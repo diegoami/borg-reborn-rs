@@ -21,7 +21,7 @@ use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
-    borg_escape, borg_freedom, borg_recall, borg_surrounded,
+    borg_escape, borg_freedom, borg_surrounded,
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
@@ -961,10 +961,11 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
+    let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
     // instead (`caution_stairs_clean_path`; 0 = C).
-    if p(Param::caution_stairs_clean_path) != 0 {
+    if p(Param::caution_stairs_clean_path) != 0 && weight == 0 {
         let percent = p(Param::caution_stairs_block_danger_percent);
         if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
@@ -979,7 +980,12 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
     // caution_desperate_ranged_first_reach grids of its path; the attack at
     // range decides (0 = C).
     let reach = p(Param::caution_desperate_ranged_first_reach);
-    if reach > 0 && !awake_monster_adjacent(st) && crate::borg_fight_attack::ranged_means(st) {
+    let ranged_reach = if reach > 0 && !awake_monster_adjacent(st) && crate::borg_fight_attack::ranged_means(st) {
+        reach
+    } else {
+        0
+    };
+    if weight == 0 && ranged_reach > 0 {
         let percent = p(Param::caution_stairs_block_danger_percent);
         if let Some(k) = crate::borg_flow_stairs::stair_path_ahead(st, up, percent, reach) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
@@ -988,7 +994,9 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
         }
     }
     st.borg.status.desperate = true;
-    let ok = if up {
+    let ok = if weight > 0 && ranged_reach > 0 {
+        crate::borg_flow_stairs::weighted_desperate_flight(st, up, ranged_reach)
+    } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
         borg_flow_stair_more(st, GOAL_FLEE, false, false)
@@ -1994,6 +2002,156 @@ mod winning_fight_tests {
     }
 }
 
+/// #758: shortest known/possible route to a grid adjacent to the player.
+/// Unknown terrain is permitted by the caller as a conservative bound.
+/// Other monsters do not permanently block a route: they may move during
+/// Recall. This uses remembered terrain, never the engine's unseen map.
+fn recall_contact_steps(from: loc, player: loc, max_moves: i32, passable: impl Fn(i32, i32) -> bool) -> Option<i32> {
+    let adjacent = |p: loc| (p.x - player.x).abs().max((p.y - player.y).abs()) <= 1;
+    if adjacent(from) { return Some(0); }
+    let mut queue = std::collections::VecDeque::from([(from, 0)]);
+    let mut seen = std::collections::BTreeSet::from([(from.x, from.y)]);
+    while let Some((at, steps)) = queue.pop_front() {
+        if steps >= max_moves { continue; }
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 { continue; }
+                let next = loc { x: at.x + dx, y: at.y + dy };
+                if next.x <= 0 || next.y <= 0 || next.x >= AUTO_MAX_X - 1 || next.y >= AUTO_MAX_Y - 1
+                    || !passable(next.x, next.y) || !seen.insert((next.x, next.y)) { continue; }
+                if adjacent(next) { return Some(steps + 1); }
+                queue.push_back((next, steps + 1));
+            }
+        }
+    }
+    None
+}
+
+/// Ranged exposure needs line of fire OR a possible melee route. A
+/// projectable immobile caster can attack even without a walking route.
+fn recall_attack_steps(contact: Option<i32>, has_spells: bool, projectable: bool) -> Option<i32> {
+    if has_spells && (projectable || contact.is_some()) { Some(0) } else { contact }
+}
+
+#[cfg(test)]
+mod recall_ranged_route_tests {
+    #[test]
+    fn immobile_caster_uses_line_of_fire_without_a_melee_route() {
+        assert_eq!(super::recall_attack_steps(None, true, true), Some(0));
+        assert_eq!(super::recall_attack_steps(None, true, false), None);
+        assert_eq!(super::recall_attack_steps(Some(8), true, false), Some(0));
+        assert_eq!(super::recall_attack_steps(Some(8), false, false), Some(8));
+        assert_eq!(super::recall_attack_steps(None, false, false), None);
+    }
+}
+
+fn recall_exposure(damage_per_turn: f64, player_energy: f64, monster_energy: f64, ticks: i32, steps: i32) -> f64 {
+    let duration = f64::from(ticks) * player_energy / 10.0;
+    let travel = f64::from(steps.max(0)) * player_energy / monster_energy.max(1.0);
+    damage_per_turn * (duration - travel).max(0.0)
+}
+
+fn recall_forecast_allows(contact_hp: f64, unknown_risks: i32, hp: i32) -> bool {
+    unknown_risks == 0 && contact_hp.is_finite() && contact_hp >= 0.0 && contact_hp < f64::from(hp)
+}
+
+#[cfg(test)]
+mod recall_quantity_tests {
+    #[test]
+    fn acid_hp_and_unmodelled_risk_are_separate_reasons() {
+        assert!(super::recall_forecast_allows(19.0, 0, 20), "modelled1d3 acid exposure can be safe; no200-point fear price");
+        assert!(!super::recall_forecast_allows(19.0, 1, 20), "uncertainty refuses qualitatively, not as invented HP");
+        assert!(!super::recall_forecast_allows(20.0, 0, 20), "equality at HP still refuses");
+        assert!(!super::recall_forecast_allows(0.0, 1, 20), "a projectable immobile caster's unknown spell still counts");
+    }
+}
+
+/// #758: only the flight's Recall entry point calls this. Evaluate every
+/// known monster, including sleepers that may wake, and sum exposure. Doors
+/// and walls obey known race movement flags. Casters that can fire now have
+/// no approach discount. The maximum delay is conservative, not knowledge
+/// of the engine's next random roll (effect-handler-general.c:1145).
+pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
+    if p(Param::caution_recall_survival) == 0 { return true; }
+    let ticks = p(Param::caution_recall_survival_delay);
+    let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
+    let mut exposure = 0.0;
+    let mut unknown_risks = 0;
+    let (mut awake, mut asleep, mut reachable) = (0, 0, 0);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        let r = usize::from(kill.r_idx);
+        if r == 0 || r >= engine::r_max().saturating_sub(1) { continue; }
+        if !kill.awake { asleep += 1; } else { awake += 1; }
+        let monster_energy = f64::from(engine::extract_energy(forecast_monster_speed(&kill).clamp(0, 199) as usize)).max(1.0);
+        let flag = |f| engine::race_flag_has(r, f);
+        let never_move = flag(RF_NEVER_MOVE);
+        let pass_wall = flag(crate::headers::list_mon_race_flags_h::RF_PASS_WALL)
+            || flag(crate::headers::list_mon_race_flags_h::RF_KILL_WALL);
+        let open_door = flag(crate::headers::list_mon_race_flags_h::RF_OPEN_DOOR)
+            || flag(crate::headers::list_mon_race_flags_h::RF_BASH_DOOR);
+        let steps = recall_contact_steps(kill.pos, st.borg.c,
+            if never_move { 0 } else { (f64::from(ticks) * monster_energy / 10.0).ceil() as i32 },
+            |x, y| {
+                let ag = st.cave.grid(x, y);
+                let feat = u32::from(ag.feat);
+                if feat == crate::headers::list_terrain_h::FEAT_PERM { return false; }
+                if feat == crate::headers::list_terrain_h::FEAT_CLOSED { return open_door || pass_wall; }
+                feat == FEAT_NONE || borg_cave_floor_grid(ag) || pass_wall
+            });
+        // Literal contact HP uses the actual walking route. A harmless
+        // HEAL/SCARE flag does not turn a distant bite into a ranged hit.
+        let forecast = fight_incoming_with(st, i, true);
+        let projectable = forecast.ranged_risk && crate::borg_projection::borg_projectable_pure(
+            st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
+        let Some(risk_steps) = recall_attack_steps(steps, forecast.ranged_risk, projectable) else { continue };
+        reachable += 1;
+        if forecast.unknown_damage && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
+            unknown_risks += 1;
+        }
+        if let Some(contact_steps) = steps {
+            exposure += recall_exposure(forecast.hp_per_turn, player_energy, monster_energy, ticks, contact_steps);
+        }
+    }
+    let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
+    if allowed && asleep > 0 {
+        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
+    }
+    if unknown_risks > 0 {
+        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+    } else if !allowed {
+        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+    }
+    allowed
+}
+
+#[cfg(test)]
+mod recall_survival_tests {
+    use super::*;
+
+    #[test]
+    fn recall_delay_uses_world_time_at_every_player_speed() {
+        let normal = recall_exposure(8.0, 10.0, 20.0, 34, 0);
+        let fast_player = recall_exposure(4.0, 20.0, 20.0, 34, 0);
+        assert_eq!(normal, 272.0);
+        assert_eq!(normal, fast_player, "same monster actions during Recall at either player speed");
+        assert_eq!(recall_exposure(8.0, 10.0, 20.0, 15, 0), 120.0);
+        assert_eq!(recall_exposure(8.0, 10.0, 20.0, 15, 30), 0.0, "cannot arrive during the delay");
+    }
+
+    #[test]
+    fn a_wall_or_closed_door_can_prevent_contact() {
+        let from = loc { x: 3, y: 5 };
+        let player = loc { x: 7, y: 5 };
+        let corridor = |x, y| y == 5 && (3..=7).contains(&x);
+        assert_eq!(recall_contact_steps(from, player, 3, corridor), Some(3));
+        assert_eq!(recall_contact_steps(from, player, 2, corridor), None);
+        assert_eq!(recall_contact_steps(from, player, 34, |x, y| corridor(x, y) && x != 5), None);
+        assert_eq!(recall_contact_steps(loc { x: 6, y: 5 }, player, 0, |_, _| false), Some(0), "immobile but adjacent");
+        assert_eq!(recall_contact_steps(from, player, 0, corridor), None, "immobile at range");
+    }
+}
+
 /// #759/#758: quantities of HP and unmodelled risk are separate. A native
 /// danger score includes fear prices and must never be multiplied by time
 /// or compared to HP as if it were damage.
@@ -2869,7 +3027,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && !ranged_before_recall(st)
         && !breeder_recall_held(st)
         && recall_escape_allowed(st, Some(pos_danger))
-        && borg_recall(st)
+        && crate::borg_escape::borg_recall_for_flight(st)
     {
         // Note
         borg_note(st, "# Fleeing the level (recall)");
@@ -2954,6 +3112,11 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
 /// Does the up (`up`) or down stair flow, spread as the flee flows spread
 /// it, reach the Borg?
 fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
+    let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
+    let weight = stair_flight_weight(GOAL_FLEE, false);
+    if weight > 0 {
+        return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
+    }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
@@ -2965,7 +3128,6 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
-    let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
     i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
 }
@@ -5048,18 +5210,41 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     // unknown staircase grid's danger unless the flow ignores danger
     // (review of #566; `desperate_flow` set it before the whole flow).
     st.borg.status.desperate = true;
-    crate::borg_flow::borg_flow_clear(st);
-    crate::borg_flow_stairs::enqueue_down_stairs(st);
-    crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
-    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-        st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-        crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    let weight = stair_flight_weight(GOAL_FLEE, false);
+    let depth = flee_down_depth(max_cost);
+    let ok = if weight > 0 {
+        crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
+    } else {
+        crate::borg_flow::borg_flow_clear(st);
+        crate::borg_flow_stairs::enqueue_down_stairs(st);
+        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+        }
     };
     st.borg.status.desperate = false;
     if ok {
         borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
     }
     ok
+}
+
+/// #765: the weight is also the opt-in switch. Case 807683971 takes the
+/// bored ascent while fleeing, so the up-stair flow can opt in there too.
+pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
+    if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// The weighted route is checked after it is planned, including for a
+/// desperate walk. A clean detour can satisfy the same check.
+pub(crate) fn weighted_stairs_blocker_percent(st: &BorgState) -> Option<i32> {
+    let check = if st.borg.status.desperate {
+        p(Param::caution_stairs_clean_path) != 0
+    } else {
+        stairs_clean_path_flee_on()
+    };
+    check.then(|| p(Param::caution_stairs_block_danger_percent))
 }
 
 /// borg-reborn-rs (#548, K of #544): whether the stuck jumpstart (bravery

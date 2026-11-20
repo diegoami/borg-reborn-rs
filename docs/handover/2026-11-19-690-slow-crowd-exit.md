@@ -84,6 +84,9 @@ That is why the open grids and the descending distance were added.
   with the shipped breeder policy 3 still needs a paired comparison.
 - The owner kept the walk ahead of the escape block. [#756] tracks
   testing how it interacts with live stair routes and escape items.
+  The [re-review] at `955f3889` reported a Priest (1569794094) whose
+  Phase Door was displaced by a walk. Both runs survived, and the
+  switch-on run reached a lower CL and DL.
 
 **Conflict resolution:** preserved the current breeder policy and its
 shipped value of 3. The slow-crowd switch stays compiled and shipped at 0
@@ -95,3 +98,4 @@ remaining interaction with the one-turn hunt pause.
 [Zoo #448]: https://github.com/diegoami/borg-zoo/issues/448#issuecomment-7023014570
 [Zoo #460]: https://github.com/diegoami/borg-zoo/issues/460#issuecomment-7026466575
 [#756]: https://github.com/diegoami/borg-reborn-rs/issues/756
+[re-review]: https://github.com/diegoami/borg-reborn-rs/pull/702#issuecomment-7051923464

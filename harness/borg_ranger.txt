@@ -10,6 +10,12 @@ borg_param_town_heal_reserve_hp_percent = 200
 borg_param_town_devices_percent = 115
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the ranger.
 borg_param_town_phase_curve_scale_percent = 150
+# #784 (owner, 2026-11-20, after #778 merged): "for rangers put
+# town_phase_reserve = 2" (the owner's correction of an earlier paladin
+# instruction). The first two Scrolls of Phase Door are a requirement of the
+# town trip, each worth town_phase_reserve_percent (100) of the escape
+# weight, on top of the Phase Door curve.
+borg_param_town_phase_reserve = 2
 borg_param_town_oil_curve_scale_percent = 50
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 6
