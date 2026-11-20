@@ -296,7 +296,9 @@ paragraph records the original milestone process.
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In progress: source startup #706/#708, then kickoff #707.** The owner
+**In progress: #680 enchant/decurse extraction.** Source startup #706/#708
+and kickoff #707/#709 are integrated after owner-accepted re-reviews and
+green CI; current task baseline is track-p `760fae80`. The owner
 requested continuation after accepting and promoting P5. P6 addresses the
 remaining adjacent item-policy dependency #680 reported by the R4 ownership
 audit; it does not transfer that work to Track R.
@@ -319,6 +321,12 @@ audit; it does not transfer that work to Track R.
    thresholds and enchant targets where the audit establishes policy.
    Preserve defaults, integer widths, evaluation/branch order, resource
    preference, callers and the existing `BORG_ENCHANT_LIMIT` setting.
+
+4. **Pre-promotion reconciliation (#774), after #680:** synchronize exact
+   accepted newer main through its own reviewed task PR into track-p,
+   preserve the new engine/settings/other-track work and the neutral contract,
+   and revalidate against that synchronized receiving baseline. The #680
+   receipts at 760fae80 do not prove latest-main compatibility.
 
 Exit: a source-grounded classification and parameter contract, registered
 bounded overrides/profile exposure and decision-trace coverage; focused

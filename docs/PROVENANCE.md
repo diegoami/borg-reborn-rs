@@ -111,3 +111,12 @@ weights/thresholds without changing neutral arithmetic, quantities or RNG
 order. The source inventory and retained mechanics classification are in
 M13-INVENTORY-PARAMETERS.md/.json. No engine, recorder or donor code is
 updated. #293's explicit shopping replacement remains separate.
+
+## P6 enchant/decurse extraction (#680)
+
+The existing borg-rs 8c5d000a copies of `borg_item_enchant.rs` and
+`borg_item_decurse.rs` gain named neutral policy controls; the vendor audit
+marks these two files hooked. Existing declarations and notices remain. No
+new donor source is copied or engine behavior adopted. The receiving parameter
+registry adds bounds/provenance tests; the native override check exercises
+the production decision. See [the contract](CALIBRATION.md#enchantdecurse-policy-680--p6).
