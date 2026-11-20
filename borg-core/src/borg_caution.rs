@@ -1476,7 +1476,11 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 /// `monster.txt` `NEVER_MOVE` with a blow and without `NEVER_BLOW`).
 fn immobile_attacker(r_idx: usize) -> bool {
     use crate::headers::list_mon_race_flags_h::{RF_NEVER_BLOW, RF_NEVER_MOVE};
+    // borg-reborn-rs (#726): not the placeholder race past the last one
+    // (no blow array), as the rest of the core skips it (`r_max - 1`).
     r_idx != 0
+        && engine::r_max() != 0
+        && r_idx < usize::from(engine::r_max()) - 1
         && engine::race_flag_has(r_idx, RF_NEVER_MOVE)
         && !engine::race_flag_has(r_idx, RF_NEVER_BLOW)
         && engine::race_blow(r_idx, 0).is_some()
@@ -1505,11 +1509,15 @@ fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
 /// out of its reach when next to it (`immobile_step_away`).
 pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     let mode = p(Param::caution_ranged_vs_immobile);
+    // borg-reborn-rs (#726): the blows are read only for an immobile
+    // attacker (it has a blow array); a race without one, such as the
+    // placeholder one past the last race, aborted in race_blow_effect_name.
     mode >= 2
         && st.borg.tr(BI_CDEPTH) > 0
+        && immobile_attacker(r_idx)
         && immobile_annoying(
             mode,
-            immobile_attacker(r_idx),
+            true,
             (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
         )
 }
