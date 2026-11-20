@@ -26,6 +26,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
 use crate::headers::list_options_h::OPT_birth_force_descend;
+use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
@@ -174,6 +175,138 @@ fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
     true
 }
 
+/// #765: choose the cheapest stair route. If the clean-path check refuses
+/// it, search the same stair set with the check applied to every entered
+/// grid so a costlier clean detour can still be used.
+fn weighted_route(
+    st: &mut BorgState,
+    kinds: &[Which],
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+) -> Result<Option<borg_flow::StairPath>, usize> {
+    let mut stairs = Vec::new();
+    for &which in kinds {
+        let track = track(st, which);
+        for i in 0..track.num.max(0) as usize {
+            let (y, x) = track.at(i);
+            if st.cave.grid(x, y).kill == 0 {
+                stairs.push(loc { x, y });
+            }
+        }
+    }
+    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true) else {
+        return Ok(None);
+    };
+    let Some(percent) = crate::borg_caution::weighted_stairs_blocker_percent(st) else {
+        return Ok(Some(path));
+    };
+    let mode = crate::borg_caution::stairs_clean_path_mode();
+    let mut check = WeightedPathCheck {
+        mode,
+        reach: blocker_reach(mode),
+        hp: st.borg.tr(BI_CURHP).max(1),
+        percent,
+        blocks: [None; 256],
+    };
+    let target = *path.grids.last().expect("a stair path includes its target");
+    let Some(blocker) = path.grids.iter().skip(1).find_map(|&grid| check.blocker_at(st, grid, target)) else {
+        return Ok(Some(path));
+    };
+
+    // Mode 3's test of whether a nearby monster is ahead depends on the
+    // destination. Check each staircase under its own rule.
+    let search = |check: &mut WeightedPathCheck, st: &mut BorgState, goals: &[loc], target| {
+        borg_flow::weighted_stair_path(st, goals, depth, avoid, sneak, weight, |st, grid| {
+            check.blocker_at(st, grid, target).is_none()
+        })
+    };
+    let clean = if mode == 3 {
+        stairs.iter().filter_map(|stair| search(&mut check, st, std::slice::from_ref(stair), *stair))
+            .min_by_key(|route| (route.cost, route.grids.len()))
+    } else {
+        search(&mut check, st, &stairs, target)
+    };
+    clean.map(Some).ok_or(blocker)
+}
+
+struct WeightedPathCheck {
+    mode: i32,
+    reach: i32,
+    hp: i32,
+    percent: i32,
+    blocks: [Option<bool>; 256],
+}
+
+impl WeightedPathCheck {
+    fn blocker_at(&mut self, st: &mut BorgState, grid: loc, target: loc) -> Option<usize> {
+        let stairs = (target.y, target.x);
+        let borg_far = distance((st.borg.c.y, st.borg.c.x), stairs);
+        for dy in -self.reach..=self.reach {
+            for dx in -self.reach..=self.reach {
+                let (y, x) = (grid.y + dy, grid.x + dx);
+                if !engine::square_in_bounds(x, y) {
+                    continue;
+                }
+                let k = usize::from(st.cave.grid(x, y).kill);
+                if k == 0 || !st.kills.kills[k].awake {
+                    continue;
+                }
+                if (dx != 0 || dy != 0) && !beside_blocks(self.mode, distance((y, x), stairs), borg_far) {
+                    continue;
+                }
+                if *self.blocks[k].get_or_insert_with(|| dangerous_path_blocker(st, k, self.hp, self.percent)) {
+                    return Some(k);
+                }
+            }
+        }
+        None
+    }
+}
+
+fn weighted_flight(
+    st: &mut BorgState,
+    why: i32,
+    direction: Option<Which>,
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+) -> bool {
+    let (who, kinds): (_, &[_]) = match direction {
+        Some(Which::Less) => (c"up-stairs", &[Which::Less]),
+        Some(Which::More) => (c"down-stairs", &[Which::More]),
+        None if crate::borg_caution::rising_holds_flee_descent(st) => (c"stairs", &[Which::Less]),
+        None => (c"stairs", &[Which::Less, Which::More]),
+    };
+    match weighted_route(st, kinds, depth, avoid, sneak, weight) {
+        Ok(Some(path)) => borg_flow::commit_weighted_stair_path(st, who, why, &path.grids),
+        Ok(None) => false,
+        Err(k) => {
+            st.borg.flee_path_refused = true;
+            if st.borg.status.desperate || !st.borg.flee_path_noted {
+                if !st.borg.status.desperate {
+                    st.borg.flee_path_noted = true;
+                }
+                let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+                let to = who.to_string_lossy();
+                borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
+            }
+            false
+        }
+    }
+}
+
+pub(crate) fn weighted_down_flight(st: &mut BorgState, depth: i32, weight: i32) -> bool {
+    weighted_flight(st, GOAL_FLEE, Some(Which::More), depth, false, false, weight)
+}
+
+pub(crate) fn weighted_stair_reachable(st: &mut BorgState, up: bool, avoid: bool, weight: i32) -> bool {
+    let which = if up { Which::Less } else { Which::More };
+    matches!(weighted_route(st, &[which], 250, avoid, false, weight), Ok(Some(_)))
+}
+
 /// Do a Stair-Flow. Look at how far away this grid is to my closest stair.
 pub fn borg_flow_cost_stair(st: &mut BorgState, y: i32, x: i32, b_stair: i32) -> i32 {
     /* Clear the flow codes */
@@ -223,6 +356,11 @@ fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* Absolutely no diving if no light */
     if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 {
         return false;
+    }
+
+    let weight = crate::borg_caution::stair_flight_weight(why, false);
+    if weight > 0 {
+        return weighted_flight(st, why, None, 250, false, sneak, weight);
     }
 
     /* Clear the flow codes */
@@ -366,15 +504,19 @@ fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
                 if beside && !beside_blocks(mode, distance((my, mx), (sy, sx)), borg_far) {
                     continue;
                 }
-                let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-                let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false);
-                if danger * 100 >= hp * percent {
+                if dangerous_path_blocker(st, k, hp, percent) {
                     return Some(k);
                 }
             }
         }
     }
     None
+}
+
+fn dangerous_path_blocker(st: &mut BorgState, k: usize, hp: i32, percent: i32) -> bool {
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false);
+    danger * 100 >= hp * percent
 }
 
 /// Grid steps between two grids (king moves), for #751's mode 3.
@@ -409,6 +551,12 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* None to flow to */
     if st.stairs.less.num == 0 {
         return false;
+    }
+
+    let weight = crate::borg_caution::stair_flight_weight(why, st.borg.goal.fleeing || st.borg.goal.leaving);
+    if weight > 0 {
+        let avoid = st.borg.tr(BI_CLEVEL) <= 35 && st.borg.tr(BI_LIGHT) != 0 && !st.borg.status.desperate;
+        return weighted_flight(st, why, Some(Which::Less), 250, avoid, sneak, weight);
     }
 
     /* Clear the flow codes */
@@ -497,6 +645,11 @@ fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
 
     if more_refused(st, brave) {
         return false;
+    }
+
+    let weight = crate::borg_caution::stair_flight_weight(why, false);
+    if weight > 0 {
+        return weighted_flight(st, why, Some(Which::More), 250, false, sneak, weight);
     }
 
     /* Clear the flow codes */

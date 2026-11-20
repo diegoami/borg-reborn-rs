@@ -956,7 +956,7 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
     // instead (`caution_stairs_clean_path`; 0 = C).
-    if p(Param::caution_stairs_clean_path) != 0 {
+    if p(Param::caution_stairs_clean_path) != 0 && stair_flight_weight(GOAL_FLEE, false) == 0 {
         let percent = p(Param::caution_stairs_block_danger_percent);
         if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
@@ -2575,6 +2575,11 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
 /// Does the up (`up`) or down stair flow, spread as the flee flows spread
 /// it, reach the Borg?
 fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
+    let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
+    let weight = stair_flight_weight(GOAL_FLEE, false);
+    if weight > 0 {
+        return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
+    }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
@@ -2586,7 +2591,6 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
-    let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
     i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
 }
@@ -4458,18 +4462,41 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     // unknown staircase grid's danger unless the flow ignores danger
     // (review of #566; `desperate_flow` set it before the whole flow).
     st.borg.status.desperate = true;
-    crate::borg_flow::borg_flow_clear(st);
-    crate::borg_flow_stairs::enqueue_down_stairs(st);
-    crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
-    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-        st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-        crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    let weight = stair_flight_weight(GOAL_FLEE, false);
+    let depth = flee_down_depth(max_cost);
+    let ok = if weight > 0 {
+        crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
+    } else {
+        crate::borg_flow::borg_flow_clear(st);
+        crate::borg_flow_stairs::enqueue_down_stairs(st);
+        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+        }
     };
     st.borg.status.desperate = false;
     if ok {
         borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
     }
     ok
+}
+
+/// #765: the weight is also the opt-in switch. Case 807683971 takes the
+/// bored ascent while fleeing, so the up-stair flow can opt in there too.
+pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
+    if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// The weighted route is checked after it is planned, including for a
+/// desperate walk. A clean detour can satisfy the same check.
+pub(crate) fn weighted_stairs_blocker_percent(st: &BorgState) -> Option<i32> {
+    let check = if st.borg.status.desperate {
+        p(Param::caution_stairs_clean_path) != 0
+    } else {
+        stairs_clean_path_flee_on()
+    };
+    check.then(|| p(Param::caution_stairs_block_danger_percent))
 }
 
 /// borg-reborn-rs (#548, K of #544): whether the stuck jumpstart (bravery
