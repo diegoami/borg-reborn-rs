@@ -344,7 +344,8 @@ borg_param_prepared_recall_depth = 5
 # Warrior 2, 4, 0. The common
 # values here apply to no class today. The switch stays common, so one line
 # turns the plan on or off for every class.
-borg_param_prepared_depth_plan = 0
+# Shipped 1 (owner, 2026-11-20: "switch goes 1"), with the per-class values.
+borg_param_prepared_depth_plan = 1
 borg_param_prepared_depth_early_levels_per_dl = 3
 borg_param_prepared_depth_early_until_level = 6
 borg_param_prepared_depth_late_levels_below = 3
