@@ -4871,6 +4871,42 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         st.flow.temp_push(kill.pos.y, kill.pos.x);
     }
 
+    // borg-reborn-rs (#736, owner: "choosing the enemy you can take down is
+    // the wrong idea. Here it is obvious better to target the mobile one ...
+    // I would flask the acolyte, who can kill me"): with
+    // `attack_mobile_threat_first`, while a mobile monster among the targets
+    // is a threat (its danger at least `attack_mobile_threat_percent` of the
+    // HP), the immobile ones are not targets. They cannot follow; the Borg
+    // keeps away from them instead. 0 = C.
+    if param(Param::attack_mobile_threat_first) != 0 && st.flow.temp_n > 1 {
+        let percent = param(Param::attack_mobile_threat_percent);
+        let hp = tr(st, BI_CURHP).max(1);
+        let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+        let targets: Vec<(i32, i32, usize)> = (0..st.flow.temp_n as usize)
+            .map(|t| {
+                let (y, x) = (i32::from(st.flow.temp_y[t]), i32::from(st.flow.temp_x[t]));
+                (y, x, usize::from(grid(st, x, y).kill))
+            })
+            .collect();
+        let immobile = |st: &BorgState, k: usize| k != 0 && rf(st.kills.kills[k].r_idx, RF_NEVER_MOVE);
+        let mut threat = false;
+        for &(_, _, k) in &targets {
+            if k != 0 && !immobile(st, k) && crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false) * 100 >= hp * percent {
+                threat = true;
+                break;
+            }
+        }
+        if threat && targets.iter().any(|&(_, _, k)| immobile(st, k)) {
+            st.flow.temp_n = 0;
+            for &(y, x, k) in &targets {
+                if !immobile(st, k) {
+                    st.flow.temp_push(y, x);
+                }
+            }
+            borg_note(st, "# Targeting the mobile threat, not the immobile monsters (#736)");
+        }
+    }
+
     /* No destinations */
     if st.flow.temp_n == 0 {
         st.traits.attacking = false;

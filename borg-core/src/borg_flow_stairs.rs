@@ -230,6 +230,118 @@ fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     commit_and_step(st, c"stairs", why)
 }
 
+/// borg-reborn-rs (#736): spread the desperate stair flow (to the up stairs,
+/// the down stairs, or both with `up` `None`), as `desperate_flow` would,
+/// run `f` on it, and put the flow state back as it was: an observation
+/// only, so the rules after it read what they would have read.
+fn with_stair_spread<R>(st: &mut BorgState, up: Option<bool>, f: impl FnOnce(&mut BorgState) -> R) -> R {
+    let fl = &st.flow;
+    let saved = (fl.head, fl.tail, fl.flow_x.clone(), fl.flow_y.clone(), fl.data_cost.clone(),
+                 fl.data_know.clone(), fl.data_icky.clone(), fl.hunting, fl.to_stairs);
+    // As `desperate_flow` spreads it: desperate (dangerous grids are
+    // crossed), no avoidance.
+    let was = std::mem::replace(&mut st.borg.status.desperate, true);
+    borg_flow::borg_flow_clear(st);
+    if up != Some(false) {
+        enqueue_stairs(st, Which::Less);
+    }
+    if up != Some(true) {
+        enqueue_stairs(st, Which::More);
+    }
+    let optimize = st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0;
+    borg_flow::borg_flow_spread_stairs(st, 250, optimize, false, false, -1, false);
+    let r = f(st);
+    st.borg.status.desperate = was;
+    let fl = &mut st.flow;
+    (fl.head, fl.tail, fl.flow_x, fl.flow_y, fl.data_cost, fl.data_know, fl.data_icky, fl.hunting, fl.to_stairs) = saved;
+    r
+}
+
+/// borg-reborn-rs (#736, owner: "the acolyte is going to be in the way. The
+/// path to the stairs is not clean, so the 'desperate for stairs' should see
+/// that the stairs are not reachable"): walk the desperate flow's path from
+/// the Borg to the up (`up`) or down stairs. The first awake monster on a
+/// grid of the path, or next to one, whose danger to the Borg is at least
+/// `percent` of its HP, is returned (its index in `st.kills`). `None`: a
+/// clean path, or no stairs to flow to.
+pub fn stair_path_blocker(st: &mut BorgState, up: bool, percent: i32) -> Option<usize> {
+    let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if track.num == 0 {
+        return None;
+    }
+    with_stair_spread(st, Some(up), |st| path_blocker(st, percent))
+}
+
+/// borg-reborn-rs (#736, owner: "it stepped away in the wrong direction,
+/// instead of W he should have stepped SE towards the exit"): the steps from
+/// each of the eight grids around the Borg (in `ddd` order) to the nearest
+/// staircase, up or down, by the desperate flow. 255: none known, or not
+/// reachable from that grid.
+pub fn stair_steps_around(st: &mut BorgState) -> [i32; 8] {
+    if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
+        return [255; 8];
+    }
+    with_stair_spread(st, None, |st| {
+        let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+        std::array::from_fn(|i| {
+            let x = cx + i32::from(engine::ddx_ddd(i));
+            let y = cy + i32::from(engine::ddy_ddd(i));
+            if engine::square_in_bounds(x, y) { i32::from(st.flow.cost_at(y, x)) } else { 255 }
+        })
+    })
+}
+
+/// The walk of `stair_path_blocker` over the spread flow costs.
+fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
+    let hp = st.borg.tr(BI_CURHP).max(1);
+    let (mut y, mut x) = (st.borg.c.y, st.borg.c.x);
+    let mut seen = [false; 1024];
+    for _ in 0..250 {
+        let here = i32::from(st.flow.cost_at(y, x));
+        if here == 0 || here >= 250 {
+            break;
+        }
+        // The next grid of the path: the neighbour with the lowest cost.
+        let mut next = None;
+        for i in 0..8 {
+            let nx = x + i32::from(engine::ddx_ddd(i));
+            let ny = y + i32::from(engine::ddy_ddd(i));
+            if !engine::square_in_bounds(nx, ny) {
+                continue;
+            }
+            let c = i32::from(st.flow.cost_at(ny, nx));
+            if c < here && next.is_none_or(|(_, _, b)| c < b) {
+                next = Some((ny, nx, c));
+            }
+        }
+        let Some((ny, nx, _)) = next else { break };
+        (y, x) = (ny, nx);
+        // A monster on this grid of the path, or next to it.
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                let (my, mx) = (y + dy, x + dx);
+                if !engine::square_in_bounds(mx, my) {
+                    continue;
+                }
+                let k = usize::from(st.cave.grid(mx, my).kill);
+                if k == 0 || k >= seen.len() || seen[k] {
+                    continue;
+                }
+                seen[k] = true;
+                if !st.kills.kills[k].awake {
+                    continue;
+                }
+                let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+                let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false);
+                if danger * 100 >= hp * percent {
+                    return Some(k);
+                }
+            }
+        }
+    }
+    None
+}
+
 /// Prepare to flow towards "up" stairs.
 fn stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* forced to go up */
