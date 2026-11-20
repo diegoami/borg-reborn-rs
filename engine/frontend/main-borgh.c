@@ -134,6 +134,9 @@ static int opt_depth = 0;
 static int opt_start_depth = 0;
 static int initial_depth = 0;
 static int initial_clevel, initial_max_hp, initial_max_sp;
+static int initial_hp, initial_sp, start_build_version;
+static int initial_learned_spells, initial_worked_spells, initial_new_spells;
+static int initial_ac, initial_to_a;
 static int initial_cave_depth;
 static bool initial_generation_pending;
 static const char *opt_start_build;
@@ -285,8 +288,12 @@ static void borgh_finish(const char *reason)
 		fprintf(fp, "  \"initial_depth\": %d,\n", initial_depth);
 		fprintf(fp, "  \"initial_cave_depth\": %d,\n  \"initial_generation_pending\": %s,\n", initial_cave_depth, initial_generation_pending ? "true" : "false");
 		fprintf(fp, "  \"initial_clevel\": %d,\n  \"initial_max_hp\": %d,\n  \"initial_max_sp\": %d,\n", initial_clevel, initial_max_hp, initial_max_sp);
+		fprintf(fp, "  \"initial_hp\": %d,\n  \"initial_sp\": %d,\n", initial_hp, initial_sp);
+		fprintf(fp, "  \"initial_ac\": %d,\n  \"initial_to_a\": %d,\n", initial_ac, initial_to_a);
+		fprintf(fp, "  \"initial_learned_spells\": %d,\n  \"initial_worked_spells\": %d,\n  \"initial_new_spells\": %d,\n", initial_learned_spells, initial_worked_spells, initial_new_spells);
 		fprintf(fp, "  \"start_build\": \"%s\",\n", opt_start_build ? "record" : "birth");
 		if (opt_start_build) fprintf(fp, "  \"start_build_sha256\": \"%s\",\n", start_build_sha256);
+		if (opt_start_build) fprintf(fp, "  \"start_build_schema\": \"borg-reborn-rs/character-build@%d\",\n", start_build_version);
 		fprintf(fp, "  \"dungeon_mode\": \"one_way\",\n");
 	}
 	if (opt_load)
@@ -596,6 +603,15 @@ static void borgh_key(struct keypress k)
 		initial_clevel = player->lev;
 		initial_max_hp = player->mhp;
 		initial_max_sp = player->msp;
+		initial_hp = player->chp;
+		initial_sp = player->csp;
+		initial_ac = player->state.ac;
+		initial_to_a = player->state.to_a;
+		initial_new_spells = player->upkeep->new_spells;
+		for (int i = 0; i < player->class->magic.total_spells; ++i) {
+			if (player->spell_flags[i] & PY_SPELL_LEARNED) initial_learned_spells++;
+			if (player->spell_flags[i] & PY_SPELL_WORKED) initial_worked_spells++;
+		}
 	}
 	keys_logged++;
 	if (opt_capture_build && !build_capture_turn && player->lev == opt_capture_build_level) {
@@ -703,7 +719,7 @@ static void prepare_borg_start(void)
 		bool auto_more = OPT(player, auto_more);
 		if (opt_start_depth >= z_info->max_depth)
 			quit("borgh: -start-depth must be between 1 and max_depth-1");
-		if (opt_start_build) synthetic_build_apply(opt_start_build, start_build_sha256);
+		if (opt_start_build) synthetic_build_apply(opt_start_build, start_build_sha256, &start_build_version);
 		/* Complete the engine's normal level transition before any Borg
 		 * initialization or key. Merely changing player->depth leaves
 		 * the previous cave active until a later game-loop boundary. */
