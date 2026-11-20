@@ -105,6 +105,17 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('**new tags** `4.2.6-impact-v*`: 4.2.6-impact-v8', text)
         self.assertIn('**cited C Borg functions changed:** borg-danger.c:borg_danger', text)
 
+    def test_every_upstream_borg_commit_is_in_the_ledger(self):
+        # #724: commit B touches src/borg after the ledger's since (A).
+        pins = json.loads((self.root / 'pins.json').read_text())
+        pins['pins']['src']['borg_ledger'] = 'engine/upstream-borg.txt'
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        self.assertIn('C Borg ledger** `engine/upstream-borg.txt`: missing', self.report())
+        write(self.root, {'engine/upstream-borg.txt': f'# ledger\nsince {self.a}\n'})
+        self.assertIn(f'**upstream C Borg commits not in `engine/upstream-borg.txt`:** {self.b[:8]}', self.report())
+        write(self.root, {'engine/upstream-borg.txt': f'since {self.a}\n{self.b[:8]} carried borg-core/src/x.rs\n'})
+        self.assertIn('upstream C Borg commits: all listed', self.report())
+
     def test_a_milestone_tag_before_the_pin_is_still_new(self):
         # better-borg-c 4.2.6-impact-v8 was tagged before the pin moved past
         # it; the arm in use is still v7, so v8 must be reported.
