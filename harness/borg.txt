@@ -656,10 +656,13 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. Reverted to
-# 0 for every class (owner, 2026-11-20): a low-level character sees only the
-# grids next to it in a dark room, so it walks into floating eyes; detection
-# is what shows them first. The zoo measures it.
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. #728
+# reverted it to 0 for every class (owner, 2026-11-20): a low-level character
+# sees only the grids next to it in a dark room, so it walks into floating
+# eyes, and detection shows them first. #744 (owner, 2026-11-20) sets 10 again
+# for Mage, Druid, Priest, Necromancer and Paladin in their class files
+# (borg-zoo#480, classes-1800 starts 1-360, 100k turns: same deaths, CL +0.53,
+# no floating-eye death); this common line stays 0 for the other classes.
 borg_param_light_detect_evil_spell_min_level = 0
 
 # Thrown oil (#712, owner 2026-11-20): the town planner values each flask of
@@ -953,6 +956,12 @@ borg_param_caution_cornered_danger_tenths = 10
 borg_param_caution_cornered_radius = 2
 borg_param_caution_cornered_big_level_margin = 0
 borg_param_caution_cornered_spell_fail = 25
+# #719 (owner): cornered, throw or shoot first while no monster is adjacent
+# and a ranged attack does damage; buff once one is next to it. 1 = the
+# cornered boost, 2 = also the breeder fight's boost; 0 = buff first.
+# Shipped 1 (owner, 2026-11-20): measured neutral and rare (starts 1-90: it
+# acts 4 times in 3 games, deaths 4 and 4).
+borg_param_caution_cornered_throw_first = 1
 
 
 ### Breeders ###
@@ -1062,8 +1071,10 @@ borg_param_caution_breeder_lost_recall_turns = 500
 # breeding can be stopped (the known breeders' expected births a turn, times
 # births_percent, below the Borg's kills a turn with its best attack of any
 # kind, the attack planner's own choice), at any count and level
-# and whether or not it carries an escape; danger at or above the HP stops the
-# stand for that think. Once the breeding outpaces the kills the level is lost
+# and whether or not it carries an escape; danger at or above the HP pauses the
+# stand (and the hunt) for that think only: the usual caution acts (retreat,
+# escape), but no level-long leave, breeder flee or scary level follows from
+# the pause (#722). Once the breeding outpaces the kills the level is lost
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 
@@ -1087,6 +1098,12 @@ borg_param_caution_scary_named_monsters = 1
 # and the zoo copy the file next to borg.txt and pin its hash.
 
 borg_scary_list = scary_monsters.txt
+
+# The world (#704): game data with some monsters more common, for stress tests
+# (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
+# key, generates the data and records it; the Borg never reads it. none = the
+# game's own data. A world's games compare only with games of the same world.
+borg_world = none
 
 # A monster is also scary when one character turn of its melee can take at
 # least this percent of max HP: Fang is scary to a 10-HP Mage, not to an
@@ -1270,7 +1287,7 @@ borg_param_town_heal_reserve_hp_percent_mage = 300
 borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
-borg_param_light_detect_evil_spell_min_level__mage = 0
+borg_param_light_detect_evil_spell_min_level__mage = 10
 borg_param_prepared_depth_early_levels_per_dl__mage = 4
 borg_param_prepared_depth_early_until_level__mage = 8
 borg_param_prepared_depth_late_levels_below__mage = 3
@@ -1281,7 +1298,7 @@ borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
-borg_param_light_detect_evil_spell_min_level__druid = 0
+borg_param_light_detect_evil_spell_min_level__druid = 10
 borg_param_prepared_depth_early_levels_per_dl__druid = 5
 borg_param_prepared_depth_early_until_level__druid = 10
 borg_param_prepared_depth_late_levels_below__druid = 4
@@ -1292,7 +1309,7 @@ borg_param_town_heal_reserve_hp_percent_priest = 250
 borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
-borg_param_light_detect_evil_spell_min_level__priest = 0
+borg_param_light_detect_evil_spell_min_level__priest = 10
 borg_param_prepared_depth_early_levels_per_dl__priest = 4
 borg_param_prepared_depth_early_until_level__priest = 8
 borg_param_prepared_depth_late_levels_below__priest = 3
@@ -1304,7 +1321,7 @@ borg_param_town_heal_reserve_hp_percent_necromancer = 300
 borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
-borg_param_light_detect_evil_spell_min_level__necromancer = 0
+borg_param_light_detect_evil_spell_min_level__necromancer = 10
 borg_param_prepared_depth_early_levels_per_dl__necromancer = 4
 borg_param_prepared_depth_early_until_level__necromancer = 8
 borg_param_prepared_depth_late_levels_below__necromancer = 3
@@ -1316,7 +1333,7 @@ borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent__paladin = 100
 borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
-borg_param_light_detect_evil_spell_min_level__paladin = 0
+borg_param_light_detect_evil_spell_min_level__paladin = 10
 borg_param_caution_breeder_hunt_max_count__paladin = 6
 borg_param_prepared_depth_early_levels_per_dl__paladin = 3
 borg_param_prepared_depth_early_until_level__paladin = 5

@@ -2266,6 +2266,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if st.borg.near.breeder
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level)
         && !breeder_stand(st)
+        // borg-reborn-rs (#722, lead b): not from a one-think pause.
+        && !breeder_stand_paused(st)
     {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
@@ -3339,6 +3341,26 @@ fn breed_chance(k: i32) -> f64 {
 /// level lost to the breeders, still stand while no staircase is known (a
 /// flight with nowhere to go only wanders through the colony,
 /// borg-cemetery#77); never while the danger here is at or above the HP.
+/// borg-reborn-rs (#722, lead b): with `caution_breeder_stoppable`, the stand
+/// is paused for this think only: the level is not lost, but the danger here
+/// is at or above the HP. The level-long effects of not standing (the
+/// "ignoring breeders" leave of `borg_check_breeders`, the breeder flee, the
+/// breeder scary level) must not follow from a pause, or one dangerous turn
+/// latches the flight for the whole level.
+pub(crate) fn breeder_stand_paused(st: &BorgState) -> bool {
+    stand_paused(
+        p(Param::caution_breeder_stoppable) != 0,
+        st.borg.breeders_lost,
+        st.borg.breeders_in_danger,
+        st.borg.mon.breeders > 0 && st.borg.tr(BI_CDEPTH) != 0,
+    )
+}
+
+/// `breeder_stand_paused` with its inputs given.
+fn stand_paused(stoppable: bool, lost: bool, in_danger: bool, breeders_here: bool) -> bool {
+    stoppable && breeders_here && !lost && in_danger
+}
+
 fn stand_against_breeders(lost: bool, no_stairs_known: bool, in_danger: bool) -> bool {
     !in_danger && (!lost || no_stairs_known)
 }
@@ -3939,6 +3961,11 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
 pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+    // borg-reborn-rs (#719, owner): "if I am cornered I should throw missile
+    // and then boost myself".
+    if throw_first(st, why) {
+        return true;
+    }
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
@@ -3985,6 +4012,47 @@ pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
         }
     }
     false
+}
+
+/// borg-reborn-rs (#719, owner): with `caution_cornered_throw_first`, a
+/// boost waits while no monster is adjacent yet and an attack from range
+/// would do damage (`borg_attack_estimate`: throws, shots, attack spells,
+/// wands; with nothing adjacent no melee blow is possible). The Borg attacks
+/// instead, and buffs once a monster is next to it or nothing reaches. Mode 1
+/// is the "Cornered" boost only; mode 2 also the hard breeder fight's (the
+/// Phase Door rule's boost is reached only after its own attack found nothing,
+/// so mode 2 changes nothing there).
+fn throw_first(st: &mut BorgState, why: &str) -> bool {
+    let mode = p(Param::caution_cornered_throw_first);
+    if mode == 0 {
+        return false;
+    }
+    let adjacent = (1..st.kills.nxt.max(0) as usize)
+        .any(|i| st.kills.kills[i].r_idx != 0 && engine::distance(st.borg.c, st.kills.kills[i].pos) <= 1);
+    // The dry run draws the Borg's random numbers and may clear the waiting
+    // flag: both are restored, so a check that does not act changes nothing
+    // (as the breeder estimate does).
+    if !throw_first_applies(mode, why == "Cornered", adjacent, || {
+        let (quick, value) = engine::rand_state();
+        let waiting = st.borg.goal.waiting;
+        let damage = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+        engine::set_rand_state(quick, value);
+        st.borg.goal.waiting = waiting;
+        damage
+    }) {
+        return false;
+    }
+    if crate::borg_fight_attack::borg_attack(st, false) {
+        borg_note(st, &format!("# {why}: attacking at range before the boost (#719)"));
+        return true;
+    }
+    false
+}
+
+/// The test of `throw_first`: on for this caller, nothing adjacent, and a
+/// ranged attack that does damage (asked last: the estimate runs a dry run).
+fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_damage: impl FnOnce() -> i32) -> bool {
+    (mode >= 2 || (mode == 1 && cornered_caller)) && !adjacent && ranged_damage() > 0
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),
@@ -5225,6 +5293,23 @@ mod cornered_tests {
 }
 
 #[cfg(test)]
+mod throw_first_tests {
+    use super::throw_first_applies;
+
+    /// #719: the order decision.
+    #[test]
+    fn throw_before_the_boost() {
+        assert!(!throw_first_applies(0, true, false, || 10), "off");
+        assert!(throw_first_applies(1, true, false, || 10), "cornered, closing in, a throw");
+        assert!(!throw_first_applies(1, false, false, || 10), "mode 1: not the breeder or Phase rule boost");
+        assert!(throw_first_applies(2, false, false, || 10), "mode 2: every boost");
+        assert!(!throw_first_applies(1, true, true, || 10), "adjacent: buff");
+        assert!(!throw_first_applies(1, true, false, || 0), "nothing reaches: buff");
+        assert!(!throw_first_applies(1, true, true, || panic!("no dry run when adjacent")));
+    }
+}
+
+#[cfg(test)]
 mod recall_tests {
     use super::*;
 
@@ -5462,5 +5547,20 @@ mod breeder_policy_tests {
         assert_eq!(lost_recall(3, true, 1_000, 1_000, 0), (false, true), "0: at once");
         assert_eq!(lost_recall(3, false, 0, 9_000, 500), (false, false), "not lost");
         assert_eq!(lost_recall(2, true, 1_000, 9_000, 500), (false, false), "below 3");
+    }
+}
+
+#[cfg(test)]
+mod breeder_pause_tests {
+    use super::stand_paused;
+
+    /// #722 lead b: a pause is a stoppable, unlost level in danger this think.
+    #[test]
+    fn pause() {
+        assert!(stand_paused(true, false, true, true));
+        assert!(!stand_paused(true, true, true, true), "a lost level is not a pause");
+        assert!(!stand_paused(true, false, false, true), "no danger: standing");
+        assert!(!stand_paused(false, false, true, true), "stoppable off: C");
+        assert!(!stand_paused(true, false, true, false), "no breeders");
     }
 }
