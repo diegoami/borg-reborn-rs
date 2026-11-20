@@ -1190,7 +1190,6 @@ borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 0
 borg_param_caution_breeder_hunt_max_count__paladin = 6
-borg_param_light_detect_evil_spell_min_level__paladin = 10
 borg_param_prepared_depth_early_levels_per_dl__paladin = 2
 borg_param_prepared_depth_early_until_level__paladin = 4
 borg_param_prepared_depth_late_levels_below__paladin = 0
