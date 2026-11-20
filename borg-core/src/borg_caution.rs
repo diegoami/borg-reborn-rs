@@ -2979,6 +2979,47 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
     ok
 }
 
+/// borg-reborn-rs (#697): walk to the nearest known grid at least `distance`
+/// grids from `from`: a corridor or doorway (#544's `breeder_exit_grid`) if
+/// one is known, else any known floor grid. Unlike #544's exit the flow is
+/// not the desperate one: danger is counted, so a dangerous monster's grid
+/// is refused; `avoid` keeps the path off unknown grids, as the desperate
+/// flow does (review of #698). Takes the first step; false when no grid is
+/// known or none can be reached.
+pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: &std::ffi::CStr) -> bool {
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
+    };
+    let mut corridors = Vec::new();
+    let mut floors = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            let at = loc { x, y };
+            if st.cave.grid(x, y).kill != 0 || !passable(x, y) || engine::distance(from, at) < distance {
+                continue;
+            }
+            if breeder_exit_grid(&passable, at, &[from], distance) {
+                corridors.push(at);
+            } else {
+                floors.push(at);
+            }
+        }
+    }
+    let targets = if corridors.is_empty() { floors } else { corridors };
+    if targets.is_empty() {
+        return false;
+    }
+    crate::borg_flow::borg_flow_clear(st);
+    for e in &targets {
+        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+    crate::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+}
+
 /// Flow to the nearest of `exits` and take its first step. When the flow
 /// is committed but no step can be taken, `borg_flow_old` cancels the goal
 /// (`goal.type_0 = 0`), so no `GOAL_FLEE` flow is left for the next think.

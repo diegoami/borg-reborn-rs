@@ -540,6 +540,18 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# An unseen attacker (#697): "Something touches you" makes no monster, so no
+# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
+# an unseen attack counts that long: no rest within distance grids of where
+# it struck; hurt, the Borg walks at least that far (a corridor first) and
+# rests there; struck again that far away, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
+# Impact: see CALIBRATION (#697).
+
+borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_distance = 10
+borg_param_recover_unseen_heal_hp_percent = 0
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
