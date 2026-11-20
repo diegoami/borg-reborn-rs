@@ -942,6 +942,22 @@ borg_param_caution_breeder_through_turns = 5
 
 borg_param_caution_breeder_stuck_turns = 20
 
+# The breeder policy (#722, owner): one setting for the breeder switches.
+# -1 = the switches below as set. 0 = C. 1 = stand when there is no easy
+# escape, and hunt few breeders below CL10 (#503, #558). 2 = and never rest
+# while breeders are known: hunt them or leave (#644). 3 = and kill them first
+# while the kills outpace the breeding, at any count and level (#556); the
+# level is lost once more breeders are known than the class clears
+# (caution_breeder_hunt_max_count, per class) or the breeding wins; on a lost
+# level the Borg leaves, searching for stairs, and reads Recall after
+# lost_recall_turns game turns (owner: "search for stairs first, but if paths
+# are blocked by breeders, recall at some point"). 4 = and paths avoid
+# colonies (#556). 5 = and walk out of a breeder room (#544).
+# Impact: see CALIBRATION (#722).
+
+borg_param_caution_breeder_policy = 3
+borg_param_caution_breeder_lost_recall_turns = 500
+
 # Kill breeders first (#556, owner): stand and hunt breeders while the
 # breeding can be stopped (the known breeders' expected births a turn, times
 # births_percent, below the Borg's kills a turn with its best attack of any
