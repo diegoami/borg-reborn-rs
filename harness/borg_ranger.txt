@@ -11,3 +11,5 @@ borg_param_town_devices_percent = 115
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the ranger.
 borg_param_town_phase_curve_scale_percent = 150
 borg_param_town_oil_curve_scale_percent = 50
+# Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
+borg_param_caution_breeder_hunt_max_count = 6
