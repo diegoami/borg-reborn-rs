@@ -12,4 +12,4 @@
   - 17 of 19 keys identical;
   - deaths 1 and 1 (the same Druid, an invisible clear icky thing);
   - sum of max CL 102 to 104; sum of max DL 35 to 36.
-- The real-character breeder test bed (living saves plus `-start-monsters`) is PR #740's change; its results are on #722.
+- The real-character breeder test bed (living saves plus `-start-monsters`) is PR #741's change; its results are on #722.
