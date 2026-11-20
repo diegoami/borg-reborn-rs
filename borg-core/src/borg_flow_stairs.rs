@@ -660,7 +660,7 @@ fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgSta
 /// a flight (`GOAL_FLEE`), and not the desperate walk (`desperate_flow`
 /// checks its own path first, #736).
 fn flee_check_applies(st: &BorgState, why: i32) -> bool {
-    flee_check_applies_with(crate::params::value(crate::params::Param::caution_stairs_clean_path_flee) != 0, why, st.borg.status.desperate)
+    flee_check_applies_with(crate::borg_caution::stairs_clean_path_flee_on(), why, st.borg.status.desperate)
 }
 
 /// `flee_check_applies` with the switch and the desperate flag given.
