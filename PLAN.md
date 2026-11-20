@@ -301,7 +301,9 @@ integrated through owner-reviewed #773 at track-p `e9670cab`; canonical
 evidence PR Cemetery #90 is merged. Source startup #706/#708 and kickoff
 #707/#709 are complete. The original #680 receiving baseline was `760fae80`;
 #774 synchronizes exact accepted main `4e9af99e` (engine `574b618c`) and
-keeps broader compatibility verification pending the pinned Zoo request. The owner
+keeps broader compatibility verification pending [Zoo #520](https://github.com/diegoami/borg-zoo/issues/520).
+Local smoke and the named override pass at that synchronized engine; this is
+not the broader comparison result. The owner
 requested continuation after accepting and promoting P5. P6 addresses the
 remaining adjacent item-policy dependency #680 reported by the R4 ownership
 audit; it does not transfer that work to Track R.

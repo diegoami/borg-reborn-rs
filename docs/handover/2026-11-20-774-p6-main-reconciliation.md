@@ -17,16 +17,35 @@ are preserved. Only the reviewed four-file P6 implementation delta remains.
 The read_on metadata and P6 docs are retained; no further donor carry or tuning.
 Historical #680 notes and immutable Cemetery 0529ff6f are unchanged.
 
-Validation in progress: required Rust/vendor/citation/engine checks and native
-smoke, plus the named seed1001/race1/class0 override case. Current RULES20
-routes comparisons over sets of starts to Zoo: no local full45 batch is run.
-The exact-build broader comparison request, result disposition and any new
-canonical evidence will be linked in this task's PR/note. Original source
-receipts cannot be relabelled as current-main proof.
+Local validation passes: 505 release-core tests (4 ignored), fmt/clippy/
+workspace/vendor, 2264 citations, 39 script tests, 96 tool tests and 92
+engine/contract tests (4 skipped). Initial engine setup failed because a
+shared Zoo checkout differed from the retained pin; a shared-clone attempt
+also lacked cached blobs. A fresh direct checkout at exact Zoo 7b373a70
+resolved the setup, without changing source or pins; failure logs are retained.
+
+Native smoke is 3/3 identical keys/messages/states against the preserved
+main reference. The named seed1001/race1/class0/menu/cap100000 pair stops
+alive and proves the override still controls a real command: at key10604 /
+turn80689 / think7928, enchant_town_max_turns=0 (environment) changes
+borg_enchanting to borg_flow_shop_entry. The old turn23238 witness is not
+claimed on this engine. Build source38947c1a / binary02bdfdea are pinned in
+[canonical local evidence](https://github.com/diegoami/borg-cemetery/tree/be61aeff63f19ad275de265a1550aba5d7d392b5/validation/borg-reborn-rs/p6-main-reconciliation-774)
+(Cemetery PR #93, pending review). Its default and override traces are each
+retained independently; no natural deaths occurred in these five checks.
+Build clean; smoke checkout had documentation-only dirtiness while the
+citation conflict was corrected, inputs unchanged and overrides=none.
+
+Broader default comparison is requested in [Zoo #520](https://github.com/diegoami/borg-zoo/issues/520)
+at exact baseline4e9af99e versus published candidate d0657712 (runtime
+identical to merge27700983; later completion edits documentation only).
+Pilot first; any exact-native45 follow-up waits for its gate and owner
+agreement. RULES20 routes sets of starts to Zoo: no new local full45 batch
+was run. Original #680 receipts are preserved and are not new-main proof.
 
 Left: #774 Zoo comparison receipt, owner-selected task review/green CI and
 integration into track-p, then pinned P6 milestone review. No source main
 promotion, R4 carry, independent-life inflation or population claim is implied.
-Optional #773 evidence-presentation notes are addressed additively in the new
-evidence documentation, pointing at the already retained default trace and
-explaining the quiet stdout log; old canonical bytes stay fixed.
+Optional #773 evidence-presentation notes are addressed additively in
+Cemetery #93's README, pointing at the already retained default trace in
+0529ff6f and explaining quiet stdout; old canonical bytes stay fixed.

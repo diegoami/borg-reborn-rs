@@ -4573,3 +4573,22 @@ override changes a real queued command/selection; original failures and
 paired-attempt accounting remain in the canonical bundle. This verifies the
 named receiving baseline only. Required reconciliation with newer accepted
 main is tracked separately in #774 before P6 promotion.
+
+
+### Synchronized receiving baseline (#774)
+
+Accepted main `4e9af99e` and reviewed track-p `e9670cab` merge at
+`27700983` (engine `574b618c`, donor still `8c5d000a`). The subject modules
+are byte-exact reviewed #680 code, and subtracting those ten registry
+entries/test/prefix map recovers main's exact parser/registry. All other
+runtime inputs, settings, references and commit pins preserve main.
+[Local immutable receipt](https://github.com/diegoami/borg-cemetery/tree/be61aeff63f19ad275de265a1550aba5d7d392b5/validation/borg-reborn-rs/p6-main-reconciliation-774)
+(Cemetery #93) covers native smoke 3/3 and one named override case. Both
+sides' complete traces are retained; the new witness is at turn80689, not
+the historical turn23238. No natural death occurred in these five checks.
+The stdout logs remain as captured; quiet success is explained in the README.
+
+Broader new-engine/build parity remains pending [Zoo #520](https://github.com/diegoami/borg-zoo/issues/520)
+under RULES20, pilot first and further starts only after owner-gated results.
+Neither local smoke nor original 760fae80 full45 is proof of that comparison.
+This note does not accept the reconciliation PR or the P6 milestone.
