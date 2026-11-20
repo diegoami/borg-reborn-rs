@@ -4,5 +4,5 @@
 #   <commit> carried|not-carried|n/a <where, or why not>
 since 42cd156ac9f95ddf4311e88dd7ad462292d6d1d6
 007bea95 carried borg-core/src/borg_trait.rs: the largest slay multiplier across slots (max, not borg-rs's |=; play identical, every read is on/off) (#724)
-b5747369 carried borg-core/src/borg_caution.rs: borg-rs patch 0092, the healing-chance adjustments in their stated direction (vendor/borg-rs/docs/c-bugs.md)
+b5747369 carried borg-core/src/borg_caution.rs: borg-rs patch 0092, the healing-chance adjustments in their stated direction (borg-rs's docs/c-bugs.md)
 95387b06 carried borg-core/src/borg_escape.rs lacks_teleport: the landing check with either teleport, behind escape_teleport_landing_either (compiled and shipped 0) (#724)
