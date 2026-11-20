@@ -333,6 +333,16 @@ borg_param_power_inventory_clevel_threshold_3 = 7
 # Impact: set to 10, 0 of 6 test games play differently.
 
 borg_param_prepared_recall_depth = 5
+# #693 (owner): the errands plan as a depth cap in borg.txt. With
+# prepared_depth_plan = 1 the Borg is never prepared for a level deeper than:
+# up to CL prepared_depth_early_until_level, ceil(CL / early_levels_per_dl);
+# past it, CL - late_levels_below, but never shallower than the early part's
+# last cap (ceil(knee / div)); never above DL1; none from CL50. These are the casters'
+# values; the fighters' are in their class files (2, 4, 0). 0 = off.
+borg_param_prepared_depth_plan = 0
+borg_param_prepared_depth_early_levels_per_dl = 3
+borg_param_prepared_depth_early_until_level = 6
+borg_param_prepared_depth_late_levels_below = 3
 
 # Fleeing: walk to a reachable staircase first, and read Recall only when
 # none is reachable (#539). 0 = the C order, Recall first.
@@ -1133,6 +1143,9 @@ borg_param_town_devices_percent__warrior = 75
 borg_param_town_phase_curve_scale_percent__warrior = 75
 borg_param_town_oil_curve_scale_percent__warrior = 100
 borg_param_caution_breeder_hunt_max_count__warrior = 7
+borg_param_prepared_depth_early_levels_per_dl__warrior = 2
+borg_param_prepared_depth_early_until_level__warrior = 4
+borg_param_prepared_depth_late_levels_below__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1177,6 +1190,9 @@ borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 0
 borg_param_caution_breeder_hunt_max_count__paladin = 6
+borg_param_prepared_depth_early_levels_per_dl__paladin = 2
+borg_param_prepared_depth_early_until_level__paladin = 4
+borg_param_prepared_depth_late_levels_below__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1187,6 +1203,9 @@ borg_param_town_devices_percent__rogue = 135
 borg_param_town_phase_curve_scale_percent__rogue = 125
 borg_param_town_oil_curve_scale_percent__rogue = 125
 borg_param_caution_breeder_hunt_max_count__rogue = 6
+borg_param_prepared_depth_early_levels_per_dl__rogue = 2
+borg_param_prepared_depth_early_until_level__rogue = 4
+borg_param_prepared_depth_late_levels_below__rogue = 0
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1196,6 +1215,9 @@ borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
+borg_param_prepared_depth_early_levels_per_dl__ranger = 2
+borg_param_prepared_depth_early_until_level__ranger = 4
+borg_param_prepared_depth_late_levels_below__ranger = 0
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -1205,4 +1227,7 @@ borg_param_town_devices_percent__blackguard = 100
 borg_param_town_phase_curve_scale_percent__blackguard = 50
 borg_param_town_oil_curve_scale_percent__blackguard = 100
 borg_param_caution_breeder_hunt_max_count__blackguard = 8
+borg_param_prepared_depth_early_levels_per_dl__blackguard = 2
+borg_param_prepared_depth_early_until_level__blackguard = 4
+borg_param_prepared_depth_late_levels_below__blackguard = 0
 # ---- END CLASS FILES ----

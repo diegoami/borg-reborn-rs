@@ -3817,3 +3817,46 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5014` |
+
+## The errands plan as a depth cap (#693)
+
+The registry now holds **2205** parameters (2201 on main before it; four added).
+
+Owner (2026-11-19): "for errands plan by default, we need to make them fit in
+borg.txt, with formula parameters or something". `errands_plan.txt` can't
+ship as the default: the zoo can't take a plan from a specimen's borg.txt
+(borg-zoo#398), and at 200k turns it costs depth (`reborn-errands-main-200k`,
+360 starts: 23 vs 22 deaths, DL −0.23 [−0.31, −0.14]; #696 item 4).
+
+`prepared_depth_plan` (compiled and shipped 0) puts a cap of the character
+level in borg.txt. The Borg is never prepared for a level deeper than it,
+and climbs from one (`borg_prepared`, `borg_think_dungeon_util.rs`), as with
+`borg_no_deeper`. It combines with `borg_no_deeper` and any `borg_plan` by
+taking the smallest:
+
+    up to CL knee:  ceil(CL / div)
+    past it:        max(ceil(knee / div), CL - below)
+    from CL50:      no cap; never below DL1
+
+| parameter | casters (borg.txt) | fighters (class files) |
+|---|---:|---:|
+| `prepared_depth_early_levels_per_dl` (div) | 3 | 2 |
+| `prepared_depth_early_until_level` (knee) | 6 | 4 |
+| `prepared_depth_late_levels_below` (below) | 3 | 0 |
+
+Casters are Mage, Druid, Priest and Necromancer; fighters are Warrior,
+Paladin, Rogue, Ranger and Blackguard. The early part keeps errands' caps
+where its survival lead is (CL1–3 on DL1–2). Past the knee the cap follows
+the character level, where errands' steps bind (CL7–14).
+
+**Local check** (classes-18, 200,000 turns, main a87b4c96, 18 games per arm):
+
+| arm | deaths | sum of max CL | sum of max DL |
+|---|---:|---:|---:|
+| off | 0 | 143 | 55 |
+| `borg_plan = errands_plan.txt` | 0 | 133 | 49 |
+| `prepared_depth_plan = 1` | 0 | 138 | 56 |
+
+The plan file shows the zoo's depth cost again; the formula keeps the depth.
+With no deaths in any arm, survival is unmeasured here (RULES 14): that's the
+zoo's to measure.
