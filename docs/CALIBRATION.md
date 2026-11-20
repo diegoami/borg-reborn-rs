@@ -3819,7 +3819,7 @@ Owner (2026-11-20): "if I am cornered I should throw missile and then boost
 myself". `cornered_boost` (#504) runs in `borg_caution`, before
 `borg_attack`, so a cornered Borg always buffs first.
 
-`caution_cornered_throw_first` (compiled and shipped 0):
+`caution_cornered_throw_first` (compiled 0, shipped 1, owner 2026-11-20):
 - **1:** in the cornered boost, while no monster is adjacent and an attack
   from range would do damage (the attack planner's dry run,
   `borg_attack_estimate`, with the Borg's random numbers and the waiting flag

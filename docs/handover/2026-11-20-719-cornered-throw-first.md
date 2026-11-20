@@ -24,7 +24,13 @@ Owner: "if I am cornered I should throw missile and then boost myself".
   always has the monster already adjacent.
 - **Checked:** fmt, clippy `-D warnings`, both test commands, citations.
 
-**Owner's decision:** shipping it at 1 (or 2) as the preferred behaviour; it
-can't be harmful at this rate, and the zoo can't measure a rule this rare at
-normal tiers. A widening (for example a larger cornered radius, so that
-"closing in" happens more often) would be a separate change.
+**Shipped 1** (owner, 2026-11-20: "ship at 1"): smoke-borg-rs is still 3/3
+identical (`scripts/rerecord-smoke-borg-rs.sh`: nothing to re-record). Mode 2
+(the other two boosts) is not shipped. A widening (for example a larger
+cornered radius, so that "closing in" happens more often) would be a
+separate change.
+
+**The four deaths of starts 1–90** (the same games in mode 0 and 2, none
+involving the rule): two Druids to Fang (CL1–2, meleeing with a 1d3 whip),
+a Mage to a crow during a scary-level flee (#689's case), a Druid to a wild
+cat while every Phase Door was refused and Word of Recall was read.
