@@ -1867,6 +1867,16 @@ mod winning_fight_tests {
     use super::{race_turns, wins_race};
 
     #[test]
+    fn observed_haste_is_included_without_changing_legacy_speed() {
+        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        kill.speed = 110;
+        assert_eq!(super::forecast_monster_speed(&kill), 110);
+        kill.observed_fast = true;
+        assert_eq!(super::forecast_monster_speed(&kill), 120);
+        assert_eq!(kill.speed, 110, "the off planner keeps its original base-speed field");
+    }
+
+    #[test]
     fn remaining_hp_is_used_once_and_ties_do_not_win() {
         let (turns, _) = race_turns(6, 3.0, None, 1.0, 0.0).unwrap();
         assert_eq!(turns, 2.0, "6 remaining HP, not another injury discount");
@@ -1903,6 +1913,12 @@ mod winning_fight_tests {
 /// AC damage reduction and monster confusion are omitted conservatively.
 /// Status attacks and spells retain the existing danger upper estimate;
 /// unlike a raw dice mean it includes their non-HP consequences.
+/// mon-move.c:1929-1934 at 574b618c. Haste adds ten speed. Do not credit
+/// Slow persisting throughout a future fight/Recall; it may wear off.
+pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
+}
+
 pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
     let kill = st.kills.kills[i];
     if kill.r_idx == 0 || !kill.awake { return 0.0; }
@@ -1919,7 +1935,7 @@ pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
         melee += average as f64 / 10.0 * f64::from(chance) / 10_000.0;
     }
     let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
-    let ratio = energy(i32::from(kill.speed)) / energy(engine::player_combat_speed());
+    let ratio = energy(forecast_monster_speed(&kill)) / energy(engine::player_combat_speed());
     if plain { return melee * ratio; }
     // At the monster's own position there is no distance discount. This
     // keeps a presently distant attacker in the bound while another dies.

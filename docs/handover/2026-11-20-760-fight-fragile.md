@@ -29,8 +29,8 @@ main `08f94e1f`. #757 and #761 belong to another session and are untouched.
 
 ## Migration / resume state (owner request, 2026-11-20)
 
-The owner requested moving this session to another computer, with the same
-absolute paths. All three of this session's pending lock requests were
+The owner considered moving this session to another computer, then chose
+to wait on this machine. Transfer instructions remain a fallback. All three of this session's pending lock requests were
 cancelled while still queued; no own validation game was active. Other
 sessions' jobs were left untouched. Do not try to resume old tool-session IDs.
 
@@ -38,9 +38,9 @@ sessions' jobs were left untouched. Do not try to resume old tool-session IDs.
 [PR #763](https://github.com/diegoami/borg-reborn-rs/pull/763) is a draft;
 [CI 44758141143](https://github.com/diegoami/borg-reborn-rs/actions/runs/44758141143)
 is green at that code pin, including deterministic/reference borg-rs smoke,
-replay, Rust, recorder and engine checks. Later handover commits change
-only documentation. This note supersedes earlier statements that default
-neutrality or CI still needed checking.
+replay, Rust, recorder and engine checks. That records the previous successful CI. The subsequent observed-Haste/free-fox
+follow-up needs a fresh CI result; check the PR current head. Default-off
+neutrality had passed; enabled validation remains untested.
 
 **No enabled local games or 600-start candidate cohorts have run.** Only
 the clean baseline six were played: every endpoint and key/state/message
@@ -57,21 +57,21 @@ instructing the owner-selected reviewer to post a PR comment.
 ### Concrete remaining work
 
 1. Read the implementation and the related #758 note before continuing.
-   Inspect two **identified, not yet fixed** model gaps before the large
-   cohort:
+   Two audit findings have now been addressed in the implementation;
+   validate their behavior in the wider cohort:
    - Native `kill.speed` stores base `m.mspeed`. `mon-move.c:1929-1934`
      adds temporary Haste and subtracts graded Slow. The new fight/Recall
-     model currently uses base monster speed: it must account for observed
-     Haste to avoid optimistic wins; handle Slow conservatively or correctly.
-     Preserve legacy off behavior. These timers already arrive in the
+     model now records observed Haste separately and forecasts base speed
+     plus Haste; it does not credit Slow persisting during the forecast.
+     Legacy off speed remains unchanged. Timers come from the existing
      permitted MonsterView observation. None of the six baseline logs
      contains a visible “starts moving faster” event; that is not a proof
      that every possible encounter has no haste.
-   - The focused executor bypasses native `borg_attack`'s
-     `revert_fox_to_fight` before melee. A fox's natural attack is not its
-     equipped weapon damage. Model availability/revert cost or decline
-     unavailable weapon attacks; do not certify wins using the wrong form.
-     This matters for Druids in the wider set, not the six Ranger cases.
+   - The focused executor now uses native `revert_fox_to_fight` before
+     melee. Changing back costs no energy; the next think recomputes the
+     plan in normal form, instead of executing a weapon estimate as a fox
+     bite. This matters for Druids in the wider set, not the six Rangers.
+
    These are implementation findings, not owner-approved policy decisions.
 2. Build and play the six cases with each switch separately and together;
    check estimates on won fights too. If case 425904011 is not judged
