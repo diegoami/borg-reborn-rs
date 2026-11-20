@@ -25,7 +25,7 @@ use crate::borg_projection::borg_distance;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_VERBOSE};
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
+    BI_AMISSILES, BI_AMMO_TVAL, BI_CDEPTH, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
     BI_QUIVER_SLOTS,
 };
 use crate::headers::list_mon_race_flags_h::{RF_KILL_ITEM, RF_TAKE_ITEM};
@@ -549,10 +549,10 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         let x = i32::from(take.x);
         let y = i32::from(take.y);
 
-        // borg-reborn-rs (#732, review of #734): with flow_leash, the owner's
-        // leash from the nearest known staircase replaces C's two take
-        // leashes below.
-        let owner_leash = crate::borg_flow::leash_steps(st.borg.tr(BI_CLEVEL)).is_some();
+        // borg-reborn-rs (#732, review of #734): where the owner's leash is
+        // in force, it replaces C's two take leashes below; elsewhere C's
+        // apply (owner, 2026-11-20).
+        let owner_leash = crate::borg_flow::owner_leash_in_force(st.borg.tr(BI_CLEVEL), st.borg.tr(BI_CDEPTH)).is_some();
         if owner_leash && borg_flow_misc::borg_flow_far_from_stairs_dist(st, x, y, b_stair, 0) {
             continue;
         }

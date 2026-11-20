@@ -354,7 +354,7 @@ borg_param_prepared_depth_late_levels_below = 3
 # flow_leash = 1, exploring, walking to items and choosing a monster to hunt
 # stay within these flow steps
 # of the nearest known staircase (up or down): CL1 15, CL2 25, CL3 40, CL4 60;
-# past flow_leash_max_level the whole level. 1 = by level, 2 = growing; 0 = C's leash (CL x 3 + 9 from
+# past flow_leash_max_level, and in town, C's leash. 1 = by level, 2 = growing; 0 = C's leash (CL x 3 + 9 from
 # the farthest up staircase).
 borg_param_flow_leash = 0
 borg_param_flow_leash_cl1 = 15

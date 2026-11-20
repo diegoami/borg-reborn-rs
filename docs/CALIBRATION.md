@@ -4216,8 +4216,9 @@ from an up staircase below CL20. It has four leaks:
   (`borg_flow_kill`, through the same check as C; its aim, corridor and
   direct methods have no leash, in C either) skip a target more flow steps
   from the nearest known staircase, up or down, than `flow_leash_cl1` … `flow_leash_cl4` (15, 25, 40,
-  60). Past `flow_leash_max_level` (4) there is no leash, and with no
-  staircase known none either. The distances come from one spread from
+  60). Past `flow_leash_max_level` (4), and in town, C's leash applies, as
+  with the switch off (owner, 2026-11-20, re-review of #734: the switch only
+  tightens CL1-4); with no staircase known there is no leash. The distances come from one spread from
   every known staircase per think (`leash_cost`).
 - **2:** as 1, and the leash grows with the XP gained toward the next level
   (`engine::level_progress_permille`: `player_exp[L - 1] × expfact / 100`,

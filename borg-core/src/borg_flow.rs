@@ -573,6 +573,25 @@ fn spread_blocked(
 /// (C's leash, `borg_get_leash`); `Some(None)` past `flow_leash_max_level`
 /// (no leash); `Some(Some(n))`: at most n flow steps from the nearest known
 /// staircase.
+/// borg-reborn-rs (#732, review of #734; owner, 2026-11-20: keep C's leash
+/// where the owner's does not apply): the owner's leash **in force**, the one
+/// decision every consumer reads (exploration, the walk to items, the
+/// distance check): `Some(n)` (at most n flow steps from the nearest known
+/// staircase) with `flow_leash` on, in the dungeon, at a character level the
+/// leash covers (CL1-4 as shipped); `None` everywhere else, where C's leash
+/// (`borg_get_leash`) applies as with the switch off.
+pub(crate) fn owner_leash_in_force(clevel: i32, depth: i32) -> Option<i32> {
+    owner_leash_with(leash_steps(clevel), depth)
+}
+
+/// `owner_leash_in_force` with `leash_steps`'s answer given (unit-tested).
+pub(crate) fn owner_leash_with(leash: Option<Option<i32>>, depth: i32) -> Option<i32> {
+    match leash {
+        Some(Some(n)) if depth > 0 => Some(n),
+        _ => None,
+    }
+}
+
 pub(crate) fn leash_steps(clevel: i32) -> Option<Option<i32>> {
     use crate::params::{value, Param};
     if value(Param::flow_leash) == 0 {
