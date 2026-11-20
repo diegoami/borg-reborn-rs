@@ -17,7 +17,7 @@ Slow is not assumed to persist.
 
 **Owner clarification, 2026-11-20:** include reachable sleepers that may wake
 before Recall. The initial awake-only version missed 807683971: at the
-read at 1390 the naga was asleep; it then woke and killed the Borg at1534.
+read at 1390 the naga was asleep; it then woke and killed the Borg at 1534.
 The final forecast evaluates an awake copy of the known record, without
 mutating knowledge or assuming sleep lasts for the delay. It refuses the
 original read (155.61 exposure against 15 HP); that named life now reaches
@@ -37,7 +37,7 @@ smoke/reference/replay. The seven named starts were replayed locally at the
 100,000-engine-turn cap. Recall-only reaches the cap for 425904011,
 1976035382 and 807683971; 2095979189, 2049259432 and 1517990203 still die
 with this switch alone. All three together reach the cap for all seven;
-Rogue390305857 already survives in the shipped control. Its old crow death
+Rogue 390305857 already survives in the shipped control. Its old crow death
 was a different, PR757 flight-on arm, not a local rescue claim.
 
 Canonical report, all intermediate outcomes, exact builds/stream hashes,
@@ -52,12 +52,12 @@ contains the exact all-switch-capable specimen, shipped control, individual
 switches and all together, class scope and expected mechanisms. The owner
 alone chooses tiers/scheduling. No zoo run was dispatched and no local
 50-per-class/600-start candidate arm was started. This machine is for
-builds/smoke/named-case replays (owner reaffirmed RULES20).
+builds/smoke/named-case replays (owner reaffirmed RULES 20).
 
 **Left:** owner-selected review and owner-scheduled measurement #511.
 Higher-level/range and conservative-model tradeoffs remain unmeasured.
 No reviewer was selected by this session and no PR is merged without the
 owner's word. Raw local artifacts remain `/tmp/T760-fight/`; canonical work
-is `/tmp/T760-cemetery` on `task/T760-flight-evidence`, PR88. Original
+is `/tmp/T760-cemetery` on `task/T760-flight-evidence`, PR #88. Original
 scratchpad inputs remain read-only. A transfer was considered, then the
 owner chose waiting here; no files moved.
