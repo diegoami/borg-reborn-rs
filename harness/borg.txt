@@ -724,18 +724,21 @@ borg_param_escape_phase_lost_danger_percent = 100
 
 borg_param_escape_phase_lost_mana = 1
 
-# Ranged first against immobile attackers (#646, owner: "always choose ranged
-# against immobile but annoying monsters"). 1 = next to a known monster that
-# never moves and attacks (mushroom patch, mold, floating eye), confused or
-# carrying something to throw or shoot (then once per monster and level;
-# confused up to three times),
-# the Borg steps out of its reach and
-# does not cure confusion next to it; not when the monsters that move are as
-# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
-# times, borg-cemetery#75).
+# Immobile creatures (#646, #713). Owner: "always choose ranged against
+# immobile but annoying monsters"; "step away from immobile creature with
+# annoying effects and only attack them from a distance, if you have to".
+# 1 (#646) = next to a monster that never moves and attacks, step out of its
+# reach when confused (up to three times) or carrying something to throw or
+# shoot (once), and do not cure confusion next to it.
+# 2 (#713) = also keep one whose blows do more than plain damage (poison,
+# confusion, paralysis, fear, drain: 23 of 25, from DL1 to DL80) at range: never
+# melee it, no hunt walk to it, flows keep out of its reach (a flow to stairs
+# may pass, never onto its grid), always step away from it (while fleeing
+# too, up to three times); throws and shots kill it from afar.
+# 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
 # Change together: works with what the Borg carries to throw (#649, #652).
 
-borg_param_caution_ranged_vs_immobile = 0
+borg_param_caution_ranged_vs_immobile = 2
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
