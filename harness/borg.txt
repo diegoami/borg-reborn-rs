@@ -392,9 +392,13 @@ borg_param_caution_flee_recall_danger_percent = 0
 # deeper: in town and on DL1 a staircase crosses between town and dungeon,
 # and the Recall would take the Borg back. 0 = C's Recall-only rules (the
 # buy-time escapes of caution_recall_*).
-# Impact: off here; see the PR for classes-18.
+# Impact: zoo-neutral and rarely reached: borg-zoo#400 (1,800 starts) 103
+# deaths against 105; reborn-recall-usual-200k-main (72 starts at 200k) the
+# same 4 deaths, 17 games changed, CL -0.04, DL -0.05; borg-zoo#428 (108
+# starts on e5cc5469) 2 against 2, 3 games changed. Shipped 1 (owner,
+# 2026-11-20, #694: "I would adopt it"), as the better way to play.
 
-borg_param_caution_recall_wait_as_usual = 0
+borg_param_caution_recall_wait_as_usual = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
@@ -539,6 +543,18 @@ borg_param_attack_town_dangerous_bonus_percent = 300
 borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
+
+# An unseen attacker (#697): "Something touches you" makes no monster, so no
+# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
+# an unseen attack counts that long: no rest within distance grids of where
+# it struck; hurt, the Borg walks at least that far (a corridor first) and
+# rests there; struck again that far away, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
+# Impact: see CALIBRATION (#697).
+
+borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_distance = 10
+borg_param_recover_unseen_heal_hp_percent = 0
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
@@ -729,17 +745,31 @@ borg_param_escape_phase_lost_danger_percent = 100
 
 borg_param_escape_phase_lost_mana = 1
 
-# Ranged first against immobile attackers (#646, owner: "always choose ranged
-# against immobile but annoying monsters"). 1 = next to a known monster that
-# never moves and attacks (mushroom patch, mold, floating eye), confused or
-# carrying something to throw or shoot (then once per monster and level;
-# confused up to three times),
-# the Borg steps out of its reach and
-# does not cure confusion next to it; not when the monsters that move are as
-# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
-# times, borg-cemetery#75).
-# Change together: works with what the Borg carries to throw (#649, #652).
+# Teleport landing with either kind of teleport (#724, upstream Angband
+# 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
+# teleport scroll or spell or a teleport staff or activation; 0 = C (both
+# needed, so with one only the Destruction and Teleport Level defences never
+# saw a safe landing).
+borg_param_escape_teleport_landing_either = 0
 
+# Immobile creatures (#646, #713). Owner: "always choose ranged against
+# immobile but annoying monsters"; "step away from immobile creature with
+# annoying effects and only attack them from a distance, if you have to".
+# 1 (#646) = next to a monster that never moves and attacks, step out of its
+# reach when confused (up to three times) or carrying something to throw or
+# shoot (once), and do not cure confusion next to it.
+# 2 (#713) = also keep one whose blows do more than plain damage (poison,
+# confusion, paralysis, fear, drain: 23 of 25, from DL1 to DL80) at range: never
+# melee it, no hunt walk to it, flows keep out of its reach (a flow to stairs
+# may pass, never onto its grid), always step away from it (while fleeing
+# too, up to three times); throws and shots kill it from afar.
+# 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
+# Change together: works with what the Borg carries to throw (#649, #652).
+# Off (owner, 2026-11-20): "stepaway flag is not a solution, I do not like
+# it". In borg-zoo#461 modes 2 and 3 lost games (22 -> 24 / 27 deaths; Druids
+# 5 -> 9 / 10): the step-away loops against a flight that passes the monster,
+# and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
+# #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
@@ -780,8 +810,11 @@ borg_param_escape_phase_antisummon_delay = 50
 # Change together: these settings form one set.
 # Impact: escape_fox_form 1: 1 of 6 test games plays differently (the Druid);
 # the other four: 0 with the switch at 0.
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#400, 1,800
+# starts: 105 deaths against 105, 3 saved and 3 lost, only Druid games
+# change); adopted as the better way for a Druid to flee.
 
-borg_param_escape_fox_form = 0
+borg_param_escape_fox_form = 1
 borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
@@ -796,10 +829,20 @@ borg_param_escape_fox_form_stand_speed = 10
 # fox) and before a blow. Raising min_steps casts on longer walks only (each
 # cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
 # Impact: set to 1, 1 of 6 test games play differently (the Druid).
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#413 small, 90
+# starts: 4 deaths against 4, 10 games changed); adopted with escape_fox_form.
 
-borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town = 1
 borg_param_escape_fox_form_town_max_level = 20
 borg_param_escape_fox_form_town_min_steps = 10
+
+# #694 (owner: "make the druid learn this spell first"): the rating Fox Form
+# is studied by. C rates it 5, below the 50 a spell needs unless the Borg is
+# bored, so a Druid learns it once bored (still early: within its first few
+# thousand log lines on classes-18). 100 is above Detect Life and Stinking
+# Cloud (95): learned first. Shipped 0 = C's rating (owner, 2026-11-20): on 6
+# Druid starts, first cost levels (sum of CL 45 -> 33, one death).
+borg_param_magic_fox_form_study_rating = 0
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.

@@ -174,7 +174,7 @@ pub fn borg_flow_cost_stair(st: &mut BorgState, y: i32, x: i32, b_stair: i32) ->
     borg_flow::borg_flow_enqueue_grid(st, sy, sx);
 
     /* Spread, but do NOT optimize */
-    borg_flow::borg_flow_spread(st, 250, false, false, false, b_stair, false);
+    borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, b_stair, false);
 
     /* Distance from the grid to the stair */
     let cost = i32::from(st.flow.cost_at(y, x));
@@ -225,7 +225,7 @@ fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     enqueue_parked_if_alone(st, enqueued, parked);
 
     /* Spread the flow */
-    borg_flow::borg_flow_spread(st, 250, false, false, false, -1, sneak);
+    borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, -1, sneak);
 
     commit_and_step(st, c"stairs", why)
 }
@@ -250,11 +250,11 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 
     if st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0 {
         /* Spread the flow */
-        borg_flow::borg_flow_spread(st, 250, true, false, false, -1, sneak);
+        borg_flow::borg_flow_spread_stairs(st, 250, true, false, false, -1, sneak);
     } else {
         /* Spread the flow, No Optimize, Avoid */
         let avoid = !st.borg.status.desperate;
-        borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, sneak);
+        borg_flow::borg_flow_spread_stairs(st, 250, false, avoid, false, -1, sneak);
     }
 
     commit_and_step(st, c"up-stairs", why)
@@ -337,7 +337,7 @@ fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
     enqueue_stairs(st, Which::More);
 
     /* Spread the flow */
-    borg_flow::borg_flow_spread(st, 250, true, false, false, -1, sneak);
+    borg_flow::borg_flow_spread_stairs(st, 250, true, false, false, -1, sneak);
 
     commit_and_step(st, c"down-stairs", why)
 }

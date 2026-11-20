@@ -2024,6 +2024,8 @@ fn new_level(st: &mut BorgState) {
     // Assume not leaving the level
     b.goal.leaving = false;
     b.breeder_leaving = false; // borg-reborn-rs (#644, re-review of #656)
+    b.unseen_turn = 0; // borg-reborn-rs (#697)
+    b.unseen_followed = false;
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
@@ -2377,6 +2379,9 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                 // Handle "xxx screams in pain."
                 locate(st, args(what), c, 20, i, 4);
             } else if msg.starts_with(b"HIT_BY:") || msg.starts_with(b"MISS_BY:") {
+                // borg-reborn-rs (#697): remember an attack by a monster the
+                // Borg cannot see; it reads no setting and draws nothing.
+                crate::borg_recover::note_unseen_attack(st, args(what));
                 // Handle "xxx hits you." / "xxx misses you."
                 locate(st, args(what), c, hit_dist, i, 4);
             } else if msg.starts_with(b"STATE_SLEEP:") {

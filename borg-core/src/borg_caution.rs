@@ -1482,6 +1482,73 @@ fn immobile_attacker(r_idx: usize) -> bool {
         && engine::race_blow(r_idx, 0).is_some()
 }
 
+/// borg-reborn-rs (#713): a blow effect worse than plain damage: poison,
+/// confusion, paralysis, fear, blindness, hallucination, stat or experience
+/// drain, theft, disenchantment, elemental damage (`blow_effects.txt`).
+fn annoying_effect(name: &[u8]) -> bool {
+    name != b"HURT" && name != b"NONE"
+}
+
+/// borg-reborn-rs (#713): `caution_ranged_vs_immobile` at 2 or 3 keeps race
+/// `r_idx` at range: an immobile attacker (`immobile_attacker`) with an
+/// annoying blow at 2 (23 of the 25 in `monster.txt`: 15 at DL10 or shallower,
+/// 8 deeper, down to Wiruin at DL80),
+/// any at 3. At 1 (#646) none is.
+fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
+    mode >= 2 && immobile && (mode >= 3 || annoying)
+}
+
+/// borg-reborn-rs (#713, owner: "step away from immobile creature with
+/// annoying effects and only attack them from a distance, if you have to"):
+/// in the dungeon, the Borg keeps race `r_idx` at range: no melee
+/// (`borg_thrust_damage_one`), no walk to it (`borg_flow_kill`), and a step
+/// out of its reach when next to it (`immobile_step_away`).
+pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
+    let mode = p(Param::caution_ranged_vs_immobile);
+    mode >= 2
+        && st.borg.tr(BI_CDEPTH) > 0
+        && immobile_annoying(
+            mode,
+            immobile_attacker(r_idx),
+            (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
+        )
+}
+
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
+/// immobile creature kept at range (its reach). Off: no scan.
+pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
+    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
+        return false;
+    }
+    (-1..=1).any(|dy| {
+        (-1..=1).any(|dx| {
+            let (gx, gy) = (x + dx, y + dy);
+            engine::square_in_bounds_fully(gx, gy) && {
+                let k = st.cave.grid(gx, gy).kill;
+                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+            }
+        })
+    })
+}
+
+/// borg-reborn-rs (#713): an immobile creature kept at range is next to the
+/// Borg.
+fn kept_at_range_next_to(st: &BorgState) -> bool {
+    kept_attacker_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+}
+
+/// borg-reborn-rs (#713, review of #717): the first known immobile attacker
+/// next to grid (`y`, `x`) that is kept at range, by kill index. A plain
+/// damage one listed first must not hide a kept one beside it.
+fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
+        let kill = &st.kills.kills[i];
+        immobile_kept_at_range(st, usize::from(kill.r_idx))
+            && (i32::from(kill.pos.y) - y).abs() <= 1
+            && (i32::from(kill.pos.x) - x).abs() <= 1
+    })
+}
+
 /// The first known immobile attacker next to grid (`y`, `x`), by kill index.
 fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
@@ -1574,14 +1641,27 @@ fn step_away_wanted(confused: bool, missiles: i32, mobile_danger: impl FnOnce() 
 /// the time (`player_confuse_dir`, `player-util.c:1358`); it is tried
 /// again on the next turn.
 pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
-    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+    let ranged_rule = p(Param::caution_ranged_vs_immobile) != 0;
+    if !ranged_rule || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let Some(who) = immobile_attacker_next_to(st, cy, cx) else { return false };
+    // Review of #717: a kept attacker first, so a plain-damage one beside
+    // it does not take its place.
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+        return false;
+    };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
     let (missiles, hp) = (st.borg.tr(BI_AMISSILES), st.borg.tr(BI_CURHP));
-    if !step_away_wanted(confused, missiles, || mobile_danger(st), hp) {
+    // borg-reborn-rs (#713): a creature kept at range (2 and 3) is stepped
+    // away from whether or not the Borg has a ranged attack or is confused.
+    let kept = immobile_kept_at_range(st, usize::from(st.kills.kills[who].r_idx));
+    let wanted = if kept {
+        mobile_danger(st) < hp
+    } else {
+        ranged_rule && step_away_wanted(confused, missiles, || mobile_danger(st), hp)
+    };
+    if !wanted {
         return false;
     }
     // Review of #659: only a grid less dangerous than this one, and not the
@@ -1608,11 +1688,14 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     }
     let Some((i, _)) = best else { return false };
     let pos = (st.kills.kills[who].pos.y as u8, st.kills.kills[who].pos.x as u8);
-    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused) {
+    // #713: a creature kept at range allows the confused tries' count of
+    // steps (3), not the single ranged step.
+    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused || kept) {
         return false;
     }
     let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
-    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), if confused { ", confused" } else { ", ranged first" }));
+    let why = if kept { ", kept at range (#713)" } else if confused { ", confused" } else { ", ranged first" };
+    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), why));
     borg_keypress(st, i2d(i32::from(engine::ddd(i))));
     st.borg.goal.type_0 = 0;
     true
@@ -1896,6 +1979,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
 
+    // borg-reborn-rs (#713): a creature kept at range is stepped away from
+    // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
+    // stairs it could reach).
+    if st.borg.goal.fleeing && kept_at_range_next_to(st) && immobile_step_away(st) {
+        return true;
+    }
     if !st.borg.goal.fleeing {
         // borg-reborn-rs (#646): away from an immobile attacker first.
         if immobile_step_away(st) {
@@ -2977,6 +3066,47 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
         borg_note(st, &format!("# Leaving the breeders' room ({} exit grids)", exits.len()));
     }
     ok
+}
+
+/// borg-reborn-rs (#697): walk to the nearest known grid at least `distance`
+/// grids from `from`: a corridor or doorway (#544's `breeder_exit_grid`) if
+/// one is known, else any known floor grid. Unlike #544's exit the flow is
+/// not the desperate one: danger is counted, so a dangerous monster's grid
+/// is refused; `avoid` keeps the path off unknown grids, as the desperate
+/// flow does (review of #698). Takes the first step; false when no grid is
+/// known or none can be reached.
+pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: &std::ffi::CStr) -> bool {
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
+    };
+    let mut corridors = Vec::new();
+    let mut floors = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            let at = loc { x, y };
+            if st.cave.grid(x, y).kill != 0 || !passable(x, y) || engine::distance(from, at) < distance {
+                continue;
+            }
+            if breeder_exit_grid(&passable, at, &[from], distance) {
+                corridors.push(at);
+            } else {
+                floors.push(at);
+            }
+        }
+    }
+    let targets = if corridors.is_empty() { floors } else { corridors };
+    if targets.is_empty() {
+        return false;
+    }
+    crate::borg_flow::borg_flow_clear(st);
+    for e in &targets {
+        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+    crate::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 
 /// Flow to the nearest of `exits` and take its first step. When the flow
@@ -5260,6 +5390,26 @@ mod immobile_tests {
         for k in 0..16u8 { assert!(step_allowed(&mut full, 100, (k, 1), false)); }
         assert!(!step_allowed(&mut full, 100, (20, 1), false), "the 17th fails closed");
         assert!(!step_allowed(&mut full, 100, (20, 1), false));
+    }
+}
+
+#[cfg(test)]
+mod immobile_range_tests {
+    use super::{annoying_effect, immobile_annoying};
+
+    /// #713: which blows are annoying, and the modes.
+    #[test]
+    fn kept_at_range() {
+        for e in [&b"POISON"[..], b"CONFUSE", b"PARALYZE", b"TERRIFY", b"EXP_10", b"EAT_LIGHT", b"ACID"] {
+            assert!(annoying_effect(e), "{}", String::from_utf8_lossy(e));
+        }
+        assert!(!annoying_effect(b"HURT"), "plain damage");
+        assert!(immobile_annoying(2, true, true), "the yellow jelly at 2");
+        assert!(!immobile_annoying(2, true, false), "2: a plain-damage one is fought");
+        assert!(immobile_annoying(3, true, false), "3: any immobile attacker");
+        assert!(!immobile_annoying(3, false, true), "a monster that moves");
+        assert!(!immobile_annoying(1, true, true), "1 is #646: none kept at range");
+        assert!(!immobile_annoying(0, true, true), "0 is C");
     }
 }
 
