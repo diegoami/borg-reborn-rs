@@ -13,11 +13,12 @@ search looks for a clean detour to the same stair set. Mode 3 evaluates
 each possible destination's own definition of whether a monster is
 ahead. Each movement decision uses a route from the current observation.
 
-The 600-start comparison uses the [scratch manifest and runner](https://github.com/diegoami/borg-reborn-rs/tree/e4bcb70f/scratch-757),
+The local, directional 600-start comparison uses the [scratch manifest and runner](https://github.com/diegoami/borg-reborn-rs/tree/e4bcb70f/scratch-757),
 shipped settings on `ad1dff48` for the control, and the measured mode 3
 settings on `6951bc98`. The experimental arm adds weight 5 to those
-mode 3 settings. Ranged-first (`50c23a5e`) is a separate
-[borg-zoo arm](https://github.com/diegoami/borg-zoo/issues/501).
+mode 3 settings. The Zoo pilot is pinned to the reviewed branch
+`task/T765-flight-routing` at `4a2eade967712e25fb175652d69bbae9c08f291d`.
+[borg-zoo #524](https://github.com/diegoami/borg-zoo/issues/524)
 
 The experimental build `d8edf546` finished all 600 starts at the 100,000-turn
 cap or on death. There were 10 deaths (5 Rangers, 3 Priests and 2
@@ -26,7 +27,13 @@ published mode 3 arm. Two initial wall timeouts, Rogue 23482467 and
 Blackguard 149213750, reached the cap on retry under the same 300-second
 limit. All three issue seeds reached the cap with weight 5. The comparison
 uses the published control totals and local replays of the reported seeds.
-See [PR #769](https://github.com/diegoami/borg-reborn-rs/pull/769).
+The local cohort preceded the current Zoo-only rule for cohorts.
+[PR #769](https://github.com/diegoami/borg-reborn-rs/pull/769)
+
+Cemetery retains the ten dossiers, original death streams, outcome
+receipts, and both timeout and retry receipts. Fresh replays matched the
+completed retry hashes and contained the exact initial timeout key-log
+prefixes. [Cemetery evidence](https://github.com/diegoami/borg-cemetery/tree/c0d6e5d31f7ade182a270b47560d3913f25923d6/runs/2026-11-20-reborn-765-weighted-flight) · [Cemetery PR #94](https://github.com/diegoami/borg-cemetery/pull/94)
 
 Formatting, workspace Clippy and tests, release core tests, parameter
 citations and the vendor check passed. All three shipped borg-rs smoke
@@ -39,3 +46,6 @@ weighted route on a desperate walk. Formatting, Clippy, workspace tests,
 507 release core tests, parameter citations and all three default smoke
 comparisons passed on `342a55ea`. The 600-start figures belong to the
 earlier pinned experimental build.
+
+The review covers `4a2eade967712e25fb175652d69bbae9c08f291d`, including
+the merge from main. [PR #769 review](https://github.com/diegoami/borg-reborn-rs/pull/769#issuecomment-7049742772)

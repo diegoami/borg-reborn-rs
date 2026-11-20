@@ -29,6 +29,9 @@ precedence over the old grid danger gate and
 `caution_stairs_flight_ignore_danger` on these flights. The compiled and
 shipped weight is 0.
 
+At a positive weight, only unoccupied staircases are eligible targets.
+`caution_stair_parked_fallback` applies to legacy routing at weight 0.
+
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_stairs_flight_threat_weight` | 0 | extra steps at current HP | 0–100 | `borg_caution.rs:4585` |
