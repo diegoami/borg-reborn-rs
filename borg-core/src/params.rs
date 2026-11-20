@@ -2724,7 +2724,10 @@ mod tests {
                      "borg_param_town_heal_curve_scale_percent_mage = 0",
                      "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
             let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
-            assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
+            assert!(
+                values.iter().all(|s| s.class_values.values().all(|v| v.origin == "default")),
+                "{text}"
+            );
         }
         // #534 review: environment names stay upper case.
         let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
@@ -2773,6 +2776,22 @@ mod tests {
     fn dive_gates_ship_compiled_class_defaults_and_accept_overrides() {
         let compiled = parse("", &BTreeMap::new(), SPECS).unwrap();
         let shipped = parse(include_str!("../../harness/borg.txt"), &BTreeMap::new(), SPECS).unwrap();
+        for (param, expected) in [
+            (Param::prepared_clevel_depth_margin, 0),
+            (Param::prepared_dl2_min_hp, 30),
+            (Param::prepared_cure_min, 2),
+            (Param::prepared_cure_until_clevel, 30),
+            (Param::prepared_mid_max_depth, 19),
+            (Param::prepared_mid_caster_max_clevel, 28),
+            (Param::prepared_deep_caster_ramp_max_clevel, 44),
+            (Param::prepared_deep_caster_ramp_base_depth, 30),
+            (Param::prepared_deep_caster_ramp_depth_per_level, 2),
+            (Param::prepared_dl34_plus_min_clevel, 40),
+        ] {
+            assert_eq!(compiled[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].origin, "borg.txt");
+        }
         let gate_values = [
             (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50]),
             (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4]),
@@ -2798,6 +2817,15 @@ mod tests {
         assert_eq!(overrides[param as usize].value, -2);
         assert_eq!(class_value(&overrides, param, "warrior"), None);
         assert_eq!(class_value(&overrides, param, "mage"), Some((2, "borg.txt")));
+    }
+
+    #[test]
+    fn retired_depth_cap_settings_can_load() {
+        let text = "borg_param_prepared_depth_plan = 1\nborg_param_prepared_depth_early_until_level__warrior = 4";
+        let env = BTreeMap::from([("PREPARED_DEPTH_LATE_LEVELS_BELOW__MAGE".into(), "3".into())]);
+        let settings = parse(text, &env, SPECS).unwrap();
+        assert_eq!(settings[Param::prepared_clevel_depth_margin as usize].value, 0);
+        assert!(parse("borg_param_prepared_depth_plan__typo = 1", &env, SPECS).is_err());
     }
 
     #[test]
