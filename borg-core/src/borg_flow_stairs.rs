@@ -633,6 +633,11 @@ enum CleanKinds {
 /// The kinds a flight to any stairs may take (`CleanKinds`), from which
 /// kinds are known and which are blocked.
 fn clean_kinds(up_known: bool, up_blocked: bool, down_known: bool, down_blocked: bool) -> CleanKinds {
+    // Nothing blocked: C's flow to any stairs, unchanged (a narrower flow
+    // would change play where no path is blocked).
+    if !up_blocked && !down_blocked {
+        return CleanKinds::All;
+    }
     let up = up_known && !up_blocked;
     let down = down_known && !down_blocked;
     match (up, down) {
@@ -727,7 +732,7 @@ mod flee_clean_tests {
         assert_eq!(clean_kinds(true, false, true, true), CleanKinds::Up, "down blocked");
         assert_eq!(clean_kinds(true, true, true, true), CleanKinds::None, "both blocked");
         assert_eq!(clean_kinds(true, true, false, false), CleanKinds::None, "the only kind blocked");
-        assert_eq!(clean_kinds(false, false, true, false), CleanKinds::Down, "only down known");
+        assert_eq!(clean_kinds(false, false, true, false), CleanKinds::All, "only down known, none blocked: C's flow");
         assert_eq!(clean_kinds(false, false, false, false), CleanKinds::All, "none known");
     }
 }
