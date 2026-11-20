@@ -484,6 +484,9 @@ borg_trip_return_gold = 0
 # Impact: set to 1, 1 of 6 test games play differently.
 
 borg_param_caution_rising_hold_flee_descent = 0
+# #753: a fleeing Borg below this percent of its max HP isn't held off a
+# descent while rising (214960633: held at 2 of 47 HP). 0 = today.
+borg_param_caution_rising_hold_min_hp_percent = 0
 
 # Walking home (rising), hold a descent that is not a desperate escape for
 # this many Borg ticks on each level while it explores for an up staircase
