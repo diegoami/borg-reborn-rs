@@ -501,6 +501,8 @@ fn borg_check_breeders(st: &mut BorgState) -> bool {
     if (i32::from(st.borg.mon.breeders) >= (st.borg.tr(BI_CLEVEL) + 2).min(5))
         && (st.borg.tr(BI_RECALL) <= 0 || st.borg.tr(BI_CLEVEL) < 35)
         && !crate::borg_caution::breeder_stand(st)
+        // borg-reborn-rs (#722, lead b): not from a one-think pause.
+        && !crate::borg_caution::breeder_stand_paused(st)
     {
         /* Ignore monsters from caution */
         if !st.borg.goal.ignoring && borg_timer(st, st.borg.time.level) >= 2500 {

@@ -1052,8 +1052,10 @@ borg_param_caution_breeder_lost_recall_turns = 500
 # breeding can be stopped (the known breeders' expected births a turn, times
 # births_percent, below the Borg's kills a turn with its best attack of any
 # kind, the attack planner's own choice), at any count and level
-# and whether or not it carries an escape; danger at or above the HP stops the
-# stand for that think. Once the breeding outpaces the kills the level is lost
+# and whether or not it carries an escape; danger at or above the HP pauses the
+# stand (and the hunt) for that think only: the usual caution acts (retreat,
+# escape), but no level-long leave, breeder flee or scary level follows from
+# the pause (#722). Once the breeding outpaces the kills the level is lost
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 
