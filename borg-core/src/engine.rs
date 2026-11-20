@@ -1402,6 +1402,25 @@ pub struct PlayerSummary {
     pub word_recall: i16,
 }
 
+/// #759: computed attack rates from the player's own state, already in
+/// the permitted player_state read category (docs/ENGINE-READS.md). Blows
+/// are hundredths and shots tenths (player-attack.c:991,1087).
+pub fn player_attack_rates() -> (i32, i32) {
+    let p = player_ref();
+    (p.state.num_blows, p.state.num_shots)
+}
+
+/// #759 review: own computed blessed-weapon hit bonus, as in
+/// player-attack.c:chance_of_melee_hit_base:89-95 (574b618c).
+pub fn player_blessed_weapon_bonus() -> i32 {
+    if player_ref().state.bless_wield { 2 } else { 0 }
+}
+
+/// #759/#758: own displayed speed, including current haste/slow effects.
+pub fn player_combat_speed() -> i32 {
+    player_ref().state.speed
+}
+
 /// Read the player's summary fields.
 pub fn player_summary() -> PlayerSummary {
     let p = player_ref();
@@ -1983,6 +2002,8 @@ pub fn feat_is_shop(feat: i32) -> bool {
 pub struct RaceBlow {
     /// `effect->name`
     pub effect_name: &'static CStr,
+    /// Static hit power from blow_effects.txt (mon-attack.c:336-355).
+    pub hit_power: i32,
     /// `dice.dice`
     pub dice: i32,
     /// `dice.sides`
@@ -2011,7 +2032,7 @@ pub fn race_blow(r_idx: usize, k: usize) -> Option<RaceBlow> {
         assert!(!b.effect.is_null(), "race {r_idx} blow {k} has no effect");
         let name = (*b.effect).name;
         assert!(!name.is_null(), "race {r_idx} blow {k} effect has no name");
-        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
+        Some(RaceBlow { effect_name: CStr::from_ptr(name), hit_power: (*b.effect).power, dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
     }
 }
 

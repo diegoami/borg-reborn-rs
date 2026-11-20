@@ -719,6 +719,15 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* examine equipment and swaps */
     borg_notice(st, true);
 
+    // #760/#759: an attack-on-sight target or a winning fight owns the
+    // action before even an out-of-light wait or a depth-return flight.
+    if crate::borg_caution::fight_before_flight(st) {
+        if st.borg.no_retreat > 0 {
+            st.borg.no_retreat -= 1;
+        }
+        return choice!("fight_before_flight");
+    }
+
     /* Keep borg on a suitable level */
     if st.stairs.less.num != 0 && st.borg.tr(BI_CLEVEL) < 10 && !st.borg.goal.less && {
         let d = st.borg.tr(BI_CDEPTH);
