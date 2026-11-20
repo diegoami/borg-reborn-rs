@@ -26,6 +26,14 @@ and shipped 0 = today (`caution_stairs_clean_path` stays shipped 1):
   monster next to the Borg "in the way" of an adjacent staircase
   (2095979189, wild cat). The mode is read inside `path_blocker`, so it
   applies to the desperate walk and to #743's check of every flight.
+- **`caution_stairs_clean_path` 3** (#751, owner on 93034700: "he has to
+  actually walk past his opponent"): on the path, or next to it and ahead
+  of the Borg (a lower flow cost than the Borg's own grid). Mode 2 let a
+  Necromancer at 11/11 HP walk past an adjacent apprentice to stairs 8
+  steps beyond it, and it died on the way with 9 Cure Light Wounds, 6 Phase
+  Door and 27 Flasks of oil. At mode 1 the same start reads Phase Door and
+  kills the apprentice with two flasks. A monster next to the Borg but
+  behind it, away from the stairs, does not block.
 - **`caution_desperate_fast_danger_percent`** (#747): "Desperate for Stairs
   (three)" doesn't walk while a faster monster is adjacent. Above 0, only
   when that monster's danger is at least this percent of the HP: a fruit bat
@@ -71,7 +79,7 @@ borg-zoo#501, and every switch stays at 0 until it reports.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_stairs_clean_path` | 0 (shipped 1) | choice | 0–2 | `borg_caution.rs:959` |
+| `caution_stairs_clean_path` | 0 (shipped 1) | choice | 0–3 | `borg_caution.rs:959` |
 | `caution_desperate_fast_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:4124` |
 | `caution_recall_cure_min_loss_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4359` |
 | `caution_stairs_flight_ignore_danger` | 0 | flag | 0–1 | `borg_caution.rs:4104` |

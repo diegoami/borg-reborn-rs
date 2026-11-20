@@ -4108,11 +4108,12 @@ fn flight_goal(why: i32, fleeing: bool) -> bool {
     why == GOAL_FLEE || (why == GOAL_BORE && fleeing)
 }
 
-/// borg-reborn-rs (#751): `caution_stairs_clean_path` at 2: a monster blocks
-/// the path to the stairs only when it stands on it (read here, as the
-/// registry asks of a caution parameter).
-pub(crate) fn stairs_on_path_only() -> bool {
-    p(Param::caution_stairs_clean_path) >= 2
+/// borg-reborn-rs (#751): `caution_stairs_clean_path`, the mode of the path
+/// test (read here, as the registry asks of a caution parameter): at 2 a
+/// monster blocks the path to the stairs only when it stands on it; at 3
+/// also when it is next to it and ahead of the Borg.
+pub(crate) fn stairs_clean_path_mode() -> i32 {
+    p(Param::caution_stairs_clean_path)
 }
 
 /// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg
