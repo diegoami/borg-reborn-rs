@@ -943,6 +943,13 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
     best
 }
 
+/// borg-reborn-rs (#743): whether every flight to the stairs needs a clean
+/// path (`caution_stairs_clean_path_flee`, read here as the registry asks
+/// of a caution parameter; the check is `borg_flow_stairs::commit_and_step`).
+pub(crate) fn stairs_clean_path_flee_on() -> bool {
+    p(Param::caution_stairs_clean_path_flee) != 0
+}
+
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {

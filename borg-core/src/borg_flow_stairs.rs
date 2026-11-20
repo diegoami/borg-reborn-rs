@@ -142,6 +142,22 @@ fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32
 
 /// Commit the flow and take one step (the common end of the three flows).
 fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
+    // borg-reborn-rs (#743, the follow-up of #736): a flight takes a
+    // staircase only by a clean path: the flow just spread is walked
+    // (`path_blocker`, no second spread) before it is committed.
+    if flee_check_applies(st, why) {
+        let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
+        if let Some(k) = path_blocker(st, percent) {
+            st.borg.flee_path_refused = true;
+            if !st.borg.flee_path_noted {
+                st.borg.flee_path_noted = true;
+                let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+                let to = who.to_string_lossy();
+                borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
+            }
+            return false;
+        }
+    }
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, who, why) {
         return false;
@@ -613,7 +629,17 @@ mod tests {
 /// Prepare to flee the level via stairs (`stair_both`, with #556's
 /// fight-through fallback, `fight_through`).
 pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_both(st, why, sneak))
+    st.borg.flee_path_refused = false;
+    if fight_through(st, why, |st| stair_both(st, why, sneak)) {
+        return true;
+    }
+    // borg-reborn-rs (#743): the nearest stairs' path was not clean; the
+    // other kind may be.
+    if st.borg.flee_path_refused {
+        return fight_through(st, why, |st| stair_less(st, why, sneak))
+            || fight_through(st, why, |st| stair_more(st, why, sneak, false));
+    }
+    false
 }
 
 /// Prepare to flow towards "up" stairs (`stair_less`, with #556's
@@ -666,4 +692,31 @@ fn fight_through_plain(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut B
         borg_io::borg_note(st, "# Fighting through the breeders to the stairs");
     }
     ok
+}
+
+/// borg-reborn-rs (#743): whether a flight's path is checked: the switch on,
+/// a flight (`GOAL_FLEE`), and not the desperate walk (`desperate_flow`
+/// checks its own path first, #736).
+fn flee_check_applies(st: &BorgState, why: i32) -> bool {
+    flee_check_applies_with(crate::borg_caution::stairs_clean_path_flee_on(), why, st.borg.status.desperate)
+}
+
+/// `flee_check_applies` with the switch and the desperate flag given.
+fn flee_check_applies_with(on: bool, why: i32, desperate: bool) -> bool {
+    on && why == GOAL_FLEE && !desperate
+}
+
+#[cfg(test)]
+mod flee_clean_tests {
+    use super::{flee_check_applies_with, GOAL_FLEE};
+
+    /// #743: only a flight is checked, with the switch on, and not the
+    /// desperate walk (which checks its own path, #736).
+    #[test]
+    fn only_a_flight_is_checked() {
+        assert!(flee_check_applies_with(true, GOAL_FLEE, false));
+        assert!(!flee_check_applies_with(false, GOAL_FLEE, false), "off");
+        assert!(!flee_check_applies_with(true, GOAL_FLEE, true), "the desperate walk");
+        assert!(!flee_check_applies_with(true, GOAL_FLEE - 1, false), "not a flight");
+    }
 }
