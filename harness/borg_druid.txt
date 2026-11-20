@@ -12,3 +12,7 @@ borg_param_town_phase_curve_scale_percent = 175
 borg_param_town_oil_curve_scale_percent = 150
 # #685 reverted (owner, 2026-11-20): low-level casters detect again (the zoo decides, see the global line).
 borg_param_light_detect_evil_spell_min_level = 0
+# #693 (owner, 2026-11-20): the druid's depth cap (div 5, knee 10, below 4).
+borg_param_prepared_depth_early_levels_per_dl = 5
+borg_param_prepared_depth_early_until_level = 10
+borg_param_prepared_depth_late_levels_below = 4
