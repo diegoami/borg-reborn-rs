@@ -29,3 +29,12 @@ PR. The session-start --no-fetch source report made no unrelated pin changes.
 
 Left: owner review-complete/merge decision for this adoption PR (#776), and
 landing Cemetery #91. No next milestone or policy experiment is selected.
+
+The owner-run MiniMax-M3 review of #777 approved the pinned adoption with three
+nonblocking follow-ups. tools/README.md now states the stricter replay contract;
+REFERENCE-RECEIPTS.md explicitly distinguishes its historical inspection pin
+from the authoritative current death-tools-pin.txt rather than rewriting old
+provenance. Keep the Cemetery task branch until #91 lands: merge that PR before
+deleting the branch so the exact consumer pin remains reachable from main.
+These follow-ups change documentation only; the native pin and tested behavior
+are unchanged.
