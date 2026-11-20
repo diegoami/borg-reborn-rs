@@ -75,3 +75,7 @@ The registry count is2269 (main2265 plus four); historical snapshot counts
 remain unchanged. Cemetery links are pinned and the Phase Door table includes
 the new site. Refreshed validation/evidence and the exact new review pin are
 recorded on PR #782. Both PRs still await the owner's review disposition.
+
+Latest integration: synchronized main d7e58cdf after #787/#785 landed during
+validation. Earlier review runs remain pinned to fcaecf2b; latest shipped
+smoke uses the new main reference. No shipped values changed in this task.
