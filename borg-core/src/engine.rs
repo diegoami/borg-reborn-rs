@@ -1410,6 +1410,12 @@ pub fn player_attack_rates() -> (i32, i32) {
     (p.state.num_blows, p.state.num_shots)
 }
 
+/// #759 review: own computed blessed-weapon hit bonus, as in
+/// player-attack.c:chance_of_melee_hit_base:89-95 (574b618c).
+pub fn player_blessed_weapon_bonus() -> i32 {
+    if player_ref().state.bless_wield { 2 } else { 0 }
+}
+
 /// #759/#758: own displayed speed, including current haste/slow effects.
 pub fn player_combat_speed() -> i32 {
     player_ref().state.speed

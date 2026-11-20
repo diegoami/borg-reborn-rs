@@ -461,6 +461,10 @@ fn town_wand_allowed(st: &BorgState) -> bool {
 /// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
 /// round against a tracked kill.
 pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
+    thrust_damage(st, i, 1)
+}
+
+fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
     /* Examine current weapon */
     let item = &st.items.items[inven_wield() as usize];
 
@@ -533,12 +537,16 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     if focused {
         // player-attack.c:99-109,196-219: real hit chance, no targeting
         // or class preference bonuses. Millihitpoints preserve fractions.
+        chance += 3 * engine::player_blessed_weapon_bonus();
         if tr(st, BI_ISBLIND) != 0 { chance /= 2; }
-        let capped = focused_blow_damage.max(0).min(focused_power(st, kill.power));
-        let per_blow = i64::from(capped) * i64::from(hit_permyriad(chance, r_ptr.ac)) / 10_000;
+        // Fixed spell blows share a capped HP budget BEFORE hit chance.
+        // This credits their count without treating separate chances of an
+        // overkill hit as guaranteed damage (effect-handler-attack.c:1940-1974).
+        let per_blow = focused_blow_expectation(focused_blow_damage, focused_power(st, kill.power),
+            hit_permyriad(chance, r_ptr.ac), spell_blows);
         // Ordinary melee takes fractional energy. Weapon spells specify
         // their own number of py_attack_real blows and take a full action.
-        let rate = if st.fight_attack.focused_kind == BF_THRUST as i32 { engine::player_attack_rates().0 } else { 100 };
+        let rate = if st.fight_attack.focused_kind == BF_THRUST as i32 { engine::player_attack_rates().0 } else { 100 * spell_blows.max(0) };
         return (per_blow * i64::from(rate.max(0)) / 100) as i32;
     }
 
@@ -3576,26 +3584,22 @@ fn borg_attack_aux_whirlwind_attack(st: &mut BorgState) -> i32 {
         let k = i32::from(grid(st, x, y).kill);
 
         /* Calculate "average" damage */
-        let d = borg_thrust_damage_one(st, k);
+        let d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) };
 
         /* No damage */
         if d <= 0 {
             continue;
         }
 
-        let one_blow = d;
-        /* get to do "blows" attacks */
-        let d = d * blows;
+        /* get to do "blows" attacks; focused estimate already counts them. */
+        let d = if st.fight_attack.focused_target.is_some() { d } else { d * blows };
 
         // borg-reborn-rs (re-review of #657): the fight test applies the
         // primary's damage to one foe at a time, so its true damage is the best
         // single foe's (at most its HP); the sum stays the ranking's. Each foe's
         // kills count for #556 (a sweep can kill several).
         let power = focused_power(st, st.kills.kills[k as usize].power);
-        // A guaranteed one-blow lower bound avoids crediting overkill from
-        // several fixed spell blows as probability of landing a hit.
-        let expected = if st.fight_attack.focused_target.is_some() { one_blow } else { d };
-        true_best = true_best.max(expected.clamp(0, power.max(0)));
+        true_best = true_best.max(d.clamp(0, power.max(0)));
         kills_total += kill_fraction(d, power);
 
         let Some(d) = melee_score(st, k, x, y, d) else {
@@ -3663,11 +3667,14 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         }
 
         /* Calculate "average" damage */
-        let mut d = borg_thrust_damage_one(st, k);
-        let one_blow = d;
         let mut blows = (tr(st, BI_CLEVEL) + 5) / 15;
-        blows = ((blows * m_dist + 2) / 4) + 1;
-        d *= blows;
+        blows = if st.fight_attack.focused_target.is_some() {
+            // Certify only an adjacent leap: no uncertain MOVE_ATTACK route
+            // or distance-scaled blow count (effect-handler-attack.c:1789-1850).
+            if m_dist != 1 { continue; }
+            blows
+        } else { ((blows * m_dist + 2) / 4) + 1 };
+        let d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) * blows };
 
         /* No damage */
         if d <= 0 {
@@ -3694,9 +3701,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         b_d = d;
         // borg-reborn-rs (#584): the true damage, without the unique
         // targeting bonus of `borg_thrust_damage_one`.
-        st.fight_attack.dmg_best = if st.fight_attack.focused_target.is_some() {
-            one_blow
-        } else if rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
+        st.fight_attack.dmg_best = if st.fight_attack.focused_target.is_none() && rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
             true_d / (1 + param(Param::attack_melee_unique_bonus).max(0))
         } else {
             true_d
@@ -3793,15 +3798,13 @@ fn borg_attack_aux_maim_foe(st: &mut BorgState) -> i32 {
         let k = i32::from(grid(st, x, y).kill);
 
         /* Calculate "average" damage */
-        let one_blow = borg_thrust_damage_one(st, k);
-        d = one_blow * blows;
+        d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) * blows };
 
         /* No damage */
         if d <= 0 {
             continue;
         }
-        let expected = if st.fight_attack.focused_target.is_some() { one_blow } else { d };
-        let true_d = expected.clamp(0, focused_power(st, st.kills.kills[k as usize].power));
+        let true_d = d.clamp(0, focused_power(st, st.kills.kills[k as usize].power));
 
         /* "player ghosts" */
         if is_ghost(st.kills.kills[k as usize].r_idx) {
@@ -5213,6 +5216,12 @@ fn focused_priority(kind: i32) -> i32 {
     }
 }
 
+// Share the HP cap before hit chance; count all fixed spell blows without
+// counting the same possible overkill repeatedly. Values are millihitpoints.
+fn focused_blow_expectation(damage: i32, hp: i32, chance: i32, blows: i32) -> i64 {
+    i64::from(damage.max(0).min(hp.max(0) / blows.max(1))) * i64::from(chance) / 10_000
+}
+
 fn focused_score(a: FocusedAttack) -> (i64, i32) {
     let expected = i64::from(a.damage) * i64::from(100 - a.cost.map_or(0, |c| c.fail_pct));
     (expected, focused_priority(a.kind))
@@ -5221,6 +5230,15 @@ fn focused_score(a: FocusedAttack) -> (i64, i32) {
 #[cfg(test)]
 mod focused_tests {
     use super::*;
+
+    #[test]
+    fn fixed_spell_blows_are_counted_without_repeating_the_hp_budget() {
+        let blow = |hp, n| focused_blow_expectation(4000, hp, 5000, n) * i64::from(n);
+        assert_eq!(blow(100_000, 1), 2000);
+        assert_eq!(blow(100_000, 3), 6000, "CL45 Maim/Sweep: three real blows, not one");
+        assert_eq!(blow(6000, 3), 3000, "cap before hit chance, not after adding expected blows");
+        assert!(blow(1000, 3) <= 500);
+    }
 
     #[test]
     fn expected_damage_precedes_family_tiebreak() {
@@ -5332,12 +5350,14 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
     let kill = st.kills.kills[target];
     st.flow.temp_n = 0;
     st.flow.temp_push(kill.pos.y, kill.pos.x);
+    let prior_kill = st.cave.grid(kill.pos.x, kill.pos.y).kill;
     st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = target as u8;
     st.fight_attack.focused_target = Some(target);
     st.fight_attack.focused_kind = attack.kind;
     st.traits.simulate = false;
     st.traits.attacking = true;
     let result = borg_calculate_attack_effectiveness(st, attack.kind);
+    st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = prior_kill;
     st.fight_attack.focused_target = None;
     st.traits.attacking = false;
     result > 0
@@ -5352,6 +5372,7 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         if kill.r_idx == 0 { continue; }
         let Some(reason) = attack_on_sight_reason(st, usize::from(kill.r_idx)) else { continue };
         let Some(attack) = focused_attack(st, i) else { continue };
+        if !crate::borg_caution::category_attack_safe(st, i) { continue; }
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
             String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
         if perform_focused_attack(st, i, attack) { return true; }

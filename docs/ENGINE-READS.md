@@ -108,7 +108,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `player` | B | the character (the global's type): grid, depth, levels, HP, SP, stats, timed effects, gear lists, spells, options |
 | `player_race` | B | the race played (`ridx`); K for the static race table |
 | `player_class` | B | the class played (`cidx`, its magic, its player flags `pflags`: `UNLIGHT`, `CHOOSE_SPELLS`, #172/#127); K for the static class table |
-| `player_state` | B | computed stats, speed, blows, shots, AC; #759's focused planner reads own `num_blows`/`num_shots` for fractional attack timing |
+| `player_state` | B | computed stats, speed, blows, shots, AC, blessed-weapon hit bonus; #759's focused planner reads own `num_blows`/`num_shots` for fractional attack timing |
 | `player_options` | X | `birth_percent_damage` |
 | `player_upkeep` | B | resting, running, the pack and quiver arrays, `new_spells` (the status bar's "Study", #127) |
 | `player_body` | B | the equipment slots |

@@ -1876,21 +1876,22 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// could die in two rounds.
 ///
 /// (See borg-caution.c for the full commentary.)
-/// #759: expected turns using a finite primary, then an unlimited fallback.
-/// Damage is in HP/action; resource uses are whole actions, never fractions
-/// shared between monsters. Unknown HP/damage cannot certify a win.
+/// #759: time in Borg turns, rounded up to complete attack commands.
+/// Damage and fallback are HP per Borg turn; duration is turns per primary
+/// command (a shot can be fractional). The unlimited melee fallback books
+/// whole commands conservatively, even if an early kill saves blow energy
+/// (player-attack.c:990-1020). Resource uses are whole commands as well.
 fn race_turns(hp: i32, damage: f64, uses: Option<i32>, duration: f64, fallback: f64) -> Option<(f64, i32)> {
     if hp <= 0 || !damage.is_finite() || damage <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
-    let needed = hp / damage;
-    if fallback >= damage && fallback > 0.0 { return Some((hp / fallback, 0)); }
-    let Some(uses) = uses else { return Some((needed, 0)); };
+    if fallback >= damage && fallback > 0.0 { return Some(((hp / fallback).ceil(), 0)); }
+    let commands = (hp / (damage * duration)).ceil();
+    let Some(uses) = uses else { return Some((commands * duration, 0)); };
     let uses = uses.max(0);
-    let commands = (needed / duration).ceil() as i32;
-    if commands <= uses { return Some((needed, commands)); }
-    if fallback <= 0.0 { return None; }
+    if commands <= f64::from(uses) { return Some((commands * duration, commands as i32)); }
+    if !fallback.is_finite() || fallback <= 0.0 { return None; }
     let primary_time = f64::from(uses) * duration;
-    Some((primary_time + (hp - primary_time * damage) / fallback, uses))
+    Some((primary_time + ((hp - primary_time * damage) / fallback).ceil(), uses))
 }
 
 fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
@@ -1925,13 +1926,24 @@ mod winning_fight_tests {
     fn a_finite_attack_needs_a_real_fallback() {
         assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 4.0), Some((4.0, 1)));
         assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 0.0), None);
-        assert_eq!(race_turns(4, 8.0, Some(1), 1.0, 0.0), Some((0.5, 1)), "a finishing cast consumes a whole use");
+        assert_eq!(race_turns(4, 8.0, Some(1), 1.0, 0.0), Some((1.0, 1)), "a finishing cast consumes a whole action and use");
         assert_eq!(race_turns(4, 8.0, Some(0), 1.0, 2.0), Some((2.0, 0)));
         assert_eq!(race_turns(0, 8.0, None, 1.0, 0.0), None, "unknown HP cannot certify a win");
         assert_eq!(race_turns(8, 8.0, Some(1), 0.5, 0.0), None, "one half-turn shot is not two shots");
         assert_eq!(race_turns(4, 8.0, Some(1), 0.5, 0.0), Some((0.5, 1)));
         assert!(!wins_race(f64::INFINITY, 1.0, 100));
         assert!(!wins_race(1.0, f64::NAN, 100));
+    }
+
+    #[test]
+    fn finishing_attacks_and_fallbacks_book_complete_commands() {
+        assert_eq!(race_turns(5, 10.0, None, 1.0, 0.0), Some((1.0, 0)));
+        assert_eq!(race_turns(5, 9.0, Some(3), 1.0 / 3.0, 0.0), Some((2.0 / 3.0, 2)));
+        assert_eq!(race_turns(13, 8.0, Some(1), 1.0, 4.0), Some((3.0, 1)));
+        assert_eq!(race_turns(1, 2.0, None, 1.0, 0.0), Some((1.0, 0)));
+        assert!(!wins_race(race_turns(1, 2.0, None, 1.0, 0.0).unwrap().0, 1.0, 1));
+        let three = 3.0 * race_turns(5, 10.0, None, 1.0, 0.0).unwrap().0;
+        assert_eq!(three, 3.0, "each foe needs its own finishing command");
     }
 
     #[test]
@@ -1956,7 +1968,13 @@ pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> 
 }
 
 pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
-    let kill = st.kills.kills[i];
+    fight_incoming_with(st, i, false)
+}
+
+/// Evaluate a copy, including possible wake-up for a deliberate attack.
+pub(crate) fn fight_incoming_with(st: &mut BorgState, i: usize, wake: bool) -> f64 {
+    let mut kill = st.kills.kills[i];
+    if wake { kill.awake = true; }
     if kill.r_idx == 0 || !kill.awake { return 0.0; }
     let r = usize::from(kill.r_idx);
     let race = engine::race(r);
@@ -1975,7 +1993,10 @@ pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
     if plain { return melee * ratio; }
     // At the monster's own position there is no distance discount. This
     // keeps a presently distant attacker in the bound while another dies.
-    f64::from(crate::borg_danger::borg_danger_one_kill(st, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
+    // Pass the observed Haste to the native status/spell estimate too.
+    // The legacy knowledge record keeps its base speed (off behavior).
+    kill.speed = forecast_monster_speed(&kill).clamp(0, 199) as u8;
+    f64::from(crate::borg_danger::danger_one_kill(st, &kill, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
 }
 
 /// #759: a fresh comparison on every think, including during an existing
@@ -2063,6 +2084,36 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_limit: i64) -> bool {
+    hp > 0 && target_damage.is_finite() && target_damage < f64::from(hp) && other_danger <= other_limit
+}
+
+/// Owner-approved review exception: the category itself never creates a
+/// scare, but lethal contact or excessive danger from other foes can still
+/// reach ordinary cures/escapes. Reuse today's excessive-danger threshold.
+pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
+    let hp = st.borg.tr(BI_CURHP);
+    let target_damage = fight_incoming_with(st, target, true);
+    let mut other_danger = 0_i64;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        if i == target || st.kills.kills[i].r_idx == 0 { continue; }
+        other_danger += i64::from(crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
+    }
+    let limit = i64::from(hp) * i64::from(p(Param::caution_flee_danger_hp_multiplier));
+    category_threat_safe(hp, target_damage, other_danger, limit)
+}
+
+#[cfg(test)]
+mod category_threat_tests {
+    #[test]
+    fn first_sight_attack_yields_to_real_danger() {
+        assert!(super::category_threat_safe(20, 6.5, 0, 40), "healthy Borg shoots lone cat");
+        assert!(!super::category_threat_safe(6, 6.5, 0, 12), "cat can kill before another action");
+        assert!(!super::category_threat_safe(20, 6.5, 41, 40), "other foes exceed existing flight threshold");
+        assert!(super::category_threat_safe(20, 6.5, 40, 40), "ordinary threshold is strict greater-than");
+    }
 }
 
 /// #760/#759: before any dungeon flight, including the light/countdown
