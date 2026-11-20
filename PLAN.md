@@ -296,9 +296,12 @@ paragraph records the original milestone process.
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In progress: #680 enchant/decurse extraction.** Source startup #706/#708
-and kickoff #707/#709 are integrated after owner-accepted re-reviews and
-green CI; current task baseline is track-p `760fae80`. The owner
+**In progress: #774 pre-promotion reconciliation and revalidation.** #680
+integrated through owner-reviewed #773 at track-p `e9670cab`; canonical
+evidence PR Cemetery #90 is merged. Source startup #706/#708 and kickoff
+#707/#709 are complete. The original #680 receiving baseline was `760fae80`;
+#774 synchronizes exact accepted main `4e9af99e` (engine `574b618c`) and
+keeps broader compatibility verification pending the pinned Zoo request. The owner
 requested continuation after accepting and promoting P5. P6 addresses the
 remaining adjacent item-policy dependency #680 reported by the R4 ownership
 audit; it does not transfer that work to Track R.

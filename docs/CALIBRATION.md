@@ -4484,9 +4484,14 @@ caution's site skips (`BI_ISHUNGRY` with food left).
 | `caution_recall_pending_escape` | 0 | flag | 0–1 | `borg_caution.rs:2823` |
 | `caution_recall_wait_no_explore` | 0 | flag | 0–1 | `borg_caution.rs:3040` |
 
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5014` |
-
 ## Enchant/decurse policy (#680 / P6)
+
+The contract and receipts below describe the original #680 extraction.
+#774 preserves this implementation while reconciling accepted main `4e9af99e`
+and its engine `574b618c`. The original 45-case results are historical to
+`760fae80`, not proof of the synchronized candidate. The synchronized merge
+is checked locally with Rust/vendor/citations, smoke and one named override
+case; the broader default comparison goes to Zoo under current RULES20.
 
 Receiving baseline: `760fae80d3daa5c007a26e10d80f0c18eb0000ca` on
 `track-p`; engine `42cd156ac`, donor `8c5d000a`. This contract does not
