@@ -10,13 +10,16 @@ use std::sync::OnceLock;
 // One row generates both the lookup index and its metadata: additions cannot
 // accidentally shift the values away from their names.
 macro_rules! parameters {
-    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr)),* $(,)?) => {
+    (@class_defaults) => { None };
+    (@class_defaults $values:expr) => { Some(&$values) };
+    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr $(, $class_defaults:expr)?)),* $(,)?) => {
         #[derive(Clone, Copy)]
         #[repr(usize)]
         pub(crate) enum Param { $($name),* }
         pub(crate) const SPECS: &[Spec] = &[
             $(Spec { name: stringify!($name), default: $default, unit: $unit,
-                min: $min, max: $max, source: $source, description: $description }),*
+                min: $min, max: $max, source: $source, description: $description,
+                class_defaults: parameters!(@class_defaults $($class_defaults)?) }),*
         ];
     };
 }
@@ -30,6 +33,8 @@ pub(crate) struct Spec {
     pub max: i32,
     pub source: &'static str,
     pub description: &'static str,
+    #[serde(skip)]
+    class_defaults: Option<&'static [i32; CLASSES.len()]>,
 }
 
 parameters! {
@@ -227,10 +232,25 @@ parameters! {
     town_recall_reserve => (0, "count", 0, 5, "borg_town_capability.rs:694", "#557: the live town planner (the capability model, and borg_town_utility.rs's need model) values this many Word of Recall as a requirement at the full trip weight each, at any depth (the walk a scroll saves is always worth less than that), so a shallow Borg buys and carries one; 0 = off (Recall valued only as the walk it saves, which at DL1-3 never beats saving gold)."),
     town_recall_value_percent => (100, "percent", 0, 10000, "borg_town_capability.rs:1371", "#557 (owner): the town planner values a Word of Recall at this percent of the walk it saves (both the capability model and borg_town_utility.rs's need model); 100 = as computed; higher makes a shallow Borg buy and keep one."),
     prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:202", "#557 (owner): a descent to this depth or deeper needs one Word of Recall carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
-    prepared_depth_plan => (0, "flag", 0, 1, "borg_prepared.rs:751", "#693 (owner): \"errands plan by default ... fit in borg.txt, with formula parameters\". 1 = the Borg is never prepared for, and climbs from, a level deeper than a cap set by the character level: up to prepared_depth_early_until_level, ceil(level / prepared_depth_early_levels_per_dl); past it, level - prepared_depth_late_levels_below (never shallower than the earlier value); none from level 50. Combined with borg_no_deeper and any borg_plan file by taking the smallest. Set per class in harness/borg_<class>.txt. 0 = off."),
-    prepared_depth_early_levels_per_dl => (3, "levels", 1, 50, "borg_prepared.rs:756", "#693: with prepared_depth_plan, character levels per dungeon level up to prepared_depth_early_until_level (3: CL1-3 DL1, CL4-6 DL2)."),
-    prepared_depth_early_until_level => (6, "level", 0, 50, "borg_prepared.rs:757", "#693: with prepared_depth_plan, the last character level of the early part of the cap."),
-    prepared_depth_late_levels_below => (3, "levels", 0, 50, "borg_prepared.rs:758", "#693: with prepared_depth_plan, past the early part the cap is this many levels below the character level."),
+    // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
+    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:675", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_dl2_min_hp => (30, "hp", 0, 10000, "borg_prepared.rs:229", "Minimum maximum HP from DL2, skipped in risky play."),
+    prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:243", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+    prepared_dl34_min_clevel => (4, "level", 0, 50, "borg_prepared.rs:247", "Minimum maximum character level from DL3, skipped in risky play.", [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+    prepared_cure_min => (2, "potions", 0, 99, "borg_prepared.rs:255", "Minimum sum of CLW, CSW and CCW from DL3 while below prepared_cure_until_clevel."),
+    prepared_cure_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:256", "Maximum character level at which the early combined-cure requirement stops applying."),
+    prepared_dl59_min_hp => (60, "hp", 0, 10000, "borg_prepared.rs:271", "Minimum maximum HP from DL5 while already in the dungeon, skipped in risky play.", [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+    prepared_dl59_min_clevel => (6, "level", 0, 50, "borg_prepared.rs:275", "Minimum maximum character level from DL5 while already in the dungeon, skipped in risky play.", [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+    prepared_mid_clevel_offset => (0, "levels", -50, 50, "borg_prepared.rs:318", "From DL10, require maximum character level to reach depth plus this offset when the mid-depth class gate applies.", [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+    prepared_mid_max_depth => (19, "depth", 0, 127, "borg_prepared.rs:316", "Last depth at which the mid-depth offset applies for classes other than Mage and Necromancer."),
+    prepared_mid_caster_max_clevel => (28, "level", 0, 50, "borg_prepared.rs:314", "Last maximum character level at which the mid-depth offset applies for Mage and Necromancer."),
+    prepared_deep_clevel_offset => (5, "levels", -50, 50, "borg_prepared.rs:386", "From DL21, require maximum character level to reach depth plus this offset within the deep character-level range.", [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+    prepared_deep_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:387", "First maximum character level at which the deep offset applies (C: 29 for Ranger).", [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+    prepared_deep_max_clevel => (38, "level", 0, 50, "borg_prepared.rs:385", "Last maximum character level at which the deep offset applies. The Mage and Necromancer depth ramp starts above this level.", [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+    prepared_deep_caster_ramp_max_clevel => (44, "level", 0, 50, "borg_prepared.rs:393", "Last maximum character level at which the Mage and Necromancer depth ramp applies."),
+    prepared_deep_caster_ramp_base_depth => (30, "depth", 0, 127, "borg_prepared.rs:394", "Base depth of the Mage and Necromancer ramp from DL21."),
+    prepared_deep_caster_ramp_depth_per_level => (2, "levels", 0, 127, "borg_prepared.rs:395", "Extra depth per character level above prepared_deep_max_clevel on the Mage and Necromancer ramp."),
+    prepared_dl34_plus_min_clevel => (40, "level", 0, 50, "borg_prepared.rs:438", "Minimum maximum character level from DL34, skipped in risky play."),
     town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:250", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
     town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:251", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
     town_fear_cure_count => (0, "count", 0, 100, "borg_town_capability.rs:649", "#516: while the character is not afraid, fear cures (Potion of Boldness, CURE:AFRAID) are valued linearly up to this many in the pack and not beyond (each of the first ones is worth more than on the curve, a further one nothing); 0 = the diminishing curve (the planner kept buying Boldness: 35 bought, 7 drunk on 18 games)."),
@@ -2332,9 +2352,17 @@ pub(crate) fn set_class(class: i32) {
     CLASS.store(class, std::sync::atomic::Ordering::Relaxed);
 }
 
+fn current_class() -> Option<usize> {
+    let class = usize::try_from(CLASS.load(std::sync::atomic::Ordering::Relaxed)).ok()?;
+    (class < CLASSES.len()).then_some(class)
+}
+
 fn pick(r: &Resolved) -> (i32, &'static str) {
-    let class = CLASS.load(std::sync::atomic::Ordering::Relaxed);
-    usize::try_from(class).ok().and_then(|c| r.class.get(c).copied().flatten()).unwrap_or((r.value, r.origin))
+    current_class().and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
+}
+
+fn compiled_default(spec: &Spec) -> i32 {
+    spec.class_defaults.and_then(|defaults| current_class().map(|class| defaults[class])).unwrap_or(spec.default)
 }
 
 pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
@@ -2342,7 +2370,7 @@ pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
         return (v, "caution_breeder_policy");
     }
     let i = param as usize;
-    VALUES.get().map_or((SPECS[i].default, "default"), |values| pick(&values[i]))
+    VALUES.get().map_or_else(|| (compiled_default(&SPECS[i]), "default"), |values| pick(&values[i]))
 }
 
 /// Pure lookup after init: the current class's value when it has one, else
@@ -2352,7 +2380,7 @@ pub(crate) fn value(param: Param) -> i32 {
         return v;
     }
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i]).0)
+    VALUES.get().map_or_else(|| compiled_default(&SPECS[i]), |values| pick(&values[i]).0)
 }
 
 /// borg-reborn-rs (#722): the layer of `caution_breeder_policy` that turns
@@ -2442,6 +2470,16 @@ fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i3
     split_name(&lower)
 }
 
+/// #768: allow an existing profile to load after the errands cap was removed.
+fn retired_depth_cap(name: &str) -> bool {
+    let base = match name.rsplit_once("__").or_else(|| name.rsplit_once('@')) {
+        Some((base, class)) if CLASSES.contains(&class) => base,
+        _ => name,
+    };
+    matches!(base, "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
+        | "prepared_depth_early_until_level" | "prepared_depth_late_levels_below")
+}
+
 type Key = (&'static str, Option<usize>);
 
 fn parse<'a>(
@@ -2449,6 +2487,7 @@ fn parse<'a>(
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
+    let mut had_depth_cap = false;
     // (parameter, class) -> (raw value, alias sentinel)
     let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
@@ -2460,6 +2499,10 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
+        if retired_depth_cap(name) {
+            had_depth_cap = true;
+            continue;
+        }
         let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
         if file.insert((spec.name, class), (value.trim().to_string(), sentinel)).is_some() {
             return Err(format!("duplicate borg_param_{name}"));
@@ -2467,10 +2510,17 @@ fn parse<'a>(
     }
     let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (name, value) in env {
+        if *name == name.to_ascii_uppercase() && retired_depth_cap(&name.to_ascii_lowercase()) {
+            had_depth_cap = true;
+            continue;
+        }
         let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
         if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
             return Err(format!("duplicate BORG_PARAM_{name}"));
         }
+    }
+    if had_depth_cap {
+        eprintln!("borg-reborn-rs: ignoring retired preparedness depth cap settings (#768)");
     }
     let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
         let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
@@ -2492,13 +2542,15 @@ fn parse<'a>(
         for (c, class) in CLASSES.iter().enumerate() {
             let found = envs.get(&(spec.name, Some(c))).map(|v| (v, "environment"))
                 .or_else(|| file.get(&(spec.name, Some(c))).map(|v| (v, "borg.txt")));
-            if let Some(((raw, sentinel), origin)) = found {
+            if let Some(((raw, sentinel), class_origin)) = found {
                 let raw = raw.trim();
                 // An alias at its old "general value" sentinel sets nothing.
                 if sentinel.is_some() && raw.parse::<i32>().ok() == *sentinel {
                     continue;
                 }
-                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin });
+                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin: class_origin });
+            } else if let Some(defaults) = spec.class_defaults.filter(|_| origin == "default") {
+                class_values.insert(*class, ClassValue { value: defaults[c], origin: "default" });
             }
         }
         settings.push(Setting { spec, value, origin, class_values });
@@ -2678,7 +2730,10 @@ mod tests {
                      "borg_param_town_heal_curve_scale_percent_mage = 0",
                      "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
             let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
-            assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
+            assert!(
+                values.iter().all(|s| s.class_values.values().all(|v| v.origin == "default")),
+                "{text}"
+            );
         }
         // #534 review: environment names stay upper case.
         let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
@@ -2721,6 +2776,62 @@ mod tests {
                      "defend_shield_low_fail_adjustment"] {
             assert!(parse(&format!("borg_param_{name} = 1"), &BTreeMap::new(), SPECS).is_err());
         }
+    }
+
+    #[test]
+    fn dive_gates_ship_compiled_class_defaults_and_accept_overrides() {
+        let compiled = parse("", &BTreeMap::new(), SPECS).unwrap();
+        let shipped = parse(include_str!("../../harness/borg.txt"), &BTreeMap::new(), SPECS).unwrap();
+        for (param, expected) in [
+            (Param::prepared_clevel_depth_margin, 0),
+            (Param::prepared_dl2_min_hp, 30),
+            (Param::prepared_cure_min, 2),
+            (Param::prepared_cure_until_clevel, 30),
+            (Param::prepared_mid_max_depth, 19),
+            (Param::prepared_mid_caster_max_clevel, 28),
+            (Param::prepared_deep_caster_ramp_max_clevel, 44),
+            (Param::prepared_deep_caster_ramp_base_depth, 30),
+            (Param::prepared_deep_caster_ramp_depth_per_level, 2),
+            (Param::prepared_dl34_plus_min_clevel, 40),
+        ] {
+            assert_eq!(compiled[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].origin, "borg.txt");
+        }
+        let gate_values = [
+            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+        ];
+        for (param, values) in gate_values {
+            for (class, expected) in CLASSES.into_iter().zip(values) {
+                assert_eq!(class_value(&compiled, param, class), Some((expected, "default")));
+                assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")));
+            }
+        }
+        let param = Param::prepared_mid_clevel_offset;
+        let overrides = parse(
+            "borg_param_prepared_mid_clevel_offset = -2\nborg_param_prepared_mid_clevel_offset__mage = 2",
+            &BTreeMap::new(),
+            SPECS,
+        ).unwrap();
+        assert_eq!(overrides[param as usize].value, -2);
+        assert_eq!(class_value(&overrides, param, "warrior"), None);
+        assert_eq!(class_value(&overrides, param, "mage"), Some((2, "borg.txt")));
+    }
+
+    #[test]
+    fn retired_depth_cap_settings_can_load() {
+        let text = "borg_param_prepared_depth_plan = 1\nborg_param_prepared_depth_early_until_level__warrior = 4";
+        let env = BTreeMap::from([("PREPARED_DEPTH_LATE_LEVELS_BELOW__MAGE".into(), "3".into())]);
+        let settings = parse(text, &env, SPECS).unwrap();
+        assert_eq!(settings[Param::prepared_clevel_depth_margin as usize].value, 0);
+        assert!(parse("borg_param_prepared_depth_plan__typo = 1", &env, SPECS).is_err());
     }
 
     #[test]
