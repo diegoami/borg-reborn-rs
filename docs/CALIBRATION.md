@@ -26,7 +26,8 @@ The registry gains two parameters. The shipped level gate stays as before.
   viable response among Phase Door, Teleport Self, Magic Missile and
   Nether Bolt. If no listed response is legal, there is no exception.
   The reserve also respects the two existing mana thresholds in
-  `borg_recover` so a cast by itself cannot make either branch start a rest.
+  `borg_recover` at the observed level and maximum SP, so the cast does
+  not cross either threshold in that state.
 
 Detect Evil and Seek Battle keep the level gate. The engine predicates
 select non-invisible monsters for Detect Monsters, monsters with
