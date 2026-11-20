@@ -2978,19 +2978,27 @@ fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
 /// borg-reborn-rs (#754, owner): with `caution_recall_pending_escape`, a
 /// Word of Recall already counting down (`goal.recalling`) is an escape that
 /// is running, so a scary level keeps its flight instead of "standing and
-/// fighting" (#530 counts only a Recall still in the pack). 0 = #530.
+/// fighting" (#530 counts only a Recall still in the pack). #603's gates
+/// (`recall_restricts`) still hold the flee flows and the down stairs, but
+/// an up staircase reached on foot is still taken (`choose_stairs`, "Take
+/// stairs up"): on DL1 that is town, where the pending Recall fires and
+/// returns the Borg to its maximum depth. 0 = #530.
 fn recall_pending_escape(on: bool, recalling: i32) -> bool {
     on && recalling != 0
 }
 
 /// borg-reborn-rs (#754, owner): with `caution_recall_wait_no_explore`, while
 /// Word of Recall counts down in the dungeon the Borg does not explore or
-/// chase far monsters and objects (`borg_think_dungeon`'s "Explore the
-/// dungeon" block: vaults, `borg_flow_kill`/`borg_flow_take`/`borg_flow_vein`
-/// at 250, `borg_flow_dark`). It waits where it stands instead: the usual
-/// rest for Recall when nothing threatens it here (`borg_danger` 0), else it
-/// stays still one turn (`,`), so each think sees what comes. 0 = C (explore
-/// while waiting; the wait comes after exploration).
+/// chase far monsters and objects. It waits where it stands instead, and the
+/// think ends there: the hook sits before `borg_think_dungeon`'s "Explore the
+/// dungeon" block, so that block (vaults, `borg_flow_kill`/`borg_flow_take`/
+/// `borg_flow_vein` at 250, `borg_flow_dark`) and the rest of the think
+/// (`borg_leave_level`, the shops, C's own late "Wait for recall") are
+/// skipped for the wait. The wait rests for Recall as caution's own site
+/// does (`caution_recall_rest_turns`) only when `borg_check_rest` allows it
+/// here and nothing threatens the Borg (`borg_danger` 0; #567's hold first).
+/// Otherwise it stays still one turn (`,`), so each think sees what comes.
+/// 0 = C (explore while waiting; the wait comes after exploration).
 pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
     if !recall_wait_holds(
         p(Param::caution_recall_wait_no_explore) != 0,
@@ -3000,7 +3008,9 @@ pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
         return false;
     }
     let (y, x) = (st.borg.c.y, st.borg.c.x);
-    let safe = borg_danger(st, y, x, 1, true, false) <= 0;
+    // Review of #762: the rest keeps `borg_check_rest`'s refusals (hungry,
+    // weak, unlit, fear, a multiplier just killed, lava).
+    let safe = borg_danger(st, y, x, 1, true, false) <= 0 && crate::borg_flow_misc::borg_check_rest(st, y, x);
     // #567's hold (a monster was near a moment ago) presses its own `,`.
     if safe && recall_rest_held(st) {
         return true;
@@ -3008,9 +3018,13 @@ pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
     if safe {
         borg_note(st, "# Waiting for Recall (not exploring).");
         borg_keypress(st, key(b'R'));
-        borg_keypress(st, key(b'9'));
+        for digit in p(Param::caution_recall_rest_turns).to_string().bytes() {
+            borg_keypress(st, key(digit));
+        }
         borg_keypress(st, KC_ENTER);
     } else {
+        // Review of #762: keep #567's watch current while a monster is near.
+        watch_for_recall(st);
         borg_note(st, "# Waiting for Recall (not exploring): staying still.");
         borg_keypress(st, key(b','));
     }
