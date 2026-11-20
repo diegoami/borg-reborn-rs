@@ -1,7 +1,8 @@
 ## 2026-11-20: flight Recall survival guard (#758)
 
 Separate change on `task/T758-recall-survival`, stacked on #763's
-`03e95ba4858099f10268599c3f24c2b266f033fe` (#760/#759), as requested.
+`2295f6c3879daa2fc3c437c8baf81c76442d43ab` (#760/#759), including accepted
+main `ec0f3b28` and the exact-observed-HP refinements, as requested.
 
 - `caution_recall_survival` is compiled/shipped 0. Its named horizon,
   `caution_recall_survival_delay`, is 34 world ticks (the engine maximum),
