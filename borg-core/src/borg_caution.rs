@@ -3780,8 +3780,9 @@ pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
 /// would do damage (`borg_attack_estimate`: throws, shots, attack spells,
 /// wands; with nothing adjacent no melee blow is possible). The Borg attacks
 /// instead, and buffs once a monster is next to it or nothing reaches. Mode 1
-/// is the "Cornered" boost only; mode 2 also the hard breeder fight and the
-/// Phase Door rule's boost.
+/// is the "Cornered" boost only; mode 2 also the hard breeder fight's (the
+/// Phase Door rule's boost is reached only after its own attack found nothing,
+/// so mode 2 changes nothing there).
 fn throw_first(st: &mut BorgState, why: &str) -> bool {
     let mode = p(Param::caution_cornered_throw_first);
     if mode == 0 {

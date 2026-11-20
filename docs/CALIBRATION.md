@@ -1933,7 +1933,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:2157` |
 | `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:2159` |
 | `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2193` |
-| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:3880` |
+| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:3889` |
 | `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:3905` |
 | `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:3913` |
 | `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:3914` |
@@ -3815,6 +3815,8 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 ## Cornered: attack at range before the boost (#719)
 
+The registry now holds **2202** parameters (2201 before; one added).
+
 Owner (2026-11-20): "if I am cornered I should throw missile and then boost
 myself". `cornered_boost` (#504) runs in `borg_caution`, before
 `borg_attack`, so a cornered Borg always buffs first.
@@ -3825,8 +3827,9 @@ myself". `cornered_boost` (#504) runs in `borg_caution`, before
   `borg_attack_estimate`, with the Borg's random numbers and the waiting flag
   restored), the Borg attacks first. It buffs once a monster is next to it,
   or when nothing reaches.
-- **2:** the same for the hard breeder fight's and the Phase Door rule's
-  boosts.
+- **2:** the same for the hard breeder fight's boost. (The Phase Door rule's
+  boost is reached only after its own `borg_attack` found nothing to do, so
+  there mode 2 adds nothing: that site already attacks first.)
 
 **Local check** (100,000 turns, main 2026-11-20):
 
