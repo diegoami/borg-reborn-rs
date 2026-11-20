@@ -27,9 +27,10 @@ advances. `caution_winning_fight=2` is a non-acting diagnostic, not a zoo arm.
 **Checked:** clean baseline `08f94e1f` reproduced all six Ranger deaths with
 exact canonical keys/states/messages before implementation. The seven named
 starts (the six Rangers plus Rogue 390305857) were checked locally, at the
-100,000-engine-turn cap, with separate switches and combinations. All three
-together reach the cap in every named start; the Rogue control was already
-alive. This is selected-case evidence, not population improvement. Some
+100,000-engine-turn cap, with separate switches and combinations. After the damage-first selector correction, all three together reach the
+cap in six of seven named starts. Seed 1976035382 dies to a large white
+snake at 3790; earlier versions reached the cap on that life and remain
+retained. The Rogue control was already alive. This is selected-case evidence, not population improvement. Some
 lives diverge before the old killer appears. The unchanged original
 425904011 finishing state is independently evaluated by diagnostic mode:
 1.044 turns to kill against about 1.064 turns to die, so active mode attacks.
@@ -41,7 +42,8 @@ first differing keys and all retained deaths:
 [borg-cemetery PR #88](https://github.com/diegoami/borg-cemetery/pull/88),
 `studies/reborn-flight-fights-20261120/local-cases.md`. The initial active
 fight checks used code `734b7c1a`, diagnostic checks `4b1e4c1f`; the final
-wake-aware Recall/all checks used `dab3ea69`. Final main synchronization
+wake-aware Recall/all checks used `dab3ea69`. Category/all checks after the
+selector correction used `5acb8104`. Final main synchronization
 retains #754's default-off additions. Do not duplicate the gameplay report
 in this source repository or count repeated starts as independent samples.
 
@@ -55,8 +57,14 @@ This machine's lock is for builds/smoke/single named-case replays, not
 population arms. No 50-per-class or 600-start candidate comparison was
 started here. Measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511):
 exact specimen, shipped control, one arm per switch, all together, all nine
-classes, and the exact retained 600-start manifest. Nothing was dispatched;
-the owner chooses tiers and scheduling. The manifest/census/control audit
+classes, and the exact retained 600-start manifest. A separate owner-authorized zoo session ran the initial pilot on
+`78b8f297`; no arm led on survival. Its recorded Rogue crow death exposed
+a selector bug: weak missiles outranked stronger throws. Fix `64f20bb4`
+sorts expected damage first and uses family preference only for ties;
+a regression test covers oil versus pebbles. Canonical investigation is
+in Cemetery #88. Future specimen `5acb8104` includes that correction and
+possible-wake Recall; it is explicitly repinned in Zoo #511 and remains
+unmeasured. This session dispatched no run; the owner chooses scheduling. The manifest/census/control audit
 are evidence inputs, not a locally played candidate population.
 
 **Left:** owner-selected review and owner-scheduled measurement #511.

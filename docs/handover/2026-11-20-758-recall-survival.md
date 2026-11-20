@@ -36,22 +36,27 @@ immobile contact; CI's Rust commands and citations (0 wrong); shipped-off
 smoke/reference/replay. The seven named starts were replayed locally at the
 100,000-engine-turn cap. Recall-only reaches the cap for 425904011,
 1976035382 and 807683971; 2095979189, 2049259432 and 1517990203 still die
-with this switch alone. All three together reach the cap for all seven;
+with this switch alone. After the damage-first correction, all three together reach the cap in six
+of seven; 1976035382 dies to a large white snake at engine turn 17873;
 Rogue 390305857 already survives in the shipped control. Its old crow death
 was a different, PR757 flight-on arm, not a local rescue claim.
 
 Canonical report, all intermediate outcomes, exact builds/stream hashes,
 first differing keys and natural-death records: [Cemetery #88](https://github.com/diegoami/borg-cemetery/pull/88),
 `studies/reborn-flight-fights-20261120/local-cases.md`. Final wake-aware
-local checks used `dab3ea69`; later main synchronization retains #754's
+local Recall checks used `dab3ea69`; final category/all checks used
+`5acb8104`; later main synchronization retains #754's
 shipped-zero additions. Final PR head/CI and the exact reviewer checklist
 are on the PR. No population improvement is claimed.
 
 **Measurement:** [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511)
 contains the exact all-switch-capable specimen, shipped control, individual
 switches and all together, class scope and expected mechanisms. The owner
-alone chooses tiers/scheduling. No zoo run was dispatched and no local
-50-per-class/600-start candidate arm was started. This machine is for
+alone chooses tiers/scheduling. A separate owner-authorized zoo session ran the initial pilot on `78b8f297`;
+no arm led on survival. That pin lacked possible-wake handling and the
+later damage-first category fix. Zoo #511 explicitly supersedes it with
+`5acb8104` for future runs; the corrected specimen remains unmeasured.
+This session dispatched no zoo run and started no local population arm. This machine is for
 builds/smoke/named-case replays (owner reaffirmed RULES 20).
 
 **Left:** owner-selected review and owner-scheduled measurement #511.
