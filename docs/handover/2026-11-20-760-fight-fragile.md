@@ -116,3 +116,30 @@ explicit new394f2aea specimen; old78b8 and5acb results/proposals are retained
 as distinct provenance. Future specimen remains unmeasured. The exact
 final review head, CI and disposition comments are on the PR; owner-selected
 re-review and owner-controlled measurement remain. No merge or dispatch.
+
+
+Third review (MiniMax-M3 on2379b3fb) answered with engine-based rate tests:
+the focused input is HP/Borgturn, not HP/shot. ranged_damage does not scale
+an arrow by firing rate; the command energy is shorter. The proposed
+removal of duration would over-credit arrows, so the correct formula is
+retained and the field is now hp_per_turn_milli. Regeneration is gated by
+turn%100 (mon-move.c1893-1897), not each monster attack; the player-energy
+conversion is retained. The other-danger exception reuses only the threshold
+multiplier, not the full regional/fear-map danger quantity.
+
+The valid shared mixed-unit problem is fixed: IncomingDamage separates
+literal contact HP from unknown spell/status contributions. No native fear
+score enters HP forecasts; unknown fights are uncertified. Basic elemental
+contact uses dice/static hit power/speed, with a vulnerability factor and no
+AC/resistance discounts. Recall uses separate qualitative risk refusals.
+New code is parenta6c88dea and common tested childa4e4d915; accepted main
+#779 is preserved.517/521 core tests pass (four ignored), required local
+Rust/citation/vendor checks pass (2256/2258, zero wrong/disagreeing rows),
+smoke3/3 exact and both code-pin CI runs green.42 fresh named attempts
+bring the Cemetery ledger to172, with no new natural key stream requiring
+a duplicate dossier. Latest canonical report: Cemetery #88 `units-cases.md`,
+4672f20c. All-switch remains five original lives alive; both reviewer-added
+starts survive with actual Magic Missile/oil choices. Canonical old versions
+remain retained. New shared Zoo proposal isa4e4d915, explicitly repinned;
+394f2aea is superseded and unmeasured. No dispatch or merge; owner-selected
+re-review and owner-scheduled Zoo #511 remain.

@@ -4584,7 +4584,7 @@ specimen remains unmeasured; [Zoo #511](https://github.com/diegoami/borg-zoo/iss
 preserves the initial pilot provenance and pins the future specimen.
 
 
-Review corrections for #763 (MiniMax-M3 and Claude Opus 5.5):
+Review corrections on2379b3fb (historical; superseded by the unit separation below):
 
 - Race time now rounds to complete commands, including the unlimited melee
   fallback and each attacker's finishing command. A shot retains its fractional
@@ -4644,3 +4644,18 @@ is gated by turn%100, not by each monster attack (mon-move.c:1893-1897), so
 its conversion through player energy remains unchanged. Older forecast
 figures and specimen394f2aea are historical; the new specimen must be
 explicitly pinned after verification. No switch is enabled for shipping.
+
+
+Verified shared unit-separation specimen:
+`a4e4d91546cd9a2e1b43a03c0321feaa14b9893f`, with accepted main #779.
+42 new named attempts (nine explicitly named starts, repeated across flags
+plus one diagnostic) have no harness failures. All-switch reaches100k in
+five original lives;425 dies to Fang3621 and151 to rock lizard6299. Both
+reviewer-added starts survive; Magic Missile/oil choices are in the canonical
+Cemetery #88 `units-cases.md` at4672f20c. Original425's non-acting diagnostic
+remains control-neutral. The sound naga calculation still gives155.61HP;
+unmodelled risk is a separate refusal reason. This supersedes394f2aea as the
+future Zoo proposal; the original78b8 pilot retains its own provenance.
+Both implementation CI runs and the shipped-off smoke checks pass. No
+population improvement or shipment is claimed; only the owner schedules
+Zoo #511 and accepts re-review.
