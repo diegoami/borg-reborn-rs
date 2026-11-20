@@ -269,8 +269,26 @@ fn decode_plan(bytes: &[u8]) -> Result<&str, String> {
     }
     std::str::from_utf8(bytes).map_err(|e| format!("plan is not UTF-8: {e}"))
 }
+/// borg-reborn-rs (#704, review of #740): whether a `borg_world` value
+/// reached the Borg unconsumed. `harness/run.sh` replaces the key with a
+/// comment when it generates the world, so a value other than `none` here
+/// means nothing loaded that world's data: the game would play upstream's
+/// data under the world's name.
+fn world_unloaded(value: Option<&str>) -> bool {
+    value.is_some_and(|v| !matches!(v.trim(), "" | "none"))
+}
+
 /// Called before core initialization; absent configuration is inert.
 pub(crate) fn initialize() {
+    // Lenient: an unreadable borg.txt is the parameter loader's to report.
+    let world = shell::borg_txt_setting_lenient("borg_world");
+    if world_unloaded(world.as_deref()) {
+        eprintln!(
+            "borg_world: '{}' was not generated (run through harness/run.sh, or a zoo adapter that loads worlds); refusing to play the game's own data under its name",
+            world.unwrap_or_default().trim()
+        );
+        std::process::exit(2);
+    }
     RUNTIME.get_or_init(|| {
         let file = std::env::var_os("BORG_ERRANDS_PLAN")
             .map(|p| {
@@ -422,6 +440,18 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
 
 #[cfg(test)]
 mod tests {
+
+    /// #704 (review of #740): a world the harness did not consume stops
+    /// the game; `none`, empty or no key plays the game's data.
+    #[test]
+    fn an_unloaded_world_is_refused() {
+        assert!(world_unloaded(Some("breeders-x4")));
+        assert!(!world_unloaded(Some("none")));
+        assert!(!world_unloaded(Some(" none ")));
+        assert!(!world_unloaded(Some("")));
+        assert!(!world_unloaded(None));
+    }
+
     use super::*;
     const EXAMPLE: &str = "[default]\n  level <= 5\n    max-depth 2\n  5 < level <= 10\n    max-depth 4\n[mage]\n  level <= 5\n    max-depth 1\n  5 < level <= 10\n    max-depth 3\n";
     #[test]
