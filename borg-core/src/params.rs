@@ -10,13 +10,16 @@ use std::sync::OnceLock;
 // One row generates both the lookup index and its metadata: additions cannot
 // accidentally shift the values away from their names.
 macro_rules! parameters {
-    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr)),* $(,)?) => {
+    (@class_defaults) => { None };
+    (@class_defaults $values:expr) => { Some(&$values) };
+    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr $(, $class_defaults:expr)?)),* $(,)?) => {
         #[derive(Clone, Copy)]
         #[repr(usize)]
         pub(crate) enum Param { $($name),* }
         pub(crate) const SPECS: &[Spec] = &[
             $(Spec { name: stringify!($name), default: $default, unit: $unit,
-                min: $min, max: $max, source: $source, description: $description }),*
+                min: $min, max: $max, source: $source, description: $description,
+                class_defaults: parameters!(@class_defaults $($class_defaults)?) }),*
         ];
     };
 }
@@ -30,6 +33,8 @@ pub(crate) struct Spec {
     pub max: i32,
     pub source: &'static str,
     pub description: &'static str,
+    #[serde(skip)]
+    class_defaults: Option<&'static [i32; CLASSES.len()]>,
 }
 
 parameters! {
@@ -66,7 +71,7 @@ parameters! {
     caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:280", "Controls heal estimate percent."),
     caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:281", "Controls heal estimate min."),
     caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:289", "Controls healing rod fail."),
-    caution_ranged_vs_immobile => (0, "mode", 0, 3, "borg_caution.rs:1535", "#646, #713 (owner): immobile creatures (a monster that never moves and attacks with its blows). 1 (#646) = next to one, step away when confused (up to 3 steps) or carrying a ranged attack (1 step), and hold the confusion cure next to it. 2 (#713, shipped) = also keep one whose blows do more than plain damage (poison, confusion, paralysis, fear, drain...: 23 of the 25 in monster.txt, 15 of them at DL10 or shallower and 8 deeper, down to Wiruin at DL80) at range: never melee it, no hunt walk to it, flows keep out of its reach (stair flows may pass, never onto its grid), and always step away from it, while fleeing too, up to 3 times; ranged attacks kill it from afar. 3 = as 2 for every immobile attacker. 0 = C."),
+    caution_ranged_vs_immobile => (0, "mode", 0, 3, "borg_caution.rs:1566", "#646, #713 (owner): immobile creatures (a monster that never moves and attacks with its blows). 1 (#646) = next to one, step away when confused (up to 3 steps) or carrying a ranged attack (1 step), and hold the confusion cure next to it. 2 (#713, shipped) = also keep one whose blows do more than plain damage (poison, confusion, paralysis, fear, drain...: 23 of the 25 in monster.txt, 15 of them at DL10 or shallower and 8 deeper, down to Wiruin at DL80) at range: never melee it, no hunt walk to it, flows keep out of its reach (stair flows may pass, never onto its grid), and always step away from it, while fleeing too, up to 3 times; ranged attacks kill it from afar. 3 = as 2 for every immobile attacker. 0 = C."),
     caution_confused_heal_loss => (80, "percent", 0, 100, "borg_caution.rs:304", "Controls confused heal loss."),
     caution_confused_star_loss => (85, "percent", 0, 100, "borg_caution.rs:311", "Controls confused star loss."),
     caution_confused_star_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:312", "Controls confused star danger multiplier."),
@@ -154,28 +159,39 @@ parameters! {
     caution_cut_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:814", "Controls cut critical hp."),
     caution_cut_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:816", "Controls cut critical hp divisor."),
     caution_cut_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:839", "Controls cut reserve hp divisor."),
-    caution_flee_stairs_before_recall => (0, "flag", 0, 1, "borg_caution.rs:2532", "#539 (owner): 1 = a fleeing Borg that can walk to a free staircase (the flee flows' stair flow reaches it) does not read Word of Recall (the flee flow walks it to the stairs); 0 = Recall first (C's behaviour)."),
-    caution_flee_recall => (1, "flag", 0, 1, "borg_caution.rs:2635", "#557 (owner): 1 = C: a fleeing Borg reads Word of Recall as its escape (after #539's stairs and ranged checks), and Recall counts as an easy escape for the #503/#530 stand tests; 0 = only on a level swamped by breeders (caution_flee_recall_breeders) or when chased by several monsters (caution_flee_recall_chasers), else the flight walks."),
-    caution_flee_recall_breeders => (5, "monsters", 0, 100, "borg_caution.rs:2658", "#557: with caution_flee_recall 0, this many breeders known on the level make Word of Recall an escape again; 0 = never for breeders."),
-    caution_flee_recall_chasers => (3, "monsters", 0, 100, "borg_caution.rs:2659", "#557: with caution_flee_recall 0, this many awake monsters that can move (not RF_NEVER_MOVE) within caution_flee_recall_chase_distance make Word of Recall an escape again; 0 = never for chasers."),
-    caution_flee_recall_chase_distance => (6, "grids", 1, 30, "borg_caution.rs:2659", "#557: the distance within which an awake monster counts as a chaser for caution_flee_recall_chasers."),
-    caution_flee_recall_gate_below_depth => (0, "dungeon level", 0, 127, "borg_caution.rs:2637", "#557 (owner): a ceiling. With caution_flee_recall 1, a flight at a depth shallower than this (2 = DL1 only) reads Word of Recall only with the breeder or chaser exception of caution_flee_recall 0, and Recall there is no easy escape in the stand tests; the stairs are a short walk. 0 = off (C at every depth); 1 is off too (the town never asks)."),
-    caution_flee_recall_danger_percent => (0, "percent of HP", 0, 10000, "borg_caution.rs:2650", "#587 (owner): where the depth gate or caution_flee_recall 0 holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it (with the breeder and chaser exceptions); only the flight's read, not the stand tests. 0 = off; at the shipped gate (1, off) and caution_flee_recall 1 nothing is held back, so it acts only with the gate on or caution_flee_recall 0."),
-    caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:2603", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
+    caution_flee_stairs_before_recall => (0, "flag", 0, 1, "borg_caution.rs:2563", "#539 (owner): 1 = a fleeing Borg that can walk to a free staircase (the flee flows' stair flow reaches it) does not read Word of Recall (the flee flow walks it to the stairs); 0 = Recall first (C's behaviour)."),
+    caution_flee_recall => (1, "flag", 0, 1, "borg_caution.rs:2670", "#557 (owner): 1 = C: a fleeing Borg reads Word of Recall as its escape (after #539's stairs and ranged checks), and Recall counts as an easy escape for the #503/#530 stand tests; 0 = only on a level swamped by breeders (caution_flee_recall_breeders) or when chased by several monsters (caution_flee_recall_chasers), else the flight walks."),
+    caution_flee_recall_breeders => (5, "monsters", 0, 100, "borg_caution.rs:2694", "#557: with caution_flee_recall 0, this many breeders known on the level make Word of Recall an escape again; 0 = never for breeders."),
+    caution_flee_recall_chasers => (3, "monsters", 0, 100, "borg_caution.rs:2695", "#557: with caution_flee_recall 0, this many awake monsters that can move (not RF_NEVER_MOVE) within caution_flee_recall_chase_distance make Word of Recall an escape again; 0 = never for chasers."),
+    caution_flee_recall_chase_distance => (6, "grids", 1, 30, "borg_caution.rs:2690", "#557: the distance within which an awake monster counts as a chaser for caution_flee_recall_chasers."),
+    caution_flee_recall_gate_below_depth => (0, "dungeon level", 0, 127, "borg_caution.rs:2672", "#557 (owner): a ceiling. With caution_flee_recall 1, a flight at a depth shallower than this (2 = DL1 only) reads Word of Recall only with the breeder or chaser exception of caution_flee_recall 0, and Recall there is no easy escape in the stand tests; the stairs are a short walk. 0 = off (C at every depth); 1 is off too (the town never asks)."),
+    caution_flee_recall_danger_percent => (0, "percent of HP", 0, 10000, "borg_caution.rs:2681", "#587 (owner): where the depth gate or caution_flee_recall 0 holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it (with the breeder and chaser exceptions); only the flight's read, not the stand tests. 0 = off; at the shipped gate (1, off) and caution_flee_recall 1 nothing is held back, so it acts only with the gate on or caution_flee_recall 0."),
+    caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:2634", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
+    flow_leash_per_level => (3, "steps per level", 0, 100, "borg_flow.rs:1893", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x this + flow_leash_base steps from the stairs (C: 3)."),
+    flow_leash_base => (9, "steps", 0, 250, "borg_flow.rs:1894", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x flow_leash_per_level + this (C: 9)."),
+    flow_leash_unbounded => (250, "steps", 0, 250, "borg_flow.rs:1895", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash when none applies (C: 250, the flow's whole reach)."),
+    flow_leash_pickup_max_level => (20, "level", 0, 51, "borg_flow.rs:1896", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash for picking up items applies below this character level (C: 20)."),
+    flow_leash_depth_margin => (5, "levels", 0, 127, "borg_flow.rs:1897", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the exploring leash, and the distance-to-stairs check, apply while the depth is at least the character level less this (C: 5); a larger margin keeps the leash deeper."),
+    flow_leash_twitch_after => (21, "twitches", 0, 1000, "borg_flow.rs:1898", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: once the Borg has twitched (run out of things to do) more than this many times, the leash grows by the twitch count (C: 21)."),
+    flow_leash_stairs_max_level => (20, "level", 0, 51, "borg_flow.rs:1899", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_flow_far_from_stairs_dist checks the distance to the stairs below this character level (C: 20)."),
+    flow_leash_take_near_max_level => (10, "level", 0, 51, "borg_flow.rs:1900", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select skips an item far from the stairs while the Borg is near them, below this character level (C: 10)."),
+    flow_leash_take_nearness => (5, "steps", 0, 250, "borg_flow.rs:1901", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs against the leash when the item search reaches beyond this nearness (C: 5)."),
+    flow_leash_take_max_level => (20, "level", 0, 51, "borg_flow.rs:1902", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs below this character level (C: 20)."),
     kill_live_min_power => (0, "hp", 0, 10, "borg_flow_kill.rs:375", "#546 (owner): a living monster (hp above 0) is estimated at least this many hit points; the estimate truncates twice and puts a monster left with 1 HP of 9 at 0, which every attack's overkill cap then scores 0; 0 = off (C's estimate)."),
-    caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:990", "Controls desperate stair distance."),
-    caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:1007", "Controls desperate adjacent up distance."),
-    caution_stairs_clean_path => (0, "choice", 0, 3, "borg_caution.rs:959", "#736 (owner): 1 = a desperate walk to the stairs (borg_caution's 'Desperate for Stairs') needs a clean path: an awake monster on, or next to, the flow path whose danger is at least caution_stairs_block_danger_percent of the HP makes the stairs not reachable, and the escapes and the attack decide instead. 2 (#751, owner: \"stop flight when other monsters are IN BETWEEN the stairs, not close\") = only a monster on the path (a grid of the walk, the staircase included) blocks it, not one next to it. 3 (#751, owner on 93034700: \"he has to actually walk past his opponent\") = on the path, or next to it and ahead of the Borg (nearer the staircase in Chebyshev distance): a monster the walk has to pass. 0 = C."),
-    caution_stairs_block_danger_percent => (50, "percent", 0, 10_000, "borg_caution.rs:960", "#736: with caution_stairs_clean_path, the danger (in percent of the current HP) at which a monster on or next to the path to the stairs blocks it."),
+    caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:1021", "Controls desperate stair distance."),
+    caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:1030", "Controls desperate adjacent up distance."),
+    caution_stairs_clean_path => (0, "choice", 0, 3, "borg_caution.rs:967", "#736 (owner): 1 = a desperate walk to the stairs (borg_caution's 'Desperate for Stairs') needs a clean path: an awake monster on, or next to, the flow path whose danger is at least caution_stairs_block_danger_percent of the HP makes the stairs not reachable, and the escapes and the attack decide instead. 2 (#751, owner: \"stop flight when other monsters are IN BETWEEN the stairs, not close\") = only a monster on the path (a grid of the walk, the staircase included) blocks it, not one next to it. 3 (#751, owner on 93034700: \"he has to actually walk past his opponent\") = on the path, or next to it (one of the 8 grids around a grid of the path) and nearer the staircase at the path's end than the Borg, in grid steps (king moves): a monster the walk has to pass. 0 = C."),
+    caution_stairs_block_danger_percent => (50, "percent", 0, 10_000, "borg_caution.rs:968", "#736: with caution_stairs_clean_path, the danger (in percent of the current HP) at which a monster on or next to the path to the stairs blocks it."),
     caution_stairs_clean_path_flee => (0, "flag", 0, 1, "borg_caution.rs:949", "#743 (owner, the follow-up of #736): 1 = every flight to the stairs (GOAL_FLEE: a scary level, too much danger, 'Looking for any stair') takes a staircase only by a clean path: the flight's own flow is walked before it is committed (#736's path_blocker), and an awake monster on, or next to, the path whose danger is at least caution_stairs_block_danger_percent of the HP refuses it; a flight to any stairs then tries each kind on its own; with none clean the flight does not start and the escapes and the attack decide (#736's 'Stairs not reachable', noted once per level). The desperate walk keeps its own check (caution_stairs_clean_path). 0 = C."),
-    caution_desperate_fast_danger_percent => (0, "percent of HP", 0, 10_000, "borg_caution.rs:4128", "#747: 'Desperate for Stairs (three)' does not walk when an adjacent monster is faster than the Borg; above 0, only when that monster's danger is also at least this percent of the current HP (a harmless fruit bat no longer cancels the walk). 0 = C (any faster monster)."),
-    caution_stairs_flight_ignore_danger => (0, "flag", 0, 1, "borg_caution.rs:4108", "#750: 1 = a flight's stair flow (GOAL_FLEE, or a bored walk up while fleeing or leaving) refuses no grid for its danger, as the desperate walk; a monster near a clear corridor no longer closes it (807683971: a black naga two grids beside the corridor). Whether a monster stands on the path is caution_stairs_clean_path's test. 0 = C (grids above the flow's fear are refused)."),
-    caution_stairs_flight_threat_weight => (0, "extra steps at current HP", 0, 100, "borg_caution.rs:4488", "#765: stair flights (GOAL_FLEE, including desperate walks, or a bored ascent while fleeing or leaving) price each entered grid at one step plus this weight times danger divided by current HP. Awake monster grids are blocked. A clean-path veto can trigger a search for a clean detour. 0 = existing stair flows."),
-    caution_immobile_step_to_exit => (0, "flag", 0, 1, "borg_caution.rs:1685", "#736 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) takes, among the grids it may step to, the one with the fewest steps to a staircase, then the least danger. 0 = the least danger only."),
+    caution_desperate_ranged_first_reach => (0, "grids", 0, 10, "borg_caution.rs:981", "#751 (owner on 247597266: the Mage walked toward a cutpurse and an apprentice between it and the stairs, with 22 Flasks of oil and Magic Missile): above 0, while the Borg has a ranged attack (a bow with ammunition or something to throw; spells are not counted) and no awake monster is adjacent, the desperate walk to the stairs does not start toward an awake monster within this many grids of its path and nearer the stairs than the Borg, whose danger is at least caution_stairs_block_danger_percent of the HP; the attack at range decides. 0 = C."),
+    caution_desperate_fast_danger_percent => (0, "percent of HP", 0, 10_000, "borg_caution.rs:4226", "#747: 'Desperate for Stairs (three)' does not walk when an adjacent monster is faster than the Borg; above 0, only when that monster's danger is also at least this percent of the current HP (a harmless fruit bat no longer cancels the walk). 0 = C (any faster monster)."),
+    caution_stairs_flight_ignore_danger => (0, "flag", 0, 1, "borg_caution.rs:4204", "#750: 1 = a flight's stair flow (GOAL_FLEE, or any GOAL_BORE stair flow while fleeing or leaving: the bored walk up, the bored walks down and the powerdive) refuses no grid for its danger, as the desperate walk; a monster near a clear corridor no longer closes it (807683971: a black naga two grids beside the corridor). Whether a monster stands on the path is caution_stairs_clean_path's test. 0 = C (grids above the flow's fear are refused)."),
+    caution_stairs_flight_threat_weight => (0, "extra steps at current HP", 0, 100, "borg_caution.rs:4585", "#765: stair flights (GOAL_FLEE, including desperate walks, or a bored ascent while fleeing or leaving) price each entered grid at one step plus this weight times danger divided by current HP. Awake monster grids are blocked. A clean-path veto can trigger a search for a clean detour. 0 = existing stair flows."),
+    caution_immobile_step_to_exit => (0, "flag", 0, 1, "borg_caution.rs:1729", "#736 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) takes, among the grids it may step to, the one with the fewest steps to a staircase, then the least danger. 0 = the least danger only."),
     attack_mobile_threat_first => (0, "flag", 0, 1, "borg_fight_attack.rs:4881", "#736 (owner): 1 = while a mobile monster among borg_attack's targets is a threat (danger at least attack_mobile_threat_percent of the HP), immobile monsters are not targets. 0 = C."),
     attack_mobile_threat_percent => (50, "percent", 0, 10_000, "borg_fight_attack.rs:4882", "#736: with attack_mobile_threat_first, the danger (in percent of the current HP) at which a mobile target is a threat."),
-    caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:989", "Controls desperate scary distance."),
-    caution_desperate_scary_level => (20, "level", 1, 51, "borg_caution.rs:992", "Controls desperate scary level."),
+    caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:1038", "Controls desperate scary distance."),
+    caution_desperate_scary_level => (20, "level", 1, 51, "borg_caution.rs:1041", "Controls desperate scary level."),
     caution_desperate_unique_depth => (5, "depth", 0, 127, "borg_caution.rs:1019", "Controls desperate unique depth."),
     caution_desperate_adjacent_down_distance => (2, "grids", 1, 100, "borg_caution.rs:1031", "Controls desperate adjacent down distance."),
     caution_retreat_max_distance => (10, "grids", 1, 100, "borg_caution.rs:1136", "Controls retreat max distance."),
@@ -186,7 +202,7 @@ parameters! {
     caution_retreat_surrounded_hp_tenths => (15, "tenths", 0, 100, "borg_caution.rs:1170", "Controls retreat surrounded hp tenths."),
     caution_retreat_low_level_hp_multiplier => (4, "multiplier", 0, 20, "borg_caution.rs:1179", "Controls retreat low level hp multiplier."),
     caution_retreat_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1197", "Controls retreat monster age."),
-    caution_back_surrounded_danger_tenths => (12, "tenths", 0, 100, "borg_caution.rs:1317", "Controls back surrounded danger tenths."),
+    caution_back_surrounded_danger_tenths => (12, "tenths", 0, 100, "borg_caution.rs:1340", "Controls back surrounded danger tenths."),
     caution_back_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1348", "Controls back monster age."),
     caution_back_fast_monster_distance => (2, "grids", 1, 100, "borg_caution.rs:1359", "Controls back fast monster distance."),
     caution_back_high_level => (35, "level", 1, 51, "borg_caution.rs:1385", "Controls back high level."),
@@ -195,15 +211,15 @@ parameters! {
     caution_back_low_level_danger_tenths => (8, "tenths", 0, 100, "borg_caution.rs:1397", "Controls back low level danger tenths."),
     caution_back_injured_level => (10, "level", 1, 51, "borg_caution.rs:1419", "Controls back injured level."),
     caution_back_freedom_depth => (85, "depth", 0, 127, "borg_caution.rs:1428", "Controls back freedom depth."),
-    caution_move_antisummon_delay => (50, "turns", 0, 100000, "borg_caution.rs:1767", "Controls move antisummon delay."),
-    caution_move_max_hp => (500, "hp", 0, 10000, "borg_caution.rs:1762", "Controls move max hp."),
-    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1794", "Controls one blow monster age."),
-    caution_nasty_light_timeout => (250, "turns", 0, 100000, "borg_caution.rs:1856", "Controls nasty light timeout."),
-    caution_questor_arrival_turns => (10, "turns", 0, 100000, "borg_caution.rs:1871", "Controls questor arrival turns."),
+    caution_move_antisummon_delay => (50, "turns", 0, 100000, "borg_caution.rs:1790", "Controls move antisummon delay."),
+    caution_move_max_hp => (500, "hp", 0, 10000, "borg_caution.rs:1793", "Controls move max hp."),
+    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1825", "Controls one blow monster age."),
+    caution_nasty_light_timeout => (250, "turns", 0, 100000, "borg_caution.rs:1887", "Controls nasty light timeout."),
+    caution_questor_arrival_turns => (10, "turns", 0, 100000, "borg_caution.rs:1901", "Controls questor arrival turns."),
     caution_escape_limit => (3, "count", 0, 1000, "borg_caution.rs:1912", "Controls escape limit."),
-    caution_escape_absolute_limit => (55, "count", 0, 1000, "borg_caution.rs:1856", "Controls escape absolute limit."),
-    caution_escape_limit_max_depth => (98, "depth", 0, 127, "borg_caution.rs:1858", "Controls escape limit max depth."),
-    caution_escape_flee_limit => (3, "count", 0, 1000, "borg_caution.rs:1864", "Controls escape flee limit."),
+    caution_escape_absolute_limit => (55, "count", 0, 1000, "borg_caution.rs:1936", "Controls escape absolute limit."),
+    caution_escape_limit_max_depth => (98, "depth", 0, 127, "borg_caution.rs:1938", "Controls escape limit max depth."),
+    caution_escape_flee_limit => (3, "count", 0, 1000, "borg_caution.rs:1944", "Controls escape flee limit."),
     caution_swap_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:2021", "Controls swap danger divisor."),
     caution_recall_prep_turns => (2, "turns", 0, 100000, "borg_caution.rs:2081", "Controls recall prep turns."),
     caution_restock_town_delay => (200, "turns", 0, 100000, "borg_caution.rs:2104", "Controls restock town delay."),
@@ -211,16 +227,31 @@ parameters! {
     caution_restock_food_count => (3, "count", 0, 1000, "borg_caution.rs:2132", "Controls restock food count."),
     caution_restock_fuel_count => (2, "count", 0, 1000, "borg_caution.rs:2133", "Controls restock fuel count."),
     caution_restock_level_delay => (400, "turns", 0, 100000, "borg_caution.rs:2135", "Controls restock level delay."),
-    caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1859", "Controls flee danger hp multiplier."),
-    caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1864", "Controls flee max level."),
-    caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1878", "Controls town flee max level."),
+    caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:2176", "Controls flee danger hp multiplier."),
+    caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:2181", "Controls flee max level."),
+    caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:2195", "Controls town flee max level."),
     town_recall_reserve => (0, "count", 0, 5, "borg_town_capability.rs:694", "#557: the live town planner (the capability model, and borg_town_utility.rs's need model) values this many Word of Recall as a requirement at the full trip weight each, at any depth (the walk a scroll saves is always worth less than that), so a shallow Borg buys and carries one; 0 = off (Recall valued only as the walk it saves, which at DL1-3 never beats saving gold)."),
     town_recall_value_percent => (100, "percent", 0, 10000, "borg_town_capability.rs:1371", "#557 (owner): the town planner values a Word of Recall at this percent of the walk it saves (both the capability model and borg_town_utility.rs's need model); 100 = as computed; higher makes a shallow Borg buy and keep one."),
     prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:202", "#557 (owner): a descent to this depth or deeper needs one Word of Recall carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
-    prepared_depth_plan => (0, "flag", 0, 1, "borg_prepared.rs:751", "#693 (owner): \"errands plan by default ... fit in borg.txt, with formula parameters\". 1 = the Borg is never prepared for, and climbs from, a level deeper than a cap set by the character level: up to prepared_depth_early_until_level, ceil(level / prepared_depth_early_levels_per_dl); past it, level - prepared_depth_late_levels_below (never shallower than the earlier value); none from level 50. Combined with borg_no_deeper and any borg_plan file by taking the smallest. Set per class in harness/borg_<class>.txt. 0 = off."),
-    prepared_depth_early_levels_per_dl => (3, "levels", 1, 50, "borg_prepared.rs:756", "#693: with prepared_depth_plan, character levels per dungeon level up to prepared_depth_early_until_level (3: CL1-3 DL1, CL4-6 DL2)."),
-    prepared_depth_early_until_level => (6, "level", 0, 50, "borg_prepared.rs:757", "#693: with prepared_depth_plan, the last character level of the early part of the cap."),
-    prepared_depth_late_levels_below => (3, "levels", 0, 50, "borg_prepared.rs:758", "#693: with prepared_depth_plan, past the early part the cap is this many levels below the character level."),
+    // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
+    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:675", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_dl2_min_hp => (30, "hp", 0, 10000, "borg_prepared.rs:229", "Minimum maximum HP from DL2, skipped in risky play."),
+    prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:243", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+    prepared_dl34_min_clevel => (4, "level", 0, 50, "borg_prepared.rs:247", "Minimum maximum character level from DL3, skipped in risky play.", [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+    prepared_cure_min => (2, "potions", 0, 99, "borg_prepared.rs:255", "Minimum sum of CLW, CSW and CCW from DL3 while below prepared_cure_until_clevel."),
+    prepared_cure_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:256", "Maximum character level at which the early combined-cure requirement stops applying."),
+    prepared_dl59_min_hp => (60, "hp", 0, 10000, "borg_prepared.rs:271", "Minimum maximum HP from DL5 while already in the dungeon, skipped in risky play.", [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+    prepared_dl59_min_clevel => (6, "level", 0, 50, "borg_prepared.rs:275", "Minimum maximum character level from DL5 while already in the dungeon, skipped in risky play.", [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+    prepared_mid_clevel_offset => (0, "levels", -50, 50, "borg_prepared.rs:318", "From DL10, require maximum character level to reach depth plus this offset when the mid-depth class gate applies.", [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+    prepared_mid_max_depth => (19, "depth", 0, 127, "borg_prepared.rs:316", "Last depth at which the mid-depth offset applies for classes other than Mage and Necromancer."),
+    prepared_mid_caster_max_clevel => (28, "level", 0, 50, "borg_prepared.rs:314", "Last maximum character level at which the mid-depth offset applies for Mage and Necromancer."),
+    prepared_deep_clevel_offset => (5, "levels", -50, 50, "borg_prepared.rs:386", "From DL21, require maximum character level to reach depth plus this offset within the deep character-level range.", [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+    prepared_deep_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:387", "First maximum character level at which the deep offset applies (C: 29 for Ranger).", [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+    prepared_deep_max_clevel => (38, "level", 0, 50, "borg_prepared.rs:385", "Last maximum character level at which the deep offset applies. The Mage and Necromancer depth ramp starts above this level.", [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+    prepared_deep_caster_ramp_max_clevel => (44, "level", 0, 50, "borg_prepared.rs:393", "Last maximum character level at which the Mage and Necromancer depth ramp applies."),
+    prepared_deep_caster_ramp_base_depth => (30, "depth", 0, 127, "borg_prepared.rs:394", "Base depth of the Mage and Necromancer ramp from DL21."),
+    prepared_deep_caster_ramp_depth_per_level => (2, "levels", 0, 127, "borg_prepared.rs:395", "Extra depth per character level above prepared_deep_max_clevel on the Mage and Necromancer ramp."),
+    prepared_dl34_plus_min_clevel => (40, "level", 0, 50, "borg_prepared.rs:438", "Minimum maximum character level from DL34, skipped in risky play."),
     town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:250", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
     town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:251", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
     town_fear_cure_count => (0, "count", 0, 100, "borg_town_capability.rs:649", "#516: while the character is not afraid, fear cures (Potion of Boldness, CURE:AFRAID) are valued linearly up to this many in the pack and not beyond (each of the first ones is worth more than on the curve, a further one nothing); 0 = the diminishing curve (the planner kept buying Boldness: 35 bought, 7 drunk on 18 games)."),
@@ -239,59 +270,59 @@ parameters! {
     town_missiles_percent => (-1, "percent_override", -1, 1000, "borg_town_capability.rs:407", "#666 (owner): the town plan's reserve of shots for the class's launcher, in percent of borg_town_w_ranger_missiles, for any class (set per class by shooting skill in harness/borg_<class>.txt). -1 = C: the Ranger's reserve only."),
     town_missiles_other_ranged_percent => (100, "percent", 0, 100, "borg_town_capability.rs:657", "#666 (owner): \"projectile buying is more important if they cannot get flasks of oil or wands\". With at least 5 flasks of oil and attack-wand charges (Magic Missile, Stinking Cloud) in the pack, the reserve of shots weighs this percent. 100 = no change."),
     town_devices_percent => (100, "percent", 0, 1000, "borg_town_capability.rs:562", "#666 (owner): a wand, rod or staff is worth this percent of what it supplies in the town plan (set per class by device skill in harness/borg_<class>.txt). 100 = as computed."),
-    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:4096", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
-    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:4097", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
+    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:4190", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
+    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:4195", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1892", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1893", "Controls stair danger divisor."),
-    caution_cornered => (0, "flag", 0, 1, "borg_caution.rs:3870", "#504: 1 = cornered (no Phase Door, teleport or escape, a monster near, danger at or above the HP) the Borg uses every buff it has (fear cure, Speed, Heroism, Berserk Strength, Blessing) regardless of their usual danger windows, reads Monster Confusion against an adjacent big monster, and a melee class neither retreats nor backs away; 0 = off."),
-    caution_cornered_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:3871", "#504: cornered when danger here x 10 >= current HP x this (10 = danger at or above the HP)."),
-    caution_cornered_radius => (2, "grids", 0, 100, "borg_caution.rs:3873", "#504: cornered only with a known monster within this many grids (a fight is on)."),
-    caution_breeder_boost_danger_tenths => (0, "tenths", 0, 1000, "borg_caution.rs:3922", "#504 (owner): standing against breeders with no easy escape, danger here at or above the HP x this / 10 makes the Borg use the cornered boosts (fear cure, Speed, Heroism, Berserk Strength, Blessing); 0 = off."),
-    caution_cornered_spell_fail => (25, "percent", 0, 100, "borg_caution.rs:3994", "#504: cornered, a buff spell (Haste Self, Heroism, Berserk Strength, Bless) is cast only at or below this failure percent, so a failing cast is not retried turn after turn under fire."),
-    caution_cornered_throw_first => (0, "choice", 0, 2, "borg_caution.rs:4054", "#719 (owner): \"if I am cornered I should throw missile and then boost myself\". 1 = while no monster is adjacent and an attack from range would do damage (borg_attack_estimate), the cornered boost waits and the Borg attacks first; it buffs once a monster is next to it or nothing reaches. 2 = the same for the hard breeder fight's boost (the Phase Door rule's boost already follows its own attack, so mode 2 adds nothing there). 0 = buff first (today)."),
-    caution_cornered_big_level_margin => (0, "levels", 0, 100, "borg_caution.rs:3934", "#504: an adjacent monster is big (Monster Confusion) when unique or its level exceeds the Borg's by more than this."),
+    caution_cornered => (0, "flag", 0, 1, "borg_caution.rs:3968", "#504: 1 = cornered (no Phase Door, teleport or escape, a monster near, danger at or above the HP) the Borg uses every buff it has (fear cure, Speed, Heroism, Berserk Strength, Blessing) regardless of their usual danger windows, reads Monster Confusion against an adjacent big monster, and a melee class neither retreats nor backs away; 0 = off."),
+    caution_cornered_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:3969", "#504: cornered when danger here x 10 >= current HP x this (10 = danger at or above the HP)."),
+    caution_cornered_radius => (2, "grids", 0, 100, "borg_caution.rs:3971", "#504: cornered only with a known monster within this many grids (a fight is on)."),
+    caution_breeder_boost_danger_tenths => (0, "tenths", 0, 1000, "borg_caution.rs:4016", "#504 (owner): standing against breeders with no easy escape, danger here at or above the HP x this / 10 makes the Borg use the cornered boosts (fear cure, Speed, Heroism, Berserk Strength, Blessing); 0 = off."),
+    caution_cornered_spell_fail => (25, "percent", 0, 100, "borg_caution.rs:4092", "#504: cornered, a buff spell (Haste Self, Heroism, Berserk Strength, Bless) is cast only at or below this failure percent, so a failing cast is not retried turn after turn under fire."),
+    caution_cornered_throw_first => (0, "choice", 0, 2, "borg_caution.rs:4148", "#719 (owner): \"if I am cornered I should throw missile and then boost myself\". 1 = while no monster is adjacent and an attack from range would do damage (borg_attack_estimate), the cornered boost waits and the Borg attacks first; it buffs once a monster is next to it or nothing reaches. 2 = the same for the hard breeder fight's boost (the Phase Door rule's boost already follows its own attack, so mode 2 adds nothing there). 0 = buff first (today)."),
+    caution_cornered_big_level_margin => (0, "levels", 0, 100, "borg_caution.rs:4028", "#504: an adjacent monster is big (Monster Confusion) when unique or its level exceeds the Borg's by more than this."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1980", "Controls breeder flee max level."),
-    caution_breeder_fight => (0, "flag", 0, 1, "borg_caution.rs:2748", "#503: 1 = with breeders on the level and no easy escape the Borg stands and fights (no breeder flee, no breeder scary level, no breeder 'no recall' flee), and below clevel 10 it hunts breeders while few (caution_breeder_hunt_max_count, per class since #558); 0 = off (C's behaviour), which also turns off recover_breeder_hunt_hp_percent and danger_hunt_breeder_no_acid_fear."),
-    caution_breeder_easy_escape_steps => (5, "grids", 0, 100, "borg_caution.rs:2749", "#503: a free staircase within this many grids (the engine's distance) is an easy escape from breeders (as is a Phase Door, teleport, Teleport Level, escape or Word of Recall)."),
-    caution_breeder_stand_radius => (5, "grids", 0, 100, "borg_caution.rs:3032", "#503: standing against breeders, with a breeder within this many grids and no other known monster within danger_monster_max_distance (on the larger axis distance, borg_danger's reach), the Borg neither retreats nor backs away from their danger (being surrounded still moves it)."),
-    caution_scary_named_monsters => (1, "flag", 0, 1, "borg_caution.rs:3622", "#503: 1 = the C Borg's hard-coded scary monsters by character level (squint-eyed rogue, Grip, Fang, small kobold, soldier, cutpurse, ..., Bullroarer, breeders, cave spider, ..., hounds, ancient dragons, Beorn, Dread) and the low-level door scares mark the level scary (leave and flee) until a new level; 0 = off (the resist-based scares stay). The data file's ignore lines (#621) don't depend on it."),
-    caution_town_never_scary => (0, "flag", 0, 1, "borg_caution.rs:3656", "#604 (owner): 1 = in town no monster makes the level scary (the named list, the damage rule, the resist scares): the Borg meets town monsters by its danger rules instead of fleeing to DL1; 0 = C."),
-    caution_town_scary_levels_less => (0, "levels", 0, 51, "borg_caution.rs:3615", "#622 (owner): a town monster (race level 0) on the data-file scary list (borg_scary_list; not the compiled C list) is scary for this many fewer character levels: clevel <= listed level - this. The list's order stays; 11 or more ends the town's list scares at once (the damage rule and resist scares still apply); 0 = the list as it is."),
-    caution_town_flee_no_worse => (0, "flag", 0, 1, "borg_caution.rs:3639", "#647: 1 = in town, while the level is scary or the Borg flees or leaves, the flow refuses no grid at most as dangerous as the Borg's own (its fear is at least the danger here): a low-level Borg next to a filthy street urchin found every path to the stairs refused and twitched for 70,000 turns. 0 = C (the flow's fear alone)."),
-    caution_scary_damage_percent => (0, "percent of max HP", 0, 1000, "borg_caution.rs:3686", "#505: a monster on the level is scary (leave and flee, as the named list) when one character turn of its melee (the average of its blows' random_value, base + dice + level bonus as randcalc AVERAGE, times its moves per character turn) takes at least this percent of max HP (owner: scary is a monster that can one- or two-shot you). Spells are not counted. 0 = off."),
-    caution_scary_stand => (0, "flag", 0, 1, "borg_caution.rs:2790", "#530: 1 = in the dungeon a monster that never moves is never scary, and a scary level is fled only while the escape is real: a free staircase within caution_breeder_easy_escape_steps or an escape item, or no scary monster awake and at least as fast as the character; otherwise the Borg stands and fights (the scare's leave and flee are withdrawn). 0 = C (flee every scary level)."),
-    caution_scary_latch => (1, "flag", 0, 1, "borg_caution.rs:2813", "#515: with caution_scary_stand, 1 = the C latch: a scary level stays scary until a new level; 0 = the flag is re-checked each scan of the known monsters, and when no scary monster remains the level stops being scary and the goals the scare set (leave, flee, flee to town) are withdrawn. Door scares stay latched."),
-    caution_stairs_leave_on_monster => (0, "flag", 0, 1, "borg_caution.rs:4160", "#614: 1 = in the dungeon, a Borg standing on a staircase that still needs to recover (HP or SP below the maximum) takes the stairs as soon as a monster threatens it (danger here at least caution_stairs_leave_danger_percent of the current HP), instead of fighting or reading an escape; never in town (review of #616: the town's down staircase made it dive into DL1); 0 = C."),
-    caution_stairs_leave_danger_percent => (10, "percent of current HP", 0, 1000, "borg_caution.rs:4159", "#614 (review of #616): with caution_stairs_leave_on_monster, the danger here, as a percent of the current HP, that counts as a monster threatening (at least 1): any danger above 0 fired at danger 1, a distant or harmless monster."),
-    caution_stairs_leave_down => (1, "flag", 0, 1, "borg_caution.rs:4166", "#614 (review of #616): with caution_stairs_leave_on_monster, 1 = take the staircase the Borg stands on, up or down (the owner: climb up/down); 0 = an up staircase only (a down one goes deeper)."),
-    caution_scary_unlatch_kill => (0, "flag", 0, 1, "borg_caution.rs:2799", "#590 (owner): with caution_scary_stand (the scary flag is decided after each scan), 1 = the level's scary flag clears once no scary monster is known and the last one known was killed (a monster of a race that made the level scary died since a scan last found one known), with caution_scary_latch on or off; forgetting the monster is not enough (it has not left the level). 0 = the latch decides (1: never on the level; 0: whenever none is known)."),
-    caution_scary_unlatch_calmed => (0, "flag", 0, 1, "borg_caution.rs:2800", "#593 (owner): with caution_scary_stand, 1 = the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan (caution_scary_hurt_percent, caution_scary_afraid; resist-based scares are never calmed), or one was killed, with caution_scary_latch on or off; forgetting the monster is not enough. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary. 0 = off."),
-    caution_scary_hurt_percent => (0, "percent of HP", 0, 100, "borg_caution.rs:3710", "#539: a named-list or damage-rule scary monster that has lost at least this percent of its HP (kill.injury, from the health bar) makes nothing scary; resist-based and door scares are not affected. With caution_scary_latch 0 a level whose scary monsters are all hurt stops being scary. 0 = off (C)."),
-    caution_scary_afraid => (0, "flag", 0, 1, "borg_caution.rs:3710", "#539: 1 = a named-list or damage-rule scary monster that is afraid (kill.afraid) makes nothing scary; resist-based and door scares are not affected. 0 = C."),
+    caution_breeder_fight => (0, "flag", 0, 1, "borg_caution.rs:2783", "#503: 1 = with breeders on the level and no easy escape the Borg stands and fights (no breeder flee, no breeder scary level, no breeder 'no recall' flee), and below clevel 10 it hunts breeders while few (caution_breeder_hunt_max_count, per class since #558); 0 = off (C's behaviour), which also turns off recover_breeder_hunt_hp_percent and danger_hunt_breeder_no_acid_fear."),
+    caution_breeder_easy_escape_steps => (5, "grids", 0, 100, "borg_caution.rs:2784", "#503: a free staircase within this many grids (the engine's distance) is an easy escape from breeders (as is a Phase Door, teleport, Teleport Level, escape or Word of Recall)."),
+    caution_breeder_stand_radius => (5, "grids", 0, 100, "borg_caution.rs:3133", "#503: standing against breeders, with a breeder within this many grids and no other known monster within danger_monster_max_distance (on the larger axis distance, borg_danger's reach), the Borg neither retreats nor backs away from their danger (being surrounded still moves it)."),
+    caution_scary_named_monsters => (1, "flag", 0, 1, "borg_caution.rs:3716", "#503: 1 = the C Borg's hard-coded scary monsters by character level (squint-eyed rogue, Grip, Fang, small kobold, soldier, cutpurse, ..., Bullroarer, breeders, cave spider, ..., hounds, ancient dragons, Beorn, Dread) and the low-level door scares mark the level scary (leave and flee) until a new level; 0 = off (the resist-based scares stay). The data file's ignore lines (#621) don't depend on it."),
+    caution_town_never_scary => (0, "flag", 0, 1, "borg_caution.rs:3750", "#604 (owner): 1 = in town no monster makes the level scary (the named list, the damage rule, the resist scares): the Borg meets town monsters by its danger rules instead of fleeing to DL1; 0 = C."),
+    caution_town_scary_levels_less => (0, "levels", 0, 51, "borg_caution.rs:3709", "#622 (owner): a town monster (race level 0) on the data-file scary list (borg_scary_list; not the compiled C list) is scary for this many fewer character levels: clevel <= listed level - this. The list's order stays; 11 or more ends the town's list scares at once (the damage rule and resist scares still apply); 0 = the list as it is."),
+    caution_town_flee_no_worse => (0, "flag", 0, 1, "borg_caution.rs:3733", "#647: 1 = in town, while the level is scary or the Borg flees or leaves, the flow refuses no grid at most as dangerous as the Borg's own (its fear is at least the danger here): a low-level Borg next to a filthy street urchin found every path to the stairs refused and twitched for 70,000 turns. 0 = C (the flow's fear alone)."),
+    caution_scary_damage_percent => (0, "percent of max HP", 0, 1000, "borg_caution.rs:3780", "#505: a monster on the level is scary (leave and flee, as the named list) when one character turn of its melee (the average of its blows' random_value, base + dice + level bonus as randcalc AVERAGE, times its moves per character turn) takes at least this percent of max HP (owner: scary is a monster that can one- or two-shot you). Spells are not counted. 0 = off."),
+    caution_scary_stand => (0, "flag", 0, 1, "borg_caution.rs:2821", "#530: 1 = in the dungeon a monster that never moves is never scary, and a scary level is fled only while the escape is real: a free staircase within caution_breeder_easy_escape_steps or an escape item, or no scary monster awake and at least as fast as the character; otherwise the Borg stands and fights (the scare's leave and flee are withdrawn). 0 = C (flee every scary level)."),
+    caution_scary_latch => (1, "flag", 0, 1, "borg_caution.rs:2836", "#515: with caution_scary_stand, 1 = the C latch: a scary level stays scary until a new level; 0 = the flag is re-checked each scan of the known monsters, and when no scary monster remains the level stops being scary and the goals the scare set (leave, flee, flee to town) are withdrawn. Door scares stay latched."),
+    caution_stairs_leave_on_monster => (0, "flag", 0, 1, "borg_caution.rs:4262", "#614: 1 = in the dungeon, a Borg standing on a staircase that still needs to recover (HP or SP below the maximum) takes the stairs as soon as a monster threatens it (danger here at least caution_stairs_leave_danger_percent of the current HP), instead of fighting or reading an escape; never in town (review of #616: the town's down staircase made it dive into DL1); 0 = C."),
+    caution_stairs_leave_danger_percent => (10, "percent of current HP", 0, 1000, "borg_caution.rs:4261", "#614 (review of #616): with caution_stairs_leave_on_monster, the danger here, as a percent of the current HP, that counts as a monster threatening (at least 1): any danger above 0 fired at danger 1, a distant or harmless monster."),
+    caution_stairs_leave_down => (1, "flag", 0, 1, "borg_caution.rs:4268", "#614 (review of #616): with caution_stairs_leave_on_monster, 1 = take the staircase the Borg stands on, up or down (the owner: climb up/down); 0 = an up staircase only (a down one goes deeper)."),
+    caution_scary_unlatch_kill => (0, "flag", 0, 1, "borg_caution.rs:2837", "#590 (owner): with caution_scary_stand (the scary flag is decided after each scan), 1 = the level's scary flag clears once no scary monster is known and the last one known was killed (a monster of a race that made the level scary died since a scan last found one known), with caution_scary_latch on or off; forgetting the monster is not enough (it has not left the level). 0 = the latch decides (1: never on the level; 0: whenever none is known)."),
+    caution_scary_unlatch_calmed => (0, "flag", 0, 1, "borg_caution.rs:2838", "#593 (owner): with caution_scary_stand, 1 = the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan (caution_scary_hurt_percent, caution_scary_afraid; resist-based scares are never calmed), or one was killed, with caution_scary_latch on or off; forgetting the monster is not enough. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary. 0 = off."),
+    caution_scary_hurt_percent => (0, "percent of HP", 0, 100, "borg_caution.rs:3804", "#539: a named-list or damage-rule scary monster that has lost at least this percent of its HP (kill.injury, from the health bar) makes nothing scary; resist-based and door scares are not affected. With caution_scary_latch 0 a level whose scary monsters are all hurt stops being scary. 0 = off (C)."),
+    caution_scary_afraid => (0, "flag", 0, 1, "borg_caution.rs:3804", "#539: 1 = a named-list or damage-rule scary monster that is afraid (kill.afraid) makes nothing scary; resist-based and door scares are not affected. 0 = C."),
     caution_flee_known_down_stairs => (0, "flag", 0, 1, "borg_caution.rs:1043", "#544 (A), narrowed in #548: 1 = fleeing (or the level scary) with no free up staircase known, the Borg walks to a known down staircase with the desperate flow (danger ignored, monster grids routed around), only when cornered (caution_flee_known_down_cornered) and within caution_flee_known_down_max_cost grids of flow; 0 = off (C's behaviour). Keeping the stairs through the stuck jumpstart is caution_jumpstart_keep_stairs."),
     caution_flee_known_down_cornered => (1, "flag", 0, 1, "borg_caution.rs:1048", "#548: with caution_flee_known_down_stairs, 1 = only when cornered: a known monster that can move is adjacent (distance 1, diagonals included; #504 uses caution_cornered_radius), no Phase Door, teleport, Teleport Level or escape in the pack (items; spells are not counted), and the danger here at or above the HP or the Borg surrounded; 0 = any flight (#545 as merged: it fired on 13 of 18 classes-18 games, up to 721 times)."),
     caution_flee_known_down_max_cost => (40, "steps of flow", 0, 250, "borg_caution.rs:1049", "#548: with caution_flee_known_down_stairs, the known down staircase is taken only within this many steps of flow (the flow's depth from the staircases: the walk around walls, not the straight-line distance); 0 = any distance (#545 as merged)."),
-    caution_jumpstart_keep_stairs => (0, "flag", 0, 1, "borg_caution.rs:4505", "#548 (K of #544, split from caution_flee_known_down_stairs): 1 = the stuck jumpstart (bravery boost 3) keeps the known up and down staircases instead of forgetting them; 0 = C (forgets them). Usually wanted with caution_flee_known_down_stairs: in the worm room (priest-1055640847) the narrowed flight escapes only with it. Alone it did not save that game (still dead at turn 91,153)."),
-    caution_twitch_avoid_lava => (0, "flag", 0, 1, "borg_caution.rs:2960", "#597: 1 = the twitch's random step (borg_twitchy, borg_flow_misc.rs) never chooses lava without fire immunity (100 + 1d100 fire damage per step); if every direction is wall or lava the Borg rests. 0 = C (only walls are refused)."),
-    caution_stair_parked_fallback => (0, "flag", 0, 1, "borg_caution.rs:2967", "#597: 1 = a stair flow that finds a monster marked on every known staircase of its kind (enqueue_stairs, borg_flow_stairs.rs) flows to them anyway, so the only known staircase is never refused for a monster on it, harmless or long gone. 0 = C (a parked staircase is skipped)."),
-    caution_breeder_exit => (0, "flag", 0, 1, "borg_caution.rs:3065", "#544 (B): 1 = only breeders near, one adjacent, and danger here at or above the HP or surrounded: the Borg walks with the desperate flow to the nearest known chokepoint (a grid whose passable known neighbours form at least two separate groups: a corridor or doorway; unknown grids count as walls) at least caution_breeder_exit_distance grids from every known breeder; 0 = off."),
-    caution_breeder_exit_distance => (6, "grids", 1, 100, "borg_caution.rs:3064", "#544 (B): an exit grid is at least this many grids (the engine's distance) from every known breeder."),
-    caution_breeder_avoid => (0, "flag", 0, 1, "borg_caution.rs:3177", "#556: 1 = every grid a breeder is seen on (a moving breeder leaves a trail of marks, one per grid) is remembered for caution_breeder_avoid_turns; every flow but a kill flow (the stair and flee flows, exploration, items, the breeder exit) treats a grid within caution_breeder_avoid_radius of one as impassable, except the grids next to the Borg (its first step), so it neither walks into a colony nor back into one it lost from view; and a Phase Door landing grid there counts as scary. 0 = off (C's behaviour)."),
-    caution_breeder_avoid_radius => (1, "grids", 0, 10, "borg_caution.rs:3179", "#556: with caution_breeder_avoid, a grid within this many grids (the engine's distance) of a remembered breeder is avoided; 0 = only the breeder's own grid."),
-    caution_breeder_avoid_turns => (50, "borg turns", 1, 100000, "borg_caution.rs:3177", "#556: with caution_breeder_avoid, a breeder's grid is remembered this many Borg turns (`time.now`, one per think) after the breeder was last known there."),
-    caution_breeder_avoid_fight_through => (1, "flag", 0, 1, "borg_caution.rs:3435", "#556 (owner 2026-11-19: \"fallback to fight our way out\"): with caution_breeder_avoid, 1 = a flight whose stair flow finds no route around the remembered breeders takes the plain route through them, and for caution_breeder_through_turns after, retreat and back-away stand down while the danger here is below the HP (the Borg kills what blocks the way and goes on); 0 = no route, the flight looks elsewhere."),
-    caution_breeder_through_turns => (5, "borg turns", 0, 1000, "borg_caution.rs:3444", "#556: with caution_breeder_avoid_fight_through, retreat and back-away stand down this many Borg turns after the flight last took the route through the breeders (the flow is recomputed after every attack)."),
-    caution_breeder_stuck_turns => (20, "borg turns", 0, 1000, "borg_caution.rs:3418", "#556: with caution_breeder_avoid, when the Borg is stuck (the dungeon think reaches its bravery boosts) while remembered breeders block its flows, the marks are ignored for this many Borg turns, so it can fight its way out instead of staying boxed in; 0 = never (the marks hold even when stuck)."),
-    caution_breeder_policy => (-1, "mode", -1, 5, "borg_caution.rs:3220", "#722 (owner): the breeder policy, one setting for the breeder switches. -1 = the switches as set (caution_breeder_fight, danger_hunt_breeder_no_acid_fear, recover_rest_breeders, caution_breeder_stoppable, caution_breeder_avoid, caution_breeder_exit). 0 = C (all off). 1 = stand without an easy escape and hunt few breeders below CL10 (#503, #558). 2 = and no rest while breeders are known (#644). 3 = and kill them first while the kills outpace the breeding, at any count and level (#556); the level is lost once more breeders are known than caution_breeder_hunt_max_count (per class) or the breeding outpaces the kills; on a lost level the Borg searches for stairs, and reads Recall after caution_breeder_lost_recall_turns. 4 = and paths avoid colonies (#556). 5 = and walk out of a breeder room (#544)."),
-    caution_breeder_lost_recall_turns => (500, "game turns", 0, 100000, "borg_caution.rs:3320", "#722 (owner: \"search for stairs first, but if paths are blocked by breeders, recall at some point\"): with caution_breeder_policy 3 or more, this many game turns after the level was lost to breeders the Borg reads Word of Recall, stairs known or not; until then a lost level's flight searches for stairs and does not read Recall. 0 = Recall at once."),
-    caution_breeder_stoppable => (0, "flag", 0, 1, "borg_caution.rs:3214", "#556 (owner 2026-11-19: \"kill them first and only escape if it is not possible\"): 1 = on a level with breeders the Borg stands and hunts them (breeder_stand and breeder_hunt, at any count and character level, escape items or not) while the breeding can be stopped: the known breeders' expected births a turn (the engine's 1 in 8k while k < 4, monster speed against the character's), times caution_breeder_stoppable_births_percent, below the Borg's kills a turn (every attack it has: the attack planner's dry run, borg_attack_estimate, and the kills of the attack it would choose, for each monster hit its true damage over that monster's HP at most 1; the random state is restored after the dry run). A think is judged only when the planner has something to attack. With the danger where it stands at or above the HP it does not stand that think. While no staircase is known it fights on even then (a flight with nowhere to go). Once the breeding outpaces the kills, the level is lost to them until a new one, and the breeder flees act (with caution_breeder_avoid, the flight avoids the colony). 0 = #503's stand (no easy escape) and #558's hunt (caution_breeder_hunt_max_count, below clevel 10)."),
-    caution_breeder_stoppable_births_percent => (200, "percent", 1, 10000, "borg_caution.rs:3233", "#556: with caution_breeder_stoppable, the expected births a turn are weighed by this percent against the kills a turn (200 = the Borg must kill twice as fast as they breed: it walks between them and does not see them all)."),
-    caution_breeder_stoppable_confirm => (5, "thinks", 1, 1000, "borg_caution.rs:3237", "#556: with caution_breeder_stoppable, the level is lost to the breeders only after the breeding outpaced the kills on this many judged thinks in a row (a think is judged only when the attack planner has something to attack)."),
-    caution_stair_scum_threat => (0, "flag", 0, 1, "borg_caution.rs:3542", "#549: 1 = after fleeing town, no stair scum (grabbing DL1 items near the stairs before going back up) while the level is scary, the danger here is above caution_stair_scum_danger, or the HP is below the maximum: the Borg goes straight back up (and the scum's own GOAL_TAKE flow is cancelled). The HP condition is the broad one: any injury stops the scum; 0 = off (C's behaviour)."),
-    caution_stair_scum_danger => (0, "danger", 0, 10000, "borg_caution.rs:3542", "#549: with caution_stair_scum_threat, a danger here above this stops the stair scum."),
-    caution_rising_hold_flee_descent => (0, "flag", 0, 1, "borg_caution.rs:3573", "#557: 1 = while rising (a return trip on foot) in the dungeon, a flight takes no down staircase (stair_more, the both-stairs flee flow, the down-stairs flee flow) unless the danger here is at or above the HP; with birth_connect_stairs each such flight lands on DL+1's up staircase and the climb restarts on a fresh level; 0 = off (C's behaviour)."),
-    caution_rising_hold_min_hp_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:3579", "#753: with caution_rising_hold_flee_descent, a fleeing Borg with less than this percent of its max HP is not held off a descent while rising (214960633: held at 2 of 47 HP on a down staircase, the danger there 0, next to a grey mold). 0 = today."),
-    caution_breeder_hunt_max_count => (4, "count", 0, 1000, "borg_caution.rs:3219", "#503, #558: below clevel 10 the Borg hunts breeders while at most this many are known on the level (with caution_breeder_fight); a class value per class (the class files), 0 = that class does not hunt. Before #558 only Warriors, Paladins, Rogues and Blackguards hunted."),
+    caution_jumpstart_keep_stairs => (0, "flag", 0, 1, "borg_caution.rs:4602", "#548 (K of #544, split from caution_flee_known_down_stairs): 1 = the stuck jumpstart (bravery boost 3) keeps the known up and down staircases instead of forgetting them; 0 = C (forgets them). Usually wanted with caution_flee_known_down_stairs: in the worm room (priest-1055640847) the narrowed flight escapes only with it. Alone it did not save that game (still dead at turn 91,153)."),
+    caution_twitch_avoid_lava => (0, "flag", 0, 1, "borg_caution.rs:2992", "#597: 1 = the twitch's random step (borg_twitchy, borg_flow_misc.rs) never chooses lava without fire immunity (100 + 1d100 fire damage per step); if every direction is wall or lava the Borg rests. 0 = C (only walls are refused)."),
+    caution_stair_parked_fallback => (0, "flag", 0, 1, "borg_caution.rs:2999", "#597: 1 = a stair flow that finds a monster marked on every known staircase of its kind (enqueue_stairs, borg_flow_stairs.rs) flows to them anyway, so the only known staircase is never refused for a monster on it, harmless or long gone. 0 = C (a parked staircase is skipped)."),
+    caution_breeder_exit => (0, "flag", 0, 1, "borg_caution.rs:3159", "#544 (B): 1 = only breeders near, one adjacent, and danger here at or above the HP or surrounded: the Borg walks with the desperate flow to the nearest known chokepoint (a grid whose passable known neighbours form at least two separate groups: a corridor or doorway; unknown grids count as walls) at least caution_breeder_exit_distance grids from every known breeder; 0 = off."),
+    caution_breeder_exit_distance => (6, "grids", 1, 100, "borg_caution.rs:3162", "#544 (B): an exit grid is at least this many grids (the engine's distance) from every known breeder."),
+    caution_breeder_avoid => (0, "flag", 0, 1, "borg_caution.rs:3271", "#556: 1 = every grid a breeder is seen on (a moving breeder leaves a trail of marks, one per grid) is remembered for caution_breeder_avoid_turns; every flow but a kill flow (the stair and flee flows, exploration, items, the breeder exit) treats a grid within caution_breeder_avoid_radius of one as impassable, except the grids next to the Borg (its first step), so it neither walks into a colony nor back into one it lost from view; and a Phase Door landing grid there counts as scary. 0 = off (C's behaviour)."),
+    caution_breeder_avoid_radius => (1, "grids", 0, 10, "borg_caution.rs:3280", "#556: with caution_breeder_avoid, a grid within this many grids (the engine's distance) of a remembered breeder is avoided; 0 = only the breeder's own grid."),
+    caution_breeder_avoid_turns => (50, "borg turns", 1, 100000, "borg_caution.rs:3275", "#556: with caution_breeder_avoid, a breeder's grid is remembered this many Borg turns (`time.now`, one per think) after the breeder was last known there."),
+    caution_breeder_avoid_fight_through => (1, "flag", 0, 1, "borg_caution.rs:3529", "#556 (owner 2026-11-19: \"fallback to fight our way out\"): with caution_breeder_avoid, 1 = a flight whose stair flow finds no route around the remembered breeders takes the plain route through them, and for caution_breeder_through_turns after, retreat and back-away stand down while the danger here is below the HP (the Borg kills what blocks the way and goes on); 0 = no route, the flight looks elsewhere."),
+    caution_breeder_through_turns => (5, "borg turns", 0, 1000, "borg_caution.rs:3538", "#556: with caution_breeder_avoid_fight_through, retreat and back-away stand down this many Borg turns after the flight last took the route through the breeders (the flow is recomputed after every attack)."),
+    caution_breeder_stuck_turns => (20, "borg turns", 0, 1000, "borg_caution.rs:3512", "#556: with caution_breeder_avoid, when the Borg is stuck (the dungeon think reaches its bravery boosts) while remembered breeders block its flows, the marks are ignored for this many Borg turns, so it can fight its way out instead of staying boxed in; 0 = never (the marks hold even when stuck)."),
+    caution_breeder_policy => (-1, "mode", -1, 5, "borg_caution.rs:3321", "#722 (owner): the breeder policy, one setting for the breeder switches. -1 = the switches as set (caution_breeder_fight, danger_hunt_breeder_no_acid_fear, recover_rest_breeders, caution_breeder_stoppable, caution_breeder_avoid, caution_breeder_exit). 0 = C (all off). 1 = stand without an easy escape and hunt few breeders below CL10 (#503, #558). 2 = and no rest while breeders are known (#644). 3 = and kill them first while the kills outpace the breeding, at any count and level (#556); the level is lost once more breeders are known than caution_breeder_hunt_max_count (per class) or the breeding outpaces the kills; on a lost level the Borg searches for stairs, and reads Recall after caution_breeder_lost_recall_turns. 4 = and paths avoid colonies (#556). 5 = and walk out of a breeder room (#544)."),
+    caution_breeder_lost_recall_turns => (500, "game turns", 0, 100000, "borg_caution.rs:3418", "#722 (owner: \"search for stairs first, but if paths are blocked by breeders, recall at some point\"): with caution_breeder_policy 3 or more, this many game turns after the level was lost to breeders the Borg reads Word of Recall, stairs known or not; until then a lost level's flight searches for stairs and does not read Recall. 0 = Recall at once."),
+    caution_breeder_stoppable => (0, "flag", 0, 1, "borg_caution.rs:3308", "#556 (owner 2026-11-19: \"kill them first and only escape if it is not possible\"): 1 = on a level with breeders the Borg stands and hunts them (breeder_stand and breeder_hunt, at any count and character level, escape items or not) while the breeding can be stopped: the known breeders' expected births a turn (the engine's 1 in 8k while k < 4, monster speed against the character's), times caution_breeder_stoppable_births_percent, below the Borg's kills a turn (every attack it has: the attack planner's dry run, borg_attack_estimate, and the kills of the attack it would choose, for each monster hit its true damage over that monster's HP at most 1; the random state is restored after the dry run). A think is judged only when the planner has something to attack. With the danger where it stands at or above the HP it does not stand that think. While no staircase is known it fights on even then (a flight with nowhere to go). Once the breeding outpaces the kills, the level is lost to them until a new one, and the breeder flees act (with caution_breeder_avoid, the flight avoids the colony). 0 = #503's stand (no easy escape) and #558's hunt (caution_breeder_hunt_max_count, below clevel 10)."),
+    caution_breeder_stoppable_births_percent => (200, "percent", 1, 10000, "borg_caution.rs:3362", "#556: with caution_breeder_stoppable, the expected births a turn are weighed by this percent against the kills a turn (200 = the Borg must kill twice as fast as they breed: it walks between them and does not see them all)."),
+    caution_breeder_stoppable_confirm => (5, "thinks", 1, 1000, "borg_caution.rs:3366", "#556: with caution_breeder_stoppable, the level is lost to the breeders only after the breeding outpaced the kills on this many judged thinks in a row (a think is judged only when the attack planner has something to attack)."),
+    caution_stair_scum_threat => (0, "flag", 0, 1, "borg_caution.rs:3636", "#549: 1 = after fleeing town, no stair scum (grabbing DL1 items near the stairs before going back up) while the level is scary, the danger here is above caution_stair_scum_danger, or the HP is below the maximum: the Borg goes straight back up (and the scum's own GOAL_TAKE flow is cancelled). The HP condition is the broad one: any injury stops the scum; 0 = off (C's behaviour)."),
+    caution_stair_scum_danger => (0, "danger", 0, 10000, "borg_caution.rs:3640", "#549: with caution_stair_scum_threat, a danger here above this stops the stair scum."),
+    caution_rising_hold_flee_descent => (0, "flag", 0, 1, "borg_caution.rs:3667", "#557: 1 = while rising (a return trip on foot) in the dungeon, a flight takes no down staircase (stair_more, the both-stairs flee flow, the down-stairs flee flow) unless the danger here is at or above the HP; with birth_connect_stairs each such flight lands on DL+1's up staircase and the climb restarts on a fresh level; 0 = off (C's behaviour)."),
+    caution_rising_hold_min_hp_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:3673", "#753: with caution_rising_hold_flee_descent, a fleeing Borg with less than this percent of its max HP is not held off a descent while rising (214960633: held at 2 of 47 HP on a down staircase, the danger there 0, next to a grey mold). 0 = today."),
+    caution_breeder_hunt_max_count => (4, "count", 0, 1000, "borg_caution.rs:3320", "#503, #558: below clevel 10 the Borg hunts breeders while at most this many are known on the level (with caution_breeder_fight); a class value per class (the class files), 0 = that class does not hunt. Before #558 only Warriors, Paladins, Rogues and Blackguards hunted."),
     recover_breeder_hunt_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:899", "#558 (owner): when a rest is due, HP is at least this percent of max HP and the Borg is fit to hunt breeders now (the hunt applies: caution_breeder_fight on and caution_breeder_hunt_max_count; the Borg is not ignoring the breeders, fleeing or leaving, and no scary monster is on the level; a Mage or Necromancer has half its mana; it is not hungry, confused, blind, hallucinating, afraid or stunned; a known breeder passes the hunt walk's danger test, but not its leash to the stairs or reachability), the Borg does not rest (breeders multiply while it rests) and hunts them first. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For an acid breeder (a worm mass) the danger test passes only with danger_hunt_breeder_no_acid_fear on; 0 = off (C's rest)."),
     recover_unseen_attack_turns => (0, "game turns", 0, 100000, "borg_recover.rs:765", "#697 (owner): an attack by a monster the Borg cannot see (\"Something/Someone ... you\") counts for this many game turns: no rest within recover_unseen_attack_distance of where it struck; hurt, the Borg walks to a corridor (else any known grid) at least that far and rests there; struck again that far from the last attack (it followed), or nowhere to walk, it leaves the level. 0 = C (the attacker is ignored: no monster, no danger)."),
     recover_unseen_attack_distance => (10, "grids", 1, 100, "borg_recover.rs:768", "#697: the distance from an unseen attack within which the Borg does not rest, the distance it walks away, and the distance at which a later attack means the attacker followed it."),
@@ -321,27 +352,29 @@ parameters! {
     caution_reserve_unique_loss => (600, "hp", 0, 10000, "borg_caution.rs:2157", "Controls reserve unique loss."),
     caution_reserve_unique_depth => (85, "depth", 0, 127, "borg_caution.rs:2159", "Controls reserve unique depth."),
     caution_recall_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:2193", "Controls recall danger multiplier."),
-    caution_recall_wait_as_usual => (0, "flag", 0, 1, "borg_caution.rs:2985", "#603 (owner): 1 = while Word of Recall counts down the Borg plays by its ordinary rules: it flees and leaves by stairs or Teleport Level (the countdown keeps running on the new level), takes stairs down in caution, counts a staircase as an escape, uses the ordinary escape and attack decisions instead of buy_time_for_recall, and handles a scary level as without Recall; only on DL2 and deeper (in town and on DL1 a staircase crosses between town and dungeon, and the Recall would take the Borg back); resting or waiting when safe is kept. 0 = C (the Recall-only rules; the caution_recall_* buy-time settings apply only at 0)."),
-    caution_stair_danger_max_level => (49, "level", 1, 51, "borg_caution.rs:4195", "Controls stair danger max level."),
-    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:4220", "Controls stair min food."),
-    caution_sell_max_level => (25, "level", 1, 51, "borg_caution.rs:4233", "Controls sell max level."),
-    caution_sell_max_gold => (25000, "gold", 0, 1000000, "borg_caution.rs:4192", "Controls sell max gold."),
-    caution_sell_min_count => (13, "count", 0, 1000, "borg_caution.rs:4193", "Controls sell min count."),
-    caution_recall_mana_maxsp => (60, "sp", 0, 10000, "borg_caution.rs:4361", "Controls recall mana maxsp."),
-    caution_recall_mana_divisor => (4, "divisor", 1, 100, "borg_caution.rs:4362", "Controls recall mana divisor."),
-    caution_recall_phase_tolerance => (50, "percent", 0, 100, "borg_caution.rs:4364", "Controls recall phase tolerance."),
-    caution_recall_phase_horizon => (1, "turns", 1, 100000, "borg_caution.rs:4365", "Controls recall phase horizon."),
-    caution_recall_phase_fail => (30, "percent", 0, 100, "borg_caution.rs:4370", "Controls recall phase fail."),
-    caution_recall_portal_fail => (30, "percent", 0, 100, "borg_caution.rs:4382", "Controls recall portal fail."),
-    caution_recall_cure_loss => (100, "hp", 0, 10000, "borg_caution.rs:4399", "Controls recall cure loss."),
-    caution_recall_cure_min_loss_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:4400", "#749: waiting for Recall in danger, C buys time with a Cure Light or Serious Wounds while less than caution_recall_cure_loss (100) HP are lost, which at low level includes full HP; above 0, only with at least this percent of the max HP lost. 0 = C."),
-    caution_recall_heal_loss => (150, "hp", 0, 10000, "borg_caution.rs:4368", "Controls recall heal loss."),
+    caution_recall_wait_as_usual => (0, "flag", 0, 1, "borg_caution.rs:3017", "#603 (owner): 1 = while Word of Recall counts down the Borg plays by its ordinary rules: it flees and leaves by stairs or Teleport Level (the countdown keeps running on the new level), takes stairs down in caution, counts a staircase as an escape, uses the ordinary escape and attack decisions instead of buy_time_for_recall, and handles a scary level as without Recall; only on DL2 and deeper (in town and on DL1 a staircase crosses between town and dungeon, and the Recall would take the Borg back); resting or waiting when safe is kept. 0 = C (the Recall-only rules; the caution_recall_* buy-time settings apply only at 0)."),
+    caution_recall_pending_escape => (0, "flag", 0, 1, "borg_caution.rs:2871", "#754 (owner): 1 = a Word of Recall already counting down is an escape that is running: on a scary level the Borg keeps its flight instead of #530's 'no escape: standing and fighting' (#530 counts only a Recall still in the pack); #603's gates still hold the flee flows and down stairs, but an up staircase reached on foot is taken (on DL1: town, where the Recall fires and returns the Borg to its maximum depth). 0 = #530."),
+    caution_recall_wait_no_explore => (0, "flag", 0, 1, "borg_caution.rs:3052", "#754 (owner): 1 = while Word of Recall counts down in the dungeon the Borg does not explore or chase far monsters and objects (the 'Explore the dungeon' block of borg_think_dungeon): the think ends there; it rests for Recall where it stands (caution_recall_rest_turns) when borg_check_rest allows it and nothing threatens it there, else stays still one turn. 0 = C (explore while waiting; the wait comes after exploration)."),
+    caution_stair_danger_max_level => (49, "level", 1, 51, "borg_caution.rs:4297", "Controls stair danger max level."),
+    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:4309", "Controls stair min food."),
+    caution_sell_max_level => (25, "level", 1, 51, "borg_caution.rs:4317", "Controls sell max level."),
+    caution_sell_max_gold => (25000, "gold", 0, 1000000, "borg_caution.rs:4318", "Controls sell max gold."),
+    caution_sell_min_count => (13, "count", 0, 1000, "borg_caution.rs:4319", "Controls sell min count."),
+    caution_recall_mana_maxsp => (60, "sp", 0, 10000, "borg_caution.rs:4463", "Controls recall mana maxsp."),
+    caution_recall_mana_divisor => (4, "divisor", 1, 100, "borg_caution.rs:4464", "Controls recall mana divisor."),
+    caution_recall_phase_tolerance => (50, "percent", 0, 100, "borg_caution.rs:4464", "Controls recall phase tolerance."),
+    caution_recall_phase_horizon => (1, "turns", 1, 100000, "borg_caution.rs:4465", "Controls recall phase horizon."),
+    caution_recall_phase_fail => (30, "percent", 0, 100, "borg_caution.rs:4470", "Controls recall phase fail."),
+    caution_recall_portal_fail => (30, "percent", 0, 100, "borg_caution.rs:4471", "Controls recall portal fail."),
+    caution_recall_cure_loss => (100, "hp", 0, 10000, "borg_caution.rs:4484", "Controls recall cure loss."),
+    caution_recall_cure_min_loss_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:4485", "#749: waiting for Recall in danger, C buys time with a Cure Light or Serious Wounds while less than caution_recall_cure_loss (100) HP are lost, which at low level includes full HP; above 0, only with at least this percent of the max HP lost. 0 = C."),
+    caution_recall_heal_loss => (150, "hp", 0, 10000, "borg_caution.rs:4494", "Controls recall heal loss."),
     caution_retreat_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1145", "Number of Borg turns of danger evaluated along a retreat."),
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1373", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1950", "Number of Borg turns of danger evaluated at the current grid."),
     caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:2056", "Number of rest turns queued while waiting safely for recall."),
-    caution_recall_rest_monster_turns => (0, "game turns", 0, 100000, "borg_caution.rs:4266", "#567: while Word of Recall is active, no long rest (Resting for Recall, Waiting for Recall, or the wait with no light) if an awake monster was known within caution_recall_rest_monster_distance in the last this many game turns; the Borg stays still one turn at a time instead (','), so each think sees a returning monster. 0 = off (C)."),
-    caution_recall_rest_monster_distance => (20, "grids", 1, 100, "borg_caution.rs:4270", "#567: with caution_recall_rest_monster_turns, how near an awake monster must be (the engine's distance) to hold the Recall rest."),
+    caution_recall_rest_monster_turns => (0, "game turns", 0, 100000, "borg_caution.rs:4364", "#567: while Word of Recall is active, no long rest (Resting for Recall, Waiting for Recall, or the wait with no light) if an awake monster was known within caution_recall_rest_monster_distance in the last this many game turns; the Borg stays still one turn at a time instead (','), so each think sees a returning monster. 0 = off (C)."),
+    caution_recall_rest_monster_distance => (20, "grids", 1, 100, "borg_caution.rs:4367", "#567: with caution_recall_rest_monster_turns, how near an awake monster must be (the engine's distance) to hold the Recall rest."),
     // #457: outmatched healing, a study flag. 0 = the vendored behaviour exactly.
     caution_heal_when_outmatched => (0, "flag", 0, 1, "borg_caution.rs:229", "1 = after every escape declined, a hurt Borg whose danger reaches its HP drinks CLW/CSW/CCW instead of attacking; 0 = off."),
     caution_heal_outmatched_min_loss => (50, "percent", 0, 100, "borg_caution.rs:233", "Minimum percent of maximum HP lost before outmatched healing applies (only when caution_heal_when_outmatched is 1)."),
@@ -2320,9 +2353,17 @@ pub(crate) fn set_class(class: i32) {
     CLASS.store(class, std::sync::atomic::Ordering::Relaxed);
 }
 
+fn current_class() -> Option<usize> {
+    let class = usize::try_from(CLASS.load(std::sync::atomic::Ordering::Relaxed)).ok()?;
+    (class < CLASSES.len()).then_some(class)
+}
+
 fn pick(r: &Resolved) -> (i32, &'static str) {
-    let class = CLASS.load(std::sync::atomic::Ordering::Relaxed);
-    usize::try_from(class).ok().and_then(|c| r.class.get(c).copied().flatten()).unwrap_or((r.value, r.origin))
+    current_class().and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
+}
+
+fn compiled_default(spec: &Spec) -> i32 {
+    spec.class_defaults.and_then(|defaults| current_class().map(|class| defaults[class])).unwrap_or(spec.default)
 }
 
 pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
@@ -2330,7 +2371,7 @@ pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
         return (v, "caution_breeder_policy");
     }
     let i = param as usize;
-    VALUES.get().map_or((SPECS[i].default, "default"), |values| pick(&values[i]))
+    VALUES.get().map_or_else(|| (compiled_default(&SPECS[i]), "default"), |values| pick(&values[i]))
 }
 
 /// Pure lookup after init: the current class's value when it has one, else
@@ -2340,7 +2381,7 @@ pub(crate) fn value(param: Param) -> i32 {
         return v;
     }
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i]).0)
+    VALUES.get().map_or_else(|| compiled_default(&SPECS[i]), |values| pick(&values[i]).0)
 }
 
 /// borg-reborn-rs (#722): the layer of `caution_breeder_policy` that turns
@@ -2430,6 +2471,16 @@ fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i3
     split_name(&lower)
 }
 
+/// #768: allow an existing profile to load after the errands cap was removed.
+fn retired_depth_cap(name: &str) -> bool {
+    let base = match name.rsplit_once("__").or_else(|| name.rsplit_once('@')) {
+        Some((base, class)) if CLASSES.contains(&class) => base,
+        _ => name,
+    };
+    matches!(base, "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
+        | "prepared_depth_early_until_level" | "prepared_depth_late_levels_below")
+}
+
 type Key = (&'static str, Option<usize>);
 
 fn parse<'a>(
@@ -2437,6 +2488,7 @@ fn parse<'a>(
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
+    let mut had_depth_cap = false;
     // (parameter, class) -> (raw value, alias sentinel)
     let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
@@ -2448,6 +2500,10 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
+        if retired_depth_cap(name) {
+            had_depth_cap = true;
+            continue;
+        }
         let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
         if file.insert((spec.name, class), (value.trim().to_string(), sentinel)).is_some() {
             return Err(format!("duplicate borg_param_{name}"));
@@ -2455,10 +2511,17 @@ fn parse<'a>(
     }
     let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (name, value) in env {
+        if *name == name.to_ascii_uppercase() && retired_depth_cap(&name.to_ascii_lowercase()) {
+            had_depth_cap = true;
+            continue;
+        }
         let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
         if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
             return Err(format!("duplicate BORG_PARAM_{name}"));
         }
+    }
+    if had_depth_cap {
+        eprintln!("borg-reborn-rs: ignoring retired preparedness depth cap settings (#768)");
     }
     let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
         let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
@@ -2480,13 +2543,15 @@ fn parse<'a>(
         for (c, class) in CLASSES.iter().enumerate() {
             let found = envs.get(&(spec.name, Some(c))).map(|v| (v, "environment"))
                 .or_else(|| file.get(&(spec.name, Some(c))).map(|v| (v, "borg.txt")));
-            if let Some(((raw, sentinel), origin)) = found {
+            if let Some(((raw, sentinel), class_origin)) = found {
                 let raw = raw.trim();
                 // An alias at its old "general value" sentinel sets nothing.
                 if sentinel.is_some() && raw.parse::<i32>().ok() == *sentinel {
                     continue;
                 }
-                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin });
+                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin: class_origin });
+            } else if let Some(defaults) = spec.class_defaults.filter(|_| origin == "default") {
+                class_values.insert(*class, ClassValue { value: defaults[c], origin: "default" });
             }
         }
         settings.push(Setting { spec, value, origin, class_values });
@@ -2666,7 +2731,10 @@ mod tests {
                      "borg_param_town_heal_curve_scale_percent_mage = 0",
                      "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
             let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
-            assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
+            assert!(
+                values.iter().all(|s| s.class_values.values().all(|v| v.origin == "default")),
+                "{text}"
+            );
         }
         // #534 review: environment names stay upper case.
         let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
@@ -2709,6 +2777,62 @@ mod tests {
                      "defend_shield_low_fail_adjustment"] {
             assert!(parse(&format!("borg_param_{name} = 1"), &BTreeMap::new(), SPECS).is_err());
         }
+    }
+
+    #[test]
+    fn dive_gates_ship_compiled_class_defaults_and_accept_overrides() {
+        let compiled = parse("", &BTreeMap::new(), SPECS).unwrap();
+        let shipped = parse(include_str!("../../harness/borg.txt"), &BTreeMap::new(), SPECS).unwrap();
+        for (param, expected) in [
+            (Param::prepared_clevel_depth_margin, 0),
+            (Param::prepared_dl2_min_hp, 30),
+            (Param::prepared_cure_min, 2),
+            (Param::prepared_cure_until_clevel, 30),
+            (Param::prepared_mid_max_depth, 19),
+            (Param::prepared_mid_caster_max_clevel, 28),
+            (Param::prepared_deep_caster_ramp_max_clevel, 44),
+            (Param::prepared_deep_caster_ramp_base_depth, 30),
+            (Param::prepared_deep_caster_ramp_depth_per_level, 2),
+            (Param::prepared_dl34_plus_min_clevel, 40),
+        ] {
+            assert_eq!(compiled[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].origin, "borg.txt");
+        }
+        let gate_values = [
+            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+        ];
+        for (param, values) in gate_values {
+            for (class, expected) in CLASSES.into_iter().zip(values) {
+                assert_eq!(class_value(&compiled, param, class), Some((expected, "default")));
+                assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")));
+            }
+        }
+        let param = Param::prepared_mid_clevel_offset;
+        let overrides = parse(
+            "borg_param_prepared_mid_clevel_offset = -2\nborg_param_prepared_mid_clevel_offset__mage = 2",
+            &BTreeMap::new(),
+            SPECS,
+        ).unwrap();
+        assert_eq!(overrides[param as usize].value, -2);
+        assert_eq!(class_value(&overrides, param, "warrior"), None);
+        assert_eq!(class_value(&overrides, param, "mage"), Some((2, "borg.txt")));
+    }
+
+    #[test]
+    fn retired_depth_cap_settings_can_load() {
+        let text = "borg_param_prepared_depth_plan = 1\nborg_param_prepared_depth_early_until_level__warrior = 4";
+        let env = BTreeMap::from([("PREPARED_DEPTH_LATE_LEVELS_BELOW__MAGE".into(), "3".into())]);
+        let settings = parse(text, &env, SPECS).unwrap();
+        assert_eq!(settings[Param::prepared_clevel_depth_margin as usize].value, 0);
+        assert!(parse("borg_param_prepared_depth_plan__typo = 1", &env, SPECS).is_err());
     }
 
     #[test]

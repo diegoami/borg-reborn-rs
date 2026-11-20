@@ -49,10 +49,12 @@ HOOKED = {
     'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
+    'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
     'src/borg_junk.rs',  # #470: discard Deep Descent on sight
+    'src/borg_item.rs',  # #775: defer uninscribing carried items until normal form
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
     'src/borg_flow_misc.rs',  # #597: the twitch refuses lava

@@ -1866,3 +1866,39 @@ mod breeder_block_tests {
         assert!(least_cost_stair_path(start, &[stair], 2, |grid| (grid == stair).then_some(100)).is_none());
     }
 }
+
+/// borg-reborn-rs (#732; owner, 2026-11-20: "remove our leash completely and
+/// expose the leash of C with configuration parameters"): C's leash numbers
+/// (`borg_get_leash`, `borg_flow_far_from_stairs_dist`, `take_select`), each
+/// a parameter whose compiled default is C's literal, read here (the
+/// registry's `flow_` file).
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CLeash {
+    pub per_level: i32,
+    pub base: i32,
+    pub unbounded: i32,
+    pub pickup_max_level: i32,
+    pub depth_margin: i32,
+    pub twitch_after: i32,
+    pub stairs_max_level: i32,
+    pub take_near_max_level: i32,
+    pub take_nearness: i32,
+    pub take_max_level: i32,
+}
+
+/// The leash parameters (`CLeash`).
+pub(crate) fn c_leash() -> CLeash {
+    use crate::params::{value, Param};
+    CLeash {
+        per_level: value(Param::flow_leash_per_level),
+        base: value(Param::flow_leash_base),
+        unbounded: value(Param::flow_leash_unbounded),
+        pickup_max_level: value(Param::flow_leash_pickup_max_level),
+        depth_margin: value(Param::flow_leash_depth_margin),
+        twitch_after: value(Param::flow_leash_twitch_after),
+        stairs_max_level: value(Param::flow_leash_stairs_max_level),
+        take_near_max_level: value(Param::flow_leash_take_near_max_level),
+        take_nearness: value(Param::flow_leash_take_nearness),
+        take_max_level: value(Param::flow_leash_take_max_level),
+    }
+}

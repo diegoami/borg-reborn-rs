@@ -37,3 +37,25 @@ are too few deaths for a claim either way.
 - #754 (the Borg stops after Recall) is not started.
 - Smoke at the shipped values is unchanged (3/3 identical), so
   `smoke-borg-rs` is not re-recorded.
+
+**Later the same day: mode 3 and the review (a comment on PR #757).**
+- The owner, on the death page of the "on" arm (93034700: a Necromancer at
+  11/11 HP walked past an adjacent apprentice to stairs 8 steps beyond it and
+  died carrying 9 CLW, 6 Phase Door and 27 Flasks of oil): "he has to
+  actually walk past his opponent"; "phase door would work in this case,
+  change that setting". `caution_stairs_clean_path` 3: on the path, or next
+  to it and nearer the staircase than the Borg. A first version compared flow
+  costs; the flow skips monster grids, so it compares grid distances to the
+  path's last grid. On the 600 starts mode 3 has 16 deaths (mode 2 18, off 12);
+  CALIBRATION.md has the table.
+- Review findings fixed: #750's scope is every `GOAL_BORE` stair flow while
+  fleeing or leaving (the docs now say so; the runs measured that code);
+  #743's fallback tries each kind under `stair_both`'s rules (`stair_kinds`),
+  not `stair_more`'s `more_refused`; `path_blocker` is split into
+  `walk_path` and `first_blocker`, with tests on a constructed corridor (on
+  the path, on the staircase, beside it ahead, next to the Borg level with it,
+  behind, asleep); #743's CALIBRATION row cites `borg_caution.rs`.
+- Filed from the same deaths: #758 (Recall read as a flight next to the
+  killer), #759 (never flee a winning fight), #760 (monster categories:
+  attack on sight), #761 (Phase Door, Rangers first; a Sonnet agent of this
+  session is measuring arrows 20, heal reserve 100 and oil 25 for Rangers).
