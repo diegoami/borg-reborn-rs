@@ -148,6 +148,10 @@ pub struct Borg {
     /// borg-reborn-rs (#556): the judged thinks in a row on which the breeding
     /// outpaced the kills (`caution_breeder_stoppable_confirm` lose the level).
     pub breeders_behind: i32,
+    /// borg-reborn-rs (#743): a flight to the stairs was refused for a
+    /// blocked path on this level (the note is once per level); cleared on a
+    /// new level.
+    pub flee_path_noted: bool,
     /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
     /// at or above its HP, so it does not stand against the breeders now.
     pub breeders_in_danger: bool,

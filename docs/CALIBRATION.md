@@ -10,6 +10,26 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A clean path for every flight to the stairs (#743)
+
+The registry now holds **2223** parameters (2222 before; one added). Owner,
+2026-11-20, closing #689: the follow-up of #736's clean path, for the
+ordinary flight to the stairs.
+
+- **`caution_stairs_clean_path_flee`** (compiled 0, shipped 0): every flight
+  to the stairs (`GOAL_FLEE` through `borg_flow_stair_both`, `_less` and
+  `_more`: a scary level, too much danger, "Looking for any stair") takes
+  only the kinds of stairs whose path is clean. #736's `stair_path_blocker`
+  walks the path. A kind with an awake monster on, or next to, its path,
+  whose danger is at least `caution_stairs_block_danger_percent` of the HP,
+  is not taken. With none left the flight does not start, and the escapes and
+  the attack decide. Noted once per level as #736's "# Stairs not reachable".
+  The desperate walk keeps its own check (`caution_stairs_clean_path`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_stairs_clean_path_flee` | 0 | flag | 0–1 | `#743 (owner, the follow-up of #736): 1 = every flight to the stairs (GOAL_FLEE: a scary level, too much danger, 'Looking for any stair') takes only stairs whose path is clean: a kind of stairs with an awake monster on, or next to, its path, whose danger is at least caution_stairs_block_danger_percent of the HP, is not taken; with none left the flight does not start and the escapes and the attack decide (#736's 'Stairs not reachable', noted once per level). The desperate walk keeps its own check (caution_stairs_clean_path). 0 = C.` |
+
 ## Immobile monsters and blocked stairs (#736)
 
 The registry now holds **2221** parameters (2216 after #716; five added).

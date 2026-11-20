@@ -589,19 +589,103 @@ mod tests {
 /// Prepare to flee the level via stairs (`stair_both`, with #556's
 /// fight-through fallback, `fight_through`).
 pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_both(st, why, sneak))
+    // borg-reborn-rs (#743): a flight takes only the kinds of stairs whose
+    // path is clean.
+    match flee_clean_kinds(st, why) {
+        CleanKinds::All => fight_through(st, why, |st| stair_both(st, why, sneak)),
+        CleanKinds::Up => fight_through(st, why, |st| stair_less(st, why, sneak)),
+        CleanKinds::Down => fight_through(st, why, |st| stair_more(st, why, sneak, false)),
+        CleanKinds::None => false,
+    }
 }
 
 /// Prepare to flow towards "up" stairs (`stair_less`, with #556's
 /// fight-through fallback).
 pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+    if flee_path_blocked(st, why, true) {
+        return false;
+    }
     fight_through(st, why, |st| stair_less(st, why, sneak))
 }
 
 /// Prepare to flow towards "down" stairs (`stair_more`, with #556's
 /// fight-through fallback).
 pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
+    if flee_path_blocked(st, why, false) {
+        return false;
+    }
     fight_through(st, why, |st| stair_more(st, why, sneak, brave))
+}
+
+/// borg-reborn-rs (#743, the follow-up of #736): which kinds of stairs a
+/// flight (`GOAL_FLEE`) may take, with `caution_stairs_clean_path_flee`: a
+/// kind whose path has a dangerous awake monster on, or next to, it
+/// (`stair_path_blocker`) is not taken; with none left the flight does not
+/// start, and the escapes and the attack decide.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum CleanKinds {
+    All,
+    Up,
+    Down,
+    None,
+}
+
+/// The kinds a flight to any stairs may take (`CleanKinds`), from which
+/// kinds are known and which are blocked.
+fn clean_kinds(up_known: bool, up_blocked: bool, down_known: bool, down_blocked: bool) -> CleanKinds {
+    let up = up_known && !up_blocked;
+    let down = down_known && !down_blocked;
+    match (up, down) {
+        (true, true) => CleanKinds::All,
+        (true, false) => CleanKinds::Up,
+        (false, true) => CleanKinds::Down,
+        // No kind known: the flow finds nothing either way, as C.
+        (false, false) if !up_known && !down_known => CleanKinds::All,
+        (false, false) => CleanKinds::None,
+    }
+}
+
+/// Whether the check applies: the switch on, a flight, and not the
+/// desperate walk (`desperate_flow` checks its own path first, #736).
+fn flee_check_applies(st: &BorgState, why: i32) -> bool {
+    why == GOAL_FLEE
+        && !st.borg.status.desperate
+        && crate::params::value(crate::params::Param::caution_stairs_clean_path_flee) != 0
+}
+
+/// The blocker of the path to the up (`up`) or down stairs, noted once per
+/// level as #736's "Stairs not reachable".
+fn flee_blocker(st: &mut BorgState, up: bool) -> bool {
+    let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
+    let Some(k) = stair_path_blocker(st, up, percent) else {
+        return false;
+    };
+    if !st.borg.flee_path_noted {
+        st.borg.flee_path_noted = true;
+        let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+        borg_io::borg_note(
+            st,
+            &format!("# Stairs not reachable: {} in the way (flight to the {} stairs)", String::from_utf8_lossy(&name), if up { "up" } else { "down" }),
+        );
+    }
+    true
+}
+
+/// `borg_flow_stair_less/more`: a flight to a blocked kind does not start.
+fn flee_path_blocked(st: &mut BorgState, why: i32, up: bool) -> bool {
+    flee_check_applies(st, why) && flee_blocker(st, up)
+}
+
+/// `borg_flow_stair_both`: the kinds a flight may take.
+fn flee_clean_kinds(st: &mut BorgState, why: i32) -> CleanKinds {
+    if !flee_check_applies(st, why) {
+        return CleanKinds::All;
+    }
+    let up_known = st.stairs.less.num > 0;
+    let down_known = st.stairs.more.num > 0;
+    let up_blocked = up_known && flee_blocker(st, true);
+    let down_blocked = down_known && flee_blocker(st, false);
+    clean_kinds(up_known, up_blocked, down_known, down_blocked)
 }
 
 /// borg-reborn-rs (#556, owner 2026-11-19: "fallback to fight our way
@@ -628,4 +712,22 @@ fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgSta
         borg_io::borg_note(st, "# Fighting through the breeders to the stairs");
     }
     ok
+}
+
+#[cfg(test)]
+mod flee_clean_tests {
+    use super::{clean_kinds, CleanKinds};
+
+    /// #743: a flight takes only the clean kinds; with every known kind
+    /// blocked it does not start; with none known, as C.
+    #[test]
+    fn a_flight_takes_only_clean_stairs() {
+        assert_eq!(clean_kinds(true, false, true, false), CleanKinds::All);
+        assert_eq!(clean_kinds(true, true, true, false), CleanKinds::Down, "up blocked");
+        assert_eq!(clean_kinds(true, false, true, true), CleanKinds::Up, "down blocked");
+        assert_eq!(clean_kinds(true, true, true, true), CleanKinds::None, "both blocked");
+        assert_eq!(clean_kinds(true, true, false, false), CleanKinds::None, "the only kind blocked");
+        assert_eq!(clean_kinds(false, false, true, false), CleanKinds::Down, "only down known");
+        assert_eq!(clean_kinds(false, false, false, false), CleanKinds::All, "none known");
+    }
 }
