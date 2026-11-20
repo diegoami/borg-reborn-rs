@@ -323,6 +323,17 @@ mod tests {
         assert!(parse("wild cat | 50 | | | fast-fragile\n", &resolve).is_err());
     }
 
+    #[test]
+    fn inactive_attack_range_does_not_remove_an_independent_scare() {
+        let list = parse("wild cat | 50 | mage 3 | attack | fast-fragile\nwild cat | 8\n", &|_| Some(1)).unwrap();
+        assert!(is_scary(&list, 1, b"feline", who(4, 1)));
+        assert_eq!(attack_reason(&list, 1, b"feline", who(4, 1)), None);
+        assert_eq!(attack_reason(&list, 1, b"feline", who(4, 7)), Some("fast-fragile"), "mage is a ceiling override, not a class restriction");
+        let attack_only = parse("wild cat | 3 | | attack | fast-fragile\n", &|_| Some(1)).unwrap();
+        assert_eq!(attack_reason(&attack_only, 1, b"feline", who(4, 7)), None);
+        assert!(!is_scary(&attack_only, 1, b"feline", who(4, 7)), "an attack row never invents a separate scare");
+    }
+
     fn race(name: &str) -> Option<usize> {
         ["", "soldier", "squint-eyed rogue", "giant white mouse", "Fang, Farmer Maggot's Dog"]
             .iter()

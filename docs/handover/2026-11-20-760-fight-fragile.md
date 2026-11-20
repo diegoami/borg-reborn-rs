@@ -81,3 +81,15 @@ Raw local artifacts remain `/tmp/T760-fight/`; canonical evidence work is
 scratchpad remains read-only. A machine transfer was considered, then the
 owner chose waiting here; no files were moved. The private replay helper
 rejects population inputs and locks each named replay separately.
+
+
+Review follow-up: owner supplied MiniMax-M3 and Claude Opus 5.5 reviews on
+547e2796, then explicitly approved the real-threat exception. Corrections
+round all fight commands (including fallback), restore the target grid,
+count fixed spell blows with shared pre-hit HP caps, apply observed Haste
+on a copy through native danger, and include own blessed-weapon to-hit.
+Leap forecasts only adjacent attacks. Existing attack-range gating is
+retained and covered by additional independent-kind/class-ceiling tests.
+The original continuous 425 estimate is superseded; new named-case results
+and a future specimen pin must accompany the reviewed corrections. No
+review acceptance or merge permission was inferred from the reviews.

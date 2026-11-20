@@ -69,3 +69,13 @@ owner's word. Raw local artifacts remain `/tmp/T760-fight/`; canonical work
 is `/tmp/T760-cemetery` on `task/T760-flight-evidence`, PR #88. Original
 scratchpad inputs remain read-only. A transfer was considered, then the
 owner chose waiting here; no files moved.
+
+
+Review follow-up: MiniMax-M3 and Claude Opus 5.5 reviewed 09be115f. The
+shared #763 fixes are integrated (whole-command timing, real-threat
+exception, observed Haste through native danger and focused-state/spell
+corrections). Recall reachability was clarified, preserving the important
+projectable immobile-caster case even without a walking route; an explicit
+regression rejects dropping that branch. New named replays and a common
+future Zoo pin must supersede the earlier 5acb8104 proposal. No population
+claim or owner merge authorization is inferred from either review.
