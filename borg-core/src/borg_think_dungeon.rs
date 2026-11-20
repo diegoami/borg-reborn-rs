@@ -483,6 +483,13 @@ fn borg_check_bounciness(st: &mut BorgState) -> bool {
 }
 
 fn borg_check_breeders(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#722): a level lost to breeders, searched long enough
+    // for stairs: Recall.
+    if crate::borg_caution::breeder_recall_due(st) && crate::borg_escape::borg_recall(st) {
+        borg_note(st, "# Leaving a level lost to breeders (recall): no stairs reached in time.");
+        return true;
+    }
+
     /* Close doors on breeder levels */
     if st.borg.mon.breeders >= 3 {
         /* set the flag to close doors */
