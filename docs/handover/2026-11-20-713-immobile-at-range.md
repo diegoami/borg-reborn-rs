@@ -36,3 +36,8 @@ Paladin 766958386 (borg-cemetery#79) meleed a yellow jelly for 120 game turns, w
   - #713's options (a) point-blank and (b) tie-break were not taken.
   - A Paladin throws other realms' books (`best_throw`), which can drop them under a monster.
   - Owner's idea, not yet an issue: when cornered, throw first while the monster approaches, then buff (`cornered_boost` buffs first).
+- **Review of #717** (fixed):
+  - a kept attacker is chosen before a plain-damage one beside it (`kept_attacker_next_to`);
+  - the scope reads "23 of 25, 15 at DL10 or shallower, 8 deeper down to DL80", not "every one below DL10".
+  - Re-measured on main `b59ccbb6`, which ships `attack_throw_as_melee`: mode 0 identical 19/19; mode 2: deaths 0 and 0, CL 110 to 112, DL 41 to 44, blows from immobile creatures 15 to 3.
+  - Open: the Phase Door "fight lost" test counts a kept neighbour as unhurtable.

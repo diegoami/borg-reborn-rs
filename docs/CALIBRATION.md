@@ -71,6 +71,16 @@ their stairs"; "set the switch to on".
   mode is the same: a blue worm mass kills the CL7 Necromancer 1574344917.
   The differences in CL are within the noise of 19 games. Not a measure of
   benefit (RULES 14); the zoo experiment decides.
+- **Re-measured on main `b59ccbb6`** (review of #717: main now ships
+  `attack_throw_as_melee = 1`, the throw rating the case turned on), after
+  the review's fix (a kept attacker is chosen first): mode 0 keys-identical
+  to main in 19 of 19. Mode 2 against main: deaths 0 and 0; sum of max CL
+  110 to 112; sum of max DL 41 to 44; 73 steps away; blows taken from
+  immobile creatures 15 to 3; 15 of 19 games differ.
+- **Left by the review:** the Phase Door rule's "fight lost" test
+  (`borg_escape.rs`, `adjacent_foes`) counts a kept neighbour as a foe the
+  Borg cannot hurt (its melee is 0), so that escape fires a little more
+  eagerly next to one. Not changed here.
 ## Store at home only when overweight (#711)
 
 The registry now holds **2201** parameters (2200 before; one added).
