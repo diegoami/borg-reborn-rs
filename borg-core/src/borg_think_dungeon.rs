@@ -483,6 +483,13 @@ fn borg_check_bounciness(st: &mut BorgState) -> bool {
 }
 
 fn borg_check_breeders(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#722): a level lost to breeders, searched long enough
+    // for stairs: Recall.
+    if crate::borg_caution::breeder_recall_due(st) && crate::borg_escape::borg_recall(st) {
+        borg_note(st, "# Leaving a level lost to breeders (recall): no stairs reached in time.");
+        return true;
+    }
+
     /* Close doors on breeder levels */
     if st.borg.mon.breeders >= 3 {
         /* set the flag to close doors */
@@ -494,6 +501,8 @@ fn borg_check_breeders(st: &mut BorgState) -> bool {
     if (i32::from(st.borg.mon.breeders) >= (st.borg.tr(BI_CLEVEL) + 2).min(5))
         && (st.borg.tr(BI_RECALL) <= 0 || st.borg.tr(BI_CLEVEL) < 35)
         && !crate::borg_caution::breeder_stand(st)
+        // borg-reborn-rs (#722, lead b): not from a one-think pause.
+        && !crate::borg_caution::breeder_stand_paused(st)
     {
         /* Ignore monsters from caution */
         if !st.borg.goal.ignoring && borg_timer(st, st.borg.time.level) >= 2500 {
@@ -1286,6 +1295,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Explore the dungeon ***/
+
+    // borg-reborn-rs (#754): caution_recall_wait_no_explore.
+    if crate::borg_caution::recall_wait_no_explore(st) {
+        return choice!("wait_for_recall");
+    }
 
     if st.borg.status.vault {
         /* Chase close monsters */

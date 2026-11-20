@@ -64,7 +64,7 @@ The POC showed that a Borg built here from first principles does not beat
 borg-rs. The repository now hosts **borg-rs's decision core**
 (`borg-core/`, vendored at borg-rs v12; docs/SPEC.md §2 amendment) with
 **errands** around it (docs/ERRANDS.md). The engine is upstream
-`42cd156ac`, the commit borg-rs plays (#216). Our own core stays the
+`574b618c` (#724; `42cd156ac`, the commit borg-rs plays, until 2026-11-20, #216). Our own core stays the
 default and is frozen: **M5–M7 are paused**, their open issues kept.
 
 Work now runs in two tracks, side by side, each with its own milestones,

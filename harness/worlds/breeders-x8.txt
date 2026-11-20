@@ -1,0 +1,4 @@
+# A heavier breeder world (#704): breeders 8 times as likely, 3 levels
+# shallower. A stress test; most games will meet a colony.
+breeder_weight = 8
+breeder_depth_shift = 3
