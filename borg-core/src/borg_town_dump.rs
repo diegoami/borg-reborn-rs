@@ -823,12 +823,112 @@ pub fn dump_purchase(st: &mut BorgState, shop: i32, item: &borg_item) {
     }
 }
 
+/// Observation-only state for the Phase Door receipt (#797).
+#[derive(Default)]
+pub struct PhaseObservation {
+    shop: Option<usize>,
+    town_stock: Option<Vec<i32>>,
+    seen_town_monster: bool,
+    seen_dungeon_monster: bool,
+}
+
+#[derive(serde::Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum PhaseEvent<'a> {
+    TownStock { shops: &'a [i32] },
+    ShopVisit { shop: usize, phase_scrolls: i32 },
+    FirstMonsterContact { depth: i32, phase_scrolls: i32 },
+}
+
+fn phase_scroll_count(items: &[borg_item], phase_sval: i32) -> i32 {
+    use crate::headers::list_tvals_h::TV_SCROLL;
+    items.iter()
+        .filter(|item| u32::from(item.tval) == TV_SCROLL && i32::from(item.sval) == phase_sval)
+        .map(|item| i32::from(item.iqty))
+        .sum()
+}
+
+fn write_phase_event(file: &Mutex<File>, turn: i32, event: PhaseEvent<'_>) {
+    #[derive(serde::Serialize)]
+    struct Record<'a> {
+        schema: &'static str,
+        game_turn: i32,
+        #[serde(flatten)]
+        event: PhaseEvent<'a>,
+    }
+    let record = Record { schema: "borg-phase-observations@1", game_turn: turn, event };
+    let json = serde_json::to_string(&record).expect("Phase Door receipt is serializable");
+    write_record(Some(file), &json);
+}
+
+/// Call after the existing pack/store scan and monster update, before the
+/// next action. The stock snapshot also captures stock at unvisited shops.
+pub(crate) fn record_phase_observation(st: &mut BorgState, shop: Option<usize>) {
+    static FILE: OnceLock<Option<Mutex<File>>> = OnceLock::new();
+    let Some(file) = FILE.get_or_init(|| {
+        let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR")?).join("phase-observations.jsonl");
+        match File::create(&path) {
+            Ok(file) => Some(Mutex::new(file)),
+            Err(e) => {
+                eprintln!("borg-reborn-rs: {}: {e}", path.display());
+                std::process::exit(2);
+            }
+        }
+    }).as_ref() else { return };
+
+    let depth = st.borg.tr(BI_CDEPTH);
+    let state = &mut st.think.phase_observation;
+    let sval = st.item_val.sv_scroll_phase_door;
+    let turn = engine::game_turn();
+    if depth == 0 {
+        let shops: Vec<_> = st.store.safe_shops.iter().take(BORG_HOME)
+            .map(|shop| phase_scroll_count(&shop.ware, sval))
+            .collect();
+        if state.town_stock.as_ref() != Some(&shops) {
+            write_phase_event(file, turn, PhaseEvent::TownStock { shops: &shops });
+            state.town_stock = Some(shops);
+        }
+        if let Some(index) = shop.filter(|index| Some(*index) != state.shop) {
+            if let Some(&phase_scrolls) = state.town_stock.as_ref().and_then(|shops| shops.get(index)) {
+                write_phase_event(file, turn, PhaseEvent::ShopVisit { shop: index, phase_scrolls });
+            }
+        }
+    } else {
+        state.town_stock = None;
+    }
+    state.shop = shop;
+    let seen = if depth == 0 { &mut state.seen_town_monster } else { &mut state.seen_dungeon_monster };
+    if !*seen && st.kills.kills.iter().any(|kill| kill.r_idx != 0 && kill.seen) {
+        let pack = &st.items.safe_items[..inven_wield() as usize];
+        let phase_scrolls = phase_scroll_count(pack, sval);
+        write_phase_event(file, turn, PhaseEvent::FirstMonsterContact { depth, phase_scrolls });
+        *seen = true;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::state_key;
 
     /// Two records of the same state that differ only in their seq have
     /// the same key: the seq is bookkeeping, not state.
+    #[test]
+    fn phase_count_uses_physical_scroll_stacks() {
+        use crate::borg_item::blank_item;
+        use crate::headers::list_tvals_h::{TV_SCROLL, TV_STAFF};
+
+        let mut phase = blank_item();
+        phase.tval = TV_SCROLL as u8;
+        phase.sval = 3;
+        phase.iqty = 2;
+        let mut other_scroll = phase;
+        other_scroll.sval = 4;
+        let mut staff = phase;
+        staff.tval = TV_STAFF as u8;
+        assert_eq!(super::phase_scroll_count(&[phase, other_scroll, staff, phase], 3), 4);
+        assert_eq!(super::phase_scroll_count(&[], 3), 0);
+    }
+
     #[test]
     fn the_seq_is_not_part_of_the_state() {
         let a = r#"{"v":3,"seq":7,"turn":120,"depth":0,"gold":50}"#;

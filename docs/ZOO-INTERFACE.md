@@ -265,6 +265,28 @@ The core trace's `parameter_name` for an attack candidate is the family's
 parameter (`attack_preference_spell_permille`); the row's `class_name` gives the
 class.
 
+## Phase Door observations (#797)
+
+The vendored core writes `phase-observations.jsonl` alongside the native
+summary when a run directory is present. Each line has
+`schema: "borg-phase-observations@1"`, `game_turn` and `type`.
+
+- `town_stock` has `shops`, Phase Door stock counts indexed by retail shop
+  (indices 0–6). The first town observation and a changed inventory of
+  Phase Doors emit a snapshot, whether the shop was visited or not.
+- `shop_visit` has the entered `shop` and its `phase_scrolls` stock before
+  the Borg's first action on that visit. Zero is an observed count.
+- `first_monster_contact` has `depth` and `phase_scrolls` in the pack at
+  the first think that saw a tracked monster. Town and dungeon each emit
+  at most one such row per character. Counts include physical scrolls
+  even if their flavor is unidentified. The receipt uses the inventory
+  cache and does not feed the decision.
+
+Keep the stream alongside the Zoo's `town-transactions.jsonl` (the latter
+comes from native purchase receipts). The contact count can include scrolls
+picked up since departure. Missing contact is an unobserved endpoint.
+For `borg-zoo#536`, use retained cell evidence in both arms.
+
 ## Class/family preference profiles (#403)
 
 Since #520 there is one preference per family, `borg_param_attack_preference_<family>_permille`,

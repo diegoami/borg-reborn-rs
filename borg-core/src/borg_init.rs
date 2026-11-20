@@ -971,6 +971,8 @@ pub fn borg_prepare_race_class_info(st: &mut BorgState) {
     // ... and the class lines of the `borg_*` settings.
     apply_class_settings(&mut st.core, engine::class_cidx() as i32);
 
+    st.think.phase_observation = crate::borg_town_dump::PhaseObservation::default();
+
     // Initialize the various spell arrays by book
     crate::borg_magic::borg_prepare_book_info(st);
 
