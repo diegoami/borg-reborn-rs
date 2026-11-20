@@ -1173,7 +1173,7 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
-# #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
+# #759/#788: shared dungeon/town damage-race test; compiled 0, shipped 1.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1

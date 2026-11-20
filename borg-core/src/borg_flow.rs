@@ -67,6 +67,8 @@ const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
 const GOAL_FLEE: i32 = 7;
+/// Monster hunt (borg-flow.h), shared town certificate at every step (#788).
+const GOAL_KILL: i32 = 1;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
@@ -1589,6 +1591,17 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
             return false;
         }
     };
+
+    // #788: every town hunt step must still have a winning certificate;
+    // a bump attack, closed door, trap or unknown grid is not a plain walk.
+    if let Some(to) = next.filter(|_| why == GOAL_KILL) {
+        let grid = *st.cave.grid(to.x, to.y);
+        if !crate::borg_caution::town_hunt_step_allowed(st, grid) {
+            borg_note(st, "# Town hunt declined: no current winning certificate (#788)");
+            st.borg.goal.type_0 = 0;
+            return false;
+        }
+    }
 
     // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
     if next.is_some() && why == GOAL_FLEE {

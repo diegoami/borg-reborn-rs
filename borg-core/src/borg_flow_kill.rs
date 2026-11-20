@@ -1895,7 +1895,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     {
         if !(1..i32::from(st.kills.nxt)).any(|k| {
             let r = st.kills.kills[k as usize].r_idx;
-            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+            r != 0 && crate::borg_fight_attack::town_hunt_target(st, usize::from(r))
         }) {
             return false;
         }
@@ -1915,9 +1915,10 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     let dangerous_known = st.borg.tr(BI_CDEPTH) == 0
         && (1..i32::from(st.kills.nxt)).any(|k| {
             let r = st.kills.kills[k as usize].r_idx;
-            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+            r != 0 && crate::borg_fight_attack::town_hunt_target(st, usize::from(r))
         });
-    if low_level_caster(st) && caster_walks_to_dangerous(crate::borg_fight_attack::town_caster_walk(), dangerous_known) {
+    if low_level_caster(st) && caster_walks_to_dangerous(crate::borg_fight_attack::town_caster_walk()
+        || crate::borg_caution::town_fight_mode(st.borg.tr(BI_CDEPTH), crate::params::value(crate::params::Param::caution_winning_fight)), dangerous_known) {
         if !caster_hunts(true, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
             return false;
         }
@@ -1998,7 +1999,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
         if town_dangerous_only
-            && (kill.r_idx == 0 || !crate::borg_fight_attack::town_kill_on_sight(st, usize::from(kill.r_idx)))
+            && (kill.r_idx == 0 || !crate::borg_fight_attack::town_hunt_target(st, usize::from(kill.r_idx)))
         {
             continue;
         }
