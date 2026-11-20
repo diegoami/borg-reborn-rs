@@ -265,6 +265,40 @@ The core trace's `parameter_name` for an attack candidate is the family's
 parameter (`attack_preference_spell_permille`); the row's `class_name` gives the
 class.
 
+### Resolved settings at birth (#798)
+
+The vendored core writes `settings-resolved.json` beside `params-core.json`
+when it first attaches to a character. It uses the run directory described
+above. The receipt is also refreshed on reincarnation. A standard zoo cell
+plays one character.
+
+```json
+{
+  "schema": "borg-settings-resolved@1",
+  "class_index": 7,
+  "class_name": "ranger",
+  "effective_settings": {"town_phase_reserve": 2}
+}
+```
+
+The example shows one entry. The map includes every registered parameter
+whose live value differs from its compiled default for that class, with
+canonical names and integer values. It accounts for file and environment
+precedence, class overrides, and policy-derived values such as breeder
+switches. An explicit setting equal to its compiled class default is
+omitted, so an empty map can come from a populated `borg.txt`. A missing
+file means no receipt is available.
+
+Preserve the canonical map, class identity, schema and SHA-256 of the
+original file with the Zoo cell. For comparisons using written names,
+match each applicable `borg_param_*` name to its canonical registry name
+using the played class and the core's alias rules. For example,
+`borg_param_town_phase_reserve__ranger` maps to `town_phase_reserve`
+for a Ranger. If projecting into the existing Zoo `effective_settings`
+field, keep the written keys its consumers expect. An omitted parameter
+needs independent default information before it can be verified against a
+specific value. Native `summary.json` keeps its existing format.
+
 ## Phase Door observations (#797)
 
 The vendored core writes `phase-observations.jsonl` alongside the native
