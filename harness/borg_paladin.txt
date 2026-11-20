@@ -11,8 +11,9 @@ borg_param_town_devices_percent = 100
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the paladin.
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 125
-# #744 (owner, 2026-11-20): no detection prayer by panel below CL10 again (undoes #728).
-# borg-zoo#480 (360 starts, 100k): same deaths, +0.53 CL, no floating-eye deaths.
+# #744 (owner, 2026-11-20): no detection prayer by panel below CL10 again (undoes
+# #728 for this class; the common line stays 0). borg-zoo#480 (classes-1800,
+# starts 1-360, 100k turns): same deaths, +0.53 CL, no floating-eye deaths.
 borg_param_light_detect_evil_spell_min_level = 10
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 6
