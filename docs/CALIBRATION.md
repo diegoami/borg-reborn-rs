@@ -10,11 +10,13 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
-## Ranger arrows: a soft cap, then a taper (#716)
+## Ranger arrows: a soft cap, then a diminishing curve (#716)
 
 The registry now holds **2205** parameters (2203 after #712; two added).
 Owner, 2026-11-20: "they do not need that many arrows"; "a soft cap at 50
-and then a curve for additional arrows utility, configurable, say 75".
+and then a curve for additional arrows utility"; "a curve coefficient like
+we defined for healing ... can take infinite arrows, but the more he carries
+the less value they have".
 
 - **`town_ranger_arrows_max`** (0 = C): the town planner's shot reserve
   ("Ranger usable shots") becomes a requirement. Each shot up to this many
@@ -22,19 +24,21 @@ and then a curve for additional arrows utility, configurable, say 75".
   grows with the trip and never stops paying, and arrows cost 1 gold, so
   Rangers bought about 300 a game and carried 150–200. Their weight sent
   Phase Door to the Home.
-- **`town_ranger_arrows_taper`** (0): shots past the cap count on a
-  capability of their own, "extra shots". Each is worth less than the last,
-  linearly, and nothing past this many shots in all. 0, or at most the cap,
-  means nothing past the cap.
-- **Shipped** (owner): the Ranger, 50 and 75; every other class 0 (only the
-  Ranger has a shot reserve, `town_missiles_percent` -1).
+- **`town_ranger_arrows_curve_scale_percent`** (0): shots past the cap count
+  on a capability of their own, "extra shots". It is C's shot curve (the
+  reserve's weight, the trip's demand) with weight and demand scaled by this
+  percent, as `town_heal_curve_scale_percent` does healing. Every shot is
+  worth something, each less than the last. 0 means nothing past the cap.
+- **Shipped** (owner): the Ranger, 50 and 50; every other class 0 (only the
+  Ranger has a shot reserve, `town_missiles_percent` -1). A zoo experiment
+  calibrates the scale.
 - **Not changed:** pack power still keeps up to 180 shots that the Ranger
   picks up in the dungeon (`power_inventory_amissiles_limit_3`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:684` |
-| `town_ranger_arrows_taper` | 0 | count | 0–1000 | `borg_town_capability.rs:725` |
+| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
 
