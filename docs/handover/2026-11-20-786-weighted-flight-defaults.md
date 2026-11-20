@@ -11,3 +11,7 @@ deaths went from 12 to 5 in 200 starts and the other classes went from 4
 to 5 in 400 starts. Two initial wall timeouts reached the turn cap on
 retry. The Zoo pilot has its own reviewed specimen and profiles.
 [Local results](https://github.com/diegoami/borg-reborn-rs/pull/769) · [Zoo pilot](https://github.com/diegoami/borg-zoo/issues/524)
+
+The three default borg-rs smoke games changed. The re-recorded references
+match all three key, message and state streams. Each smoke parameter dump
+reports the requested profile from the shared `borg.txt`.
