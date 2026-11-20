@@ -1594,10 +1594,9 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     // #788: every town hunt step must still have a winning certificate;
     // a bump attack, closed door, trap or unknown grid is not a plain walk.
-    if b_i >= 0 && why == GOAL_KILL {
-        let next = *st.cave.grid(st.borg.c.x + i32::from(engine::ddx_ddd(b_i as usize)),
-            st.borg.c.y + i32::from(engine::ddy_ddd(b_i as usize)));
-        if !crate::borg_caution::town_hunt_step_allowed(st, next) {
+    if let Some(to) = next.filter(|_| why == GOAL_KILL) {
+        let grid = *st.cave.grid(to.x, to.y);
+        if !crate::borg_caution::town_hunt_step_allowed(st, grid) {
             borg_note(st, "# Town hunt declined: no current winning certificate (#788)");
             st.borg.goal.type_0 = 0;
             return false;
