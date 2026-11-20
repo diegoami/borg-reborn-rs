@@ -1031,6 +1031,12 @@ borg_param_caution_scary_named_monsters = 1
 
 borg_scary_list = scary_monsters.txt
 
+# The world (#704): game data with some monsters more common, for stress tests
+# (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
+# key, generates the data and records it; the Borg never reads it. none = the
+# game's own data. A world's games compare only with games of the same world.
+borg_world = none
+
 # A monster is also scary when one character turn of its melee can take at
 # least this percent of max HP: Fang is scary to a 10-HP Mage, not to an
 # 80-HP Warrior (#505). Lower makes more monsters scary; 0 = off. Spells are
