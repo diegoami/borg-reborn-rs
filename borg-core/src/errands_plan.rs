@@ -280,7 +280,8 @@ fn world_unloaded(value: Option<&str>) -> bool {
 
 /// Called before core initialization; absent configuration is inert.
 pub(crate) fn initialize() {
-    let world = checked_setting("borg_world");
+    // Lenient: an unreadable borg.txt is the parameter loader's to report.
+    let world = shell::borg_txt_setting_lenient("borg_world");
     if world_unloaded(world.as_deref()) {
         eprintln!(
             "borg_world: '{}' was not generated (run through harness/run.sh, or a zoo adapter that loads worlds); refusing to play the game's own data under its name",
