@@ -2378,29 +2378,25 @@ fn pick(r: &Resolved, class: Option<usize>) -> (i32, &'static str) {
 }
 
 fn compiled_default(spec: &Spec, class: Option<usize>) -> i32 {
-    spec.class_defaults.and_then(|defaults| class.map(|c| defaults[c])).unwrap_or(spec.default)
-}
-
-fn resolved_for(param: Param, values: Option<&[Resolved]>, class: Option<usize>) -> (i32, &'static str) {
-    if let Some(layer) = breeder_policy_layer(param) {
-        let policy = Param::caution_breeder_policy as usize;
-        let policy = values.map_or(SPECS[policy].default, |values| pick(&values[policy], class).0);
-        if policy >= 0 {
-            return (i32::from(policy >= layer), "caution_breeder_policy");
-        }
-    }
-    let i = param as usize;
-    values.map_or_else(|| (compiled_default(&SPECS[i], class), "default"), |values| pick(&values[i], class))
+    spec.class_defaults.and_then(|defaults| class.map(|class| defaults[class])).unwrap_or(spec.default)
 }
 
 pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
-    resolved_for(param, VALUES.get().map(Vec::as_slice), current_class())
+    if let Some(v) = breeder_policy_switch(param) {
+        return (v, "caution_breeder_policy");
+    }
+    let i = param as usize;
+    VALUES.get().map_or_else(|| (compiled_default(&SPECS[i], current_class()), "default"), |values| pick(&values[i], current_class()))
 }
 
 /// Pure lookup after init: the current class's value when it has one, else
 /// the common one. Isolated decision tests use the same defaults.
 pub(crate) fn value(param: Param) -> i32 {
-    resolved(param).0
+    if let Some(v) = breeder_policy_switch(param) {
+        return v;
+    }
+    let i = param as usize;
+    VALUES.get().map_or_else(|| compiled_default(&SPECS[i], current_class()), |values| pick(&values[i], current_class()).0)
 }
 
 /// borg-reborn-rs (#722): the layer of `caution_breeder_policy` that turns
@@ -2414,6 +2410,20 @@ fn breeder_policy_layer(param: Param) -> Option<i32> {
         Param::caution_breeder_exit => Some(5),
         _ => None,
     }
+}
+
+/// borg-reborn-rs (#722): with `caution_breeder_policy` 0..5, the breeder
+/// switches follow it (each on from its layer); at -1 (compiled) they are
+/// read as set.
+fn breeder_policy_switch(param: Param) -> Option<i32> {
+    let layer = breeder_policy_layer(param)?;
+    let i = Param::caution_breeder_policy as usize;
+    let policy = VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i], current_class()).0);
+    applied_breeder_layer(policy, layer)
+}
+
+fn applied_breeder_layer(policy: i32, layer: i32) -> Option<i32> {
+    (policy >= 0).then(|| i32::from(policy >= layer))
 }
 
 /// borg-reborn-rs (#520): the per-class names of the families that #520
@@ -2638,9 +2648,12 @@ struct SettingsReceipt {
 }
 
 fn settings_receipt(values: &[Resolved], class: usize) -> SettingsReceipt {
+    let class_index = Some(class);
+    let policy = pick(&values[Param::caution_breeder_policy as usize], class_index).0;
     let effective_settings = PARAMETERS.iter().filter_map(|&param| {
         let spec = &SPECS[param as usize];
-        let value = resolved_for(param, Some(values), Some(class)).0;
+        let value = breeder_policy_layer(param).and_then(|layer| applied_breeder_layer(policy, layer))
+            .unwrap_or_else(|| pick(&values[param as usize], class_index).0);
         (value != compiled_default(spec, Some(class))).then_some((spec.name, value))
     }).collect();
     SettingsReceipt {
