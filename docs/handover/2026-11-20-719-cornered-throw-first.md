@@ -20,6 +20,9 @@ Owner: "if I am cornered I should throw missile and then boost myself".
     identical;
   - the rule acted 4 times in 3 games.
 
+  Mode 1, the shipped value, on the same 90 starts rebuilt on today's main:
+  it never acts; 90/90 identical to mode 0 (review of #727, F3).
+
   It's rarely reached: a cornered Borg (a monster within 2 grids) almost
   always has the monster already adjacent.
 - **Checked:** fmt, clippy `-D warnings`, both test commands, citations.

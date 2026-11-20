@@ -3840,6 +3840,11 @@ myself". `cornered_boost` (#504) runs in `borg_caution`, before
 | classes-1800 starts 1–90 | 0 | 4 | 517 | 206 | – | – |
 | classes-1800 starts 1–90 | 2 | 4 | 518 | 206 | 89 / 90 | 4 (two Blackguard games, one Druid) |
 
+**The shipped mode 1** (classes-1800 starts 1–90, 100k, rebuilt on main
+2026-11-20 after merging it): it never acts. Modes 0 and 1 play 90/90
+identical games (5 deaths, sum of CL 544, DL 213). The 4 actions of mode 2
+above were all at the cornered boost, on the earlier main.
+
 The rule is rarely reached: when the Borg is cornered (a known monster
 within 2 grids), the monster is almost always already adjacent. A first
 version that didn't restore the dry run's random numbers changed games where
