@@ -322,6 +322,12 @@ audit; it does not transfer that work to Track R.
    Preserve defaults, integer widths, evaluation/branch order, resource
    preference, callers and the existing `BORG_ENCHANT_LIMIT` setting.
 
+4. **Pre-promotion reconciliation (#774), after #680:** synchronize exact
+   accepted newer main through its own reviewed task PR into track-p,
+   preserve the new engine/settings/other-track work and the neutral contract,
+   and revalidate against that synchronized receiving baseline. The #680
+   receipts at 760fae80 do not prove latest-main compatibility.
+
 Exit: a source-grounded classification and parameter contract, registered
 bounded overrides/profile exposure and decision-trace coverage; focused
 boundary and real decision override witnesses; default compatibility against

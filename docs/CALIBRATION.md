@@ -3826,3 +3826,13 @@ trace selection. The registry has boundary/precedence/provenance tests, while th
 native override check records an actual changed command and trace; these demonstrate control, not better play. Default
 compatibility and all failures/limits are recorded in the PR against exact
 receiving builds. Gameplay reports stay in Cemetery, not this document.
+
+
+Validation receipt for this task: [immutable Cemetery bundle](https://github.com/diegoami/borg-cemetery/tree/0529ff6f7208b197a5ee156be180395e7fbef38e/validation/borg-reborn-rs/enchant-decurse-680)
+(Cemetery PR #90, pending owner review). Clean build at receiving 760fae80
+versus implementation 710ba18f passes strict full45 key/message/state
+comparison and all 45 complete trace@2 comparisons. A single environment
+override changes a real queued command/selection; original failures and
+paired-attempt accounting remain in the canonical bundle. This verifies the
+named receiving baseline only. Required reconciliation with newer accepted
+main is tracked separately in #774 before P6 promotion.
