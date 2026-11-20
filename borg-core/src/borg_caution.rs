@@ -1882,17 +1882,28 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// command (a shot can be fractional). The unlimited melee fallback books
 /// whole commands conservatively, even if an early kill saves blow energy
 /// (player-attack.c:990-1020). Resource uses are whole commands as well.
+// Remove only floating-point roundoff at an integer command boundary.
+// This is a numerical error bound, not a gameplay/tuning tolerance.
+fn complete_attack_commands(value: f64) -> f64 {
+    let nearest = value.round();
+    if (value - nearest).abs() <= 8.0 * f64::EPSILON * value.abs().max(1.0) {
+        nearest
+    } else { value.ceil() }
+}
+
 fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
     if hp <= 0 || !hp_per_turn.is_finite() || hp_per_turn <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
-    if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some(((hp / fallback_hp_per_turn).ceil(), 0)); }
-    let commands = (hp / (hp_per_turn * duration)).ceil();
+    if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some((complete_attack_commands(hp / fallback_hp_per_turn), 0)); }
+    let per_command = hp_per_turn * duration;
+    let commands = complete_attack_commands(hp / per_command);
     let Some(uses) = uses else { return Some((commands * duration, 0)); };
     let uses = uses.max(0);
     if commands <= f64::from(uses) { return Some((commands * duration, commands as i32)); }
     if !fallback_hp_per_turn.is_finite() || fallback_hp_per_turn <= 0.0 { return None; }
     let primary_time = f64::from(uses) * duration;
-    Some((primary_time + ((hp - primary_time * hp_per_turn) / fallback_hp_per_turn).ceil(), uses))
+    let remaining = hp - f64::from(uses) * per_command;
+    Some((primary_time + complete_attack_commands(remaining / fallback_hp_per_turn), uses))
 }
 
 fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
@@ -1945,6 +1956,16 @@ mod winning_fight_tests {
         assert!(!wins_race(race_turns(1, 2.0, None, 1.0, 0.0).unwrap().0, 1.0, 1));
         let three = 3.0 * race_turns(5, 10.0, None, 1.0, 0.0).unwrap().0;
         assert_eq!(three, 3.0, "each foe needs its own finishing command");
+    }
+
+    #[test]
+    fn fractional_primary_does_not_invent_a_fallback_command() {
+        let (turns, arrows) = race_turns(30, 9.0, Some(5), 1.0 / 3.0, 3.0).unwrap();
+        assert_eq!(arrows, 5);
+        assert!((turns - 20.0 / 3.0).abs() < 1e-12);
+        assert_eq!(super::complete_attack_commands(5.0 + 1e-10), 6.0,
+            "a real residual above the boundary still requires another command");
+        assert_eq!(super::complete_attack_commands(5.0 + f64::EPSILON * 5.0), 5.0);
     }
 
     #[test]
@@ -2160,7 +2181,9 @@ fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: 
     // project-player.c:72-73: elemental vulnerability multiplies by 4/3.
     // Ignore AC, resistance, immunity and damage reduction conservatively;
     // element melee uses max(physical, elemental), not their sum
-    // (mon-blows.c:442-460). Neither fear nor item-damage prices are HP.
+    // (mon-blows.c:442-460). RF_HURT/IM in :311-365 belongs to the
+    // monster-versus-monster target path, not a blow against the player.
+    // Neither fear nor item-damage prices are HP.
     average.max(0.0) * f64::from(chance) / 10_000.0 * energy_ratio
         * if vulnerable { 4.0 / 3.0 } else { 1.0 }
 }

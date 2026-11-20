@@ -143,3 +143,13 @@ starts survive with actual Magic Missile/oil choices. Canonical old versions
 remain retained. New shared Zoo proposal isa4e4d915, explicitly repinned;
 394f2aea is superseded and unmeasured. No dispatch or merge; owner-selected
 re-review and owner-scheduled Zoo #511 remain.
+
+
+Owner decision after fourth review: fix remaining findings, merge after CI,
+and ship all three switches at1. The fight branch ships its two at1 while
+compiled defaults stay0. Whole-command fallback roundoff is fixed with a
+regression that preserves real above-boundary residuals. Recall retains its
+declared conservative unknown-risk policy; Zoo comparisons split refusal
+reasons. New default-on smoke and checks supersede prior off-only checks.
+Population benefit remains unconfirmed; two experiment requests will use
+one exact combined specimen and explicit all-off/individual/all overrides.
