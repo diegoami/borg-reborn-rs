@@ -14,7 +14,7 @@ Owner: "so many breeder settings"; "assume the level is lost if you could not ki
 - **Measured** (CALIBRATION, #722):
   - -1 is identical to main 19/19.
   - Policy 3: deaths 2 against 1 (neither from breeders), CL 111 and 111, DL 43 against 40.
-  - smoke-borg-rs re-recorded for the shipped 3.
+  - smoke-borg-rs: identical at the shipped 3 (on main with #721, which ships its switches; the full-level and Recall rules do not fire in smoke), so not re-recorded.
   - The test bed as tried (CL1 fresh characters) kills nearly every character under every policy and tells nothing yet.
 - **Left:**
   - The test bed needs a captured build (#382's `start-build`).
