@@ -4547,14 +4547,15 @@ caution's site skips (`BI_ISHUNGRY` with food left).
 
 ## Attack categories and winning fights (#760, #759)
 
-These independent switches are compiled and shipped **0**. Their enabled
+These independent switches compile to **0** and ship **1** by the owner's
+2026-11-20 adoption decision. Their enabled
 behavior and class ranges are hypotheses pending the paired validation;
 no improvement is claimed from implementing the policy.
 
 | Parameter | Compiled / shipped | Meaning |
 | --- | --- | --- |
-| `attack_on_sight` | 0 / 0 | Give an active attack category priority before flight, and exclude that monster from scare classification. |
-| `caution_winning_fight` | 0 / 0 | Attack while turns to kill all attackers are strictly fewer than turns to die; otherwise use ordinary caution. |
+| `attack_on_sight` | 0 / 1 | Give an active attack category priority before flight, and exclude that monster from scare classification. |
+| `caution_winning_fight` | 0 / 1 | Attack while turns to kill all attackers are strictly fewer than turns to die; otherwise use ordinary caution. |
 
 `harness/scary_monsters.txt` remains the common database. Its new form is
 `monster | level | class exceptions | attack[,breeders] | reason`.
