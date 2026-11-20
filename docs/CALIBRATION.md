@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Ranger arrows: a soft cap, then a taper (#716)
 
-The registry now holds **2204** parameters (2202 after #712; two added).
+The registry now holds **2205** parameters (2203 after #712; two added).
 Owner, 2026-11-20: "they do not need that many arrows"; "a soft cap at 50
 and then a curve for additional arrows utility, configurable, say 75".
 
@@ -38,7 +38,7 @@ and then a curve for additional arrows utility, configurable, say 75".
 
 ## Thrown oil, a town-planner curve of its own (#712)
 
-The registry now holds **2202** parameters (2200 after #685; two added).
+The registry now holds **2203** parameters (2201 after #711; two added).
 
 - **`town_oil_apart`** (flag, 0 = C): the town planner values each flask of
   oil kept to throw on a capability of its own, "thrown oil", beside its
@@ -56,6 +56,31 @@ The registry now holds **2202** parameters (2200 after #685; two added).
 |---|---|---|---|---|
 | `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:392` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
+
+## Store at home only when overweight (#711)
+
+The registry now holds **2201** parameters (2200 before; one added).
+Owner, 2026-11-20: "only when it weighs too much they should stash the
+object with less value at home, untile they are not overcarrying again".
+
+- **`town_store_only_overweight`** (compiled 0, **shipped 1**: owner,
+  2026-11-20, "it is a no brainer, turn the switch on"). With it on, the
+  live town planner (`dispositions`, `borg_town_utility.rs`) moves a pack
+  stack to the Home only while the pack is over its weight allowance. The
+  pack is visited lowest keep value per weight first, so the least valuable
+  stack goes first, and the storing stops once the pack is under.
+- **0 (today):** a stack also goes home when its value kept for later
+  (times `borg_town_home_discount` / 1000, shipped 500) minus a home slot's
+  cost beats its value carried now minus its carrying cost. Next to a few
+  Cure Light Wounds the healing curve is nearly full, so a Cure Serious
+  Wounds went home with the pack light (#711; the pack power rule,
+  `power_inventory_maxclevel_threshold`, plays no part with
+  `borg_town_plan = 1`).
+- Taking stacks back from the Home is unchanged.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 
 ## No detection prayer by panel at low level (#685)
 
