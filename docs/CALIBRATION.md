@@ -67,9 +67,14 @@ The registry now holds **2200** parameters (2199 after #625; one added).
   mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
   Paladins. Detect Evil also misses the animals that kill these classes on
   DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
-  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; since
-  2026-11-20 (owner) 10 for every class, so Rogue, Ranger and Blackguard too
-  (a Warrior casts none).
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; on
+  2026-11-20 10 for every class (#723), then **reverted to 0 for every class**
+  (owner, 2026-11-20: "turning on call light and detect monsters on casters
+  low level seems a bad call"). A CL1 character sees only the 8 grids next to
+  it in a dark room (unlight `2 + lev/6`, or a torch's `LIGHT_2`, radius 1,
+  `cave-view.c:658,777`), so it meets a floating eye only when adjacent, and
+  the eye's gaze paralyses it before it acts again (165 of 8,702 zoo deaths,
+  117 at CL1). Detection shows it first. The zoo measures 0 against 10.
   Shipped with #568 (PR #723, the same run as there): detection casts on
   the 18 classes-18 starts 62 to 14, most of them the Blackguards' Seek
   Battle (37 to 2 and 20 to 1). The 40% and 46% figures above are the
