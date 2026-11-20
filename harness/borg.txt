@@ -1099,6 +1099,17 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
 
+# Slower crowd exit (#690, generalising the breeder exit): surrounded, the
+# danger here at or above the HP, and every awake monster within reach
+# slower than the Borg by the margin (energy per game turn) or never moving:
+# walk to the nearest known corridor, doorway or staircase at least this
+# distance from all of them, else to any open grid that far; with neither,
+# the distance comes down to 2. A faster awake monster near holds it. 0 = off.
+
+borg_param_caution_slow_crowd_exit = 0
+borg_param_caution_slow_crowd_exit_distance = 6
+borg_param_caution_slow_crowd_exit_margin_percent = 25
+
 # Avoid breeder colonies (#556): remember where breeders were seen for
 # caution_breeder_avoid_turns Borg turns; every flow but a kill flow (stairs,
 # flight, exploration, items, the breeder exit) refuses the grids within
