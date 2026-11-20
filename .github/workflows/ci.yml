@@ -247,7 +247,13 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/reference/smoke-borg-rs
-      - run: python3 harness/check-ranger-phase.py
+      - id: ranger-phase
+        run: python3 harness/check-ranger-phase.py --out "$RUNNER_TEMP/ranger-phase"
+      - uses: actions/upload-artifact@v4
+        if: failure() && steps.ranger-phase.outcome == 'failure'
+        with:
+          name: ranger-phase-failure
+          path: ${{ runner.temp }}/ranger-phase
       - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
       # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
       - run: BORG_CORE=reborn BORG_IMPL=rust harness/check-extra-load.sh

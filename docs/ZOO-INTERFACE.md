@@ -272,8 +272,10 @@ summary when a run directory is present. Each line has
 `schema: "borg-phase-observations@1"`, `game_turn` and `type`.
 
 - `town_stock` has `shops`, Phase Door stock counts indexed by retail shop
-  (indices 0–6). The first town observation and a changed inventory of
-  Phase Doors emit a snapshot, whether the shop was visited or not.
+  (indices 0–6). The first town observation on each arrival and a change
+  in noticed stock emit a snapshot, even for unvisited shops. This cache
+  reflects the latest inventory scan and can lag shelf changes between
+  scans. A return to town can emit the same counts again.
 - `shop_visit` has the entered `shop` and its `phase_scrolls` stock before
   the Borg's first action on that visit. Zero is an observed count.
 - `first_monster_contact` has `depth` and `phase_scrolls` in the pack at

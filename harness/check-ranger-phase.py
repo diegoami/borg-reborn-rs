@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Native first-town regression for Half-Orc Ranger 2095979189 (#797)."""
 
+import argparse
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import tempfile
 
 
@@ -41,14 +44,18 @@ def check_arm(out, reserve):
     summary = json.loads((out / "summary.json").read_text())
     assert summary["stop_reason"] == "turns" and summary["game_turns"] == 1900, summary
     assert (summary["seed"], summary["class_idx"], summary["race_idx"]) == (2095979189, 7, 6)
+    departure = None
     with (out / "state.log").open() as states:
-        departure = next(int(turn) for turn, _, depth, *_ in map(str.split, states)
-                         if not depth.startswith("d0/"))
-    purchases = []
-    for row in (out / "messages.log").read_text().splitlines():
-        _, turn, _, message = row.split(" ", 3)
-        if int(turn) < departure and message.startswith("You bought "):
-            purchases.append(message.removeprefix("You bought "))
+        for fields in map(str.split, states):
+            if len(fields) >= 3 and fields[2].startswith("d") and not fields[2].startswith("d0/"):
+                departure = int(fields[0])
+                break
+    assert departure is not None, (reserve, "no dungeon departure")
+
+    messages = [(int(turn), note) for _, turn, _, note in
+                (line.split(" ", 3) for line in (out / "messages.log").read_text().splitlines())]
+    purchases = [note.removeprefix("You bought ") for turn, note in messages
+                 if turn < departure and note.startswith("You bought ")]
     assert purchases == EXPECTED_PURCHASES[reserve], (reserve, departure, purchases)
 
     rows = [json.loads(row) for row in (out / "phase-observations.jsonl").read_text().splitlines()]
@@ -61,16 +68,33 @@ def check_arm(out, reserve):
                        and row["depth"] > 0]
     assert len(dungeon_contact) == 1, (reserve, dungeon_contact)
     contact = dungeon_contact[0]
-    first_sighting = next(int(turn) for _, turn, _, note in
-                          (line.split(" ", 3) for line in (out / "messages.log").read_text().splitlines())
-                          if int(turn) >= departure and note.startswith("# Creating a monster "))
+    first_sighting = next((turn for turn, note in messages
+                           if turn >= departure and note.startswith("# Creating a monster ")), None)
+    assert first_sighting is not None, (reserve, "no dungeon monster sighting")
     assert contact["game_turn"] == first_sighting, (reserve, contact, first_sighting)
     # The reserve-2 character picked up four more scrolls before seeing a foe.
     assert contact["phase_scrolls"] == (1 if reserve == 0 else 6), (reserve, contact)
     print(f"Ranger reserve {reserve}: first town purchases and contact kit matched")
 
 
-if __name__ == "__main__":
-    with tempfile.TemporaryDirectory(prefix="ranger-phase-") as tmp:
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--out", type=Path, help="new directory for replay logs on failure")
+    args = parser.parse_args()
+    out = args.out
+    if out is None:
+        out = Path(tempfile.mkdtemp(prefix="ranger-phase-"))
+    else:
+        out.mkdir()
+    try:
         for reserve in (0, 2):
-            check_arm(Path(tmp) / f"reserve-{reserve}", reserve)
+            check_arm(out / f"reserve-{reserve}", reserve)
+    except BaseException:
+        print(f"Ranger regression logs retained in {out.resolve()}", file=sys.stderr)
+        raise
+    else:
+        shutil.rmtree(out)
+
+
+if __name__ == "__main__":
+    main()
