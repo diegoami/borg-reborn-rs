@@ -5092,6 +5092,13 @@ pub(crate) fn observed_kill_hp(kill: &crate::borg_flow_kill::BorgKill) -> Option
     kill.observed_health.filter(|&(hp, max)| hp >= 0 && max > 0).map(|(hp, _)| i32::from(hp) + 1)
 }
 
+/// HP/shot -> HP/Borg turn. Engine ranged_damage does not multiply the
+/// damage of an arrow by shooting rate (player-attack.c:554-582); firing
+/// instead costs 10/num_shots of a turn (player-attack.c:1087).
+pub(crate) fn focused_projectile_rate(per_shot: i64, num_shots: i32) -> i64 {
+    per_shot * i64::from(num_shots.max(0)) / 10
+}
+
 /// #759: real damage for the focused planner, in millihitpoints. The
 /// native planner's targeting bonuses, missile conservation and point-blank
 /// preferences are not damage. Non-damaging projections score zero.
@@ -5125,7 +5132,7 @@ fn focused_launch_damage(st: &BorgState, i: usize, damage: i32, typ: i32, slot: 
             damage = damage.min(i64::from(focused_power(st, kill.power)));
             damage = damage * i64::from(hit_permyriad(chance, race.ac)) / 10_000;
             if !st.fight_attack.throwing {
-                damage = damage * i64::from(engine::player_attack_rates().1.max(0)) / 10;
+                damage = focused_projectile_rate(damage, engine::player_attack_rates().1);
             }
         }
         BORG_ATTACK_ACID if rf(r, RF_IM_ACID) => damage = 0,
@@ -5198,7 +5205,8 @@ pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'stati
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct FocusedAttack {
     pub kind: i32,
-    pub damage: i32,
+    /// Expected millihitpoints per Borg turn, AFTER firing/blow rate scaling.
+    pub hp_per_turn_milli: i32,
     pub cost: Option<AttackCost>,
     pub fallback: i32,
     /// Borg turns consumed by one use (shots use fractional energy).
@@ -5223,7 +5231,7 @@ fn focused_blow_expectation(damage: i32, hp: i32, chance: i32, blows: i32) -> i6
 }
 
 fn focused_score(a: FocusedAttack) -> (i64, i32) {
-    let expected = i64::from(a.damage) * i64::from(100 - a.cost.map_or(0, |c| c.fail_pct));
+    let expected = i64::from(a.hp_per_turn_milli) * i64::from(100 - a.cost.map_or(0, |c| c.fail_pct));
     (expected, focused_priority(a.kind))
 }
 
@@ -5242,14 +5250,14 @@ mod focused_tests {
 
     #[test]
     fn expected_damage_precedes_family_tiebreak() {
-        let missile = FocusedAttack { kind: BF_LAUNCH as i32, damage: 2000, cost: None, fallback: 0, duration: 1.0 };
-        let melee = FocusedAttack { kind: BF_THRUST as i32, damage: 9000, cost: None, fallback: 0, duration: 1.0 };
+        let missile = FocusedAttack { kind: BF_LAUNCH as i32, hp_per_turn_milli: 2000, cost: None, fallback: 0, duration: 1.0 };
+        let melee = FocusedAttack { kind: BF_THRUST as i32, hp_per_turn_milli: 9000, cost: None, fallback: 0, duration: 1.0 };
         assert!(focused_score(melee) > focused_score(missile), "best damage first, including attack-on-sight");
-        let equal_missile = FocusedAttack { damage: 9000, ..missile };
+        let equal_missile = FocusedAttack { hp_per_turn_milli: 9000, ..missile };
         assert!(focused_score(equal_missile) > focused_score(melee), "missile wins only a damage tie");
-        let oil = FocusedAttack { kind: BF_OBJECT as i32, damage: 8000, ..missile };
+        let oil = FocusedAttack { kind: BF_OBJECT as i32, hp_per_turn_milli: 8000, ..missile };
         assert!(focused_score(oil) > focused_score(missile), "pilot crow regression: oil must beat weak pebbles");
-        let spell = FocusedAttack { kind: BF_SPELL_MAGIC_MISSILE as i32, damage: 10_000,
+        let spell = FocusedAttack { kind: BF_SPELL_MAGIC_MISSILE as i32, hp_per_turn_milli: 10_000,
             cost: Some(AttackCost { fail_pct: 90, uses: Some(1), spell: true }), fallback: 0, duration: 1.0 };
         assert!(focused_score(missile) > focused_score(spell), "spell failure counts");
         assert_eq!(hit_permyriad(100, 0), 9500);
@@ -5323,7 +5331,7 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
         }
         if cost.is_none() { fallback = fallback.max(damage); }
         let duration = if kind == BF_LAUNCH as i32 { 10.0 / f64::from(engine::player_attack_rates().1.max(1)) } else { 1.0 };
-        let candidate = FocusedAttack { kind, damage, cost, fallback: 0, duration };
+        let candidate = FocusedAttack { kind, hp_per_turn_milli: damage, cost, fallback: 0, duration };
         if best.is_none_or(|b| focused_score(candidate) > focused_score(b)) {
             best = Some(candidate);
         }
