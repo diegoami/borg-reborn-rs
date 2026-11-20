@@ -4584,7 +4584,7 @@ specimen remains unmeasured; [Zoo #511](https://github.com/diegoami/borg-zoo/iss
 preserves the initial pilot provenance and pins the future specimen.
 
 
-Review corrections for #763 (MiniMax-M3 and Claude Opus 5.5):
+Review corrections on2379b3fb (historical; superseded by the unit separation below):
 
 - Race time now rounds to complete commands, including the unlimited melee
   fallback and each attacker's finishing command. A shot retains its fractional
@@ -4645,14 +4645,31 @@ its conversion through player energy remains unchanged. Older forecast
 figures and specimen394f2aea are historical; the new specimen must be
 explicitly pinned after verification. No switch is enabled for shipping.
 
+
+Verified shared unit-separation specimen:
+`a4e4d91546cd9a2e1b43a03c0321feaa14b9893f`, with accepted main #779.
+42 new named attempts (nine explicitly named starts, repeated across flags
+plus one diagnostic) have no harness failures. All-switch reaches100k in
+five original lives;425 dies to Fang3621 and151 to rock lizard6299. Both
+reviewer-added starts survive; Magic Missile/oil choices are in the canonical
+Cemetery #88 `units-cases.md` at4672f20c. Original425's non-acting diagnostic
+remains control-neutral. The sound naga calculation still gives155.61HP;
+unmodelled risk is a separate refusal reason. This supersedes394f2aea as the
+future Zoo proposal; the original78b8 pilot retains its own provenance.
+Both implementation CI runs and the shipped-off smoke checks pass. No
+population improvement or shipment is claimed; only the owner schedules
+Zoo #511 and accepts re-review.
+
 ## Flight Recall survival gate (#758)
 
 The registry now holds **2258** parameters after accepted main #768
 (2256 in the parent fight branch; two Recall parameters added).
 
 `caution_recall_survival` is compiled and shipped **0**. At 1, only a
-flight's Recall read is refused when the expected exposure to known reachable monsters during the delay,
-including sleepers that may wake is at least current HP. The switch
+flight's Recall read is refused when modelled contact HP during the delay
+reaches current HP, or a reachable spell/status contribution remains unmodelled.
+Sleepers that may wake are included; unknown risk is reported separately,
+not converted from a fear score into HP. The switch
 does not change trip-home Recall or the handling of a pending Recall.
 
 `caution_recall_survival_delay` is compiled/shipped **34 world ticks**,
@@ -4732,3 +4749,15 @@ This deliberately conservative fallback can refuse a safe unknown case; it
 is not a claim that the monster's unmodelled spell is lethal. The new shared
 specimen must be explicitly repinned after named checks. No population
 comparison or shipped adoption is implied.
+
+
+Latest verification uses shared specimen a4e4d915:42 additional named attempts,
+no harness failures, with fresh controls, all three switches individually/all,
+two reviewer-named starts and the original425 diagnostic. Recall-only still
+reaches100k for425,197 and807; all-switch reaches five original lives, with
+Fang425 and rock-lizard151 retained as deaths. Both added starts survive;
+actual Magic Missile/oil choices are retained in Cemetery #88 `units-cases.md`
+at4672f20c. The naga's155.61HP exposure is preserved, while unknown spell/status
+risk is qualitatively labelled. Both code-pin CI runs and3/3 off smoke pass.
+The future Zoo proposal is explicitly repinned to a4e4d915 and remains
+unmeasured. Earlier394/5acb proposals and78b8 pilot keep separate provenance.

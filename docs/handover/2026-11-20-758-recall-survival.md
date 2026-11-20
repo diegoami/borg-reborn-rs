@@ -95,3 +95,29 @@ shared Zoo pin is394f2aea (f9e15507 source hash); previous78b8 pilot and
 pass (518 core tests, four ignored); smoke3/3 identical and CI394f2aea green.
 Final documentation/review pins are on the PR. Owner-selected re-review and
 owner-scheduled measurement remain; no review acceptance, merge or dispatch.
+
+
+Third review on1af8aa1c identified a valid mixed-unit issue. Fixed in tested
+shared specimen a4e4d915: contact HP is summed separately from unmodelled
+spell/status risk. Basic elemental dice use static effect hit power and
+speed; no native fear score is multiplied by time. Known non-damaging and
+non-moving effects such as HEAL/SCARE add no HP and do not remove melee
+travel. Unknown contributions refuse qualitatively, without claiming
+proven lethality. Projectable immobile offensive/status casters still count.
+The parameter description, logs and CALIBRATION describe the uncertainty.
+
+The third bow allegation is rebutted against engine ranged_damage and the
+actual HP/Borgturn input (new rate-conversion tests); removing duration would
+over-credit arrows. Regeneration is turn%100 gated, not per monster action.
+The exception shares the existing threshold multiplier, not regional/map
+fear terms. Responses are on #763/#764, with exact new re-review pins there.
+Accepted main #779 is synchronized. Local Rust/citation/vendor checks pass
+(521 core tests, four ignored;2258 zero wrong/disagreeing rows), and both
+implementation CI pins plus3/3 off smoke are green.42 fresh attempts bring
+the canonical ledger to172, all accounted for; no new natural key stream
+needed a duplicate dossier (1738 canonical dossiers verified). Latest report
+is Cemetery #88 `units-cases.md`,4672f20c. All-switch remains five original
+survivors; both reviewer-added starts survive with actual spell/oil choices.
+New shared Zoo specimen a4e4d915 sourcehash2ccaf24c is explicitly pinned,
+unmeasured; previous proposals/pilot retain their provenance. Owner-selected
+re-review and owner-scheduled measurement remain. No merge or dispatch.
