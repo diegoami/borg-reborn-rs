@@ -115,6 +115,10 @@ pub struct FlowState {
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
+    /// borg-reborn-rs (#732): flow steps to the nearest known staircase for
+    /// every grid, computed once per think (`now`) for `flow_leash`; empty
+    /// when no staircase is known.
+    pub leash_map: Option<(crate::borg::BorgTime, Vec<u8>)>,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -144,6 +148,7 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             hunting: false,
+            leash_map: None,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -545,6 +550,35 @@ fn spread_blocked(
 /// nor to Monster grids if borg_desperate is set.
 ///
 /// "Sneak" will have the borg avoid grids which are adjacent to a monster.
+/// borg-reborn-rs (#732, owner: "at lvl 1 never more than 15 from stairs,
+/// at lvl 2 no more than 25, at lvl 3 no more than 40, at lvl 4 no more than
+/// 60 and at lvl 5 they can explore the level"). `None` with `flow_leash` off
+/// (C's leash, `borg_get_leash`); `Some(None)` past `flow_leash_max_level`
+/// (no leash); `Some(Some(n))`: at most n flow steps from the nearest known
+/// staircase.
+pub(crate) fn leash_steps(clevel: i32) -> Option<Option<i32>> {
+    use crate::params::{value, Param};
+    if value(Param::flow_leash) == 0 {
+        return None;
+    }
+    let steps = [
+        value(Param::flow_leash_cl1),
+        value(Param::flow_leash_cl2),
+        value(Param::flow_leash_cl3),
+        value(Param::flow_leash_cl4),
+    ];
+    Some(leash_for(clevel, value(Param::flow_leash_max_level), steps))
+}
+
+/// The leash at character level `clevel`: none past `max_level`; CL1-4 take
+/// their own value, CL5 and up (when `max_level` allows) CL4's.
+pub(crate) fn leash_for(clevel: i32, max_level: i32, steps: [i32; 4]) -> Option<i32> {
+    if clevel > max_level {
+        return None;
+    }
+    Some(steps[(clevel.clamp(1, 4) - 1) as usize])
+}
+
 /// borg-reborn-rs (#556): a spread refuses grid (`x`, `y`) when it is near a
 /// remembered breeder, unless the spread is a kill flow's (`hunting`) or the
 /// grid is next to the Borg at `borg` (its first step).
@@ -1569,6 +1603,24 @@ mod tests {
         assert!(contains(b"Small wooden chest", b"chest"));
         assert!(!contains(b"Ruined chest", b"chests"));
         assert!(contains(b"abc", b""));
+    }
+}
+
+#[cfg(test)]
+mod leash_tests {
+    use super::leash_for;
+
+    /// #732: the owner's leash by character level.
+    #[test]
+    fn leash_by_level() {
+        let steps = [15, 25, 40, 60];
+        assert_eq!(leash_for(1, 4, steps), Some(15));
+        assert_eq!(leash_for(2, 4, steps), Some(25));
+        assert_eq!(leash_for(3, 4, steps), Some(40));
+        assert_eq!(leash_for(4, 4, steps), Some(60));
+        assert_eq!(leash_for(5, 4, steps), None, "CL5 explores the level");
+        assert_eq!(leash_for(6, 8, steps), Some(60), "past CL4, CL4's leash up to max_level");
+        assert_eq!(leash_for(1, 0, steps), None, "max_level 0: no leash");
     }
 }
 

@@ -1503,6 +1503,14 @@ pub fn borg_flow_far_from_stairs_dist(
     b_stair: i32,
     distance: i32,
 ) -> bool {
+    // borg-reborn-rs (#732): with flow_leash, the owner's leash by character
+    // level from the nearest known staircase of either kind, instead of C's.
+    if let Some(leash) = crate::borg_flow::leash_steps(st.borg.tr(BI_CLEVEL)) {
+        return match leash {
+            Some(n) if st.borg.tr(BI_CDEPTH) > 0 => leash_cost(st, y, x).is_some_and(|cost| cost > n),
+            _ => false,
+        };
+    }
     if st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5 && st.borg.tr(BI_CLEVEL) < 20 {
         /* obtain the number of steps from this take to the stairs */
         let cost = borg_flow_cost_stair(st, y, x, b_stair);
@@ -1514,6 +1522,34 @@ pub fn borg_flow_far_from_stairs_dist(
     }
 
     false
+}
+
+/// borg-reborn-rs (#732): flow steps from (`x`, `y`) to the nearest known
+/// staircase, up or down. One spread from every known staircase per think
+/// (C's leash spreads once per candidate grid, from one up staircase). `None`
+/// when no staircase is known (no leash: the Borg must find one) or the grid
+/// is out of the spread's reach (as C: off leash).
+fn leash_cost(st: &mut BorgState, y: i32, x: i32) -> Option<i32> {
+    let now = st.borg.time.now;
+    if st.flow.leash_map.as_ref().is_none_or(|(t, _)| *t != now) {
+        let stairs: Vec<(i32, i32)> = (0..st.stairs.less.num.max(0) as usize)
+            .map(|i| st.stairs.less.at(i))
+            .chain((0..st.stairs.more.num.max(0) as usize).map(|i| st.stairs.more.at(i)))
+            .collect();
+        let mut map = Vec::new();
+        if !stairs.is_empty() {
+            crate::borg_flow::borg_flow_clear(st);
+            for (sy, sx) in stairs {
+                crate::borg_flow::borg_flow_enqueue_grid(st, sy, sx);
+            }
+            crate::borg_flow::borg_flow_spread(st, 250, false, false, false, -1, false);
+            map = (0..AUTO_MAX_Y).flat_map(|yy| (0..AUTO_MAX_X).map(move |xx| (yy, xx))).map(|(yy, xx)| st.flow.cost_at(yy, xx)).collect();
+        }
+        st.flow.leash_map = Some((now, map));
+    }
+    let map = &st.flow.leash_map.as_ref()?.1;
+    let cost = *map.get((y * AUTO_MAX_X + x) as usize)?;
+    (cost != 255).then_some(i32::from(cost))
 }
 
 /// `borg_init_flow_misc()`.

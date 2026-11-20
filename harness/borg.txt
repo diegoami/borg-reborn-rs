@@ -344,6 +344,18 @@ borg_param_prepared_depth_early_levels_per_dl = 3
 borg_param_prepared_depth_early_until_level = 6
 borg_param_prepared_depth_late_levels_below = 3
 
+# #732 (owner): a leash for low levels on top of the depth cap. With
+# flow_leash = 1, exploring and walking to items stay within these flow steps
+# of the nearest known staircase (up or down): CL1 15, CL2 25, CL3 40, CL4 60;
+# past flow_leash_max_level the whole level. 0 = C's leash (CL x 3 + 9 from
+# the farthest up staircase).
+borg_param_flow_leash = 0
+borg_param_flow_leash_cl1 = 15
+borg_param_flow_leash_cl2 = 25
+borg_param_flow_leash_cl3 = 40
+borg_param_flow_leash_cl4 = 60
+borg_param_flow_leash_max_level = 4
+
 # Fleeing: walk to a reachable staircase first, and read Recall only when
 # none is reachable (#539). 0 = the C order, Recall first.
 # Impact: set to 0, 2 of 6 test games play differently.
