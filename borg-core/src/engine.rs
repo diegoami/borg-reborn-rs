@@ -1402,6 +1402,19 @@ pub struct PlayerSummary {
     pub word_recall: i16,
 }
 
+/// #759: computed attack rates from the player's own state, already in
+/// the permitted player_state read category (docs/ENGINE-READS.md). Blows
+/// are hundredths and shots tenths (player-attack.c:991,1087).
+pub fn player_attack_rates() -> (i32, i32) {
+    let p = player_ref();
+    (p.state.num_blows, p.state.num_shots)
+}
+
+/// #759/#758: own displayed speed, including current haste/slow effects.
+pub fn player_combat_speed() -> i32 {
+    player_ref().state.speed
+}
+
 /// Read the player's summary fields.
 pub fn player_summary() -> PlayerSummary {
     let p = player_ref();

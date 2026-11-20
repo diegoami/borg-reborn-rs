@@ -16,7 +16,9 @@ main `08f94e1f`. #757 and #761 belong to another session and are untouched.
   not win. Exact observed HP/max HP is retained at the existing perception
   read; health-bar rounding is not used to certify a win. Zero-HP monsters
   still need one damage point. Finishing damage is capped before hit chance,
-  fractional arrow averages are retained, and regeneration is charged. The
+  fractional arrow averages are retained, and regeneration is charged.
+  Own computed fractional blows/shots and displayed speed drive the clock;
+  ammo limits count individual uses, not whole turns of fire. The
   fight rung precedes depth-return/light/countdown flight rungs. Unknown
   estimates fall through to ordinary caution.
 - The category proposal was presented before building. The six specified

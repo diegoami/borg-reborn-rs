@@ -722,6 +722,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // #760/#759: an attack-on-sight target or a winning fight owns the
     // action before even an out-of-light wait or a depth-return flight.
     if crate::borg_caution::fight_before_flight(st) {
+        if st.borg.no_retreat > 0 {
+            st.borg.no_retreat -= 1;
+        }
         return choice!("fight_before_flight");
     }
 
