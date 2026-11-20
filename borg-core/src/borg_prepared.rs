@@ -1063,6 +1063,8 @@ mod recall_depth_tests {
     fn shallow_gates_keep_first_failure_and_report_the_compared_operands() {
         use super::*;
         let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
         st.borg.trait_[BI_CDEPTH as usize] = 4;
         let fail = |st: &BorgState| shallow_requirements(st, 5).unwrap().requirement;
         assert_eq!(fail(&st), Requirement { name: "light_radius", actual: 0, required: 1, relation: ">=" });
@@ -1072,6 +1074,10 @@ mod recall_depth_tests {
             Requirement { name: "food", actual: 0, required: 3, relation: ">=" });
         st.borg.trait_[BI_FOOD as usize] = 5;
         assert_eq!(fail(&st), Requirement { name: "prepared_dl2_min_hp", actual: 0, required: 30, relation: ">=" });
+        st.borg.trait_[BI_MAXHP as usize] = 30;
+        let hp = fail(&st);
+        assert_eq!((hp.name, hp.actual), ("prepared_dl34_min_hp", 30));
+        assert!(hp.required >= 40);
         st.borg.trait_[BI_MAXHP as usize] = 100;
         let cl = fail(&st);
         assert_eq!(cl.name, "prepared_dl34_min_clevel");

@@ -12,6 +12,6 @@ Paladin trips that reached DL2 recorded an explicit 50-max-HP refusal for
 DL3. No cell reached DL4. These are partial observations from two Paladin
 births. The 90-start follow-up lacks raw streams.
 
-The proposed Zoo test changes only the Paladin DL3–4 max-HP minimum, from
+The [proposed Zoo test](https://github.com/diegoami/borg-zoo/issues/544) changes only the Paladin DL3–4 max-HP minimum, from
 50 to 45, with the P7 descent endpoint and a prespecified survival margin.
 The owner chooses whether to run it and opens the confirmation block.
