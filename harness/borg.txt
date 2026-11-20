@@ -608,10 +608,11 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. Shipped 10
-# for every class (owner, 2026-11-20); the casters also set 10 in their class
-# files.
-borg_param_light_detect_evil_spell_min_level = 10
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. Reverted to
+# 0 for every class (owner, 2026-11-20): a low-level character sees only the
+# grids next to it in a dark room, so it walks into floating eyes; detection
+# is what shows them first. The zoo measures it.
+borg_param_light_detect_evil_spell_min_level = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
@@ -1139,7 +1140,7 @@ borg_param_town_heal_reserve_hp_percent_mage = 300
 borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
-borg_param_light_detect_evil_spell_min_level__mage = 10
+borg_param_light_detect_evil_spell_min_level__mage = 0
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1147,7 +1148,7 @@ borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
-borg_param_light_detect_evil_spell_min_level__druid = 10
+borg_param_light_detect_evil_spell_min_level__druid = 0
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1155,7 +1156,7 @@ borg_param_town_heal_reserve_hp_percent_priest = 250
 borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
-borg_param_light_detect_evil_spell_min_level__priest = 10
+borg_param_light_detect_evil_spell_min_level__priest = 0
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1164,7 +1165,7 @@ borg_param_town_heal_reserve_hp_percent_necromancer = 300
 borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
-borg_param_light_detect_evil_spell_min_level__necromancer = 10
+borg_param_light_detect_evil_spell_min_level__necromancer = 0
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1173,7 +1174,7 @@ borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent__paladin = 100
 borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
-borg_param_light_detect_evil_spell_min_level__paladin = 10
+borg_param_light_detect_evil_spell_min_level__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
