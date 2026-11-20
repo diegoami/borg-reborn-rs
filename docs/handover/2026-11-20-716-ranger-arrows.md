@@ -31,6 +31,9 @@ curve for additional arrows utility, configurable, say 75".
   | Phase Door sent home | 5 / 0 | 0 / 0 | 0 / 0 |
   | Max CL | 6 / 6 | 5 / 7 | 6 / 5 |
 
+  - As shipped, after merging main's #711 (`town_store_only_overweight`):
+    180 / 71 bought, median 65 / 62, most 80 / 79, no Phase Door sent home,
+    max CL 6 / 4.
   - Off, both games play main's keys.
   - A first try, a diminishing curve past the cap weighted as the reserve,
     carried more arrows than C (median 102 and 195) and was replaced by the
@@ -38,8 +41,7 @@ curve for additional arrows utility, configurable, say 75".
   - The most carried (80–120) comes from arrows picked up in the dungeon:
     pack power keeps up to 180 (`power_inventory_amissiles_limit_3`,
     unchanged).
-- **smoke-borg-rs:** no Ranger in it; the games match the reference merged
-  from #712 (`scripts/rerecord-smoke-borg-rs.sh`: nothing to re-record).
+- **smoke-borg-rs re-recorded** (`scripts/rerecord-smoke-borg-rs.sh`) after merging main.
 - **Checked:** fmt, clippy `-D warnings`, both test commands (core 473),
   the class files check, `borg-core-vendor.py check`, citations (2204).
 
