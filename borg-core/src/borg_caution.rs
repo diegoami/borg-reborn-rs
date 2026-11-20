@@ -2819,7 +2819,8 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     // not take is no escape.
     let down = if rising_holds_flee_descent(st) { -1 } else { nearest_free_stair(st, false) };
     let escape = st.borg.tr(BI_CDEPTH) == 0
-        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down);
+        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down)
+        || recall_pending_escape(p(Param::caution_recall_pending_escape) != 0, st.borg.goal.recalling);
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
@@ -2972,6 +2973,54 @@ pub(crate) fn recall_restricts(st: &BorgState) -> bool {
 
 fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
     recalling && (!as_usual || depth <= 1)
+}
+
+/// borg-reborn-rs (#754, owner): with `caution_recall_pending_escape`, a
+/// Word of Recall already counting down (`goal.recalling`) is an escape that
+/// is running, so a scary level keeps its flight instead of "standing and
+/// fighting" (#530 counts only a Recall still in the pack). 0 = #530.
+fn recall_pending_escape(on: bool, recalling: i32) -> bool {
+    on && recalling != 0
+}
+
+/// borg-reborn-rs (#754, owner): with `caution_recall_wait_no_explore`, while
+/// Word of Recall counts down in the dungeon the Borg does not explore or
+/// chase far monsters and objects (`borg_think_dungeon`'s "Explore the
+/// dungeon" block: vaults, `borg_flow_kill`/`borg_flow_take`/`borg_flow_vein`
+/// at 250, `borg_flow_dark`). It waits where it stands instead: the usual
+/// rest for Recall when nothing threatens it here (`borg_danger` 0), else it
+/// stays still one turn (`,`), so each think sees what comes. 0 = C (explore
+/// while waiting; the wait comes after exploration).
+pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
+    if !recall_wait_holds(
+        p(Param::caution_recall_wait_no_explore) != 0,
+        st.borg.goal.recalling,
+        st.borg.tr(BI_CDEPTH),
+    ) {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let safe = borg_danger(st, y, x, 1, true, false) <= 0;
+    // #567's hold (a monster was near a moment ago) presses its own `,`.
+    if safe && recall_rest_held(st) {
+        return true;
+    }
+    if safe {
+        borg_note(st, "# Waiting for Recall (not exploring).");
+        borg_keypress(st, key(b'R'));
+        borg_keypress(st, key(b'9'));
+        borg_keypress(st, KC_ENTER);
+    } else {
+        borg_note(st, "# Waiting for Recall (not exploring): staying still.");
+        borg_keypress(st, key(b','));
+    }
+    st.borg.in_shop = false;
+    true
+}
+
+/// The test of `recall_wait_no_explore`: on, Recall pending, in the dungeon.
+fn recall_wait_holds(on: bool, recalling: i32, depth: i32) -> bool {
+    on && recalling != 0 && depth != 0
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -4823,6 +4872,22 @@ mod scary_stand_tests {
         assert!(recall_restricts_with(true, true, 0), "not in town: the down staircase leads to the dungeon");
         assert!(!recall_restricts_with(false, false, 5), "no Recall pending");
         assert!(!recall_restricts_with(false, true, 0));
+    }
+
+    #[test]
+    fn a_pending_recall_is_an_escape_only_with_the_switch() {
+        assert!(!recall_pending_escape(false, 30), "#530: a pending Recall is no escape");
+        assert!(recall_pending_escape(true, 30), "the switch: it is one");
+        assert!(!recall_pending_escape(true, 0), "no Recall pending");
+    }
+
+    #[test]
+    fn the_recall_wait_skips_exploration_only_in_the_dungeon() {
+        assert!(!recall_wait_holds(false, 30, 1), "off: C explores while waiting");
+        assert!(recall_wait_holds(true, 30, 1), "on, DL1");
+        assert!(recall_wait_holds(true, 30, 7), "on, DL7");
+        assert!(!recall_wait_holds(true, 30, 0), "not in town");
+        assert!(!recall_wait_holds(true, 0, 3), "no Recall pending");
     }
 
     #[test]

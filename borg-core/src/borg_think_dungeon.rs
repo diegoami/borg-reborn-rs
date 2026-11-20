@@ -1296,6 +1296,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /*** Explore the dungeon ***/
 
+    // borg-reborn-rs (#754): caution_recall_wait_no_explore.
+    if crate::borg_caution::recall_wait_no_explore(st) {
+        return choice!("wait_for_recall");
+    }
+
     if st.borg.status.vault {
         /* Chase close monsters */
         if borg_flow_kill(st, false, i32::from(engine::z_info().max_range) + 1) {
