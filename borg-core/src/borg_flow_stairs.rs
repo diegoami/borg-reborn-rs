@@ -142,6 +142,22 @@ fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32
 
 /// Commit the flow and take one step (the common end of the three flows).
 fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
+    // borg-reborn-rs (#743, the follow-up of #736): a flight takes a
+    // staircase only by a clean path: the flow just spread is walked
+    // (`path_blocker`, no second spread) before it is committed.
+    if flee_check_applies(st, why) {
+        let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
+        if let Some(k) = path_blocker(st, percent) {
+            st.borg.flee_path_refused = true;
+            if !st.borg.flee_path_noted {
+                st.borg.flee_path_noted = true;
+                let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+                let to = who.to_string_lossy();
+                borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
+            }
+            return false;
+        }
+    }
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, who, why) {
         return false;
@@ -189,8 +205,18 @@ pub fn borg_flow_cost_stair(st: &mut BorgState, y: i32, x: i32, b_stair: i32) ->
 
 /// Prepare to flee the level via stairs.
 fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+    stair_kinds(st, why, sneak, None)
+}
+
+/// `stair_both` for the staircases of `only` (`None`: both kinds). The
+/// review of #757: #743's fallback tries each kind on its own under the
+/// combined flight's rules, not `stair_less`/`stair_more`'s (whose
+/// `more_refused` the combined flow never applied).
+fn stair_kinds(st: &mut BorgState, why: i32, sneak: bool, only: Option<Which>) -> bool {
+    let up = !matches!(only, Some(Which::More));
+    let down = !matches!(only, Some(Which::Less));
     /* None to flow to */
-    if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
+    if (!up || st.stairs.less.num == 0) && (!down || st.stairs.more.num == 0) {
         return false;
     }
 
@@ -215,9 +241,9 @@ fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* Enqueue useful grids */
     // borg-reborn-rs (#597): the parked fallback is decided across both
     // kinds, so a parked up staircase is no goal while a down one is free.
-    let (mut enqueued, mut parked) = enqueue_free_stairs(st, Which::Less);
+    let (mut enqueued, mut parked) = if up { enqueue_free_stairs(st, Which::Less) } else { (0, Vec::new()) };
     // borg-reborn-rs (#557): no down staircase for a flight while rising.
-    if !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st)) {
+    if down && !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st)) {
         let (more, more_parked) = enqueue_free_stairs(st, Which::More);
         enqueued += more;
         parked.extend(more_parked);
@@ -272,6 +298,19 @@ pub fn stair_path_blocker(st: &mut BorgState, up: bool, percent: i32) -> Option<
     with_stair_spread(st, Some(up), |st| path_blocker(st, percent))
 }
 
+/// borg-reborn-rs (#751, owner on 247597266: the Mage walked at a cutpurse
+/// and an apprentice between it and the stairs, with 22 Flasks of oil): the
+/// first awake monster within `reach` grids of the desperate walk's path to
+/// the up (`up`) or down stairs and nearer them than the Borg, whose danger
+/// is at least `percent` of the HP. `None`: none, or no stairs.
+pub fn stair_path_ahead(st: &mut BorgState, up: bool, percent: i32, reach: i32) -> Option<usize> {
+    let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if track.num == 0 {
+        return None;
+    }
+    with_stair_spread(st, Some(up), |st| path_blocker_with(st, percent, 3, reach))
+}
+
 /// borg-reborn-rs (#736, owner: "it stepped away in the wrong direction,
 /// instead of W he should have stepped SE towards the exit"): the steps from
 /// each of the eight grids around the Borg (in `ddd` order) to the nearest
@@ -293,53 +332,137 @@ pub fn stair_steps_around(st: &mut BorgState) -> [i32; 8] {
 
 /// The walk of `stair_path_blocker` over the spread flow costs.
 fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
+    // borg-reborn-rs (#751, owner: "stop flight when other monsters are IN
+    // BETWEEN the stairs, not close"): with caution_stairs_clean_path at 2,
+    // only a monster on the path blocks it, for the desperate walk and for
+    // every other caller of this walk (#743's flights). At 3 (owner,
+    // 93034700: "he has to actually walk past his opponent"), a monster
+    // next to the path blocks it only when it is ahead: nearer the
+    // staircase at the path's end than the Borg.
+    let mode = crate::borg_caution::stairs_clean_path_mode();
+    path_blocker_with(st, percent, mode, blocker_reach(mode))
+}
+
+/// `path_blocker` for a given mode and reach (grids from the path).
+fn path_blocker_with(st: &mut BorgState, percent: i32, mode: i32, reach: i32) -> Option<usize> {
     let hp = st.borg.tr(BI_CURHP).max(1);
-    let (mut y, mut x) = (st.borg.c.y, st.borg.c.x);
-    let mut seen = [false; 1024];
+    let borg = (st.borg.c.y, st.borg.c.x);
+    let path = walk_path(
+        borg,
+        |y, x| engine::square_in_bounds(x, y).then(|| i32::from(st.flow.cost_at(y, x))),
+        |i| (i32::from(engine::ddy_ddd(i)), i32::from(engine::ddx_ddd(i))),
+    );
+    first_blocker(
+        st,
+        &path,
+        borg,
+        mode,
+        reach,
+        |st, y, x| if engine::square_in_bounds(x, y) { usize::from(st.cave.grid(x, y).kill) } else { 0 },
+        |st, k| {
+            st.kills.kills[k].awake && {
+                let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+                let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false);
+                danger * 100 >= hp * percent
+            }
+        },
+    )
+}
+
+/// The flow's path from `start` (y, x): each step the neighbour with the
+/// lowest cost below the current grid's, in `step(i)`'s order (the engine's
+/// `ddy_ddd`/`ddx_ddd`), until a grid of cost 0 (the staircase) or none
+/// lower. `cost` is `None` out of bounds. The review of #757 asked for
+/// tests on constructed paths, hence no engine here.
+fn walk_path(start: (i32, i32), cost: impl Fn(i32, i32) -> Option<i32>, step: impl Fn(usize) -> (i32, i32)) -> Vec<(i32, i32)> {
+    let (mut y, mut x) = start;
+    let mut path = Vec::new();
     for _ in 0..250 {
-        let here = i32::from(st.flow.cost_at(y, x));
+        let here = cost(y, x).unwrap_or(255);
         if here == 0 || here >= 250 {
             break;
         }
-        // The next grid of the path: the neighbour with the lowest cost.
         let mut next = None;
         for i in 0..8 {
-            let nx = x + i32::from(engine::ddx_ddd(i));
-            let ny = y + i32::from(engine::ddy_ddd(i));
-            if !engine::square_in_bounds(nx, ny) {
-                continue;
-            }
-            let c = i32::from(st.flow.cost_at(ny, nx));
+            let (dy, dx) = step(i);
+            let (ny, nx) = (y + dy, x + dx);
+            let Some(c) = cost(ny, nx) else { continue };
             if c < here && next.is_none_or(|(_, _, b)| c < b) {
                 next = Some((ny, nx, c));
             }
         }
         let Some((ny, nx, _)) = next else { break };
         (y, x) = (ny, nx);
-        // A monster on this grid of the path, or next to it.
-        for dy in -1..=1 {
-            for dx in -1..=1 {
+        path.push((y, x));
+    }
+    path
+}
+
+/// The first monster in the way of `path` (#736, #751): on a grid of the
+/// path, or within `reach` grids of one (`blocker_reach`: 1 in modes 1 and
+/// 3, 0 in mode 2), where mode 3 keeps only a monster
+/// nearer the staircase (the path's last grid) than the Borg at `borg`.
+/// `kill_at` gives the monster index on a grid (0: none, or out of bounds);
+/// `blocks` says whether that monster stops the walk (awake and dangerous).
+/// Each monster is judged once, at the first grid of the path it touches.
+fn first_blocker<C>(
+    ctx: &mut C,
+    path: &[(i32, i32)],
+    borg: (i32, i32),
+    mode: i32,
+    reach: i32,
+    kill_at: impl Fn(&C, i32, i32) -> usize,
+    mut blocks: impl FnMut(&mut C, usize) -> bool,
+) -> Option<usize> {
+    let stairs = path.last().copied().unwrap_or(borg);
+    let borg_far = grids_apart(borg, stairs);
+    let mut seen = [false; 1024];
+    for &(y, x) in path {
+        for dy in -reach..=reach {
+            for dx in -reach..=reach {
                 let (my, mx) = (y + dy, x + dx);
-                if !engine::square_in_bounds(mx, my) {
-                    continue;
-                }
-                let k = usize::from(st.cave.grid(mx, my).kill);
+                let k = kill_at(ctx, my, mx);
                 if k == 0 || k >= seen.len() || seen[k] {
                     continue;
                 }
-                seen[k] = true;
-                if !st.kills.kills[k].awake {
+                let beside = dy != 0 || dx != 0;
+                // The review of #757: a monster beside the path but not
+                // ahead is not marked seen, so the grid it stands on, if the
+                // walk reaches it, still judges it as on the path.
+                if beside && !beside_blocks(mode, grids_apart((my, mx), stairs), borg_far) {
                     continue;
                 }
-                let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-                let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false);
-                if danger * 100 >= hp * percent {
+                seen[k] = true;
+                if blocks(ctx, k) {
                     return Some(k);
                 }
             }
         }
     }
     None
+}
+
+/// Grid steps between two grids (king moves, Chebyshev), for #751's mode 3;
+/// not `engine::distance`, the game's `max + min / 2`.
+fn grids_apart(a: (i32, i32), b: (i32, i32)) -> i32 {
+    (a.0 - b.0).abs().max((a.1 - b.1).abs())
+}
+
+/// borg-reborn-rs (#751): how far from a grid of the path a monster blocks
+/// it: 0 = only on it (mode 2), 1 = on or next to it (#736's mode 1, and
+/// mode 3, which then asks `beside_blocks`).
+fn blocker_reach(mode: i32) -> i32 {
+    if mode == 2 { 0 } else { 1 }
+}
+
+/// borg-reborn-rs (#751, mode 3): a monster next to the path, `monster_far`
+/// steps from the staircase at its end, blocks it only when it is nearer
+/// that staircase than the Borg (`borg_far`): one the walk has to pass.
+/// (The flow cost cannot tell: the flow skips the grids of monsters and
+/// dangerous grids.) In the other modes every monster next to the path
+/// counts (mode 2 sees none).
+fn beside_blocks(mode: i32, monster_far: i32, borg_far: i32) -> bool {
+    mode != 3 || monster_far < borg_far
 }
 
 /// Prepare to flow towards "up" stairs.
@@ -560,6 +683,130 @@ pub fn borg_free_flow_stairs(st: &mut BorgState) {
 }
 
 #[cfg(test)]
+mod blocker_reach_tests {
+    use super::{beside_blocks, blocker_reach, first_blocker, walk_path};
+
+    /// #751: mode 2 looks only at the path's grids, modes 1 and 3 also next
+    /// to them.
+    #[test]
+    fn on_the_path_or_next_to_it() {
+        assert_eq!(blocker_reach(2), 0);
+        assert_eq!(blocker_reach(1), 1);
+        assert_eq!(blocker_reach(3), 1);
+    }
+
+    /// #751 mode 3 (93034700): the apprentice beside the path 7 steps from
+    /// the stairs, the Borg 8, blocks; one behind the Borg (9) or level with
+    /// it does not. Mode 1 counts both.
+    /// The review of #757 (#751's "Done when"): constructed paths. A
+    /// corridor along row 5 from the Borg at (5,10) to the staircase at
+    /// (5,2), its cost x - 2; the rows beside it are floor the flow did not
+    /// reach (255: the flow skips monster grids). The cases the issue names:
+    /// on the path, on the staircase, beside the path ahead, next to the Borg
+    /// level with it, and a monster asleep.
+    const DIRS: [(i32, i32); 8] = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
+
+    fn corridor() -> Vec<(i32, i32)> {
+        let cost = |y: i32, x: i32| {
+            if !(0..20).contains(&y) || !(0..20).contains(&x) {
+                None
+            } else if y == 5 && (2..=10).contains(&x) {
+                Some(x - 2)
+            } else {
+                Some(255)
+            }
+        };
+        walk_path((5, 10), cost, |i| DIRS[i])
+    }
+
+    /// `first_blocker` over the corridor with one monster (index 1) at
+    /// `at`, awake or not, every awake monster dangerous.
+    fn blocked(mode: i32, at: (i32, i32), awake: bool) -> bool {
+        let mut ctx = at;
+        first_blocker(&mut ctx, &corridor(), (5, 10), mode, blocker_reach(mode), |m, y, x| usize::from(*m == (y, x)), |_, _| awake).is_some()
+    }
+
+    /// The review of #757, finding 1: a path that winds away from the
+    /// staircase. The monster on its second grid (10,22) is first met beside
+    /// the first grid, where it is not nearer the stairs than the Borg (8
+    /// steps each); it still blocks when the walk reaches it, in every mode.
+    #[test]
+    fn a_monster_on_a_winding_walk_blocks() {
+        let path = [(10, 20), (10, 21), (10, 22), (9, 23), (8, 24), (7, 25), (6, 26), (5, 26), (4, 26), (3, 26), (2, 26)];
+        let cost = |y: i32, x: i32| {
+            if !(0..30).contains(&y) || !(0..30).contains(&x) {
+                return None;
+            }
+            Some(path.iter().position(|&g| g == (y, x)).map_or(255, |i| (path.len() - 1 - i) as i32))
+        };
+        let walk = walk_path((10, 20), cost, |i| DIRS[i]);
+        assert_eq!(walk, path[1..].to_vec());
+        for mode in [1, 2, 3] {
+            let mut ctx = (10, 22);
+            let hit = first_blocker(&mut ctx, &walk, (10, 20), mode, blocker_reach(mode), |m, y, x| usize::from(*m == (y, x)), |_, _| true);
+            assert!(hit.is_some(), "on the walk, mode {mode}");
+        }
+    }
+
+    /// The ranged-first test (`stair_path_ahead`): mode 3 with a wider
+    /// reach. 247597266's shape: two grids beside the walk, ahead.
+    #[test]
+    fn a_monster_ahead_within_reach() {
+        let at = |at: (i32, i32), reach: i32| {
+            let mut ctx = at;
+            first_blocker(&mut ctx, &corridor(), (5, 10), 3, reach, |m, y, x| usize::from(*m == (y, x)), |_, _| true).is_some()
+        };
+        assert!(!at((3, 7), 1), "two grids off the path: not next to it");
+        assert!(at((3, 7), 2), "within two grids, nearer the stairs");
+        assert!(!at((3, 11), 3), "behind the Borg");
+    }
+
+    #[test]
+    fn the_corridor_path_ends_on_the_staircase() {
+        assert_eq!(corridor(), (2..=9).rev().map(|x| (5, x)).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn a_monster_on_the_path_or_the_staircase_blocks_in_every_mode() {
+        for mode in [1, 2, 3] {
+            assert!(blocked(mode, (5, 6), true), "on the path, mode {mode}");
+            assert!(blocked(mode, (5, 2), true), "on the staircase, mode {mode}");
+            assert!(!blocked(mode, (5, 6), false), "asleep, mode {mode}");
+        }
+    }
+
+    #[test]
+    fn a_monster_beside_the_path_ahead() {
+        // 93034700's shape: beside the walk, nearer the stairs (6) than the
+        // Borg (8).
+        assert!(blocked(1, (4, 8), true));
+        assert!(!blocked(2, (4, 8), true));
+        assert!(blocked(3, (4, 8), true));
+    }
+
+    #[test]
+    fn a_monster_next_to_the_borg_level_with_it() {
+        // 2095979189's shape: next to the Borg and to the path's first step,
+        // as far from the stairs as the Borg (8): only mode 1 counts it.
+        assert!(blocked(1, (6, 10), true));
+        assert!(!blocked(2, (6, 10), true));
+        assert!(!blocked(3, (6, 10), true));
+        // Behind the Borg, next to no grid of the path: nothing counts it.
+        for mode in [1, 2, 3] {
+            assert!(!blocked(mode, (5, 12), true), "behind, mode {mode}");
+        }
+    }
+
+    #[test]
+    fn mode_three_counts_only_a_monster_ahead() {
+        assert!(beside_blocks(3, 7, 8));
+        assert!(!beside_blocks(3, 8, 8));
+        assert!(!beside_blocks(3, 9, 8));
+        assert!(beside_blocks(1, 9, 8));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -589,7 +836,17 @@ mod tests {
 /// Prepare to flee the level via stairs (`stair_both`, with #556's
 /// fight-through fallback, `fight_through`).
 pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_both(st, why, sneak))
+    st.borg.flee_path_refused = false;
+    if fight_through(st, why, |st| stair_both(st, why, sneak)) {
+        return true;
+    }
+    // borg-reborn-rs (#743): the nearest stairs' path was not clean; the
+    // other kind may be.
+    if st.borg.flee_path_refused {
+        return fight_through(st, why, |st| stair_kinds(st, why, sneak, Some(Which::Less)))
+            || fight_through(st, why, |st| stair_kinds(st, why, sneak, Some(Which::More)));
+    }
+    false
 }
 
 /// Prepare to flow towards "up" stairs (`stair_less`, with #556's
@@ -610,7 +867,21 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
 /// through them, with `caution_breeder_avoid_fight_through`; the fight-through
 /// is noted in `breeder_through` so back-away and retreat do not undo it
 /// (`crate::borg_caution::breeder_fighting_through`).
-fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+/// borg-reborn-rs (#750, owner case 807683971: a black naga two grids
+/// beside a clear corridor made the corridor's first grid "too dangerous",
+/// so the flight never reached the up staircase 8 grids away). With
+/// `caution_stairs_flight_ignore_danger`, a flight's stair flow (`GOAL_FLEE`,
+/// or any `GOAL_BORE` stair flow, up or down, while fleeing or leaving) refuses no grid for its
+/// danger; whether a monster stands in between is #751's path test.
+fn fight_through(st: &mut BorgState, why: i32, flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+    let flight = crate::borg_caution::stairs_flight_ignores_danger(why, st.borg.goal.fleeing || st.borg.goal.leaving);
+    let was = std::mem::replace(&mut st.flow.flight_no_danger, flight);
+    let ok = fight_through_plain(st, why, flow);
+    st.flow.flight_no_danger = was;
+    ok
+}
+
+fn fight_through_plain(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
     if flow(st) {
         return true;
     }
@@ -628,4 +899,31 @@ fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgSta
         borg_io::borg_note(st, "# Fighting through the breeders to the stairs");
     }
     ok
+}
+
+/// borg-reborn-rs (#743): whether a flight's path is checked: the switch on,
+/// a flight (`GOAL_FLEE`), and not the desperate walk (`desperate_flow`
+/// checks its own path first, #736).
+fn flee_check_applies(st: &BorgState, why: i32) -> bool {
+    flee_check_applies_with(crate::borg_caution::stairs_clean_path_flee_on(), why, st.borg.status.desperate)
+}
+
+/// `flee_check_applies` with the switch and the desperate flag given.
+fn flee_check_applies_with(on: bool, why: i32, desperate: bool) -> bool {
+    on && why == GOAL_FLEE && !desperate
+}
+
+#[cfg(test)]
+mod flee_clean_tests {
+    use super::{flee_check_applies_with, GOAL_FLEE};
+
+    /// #743: only a flight is checked, with the switch on, and not the
+    /// desperate walk (which checks its own path, #736).
+    #[test]
+    fn only_a_flight_is_checked() {
+        assert!(flee_check_applies_with(true, GOAL_FLEE, false));
+        assert!(!flee_check_applies_with(false, GOAL_FLEE, false), "off");
+        assert!(!flee_check_applies_with(true, GOAL_FLEE, true), "the desperate walk");
+        assert!(!flee_check_applies_with(true, GOAL_FLEE - 1, false), "not a flight");
+    }
 }
