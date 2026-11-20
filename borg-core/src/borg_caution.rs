@@ -70,6 +70,7 @@ const CLASS_PALADIN: i32 = 5;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
+const GOAL_BORE: i32 = 6;
 use crate::borg_flow_take::GOAL_TAKE;
 
 /// A literal key (`borg_keypress('R')` etc.).
@@ -942,6 +943,21 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
     best
 }
 
+/// borg-reborn-rs (#743): whether every flight to the stairs needs a clean
+/// path (`caution_stairs_clean_path_flee`, read here as the registry asks
+/// of a caution parameter; the check is `borg_flow_stairs::commit_and_step`).
+pub(crate) fn stairs_clean_path_flee_on() -> bool {
+    p(Param::caution_stairs_clean_path_flee) != 0
+}
+
+/// An awake known monster next to the Borg (#751's ranged-first test).
+fn awake_monster_adjacent(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+    })
+}
+
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
@@ -953,6 +969,21 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
         if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
             borg_note(st, &format!("# Stairs not reachable: {} in the way ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
+            return false;
+        }
+    }
+    // borg-reborn-rs (#751, owner on 247597266: "he starts moving towards the
+    // cutpurse even if it has much better options, such as flask of oil,
+    // magic missile"): with a ranged attack and nothing adjacent, the walk
+    // does not head toward a dangerous monster within
+    // caution_desperate_ranged_first_reach grids of its path; the attack at
+    // range decides (0 = C).
+    let reach = p(Param::caution_desperate_ranged_first_reach);
+    if reach > 0 && !awake_monster_adjacent(st) && crate::borg_fight_attack::ranged_means(st) {
+        let percent = p(Param::caution_stairs_block_danger_percent);
+        if let Some(k) = crate::borg_flow_stairs::stair_path_ahead(st, up, percent, reach) {
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            borg_note(st, &format!("# Stairs not reachable: {} ahead, fighting at range ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
             return false;
         }
     }
@@ -1028,7 +1059,12 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             }
 
             // Access the monster and check it's speed
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED) {
+            // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
+            // only a faster monster that is also dangerous (a fruit bat
+            // next to the Borg is not a reason to stay).
+            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+                && fast_neighbour_counts(st, usize::from(kill))
+            {
                 safe = false;
             }
         }
@@ -2819,7 +2855,8 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     // not take is no escape.
     let down = if rising_holds_flee_descent(st) { -1 } else { nearest_free_stair(st, false) };
     let escape = st.borg.tr(BI_CDEPTH) == 0
-        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down);
+        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down)
+        || recall_pending_escape(p(Param::caution_recall_pending_escape) != 0, st.borg.goal.recalling);
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
@@ -2972,6 +3009,68 @@ pub(crate) fn recall_restricts(st: &BorgState) -> bool {
 
 fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
     recalling && (!as_usual || depth <= 1)
+}
+
+/// borg-reborn-rs (#754, owner): with `caution_recall_pending_escape`, a
+/// Word of Recall already counting down (`goal.recalling`) is an escape that
+/// is running, so a scary level keeps its flight instead of "standing and
+/// fighting" (#530 counts only a Recall still in the pack). #603's gates
+/// (`recall_restricts`) still hold the flee flows and the down stairs, but
+/// an up staircase reached on foot is still taken (`choose_stairs`, "Take
+/// stairs up"): on DL1 that is town, where the pending Recall fires and
+/// returns the Borg to its maximum depth. 0 = #530.
+fn recall_pending_escape(on: bool, recalling: i32) -> bool {
+    on && recalling != 0
+}
+
+/// borg-reborn-rs (#754, owner): with `caution_recall_wait_no_explore`, while
+/// Word of Recall counts down in the dungeon the Borg does not explore or
+/// chase far monsters and objects. It waits where it stands instead, and the
+/// think ends there: the hook sits before `borg_think_dungeon`'s "Explore the
+/// dungeon" block, so that block (vaults, `borg_flow_kill`/`borg_flow_take`/
+/// `borg_flow_vein` at 250, `borg_flow_dark`) and the rest of the think
+/// (`borg_leave_level`, the shops, C's own late "Wait for recall") are
+/// skipped for the wait. The wait rests for Recall as caution's own site
+/// does (`caution_recall_rest_turns`) only when `borg_check_rest` allows it
+/// here and nothing threatens the Borg (`borg_danger` 0; #567's hold first).
+/// Otherwise it stays still one turn (`,`), so each think sees what comes.
+/// 0 = C (explore while waiting; the wait comes after exploration).
+pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
+    if !recall_wait_holds(
+        p(Param::caution_recall_wait_no_explore) != 0,
+        st.borg.goal.recalling,
+        st.borg.tr(BI_CDEPTH),
+    ) {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    // Review of #762: the rest keeps `borg_check_rest`'s refusals (hungry,
+    // weak, unlit, fear, a multiplier just killed, lava).
+    let safe = borg_danger(st, y, x, 1, true, false) <= 0 && crate::borg_flow_misc::borg_check_rest(st, y, x);
+    // #567's hold (a monster was near a moment ago) presses its own `,`.
+    if safe && recall_rest_held(st) {
+        return true;
+    }
+    if safe {
+        borg_note(st, "# Waiting for Recall (not exploring).");
+        borg_keypress(st, key(b'R'));
+        for digit in p(Param::caution_recall_rest_turns).to_string().bytes() {
+            borg_keypress(st, key(digit));
+        }
+        borg_keypress(st, KC_ENTER);
+    } else {
+        // Review of #762: keep #567's watch current while a monster is near.
+        watch_for_recall(st);
+        borg_note(st, "# Waiting for Recall (not exploring): staying still.");
+        borg_keypress(st, key(b','));
+    }
+    st.borg.in_shop = false;
+    true
+}
+
+/// The test of `recall_wait_no_explore`: on, Recall pending, in the dungeon.
+fn recall_wait_holds(on: bool, recalling: i32, depth: i32) -> bool {
+    on && recalling != 0 && depth != 0
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -3556,8 +3655,19 @@ pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
     if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    // borg-reborn-rs (#753): not for a fleeing Borg at low HP (214960633:
+    // held at 2 of 47 HP on a down staircase, danger 0 there, beside a
+    // grey mold it kept walking past).
+    if fleeing_hurt(st.borg.goal.fleeing, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_rising_hold_min_hp_percent)) {
+        return false;
+    }
     let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
     rising_hold(here, st.borg.tr(BI_CURHP))
+}
+
+/// #753: fleeing with less than `min_percent` of the max HP (0 = off).
+fn fleeing_hurt(fleeing: bool, hp: i32, max_hp: i32, min_percent: i32) -> bool {
+    fleeing && min_percent > 0 && i64::from(hp) * 100 < i64::from(max_hp.max(1)) * i64::from(min_percent)
 }
 
 /// The danger test of `rising_holds_flee_descent` (#557): held unless the
@@ -4073,6 +4183,53 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
         && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
 }
 
+/// borg-reborn-rs (#750): whether a stair flow for `why` skips the danger
+/// limit (`caution_stairs_flight_ignore_danger`): a flight (`GOAL_FLEE`), or
+/// any stair flow of `GOAL_BORE` while fleeing or leaving: the bored walk up
+/// (`borg_think_dungeon_util.rs:1047`), the bored walks down (`:1087`,
+/// `:1122`, `:1160`) and the powerdive (`borg_think_dungeon.rs:1264`).
+pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -> bool {
+    p(Param::caution_stairs_flight_ignore_danger) != 0 && flight_goal(why, fleeing_or_leaving)
+}
+
+/// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
+fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+    why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
+}
+
+/// borg-reborn-rs (#751): `caution_stairs_clean_path`, the mode of the path
+/// test (read here, as the registry asks of a caution parameter): at 2 a
+/// monster blocks the path to the stairs only when it stands on it; at 3
+/// also when it is next to it and ahead of the Borg.
+pub(crate) fn stairs_clean_path_mode() -> i32 {
+    p(Param::caution_stairs_clean_path)
+}
+
+/// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg
+/// cancelled its walk to stairs 6 steps away). With
+/// `caution_desperate_fast_danger_percent` above 0, a faster adjacent
+/// monster stops the desperate walk only when its danger is at least that
+/// percent of the HP; 0 = C (any faster monster).
+fn fast_neighbour_counts(st: &mut BorgState, kill: usize) -> bool {
+    let percent = p(Param::caution_desperate_fast_danger_percent);
+    if percent <= 0 {
+        return true;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger_one_kill(st, y, x, 1, kill as i32, true, false);
+    danger_share_reaches(danger, st.borg.tr(BI_CURHP), percent)
+}
+
+fn danger_share_reaches(danger: i32, hp: i32, percent: i32) -> bool {
+    i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#749): enough HP lost for a Recall buy-time cure: at
+/// least `min_percent` of the max HP (0 = C: any loss, even none).
+fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
+    min_percent <= 0 || i64::from(lost) * 100 >= i64::from(max_hp.max(1)) * i64::from(min_percent)
+}
+
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
@@ -4321,7 +4478,12 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) < p(Param::caution_recall_cure_loss)
+    // borg-reborn-rs (#749): C's "less than 100 HP lost" is true at full HP for
+    // a low-level character; with caution_recall_cure_min_loss_percent, a cure
+    // needs at least that share of the max HP lost.
+    let lost = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
+    if lost < p(Param::caution_recall_cure_loss)
+        && recall_cure_hurt_enough(lost, st.borg.tr(BI_MAXHP), p(Param::caution_recall_cure_min_loss_percent))
         && (borg_quaff_crit(st, true)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
@@ -4826,6 +4988,22 @@ mod scary_stand_tests {
     }
 
     #[test]
+    fn a_pending_recall_is_an_escape_only_with_the_switch() {
+        assert!(!recall_pending_escape(false, 30), "#530: a pending Recall is no escape");
+        assert!(recall_pending_escape(true, 30), "the switch: it is one");
+        assert!(!recall_pending_escape(true, 0), "no Recall pending");
+    }
+
+    #[test]
+    fn the_recall_wait_skips_exploration_only_in_the_dungeon() {
+        assert!(!recall_wait_holds(false, 30, 1), "off: C explores while waiting");
+        assert!(recall_wait_holds(true, 30, 1), "on, DL1");
+        assert!(recall_wait_holds(true, 30, 7), "on, DL7");
+        assert!(!recall_wait_holds(true, 30, 0), "not in town");
+        assert!(!recall_wait_holds(true, 0, 3), "no Recall pending");
+    }
+
+    #[test]
     fn every_switched_site_asks_recall_restricts() {
         // The seven sites of #603 (review of #627): a site put back to
         // `goal.recalling != 0` would ignore the switch and still pass the
@@ -5306,6 +5484,47 @@ mod throw_first_tests {
         assert!(!throw_first_applies(1, true, true, || 10), "adjacent: buff");
         assert!(!throw_first_applies(1, true, false, || 0), "nothing reaches: buff");
         assert!(!throw_first_applies(1, true, true, || panic!("no dry run when adjacent")));
+    }
+}
+
+#[cfg(test)]
+mod flight_tuning_tests {
+    use super::{danger_share_reaches, flight_goal, recall_cure_hurt_enough, GOAL_BORE, GOAL_FLEE};
+
+    /// #753: the rising hold lets a hurt fleeing Borg down.
+    #[test]
+    fn a_hurt_flight_is_not_held() {
+        use super::fleeing_hurt;
+        assert!(fleeing_hurt(true, 2, 47, 50), "2 of 47 HP");
+        assert!(!fleeing_hurt(true, 30, 47, 50));
+        assert!(!fleeing_hurt(false, 2, 47, 50), "not fleeing");
+        assert!(!fleeing_hurt(true, 2, 47, 0), "0: today");
+    }
+
+    /// #750: which stair flows are flights.
+    #[test]
+    fn flight_goals() {
+        assert!(flight_goal(GOAL_FLEE, false));
+        assert!(flight_goal(GOAL_BORE, true), "heading up while fleeing");
+        assert!(!flight_goal(GOAL_BORE, false), "a calm bored walk keeps the danger limit");
+        assert!(!flight_goal(1, true));
+    }
+
+    /// #747: a faster neighbour counts only when dangerous enough.
+    #[test]
+    fn a_fast_neighbour_needs_danger() {
+        assert!(danger_share_reaches(8, 15, 50), "half the HP");
+        assert!(!danger_share_reaches(1, 15, 50), "a fruit bat's bite");
+        assert!(danger_share_reaches(0, 15, 0), "0: any danger counts");
+    }
+
+    /// #749: a Recall buy-time cure needs real HP lost.
+    #[test]
+    fn a_cure_needs_hp_lost() {
+        assert!(recall_cure_hurt_enough(0, 15, 0), "0 = C: even at full HP");
+        assert!(!recall_cure_hurt_enough(0, 15, 30), "full HP: no cure");
+        assert!(!recall_cure_hurt_enough(4, 15, 30));
+        assert!(recall_cure_hurt_enough(5, 15, 30));
     }
 }
 
