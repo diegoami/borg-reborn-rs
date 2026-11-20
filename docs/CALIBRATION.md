@@ -25,6 +25,8 @@ The registry gains two parameters. The shipped level gate stays as before.
   must leave at least this many SP and enough for the cheapest learned,
   viable response among Phase Door, Teleport Self, Magic Missile and
   Nether Bolt. If no listed response is legal, there is no exception.
+  The reserve also respects the two existing mana thresholds in
+  `borg_recover` so a cast by itself cannot make either branch start a rest.
 
 Detect Evil and Seek Battle keep the level gate. The engine predicates
 select non-invisible monsters for Detect Monsters, monsters with
@@ -3125,12 +3127,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:418` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:418` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:418` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:461` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:461` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:462` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:909` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:910` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:912` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:919` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:920` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:921` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |

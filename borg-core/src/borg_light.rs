@@ -356,7 +356,8 @@ fn detect_on_dark_entry(st: &mut BorgState, panel: (i32, i32)) -> bool {
     else {
         return false;
     };
-    let reserve = param(Param::light_detect_dark_entry_reserve_sp).max(response_cost);
+    let reserve = param(Param::light_detect_dark_entry_reserve_sp).max(response_cost)
+        .max(crate::borg_recover::recovery_sp_floor(st));
     let sp = st.borg.tr(BI_CURSP);
     for (spell, name) in [(DETECT_MONSTERS, "Detect Monsters"), (READ_MINDS, "Read Minds")] {
         let cost = borg_get_spell_power(st, spell);
