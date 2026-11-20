@@ -567,7 +567,24 @@ pub(crate) fn leash_steps(clevel: i32) -> Option<Option<i32>> {
         value(Param::flow_leash_cl3),
         value(Param::flow_leash_cl4),
     ];
-    Some(leash_for(clevel, value(Param::flow_leash_max_level), steps))
+    let max_level = value(Param::flow_leash_max_level);
+    let leash = leash_for(clevel, max_level, steps);
+    // borg-reborn-rs (#732, owner: "progressively more audacious on their
+    // level the closer they are to the next level"): mode 2 grows the leash
+    // with the XP gained toward the next level, up to the next level's
+    // leash (flow_leash_full where the next level has none).
+    if value(Param::flow_leash) == 2 {
+        if let Some(here) = leash {
+            let next = leash_for(clevel + 1, max_level, steps).unwrap_or(value(Param::flow_leash_full));
+            return Some(Some(leash_between(here, next, crate::engine::level_progress_permille())));
+        }
+    }
+    Some(leash)
+}
+
+/// The leash `progress` permille of the way from `here` to `next`.
+pub(crate) fn leash_between(here: i32, next: i32, progress: i32) -> i32 {
+    here + (next - here) * progress.clamp(0, 1000) / 1000
 }
 
 /// The leash at character level `clevel`: none past `max_level`; CL1-4 take
@@ -1621,6 +1638,19 @@ mod leash_tests {
         assert_eq!(leash_for(5, 4, steps), None, "CL5 explores the level");
         assert_eq!(leash_for(6, 8, steps), Some(60), "past CL4, CL4's leash up to max_level");
         assert_eq!(leash_for(1, 0, steps), None, "max_level 0: no leash");
+    }
+
+    /// #732 mode 2: the leash grows with the XP toward the next level.
+    #[test]
+    fn leash_grows_with_progress() {
+        use super::leash_between;
+        assert_eq!(leash_between(25, 40, 0), 25, "just reached CL2");
+        assert_eq!(leash_between(25, 40, 500), 32, "halfway to CL3");
+        assert_eq!(leash_between(25, 40, 1000), 40, "about to reach CL3");
+        assert_eq!(leash_between(60, 150, 500), 105, "CL4, halfway to the whole level");
+        assert_eq!(crate::engine::progress_permille(150, 100, 200), 500);
+        assert_eq!(crate::engine::progress_permille(90, 100, 200), 0, "below the level's start");
+        assert_eq!(crate::engine::progress_permille(250, 100, 200), 1000);
     }
 }
 

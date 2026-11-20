@@ -1898,6 +1898,32 @@ pub fn adj_str_hold(i: usize) -> i32 {
     unsafe { headers::player_calcs_h::adj_str_hold[i] }
 }
 
+// borg-reborn-rs (#732): the experience table of player.c.
+extern "C" {
+    static player_exp: [i32; 50];
+}
+
+/// borg-reborn-rs (#732): how far the player is from its level to the next,
+/// in permille (0 on reaching the level, 1000 at the next), by the engine's
+/// own test (`player.c:219-223`): level L+1 needs `player_exp[L - 1] *
+/// expfact / 100`. 1000 at the top level.
+pub fn level_progress_permille() -> i32 {
+    let p = player_ref();
+    let lev = usize::try_from(p.lev).unwrap_or(1).max(1);
+    if lev >= 50 {
+        return 1000;
+    }
+    let factor = i64::from(p.expfact);
+    // SAFETY: a constant table of the engine; nothing writes it.
+    let need = |l: usize| if l <= 1 { 0 } else { i64::from(unsafe { player_exp[l - 2] }) * factor / 100 };
+    progress_permille(i64::from(p.exp), need(lev), need(lev + 1))
+}
+
+/// `(exp - from) / (to - from)` in permille, clamped to 0..=1000.
+pub fn progress_permille(exp: i64, from: i64, to: i64) -> i32 {
+    ((exp - from) * 1000 / (to - from).max(1)).clamp(0, 1000) as i32
+}
+
 /// `extract_energy[speed]` (game-world.c); panics out of range.
 pub fn extract_energy(speed: usize) -> u8 {
     // SAFETY: a constant table of the engine; nothing writes it.
