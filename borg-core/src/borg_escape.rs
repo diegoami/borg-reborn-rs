@@ -1244,6 +1244,17 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
     true
 }
 
+/// borg-reborn-rs (#724): whether `borg_caution_teleport` lacks the ability:
+/// with `either` (upstream 95387b06) neither a teleport scroll or spell nor
+/// a teleport staff or activation; without it (C), not both.
+fn lacks_teleport(either: bool, teleport: i32, escape: i32) -> bool {
+    if either {
+        teleport == 0 && escape == 0
+    } else {
+        teleport == 0 || escape == 0
+    }
+}
+
 /// Help determine if "Teleport" seems like a good idea
 pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
     // Extract panel
@@ -1251,7 +1262,12 @@ pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> 
     let q_y = st.core.w_y / borg_panel_hgt();
 
     // must have the ability
-    if st.borg.tr(BI_ATELEPORT) == 0 || st.borg.tr(BI_AESCAPE) == 0 {
+    // borg-reborn-rs (#724): upstream Angband 95387b06 needs a teleport
+    // scroll or spell (BI_ATELEPORT) **or** a teleport staff or activation
+    // (BI_AESCAPE). C (and borg-rs) needed both, so with only one of them the
+    // landing check never ran, and the Destruction and Teleport Level
+    // defences that ask it never saw a safe landing.
+    if lacks_teleport(param(Param::escape_teleport_landing_either) != 0, st.borg.tr(BI_ATELEPORT), st.borg.tr(BI_AESCAPE)) {
         return false;
     }
 
@@ -2170,5 +2186,23 @@ mod phase_decision_tests {
             phase_note(PhaseSite::TwitchyThink, 48, 48, None, None),
             "# Phase (twitchy think): done, HP 48/48, nearest awake monster none"
         );
+    }
+}
+
+#[cfg(test)]
+mod landing_tests {
+    use super::lacks_teleport;
+
+    /// #724 (upstream 95387b06): either kind of teleport is enough.
+    #[test]
+    fn either_kind_of_teleport_checks_the_landing() {
+        for (t, e) in [(1, 0), (0, 1), (1, 1)] {
+            assert!(!lacks_teleport(true, t, e), "upstream: {t} {e}");
+        }
+        assert!(lacks_teleport(true, 0, 0), "upstream: neither");
+        // C: both were needed.
+        assert!(lacks_teleport(false, 1, 0));
+        assert!(lacks_teleport(false, 0, 1));
+        assert!(!lacks_teleport(false, 1, 1));
     }
 }

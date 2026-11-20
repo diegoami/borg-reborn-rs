@@ -137,6 +137,33 @@ def citations(root):
     return sorted(found)
 
 
+def unlisted_borg_commits(src, borg_dir, ledger):
+    """The short ids of the commits touching BORG_DIR after the ledger's
+    `since` line, up to the source's head, that the ledger does not list
+    (#724). None when it cannot be verified: the ledger missing or without a
+    `since` line, no source head, or `git log` failing (a bad `since`)."""
+    if not ledger.exists():
+        return None
+    since, listed = None, set()
+    for line in ledger.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith('#'):
+            continue
+        word = line.split()
+        if word[0] == 'since' and len(word) > 1:
+            since = word[1]
+        else:
+            listed.add(word[0])
+    if not since or not src.head:
+        return None
+    # Review of #729: a failed `git log` (a bad `since`, no clone) is
+    # unverifiable, never "all listed".
+    r = git(src.repo, 'log', '--format=%H', f'{since}..{src.head}', '--', borg_dir)
+    if r.returncode != 0:
+        return None
+    return [c[:8] for c in reversed(r.stdout.split()) if not any(c.startswith(x) for x in listed)]
+
+
 def changed_functions(src, cited, borg_dir):
     """Cited (file, function) pairs whose code changed between pin and head."""
     hits = []
@@ -219,6 +246,17 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
             hint = ' (re-vendor: `scripts/borg-core-vendor.py refresh REV`, in its own PR)' if n not in ('', '0') else ''
             w(f"- vendored core `borg-core/` at {core_pin[:12]}: {n or '?'} borg-rs commits since touch its files{hint}\n")
         borg_dir = pin.get('borg_dir')
+        if borg_dir and pin.get('borg_ledger'):
+            # #724: every upstream C Borg commit is in the ledger (carried,
+            # not carried with a reason, or not applicable), so a fix is
+            # never missed.
+            missing = unlisted_borg_commits(src, borg_dir, root / pin['borg_ledger'])
+            if missing is None:
+                w(f"- **C Borg ledger** `{pin['borg_ledger']}`: cannot be verified (missing, no `since` line, or `since` not in the source)\n")
+            elif missing:
+                w(f"- **upstream C Borg commits not in `{pin['borg_ledger']}`:** {', '.join(missing)} (carry, or list why not)\n")
+            else:
+                w(f"- upstream C Borg commits: all listed in `{pin['borg_ledger']}`\n")
         if borg_dir:
             if not cited:
                 w('- cited C Borg functions: none cited in this repository yet\n')

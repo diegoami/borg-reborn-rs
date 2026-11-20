@@ -13,7 +13,7 @@ borg_param_town_phase_curve_scale_percent = 50
 borg_param_town_oil_curve_scale_percent = 100
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 8
-# #693: the depth cap's fighter values (CL1-2 DL1, CL3-4 DL2, then CL).
-borg_param_prepared_depth_early_levels_per_dl = 2
-borg_param_prepared_depth_early_until_level = 4
-borg_param_prepared_depth_late_levels_below = 0
+# #693 (owner, 2026-11-20): the blackguard's depth cap (div 3, knee 5, below 1).
+borg_param_prepared_depth_early_levels_per_dl = 3
+borg_param_prepared_depth_early_until_level = 5
+borg_param_prepared_depth_late_levels_below = 1

@@ -2042,6 +2042,11 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         {
             continue;
         }
+        // borg-reborn-rs (#713): no walk to an immobile creature kept at
+        // range; a ranged attack reaches it from where the Borg is.
+        if crate::borg_caution::immobile_kept_at_range(st, usize::from(kill.r_idx)) {
+            continue;
+        }
         // borg-reborn-rs (#618, #621): no hunt for an ignored monster.
         if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx)) {
             continue;

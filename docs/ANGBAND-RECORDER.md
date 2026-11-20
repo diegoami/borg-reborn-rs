@@ -8,7 +8,7 @@ Rust staticlib is not linked. Recording stays off in the measured harness.
 
 Configure with `-DSUPPORT_BORG_RECORDING=ON`. The consumer adapter in
 engine/recorder-hooks.patch applies to the generated tree after the existing
-patch series. Pristine engine/angband remains at upstream `42cd156ac`.
+patch series. Pristine engine/angband remains at upstream `574b618c`.
 The adapter is regenerated against that actual receiving tree; it preserves
 our harness hooks rather than applying the donor's whole vanilla patch.
 
