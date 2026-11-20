@@ -293,6 +293,12 @@ pub fn stair_steps_around(st: &mut BorgState) -> [i32; 8] {
 
 /// The walk of `stair_path_blocker` over the spread flow costs.
 fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
+    // borg-reborn-rs (#751, owner: "stop flight when other monsters are IN
+    // BETWEEN the stairs, not close"): with caution_stairs_clean_path at 2,
+    // only a monster on the path blocks it, for the desperate walk and for
+    // every other caller of this walk (#743's flights).
+    let on_path_only = crate::borg_caution::stairs_on_path_only();
+    let reach = blocker_reach(on_path_only);
     let hp = st.borg.tr(BI_CURHP).max(1);
     let (mut y, mut x) = (st.borg.c.y, st.borg.c.x);
     let mut seen = [false; 1024];
@@ -316,9 +322,9 @@ fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
         }
         let Some((ny, nx, _)) = next else { break };
         (y, x) = (ny, nx);
-        // A monster on this grid of the path, or next to it.
-        for dy in -1..=1 {
-            for dx in -1..=1 {
+        // A monster on this grid of the path, or (#736, mode 1) next to it.
+        for dy in -reach..=reach {
+            for dx in -reach..=reach {
                 let (my, mx) = (y + dy, x + dx);
                 if !engine::square_in_bounds(mx, my) {
                     continue;
@@ -340,6 +346,12 @@ fn path_blocker(st: &mut BorgState, percent: i32) -> Option<usize> {
         }
     }
     None
+}
+
+/// borg-reborn-rs (#751): how far from a grid of the path a monster blocks
+/// it: 0 = only on it (mode 2), 1 = on or next to it (#736's mode 1).
+fn blocker_reach(on_path_only: bool) -> i32 {
+    if on_path_only { 0 } else { 1 }
 }
 
 /// Prepare to flow towards "up" stairs.
@@ -557,6 +569,18 @@ pub fn borg_init_flow_stairs(st: &mut BorgState) {
 pub fn borg_free_flow_stairs(st: &mut BorgState) {
     st.stairs.more.free();
     st.stairs.less.free();
+}
+
+#[cfg(test)]
+mod blocker_reach_tests {
+    use super::blocker_reach;
+
+    /// #751: mode 2 looks only at the path's grids, mode 1 also next to them.
+    #[test]
+    fn on_the_path_or_next_to_it() {
+        assert_eq!(blocker_reach(true), 0);
+        assert_eq!(blocker_reach(false), 1);
+    }
 }
 
 #[cfg(test)]

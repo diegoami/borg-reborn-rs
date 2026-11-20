@@ -1028,7 +1028,12 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             }
 
             // Access the monster and check it's speed
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED) {
+            // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
+            // only a faster monster that is also dangerous (a fruit bat
+            // next to the Borg is not a reason to stay).
+            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+                && fast_neighbour_counts(st, usize::from(kill))
+            {
                 safe = false;
             }
         }
@@ -4073,6 +4078,38 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
         && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
 }
 
+/// borg-reborn-rs (#751): `caution_stairs_clean_path` at 2: a monster blocks
+/// the path to the stairs only when it stands on it (read here, as the
+/// registry asks of a caution parameter).
+pub(crate) fn stairs_on_path_only() -> bool {
+    p(Param::caution_stairs_clean_path) >= 2
+}
+
+/// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg
+/// cancelled its walk to stairs 6 steps away). With
+/// `caution_desperate_fast_danger_percent` above 0, a faster adjacent
+/// monster stops the desperate walk only when its danger is at least that
+/// percent of the HP; 0 = C (any faster monster).
+fn fast_neighbour_counts(st: &mut BorgState, kill: usize) -> bool {
+    let percent = p(Param::caution_desperate_fast_danger_percent);
+    if percent <= 0 {
+        return true;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger_one_kill(st, y, x, 1, kill as i32, true, false);
+    danger_share_reaches(danger, st.borg.tr(BI_CURHP), percent)
+}
+
+fn danger_share_reaches(danger: i32, hp: i32, percent: i32) -> bool {
+    i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#749): enough HP lost for a Recall buy-time cure: at
+/// least `min_percent` of the max HP (0 = C: any loss, even none).
+fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
+    min_percent <= 0 || i64::from(lost) * 100 >= i64::from(max_hp.max(1)) * i64::from(min_percent)
+}
+
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
@@ -4321,7 +4358,12 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) < p(Param::caution_recall_cure_loss)
+    // borg-reborn-rs (#749): C's "less than 100 HP lost" is true at full HP for
+    // a low-level character; with caution_recall_cure_min_loss_percent, a cure
+    // needs at least that share of the max HP lost.
+    let lost = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
+    if lost < p(Param::caution_recall_cure_loss)
+        && recall_cure_hurt_enough(lost, st.borg.tr(BI_MAXHP), p(Param::caution_recall_cure_min_loss_percent))
         && (borg_quaff_crit(st, true)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
@@ -5306,6 +5348,28 @@ mod throw_first_tests {
         assert!(!throw_first_applies(1, true, true, || 10), "adjacent: buff");
         assert!(!throw_first_applies(1, true, false, || 0), "nothing reaches: buff");
         assert!(!throw_first_applies(1, true, true, || panic!("no dry run when adjacent")));
+    }
+}
+
+#[cfg(test)]
+mod flight_tuning_tests {
+    use super::{danger_share_reaches, recall_cure_hurt_enough};
+
+    /// #747: a faster neighbour counts only when dangerous enough.
+    #[test]
+    fn a_fast_neighbour_needs_danger() {
+        assert!(danger_share_reaches(8, 15, 50), "half the HP");
+        assert!(!danger_share_reaches(1, 15, 50), "a fruit bat's bite");
+        assert!(danger_share_reaches(0, 15, 0), "0: any danger counts");
+    }
+
+    /// #749: a Recall buy-time cure needs real HP lost.
+    #[test]
+    fn a_cure_needs_hp_lost() {
+        assert!(recall_cure_hurt_enough(0, 15, 0), "0 = C: even at full HP");
+        assert!(!recall_cure_hurt_enough(0, 15, 30), "full HP: no cure");
+        assert!(!recall_cure_hurt_enough(4, 15, 30));
+        assert!(recall_cure_hurt_enough(5, 15, 30));
     }
 }
 

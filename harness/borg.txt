@@ -449,6 +449,9 @@ borg_param_caution_recall_phase_horizon = 1
 borg_param_caution_recall_phase_fail = 30
 borg_param_caution_recall_portal_fail = 30
 borg_param_caution_recall_cure_loss = 100
+# #749: a Recall buy-time cure needs at least this percent of the max HP lost
+# (0 = C: at low level even full HP, so it drinks Cure Light Wounds for nothing).
+borg_param_caution_recall_cure_min_loss_percent = 0
 borg_param_caution_recall_heal_loss = 150
 
 
@@ -795,6 +798,11 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 1
 borg_param_caution_stairs_block_danger_percent = 50
+# #751 (owner): caution_stairs_clean_path 2 = only a monster IN BETWEEN (on the
+# path, the staircase included) blocks it; 1 = on or next to it (#736).
+# #747: Desperate for Stairs (three) stays put for a faster adjacent monster
+# only when its danger is at least this percent of the HP (0 = C: any).
+borg_param_caution_desperate_fast_danger_percent = 0
 borg_param_caution_immobile_step_to_exit = 1
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
