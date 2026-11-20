@@ -2266,6 +2266,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if st.borg.near.breeder
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level)
         && !breeder_stand(st)
+        // borg-reborn-rs (#722, lead b): not from a one-think pause.
+        && !breeder_stand_paused(st)
     {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
@@ -3339,6 +3341,26 @@ fn breed_chance(k: i32) -> f64 {
 /// level lost to the breeders, still stand while no staircase is known (a
 /// flight with nowhere to go only wanders through the colony,
 /// borg-cemetery#77); never while the danger here is at or above the HP.
+/// borg-reborn-rs (#722, lead b): with `caution_breeder_stoppable`, the stand
+/// is paused for this think only: the level is not lost, but the danger here
+/// is at or above the HP. The level-long effects of not standing (the
+/// "ignoring breeders" leave of `borg_check_breeders`, the breeder flee, the
+/// breeder scary level) must not follow from a pause, or one dangerous turn
+/// latches the flight for the whole level.
+pub(crate) fn breeder_stand_paused(st: &BorgState) -> bool {
+    stand_paused(
+        p(Param::caution_breeder_stoppable) != 0,
+        st.borg.breeders_lost,
+        st.borg.breeders_in_danger,
+        st.borg.mon.breeders > 0 && st.borg.tr(BI_CDEPTH) != 0,
+    )
+}
+
+/// `breeder_stand_paused` with its inputs given.
+fn stand_paused(stoppable: bool, lost: bool, in_danger: bool, breeders_here: bool) -> bool {
+    stoppable && breeders_here && !lost && in_danger
+}
+
 fn stand_against_breeders(lost: bool, no_stairs_known: bool, in_danger: bool) -> bool {
     !in_danger && (!lost || no_stairs_known)
 }
@@ -5462,5 +5484,20 @@ mod breeder_policy_tests {
         assert_eq!(lost_recall(3, true, 1_000, 1_000, 0), (false, true), "0: at once");
         assert_eq!(lost_recall(3, false, 0, 9_000, 500), (false, false), "not lost");
         assert_eq!(lost_recall(2, true, 1_000, 9_000, 500), (false, false), "below 3");
+    }
+}
+
+#[cfg(test)]
+mod breeder_pause_tests {
+    use super::stand_paused;
+
+    /// #722 lead b: a pause is a stoppable, unlost level in danger this think.
+    #[test]
+    fn pause() {
+        assert!(stand_paused(true, false, true, true));
+        assert!(!stand_paused(true, true, true, true), "a lost level is not a pause");
+        assert!(!stand_paused(true, false, false, true), "no danger: standing");
+        assert!(!stand_paused(false, false, true, true), "stoppable off: C");
+        assert!(!stand_paused(true, false, true, false), "no breeders");
     }
 }

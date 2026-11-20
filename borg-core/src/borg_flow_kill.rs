@@ -1812,8 +1812,11 @@ pub(crate) fn breeder_hunt_now_with(st: &mut BorgState, engaged: bool) -> bool {
     if !hunt || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_FOOD) == 0 {
         return false;
     }
+    // borg-reborn-rs (#722, lead d): blind too, as #644's `impaired` (a
+    // blind Borg skipped its mana rest to hunt).
     if !fit_to_hunt(
         st.borg.tr(BI_ISCONFUSED) != 0
+            || st.borg.tr(crate::borg_headers::borg_trait_h::BI_ISBLIND) != 0
             || st.borg.tr(BI_ISIMAGE) != 0
             || st.borg.tr(BI_ISAFRAID) != 0
             || st.borg.tr(BI_ISSTUN) != 0
@@ -2826,7 +2829,8 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let breeder_count = i32::from(st.borg.mon.breeders);
     // borg-reborn-rs (#503): breeders make no level scary when the Borg
     // stands and fights them (no easy escape).
-    let breeder_stand = crate::borg_caution::breeder_stand(st);
+    // borg-reborn-rs (#722, lead b): a one-think pause is still a stand here.
+    let breeder_stand = crate::borg_caution::breeder_stand(st) || crate::borg_caution::breeder_stand_paused(st);
     let named = crate::borg_caution::scary_named_monsters();
     // borg-reborn-rs (#530): with caution_scary_stand, the level's scary
     // flag is decided after the scan: flee while the escape is real.
