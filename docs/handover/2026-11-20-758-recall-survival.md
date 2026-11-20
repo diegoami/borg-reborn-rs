@@ -3,8 +3,11 @@
 Implementation: [PR #764](https://github.com/diegoami/borg-reborn-rs/pull/764),
 `task/T758-recall-survival`, worktree `.worktrees/T758-recall`, stacked on
 #763 (#760/#759). Accepted main #762/#754 was synchronized without changing
-its shipped-zero switches. #757/#761 belong to another session and were not
-modified. #582/#583/#754/#641 and their comments were read; existing
+its shipped-zero switches. Accepted main `09a70906` (#757/#766) was
+subsequently synchronized, preserving its code/settings and resolving
+parameter-citation overlaps. Zoo #511 stays pinned to the tested `5acb8104`
+specimen; this main synchronization does not silently move the measurement.
+#757/#761 belong to another session and were not modified by this session. #582/#583/#754/#641 and their comments were read; existing
 countdown/light/exploration policies were not redone.
 
 `caution_recall_survival` compiles/ships 0. Its named horizon is
