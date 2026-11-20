@@ -4225,17 +4225,17 @@ from an up staircase below CL20. It has four leaks:
   or `flow_leash_full` (150) at the last leashed level.
 
 **Local check** (classes-18 and classes-1800 starts 1–90, 108 starts, 100,000
-turns, main 43c6feed):
+turns), after the review of #734 (methods 4–5 spread to the leash; the walk
+to items under it), on the new engine `574b618c`:
 
 | arm | deaths (casters / fighters) | saved / newly killed vs off | sum of max CL | sum of max DL |
 |---|---|---:|---:|---:|
-| off | 4 (2 / 2) | – | 607 | 243 |
-| `flow_leash = 1` | 3 (2 / 1) | 4 / 3 | 602 | 237 |
-| `flow_leash = 2` | 6 (3 / 3) | 4 / 6 | 584 | 230 |
-| 1 + `prepared_depth_plan` at div 5, knee 6 | 3 (2 / 1) | 4 / 3 | 550 | 204 |
+| off | 2 (2 / 0) | – | 589 | 212 |
+| `flow_leash = 1` | 4 (2 / 2) | 2 / 4 | 562 | 215 |
+| `flow_leash = 2` | 3 (1 / 2) | 2 / 3 | 581 | 218 |
 
-Mode 1 is close to neutral. Mode 2 is the worst arm: its new deaths are
-CL1–2 characters killed by early animals. The ladder (DL1 to CL5) costs
-progress for nothing more. All of this is small: 3–6 deaths in 108 games,
-for the zoo to measure. Every game plays differently with the leash on (0 of
+Neither mode saves games here: mode 1 costs levels (−27 CL), mode 2 is
+nearly neutral on progress. The first version (C's spread bound methods 4–5,
+old engine `42cd156ac`) measured off 4 / mode 1 3 / mode 2 6 deaths. All of
+this is 2–6 deaths in 108 games, for the zoo to measure.
 108 identical), and mode 1 replays 108/108 identically across two builds.
