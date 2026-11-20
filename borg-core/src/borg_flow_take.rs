@@ -25,7 +25,7 @@ use crate::borg_projection::borg_distance;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_VERBOSE};
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
+    BI_AMISSILES, BI_AMMO_TVAL, BI_APHASE, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
     BI_QUIVER_SLOTS,
 };
 use crate::headers::list_mon_race_flags_h::{RF_KILL_ITEM, RF_TAKE_ITEM};
@@ -536,6 +536,11 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     /* Check distance away from stairs, used later */
     let (b_stair, b_j) = nearest_up_stair(st);
 
+    /* borg-reborn-rs (#761): short of Phase Doors, one on the floor is exempt from the leash */
+    let (phase_short_below, phase_first) = crate::borg_flow::take_phase_rule();
+    let phase_short = short_of_phase(phase_short_below, st.borg.tr(BI_APHASE));
+    let mut phase_pushed: Vec<bool> = Vec::new();
+
     /* Scan the object list */
     let mut i: i32 = 1;
     while i < i32::from(st.takes.nxt) {
@@ -551,8 +556,10 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         let x = i32::from(take.x);
         let y = i32::from(take.y);
 
+        let is_phase = phase_short && take_is_phase(st, take.kidx);
+
         /* Skip ones that make me wander too far */
-        if b_stair != -1 && st.borg.tr(BI_CLEVEL) < c.take_near_max_level {
+        if !is_phase && b_stair != -1 && st.borg.tr(BI_CLEVEL) < c.take_near_max_level {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -601,7 +608,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         borg_flow::borg_flow_clear(st);
 
         /* Check the distance to stair for this proposed grid and leash*/
-        if nearness > c.take_nearness
+        if !is_phase
+            && nearness > c.take_nearness
             && st.borg.tr(BI_CLEVEL) < c.take_max_level
             && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
         {
@@ -610,10 +618,32 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
+        phase_pushed.push(is_phase);
+    }
+
+    /* borg-reborn-rs (#761): short of Phase Doors, only they, when one is in reach */
+    if phase_first && phase_pushed.iter().any(|&p| p) && phase_pushed.iter().any(|&p| !p) {
+        let n = st.flow.temp_n as usize;
+        let kept: Vec<(i32, i32)> = (0..n).filter(|&k| phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
+        st.flow.temp_n = 0;
+        for (y, x) in kept {
+            st.flow.temp_push(y, x);
+        }
     }
 
     /* Nothing to take */
     st.flow.temp_n != 0
+}
+
+/// borg-reborn-rs (#761): the Borg holds fewer Phase Doors than the switch asks (0 = off).
+fn short_of_phase(below: i32, held: i32) -> bool {
+    below > 0 && held < below
+}
+
+/// borg-reborn-rs (#761): the object kind is a Scroll of Phase Door.
+fn take_is_phase(st: &BorgState, kidx: u32) -> bool {
+    let k = engine::kind(kidx as usize);
+    i64::from(k.tval) == i64::from(crate::headers::list_tvals_h::TV_SCROLL) && i32::from(k.sval) == st.item_val.sv_scroll_phase_door
 }
 
 /// The flow part of `borg_flow_take`, after `take_select`.
@@ -741,6 +771,13 @@ pub fn borg_free_flow_take(st: &mut BorgState) {
 mod tests {
     use super::*;
 
+
+    #[test]
+    fn short_of_phase_is_off_at_zero_and_below_the_count() {
+        assert!(!short_of_phase(0, 0));
+        assert!(short_of_phase(2, 0) && short_of_phase(2, 1));
+        assert!(!short_of_phase(2, 2) && !short_of_phase(2, 5));
+    }
 
     #[test]
     fn init_and_free() {

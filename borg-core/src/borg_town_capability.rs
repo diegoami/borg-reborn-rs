@@ -80,6 +80,13 @@ const THROWN_OIL: usize = 59;
 /// worth something, each less than the last. Only the shots past the cap
 /// count here. Zero weight unless both are set.
 const EXTRA_SHOTS: usize = 60;
+/// borg-reborn-rs (#761, owner: "we need to value phase doors much more,
+/// especially for rangers"): the first `town_phase_reserve` Phase Doors as a
+/// requirement, on top of the PHASE curve (whose first scroll is worth about
+/// a third of the trip's escape weight, so 1-gold arrows and 20-gold potions
+/// outbid it). Each is worth `town_phase_reserve_percent` of the trip's
+/// escape weight; nothing past the reserve. Zero weight when the reserve is 0.
+const PHASE_RESERVE: usize = 61;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -95,14 +102,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 61] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 62] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -498,7 +505,24 @@ fn worthless(tval: u32, sval: i32) -> bool {
             && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
 }
 
+/// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
+/// shop wares (`{unseen}`: a Potion or Scroll whose flavour the player has not
+/// seen) scaled by `town_unseen_percent`. Phase Door has its own
+/// coefficients (`town_phase_*`) and is not scaled. 100 = today.
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
+    let out = supplies_of_kind(item, ctx, origin);
+    let percent = param(Param::town_unseen_percent);
+    if percent == 100 || item.flavour_aware || origin.0 >= 7 { return out; }
+    unseen_scaled(out, percent)
+}
+
+/// borg-reborn-rs (#761): a flavour-unseen ware's supplies at `percent`,
+/// Phase Door's (its own coefficients) as they are.
+fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
+    out.into_iter().map(|(cap, n)| if cap == PHASE || cap == PHASE_RESERVE { (cap, n) } else { (cap, scale_percent(n, percent)) }).collect()
+}
+
+fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
     // A shop teaches its kind on purchase; carried unknown flavours/devices
@@ -508,7 +532,9 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
     let qty = i64::from(item.iqty).max(1);
     let mut effects = engine::kind_effect_values(item.kind as usize, ctx.journey.level as i32);
     if tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_phase_door {
-        return vec![(PHASE, UNIT)]; // TELEPORT(10) is not full Teleportation.
+        // TELEPORT(10) is not full Teleportation. A Phase Door also counts
+        // toward the reserve (#761).
+        return vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)];
     }
     if tval == TV_FLASK {
         // borg-reborn-rs (#649): the engine's thrown damage, not the dice alone.
@@ -634,7 +660,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     let ctx = Context { st, journey, lantern };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..COUNT).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
-    curve(LIGHT, cfg(BORG_TOWN_W_LIGHT) * UNIT, journey.turns * UNIT);
+    // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
+    // borg_town_w_light (100 = today).
+    curve(LIGHT, scale_percent(cfg(BORG_TOWN_W_LIGHT) * UNIT, param(Param::town_light_percent)), journey.turns * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
     // copy whitelist. One ration's nutrition (RATION_NUTRITION, 30) supports
     // food_turns actions.
@@ -651,11 +679,14 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // Below the floor, food is a requirement (negative demand: worth its
     // weight linearly up to five rations, nothing past them), so it is
     // bought up to the floor and never sold below it, but not hoarded.
+    // borg-reborn-rs (#761, owner): a class's own food weight, in percent of
+    // borg_town_w_food (100 = today).
+    let w_food = scale_percent(cfg(BORG_TOWN_W_FOOD), param(Param::town_food_percent));
     let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
     if rations < READY_FOOD * UNIT {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
+        curve(FOOD, w_food * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
     } else {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, RATION_NUTRITION * rations);
+        curve(FOOD, w_food * rations, RATION_NUTRITION * rations);
     }
     // borg-reborn-rs (#491, owner: "we can never have enough healing").
     // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
@@ -685,6 +716,16 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // healing's: weight and demand scale together (100 = today).
     let phase_scale = i64::from(param(Param::town_phase_curve_scale_percent));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE) * phase_scale / 100, exposure * phase_scale / 100);
+    // borg-reborn-rs (#761): the first `town_phase_reserve` Phase Doors are a
+    // requirement (as Recall's reserve): each worth `town_phase_reserve_percent`
+    // of the trip's escape weight, nothing past them (0 = off, today).
+    let phase_reserve = i64::from(param(Param::town_phase_reserve)).max(0);
+    if phase_reserve > 0 {
+        curve(PHASE_RESERVE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_phase_reserve_percent)) * phase_reserve,
+            -(phase_reserve * UNIT));
+    } else {
+        curve(PHASE_RESERVE, 0, UNIT);
+    }
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
     // (worth the full trip weight each, nothing past them) at any depth: the
     // walk it saves is always worth less than the full weight (the journey
@@ -989,6 +1030,32 @@ mod tests {
         m.curves[RANGER_MISSILES][2] = 30 * UNIT; // no cap (C's curve): no extra value
         m.curves[RANGER_MISSILES][3] = 0;
         assert_eq!(m.gain(&[(EXTRA_SHOTS, UNIT)]), 0);
+    }
+
+    /// #761: `town_unseen_percent` scales what an unseen-flavour ware supplies
+    /// and leaves Phase Door's units alone; 100 changes nothing.
+    #[test]
+    fn the_unseen_percent_scales_all_but_phase_door() {
+        let out = vec![(HEAL, 20 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)];
+        assert_eq!(unseen_scaled(out.clone(), 100), out);
+        assert_eq!(unseen_scaled(out.clone(), 50), vec![(HEAL, 10 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)]);
+        assert_eq!(unseen_scaled(out, 0), vec![(HEAL, 0), (PHASE, UNIT), (PHASE_RESERVE, UNIT)]);
+    }
+
+    /// #761: the first `town_phase_reserve` Phase Doors are a requirement on
+    /// top of the Phase Door curve: each worth the same up to the reserve,
+    /// nothing more past it; off (weight 0) it adds nothing.
+    #[test]
+    fn the_phase_reserve_is_a_requirement_on_top_of_the_curve() {
+        let w = 120 * UNIT;
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[PHASE] = [PHASE as i64, 180 * UNIT, 3600, 0, 0];
+        let curve_only = m.gain(&[(PHASE, UNIT)]);
+        assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only, "reserve off: nothing added");
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, w * 2, -2 * UNIT, 0, 0];
+        assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
+        assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
+        assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
     }
 
     #[test]
