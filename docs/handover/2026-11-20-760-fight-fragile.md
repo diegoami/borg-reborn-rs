@@ -29,7 +29,7 @@ exact canonical keys/states/messages before implementation. The seven named
 starts (the six Rangers plus Rogue 390305857) were checked locally, at the
 100,000-engine-turn cap, with separate switches and combinations. After the damage-first selector correction, all three together reach the
 cap in six of seven named starts. Seed 1976035382 dies to a large white
-snake at 3790; earlier versions reached the cap on that life and remain
+snake at engine turn 17873; earlier versions reached the cap on that life and remain
 retained. The Rogue control was already alive. This is selected-case evidence, not population improvement. Some
 lives diverge before the old killer appears. The unchanged original
 425904011 finishing state is independently evaluated by diagnostic mode:
