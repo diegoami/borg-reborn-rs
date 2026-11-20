@@ -26,8 +26,14 @@ cheapest route that passes the check. Mode 3 judges whether a monster is
 ahead relative to each candidate staircase. Ranged-first reads the
 selected weighted route on a desperate walk. A positive weight takes
 precedence over the old grid danger gate and
-`caution_stairs_flight_ignore_danger` on these flights. The compiled and
-shipped weight is 0.
+`caution_stairs_flight_ignore_danger` on these flights. The compiled
+weight is 0.
+
+The shared profile ships weight 5 for every class (#786), with clean-path
+mode 3, flight clean-path checks enabled, the fast-neighbor threshold at
+50%, the Recall cure threshold at 30%, and the old flight danger gate
+disabled. The mode 3 blocker threshold is 50% of current HP. Ranged-first
+and the rising HP override ship at 0. [Zoo pilot](https://github.com/diegoami/borg-zoo/issues/524)
 
 At a positive weight, only unoccupied staircases are eligible targets.
 `caution_stair_parked_fallback` applies to legacy routing at weight 0.
