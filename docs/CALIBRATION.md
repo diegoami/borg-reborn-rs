@@ -10,6 +10,23 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Step-away from immobile creatures turned off (#736)
+
+The registry still holds **2211** parameters. Owner, 2026-11-20: "stepaway
+flag is not a solution, I do not like it"; "why do we build 'step away',
+isn't it better 'do not get closer'?".
+
+- **`caution_ranged_vs_immobile`** ships **0** (C). In borg-zoo#461's big
+  tier, modes 2 and 3 lost games (22 deaths off, 24 and 27; Druids 5 → 9 and
+  10). Mode 3 crashed (#726).
+  - Replays on PR #717's head: the step-away loops against a flight whose
+    path passes the monster, and it steps instead of reading Phase Door while
+    a mobile attacker hits the Borg.
+- **Until #736:** the owner's reading of the replays: the step-away is not
+  the fault, its direction is (toward the exit, not the first safe grid), and
+  the stairs, the target and Phase Door around it. #736 fixes those, then
+  the step-away can come back.
+
 ## Upstream C Borg fixes carried (#724)
 
 The registry now holds **2211** parameters (2210 before; one added). Owner,
@@ -43,7 +60,8 @@ annoying effects and only attack them from a distance, if you have to";
 attack"; "do not block the path through their reach if they need to go to
 their stairs"; "set the switch to on".
 
-- **`caution_ranged_vs_immobile`** (mode 0–3, compiled 0 = C, **shipped 2**):
+- **`caution_ranged_vs_immobile`** (mode 0–3, compiled 0 = C, shipped 2, then **shipped 0** by #736's
+  owner decision below):
   - **1** (#646): next to an immobile attacker (`NEVER_MOVE` with a blow),
     step away when confused (up to 3 steps) or carrying a ranged attack (1),
     and hold the confusion cure next to it.
@@ -895,7 +913,7 @@ not MOAN, BEG or DROOL) and #595.
 
 ## Play by the ordinary rules while Recall counts down (#603)
 
-The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (0, off): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).
+The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (compiled 0, shipped 1 since #694): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -1990,7 +2008,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_heal_estimate_percent` | 35 | percent | 0–100 | `borg_caution.rs:280` |
 | `caution_heal_estimate_min` | 300 | hp | 0–10000 | `borg_caution.rs:281` |
 | `caution_healing_rod_fail` | 500 | permille | 0–1000 | `borg_caution.rs:289` |
-| `caution_ranged_vs_immobile` | 0 (shipped 2) | mode | 0–3 | `borg_caution.rs:1511` |
+| `caution_ranged_vs_immobile` | 0 (shipped 0, #736) | mode | 0–3 | `borg_caution.rs:1511` |
 | `caution_confused_heal_loss` | 80 | percent | 0–100 | `borg_caution.rs:304` |
 | `caution_confused_star_loss` | 85 | percent | 0–100 | `borg_caution.rs:311` |
 | `caution_confused_star_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:312` |
@@ -4069,3 +4087,13 @@ the character level, where errands' steps bind (CL7–14).
 The plan file shows the zoo's depth cost again; the formula keeps the depth.
 With no deaths in any arm, survival is unmeasured here (RULES 14): that's the
 zoo's to measure.
+
+## Fox Form's study rating (#694)
+
+The registry now holds **2212** parameters (2211 on main before it; one added).
+
+`magic_fox_form_study_rating` (compiled and shipped 0 = C's rating 5): above 0,
+the rating Fox Form is studied by (`borg_magic::study_rating`). C's 5 is below
+the 50 a spell needs unless the Borg is bored, so a Druid learns it once bored;
+100 puts it above Detect Life and Stinking Cloud (95), learned first. On 6
+Druid starts (100k turns) first cost levels: sum of max CL 45 → 33, one death.
