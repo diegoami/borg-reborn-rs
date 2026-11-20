@@ -337,9 +337,15 @@ borg_param_prepared_recall_depth = 5
 # prepared_depth_plan = 1 the Borg is never prepared for a level deeper than:
 # up to CL prepared_depth_early_until_level, ceil(CL / early_levels_per_dl);
 # past it, CL - late_levels_below, but never shallower than the early part's
-# last cap (ceil(knee / div)); never above DL1; none from CL50. These are the casters'
-# values; the fighters' are in their class files (2, 4, 0). 0 = off.
-borg_param_prepared_depth_plan = 0
+# last cap (ceil(knee / div)); never above DL1; none from CL50. 0 = off.
+# Every class sets its own three values in harness/borg_<class>.txt (folded
+# below as __<class> lines; owner, 2026-11-20): Druid 5, 10, 4; Mage, Priest,
+# Necromancer 4, 8, 3; Ranger, Rogue 3, 6, 2; Paladin, Blackguard 3, 5, 1;
+# Warrior 2, 4, 0. The common
+# values here apply to no class today. The switch stays common, so one line
+# turns the plan on or off for every class.
+# Shipped 1 (owner, 2026-11-20: "switch goes 1"), with the per-class values.
+borg_param_prepared_depth_plan = 1
 borg_param_prepared_depth_early_levels_per_dl = 3
 borg_param_prepared_depth_early_until_level = 6
 borg_param_prepared_depth_late_levels_below = 3
@@ -392,9 +398,13 @@ borg_param_caution_flee_recall_danger_percent = 0
 # deeper: in town and on DL1 a staircase crosses between town and dungeon,
 # and the Recall would take the Borg back. 0 = C's Recall-only rules (the
 # buy-time escapes of caution_recall_*).
-# Impact: off here; see the PR for classes-18.
+# Impact: zoo-neutral and rarely reached: borg-zoo#400 (1,800 starts) 103
+# deaths against 105; reborn-recall-usual-200k-main (72 starts at 200k) the
+# same 4 deaths, 17 games changed, CL -0.04, DL -0.05; borg-zoo#428 (108
+# starts on e5cc5469) 2 against 2, 3 games changed. Shipped 1 (owner,
+# 2026-11-20, #694: "I would adopt it"), as the better way to play.
 
-borg_param_caution_recall_wait_as_usual = 0
+borg_param_caution_recall_wait_as_usual = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
@@ -636,6 +646,23 @@ borg_param_town_oil_curve_scale_percent = 100
 # is what shows them first. The zoo measures it.
 borg_param_light_detect_evil_spell_min_level = 0
 
+# Thrown oil (#712, owner 2026-11-20): the town planner values each flask of
+# oil kept to throw on a curve of its own, which a stack of shots cannot fill
+# (before, shots saturated the shared ATTACK curve and the flasks went to the
+# Home). Half its value at town_oil_flasks flasks. The Ranger keeps C's
+# behaviour: it has arrows and does not need oil.
+borg_param_town_oil_apart = 1
+borg_param_town_oil_flasks = 10
+
+# Ranger arrows (#716, owner 2026-11-20): the town planner's shot reserve as a
+# soft cap: each shot up to town_ranger_arrows_max is worth the same; past it
+# shots count on C's curve with weight and demand scaled by
+# town_ranger_arrows_curve_scale_percent (as healing's): each worth less than
+# the last. 0 = C (a curve that grows with the trip: 150-200 arrows carried,
+# Phase Door sent home). The Ranger sets 50 and 50 in its class file.
+borg_param_town_ranger_arrows_max = 0
+borg_param_town_ranger_arrows_curve_scale_percent = 0
+
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
 # Serious Wounds, then Healing. Higher shifts purchases to stronger potions.
@@ -807,8 +834,11 @@ borg_param_escape_phase_antisummon_delay = 50
 # Change together: these settings form one set.
 # Impact: escape_fox_form 1: 1 of 6 test games plays differently (the Druid);
 # the other four: 0 with the switch at 0.
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#400, 1,800
+# starts: 105 deaths against 105, 3 saved and 3 lost, only Druid games
+# change); adopted as the better way for a Druid to flee.
 
-borg_param_escape_fox_form = 0
+borg_param_escape_fox_form = 1
 borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
@@ -823,10 +853,20 @@ borg_param_escape_fox_form_stand_speed = 10
 # fox) and before a blow. Raising min_steps casts on longer walks only (each
 # cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
 # Impact: set to 1, 1 of 6 test games play differently (the Druid).
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#413 small, 90
+# starts: 4 deaths against 4, 10 games changed); adopted with escape_fox_form.
 
-borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town = 1
 borg_param_escape_fox_form_town_max_level = 20
 borg_param_escape_fox_form_town_min_steps = 10
+
+# #694 (owner: "make the druid learn this spell first"): the rating Fox Form
+# is studied by. C rates it 5, below the 50 a spell needs unless the Borg is
+# bored, so a Druid learns it once bored (still early: within its first few
+# thousand log lines on classes-18). 100 is above Detect Life and Stinking
+# Cloud (95): learned first. Shipped 0 = C's rating (owner, 2026-11-20): on 6
+# Druid starts, first cost levels (sum of CL 45 -> 33, one death).
+borg_param_magic_fox_form_study_rating = 0
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
@@ -1215,6 +1255,9 @@ borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
 borg_param_light_detect_evil_spell_min_level__mage = 0
+borg_param_prepared_depth_early_levels_per_dl__mage = 4
+borg_param_prepared_depth_early_until_level__mage = 8
+borg_param_prepared_depth_late_levels_below__mage = 3
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1223,6 +1266,9 @@ borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
 borg_param_light_detect_evil_spell_min_level__druid = 0
+borg_param_prepared_depth_early_levels_per_dl__druid = 5
+borg_param_prepared_depth_early_until_level__druid = 10
+borg_param_prepared_depth_late_levels_below__druid = 4
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1231,6 +1277,9 @@ borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
 borg_param_light_detect_evil_spell_min_level__priest = 0
+borg_param_prepared_depth_early_levels_per_dl__priest = 4
+borg_param_prepared_depth_early_until_level__priest = 8
+borg_param_prepared_depth_late_levels_below__priest = 3
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1240,6 +1289,9 @@ borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
 borg_param_light_detect_evil_spell_min_level__necromancer = 0
+borg_param_prepared_depth_early_levels_per_dl__necromancer = 4
+borg_param_prepared_depth_early_until_level__necromancer = 8
+borg_param_prepared_depth_late_levels_below__necromancer = 3
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1250,9 +1302,9 @@ borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 0
 borg_param_caution_breeder_hunt_max_count__paladin = 6
-borg_param_prepared_depth_early_levels_per_dl__paladin = 2
-borg_param_prepared_depth_early_until_level__paladin = 4
-borg_param_prepared_depth_late_levels_below__paladin = 0
+borg_param_prepared_depth_early_levels_per_dl__paladin = 3
+borg_param_prepared_depth_early_until_level__paladin = 5
+borg_param_prepared_depth_late_levels_below__paladin = 1
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1263,9 +1315,9 @@ borg_param_town_devices_percent__rogue = 135
 borg_param_town_phase_curve_scale_percent__rogue = 125
 borg_param_town_oil_curve_scale_percent__rogue = 125
 borg_param_caution_breeder_hunt_max_count__rogue = 6
-borg_param_prepared_depth_early_levels_per_dl__rogue = 2
-borg_param_prepared_depth_early_until_level__rogue = 4
-borg_param_prepared_depth_late_levels_below__rogue = 0
+borg_param_prepared_depth_early_levels_per_dl__rogue = 3
+borg_param_prepared_depth_early_until_level__rogue = 6
+borg_param_prepared_depth_late_levels_below__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1275,9 +1327,12 @@ borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
-borg_param_prepared_depth_early_levels_per_dl__ranger = 2
-borg_param_prepared_depth_early_until_level__ranger = 4
-borg_param_prepared_depth_late_levels_below__ranger = 0
+borg_param_prepared_depth_early_levels_per_dl__ranger = 3
+borg_param_prepared_depth_early_until_level__ranger = 6
+borg_param_prepared_depth_late_levels_below__ranger = 2
+borg_param_town_oil_apart__ranger = 0
+borg_param_town_ranger_arrows_max__ranger = 50
+borg_param_town_ranger_arrows_curve_scale_percent__ranger = 50
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -1287,7 +1342,7 @@ borg_param_town_devices_percent__blackguard = 100
 borg_param_town_phase_curve_scale_percent__blackguard = 50
 borg_param_town_oil_curve_scale_percent__blackguard = 100
 borg_param_caution_breeder_hunt_max_count__blackguard = 8
-borg_param_prepared_depth_early_levels_per_dl__blackguard = 2
-borg_param_prepared_depth_early_until_level__blackguard = 4
-borg_param_prepared_depth_late_levels_below__blackguard = 0
+borg_param_prepared_depth_early_levels_per_dl__blackguard = 3
+borg_param_prepared_depth_early_until_level__blackguard = 5
+borg_param_prepared_depth_late_levels_below__blackguard = 1
 # ---- END CLASS FILES ----
