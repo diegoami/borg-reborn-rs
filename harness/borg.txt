@@ -689,6 +689,8 @@ borg_param_town_oil_curve_scale_percent = 100
 # for Mage, Druid, Priest, Necromancer and Paladin in their class files
 # (borg-zoo#480, classes-1800 starts 1-360, 100k turns: same deaths, CL +0.53,
 # no floating-eye death); this common line stays 0 for the other classes.
+borg_param_light_detect_dark_entry = 0
+borg_param_light_detect_dark_entry_reserve_sp = 2
 borg_param_light_detect_evil_spell_min_level = 0
 
 # Thrown oil (#712, owner 2026-11-20): the town planner values each flask of
