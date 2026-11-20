@@ -657,6 +657,16 @@ mod tests {
         assert_eq!(d.iter().filter(|&&x| x == Disposition::Store).count(), 1, "{d:?}");
         assert_eq!(d[0], Disposition::Store, "the least valuable goes: {d:?}");
         assert!(inp.limits.weight + freed.weight >= 0, "under the allowance after it");
+        // Review of #714: the public entry point reads the switch the right
+        // way round (at the value the registry gives this test process).
+        let kit = [recall(Place::Pack)];
+        let on = crate::params::value(crate::params::Param::town_store_only_overweight) != 0;
+        let mut u = Utility::of(&st, &kit, false);
+        let public = dispositions(&input(&kit), &mut u, &st).0;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(public, dispositions_with(&input(&kit), &mut u, &st, on).0);
+        let mut u = Utility::of(&st, &kit, false);
+        assert_ne!(public, dispositions_with(&input(&kit), &mut u, &st, !on).0, "the switch changes this case");
     }
 
     #[test]

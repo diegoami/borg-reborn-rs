@@ -55,5 +55,10 @@ the value.
 
 **Left / for the owner:**
 - The zoo pilot (borg-zoo#457) measures it; it ships 1 already, by the owner's decision.
-- #712 (oil stashed at home) is very likely the same cause: oil stores fall
-  from 34 to the overweight ones.
+- #712 (oil stashed at home) shares the storing *mechanism*, not its cause
+  (review of #714). Oil counts as missiles (`BI_AMISSILES`) only below CL15
+  and only the first 15 (`borg_trait.rs:2232`), and launcher ammunition fills
+  the missile cap (`power_inventory_amissiles_limit_4`, `borg_power.rs:1514`),
+  so the pack gives oil no value. This change decides where such oil goes:
+  it is no longer stored with the pack light, but oil the pack does not value
+  may now be sold or dropped instead. #712 stays open for the power model.
