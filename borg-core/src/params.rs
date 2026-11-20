@@ -211,6 +211,7 @@ parameters! {
     town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:250", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
     town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:251", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
     town_fear_cure_count => (0, "count", 0, 100, "borg_town_capability.rs:649", "#516: while the character is not afraid, fear cures (Potion of Boldness, CURE:AFRAID) are valued linearly up to this many in the pack and not beyond (each of the first ones is worth more than on the curve, a further one nothing); 0 = the diminishing curve (the planner kept buying Boldness: 35 bought, 7 drunk on 18 games)."),
+    town_store_only_overweight => (0, "flag", 0, 1, "borg_town_utility.rs:256", "#711 (owner, 2026-11-20: \"only when it weighs too much they should stash the object with less value at home, until they are not overcarrying again\"): 1 = the live town planner stores a pack stack in the Home only while the pack is over its weight allowance, the lowest keep value per weight first, until it is under; 0 = today (a stack also goes home when its value kept for later, borg_town_home_discount, beats its value carried now: 329 stores in 18 classes-18 games, 130 of them fight consumables)."),
     town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:413", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
     town_phase_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:639", "#682 (owner): stretches the live town planner's Phase Door curve, as town_heal_curve_scale_percent does healing's: weight and demand scale together (100 = today). Per class with town_phase_curve_scale_percent@<class> or the class files."),
     town_oil_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:484", "#682 (owner): weights a flask of oil's thrown damage in the live town planner (100 = today), so a class buys more or fewer flasks to throw; flasks kept as lantern fuel are not changed. Per class with town_oil_curve_scale_percent@<class> or the class files."),
@@ -270,10 +271,10 @@ parameters! {
     caution_stair_scum_danger => (0, "danger", 0, 10000, "borg_caution.rs:3329", "#549: with caution_stair_scum_threat, a danger here above this stops the stair scum."),
     caution_rising_hold_flee_descent => (0, "flag", 0, 1, "borg_caution.rs:3358", "#557: 1 = while rising (a return trip on foot) in the dungeon, a flight takes no down staircase (stair_more, the both-stairs flee flow, the down-stairs flee flow) unless the danger here is at or above the HP; with birth_connect_stairs each such flight lands on DL+1's up staircase and the climb restarts on a fresh level; 0 = off (C's behaviour)."),
     caution_breeder_hunt_max_count => (4, "count", 0, 1000, "borg_caution.rs:3583", "#503, #558: below clevel 10 the Borg hunts breeders while at most this many are known on the level (with caution_breeder_fight); a class value per class (the class files), 0 = that class does not hunt. Before #558 only Warriors, Paladins, Rogues and Blackguards hunted."),
-    recover_breeder_hunt_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:892", "#558 (owner): when a rest is due, HP is at least this percent of max HP and the Borg is fit to hunt breeders now (the hunt applies: caution_breeder_fight on and caution_breeder_hunt_max_count; the Borg is not ignoring the breeders, fleeing or leaving, and no scary monster is on the level; a Mage or Necromancer has half its mana; it is not hungry, confused, hallucinating, afraid or stunned; a known breeder passes the hunt walk's danger test, but not its leash to the stairs or reachability), the Borg does not rest (breeders multiply while it rests) and hunts them first. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For an acid breeder (a worm mass) the danger test passes only with danger_hunt_breeder_no_acid_fear on; 0 = off (C's rest)."),
-    recover_unseen_attack_turns => (0, "game turns", 0, 100000, "borg_recover.rs:765", "#697 (owner): an attack by a monster the Borg cannot see (\"Something/It ... you\") counts for this many game turns: no rest within recover_unseen_attack_distance of where it struck; hurt, the Borg walks to a corridor (else any known grid) at least that far and rests there; struck again that far from the last attack (it followed), or nowhere to walk, it leaves the level. 0 = C (the attacker is ignored: no monster, no danger)."),
+    recover_breeder_hunt_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:899", "#558 (owner): when a rest is due, HP is at least this percent of max HP and the Borg is fit to hunt breeders now (the hunt applies: caution_breeder_fight on and caution_breeder_hunt_max_count; the Borg is not ignoring the breeders, fleeing or leaving, and no scary monster is on the level; a Mage or Necromancer has half its mana; it is not hungry, confused, hallucinating, afraid or stunned; a known breeder passes the hunt walk's danger test, but not its leash to the stairs or reachability), the Borg does not rest (breeders multiply while it rests) and hunts them first. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For an acid breeder (a worm mass) the danger test passes only with danger_hunt_breeder_no_acid_fear on; 0 = off (C's rest)."),
+    recover_unseen_attack_turns => (0, "game turns", 0, 100000, "borg_recover.rs:765", "#697 (owner): an attack by a monster the Borg cannot see (\"Something/Someone ... you\") counts for this many game turns: no rest within recover_unseen_attack_distance of where it struck; hurt, the Borg walks to a corridor (else any known grid) at least that far and rests there; struck again that far from the last attack (it followed), or nowhere to walk, it leaves the level. 0 = C (the attacker is ignored: no monster, no danger)."),
     recover_unseen_attack_distance => (10, "grids", 1, 100, "borg_recover.rs:768", "#697: the distance from an unseen attack within which the Borg does not rest, the distance it walks away, and the distance at which a later attack means the attacker followed it."),
-    recover_unseen_heal_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:825", "#697 (owner): while an unseen attack is recent (recover_unseen_attack_turns), below this share of the maximum HP the Borg drinks Cure Light, Cure Serious, then Cure Critical Wounds. 0 = off."),
+    recover_unseen_heal_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:832", "#697 (owner): while an unseen attack is recent (recover_unseen_attack_turns), below this share of the maximum HP the Borg drinks Cure Light, Cure Serious, then Cure Critical Wounds. 0 = off."),
     recover_rest_breeders => (0, "flag", 0, 1, "borg_recover.rs:679", "#644 (owner): 1 = in the dungeon, while any breeder is known on the level, no rod, HP/SP or mana rest: the Borg hunts the breeders when #558's hunt applies, otherwise leaves the level; kept when confused, blind, hallucinating or stunned. 0 = rest as C."),
     caution_desperate_max_level => (35, "level", 1, 51, "borg_caution.rs:1993", "Controls desperate max level."),
     caution_retreat_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:2028", "Controls retreat danger divisor."),
@@ -2338,6 +2339,16 @@ fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
 /// A setting's name: the parameter, its class if any, and the alias's
 /// "general value" sentinel.
 fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    // #696: `<name>__<class>` is `<name>@<class>` in the characters a zoo
+    // profile can write (`[A-Za-z0-9_.-]`); no parameter name has `__`.
+    let at;
+    let name = match name.rsplit_once("__") {
+        Some((base, class)) if !name.contains('@') && CLASSES.contains(&class) => {
+            at = format!("{base}@{class}");
+            at.as_str()
+        }
+        _ => name,
+    };
     if let Some((base, class)) = name.split_once('@') {
         let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
         let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
@@ -2569,6 +2580,13 @@ mod tests {
         assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_attack_preference_spell_permille@mage = 1500"), &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_spell_permille@wizard = 1000", &BTreeMap::new(), SPECS).is_err());
+        // #696: `<name>__<class>` is `<name>@<class>`, for every parameter.
+        let d = Param::town_devices_percent;
+        let values = parse("borg_param_town_devices_percent__mage = 150", &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!(class_value(&values, d, "mage"), Some((150, "borg.txt")));
+        assert_eq!(values[d as usize].value, 100, "the common value stays");
+        assert!(parse("borg_param_town_devices_percent__mage = 150\nborg_param_town_devices_percent@mage = 140", &BTreeMap::new(), SPECS).is_err(), "a duplicate");
+        assert!(parse("borg_param_town_devices_percent__wizard = 150", &BTreeMap::new(), SPECS).is_err());
     }
 
     /// #520: precedence (default < borg.txt < class line < environment <

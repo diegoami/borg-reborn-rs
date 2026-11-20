@@ -234,6 +234,14 @@ borg_town_w_gold = 0
 borg_town_light_depth = 15
 borg_town_food_trip = 10
 
+# Store at home only when overweight (#711, owner): 1 = the town planner
+# moves a pack stack to the Home only while the pack is over its weight
+# allowance, the least valuable per weight first, until it is under. 0 = also
+# when its value kept for later (borg_town_home_discount) beats its value
+# carried now: cures, oil and Phase Door went home with the pack light.
+
+borg_param_town_store_only_overweight = 1
+
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer
 # supplies. 0 and 0 = spend freely.
@@ -537,10 +545,10 @@ borg_param_recover_unseen_heal_hp_percent = 0
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
-# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
-# Impact: see CALIBRATION (#568).
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C. Shipped 1
+# (owner, 2026-11-20). Impact: see CALIBRATION (#568).
 
-borg_param_attack_throw_as_melee = 0
+borg_param_attack_throw_as_melee = 1
 
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
@@ -612,8 +620,10 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. The casters
-# set 10 in their class files.
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. Reverted to
+# 0 for every class (owner, 2026-11-20): a low-level character sees only the
+# grids next to it in a dark room, so it walks into floating eyes; detection
+# is what shows them first. The zoo measures it.
 borg_param_light_detect_evil_spell_min_level = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
@@ -892,7 +902,7 @@ borg_param_danger_hunt_breeder_no_acid_fear = 1
 # otherwise leave the level. Kept when confused, blind, hallucinating or
 # stunned. 0 = rest as C.
 # Impact (18 classes-18 starts, 100,000 turns): 1: 13 of 18 play differently.
-borg_param_recover_rest_breeders = 0
+borg_param_recover_rest_breeders = 1
 
 # Fighting breeders with no easy escape and danger at or above this many
 # tenths of the HP (5 = half), use the cornered buffs (#504). Lower buffs
@@ -943,7 +953,7 @@ borg_param_caution_breeder_stuck_turns = 20
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 
-borg_param_caution_breeder_stoppable = 0
+borg_param_caution_breeder_stoppable = 1
 borg_param_caution_breeder_stoppable_births_percent = 200
 borg_param_caution_breeder_stoppable_confirm = 5
 
@@ -992,9 +1002,9 @@ borg_param_caution_scary_latch = 1
 # has not left the level (#590). 0 = the latch decides.
 # Change together: needs caution_scary_stand = 1 (the flag is decided after
 # each scan only there).
-# Impact: off here; set to 1, it fires in 3 of 6 test games.
+# Impact: set to 1 it fires in 3 of 6 test games; shipped 1 (owner, 2026-11-20).
 
-borg_param_caution_scary_unlatch_kill = 0
+borg_param_caution_scary_unlatch_kill = 1
 
 # 1 = the level stops being scary once a named-list or damage-rule scary
 # monster is known hurt or afraid (the thresholds below), or is killed, with
@@ -1005,7 +1015,10 @@ borg_param_caution_scary_unlatch_kill = 0
 # the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
 # Shipped 1 (#671, borg-zoo#400, all 1,800 classes-1800 starts on 3ba17e2c):
 # 93 deaths against 105 (28 rescued, 16 newly killed, p = 0.096), mean max CL
-# +0.09 and DL +0.05 (both significant). Safe to adopt; deaths not confirmed.
+# +0.09 and DL +0.05 (both significant). The confirmation on fresh starts
+# (reborn-calmed-confirm, 3,600 games, #696): 128 deaths against 130
+# (p = 0.89), mean max CL +0.10 [+0.06, +0.15]. Neutral on deaths, helpful on
+# progress.
 
 borg_param_caution_scary_unlatch_calmed = 1
 
@@ -1128,75 +1141,80 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
-borg_param_town_devices_percent@warrior = 75
-borg_param_town_phase_curve_scale_percent@warrior = 75
-borg_param_town_oil_curve_scale_percent@warrior = 100
+borg_param_town_devices_percent__warrior = 75
+borg_param_town_phase_curve_scale_percent__warrior = 75
+borg_param_town_oil_curve_scale_percent__warrior = 100
+borg_param_caution_breeder_hunt_max_count__warrior = 7
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
-borg_param_town_devices_percent@mage = 150
-borg_param_town_phase_curve_scale_percent@mage = 175
-borg_param_town_oil_curve_scale_percent@mage = 100
-borg_param_light_detect_evil_spell_min_level@mage = 10
+borg_param_town_devices_percent__mage = 150
+borg_param_town_phase_curve_scale_percent__mage = 175
+borg_param_town_oil_curve_scale_percent__mage = 100
+borg_param_light_detect_evil_spell_min_level__mage = 0
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
-borg_param_town_devices_percent@druid = 100
-borg_param_town_phase_curve_scale_percent@druid = 175
-borg_param_town_oil_curve_scale_percent@druid = 150
-borg_param_light_detect_evil_spell_min_level@druid = 10
+borg_param_town_devices_percent__druid = 100
+borg_param_town_phase_curve_scale_percent__druid = 175
+borg_param_town_oil_curve_scale_percent__druid = 150
+borg_param_light_detect_evil_spell_min_level__druid = 0
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
-borg_param_town_devices_percent@priest = 125
-borg_param_town_phase_curve_scale_percent@priest = 125
-borg_param_town_oil_curve_scale_percent@priest = 150
-borg_param_light_detect_evil_spell_min_level@priest = 10
+borg_param_town_devices_percent__priest = 125
+borg_param_town_phase_curve_scale_percent__priest = 125
+borg_param_town_oil_curve_scale_percent__priest = 150
+borg_param_light_detect_evil_spell_min_level__priest = 0
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
-borg_param_town_devices_percent@necromancer = 150
-borg_param_town_phase_curve_scale_percent@necromancer = 175
-borg_param_town_oil_curve_scale_percent@necromancer = 100
-borg_param_light_detect_evil_spell_min_level@necromancer = 10
+borg_param_town_devices_percent__necromancer = 150
+borg_param_town_phase_curve_scale_percent__necromancer = 175
+borg_param_town_oil_curve_scale_percent__necromancer = 100
+borg_param_light_detect_evil_spell_min_level__necromancer = 0
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
-borg_param_town_devices_percent@paladin = 100
-borg_param_town_phase_curve_scale_percent@paladin = 100
-borg_param_town_oil_curve_scale_percent@paladin = 125
-borg_param_light_detect_evil_spell_min_level@paladin = 10
+borg_param_town_devices_percent__paladin = 100
+borg_param_town_phase_curve_scale_percent__paladin = 100
+borg_param_town_oil_curve_scale_percent__paladin = 125
+borg_param_light_detect_evil_spell_min_level__paladin = 0
+borg_param_caution_breeder_hunt_max_count__paladin = 6
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
-borg_param_town_devices_percent@rogue = 135
-borg_param_town_phase_curve_scale_percent@rogue = 125
-borg_param_town_oil_curve_scale_percent@rogue = 125
+borg_param_town_devices_percent__rogue = 135
+borg_param_town_phase_curve_scale_percent__rogue = 125
+borg_param_town_oil_curve_scale_percent__rogue = 125
+borg_param_caution_breeder_hunt_max_count__rogue = 6
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
-borg_param_town_devices_percent@ranger = 115
-borg_param_town_phase_curve_scale_percent@ranger = 150
-borg_param_town_oil_curve_scale_percent@ranger = 50
+borg_param_town_devices_percent__ranger = 115
+borg_param_town_phase_curve_scale_percent__ranger = 150
+borg_param_town_oil_curve_scale_percent__ranger = 50
+borg_param_caution_breeder_hunt_max_count__ranger = 6
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 100
 borg_param_town_heal_reserve_hp_percent_blackguard = 200
-borg_param_town_devices_percent@blackguard = 100
-borg_param_town_phase_curve_scale_percent@blackguard = 50
-borg_param_town_oil_curve_scale_percent@blackguard = 100
+borg_param_town_devices_percent__blackguard = 100
+borg_param_town_phase_curve_scale_percent__blackguard = 50
+borg_param_town_oil_curve_scale_percent__blackguard = 100
+borg_param_caution_breeder_hunt_max_count__blackguard = 8
 # ---- END CLASS FILES ----

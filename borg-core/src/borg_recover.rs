@@ -818,12 +818,19 @@ fn unseen_rest_held(st: &mut BorgState) -> bool {
     held
 }
 
+/// borg-reborn-rs (#697): below `percent` of the maximum HP, strictly (0 =
+/// off). `max * percent` stays in `i32` (HP up to a few thousand, percent up
+/// to 100).
+fn unseen_heal_due(percent: i32, cur: i32, max: i32) -> bool {
+    percent > 0 && cur * 100 < max * percent
+}
+
 /// borg-reborn-rs (#697), `recover_unseen_heal_hp_percent`: while an unseen
 /// attack is recent, below this share of the maximum HP, drink a cure: its
 /// HP loss counts as no danger, so `borg_heal`'s tests never fire.
 fn unseen_heal(st: &mut BorgState) -> bool {
     let percent = param(Param::recover_unseen_heal_hp_percent);
-    if percent == 0 || !unseen_active(st) || st.borg.tr(BI_CURHP) * 100 >= st.borg.tr(BI_MAXHP) * percent {
+    if !unseen_heal_due(percent, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP)) || !unseen_active(st) {
         return false;
     }
     let healed = borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
@@ -999,7 +1006,17 @@ mod tests {
 
 #[cfg(test)]
 mod unseen_tests {
-    use super::{unseen_followed_next, unseen_name, unseen_recent};
+    use super::{unseen_followed_next, unseen_heal_due, unseen_name, unseen_recent};
+
+    /// #697 (re-review of #698): the heal threshold is strict.
+    #[test]
+    fn heal_threshold() {
+        assert!(unseen_heal_due(50, 49, 100));
+        assert!(!unseen_heal_due(50, 50, 100), "at half, not below it");
+        assert!(!unseen_heal_due(0, 1, 100), "0 is off");
+        assert!(unseen_heal_due(100, 99, 100), "100: below the maximum");
+        assert!(!unseen_heal_due(100, 100, 100));
+    }
 
     /// #697: the names the game gives a monster the Borg cannot see.
     #[test]

@@ -82,7 +82,7 @@ pub struct Borg {
     /// may still clear it). Only read while `goal.leaving` is set.
     pub breeder_leaving: bool,
     /// borg-reborn-rs (#697): the last attack by a monster the Borg cannot
-    /// see ("Something/It ... you"): its game turn (0: none on this level)
+    /// see ("Something/Someone ... you"): its game turn (0: none on this level)
     /// and the Borg's grid then; `unseen_followed`: a later one struck at
     /// least `recover_unseen_attack_distance` grids from the one before.
     pub unseen_turn: i32,

@@ -3,7 +3,7 @@
 Owner: "it leaves if it senses an invisible thing and goes rest somewhere else, and use healing potions". The default core's version of #462 (reborn core).
 
 - **Found** in #691's measurement: a CL3 Rogue (1502695781, `kill_flow_mode` 3) rested through 23 "Something touches you" and died to a clear icky thing with 2 Cure Light Wounds.
-  - `borg_locate_kill` makes no monster for "Something"/"It", so the danger stays about 0.
+  - `borg_locate_kill` makes no monster for "Something", and records "Someone" as a player ghost, so the danger stays about 0.
   - Setting 0 of #695 survives only by chance: it bumps the invisible monster while picking up an item.
 - **Change** (`borg_recover.rs`, shipped 0):
   - `note_unseen_attack`, called from `borg_update.rs`'s `HIT_BY`/`MISS_BY`, records the game turn and grid (fields in `borg.rs`, reset on a new level);
@@ -15,4 +15,4 @@ Owner: "it leaves if it senses an invisible thing and goes rest somewhere else, 
   - classes-18: off is identical to main 19/19 and on smoke; on: 0 deaths both, sum of max CL 108 to 111, max DL 40 to 43, no loops.
 - **For the owner:** values to ship, after a zoo pilot. The heal was not exercised at 50% on classes-18.
 - **Not covered:** an invisible monster that casts ("Something mumbles"); the record only reads blows (`HIT_BY`/`MISS_BY`).
-- **Review of #698** (fixed): "Someone" (an unseen male or female monster, 181 races) counts, "It" (never a blow's name) does not; the walk away comes before the heal; a held rest is noted; the walk stays off unknown grids; the last Cure Critical Wounds is drunk (plain quaff); "followed" is a tested state that stays set for the window. Re-measured on main `dbc92d18`: off identical 19/19; on, sum of max CL 111 to 116, deaths 1 and 1 (the same death). The Rogue case no longer dies on current main even with the switches off.
+- **Review of #698** (fixed): "Someone" (a male or female monster the Borg cannot see: 15 invisible gendered races, or any of the 186 gendered ones out of sight) counts, "It" (never a blow's name) does not; the walk away comes before the heal; a held rest is noted; the walk stays off unknown grids; the last Cure Critical Wounds is drunk (plain quaff); "followed" is a tested state that stays set for the window. Re-measured on main `dbc92d18`: off identical 19/19; on, sum of max CL 111 to 116, deaths 1 and 1 (the same death). The Rogue case no longer dies on current main even with the switches off.
