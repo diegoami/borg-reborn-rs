@@ -4951,7 +4951,9 @@ This section records 2273 parameters after synchronizing main 2b67266d
 (2269 before this task; four added). Earlier section counts are historical
 snapshots and are not rewritten.
 
-The behavior switches are compiled and shipped off. A flow or twitch move
+The behavior switches compile off. The shipped borg-rs profile enables
+200 game turns of memory, the response, and a cure threshold of 50% HP,
+with up to three oil throws per grid (#802). A flow or twitch move
 followed by unseen player-melee feedback and an unchanged observed position
 marks its intended grid occupied. Incoming attacks alone do not locate a
 source. Blind, confused and hallucinating steps supply no grid. All flow
@@ -4988,11 +4990,12 @@ bump evidence supplies adjacency, but now keeps the ordinary emergency
 landing tolerance/horizon. A successful phase increments `borg.escapes` and
 cancels the old flow, as the ordinary escape call does. `caution_escape_limit`
 is a threshold that starts leaving, not a hard cap prohibiting further escapes.
-These are hypotheses for Zoo measurement, not shipped policy.
+These settings are hypotheses for Zoo measurement. The owner chose to ship
+the profile used in the #781 review trials.
 
 Historical controls reproduce `8b21c6b94e80e969` and death at37,759. Current
 main already survives after #768, so historical reconstruction is distinct
 from current-main checks. Canonical prior attempts and reproduction patches
 are pinned in the [Cemetery case](https://github.com/diegoami/borg-cemetery/tree/b20537c68830e415c79a8766135a1b32c7e539c2/validation/borg-reborn-rs/unseen-bump-781).
-Review follow-up receipts are published with Cemetery PR #92. No population
-result or shipped-value change is implied.
+Review follow-up receipts are published with Cemetery PR #92. Those trials
+did not measure a population effect.
