@@ -47,6 +47,69 @@ const GOAL_RECOVER: i16 = 9;
 /// `GOAL_FLEE` (borg-flow.h): the flight to a staircase (#614).
 const GOAL_FLEE: i16 = 7;
 
+/// borg-reborn-rs (#615 rule a, owner: "ok do a"): with
+/// `recover_rest_monster_turns`, record the game turn while an awake monster
+/// that can move is known within `recover_rest_monster_distance`. Called
+/// every dungeon think (`borg_caution`) and before every rest, so a monster
+/// forgotten out of view still counts.
+pub(crate) fn watch_for_rest(st: &mut BorgState) {
+    if param(Param::recover_rest_monster_turns) == 0 {
+        return;
+    }
+    if let Some(k) = crate::borg_caution::nearest_mover_seen(st, param(Param::recover_rest_monster_distance)) {
+        st.borg.rest_watch_turn = crate::engine::game_turn();
+        st.borg.rest_watch_depth = crate::engine::player_depth();
+        st.borg.rest_watch_kill = k;
+    }
+}
+
+/// #615 rule a: no rest (rod, HP/SP, mana) while an awake monster was near
+/// within the last `recover_rest_monster_turns` game turns on this level.
+/// A rest then is broken at once by the game (#615's analysis: 63% of town
+/// rests and 13% of dungeon rests lasted one player turn, mostly with an
+/// awake monster in view, up to 32 in a row). The Borg does something else.
+fn rest_held_for_monster(st: &mut BorgState) -> bool {
+    let Some(ago) = holding_for_monster_ago(st) else {
+        return false;
+    };
+    if st.borg.rest_watch_noted != Some(st.borg.time.now) {
+        st.borg.rest_watch_noted = Some(st.borg.time.now);
+        borg_note(st, &format!("# No rest: a monster was near {ago} game turns ago."));
+    }
+    true
+}
+
+/// #615 rule a: the rest is held (`Some(game turns since the monster)`),
+/// without the note. `borg_think_dungeon` also holds the walk to a recovery
+/// grid with it (review of #645), as #614 does with `holding_for_stairs`.
+pub(crate) fn holding_for_monster(st: &mut BorgState) -> bool {
+    holding_for_monster_ago(st).is_some()
+}
+
+fn holding_for_monster_ago(st: &mut BorgState) -> Option<i32> {
+    let turns = param(Param::recover_rest_monster_turns);
+    if turns == 0 {
+        return None;
+    }
+    // Impaired (confused, blind, hallucinating, stunned, afraid), walking is
+    // worse than a broken rest: a confused Ranger held its rest in town,
+    // walked into lava and died (first local run); an afraid Borg twitches
+    // in a random direction (review of #645).
+    let impaired = [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN, BI_ISAFRAID]
+        .iter()
+        .any(|&f| st.borg.tr(f) != 0);
+    watch_for_rest(st);
+    let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
+    let here = st.borg.rest_watch_depth == crate::engine::player_depth();
+    rest_monster_hold(turns, st.borg.rest_watch_turn, ago, here, impaired).then_some(ago)
+}
+
+/// The test of `holding_for_monster`: on, not impaired, a clock set (and
+/// not cleared by the monster's death), on this level, within `turns`.
+fn rest_monster_hold(turns: i32, seen_turn: i32, ago: i32, same_level: bool, impaired: bool) -> bool {
+    !impaired && crate::borg_caution::recall_watch_holds(turns, seen_turn, ago, same_level)
+}
+
 /// borg-reborn-rs (#614, owner): "once committed to a stair, it must at
 /// least reach that stair before stopping to rest". A Borg on a flight
 /// flow (`GOAL_FLEE`) whose staircase is at most `recover_rest_reach_stairs`
@@ -462,6 +525,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st)
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -503,7 +569,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER
-        && !rest_held_for_stairs(st);
+        && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st)
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -554,6 +623,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !hunt_now(st)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st)
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -568,6 +640,105 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+/// borg-reborn-rs (#644, owner: "no rest if aware of any breeders, clear the
+/// breeders or leave the level asap"): what to do instead of a rest while
+/// breeders are known on the level.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum BreederRest {
+    /// No breeder rule applies: rest as before.
+    Rest,
+    /// Hunt the breeders (#558's hunt applies).
+    Hunt,
+    /// Leave the level (`goal.leaving`).
+    Leave,
+}
+
+/// The decision of `recover_rest_breeders`, read from the state only. The
+/// hunt is judged as if this rule's own leave were not set (review of #656:
+/// `breeder_engaged` reads `goal.leaving` as "not engaged", so a leave set
+/// here stopped the hunt from ever resuming on the level).
+fn breeder_rest_decision(st: &mut BorgState) -> BreederRest {
+    let on = param(Param::recover_rest_breeders) != 0;
+    if !on {
+        return BreederRest::Rest;
+    }
+    let breeders = i32::from(st.borg.mon.breeders);
+    if !breeder_hold(on, st.borg.tr(BI_CDEPTH), impaired(st), breeders) {
+        return BreederRest::Rest;
+    }
+    let ours = st.borg.breeder_leaving && st.borg.goal.leaving;
+    let engaged = crate::borg_caution::breeder_engaged_but_own_leave(st, ours);
+    breeder_choice(crate::borg_flow_kill::breeder_hunt_now_with(st, engaged))
+}
+
+/// Hunt when the hunt applies, otherwise leave.
+fn breeder_choice(hunt: bool) -> BreederRest {
+    if hunt {
+        BreederRest::Hunt
+    } else {
+        BreederRest::Leave
+    }
+}
+
+/// Act on a `Hunt` or `Leave` decision: a hunt that applies again clears
+/// this rule's own leave; a leave is set once and remembered as this rule's.
+/// Noted once a think.
+fn apply_breeder_rest(st: &mut BorgState, d: BreederRest) {
+    match d {
+        BreederRest::Rest => return,
+        BreederRest::Hunt => {
+            let g = &st.borg.goal;
+            if withdraw_own_leave(st.borg.breeder_leaving, g.leaving, g.fleeing || g.fleeing_to_town) {
+                st.borg.goal.leaving = false;
+                borg_note(st, "# Not leaving: the breeder hunt applies again.");
+            }
+            st.borg.breeder_leaving = false;
+        }
+        BreederRest::Leave => {
+            if !st.borg.goal.leaving {
+                crate::borg_caution::start_leaving(st, "# Leaving (breeders on the level, no rest)");
+                st.borg.breeder_leaving = true;
+            }
+        }
+    }
+    if st.borg.breeder_rest_noted != Some(st.borg.time.now) {
+        st.borg.breeder_rest_noted = Some(st.borg.time.now);
+        let then = if d == BreederRest::Hunt { "hunting them" } else { "leaving" };
+        let n = st.borg.mon.breeders;
+        borg_note(st, &format!("# No rest: {n} breeders known on the level, {then}."));
+    }
+}
+
+/// Re-review of #656: a hunt that applies again withdraws the leave only if
+/// it is this rule's (`own`) and the Borg is not fleeing. The low-hit-points
+/// and bleeding/poison leaves (`borg_caution`) set `goal.fleeing` too; they
+/// may join a leave this rule set first (they only set it when it is not
+/// set yet), and must not lose it to the hunt.
+fn withdraw_own_leave(own: bool, leaving: bool, fleeing: bool) -> bool {
+    own && leaving && !fleeing
+}
+
+/// A rest that is due is held for breeders: decide, act on the decision,
+/// and say whether the rest is held. Kept when confused, blind,
+/// hallucinating or stunned: walking then is worse (#615 rule a).
+fn hold_for_breeders(st: &mut BorgState) -> bool {
+    let d = breeder_rest_decision(st);
+    apply_breeder_rest(st, d);
+    d != BreederRest::Rest
+}
+
+/// The test of `breeder_rest_decision`: on, in the dungeon, not impaired,
+/// and a breeder known on the level.
+fn breeder_hold(on: bool, depth: i32, impaired: bool, breeders: i32) -> bool {
+    on && depth > 0 && !impaired && breeders > 0
+}
+
+/// Confused, blind, hallucinating or stunned: a rest clears it, and walking
+/// is dangerous.
+fn impaired(st: &BorgState) -> bool {
+    [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN].iter().any(|&f| st.borg.tr(f) != 0)
 }
 
 thread_local! {
@@ -588,6 +759,66 @@ fn hunt_now(st: &mut BorgState) -> bool {
 /// 0 = off (C's rest).
 fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
     hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod breeder_rest_tests {
+    use super::{breeder_choice, breeder_hold, BreederRest};
+
+    /// #644: no rest while a breeder is known on the level.
+    #[test]
+    fn no_rest_while_breeders_are_known() {
+        assert!(breeder_hold(true, 3, false, 1), "a worm mass on DL3");
+        assert!(!breeder_hold(true, 3, false, 0), "no breeder known");
+        assert!(!breeder_hold(true, 0, false, 4), "town");
+        assert!(!breeder_hold(true, 3, true, 4), "confused: the rest clears it");
+        assert!(!breeder_hold(false, 3, false, 4), "off (C)");
+        assert_eq!(breeder_choice(true), BreederRest::Hunt);
+        assert_eq!(breeder_choice(false), BreederRest::Leave);
+    }
+
+    /// Review of #656: hunt, a transient failure (the HP below the hunt's
+    /// percent) sets this rule's leave, and the hunt resumes when it applies
+    /// again, because the hunt ignores the rule's own leave.
+    #[test]
+    fn the_hunt_resumes_after_the_rules_own_leave() {
+        use crate::borg_caution::engaged_ignoring_own_leave as engaged;
+        // (ignoring, fleeing, leaving, scary, leaving is ours)
+        assert!(engaged(false, false, false, false, false), "hunting");
+        assert!(engaged(false, false, true, false, true), "this rule's leave does not stop the hunt");
+        assert!(!engaged(false, false, true, false, false), "another rule's leave still does");
+        assert!(!engaged(true, false, true, false, true), "ignoring the breeders (#503) still does");
+        assert!(!engaged(false, true, true, false, true), "fleeing still does");
+    }
+
+    /// Re-review of #656: the rule's leave, then the low-HP leave joins it
+    /// (and sets fleeing): the resumed hunt keeps the leave.
+    #[test]
+    fn the_hunt_keeps_a_leave_another_rule_joined() {
+        use super::withdraw_own_leave;
+        assert!(withdraw_own_leave(true, true, false), "the rule's own leave: withdrawn");
+        assert!(!withdraw_own_leave(true, true, true), "low HP or bleeding joined (fleeing): kept");
+        assert!(!withdraw_own_leave(false, true, false), "another rule's leave: kept");
+        assert!(!withdraw_own_leave(true, false, false), "nothing to withdraw");
+    }
+}
+
+#[cfg(test)]
+mod rest_monster_tests {
+    use super::rest_monster_hold;
+
+    /// #615 rule a (review of #645): the rest waits for a monster seen
+    /// recently, on this level, unless impaired or the monster died.
+    #[test]
+    fn no_rest_soon_after_a_monster_was_near() {
+        assert!(rest_monster_hold(100, 5000, 30, true, false), "a yeek 30 game turns ago");
+        assert!(rest_monster_hold(100, 5000, 100, true, false), "at the limit");
+        assert!(!rest_monster_hold(100, 5000, 101, true, false), "long enough ago");
+        assert!(!rest_monster_hold(100, 5000, 30, false, false), "another level");
+        assert!(!rest_monster_hold(100, 5000, 30, true, true), "impaired (afraid, confused...): rest");
+        assert!(!rest_monster_hold(100, 0, 30, true, false), "the clock cleared: the monster died");
+        assert!(!rest_monster_hold(0, 5000, 30, true, false), "off (C)");
+    }
 }
 
 #[cfg(test)]

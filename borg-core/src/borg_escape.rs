@@ -39,6 +39,11 @@ use crate::borg_headers::borg_magic_h::{
 };
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
+/// `GOAL_KILL`, `GOAL_TAKE` (borg-flow.h): not walks (#620).
+const GOAL_KILL: i32 = 1;
+const GOAL_TAKE: i32 = 2;
+/// `GOAL_RECOVER` (borg-flow.h): a walk to rest, not worth the shape.
+const GOAL_RECOVER: i32 = 9;
 use crate::borg_headers::borg_trait_h::{
     BI_AESCAPE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH, BI_CLASS, BI_CLEVEL,
     BI_CRSNOTEL, BI_CURHP, BI_CURSP, BI_ISAFRAID, BI_ISCUT, BI_ISHEAVYSTUN, BI_ISPOISONED,
@@ -46,7 +51,7 @@ use crate::borg_headers::borg_trait_h::{
 };
 use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL, RF_PASS_WALL};
 use crate::headers::list_options_h::OPT_birth_force_descend;
-use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_NONE};
+use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
@@ -434,7 +439,9 @@ fn count_scary(
         let p = borg_danger(st, y, x, turns, true, false);
 
         // if *very* scary, do not allow jumps at all
-        if p > st.borg.tr(BI_CURHP) {
+        // borg-reborn-rs (#556): a landing near a remembered breeder is
+        // scary too (a Phase Door into the colony; no random numbers drawn).
+        if p > st.borg.tr(BI_CURHP) || crate::borg_caution::near_known_breeder(st, x, y) {
             n += 1;
         }
     }
@@ -486,6 +493,105 @@ pub(crate) fn fox_form_on() -> bool {
     param(Param::escape_fox_form) != 0
 }
 
+/// borg-reborn-rs (#620): `escape_fox_form` or `escape_fox_form_town` is
+/// on: the Borg casts the shape, so the change back is its own (the prompt
+/// answer, the revert before a blow, at a shop door).
+pub(crate) fn any_fox_form_on() -> bool {
+    fox_form_on() || param(Param::escape_fox_form_town) != 0
+}
+
+/// borg-reborn-rs (#620): a walk in town with the shape: the switch is on,
+/// in town, at most `escape_fox_form_town_max_level`.
+fn town_fox_when(on: bool, depth: i32, clevel: i32, max_level: i32) -> bool {
+    on && depth == 0 && clevel <= max_level
+}
+
+/// borg-reborn-rs (#620): the goal is a walk (to a shop, home, a staircase,
+/// or a flight), not a monster to kill, an object to take or a place to rest
+/// (review of #648, finding 3: a fox would rest at STR -3).
+fn walk_goal(goal: i32) -> bool {
+    goal != 0 && goal != GOAL_KILL && goal != GOAL_TAKE && goal != GOAL_RECOVER
+}
+
+fn town_fox_now(st: &BorgState) -> bool {
+    town_fox_when(
+        param(Param::escape_fox_form_town) != 0,
+        engine::player_depth(),
+        st.borg.tr(BI_CLEVEL),
+        param(Param::escape_fox_form_town_max_level),
+    )
+}
+
+/// borg-reborn-rs (#620, owner): a low-level Druid about to take a step of
+/// a walk in town at least `escape_fox_form_town_min_steps` from its goal
+/// casts Fox Form first (double movement): town is crossed faster, and the
+/// town monsters get fewer turns. It changes back at the shop door
+/// (`revert_fox_at_shop`) or before a blow (`revert_fox_to_fight`).
+pub(crate) fn fox_form_before_town_step(st: &mut BorgState, why: i32, steps_left: i32) -> bool {
+    let fail = param(Param::escape_fox_form_fail);
+    if !town_fox_now(st)
+        || !walk_goal(why)
+        || engine::player_is_shapechanged()
+        || steps_left < param(Param::escape_fox_form_town_min_steps)
+        || on_stairs(st)
+        || !borg_spell_okay_fail(st, FOX_FORM, fail)
+        || !mana_kept(
+            st.borg.tr(BI_CURSP) - crate::borg_magic::borg_get_spell_power(st, FOX_FORM),
+            st.borg.tr(BI_MAXSP),
+            st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level),
+            param(Param::recover_mana_rest_sp_tenths),
+        )
+    {
+        return false;
+    }
+    borg_note(st, &format!("# Fox Form: walking in town ({steps_left} steps to go)"));
+    borg_spell_fail(st, FOX_FORM, fail)
+}
+
+/// borg-reborn-rs (#620): standing on a staircase. No cast there (it would
+/// be spent on the step onto the stairs), and a town fox there changes
+/// back (`keep_fox_form`) before the think that takes them.
+/// The game's grid, not the Borg's: `borg_think` checks the shape before
+/// this think's `borg_update`, when `st.borg.c` is still the grid before the
+/// last step (as `keep_fox_form` reads the game's depth).
+fn on_stairs(_st: &BorgState) -> bool {
+    let at = engine::player_grid();
+    let feat = u32::from(engine::square_feat(at.x, at.y));
+    feat == FEAT_LESS || feat == FEAT_MORE
+}
+
+/// borg-reborn-rs (#620): the cast leaves the mana above `borg_recover`'s
+/// mana rest (`recover_mana_rest_*`): a cast that sends the Druid to rest
+/// costs more time in town than the fox saves (the first measure: twice the
+/// town time, all of it resting for one SP).
+fn mana_kept(sp_after: i32, max_sp: i32, rest_applies: bool, rest_tenths: i32) -> bool {
+    sp_after >= 0 && (!rest_applies || sp_after >= max_sp * rest_tenths / 10)
+}
+
+/// borg-reborn-rs (#620, review of #648): the note of `borg_think`'s change
+/// back, when it is the town fox's on a staircase (the other two reverts,
+/// at the shop door and before a blow, write their own).
+pub(crate) fn note_fox_revert(st: &mut BorgState) {
+    if is_fox() && town_fox_now(st) && on_stairs(st) {
+        borg_note(st, "# Fox Form: changing back on the staircase");
+    }
+}
+
+/// borg-reborn-rs (#620): a fox about to step onto a shop entrance changes
+/// back first: a shapechanged player on a shop entrance is refused
+/// (`player-util.c` `player_handle_post_move`, from `move_player`; also
+/// `cmd-cave.c` `do_cmd_hold`): "the door slams shut", and the home refuses
+/// silently. Changing back uses no
+/// energy; the step comes at the next think.
+pub(crate) fn revert_fox_at_shop(st: &mut BorgState) -> bool {
+    if !(any_fox_form_on() && is_fox()) {
+        return false;
+    }
+    borg_note(st, "# Fox Form: changing back at the shop door");
+    queue_fox_revert(st);
+    true
+}
+
 /// borg-reborn-rs (#551): the player is in fox shape.
 pub(crate) fn is_fox() -> bool {
     engine::player_is_shapechanged() && engine::player_shape_name() == b"fox"
@@ -502,7 +608,11 @@ pub(crate) fn keep_fox_form(st: &BorgState) -> bool {
     let scary = st.borg.mon.scary || st.borg.mon.scary_stand;
     // The game's depth, not the Borg's last update: right after a Recall
     // to town the trait still holds the old depth (review question 3).
-    fox_form_on() && is_fox() && keep_fox_when(engine::player_depth(), flight, scary)
+    // borg-reborn-rs (#620): and in town while a walk lasts, but not on a
+    // staircase: the change back comes before the think that takes the
+    // stairs (review of #648, finding 1: a fox arrived in the dungeon).
+    let town = town_fox_now(st) && walk_goal(i32::from(st.borg.goal.type_0)) && !on_stairs(st);
+    is_fox() && ((fox_form_on() && keep_fox_when(engine::player_depth(), flight, scary)) || town)
 }
 
 fn keep_fox_when(depth: i32, flight: bool, scary_level: bool) -> bool {
@@ -550,7 +660,7 @@ pub(crate) fn queue_fox_revert(st: &mut BorgState) {
 /// in its own shape from the next think. Other attacks are item or spell
 /// commands, which change back through the game's prompt.
 pub(crate) fn revert_fox_to_fight(st: &mut BorgState) -> bool {
-    if !(fox_form_on() && is_fox()) {
+    if !(any_fox_form_on() && is_fox()) {
         return false;
     }
     borg_note(st, "# Fox Form: reverting to fight");
@@ -592,7 +702,26 @@ pub(crate) fn fox_moving_speed_bonus() -> i32 {
 
 #[cfg(test)]
 mod fox_form_tests {
-    use super::{cast_fox_when, keep_fox_when};
+    use super::{cast_fox_when, keep_fox_when, mana_kept, town_fox_when, walk_goal};
+
+    #[test]
+    fn e_a_town_cast_keeps_the_mana_above_the_rest() {
+        assert!(!mana_kept(4, 7, true, 8), "7 SP, 4 left: below 5 (7 x 8 / 10), the cast sends it to rest");
+        assert!(mana_kept(1, 2, true, 8), "the rest's own integer line: 2 x 8 / 10 = 1");
+        assert!(mana_kept(7, 8, true, 8), "8 SP: 7 left is above 6.4");
+        assert!(mana_kept(1, 2, false, 8), "above the mana rest's level");
+        assert!(!mana_kept(-1, 2, false, 8), "not enough mana");
+    }
+
+    #[test]
+    fn d_a_town_fox_is_a_low_level_walk_in_town() {
+        assert!(town_fox_when(true, 0, 20, 20));
+        assert!(!town_fox_when(false, 0, 5, 20), "switch off");
+        assert!(!town_fox_when(true, 1, 5, 20), "the dungeon: #551's rules");
+        assert!(!town_fox_when(true, 0, 21, 20), "above the level");
+        assert!(walk_goal(3) && walk_goal(7), "a shop or stairs walk, a flight");
+        assert!(!walk_goal(0) && !walk_goal(1) && !walk_goal(2) && !walk_goal(9), "no goal, a kill, a take, a rest");
+    }
 
     #[test]
     fn a_fox_form_is_cast_only_on_a_long_enough_flight_in_the_dungeon() {
@@ -810,11 +939,34 @@ fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
             // The attack the Borg would choose now, of any kind (a Mage casts
             // next to an enemy too; owner, 2026-11-19): its true damage.
             let best = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
-            let foes: Vec<(i32, i32)> = adjacent_foes(st).into_iter().map(|(left, melee)| (left, melee.max(best))).collect();
-            let lost = fight_lost_by(&foes, here, hp);
-            let list: Vec<String> = foes.iter().map(|(left, dam)| format!("{left} HP at {dam} a turn")).collect();
-            let note = format!("# Phase rule: the fight: {}; danger {here}, HP {hp}: {}", list.join(", "), if lost { "lost" } else { "not lost" });
-            borg_note(st, &note);
+            let lost = if param(Param::escape_phase_lost_mana) != 0 {
+                // borg-reborn-rs (#625, owner): the chosen attack's damage
+                // weighed by its success chance, for as many uses as the mana
+                // (or the charges) pay for; then the best attack that is not a
+                // spell, or melee.
+                let cost = st.fight_attack.est_cost;
+                let fallback = st.fight_attack.est_fallback;
+                let foes = adjacent_foes(st);
+                let primary = Primary::of(best, cost);
+                let lost = fight_turns(&foes, primary, fallback).is_none_or(|t| t * f64::from(here) > f64::from(hp));
+                let list: Vec<String> = foes.iter().map(|(left, melee)| format!("{left} HP (melee {melee})")).collect();
+                let uses = primary.uses.map_or("no limit".to_string(), |u| format!("{u} use{}", if u == 1 { "" } else { "s" }));
+                let note = format!(
+                    "# Phase rule: the fight: {}; attack {best} at {}% fail ({uses}), then {fallback}; danger {here}, HP {hp}: {}",
+                    list.join(", "),
+                    cost.map_or(0, |c| c.fail_pct),
+                    if lost { "lost" } else { "not lost" }
+                );
+                borg_note(st, &note);
+                lost
+            } else {
+                let foes: Vec<(i32, i32)> = adjacent_foes(st).into_iter().map(|(left, melee)| (left, melee.max(best))).collect();
+                let lost = fight_lost_by(&foes, here, hp);
+                let list: Vec<String> = foes.iter().map(|(left, dam)| format!("{left} HP at {dam} a turn")).collect();
+                let note = format!("# Phase rule: the fight: {}; danger {here}, HP {hp}: {}", list.join(", "), if lost { "lost" } else { "not lost" });
+                borg_note(st, &note);
+                lost
+            };
             if !lost || test < 2 {
                 return lost;
             }
@@ -838,6 +990,69 @@ fn fight_lost_by(foes: &[(i32, i32)], danger: i32, hp: i32) -> bool {
     // product of the damages would overflow; compare in f64.
     let turns: f64 = foes.iter().map(|&(left, dam)| f64::from(left) / f64::from(dam)).sum();
     turns * f64::from(danger) > f64::from(hp)
+}
+
+/// borg-reborn-rs (#625): the attack the Borg would choose now, for the
+/// fight test: its expected damage a turn (true damage times the success
+/// chance) and the uses it can pay for (`None`: no limit).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Primary {
+    dam: f64,
+    uses: Option<i32>,
+}
+
+impl Primary {
+    /// From `borg_attack_estimate`'s true damage and the winner's cost
+    /// (`None`: melee, missiles, throws: no fail chance, no limit).
+    fn of(best: i32, cost: Option<crate::borg_fight_attack::AttackCost>) -> Primary {
+        match cost {
+            None => Primary { dam: f64::from(best.max(0)), uses: None },
+            Some(c) => Primary {
+                dam: f64::from(best.max(0)) * f64::from(100 - c.fail_pct.clamp(0, 100)) / 100.0,
+                uses: c.uses.map(|u| u.max(0)),
+            },
+        }
+    }
+}
+
+/// borg-reborn-rs (#625): the turns to kill the adjacent foes one after
+/// another, each `(HP left, melee a turn)`. Each turn uses the chosen attack
+/// (`primary`) while it does more than the foe's other damage (the larger of
+/// melee and `fallback`, the best attack that is not a spell) and uses are
+/// left (fractions count: a 2-use spell spends 0.5 of a use on a foe it
+/// kills in half a cast); then the other damage. `None`: a foe the Borg
+/// cannot hurt.
+fn fight_turns(foes: &[(i32, i32)], primary: Primary, fallback: i32) -> Option<f64> {
+    let mut uses = primary.uses.map(f64::from);
+    let mut turns = 0.0;
+    for &(left, melee) in foes {
+        let mut left = f64::from(left);
+        let other = f64::from(melee.max(fallback).max(0));
+        if primary.dam > other {
+            let needed = left / primary.dam;
+            match uses {
+                None => {
+                    turns += needed;
+                    continue;
+                }
+                Some(u) if needed <= u => {
+                    turns += needed;
+                    uses = Some(u - needed);
+                    continue;
+                }
+                Some(u) => {
+                    turns += u;
+                    left -= u * primary.dam;
+                    uses = Some(0.0);
+                }
+            }
+        }
+        if other <= 0.0 {
+            return None;
+        }
+        turns += left / other;
+    }
+    Some(turns)
 }
 
 /// The awake known monsters next to the Borg, as (HP left, the Borg's melee
@@ -1911,6 +2126,36 @@ mod phase_decision_tests {
         assert!(fight_lost_by(&[(5, 0)], 1, 100), "no damage");
         assert!(!fight_lost_by(&[(20, 5)], 0, 40), "no danger");
         assert!(!fight_lost_by(&[], 50, 10), "no foe");
+    }
+
+    /// #625 (owner): the chosen attack counts at its success chance, for the
+    /// uses the mana pays for, and then the best attack that is not a spell.
+    #[test]
+    fn the_fight_counts_the_mana_and_the_fail_rate() {
+        use crate::borg_fight_attack::AttackCost;
+        let spell = |fail_pct, uses| Some(AttackCost { fail_pct, uses: Some(uses), spell: true });
+        // A bolt of 10 at 20% fail: 8 a turn expected.
+        assert_eq!(Primary::of(10, spell(20, 3)), Primary { dam: 8.0, uses: Some(3) });
+        // Melee, missiles, throws: full damage, no limit.
+        assert_eq!(Primary::of(6, None), Primary { dam: 6.0, uses: None });
+        // A rod: fail only.
+        let rod = Some(AttackCost { fail_pct: 50, uses: None, spell: false });
+        assert_eq!(Primary::of(10, rod), Primary { dam: 5.0, uses: None });
+        // 40 HP left, bolt 8 a turn for 5 casts: 5 turns.
+        let p = Primary { dam: 8.0, uses: Some(5) };
+        assert_eq!(fight_turns(&[(40, 2)], p, 0), Some(5.0));
+        // Mana for 1 cast: 8 damage, then 32 at melee 2: 1 + 16 turns.
+        let p1 = Primary { dam: 8.0, uses: Some(1) };
+        assert_eq!(fight_turns(&[(40, 2)], p1, 0), Some(17.0));
+        // The fallback (a sling, 4) beats melee after the mana: 1 + 8.
+        assert_eq!(fight_turns(&[(40, 2)], p1, 4), Some(9.0));
+        // The uses carry over foes: 0.5 cast on the first, 0.5 on the second.
+        assert_eq!(fight_turns(&[(4, 2), (8, 2)], p1, 0), Some(0.5 + 0.5 + 2.0));
+        // No mana and no other damage: the Borg cannot hurt it.
+        assert_eq!(fight_turns(&[(10, 0)], Primary { dam: 8.0, uses: Some(0) }, 0), None);
+        // Melee better than the expected spell: melee every turn, mana untouched.
+        assert_eq!(fight_turns(&[(12, 6)], Primary { dam: 4.0, uses: Some(9) }, 0), Some(2.0));
+        assert_eq!(fight_turns(&[], p1, 0), Some(0.0), "no foe");
     }
 
     /// #584: the note of a Phase Door names the site, the HP, the danger

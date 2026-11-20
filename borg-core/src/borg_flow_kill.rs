@@ -1741,6 +1741,9 @@ pub fn borg_locate_kill(st: &mut BorgState, who: &[u8], mut c: loc, r: i32) -> i
 
 /// Notice the "death" of a monster (`borg_count_death`)
 pub fn borg_count_death(st: &mut BorgState, i: i32) {
+    // borg-reborn-rs (#567, review of #645): a watch clock set by this
+    // monster ends with it.
+    crate::borg_caution::monster_died(st, i);
     let kill = st.kills.kills[i as usize];
 
     if kill.r_idx != 0 {
@@ -1774,6 +1777,12 @@ fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
     hunt && max_sp > 0 && cur_sp * 2 >= max_sp
 }
 
+/// borg-reborn-rs (#637): a low-level caster's town hunt goes for the
+/// dangerous town monsters (with the switch, one known in town).
+fn caster_walks_to_dangerous(switch: bool, dangerous_known_in_town: bool) -> bool {
+    switch && dangerous_known_in_town
+}
+
 /// borg-reborn-rs (#558): a Mage or Necromancer below the level at which
 /// `borg_flow_kill` lets it walk to a fight.
 fn low_level_caster(st: &BorgState) -> bool {
@@ -1789,7 +1798,14 @@ fn low_level_caster(st: &BorgState) -> bool {
 /// Only that test of the walk's: not its leash to the stairs, nor whether
 /// the breeder can be reached.
 pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
-    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    let engaged = crate::borg_caution::breeder_engaged(st);
+    breeder_hunt_now_with(st, engaged)
+}
+
+/// `breeder_hunt_now` with the engagement given (#644: the rule's own leave
+/// does not count).
+pub(crate) fn breeder_hunt_now_with(st: &mut BorgState, engaged: bool) -> bool {
+    let mut hunt = engaged;
     if low_level_caster(st) {
         hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
     }
@@ -1821,6 +1837,23 @@ pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
 /// borg-reborn-rs (#558): a status a rest clears means rest, not hunt.
 fn fit_to_hunt(status: bool) -> bool {
     !status
+}
+
+/// borg-reborn-rs (#691): what `kill_flow_mode` lets `borg_flow_kill` hunt:
+/// `None` no hunt, `Some(true)` breeders only, `Some(false)` as before.
+/// 0: as C. 1: only this repository's targeted hunts: breeders when a hunt
+/// for them applies (#503, #558), dangerous town monsters (#619, #637).
+/// 2: no call for monsters out of view (the "chase old monsters" calls).
+/// 3: never.
+fn kill_flow_mode_hunt(mode: i32, viewable: bool, breeder_hunt: bool, town_dangerous_only: bool) -> Option<bool> {
+    match mode {
+        1 if town_dangerous_only => Some(false),
+        1 if breeder_hunt => Some(true),
+        1 => None,
+        2 if !viewable => None,
+        3 => None,
+        _ => Some(false),
+    }
 }
 
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
@@ -1860,7 +1893,22 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // the mana to fight them with spells (borg_attack casts before any walk
     // brings it next to them).
     let mut breeders_only = false;
-    if low_level_caster(st) {
+    // borg-reborn-rs (#637): with attack_town_dangerous_caster_walk, in
+    // town a hunt for the dangerous town monsters stands in for the
+    // breeders, at every level below the caster rule's (CL25 in town; the
+    // town gate above stops at CL20, review of #653), with the same mana
+    // condition.
+    let dangerous_known = st.borg.tr(BI_CDEPTH) == 0
+        && (1..i32::from(st.kills.nxt)).any(|k| {
+            let r = st.kills.kills[k as usize].r_idx;
+            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+        });
+    if low_level_caster(st) && caster_walks_to_dangerous(crate::borg_fight_attack::town_caster_walk(), dangerous_known) {
+        if !caster_hunts(true, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+        town_dangerous_only = true;
+    } else if low_level_caster(st) {
         if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
             return false;
         }
@@ -1875,6 +1923,17 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // Not if sitting in a sea of runes
     if st.borg.morgoth_position {
         return false;
+    }
+
+    // borg-reborn-rs (#691): `kill_flow_mode`, the hunt removed in steps to
+    // measure what it is worth.
+    // Mode 1 sets `breeders_only`, which narrows the targets; the CL < 10
+    // breeder skip in the scan still reads `breeder_hunt` (review of #695).
+    let mode = crate::params::value(crate::params::Param::kill_flow_mode);
+    match kill_flow_mode_hunt(mode, viewable, breeder_hunt || breeders_only, town_dangerous_only) {
+        None => return false,
+        Some(true) => breeders_only = true,
+        Some(false) => {}
     }
 
     // Nothing found
@@ -2086,7 +2145,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // Spread the flow: if we are not flowing toward monsters that we can
     // see, make sure they are at least easily reachable.
-    borg_flow::borg_flow_spread(st, nearness, true, !viewable, false, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, nearness, true, !viewable, false, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, c"kill", i32::from(GOAL_KILL)) {
@@ -2218,7 +2277,7 @@ pub fn borg_flow_kill_aim(st: &mut BorgState, viewable: bool) -> bool {
                 st.borg.c.y = s_c_y;
 
                 // Spread the flow
-                borg_flow::borg_flow_spread(st, 5, true, !viewable, false, -1, false);
+                borg_flow::borg_flow_spread_hunting(st, 5, true, !viewable, false, -1, false);
 
                 // Attempt to Commit the flow
                 if !borg_flow::borg_flow_commit(st, c"targetable position", i32::from(GOAL_KILL)) {
@@ -2317,7 +2376,7 @@ fn dig_to(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr, twice: boo
     if twice {
         st.borg.status.digging = true;
     }
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {
@@ -2441,7 +2500,7 @@ pub fn borg_flow_kill_corridor(st: &mut BorgState) -> bool {
         borg_flow::borg_flow_clear(st);
         st.borg.status.digging = true;
         borg_flow::borg_flow_enqueue_grid(st, kill.pos.y, kill.pos.x);
-        borg_flow::borg_flow_spread(st, 10, true, !mapped, false, -1, false);
+        borg_flow::borg_flow_spread_hunting(st, 10, true, !mapped, false, -1, false);
         if !borg_flow::borg_flow_commit(st, c"Monster Path", i32::from(GOAL_KILL)) {
             return false;
         }
@@ -2660,7 +2719,7 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
     borg_flow::borg_flow_enqueue_grid(st, y, x);
 
     // Spread the flow
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {
@@ -3431,6 +3490,15 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 mod tests {
     use super::*;
 
+    /// #637 (review of #653): the caster walk needs the switch and a
+    /// dangerous town monster known in town, not the CL20 town gate.
+    #[test]
+    fn a_low_level_caster_walks_to_a_dangerous_town_monster_with_the_switch() {
+        assert!(caster_walks_to_dangerous(true, true));
+        assert!(!caster_walks_to_dangerous(false, true), "switch off: breeders only, as C");
+        assert!(!caster_walks_to_dangerous(true, false), "none known, or not in town");
+    }
+
     #[test]
     fn casters_hunt_breeders_with_mana() {
         assert!(caster_hunts(true, 5, 10));
@@ -3534,4 +3602,23 @@ mod tests {
         assert_eq!((WEST.dy[11], WEST.dx[11]), (0, -3));
     }
 
+}
+
+#[cfg(test)]
+mod kill_flow_mode_tests {
+    use super::kill_flow_mode_hunt;
+
+    /// #691: each mode of the hunt's removal.
+    #[test]
+    fn modes() {
+        for v in [false, true] {
+            assert_eq!(kill_flow_mode_hunt(0, v, false, false), Some(false), "0 is C");
+            assert_eq!(kill_flow_mode_hunt(3, v, true, true), None, "3 never hunts");
+        }
+        assert_eq!(kill_flow_mode_hunt(1, true, false, false), None, "1: no targeted hunt, none");
+        assert_eq!(kill_flow_mode_hunt(1, true, true, false), Some(true), "1: breeders only");
+        assert_eq!(kill_flow_mode_hunt(1, false, false, true), Some(false), "1: the town hunt as it is");
+        assert_eq!(kill_flow_mode_hunt(2, false, false, false), None, "2: no out-of-view call");
+        assert_eq!(kill_flow_mode_hunt(2, true, false, false), Some(false), "2: in view as before");
+    }
 }

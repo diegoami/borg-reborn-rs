@@ -188,7 +188,7 @@ pub fn borg_flow_cost_stair(st: &mut BorgState, y: i32, x: i32, b_stair: i32) ->
 }
 
 /// Prepare to flee the level via stairs.
-pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+fn stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* None to flow to */
     if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
         return false;
@@ -231,7 +231,7 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 }
 
 /// Prepare to flow towards "up" stairs.
-pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+fn stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     /* forced to go up */
     if engine::player_opt(OPT_birth_force_descend) {
         return false;
@@ -315,7 +315,7 @@ pub(crate) fn enqueue_down_stairs(st: &mut BorgState) {
 }
 
 /// Prepare to flow towards "down" stairs.
-pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
+fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
     /* None to flow to */
     if st.stairs.more.num == 0 {
         return false;
@@ -472,4 +472,48 @@ mod tests {
         t.init(16);
         t.at(0);
     }
+}
+
+/// Prepare to flee the level via stairs (`stair_both`, with #556's
+/// fight-through fallback, `fight_through`).
+pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+    fight_through(st, why, |st| stair_both(st, why, sneak))
+}
+
+/// Prepare to flow towards "up" stairs (`stair_less`, with #556's
+/// fight-through fallback).
+pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
+    fight_through(st, why, |st| stair_less(st, why, sneak))
+}
+
+/// Prepare to flow towards "down" stairs (`stair_more`, with #556's
+/// fight-through fallback).
+pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
+    fight_through(st, why, |st| stair_more(st, why, sneak, brave))
+}
+
+/// borg-reborn-rs (#556, owner 2026-11-19: "fallback to fight our way
+/// out"): a flight (`GOAL_FLEE`) whose stair flow found no route around the
+/// remembered breeders (`caution_breeder_avoid`) takes the plain route
+/// through them, with `caution_breeder_avoid_fight_through`; the fight-through
+/// is noted in `breeder_through` so back-away and retreat do not undo it
+/// (`crate::borg_caution::breeder_fighting_through`).
+fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+    if flow(st) {
+        return true;
+    }
+    if why != GOAL_FLEE
+        || st.borg.breeder_block.is_empty()
+        || !crate::borg_caution::breeder_fight_through_on()
+    {
+        return false;
+    }
+    let was = std::mem::replace(&mut st.flow.hunting, true);
+    let ok = flow(st);
+    st.flow.hunting = was;
+    if ok {
+        st.borg.breeder_through = Some(st.borg.time.now);
+        borg_io::borg_note(st, "# Fighting through the breeders to the stairs");
+    }
+    ok
 }

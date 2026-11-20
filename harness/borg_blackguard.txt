@@ -4,5 +4,10 @@
 # the one file a run reads).
 borg_param_attack_preference_melee_permille = 1600
 borg_param_attack_preference_spell_permille = 1400
-borg_param_town_heal_curve_scale_percent = 75
-borg_param_town_heal_reserve_hp_percent = 150
+borg_param_town_heal_curve_scale_percent = 100
+borg_param_town_heal_reserve_hp_percent = 200
+# #666 (owner): devices by device skill (class.txt; 24 = 100).
+borg_param_town_devices_percent = 100
+# #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the blackguard.
+borg_param_town_phase_curve_scale_percent = 50
+borg_param_town_oil_curve_scale_percent = 100

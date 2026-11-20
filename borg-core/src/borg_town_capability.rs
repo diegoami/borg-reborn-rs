@@ -347,6 +347,19 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
     out.into_iter().collect()
 }
 
+/// borg-reborn-rs (#649): the average damage of a thrown throwing object,
+/// in `UNIT`s, as the engine computes it (`ranged_damage`,
+/// `player-attack.c:554-582`): the dice's average times `2 + weight / 12`
+/// (integer division, weight in tenths of a pound), and three times that
+/// for an exploding object (`make_ranged_throw`, `player-attack.c:1296`).
+/// A flask of oil (1d4, weight 20, `EXPLODE | THROWING`) does 22.5; the
+/// planner counted 2.5, so a sling shot (5) looked twice as good.
+fn thrown_damage(dd: i64, ds: i64, weight: i64, explode: bool) -> i64 {
+    let dice = dd * (ds + 1) * UNIT / 2;
+    let throw = dice * (2 + weight.max(0) / 12);
+    (if explode { throw * 3 } else { throw }).max(UNIT)
+}
+
 fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(usize, i64)> {
     let mut out = Vec::new();
     let n = quantity.max(1);
@@ -359,8 +372,37 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
 // arrow contributes both damage and one reliable shot, separate objectives.
 fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     let mut out = vec![(ATTACK, damage)];
-    if class == CLASS_RANGER { out.push((RANGER_MISSILES, UNIT)); }
+    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 { out.push((RANGER_MISSILES, UNIT)); }
     out
+}
+
+/// borg-reborn-rs (#666, owner): the reserve of shots for the class's
+/// launcher, in percent of `borg_town_w_ranger_missiles`:
+/// `town_missiles_percent` (per class, by shooting skill); -1 = C, the
+/// Ranger's reserve only (100 for a Ranger, 0 for the others).
+pub(crate) fn missiles_percent(class: i32, setting: i32) -> i64 {
+    if setting < 0 { if class == CLASS_RANGER { 100 } else { 0 } } else { i64::from(setting) }
+}
+
+/// borg-reborn-rs (#666, owner): "projectile buying is more important if they
+/// cannot get flasks of oil or wands". With at least `OTHER_RANGED_ENOUGH`
+/// flasks of oil and attack-wand charges carried, the shots' reserve weighs
+/// `town_missiles_other_ranged_percent` (100 = no change).
+const OTHER_RANGED_ENOUGH: i64 = 5;
+fn missiles_other_ranged(weight: i64, other_ranged: i64, percent: i32) -> i64 {
+    if other_ranged >= OTHER_RANGED_ENOUGH { scale_percent(weight, percent) } else { weight }
+}
+
+/// The flasks of oil and the charges of attack wands in the pack.
+fn other_ranged(st: &BorgState) -> i64 {
+    let iv = &st.item_val;
+    st.items.items.iter().take(crate::borg_item::inven_wield() as usize).filter(|i| i.iqty != 0).map(|i| {
+        let tval = u32::from(i.tval);
+        let sval = i32::from(i.sval);
+        if tval == TV_FLASK && sval == iv.sv_flask_oil { i64::from(i.iqty) }
+        else if tval == TV_WAND && i.aware && (sval == iv.sv_wand_magic_missile || sval == iv.sv_wand_stinking_cloud) { i64::from(i.pval).max(0) }
+        else { 0 }
+    }).sum()
 }
 
 /// borg-reborn-rs (#487, #520): the healing curve's scale:
@@ -437,7 +479,9 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return vec![(PHASE, UNIT)]; // TELEPORT(10) is not full Teleportation.
     }
     if tval == TV_FLASK {
-        let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2).max(UNIT);
+        // borg-reborn-rs (#649): the engine's thrown damage, not the dice alone.
+        let damage = thrown_damage(i64::from(item.dd), i64::from(item.ds), i64::from(item.weight),
+            engine::flag_has(&item.flags, crate::headers::list_object_flags_h::OF_EXPLODE as i32));
         let fuel = i64::from(item.pval).max(0);
         let light = &st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
         let needed = if ctx.lantern && fuel > 0 {
@@ -451,6 +495,8 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         let prior: i64 = st.items.items.iter().take(end).filter(|i| i.aware && u32::from(i.tval) == TV_FLASK)
             .map(|i| i64::from(i.iqty)).sum();
         let quantity = if origin.0 < PACK { 1 } else { qty };
+        // borg-reborn-rs (#682): a class's oil scale weights each throw.
+        let damage = damage * i64::from(param(Param::town_oil_curve_scale_percent)) / 100;
         return oil_supply(quantity, (needed - prior).clamp(0, quantity), damage, fuel);
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
@@ -527,6 +573,11 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
             rod_uses(qty, i64::from(item.timeout), i64::from(turns), ctx.journey.turns) * UNIT / qty
         } else { UNIT };
     for (_, units) in &mut out { *units = *units * uses / UNIT; }
+    // borg-reborn-rs (#666, owner): a device is worth `town_devices_percent`
+    // of what it supplies (per class, by device skill; 100 = as computed).
+    if matches!(tval, TV_WAND | TV_ROD | TV_STAFF) {
+        for (_, units) in &mut out { *units = scale_percent(*units, param(Param::town_devices_percent)); }
+    }
     out.retain(|&(_, units)| units > 0);
     if matches!(tval, TV_WAND | TV_STAFF) && item.pval > 0 {
         let maximum = engine::kind_value_average(engine::kind(item.kind as usize).charge).max(1);
@@ -598,7 +649,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(CONTROL, ordinary, exposure.max(UNIT));
     curve(POISON, if t(BI_ISPOISONED) > 0 { cfg(BORG_TOWN_W_POISON) * UNIT } else { 0 },
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
-    curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
+    // borg-reborn-rs (#682, owner): Phase Door's curve stretched per class, as
+    // healing's: weight and demand scale together (100 = today).
+    let phase_scale = i64::from(param(Param::town_phase_curve_scale_percent));
+    curve(PHASE, risk(BORG_TOWN_W_ESCAPE) * phase_scale / 100, exposure * phase_scale / 100);
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
     // (worth the full trip weight each, nothing past them) at any depth: the
     // walk it saves is always worth less than the full weight (the journey
@@ -617,12 +671,21 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
     // and spells supply damage but cannot replenish usable missile shots.
-    curve(RANGER_MISSILES, if st.borg.tr(BI_CLASS) == CLASS_RANGER { risk(BORG_TOWN_W_RANGER_MISSILES) } else { 0 },
+    // borg-reborn-rs (#666): every class by its own percent (shooting skill),
+    // less when it carries flasks or attack-wand charges.
+    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
+    let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
+    curve(RANGER_MISSILES, missiles_weight,
           (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
-    for cap in [TRAPS, MONSTERS, INVISIBLE, MAP, ILLUMINATE] { curve(cap, ordinary, journey.turns * UNIT); }
+    for cap in [TRAPS, MONSTERS] { curve(cap, ordinary, journey.turns * UNIT); }
+    // borg-reborn-rs (#663, owner): Magic Mapping, Detect Invisible and Light
+    // are "something you never buy": a read counted as borg_town_support_turns
+    // of service, so each was worth about a Phase Door and they took a quarter
+    // of the gold. A carried or found copy keeps a small value (kept, not sold).
+    for cap in [INVISIBLE, MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -650,7 +713,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // are worth only up to town_fear_cure_count in the pack (0 = the curve).
     let fear_cap = i64::from(param(Param::town_fear_cure_count));
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
-        curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { ordinary }, if t(condition) > 0 {
+        // borg-reborn-rs (#663, owner): a fear cure (Boldness) is worth very
+        // little while not afraid.
+        let calm = if cap == FEAR { low_value(ordinary) } else { ordinary };
+        curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { calm }, if t(condition) > 0 {
             let timed = match cap { CONFUSION => TMD_CONFUSED, BLIND => TMD_BLIND, _ => TMD_AFRAID };
             -(i64::from(engine::player_timed(timed)).max(1) * UNIT)
         } else if cap == FEAR && fear_cap > 0 { -fear_cap * UNIT } else { exposure });
@@ -988,6 +1054,10 @@ mod tests {
     #[test]
     fn oil_is_allocated_to_fuel_or_ammunition_without_counting_a_bottle_twice() {
         assert_eq!(oil_supply(1, 1, 2500, 7500), [(LIGHT, 7500 * UNIT)]);
+        // #649: a flask of oil (1d4, weight 20, exploding) does 22.5, as the engine.
+        assert_eq!(thrown_damage(1, 4, 20, true), 22_500);
+        assert_eq!(thrown_damage(1, 4, 5, false), 5_000, "an Iron Shot thrown by hand");
+        assert_eq!(thrown_damage(1, 2, 4, false), 3_000, "a Rounded Pebble thrown by hand");
         assert_eq!(oil_supply(1, 0, 2500, 7500), [(ATTACK, 2500)]);
         let held = oil_supply(5, 2, 2500, 7500);
         assert_eq!(held, [(LIGHT, 3000 * UNIT), (ATTACK, 1500)]);
@@ -1183,6 +1253,36 @@ mod class_heal_tests {
         assert_eq!(heal_curve_scale_percent(99), param(Param::town_heal_curve_scale_percent));
         assert_eq!(heal_reserve_hp_percent(99), param(Param::town_heal_reserve_hp_percent));
     }
+
+    #[test]
+    fn shots_for_every_class_by_its_percent() {
+        // #666: -1 keeps C (the Ranger only); a percent applies to any class.
+        assert_eq!(missiles_percent(CLASS_RANGER, -1), 100);
+        assert_eq!(missiles_percent(0, -1), 0);
+        assert_eq!(missiles_percent(0, 75), 75);
+        assert_eq!(missiles_percent(CLASS_RANGER, 100), 100);
+        // Fewer shots wanted with flasks or attack-wand charges in the pack.
+        assert_eq!(missiles_other_ranged(1000, 4, 50), 1000);
+        assert_eq!(missiles_other_ranged(1000, 5, 50), 500);
+        assert_eq!(missiles_other_ranged(1000, 20, 100), 1000);
+    }
+
+    #[test]
+    fn what_the_borg_never_buys_keeps_a_small_value() {
+        // #663: one percent, above zero so a carried copy is kept.
+        assert_eq!(low_value(55_000), 550);
+        assert!(low_value(55_000) > 0);
+        let scroll = coverage(&[MAP as i64, low_value(55_000), 1_100_000, 0, 0], 1_000_000);
+        let phase = coverage(&[PHASE as i64, 55_000, 1_100, 0, 0], 1_000);
+        assert!(scroll * 50 < phase, "{scroll} against a Phase Door's {phase}");
+    }
+}
+
+/// borg-reborn-rs (#663, owner): the weight of what the Borg never buys
+/// (Magic Mapping, Detect Invisible, Light, a fear cure while not afraid): one
+/// percent of the ordinary weight, so a copy it carries still counts.
+fn low_value(ordinary: i64) -> i64 {
+    ordinary / 100
 }
 
 /// borg-reborn-rs (#557, owner): a Word of Recall's value (the walk it
