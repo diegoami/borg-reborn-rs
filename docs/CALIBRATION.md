@@ -4488,11 +4488,13 @@ the whole delay, blocked/open routes and immobile contact. The seven named
 before/after cases are complete at 100k engine turns. Recall-only reaches
 the cap for 425904011, 1976035382 and 807683971; the other three Ranger
 controls still die with this switch alone. All three switches together
-reach the cap for all seven, including the Rogue control that was already
-alive. These are selected case checks, not a population improvement claim.
+reach the cap in six of seven on corrected specimen `5acb8104`;
+1976035382 dies to a large white snake at engine turn 17873.
+The Rogue control was already alive. These are selected case checks, not a population improvement claim.
 Canonical results/builds/deaths are in [Cemetery #88](https://github.com/diegoami/borg-cemetery/pull/88).
 Measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511),
-not dispatched. No local population comparison was started.
+whose first pilot used `78b8f297`; the corrected specimen remains
+unmeasured. No local population comparison was started.
 
 
 Owner clarification, 2026-11-20: include possible wake-up during Recall.
