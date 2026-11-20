@@ -4,7 +4,11 @@ Implementation: [PR #763](https://github.com/diegoami/borg-reborn-rs/pull/763),
 `task/T760-fight-fragile`, worktree `.worktrees/T760-fight`. #758 is the
 separate stacked PR #764. #757/#761 belong to another session and were not
 modified. Accepted main #755 and #762/#754 were synchronized, preserving
-their settings and code; both new #754 switches remain shipped 0.
+their settings and code; both new #754 switches remain shipped 0. Accepted
+main `09a70906` (#757/#766) was subsequently synchronized to resolve
+parameter-citation conflicts and permit CI. Its flight settings are
+preserved; Zoo #511 remains pinned to the tested pre-sync `5acb8104`,
+with no silent measurement revision.
 
 **Behavior:** `attack_on_sight` and `caution_winning_fight` compile/ship 0.
 Attack entries extend the existing scary/ignore database with required
