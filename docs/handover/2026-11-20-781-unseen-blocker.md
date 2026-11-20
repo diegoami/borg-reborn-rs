@@ -39,7 +39,7 @@ change is confined to borg-rs's core and its settings. No population experiment
 was dispatched and no improvement claim is made.
 
 Canonical gameplay evidence and reproducible historical patch:
-[Cemetery case](https://github.com/diegoami/borg-cemetery/tree/adf585125e1d1b1b525d1e5424797c4e938e990f/validation/borg-reborn-rs/unseen-bump-781).
+[Cemetery case](https://github.com/diegoami/borg-cemetery/tree/b20537c68830e415c79a8766135a1b32c7e539c2/validation/borg-reborn-rs/unseen-bump-781).
 
 **Owner:** review the task PR. Any enabled profile/default choice and zoo
 measurement remain the owner's decision; no new implementation follow-up was
@@ -79,3 +79,10 @@ recorded on PR #782. Both PRs still await the owner's review disposition.
 Latest integration: synchronized main d7e58cdf after #787/#785 landed during
 validation. Earlier review runs remain pinned to fcaecf2b; latest shipped
 smoke uses the new main reference. No shipped values changed in this task.
+
+Re-review: R1 updates both Cemetery links to b20537c6, including the review
+receipts. R2 remains a disclosed coverage limit: the new Detect Invisible
+call was not exercised, and its danger gate can refuse it during the lethal
+staircase stretch. R3 remains explicit: main already survives this seed;
+the exact historical death is a regression guard, not a live main failure.
+No code or shipped settings changed in this follow-up.

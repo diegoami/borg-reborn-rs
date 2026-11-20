@@ -4946,6 +4946,6 @@ These are hypotheses for Zoo measurement, not shipped policy.
 Historical controls reproduce `8b21c6b94e80e969` and death at37,759. Current
 main already survives after #768, so historical reconstruction is distinct
 from current-main checks. Canonical prior attempts and reproduction patches
-are pinned in the [Cemetery case](https://github.com/diegoami/borg-cemetery/tree/adf585125e1d1b1b525d1e5424797c4e938e990f/validation/borg-reborn-rs/unseen-bump-781).
+are pinned in the [Cemetery case](https://github.com/diegoami/borg-cemetery/tree/b20537c68830e415c79a8766135a1b32c7e539c2/validation/borg-reborn-rs/unseen-bump-781).
 Review follow-up receipts are published with Cemetery PR #92. No population
 result or shipped-value change is implied.
