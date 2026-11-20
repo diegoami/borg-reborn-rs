@@ -148,6 +148,7 @@ static bool initial_generation_pending;
 static const char *opt_start_build;
 static const char *opt_start_monsters;
 static int start_monsters_placed;
+static int start_monsters_requested;
 static char start_build_sha256[65];
 static const char *opt_capture_build;
 static int opt_capture_build_level;
@@ -290,7 +291,12 @@ static void borgh_finish(const char *reason)
 	/* Every summary says whether a save was loaded (docs/SPEC.md §3.5). */
 	fprintf(fp, "  \"loaded\": %s,\n", opt_load ? "true" : "false");
 	if (opt_start_monsters)
-		fprintf(fp, "  \"start_monsters\": \"%s\",\n  \"start_monsters_placed\": %d,\n", opt_start_monsters, start_monsters_placed);
+	{
+		fprintf(fp, "  \"start_monsters\": ");
+		json_str(fp, opt_start_monsters);
+		fprintf(fp, ",\n  \"start_monsters_requested\": %d,\n  \"start_monsters_placed\": %d,\n",
+			start_monsters_requested, start_monsters_placed);
+	}
 	if (opt_start_depth) {
 		fprintf(fp, "  \"synthetic\": true,\n");
 		fprintf(fp, "  \"synthetic_contract\": \"borg-reborn-rs/synthetic-start@2\",\n");
@@ -741,8 +747,13 @@ static void place_start_monsters(const char *spec)
 		if (*p == ':') dist = strtol(p + 1, &p, 10);
 		if (*p != '\0' || count < 1 || count > 100 || dist < 1 || dist > 40)
 			quit("borgh: -start-monsters needs COUNT 1..100 and DIST 1..40");
+		/* Review of #741: lookup_monster falls back to a substring match
+		 * ("worm" is the white worm mass); the bed names its species
+		 * exactly, so anything else is refused. */
 		race = lookup_monster(name);
-		if (!race) quit_fmt("borgh: -start-monsters: no monster named '%s'", name);
+		if (!race || !race->name || my_stricmp(race->name, name) != 0)
+			quit_fmt("borgh: -start-monsters: no monster named exactly '%s'", name);
+		start_monsters_requested += (int)count;
 		while (count-- > 0) {
 			int tries;
 			for (tries = 0; tries < 10; tries++) {

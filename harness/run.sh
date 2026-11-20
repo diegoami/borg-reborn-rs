@@ -128,6 +128,13 @@ if [ "$FLAGS" != "-" ]; then
                 START_MONSTERS="${fl#start-monsters=}"
                 [[ "$START_MONSTERS" =~ ^[A-Za-z_\'-]+:[0-9]{1,3}(:[0-9]{1,2})?(\+[A-Za-z_\'-]+:[0-9]{1,3}(:[0-9]{1,2})?)*$ ]] || {
                     echo 'run.sh: start-monsters must be NAME:COUNT[:DIST] joined by +' >&2; exit 2; }
+                # Review of #741: the frontend's bounds, COUNT 1..100, DIST 1..40.
+                IFS=+ read -r -a SM_ENTRIES <<< "$START_MONSTERS"
+                for sm in "${SM_ENTRIES[@]}"; do
+                    IFS=: read -r _ sm_count sm_dist <<< "$sm"
+                    { [ "$sm_count" -ge 1 ] && [ "$sm_count" -le 100 ] && { [ -z "$sm_dist" ] || { [ "$sm_dist" -ge 1 ] && [ "$sm_dist" -le 40 ]; }; }; } || {
+                        echo 'run.sh: start-monsters needs COUNT 1..100 and DIST 1..40' >&2; exit 2; }
+                done
                 BORGH_FLAGS+=(-start-monsters "$START_MONSTERS");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
@@ -178,7 +185,7 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
     esac
 done
 [ -z "$START_BUILD" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-build requires start-depth' >&2; exit 2; }
-[ -z "$START_MONSTERS" ] || [ -n "$START_DEPTH" ] || [ -n "$SAVE_NAME" ] || { echo 'run.sh: start-monsters requires start-depth or save=NAME' >&2; exit 2; }
+[ -z "$START_MONSTERS" ] || [ -n "$START_DEPTH" ] || [ -n "$SAVE_NAME" ] || [ -n "${EXTRA_LOAD:-}" ] || { echo 'run.sh: start-monsters requires start-depth, save=NAME or -load' >&2; exit 2; }
 if [ -n "$START_DEPTH" ]; then
     [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
     for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
@@ -396,6 +403,17 @@ fi
 # The game preserves the plan it parsed as BORG_RUN_DIR/errands_plan.txt.
 if [ -n "$PLAN" ] && ! cmp -s "$OUT/user/errands_plan.txt" "$OUT/errands_plan.txt"; then
     echo "run.sh: the game did not load the plan: $OUT" >&2; exit 1
+fi
+# Review of #741: a start-monsters run that placed fewer monsters than it
+# asked for is measuring another colony than its label says; say so.
+if [ -n "$START_MONSTERS" ]; then
+    python3 - "$OUT/summary.json" <<'PYSHORT' >&2
+import json, sys
+s = json.load(open(sys.argv[1]))
+req, got = s.get("start_monsters_requested", 0), s.get("start_monsters_placed", 0)
+if got < req:
+    print(f"run.sh: warning: start-monsters placed {got} of {req} ({s.get('start_monsters')})")
+PYSHORT
 fi
 # borg-reborn-rs (#219): environment overrides are part of the run identity.
 if [ -f "$OUT/params-core.json" ]; then
