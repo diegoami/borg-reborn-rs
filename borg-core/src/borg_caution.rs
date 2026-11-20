@@ -1953,8 +1953,7 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         let kill = st.kills.kills[i];
         let r = usize::from(kill.r_idx);
         if r == 0 || r >= engine::r_max().saturating_sub(1) { continue; }
-        if !kill.awake { asleep += 1; continue; }
-        awake += 1;
+        if !kill.awake { asleep += 1; } else { awake += 1; }
         let monster_energy = f64::from(engine::extract_energy(forecast_monster_speed(&kill).clamp(0, 199) as usize)).max(1.0);
         let flag = |f| engine::race_flag_has(r, f);
         let never_move = flag(RF_NEVER_MOVE);
@@ -1979,12 +1978,15 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         // range. Once a route exists, do not discount all that travel as
         // attack-free time. An immobile blocked caster still has no route.
         let steps = if kill.ranged_attack != 0 { 0 } else { steps };
-        let damage = fight_incoming(st, i);
+        // Owner 2026-11-20: a sleeping reachable creature may wake before
+        // Recall engages. Forecast an awake copy without changing knowledge
+        // or assuming that sleep lasts throughout the horizon.
+        let damage = fight_incoming_with(st, i, true);
         exposure += recall_exposure(damage, player_energy, monster_energy, ticks, steps);
     }
     let allowed = exposure < f64::from(st.borg.tr(BI_CURHP));
     if allowed && asleep > 0 {
-        borg_note(st, &format!("# Flight Recall forecast: {awake} awake, {asleep} asleep, {reachable} reachable, {exposure:.2} damage, HP {}: allowed by awake-only gate (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Flight Recall forecast: {awake} awake, {asleep} asleep, {reachable} reachable, {exposure:.2} damage, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
     }
     if !allowed {
         borg_note(st, &format!("# Refusing flight Recall: {exposure:.2} damage during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
@@ -2032,8 +2034,13 @@ pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> 
 }
 
 pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
-    let kill = st.kills.kills[i];
-    if kill.r_idx == 0 || !kill.awake { return 0.0; }
+    fight_incoming_with(st, i, false)
+}
+
+fn fight_incoming_with(st: &mut BorgState, i: usize, may_wake: bool) -> f64 {
+    let mut kill = st.kills.kills[i];
+    if kill.r_idx == 0 || (!kill.awake && !may_wake) { return 0.0; }
+    if may_wake { kill.awake = true; }
     let r = usize::from(kill.r_idx);
     let race = engine::race(r);
     let mut plain = kill.ranged_attack == 0;
@@ -2051,7 +2058,7 @@ pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
     if plain { return melee * ratio; }
     // At the monster's own position there is no distance discount. This
     // keeps a presently distant attacker in the bound while another dies.
-    f64::from(crate::borg_danger::borg_danger_one_kill(st, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
+    f64::from(crate::borg_danger::danger_one_kill(st, &kill, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
 }
 
 /// #759: a fresh comparison on every think, including during an existing
