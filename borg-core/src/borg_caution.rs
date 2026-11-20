@@ -2107,7 +2107,7 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     }
     let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
     if allowed && asleep > 0 {
-        borg_note(st, &format!("# Flight Recall forecast: {awake} awake, {asleep} asleep, {reachable} reachable, {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
     }
     if unknown_risks > 0 {
         borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));

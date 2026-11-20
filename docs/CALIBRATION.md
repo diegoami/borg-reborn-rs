@@ -4547,14 +4547,15 @@ caution's site skips (`BI_ISHUNGRY` with food left).
 
 ## Attack categories and winning fights (#760, #759)
 
-These independent switches are compiled and shipped **0**. Their enabled
+These independent switches compile to **0** and ship **1** by the owner's
+2026-11-20 adoption decision. Their enabled
 behavior and class ranges are hypotheses pending the paired validation;
 no improvement is claimed from implementing the policy.
 
 | Parameter | Compiled / shipped | Meaning |
 | --- | --- | --- |
-| `attack_on_sight` | 0 / 0 | Give an active attack category priority before flight, and exclude that monster from scare classification. |
-| `caution_winning_fight` | 0 / 0 | Attack while turns to kill all attackers are strictly fewer than turns to die; otherwise use ordinary caution. |
+| `attack_on_sight` | 0 / 1 | Give an active attack category priority before flight, and exclude that monster from scare classification. |
+| `caution_winning_fight` | 0 / 1 | Attack while turns to kill all attackers are strictly fewer than turns to die; otherwise use ordinary caution. |
 
 `harness/scary_monsters.txt` remains the common database. Its new form is
 `monster | level | class exceptions | attack[,breeders] | reason`.
@@ -4726,7 +4727,8 @@ Zoo #511 and accepts re-review.
 The registry now holds **2258** parameters after accepted main #768
 (2256 in the parent fight branch; two Recall parameters added).
 
-`caution_recall_survival` is compiled and shipped **0**. At 1, only a
+`caution_recall_survival` compiles to **0** and ships **1** by owner
+decision (2026-11-20). At 1, only a
 flight's Recall read is refused when modelled contact HP during the delay
 reaches current HP, or a reachable spell/status contribution remains unmodelled.
 Sleepers that may wake are included; unknown risk is reported separately,
@@ -4773,13 +4775,14 @@ the whole delay, blocked/open routes and immobile contact. The seven named
 before/after cases are complete at 100k engine turns. Recall-only reaches
 the cap for 425904011, 1976035382 and 807683971; the other three Ranger
 controls still die with this switch alone. All three switches together
-reach the cap in six of seven on corrected specimen `5acb8104`;
+historically reached the cap in six of seven on superseded specimen `5acb8104`;
 1976035382 dies to a large white snake at engine turn 17873.
 The Rogue control was already alive. These are selected case checks, not a population improvement claim.
 Canonical results/builds/deaths are in [Cemetery #88](https://github.com/diegoami/borg-cemetery/pull/88).
 Measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511),
-whose first pilot used `78b8f297`; the corrected specimen remains
-unmeasured. No local population comparison was started.
+whose first pilot used `78b8f297`; later specimens and the default-on
+adoption remain unmeasured. The current pre-adoption result below is five
+of seven on `a4e4d915`, not the historical six-of-seven result. No local population comparison was started.
 
 
 Owner clarification, 2026-11-20: include possible wake-up during Recall.
@@ -4833,3 +4836,14 @@ is removed using a machine-epsilon error bound; finite-ammunition fallback
 still books complete commands and genuine excess residuals round upward.
 The conservative Recall unknown-risk policy is retained for the paired
 experiments, with HP-based and qualitative refusals reported separately.
+
+
+Owner decision after fourth review, 2026-11-20: retain the explicitly
+conservative unknown-risk refusal and ship all three switches at1 (compiled0).
+This includes reachable poison/status attacks whose total consequences are
+not modelled; it means modelling uncertainty, not proven lethality. Zoo must
+report quantified-HP refusals and qualitative-risk refusals separately,
+including outcomes/new deaths and actual Recall initiations. The owner
+adopts this policy before population confirmation; no measured benefit is
+claimed. Known awake/asleep counts in notes cover all known monsters; the
+reachable count is a subset. The note now states that relationship explicitly.

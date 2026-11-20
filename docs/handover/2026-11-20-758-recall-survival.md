@@ -121,3 +121,14 @@ survivors; both reviewer-added starts survive with actual spell/oil choices.
 New shared Zoo specimen a4e4d915 sourcehash2ccaf24c is explicitly pinned,
 unmeasured; previous proposals/pilot retain their provenance. Owner-selected
 re-review and owner-scheduled measurement remain. No merge or dispatch.
+
+
+Owner decision after fourth review: fix remaining findings and merge after
+checks; ship Recall survival1 alongside the two fight switches1, compiled0.
+Retain conservative unknown-risk refusal with separate Zoo reporting from
+quantified-HP refusals; this includes potentially mild status attacks and
+is not proof they are lethal. Marked the old5acb six-of-seven result as
+historical and clarified known-monster versus reachable-subset note counts.
+New default-on smoke/checks and two Zoo experiment requests will supersede
+the previous off-only integration checks. Population benefit unconfirmed;
+no Zoo dispatch authorized by this source session.
