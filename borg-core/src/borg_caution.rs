@@ -1932,7 +1932,7 @@ fn recall_exposure(damage_per_turn: f64, player_energy: f64, monster_energy: f64
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = p(Param::caution_recall_survival_delay);
-    let player_energy = f64::from(engine::extract_energy(st.borg.tr(BI_SPEED).clamp(0, 199) as usize)).max(1.0);
+    let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
     let mut exposure = 0.0;
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
@@ -1957,6 +1957,10 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         let ranged = kill.ranged_attack != 0 && crate::borg_projection::borg_projectable_pure(
             st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
         let Some(steps) = (if ranged { Some(0) } else { steps }) else { continue };
+        // A mobile caster may gain line of fire before it reaches melee
+        // range. Once a route exists, do not discount all that travel as
+        // attack-free time. An immobile blocked caster still has no route.
+        let steps = if kill.ranged_attack != 0 { 0 } else { steps };
         let damage = fight_incoming(st, i);
         exposure += recall_exposure(damage, player_energy, monster_energy, ticks, steps);
     }
