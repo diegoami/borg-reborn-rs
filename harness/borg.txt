@@ -337,9 +337,15 @@ borg_param_prepared_recall_depth = 5
 # prepared_depth_plan = 1 the Borg is never prepared for a level deeper than:
 # up to CL prepared_depth_early_until_level, ceil(CL / early_levels_per_dl);
 # past it, CL - late_levels_below, but never shallower than the early part's
-# last cap (ceil(knee / div)); never above DL1; none from CL50. These are the casters'
-# values; the fighters' are in their class files (2, 4, 0). 0 = off.
-borg_param_prepared_depth_plan = 0
+# last cap (ceil(knee / div)); never above DL1; none from CL50. 0 = off.
+# Every class sets its own three values in harness/borg_<class>.txt (folded
+# below as __<class> lines; owner, 2026-11-20): Druid 5, 10, 4; Mage, Priest,
+# Necromancer 4, 8, 3; Ranger, Rogue 3, 6, 2; Paladin, Blackguard 3, 5, 1;
+# Warrior 2, 4, 0. The common
+# values here apply to no class today. The switch stays common, so one line
+# turns the plan on or off for every class.
+# Shipped 1 (owner, 2026-11-20: "switch goes 1"), with the per-class values.
+borg_param_prepared_depth_plan = 1
 borg_param_prepared_depth_early_levels_per_dl = 3
 borg_param_prepared_depth_early_until_level = 6
 borg_param_prepared_depth_late_levels_below = 3
@@ -1214,6 +1220,9 @@ borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
 borg_param_light_detect_evil_spell_min_level__mage = 0
+borg_param_prepared_depth_early_levels_per_dl__mage = 4
+borg_param_prepared_depth_early_until_level__mage = 8
+borg_param_prepared_depth_late_levels_below__mage = 3
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1222,6 +1231,9 @@ borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
 borg_param_light_detect_evil_spell_min_level__druid = 0
+borg_param_prepared_depth_early_levels_per_dl__druid = 5
+borg_param_prepared_depth_early_until_level__druid = 10
+borg_param_prepared_depth_late_levels_below__druid = 4
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1230,6 +1242,9 @@ borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
 borg_param_light_detect_evil_spell_min_level__priest = 0
+borg_param_prepared_depth_early_levels_per_dl__priest = 4
+borg_param_prepared_depth_early_until_level__priest = 8
+borg_param_prepared_depth_late_levels_below__priest = 3
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1239,6 +1254,9 @@ borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
 borg_param_light_detect_evil_spell_min_level__necromancer = 0
+borg_param_prepared_depth_early_levels_per_dl__necromancer = 4
+borg_param_prepared_depth_early_until_level__necromancer = 8
+borg_param_prepared_depth_late_levels_below__necromancer = 3
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1249,9 +1267,9 @@ borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 0
 borg_param_caution_breeder_hunt_max_count__paladin = 6
-borg_param_prepared_depth_early_levels_per_dl__paladin = 2
-borg_param_prepared_depth_early_until_level__paladin = 4
-borg_param_prepared_depth_late_levels_below__paladin = 0
+borg_param_prepared_depth_early_levels_per_dl__paladin = 3
+borg_param_prepared_depth_early_until_level__paladin = 5
+borg_param_prepared_depth_late_levels_below__paladin = 1
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1262,9 +1280,9 @@ borg_param_town_devices_percent__rogue = 135
 borg_param_town_phase_curve_scale_percent__rogue = 125
 borg_param_town_oil_curve_scale_percent__rogue = 125
 borg_param_caution_breeder_hunt_max_count__rogue = 6
-borg_param_prepared_depth_early_levels_per_dl__rogue = 2
-borg_param_prepared_depth_early_until_level__rogue = 4
-borg_param_prepared_depth_late_levels_below__rogue = 0
+borg_param_prepared_depth_early_levels_per_dl__rogue = 3
+borg_param_prepared_depth_early_until_level__rogue = 6
+borg_param_prepared_depth_late_levels_below__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1274,9 +1292,9 @@ borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
-borg_param_prepared_depth_early_levels_per_dl__ranger = 2
-borg_param_prepared_depth_early_until_level__ranger = 4
-borg_param_prepared_depth_late_levels_below__ranger = 0
+borg_param_prepared_depth_early_levels_per_dl__ranger = 3
+borg_param_prepared_depth_early_until_level__ranger = 6
+borg_param_prepared_depth_late_levels_below__ranger = 2
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -1286,7 +1304,7 @@ borg_param_town_devices_percent__blackguard = 100
 borg_param_town_phase_curve_scale_percent__blackguard = 50
 borg_param_town_oil_curve_scale_percent__blackguard = 100
 borg_param_caution_breeder_hunt_max_count__blackguard = 8
-borg_param_prepared_depth_early_levels_per_dl__blackguard = 2
-borg_param_prepared_depth_early_until_level__blackguard = 4
-borg_param_prepared_depth_late_levels_below__blackguard = 0
+borg_param_prepared_depth_early_levels_per_dl__blackguard = 3
+borg_param_prepared_depth_early_until_level__blackguard = 5
+borg_param_prepared_depth_late_levels_below__blackguard = 1
 # ---- END CLASS FILES ----
