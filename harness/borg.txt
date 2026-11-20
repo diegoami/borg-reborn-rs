@@ -333,6 +333,16 @@ borg_param_power_inventory_clevel_threshold_3 = 7
 # Impact: set to 10, 0 of 6 test games play differently.
 
 borg_param_prepared_recall_depth = 5
+# #693 (owner): the errands plan as a depth cap in borg.txt. With
+# prepared_depth_plan = 1 the Borg is never prepared for a level deeper than:
+# up to CL prepared_depth_early_until_level, ceil(CL / early_levels_per_dl);
+# past it, CL - late_levels_below, but never shallower than the early part's
+# last cap (ceil(knee / div)); never above DL1; none from CL50. These are the casters'
+# values; the fighters' are in their class files (2, 4, 0). 0 = off.
+borg_param_prepared_depth_plan = 0
+borg_param_prepared_depth_early_levels_per_dl = 3
+borg_param_prepared_depth_early_until_level = 6
+borg_param_prepared_depth_late_levels_below = 3
 
 # Fleeing: walk to a reachable staircase first, and read Recall only when
 # none is reachable (#539). 0 = the C order, Recall first.
@@ -530,6 +540,18 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# An unseen attacker (#697): "Something touches you" makes no monster, so no
+# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
+# an unseen attack counts that long: no rest within distance grids of where
+# it struck; hurt, the Borg walks at least that far (a corridor first) and
+# rests there; struck again that far away, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
+# Impact: see CALIBRATION (#697).
+
+borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_distance = 10
+borg_param_recover_unseen_heal_hp_percent = 0
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
@@ -608,10 +630,11 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. Shipped 10
-# for every class (owner, 2026-11-20); the casters also set 10 in their class
-# files.
-borg_param_light_detect_evil_spell_min_level = 10
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. Reverted to
+# 0 for every class (owner, 2026-11-20): a low-level character sees only the
+# grids next to it in a dark room, so it walks into floating eyes; detection
+# is what shows them first. The zoo measures it.
+borg_param_light_detect_evil_spell_min_level = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
@@ -701,18 +724,28 @@ borg_param_escape_phase_lost_danger_percent = 100
 
 borg_param_escape_phase_lost_mana = 1
 
-# Ranged first against immobile attackers (#646, owner: "always choose ranged
-# against immobile but annoying monsters"). 1 = next to a known monster that
-# never moves and attacks (mushroom patch, mold, floating eye), confused or
-# carrying something to throw or shoot (then once per monster and level;
-# confused up to three times),
-# the Borg steps out of its reach and
-# does not cure confusion next to it; not when the monsters that move are as
-# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
-# times, borg-cemetery#75).
+# Teleport landing with either kind of teleport (#724, upstream Angband
+# 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
+# teleport scroll or spell or a teleport staff or activation; 0 = C (both
+# needed, so with one only the Destruction and Teleport Level defences never
+# saw a safe landing).
+borg_param_escape_teleport_landing_either = 0
+
+# Immobile creatures (#646, #713). Owner: "always choose ranged against
+# immobile but annoying monsters"; "step away from immobile creature with
+# annoying effects and only attack them from a distance, if you have to".
+# 1 (#646) = next to a monster that never moves and attacks, step out of its
+# reach when confused (up to three times) or carrying something to throw or
+# shoot (once), and do not cure confusion next to it.
+# 2 (#713) = also keep one whose blows do more than plain damage (poison,
+# confusion, paralysis, fear, drain: 23 of 25, from DL1 to DL80) at range: never
+# melee it, no hunt walk to it, flows keep out of its reach (a flow to stairs
+# may pass, never onto its grid), always step away from it (while fleeing
+# too, up to three times); throws and shots kill it from afar.
+# 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
 # Change together: works with what the Borg carries to throw (#649, #652).
 
-borg_param_caution_ranged_vs_immobile = 0
+borg_param_caution_ranged_vs_immobile = 2
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
@@ -895,7 +928,7 @@ borg_param_danger_hunt_breeder_no_acid_fear = 1
 # otherwise leave the level. Kept when confused, blind, hallucinating or
 # stunned. 0 = rest as C.
 # Impact (18 classes-18 starts, 100,000 turns): 1: 13 of 18 play differently.
-borg_param_recover_rest_breeders = 0
+borg_param_recover_rest_breeders = 1
 
 # Fighting breeders with no easy escape and danger at or above this many
 # tenths of the HP (5 = half), use the cornered buffs (#504). Lower buffs
@@ -937,6 +970,22 @@ borg_param_caution_breeder_through_turns = 5
 
 borg_param_caution_breeder_stuck_turns = 20
 
+# The breeder policy (#722, owner): one setting for the breeder switches.
+# -1 = the switches below as set. 0 = C. 1 = stand when there is no easy
+# escape, and hunt few breeders below CL10 (#503, #558). 2 = and never rest
+# while breeders are known: hunt them or leave (#644). 3 = and kill them first
+# while the kills outpace the breeding, at any count and level (#556); the
+# level is lost once more breeders are known than the class clears
+# (caution_breeder_hunt_max_count, per class) or the breeding wins; on a lost
+# level the Borg leaves, searching for stairs, and reads Recall after
+# lost_recall_turns game turns (owner: "search for stairs first, but if paths
+# are blocked by breeders, recall at some point"). 4 = and paths avoid
+# colonies (#556). 5 = and walk out of a breeder room (#544).
+# Impact: see CALIBRATION (#722).
+
+borg_param_caution_breeder_policy = 3
+borg_param_caution_breeder_lost_recall_turns = 500
+
 # Kill breeders first (#556, owner): stand and hunt breeders while the
 # breeding can be stopped (the known breeders' expected births a turn, times
 # births_percent, below the Borg's kills a turn with its best attack of any
@@ -946,7 +995,7 @@ borg_param_caution_breeder_stuck_turns = 20
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 
-borg_param_caution_breeder_stoppable = 0
+borg_param_caution_breeder_stoppable = 1
 borg_param_caution_breeder_stoppable_births_percent = 200
 borg_param_caution_breeder_stoppable_confirm = 5
 
@@ -995,9 +1044,9 @@ borg_param_caution_scary_latch = 1
 # has not left the level (#590). 0 = the latch decides.
 # Change together: needs caution_scary_stand = 1 (the flag is decided after
 # each scan only there).
-# Impact: off here; set to 1, it fires in 3 of 6 test games.
+# Impact: set to 1 it fires in 3 of 6 test games; shipped 1 (owner, 2026-11-20).
 
-borg_param_caution_scary_unlatch_kill = 0
+borg_param_caution_scary_unlatch_kill = 1
 
 # 1 = the level stops being scary once a named-list or damage-rule scary
 # monster is known hurt or afraid (the thresholds below), or is killed, with
@@ -1137,6 +1186,10 @@ borg_param_town_heal_reserve_hp_percent_warrior = 100
 borg_param_town_devices_percent__warrior = 75
 borg_param_town_phase_curve_scale_percent__warrior = 75
 borg_param_town_oil_curve_scale_percent__warrior = 100
+borg_param_caution_breeder_hunt_max_count__warrior = 7
+borg_param_prepared_depth_early_levels_per_dl__warrior = 2
+borg_param_prepared_depth_early_until_level__warrior = 4
+borg_param_prepared_depth_late_levels_below__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1145,7 +1198,7 @@ borg_param_town_heal_reserve_hp_percent_mage = 300
 borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
-borg_param_light_detect_evil_spell_min_level__mage = 10
+borg_param_light_detect_evil_spell_min_level__mage = 0
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1153,7 +1206,7 @@ borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
-borg_param_light_detect_evil_spell_min_level__druid = 10
+borg_param_light_detect_evil_spell_min_level__druid = 0
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1161,7 +1214,7 @@ borg_param_town_heal_reserve_hp_percent_priest = 250
 borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
-borg_param_light_detect_evil_spell_min_level__priest = 10
+borg_param_light_detect_evil_spell_min_level__priest = 0
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1170,7 +1223,7 @@ borg_param_town_heal_reserve_hp_percent_necromancer = 300
 borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
-borg_param_light_detect_evil_spell_min_level__necromancer = 10
+borg_param_light_detect_evil_spell_min_level__necromancer = 0
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1179,7 +1232,11 @@ borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent__paladin = 100
 borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
-borg_param_light_detect_evil_spell_min_level__paladin = 10
+borg_param_light_detect_evil_spell_min_level__paladin = 0
+borg_param_caution_breeder_hunt_max_count__paladin = 6
+borg_param_prepared_depth_early_levels_per_dl__paladin = 2
+borg_param_prepared_depth_early_until_level__paladin = 4
+borg_param_prepared_depth_late_levels_below__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1189,6 +1246,10 @@ borg_param_town_heal_reserve_hp_percent_rogue = 200
 borg_param_town_devices_percent__rogue = 135
 borg_param_town_phase_curve_scale_percent__rogue = 125
 borg_param_town_oil_curve_scale_percent__rogue = 125
+borg_param_caution_breeder_hunt_max_count__rogue = 6
+borg_param_prepared_depth_early_levels_per_dl__rogue = 2
+borg_param_prepared_depth_early_until_level__rogue = 4
+borg_param_prepared_depth_late_levels_below__rogue = 0
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1197,6 +1258,10 @@ borg_param_town_heal_reserve_hp_percent_ranger = 200
 borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
 borg_param_town_oil_curve_scale_percent__ranger = 50
+borg_param_caution_breeder_hunt_max_count__ranger = 6
+borg_param_prepared_depth_early_levels_per_dl__ranger = 2
+borg_param_prepared_depth_early_until_level__ranger = 4
+borg_param_prepared_depth_late_levels_below__ranger = 0
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -1205,4 +1270,8 @@ borg_param_town_heal_reserve_hp_percent_blackguard = 200
 borg_param_town_devices_percent__blackguard = 100
 borg_param_town_phase_curve_scale_percent__blackguard = 50
 borg_param_town_oil_curve_scale_percent__blackguard = 100
+borg_param_caution_breeder_hunt_max_count__blackguard = 8
+borg_param_prepared_depth_early_levels_per_dl__blackguard = 2
+borg_param_prepared_depth_early_until_level__blackguard = 4
+borg_param_prepared_depth_late_levels_below__blackguard = 0
 # ---- END CLASS FILES ----

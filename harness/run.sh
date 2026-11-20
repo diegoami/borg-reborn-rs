@@ -16,6 +16,9 @@
 #     key-limit=N  stops after N keys (-keys N)
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
 #     start-depth=N  synthetic birth at depth N; no ascent/recall, descent allowed
+#     start-monsters=SPEC  with start-depth (#722): monsters placed near the
+#            player after the level is generated, NAME:COUNT[:DIST] joined by
+#            '+', '_' for spaces (yellow_worm_mass:6+green_worm_mass:4:8)
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
@@ -97,6 +100,7 @@ SAVE_NAME=""
 BIRTH_ARGS=(-n)
 BORGH_FLAGS=()
 START_DEPTH=""
+START_MONSTERS=""
 START_BUILD=""
 START_BUILD_SHA=""
 set_start_depth() {
@@ -118,6 +122,12 @@ if [ "$FLAGS" != "-" ]; then
             start-depth=*)
                 set_start_depth "${fl#start-depth=}"
                 BORGH_FLAGS+=(-start-depth "$START_DEPTH");;
+            start-monsters=*)
+                [ -z "$START_MONSTERS" ] || { echo 'run.sh: duplicate start-monsters' >&2; exit 2; }
+                START_MONSTERS="${fl#start-monsters=}"
+                [[ "$START_MONSTERS" =~ ^[A-Za-z_\'-]+:[0-9]{1,3}(:[0-9]{1,2})?(\+[A-Za-z_\'-]+:[0-9]{1,3}(:[0-9]{1,2})?)*$ ]] || {
+                    echo 'run.sh: start-monsters must be NAME:COUNT[:DIST] joined by +' >&2; exit 2; }
+                BORGH_FLAGS+=(-start-monsters "$START_MONSTERS");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }
@@ -167,6 +177,7 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
     esac
 done
 [ -z "$START_BUILD" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-build requires start-depth' >&2; exit 2; }
+[ -z "$START_MONSTERS" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-monsters requires start-depth' >&2; exit 2; }
 if [ -n "$START_DEPTH" ]; then
     [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
     for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
@@ -288,6 +299,7 @@ fi
     if [ -n "$START_DEPTH" ]; then
         echo 'synthetic=1'
         echo "start_depth=$START_DEPTH"
+        [ -z "$START_MONSTERS" ] || echo "start_monsters=$START_MONSTERS"
         if [ -n "$START_BUILD_SHA" ]; then
             echo 'start_build=record'
             echo "start_build_sha256=$START_BUILD_SHA"
