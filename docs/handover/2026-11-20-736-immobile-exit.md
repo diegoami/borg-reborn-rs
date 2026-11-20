@@ -36,7 +36,7 @@ them already on."
     sum of max CL 104 → 106, sum of max DL 37 → 41, 11 of 18 identical.
   - fmt, clippy `-D warnings`, `cargo test --release -p borg-core` (483),
     the vendor check, citations (2216).
-- **smoke-borg-rs re-recorded** (`scripts/rerecord-smoke-borg-rs.sh`).
+- **smoke-borg-rs:** identical to the reference with the three on (`scripts/rerecord-smoke-borg-rs.sh`: nothing to re-record).
 - **Found on the way (Fox Form):**
   - Both CL1 Druids had learned Detect Life, not Fox Form. C's study table
     rates Fox Form 5 against Detect Life's 95 (`borg_magic.rs`, "need to know
