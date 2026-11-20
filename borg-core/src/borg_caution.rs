@@ -1882,17 +1882,17 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// command (a shot can be fractional). The unlimited melee fallback books
 /// whole commands conservatively, even if an early kill saves blow energy
 /// (player-attack.c:990-1020). Resource uses are whole commands as well.
-fn race_turns(hp: i32, damage: f64, uses: Option<i32>, duration: f64, fallback: f64) -> Option<(f64, i32)> {
-    if hp <= 0 || !damage.is_finite() || damage <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
+fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
+    if hp <= 0 || !hp_per_turn.is_finite() || hp_per_turn <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
-    if fallback >= damage && fallback > 0.0 { return Some(((hp / fallback).ceil(), 0)); }
-    let commands = (hp / (damage * duration)).ceil();
+    if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some(((hp / fallback_hp_per_turn).ceil(), 0)); }
+    let commands = (hp / (hp_per_turn * duration)).ceil();
     let Some(uses) = uses else { return Some((commands * duration, 0)); };
     let uses = uses.max(0);
     if commands <= f64::from(uses) { return Some((commands * duration, commands as i32)); }
-    if !fallback.is_finite() || fallback <= 0.0 { return None; }
+    if !fallback_hp_per_turn.is_finite() || fallback_hp_per_turn <= 0.0 { return None; }
     let primary_time = f64::from(uses) * duration;
-    Some((primary_time + ((hp - primary_time * damage) / fallback).ceil(), uses))
+    Some((primary_time + ((hp - primary_time * hp_per_turn) / fallback_hp_per_turn).ceil(), uses))
 }
 
 fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
@@ -2116,7 +2116,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     // Remove the fastest-to-kill attacker first. Incoming remains the full
     // sum for the entire fight, a conservative bound as attackers die.
     plans.sort_by(|a, b| {
-        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.damage.max(1));
+        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.hp_per_turn_milli.max(1));
         turns(a).total_cmp(&turns(b)).then(a.0.cmp(&b.0))
     });
     let mana = st.borg.tr(BI_CURSP);
@@ -2140,7 +2140,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let regen = f64::from((i32::from(max_hp) / 100).max(1))
             * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
             / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
-        let damage = f64::from(attack.damage) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
+        let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
         let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
         turns += t;
@@ -2154,7 +2154,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
     let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
-        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.damage) / 1000.0)).collect();
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
         plans.len(), if won { "winning" } else { "not winning" }));
     borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
