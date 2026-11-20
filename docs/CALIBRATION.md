@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Dark-entry detection exception (#796)
 
-The registry gains two parameters. The shipped level gate stays as before.
+The registry now holds **2271** parameters (2269 before; two added).
 
 - `light_detect_dark_entry=0` (compiled and shipped). At 1, the exception
   permits **Detect Monsters** and **Read Minds** below the regular level
@@ -33,7 +33,7 @@ Detect Evil and Seek Battle keep the level gate. The engine predicates
 select non-invisible monsters for Detect Monsters, monsters with
 `RF_SPIRIT` for Read Minds, evil monsters for Detect Evil, and
 fear-susceptible monsters for Seek Battle
-(`effect-handler-general.c:1858–1943`, `mon-predicate.c:133–166`).
+(`effect-handler-general.c:1858–1943`, `mon-predicate.c:83–172`).
 The floating eye has neither `EVIL` nor `SPIRIT`, and is immune to fear
 (`monster.txt:694–708`, `monster_base.txt:128–132`). Its CL1 Necromancer
 also cannot know Read Minds before CL4 (`class.txt:1017–1025`).

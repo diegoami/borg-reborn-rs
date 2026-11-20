@@ -32,3 +32,9 @@ with zero wrong citations. Raw local runs are under `/tmp/p7-796-*`.
 [Zoo #546](https://github.com/diegoami/borg-zoo/issues/546) requests paired
 Mage and Necromancer births with the P7 tactical endpoints. The owner
 chooses whether to dispatch and opens the confirmation block.
+
+The GLM-5.3-Flash review at `58a225321320d85a6bc4299d12ac9e80b4026beb`
+checked the recorded evidence and source. The review follow-up extends the
+engine predicate citation, gives the registry total and labels the
+dark-entry block in `borg.txt`. All configuration assignments keep their
+previous values and order.
