@@ -549,8 +549,16 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         let x = i32::from(take.x);
         let y = i32::from(take.y);
 
+        // borg-reborn-rs (#732, review of #734): with flow_leash, the owner's
+        // leash from the nearest known staircase replaces C's two take
+        // leashes below.
+        let owner_leash = crate::borg_flow::leash_steps(st.borg.tr(BI_CLEVEL)).is_some();
+        if owner_leash && borg_flow_misc::borg_flow_far_from_stairs_dist(st, x, y, b_stair, 0) {
+            continue;
+        }
+
         /* Skip ones that make me wander too far */
-        if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
+        if !owner_leash && b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -599,7 +607,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         borg_flow::borg_flow_clear(st);
 
         /* Check the distance to stair for this proposed grid and leash*/
-        if nearness > 5
+        if !owner_leash
+            && nearness > 5
             && st.borg.tr(BI_CLEVEL) < 20
             && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
         {

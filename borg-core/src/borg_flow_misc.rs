@@ -1524,6 +1524,22 @@ pub fn borg_flow_far_from_stairs_dist(
     false
 }
 
+/// borg-reborn-rs (#732, review of #734): with `flow_leash`, the leash every
+/// exploration method uses for its own spread as well (methods 4 and 5 limit
+/// their flow to it, as C couples the two): the owner's leash for the
+/// character level, the whole level (250 steps) past `flow_leash_max_level`.
+/// `None` with the switch off (C's `borg_get_leash`).
+pub(crate) fn explore_leash(st: &BorgState) -> Option<i32> {
+    explore_leash_with(crate::borg_flow::leash_steps(st.borg.tr(BI_CLEVEL)), st.borg.tr(BI_CDEPTH))
+}
+
+fn explore_leash_with(leash: Option<Option<i32>>, depth: i32) -> Option<i32> {
+    match leash? {
+        Some(n) if depth > 0 => Some(n),
+        _ => Some(250),
+    }
+}
+
 /// borg-reborn-rs (#732): flow steps from (`x`, `y`) to the nearest known
 /// staircase, up or down. One spread from every known staircase per think
 /// (C's leash spreads once per candidate grid, from one up staircase). `None`
@@ -1570,6 +1586,20 @@ pub fn borg_free_flow_misc(st: &mut BorgState) {
     m.track_vein.free();
     m.track_shop_y = Vec::new();
     m.track_shop_x = Vec::new();
+}
+
+#[cfg(test)]
+mod explore_leash_tests {
+    use super::explore_leash_with;
+
+    /// #732 (review of #734): the leash methods 4 and 5 spread to.
+    #[test]
+    fn explore_leash_by_switch() {
+        assert_eq!(explore_leash_with(None, 1), None, "off: C's leash");
+        assert_eq!(explore_leash_with(Some(Some(40)), 1), Some(40), "the owner's leash in the dungeon");
+        assert_eq!(explore_leash_with(Some(None), 1), Some(250), "past the leashed levels: the whole level");
+        assert_eq!(explore_leash_with(Some(Some(15)), 0), Some(250), "town: no leash");
+    }
 }
 
 #[cfg(test)]

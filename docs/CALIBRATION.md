@@ -3991,12 +3991,16 @@ from an up staircase below CL20. It has four leaks:
 - it measures from the farthest up staircase (`borg_flow_dark`, "C bug 31");
 - with no up staircase known there is no leash at all;
 - it grows when the Borg is bored (`times_twitch`);
-- the kill flow ignores it.
+- the walk to items has two leashes of its own (from the farthest up
+  staircase, below CL10 and CL20).
 
 `flow_leash` (compiled and shipped 0 = C's leash):
-- **1:** exploration (every `borg_flow_dark` method) and the walk to items
-  (`borg_flow_take`) skip a target more flow steps from the nearest known
-  staircase, up or down, than `flow_leash_cl1` … `flow_leash_cl4` (15, 25, 40,
+- **1:** exploration (every `borg_flow_dark` method; methods 4 and 5 also
+  spread only that far, `explore_leash`), the walk to items (`borg_flow_take`,
+  in place of C's two take leashes) and the kill flow's target choice
+  (`borg_flow_kill`, through the same check as C; its aim, corridor and
+  direct methods have no leash, in C either) skip a target more flow steps
+  from the nearest known staircase, up or down, than `flow_leash_cl1` … `flow_leash_cl4` (15, 25, 40,
   60). Past `flow_leash_max_level` (4) there is no leash, and with no
   staircase known none either. The distances come from one spread from
   every known staircase per think (`leash_cost`).

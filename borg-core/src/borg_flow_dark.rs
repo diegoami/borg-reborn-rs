@@ -739,7 +739,9 @@ fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
 ///
 /// The "borg_temp" array is large enough to hold one panel full of grids.
 fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
-    let leash = borg_flow_misc::borg_get_leash(st, false);
+    // borg-reborn-rs (#732): with flow_leash, the owner's leash also limits
+    // the spread below (review of #734).
+    let leash = borg_flow_misc::explore_leash(st).unwrap_or_else(|| borg_flow_misc::borg_get_leash(st, false));
 
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
@@ -793,7 +795,9 @@ fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
 
 /// Prepare to "flow" towards "interesting" grids (method 5)
 fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
-    let leash = borg_flow_misc::borg_get_leash(st, false);
+    // borg-reborn-rs (#732): with flow_leash, the owner's leash also limits
+    // the spread below (review of #734).
+    let leash = borg_flow_misc::explore_leash(st).unwrap_or_else(|| borg_flow_misc::borg_get_leash(st, false));
 
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
