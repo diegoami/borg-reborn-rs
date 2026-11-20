@@ -96,6 +96,17 @@ fn phase_not_escape(st: &mut BorgState) {
 
 /// Attempt to induce WORD_OF_RECALL
 /// artifact activations added throughout this code
+/// #758: flight-only entry point. The failed-teleport fallback sets flight
+/// flags; borg_caution later reaches this same entry point. Trip-home calls
+/// continue to call borg_recall directly, without this gate.
+pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
+    // Match borg_recall's existing pending gate before forecasting: this
+    // is not a new read and must not be logged as a blocked Recall.
+    if st.borg.goal.recalling != 0 { return false; }
+    crate::borg_caution::flight_recall_survivable(st) && borg_recall(st)
+}
+
+/// Ordinary Recall, including trips home; no flight-survival policy here.
 pub fn borg_recall(st: &mut BorgState) -> bool {
     // Multiple "recall" fails
     if st.borg.goal.recalling == 0 {
@@ -1225,7 +1236,7 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
 
     // borg-reborn-rs (#539): not while the monster is still distant. With
     // #584's rule on, the rule decides instead (it must not rely on #539).
-    if param(Param::escape_phase_adjacent_rule) == 0 && phase_is_pointless(st) {
+    if site != PhaseSite::UnseenBump && param(Param::escape_phase_adjacent_rule) == 0 && phase_is_pointless(st) {
         borg_note(st, &format!("# Phase ({}): no, no monster next to me", site.label()));
         return false;
     }
@@ -2209,4 +2220,17 @@ mod landing_tests {
         assert!(lacks_teleport(false, 0, 1));
         assert!(!lacks_teleport(false, 1, 1));
     }
+}
+
+
+/// borg-reborn-rs (#781 review): confirmed bump supplies adjacency in place
+/// of a known race. Keep the ordinary emergency landing tolerance/horizon.
+pub(crate) fn unseen_bump_phase(st: &mut BorgState, danger: i32) -> bool {
+    phase_door(st, PhaseSite::UnseenBump, PhaseCheck::Landing {
+        tolerance: param(Param::escape_emergency_phase_tolerance),
+        horizon: param(Param::escape_emergency_phase_horizon),
+    }, Some(danger), |st| {
+        borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+            || borg_activate_item(st, st.act.tele_phase) || borg_spell(st, PHASE_DOOR)
+    })
 }

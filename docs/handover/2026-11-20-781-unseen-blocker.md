@@ -39,9 +39,39 @@ change is confined to borg-rs's core and its settings. No population experiment
 was dispatched and no improvement claim is made.
 
 Canonical gameplay evidence and reproducible historical patch:
-[Cemetery case](https://github.com/diegoami/borg-cemetery/tree/evidence/reborn-781-unseen-bump/validation/borg-reborn-rs/unseen-bump-781).
+[Cemetery case](https://github.com/diegoami/borg-cemetery/tree/adf585125e1d1b1b525d1e5424797c4e938e990f/validation/borg-reborn-rs/unseen-bump-781).
 
 **Owner:** review the task PR. Any enabled profile/default choice and zoo
 measurement remain the owner's decision; no new implementation follow-up was
 identified. Other sessions' tasks were left alone. The task merge still needs
 the owner's review disposition (RULES 1a).
+
+
+## Review follow-up
+
+Synchronized current main fcaecf2b without rewriting either branch. The
+response now follows ordinary healing/defence/Recall/food and precedes stair
+walking. Detection shares existing danger/darkness gates. The independent
+cure intentionally ignores danger; its risk is explicit. Bump phases retain
+emergency landing checks and increment ordinary level escape accounting
+(the escape limit starts leaving; it is not a hard cap). Twitch steps now
+supply the same bounded bump evidence.
+
+The F1 report's delayed-think ordering is not the ordinary queued-input
+ordering: messages are parsed and queued keys/directions answered before a
+new think. The cited second throw follows a miss, then kills; retained logs
+show no third throw after that kill. Nevertheless pending-shot completion
+is now explicit, preserving an unresolved shot across intermediate updates
+and clearing it on an oil-break resolution, kill, cancel, expiry or entry.
+New tests cover delayed death feedback, a miss followed by an unrelated
+death, and all cleanup boundaries. Queued attempts reserve the budget.
+
+The original cure calculation is checked directly: of110 final caution
+rows,70 meet the30% wound gate. The first is turn37069, HP29/44, danger76;
+all70 fail BOTH `danger < HP +20` and `20 > danger/3`. Thus the historical
+explanation remains valid; it does not attribute the loss to zero danger.
+
+The registry count is2269 (main2265 plus four); historical snapshot counts
+remain unchanged. Cemetery links are pinned and the Phase Door table includes
+the new site. Refreshed validation/evidence and the exact new review pin are
+recorded on PR #782. Both PRs still await the owner's review disposition.

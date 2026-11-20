@@ -21,7 +21,7 @@ use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
-    borg_escape, borg_freedom, borg_recall, borg_surrounded,
+    borg_escape, borg_freedom, borg_surrounded,
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
@@ -1876,6 +1876,506 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// could die in two rounds.
 ///
 /// (See borg-caution.c for the full commentary.)
+/// #759: time in Borg turns, rounded up to complete attack commands.
+/// Damage and fallback are RATES in HP per Borg turn, not HP per shot.
+/// Per-command damage is rate * duration; duration is turns per primary
+/// command (a shot can be fractional). The unlimited melee fallback books
+/// whole commands conservatively, even if an early kill saves blow energy
+/// (player-attack.c:990-1020). Resource uses are whole commands as well.
+// Remove only floating-point roundoff at an integer command boundary.
+// This is a numerical error bound, not a gameplay/tuning tolerance.
+fn complete_attack_commands(value: f64) -> f64 {
+    let nearest = value.round();
+    if (value - nearest).abs() <= 8.0 * f64::EPSILON * value.abs().max(1.0) {
+        nearest
+    } else { value.ceil() }
+}
+
+fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
+    if hp <= 0 || !hp_per_turn.is_finite() || hp_per_turn <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
+    let hp = f64::from(hp);
+    if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some((complete_attack_commands(hp / fallback_hp_per_turn), 0)); }
+    let per_command = hp_per_turn * duration;
+    let commands = complete_attack_commands(hp / per_command);
+    let Some(uses) = uses else { return Some((commands * duration, 0)); };
+    let uses = uses.max(0);
+    if commands <= f64::from(uses) { return Some((commands * duration, commands as i32)); }
+    if !fallback_hp_per_turn.is_finite() || fallback_hp_per_turn <= 0.0 { return None; }
+    let primary_time = f64::from(uses) * duration;
+    let remaining = hp - f64::from(uses) * per_command;
+    Some((primary_time + complete_attack_commands(remaining / fallback_hp_per_turn), uses))
+}
+
+fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
+    turns.is_finite() && turns > 0.0 && incoming.is_finite() && incoming >= 0.0
+        && hp > 0 && turns * incoming < f64::from(hp)
+}
+
+#[cfg(test)]
+mod winning_fight_tests {
+    use super::{race_turns, wins_race};
+
+    #[test]
+    fn observed_haste_is_included_without_changing_legacy_speed() {
+        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        kill.speed = 110;
+        assert_eq!(super::forecast_monster_speed(&kill), 110);
+        kill.observed_fast = true;
+        assert_eq!(super::forecast_monster_speed(&kill), 120);
+        assert_eq!(kill.speed, 110, "the off planner keeps its original base-speed field");
+    }
+
+    #[test]
+    fn remaining_hp_is_used_once_and_ties_do_not_win() {
+        let (turns, _) = race_turns(6, 3.0, None, 1.0, 0.0).unwrap();
+        assert_eq!(turns, 2.0, "6 remaining HP, not another injury discount");
+        assert!(!wins_race(turns, 4.0, 8), "equal races do not win");
+        assert!(wins_race(turns, 4.0, 9));
+        assert!(!wins_race(turns, 8.0, 9), "double monster speed reverses the race");
+    }
+
+    #[test]
+    fn a_finite_attack_needs_a_real_fallback() {
+        assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 4.0), Some((4.0, 1)));
+        assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 0.0), None);
+        assert_eq!(race_turns(4, 8.0, Some(1), 1.0, 0.0), Some((1.0, 1)), "a finishing cast consumes a whole action and use");
+        assert_eq!(race_turns(4, 8.0, Some(0), 1.0, 2.0), Some((2.0, 0)));
+        assert_eq!(race_turns(0, 8.0, None, 1.0, 0.0), None, "unknown HP cannot certify a win");
+        assert_eq!(race_turns(8, 8.0, Some(1), 0.5, 0.0), None, "one half-turn shot is not two shots");
+        assert_eq!(race_turns(4, 8.0, Some(1), 0.5, 0.0), Some((0.5, 1)));
+        assert!(!wins_race(f64::INFINITY, 1.0, 100));
+        assert!(!wins_race(1.0, f64::NAN, 100));
+    }
+
+    #[test]
+    fn finishing_attacks_and_fallbacks_book_complete_commands() {
+        assert_eq!(race_turns(5, 10.0, None, 1.0, 0.0), Some((1.0, 0)));
+        assert_eq!(race_turns(5, 9.0, Some(3), 1.0 / 3.0, 0.0), Some((2.0 / 3.0, 2)));
+        assert_eq!(race_turns(13, 8.0, Some(1), 1.0, 4.0), Some((3.0, 1)));
+        assert_eq!(race_turns(1, 2.0, None, 1.0, 0.0), Some((1.0, 0)));
+        assert!(!wins_race(race_turns(1, 2.0, None, 1.0, 0.0).unwrap().0, 1.0, 1));
+        let three = 3.0 * race_turns(5, 10.0, None, 1.0, 0.0).unwrap().0;
+        assert_eq!(three, 3.0, "each foe needs its own finishing command");
+    }
+
+    #[test]
+    fn fractional_primary_does_not_invent_a_fallback_command() {
+        let (turns, arrows) = race_turns(30, 9.0, Some(5), 1.0 / 3.0, 3.0).unwrap();
+        assert_eq!(arrows, 5);
+        assert!((turns - 20.0 / 3.0).abs() < 1e-12);
+        assert_eq!(super::complete_attack_commands(5.0 + 1e-10), 6.0,
+            "a real residual above the boundary still requires another command");
+        assert_eq!(super::complete_attack_commands(5.0 + f64::EPSILON * 5.0), 5.0);
+    }
+
+    #[test]
+    fn firing_rate_changes_command_time_not_an_arrows_damage() {
+        let rate = crate::borg_fight_attack::focused_projectile_rate(18_000, 30) as f64 / 1000.0;
+        assert_eq!(rate, 54.0, "one 18HP arrow, three shots per turn: 54HP/turn");
+        assert_eq!(race_turns(30, rate, Some(2), 1.0 / 3.0, 0.0), Some((2.0 / 3.0, 2)));
+        let rate = crate::borg_fight_attack::focused_projectile_rate(6000, 30) as f64 / 1000.0;
+        assert_eq!(rate, 18.0);
+        let (turns, arrows) = race_turns(30, rate, Some(5), 1.0 / 3.0, 0.0).unwrap();
+        assert_eq!(arrows, 5, "18HP/turn is 6HP per third-turn arrow, not18 per arrow");
+        assert!((turns - 5.0 / 3.0).abs() < 1e-12);
+        let rate = crate::borg_fight_attack::focused_projectile_rate(12_000, 20) as f64 / 1000.0;
+        assert_eq!(race_turns(30, rate, Some(5), 0.5, 0.0), Some((1.5, 3)));
+        let cl20_rate = crate::borg_fight_attack::focused_projectile_rate(12_000, 16) as f64 / 1000.0;
+        assert_eq!(race_turns(30, cl20_rate, Some(3), 10.0 / 16.0, 0.0), Some((1.875, 3)), "PF_FAST_SHOT adds level/3: CL20 adds6 shots-tenths, not10");
+        assert_eq!(race_turns(30, rate, Some(1), 0.5, 6.0), Some((3.5, 1)), "one12HP shot leaves18HP for three melee commands");
+    }
+
+    #[test]
+    fn several_attackers_share_the_damage_budget() {
+        let first = race_turns(4, 4.0, None, 1.0, 0.0).unwrap().0;
+        let second = race_turns(8, 4.0, None, 1.0, 0.0).unwrap().0;
+        assert!(wins_race(first, 3.0, 8));
+        assert!(!wins_race(first + second, 3.0 + 2.0, 8));
+    }
+}
+
+/// #758: shortest known/possible route to a grid adjacent to the player.
+/// Unknown terrain is permitted by the caller as a conservative bound.
+/// Other monsters do not permanently block a route: they may move during
+/// Recall. This uses remembered terrain, never the engine's unseen map.
+fn recall_contact_steps(from: loc, player: loc, max_moves: i32, passable: impl Fn(i32, i32) -> bool) -> Option<i32> {
+    let adjacent = |p: loc| (p.x - player.x).abs().max((p.y - player.y).abs()) <= 1;
+    if adjacent(from) { return Some(0); }
+    let mut queue = std::collections::VecDeque::from([(from, 0)]);
+    let mut seen = std::collections::BTreeSet::from([(from.x, from.y)]);
+    while let Some((at, steps)) = queue.pop_front() {
+        if steps >= max_moves { continue; }
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                if dx == 0 && dy == 0 { continue; }
+                let next = loc { x: at.x + dx, y: at.y + dy };
+                if next.x <= 0 || next.y <= 0 || next.x >= AUTO_MAX_X - 1 || next.y >= AUTO_MAX_Y - 1
+                    || !passable(next.x, next.y) || !seen.insert((next.x, next.y)) { continue; }
+                if adjacent(next) { return Some(steps + 1); }
+                queue.push_back((next, steps + 1));
+            }
+        }
+    }
+    None
+}
+
+/// Ranged exposure needs line of fire OR a possible melee route. A
+/// projectable immobile caster can attack even without a walking route.
+fn recall_attack_steps(contact: Option<i32>, has_spells: bool, projectable: bool) -> Option<i32> {
+    if has_spells && (projectable || contact.is_some()) { Some(0) } else { contact }
+}
+
+#[cfg(test)]
+mod recall_ranged_route_tests {
+    #[test]
+    fn immobile_caster_uses_line_of_fire_without_a_melee_route() {
+        assert_eq!(super::recall_attack_steps(None, true, true), Some(0));
+        assert_eq!(super::recall_attack_steps(None, true, false), None);
+        assert_eq!(super::recall_attack_steps(Some(8), true, false), Some(0));
+        assert_eq!(super::recall_attack_steps(Some(8), false, false), Some(8));
+        assert_eq!(super::recall_attack_steps(None, false, false), None);
+    }
+}
+
+fn recall_exposure(damage_per_turn: f64, player_energy: f64, monster_energy: f64, ticks: i32, steps: i32) -> f64 {
+    let duration = f64::from(ticks) * player_energy / 10.0;
+    let travel = f64::from(steps.max(0)) * player_energy / monster_energy.max(1.0);
+    damage_per_turn * (duration - travel).max(0.0)
+}
+
+fn recall_forecast_allows(contact_hp: f64, unknown_risks: i32, hp: i32) -> bool {
+    unknown_risks == 0 && contact_hp.is_finite() && contact_hp >= 0.0 && contact_hp < f64::from(hp)
+}
+
+#[cfg(test)]
+mod recall_quantity_tests {
+    #[test]
+    fn acid_hp_and_unmodelled_risk_are_separate_reasons() {
+        assert!(super::recall_forecast_allows(19.0, 0, 20), "modelled1d3 acid exposure can be safe; no200-point fear price");
+        assert!(!super::recall_forecast_allows(19.0, 1, 20), "uncertainty refuses qualitatively, not as invented HP");
+        assert!(!super::recall_forecast_allows(20.0, 0, 20), "equality at HP still refuses");
+        assert!(!super::recall_forecast_allows(0.0, 1, 20), "a projectable immobile caster's unknown spell still counts");
+    }
+}
+
+/// #758: only the flight's Recall entry point calls this. Evaluate every
+/// known monster, including sleepers that may wake, and sum exposure. Doors
+/// and walls obey known race movement flags. Casters that can fire now have
+/// no approach discount. The maximum delay is conservative, not knowledge
+/// of the engine's next random roll (effect-handler-general.c:1145).
+pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
+    if p(Param::caution_recall_survival) == 0 { return true; }
+    let ticks = p(Param::caution_recall_survival_delay);
+    let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
+    let mut exposure = 0.0;
+    let mut unknown_risks = 0;
+    let (mut awake, mut asleep, mut reachable) = (0, 0, 0);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        let r = usize::from(kill.r_idx);
+        if r == 0 || r >= engine::r_max().saturating_sub(1) { continue; }
+        if !kill.awake { asleep += 1; } else { awake += 1; }
+        let monster_energy = f64::from(engine::extract_energy(forecast_monster_speed(&kill).clamp(0, 199) as usize)).max(1.0);
+        let flag = |f| engine::race_flag_has(r, f);
+        let never_move = flag(RF_NEVER_MOVE);
+        let pass_wall = flag(crate::headers::list_mon_race_flags_h::RF_PASS_WALL)
+            || flag(crate::headers::list_mon_race_flags_h::RF_KILL_WALL);
+        let open_door = flag(crate::headers::list_mon_race_flags_h::RF_OPEN_DOOR)
+            || flag(crate::headers::list_mon_race_flags_h::RF_BASH_DOOR);
+        let steps = recall_contact_steps(kill.pos, st.borg.c,
+            if never_move { 0 } else { (f64::from(ticks) * monster_energy / 10.0).ceil() as i32 },
+            |x, y| {
+                let ag = st.cave.grid(x, y);
+                let feat = u32::from(ag.feat);
+                if feat == crate::headers::list_terrain_h::FEAT_PERM { return false; }
+                if feat == crate::headers::list_terrain_h::FEAT_CLOSED { return open_door || pass_wall; }
+                feat == FEAT_NONE || borg_cave_floor_grid(ag) || pass_wall
+            });
+        // Literal contact HP uses the actual walking route. A harmless
+        // HEAL/SCARE flag does not turn a distant bite into a ranged hit.
+        let forecast = fight_incoming_with(st, i, true);
+        let projectable = forecast.ranged_risk && crate::borg_projection::borg_projectable_pure(
+            st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
+        let Some(risk_steps) = recall_attack_steps(steps, forecast.ranged_risk, projectable) else { continue };
+        reachable += 1;
+        if forecast.unknown_damage && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
+            unknown_risks += 1;
+        }
+        if let Some(contact_steps) = steps {
+            exposure += recall_exposure(forecast.hp_per_turn, player_energy, monster_energy, ticks, contact_steps);
+        }
+    }
+    let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
+    if allowed && asleep > 0 {
+        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
+    }
+    if unknown_risks > 0 {
+        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+    } else if !allowed {
+        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+    }
+    allowed
+}
+
+#[cfg(test)]
+mod recall_survival_tests {
+    use super::*;
+
+    #[test]
+    fn recall_delay_uses_world_time_at_every_player_speed() {
+        let normal = recall_exposure(8.0, 10.0, 20.0, 34, 0);
+        let fast_player = recall_exposure(4.0, 20.0, 20.0, 34, 0);
+        assert_eq!(normal, 272.0);
+        assert_eq!(normal, fast_player, "same monster actions during Recall at either player speed");
+        assert_eq!(recall_exposure(8.0, 10.0, 20.0, 15, 0), 120.0);
+        assert_eq!(recall_exposure(8.0, 10.0, 20.0, 15, 30), 0.0, "cannot arrive during the delay");
+    }
+
+    #[test]
+    fn a_wall_or_closed_door_can_prevent_contact() {
+        let from = loc { x: 3, y: 5 };
+        let player = loc { x: 7, y: 5 };
+        let corridor = |x, y| y == 5 && (3..=7).contains(&x);
+        assert_eq!(recall_contact_steps(from, player, 3, corridor), Some(3));
+        assert_eq!(recall_contact_steps(from, player, 2, corridor), None);
+        assert_eq!(recall_contact_steps(from, player, 34, |x, y| corridor(x, y) && x != 5), None);
+        assert_eq!(recall_contact_steps(loc { x: 6, y: 5 }, player, 0, |_, _| false), Some(0), "immobile but adjacent");
+        assert_eq!(recall_contact_steps(from, player, 0, corridor), None, "immobile at range");
+    }
+}
+
+/// #759/#758: quantities of HP and unmodelled risk are separate. A native
+/// danger score includes fear prices and must never be multiplied by time
+/// or compared to HP as if it were damage.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct IncomingDamage {
+    pub hp_per_turn: f64,
+    pub unknown_damage: bool,
+    pub unknown_fight: bool,
+    pub ranged_risk: bool,
+}
+
+/// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
+/// persists during a future fight or the Recall delay.
+pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
+}
+
+// Recall is already pending during exposure: these non-damaging spells do
+// not stop its countdown. They CAN change the ability to execute attacks,
+// so a winning fight with spells still remains uncertified. monster_spell.txt
+// :655-663,894-927,959-977,1056-1065 at 574b618c defines these effects.
+// Teleporting, HASTE, summons and damaging spells are
+// not silently priced as HP: their unmodelled contribution is a risk flag.
+fn recall_spell_has_unknown_damage(spell: u32) -> bool {
+    use crate::headers::list_mon_spells_h::*;
+    !matches!(spell, RSF_HEAL | RSF_HEAL_KIN | RSF_SCARE | RSF_BLIND | RSF_CONF
+        | RSF_DRAIN_MANA | RSF_FORGET)
+}
+
+fn modelled_blow(effect: &[u8]) -> bool {
+    matches!(effect, b"HURT" | b"ACID" | b"ELEC" | b"FIRE" | b"COLD" | b"NONE")
+}
+
+fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: bool) -> f64 {
+    // project-player.c:72-73: elemental vulnerability multiplies by 4/3.
+    // Ignore AC, resistance, immunity and damage reduction conservatively;
+    // element melee uses max(physical, elemental), not their sum
+    // (mon-blows.c:442-460). RF_HURT/IM in :311-365 belongs to the
+    // monster-versus-monster target path, not a blow against the player.
+    // Neither fear nor item-damage prices are HP.
+    average.max(0.0) * f64::from(chance) / 10_000.0 * energy_ratio
+        * if vulnerable { 4.0 / 3.0 } else { 1.0 }
+}
+
+pub(crate) fn fight_incoming(st: &BorgState, i: usize) -> IncomingDamage {
+    fight_incoming_with(st, i, false)
+}
+
+/// Literal expected contact HP/Borg turn plus separate uncertainty flags.
+/// Unknown spell/status HP prevents a win certificate and makes Recall
+/// refuse explicitly for unmodelled risk, never a fabricated HP number.
+pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> IncomingDamage {
+    let kill = st.kills.kills[i];
+    if kill.r_idx == 0 || (!kill.awake && !wake) { return IncomingDamage::default(); }
+    let r = usize::from(kill.r_idx);
+    let race = engine::race(r);
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let ratio = energy(forecast_monster_speed(&kill)) / energy(engine::player_combat_speed());
+    let mut out = IncomingDamage { unknown_fight: kill.ranged_attack != 0, ..IncomingDamage::default() };
+    for b in 0..usize::from(engine::z_info().mon_blows_max) {
+        let Some(blow) = engine::race_blow(r, b) else { break };
+        let effect = blow.effect_name.to_bytes();
+        out.unknown_fight |= effect != b"HURT";
+        out.unknown_damage |= !modelled_blow(effect);
+        let vulnerable = match effect {
+            b"ACID" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VACID) != 0,
+            b"ELEC" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VELEC) != 0,
+            b"FIRE" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VFIRE) != 0,
+            b"COLD" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VCOLD) != 0,
+            _ => false,
+        };
+        let chance = crate::borg_fight_attack::hit_permyriad(3 * i32::from(race.level).max(1) + blow.hit_power, st.borg.tr(crate::borg_headers::borg_trait_h::BI_ARMOR));
+        let average = blow_average_tenths(blow.base, blow.dice, blow.sides, blow.m_bonus, i32::from(race.level)) as f64 / 10.0;
+        out.hp_per_turn += blow_hp_per_action(average, chance, ratio, vulnerable);
+    }
+    use crate::headers::list_mon_spells_h::RSF_MAX;
+    for spell in 1..RSF_MAX {
+        if engine::flag_has(&race.spell_flags, spell as i32) {
+            out.ranged_risk |= recall_spell_has_unknown_damage(spell);
+        }
+    }
+    out.unknown_damage |= out.ranged_risk;
+    out
+}
+
+#[cfg(test)]
+mod incoming_units_tests {
+    #[test]
+    fn elemental_blows_and_harmless_spells_are_not_fear_prices() {
+        assert_eq!(super::blow_hp_per_action(2.0, 9500, 1.0, false), 1.9, "1d3 acid is not 200/630/1014 HP");
+        assert!(super::blow_hp_per_action(2.0, 9500, 2.0, true) < 6.0);
+        use crate::headers::list_mon_spells_h::*;
+        assert!(!super::recall_spell_has_unknown_damage(RSF_HEAL));
+        assert!(!super::recall_spell_has_unknown_damage(RSF_SCARE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_MISSILE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_HASTE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_BLINK), "can bypass the approach route");
+        assert!(super::recall_spell_has_unknown_damage(RSF_DARKNESS), "has a DARK_WEAK projection too");
+        assert!(super::modelled_blow(b"ACID"));
+        assert!(!super::modelled_blow(b"POISON"));
+    }
+}
+
+/// #759: a fresh comparison on every think, including during an existing
+/// flight. Count every awake visible attacker, including those which can
+/// join while another is fought. A target we cannot damage now prevents a
+/// winning verdict; no optimistic missing-foe or unknown-HP assumptions.
+fn winning_fight(st: &mut BorgState) -> bool {
+    let mode = p(Param::caution_winning_fight);
+    if mode == 0 { return false; }
+    // The direct-damage race does not model random confused commands or
+    // ongoing poison/bleeding damage. Let the ordinary cures act first.
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    let mut plans = Vec::new();
+    let mut incoming = 0.0;
+    let mut in_contact = false;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
+            if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
+                return false; // an attacker without a current observable target
+            }
+            continue;
+        }
+        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
+            continue;
+        }
+        let forecast = fight_incoming(st, i);
+        if forecast.unknown_fight || forecast.unknown_damage { return false; }
+        let danger = forecast.hp_per_turn;
+        if danger <= 0.0 { continue; }
+        in_contact |= d <= 1 || kill.ranged_attack != 0;
+        incoming += danger;
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
+        plans.push((i, hp, attack));
+    }
+    if plans.is_empty() || !in_contact { return false; }
+    // Remove the fastest-to-kill attacker first. Incoming remains the full
+    // sum for the entire fight, a conservative bound as attackers die.
+    plans.sort_by(|a, b| {
+        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.hp_per_turn_milli.max(1));
+        turns(a).total_cmp(&turns(b)).then(a.0.cmp(&b.0))
+    });
+    let mana = st.borg.tr(BI_CURSP);
+    let mut mana_left = mana;
+    let mut spent = std::collections::BTreeMap::<i32, i32>::new();
+    let mut turns = 0.0;
+    for &(i, hp, attack) in &plans {
+        let cost = attack.cost;
+        let uses = cost.and_then(|c| c.uses).map(|u| {
+            if cost.is_some_and(|c| c.spell) {
+                if mana <= 0 { 0 } else { u * mana_left / mana }
+            } else { (u - spent.get(&attack.kind).copied().unwrap_or(0)).max(0) }
+        });
+        // mon-move.c:1893-1897 gates regen on turn%100==0, regardless of
+        // monster speed; :1914-1925 handles each monster once that turn.
+        // regen_monster: at least 1 HP each 100 game turns,
+        // doubled for REGENERATE. Charge its continuous mean immediately,
+        // conservatively, rather than assuming a long fight has no healing.
+        let kill = st.kills.kills[i];
+        let max_hp = kill.observed_health.unwrap().1;
+        let regen = f64::from((i32::from(max_hp) / 100).max(1))
+            * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
+            / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
+        let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
+        let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
+        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
+        turns += t;
+        if let Some(c) = cost {
+            if c.spell {
+                let per_cast = (mana + c.uses.unwrap_or(1).max(1) - 1) / c.uses.unwrap_or(1).max(1);
+                mana_left = (mana_left - per_cast * used).max(0);
+            } else { *spent.entry(attack.kind).or_default() += used; }
+        }
+    }
+    let hp = st.borg.tr(BI_CURHP);
+    let won = wins_race(turns, incoming, hp);
+    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
+    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
+        plans.len(), if won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
+    // Mode 2 is a diagnostic: retain the unchanged control's actions so
+    // estimates can be checked on its original losing AND winning fights.
+    if !won || mode == 2 { return false; }
+    let (i, _, attack) = plans[0];
+    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_limit: i64) -> bool {
+    hp > 0 && target_damage.is_finite() && target_damage < f64::from(hp) && other_danger <= other_limit
+}
+
+/// Owner-approved review exception: the category itself never creates a
+/// scare, but lethal contact or excessive danger from other foes can still
+/// reach ordinary cures/escapes. Reuse today's threshold MULTIPLIER. The
+/// quantity is other monsters' native danger, excluding the target and the
+/// regional/fear-map terms; it is not today's full borg_danger sum.
+pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
+    let hp = st.borg.tr(BI_CURHP);
+    let target_damage = fight_incoming_with(st, target, true);
+    let mut other_danger = 0_i64;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        if i == target || st.kills.kills[i].r_idx == 0 { continue; }
+        other_danger += i64::from(crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
+    }
+    let limit = i64::from(hp) * i64::from(p(Param::caution_flee_danger_hp_multiplier));
+    !target_damage.unknown_damage && category_threat_safe(hp, target_damage.hp_per_turn, other_danger, limit)
+}
+
+#[cfg(test)]
+mod category_threat_tests {
+    #[test]
+    fn first_sight_attack_yields_to_real_danger() {
+        assert!(super::category_threat_safe(20, 6.5, 0, 40), "healthy Borg shoots lone cat");
+        assert!(!super::category_threat_safe(6, 6.5, 0, 12), "cat can kill before another action");
+        assert!(!super::category_threat_safe(20, 6.5, 41, 40), "other foes exceed existing flight threshold");
+        assert!(super::category_threat_safe(20, 6.5, 40, 40), "ordinary threshold is strict greater-than");
+    }
+}
+
+/// #760/#759: before any dungeon flight, including the light/countdown
+/// and depth-return rungs which otherwise precede borg_caution.
+pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
+    crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
+}
+
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
     let mut nasty = false;
@@ -2043,8 +2543,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
 
-    // borg-reborn-rs (#781): the unseen blocker outranks the stair walk.
-    if unseen_bump_response(st) { return true; }
 
     // borg-reborn-rs (#713): a creature kept at range is stepped away from
     // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
@@ -2311,6 +2809,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
 
+    // borg-reborn-rs (#781 review): ordinary healing, defence, Recall and
+    // emergency food keep priority; the unseen response precedes stair walking.
+    if unseen_bump_response(st, pos_danger) { return true; }
+
     /*** Flee on foot ***/
 
     // Desperation Head for stairs
@@ -2516,7 +3018,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && !ranged_before_recall(st)
         && !breeder_recall_held(st)
         && recall_escape_allowed(st, Some(pos_danger))
-        && borg_recall(st)
+        && crate::borg_escape::borg_recall_for_flight(st)
     {
         // Note
         borg_note(st, "# Fleeing the level (recall)");
@@ -5794,8 +6296,15 @@ mod breeder_pause_tests {
 #[derive(Clone, Default)]
 pub struct UnseenBumps {
     step: Option<(loc, loc, bool)>,
-    shot: Option<(loc, bool)>,
+    shot: Option<UnseenOilShot>,
     grids: Vec<UnseenBump>,
+}
+
+#[derive(Clone, Copy)]
+struct UnseenOilShot {
+    grid: loc,
+    dead: bool,
+    resolved: bool,
 }
 
 #[derive(Clone)]
@@ -5803,7 +6312,7 @@ struct UnseenBump {
     grid: loc,
     at: i32,
     throws: i32,
-    detected: bool,
+    detection_read: bool,
 }
 
 fn same_grid(a: loc, b: loc) -> bool { a.x == b.x && a.y == b.y }
@@ -5867,29 +6376,40 @@ pub(crate) fn unseen_bump_message(st: &mut BorgState, msg: &[u8]) {
     // Oil is a single-target throw into the adjacent square (not an area
     // spell). Its unseen victim's death identifies the now-cleared grid.
     if [b"It dies.".as_slice(), b"Something dies.", b"Someone dies.", b"It is destroyed."].contains(&msg) {
-        if let Some((_, dead)) = &mut st.borg.unseen_bumps.shot { *dead = true; }
+        if let Some(shot) = &mut st.borg.unseen_bumps.shot { shot.dead = true; }
+    }
+    // Explicit throw completion: a miss must not carry its attribution
+    // into another command. The pinned oil object always breaks.
+    if msg == b"The Flask of oil breaks." {
+        if let Some(shot) = &mut st.borg.unseen_bumps.shot { shot.resolved = true; }
     }
 }
 
 /// Consume the command's evidence once, after the observed position changed.
 /// A successful (possibly confused) move cannot mark its intended grid.
 fn finish_bump(bumps: &mut UnseenBumps, pos: loc, now: i32, turns: i32) -> Option<loc> {
-    if let Some((grid, true)) = bumps.shot.take() {
-        bumps.grids.retain(|b| !same_grid(b.grid, grid));
-    }
     bumps.grids.retain(|b| bump_recent(now, b.at, turns) && !same_grid(b.grid, pos));
+    if let Some(shot) = bumps.shot {
+        if shot.dead { bumps.grids.retain(|b| !same_grid(b.grid, shot.grid)); }
+        if shot.dead || shot.resolved || !bumps.grids.iter().any(|b| same_grid(b.grid, shot.grid)) {
+            bumps.shot = None;
+        }
+    }
     let (from, grid, hit) = bumps.step.take()?;
     if turns == 0 || !hit || !same_grid(from, pos) { return None; }
     if let Some(b) = bumps.grids.iter_mut().find(|b| same_grid(b.grid, grid)) {
         b.at = now;
     } else {
-        bumps.grids.push(UnseenBump { grid, at: now, throws: 0, detected: false });
+        bumps.grids.push(UnseenBump { grid, at: now, throws: 0, detection_read: false });
     }
     Some(grid)
 }
 
 pub(crate) fn unseen_bump_update(st: &mut BorgState) {
     let turns = p(Param::caution_unseen_bump_turns);
+    if let Some(shot) = st.borg.unseen_bumps.shot.filter(|s| s.dead) {
+        borg_note(st, &format!("# Unseen bump cleared: oil killed occupant ({},{})", shot.grid.y, shot.grid.x));
+    }
     if let Some(g) = finish_bump(&mut st.borg.unseen_bumps, st.borg.c, engine::game_turn(), turns) {
         st.borg.goal.type_0 = 0;
         borg_note(st, &format!("# Unseen bump: ({},{}) occupied for {turns} game turns", g.y, g.x));
@@ -5911,7 +6431,7 @@ fn bump_heal_due(hp: i32, max: i32, percent: i32) -> bool {
 /// to have a race (and therefore an estimated danger). Detection is tried
 /// once per observation; oil is bounded per grid; then a Phase Door. None
 /// of these invents a monster index, HP, armour or a clear target.
-fn unseen_bump_response(st: &mut BorgState) -> bool {
+fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
     let turns = p(Param::caution_unseen_bump_turns);
     if turns == 0 || st.borg.tr(BI_CDEPTH) == 0 { return false; }
     let now = engine::game_turn();
@@ -5928,10 +6448,11 @@ fn unseen_bump_response(st: &mut BorgState) -> bool {
         return true;
     }
     if p(Param::caution_unseen_bump_response) == 0 { return false; }
-    if !st.borg.unseen_bumps.grids[i].detected
+    if !st.borg.unseen_bumps.grids[i].detection_read
+        && crate::borg_fight_defend::unseen_detection_safe(st, danger)
         && borg_read_scroll(st, st.item_val.sv_scroll_detect_invis)
     {
-        st.borg.unseen_bumps.grids[i].detected = true;
+        st.borg.unseen_bumps.grids[i].detection_read = true;
         borg_note(st, "# Detect Invisible: an unseen monster blocks the step");
         return true;
     }
@@ -5941,16 +6462,17 @@ fn unseen_bump_response(st: &mut BorgState) -> bool {
         && crate::borg_fight_attack::throw_at_unseen_bump(st, g)
     {
         st.borg.unseen_bumps.grids[i].throws += 1;
-        st.borg.unseen_bumps.shot = Some((g, false));
+        st.borg.unseen_bumps.shot = Some(UnseenOilShot { grid: g, dead: false, resolved: false });
         return true;
     }
     // The ordinary adjacent-monster rule cannot rate a monster with no
     // known race. This site's explicit, bounded bump evidence is its gate.
-    crate::borg_escape::phase_door(st, crate::borg_escape::PhaseSite::UnseenBump,
-        crate::borg_escape::PhaseCheck::None, None, |st| {
-            borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-                || borg_activate_item(st, st.act.tele_phase) || borg_spell(st, PHASE_DOOR)
-        })
+    if crate::borg_escape::unseen_bump_phase(st, danger) {
+        st.borg.escapes = st.borg.escapes.wrapping_add(1);
+        st.borg.goal.type_0 = 0;
+        return true;
+    }
+    false
 }
 
 #[cfg(test)]
@@ -5993,11 +6515,11 @@ mod unseen_bump_tests {
         bumps.step = Some((pos(40,35), pos(40,34), true));
         finish_bump(&mut bumps, pos(40,35), 100, 100);
         bumps.grids[0].throws = 3;
-        bumps.grids[0].detected = true;
+        bumps.grids[0].detection_read = true;
         bumps.step = Some((pos(40,35), pos(40,34), true));
         finish_bump(&mut bumps, pos(40,35), 110, 100);
         assert_eq!(bumps.grids[0].throws, 3);
-        assert!(bumps.grids[0].detected);
+        assert!(bumps.grids[0].detection_read);
         finish_bump(&mut bumps, pos(40,34), 120, 100);
         assert!(bumps.grids.is_empty());
     }
@@ -6017,14 +6539,14 @@ mod unseen_bump_kill_tests {
     fn a_directional_oil_kill_clears_only_its_grid() {
         let mut st = BorgState::default();
         st.borg.unseen_bumps.grids = vec![
-            UnseenBump { grid: loc { x: 40, y: 34 }, at: 100, throws: 1, detected: false },
-            UnseenBump { grid: loc { x: 41, y: 35 }, at: 100, throws: 0, detected: false },
+            UnseenBump { grid: loc { x: 40, y: 34 }, at: 100, throws: 1, detection_read: false },
+            UnseenBump { grid: loc { x: 41, y: 35 }, at: 100, throws: 0, detection_read: false },
         ];
         // An unassociated death cannot clear an inferred occupant.
         unseen_bump_message(&mut st, b"It dies.");
         finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 110, 100);
         assert_eq!(st.borg.unseen_bumps.grids.len(), 2);
-        st.borg.unseen_bumps.shot = Some((loc { x: 40, y: 34 }, false));
+        st.borg.unseen_bumps.shot = Some(UnseenOilShot { grid: loc { x: 40, y: 34 }, dead: false, resolved: false });
         unseen_bump_message(&mut st, b"It dies.");
         finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 120, 100);
         assert_eq!(st.borg.unseen_bumps.grids.len(), 1);
@@ -6050,4 +6572,54 @@ mod unseen_melee_vocabulary_tests {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod unseen_oil_lifecycle_tests {
+    use super::*;
+    fn pending() -> BorgState {
+        let mut st = BorgState::default();
+        let grid = loc { x: 40, y: 34 };
+        st.borg.unseen_bumps.grids.push(UnseenBump { grid, at: 100, throws: 1, detection_read: false });
+        st.borg.unseen_bumps.shot = Some(UnseenOilShot { grid, dead: false, resolved: false });
+        st
+    }
+    #[test]
+    fn pending_shot_survives_an_intermediate_update_until_feedback() {
+        let mut st = pending();
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 110, 100);
+        assert!(st.borg.unseen_bumps.shot.is_some());
+        unseen_bump_message(&mut st, b"It dies.");
+        unseen_bump_message(&mut st, b"The Flask of oil breaks.");
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 120, 100);
+        assert!(st.borg.unseen_bumps.grids.is_empty());
+        assert!(st.borg.unseen_bumps.shot.is_none());
+    }
+    #[test]
+    fn a_resolved_miss_cannot_claim_a_later_unrelated_death() {
+        let mut st = pending();
+        unseen_bump_message(&mut st, b"The Flask of oil breaks.");
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 110, 100);
+        assert!(st.borg.unseen_bumps.shot.is_none());
+        unseen_bump_message(&mut st, b"It dies.");
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 120, 100);
+        assert_eq!(st.borg.unseen_bumps.grids.len(), 1);
+    }
+    #[test]
+    fn pending_shots_cannot_outlive_their_grid_or_a_cancelled_command() {
+        for (pos, now, turns) in [(loc { x: 40, y: 34 }, 110, 100),
+            (loc { x: 40, y: 35 }, 200, 100), (loc { x: 40, y: 35 }, 110, 0)] {
+            let mut st = pending();
+            finish_bump(&mut st.borg.unseen_bumps, pos, now, turns);
+            assert!(st.borg.unseen_bumps.shot.is_none());
+        }
+        let mut st = pending();
+        crate::borg_io::borg_flush(&mut st);
+        assert!(st.borg.unseen_bumps.shot.is_none());
+    }
+}
+
+/// Cancelled input cannot later attribute another command's death to oil.
+pub(crate) fn unseen_bump_cancel_shot(st: &mut BorgState) {
+    st.borg.unseen_bumps.shot = None;
 }

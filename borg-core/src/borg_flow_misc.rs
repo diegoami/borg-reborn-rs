@@ -1175,6 +1175,11 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
 
     /* Normally move */
 
+    // #781: reject before queueing even an alter prefix.
+    let x = st.borg.c.x + i32::from(engine::ddx(dir as usize));
+    let y = st.borg.c.y + i32::from(engine::ddy(dir as usize));
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) { return false; }
+
     /* if afraid, we need to try to dig. We have tried everything else */
     /* digging will at least take an action so maybe give time to not be */
     /* afraid */
@@ -1183,6 +1188,9 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
     }
 
     /* Send direction */
+    // borg-reborn-rs (#781 review): an unimpaired twitch can also bump an
+    // unseen occupant. Do not re-enter a remembered occupied grid.
+    crate::borg_caution::unseen_bump_step(st, x, y);
     borg_keypress(st, i2d(dir));
 
     /* We did something */
