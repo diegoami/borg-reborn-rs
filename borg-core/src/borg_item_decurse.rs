@@ -31,6 +31,8 @@ use crate::borg_headers::borg_trait_h::{BI_FIRST_CURSED, BI_WHERE_CURSED, BORG_E
 use crate::headers::list_tvals_h::TV_SCROLL;
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+// borg-reborn-rs (#680): preserve resource order and spell semantics.
+use crate::params::{value as param, Param};
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`). `i` is -1 only for a swap index of 0 (a decurse flag
@@ -60,7 +62,7 @@ fn can_decurse(st: &mut BorgState) -> bool {
 
     !(-1 == borg_slot(st, TV_SCROLL as i32, sv_scroll)
         && !borg_equips_staff_fail(st, sv_staff)
-        && !borg_spell_okay_fail(st, REMOVE_CURSE, 40)
+        && !borg_spell_okay_fail(st, REMOVE_CURSE, param(Param::decurse_spell_fail))
         && -1 == borg_slot(st, TV_SCROLL as i32, sv_star)
         && !borg_equips_item(st, act1, true)
         && !borg_equips_item(st, act2, true))

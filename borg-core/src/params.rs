@@ -2247,6 +2247,17 @@ parameters! {
     sell_unidentified_ego_min_copies => (2, "count", 1, 99, "borg_store_sell.rs:956", "sell unidentified ego min copies: inherited policy; neutral default."),
     shopping_upgrade_light_radius => (1, "grids", 1, 5, "borg_think_store.rs:224", "shopping upgrade light radius: inherited policy; neutral default."),
 
+    // borg-reborn-rs (#680): enchant/decurse policy, neutral inherited defaults.
+    decurse_spell_fail => (40, "percent", 0, 100, "borg_item_decurse.rs:65", "Maximum acceptable Remove Curse spell failure rate."),
+    enchant_spell_fail => (65, "percent", 0, 100, "borg_item_enchant.rs:98", "Maximum acceptable enchant spell failure rate, for availability and casting."),
+    enchant_brand_spell_fail => (65, "percent", 0, 100, "borg_item_enchant.rs:486", "Maximum acceptable Brand Ammunition spell failure rate."),
+    enchant_plain_target => (8, "bonus", 0, 20, "borg_item_enchant.rs:96", "Target bonus without an acceptable spell or star-enchant scroll."),
+    enchant_ammo_target => (10, "bonus", 0, 20, "borg_item_enchant.rs:391", "Ammo target with an acceptable spell or star-enchant scroll; equipment keeps BORG_ENCHANT_LIMIT."),
+    enchant_min_shooter_power => (3, "multiplier", 0, 10, "borg_item_enchant.rs:318", "Minimum launcher multiplier to enchant a plain bow or ammunition; other ego/artifact gates unchanged."),
+    enchant_ammo_min_quantity => (5, "count", 1, 255, "borg_item_enchant.rs:373", "Minimum ammunition stack eligible for enchantment."),
+    enchant_brand_min_quantity => (20, "count", 1, 255, "borg_item_enchant.rs:447", "Minimum ammunition stack eligible for branding."),
+    enchant_dungeon_max_turns => (5500, "turns", 0, 100000, "borg_item_enchant.rs:507", "Elapsed level-turn cutoff before dungeon curse removal; strict greater-than comparison."),
+    enchant_town_max_turns => (3501, "turns", 0, 100000, "borg_item_enchant.rs:508", "Elapsed level-turn cutoff before town curse removal and enchantment; strict greater-than comparison."),
 }
 
 /// borg-reborn-rs (#520): the class names, `class.txt` order (`cidx`).
@@ -2492,6 +2503,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn enchant_decurse_bounds_precedence_and_provenance() {
+        let names = ["decurse_spell_fail", "enchant_spell_fail", "enchant_brand_spell_fail",
+            "enchant_plain_target", "enchant_ammo_target", "enchant_min_shooter_power",
+            "enchant_ammo_min_quantity", "enchant_brand_min_quantity",
+            "enchant_dungeon_max_turns", "enchant_town_max_turns"];
+        for name in names {
+            let spec = SPECS.iter().find(|s| s.name == name).unwrap();
+            for value in [spec.min - 1, spec.max + 1] {
+                assert!(parse(&format!("borg_param_{name} = {value}"), &BTreeMap::new(), SPECS).is_err());
+            }
+            for value in [spec.min, spec.default, spec.max] {
+                let env = BTreeMap::from([(name.to_uppercase(), value.to_string())]);
+                let parsed = parse(&format!("borg_param_{name} = {}", spec.min), &env, SPECS).unwrap();
+                let row = parsed.iter().find(|s| s.spec.name == name).unwrap();
+                assert_eq!((row.value, row.origin), (value, "environment"));
+                let json = serde_json::to_value(row).unwrap();
+                assert_eq!(json["name"], name);
+                assert_eq!(json["default"], spec.default);
+                assert_eq!(json["value"], value);
+            }
+        }
+    }
+
+    #[test]
     fn inventory_bounds_reject_unsafe_quantity_rng_and_ordering() {
         for text in [
             "borg_param_sell_ammo_batch_count = 0",
@@ -2652,6 +2687,8 @@ mod tests {
                 "defend" => "fight_defend",
                 "item" => "item_use",
                 "wear" => "item_wear",
+                "enchant" => "item_enchant",
+                "decurse" => "item_decurse",
                 "buy" => "store_buy",
                 "sell" => "store_sell",
                 "shopping" => "think_store",

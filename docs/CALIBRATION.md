@@ -3753,3 +3753,76 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5014` |
+
+## Enchant/decurse policy (#680 / P6)
+
+Receiving baseline: `760fae80d3daa5c007a26e10d80f0c18eb0000ca` on
+`track-p`; engine `42cd156ac`, donor `8c5d000a`. This contract does not
+adopt newer main, an engine update or donor v15. The source inventory’s
+explicit deferrals still apply. R4 adoption remains a separate audited carry
+after owner acceptance and P6 promotion.
+
+Read the Strategy Manual ch. 6 §15 (curses), ch. 7 §9 (enchantment) and the
+official command manual; checked against the receiving engine’s
+`effect-handler-general.c:enchant_score:270-287`, `enchant:319-348` and
+`uncurse_object:179-209` and the receiving `borg_magic.rs` availability/failure checks.
+The engine’s enchant chance table, stack-resistance formula, curse strengths,
+spell failure calculation and prompts are mechanics, unchanged here. The
+Borg’s willingness to spend a resource at a failure rate, stack size, bonus,
+launcher quality or elapsed time is policy. Defaults are inherited choices,
+not measured optima or safety recommendations.
+
+The registry exposes ten additional settings through the existing
+`borg_param_<name> = <integer>` and `BORG_PARAM_<UPPERCASE_NAME>` forms,
+including existing per-class forms. Environment overrides file overrides
+compiled defaults; invalid bounds/names are refused. `params-core.json`
+retains name/default/value/unit/bounds/origin/source and the effective profile
+hash is recorded in run configuration. No shipped profile values change.
+
+| Name | Default | Unit | Bounds | Source |
+| --- | --- | --- | --- | --- |
+| `decurse_spell_fail` | 40 | percent | 0–100 | `borg_item_decurse.rs:65` |
+| `enchant_spell_fail` | 65 | percent | 0–100 | `borg_item_enchant.rs:98` |
+| `enchant_brand_spell_fail` | 65 | percent | 0–100 | `borg_item_enchant.rs:486` |
+| `enchant_plain_target` | 8 | bonus | 0–20 | `borg_item_enchant.rs:96` |
+| `enchant_ammo_target` | 10 | bonus | 0–20 | `borg_item_enchant.rs:391` |
+| `enchant_min_shooter_power` | 3 | multiplier | 0–10 | `borg_item_enchant.rs:318` |
+| `enchant_ammo_min_quantity` | 5 | count | 1–255 | `borg_item_enchant.rs:373` |
+| `enchant_brand_min_quantity` | 20 | count | 1–255 | `borg_item_enchant.rs:447` |
+| `enchant_dungeon_max_turns` | 5500 | turns | 0–100000 | `borg_item_enchant.rs:507` |
+| `enchant_town_max_turns` | 3501 | turns | 0–100000 | `borg_item_enchant.rs:508` |
+
+All comparisons remain i32 except the original u8 quantity read, which is
+losslessly widened to i32 before comparing the bounded quantity setting.
+No narrowing/truncation is added. The `>` timer cuts retain the original
+short-circuit ordering and depth predicates (`>= 1` vs `== 0`); no depth is
+reclassified. The shared spell-failure setting controls both enchant
+availability and the matching casts; branding and decursing keep distinct
+allowances. Original resource precedence and RNG/call order remain unchanged.
+
+Classification of the remaining literals in the two audited files:
+
+| Literal / shape | Classification and retained meaning |
+| --- | --- |
+| `BORG_ENCHANT_LIMIT` | Existing user configuration; advanced armour/equipment target unchanged. Ammo retains a separate target, as before. |
+| `0` / `1` presence checks, depth town/dungeon split, boolean equality | State/availability semantics, not new policy thresholds. |
+| Equipment offsets `+1`, `+6`, `+12`; `-1` and slot conversions; quiver digits; selector bytes, Enter; inventory/equipment bit masks | UI/index bookkeeping, unchanged. |
+| Candidate sentinels `-1`, `99`, `0`; `<`/`>` best-item tie handling | Search initialization/order, unchanged; not enchant targets. |
+| Spell/activation IDs, tvals and ego/artifact identity checks | Game/resource type and identity semantics, unchanged. |
+| C duplicate `TV_HELM` entry and ineffective repeated shooter comment | Inherited ordering/comment retained; no cleanup mixed into extraction. |
+| Literal values in comments, licenses, tests | Documentation / test oracles, not runtime knobs. |
+
+`borg_enchanting` still refuses blind/confused state, performs elapsed-level
+checks, tries swap-armour curse removal, swap-weapon removal and general
+removal in order, and only then requires town for branding, weapon-to-hit,
+weapon-to-damage and armour enchantment, in that order. `start_decurse`
+still tries scroll, staff, spell, star-scroll and activations in its original
+order. No direct curse-strength or engine enchant-success knob is introduced.
+
+The existing trace@2 selection `borg_enchanting` and its queued keys remain
+the decision witness; adding registry entries needs no trace schema bump.
+Parameters/provenance are in params-core.json, not inferred from a missing
+trace selection. The registry has boundary/precedence/provenance tests, while the bounded
+native override check records an actual changed command and trace; these demonstrate control, not better play. Default
+compatibility and all failures/limits are recorded in the PR against exact
+receiving builds. Gameplay reports stay in Cemetery, not this document.
