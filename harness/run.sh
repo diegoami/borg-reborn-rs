@@ -16,8 +16,9 @@
 #     key-limit=N  stops after N keys (-keys N)
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
 #     start-depth=N  synthetic birth at depth N; no ascent/recall, descent allowed
-#     start-monsters=SPEC  with start-depth (#722): monsters placed near the
-#            player after the level is generated, NAME:COUNT[:DIST] joined by
+#     start-monsters=SPEC  with start-depth or save=NAME (#722): monsters
+#            placed near the player after the level is generated (or the save
+#            loaded, in the dungeon), NAME:COUNT[:DIST] joined by
 #            '+', '_' for spaces (yellow_worm_mass:6+green_worm_mass:4:8)
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
@@ -177,7 +178,7 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
     esac
 done
 [ -z "$START_BUILD" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-build requires start-depth' >&2; exit 2; }
-[ -z "$START_MONSTERS" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-monsters requires start-depth' >&2; exit 2; }
+[ -z "$START_MONSTERS" ] || [ -n "$START_DEPTH" ] || [ -n "$SAVE_NAME" ] || { echo 'run.sh: start-monsters requires start-depth or save=NAME' >&2; exit 2; }
 if [ -n "$START_DEPTH" ]; then
     [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
     for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
@@ -296,10 +297,10 @@ if [ -n "$PLAN" ]; then
 fi
 {
     echo "flags=$FLAGS"
+    [ -z "$START_MONSTERS" ] || echo "start_monsters=$START_MONSTERS"
     if [ -n "$START_DEPTH" ]; then
         echo 'synthetic=1'
         echo "start_depth=$START_DEPTH"
-        [ -z "$START_MONSTERS" ] || echo "start_monsters=$START_MONSTERS"
         if [ -n "$START_BUILD_SHA" ]; then
             echo 'start_build=record'
             echo "start_build_sha256=$START_BUILD_SHA"

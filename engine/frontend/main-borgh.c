@@ -50,8 +50,10 @@
  *   -depth N      stop when the max depth reaches N (0 = no limit)
  *   -start-depth N  synthetic birth at dungeon level N (no load/random birth)
  *                 one-way: no ascent or recall; further descent is allowed
- *   -start-monsters SPEC  with -start-depth: after the level is generated,
- *                 place monsters near the player (#722, a breeder test bed):
+ *   -start-monsters SPEC  with -start-depth (after the level is generated)
+ *                 or -load (after the replay seed, the character in the
+ *                 dungeon): place monsters near the player (#722, a breeder
+ *                 test bed):
  *                 NAME:COUNT[:DIST] joined by '+', '_' for a space in the
  *                 name (yellow_worm_mass:6+green_worm_mass:4:8); DIST is the
  *                 scatter distance from the player (default 6)
@@ -287,6 +289,8 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, "  \"seed\": %lu,\n", (unsigned long)borgh_seed);
 	/* Every summary says whether a save was loaded (docs/SPEC.md §3.5). */
 	fprintf(fp, "  \"loaded\": %s,\n", opt_load ? "true" : "false");
+	if (opt_start_monsters)
+		fprintf(fp, "  \"start_monsters\": \"%s\",\n  \"start_monsters_placed\": %d,\n", opt_start_monsters, start_monsters_placed);
 	if (opt_start_depth) {
 		fprintf(fp, "  \"synthetic\": true,\n");
 		fprintf(fp, "  \"synthetic_contract\": \"borg-reborn-rs/synthetic-start@2\",\n");
@@ -296,8 +300,6 @@ static void borgh_finish(const char *reason)
 		fprintf(fp, "  \"initial_clevel\": %d,\n  \"initial_max_hp\": %d,\n  \"initial_max_sp\": %d,\n", initial_clevel, initial_max_hp, initial_max_sp);
 		fprintf(fp, "  \"start_build\": \"%s\",\n", opt_start_build ? "record" : "birth");
 		if (opt_start_build) fprintf(fp, "  \"start_build_sha256\": \"%s\",\n", start_build_sha256);
-		if (opt_start_monsters)
-			fprintf(fp, "  \"start_monsters\": \"%s\",\n  \"start_monsters_placed\": %d,\n", opt_start_monsters, start_monsters_placed);
 		fprintf(fp, "  \"dungeon_mode\": \"one_way\",\n");
 	}
 	if (opt_load)
@@ -793,6 +795,14 @@ static void prepare_borg_start(void)
 		 * requested replay seed at exactly the same pre-Borg boundary. */
 		if (!opt_keep_load_rng) Rand_state_init(borgh_seed);
 		Rand_quick = false;
+		/* borg-reborn-rs (#722): the breeder test bed on a real character
+		 * (a living save): its monsters are placed after the replay seed,
+		 * so the run stays deterministic; only on a dungeon level. */
+		if (opt_start_monsters) {
+			if (!cave || player->depth == 0)
+				quit("borgh: -start-monsters needs the loaded character in the dungeon");
+			place_start_monsters(opt_start_monsters);
+		}
 	}
 	if (opt_checkpoint_every) {
 		checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
@@ -1092,7 +1102,8 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_start_depth && (opt_load || opt_random_birth))
 		quit("borgh: -start-depth cannot load a save or use random birth");
 	if (opt_start_build && !opt_start_depth) quit("borgh: -start-build requires -start-depth");
-	if (opt_start_monsters && !opt_start_depth) quit("borgh: -start-monsters requires -start-depth");
+	if (opt_start_monsters && !opt_start_depth && !opt_load)
+		quit("borgh: -start-monsters requires -start-depth or -load");
 	if (!!opt_capture_build != !!opt_capture_build_level || opt_capture_build_level < 0 || opt_capture_build_level > 15)
 		quit("borgh: capture-build requires a level between 1 and 15");
 	if (opt_capture_build && (opt_start_depth || opt_load || opt_random_birth))
