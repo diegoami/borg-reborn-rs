@@ -10,6 +10,48 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Immobile monsters and blocked stairs (#736)
+
+The registry now holds **2216** parameters (2211 after #724; five added).
+Owner, 2026-11-20, from the key-by-key replays of #717's Druid deaths: "the
+path to the stairs is not clean, so the 'desperate for stairs' should see
+that the stairs are not reachable"; "it stepped away in the wrong direction
+... towards the exit"; "choosing the enemy you can take down is the wrong
+idea ... target the mobile one"; "I would put them already on".
+
+- **`caution_stairs_clean_path`** (flag, compiled 0 = C, **shipped 1**): the
+  desperate walks to the stairs in `borg_caution` ("Desperate for Stairs"
+  one to four) first walk the desperate flow's path from the Borg
+  (`borg_flow_stairs::stair_path_blocker`). An awake monster on a grid of
+  the path, or next to one, whose danger to the Borg is at least
+  **`caution_stairs_block_danger_percent`** (50) of the HP makes the stairs
+  not reachable (`# Stairs not reachable: <monster> in the way`). The
+  escapes and the attack decide instead.
+  - The probe puts the flow state back as it was, so it only observes.
+- **`caution_immobile_step_to_exit`** (flag, compiled 0, **shipped 1**): the
+  step away from an immobile attacker (`immobile_step_away`, only with
+  `caution_ranged_vs_immobile` 1–3, shipped 0) takes, among the grids it may
+  step to, the one with the fewest steps to a staircase, up or down
+  (`stair_steps_around`), then the least danger. C's step takes the least
+  danger, so ties go to the first direction tried.
+- **`attack_mobile_threat_first`** (flag, compiled 0, **shipped 1**): while a
+  mobile monster among `borg_attack`'s targets is a threat (danger at least
+  **`attack_mobile_threat_percent`**, 50, of the HP), immobile monsters are
+  not targets (`# Targeting the mobile threat, not the immobile monsters`).
+- **Evidence:** the three Druid deaths of borg-zoo#461 that only modes 2 and
+  3 have, replayed on #717's head with mode 2, all live with the three on.
+  On classes-18 (main with mode 0, A and C on against off), deaths 0 and 0,
+  sum of max CL 104 → 106, sum of max DL 37 → 41, 11 of 18 identical. A zoo
+  pilot follows.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_stairs_clean_path` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:951` |
+| `caution_stairs_block_danger_percent` | 50 | percent | 0–10000 | `borg_caution.rs:952` |
+| `caution_immobile_step_to_exit` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:1685` |
+| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:4881` |
+| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:4882` |
+
 ## Step-away from immobile creatures turned off (#736)
 
 The registry still holds **2211** parameters. Owner, 2026-11-20: "stepaway
