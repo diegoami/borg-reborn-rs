@@ -980,9 +980,9 @@ borg_param_caution_scary_latch = 1
 # has not left the level (#590). 0 = the latch decides.
 # Change together: needs caution_scary_stand = 1 (the flag is decided after
 # each scan only there).
-# Impact: off here; set to 1, it fires in 3 of 6 test games.
+# Impact: set to 1 it fires in 3 of 6 test games; shipped 1 (owner, 2026-11-20).
 
-borg_param_caution_scary_unlatch_kill = 0
+borg_param_caution_scary_unlatch_kill = 1
 
 # 1 = the level stops being scary once a named-list or damage-rule scary
 # monster is known hurt or afraid (the thresholds below), or is killed, with
