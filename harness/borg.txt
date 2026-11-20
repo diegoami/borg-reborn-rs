@@ -578,6 +578,23 @@ borg_param_attack_throw_as_melee = 1
 
 borg_param_kill_flow_mode = 0
 
+# The C Borg's leash, its numbers as parameters (#732, owner 2026-11-20:
+# "remove our leash completely and expose the leash of C with configuration
+# parameters"). Leash = character level x per_level + base steps from the
+# stairs: for picking up items below pickup_max_level; for exploring while
+# the depth is at least the level less depth_margin; it grows by the twitch
+# count once bored (twitches over twitch_after). The values are C's.
+borg_param_flow_leash_per_level = 3
+borg_param_flow_leash_base = 9
+borg_param_flow_leash_unbounded = 250
+borg_param_flow_leash_pickup_max_level = 20
+borg_param_flow_leash_depth_margin = 5
+borg_param_flow_leash_twitch_after = 21
+borg_param_flow_leash_stairs_max_level = 20
+borg_param_flow_leash_take_near_max_level = 10
+borg_param_flow_leash_take_nearness = 5
+borg_param_flow_leash_take_max_level = 20
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
