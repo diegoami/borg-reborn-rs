@@ -22,11 +22,41 @@ main `ec0f3b28` and the exact-observed-HP and fractional-timing refinements, as 
 - Unit tests cover speed/world time, approach delay, blocked/open routes
   and immobile monsters at range/adjacent. Rust checks passed locally.
 
-Still in progress under #758: enabled before/after cases, paired cohort
-validation, canonical Cemetery references and smoke/default neutrality.
-Update this note with outcomes before marking the PR ready. The baseline
-six deaths already reproduced on clean `08f94e1f` before either change,
-with exact supplied-control key streams.
+## Migration / resume state
 
-Owner review and merge remain pending. Do not merge without the owner's
-word. #757 and #761 remain another session's work and are untouched.
+The owner requested moving to another computer with the same paths. All
+of our pending lock requests were cancelled; no enabled local games had
+started. Other sessions' jobs were left untouched. The parent
+[task note](2026-11-20-760-fight-fragile.md) is the authoritative resume and
+transfer inventory for the whole task; read it first.
+
+Implementation code pin: `6cdd214bbc7a65ba96dbae21ad88fd9ecdb6eb1b`.
+[CI 44758476887](https://github.com/diegoami/borg-reborn-rs/actions/runs/44758476887)
+is green, including shipped-off/reference smoke and all required checks.
+Later migration commits are documentation only. This supersedes the earlier
+statement that smoke/default neutrality was untested.
+
+Still required under #758: enabled before/after cases, the paired cohort,
+canonical Cemetery packages/report and review. Keep
+[PR #764](https://github.com/diegoami/borg-reborn-rs/pull/764) a draft.
+The source's inherited fight estimate needs the observed monster Haste
+and fox-melee corrections identified in the parent note before large
+cohort validation; synchronize those through this stacked branch and
+repin the runtime scripts. No improvement has been measured.
+
+A mobile caster with a possible route is given no approach discount,
+because it can gain line of fire before arriving in melee. An immobile
+caster still requires current projectability. The timing model reads the
+player's own displayed speed and uses world ticks rather than assuming
+one action per tick. These are conservative modelling choices to validate,
+not owner-approved tuning/adoption decisions.
+
+The private script `/tmp/T760-fight/recall_trials.sh` prepares immutable
+runtime/profile copies and runs six controls, Recall-only, fights-only and
+all-switches cases. Its expected build pin must match the current head.
+Run under `flock /tmp/angband-validation.lock`; preserve existing outputs,
+using new directories for any repeat iteration. The named baseline six
+already have exact canonical key/state/message matches before implementation.
+
+No reviewer has been named and no merge is authorized. #757/#761 remain
+another session's work; do not touch them.
