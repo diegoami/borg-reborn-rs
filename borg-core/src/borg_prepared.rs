@@ -736,8 +736,50 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
     }
 
     // borg-reborn-rs (#447): cap applies before either calculation mode.
-    let limit = crate::errands_plan::plan_cap();
+    // #693: with the borg.txt depth cap, the smaller of the two.
+    let limit = smaller_limit(crate::errands_plan::plan_cap(), depth_cap_limit(st));
     prepared_with_limit(depth, limit, || borg_prepared_calculated(st, depth))
+}
+
+/// borg-reborn-rs (#693, owner: "errands plan by default ... fit in
+/// borg.txt, with formula parameters"). With `prepared_depth_plan`, the
+/// errands plan's depth cap as a formula of the character level, set per
+/// class in harness/borg_<class>.txt: the `borg_no_deeper` value (one below
+/// the deepest level allowed) for the Borg's level now; `None` when off.
+pub(crate) fn depth_cap_limit(st: &BorgState) -> Option<i32> {
+    use crate::params::{value, Param};
+    if value(Param::prepared_depth_plan) == 0 {
+        return None;
+    }
+    depth_cap(
+        st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLEVEL),
+        value(Param::prepared_depth_early_levels_per_dl),
+        value(Param::prepared_depth_early_until_level),
+        value(Param::prepared_depth_late_levels_below),
+    )
+    .map(|deepest| deepest + 1)
+}
+
+/// The deepest level allowed at character level `level`: up to `knee`,
+/// `ceil(level / div)`; past it, `level - below`, never shallower than the
+/// knee's value; at least 1. None from level 50 (the errands plan hands back
+/// there).
+fn depth_cap(level: i32, div: i32, knee: i32, below: i32) -> Option<i32> {
+    if level >= 50 {
+        return None;
+    }
+    let div = div.max(1);
+    let early = (level.min(knee) + div - 1) / div;
+    let cap = if level <= knee { early } else { early.max(level - below) };
+    Some(cap.max(1))
+}
+
+/// The stricter of two `borg_no_deeper` limits.
+pub(crate) fn smaller_limit(a: Option<i32>, b: Option<i32>) -> Option<i32> {
+    match (a, b) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    }
 }
 
 /// Keep the guard ahead of calculation dispatch, without requiring an engine
@@ -1087,6 +1129,33 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
 /// `recall_depth` on (C: 5; 0 = never).
 fn needs_recall(depth: i32, recall_depth: i32, carried: i32) -> bool {
     recall_depth > 0 && depth >= recall_depth && carried < 1
+}
+
+#[cfg(test)]
+mod depth_cap_tests {
+    use super::{depth_cap, smaller_limit};
+
+    fn caps(div: i32, knee: i32, below: i32) -> Vec<i32> {
+        (1..=24).map(|l| depth_cap(l, div, knee, below).unwrap()).collect()
+    }
+
+    /// #693: the candidate values of the issue's table.
+    #[test]
+    fn casters_and_fighters() {
+        assert_eq!(caps(3, 6, 3), [1, 1, 1, 2, 2, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
+        assert_eq!(caps(2, 4, 0), [1, 1, 2, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
+        assert_eq!(depth_cap(50, 3, 6, 3), None, "no cap at 50");
+        assert_eq!(depth_cap(5, 3, 6, 10), Some(2), "never shallower than the early part");
+        assert_eq!(depth_cap(1, 1, 0, 5), Some(1), "at least DL1");
+    }
+
+    #[test]
+    fn the_stricter_limit() {
+        assert_eq!(smaller_limit(Some(3), Some(5)), Some(3));
+        assert_eq!(smaller_limit(None, Some(5)), Some(5));
+        assert_eq!(smaller_limit(Some(4), None), Some(4));
+        assert_eq!(smaller_limit(None, None), None);
+    }
 }
 
 #[cfg(test)]
