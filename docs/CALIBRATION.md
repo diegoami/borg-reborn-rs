@@ -913,7 +913,7 @@ not MOAN, BEG or DROOL) and #595.
 
 ## Play by the ordinary rules while Recall counts down (#603)
 
-The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (0, off): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).
+The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (compiled 0, shipped 1 since #694): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -4087,3 +4087,13 @@ the character level, where errands' steps bind (CL7–14).
 The plan file shows the zoo's depth cost again; the formula keeps the depth.
 With no deaths in any arm, survival is unmeasured here (RULES 14): that's the
 zoo's to measure.
+
+## Fox Form's study rating (#694)
+
+The registry now holds **2212** parameters (2211 on main before it; one added).
+
+`magic_fox_form_study_rating` (compiled and shipped 0 = C's rating 5): above 0,
+the rating Fox Form is studied by (`borg_magic::study_rating`). C's 5 is below
+the 50 a spell needs unless the Borg is bored, so a Druid learns it once bored;
+100 puts it above Detect Life and Stinking Cloud (95), learned first. On 6
+Druid starts (100k turns) first cost levels: sum of max CL 45 → 33, one death.

@@ -147,7 +147,8 @@ pub fn borg_play_magic(st: &mut BorgState, bored: bool) -> bool {
         }
 
         // Obtain "rating"
-        let r = i32::from(as_.rating);
+        // borg-reborn-rs (#694, owner): a Druid may learn Fox Form first.
+        let r = crate::borg_magic::study_rating(as_);
 
         // Skip "boring" spells/prayers
         if !bored && r <= 50 {

@@ -392,9 +392,13 @@ borg_param_caution_flee_recall_danger_percent = 0
 # deeper: in town and on DL1 a staircase crosses between town and dungeon,
 # and the Recall would take the Borg back. 0 = C's Recall-only rules (the
 # buy-time escapes of caution_recall_*).
-# Impact: off here; see the PR for classes-18.
+# Impact: zoo-neutral and rarely reached: borg-zoo#400 (1,800 starts) 103
+# deaths against 105; reborn-recall-usual-200k-main (72 starts at 200k) the
+# same 4 deaths, 17 games changed, CL -0.04, DL -0.05; borg-zoo#428 (108
+# starts on e5cc5469) 2 against 2, 3 games changed. Shipped 1 (owner,
+# 2026-11-20, #694: "I would adopt it"), as the better way to play.
 
-borg_param_caution_recall_wait_as_usual = 0
+borg_param_caution_recall_wait_as_usual = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
@@ -789,8 +793,11 @@ borg_param_escape_phase_antisummon_delay = 50
 # Change together: these settings form one set.
 # Impact: escape_fox_form 1: 1 of 6 test games plays differently (the Druid);
 # the other four: 0 with the switch at 0.
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#400, 1,800
+# starts: 105 deaths against 105, 3 saved and 3 lost, only Druid games
+# change); adopted as the better way for a Druid to flee.
 
-borg_param_escape_fox_form = 0
+borg_param_escape_fox_form = 1
 borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
@@ -805,10 +812,20 @@ borg_param_escape_fox_form_stand_speed = 10
 # fox) and before a blow. Raising min_steps casts on longer walks only (each
 # cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
 # Impact: set to 1, 1 of 6 test games play differently (the Druid).
+# Shipped 1 (owner, 2026-11-20, #694): zoo-neutral (borg-zoo#413 small, 90
+# starts: 4 deaths against 4, 10 games changed); adopted with escape_fox_form.
 
-borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town = 1
 borg_param_escape_fox_form_town_max_level = 20
 borg_param_escape_fox_form_town_min_steps = 10
+
+# #694 (owner: "make the druid learn this spell first"): the rating Fox Form
+# is studied by. C rates it 5, below the 50 a spell needs unless the Borg is
+# bored, so a Druid learns it once bored (still early: within its first few
+# thousand log lines on classes-18). 100 is above Detect Life and Stinking
+# Cloud (95): learned first. Shipped 0 = C's rating (owner, 2026-11-20): on 6
+# Druid starts, first cost levels (sum of CL 45 -> 33, one death).
+borg_param_magic_fox_form_study_rating = 0
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
