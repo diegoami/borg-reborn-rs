@@ -10,6 +10,66 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## One breeder policy (#722)
+
+The registry now holds **2202** parameters (2200 before; two added). Owner,
+2026-11-20: "so many breeder settings"; "assume the level is lost if you could
+not kill all the breeders"; "search for stairs first, but if paths are blocked
+by breeders, recall at some point".
+
+- **`caution_breeder_policy`** (mode -1..5, compiled -1, **shipped 3**). From
+  0 up it sets the six breeder switches by layer (`params::value`, so every
+  read is unchanged; `params-core.json` shows the effective values with
+  origin `caution_breeder_policy`):
+  - **-1:** the switches as set.
+  - **0:** C, all off.
+  - **1:** `caution_breeder_fight` and `danger_hunt_breeder_no_acid_fear`.
+    Stand without an easy escape, hunt few breeders below CL10.
+  - **2:** and `recover_rest_breeders`. No rest while breeders are known.
+  - **3:** and `caution_breeder_stoppable`. Kill them first while the kills
+    outpace the breeding, at any count and level. In addition, at 3 and
+    above:
+    - **full:** the level is lost at once when more breeders are known than
+      `caution_breeder_hunt_max_count` (per class: Warrior 7, Blackguard 8,
+      Paladin, Rogue and Ranger 6, others 4; `breeder_level_full`);
+    - **search:** a lost level is left even with no stairs known; the flight
+      searches for them (`stand_against_breeders`);
+    - **Recall:** a flight's Recall waits; **`caution_breeder_lost_recall_turns`**
+      (500 game turns) after the loss, Recall is read, stairs known or not
+      (`breeder_recall_due`, from `borg_check_breeders`).
+  - **4:** and `caution_breeder_avoid`. Paths avoid colonies.
+  - **5:** and `caution_breeder_exit`. Walk out of a breeder room.
+- **What the analysis on #722 found dead** under the old shipped switches with
+  stoppable on: `caution_breeder_hunt_max_count` (now the "full" line),
+  `caution_breeder_fight`, the avoidance and exit sub-settings while their
+  switches are 0, and `recover_breeder_hunt_hp_percent` with
+  `recover_rest_breeders` on.
+- **The breeder test bed** (`run.sh ... start-depth=N,start-monsters=...`, the
+  frontend's `-start-monsters`): monsters placed near the player after the
+  synthetic level is generated, as the engine's debug summon does.
+  Deterministic.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local, base
+  `6f03fea9`:**
+
+| policy | deaths | sum of max CL | sum of max DL | levels lost (full / race) | Recalls |
+|---|---:|---:|---:|---:|---:|
+| main | 1 | 111 | 40 | — | — |
+| -1 | 1 | 111 | 40 | 0 / 0 | 0 |
+| 3 (shipped) | 2 | 111 | 43 | 2 / 1 | 0 |
+| 5 | 1 | 109 | 44 | 2 / 2 | 0 |
+
+  - -1 is keys-identical to main in 19 of 19.
+  - Neither of policy 3's deaths involves breeders: a CL1 Necromancer walked
+    into the dark near a floating eye, and a CL5 Priest fought an acolyte and
+    a soldier at 10/40 HP.
+- **The test bed as tried** (the 18 starts, CL1 fresh characters, DL2 with 11
+  worm masses and DL4 with 9 lice and mice, 30,000 turns): 15–18 of 18 die
+  under every policy, mostly to plain DL4 monsters and poison, and only part
+  of the monsters are placed (in view within 6 grids). It needs a real
+  character (`start-build` from a captured CL8–10 build, #382) to compare the
+  policies. As tried, it shows no difference between 3, 4 and 5. Not a
+  measure of benefit (RULES 14).
+
 ## No detection prayer by panel at low level (#685)
 
 The registry now holds **2200** parameters (2199 after #625; one added).
