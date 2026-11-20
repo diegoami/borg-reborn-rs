@@ -31,3 +31,11 @@ See [PR #769](https://github.com/diegoami/borg-reborn-rs/pull/769).
 Formatting, workspace Clippy and tests, release core tests, parameter
 citations and the vendor check passed. All three shipped borg-rs smoke
 runs matched the reference key streams, messages and state logs.
+
+After #757 merged, the branch synchronized with main `a04e5471`. It
+keeps the reviewed mode 3 and combined-flight rules. When ranged-first
+and threat weighting are both enabled, ranged-first checks the selected
+weighted route on a desperate walk. Formatting, Clippy, workspace tests,
+507 release core tests, parameter citations and all three default smoke
+comparisons passed on `342a55ea`. The 600-start figures belong to the
+earlier pinned experimental build.
