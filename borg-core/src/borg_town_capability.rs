@@ -68,6 +68,16 @@ const RANGER_MISSILES: usize = 57;
 /// it is worth the healing curve's first HP each (linear), past it nothing
 /// more than the curve. Zero weight when the parameter is 0.
 const HEAL_RESERVE: usize = 58;
+/// borg-reborn-rs (#712): flasks of oil kept to throw, apart from the shared
+/// ATTACK curve that launcher ammunition saturates. Each flask kept to throw
+/// counts one unit here as well as its damage in ATTACK (as an arrow counts
+/// in RANGER_MISSILES). Zero weight unless `town_oil_apart`.
+const THROWN_OIL: usize = 59;
+/// borg-reborn-rs (#716, owner): shots past the Ranger reserve's soft cap
+/// (`town_ranger_arrows_max`, the requirement row's negative demand) on a
+/// diminishing curve of their own: only the shots past the cap count here.
+/// Zero weight unless both the cap and `town_ranger_arrows_extra` are set.
+const EXTRA_SHOTS: usize = 60;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -83,14 +93,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 59] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 61] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -101,6 +111,17 @@ pub struct Model {
     pub packing: Option<crate::borg_town_packing::Packing>,
     pub curves: Vec<[i64; 5]>,
     pub supplies: Vec<[i64; 4]>,
+}
+
+/// borg-reborn-rs (#716): the extra-shots curve counts only the shots past
+/// the soft cap, which the Ranger reserve's requirement row holds as its
+/// negative demand (no cap, no extra value).
+fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
+    let Some(reserve) = m.curves.get(RANGER_MISSILES) else { return 0 };
+    if reserve[2] >= 0 { return 0; }
+    let cap = -reserve[2];
+    let past = |a: i64| (a - cap).max(0);
+    coverage(r, past((r[3] + n).max(0))) - coverage(r, past(r[3]))
 }
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
@@ -122,6 +143,7 @@ impl Model {
         sum.into_iter().map(|(id, n)| {
             let r = &self.curves[id];
             if id == RECHARGE && self.curves[RECHARGE_TARGET][3] == 0 { return 0; }
+            if id == EXTRA_SHOTS { return extra_gain(self, r, n); }
             coverage(r, (r[3] + n).max(0)) - coverage(r, r[3])
         }).sum()
     }
@@ -364,7 +386,11 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
     let mut out = Vec::new();
     let n = quantity.max(1);
     if fuel_bottles > 0 && fuel > 0 { out.push((LIGHT, fuel * UNIT * fuel_bottles / n)); }
-    if n > fuel_bottles { out.push((ATTACK, damage * (n - fuel_bottles) / n)); }
+    if n > fuel_bottles {
+        out.push((ATTACK, damage * (n - fuel_bottles) / n));
+        // borg-reborn-rs (#712): each flask kept to throw, on its own curve.
+        if param(Param::town_oil_apart) != 0 { out.push((THROWN_OIL, UNIT * (n - fuel_bottles) / n)); }
+    }
     out
 }
 
@@ -372,7 +398,11 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
 // arrow contributes both damage and one reliable shot, separate objectives.
 fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     let mut out = vec![(ATTACK, damage)];
-    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 { out.push((RANGER_MISSILES, UNIT)); }
+    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 {
+        out.push((RANGER_MISSILES, UNIT));
+        // borg-reborn-rs (#716): the same shot, counted past the soft cap.
+        out.push((EXTRA_SHOTS, UNIT));
+    }
     out
 }
 
@@ -681,13 +711,29 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // with the trip and never stops paying (half value at turns / missile
     // turns), so 1-gold arrows piled up to 150-200 and their weight sent
     // Phase Door to the Home. 0 = C.
+    // Past the cap (owner: "a soft cap at 50 and then a curve for additional
+    // arrows"), shots count on EXTRA_SHOTS: half its value at
+    // `town_ranger_arrows_extra` shots past the cap, weighted as the reserve,
+    // so its first shot is worth cap / extra of a shot under the cap.
     let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
+    let arrows_extra = i64::from(param(Param::town_ranger_arrows_extra));
     if arrows_max > 0 {
         curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
     } else {
         curve(RANGER_MISSILES, missiles_weight,
               (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
     }
+    curve(EXTRA_SHOTS, if arrows_max > 0 && arrows_extra > 0 { missiles_weight } else { 0 }, arrows_extra.max(1) * UNIT);
+    // borg-reborn-rs (#712): flasks kept to throw, on a curve of their own
+    // that shots and wands cannot fill: a stack of sling shots saturated
+    // ATTACK, so the flasks' marginal damage was worth almost nothing and the
+    // weight repair stored them at the Home. Weighted as ATTACK (and by the
+    // class's oil scale, #682); half its value at `town_oil_flasks` flasks.
+    // 0 weight (C) unless `town_oil_apart`.
+    let thrown_weight = if param(Param::town_oil_apart) != 0 {
+        scale_percent(risk(BORG_TOWN_W_ATTACK), param(Param::town_oil_curve_scale_percent))
+    } else { 0 };
+    curve(THROWN_OIL, thrown_weight, i64::from(param(Param::town_oil_flasks)).max(1) * UNIT);
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
