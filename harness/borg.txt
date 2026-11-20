@@ -744,8 +744,12 @@ borg_param_escape_teleport_landing_either = 0
 # too, up to three times); throws and shots kill it from afar.
 # 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
 # Change together: works with what the Borg carries to throw (#649, #652).
-
-borg_param_caution_ranged_vs_immobile = 2
+# Off (owner, 2026-11-20): "stepaway flag is not a solution, I do not like
+# it". In borg-zoo#461 modes 2 and 3 lost games (22 -> 24 / 27 deaths; Druids
+# 5 -> 9 / 10): the step-away loops against a flight that passes the monster,
+# and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
+# #736: kill on sight at range, else do not get closer (a path cost).
+borg_param_caution_ranged_vs_immobile = 0
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
