@@ -5320,6 +5320,12 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize, ranged_first: bo
 }
 
 pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: FocusedAttack) -> bool {
+    // As in the native planner: a fox changes back before a weapon blow.
+    // The revert costs no energy; recompute the plan in normal form on the
+    // next think rather than executing the weapon estimate as a fox bite.
+    if attack.kind == BF_THRUST as i32 && crate::borg_escape::revert_fox_to_fight(st) {
+        return true;
+    }
     let kill = st.kills.kills[target];
     st.flow.temp_n = 0;
     st.flow.temp_push(kill.pos.y, kill.pos.x);

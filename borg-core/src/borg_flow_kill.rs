@@ -58,7 +58,7 @@ use crate::headers::list_mon_spells_h::{
     RSF_S_HI_DEMON, RSF_S_HI_DRAGON, RSF_S_HI_UNDEAD, RSF_S_HOUND, RSF_S_HYDRA, RSF_S_KIN,
     RSF_S_MONSTER, RSF_S_MONSTERS, RSF_S_SPIDER, RSF_S_UNDEAD, RSF_S_UNIQUE, RSF_S_WRAITH,
 };
-use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FEAR, MON_TMD_STUN};
+use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FAST, MON_TMD_FEAR, MON_TMD_STUN};
 use crate::headers::list_terrain_h::{
     FEAT_FLOOR, FEAT_GRANITE, FEAT_MAGMA, FEAT_MORE, FEAT_NONE, FEAT_PERM, FEAT_QUARTZ_K,
 };
@@ -117,6 +117,9 @@ pub struct BorgKill {
     pub oy: u8,
     /// Estimated speed
     pub speed: u8,
+    /// #759/#758: Haste observed in the same permitted timer snapshot.
+    /// Legacy speed remains the base mspeed so off behavior is unchanged.
+    pub observed_fast: bool,
     /// Estimates moves
     pub moves: u8,
     /// qty of ranged attacks
@@ -160,6 +163,7 @@ impl BorgKill {
         ox: 0,
         oy: 0,
         speed: 0,
+        observed_fast: false,
         moves: 0,
         ranged_attack: 0,
         spell: [0; RSF_MAX as usize],
@@ -353,6 +357,7 @@ fn race_name(r_idx: impl Into<i32>) -> &'static [u8] {
 /// The parts shared by `borg_update_kill_new` and `borg_update_kill_old`
 /// after the hit points.
 fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
+    kill.observed_fast = m.m_timed[MON_TMD_FAST as usize] != 0;
     // Is it sleeping
     kill.awake = m.m_timed[MON_TMD_SLEEP] == 0;
 

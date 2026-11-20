@@ -24,25 +24,25 @@ main `ec0f3b28` and the exact-observed-HP and fractional-timing refinements, as 
 
 ## Migration / resume state
 
-The owner requested moving to another computer with the same paths. All
+The owner considered moving to another computer, then chose waiting here. All
 of our pending lock requests were cancelled; no enabled local games had
 started. Other sessions' jobs were left untouched. The parent
 [task note](2026-11-20-760-fight-fragile.md) is the authoritative resume and
 transfer inventory for the whole task; read it first.
 
-Implementation code pin: `6cdd214bbc7a65ba96dbae21ad88fd9ecdb6eb1b`.
+Previous CI-checked code pin: `6cdd214bbc7a65ba96dbae21ad88fd9ecdb6eb1b`.
 [CI 44758476887](https://github.com/diegoami/borg-reborn-rs/actions/runs/44758476887)
 is green, including shipped-off/reference smoke and all required checks.
-Later migration commits are documentation only. This supersedes the earlier
-statement that smoke/default neutrality was untested.
+The later Haste/free-fox follow-up requires CI on the latest head. The
+earlier pin already established tested shipped-off/default neutrality.
 
 Still required under #758: enabled before/after cases, the paired cohort,
 canonical Cemetery packages/report and review. Keep
 [PR #764](https://github.com/diegoami/borg-reborn-rs/pull/764) a draft.
-The source's inherited fight estimate needs the observed monster Haste
-and fox-melee corrections identified in the parent note before large
-cohort validation; synchronize those through this stacked branch and
-repin the runtime scripts. No improvement has been measured.
+The branch now includes observed monster Haste and the native free fox
+revert before weapon attacks. Reachability and damage both include Haste;
+Slow is conservatively not credited as persisting. Validate these in the
+large cohort and keep runtime script pins current. No improvement has been measured.
 
 A mobile caster with a possible route is given no approach discount,
 because it can gain line of fire before arriving in melee. An immobile
