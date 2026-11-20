@@ -328,7 +328,8 @@ borg_param_prepared_recall_depth = 5
 # #693 (owner): the errands plan as a depth cap in borg.txt. With
 # prepared_depth_plan = 1 the Borg is never prepared for a level deeper than:
 # up to CL prepared_depth_early_until_level, ceil(CL / early_levels_per_dl);
-# past it, CL - late_levels_below; none from CL50. These are the casters'
+# past it, CL - late_levels_below, but never shallower than the early part's
+# last cap (ceil(knee / div)); never above DL1; none from CL50. These are the casters'
 # values; the fighters' are in their class files (2, 4, 0). 0 = off.
 borg_param_prepared_depth_plan = 0
 borg_param_prepared_depth_early_levels_per_dl = 3

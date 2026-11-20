@@ -3775,6 +3775,8 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 ## The errands plan as a depth cap (#693)
 
+The registry now holds **2204** parameters (2200 after #685; four added).
+
 Owner (2026-11-19): "for errands plan by default, we need to make them fit in
 borg.txt, with formula parameters or something". `errands_plan.txt` can't
 ship as the default: the zoo can't take a plan from a specimen's borg.txt
