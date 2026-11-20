@@ -92,3 +92,18 @@ blubbering idiot | 10-20 | | ignore
 village idiot | 10-20 | | ignore
 mangy-looking leper | 10-20 | | ignore
 boil-covered wretch | 10-20 | | ignore
+
+# Attack categories (#760): monster | up to CL | classes | attack[,breeders] | reason.
+# Only attack_on_sight=1 activates these. Scare/ignore entries remain independent.
+# CL50 for every class is a hypothesis: no measured class cutoff yet.
+# Fast and fragile: monster.txt:1133-1163 (120 speed, 9 average HP, 2x1d3).
+wild cat | 50 | | attack | fast-fragile
+crow | 50 | | attack | fast-fragile
+# Breeders: existing stoppable-colony policy must still allow the stand.
+# monster.txt:627-642, 677-691, 1099-1113; insect base supplies MULTIPLY
+# for the louse and fly (monster_base.txt:211-216; monster.txt:1239,3101).
+giant white mouse | 50 | | attack,breeders | breeder
+giant white louse | 50 | | attack,breeders | breeder
+giant fruit fly | 50 | | attack,breeders | breeder
+white worm mass | 50 | | attack,breeders | breeder
+green worm mass | 50 | | attack,breeders | breeder

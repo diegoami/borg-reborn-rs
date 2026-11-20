@@ -1840,8 +1840,165 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// could die in two rounds.
 ///
 /// (See borg-caution.c for the full commentary.)
+/// #759: expected turns using a finite primary, then an unlimited fallback.
+/// Damage is in HP/action; resource uses are whole actions, never fractions
+/// shared between monsters. Unknown HP/damage cannot certify a win.
+fn race_turns(hp: i32, damage: f64, uses: Option<i32>, fallback: f64) -> Option<(f64, i32)> {
+    if hp <= 0 || !damage.is_finite() || damage <= 0.0 { return None; }
+    let hp = f64::from(hp);
+    let needed = hp / damage;
+    if fallback >= damage && fallback > 0.0 { return Some((hp / fallback, 0)); }
+    let Some(uses) = uses else { return Some((needed, 0)); };
+    let uses = uses.max(0);
+    if needed <= f64::from(uses) { return Some((needed, needed.ceil() as i32)); }
+    if fallback <= 0.0 { return None; }
+    Some((f64::from(uses) + (hp - f64::from(uses) * damage) / fallback, uses))
+}
+
+fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
+    turns.is_finite() && turns > 0.0 && incoming.is_finite() && incoming >= 0.0
+        && hp > 0 && turns * incoming < f64::from(hp)
+}
+
+#[cfg(test)]
+mod winning_fight_tests {
+    use super::{race_turns, wins_race};
+
+    #[test]
+    fn remaining_hp_is_used_once_and_ties_do_not_win() {
+        let (turns, _) = race_turns(6, 3.0, None, 0.0).unwrap();
+        assert_eq!(turns, 2.0, "6 remaining HP, not another injury discount");
+        assert!(!wins_race(turns, 4.0, 8), "equal races do not win");
+        assert!(wins_race(turns, 4.0, 9));
+        assert!(!wins_race(turns, 8.0, 9), "double monster speed reverses the race");
+    }
+
+    #[test]
+    fn a_finite_attack_needs_a_real_fallback() {
+        assert_eq!(race_turns(20, 8.0, Some(1), 4.0), Some((4.0, 1)));
+        assert_eq!(race_turns(20, 8.0, Some(1), 0.0), None);
+        assert_eq!(race_turns(4, 8.0, Some(1), 0.0), Some((0.5, 1)), "a finishing cast consumes a whole use");
+        assert_eq!(race_turns(4, 8.0, Some(0), 2.0), Some((2.0, 0)));
+        assert_eq!(race_turns(0, 8.0, None, 0.0), None, "unknown HP cannot certify a win");
+        assert!(!wins_race(f64::INFINITY, 1.0, 100));
+        assert!(!wins_race(1.0, f64::NAN, 100));
+    }
+
+    #[test]
+    fn several_attackers_share_the_damage_budget() {
+        let first = race_turns(4, 4.0, None, 0.0).unwrap().0;
+        let second = race_turns(8, 4.0, None, 0.0).unwrap().0;
+        assert!(wins_race(first, 3.0, 8));
+        assert!(!wins_race(first + second, 3.0 + 2.0, 8));
+    }
+}
+
+/// #759: incoming HP damage per Borg turn. For plain HURT blows, use the
+/// engine's dice mean, hit chance and energy ratio (monster.txt; mon-attack.c:
+/// 336-355; player-attack.c:196-219; game-world.c extract_energy table).
+/// AC damage reduction and monster confusion are omitted conservatively.
+/// Status attacks and spells retain the existing danger upper estimate;
+/// unlike a raw dice mean it includes their non-HP consequences.
+pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
+    let kill = st.kills.kills[i];
+    if kill.r_idx == 0 || !kill.awake { return 0.0; }
+    let r = usize::from(kill.r_idx);
+    let race = engine::race(r);
+    let mut plain = kill.ranged_attack == 0;
+    let mut melee = 0.0;
+    for b in 0..usize::from(engine::z_info().mon_blows_max) {
+        let Some(blow) = engine::race_blow(r, b) else { break };
+        if blow.effect_name.to_bytes() != b"HURT" { plain = false; }
+        // HURT's to-hit power is 40: blow_effects.txt:21-22.
+        let chance = crate::borg_fight_attack::hit_permyriad(3 * i32::from(race.level).max(1) + 40, st.borg.tr(crate::borg_headers::borg_trait_h::BI_ARMOR));
+        let average = blow_average_tenths(blow.base, blow.dice, blow.sides, blow.m_bonus, i32::from(race.level));
+        melee += average as f64 / 10.0 * f64::from(chance) / 10_000.0;
+    }
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let ratio = energy(i32::from(kill.speed)) / energy(st.borg.tr(BI_SPEED));
+    if plain { return melee * ratio; }
+    // At the monster's own position there is no distance discount. This
+    // keeps a presently distant attacker in the bound while another dies.
+    f64::from(crate::borg_danger::borg_danger_one_kill(st, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
+}
+
+/// #759: a fresh comparison on every think, including during an existing
+/// flight. Count every awake visible attacker, including those which can
+/// join while another is fought. A target we cannot damage now prevents a
+/// winning verdict; no optimistic missing-foe or unknown-HP assumptions.
+fn winning_fight(st: &mut BorgState) -> bool {
+    if p(Param::caution_winning_fight) == 0 { return false; }
+    // The direct-damage race does not model random confused commands or
+    // ongoing poison/bleeding damage. Let the ordinary cures act first.
+    if [BI_ISCONFUSED, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    let mut plans = Vec::new();
+    let mut incoming = 0.0;
+    let mut in_contact = false;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
+            continue;
+        }
+        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
+            continue;
+        }
+        let danger = fight_incoming(st, i);
+        if danger <= 0.0 { continue; }
+        in_contact |= d <= 1 || kill.ranged_attack != 0;
+        incoming += danger;
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i, false) else { return false };
+        if kill.power <= 0 { return false; }
+        plans.push((i, kill.power, attack));
+    }
+    if plans.is_empty() || !in_contact { return false; }
+    // Remove the fastest-to-kill attacker first. Incoming remains the full
+    // sum for the entire fight, a conservative bound as attackers die.
+    plans.sort_by(|a, b| {
+        let turns = |p: &(usize, i16, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.damage.max(1));
+        turns(a).total_cmp(&turns(b)).then(a.0.cmp(&b.0))
+    });
+    let mana = st.borg.tr(BI_CURSP);
+    let mut mana_left = mana;
+    let mut spent = std::collections::BTreeMap::<i32, i32>::new();
+    let mut turns = 0.0;
+    for &(_, hp, attack) in &plans {
+        let cost = attack.cost;
+        let uses = cost.and_then(|c| c.uses).map(|u| {
+            if cost.is_some_and(|c| c.spell) {
+                if mana <= 0 { 0 } else { u * mana_left / mana }
+            } else { (u - spent.get(&attack.kind).copied().unwrap_or(0)).max(0) }
+        });
+        let damage = f64::from(attack.damage) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0;
+        let Some((t, used)) = race_turns(i32::from(hp), damage, uses, f64::from(attack.fallback) / 1000.0) else { return false };
+        turns += t;
+        if let Some(c) = cost {
+            if c.spell {
+                let per_cast = (mana + c.uses.unwrap_or(1).max(1) - 1) / c.uses.unwrap_or(1).max(1);
+                mana_left = (mana_left - per_cast * used).max(0);
+            } else { *spent.entry(attack.kind).or_default() += used; }
+        }
+    }
+    let hp = st.borg.tr(BI_CURHP);
+    let won = wins_race(turns, incoming, hp);
+    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
+        plans.len(), if won { "winning" } else { "not winning" }));
+    if !won { return false; }
+    let (i, _, attack) = plans[0];
+    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
+    if crate::borg_fight_attack::attack_on_sight(st) {
+        return true;
+    }
+    if winning_fight(st) {
+        return true;
+    }
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/

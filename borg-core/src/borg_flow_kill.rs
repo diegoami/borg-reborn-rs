@@ -2944,11 +2944,14 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // borg-reborn-rs (#539, review of #569): a hurt or afraid monster is
         // no named-list or damage-rule scare; the rule is classify_scare.
         let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
-        let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
+        let attack_on_sight = crate::borg_fight_attack::attack_on_sight_reason(st, usize::from(r_idx)).is_some();
+        let scare = if attack_on_sight {
+            crate::borg_caution::Scare { scary: false, calmed_scare: false }
+        } else { crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
             // borg-reborn-rs (#604, review): no "Scary by damage" note in a town
             // that cannot be scary
             crate::borg_caution::scary_by_damage(st, i, note && !town_calm)
-        });
+        }) };
         let mut scary = scare.scary && !town_calm;
 
         if stand_mode && !town_calm {

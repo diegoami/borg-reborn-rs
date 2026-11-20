@@ -1083,6 +1083,11 @@ borg_param_caution_scary_named_monsters = 1
 
 borg_scary_list = scary_monsters.txt
 
+# #760: experimental attack categories, compiled and shipped off.
+borg_param_attack_on_sight = 0
+# #759: experimental damage-race fight test, compiled and shipped off.
+borg_param_caution_winning_fight = 0
+
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
 # key, generates the data and records it; the Borg never reads it. none = the
