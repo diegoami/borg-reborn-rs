@@ -74,9 +74,10 @@ const HEAL_RESERVE: usize = 58;
 /// in RANGER_MISSILES). Zero weight unless `town_oil_apart`.
 const THROWN_OIL: usize = 59;
 /// borg-reborn-rs (#716, owner): shots past the Ranger reserve's soft cap
-/// (`town_ranger_arrows_max`, the requirement row's negative demand) on a
-/// diminishing curve of their own: only the shots past the cap count here.
-/// Zero weight unless both the cap and `town_ranger_arrows_extra` are set.
+/// (`town_ranger_arrows_max`, the requirement row's negative demand) taper:
+/// each is worth less than the last, down to nothing at
+/// `town_ranger_arrows_taper` shots in all. Only the shots past the cap
+/// count here. Zero weight unless both are set.
 const EXTRA_SHOTS: usize = 60;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
@@ -113,15 +114,20 @@ pub struct Model {
     pub supplies: Vec<[i64; 4]>,
 }
 
-/// borg-reborn-rs (#716): the extra-shots curve counts only the shots past
-/// the soft cap, which the Ranger reserve's requirement row holds as its
-/// negative demand (no cap, no extra value).
+/// borg-reborn-rs (#716): the extra shots past the soft cap, which the
+/// Ranger reserve's requirement row holds as its negative demand (no cap, no
+/// extra value). The row's weight is the reserve's, its demand the taper's
+/// length L: a shot x past the cap is worth a shot under the cap times
+/// (1 - x / L), so the value is w/cap * (x - x^2 / 2L) up to L, flat past it.
 fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
     let Some(reserve) = m.curves.get(RANGER_MISSILES) else { return 0 };
-    if reserve[2] >= 0 { return 0; }
-    let cap = -reserve[2];
-    let past = |a: i64| (a - cap).max(0);
-    coverage(r, past((r[3] + n).max(0))) - coverage(r, past(r[3]))
+    if reserve[2] >= 0 || r[1] <= 0 || r[2] <= 0 { return 0; }
+    let (cap, len, w) = (i128::from(-reserve[2]), i128::from(r[2]), i128::from(r[1]));
+    let value = |a: i64| {
+        let x = (i128::from(a) - cap).clamp(0, len);
+        (w * (2 * len * x - x * x) / (2 * cap * len)) as i64
+    };
+    value((r[3] + n).max(0)) - value(r[3])
 }
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
@@ -712,18 +718,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // turns), so 1-gold arrows piled up to 150-200 and their weight sent
     // Phase Door to the Home. 0 = C.
     // Past the cap (owner: "a soft cap at 50 and then a curve for additional
-    // arrows"), shots count on EXTRA_SHOTS: half its value at
-    // `town_ranger_arrows_extra` shots past the cap, weighted as the reserve,
-    // so its first shot is worth cap / extra of a shot under the cap.
+    // arrows utility, configurable, say 75"), shots count on EXTRA_SHOTS:
+    // each worth less than the last, nothing past `town_ranger_arrows_taper`
+    // shots in all (see extra_gain).
     let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
-    let arrows_extra = i64::from(param(Param::town_ranger_arrows_extra));
+    let arrows_taper = i64::from(param(Param::town_ranger_arrows_taper));
     if arrows_max > 0 {
         curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
     } else {
         curve(RANGER_MISSILES, missiles_weight,
               (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
     }
-    curve(EXTRA_SHOTS, if arrows_max > 0 && arrows_extra > 0 { missiles_weight } else { 0 }, arrows_extra.max(1) * UNIT);
+    let taper = (arrows_taper - arrows_max).max(0);
+    curve(EXTRA_SHOTS, if arrows_max > 0 && taper > 0 { missiles_weight } else { 0 }, taper.max(1) * UNIT);
     // borg-reborn-rs (#712): flasks kept to throw, on a curve of their own
     // that shots and wands cannot fill: a stack of sling shots saturated
     // ATTACK, so the flasks' marginal damage was worth almost nothing and the
@@ -968,6 +975,32 @@ mod tests {
     /// at 2 (demand -2 units) one potion is worth half the weight, two the
     /// whole weight, and a third adds nothing, where the diminishing curve
     /// gave each potion a small, never-zero value.
+    #[test]
+    fn ranger_soft_cap_tapers_to_nothing() {
+        // #716: 50 shots as a requirement, then a taper to nothing at 75.
+        let w = 600 * UNIT;
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[RANGER_MISSILES] = [RANGER_MISSILES as i64, w, -50 * UNIT, 0, 0];
+        m.curves[EXTRA_SHOTS] = [EXTRA_SHOTS as i64, w, 25 * UNIT, 0, 0];
+        let shot = |m: &Model| m.gain(&[(RANGER_MISSILES, UNIT), (EXTRA_SHOTS, UNIT)]);
+        let under = shot(&m);
+        assert_eq!(under, w / 50, "a shot under the cap: the requirement's share");
+        m.curves[RANGER_MISSILES][3] = 50 * UNIT;
+        m.curves[EXTRA_SHOTS][3] = 50 * UNIT;
+        let first = shot(&m);
+        assert!(first > 0 && first < under, "the first shot past the cap is worth a little less");
+        m.curves[RANGER_MISSILES][3] = 70 * UNIT;
+        m.curves[EXTRA_SHOTS][3] = 70 * UNIT;
+        let late = shot(&m);
+        assert!(late > 0 && late < first / 3, "near the taper's end: little");
+        m.curves[RANGER_MISSILES][3] = 75 * UNIT;
+        m.curves[EXTRA_SHOTS][3] = 75 * UNIT;
+        assert_eq!(shot(&m), 0, "past the taper: nothing");
+        m.curves[RANGER_MISSILES][2] = 30 * UNIT; // no cap (C's curve): no extra value
+        m.curves[RANGER_MISSILES][3] = 0;
+        assert_eq!(m.gain(&[(EXTRA_SHOTS, UNIT)]), 0);
+    }
+
     #[test]
     fn the_fear_cure_cap_values_potions_linearly_up_to_the_cap() {
         let w = 50_000;

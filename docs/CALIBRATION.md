@@ -10,6 +10,32 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Ranger arrows: a soft cap, then a taper (#716)
+
+The registry now holds **2204** parameters (2202 after #712; two added).
+Owner, 2026-11-20: "they do not need that many arrows"; "a soft cap at 50
+and then a curve for additional arrows utility, configurable, say 75".
+
+- **`town_ranger_arrows_max`** (0 = C): the town planner's shot reserve
+  ("Ranger usable shots") becomes a requirement. Each shot up to this many
+  is worth the same, the reserve's weight divided by the cap. C's curve
+  grows with the trip and never stops paying, and arrows cost 1 gold, so
+  Rangers bought about 300 a game and carried 150–200. Their weight sent
+  Phase Door to the Home.
+- **`town_ranger_arrows_taper`** (0): shots past the cap count on a
+  capability of their own, "extra shots". Each is worth less than the last,
+  linearly, and nothing past this many shots in all. 0, or at most the cap,
+  means nothing past the cap.
+- **Shipped** (owner): the Ranger, 50 and 75; every other class 0 (only the
+  Ranger has a shot reserve, `town_missiles_percent` -1).
+- **Not changed:** pack power still keeps up to 180 shots that the Ranger
+  picks up in the dungeon (`power_inventory_amissiles_limit_3`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:684` |
+| `town_ranger_arrows_taper` | 0 | count | 0–1000 | `borg_town_capability.rs:725` |
+
 ## Thrown oil, a town-planner curve of its own (#712)
 
 The registry now holds **2202** parameters (2200 after #685; two added).
@@ -24,7 +50,7 @@ The registry now holds **2202** parameters (2200 after #685; two added).
 - **`town_oil_flasks`** (10): the thrown-oil curve is at half its value with
   this many flasks kept to throw.
 - **Shipped** (owner, 2026-11-20): on for every class except the Ranger,
-  which has arrows (`town_oil_apart@ranger = 0`).
+  which has arrows (`town_oil_apart__ranger = 0`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -1241,9 +1267,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:452` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:458` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:309` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:443` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:449` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -1371,11 +1397,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:401` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:407` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:694` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1348` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1381` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)

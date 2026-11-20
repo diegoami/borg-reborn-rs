@@ -13,3 +13,6 @@ borg_param_town_phase_curve_scale_percent = 150
 borg_param_town_oil_curve_scale_percent = 50
 # #712 (owner, 2026-11-20): a Ranger has arrows; no thrown-oil curve.
 borg_param_town_oil_apart = 0
+# #716 (owner, 2026-11-20): a soft cap of 50 arrows, then a taper to nothing at 75.
+borg_param_town_ranger_arrows_max = 50
+borg_param_town_ranger_arrows_taper = 75
