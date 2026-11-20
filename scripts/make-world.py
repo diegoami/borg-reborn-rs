@@ -50,8 +50,22 @@ def read_config(path):
         key, value = key.strip(), value.strip()
         if not sep or key not in KEYS:
             raise SystemExit(f'make-world: {path}:{n}: unknown setting {line!r} (known: {", ".join(sorted(KEYS))})')
+        if key in out:
+            raise SystemExit(f'make-world: {path}:{n}: {key} is set twice')
         out[key] = value
     return out
+
+
+def number(cfg, key, default, least):
+    """A whole-number setting, at least LEAST; a clean refusal otherwise."""
+    raw = cfg.get(key, str(default))
+    try:
+        n = int(raw)
+    except ValueError:
+        raise SystemExit(f'make-world: {key} = {raw!r}: a whole number is expected') from None
+    if n < least:
+        raise SystemExit(f'make-world: {key} = {n}: at least {least} is expected')
+    return n
 
 
 def names(value):
@@ -74,11 +88,9 @@ def records(text):
 
 def transform_monsters(text, cfg, max_depth):
     """The monster list with the config applied, and a summary."""
-    weight = int(cfg.get('breeder_weight', 1))
-    shift = int(cfg.get('breeder_depth_shift', 0))
+    weight = number(cfg, 'breeder_weight', 1, 1)
+    shift = number(cfg, 'breeder_depth_shift', 0, 0)
     only, never = names(cfg.get('breeders_only', '')), names(cfg.get('breeders_except', ''))
-    if weight < 1 or shift < 0:
-        raise SystemExit('make-world: breeder_weight must be at least 1 and breeder_depth_shift at least 0')
     favoured, others = [], 0
     out = []
     for rec in records(text):
@@ -116,7 +128,7 @@ def transform_monsters(text, cfg, max_depth):
 def transform_constants(text, cfg):
     if 'repro_max' not in cfg:
         return text
-    n = int(cfg['repro_max'])
+    n = number(cfg, 'repro_max', 100, 1)
     lines, done = [], False
     for line in text.splitlines(keepends=True):
         if line.startswith('mon-gen:repro-max:'):
@@ -131,7 +143,7 @@ def max_depth_of(constants):
     for line in constants.splitlines():
         if line.startswith('world:max-depth:'):
             return int(line.split(':')[2])
-    return 127
+    raise SystemExit('make-world: constants.txt has no world:max-depth line')
 
 
 def gamedata_sha256(gamedata):

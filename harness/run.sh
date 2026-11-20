@@ -298,6 +298,8 @@ WORLD_NAME="$(sed -n 's/^[[:space:]]*borg_world[[:space:]]*=[[:space:]]*//p' "$O
 WORLD_SRC=""; WORLD_SHA=""; WORLD_DATA_SHA=""
 if [ -n "${BORG_WORLD:-}" ]; then
     WORLD_SRC="$BORG_WORLD"; WORLD_NAME="$(basename "$BORG_WORLD" .txt)"
+    [[ "$WORLD_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || {
+        echo "run.sh: BORG_WORLD file name '$WORLD_NAME': a plain name is expected" >&2; exit 2; }
 elif [ -n "$WORLD_NAME" ] && [ "$WORLD_NAME" != none ]; then
     [[ "$WORLD_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || {
         echo "run.sh: world name '$WORLD_NAME': a plain name is expected" >&2; exit 2; }

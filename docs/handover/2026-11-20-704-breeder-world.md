@@ -28,7 +28,18 @@ configuration file"; 2026-11-20: "do 704".
 - **`harness/borg.txt`** ships `borg_world = none`. **`harness/worlds/`**
   ships `breeders-x4` (×4, 2 shallower) and `breeders-x8` (×8, 3
   shallower).
-- **The zoo contract** (`docs/ZOO-INTERFACE.md`) has the key.
+- **The zoo contract** (`docs/ZOO-INTERFACE.md`) says what is true today
+  (review of #740): the zoo's adapter does not generate worlds yet
+  (borg-zoo#487).
+- **A loud guard** (review of #740): a `borg_world` other than `none` that
+  reaches the Borg stops the game with exit 2 before play
+  (`errands_plan.rs`, `world_unloaded`, unit test). `harness/run.sh`
+  consumes the key, so its runs play. A zoo cell, until the adapter does the
+  same, fails instead of playing the game's own data under the world's name.
+  Checked: a direct run given `borg_world = breeders-x4` exits 2; a
+  `harness/run.sh` run of that world plays; smoke-borg-rs is still 3/3.
+- The generator refuses a non-number, a `repro_max` below 1, a key set
+  twice, and data without a `world:max-depth` line.
 
 **Checked:**
 - The engine loads the changed data cleanly: every world game ran to the
@@ -51,6 +62,11 @@ configuration file"; 2026-11-20: "do 704".
   about the same: x8 goes deeper, because breeders are easy experience.
 
 **Left / for the owner:**
-- The zoo experiment: the breeder switches' arms in a breeder world.
+- **The zoo adapter** (borg-zoo#487) has to generate worlds before any zoo
+  run can play one. The experiment borg-zoo#482 waits for it.
+- **RULES 12:** the three deaths of the local world runs (breeders-x4:
+  1569794094 cave spider, 226104090 poison; breeders-x8: 300036923 blue
+  worm mass) have no Cemetery case. The owner decides: record them, or rule
+  exploratory world runs exempt.
 - Other rare situations (uniques, out-of-depth monsters, invisible ones)
   could use the same mechanism with new config keys, later.

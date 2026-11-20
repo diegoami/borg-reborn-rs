@@ -97,6 +97,9 @@ class MakeWorldTest(unittest.TestCase):
             self.make('breeder_wieght = 4\n')
         with self.assertRaises(SystemExit):
             self.make('breeder_weight = 101\n')  # 1 x 101 > 100: never generated
+        for bad in ('repro_max = 0\n', 'repro_max = many\n', 'breeder_weight = 2\nbreeder_weight = 3\n', 'breeder_depth_shift = -1\n'):
+            with self.assertRaises(SystemExit, msg=bad):
+                self.make(bad)
 
 
 if __name__ == '__main__':
