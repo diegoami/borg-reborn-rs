@@ -821,9 +821,11 @@ borg_param_escape_fox_form_town_min_steps = 10
 
 # #694 (owner: "make the druid learn this spell first"): the rating Fox Form
 # is studied by. C rates it 5, below the 50 a spell needs unless the Borg is
-# bored, so a Druid learned it late and escape_fox_form seldom had it. 100 is
-# above Detect Life and Stinking Cloud (95): learned first. 0 = C's rating.
-borg_param_magic_fox_form_study_rating = 100
+# bored, so a Druid learns it once bored (still early: within its first few
+# thousand log lines on classes-18). 100 is above Detect Life and Stinking
+# Cloud (95): learned first. Shipped 0 = C's rating (owner, 2026-11-20): on 6
+# Druid starts, first cost levels (sum of CL 45 -> 33, one death).
+borg_param_magic_fox_form_study_rating = 0
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.

@@ -30,5 +30,14 @@ Owner (2026-11-20, on #694's first switch): "I would adopt it".
   games change; borg-zoo#413 small, 90 starts, 4 against 4. smoke-borg-rs is
   still 3/3 identical (it has no Druid), so nothing was re-recorded.
 
+- **Fox Form's study order** (owner: "make the druid learn this spell
+  first"): `magic_fox_form_study_rating` (compiled 0 = C's rating 5) replaces
+  the rating Fox Form is studied by (`borg_magic_play.rs`, through
+  `borg_magic::study_rating`). At 100 a Druid learns it first, but on 6
+  Druid starts (classes-18 and starts 1–90, 100k) that cost levels: sum of
+  CL 45 → 33, one death (CL2). With C's rating Druids still learn it early,
+  once "bored". Shipped 0 (owner: option 1); a middle rating (90: after
+  Detect Life and Stinking Cloud) is untested.
+
 **Left (#694):** `attack_town_dangerous_on_sight` stays 0 for now; the owner
 hasn't decided it.

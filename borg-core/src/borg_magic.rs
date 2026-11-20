@@ -113,8 +113,8 @@ pub struct SpellRating {
 /// borg-reborn-rs (#694, owner: "make the druid learn this spell first").
 /// The rating a spell is studied by (`borg_study_magic`). Fox Form is rated 5
 /// in C's table, below the 50 a spell needs unless the Borg is bored, so a
-/// Druid learned it late and `escape_fox_form` seldom had it; with
-/// `magic_fox_form_study_rating` above 0 that rating replaces C's.
+/// Druid learns it once bored; with `magic_fox_form_study_rating` above 0
+/// that rating replaces C's.
 pub(crate) fn study_rating(spell: &BorgMagic) -> i32 {
     let fox = crate::params::value(crate::params::Param::magic_fox_form_study_rating);
     study_rating_with(spell.spell_enum == FOX_FORM, i32::from(spell.rating), fox)
