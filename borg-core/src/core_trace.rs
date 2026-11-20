@@ -5,6 +5,9 @@
 //! read-only evaluation (no RNG); full-suite parity checks guard that seam.
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CURHP, BI_CURSP, BI_MAXHP, BI_MAXSP};
 use crate::state::BorgState;
+
+#[path = "death_risk.rs"]
+mod death_risk;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::fs::File;
@@ -18,6 +21,7 @@ struct Selection {
     source: Option<&'static str>,
     errand: Option<(String, Option<i32>)>,
     attacks: Vec<AttackRanking>,
+    death_risk: Option<death_risk::Observation>,
 }
 
 /// One native attack-selector invocation. Multiple attempts in one think are
@@ -111,7 +115,7 @@ struct Errand {
     target: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 struct Line {
     schema: String,
     think: u64,
@@ -124,6 +128,8 @@ struct Line {
     sp: i32,
     max_sp: i32,
     danger: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    death_risk: Option<death_risk::Observation>,
     avoidance: i32,
     check: String,
     check_source: Option<String>,
@@ -176,6 +182,21 @@ pub(crate) fn selected(name: &'static str, source: &'static str) {
     });
 }
 
+/// Sample at the existing dungeon stop gate, before a tactic can move the
+/// Borg's estimates. Traces of early returns still get an ineligible sample.
+pub(crate) fn sample_stop_scared(st: &mut BorgState, depth: i32) {
+    if depth <= 0 || FRAMES.with(|frames| frames.borrow().is_empty()) {
+        return;
+    }
+    let danger = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    let risk = death_risk::observe(st, danger, true);
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.death_risk = Some(risk);
+        }
+    });
+}
+
 // One marked hook at each successful check's return. It evaluates no policy
 // expression again and returns the original `true` unchanged.
 macro_rules! choice {
@@ -212,6 +233,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         Err(()) => frame.errand,
     }
     .map(|(name, target)| Errand { name, target });
+    let death_risk = frame.death_risk.unwrap_or_else(|| death_risk::observe(st, danger, false));
     let mut line = Line {
         schema: "borg-reborn-rs/core-trace@2".into(),
         think: 0,
@@ -224,6 +246,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         sp: st.borg.tr(BI_CURSP),
         max_sp: st.borg.tr(BI_MAXSP),
         danger,
+        death_risk: Some(death_risk),
         avoidance: i32::from(st.borg.avoidance),
         check: check.into(),
         check_source: frame.source.map(str::to_string),
@@ -319,6 +342,7 @@ mod tests {
             sp: 2,
             max_sp: 9,
             danger: 15,
+            death_risk: None,
             avoidance: 12,
             check: "borg_caution".into(),
             check_source: Some("borg_think_dungeon.rs:1536".into()),

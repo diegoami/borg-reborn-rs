@@ -461,10 +461,10 @@ fn town_wand_allowed(st: &BorgState) -> bool {
 /// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
 /// round against a tracked kill.
 pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
-    thrust_damage(st, i, 1)
+    thrust_damage(st, i, 1, st.fight_attack.focused_target.map(|target| (target, st.fight_attack.focused_kind)))
 }
 
-fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
+fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32, focus: Option<(usize, i32)>) -> i32 {
     /* Examine current weapon */
     let item = &st.items.items[inven_wield() as usize];
 
@@ -487,8 +487,7 @@ fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
         return 0;
     }
 
-    let focused = st.fight_attack.focused_target.is_some();
-    let unit = if focused { 1000 } else { 1 };
+    let unit = if focus.is_some() { 1000 } else { 1 };
     let mut dam = i32::from(item.dd) * (i32::from(item.ds) + 1) * unit / 2;
 
     /* here is the place for slays and such */
@@ -534,7 +533,7 @@ fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
 
     /* Bonuses for combat */
     let mut chance = tr(st, BI_THN) + ((tr(st, BI_TOHIT) + i32::from(item.to_h)) * 3);
-    if focused {
+    if let Some((target, focused_kind)) = focus {
         // player-attack.c:99-109,196-219: real hit chance, no targeting
         // or class preference bonuses. Millihitpoints preserve fractions.
         chance += 3 * engine::player_blessed_weapon_bonus();
@@ -542,11 +541,12 @@ fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
         // Fixed spell blows share a capped HP budget BEFORE hit chance.
         // This credits their count without treating separate chances of an
         // overkill hit as guaranteed damage (effect-handler-attack.c:1940-1974).
-        let per_blow = focused_blow_expectation(focused_blow_damage, focused_power(st, kill.power),
+        let hp = observed_kill_hp(&st.kills.kills[target]).unwrap_or(i32::from(kill.power).max(1)) * 1000;
+        let per_blow = focused_blow_expectation(focused_blow_damage, hp,
             hit_permyriad(chance, r_ptr.ac), spell_blows);
         // Ordinary melee takes fractional energy. Weapon spells specify
         // their own number of py_attack_real blows and take a full action.
-        let rate = if st.fight_attack.focused_kind == BF_THRUST as i32 { engine::player_attack_rates().0 } else { 100 * spell_blows.max(0) };
+        let rate = if focused_kind == BF_THRUST as i32 { engine::player_attack_rates().0 } else { 100 * spell_blows.max(0) };
         return (per_blow * i64::from(rate.max(0)) / 100) as i32;
     }
 
@@ -3584,7 +3584,7 @@ fn borg_attack_aux_whirlwind_attack(st: &mut BorgState) -> i32 {
         let k = i32::from(grid(st, x, y).kill);
 
         /* Calculate "average" damage */
-        let d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) };
+        let d = if let Some(target) = st.fight_attack.focused_target { thrust_damage(st, k, blows, Some((target, st.fight_attack.focused_kind))) } else { borg_thrust_damage_one(st, k) };
 
         /* No damage */
         if d <= 0 {
@@ -3674,7 +3674,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
             if m_dist != 1 { continue; }
             blows
         } else { ((blows * m_dist + 2) / 4) + 1 };
-        let d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) * blows };
+        let d = if let Some(target) = st.fight_attack.focused_target { thrust_damage(st, k, blows, Some((target, st.fight_attack.focused_kind))) } else { borg_thrust_damage_one(st, k) * blows };
 
         /* No damage */
         if d <= 0 {
@@ -3798,7 +3798,7 @@ fn borg_attack_aux_maim_foe(st: &mut BorgState) -> i32 {
         let k = i32::from(grid(st, x, y).kill);
 
         /* Calculate "average" damage */
-        d = if st.fight_attack.focused_target.is_some() { thrust_damage(st, k, blows) } else { borg_thrust_damage_one(st, k) * blows };
+        d = if let Some(target) = st.fight_attack.focused_target { thrust_damage(st, k, blows, Some((target, st.fight_attack.focused_kind))) } else { borg_thrust_damage_one(st, k) * blows };
 
         /* No damage */
         if d <= 0 {
@@ -5551,4 +5551,9 @@ mod throw_tests {
         assert_eq!(throw_hit_percent(30, 0, true, 3, 30), 33, "the distance lowers it");
         assert_eq!(throw_hit_percent(20, 2, true, 0, 30), 31, "bonus x BTH_PLUS_ADJ");
     }
+}
+
+/// Read-only melee rate for the death-risk trace, in HP per Borg action.
+pub(crate) fn expected_melee_rate(st: &BorgState, target: usize) -> f64 {
+    f64::from(thrust_damage(st, target as i32, 1, Some((target, BF_THRUST as i32)))) / 1000.0
 }
