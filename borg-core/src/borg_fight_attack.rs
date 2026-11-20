@@ -471,6 +471,12 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     let r_ptr = engine::race(usize::from(r));
 
     /* Damage */
+    // borg-reborn-rs (#713): no blow at an immobile creature kept at range
+    // (`caution_ranged_vs_immobile` 2, 3): it is left, or attacked from afar.
+    if crate::borg_caution::immobile_kept_at_range(st, usize::from(r)) {
+        return 0;
+    }
+
     let mut dam = i32::from(item.dd) * (i32::from(item.ds) + 1) / 2;
 
     /* here is the place for slays and such */
