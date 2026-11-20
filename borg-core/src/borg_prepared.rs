@@ -37,6 +37,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_SRBLIND, BI_SRCOLD, BI_SRCONF, BI_SRDIS, BI_SRELEC, BI_SRFIRE, BI_SRKAOS, BI_SRPOIS,
     BI_STR,
 };
+use crate::params::{value, Param};
 use crate::state::BorgState;
 use crate::engine;
 
@@ -45,9 +46,6 @@ const CLASS_MAGE: i32 = 1;
 const CLASS_DRUID: i32 = 2;
 const CLASS_PRIEST: i32 = 3;
 const CLASS_NECROMANCER: i32 = 4;
-const CLASS_PALADIN: i32 = 5;
-const CLASS_ROGUE: i32 = 6;
-const CLASS_RANGER: i32 = 7;
 const CLASS_BLACKGUARD: i32 = 8;
 
 /// borg-prepared.c globals: track how many uniques are around at your
@@ -134,6 +132,8 @@ pub fn prepared_buffer(st: &BorgState) -> Vec<u8> {
 pub enum Reason {
     /// A fixed text (a string literal in C).
     Text(&'static str),
+    /// An owned reason for a configurable requirement.
+    Threshold(String),
     /// A text C formats into its static `borg_prepared_buffer`
     /// (`MAX_REASON` = 1024 bytes).
     Formatted(Vec<u8>),
@@ -148,6 +148,7 @@ impl Reason {
     pub fn text<'a>(&'a self, st: &'a BorgState) -> &'a [u8] {
         match self {
             Reason::Text(s) => s.as_bytes(),
+            Reason::Threshold(s) => s.as_bytes(),
             Reason::Formatted(s) => s,
             Reason::Depth(i) => st.formulas.depth[*i].reason.to_bytes(),
             Reason::Restock(i) => st.formulas.restock[*i].reason.to_bytes(),
@@ -166,7 +167,7 @@ fn line_index(lines: &[DepthLine], r: *const CStr) -> usize {
 
 /// Determine if the Borg meets the "minimum" requirements for a level
 /// (`borg_prepared_aux`).
-fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
+fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<Reason> {
     if -1 == st.borg.ready_morgoth {
         st.borg.ready_morgoth = 0;
     }
@@ -182,26 +183,31 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     let b = &st.borg;
     let risky = st.cfg(BORG_PLAYS_RISKY) != 0;
+    let class = b.tr(BI_CLASS);
+    let known_class = (CLASS_WARRIOR..=CLASS_BLACKGUARD).contains(&class);
+    let caster = matches!(class, CLASS_MAGE | CLASS_NECROMANCER);
+    let hp = b.tr(BI_MAXHP);
+    let clevel = b.tr(BI_MAXCLEVEL);
 
     // *** Essential Items for Level 1 ***
 
     // Require lite (any)
     if b.tr(BI_LIGHT) < 1 {
-        return Some("1 Lite");
+        return Some(Reason::Text("1 Lite"));
     }
 
     // Require food
     if b.tr(BI_FOOD) < 5 {
-        return Some("5 Food");
+        return Some(Reason::Text("5 Food"));
     }
 
     // borg-reborn-rs (#557, owner): `prepared_recall_depth` moves C's
     // "1 recall" (from depth 5) shallower: below 5 it is checked here, after
     // light and food and before the DL1 and DL2 returns, so 1 and 2 gate
     // the depths they name; from 5 on it stays where C has it.
-    let recall_depth = crate::params::value(crate::params::Param::prepared_recall_depth);
+    let recall_depth = value(Param::prepared_recall_depth);
     if depth < 5 && needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
-        return Some("1 recall");
+        return Some(Reason::Text("1 recall"));
     }
 
     // Usually ready for level 1
@@ -213,17 +219,16 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Require fuel
     if b.tr(BI_AFUEL) < 5 && b.tr(BI_LIGHT) == 0 {
-        return Some("5 Fuel");
+        return Some(Reason::Text("5 Fuel"));
     }
 
     // Require recall
     // if (borg.trait[BI_RECALL] < 1) return ("1 recall");
 
-    if !risky {
-        // Require 30 hp
-        if b.tr(BI_MAXHP) < 30 {
-            return Some("30 hp");
-        }
+    // borg-prepared.c:borg_prepared_aux:82-86 (574b618c)
+    let min_hp = value(Param::prepared_dl2_min_hp);
+    if !risky && hp < min_hp {
+        return Some(Reason::Threshold(format!("{min_hp} hp")));
     }
 
     // Usually ready for level 2
@@ -233,64 +238,25 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // *** Essential Items for Level 3 and 4 ***
 
-    if !risky {
-        // class specific requirement
-        match b.tr(BI_CLASS) {
-            CLASS_WARRIOR | CLASS_BLACKGUARD => {
-                if b.tr(BI_MAXHP) < 50 {
-                    return Some("50 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 4 {
-                    return Some("4 clevel");
-                }
-            }
-            CLASS_ROGUE => {
-                if b.tr(BI_MAXHP) < 50 {
-                    return Some("50 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 8 {
-                    return Some("8 clevel");
-                }
-            }
-            CLASS_PRIEST | CLASS_DRUID => {
-                if b.tr(BI_MAXHP) < 40 {
-                    return Some("40 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 9 {
-                    return Some("9 level");
-                }
-            }
-            CLASS_PALADIN => {
-                if b.tr(BI_MAXHP) < 50 {
-                    return Some("50 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 4 {
-                    return Some("4 clevel");
-                }
-            }
-            CLASS_RANGER => {
-                if b.tr(BI_MAXHP) < 50 {
-                    return Some("50 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 4 {
-                    return Some("4 clevel");
-                }
-            }
-            CLASS_MAGE | CLASS_NECROMANCER => {
-                if b.tr(BI_MAXHP) < 60 {
-                    return Some("60 hp");
-                }
-                if b.tr(BI_MAXCLEVEL) < 11 {
-                    return Some("11 clevel");
-                }
-            }
-            _ => {}
+    // borg-prepared.c:borg_prepared_aux:94-137 (574b618c)
+    if !risky && known_class {
+        let min_hp = value(Param::prepared_dl34_min_hp);
+        if hp < min_hp {
+            return Some(Reason::Threshold(format!("{min_hp} hp")));
+        }
+        let min_clevel = value(Param::prepared_dl34_min_clevel);
+        if clevel < min_clevel {
+            let unit = if matches!(class, CLASS_PRIEST | CLASS_DRUID) { "level" } else { "clevel" };
+            return Some(Reason::Threshold(format!("{min_clevel} {unit}")));
         }
     }
 
-    // Potions of Cure Serious Wounds
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
-        return Some("2 cure");
+    // borg-prepared.c:borg_prepared_aux:139-142 (574b618c)
+    let cure_min = value(Param::prepared_cure_min);
+    let cure_until = value(Param::prepared_cure_until_clevel);
+    let cures = b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW);
+    if clevel < cure_until && cures < cure_min {
+        return Some(Reason::Threshold(format!("{cure_min} cure")));
     }
 
     // Usually ready for level 3 and 4
@@ -300,71 +266,27 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // *** Essential Items for Level 5 to 9 ***
 
-    if !risky {
-        // class specific requirement
-        if b.tr(BI_CDEPTH) != 0 {
-            match b.tr(BI_CLASS) {
-                CLASS_WARRIOR | CLASS_BLACKGUARD => {
-                    if b.tr(BI_MAXHP) < 60 {
-                        return Some("60 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 6 {
-                        return Some("6 clevel");
-                    }
-                }
-                CLASS_ROGUE => {
-                    if b.tr(BI_MAXHP) < 60 {
-                        return Some("60 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 10 {
-                        return Some("10 clevel");
-                    }
-                }
-                CLASS_PRIEST | CLASS_DRUID => {
-                    if b.tr(BI_MAXHP) < 60 {
-                        return Some("60 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 15 {
-                        return Some("15 clevel");
-                    }
-                }
-                CLASS_PALADIN => {
-                    if b.tr(BI_MAXHP) < 60 {
-                        return Some("60 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 6 {
-                        return Some("6 clevel");
-                    }
-                }
-                CLASS_RANGER => {
-                    if b.tr(BI_MAXHP) < 60 {
-                        return Some("60 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 6 {
-                        return Some("6 clevel");
-                    }
-                }
-                CLASS_MAGE | CLASS_NECROMANCER => {
-                    if b.tr(BI_MAXHP) < 80 {
-                        return Some("80 hp");
-                    }
-                    if b.tr(BI_MAXCLEVEL) < 15 {
-                        return Some("15 level");
-                    }
-                }
-                _ => {}
-            }
+    // borg-prepared.c:borg_prepared_aux:150-195 (574b618c)
+    if !risky && known_class && b.tr(BI_CDEPTH) != 0 {
+        let min_hp = value(Param::prepared_dl59_min_hp);
+        if hp < min_hp {
+            return Some(Reason::Threshold(format!("{min_hp} hp")));
+        }
+        let min_clevel = value(Param::prepared_dl59_min_clevel);
+        if clevel < min_clevel {
+            let unit = if caster { "level" } else { "clevel" };
+            return Some(Reason::Threshold(format!("{min_clevel} {unit}")));
         }
     }
 
-    // Potions of Cure Serious/Critical Wounds
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
-        return Some("2 cures (clw + csw + ccw)");
+    // borg-prepared.c:borg_prepared_aux:197-200 (574b618c)
+    if clevel < cure_until && cures < cure_min {
+        return Some(Reason::Threshold(format!("{cure_min} cures (clw + csw + ccw)")));
     }
 
     // Scrolls of Word of Recall
     if needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
-        return Some("1 recall");
+        return Some(Reason::Text("1 recall"));
     }
 
     // Usually ready for level 5 to 9
@@ -376,48 +298,38 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Require light (radius 2), necromancers like the dark
     if b.tr(BI_LIGHT) < 2 && b.tr(BI_CLASS) != CLASS_NECROMANCER {
-        return Some("2 light radius");
+        return Some(Reason::Text("2 light radius"));
     }
 
     // Escape or Teleport
     if b.tr(BI_ATELEPORT) + b.tr(BI_AESCAPE) < 2 {
-        return Some("2 tele + teleport staffs");
+        return Some(Reason::Text("2 tele + teleport staffs"));
     }
 
-    if !risky {
-        // class specific requirement
-        let clevel = b.tr(BI_MAXCLEVEL);
-        match b.tr(BI_CLASS) {
-            CLASS_WARRIOR | CLASS_BLACKGUARD if clevel < depth - 4 && depth <= 19 => {
-                return Some("dlevel - 4 >= clevel");
-            }
-            CLASS_ROGUE if clevel < depth && depth <= 19 => {
-                return Some("dlevel >= clevel");
-            }
-            CLASS_PRIEST | CLASS_DRUID if clevel < depth && depth <= 19 => {
-                return Some("dlevel >= clevel");
-            }
-            CLASS_PALADIN if clevel < depth && depth <= 19 => {
-                return Some("dlevel >= clevel");
-            }
-            CLASS_RANGER if clevel < depth && depth <= 19 => {
-                return Some("dlevel >= clevel");
-            }
-            CLASS_MAGE | CLASS_NECROMANCER if clevel < depth + 5 && clevel <= 28 => {
-                return Some("dlevel + 5 > = clevel");
-            }
-            _ => {}
+    // borg-prepared.c:borg_prepared_aux:221-253 (574b618c).
+    // Mage and Necromancer have a level ceiling; the other classes have a
+    // depth ceiling. The DL9 return above determines where this check starts.
+    if !risky && known_class {
+        let applies = if caster {
+            clevel <= value(Param::prepared_mid_caster_max_clevel)
+        } else {
+            depth <= value(Param::prepared_mid_max_depth)
+        };
+        let offset = value(Param::prepared_mid_clevel_offset);
+        if applies && clevel < depth + offset {
+            let comparison = if caster { "> =" } else { ">=" };
+            return Some(depth_offset_reason(offset, comparison));
         }
     }
 
     // Potions of Cure Critical Wounds
     if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACCW) < 3 {
-        return Some("ccw < 3");
+        return Some(Reason::Text("ccw < 3"));
     }
 
     // See invisible or telepathy
     if b.tr(BI_SINV) == 0 && b.tr(BI_DINV) == 0 && b.tr(BI_ESP) == 0 {
-        return Some("See Invis : ESP");
+        return Some(Reason::Text("See Invis : ESP"));
     }
 
     // Usually ready for level 10 to 19
@@ -429,7 +341,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Free action
     if b.tr(BI_FRACT) == 0 {
-        return Some("free action");
+        return Some(Reason::Text("free action"));
     }
 
     // ready for level 20
@@ -441,71 +353,51 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // must have fire + 2 other basic resists
     if b.tr(BI_SRFIRE) == 0 {
-        return Some("resist fire");
+        return Some(Reason::Text("resist fire"));
     }
     {
         let basics = b.tr(BI_RACID) + b.tr(BI_RCOLD) + b.tr(BI_RELEC);
 
         if basics < 2 {
-            return Some("2 basic resists");
+            return Some(Reason::Text("2 basic resists"));
         }
     }
     // have some minimal stats
     if b.tr(BI_STR) < 7 {
-        return Some("low STR");
+        return Some(Reason::Text("low STR"));
     }
 
     let spell_stat = borg_spell_stat();
     // `borg.trait[BI_STR + spell_stat]`
     let spell_stat_trait = || b.trait_[(BI_STR as i32 + spell_stat) as usize];
     if spell_stat != -1 && spell_stat_trait() < 7 {
-        return Some("low spell stat");
+        return Some(Reason::Text("low spell stat"));
     }
     if b.tr(BI_DEX) < 7 {
-        return Some("low DEX");
+        return Some(Reason::Text("low DEX"));
     }
     if b.tr(BI_CON) < 7 {
-        return Some("low CON");
+        return Some(Reason::Text("low CON"));
     }
 
-    if !risky {
-        // class specific requirement
-        let clevel = b.tr(BI_MAXCLEVEL);
-        match b.tr(BI_CLASS) {
-            CLASS_WARRIOR | CLASS_BLACKGUARD => {
-                if clevel < depth + 5 && clevel <= 38 {
-                    return Some("dlevel + 5 >= clevel");
-                }
+    // borg-prepared.c:borg_prepared_aux:304-346 (574b618c)
+    if !risky && known_class {
+        let max_clevel = value(Param::prepared_deep_max_clevel);
+        let offset = value(Param::prepared_deep_clevel_offset);
+        if clevel >= value(Param::prepared_deep_min_clevel)
+            && clevel <= max_clevel
+            && clevel < depth + offset
+        {
+            return Some(depth_offset_reason(offset, ">="));
+        }
+        if caster && clevel > max_clevel && clevel <= value(Param::prepared_deep_caster_ramp_max_clevel) {
+            let base_depth = value(Param::prepared_deep_caster_ramp_base_depth);
+            let depth_per_level = value(Param::prepared_deep_caster_ramp_depth_per_level);
+            if base_depth + (clevel - max_clevel) * depth_per_level < depth {
+                return Some(Reason::Threshold(format!(
+                    "(clevel-{max_clevel})*{depth_per_level}+{base_depth} < dlevel"
+                )));
             }
-            CLASS_ROGUE => {
-                if clevel < depth + 10 && clevel <= 43 {
-                    return Some("dlevel + 10 >= clevel");
-                }
-            }
-            CLASS_PRIEST | CLASS_DRUID => {
-                if clevel < depth + 13 && clevel <= 46 {
-                    return Some("dlevel + 13 >= clevel");
-                }
-            }
-            CLASS_PALADIN => {
-                if clevel < depth + 7 && clevel <= 40 {
-                    return Some("dlevel + 7 >= clevel");
-                }
-            }
-            CLASS_RANGER => {
-                if clevel < depth + 8 && clevel <= 41 && clevel > 28 {
-                    return Some("dlevel + 8 >= clevel");
-                }
-            }
-            CLASS_MAGE | CLASS_NECROMANCER => {
-                if clevel < depth + 8 && clevel <= 38 {
-                    return Some("dlevel + 8 >= clevel");
-                }
-                if (clevel - 38) * 2 + 30 < depth && clevel <= 44 && clevel > 38 {
-                    return Some("(clevel-38)*2+30 < dlevel");
-                }
-            }
-            _ => {}
         }
     }
 
@@ -518,23 +410,23 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // All Basic resistance
     if b.tr(BI_SRCOLD) == 0 {
-        return Some("resist cold");
+        return Some(Reason::Text("resist cold"));
     }
     if b.tr(BI_SRELEC) == 0 {
-        return Some("resist elec");
+        return Some(Reason::Text("resist elec"));
     }
     if b.tr(BI_SRACID) == 0 {
-        return Some("resist acid");
+        return Some(Reason::Text("resist acid"));
     }
 
     // Escape and Teleport
     if b.tr(BI_ATELEPORT) + b.tr(BI_AESCAPE) < 6 {
-        return Some("6 tell + telep staffs");
+        return Some(Reason::Text("6 tell + telep staffs"));
     }
 
     // Cure Critical Wounds
     if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACCW) + b.tr(BI_ACSW) < 10 {
-        return Some("10 ccw + csw");
+        return Some(Reason::Text("10 ccw + csw"));
     }
 
     // Ready for level 33
@@ -542,9 +434,10 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
         return None;
     }
 
-    // Minimal level
-    if b.tr(BI_MAXCLEVEL) < 40 && !risky {
-        return Some("level 40");
+    // borg-prepared.c:borg_prepared_aux:375-377 (574b618c)
+    let min_clevel = value(Param::prepared_dl34_plus_min_clevel);
+    if !risky && clevel < min_clevel {
+        return Some(Reason::Threshold(format!("level {min_clevel}")));
     }
 
     // Usually ready for level 20 to 39
@@ -556,24 +449,24 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Resist
     if b.tr(BI_SRPOIS) == 0 {
-        return Some("resist pois");
+        return Some(Reason::Text("resist pois"));
     }
     if b.tr(BI_SRCONF) == 0 {
-        return Some("resist conf");
+        return Some(Reason::Text("resist conf"));
     }
 
     if b.tr(BI_STR) < 16 {
-        return Some("STR < 16");
+        return Some(Reason::Text("STR < 16"));
     }
 
     if spell_stat != -1 && spell_stat_trait() < 16 {
-        return Some("spell stat < 16");
+        return Some(Reason::Text("spell stat < 16"));
     }
     if b.tr(BI_DEX) < 16 {
-        return Some("dex < 16");
+        return Some(Reason::Text("dex < 16"));
     }
     if b.tr(BI_CON) < 16 {
-        return Some("con < 16");
+        return Some(Reason::Text("con < 16"));
     }
 
     // Ok to continue
@@ -585,39 +478,39 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     //  Must have +5 speed after level 46
     if b.tr(BI_SPEED) < 115 {
-        return Some("+5 speed");
+        return Some(Reason::Text("+5 speed"));
     }
 
     // Potions of heal
     if b.tr(BI_AHEAL) < 1 && b.tr(BI_AEZHEAL) < 1 {
-        return Some("1 heal");
+        return Some(Reason::Text("1 heal"));
     }
 
     if !risky {
         // Minimal hitpoints
         if b.tr(BI_MAXHP) < 500 {
-            return Some("HP 500");
+            return Some(Reason::Text("HP 500"));
         }
     }
 
     // High stats XXX XXX XXX
     if b.tr(BI_STR) < 18 + 40 {
-        return Some("str < 18(40)");
+        return Some(Reason::Text("str < 18(40)"));
     }
 
     if spell_stat != -1 && spell_stat_trait() < 18 + 100 {
-        return Some("spell stat needs to be max");
+        return Some(Reason::Text("spell stat needs to be max"));
     }
     if b.tr(BI_DEX) < 18 + 60 {
-        return Some("dex < 18 (60)");
+        return Some(Reason::Text("dex < 18 (60)"));
     }
     if b.tr(BI_CON) < 18 + 60 {
-        return Some("con < 18 (60)");
+        return Some(Reason::Text("con < 18 (60)"));
     }
 
     // Hold Life
     if b.tr(BI_SHLIFE) == 0 && b.tr(BI_MAXCLEVEL) < 50 {
-        return Some("hold life");
+        return Some(Reason::Text("hold life"));
     }
 
     // Usually ready for level 46 to 55
@@ -629,12 +522,12 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Potions of heal
     if b.tr(BI_AHEAL) < 2 && b.tr(BI_AEZHEAL) < 1 {
-        return Some("2 heal + *heal*");
+        return Some(Reason::Text("2 heal + *heal*"));
     }
 
     // Resists
     if b.tr(BI_SRBLIND) == 0 {
-        return Some("resist blind");
+        return Some(Reason::Text("resist blind"));
     }
 
     // Must have resist nether
@@ -643,7 +536,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Telepathy, better have it by now
     if b.tr(BI_ESP) == 0 {
-        return Some("ESP");
+        return Some(Reason::Text("ESP"));
     }
 
     // Usually ready for level 55 to 59
@@ -655,15 +548,15 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 
     // Must have +10 speed
     if b.tr(BI_SPEED) < 120 {
-        return Some("+10 speed");
+        return Some(Reason::Text("+10 speed"));
     }
 
     // Resists
     if b.tr(BI_SRKAOS) == 0 {
-        return Some("resist chaos");
+        return Some(Reason::Text("resist chaos"));
     }
     if b.tr(BI_SRDIS) == 0 {
-        return Some("resist disenchant");
+        return Some(Reason::Text("resist disenchant"));
     }
 
     // Usually ready for level 61 to 80
@@ -674,7 +567,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
     // *** Essential Items for Level 81-85 ***
     // Minimal Speed
     if b.tr(BI_SPEED) < 130 {
-        return Some("+20 Speed");
+        return Some(Reason::Text("+20 Speed"));
     }
 
     // Usually ready for level 81 to 85
@@ -695,28 +588,37 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
     if b.tr(BI_KING) == 0 {
         let iv = &st.item_val;
         if b.tr(BI_MAXSP) > 100 && b.has[iv.kv_potion_restore_mana as usize] < 15 {
-            return Some("10 restore mana");
+            return Some(Reason::Text("10 restore mana"));
         }
 
         // must have lots of heal
         if b.has[iv.kv_potion_healing as usize] < 5 {
-            return Some("5 Heal");
+            return Some(Reason::Text("5 Heal"));
         }
 
         // must have lots of ez-heal
         if b.tr(BI_AEZHEAL) + b.tr(BI_ALIFE) < 15 {
-            return Some("15 *heal* or life");
+            return Some(Reason::Text("15 *heal* or life"));
         }
 
         // must have lots of speed
         if b.tr(BI_ASPEED) < 10 {
-            return Some("10 speed potions");
+            return Some(Reason::Text("10 speed potions"));
         }
     }
 
     // Its good to be the king
     // (C: `if (depth <= 127) return NULL;`, then all bases covered)
     None
+}
+
+fn depth_offset_reason(offset: i32, comparison: &str) -> Reason {
+    let depth = match offset {
+        0 => "dlevel".to_owned(),
+        1.. => format!("dlevel + {offset}"),
+        _ => format!("dlevel - {}", -offset),
+    };
+    Reason::Threshold(format!("{depth} {comparison} clevel"))
 }
 
 /// Determine if the Borg is "prepared" for the given level
@@ -735,51 +637,10 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return None;
     }
 
-    // borg-reborn-rs (#447): cap applies before either calculation mode.
-    // #693: with the borg.txt depth cap, the smaller of the two.
-    let limit = smaller_limit(crate::errands_plan::plan_cap(), depth_cap_limit(st));
-    prepared_with_limit(depth, limit, || borg_prepared_calculated(st, depth))
-}
-
-/// borg-reborn-rs (#693, owner: "errands plan by default ... fit in
-/// borg.txt, with formula parameters"). With `prepared_depth_plan`, the
-/// errands plan's depth cap as a formula of the character level, set per
-/// class in harness/borg_<class>.txt: the `borg_no_deeper` value (one below
-/// the deepest level allowed) for the Borg's level now; `None` when off.
-pub(crate) fn depth_cap_limit(st: &BorgState) -> Option<i32> {
-    use crate::params::{value, Param};
-    if value(Param::prepared_depth_plan) == 0 {
-        return None;
-    }
-    depth_cap(
-        st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLEVEL),
-        value(Param::prepared_depth_early_levels_per_dl),
-        value(Param::prepared_depth_early_until_level),
-        value(Param::prepared_depth_late_levels_below),
-    )
-    .map(|deepest| deepest + 1)
-}
-
-/// The deepest level allowed at character level `level`: up to `knee`,
-/// `ceil(level / div)`; past it, `level - below`, never shallower than the
-/// knee's value; at least 1. None from level 50 (the errands plan hands back
-/// there).
-fn depth_cap(level: i32, div: i32, knee: i32, below: i32) -> Option<i32> {
-    if level >= 50 {
-        return None;
-    }
-    let div = div.max(1);
-    let early = (level.min(knee) + div - 1) / div;
-    let cap = if level <= knee { early } else { early.max(level - below) };
-    Some(cap.max(1))
-}
-
-/// The stricter of two `borg_no_deeper` limits.
-pub(crate) fn smaller_limit(a: Option<i32>, b: Option<i32>) -> Option<i32> {
-    match (a, b) {
-        (Some(a), Some(b)) => Some(a.min(b)),
-        (a, b) => a.or(b),
-    }
+    // borg-reborn-rs (#447): the optional plan applies before either calculation mode.
+    prepared_with_limit(depth, crate::errands_plan::plan_cap(), || {
+        borg_prepared_calculated(st, depth)
+    })
 }
 
 /// Keep the guard ahead of calculation dispatch, without requiring an engine
@@ -809,15 +670,21 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
             return Some(reason);
         }
 
-        // *** Require his Clevel to be greater than or equal to Depth
-        if st.borg.tr(BI_MAXCLEVEL) < depth && st.borg.tr(BI_MAXCLEVEL) < 50 {
-            return Some(Reason::Text("Clevel < depth"));
+        // borg-prepared.c:borg_prepared:560-562 (574b618c)
+        let clevel = st.borg.tr(BI_MAXCLEVEL);
+        let margin = value(Param::prepared_clevel_depth_margin);
+        if clevel < 50 && clevel < depth - margin {
+            return Some(match margin {
+                0 => Reason::Text("Clevel < depth"),
+                1.. => Reason::Threshold(format!("Clevel < depth - {margin}")),
+                _ => Reason::Threshold(format!("Clevel < depth + {}", -margin)),
+            });
         }
 
         // Must meet minimal requirements
         if depth <= 99 {
             if let Some(reason) = borg_prepared_aux(st, depth) {
-                return Some(Reason::Text(reason));
+                return Some(reason);
             }
         }
 
@@ -1129,33 +996,6 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
 /// `recall_depth` on (C: 5; 0 = never).
 fn needs_recall(depth: i32, recall_depth: i32, carried: i32) -> bool {
     recall_depth > 0 && depth >= recall_depth && carried < 1
-}
-
-#[cfg(test)]
-mod depth_cap_tests {
-    use super::{depth_cap, smaller_limit};
-
-    fn caps(div: i32, knee: i32, below: i32) -> Vec<i32> {
-        (1..=24).map(|l| depth_cap(l, div, knee, below).unwrap()).collect()
-    }
-
-    /// #693: the candidate values of the issue's table.
-    #[test]
-    fn casters_and_fighters() {
-        assert_eq!(caps(3, 6, 3), [1, 1, 1, 2, 2, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
-        assert_eq!(caps(2, 4, 0), [1, 1, 2, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]);
-        assert_eq!(depth_cap(50, 3, 6, 3), None, "no cap at 50");
-        assert_eq!(depth_cap(5, 3, 6, 10), Some(2), "never shallower than the early part");
-        assert_eq!(depth_cap(1, 1, 0, 5), Some(1), "at least DL1");
-    }
-
-    #[test]
-    fn the_stricter_limit() {
-        assert_eq!(smaller_limit(Some(3), Some(5)), Some(3));
-        assert_eq!(smaller_limit(None, Some(5)), Some(5));
-        assert_eq!(smaller_limit(Some(4), None), Some(4));
-        assert_eq!(smaller_limit(None, None), None);
-    }
 }
 
 #[cfg(test)]
