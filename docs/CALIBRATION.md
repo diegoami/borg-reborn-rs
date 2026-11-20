@@ -842,8 +842,8 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4127` |
-| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4130` |
+| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4173` |
+| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4176` |
 
 ## Kill on sight in town: caster walk, wands, a sure preference (#637)
 
@@ -1088,9 +1088,9 @@ measurement.
 |---|---|---|---|---|
 | `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:143` |
 | `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:164` |
-| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4025` |
-| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4024` |
-| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4023` |
+| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4071` |
+| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4070` |
+| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4077` |
 
 ## Ignored town monsters (#618, #621)
 
@@ -1642,8 +1642,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:4000` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4005` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:4046` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4051` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -1766,7 +1766,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4337` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4383` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2941` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2948` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:3503` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -2260,19 +2260,19 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:2157` |
 | `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:2159` |
 | `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2193` |
-| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4052` |
-| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:4057` |
-| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:4065` |
-| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:4066` |
-| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:4067` |
-| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4226` |
-| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4227` |
-| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:4232` |
-| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:4241` |
-| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:4246` |
-| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:4247` |
-| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:4228` |
-| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:4237` |
+| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4106` |
+| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:4131` |
+| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:4139` |
+| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:4140` |
+| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:4141` |
+| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4272` |
+| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4273` |
+| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:4286` |
+| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:4287` |
+| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:4292` |
+| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:4293` |
+| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:4302` |
+| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:4311` |
 | `caution_retreat_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1145` |
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1373` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1950` |
@@ -4192,3 +4192,40 @@ the rating Fox Form is studied by (`borg_magic::study_rating`). C's 5 is below
 the 50 a spell needs unless the Borg is bored, so a Druid learns it once bored;
 100 puts it above Detect Life and Stinking Cloud (95), learned first. On 6
 Druid starts (100k turns) first cost levels: sum of max CL 45 → 33, one death.
+
+## Cornered: attack at range before the boost (#719)
+
+The registry now holds **2222** parameters (2221 on main before it; one added).
+
+Owner (2026-11-20): "if I am cornered I should throw missile and then boost
+myself". `cornered_boost` (#504) runs in `borg_caution`, before
+`borg_attack`, so a cornered Borg always buffs first.
+
+`caution_cornered_throw_first` (compiled 0, shipped 1, owner 2026-11-20):
+- **1:** in the cornered boost, while no monster is adjacent and an attack
+  from range would do damage (the attack planner's dry run,
+  `borg_attack_estimate`, with the Borg's random numbers and the waiting flag
+  restored), the Borg attacks first. It buffs once a monster is next to it,
+  or when nothing reaches.
+- **2:** the same for the hard breeder fight's boost. (The Phase Door rule's
+  boost is reached only after its own `borg_attack` found nothing to do, so
+  there mode 2 adds nothing: that site already attacks first.)
+
+**Local check** (100,000 turns, main 2026-11-20):
+
+| starts | mode | deaths | sum of max CL | sum of max DL | games as mode 0 | throws before the boost |
+|---|---|---:|---:|---:|---:|---:|
+| classes-18 | 0 | 0 | 109 | 40 | – | – |
+| classes-18 | 1, 2 | 0 | 109 | 40 | 18 / 18 | 0 |
+| classes-1800 starts 1–90 | 0 | 4 | 517 | 206 | – | – |
+| classes-1800 starts 1–90 | 2 | 4 | 518 | 206 | 89 / 90 | 4 (two Blackguard games, one Druid) |
+
+**The shipped mode 1** (classes-1800 starts 1–90, 100k, rebuilt on main
+2026-11-20 after merging it): it never acts. Modes 0 and 1 play 90/90
+identical games (5 deaths, sum of CL 544, DL 213). The 4 actions of mode 2
+above were all at the cornered boost, on the earlier main.
+
+The rule is rarely reached: when the Borg is cornered (a known monster
+within 2 grids), the monster is almost always already adjacent. A first
+version that didn't restore the dry run's random numbers changed games where
+the rule never acted; the restore fixed it (18/18 identical).
