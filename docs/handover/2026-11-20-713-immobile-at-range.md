@@ -30,7 +30,7 @@ Paladin 766958386 (borg-cemetery#79) meleed a yellow jelly for 120 game turns, w
   - classes-18: no extra death in any mode (the same worm mass death in all four); CL 111 / 116 / 109 / 107 for modes 0–3.
   - Mode 0 is identical to main.
   - The case lives at 1–3 (another path); at 2 in the earlier two-switch version it stepped away, threw 45 flasks and lived.
-  - smoke-borg-rs re-recorded for the shipped 2.
+  - smoke-borg-rs: identical at the shipped 2 (its three games meet no immobile attacker), so not re-recorded.
 - **Left:**
   - The zoo experiment (borg-zoo, filed with #717) decides the shipped value.
   - #713's options (a) point-blank and (b) tie-break were not taken.
