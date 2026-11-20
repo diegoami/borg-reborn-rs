@@ -13,3 +13,5 @@ borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 125
 # #685 reverted (owner, 2026-11-20): low-level casters detect again (the zoo decides, see the global line).
 borg_param_light_detect_evil_spell_min_level = 0
+# Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
+borg_param_caution_breeder_hunt_max_count = 6
