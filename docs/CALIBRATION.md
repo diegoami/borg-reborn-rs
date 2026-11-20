@@ -4306,48 +4306,65 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 |---|---|---|---|---|
 | `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5412` |
 
-## The errands plan as a depth cap (#693)
+## C Borg dive gates (#768)
 
-The registry now holds **2205** parameters (2201 on main before it; four added).
+`prepared_clevel_depth_margin` is the main dive-speed control. Below
+character level 50, static preparedness requires maximum CL ≥ DL − margin.
+Positive values let the Borg qualify for deeper levels. The check follows
+restock and applies even with `borg_plays_risky` on. At CL50 it stops
+applying. `borg-prepared.c:borg_prepared:560-562` at `574b618c`.
 
-Owner (2026-11-19): "for errands plan by default, we need to make them fit in
-borg.txt, with formula parameters or something". `errands_plan.txt` can't
-ship as the default: the zoo can't take a plan from a specimen's borg.txt
-(borg-zoo#398), and at 200k turns it costs depth (`reborn-errands-main-200k`,
-360 starts: 23 vs 22 deaths, DL −0.23 [−0.31, −0.14]; #696 item 4).
+The class gates skip their checks in risky play. DL2 starts a maximum-HP
+requirement. DL3 adds class HP and CL requirements, plus a combined minimum of
+two CLW, CSW and CCW potions below CL30, including in risky play. DL5 adds
+class HP and CL requirements when the Borg is already in the dungeon.
+These checks still apply at later depths that reach their code.
+`borg-prepared.c:borg_prepared_aux:82-200` at `574b618c`.
 
-`prepared_depth_plan` (compiled and shipped 0) puts a cap of the character
-level in borg.txt. The Borg is never prepared for a level deeper than it,
-and climbs from one (`borg_prepared`, `borg_think_dungeon_util.rs`), as with
-`borg_no_deeper`. It combines with `borg_no_deeper` and any `borg_plan` by
-taking the smallest:
+The offset check starts at DL10, after the light and escape checks. For
+Mage and Necromancer, it applies through CL28, including checks for depths
+past DL19. For the other classes, it applies through DL19. The DL21 class
+gate has its own offset and inclusive CL bounds. Above their DL21 upper CL
+bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 38) through CL44.
+DL34 adds a minimum of CL40. `borg-prepared.c:borg_prepared_aux:221-253`
+and `304-377` at `574b618c`.
 
-    up to CL knee:  ceil(CL / div)
-    past it:        max(ceil(knee / div), CL - below)
-    from CL50:      no cap; never below DL1
+| Class | DL3 HP / CL | DL5 HP / CL | DL10 offset | DL21 offset / min CL / max CL |
+|---|---:|---:|---:|---:|
+| Warrior, Blackguard | 50 / 4 | 60 / 6 | −4 | +5 / 0 / 38 |
+| Mage, Necromancer | 60 / 11 | 80 / 15 | +5 | +8 / 0 / 38 |
+| Druid, Priest | 40 / 9 | 60 / 15 | 0 | +13 / 0 / 46 |
+| Paladin | 50 / 4 | 60 / 6 | 0 | +7 / 0 / 40 |
+| Rogue | 50 / 8 | 60 / 10 | 0 | +10 / 0 / 43 |
+| Ranger | 50 / 4 | 60 / 6 | 0 | +8 / 29 / 41 |
 
-| parameter | casters (borg.txt) | fighters (class files) |
-|---|---:|---:|
-| `prepared_depth_early_levels_per_dl` (div) | 3 | 2 |
-| `prepared_depth_early_until_level` (knee) | 6 | 4 |
-| `prepared_depth_late_levels_below` (below) | 3 | 0 |
+Compiled and shipped values match the C checks. The files
+`harness/borg_<class>.txt` supply the class values folded as
+`borg_param_<name>__<class>` in `harness/borg.txt`. Set that class-specific
+key to sweep an offset in the zoo. The optional `borg_plan` overlay and
+`borg_no_deeper` still provide explicit depth limits. Profiles with the
+retired #693 settings load with a warning and use these checks.
 
-Casters are Mage, Druid, Priest and Necromancer; fighters are Warrior,
-Paladin, Rogue, Ranger and Blackguard. The early part keeps errands' caps
-where its survival lead is (CL1–3 on DL1–2). Past the knee the cap follows
-the character level, where errands' steps bind (CL7–14).
-
-**Local check** (classes-18, 200,000 turns, main a87b4c96, 18 games per arm):
-
-| arm | deaths | sum of max CL | sum of max DL |
-|---|---:|---:|---:|
-| off | 0 | 143 | 55 |
-| `borg_plan = errands_plan.txt` | 0 | 133 | 49 |
-| `prepared_depth_plan = 1` | 0 | 138 | 56 |
-
-The plan file shows the zoo's depth cost again; the formula keeps the depth.
-With no deaths in any arm, survival is unmeasured here (RULES 14): that's the
-zoo's to measure.
+| Parameter | Default | Unit | Range | Source |
+|---|---|---|---|---|
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:675` |
+| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:229` |
+| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:243` |
+| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:247` |
+| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:255` |
+| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:256` |
+| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:271` |
+| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:275` |
+| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:318` |
+| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:316` |
+| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:314` |
+| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:386` |
+| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:387` |
+| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:385` |
+| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:393` |
+| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:394` |
+| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:395` |
+| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:438` |
 
 ## Fox Form's study rating (#694)
 
