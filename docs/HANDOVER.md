@@ -2207,6 +2207,17 @@ One PR, owner's request (supersedes #441):
 - Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
   evidence retention and task CI are pending. No experiment is launched.
 
+## 2026-11-15: suite.sh runs what fits in memory (#310)
+
+- Owner-requested after the #302 review's `harness/suite.sh full` ran 20
+  games at once (`JOBS` defaulted to `nproc`) and took IT13's 18 GB WSL down
+  twice; one game passed 3.5 GB. Without `JOBS`, the suite now runs
+  `MemAvailable / MEM_PER_RUN_MB` (default 4096) games, at most `nproc`, at
+  least 1: 3 on IT13, about 3 on a GitHub runner (was 4). An explicit
+  `JOBS` still wins; a non-positive `JOBS` or `MEM_PER_RUN_MB` exits 2.
+- Open question for the owner: whether a game's growth to several GB over
+  100,000 turns (with `BORG_SHADOW=check`) is expected or a leak.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full 45/45 v12 play parity, 295,464 named
