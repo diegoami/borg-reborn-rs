@@ -50,6 +50,11 @@
  *   -depth N      stop when the max depth reaches N (0 = no limit)
  *   -start-depth N  synthetic birth at dungeon level N (no load/random birth)
  *                 one-way: no ascent or recall; further descent is allowed
+ *   -start-monsters SPEC  with -start-depth: after the level is generated,
+ *                 place monsters near the player (#722, a breeder test bed):
+ *                 NAME:COUNT[:DIST] joined by '+', '_' for a space in the
+ *                 name (yellow_worm_mass:6+green_worm_mass:4:8); DIST is the
+ *                 scatter distance from the player (default 6)
  *   -keylog FILE  keypress log (default: none)
  *   -msglog FILE  message log: every message_add() call, Borg notes
  *                 included (default: none)
@@ -90,6 +95,8 @@
 #include "obj-pile.h"
 #include "obj-util.h"
 #include "mon-util.h"
+#include "mon-make.h"
+#include "cave.h"
 #include "object.h"
 #include "player.h"
 #include "player-calcs.h"
@@ -137,6 +144,8 @@ static int initial_clevel, initial_max_hp, initial_max_sp;
 static int initial_cave_depth;
 static bool initial_generation_pending;
 static const char *opt_start_build;
+static const char *opt_start_monsters;
+static int start_monsters_placed;
 static char start_build_sha256[65];
 static const char *opt_capture_build;
 static int opt_capture_build_level;
@@ -287,6 +296,8 @@ static void borgh_finish(const char *reason)
 		fprintf(fp, "  \"initial_clevel\": %d,\n  \"initial_max_hp\": %d,\n  \"initial_max_sp\": %d,\n", initial_clevel, initial_max_hp, initial_max_sp);
 		fprintf(fp, "  \"start_build\": \"%s\",\n", opt_start_build ? "record" : "birth");
 		if (opt_start_build) fprintf(fp, "  \"start_build_sha256\": \"%s\",\n", start_build_sha256);
+		if (opt_start_monsters)
+			fprintf(fp, "  \"start_monsters\": \"%s\",\n  \"start_monsters_placed\": %d,\n", opt_start_monsters, start_monsters_placed);
 		fprintf(fp, "  \"dungeon_mode\": \"one_way\",\n");
 	}
 	if (opt_load)
@@ -697,6 +708,54 @@ static void borgh_checkpoint(void)
 }
 
 
+/**
+ * borg-reborn-rs (#722): place the monsters of -start-monsters near the
+ * player, as the debug command's summon does (cmd-wizard.c,
+ * do_cmd_wiz_summon_named): scatter_ext to an empty grid in view within
+ * DIST, then place_new_monster (awake per monster.txt's sleep, no group).
+ * The engine draws its own random numbers, so the run stays deterministic.
+ */
+static void place_start_monsters(const char *spec)
+{
+	char buf[512];
+	char *entry, *save = NULL;
+
+	if (strlen(spec) >= sizeof(buf)) quit("borgh: -start-monsters is too long");
+	my_strcpy(buf, spec, sizeof(buf));
+	for (entry = strtok_r(buf, "+", &save); entry; entry = strtok_r(NULL, "+", &save)) {
+		char name[80];
+		char *colon = strchr(entry, ':');
+		char *p;
+		long count, dist = 6;
+		struct monster_race *race;
+		struct monster_group_info info = { 0, 0 };
+
+		if (!colon || colon == entry || (size_t)(colon - entry) >= sizeof(name))
+			quit("borgh: -start-monsters entry must be NAME:COUNT[:DIST]");
+		memcpy(name, entry, (size_t)(colon - entry));
+		name[colon - entry] = '\0';
+		for (p = name; *p; p++) if (*p == '_') *p = ' ';
+		count = strtol(colon + 1, &p, 10);
+		if (*p == ':') dist = strtol(p + 1, &p, 10);
+		if (*p != '\0' || count < 1 || count > 100 || dist < 1 || dist > 40)
+			quit("borgh: -start-monsters needs COUNT 1..100 and DIST 1..40");
+		race = lookup_monster(name);
+		if (!race) quit_fmt("borgh: -start-monsters: no monster named '%s'", name);
+		while (count-- > 0) {
+			int tries;
+			for (tries = 0; tries < 10; tries++) {
+				struct loc grid;
+				if (scatter_ext(cave, &grid, 1, player->grid, (int)dist, true, square_isempty) == 0)
+					break;
+				if (place_new_monster(cave, grid, race, true, false, info, ORIGIN_DROP_WIZARD)) {
+					start_monsters_placed++;
+					break;
+				}
+			}
+		}
+	}
+}
+
 static void prepare_borg_start(void)
 {
 	if (opt_start_depth) {
@@ -717,6 +776,7 @@ static void prepare_borg_start(void)
 		option_set("auto_more", auto_more);
 		if (!cave || cave->depth != opt_start_depth || player->upkeep->generate_level)
 			quit("borgh: synthetic cave generation did not complete");
+		if (opt_start_monsters) place_start_monsters(opt_start_monsters);
 		synthetic_start_authorized = true;
 	}
 	if (opt_load) {
@@ -948,6 +1008,9 @@ errr init_borgh(int argc, char *argv[])
 			}
 			if (!depth || depth > 999) quit("borgh: invalid -start-depth");
 			opt_start_depth = (int)depth;
+		} else if (streq(argv[i], "-start-monsters")) {
+			if (opt_start_monsters || ++i >= argc) quit("borgh: duplicate/missing -start-monsters");
+			opt_start_monsters = argv[i];
 		} else if (streq(argv[i], "-start-build")) {
 			if (opt_start_build || ++i >= argc) quit("borgh: duplicate/missing -start-build");
 			opt_start_build = argv[i];
@@ -1029,6 +1092,7 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_start_depth && (opt_load || opt_random_birth))
 		quit("borgh: -start-depth cannot load a save or use random birth");
 	if (opt_start_build && !opt_start_depth) quit("borgh: -start-build requires -start-depth");
+	if (opt_start_monsters && !opt_start_depth) quit("borgh: -start-monsters requires -start-depth");
 	if (!!opt_capture_build != !!opt_capture_build_level || opt_capture_build_level < 0 || opt_capture_build_level > 15)
 		quit("borgh: capture-build requires a level between 1 and 15");
 	if (opt_capture_build && (opt_start_depth || opt_load || opt_random_birth))
