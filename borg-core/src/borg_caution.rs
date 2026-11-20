@@ -5820,12 +5820,44 @@ pub(crate) fn unseen_bump_step(st: &mut BorgState, x: i32, y: i32) {
 }
 
 fn unseen_melee_message(msg: &[u8]) -> bool {
-    [b"You fail to harm ".as_slice(), b"You miss ", b"You hit ", b"You punch ", b"You bite ", b"You claw "]
-        .iter().any(|prefix| msg.strip_prefix(*prefix).is_some_and(|who| {
-            [b"something".as_slice(), b"someone"].iter().any(|name| {
-                who.strip_prefix(*name).is_some_and(|rest| rest.starts_with(b".") || rest.starts_with(b" ("))
-            })
-        }))
+    // Every melee verb at 574b618c: player-attack.c plus brand.txt,
+    // slay.txt and shape.txt. Ranged feedback starts "Your", not "You".
+    const VERBS: &[&[u8]] = &[
+        b"bite",
+        b"burn",
+        b"chill",
+        b"claw",
+        b"clout",
+        b"corrode",
+        b"crush",
+        b"cuff",
+        b"dissolve",
+        b"fail to harm",
+        b"fiercely smite",
+        b"freeze",
+        b"hit",
+        b"miss",
+        b"peck",
+        b"poison",
+        b"punch",
+        b"scratch",
+        b"shock",
+        b"sicken",
+        b"singe",
+        b"slash",
+        b"smite",
+        b"strike",
+        b"swipe",
+        b"tear",
+        b"thump",
+        b"zap",
+    ];
+    let Some(rest) = msg.strip_prefix(b"You ") else { return false };
+    VERBS.iter().any(|verb| rest.strip_prefix(*verb).is_some_and(|who| {
+        [b" something".as_slice(), b" someone"].iter().any(|name| {
+            who.strip_prefix(*name).is_some_and(|tail| tail.starts_with(b".") || tail.starts_with(b" ("))
+        })
+    }))
 }
 
 pub(crate) fn unseen_bump_message(st: &mut BorgState, msg: &[u8]) {
@@ -5834,7 +5866,7 @@ pub(crate) fn unseen_bump_message(st: &mut BorgState, msg: &[u8]) {
     }
     // Oil is a single-target throw into the adjacent square (not an area
     // spell). Its unseen victim's death identifies the now-cleared grid.
-    if [b"It dies.".as_slice(), b"Something dies.", b"Someone dies."].contains(&msg) {
+    if [b"It dies.".as_slice(), b"Something dies.", b"Someone dies.", b"It is destroyed."].contains(&msg) {
         if let Some((_, dead)) = &mut st.borg.unseen_bumps.shot { *dead = true; }
     }
 }
@@ -5998,5 +6030,24 @@ mod unseen_bump_kill_tests {
         assert_eq!(st.borg.unseen_bumps.grids.len(), 1);
         assert_eq!(st.borg.unseen_bumps.grids[0].grid.x, 41);
         assert!(st.borg.unseen_bumps.shot.is_none());
+    }
+}
+
+
+#[cfg(test)]
+mod unseen_melee_vocabulary_tests {
+    use super::unseen_melee_message;
+    #[test]
+    fn all_engine_brand_slay_and_shape_melee_verbs_are_recognized() {
+        for (data, prefix) in [
+            (include_str!("../../engine/angband/lib/gamedata/brand.txt"), "verb:"),
+            (include_str!("../../engine/angband/lib/gamedata/slay.txt"), "melee-verb:"),
+            (include_str!("../../engine/angband/lib/gamedata/shape.txt"), "blow:"),
+        ] {
+            for verb in data.lines().filter_map(|line| line.strip_prefix(prefix)) {
+                assert!(unseen_melee_message(format!("You {verb} something.").as_bytes()), "{verb}");
+                assert!(!unseen_melee_message(format!("Your weapon {verb} something.").as_bytes()));
+            }
+        }
     }
 }

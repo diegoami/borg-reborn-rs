@@ -4498,9 +4498,9 @@ No monster race, HP or armour is read or invented.
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | `caution_unseen_bump_turns` | 0 | 0–100000 | game turns | `borg_caution.rs:5815` | #781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off. |
-| `caution_unseen_bump_response` | 0 | 0–1 | flag | `borg_caution.rs:5889` | #781: with a recent adjacent unseen bump, before stair desperation, try Detect Invisible once, bounded throws of oil respecting fuel reserves, then Phase Door. Requires caution_unseen_bump_turns. 0 = off. |
-| `caution_unseen_bump_heal_hp_percent` | 0 | 0–100 | percent | `borg_caution.rs:5890` | #781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW before a desperate stair walk, even when fleeing. Requires caution_unseen_bump_turns; independent of response. 0 = off. |
-| `caution_unseen_bump_throw_tries` | 3 | 0–100 | throws per grid | `borg_caution.rs:5899` | #781: maximum oil throws at one remembered bump grid before trying Phase Door. 0 = phase immediately after detection; hypothesis, not calibrated. |
+| `caution_unseen_bump_response` | 0 | 0–1 | flag | `borg_caution.rs:5930` | #781: with a recent adjacent unseen bump, before stair desperation, try Detect Invisible once, bounded throws of oil respecting fuel reserves, then Phase Door. Requires caution_unseen_bump_turns. 0 = off. |
+| `caution_unseen_bump_heal_hp_percent` | 0 | 0–100 | percent | `borg_caution.rs:5922` | #781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW before a desperate stair walk, even when fleeing. Requires caution_unseen_bump_turns; independent of response. 0 = off. |
+| `caution_unseen_bump_throw_tries` | 3 | 0–100 | throws per grid | `borg_caution.rs:5940` | #781: maximum oil throws at one remembered bump grid before trying Phase Door. 0 = phase immediately after detection; hypothesis, not calibrated. |
 
 The duration switch gates occupancy in flow seeds, spreads and old-flow steps;
 the stair-distance and path calculations consequently exclude the grid. The

@@ -12,7 +12,9 @@ observed position establish a grid. Incoming attacks alone do not. All flow
 seeds/spreads and old-flow steps refuse remembered occupied grids. Memory
 expires, resets on a new level, clears when entered, and clears when a
 single-target directional oil throw reports the unseen victim's death.
-Normal fuel reserves apply. The new Phase Door site uses bump evidence in
+Normal fuel reserves apply. All pinned engine brand, slay and shape melee
+verbs are covered by a source-data test; nonliving oil victims clear on
+"It is destroyed." too. The new Phase Door site uses bump evidence in
 place of the known-race fight test and logs that choice.
 
 **Found:** the historical control at `09a70906` reproduces the Druid death at
