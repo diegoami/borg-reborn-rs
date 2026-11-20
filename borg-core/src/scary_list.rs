@@ -444,6 +444,27 @@ mod tests {
         out
     }
 
+    #[test]
+    fn town_attack_rows_have_engine_names_reasons_and_independent_scares() {
+        let races = game_races();
+        let resolve = |name: &str| races.iter().position(|(n, _)| n == name).map(|i| i + 1);
+        let text = std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../harness/scary_monsters.txt")).unwrap();
+        let list = parse(&text, &resolve).unwrap();
+        for (name, reason) in [("mean-looking mercenary", "town-melee-danger"), ("battle-scarred veteran", "town-melee-danger"),
+            ("filthy street urchin", "town-gold-theft"), ("squint-eyed rogue", "town-item-theft")] {
+            let r = resolve(name).unwrap();
+            for class in 0..9 {
+                assert_eq!(attack_reason(&list, r, b"townsfolk", who(1, class)), Some(reason));
+                assert_eq!(attack_reason(&list, r, b"townsfolk", who(50, class)), Some(reason));
+                assert_eq!(attack_reason(&list, r, b"townsfolk", who(51, class)), None);
+                assert!(is_scary(&list, r, b"townsfolk", who(1, class)), "town losing/unknown fights retain ordinary scare policy");
+            }
+        }
+        let maggot = resolve("Farmer Maggot").unwrap();
+        assert_eq!(attack_reason(&list, maggot, b"humanoid", who(1, 0)), None);
+        assert!(is_ignored(&list, maggot, || b"humanoid", who(1, 0)));
+    }
+
     /// Review of #527: the C file reproduces the compiled C list (and the
     /// shipped ranges do for the toughest classes) over every race of the
     /// game data, every class, levels 0-60 and the breeder cases, not only

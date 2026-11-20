@@ -414,7 +414,13 @@ fn dangerous_blow(effect: u32, max_damage: i32, min_damage: i32) -> bool {
 /// town is scary (below a listed monster's level for the class) the Borg
 /// flees as before; from that level on it kills on sight.
 pub(crate) fn town_kill_on_sight(st: &BorgState, r_idx: usize) -> bool {
-    param(Param::attack_town_dangerous_on_sight) != 0 && tr(st, BI_CDEPTH) == 0 && dangerous_town_race(r_idx)
+    !crate::borg_caution::town_fight_mode(tr(st, BI_CDEPTH), param(Param::caution_winning_fight))
+        && param(Param::attack_town_dangerous_on_sight) != 0 && tr(st, BI_CDEPTH) == 0 && dangerous_town_race(r_idx)
+}
+
+/// #788: membership only; a new or continued hunt is separately certified.
+pub(crate) fn town_hunt_target(st: &BorgState, r: usize) -> bool {
+    town_attack_on_sight_reason(st, r).is_some() || town_kill_on_sight(st, r)
 }
 
 /// borg-reborn-rs (#619): the target bonus for a monster killed on sight.
@@ -444,6 +450,8 @@ pub(crate) fn town_caster_walk() -> bool {
 /// Known means seen within `attack_max_target_age`, as `borg_attack`'s own
 /// targets (review of #653, finding 3: a record can outlive the monster).
 fn town_wand_allowed(st: &BorgState) -> bool {
+    if st.fight_attack.focused_target.is_some_and(|i|
+        town_attack_on_sight_reason(st, usize::from(st.kills.kills[i].r_idx)).is_some()) { return true; }
     param(Param::attack_town_dangerous_wand) != 0
         && (1..usize::try_from(st.kills.nxt).unwrap_or(0)).any(|k| {
             let kill = &st.kills.kills[k];
@@ -1539,7 +1547,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
     // borg-reborn-rs (#619): a dangerous town monster comes first.
     dam = town_kill_bonus(st, usize::from(r), dam);
     // borg-reborn-rs (#637): a wand in town: nothing else is worth a charge.
-    if st.fight_attack.town_wand && !town_kill_on_sight(st, usize::from(r)) {
+    if st.fight_attack.town_wand && !town_hunt_target(st, usize::from(r)) {
         dam = 0;
     }
 
@@ -5189,7 +5197,7 @@ fn focused_launch_damage(st: &BorgState, i: usize, damage: i32, typ: i32, slot: 
 
 /// #760: category lookup. The switch is checked before loading the list or
 /// consulting breeder policy, so the control never performs extra work.
-pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'static str> {
+fn listed_attack_reason(st: &BorgState, r: usize) -> Option<&'static str> {
     if param(Param::attack_on_sight) == 0 || r == 0 || r >= engine::r_max().saturating_sub(1) {
         return None;
     }
@@ -5200,6 +5208,19 @@ pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'stati
         breeder_stand: !st.borg.breeders_lost && crate::borg_caution::breeder_stand(st),
         levels_less: 0,
     })
+}
+
+/// Town rows are handled by the winning-fight policy, never by the
+/// unconditional category action or its static scare suppression.
+pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'static str> {
+    if r == 0 || r >= engine::r_max().saturating_sub(1) || engine::race(r).level == 0 { return None; }
+    listed_attack_reason(st, r)
+}
+
+pub(crate) fn town_attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'static str> {
+    if !crate::borg_caution::town_fight_mode(tr(st, BI_CDEPTH), param(Param::caution_winning_fight))
+        || r == 0 || r >= engine::r_max().saturating_sub(1) || engine::race(r).level != 0 { return None; }
+    listed_attack_reason(st, r)
 }
 
 #[derive(Clone, Copy, Debug)]

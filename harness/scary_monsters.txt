@@ -107,3 +107,14 @@ giant white louse | 50 | | attack,breeders | breeder
 giant fruit fly | 50 | | attack,breeders | breeder
 white worm mass | 50 | | attack,breeders | breeder
 green worm mass | 50 | | attack,breeders | breeder
+
+# #788: town targets use caution_winning_fight=1 as well as attack_on_sight.
+# They retain ordinary scare/caution handling unless a current fight wins;
+# these rows never give an unconditional attack or an uncertified hunt.
+# monster.txt:452-489: town melee damage 1d10 / 2d6.
+mean-looking mercenary | 50 | | attack | town-melee-danger
+battle-scarred veteran | 50 | | attack | town-melee-danger
+# monster.txt:242-263,396-413: gold theft / 1d6 plus item theft.
+# Theft remains an unmodelled fight effect and falls through to caution.
+filthy street urchin | 50 | | attack | town-gold-theft
+squint-eyed rogue | 50 | | attack | town-item-theft

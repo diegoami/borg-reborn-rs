@@ -2251,58 +2251,105 @@ mod incoming_units_tests {
 /// flight. Count every awake visible attacker, including those which can
 /// join while another is fought. A target we cannot damage now prevents a
 /// winning verdict; no optimistic missing-foe or unknown-HP assumptions.
-fn winning_fight(st: &mut BorgState) -> bool {
-    let mode = p(Param::caution_winning_fight);
-    if mode == 0 { return false; }
-    // The direct-damage race does not model random confused commands or
-    // ongoing poison/bleeding damage. Let the ordinary cures act first.
-    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
-    let mut plans = Vec::new();
-    let mut incoming = 0.0;
-    let mut in_contact = false;
-    for i in 1..st.kills.nxt.max(0) as usize {
-        let kill = st.kills.kills[i];
-        if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
-            continue;
-        }
-        let d = engine::distance(st.borg.c, kill.pos);
-        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
-            if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
-                return false; // an attacker without a current observable target
-            }
-            continue;
-        }
-        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
-            continue;
-        }
-        let forecast = fight_incoming(st, i);
-        if forecast.unknown_fight || forecast.unknown_damage { return false; }
-        let danger = forecast.hp_per_turn;
-        if danger <= 0.0 { continue; }
-        in_contact |= d <= 1 || kill.ranged_attack != 0;
-        incoming += danger;
-        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
-        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
-        plans.push((i, hp, attack));
-    }
-    if plans.is_empty() || !in_contact { return false; }
-    // Remove the fastest-to-kill attacker first. Incoming remains the full
-    // sum for the entire fight, a conservative bound as attackers die.
-    plans.sort_by(|a, b| {
-        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.hp_per_turn_milli.max(1));
-        turns(a).total_cmp(&turns(b)).then(a.0.cmp(&b.0))
-    });
-    let mana = st.borg.tr(BI_CURSP);
+#[derive(Clone, Debug)]
+struct FightRace {
+    target: usize,
+    attack: crate::borg_fight_attack::FocusedAttack,
+    turns: f64,
+    incoming: f64,
+    hp: i32,
+    won: bool,
+    targets: String,
+    attackers: usize,
+}
+
+// Engine monster.txt: zero-dice NONE blows are BEG/MOAN/DROOL/INSULT;
+// mon-blows.c:638-650 (NONE handler) explicitly sets damage to zero.
+// Do not waive theft or status effects: those can change the fight.
+fn harmless_town_race(r: usize) -> bool {
+    let race = engine::race(r);
+    race.level == 0 && race.spell_flags.iter().all(|&f| f == 0)
+        && (0..usize::from(engine::z_info().mon_blows_max)).map_while(|b| engine::race_blow(r, b))
+            .all(|b| harmless_town_blow(b.effect_name.to_bytes(), i32::from(b.base), i32::from(b.dice), i32::from(b.m_bonus)))
+}
+
+fn harmless_town_blow(effect: &[u8], base: i32, dice: i32, bonus: i32) -> bool {
+    effect == b"NONE" && base == 0 && dice == 0 && bonus == 0
+}
+
+fn certifiable_incoming(forecast: IncomingDamage) -> Option<f64> {
+    (!forecast.unknown_fight && !forecast.unknown_damage && forecast.hp_per_turn.is_finite()
+        && forecast.hp_per_turn >= 0.0).then_some(forecast.hp_per_turn)
+}
+
+// One shared resource budget, used by both the dungeon action and town
+// certificates. Tuple fields: kill index, remaining HP, best attack, regen.
+fn fight_budget_turns(plans: &[(usize, i32, crate::borg_fight_attack::FocusedAttack, f64)], mana: i32, approach: f64) -> Option<f64> {
     let mut mana_left = mana;
     let mut spent = std::collections::BTreeMap::<i32, i32>::new();
-    let mut turns = 0.0;
-    for &(i, hp, attack) in &plans {
+    let mut turns = approach;
+    for &(_, hp, attack, regen) in plans {
         let cost = attack.cost;
         let uses = cost.and_then(|c| c.uses).map(|u| {
             if cost.is_some_and(|c| c.spell) {
                 if mana <= 0 { 0 } else { u * mana_left / mana }
             } else { (u - spent.get(&attack.kind).copied().unwrap_or(0)).max(0) }
         });
+        let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
+        let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
+        // Heal during the charged walk as well as during the fight.
+        let needed = hp.saturating_add((regen * approach).ceil() as i32);
+        let (t, used) = race_turns(needed, damage, uses, attack.duration, fallback)?;
+        turns += t;
+        if let Some(c) = cost {
+            if c.spell {
+                let per_cast = (mana + c.uses.unwrap_or(1).max(1) - 1) / c.uses.unwrap_or(1).max(1);
+                mana_left = (mana_left - per_cast * used).max(0);
+            } else { *spent.entry(attack.kind).or_default() += used; }
+        }
+    }
+    Some(turns)
+}
+
+// Shared non-acting certificate for the early action AND town hunt gates.
+// Approach is charged before the same finite-resource fight calculation.
+// Every foe must already have a usable attack from the current position;
+// a speculative melee attack after an unmodelled walk cannot certify a win.
+fn estimate_fight_race(st: &mut BorgState, required: Option<usize>, approach_turns: f64) -> Option<FightRace> {
+    // The direct-damage race does not model random confused commands or
+    // ongoing poison/bleeding damage. Let the ordinary cures act first.
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return None; }
+    let mut plans = Vec::new();
+    let mut incoming = 0.0;
+    let mut in_contact = false;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || (!kill.awake && required.is_none()) || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
+            if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
+                return None; // an attacker without a current observable target
+            }
+            continue;
+        }
+        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
+            continue;
+        }
+        let mut forecast = if required.is_some() { fight_incoming_with(st, i, true) } else { fight_incoming(st, i) };
+        // #788: harmless town bystanders with only zero-dice NONE blows
+        // neither deal HP nor change a fight. Theft/status/spells still
+        // remain unknown; do not turn their danger prices into damage.
+        if st.borg.tr(BI_CDEPTH) == 0 && harmless_town_race(usize::from(kill.r_idx)) {
+            forecast = IncomingDamage::default();
+        }
+        let danger = certifiable_incoming(forecast)?;
+        if danger <= 0.0 && required != Some(i) { continue; }
+        in_contact |= d <= 1 || kill.ranged_attack != 0;
+        incoming += danger;
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return None };
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return None };
         // mon-move.c:1893-1897 gates regen on turn%100==0, regardless of
         // monster speed; :1914-1925 handles each monster once that turn.
         // regen_monster: at least 1 HP each 100 game turns,
@@ -2313,29 +2360,158 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let regen = f64::from((i32::from(max_hp) / 100).max(1))
             * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
             / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
-        let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
-        let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
-        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
-        turns += t;
-        if let Some(c) = cost {
-            if c.spell {
-                let per_cast = (mana + c.uses.unwrap_or(1).max(1) - 1) / c.uses.unwrap_or(1).max(1);
-                mana_left = (mana_left - per_cast * used).max(0);
-            } else { *spent.entry(attack.kind).or_default() += used; }
-        }
+        plans.push((i, hp, attack, regen));
     }
+    if plans.is_empty() || (!in_contact && required.is_none()) || required.is_some_and(|target| !plans.iter().any(|p| p.0 == target)) { return None; }
+    // Remove the fastest-to-kill attacker first. Incoming remains the full
+    // sum for the entire fight, a conservative bound as attackers die.
+    plans.sort_by(|a, b| {
+        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack, f64)| f64::from(p.1) / f64::from(p.2.hp_per_turn_milli.max(1));
+        required.is_some_and(|i| b.0 == i).cmp(&required.is_some_and(|i| a.0 == i))
+            .then_with(|| turns(a).total_cmp(&turns(b))).then(a.0.cmp(&b.0))
+    });
+    let turns = fight_budget_turns(&plans, st.borg.tr(BI_CURSP), approach_turns)?;
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
-    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
-        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
-    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
-        plans.len(), if won { "winning" } else { "not winning" }));
-    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
-    // Mode 2 is a diagnostic: retain the unchanged control's actions so
-    // estimates can be checked on its original losing AND winning fights.
-    if !won || mode == 2 { return false; }
-    let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    let targets = plans.iter().map(|&(i, needed, a, _)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect::<Vec<_>>().join("; ");
+    Some(FightRace { target: plans[0].0, attack: plans[0].2, turns, incoming, hp, won, targets, attackers: plans.len() })
+}
+
+fn note_fight_race(st: &mut BorgState, race: &FightRace) {
+    borg_note(st, &format!("# Fight race: {} attackers, {:.3} turns to kill, {:.3} damage/turn, HP {}: {} (#759)",
+        race.attackers, race.turns, race.incoming, race.hp, if race.won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", race.targets));
+}
+
+fn winning_fight(st: &mut BorgState) -> bool {
+    let mode = p(Param::caution_winning_fight);
+    if mode == 0 { return false; }
+    let Some(race) = estimate_fight_race(st, None, 0.0) else { return false };
+    note_fight_race(st, &race);
+    if !race.won || mode == 2 { return false; }
+    // A town priority action also honors the owner-approved one-turn and
+    // other-threat exception, even if a fractional shot wins on mean time.
+    if st.borg.tr(BI_CDEPTH) == 0 && !category_attack_safe(st, race.target) { return false; }
+    crate::borg_fight_attack::perform_focused_attack(st, race.target, race.attack)
+}
+
+fn town_fight_on_sight(st: &mut BorgState) -> bool {
+    if !town_fight_mode(st.borg.tr(BI_CDEPTH), p(Param::caution_winning_fight)) { return false; }
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let r = usize::from(st.kills.kills[i].r_idx);
+        let Some(reason) = crate::borg_fight_attack::town_attack_on_sight_reason(st, r) else { continue };
+        let Some(race) = estimate_fight_race(st, Some(i), 0.0) else { continue };
+        if !race.won || !category_attack_safe(st, i) { continue; }
+        note_fight_race(st, &race);
+        borg_note(st, &format!("# Town attack on sight: {} ({reason}), winning fight (#788)",
+            String::from_utf8_lossy(engine::race_name(r))));
+        if crate::borg_fight_attack::perform_focused_attack(st, i, race.attack) { return true; }
+    }
+    false
+}
+
+pub(crate) fn town_fight_mode(depth: i32, mode: i32) -> bool { depth == 0 && mode == 1 }
+
+/// #788: fresh check at every GOAL_KILL step, including old/aim flows.
+/// Only a listed, still-observed target on a committed zero-cost seed may
+/// justify the walk. Lost targets/empty aiming squares cannot borrow a win.
+/// Charge all remaining path steps before fighting; no approach discount.
+pub(crate) fn town_hunt_step_allowed(st: &mut BorgState, next: crate::borg_cave::BorgGrid) -> bool {
+    if !town_fight_mode(st.borg.tr(BI_CDEPTH), p(Param::caution_winning_fight)) { return true; }
+    if !town_approach_square(next) { return false; }
+    let steps = st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize];
+    if steps == 255 { return false; }
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if crate::borg_fight_attack::town_attack_on_sight_reason(st, usize::from(kill.r_idx)).is_none()
+            || st.flow.data_flow[kill.pos.y as usize][kill.pos.x as usize] != 0 { continue; }
+        if estimate_fight_race(st, Some(i), f64::from(steps)).is_some_and(|race| race.won)
+            && category_attack_safe(st, i) { return true; }
+    }
+    false
+}
+
+fn town_approach_square(grid: crate::borg_cave::BorgGrid) -> bool {
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN};
+    matches!(u32::from(grid.feat), FEAT_FLOOR | FEAT_OPEN | FEAT_BROKEN | FEAT_LESS | FEAT_MORE)
+        && !grid.trap && !grid.web && grid.store == 0 && grid.kill == 0
+}
+
+#[cfg(test)]
+mod town_fight_tests {
+    use super::*;
+    use crate::borg_fight_attack::{AttackCost, FocusedAttack};
+
+    fn attack(uses: Option<i32>, fallback: i32) -> FocusedAttack {
+        FocusedAttack { kind: 7, hp_per_turn_milli: 10_000,
+            cost: uses.map(|u| AttackCost { fail_pct: 0, uses: Some(u), spell: false }),
+            fallback, duration: 1.0 }
+    }
+
+    #[test]
+    fn town_uses_only_the_acting_mode_of_the_existing_flag() {
+        assert!(town_fight_mode(0, 1));
+        for mode in [0, 2] { assert!(!town_fight_mode(0, mode), "off and diagnostic leave legacy town actions alone"); }
+        assert!(!town_fight_mode(1, 1), "dungeon rules keep their existing scope");
+    }
+
+    #[test]
+    fn town_and_dungeon_share_winning_losing_and_tied_command_budgets() {
+        let plans = [(1, 20, attack(None, 0), 0.0)];
+        let turns = fight_budget_turns(&plans, 0, 0.0).unwrap();
+        assert_eq!(turns, 2.0);
+        assert!(wins_race(turns, 4.0, 9));
+        assert!(!wins_race(turns, 4.0, 8), "a tie cannot commit the town fight");
+        assert!(!wins_race(turns, 5.0, 9));
+    }
+
+    #[test]
+    fn town_hunt_pays_for_approach_and_healing_before_the_fight() {
+        let plans = [(1, 9, attack(None, 0), 0.5)];
+        assert_eq!(fight_budget_turns(&plans, 0, 0.0), Some(1.0));
+        assert_eq!(fight_budget_turns(&plans, 0, 2.0), Some(4.0), "two walking turns, healing, two fight commands");
+        assert!(wins_race(1.0, 3.0, 10));
+        assert!(!wins_race(4.0, 3.0, 10), "safe now does not certify walking first");
+    }
+
+    #[test]
+    fn attackers_share_ammunition_and_mana_in_the_reused_estimator() {
+        let plans = [(1, 10, attack(Some(1), 0), 0.0), (2, 10, attack(Some(1), 0), 0.0)];
+        assert_eq!(fight_budget_turns(&plans, 0, 0.0), None, "one shot cannot finish two foes");
+        let plans = [(1, 10, attack(Some(1), 5000), 0.0), (2, 10, attack(Some(1), 5000), 0.0)];
+        assert_eq!(fight_budget_turns(&plans, 0, 0.0), Some(3.0));
+        assert!(!wins_race(3.0, 4.0 + 4.0, 20), "both attackers contribute throughout");
+        let mut spell1 = attack(Some(1), 0);
+        spell1.cost.as_mut().unwrap().spell = true;
+        let spell2 = FocusedAttack { kind: 8, ..spell1 };
+        assert_eq!(fight_budget_turns(&[(1, 10, spell1, 0.0), (2, 10, spell2, 0.0)], 10, 0.0), None,
+            "different spells cannot each spend the same mana");
+    }
+
+    #[test]
+    fn harmless_bystanders_are_distinct_from_unknown_theft_and_status() {
+        assert!(harmless_town_blow(b"NONE", 0, 0, 0));
+        for effect in [b"EAT_GOLD".as_slice(), b"EAT_ITEM", b"POISON", b"HURT"] {
+            assert!(!harmless_town_blow(effect, 0, 0, 0));
+        }
+        assert_eq!(certifiable_incoming(IncomingDamage::default()), Some(0.0));
+        assert_eq!(certifiable_incoming(IncomingDamage { unknown_fight: true, ..IncomingDamage::default() }), None);
+        assert_eq!(certifiable_incoming(IncomingDamage { unknown_damage: true, ..IncomingDamage::default() }), None);
+    }
+
+    #[test]
+    fn a_hunt_step_is_not_a_bump_attack_or_unmodelled_interaction() {
+        use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_CLOSED};
+        let floor = crate::borg_cave::BorgGrid { feat: FEAT_FLOOR as u8, ..Default::default() };
+        assert!(town_approach_square(floor));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid { kill: 1, ..floor }));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid { trap: true, ..floor }));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid { web: true, ..floor }));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid { store: 1, ..floor }));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid { feat: FEAT_CLOSED as u8, ..floor }));
+        assert!(!town_approach_square(crate::borg_cave::BorgGrid::default()));
+    }
 }
 
 fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_limit: i64) -> bool {
@@ -2373,7 +2549,7 @@ mod category_threat_tests {
 /// #760/#759: before any dungeon flight, including the light/countdown
 /// and depth-return rungs which otherwise precede borg_caution.
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
-    crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
+    town_fight_on_sight(st) || crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
 }
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
