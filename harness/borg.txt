@@ -640,10 +640,13 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. Reverted to
-# 0 for every class (owner, 2026-11-20): a low-level character sees only the
-# grids next to it in a dark room, so it walks into floating eyes; detection
-# is what shows them first. The zoo measures it.
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. #728
+# reverted it to 0 for every class (owner, 2026-11-20): a low-level character
+# sees only the grids next to it in a dark room, so it walks into floating
+# eyes, and detection shows them first. #744 (owner, 2026-11-20) sets 10 again
+# for Mage, Druid, Priest, Necromancer and Paladin in their class files
+# (borg-zoo#480, classes-1800 starts 1-360, 100k turns: same deaths, CL +0.53,
+# no floating-eye death); this common line stays 0 for the other classes.
 borg_param_light_detect_evil_spell_min_level = 0
 
 # Thrown oil (#712, owner 2026-11-20): the town planner values each flask of
@@ -1268,7 +1271,7 @@ borg_param_town_heal_reserve_hp_percent_mage = 300
 borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
-borg_param_light_detect_evil_spell_min_level__mage = 0
+borg_param_light_detect_evil_spell_min_level__mage = 10
 borg_param_prepared_depth_early_levels_per_dl__mage = 4
 borg_param_prepared_depth_early_until_level__mage = 8
 borg_param_prepared_depth_late_levels_below__mage = 3
@@ -1279,7 +1282,7 @@ borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
-borg_param_light_detect_evil_spell_min_level__druid = 0
+borg_param_light_detect_evil_spell_min_level__druid = 10
 borg_param_prepared_depth_early_levels_per_dl__druid = 5
 borg_param_prepared_depth_early_until_level__druid = 10
 borg_param_prepared_depth_late_levels_below__druid = 4
@@ -1290,7 +1293,7 @@ borg_param_town_heal_reserve_hp_percent_priest = 250
 borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
-borg_param_light_detect_evil_spell_min_level__priest = 0
+borg_param_light_detect_evil_spell_min_level__priest = 10
 borg_param_prepared_depth_early_levels_per_dl__priest = 4
 borg_param_prepared_depth_early_until_level__priest = 8
 borg_param_prepared_depth_late_levels_below__priest = 3
@@ -1302,7 +1305,7 @@ borg_param_town_heal_reserve_hp_percent_necromancer = 300
 borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
-borg_param_light_detect_evil_spell_min_level__necromancer = 0
+borg_param_light_detect_evil_spell_min_level__necromancer = 10
 borg_param_prepared_depth_early_levels_per_dl__necromancer = 4
 borg_param_prepared_depth_early_until_level__necromancer = 8
 borg_param_prepared_depth_late_levels_below__necromancer = 3
@@ -1314,7 +1317,7 @@ borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent__paladin = 100
 borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
-borg_param_light_detect_evil_spell_min_level__paladin = 0
+borg_param_light_detect_evil_spell_min_level__paladin = 10
 borg_param_caution_breeder_hunt_max_count__paladin = 6
 borg_param_prepared_depth_early_levels_per_dl__paladin = 3
 borg_param_prepared_depth_early_until_level__paladin = 5

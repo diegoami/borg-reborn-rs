@@ -377,6 +377,13 @@ The registry now holds **2200** parameters (2199 after #625; one added).
   `cave-view.c:658,777`), so it meets a floating eye only when adjacent, and
   the eye's gaze paralyses it before it acts again (165 of 8,702 zoo deaths,
   117 at CL1). Detection shows it first. The zoo measures 0 against 10.
+  **Then 10 again for the five casters** (Priest, Paladin, Mage,
+  Necromancer, Druid; owner, 2026-11-20, #744; the global line stays 0):
+  borg-zoo#480 (main b895e352, classes-1800 starts 1–360, 100k) measured
+  11 deaths against 11, CL +0.53 (±0.09), DL +0.13, with no floating-eye
+  death in 2,160 games. By class: Mage +1.62 CL, Priest +1.27, Paladin
+  +1.10, Necromancer +0.72; the Druid's games were identical. It was the
+  fourth measurement with that result.
   Shipped with #568 (PR #723, the same run as there): detection casts on
   the 18 classes-18 starts 62 to 14, most of them the Blackguards' Seek
   Battle (37 to 2 and 20 to 1). The 40% and 46% figures above are the
