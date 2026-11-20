@@ -3789,8 +3789,16 @@ fn throw_first(st: &mut BorgState, why: &str) -> bool {
     }
     let adjacent = (1..st.kills.nxt.max(0) as usize)
         .any(|i| st.kills.kills[i].r_idx != 0 && engine::distance(st.borg.c, st.kills.kills[i].pos) <= 1);
+    // The dry run draws the Borg's random numbers and may clear the waiting
+    // flag: both are restored, so a check that does not act changes nothing
+    // (as the breeder estimate does).
     if !throw_first_applies(mode, why == "Cornered", adjacent, || {
-        crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0)
+        let (quick, value) = engine::rand_state();
+        let waiting = st.borg.goal.waiting;
+        let damage = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+        engine::set_rand_state(quick, value);
+        st.borg.goal.waiting = waiting;
+        damage
     }) {
         return false;
     }
