@@ -1843,16 +1843,18 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// #759: expected turns using a finite primary, then an unlimited fallback.
 /// Damage is in HP/action; resource uses are whole actions, never fractions
 /// shared between monsters. Unknown HP/damage cannot certify a win.
-fn race_turns(hp: i32, damage: f64, uses: Option<i32>, fallback: f64) -> Option<(f64, i32)> {
-    if hp <= 0 || !damage.is_finite() || damage <= 0.0 { return None; }
+fn race_turns(hp: i32, damage: f64, uses: Option<i32>, duration: f64, fallback: f64) -> Option<(f64, i32)> {
+    if hp <= 0 || !damage.is_finite() || damage <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
     let needed = hp / damage;
     if fallback >= damage && fallback > 0.0 { return Some((hp / fallback, 0)); }
     let Some(uses) = uses else { return Some((needed, 0)); };
     let uses = uses.max(0);
-    if needed <= f64::from(uses) { return Some((needed, needed.ceil() as i32)); }
+    let commands = (needed / duration).ceil() as i32;
+    if commands <= uses { return Some((needed, commands)); }
     if fallback <= 0.0 { return None; }
-    Some((f64::from(uses) + (hp - f64::from(uses) * damage) / fallback, uses))
+    let primary_time = f64::from(uses) * duration;
+    Some((primary_time + (hp - primary_time * damage) / fallback, uses))
 }
 
 fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
@@ -1866,7 +1868,7 @@ mod winning_fight_tests {
 
     #[test]
     fn remaining_hp_is_used_once_and_ties_do_not_win() {
-        let (turns, _) = race_turns(6, 3.0, None, 0.0).unwrap();
+        let (turns, _) = race_turns(6, 3.0, None, 1.0, 0.0).unwrap();
         assert_eq!(turns, 2.0, "6 remaining HP, not another injury discount");
         assert!(!wins_race(turns, 4.0, 8), "equal races do not win");
         assert!(wins_race(turns, 4.0, 9));
@@ -1875,19 +1877,21 @@ mod winning_fight_tests {
 
     #[test]
     fn a_finite_attack_needs_a_real_fallback() {
-        assert_eq!(race_turns(20, 8.0, Some(1), 4.0), Some((4.0, 1)));
-        assert_eq!(race_turns(20, 8.0, Some(1), 0.0), None);
-        assert_eq!(race_turns(4, 8.0, Some(1), 0.0), Some((0.5, 1)), "a finishing cast consumes a whole use");
-        assert_eq!(race_turns(4, 8.0, Some(0), 2.0), Some((2.0, 0)));
-        assert_eq!(race_turns(0, 8.0, None, 0.0), None, "unknown HP cannot certify a win");
+        assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 4.0), Some((4.0, 1)));
+        assert_eq!(race_turns(20, 8.0, Some(1), 1.0, 0.0), None);
+        assert_eq!(race_turns(4, 8.0, Some(1), 1.0, 0.0), Some((0.5, 1)), "a finishing cast consumes a whole use");
+        assert_eq!(race_turns(4, 8.0, Some(0), 1.0, 2.0), Some((2.0, 0)));
+        assert_eq!(race_turns(0, 8.0, None, 1.0, 0.0), None, "unknown HP cannot certify a win");
+        assert_eq!(race_turns(8, 8.0, Some(1), 0.5, 0.0), None, "one half-turn shot is not two shots");
+        assert_eq!(race_turns(4, 8.0, Some(1), 0.5, 0.0), Some((0.5, 1)));
         assert!(!wins_race(f64::INFINITY, 1.0, 100));
         assert!(!wins_race(1.0, f64::NAN, 100));
     }
 
     #[test]
     fn several_attackers_share_the_damage_budget() {
-        let first = race_turns(4, 4.0, None, 0.0).unwrap().0;
-        let second = race_turns(8, 4.0, None, 0.0).unwrap().0;
+        let first = race_turns(4, 4.0, None, 1.0, 0.0).unwrap().0;
+        let second = race_turns(8, 4.0, None, 1.0, 0.0).unwrap().0;
         assert!(wins_race(first, 3.0, 8));
         assert!(!wins_race(first + second, 3.0 + 2.0, 8));
     }
@@ -2020,7 +2024,7 @@ pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
         melee += average as f64 / 10.0 * f64::from(chance) / 10_000.0;
     }
     let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
-    let ratio = energy(i32::from(kill.speed)) / energy(st.borg.tr(BI_SPEED));
+    let ratio = energy(i32::from(kill.speed)) / energy(engine::player_combat_speed());
     if plain { return melee * ratio; }
     // At the monster's own position there is no distance discount. This
     // keeps a presently distant attacker in the bound while another dies.
@@ -2035,7 +2039,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if p(Param::caution_winning_fight) == 0 { return false; }
     // The direct-damage race does not model random confused commands or
     // ongoing poison/bleeding damage. Let the ordinary cures act first.
-    if [BI_ISCONFUSED, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
     let mut plans = Vec::new();
     let mut incoming = 0.0;
     let mut in_contact = false;
@@ -2087,10 +2091,10 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let max_hp = kill.observed_health.unwrap().1;
         let regen = f64::from((i32::from(max_hp) / 100).max(1))
             * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
-            / f64::from(engine::extract_energy(st.borg.tr(BI_SPEED).clamp(0, 199) as usize)).max(1.0);
+            / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
         let damage = f64::from(attack.damage) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
-        let Some((t, used)) = race_turns(hp, damage, uses, fallback) else { return false };
+        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
         turns += t;
         if let Some(c) = cost {
             if c.spell {
