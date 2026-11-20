@@ -646,6 +646,23 @@ borg_param_town_oil_curve_scale_percent = 100
 # is what shows them first. The zoo measures it.
 borg_param_light_detect_evil_spell_min_level = 0
 
+# Thrown oil (#712, owner 2026-11-20): the town planner values each flask of
+# oil kept to throw on a curve of its own, which a stack of shots cannot fill
+# (before, shots saturated the shared ATTACK curve and the flasks went to the
+# Home). Half its value at town_oil_flasks flasks. The Ranger keeps C's
+# behaviour: it has arrows and does not need oil.
+borg_param_town_oil_apart = 1
+borg_param_town_oil_flasks = 10
+
+# Ranger arrows (#716, owner 2026-11-20): the town planner's shot reserve as a
+# soft cap: each shot up to town_ranger_arrows_max is worth the same; past it
+# shots count on C's curve with weight and demand scaled by
+# town_ranger_arrows_curve_scale_percent (as healing's): each worth less than
+# the last. 0 = C (a curve that grows with the trip: 150-200 arrows carried,
+# Phase Door sent home). The Ranger sets 50 and 50 in its class file.
+borg_param_town_ranger_arrows_max = 0
+borg_param_town_ranger_arrows_curve_scale_percent = 0
+
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
 # Serious Wounds, then Healing. Higher shifts purchases to stronger potions.
@@ -760,6 +777,24 @@ borg_param_escape_teleport_landing_either = 0
 # and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
+
+# Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
+# replays of #717's Druid deaths): "the path to the stairs is not clean, so the
+# 'desperate for stairs' should see that the stairs are not reachable"; "it
+# stepped away in the wrong direction ... towards the exit"; "target the mobile
+# one". 0 = C for each.
+# - caution_stairs_clean_path: a desperate walk to the stairs needs a clean
+#   path: an awake monster on or next to it, as dangerous as
+#   caution_stairs_block_danger_percent of the HP, makes them not reachable.
+# - caution_immobile_step_to_exit: the step away from an immobile attacker
+#   goes toward the nearest staircase (only with caution_ranged_vs_immobile).
+# - attack_mobile_threat_first: while a mobile target is a threat
+#   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
+borg_param_caution_stairs_clean_path = 1
+borg_param_caution_stairs_block_danger_percent = 50
+borg_param_caution_immobile_step_to_exit = 1
+borg_param_attack_mobile_threat_first = 1
+borg_param_attack_mobile_threat_percent = 50
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
@@ -1301,6 +1336,9 @@ borg_param_caution_breeder_hunt_max_count__ranger = 6
 borg_param_prepared_depth_early_levels_per_dl__ranger = 3
 borg_param_prepared_depth_early_until_level__ranger = 6
 borg_param_prepared_depth_late_levels_below__ranger = 2
+borg_param_town_oil_apart__ranger = 0
+borg_param_town_ranger_arrows_max__ranger = 50
+borg_param_town_ranger_arrows_curve_scale_percent__ranger = 50
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400

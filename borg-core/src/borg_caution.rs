@@ -945,6 +945,17 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
+    // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
+    // on, or next to, are not reachable: the escapes and the attack decide
+    // instead (`caution_stairs_clean_path`; 0 = C).
+    if p(Param::caution_stairs_clean_path) != 0 {
+        let percent = p(Param::caution_stairs_block_danger_percent);
+        if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            borg_note(st, &format!("# Stairs not reachable: {} in the way ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
+            return false;
+        }
+    }
     st.borg.status.desperate = true;
     let ok = if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
@@ -1675,7 +1686,14 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     // Review of #659: only a grid less dangerous than this one, and not the
     // grid of a bounce (as the back-away).
     let here = borg_danger(st, cy, cx, 1, true, false);
+    // borg-reborn-rs (#736, owner): toward the exit. With
+    // `caution_immobile_step_to_exit`, among the grids the step may take, the
+    // one with the fewest steps to a staircase wins (then the least danger);
+    // 0 = the least danger only.
+    let to_exit = p(Param::caution_immobile_step_to_exit) != 0;
+    let steps = if to_exit { crate::borg_flow_stairs::stair_steps_around(st) } else { [255; 8] };
     let mut best: Option<(usize, i32)> = None;
+    let mut best_steps = i32::MAX;
     for i in 0..8 {
         let x = cx + i32::from(engine::ddx_ddd(i));
         let y = cy + i32::from(engine::ddy_ddd(i));
@@ -1690,8 +1708,10 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         if k >= here {
             continue;
         }
-        if best.is_none_or(|(_, b)| k < b) {
+        let n = steps[i];
+        if best.is_none_or(|(_, b)| (n, k) < (best_steps, b)) {
             best = Some((i, k));
+            best_steps = n;
         }
     }
     let Some((i, _)) = best else { return false };

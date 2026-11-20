@@ -17,3 +17,9 @@ borg_param_caution_breeder_hunt_max_count = 6
 borg_param_prepared_depth_early_levels_per_dl = 3
 borg_param_prepared_depth_early_until_level = 6
 borg_param_prepared_depth_late_levels_below = 2
+# #712 (owner, 2026-11-20): a Ranger has arrows; no thrown-oil curve.
+borg_param_town_oil_apart = 0
+# #716 (owner, 2026-11-20): a soft cap of 50 arrows, then a diminishing curve
+# (scale 50, as healing's) for the arrows past it.
+borg_param_town_ranger_arrows_max = 50
+borg_param_town_ranger_arrows_curve_scale_percent = 50
