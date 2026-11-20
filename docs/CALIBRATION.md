@@ -31,6 +31,37 @@ ordinary flight to the stairs.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_stairs_clean_path_flee` | 0 | flag | 0–1 | `#743 (owner, the follow-up of #736): 1 = every flight to the stairs (GOAL_FLEE: a scary level, too much danger, 'Looking for any stair') takes only stairs whose path is clean: a kind of stairs with an awake monster on, or next to, its path, whose danger is at least caution_stairs_block_danger_percent of the HP, is not taken; with none left the flight does not start and the escapes and the attack decide (#736's 'Stairs not reachable', noted once per level). The desperate walk keeps its own check (caution_stairs_clean_path). 0 = C.` |
+## The C Borg's leash as parameters (#732)
+
+The registry now holds **2232** parameters (2222 before; ten added). Owner,
+2026-11-20: "remove our leash completely and expose the leash of C with
+configuration parameters". The owner's own leash (PR #734: 15/25/40/60 steps
+by level) is dropped; the zoo found it neutral (borg-zoo#475).
+
+- C's leash keeps the Borg within `CL × per_level + base` steps of the stairs
+  (`borg_get_leash`): for picking up items below `pickup_max_level`; for
+  exploring while the depth is at least the level less `depth_margin` (so a
+  Borg well above its depth explores freely); `unbounded` otherwise. Once
+  bored (more than `twitch_after` twitches) it grows by the twitch count.
+- The same numbers drive the distance-to-stairs check
+  (`borg_flow_far_from_stairs_dist`, below `stairs_max_level`) and the two
+  item checks of `take_select` (below `take_near_max_level` near the stairs;
+  below `take_max_level` past `take_nearness`).
+- Every default is C's literal, so play is unchanged; a zoo profile can move
+  any of them. Read once in `borg_flow.rs` (`c_leash`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1662` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1663` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1659` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1660` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1661` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1662` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1663` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1664` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1665` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1666` |
 
 ## Immobile monsters and blocked stairs (#736)
 
