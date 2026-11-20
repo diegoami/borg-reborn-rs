@@ -21,7 +21,7 @@ PR (RULES 21).
   `test_every_upstream_borg_commit_is_in_the_ledger`.
 
 **Checked:**
-- CI's commands; `check-param-citations.py` (2202); `borg-core-vendor.py
+- CI's commands; `check-param-citations.py` (2211, after merging main with #730); `borg-core-vendor.py
   check`; `scripts/tests`.
 - classes-18 through `harness/run.sh … 100000 exact,menu` (Human seeds 1-9,
   Half-Elf 10-18), base main `653f60ba`:

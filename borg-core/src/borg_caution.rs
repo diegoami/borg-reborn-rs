@@ -2356,6 +2356,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
         && !ranged_before_recall(st)
+        && !breeder_recall_held(st)
         && recall_escape_allowed(st, Some(pos_danger))
         && borg_recall(st)
     {
@@ -2978,6 +2979,47 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
     ok
 }
 
+/// borg-reborn-rs (#697): walk to the nearest known grid at least `distance`
+/// grids from `from`: a corridor or doorway (#544's `breeder_exit_grid`) if
+/// one is known, else any known floor grid. Unlike #544's exit the flow is
+/// not the desperate one: danger is counted, so a dangerous monster's grid
+/// is refused; `avoid` keeps the path off unknown grids, as the desperate
+/// flow does (review of #698). Takes the first step; false when no grid is
+/// known or none can be reached.
+pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: &std::ffi::CStr) -> bool {
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
+    };
+    let mut corridors = Vec::new();
+    let mut floors = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            let at = loc { x, y };
+            if st.cave.grid(x, y).kill != 0 || !passable(x, y) || engine::distance(from, at) < distance {
+                continue;
+            }
+            if breeder_exit_grid(&passable, at, &[from], distance) {
+                corridors.push(at);
+            } else {
+                floors.push(at);
+            }
+        }
+    }
+    let targets = if corridors.is_empty() { floors } else { corridors };
+    if targets.is_empty() {
+        return false;
+    }
+    crate::borg_flow::borg_flow_clear(st);
+    for e in &targets {
+        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+    crate::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+}
+
 /// Flow to the nearest of `exits` and take its first step. When the flow
 /// is committed but no step can be taken, `borg_flow_old` cancels the goal
 /// (`goal.type_0 = 0`), so no `GOAL_FLEE` flow is left for the next think.
@@ -3053,6 +3095,17 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
     if breeders.is_empty() {
         return;
     }
+    // borg-reborn-rs (#722, owner: "assume the level is lost if you could not
+    // kill all the breeders"): with the policy at 3 or more, more breeders
+    // known than the class can clear (caution_breeder_hunt_max_count) lose
+    // the level at once.
+    let max = p(Param::caution_breeder_hunt_max_count);
+    if breeder_level_full(p(Param::caution_breeder_policy), breeders.len(), max) {
+        st.borg.breeders_lost = true;
+        st.borg.breeders_lost_turn = engine::game_turn();
+        borg_note(st, &format!("# Breeders: {} known, more than the {max} this class clears: the level is lost.", breeders.len()));
+        return;
+    }
     let positions: Vec<loc> = (1..st.kills.nxt.max(0) as usize)
         .map(|i| st.kills.kills[i])
         .filter(|k| k.r_idx != 0)
@@ -3095,6 +3148,7 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
     let ok = ok || st.borg.breeders_behind < p(Param::caution_breeder_stoppable_confirm);
     if !ok {
         st.borg.breeders_lost = true;
+        st.borg.breeders_lost_turn = engine::game_turn();
         borg_note(
             st,
             &format!(
@@ -3106,6 +3160,49 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
             ),
         );
     }
+}
+
+/// borg-reborn-rs (#722): with the policy at 3 or more, more breeders known
+/// than the class clears (`max`) lose the level.
+fn breeder_level_full(policy: i32, known: usize, max: i32) -> bool {
+    policy >= 3 && known > usize::try_from(max.max(0)).unwrap_or(0)
+}
+
+/// borg-reborn-rs (#722): with the policy at 3 or more, on a lost level,
+/// whether Recall waits (the flight searches for stairs first) and whether
+/// it is due (`caution_breeder_lost_recall_turns` game turns after the loss).
+fn lost_recall(policy: i32, lost: bool, lost_turn: i32, now: i32, turns: i32) -> (bool, bool) {
+    let applies = policy >= 3 && lost && lost_turn > 0;
+    let due = applies && now - lost_turn >= turns;
+    (applies && !due, due)
+}
+
+/// borg-reborn-rs (#722): Recall is held on a level lost to breeders until
+/// the search for stairs has had its turns.
+pub(crate) fn breeder_recall_held(st: &BorgState) -> bool {
+    lost_recall(
+        p(Param::caution_breeder_policy),
+        st.borg.breeders_lost,
+        st.borg.breeders_lost_turn,
+        engine::game_turn(),
+        p(Param::caution_breeder_lost_recall_turns),
+    )
+    .0
+}
+
+/// borg-reborn-rs (#722, owner: "if paths are blocked by breeders, recall
+/// at some point"): on a level lost to breeders, Recall is due once the
+/// search for stairs has had `caution_breeder_lost_recall_turns`.
+pub(crate) fn breeder_recall_due(st: &BorgState) -> bool {
+    st.borg.tr(BI_CDEPTH) > 0
+        && lost_recall(
+            p(Param::caution_breeder_policy),
+            st.borg.breeders_lost,
+            st.borg.breeders_lost_turn,
+            engine::game_turn(),
+            p(Param::caution_breeder_lost_recall_turns),
+        )
+        .1
 }
 
 /// The engine's chance that a breeder with `k` monsters in its 3x3 block
@@ -3144,7 +3241,10 @@ fn breeders_stoppable(st: &BorgState) -> Option<bool> {
         .then(|| {
             stand_against_breeders(
                 st.borg.breeders_lost,
-                st.stairs.less.num == 0 && st.stairs.more.num == 0,
+                // borg-reborn-rs (#722, owner: "search for stairs first"):
+                // with the policy at 3 or more a lost level is left even
+                // with no stairs known; the flight searches for them.
+                st.stairs.less.num == 0 && st.stairs.more.num == 0 && p(Param::caution_breeder_policy) < 3,
                 st.borg.breeders_in_danger,
             ) && st.borg.mon.breeders > 0
                 && st.borg.tr(BI_CDEPTH) != 0
@@ -5201,5 +5301,29 @@ mod immobile_tests {
         for k in 0..16u8 { assert!(step_allowed(&mut full, 100, (k, 1), false)); }
         assert!(!step_allowed(&mut full, 100, (20, 1), false), "the 17th fails closed");
         assert!(!step_allowed(&mut full, 100, (20, 1), false));
+    }
+}
+
+#[cfg(test)]
+mod breeder_policy_tests {
+    use super::{breeder_level_full, lost_recall};
+
+    /// #722: the level is full above the class's count, from policy 3.
+    #[test]
+    fn full_level() {
+        assert!(breeder_level_full(3, 8, 7), "a warrior with 8 known");
+        assert!(!breeder_level_full(3, 7, 7), "7 a warrior still clears");
+        assert!(!breeder_level_full(2, 20, 4), "below policy 3 no count loses");
+        assert!(!breeder_level_full(-1, 20, 4), "the switches as set");
+    }
+
+    /// #722: on a lost level Recall waits for the search, then is due.
+    #[test]
+    fn recall_after_the_search() {
+        assert_eq!(lost_recall(3, true, 1_000, 1_100, 500), (true, false), "searching");
+        assert_eq!(lost_recall(3, true, 1_000, 1_500, 500), (false, true), "due");
+        assert_eq!(lost_recall(3, true, 1_000, 1_000, 0), (false, true), "0: at once");
+        assert_eq!(lost_recall(3, false, 0, 9_000, 500), (false, false), "not lost");
+        assert_eq!(lost_recall(2, true, 1_000, 9_000, 500), (false, false), "below 3");
     }
 }
