@@ -10,11 +10,6 @@ borg_param_town_heal_reserve_hp_percent = 150
 borg_param_town_devices_percent = 100
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the paladin.
 borg_param_town_phase_curve_scale_percent = 100
-# #784 (owner, 2026-11-20, after #778 merged): "for paladins put
-# town_phase_reserve = 2". The first two Scrolls of Phase Door are a
-# requirement of the town trip, each worth town_phase_reserve_percent (100)
-# of the escape weight, on top of the Phase Door curve.
-borg_param_town_phase_reserve = 2
 borg_param_town_oil_curve_scale_percent = 125
 # #744 (owner, 2026-11-20): no detection prayer by panel below CL10 again (undoes
 # #728 for this class; the common line stays 0). borg-zoo#480 (classes-1800,

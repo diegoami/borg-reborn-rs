@@ -16,8 +16,10 @@ The registry now holds **2247** parameters (2240 before; seven added). Owner, 20
 "we need to value phase doors much more, especially for rangers"; "increase
 phase door and decrease value of flask all over the board"; "make sure it
 picks it up". Every line ships at today's value (off or 100) — except
-`town_phase_reserve` for the paladin, which ships 2 since #784 (owner,
-2026-11-20, "for paladins put town_phase_reserve = 2"); the measuring
+`town_phase_reserve` for the ranger, which ships 2 since #784 (owner,
+2026-11-20, "for rangers put town_phase_reserve = 2"; the owner's
+correction of an earlier paladin instruction, withdrawn before it merged);
+the measuring
 moved to borg-zoo, so the arms below are a request, not a recommendation.
 
 | parameter | default | unit | range | source |
