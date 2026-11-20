@@ -6,7 +6,7 @@
 //! `extract_energy`) by `engine::knowledge()`. GOALS D3 allows full monster
 //! race data, not just the player's lore, as the C Borg uses. Formulas the
 //! engine keeps in file-local tables are lifted here, each with its
-//! `file:function:lines` at the pinned engine (`42cd156ac`, unchanged in our
+//! `file:function:lines` at the pinned engine (`574b618c`, unchanged in our
 //! tree; cited at `e473720` before #215, where no cited line moved). Where a C Borg copies an engine formula, the citation names both,
 //! and the better-borg-c milestone's version is preferred when they differ
 //! (parity is not a goal).
