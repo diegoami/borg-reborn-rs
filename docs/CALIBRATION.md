@@ -4422,5 +4422,14 @@ winnable; they are not a proof against a run of misses.
 Validation starts from clean `08f94e1fed0b80fd854584d893209983079157ea`,
 borg-rs core, shipped settings. All six owner-specified deaths reproduced
 with the supplied off arm's exact key streams before implementation.
-Runtime comparisons and canonical Cemetery references will be added after
-the enabled checks; the source tree does not own gameplay dossiers.
+Named-case validation is complete; canonical details are
+[borg-cemetery PR #88](https://github.com/diegoami/borg-cemetery/pull/88),
+`studies/reborn-flight-fights-20261120/local-cases.md`. The seven selected
+starts were replayed with individual switches/combinations; all-three reaches
+100k in each, while the Rogue control was already alive. These are case
+checks, not a population improvement claim. Non-acting mode 2 preserves
+control keys/states on all seven and evaluates the original 425904011
+finishing opportunity as winning (1.044 turns versus about 1.064).
+Population measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511),
+not dispatched. Owner 2026-11-20: local builds/smoke/named replays only;
+no local population arms. The source tree does not own gameplay dossiers.
