@@ -10,6 +10,39 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## The C Borg's leash as parameters (#732)
+
+The registry now holds **2232** parameters (2222 before; ten added). Owner,
+2026-11-20: "remove our leash completely and expose the leash of C with
+configuration parameters". The owner's own leash (PR #734: 15/25/40/60 steps
+by level) is dropped; the zoo found it neutral (borg-zoo#475).
+
+- C's leash keeps the Borg within `CL × per_level + base` steps of the stairs
+  (`borg_get_leash`): for picking up items below `pickup_max_level`; for
+  exploring while the depth is at least the level less `depth_margin` (so a
+  Borg well above its depth explores freely); `unbounded` otherwise. Once
+  bored (more than `twitch_after` twitches) it grows by the twitch count.
+- The same numbers drive the distance-to-stairs check
+  (`borg_flow_far_from_stairs_dist`, below `stairs_max_level`) and the two
+  item checks of `take_select` (below `take_near_max_level` near the stairs;
+  below `take_max_level` past `take_nearness`).
+- Every default is C's literal, so play is unchanged; a zoo profile can move
+  any of them. Read in one place, `c_leash` in `borg_flow.rs`, on each use
+  (not cached).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1657` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1658` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1659` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1660` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1661` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1662` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1663` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1664` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1665` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1666` |
+
 ## Immobile monsters and blocked stairs (#736)
 
 The registry now holds **2221** parameters (2216 after #716; five added).
@@ -1785,11 +1818,11 @@ death with the list, 4 without), 1.
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:3682` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
 | `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:3683` (#549: the danger here above which the stair scum stops) |
 | `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:3713` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
-| `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2776` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
-| `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2812` |
-| `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2813` |
+| `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2779` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
+| `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2815` |
+| `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2816` |
 | `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2799` |
-| `caution_flee_recall_gate_below_depth` | 0 (shipped 1, i.e. off) | dungeon level | 0–127 | `borg_caution.rs:2778` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
+| `caution_flee_recall_gate_below_depth` | 0 (shipped 1, i.e. off) | dungeon level | 0–127 | `borg_caution.rs:2781` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
 | `caution_flee_recall_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:2790` (#587: where the gate holds a flight's Recall, danger here at this share of HP allows it; 0 = off; inert at the shipped gate) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:3751` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
