@@ -4431,16 +4431,16 @@ checks, not a population improvement claim. Non-acting mode 2 preserves
 control keys/states on all seven and evaluates the original 425904011
 finishing opportunity as winning (1.044 turns versus about 1.064).
 Population measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511),
-not dispatched. Owner 2026-11-20: local builds/smoke/named replays only;
+whose initial pilot ran on `78b8f297`. Owner 2026-11-20: local builds/smoke/named replays only;
 no local population arms. The source tree does not own gameplay dossiers.
 
 
-The first zoo pilot on `78b8f297` exposed a selector bug: the initial
-category implementation put family order ahead of damage. Rogue1381972077
-fired pebbles at a crow while carrying eight flasks of oil. Damage now sorts
-first; a regression test requires strong oil to outrank weak pebbles and
-retains the family order only for ties. This correction was not in the
-initial pilot. The pilot had no survival-leading arm; see
-[Zoo #511 results](https://github.com/diegoami/borg-zoo/issues/511#issuecomment-7045769634).
-The later wake-aware Recall change was also absent from that pilot. All
-switches remain shipped off; no larger run was dispatched by this session.
+The first zoo pilot on `78b8f297` found no survival-leading arm and exposed
+an attack selector defect. Expected damage now sorts before attack family;
+family preference resolves ties, covered by an oil/pebble regression test.
+The corrected all-switch specimen is `5acb8104`, including possible-wake
+Recall. Its local checks reach the cap in six of seven named starts;
+1976035382 still dies. Full evidence and pilot investigation belong to
+[Cemetery #88](https://github.com/diegoami/borg-cemetery/pull/88). The updated
+specimen remains unmeasured; [Zoo #511](https://github.com/diegoami/borg-zoo/issues/511)
+preserves the initial pilot provenance and pins the future specimen.
