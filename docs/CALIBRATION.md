@@ -10,6 +10,73 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Flight tuning after the Ranger deaths (#747, #749, #750, #751, #753)
+
+Owner (2026-11-20), after the analysis of borg-zoo#488's 12 Ranger deaths
+(main fde8025a): "we must fix the flight. My idea is to stop flight when
+other monsters are IN BETWEEN the stairs, not close."
+
+The registry now holds **2227** parameters (2223 before; four added, and
+`caution_stairs_clean_path` gains a mode 2). The branch also carries #743's
+`caution_stairs_clean_path_flee` (section below). Five switches, all compiled
+and shipped 0 = today (`caution_stairs_clean_path` stays shipped 1):
+- **`caution_stairs_clean_path` 2** (#751): the path test (`path_blocker`,
+  `borg_flow_stairs.rs`) counts only a monster **on** the path, the staircase
+  included. Mode 1 (#736) also counted one next to it, which made the
+  monster next to the Borg "in the way" of an adjacent staircase
+  (2095979189, wild cat). The mode is read inside `path_blocker`, so it
+  applies to the desperate walk and to #743's check of every flight.
+- **`caution_desperate_fast_danger_percent`** (#747): "Desperate for Stairs
+  (three)" doesn't walk while a faster monster is adjacent. Above 0, only
+  when that monster's danger is at least this percent of the HP: a fruit bat
+  (432972050) no longer cancels a walk to stairs 6 steps away.
+- **`caution_recall_cure_min_loss_percent`** (#749): C's buy-time cure while
+  waiting for Recall (`borg-caution.c:2046`: less than 100 HP lost) is true
+  at full HP for a low-level character, which drank 4 Cure Light Wounds at
+  15/15 HP (432972050). Above 0, a cure needs at least this percent of the
+  max HP lost.
+- **`caution_rising_hold_min_hp_percent`** (#753): with #557's
+  `caution_rising_hold_flee_descent`, walking home (rising) holds a flight
+  off a down staircase unless the danger there is at least the HP. In
+  214960633 the Borg stood on a down staircase at 2 of 47 HP, the danger on
+  the staircase 0 (a grey mold next to it), and was held. Above 0, a
+  fleeing Borg below this percent of its max HP is not held.
+- **`caution_stairs_flight_ignore_danger`** (#750): a flight's stair flow
+  (`GOAL_FLEE`, or a bored walk up while fleeing or leaving) refuses no grid
+  for its danger, as the desperate walk. In 807683971 a black naga two grids
+  beside a clear corridor made the corridor's first grid "too dangerous" and
+  the flight never reached the up staircase 8 grids away (a logging replay).
+
+**On the 12 Ranger deaths** (fde8025a with the four switches; off replays the
+zoo's keys 12/12): each alone saves two games (#747: 1222599014, 432972050;
+#749: 1583605217, 432972050; #750: 225452245, 807683971; #751 changes only
+2095979189, which still dies); all four save 4. Six games are untouched by
+any of them (see #753, #754).
+
+**On 600 local starts** (fde8025a plus the flight branch with #743 merged;
+"on" = `caution_stairs_clean_path` 2, `caution_desperate_fast_danger_percent`
+50, `caution_recall_cure_min_loss_percent` 30,
+`caution_stairs_flight_ignore_danger` 1, `caution_stairs_clean_path_flee` 1;
+#753's switch was not in these runs):
+
+| starts | off deaths | on deaths | saved | newly killed |
+|---|---|---|---|---|
+| 200 Rangers | 9 | 10 | 1 | 2 |
+| 400 others (50 per class) | 3 | 8 | 1 | 6 |
+
+Neutral on the Rangers and leaning harmful on the other classes (12 → 18;
+too few deaths for a sign test). No single switch reproduces the new deaths
+in a per-switch replay. Nothing here is a claim: the zoo's measurement is
+borg-zoo#501, and every switch stays at 0 until it reports.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_stairs_clean_path` | 0 (shipped 1) | choice | 0–2 | `borg_caution.rs:959` |
+| `caution_desperate_fast_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:4124` |
+| `caution_recall_cure_min_loss_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4359` |
+| `caution_stairs_flight_ignore_danger` | 0 | flag | 0–1 | `borg_caution.rs:4104` |
+| `caution_rising_hold_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:3570` |
+
 ## A clean path for every flight to the stairs (#743)
 
 The registry now holds **2223** parameters (2222 before; one added). Owner,
@@ -4264,37 +4331,3 @@ The rule is rarely reached: when the Borg is cornered (a known monster
 within 2 grids), the monster is almost always already adjacent. A first
 version that didn't restore the dry run's random numbers changed games where
 the rule never acted; the restore fixed it (18/18 identical).
-
-## Flight tuning after the Ranger deaths (#747, #749, #750, #751)
-
-Owner (2026-11-20), after the analysis of borg-zoo#488's 12 Ranger deaths
-(main fde8025a): "we must fix the flight. My idea is to stop flight when
-other monsters are IN BETWEEN the stairs, not close."
-
-Four switches, all compiled and shipped 0 = today:
-- **`caution_stairs_clean_path` 2** (#751): the path test (`path_blocker`,
-  `borg_flow_stairs.rs`) counts only a monster **on** the path, the staircase
-  included. Mode 1 (#736) also counted one next to it, which made the
-  monster next to the Borg "in the way" of an adjacent staircase
-  (2095979189, wild cat). The mode is read inside `path_blocker`, so it
-  applies to the desperate walk and to #743's check of every flight.
-- **`caution_desperate_fast_danger_percent`** (#747): "Desperate for Stairs
-  (three)" doesn't walk while a faster monster is adjacent. Above 0, only
-  when that monster's danger is at least this percent of the HP: a fruit bat
-  (432972050) no longer cancels a walk to stairs 6 steps away.
-- **`caution_recall_cure_min_loss_percent`** (#749): C's buy-time cure while
-  waiting for Recall (`borg-caution.c:2046`: less than 100 HP lost) is true
-  at full HP for a low-level character, which drank 4 Cure Light Wounds at
-  15/15 HP (432972050). Above 0, a cure needs at least this percent of the
-  max HP lost.
-- **`caution_stairs_flight_ignore_danger`** (#750): a flight's stair flow
-  (`GOAL_FLEE`, or a bored walk up while fleeing or leaving) refuses no grid
-  for its danger, as the desperate walk. In 807683971 a black naga two grids
-  beside a clear corridor made the corridor's first grid "too dangerous" and
-  the flight never reached the up staircase 8 grids away (a logging replay).
-
-**On the 12 Ranger deaths** (fde8025a with the four switches; off replays the
-zoo's keys 12/12): each alone saves two games (#747: 1222599014, 432972050;
-#749: 1583605217, 432972050; #750: 225452245, 807683971; #751 changes only
-2095979189, which still dies); all four save 4. Six games are untouched by
-any of them (see #753, #754).
