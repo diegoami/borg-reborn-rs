@@ -22,8 +22,9 @@ The registry now holds **2200** parameters (2199 after #625; one added).
   mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
   Paladins. Detect Evil also misses the animals that kill these classes on
   DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
-  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; 0 (C) for
-  Warrior, Rogue, Ranger and Blackguard.
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; since
+  2026-11-20 (owner) 10 for every class, so Rogue, Ranger and Blackguard too
+  (a Warrior casts none).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -67,7 +68,7 @@ From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
 
-- **`attack_throw_as_melee`** (flag, 0 = C). With 1, `borg_attack_aux_object`
+- **`attack_throw_as_melee`** (flag, 0 = C; **shipped 1**, owner 2026-11-20). With 1, `borg_attack_aux_object`
   rates a throw on melee's footing:
   - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
     and `:1296`): dice average plus to-dam, times `2 + weight / 12` for a
