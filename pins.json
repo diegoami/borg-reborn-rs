@@ -7,7 +7,8 @@
       "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
       "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; engine/angband/ is its tree byte for byte (docs/SPEC.md §3). Its src/borg/ was the source of the c-pristine control built here until milestone E (T1.3); the zoo builds the controls now (SPEC §6).",
       "read_on": "2026-11-20",
-      "borg_dir": "src/borg"
+      "borg_dir": "src/borg",
+      "borg_ledger": "engine/upstream-borg.txt"
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",

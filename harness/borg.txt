@@ -724,6 +724,13 @@ borg_param_escape_phase_lost_danger_percent = 100
 
 borg_param_escape_phase_lost_mana = 1
 
+# Teleport landing with either kind of teleport (#724, upstream Angband
+# 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
+# teleport scroll or spell or a teleport staff or activation; 0 = C (both
+# needed, so with one only the Destruction and Teleport Level defences never
+# saw a safe landing).
+borg_param_escape_teleport_landing_either = 0
+
 # Immobile creatures (#646, #713). Owner: "always choose ranged against
 # immobile but annoying monsters"; "step away from immobile creature with
 # annoying effects and only attack them from a distance, if you have to".
