@@ -10,6 +10,14 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Resolved settings at birth (#798)
+
+`settings-resolved.json` records the active class and every parameter
+whose effective value differs from its compiled class default. The receipt
+uses the decision core's parameter lookup after applying the class
+override. See [ZOO-INTERFACE.md](ZOO-INTERFACE.md#resolved-settings-at-birth-798)
+for the schema.
+
 ## Walk out of a slower crowd (#690)
 
 The registry now holds **2269** parameters (2266 before; three added).

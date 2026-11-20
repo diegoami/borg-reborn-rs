@@ -16,6 +16,7 @@ macro_rules! parameters {
         #[derive(Clone, Copy)]
         #[repr(usize)]
         pub(crate) enum Param { $($name),* }
+        const PARAMETERS: &[Param] = &[$(Param::$name),*];
         pub(crate) const SPECS: &[Spec] = &[
             $(Spec { name: stringify!($name), default: $default, unit: $unit,
                 min: $min, max: $max, source: $source, description: $description,
@@ -2372,30 +2373,34 @@ fn current_class() -> Option<usize> {
     (class < CLASSES.len()).then_some(class)
 }
 
-fn pick(r: &Resolved) -> (i32, &'static str) {
-    current_class().and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
+fn pick(r: &Resolved, class: Option<usize>) -> (i32, &'static str) {
+    class.and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
 }
 
-fn compiled_default(spec: &Spec) -> i32 {
-    spec.class_defaults.and_then(|defaults| current_class().map(|class| defaults[class])).unwrap_or(spec.default)
+fn compiled_default(spec: &Spec, class: Option<usize>) -> i32 {
+    spec.class_defaults.and_then(|defaults| class.map(|c| defaults[c])).unwrap_or(spec.default)
+}
+
+fn resolved_for(param: Param, values: Option<&[Resolved]>, class: Option<usize>) -> (i32, &'static str) {
+    if let Some(layer) = breeder_policy_layer(param) {
+        let policy = Param::caution_breeder_policy as usize;
+        let policy = values.map_or(SPECS[policy].default, |values| pick(&values[policy], class).0);
+        if policy >= 0 {
+            return (i32::from(policy >= layer), "caution_breeder_policy");
+        }
+    }
+    let i = param as usize;
+    values.map_or_else(|| (compiled_default(&SPECS[i], class), "default"), |values| pick(&values[i], class))
 }
 
 pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
-    if let Some(v) = breeder_policy_switch(param) {
-        return (v, "caution_breeder_policy");
-    }
-    let i = param as usize;
-    VALUES.get().map_or_else(|| (compiled_default(&SPECS[i]), "default"), |values| pick(&values[i]))
+    resolved_for(param, VALUES.get().map(Vec::as_slice), current_class())
 }
 
 /// Pure lookup after init: the current class's value when it has one, else
 /// the common one. Isolated decision tests use the same defaults.
 pub(crate) fn value(param: Param) -> i32 {
-    if let Some(v) = breeder_policy_switch(param) {
-        return v;
-    }
-    let i = param as usize;
-    VALUES.get().map_or_else(|| compiled_default(&SPECS[i]), |values| pick(&values[i]).0)
+    resolved(param).0
 }
 
 /// borg-reborn-rs (#722): the layer of `caution_breeder_policy` that turns
@@ -2409,16 +2414,6 @@ fn breeder_policy_layer(param: Param) -> Option<i32> {
         Param::caution_breeder_exit => Some(5),
         _ => None,
     }
-}
-
-/// borg-reborn-rs (#722): with `caution_breeder_policy` 0..5, the breeder
-/// switches follow it (each on from its layer); at -1 (compiled) they are
-/// read as set.
-fn breeder_policy_switch(param: Param) -> Option<i32> {
-    let layer = breeder_policy_layer(param)?;
-    let i = Param::caution_breeder_policy as usize;
-    let policy = VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i]).0);
-    (policy >= 0).then(|| i32::from(policy >= layer))
 }
 
 /// borg-reborn-rs (#520): the per-class names of the families that #520
@@ -2634,9 +2629,74 @@ pub(crate) fn initialize() {
     }
 }
 
+#[derive(Serialize)]
+struct SettingsReceipt {
+    schema: &'static str,
+    class_index: usize,
+    class_name: &'static str,
+    effective_settings: BTreeMap<&'static str, i32>,
+}
+
+fn settings_receipt(values: &[Resolved], class: usize) -> SettingsReceipt {
+    let effective_settings = PARAMETERS.iter().filter_map(|&param| {
+        let spec = &SPECS[param as usize];
+        let value = resolved_for(param, Some(values), Some(class)).0;
+        (value != compiled_default(spec, Some(class))).then_some((spec.name, value))
+    }).collect();
+    SettingsReceipt {
+        schema: "borg-settings-resolved@1",
+        class_index: class,
+        class_name: CLASSES[class],
+        effective_settings,
+    }
+}
+
+/// Write after birth (or load), once the active class is known. The run
+/// directory holds the current character's receipt, including after rebirth.
+pub(crate) fn write_settings_receipt() {
+    let (Some(dir), Some(values), Some(class)) = (
+        std::env::var_os("BORG_RUN_DIR"), VALUES.get(), current_class(),
+    ) else {
+        return;
+    };
+    let path = std::path::PathBuf::from(dir).join("settings-resolved.json");
+    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let mut json = serde_json::to_vec_pretty(&settings_receipt(values, class))?;
+        json.push(b'\n');
+        std::fs::write(&path, json)?;
+        Ok(())
+    })();
+    if let Err(e) = result {
+        eprintln!("borg-reborn-rs: {}: {e}", path.display());
+        std::process::exit(2);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn birth_receipt_resolves_class_overrides_and_omits_compiled_defaults() {
+        let settings = parse(
+            "borg_param_town_phase_reserve = 1\n\
+             borg_param_town_phase_reserve__ranger = 2\n\
+             borg_param_town_phase_reserve__mage = 0\n\
+             borg_param_caution_breeder_policy__ranger = 0\n",
+            &BTreeMap::new(), SPECS,
+        ).unwrap();
+        let values = resolve(&settings);
+        let ranger = serde_json::to_value(settings_receipt(&values, 7)).unwrap();
+        assert_eq!(ranger["class_index"], 7);
+        assert_eq!(ranger["class_name"], "ranger");
+        assert_eq!(ranger["effective_settings"]["town_phase_reserve"], 2);
+        assert_eq!(ranger["effective_settings"]["caution_breeder_policy"], 0);
+        assert!(ranger["effective_settings"].get("town_phase_reserve_percent").is_none());
+        assert_eq!(settings_receipt(&values, 0).effective_settings["town_phase_reserve"], 1);
+        assert!(!settings_receipt(&values, 1).effective_settings.contains_key("town_phase_reserve"));
+        assert!(settings_receipt(&resolve(&parse("", &BTreeMap::new(), SPECS).unwrap()), 7)
+            .effective_settings.is_empty());
+    }
 
     #[test]
     fn inventory_bounds_reject_unsafe_quantity_rng_and_ordering() {
@@ -2766,13 +2826,9 @@ mod tests {
         let mut class = [None; 9];
         class[1] = Some((300, "borg.txt"));
         let r = Resolved { value: 100, origin: "borg.txt", class };
-        set_class(-1);
-        assert_eq!(pick(&r), (100, "borg.txt"));
-        set_class(1);
-        assert_eq!(pick(&r), (300, "borg.txt"));
-        set_class(0);
-        assert_eq!(pick(&r), (100, "borg.txt"));
-        set_class(-1);
+        assert_eq!(pick(&r, None), (100, "borg.txt"));
+        assert_eq!(pick(&r, Some(1)), (300, "borg.txt"));
+        assert_eq!(pick(&r, Some(0)), (100, "borg.txt"));
     }
 
     #[test]

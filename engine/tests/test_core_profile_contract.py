@@ -153,6 +153,7 @@ class CoreProfileContractTest(unittest.TestCase):
         settings = dict(examples['profiles']['core-recover-rest-8']['settings'])
         settings['borg_param_power_equipment_unidentified_weapon_bonus'] = 0
         settings['borg_param_attack_preference_mage_spell_permille'] = 1600
+        settings['borg_param_town_phase_reserve__warrior'] = 3
         out, record = self.cell('core-trial', settings)
         self.assertEqual(record['outcome'], 'turn_cap', record)
         settings = {s['name']: s for s in json.loads((out / 'params-core.json').read_text())}
@@ -161,6 +162,11 @@ class CoreProfileContractTest(unittest.TestCase):
         # #520: the legacy per-class name sets the Mage's class value.
         mage = settings['attack_preference_spell_permille']['class_values']['mage']
         self.assertEqual((mage['value'], mage['origin']), (1600, 'borg.txt'))
+        receipt = json.loads((out / 'settings-resolved.json').read_text())
+        self.assertEqual(receipt['schema'], 'borg-settings-resolved@1')
+        self.assertEqual((receipt['class_index'], receipt['class_name']), (0, 'warrior'))
+        self.assertEqual(receipt['effective_settings']['town_phase_reserve'], 3)
+        self.assertNotIn('attack_preference_spell_permille', receipt['effective_settings'])
         self.assertTrue((out / 'trace-core.jsonl').stat().st_size)
         self.assertEqual(record['binary_sha256'], self.binary_sha)
         self.assertEqual(json.loads((out / 'summary.json').read_text())['game_turns'], 300)

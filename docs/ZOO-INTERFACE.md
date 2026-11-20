@@ -265,6 +265,32 @@ The core trace's `parameter_name` for an attack candidate is the family's
 parameter (`attack_preference_spell_permille`); the row's `class_name` gives the
 class.
 
+### Resolved settings at birth (#798)
+
+The vendored core writes `settings-resolved.json` beside `params-core.json`
+when it first attaches to a character. It uses the run directory described
+above. The receipt is also refreshed on reincarnation. A standard zoo cell
+plays one character.
+
+```json
+{
+  "schema": "borg-settings-resolved@1",
+  "class_index": 7,
+  "class_name": "ranger",
+  "effective_settings": {"town_phase_reserve": 2}
+}
+```
+
+The example shows one entry. The map includes every registered parameter
+whose live value differs from its compiled default for that class, with
+canonical names and integer values. It accounts for file and environment
+precedence, class overrides, and policy-derived values such as breeder
+switches. An empty map means the character uses its compiled parameter
+defaults. A missing file means no receipt is available. Preserve the file,
+hash its exact bytes and copy the map to the zoo cell's
+`effective_settings`, retaining class identity and schema with the receipt.
+Native `summary.json` keeps its existing format.
+
 ## Class/family preference profiles (#403)
 
 Since #520 there is one preference per family, `borg_param_attack_preference_<family>_permille`,
