@@ -31,7 +31,8 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 > vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
 > Our changes to it are one patch: `src/shell.rs` (the errands) and the
 > hooks marked `borg-reborn-rs (#207)` and `(#208)`. The engine is
-> upstream `42cd156ac`, the commit borg-rs v12 plays (#215); borg-rs's one
+> upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs v12 plays, until
+> 2026-11-20, #215); borg-rs's one
 > fork correction (`cmd-wizard.c`, debug mode) is not carried. §2.1's "no
 > dependency" and §2.2's "no copy kept in sync" hold for everything else,
 > and our own core still needs nothing from borg-rs.
