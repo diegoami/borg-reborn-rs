@@ -2002,6 +2002,8 @@ pub fn feat_is_shop(feat: i32) -> bool {
 pub struct RaceBlow {
     /// `effect->name`
     pub effect_name: &'static CStr,
+    /// Static hit power from blow_effects.txt (mon-attack.c:336-355).
+    pub hit_power: i32,
     /// `dice.dice`
     pub dice: i32,
     /// `dice.sides`
@@ -2030,7 +2032,7 @@ pub fn race_blow(r_idx: usize, k: usize) -> Option<RaceBlow> {
         assert!(!b.effect.is_null(), "race {r_idx} blow {k} has no effect");
         let name = (*b.effect).name;
         assert!(!name.is_null(), "race {r_idx} blow {k} effect has no name");
-        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
+        Some(RaceBlow { effect_name: CStr::from_ptr(name), hit_power: (*b.effect).power, dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
     }
 }
 

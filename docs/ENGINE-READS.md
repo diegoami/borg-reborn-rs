@@ -124,7 +124,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `monster` | B | a seen monster: index, race, grid, HP, timers, speed, colour, mimicry |
 | `monster_race` | K | monster races |
 | `monster_base` | K | a race's base (its name) |
-| `monster_blow` | K | a race's blows |
+| `monster_blow` | K | a race's blows and static blow-effect hit power (`blow_effects.txt`) |
 | `blow_method` | K | a blow's method |
 | `blow_effect` | K | a blow's effect |
 | `ego_item` | K | ego items |

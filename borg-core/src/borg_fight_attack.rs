@@ -5092,6 +5092,13 @@ pub(crate) fn observed_kill_hp(kill: &crate::borg_flow_kill::BorgKill) -> Option
     kill.observed_health.filter(|&(hp, max)| hp >= 0 && max > 0).map(|(hp, _)| i32::from(hp) + 1)
 }
 
+/// HP/shot -> HP/Borg turn. Engine ranged_damage does not multiply the
+/// damage of an arrow by shooting rate (player-attack.c:554-582); firing
+/// instead costs 10/num_shots of a turn (player-attack.c:1087).
+pub(crate) fn focused_projectile_rate(per_shot: i64, num_shots: i32) -> i64 {
+    per_shot * i64::from(num_shots.max(0)) / 10
+}
+
 /// #759: real damage for the focused planner, in millihitpoints. The
 /// native planner's targeting bonuses, missile conservation and point-blank
 /// preferences are not damage. Non-damaging projections score zero.
@@ -5125,7 +5132,7 @@ fn focused_launch_damage(st: &BorgState, i: usize, damage: i32, typ: i32, slot: 
             damage = damage.min(i64::from(focused_power(st, kill.power)));
             damage = damage * i64::from(hit_permyriad(chance, race.ac)) / 10_000;
             if !st.fight_attack.throwing {
-                damage = damage * i64::from(engine::player_attack_rates().1.max(0)) / 10;
+                damage = focused_projectile_rate(damage, engine::player_attack_rates().1);
             }
         }
         BORG_ATTACK_ACID if rf(r, RF_IM_ACID) => damage = 0,

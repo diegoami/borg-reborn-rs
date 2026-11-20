@@ -1877,7 +1877,8 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 ///
 /// (See borg-caution.c for the full commentary.)
 /// #759: time in Borg turns, rounded up to complete attack commands.
-/// Damage and fallback are HP per Borg turn; duration is turns per primary
+/// Damage and fallback are RATES in HP per Borg turn, not HP per shot.
+/// Per-command damage is rate * duration; duration is turns per primary
 /// command (a shot can be fractional). The unlimited melee fallback books
 /// whole commands conservatively, even if an early kill saves blow energy
 /// (player-attack.c:990-1020). Resource uses are whole commands as well.
@@ -1947,6 +1948,23 @@ mod winning_fight_tests {
     }
 
     #[test]
+    fn firing_rate_changes_command_time_not_an_arrows_damage() {
+        let rate = crate::borg_fight_attack::focused_projectile_rate(18_000, 30) as f64 / 1000.0;
+        assert_eq!(rate, 54.0, "one 18HP arrow, three shots per turn: 54HP/turn");
+        assert_eq!(race_turns(30, rate, Some(2), 1.0 / 3.0, 0.0), Some((2.0 / 3.0, 2)));
+        let rate = crate::borg_fight_attack::focused_projectile_rate(6000, 30) as f64 / 1000.0;
+        assert_eq!(rate, 18.0);
+        let (turns, arrows) = race_turns(30, rate, Some(5), 1.0 / 3.0, 0.0).unwrap();
+        assert_eq!(arrows, 5, "18HP/turn is 6HP per third-turn arrow, not18 per arrow");
+        assert!((turns - 5.0 / 3.0).abs() < 1e-12);
+        let rate = crate::borg_fight_attack::focused_projectile_rate(12_000, 20) as f64 / 1000.0;
+        assert_eq!(race_turns(30, rate, Some(5), 0.5, 0.0), Some((1.5, 3)));
+        let cl20_rate = crate::borg_fight_attack::focused_projectile_rate(12_000, 16) as f64 / 1000.0;
+        assert_eq!(race_turns(30, cl20_rate, Some(3), 10.0 / 16.0, 0.0), Some((1.875, 3)), "PF_FAST_SHOT adds level/3: CL20 adds6 shots-tenths, not10");
+        assert_eq!(race_turns(30, rate, Some(1), 0.5, 6.0), Some((3.5, 1)), "one12HP shot leaves18HP for three melee commands");
+    }
+
+    #[test]
     fn several_attackers_share_the_damage_budget() {
         let first = race_turns(4, 4.0, None, 1.0, 0.0).unwrap().0;
         let second = race_turns(8, 4.0, None, 1.0, 0.0).unwrap().0;
@@ -1955,48 +1973,105 @@ mod winning_fight_tests {
     }
 }
 
-/// #759: incoming HP damage per Borg turn. For plain HURT blows, use the
-/// engine's dice mean, hit chance and energy ratio (monster.txt; mon-attack.c:
-/// 336-355; player-attack.c:196-219; game-world.c extract_energy table).
-/// AC damage reduction and monster confusion are omitted conservatively.
-/// Status attacks and spells retain the existing danger upper estimate;
-/// unlike a raw dice mean it includes their non-HP consequences.
-/// mon-move.c:1929-1934 at 574b618c. Haste adds ten speed. Do not credit
-/// Slow persisting throughout a future fight/Recall; it may wear off.
+/// #759/#758: quantities of HP and unmodelled risk are separate. A native
+/// danger score includes fear prices and must never be multiplied by time
+/// or compared to HP as if it were damage.
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct IncomingDamage {
+    pub hp_per_turn: f64,
+    pub unknown_damage: bool,
+    pub unknown_fight: bool,
+    pub ranged_risk: bool,
+}
+
+/// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
+/// persists during a future fight or the Recall delay.
 pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
 }
 
-pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
+// Recall is already pending during exposure: these non-damaging spells do
+// not stop its countdown. They CAN change the ability to execute attacks,
+// so a winning fight with spells still remains uncertified. monster_spell.txt
+// :655-663,894-927,959-977,1056-1065 at 574b618c defines these effects.
+// Teleporting, HASTE, summons and damaging spells are
+// not silently priced as HP: their unmodelled contribution is a risk flag.
+fn recall_spell_has_unknown_damage(spell: u32) -> bool {
+    use crate::headers::list_mon_spells_h::*;
+    !matches!(spell, RSF_HEAL | RSF_HEAL_KIN | RSF_SCARE | RSF_BLIND | RSF_CONF
+        | RSF_DRAIN_MANA | RSF_FORGET)
+}
+
+fn modelled_blow(effect: &[u8]) -> bool {
+    matches!(effect, b"HURT" | b"ACID" | b"ELEC" | b"FIRE" | b"COLD" | b"NONE")
+}
+
+fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: bool) -> f64 {
+    // project-player.c:72-73: elemental vulnerability multiplies by 4/3.
+    // Ignore AC, resistance, immunity and damage reduction conservatively;
+    // element melee uses max(physical, elemental), not their sum
+    // (mon-blows.c:442-460). Neither fear nor item-damage prices are HP.
+    average.max(0.0) * f64::from(chance) / 10_000.0 * energy_ratio
+        * if vulnerable { 4.0 / 3.0 } else { 1.0 }
+}
+
+pub(crate) fn fight_incoming(st: &BorgState, i: usize) -> IncomingDamage {
     fight_incoming_with(st, i, false)
 }
 
-/// Evaluate a copy, including possible wake-up for a deliberate attack.
-pub(crate) fn fight_incoming_with(st: &mut BorgState, i: usize, wake: bool) -> f64 {
-    let mut kill = st.kills.kills[i];
-    if wake { kill.awake = true; }
-    if kill.r_idx == 0 || !kill.awake { return 0.0; }
+/// Literal expected contact HP/Borg turn plus separate uncertainty flags.
+/// Unknown spell/status HP prevents a win certificate and makes Recall
+/// refuse explicitly for unmodelled risk, never a fabricated HP number.
+pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> IncomingDamage {
+    let kill = st.kills.kills[i];
+    if kill.r_idx == 0 || (!kill.awake && !wake) { return IncomingDamage::default(); }
     let r = usize::from(kill.r_idx);
     let race = engine::race(r);
-    let mut plain = kill.ranged_attack == 0;
-    let mut melee = 0.0;
-    for b in 0..usize::from(engine::z_info().mon_blows_max) {
-        let Some(blow) = engine::race_blow(r, b) else { break };
-        if blow.effect_name.to_bytes() != b"HURT" { plain = false; }
-        // HURT's to-hit power is 40: blow_effects.txt:21-22.
-        let chance = crate::borg_fight_attack::hit_permyriad(3 * i32::from(race.level).max(1) + 40, st.borg.tr(crate::borg_headers::borg_trait_h::BI_ARMOR));
-        let average = blow_average_tenths(blow.base, blow.dice, blow.sides, blow.m_bonus, i32::from(race.level));
-        melee += average as f64 / 10.0 * f64::from(chance) / 10_000.0;
-    }
     let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
     let ratio = energy(forecast_monster_speed(&kill)) / energy(engine::player_combat_speed());
-    if plain { return melee * ratio; }
-    // At the monster's own position there is no distance discount. This
-    // keeps a presently distant attacker in the bound while another dies.
-    // Pass the observed Haste to the native status/spell estimate too.
-    // The legacy knowledge record keeps its base speed (off behavior).
-    kill.speed = forecast_monster_speed(&kill).clamp(0, 199) as u8;
-    f64::from(crate::borg_danger::danger_one_kill(st, &kill, kill.pos.y, kill.pos.x, 1, i as i32, true, true)).max(melee * ratio)
+    let mut out = IncomingDamage { unknown_fight: kill.ranged_attack != 0, ..IncomingDamage::default() };
+    for b in 0..usize::from(engine::z_info().mon_blows_max) {
+        let Some(blow) = engine::race_blow(r, b) else { break };
+        let effect = blow.effect_name.to_bytes();
+        out.unknown_fight |= effect != b"HURT";
+        out.unknown_damage |= !modelled_blow(effect);
+        let vulnerable = match effect {
+            b"ACID" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VACID) != 0,
+            b"ELEC" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VELEC) != 0,
+            b"FIRE" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VFIRE) != 0,
+            b"COLD" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VCOLD) != 0,
+            _ => false,
+        };
+        let chance = crate::borg_fight_attack::hit_permyriad(3 * i32::from(race.level).max(1) + blow.hit_power, st.borg.tr(crate::borg_headers::borg_trait_h::BI_ARMOR));
+        let average = blow_average_tenths(blow.base, blow.dice, blow.sides, blow.m_bonus, i32::from(race.level)) as f64 / 10.0;
+        out.hp_per_turn += blow_hp_per_action(average, chance, ratio, vulnerable);
+    }
+    use crate::headers::list_mon_spells_h::RSF_MAX;
+    for spell in 1..RSF_MAX {
+        if engine::flag_has(&race.spell_flags, spell as i32) {
+            out.ranged_risk |= recall_spell_has_unknown_damage(spell);
+        }
+    }
+    out.unknown_damage |= out.ranged_risk;
+    out
+}
+
+#[cfg(test)]
+mod incoming_units_tests {
+    #[test]
+    fn elemental_blows_and_harmless_spells_are_not_fear_prices() {
+        assert_eq!(super::blow_hp_per_action(2.0, 9500, 1.0, false), 1.9, "1d3 acid is not 200/630/1014 HP");
+        assert!(super::blow_hp_per_action(2.0, 9500, 2.0, true) < 6.0);
+        use crate::headers::list_mon_spells_h::*;
+        assert!(!super::recall_spell_has_unknown_damage(RSF_HEAL));
+        assert!(!super::recall_spell_has_unknown_damage(RSF_SCARE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_MISSILE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_HASTE));
+        assert!(super::recall_spell_has_unknown_damage(RSF_BLINK), "can bypass the approach route");
+        assert!(super::recall_spell_has_unknown_damage(RSF_DARKNESS), "has a DARK_WEAK projection too");
+        assert!(super::modelled_blow(b"ACID"));
+        assert!(!super::modelled_blow(b"POISON"));
+    }
 }
 
 /// #759: a fresh comparison on every think, including during an existing
@@ -2027,7 +2102,9 @@ fn winning_fight(st: &mut BorgState) -> bool {
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
             continue;
         }
-        let danger = fight_incoming(st, i);
+        let forecast = fight_incoming(st, i);
+        if forecast.unknown_fight || forecast.unknown_damage { return false; }
+        let danger = forecast.hp_per_turn;
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
@@ -2053,7 +2130,9 @@ fn winning_fight(st: &mut BorgState) -> bool {
                 if mana <= 0 { 0 } else { u * mana_left / mana }
             } else { (u - spent.get(&attack.kind).copied().unwrap_or(0)).max(0) }
         });
-        // mon-move.c:regen_monster: at least 1 HP each 100 game turns,
+        // mon-move.c:1893-1897 gates regen on turn%100==0, regardless of
+        // monster speed; :1914-1925 handles each monster once that turn.
+        // regen_monster: at least 1 HP each 100 game turns,
         // doubled for REGENERATE. Charge its continuous mean immediately,
         // conservatively, rather than assuming a long fight has no healing.
         let kill = st.kills.kills[i];
@@ -2092,7 +2171,9 @@ fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_li
 
 /// Owner-approved review exception: the category itself never creates a
 /// scare, but lethal contact or excessive danger from other foes can still
-/// reach ordinary cures/escapes. Reuse today's excessive-danger threshold.
+/// reach ordinary cures/escapes. Reuse today's threshold MULTIPLIER. The
+/// quantity is other monsters' native danger, excluding the target and the
+/// regional/fear-map terms; it is not today's full borg_danger sum.
 pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
     let hp = st.borg.tr(BI_CURHP);
     let target_damage = fight_incoming_with(st, target, true);
@@ -2102,7 +2183,7 @@ pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
         other_danger += i64::from(crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
     }
     let limit = i64::from(hp) * i64::from(p(Param::caution_flee_danger_hp_multiplier));
-    category_threat_safe(hp, target_damage, other_danger, limit)
+    !target_damage.unknown_damage && category_threat_safe(hp, target_damage.hp_per_turn, other_danger, limit)
 }
 
 #[cfg(test)]

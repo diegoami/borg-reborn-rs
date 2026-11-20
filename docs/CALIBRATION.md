@@ -102,11 +102,11 @@ borg-zoo#501, and every switch stays at 0 until it reports.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_stairs_clean_path` | 0 (shipped 1) | choice | 0–3 | `borg_caution.rs:967` |
-| `caution_desperate_fast_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:4460` |
+| `caution_desperate_fast_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:4541` |
 | `caution_desperate_ranged_first_reach` | 0 | grids | 0–10 | `borg_caution.rs:981` |
-| `caution_recall_cure_min_loss_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4732` |
-| `caution_stairs_flight_ignore_danger` | 0 | flag | 0–1 | `borg_caution.rs:4438` |
-| `caution_rising_hold_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:3907` |
+| `caution_recall_cure_min_loss_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4800` |
+| `caution_stairs_flight_ignore_danger` | 0 | flag | 0–1 | `borg_caution.rs:4519` |
+| `caution_rising_hold_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:3988` |
 
 ## A clean path for every flight to the stairs (#743)
 
@@ -815,8 +815,8 @@ breeding cannot be stopped any more". This replaces the first design below
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_stoppable` | 0 | flag | 0–1 | `borg_caution.rs:3542` |
-| `caution_breeder_stoppable_births_percent` | 200 | percent | 1–10000 | `borg_caution.rs:3557` |
+| `caution_breeder_stoppable` | 0 | flag | 0–1 | `borg_caution.rs:3623` |
+| `caution_breeder_stoppable_births_percent` | 200 | percent | 1–10000 | `borg_caution.rs:3676` |
 
 ## Avoid breeder colonies (#556)
 
@@ -859,12 +859,12 @@ borg-cemetery#73).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_avoid` | 0 | flag | 0–1 | `borg_caution.rs:3505` |
-| `caution_breeder_avoid_radius` | 1 | grids | 0–10 | `borg_caution.rs:3526` |
-| `caution_breeder_avoid_turns` | 50 | Borg turns | 1–100000 | `borg_caution.rs:3509` |
-| `caution_breeder_avoid_fight_through` | 1 | flag | 0–1 | `borg_caution.rs:3763` |
-| `caution_breeder_through_turns` | 5 | Borg turns | 0–1000 | `borg_caution.rs:3772` |
-| `caution_breeder_stuck_turns` | 20 | Borg turns | 0–1000 | `borg_caution.rs:3746` |
+| `caution_breeder_avoid` | 0 | flag | 0–1 | `borg_caution.rs:3586` |
+| `caution_breeder_avoid_radius` | 1 | grids | 0–10 | `borg_caution.rs:3594` |
+| `caution_breeder_avoid_turns` | 50 | Borg turns | 1–100000 | `borg_caution.rs:3590` |
+| `caution_breeder_avoid_fight_through` | 1 | flag | 0–1 | `borg_caution.rs:3844` |
+| `caution_breeder_through_turns` | 5 | Borg turns | 0–1000 | `borg_caution.rs:3853` |
+| `caution_breeder_stuck_turns` | 20 | Borg turns | 0–1000 | `borg_caution.rs:3827` |
 
 ## Ranged first against immobile attackers (#646)
 
@@ -1008,8 +1008,8 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4598` |
-| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4601` |
+| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4679` |
+| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4682` |
 
 ## Kill on sight in town: caster walk, wands, a sure preference (#637)
 
@@ -1178,7 +1178,7 @@ The registry now holds **2166** parameters (2165 after #614; one added). `cautio
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_recall_wait_as_usual` | 0 | flag | 0–1 | `borg_caution.rs:3251` |
+| `caution_recall_wait_as_usual` | 0 | flag | 0–1 | `borg_caution.rs:3332` |
 
 ## Rest at the stairs (#614)
 
@@ -1254,9 +1254,9 @@ measurement.
 |---|---|---|---|---|
 | `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:143` |
 | `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:164` |
-| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4496` |
-| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4495` |
-| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4502` |
+| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4577` |
+| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4576` |
+| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4583` |
 
 ## Ignored town monsters (#618, #621)
 
@@ -1599,8 +1599,8 @@ death is the new `borg.txt`'s, not this change's: it comes from
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:4038` |
-| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:4038` |
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:4119` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:4119` |
 
 ## Fear cures and the see-invisible clock (#516)
 
@@ -1808,8 +1808,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:4424` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4429` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:4505` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4510` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -1839,12 +1839,12 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:4202` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4203` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:4205` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:4262` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:4326` (buff spells only at or below this failure rate) |
-| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:4250` (0 = off; owner: the same boosts in a hard breeder fight) |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:4283` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:4284` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:4286` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:4343` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:4407` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:4331` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Healing by class; no Shovel while poor (#487)
 
@@ -1923,28 +1923,28 @@ death with the list, 4 without), 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:3017` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:3018` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:3379` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:3566` |
-| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:3393` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
-| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:3396` (#544 B: the exit's distance from every breeder) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:3098` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:3099` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:3447` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:3634` |
+| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:3474` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
+| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:3477` (#544 B: the exit's distance from every breeder) |
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4813` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
-| `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3226` (#597: the twitch never steps into lava without fire immunity) |
-| `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3233` (#597: a monster on every known staircase no longer hides them from the stair flows) |
-| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:3870` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
-| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:3874` (#549: the danger here above which the stair scum stops) |
-| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:3901` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
-| `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2904` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
-| `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2940` |
-| `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2941` |
-| `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2924` |
-| `caution_flee_recall_gate_below_depth` | 0 (shipped 1, i.e. off) | dungeon level | 0–127 | `borg_caution.rs:2906` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
-| `caution_flee_recall_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:2915` (#587: where the gate holds a flight's Recall, danger here at this share of HP allows it; 0 = off; inert at the shipped gate) |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:3950` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4894` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3307` (#597: the twitch never steps into lava without fire immunity) |
+| `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3314` (#597: a monster on every known staircase no longer hides them from the stair flows) |
+| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:3951` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
+| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:3955` (#549: the danger here above which the stair scum stops) |
+| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:3982` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
+| `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2985` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
+| `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:3008` |
+| `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:3009` |
+| `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:3005` |
+| `caution_flee_recall_gate_below_depth` | 0 (shipped 1, i.e. off) | dungeon level | 0–127 | `borg_caution.rs:2987` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
+| `caution_flee_recall_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:2996` (#587: where the gate holds a flight's Recall, danger here at this share of HP allows it; 0 = off; inert at the shipped gate) |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:4031` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)
 
@@ -1980,7 +1980,7 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:3055` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:3136` (read in `borg_flow_kill.rs`) |
 
 ### The scary flag stops latching (#515)
 
@@ -2004,9 +2004,9 @@ stand mode on: the same 3 deaths either way.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:3082` |
-| `caution_scary_unlatch_kill` | 0 | flag | 0–1 | `borg_caution.rs:3083` (#590: with `caution_scary_stand`, clear once the last scary monster known was killed, latch on or off; forgetting is not enough) |
-| `caution_scary_unlatch_calmed` | 0 | flag | 0–1 | `borg_caution.rs:3084` (#593: with `caution_scary_stand`, clear once a named-list or damage-rule scary monster is known hurt or afraid, or killed, latch on or off) |
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:3150` |
+| `caution_scary_unlatch_kill` | 0 | flag | 0–1 | `borg_caution.rs:3151` (#590: with `caution_scary_stand`, clear once the last scary monster known was killed, latch on or off; forgetting is not enough) |
+| `caution_scary_unlatch_calmed` | 0 | flag | 0–1 | `borg_caution.rs:3152` (#593: with `caution_scary_stand`, clear once a named-list or damage-rule scary monster is known hurt or afraid, or killed, latch on or off) |
 
 ## The named scary list as data (#518)
 
@@ -2103,7 +2103,7 @@ list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:4014` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:4095` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 
@@ -2383,22 +2383,22 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_move_antisummon_delay` | 50 | turns | 0–100000 | `borg_caution.rs:1790` |
 | `caution_move_max_hp` | 500 | hp | 0–10000 | `borg_caution.rs:1793` |
 | `caution_one_blow_monster_age` | 2 | turns | 0–100000 | `borg_caution.rs:1825` |
-| `caution_nasty_light_timeout` | 250 | turns | 0–100000 | `borg_caution.rs:2133` |
-| `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:2147` |
-| `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:2130` |
-| `caution_escape_absolute_limit` | 55 | count | 0–1000 | `borg_caution.rs:2131` |
-| `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:2133` |
-| `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:2139` |
+| `caution_nasty_light_timeout` | 250 | turns | 0–100000 | `borg_caution.rs:2214` |
+| `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:2215` |
+| `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:2249` |
+| `caution_escape_absolute_limit` | 55 | count | 0–1000 | `borg_caution.rs:2250` |
+| `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:2252` |
+| `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:2258` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:2296` |
 | `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:2380` |
 | `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:2394` |
-| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:2131` |
-| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:2132` |
-| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:2133` |
-| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:2135` |
-| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2176` |
-| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:2181` |
-| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:2195` |
+| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:2476` |
+| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:2477` |
+| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:2478` |
+| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:2479` |
+| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2185` |
+| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:2495` |
+| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:2513` |
 | `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:2410` |
 | `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:2411` |
 | `caution_breeder_flee_max_level` | 15 | level | 1–51 | `borg_caution.rs:2498` |
@@ -2412,36 +2412,36 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_fear_holy_fail` | 25 | percent | 0–100 | `borg_caution.rs:2695` |
 | `caution_flee_low_hp_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:2703` |
 | `caution_flee_moderate_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:2704` |
-| `caution_flee_hp_per_level` | 3 | hp_per_level | 0–100 | `borg_caution.rs:2125` |
-| `caution_flee_ccw_count` | 3 | count | 0–1000 | `borg_caution.rs:2126` |
-| `caution_flee_heal_count` | 1 | count | 0–1000 | `borg_caution.rs:2127` |
-| `caution_flee_low_hp_chance` | 25 | percent | 0–100 | `borg_caution.rs:2130` |
-| `caution_flee_status_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:2138` |
-| `caution_flee_status_chance` | 25 | percent | 0–100 | `borg_caution.rs:2141` |
-| `caution_reserve_critical_hp_divisor` | 10 | divisor | 1–100 | `borg_caution.rs:2150` |
-| `caution_reserve_escape_count` | 2 | count | 0–1000 | `borg_caution.rs:2152` |
-| `caution_reserve_danger_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2153` |
-| `caution_reserve_heal_count` | 5 | count | 0–1000 | `borg_caution.rs:2155` |
-| `caution_reserve_surplus_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2155` |
-| `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:2157` |
-| `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:2159` |
-| `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2193` |
-| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4531` |
-| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:4556` |
-| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:4564` |
-| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:4565` |
-| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:4566` |
-| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4697` |
-| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4698` |
-| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:4711` |
-| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:4712` |
-| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:4717` |
-| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:4718` |
-| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:4731` |
-| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:4741` |
+| `caution_flee_hp_per_level` | 3 | hp_per_level | 0–100 | `borg_caution.rs:2773` |
+| `caution_flee_ccw_count` | 3 | count | 0–1000 | `borg_caution.rs:2774` |
+| `caution_flee_heal_count` | 1 | count | 0–1000 | `borg_caution.rs:2775` |
+| `caution_flee_low_hp_chance` | 25 | percent | 0–100 | `borg_caution.rs:2778` |
+| `caution_flee_status_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:2786` |
+| `caution_flee_status_chance` | 25 | percent | 0–100 | `borg_caution.rs:2789` |
+| `caution_reserve_critical_hp_divisor` | 10 | divisor | 1–100 | `borg_caution.rs:2798` |
+| `caution_reserve_escape_count` | 2 | count | 0–1000 | `borg_caution.rs:2800` |
+| `caution_reserve_danger_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2801` |
+| `caution_reserve_heal_count` | 5 | count | 0–1000 | `borg_caution.rs:2803` |
+| `caution_reserve_surplus_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2803` |
+| `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:2805` |
+| `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:2807` |
+| `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2848` |
+| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4612` |
+| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:4624` |
+| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:4632` |
+| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:4633` |
+| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:4634` |
+| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4778` |
+| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4779` |
+| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:4779` |
+| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:4780` |
+| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:4785` |
+| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:4786` |
+| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:4799` |
+| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:4809` |
 | `caution_retreat_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1145` |
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1373` |
-| `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:2181` |
+| `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:2300` |
 | `caution_recall_rest_turns` | 500 | turns | 2–9999 | `borg_caution.rs:2315` |
 | `caution_heal_when_outmatched` | 0 | flag | 0–1 | `borg_caution.rs:229` |
 | `caution_heal_outmatched_min_loss` | 50 | percent | 0–100 | `borg_caution.rs:233` |
@@ -4304,7 +4304,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5412` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5420` |
 
 ## C Borg dive gates (#768)
 
@@ -4481,8 +4481,8 @@ caution's site skips (`BI_ISHUNGRY` with food left).
 
 | name | default | unit | range | cited |
 |---|---:|---|---|---|
-| `caution_recall_pending_escape` | 0 | flag | 0–1 | `borg_caution.rs:3105` |
-| `caution_recall_wait_no_explore` | 0 | flag | 0–1 | `borg_caution.rs:3286` |
+| `caution_recall_pending_escape` | 0 | flag | 0–1 | `borg_caution.rs:3173` |
+| `caution_recall_wait_no_explore` | 0 | flag | 0–1 | `borg_caution.rs:3367` |
 
 ## Attack categories and winning fights (#760, #759)
 
@@ -4549,8 +4549,9 @@ monster Haste is added to base speed; Slow is not credited as persisting
 throughout a forecast. The focused executor preserves the native free
 fox-to-normal revert before melee and recomputes the plan before attacking. Plain HURT
 blows use their dice mean, hit chance and monster/player energy ratio;
-armor's damage reduction is omitted conservatively. Other effects and
-spells retain the native conservative danger estimate. Poison, bleeding,
+armor's damage reduction is omitted conservatively. Unmodelled status or
+spell contributions prevent a winning certificate; native fear scores are
+not quantities of HP and are not included in that race. Poison, bleeding,
 confused commands, an attacker without a current observable target, unknown HP or an unmodelled damage projection cannot
 certify a winning fight. These bounds can decline a fight that is actually
 winnable; they are not a proof against a run of misses.
@@ -4618,3 +4619,28 @@ before/after controls, all failures and old versions are in Cemetery #88's
 commands at3650 and does not certify that finishing state as winning. The
 future Zoo specimen is explicitly repinned after these corrections;5acb8104
 is a previous unmeasured proposal. No population improvement is claimed.
+
+
+Third-review units correction (#763/#764): incoming forecasts now carry
+literal contact HP separately from unmodelled risks. Basic elemental blows
+use their dice, actual static hit power and speed ratio, without AC or
+resistance discounts (known vulnerability uses the engine4/3 factor).
+Native fear scores never become HP/turn. Unknown spell/status HP makes a
+fight uncertified. Recall explicitly refuses unmodelled risks without
+printing a fabricated damage total; heal/scare and the other explicitly
+non-damaging, non-moving spell effects do not add HP or generic fear prices.
+The other-monster exception still uses today's threshold multiplier on the
+other monsters' native danger sum, omitting the target and regional/map fear;
+only the multiplier is shared, not the complete quantity.
+
+The new bow finding was checked against the engine: ranged_damage does not
+multiply an arrow by shooting rate (player-attack.c:554-582); the command's
+energy is reduced instead (:1087). The focused value is HP per Borg turn,
+not HP per arrow. An18HP arrow at3 shots/turn therefore gives54HP/turn and
+kills30HP in2 arrows/2/3turn; the actual formula already books that. Tests
+now exercise the real rate conversion and finite-ammo/fallback cases. Changing
+to ceil(HP/rate) without duration would over-credit each arrow. Regeneration
+is gated by turn%100, not by each monster attack (mon-move.c:1893-1897), so
+its conversion through player energy remains unchanged. Older forecast
+figures and specimen394f2aea are historical; the new specimen must be
+explicitly pinned after verification. No switch is enabled for shipping.
