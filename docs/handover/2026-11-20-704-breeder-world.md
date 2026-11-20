@@ -64,9 +64,9 @@ configuration file"; 2026-11-20: "do 704".
 **Left / for the owner:**
 - borg-zoo#482: the breeder policy ladder (0-5) in `breeders-x4`, pinned
   to `e41eb758`; its pilot is running.
-- **RULES 12:** the three deaths of the local world runs (breeders-x4:
+- **RULES 12, decided** (owner, 2026-11-20: "exploratory deaths do not
+  count"): the three deaths of the local world runs (breeders-x4:
   1569794094 cave spider, 226104090 poison; breeders-x8: 300036923 blue
-  worm mass) have no Cemetery case. The owner decides: record them, or rule
-  exploratory world runs exempt.
+  worm mass) get no Cemetery case.
 - Other rare situations (uniques, out-of-depth monsters, invisible ones)
   could use the same mechanism with new config keys, later.
