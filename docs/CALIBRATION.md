@@ -4230,8 +4230,11 @@ from an up staircase below CL20. It has four leaks:
   direct methods have no leash, in C either) skip a target more flow steps
   from the nearest known staircase, up or down, than `flow_leash_cl1` … `flow_leash_cl4` (15, 25, 40,
   60). Past `flow_leash_max_level` (4), and in town, C's leash applies, as
-  with the switch off (owner, 2026-11-20, re-review of #734: the switch only
-  tightens CL1-4); with no staircase known there is no leash. The distances come from one spread from
+  with the switch off (owner, 2026-11-20, re-review of #734: the switch
+  changes only CL1-4). The owner's leash is looser than C's at every level
+  (C's `CL × 3 + 9`: 12/15/18/21, then 24 at CL5), so a character reaching
+  CL5 goes back to C's 24 steps after 60 at CL4; the owner kept that
+  (2026-11-20, "C's leash as now"); with no staircase known there is no leash. The distances come from one spread from
   every known staircase per think (`leash_cost`).
 - **2:** as 1, and the leash grows with the XP gained toward the next level
   (`engine::level_progress_permille`: `player_exp[L - 1] × expfact / 100`,
