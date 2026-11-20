@@ -717,6 +717,10 @@ borg_param_town_ranger_arrows_curve_scale_percent = 0
 borg_param_town_phase_reserve = 0
 borg_param_town_phase_reserve_percent = 100
 
+# #789: reserve of oil available to throw and missiles for the equipped
+# launcher, counted together. Use __<class> for a class override.
+borg_param_town_ranged_reserve = 0
+
 # Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
 # town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
 # is forced to 0 in the plan); a shop lists true names, and a ware whose flavour
@@ -1173,6 +1177,10 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #789: town hunt, ranged scoring bonus, and HP retreat floor.
+borg_param_town_hunt = 0
+borg_param_town_hunt_ranged_bonus_percent = 0
+borg_param_town_hunt_min_hp_percent = 0
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.

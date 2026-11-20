@@ -1899,7 +1899,7 @@ fn complete_attack_commands(value: f64) -> f64 {
     } else { value.ceil() }
 }
 
-fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
+pub(crate) fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
     if hp <= 0 || !hp_per_turn.is_finite() || hp_per_turn <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
     if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some((complete_attack_commands(hp / fallback_hp_per_turn), 0)); }
@@ -1914,7 +1914,7 @@ fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallb
     Some((primary_time + complete_attack_commands(remaining / fallback_hp_per_turn), uses))
 }
 
-fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
+pub(crate) fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
     turns.is_finite() && turns > 0.0 && incoming.is_finite() && incoming >= 0.0
         && hp > 0 && turns * incoming < f64::from(hp)
 }
@@ -2273,6 +2273,9 @@ fn winning_fight(st: &mut BorgState) -> bool {
         if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
             continue;
         }
+        if crate::borg_town_hunt::controls_target(st, usize::from(kill.r_idx)) {
+            return false;
+        }
         let d = engine::distance(st.borg.c, kill.pos);
         if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
             if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
@@ -2317,10 +2320,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         // doubled for REGENERATE. Charge its continuous mean immediately,
         // conservatively, rather than assuming a long fight has no healing.
         let kill = st.kills.kills[i];
-        let max_hp = kill.observed_health.unwrap().1;
-        let regen = f64::from((i32::from(max_hp) / 100).max(1))
-            * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
-            / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
+        let regen = fight_regeneration(&kill);
         let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
         let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
@@ -2344,6 +2344,13 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+pub(crate) fn fight_regeneration(kill: &crate::borg_flow_kill::BorgKill) -> f64 {
+    let max_hp = kill.observed_health.expect("fight needs observed health").1;
+    f64::from((i32::from(max_hp) / 100).max(1))
+        * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
+        / f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0)
 }
 
 fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_limit: i64) -> bool {

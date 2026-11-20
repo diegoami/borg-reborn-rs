@@ -378,6 +378,7 @@ pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
 /// race's base name is read only for a base entry (the race copy is not
 /// free, and this runs on every damage estimate).
 pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
+    if crate::borg_town_hunt::avoids_maggot(st, r_idx) { return true; }
     let Some(list) = crate::scary_list::selected() else { return false };
     let who = crate::scary_list::Situation {
         clevel: tr(st, BI_CLEVEL),
@@ -465,6 +466,11 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
 }
 
 fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
+    let kind = st.fight_attack.focused_target.map(|_| st.fight_attack.focused_kind);
+    thrust_damage_with(st, i, spell_blows, kind)
+}
+
+fn thrust_damage_with(st: &BorgState, i: i32, spell_blows: i32, focused_kind: Option<i32>) -> i32 {
     /* Examine current weapon */
     let item = &st.items.items[inven_wield() as usize];
 
@@ -487,7 +493,7 @@ fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
         return 0;
     }
 
-    let focused = st.fight_attack.focused_target.is_some();
+    let focused = focused_kind.is_some();
     let unit = if focused { 1000 } else { 1 };
     let mut dam = i32::from(item.dd) * (i32::from(item.ds) + 1) * unit / 2;
 
@@ -542,11 +548,16 @@ fn thrust_damage(st: &BorgState, i: i32, spell_blows: i32) -> i32 {
         // Fixed spell blows share a capped HP budget BEFORE hit chance.
         // This credits their count without treating separate chances of an
         // overkill hit as guaranteed damage (effect-handler-attack.c:1940-1974).
-        let per_blow = focused_blow_expectation(focused_blow_damage, focused_power(st, kill.power),
+        let hp = if st.fight_attack.focused_target.is_some() {
+            focused_power(st, kill.power)
+        } else {
+            observed_kill_hp(kill).unwrap_or(i32::from(kill.power).max(1)) * 1000
+        };
+        let per_blow = focused_blow_expectation(focused_blow_damage, hp,
             hit_permyriad(chance, r_ptr.ac), spell_blows);
         // Ordinary melee takes fractional energy. Weapon spells specify
         // their own number of py_attack_real blows and take a full action.
-        let rate = if st.fight_attack.focused_kind == BF_THRUST as i32 { engine::player_attack_rates().0 } else { 100 * spell_blows.max(0) };
+        let rate = if focused_kind == Some(BF_THRUST as i32) { engine::player_attack_rates().0 } else { 100 * spell_blows.max(0) };
         return (per_blow * i64::from(rate.max(0)) / 100) as i32;
     }
 
@@ -4828,6 +4839,13 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
             continue;
         }
 
+        // #789 owns these targets while the town hunt is enabled.
+        if crate::borg_town_hunt::controls_target(st, usize::from(r))
+            || crate::borg_town_hunt::avoids_maggot(st, usize::from(r))
+        {
+            continue;
+        }
+
         /* Require current knowledge */
         if borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
             continue;
@@ -5199,7 +5217,7 @@ pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'stati
         breeder_count: i32::from(st.borg.mon.breeders),
         breeder_stand: !st.borg.breeders_lost && crate::borg_caution::breeder_stand(st),
         levels_less: 0,
-    })
+    }).filter(|reason| *reason != crate::borg_town_hunt::REASON)
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -5235,6 +5253,29 @@ fn focused_score(a: FocusedAttack) -> (i64, i32) {
     (expected, focused_priority(a.kind))
 }
 
+pub(crate) fn town_melee_damage(st: &BorgState, target: usize) -> i32 {
+    thrust_damage_with(st, target as i32, 1, Some(BF_THRUST as i32))
+}
+
+pub(crate) fn focused_attack_is_ranged(attack: FocusedAttack) -> bool {
+    focused_priority(attack.kind) > 1 && !matches!(attack.kind as u32,
+        BF_SPELL_WHIRLWIND_ATTACK | BF_SPELL_LEAP_INTO_BATTLE | BF_SPELL_MAIM_FOE)
+}
+
+fn town_focused_score(attack: FocusedAttack, bonus: i32) -> (i64, i32) {
+    let (damage, priority) = focused_score(attack);
+    let percent = if focused_attack_is_ranged(attack) { 100 + i64::from(bonus) } else { 100 };
+    (damage * percent, priority)
+}
+
+pub(crate) fn town_focused_attack(
+    st: &mut BorgState, target: usize, bonus: i32, allowed: impl Fn(FocusedAttack) -> bool,
+) -> Option<FocusedAttack> {
+    focused_attack_ranked(st, target, |attack| {
+        allowed(attack).then(|| town_focused_score(attack, bonus))
+    })
+}
+
 #[cfg(test)]
 mod focused_tests {
     use super::*;
@@ -5266,6 +5307,18 @@ mod focused_tests {
     }
 
     #[test]
+    fn town_ranged_bonus_can_break_a_close_comparison_but_melee_can_win() {
+        let melee = FocusedAttack { kind: BF_THRUST as i32, hp_per_turn_milli: 9000,
+            cost: None, fallback: 0, duration: 1.0 };
+        let oil = FocusedAttack { kind: BF_OBJECT as i32, hp_per_turn_milli: 8000, ..melee };
+        let arrow = FocusedAttack { kind: BF_LAUNCH as i32, hp_per_turn_milli: 4000, ..melee };
+        assert!(town_focused_score(melee, 0) > town_focused_score(oil, 0));
+        assert!(town_focused_score(oil, 50) > town_focused_score(melee, 50));
+        assert!(town_focused_score(melee, 50) > town_focused_score(arrow, 50));
+        assert!(!focused_attack_is_ranged(FocusedAttack { kind: BF_SPELL_MAIM_FOE as i32, ..melee }));
+    }
+
+    #[test]
     fn observed_hp_is_not_the_rounded_health_bar() {
         let mut kill = crate::borg_flow_kill::BorgKill::default();
         assert_eq!(observed_kill_hp(&kill), None);
@@ -5284,6 +5337,12 @@ mod focused_tests {
 /// Restore RNG, simulation flags, targets and goals after the dry run.
 /// Native eligibility and aim checks remain in force; no attack is issued.
 pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
+    focused_attack_ranked(st, target, |attack| Some(focused_score(attack)))
+}
+
+fn focused_attack_ranked(
+    st: &mut BorgState, target: usize, rank: impl Fn(FocusedAttack) -> Option<(i64, i32)>,
+) -> Option<FocusedAttack> {
     let kill = st.kills.kills[target];
     if kill.r_idx == 0 || is_ghost(kill.r_idx) || borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
         return None;
@@ -5304,7 +5363,7 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
     st.fight_attack.focused_target = Some(target);
     st.traits.simulate = true;
     st.traits.attacking = true;
-    let mut best: Option<FocusedAttack> = None;
+    let mut best: Option<((i64, i32), FocusedAttack)> = None;
     let mut fallback = 0;
     let max = if engine::player_opt(OPT_birth_randarts) { BF_MAX } else { BF_ACT_STARLIGHT };
     for kind in 0..max as i32 {
@@ -5332,8 +5391,8 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
         if cost.is_none() { fallback = fallback.max(damage); }
         let duration = if kind == BF_LAUNCH as i32 { 10.0 / f64::from(engine::player_attack_rates().1.max(1)) } else { 1.0 };
         let candidate = FocusedAttack { kind, hp_per_turn_milli: damage, cost, fallback: 0, duration };
-        if best.is_none_or(|b| focused_score(candidate) > focused_score(b)) {
-            best = Some(candidate);
+        if let Some(score) = rank(candidate).filter(|&score| best.is_none_or(|b| score > b.0)) {
+            best = Some((score, candidate));
         }
     }
     engine::set_rand_state(rng.0, rng.1);
@@ -5345,7 +5404,7 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
     st.flow.temp_x[0] = temp.1;
     st.flow.temp_y[0] = temp.2;
     st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = ag.kill;
-    best.map(|mut b| { b.fallback = fallback; b })
+    best.map(|(_, mut b)| { b.fallback = fallback; b })
 }
 
 pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: FocusedAttack) -> bool {

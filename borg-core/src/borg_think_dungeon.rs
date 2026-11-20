@@ -719,11 +719,24 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* examine equipment and swaps */
     borg_notice(st, true);
 
+    let town_hunt = crate::borg_town_hunt::think(st);
+    if town_hunt == crate::borg_town_hunt::Hunt::Retreat {
+        start_leaving_fleeing(st, "town hunt");
+        st.borg.goal.fleeing_to_town = true;
+    }
+    let town_retreat = crate::borg_town_hunt::enabled(st)
+        && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
+
     // #760/#759: an attack-on-sight target or a winning fight owns the
     // action before even an out-of-light wait or a depth-return flight.
-    if crate::borg_caution::fight_before_flight(st) {
+    if town_hunt == crate::borg_town_hunt::Hunt::Acted
+        || (!town_retreat && crate::borg_caution::fight_before_flight(st))
+    {
         if st.borg.no_retreat > 0 {
             st.borg.no_retreat -= 1;
+        }
+        if town_hunt == crate::borg_town_hunt::Hunt::Acted {
+            return choice!("town_hunt");
         }
         return choice!("fight_before_flight");
     }
@@ -773,6 +786,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Try not to die */
     if borg_caution(st) {
         return choice!("borg_caution");
+    }
+
+    // #789: use the normal scary-town stair flow for a retreat without
+    // restoring the named scare. The ordinary ladder remains the fallback.
+    if town_retreat {
+        if feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE {
+            borg_keypress(st, key(b'>'));
+            return choice!("town_hunt_retreat");
+        }
+        if borg_flow_old(st, GOAL_FLEE) || borg_flow_stair_both(st, GOAL_FLEE, false) {
+            return choice!("town_hunt_retreat");
+        }
     }
 
     // borg-reborn-rs (#208): an errand steers here, after caution.
