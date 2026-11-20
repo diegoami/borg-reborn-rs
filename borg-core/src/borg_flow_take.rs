@@ -25,13 +25,13 @@ use crate::borg_projection::borg_distance;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_VERBOSE};
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_APHASE, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
+    BI_AMISSILES, BI_AMMO_TVAL, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
     BI_QUIVER_SLOTS,
 };
 use crate::headers::list_mon_race_flags_h::{RF_KILL_ITEM, RF_TAKE_ITEM};
 use crate::headers::list_terrain_h::FEAT_FLOOR;
 use crate::headers::list_tvals_h::{
-    TV_ARROW, TV_BOLT, TV_GOLD, TV_SHOT,
+    TV_ARROW, TV_BOLT, TV_GOLD, TV_SCROLL, TV_SHOT,
 };
 use crate::state::BorgState;
 use crate::{borg_flow, borg_flow_misc, borg_io, engine};
@@ -487,15 +487,30 @@ fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: b
 ///
 /// Note that objects under the player are always deleted
 pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    if !take_select(st, viewable, nearness) {
+    let mut phase_pruned: Vec<(i32, i32)> = Vec::new();
+    if !take_select(st, viewable, nearness, &mut phase_pruned) {
         return false;
+    }
+    if take_flow(st, viewable, nearness) {
+        return true;
+    }
+    // borg-reborn-rs (#761, review of #778): the Phase-only shortlist can
+    // fail where the full list would not — a Phase Door past the flow's
+    // depth (`borg_flow_spread`'s limit) or behind danger suppresses the
+    // reachable loot. Restore what the rule dropped and flow once more.
+    if phase_pruned.is_empty() {
+        return false;
+    }
+    for &(y, x) in &phase_pruned {
+        st.flow.temp_push(y, x);
     }
     take_flow(st, viewable, nearness)
 }
 
 /// The object selection of `borg_flow_take`: fills `borg_temp_*`; false when
-/// there is nothing to take.
-fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
+/// there is nothing to take. `phase_pruned` gets the candidates the
+/// Phase-first rule dropped, for the retry in `borg_flow_take`.
+fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: &mut Vec<(i32, i32)>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, true);
     // borg-reborn-rs (#732): C's take-leash numbers are parameters (`c_leash`).
     let c = crate::borg_flow::c_leash();
@@ -538,7 +553,12 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
 
     /* borg-reborn-rs (#761): short of Phase Doors, one on the floor is exempt from the leash */
     let (phase_short_below, phase_first) = crate::borg_flow::take_phase_rule();
-    let phase_short = short_of_phase(phase_short_below, st.borg.tr(BI_APHASE));
+    // borg-reborn-rs (#761, review of #778): the threshold is the held
+    // scrolls, not `BI_APHASE` — the trait also counts a Phase Door spell
+    // (+1000) and an equipped activation (+1) (`borg_trait.rs`, "Handle
+    // PhaseDoor spell carefully"), which are not scrolls and hide a short
+    // stock.
+    let phase_short = short_of_phase(phase_short_below, carried_phase_scrolls(st));
     let mut phase_pushed: Vec<bool> = Vec::new();
 
     /* Scan the object list */
@@ -625,10 +645,14 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     if phase_first && phase_pushed.iter().any(|&p| p) && phase_pushed.iter().any(|&p| !p) {
         let n = st.flow.temp_n as usize;
         let kept: Vec<(i32, i32)> = (0..n).filter(|&k| phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
+        // borg-reborn-rs (#761, review of #778): remembered for the retry in
+        // `borg_flow_take`, when the Phase-only flow finds nothing in reach.
+        let dropped: Vec<(i32, i32)> = (0..n).filter(|&k| !phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
         st.flow.temp_n = 0;
         for (y, x) in kept {
             st.flow.temp_push(y, x);
         }
+        *phase_pruned = dropped;
     }
 
     /* Nothing to take */
@@ -638,6 +662,31 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
 /// borg-reborn-rs (#761): the Borg holds fewer Phase Doors than the switch asks (0 = off).
 fn short_of_phase(below: i32, held: i32) -> bool {
     below > 0 && held < below
+}
+
+/// borg-reborn-rs (#761, review of #778): the Scrolls of Phase Door in the
+/// pack — the count the documented threshold of `flow_take_phase_short_below`
+/// asks for ("while the Borg holds fewer Scrolls of Phase Door than this").
+/// Like `borg_notice_inventory`'s scan: the pack slots, aware items only.
+fn carried_phase_scrolls(st: &BorgState) -> i32 {
+    carried_phase_scrolls_in(st, pack_slots(st))
+}
+
+/// The counted part of `carried_phase_scrolls`, with the pack end a parameter
+/// so a test can build a small pack.
+fn carried_phase_scrolls_in(st: &BorgState, pack_end: i32) -> i32 {
+    let mut n = 0;
+    for i in 0..pack_end {
+        let item = &st.items.items[i as usize];
+        if item.iqty != 0
+            && item.aware
+            && u32::from(item.tval) == TV_SCROLL
+            && i32::from(item.sval) == st.item_val.sv_scroll_phase_door
+        {
+            n += i32::from(item.iqty);
+        }
+    }
+    n
 }
 
 /// borg-reborn-rs (#761): the object kind is a Scroll of Phase Door.
@@ -770,13 +819,49 @@ pub fn borg_free_flow_take(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use crate::borg_item::blank_item;
 
     #[test]
     fn short_of_phase_is_off_at_zero_and_below_the_count() {
         assert!(!short_of_phase(0, 0));
         assert!(short_of_phase(2, 0) && short_of_phase(2, 1));
         assert!(!short_of_phase(2, 2) && !short_of_phase(2, 5));
+    }
+
+    /// #761 (review of #778): the threshold counts the aware Scrolls of Phase
+    /// Door in the pack — not `BI_APHASE`, which also counts a Phase Door
+    /// spell (+1000) and an equipped activation (+1), and not a home or
+    /// unaware copy.
+    #[test]
+    fn carried_phase_scrolls_counts_aware_scrolls_in_the_pack_only() {
+        let mut st = BorgState::default();
+        st.items.items = vec![blank_item(); 8];
+        st.item_val.sv_scroll_phase_door = 10;
+        let mut scroll = blank_item();
+        scroll.tval = TV_SCROLL as u8;
+        scroll.sval = 10;
+        scroll.aware = true;
+        let mut other = scroll;
+        other.sval = 11;
+        let mut unseen = scroll;
+        unseen.aware = false;
+        st.items.items[0] = scroll;
+        st.items.items[0].iqty = 2;
+        st.items.items[1] = other;
+        st.items.items[1].iqty = 5;
+        st.items.items[2] = unseen;
+        st.items.items[2].iqty = 7;
+        st.items.items[6] = scroll;
+        st.items.items[6].iqty = 9;
+        assert_eq!(carried_phase_scrolls_in(&st, 4), 2, "one stack in the pack; the wrong sval, the unseen copy and slot 6 are outside");
+        st.items.items[3] = scroll;
+        st.items.items[3].iqty = 3;
+        assert_eq!(carried_phase_scrolls_in(&st, 4), 5, "stacks sum");
+        assert_eq!(carried_phase_scrolls_in(&st, 8), 14, "the pack end moves the count");
+        // A Phase Door spell would put 1000 into `BI_APHASE`; the count of
+        // scrolls does not read the traits.
+        st.borg.trait_ = vec![1000; 1];
+        assert_eq!(carried_phase_scrolls_in(&st, 4), 5);
     }
 
     #[test]

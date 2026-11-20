@@ -517,9 +517,12 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
 }
 
 /// borg-reborn-rs (#761): a flavour-unseen ware's supplies at `percent`,
-/// Phase Door's (its own coefficients) as they are.
+/// Phase Door's (its own coefficients) as they are. A row that scales to zero
+/// is dropped: the model keeps no zero-unit supply row (`Model::valid` asks
+/// `r[3] > 0`), and a kept one stopped the town replay of 425904011 with
+/// "invalid capability facts" (review of #778).
 fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
-    out.into_iter().map(|(cap, n)| if cap == PHASE || cap == PHASE_RESERVE { (cap, n) } else { (cap, scale_percent(n, percent)) }).collect()
+    out.into_iter().map(|(cap, n)| if cap == PHASE || cap == PHASE_RESERVE { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
 fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
@@ -1039,7 +1042,18 @@ mod tests {
         let out = vec![(HEAL, 20 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)];
         assert_eq!(unseen_scaled(out.clone(), 100), out);
         assert_eq!(unseen_scaled(out.clone(), 50), vec![(HEAL, 10 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)]);
-        assert_eq!(unseen_scaled(out, 0), vec![(HEAL, 0), (PHASE, UNIT), (PHASE_RESERVE, UNIT)]);
+        assert_eq!(unseen_scaled(out, 0), vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)], "a row that scales to zero is dropped");
+    }
+
+    /// #761 (review of #778): rows that scale to zero are dropped, not kept —
+    /// the model rejects a zero-unit supply row (`Model::valid`), and the kept
+    /// rows stopped the town replay of Ranger 425904011 with "invalid
+    /// capability facts" on its first record.
+    #[test]
+    fn the_unseen_percent_drops_rows_that_scale_to_zero() {
+        assert_eq!(unseen_scaled(vec![(HEAL, UNIT), (LIGHT, 2 * UNIT)], 0), Vec::new());
+        assert_eq!(unseen_scaled(vec![(HEAL, 3 * UNIT)], 50), vec![(HEAL, 3 * UNIT / 2)]);
+        assert_eq!(unseen_scaled(vec![(PHASE, UNIT)], 0), vec![(PHASE, UNIT)], "Phase Door is not scaled");
     }
 
     /// #761: the first `town_phase_reserve` Phase Doors are a requirement on

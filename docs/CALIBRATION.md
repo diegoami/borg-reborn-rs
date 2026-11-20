@@ -35,11 +35,15 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
   outbids it. `town_phase_reserve` adds a second row, "phase reserve": the
   first N scrolls are a requirement, each worth `town_phase_reserve_percent`
   of the escape weight, nothing past N (as Recall's reserve, #557).
-- **Phase Door on the floor:** `take_select` (`borg_flow_take.rs:498`) skips an
-  item far from the stairs twice (the `flow_leash_take_*` checks, lines 562
-  and 612). While the Borg holds fewer than `flow_take_phase_short_below`
-  Scrolls of Phase Door, a Phase Door is exempt from both; with
-  `flow_take_phase_first`, when one is in reach it is the only object flowed to.
+- **Phase Door on the floor:** `take_select` (`borg_flow_take.rs:513`) skips an
+  item far from the stairs twice (the `flow_leash_take_*` checks, lines 582
+  and 631). While the Borg holds fewer than `flow_take_phase_short_below`
+  Scrolls of Phase Door in the pack (`carried_phase_scrolls`: a Phase Door
+  spell or an equipped activation is not a scroll), a Phase Door is exempt
+  from both; with `flow_take_phase_first`, when one is in reach it is the
+  only object flowed to — and when that Phase-only flow reaches nothing, the
+  dropped candidates are restored and the flow is tried once more
+  (`borg_flow_take`, review of #778).
 - **Unknown flavours:** the planner does not buy a flavour to learn it. The
   buy-to-identify weight (`borg_town_w_knowledge`) is forced to 0 in the live
   plan (`borg_town_shadow.rs:51`, `effective_params`; `borg_town_usefulness.rs:271`
@@ -54,7 +58,9 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
   (`dump.jsonl` purchase records: "Potions of Cure Light Wounds {unseen}").
   `town_unseen_percent` scales what any unseen shop ware supplies, Phase Door
   excepted (it has `town_phase_*`); it lowers unseen Cure Light Wounds and
-  Cure Serious Wounds as much as unknown Resist Heat. For healing alone use
+  Cure Serious Wounds as much as unknown Resist Heat, and a ware whose supply
+  scales to zero drops out of the plan (`Model::valid` keeps no zero-unit
+  supply row; review of #778). For healing alone use
   `town_heal_curve_scale_percent` and `town_heal_reserve_hp_percent`.
 - **Food and light per class:** `borg_town_w_food` and `borg_town_w_light` are
   settings of the common file with no per-class spelling.
@@ -207,14 +213,6 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1672` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1673` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1669` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1670` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1671` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1672` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1673` |
-
 | `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1672` |
 | `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1673` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1669` |
@@ -1697,7 +1695,7 @@ against 38 (18 games: direction only).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:820` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
 
 
@@ -1950,7 +1948,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:694` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1438` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1452` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -4458,3 +4456,74 @@ The rule is rarely reached: when the Borg is cornered (a known monster
 within 2 grids), the monster is almost always already adjacent. A first
 version that didn't restore the dry run's random numbers changed games where
 the rule never acted; the restore fixed it (18/18 identical).
+
+## The wait for Word of Recall on a scary level (#754)
+
+The registry now holds **2234** parameters (2232 on main before it; two added).
+In the Ranger analysis (borg-zoo#488) two games read Word of Recall on DL1 and
+then had the note "Scary guy on level, no escape: standing and fighting".
+That is #530's stand: a Recall that is already counting down doesn't count as
+an escape. One of the games (432972050) then explored while it waited and walked
+back into the cutpurse.
+
+- **`caution_recall_pending_escape`** (flag, compiled and shipped 0): 1 = a
+  Recall already counting down (`goal.recalling`) counts as an escape in
+  `apply_scary_stand`, so a scary level keeps its flight. #603's gates
+  (`recall_restricts`) still hold the flee flows and the down stairs, but an
+  up staircase the Borg walks onto is still taken (`choose_stairs`, "Take
+  stairs up"). On DL1 that is town, where the pending Recall fires and takes
+  the Borg back to its maximum depth (review of #762).
+- **`caution_recall_wait_no_explore`** (flag, compiled and shipped 0): 1 =
+  while Recall counts down in the dungeon, `borg_think_dungeon` stops before
+  its "Explore the dungeon" block, and the think ends there. That block
+  covers vaults, far kills, items and veins (250), and `borg_flow_dark`. What
+  follows it is skipped too: `borg_leave_level`, the shops, and C's own late
+  "Wait for recall", which this wait replaces. The Borg waits where it
+  stands. It rests for Recall (`caution_recall_rest_turns`, like caution's
+  own site) only when `borg_check_rest` allows it there and `borg_danger` is
+  0 (#567's hold first). Otherwise it stays still one turn and keeps #567's
+  watch current (review of #762). Everything above the hook still runs:
+  caution, attack, recovery, the #603 flight and leave under
+  `caution_recall_wait_as_usual`, and the near kill and item flows.
+
+**DL1 for `caution_recall_wait_as_usual`** (the issue's third question): not
+extended. On DL1 the up staircase leads to town, where the Recall then fires
+and takes the Borg back down to its maximum depth. Only the down staircase
+would be safe, which would need a DL1 rule of its own (down stairs only).
+
+**Local check** (100,000 turns; literal seeds 1–18, Human 1–9 and Half-Elf
+10–18, classes 0–8 in turn, which is not the zoo's `classes-18` seed set; plus
+the two Ranger starts 432972050 Half-Elf and 2049259432 Gnome; the first
+version of the switches, before the review's `borg_check_rest` gate):
+
+| arm | deaths | sum of max CL | sum of max DL | games as off | "not exploring" notes |
+|---|---:|---:|---:|---:|---:|
+| off | 1 | 122 | 44 | – | 0 |
+| pending escape | 1 | 124 | 44 | 18 / 20 | 0 |
+| no explore | 1 | 123 | 45 | 14 / 20 | 89 |
+| both | 1 | 124 | 46 | 13 / 20 | 93 |
+
+**After the review's gate** (same starts; the switches as merged):
+
+| arm | deaths | sum of max CL | sum of max DL | games as off | rests / stays still |
+|---|---:|---:|---:|---:|---:|
+| off | 1 | 122 | 44 | – | – |
+| pending escape | 1 | 124 | 44 | 18 / 20 | – |
+| no explore | 1 | 123 | 45 | 13 / 20 | 0 / 104 |
+| both | 1 | 124 | 46 | 12 / 20 | 0 / 108 |
+
+In practice the wait only stays still. Caution's own rest for Recall
+(`borg_caution`, earlier in the think) already rests whenever
+`borg_check_rest` passes, so the wait's rest is left for the rare states
+caution's site skips (`BI_ISHUNGRY` with food left).
+
+- **The death is Fang (2049259432) in every arm.** At CL1 with 13 HP, Fang is
+  adjacent and twice as fast, and the Borg has no escape left. The switches
+  change only the note.
+- **432972050 no longer dies on main** (it did on fde8025a).
+- **With both switches off,** smoke-borg-rs is 3/3 identical.
+
+| name | default | unit | range | cited |
+|---|---:|---|---|---|
+| `caution_recall_pending_escape` | 0 | flag | 0–1 | `borg_caution.rs:2823` |
+| `caution_recall_wait_no_explore` | 0 | flag | 0–1 | `borg_caution.rs:3040` |
