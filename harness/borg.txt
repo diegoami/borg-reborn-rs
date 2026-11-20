@@ -937,6 +937,12 @@ borg_param_caution_cornered_danger_tenths = 10
 borg_param_caution_cornered_radius = 2
 borg_param_caution_cornered_big_level_margin = 0
 borg_param_caution_cornered_spell_fail = 25
+# #719 (owner): cornered, throw or shoot first while no monster is adjacent
+# and a ranged attack does damage; buff once one is next to it. 1 = the
+# cornered boost, 2 = also the breeder fight's boost; 0 = buff first.
+# Shipped 1 (owner, 2026-11-20): measured neutral and rare (starts 1-90: it
+# acts 4 times in 3 games, deaths 4 and 4).
+borg_param_caution_cornered_throw_first = 1
 
 
 ### Breeders ###
@@ -1046,8 +1052,10 @@ borg_param_caution_breeder_lost_recall_turns = 500
 # breeding can be stopped (the known breeders' expected births a turn, times
 # births_percent, below the Borg's kills a turn with its best attack of any
 # kind, the attack planner's own choice), at any count and level
-# and whether or not it carries an escape; danger at or above the HP stops the
-# stand for that think. Once the breeding outpaces the kills the level is lost
+# and whether or not it carries an escape; danger at or above the HP pauses the
+# stand (and the hunt) for that think only: the usual caution acts (retreat,
+# escape), but no level-long leave, breeder flee or scary level follows from
+# the pause (#722). Once the breeding outpaces the kills the level is lost
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 

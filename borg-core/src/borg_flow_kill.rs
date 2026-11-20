@@ -44,7 +44,7 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_APHASE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURSP, BI_ESP,
-    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISSTUN, BI_ISWEAK, BI_LIGHT,
+    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISSTUN, BI_ISWEAK, BI_LIGHT,
     BI_MAXCLEVEL, BI_MAXSP, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
     BI_SRLITE, BI_SRNTHR,
 };
@@ -1793,7 +1793,7 @@ fn low_level_caster(st: &BorgState) -> bool {
 /// borg-reborn-rs (#558): whether the Borg is fit to hunt breeders now, for
 /// `borg_recover`'s rest gate: it engages the breeders
 /// (`borg_caution::breeder_engaged`), a low-level caster has the mana, it is
-/// not hungry, and not confused, hallucinating, afraid or stunned (a rest
+/// not hungry, and not confused, blind, hallucinating, afraid or stunned (a rest
 /// clears those), and a known breeder passes the hunt walk's danger test.
 /// Only that test of the walk's: not its leash to the stairs, nor whether
 /// the breeder can be reached.
@@ -1816,7 +1816,7 @@ pub(crate) fn breeder_hunt_now_with(st: &mut BorgState, engaged: bool) -> bool {
     // blind Borg skipped its mana rest to hunt).
     if !fit_to_hunt(
         st.borg.tr(BI_ISCONFUSED) != 0
-            || st.borg.tr(crate::borg_headers::borg_trait_h::BI_ISBLIND) != 0
+            || st.borg.tr(BI_ISBLIND) != 0
             || st.borg.tr(BI_ISIMAGE) != 0
             || st.borg.tr(BI_ISAFRAID) != 0
             || st.borg.tr(BI_ISSTUN) != 0

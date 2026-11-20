@@ -3961,6 +3961,11 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
 pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+    // borg-reborn-rs (#719, owner): "if I am cornered I should throw missile
+    // and then boost myself".
+    if throw_first(st, why) {
+        return true;
+    }
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
@@ -4007,6 +4012,47 @@ pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
         }
     }
     false
+}
+
+/// borg-reborn-rs (#719, owner): with `caution_cornered_throw_first`, a
+/// boost waits while no monster is adjacent yet and an attack from range
+/// would do damage (`borg_attack_estimate`: throws, shots, attack spells,
+/// wands; with nothing adjacent no melee blow is possible). The Borg attacks
+/// instead, and buffs once a monster is next to it or nothing reaches. Mode 1
+/// is the "Cornered" boost only; mode 2 also the hard breeder fight's (the
+/// Phase Door rule's boost is reached only after its own attack found nothing,
+/// so mode 2 changes nothing there).
+fn throw_first(st: &mut BorgState, why: &str) -> bool {
+    let mode = p(Param::caution_cornered_throw_first);
+    if mode == 0 {
+        return false;
+    }
+    let adjacent = (1..st.kills.nxt.max(0) as usize)
+        .any(|i| st.kills.kills[i].r_idx != 0 && engine::distance(st.borg.c, st.kills.kills[i].pos) <= 1);
+    // The dry run draws the Borg's random numbers and may clear the waiting
+    // flag: both are restored, so a check that does not act changes nothing
+    // (as the breeder estimate does).
+    if !throw_first_applies(mode, why == "Cornered", adjacent, || {
+        let (quick, value) = engine::rand_state();
+        let waiting = st.borg.goal.waiting;
+        let damage = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+        engine::set_rand_state(quick, value);
+        st.borg.goal.waiting = waiting;
+        damage
+    }) {
+        return false;
+    }
+    if crate::borg_fight_attack::borg_attack(st, false) {
+        borg_note(st, &format!("# {why}: attacking at range before the boost (#719)"));
+        return true;
+    }
+    false
+}
+
+/// The test of `throw_first`: on for this caller, nothing adjacent, and a
+/// ranged attack that does damage (asked last: the estimate runs a dry run).
+fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_damage: impl FnOnce() -> i32) -> bool {
+    (mode >= 2 || (mode == 1 && cornered_caller)) && !adjacent && ranged_damage() > 0
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),
@@ -5243,6 +5289,23 @@ mod cornered_tests {
             st.borg.trait_[BI_CLASS as usize] = class;
             assert_eq!(melee_class(&st), melee, "class {class}");
         }
+    }
+}
+
+#[cfg(test)]
+mod throw_first_tests {
+    use super::throw_first_applies;
+
+    /// #719: the order decision.
+    #[test]
+    fn throw_before_the_boost() {
+        assert!(!throw_first_applies(0, true, false, || 10), "off");
+        assert!(throw_first_applies(1, true, false, || 10), "cornered, closing in, a throw");
+        assert!(!throw_first_applies(1, false, false, || 10), "mode 1: not the breeder or Phase rule boost");
+        assert!(throw_first_applies(2, false, false, || 10), "mode 2: every boost");
+        assert!(!throw_first_applies(1, true, true, || 10), "adjacent: buff");
+        assert!(!throw_first_applies(1, true, false, || 0), "nothing reaches: buff");
+        assert!(!throw_first_applies(1, true, true, || panic!("no dry run when adjacent")));
     }
 }
 
