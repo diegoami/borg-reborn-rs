@@ -460,7 +460,7 @@ borg_param_caution_recall_portal_fail = 30
 borg_param_caution_recall_cure_loss = 100
 # #749: a Recall buy-time cure needs at least this percent of the max HP lost
 # (0 = C: at low level even full HP, so it drinks Cure Light Wounds for nothing).
-borg_param_caution_recall_cure_min_loss_percent = 0
+borg_param_caution_recall_cure_min_loss_percent = 30
 borg_param_caution_recall_heal_loss = 150
 
 
@@ -860,11 +860,11 @@ borg_param_caution_ranged_vs_immobile = 0
 #   goes toward the nearest staircase (only with caution_ranged_vs_immobile).
 # - attack_mobile_threat_first: while a mobile target is a threat
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
-borg_param_caution_stairs_clean_path = 1
+borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
-borg_param_caution_desperate_fast_danger_percent = 0
+borg_param_caution_desperate_fast_danger_percent = 50
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
@@ -872,14 +872,17 @@ borg_param_caution_desperate_ranged_first_reach = 0
 # #750: 1 = a flight's stair flow (fleeing, or any bored stair flow up or
 # down while fleeing or leaving) refuses no grid for its danger (a monster
 # near a clear corridor no longer closes it); the path test decides. 0 = C.
-borg_param_caution_stairs_flight_ignore_danger = 0
+borg_param_caution_stairs_flight_ignore_danger = 1
+# #765: above 0, stair flights block awake monsters and pay this many extra
+# steps for danger equal to current HP. 0 keeps the existing flight routing.
+borg_param_caution_stairs_flight_threat_weight = 5
 
 # Clean path for every flight to the stairs (#743, the follow-up of #736):
 # 1 = a flight (a scary level, too much danger, "Looking for any stair")
 # takes only stairs whose path has no dangerous awake monster on or next to
 # it (caution_stairs_block_danger_percent of the HP); with none left the
 # flight does not start and the escapes and the attack decide. 0 = C.
-borg_param_caution_stairs_clean_path_flee = 0
+borg_param_caution_stairs_clean_path_flee = 1
 borg_param_caution_immobile_step_to_exit = 1
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
@@ -1470,6 +1473,7 @@ borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
 borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
+borg_param_town_phase_reserve__ranger = 2
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
 borg_param_prepared_dl34_min_hp__ranger = 50
