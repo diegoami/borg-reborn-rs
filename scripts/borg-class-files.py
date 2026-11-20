@@ -18,8 +18,10 @@ file, docs/ZOO-INTERFACE.md), so the class files are folded into
 `harness/borg.txt` as a generated block of class lines. A line of a family
 that had per-class parameters before #520 is written under its old name (the
 alias the parser keeps, so a zoo profile naming that key still rewrites it);
-any other is written as `borg_param_<name>@<class> = <value>`, and a
-`borg_*` setting as `borg_<name>@<class> = <value>`.
+any other is written as `borg_param_<name>__<class> = <value>`, and a
+`borg_*` setting as `borg_<name>__<class> = <value>`: the core reads
+`<name>__<class>` as `<name>@<class>`, and a zoo profile can rewrite it (its
+names are `[A-Za-z0-9_.-]`, #696).
 
     scripts/borg-class-files.py fold    rewrite the block in harness/borg.txt
     scripts/borg-class-files.py check   fail if the block is out of date
@@ -91,13 +93,13 @@ def class_lines(cls, text):
             if not value_ok(kind, s.group(2)):
                 want = 'TRUE/FALSE/YES/NO/T/F/Y/N/1/0' if kind == 'b' else 'an integer'
                 raise SystemExit(f'harness/borg_{cls}.txt:{n}: {s.group(1)} = {s.group(2)}: the value must be {want}')
-            out.append(f'{s.group(1)}@{cls} = {s.group(2)}')
+            out.append(f'{s.group(1)}__{cls} = {s.group(2)}')
             continue
         name, value = m.groups()
-        if '@' in name:
+        if '@' in name or '__' in name:
             raise SystemExit(f'harness/borg_{cls}.txt:{n}: a class file names no class ({raw!r})')
         legacy = legacy_name(name, cls)
-        out.append(f'borg_param_{legacy} = {value}' if legacy else f'borg_param_{name}@{cls} = {value}')
+        out.append(f'borg_param_{legacy} = {value}' if legacy else f'borg_param_{name}__{cls} = {value}')
     return out
 
 

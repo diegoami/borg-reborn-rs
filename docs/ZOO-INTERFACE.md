@@ -135,7 +135,7 @@ line for the same monster and kind replaces the earlier one of that kind:
 line. A later `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2200 entries in
+`borg_param_<name>` integer sets any of the 2201 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
@@ -204,9 +204,12 @@ rules; it does not launch a population experiment.
 
 Any `borg_param_<name>` can have a value for one class:
 
-- in `borg.txt` as `borg_param_<name>@<class> = <value>` (class names of
-  `class.txt`: warrior, mage, druid, priest, necromancer, paladin, rogue,
-  ranger, blackguard);
+- in `borg.txt` as `borg_param_<name>__<class> = <value>` or, the same,
+  `borg_param_<name>@<class> = <value>` (class names of `class.txt`: warrior,
+  mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard). The
+  `__<class>` form (#696) is in the characters a profile can write, so a zoo
+  arm can name any class value in `BORG_TXT_SET`; the shipped class lines are
+  folded in that form. No parameter or setting name has `__`;
 - in the environment as `BORG_PARAM_<NAME>__<CLASS>`, upper case as every
   `BORG_PARAM_*` name (shells cannot export a name with `@`);
 - through the pre-#520 per-class names of the folded families
@@ -222,8 +225,8 @@ its values (also after a reincarnation into another class).
 
 Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
 `BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
-`borg_town_w_*`) have class values too, as `borg_<name>@<class> = <value>`
-lines. The character's class applies at birth and at every reincarnation; a
+`borg_town_w_*`) have class values too, as `borg_<name>__<class> = <value>`
+(or `borg_<name>@<class>`) lines. The character's class applies at birth and at every reincarnation; a
 setting with no line for that class keeps its common value. A class line is
 strict: its value must be exactly an integer, or TRUE/FALSE/YES/NO/T/F/Y/N/1/0
 for a true/false setting. A line with an unknown class or setting, a retired
@@ -233,9 +236,20 @@ the common line, on top of the common values (each line, then each class's
 lines together); one they would change or reject is refused and the Borg does
 not start, as with an invalid common line. The keys the shell reads
 (`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
-and there is no environment form for these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
-are `[A-Za-z0-9_.-]`); it rewrites the common line, and a class line in the
-shipped file still wins for its class.
+and there is no environment form for these settings. A zoo profile writes a
+class value with the `__<class>` name (`BORG_TXT_SET` names are
+`[A-Za-z0-9_.-]`, so not with `@`). Which names can be written depends on the
+writer:
+- the zoo's adapter rewrites a name the shipped file carries and appends one
+  it doesn't, so a profile can set any class value;
+- `harness/run.sh`'s `BORG_TXT_SET` refuses a name that isn't a key of the
+  run's `borg.txt`, so it can only rewrite the class lines `harness/borg.txt`
+  ships (today the 27 `town_*` ones).
+
+The class name's case follows the form: in a `borg_param_*` name it is exact
+(`__mage`, not `__MAGE`), in a `borg_*` setting's name it is case-insensitive
+(`__RANGER` works), as with `@`. Rewriting the common line does not change a
+class that has its own line: that class line still wins for its class.
 
 The repository keeps each class's settings in `harness/borg_<class>.txt`;
 `scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a

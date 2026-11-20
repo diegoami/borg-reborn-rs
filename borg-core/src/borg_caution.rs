@@ -1491,7 +1491,8 @@ fn annoying_effect(name: &[u8]) -> bool {
 
 /// borg-reborn-rs (#713): `caution_ranged_vs_immobile` at 2 or 3 keeps race
 /// `r_idx` at range: an immobile attacker (`immobile_attacker`) with an
-/// annoying blow at 2 (23 of the 25 in `monster.txt`: every one below DL10),
+/// annoying blow at 2 (23 of the 25 in `monster.txt`: 15 at DL10 or shallower,
+/// 8 deeper, down to Wiruin at DL80),
 /// any at 3. At 1 (#646) none is.
 fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
     mode >= 2 && immobile && (mode >= 3 || annoying)
@@ -1533,8 +1534,19 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
 /// borg-reborn-rs (#713): an immobile creature kept at range is next to the
 /// Borg.
 fn kept_at_range_next_to(st: &BorgState) -> bool {
-    immobile_attacker_next_to(st, st.borg.c.y, st.borg.c.x)
-        .is_some_and(|i| immobile_kept_at_range(st, usize::from(st.kills.kills[i].r_idx)))
+    kept_attacker_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+}
+
+/// borg-reborn-rs (#713, review of #717): the first known immobile attacker
+/// next to grid (`y`, `x`) that is kept at range, by kill index. A plain
+/// damage one listed first must not hide a kept one beside it.
+fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
+        let kill = &st.kills.kills[i];
+        immobile_kept_at_range(st, usize::from(kill.r_idx))
+            && (i32::from(kill.pos.y) - y).abs() <= 1
+            && (i32::from(kill.pos.x) - x).abs() <= 1
+    })
 }
 
 /// The first known immobile attacker next to grid (`y`, `x`), by kill index.
@@ -1634,7 +1646,11 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let Some(who) = immobile_attacker_next_to(st, cy, cx) else { return false };
+    // Review of #717: a kept attacker first, so a plain-damage one beside
+    // it does not take its place.
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+        return false;
+    };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
     let (missiles, hp) = (st.borg.tr(BI_AMISSILES), st.borg.tr(BI_CURHP));
     // borg-reborn-rs (#713): a creature kept at range (2 and 3) is stepped
