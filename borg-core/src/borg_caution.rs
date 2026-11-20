@@ -2059,7 +2059,8 @@ pub(crate) fn fight_incoming(st: &mut BorgState, i: usize) -> f64 {
 /// join while another is fought. A target we cannot damage now prevents a
 /// winning verdict; no optimistic missing-foe or unknown-HP assumptions.
 fn winning_fight(st: &mut BorgState) -> bool {
-    if p(Param::caution_winning_fight) == 0 { return false; }
+    let mode = p(Param::caution_winning_fight);
+    if mode == 0 { return false; }
     // The direct-damage race does not model random confused commands or
     // ongoing poison/bleeding damage. Let the ordinary cures act first.
     if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
@@ -2133,7 +2134,9 @@ fn winning_fight(st: &mut BorgState) -> bool {
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
         plans.len(), if won { "winning" } else { "not winning" }));
     borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
-    if !won { return false; }
+    // Mode 2 is a diagnostic: retain the unchanged control's actions so
+    // estimates can be checked on its original losing AND winning fights.
+    if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
