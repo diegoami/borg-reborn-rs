@@ -110,6 +110,20 @@ pub struct SpellRating {
     pub spell_enum: borg_spells,
 }
 
+/// borg-reborn-rs (#694, owner: "make the druid learn this spell first").
+/// The rating a spell is studied by (`borg_study_magic`). Fox Form is rated 5
+/// in C's table, below the 50 a spell needs unless the Borg is bored, so a
+/// Druid learned it late and `escape_fox_form` seldom had it; with
+/// `magic_fox_form_study_rating` above 0 that rating replaces C's.
+pub(crate) fn study_rating(spell: &BorgMagic) -> i32 {
+    let fox = crate::params::value(crate::params::Param::magic_fox_form_study_rating);
+    study_rating_with(spell.spell_enum == FOX_FORM, i32::from(spell.rating), fox)
+}
+
+fn study_rating_with(is_fox_form: bool, rating: i32, fox_rating: i32) -> i32 {
+    if is_fox_form && fox_rating > 0 { fox_rating } else { rating }
+}
+
 const fn rating(name: &'static CStr, rating: u8, spell_enum: borg_spells) -> SpellRating {
     SpellRating { name, rating, spell_enum }
 }
@@ -849,6 +863,13 @@ pub fn borg_prepare_book_info(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fox_form_study_rating() {
+        assert_eq!(study_rating_with(true, 5, 0), 5, "0: C's rating");
+        assert_eq!(study_rating_with(true, 5, 100), 100, "first, above Detect Life's 95");
+        assert_eq!(study_rating_with(false, 95, 100), 95, "other spells keep theirs");
+    }
 
     #[test]
     fn rating_tables_match_the_c_source() {

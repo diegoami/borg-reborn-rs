@@ -819,6 +819,12 @@ borg_param_escape_fox_form_town = 1
 borg_param_escape_fox_form_town_max_level = 20
 borg_param_escape_fox_form_town_min_steps = 10
 
+# #694 (owner: "make the druid learn this spell first"): the rating Fox Form
+# is studied by. C rates it 5, below the 50 a spell needs unless the Borg is
+# bored, so a Druid learned it late and escape_fox_form seldom had it. 100 is
+# above Detect Life and Stinking Cloud (95): learned first. 0 = C's rating.
+borg_param_magic_fox_form_study_rating = 100
+
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
 # Impact: set to 0, 2 of 6 test games play differently.
