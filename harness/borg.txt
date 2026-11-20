@@ -1426,6 +1426,7 @@ borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent__paladin = 100
 borg_param_town_phase_curve_scale_percent__paladin = 100
+borg_param_town_phase_reserve__paladin = 2
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 10
 borg_param_caution_breeder_hunt_max_count__paladin = 6
