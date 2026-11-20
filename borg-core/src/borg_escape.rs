@@ -100,6 +100,9 @@ fn phase_not_escape(st: &mut BorgState) {
 /// flags; borg_caution later reaches this same entry point. Trip-home calls
 /// continue to call borg_recall directly, without this gate.
 pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
+    // Match borg_recall's existing pending gate before forecasting: this
+    // is not a new read and must not be logged as a blocked Recall.
+    if st.borg.goal.recalling != 0 { return false; }
     crate::borg_caution::flight_recall_survivable(st) && borg_recall(st)
 }
 

@@ -1948,10 +1948,13 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     let ticks = p(Param::caution_recall_survival_delay);
     let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
     let mut exposure = 0.0;
+    let (mut awake, mut asleep, mut reachable) = (0, 0, 0);
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
         let r = usize::from(kill.r_idx);
-        if r == 0 || r >= engine::r_max().saturating_sub(1) || !kill.awake { continue; }
+        if r == 0 || r >= engine::r_max().saturating_sub(1) { continue; }
+        if !kill.awake { asleep += 1; continue; }
+        awake += 1;
         let monster_energy = f64::from(engine::extract_energy(forecast_monster_speed(&kill).clamp(0, 199) as usize)).max(1.0);
         let flag = |f| engine::race_flag_has(r, f);
         let never_move = flag(RF_NEVER_MOVE);
@@ -1971,6 +1974,7 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         let ranged = kill.ranged_attack != 0 && crate::borg_projection::borg_projectable_pure(
             st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
         let Some(steps) = (if ranged { Some(0) } else { steps }) else { continue };
+        reachable += 1;
         // A mobile caster may gain line of fire before it reaches melee
         // range. Once a route exists, do not discount all that travel as
         // attack-free time. An immobile blocked caster still has no route.
@@ -1979,6 +1983,9 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         exposure += recall_exposure(damage, player_energy, monster_energy, ticks, steps);
     }
     let allowed = exposure < f64::from(st.borg.tr(BI_CURHP));
+    if allowed && asleep > 0 {
+        borg_note(st, &format!("# Flight Recall forecast: {awake} awake, {asleep} asleep, {reachable} reachable, {exposure:.2} damage, HP {}: allowed by awake-only gate (#758)", st.borg.tr(BI_CURHP)));
+    }
     if !allowed {
         borg_note(st, &format!("# Refusing flight Recall: {exposure:.2} damage during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
     }
