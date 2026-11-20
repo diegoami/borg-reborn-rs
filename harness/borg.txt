@@ -1520,3 +1520,9 @@ borg_param_prepared_deep_clevel_offset__blackguard = 5
 borg_param_prepared_deep_min_clevel__blackguard = 0
 borg_param_prepared_deep_max_clevel__blackguard = 38
 # ---- END CLASS FILES ----
+
+# #802: ship the unseen blocker profile exercised in #781's review trials.
+borg_param_caution_unseen_bump_turns = 200
+borg_param_caution_unseen_bump_response = 1
+borg_param_caution_unseen_bump_heal_hp_percent = 50
+borg_param_caution_unseen_bump_throw_tries = 3

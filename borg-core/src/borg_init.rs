@@ -970,6 +970,7 @@ pub fn borg_prepare_race_class_info(st: &mut BorgState) {
     crate::params::set_class(engine::class_cidx() as i32);
     // ... and the class lines of the `borg_*` settings.
     apply_class_settings(&mut st.core, engine::class_cidx() as i32);
+    crate::params::write_settings_receipt();
 
     // Initialize the various spell arrays by book
     crate::borg_magic::borg_prepare_book_info(st);
