@@ -61,7 +61,10 @@ def check_arm(out, reserve):
                        and row["depth"] > 0]
     assert len(dungeon_contact) == 1, (reserve, dungeon_contact)
     contact = dungeon_contact[0]
-    assert departure <= contact["game_turn"], (reserve, contact)
+    first_sighting = next(int(turn) for _, turn, _, note in
+                          (line.split(" ", 3) for line in (out / "messages.log").read_text().splitlines())
+                          if int(turn) >= departure and note.startswith("# Creating a monster "))
+    assert contact["game_turn"] == first_sighting, (reserve, contact, first_sighting)
     # The reserve-2 character picked up four more scrolls before seeing a foe.
     assert contact["phase_scrolls"] == (1 if reserve == 0 else 6), (reserve, contact)
     print(f"Ranger reserve {reserve}: first town purchases and contact kit matched")

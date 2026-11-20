@@ -898,7 +898,10 @@ pub(crate) fn record_phase_observation(st: &mut BorgState, shop: Option<usize>) 
     }
     state.shop = shop;
     let seen = if depth == 0 { &mut state.seen_town_monster } else { &mut state.seen_dungeon_monster };
-    if !*seen && st.kills.kills.iter().any(|kill| kill.r_idx != 0 && kill.seen) {
+    // Newly tracked monsters have a timestamp even before the next
+    // observation sets their `seen` flag.
+    let now = st.borg.time.now;
+    if !*seen && st.kills.kills.iter().any(|kill| kill.r_idx != 0 && kill.when == now) {
         let pack = &st.items.safe_items[..inven_wield() as usize];
         let phase_scrolls = phase_scroll_count(pack, sval);
         write_phase_event(file, turn, PhaseEvent::FirstMonsterContact { depth, phase_scrolls });
