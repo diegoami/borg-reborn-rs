@@ -533,10 +533,10 @@ borg_param_attack_town_dangerous_bonus_whole = 0
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
-# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
-# Impact: see CALIBRATION (#568).
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C. Shipped 1
+# (owner, 2026-11-20). Impact: see CALIBRATION (#568).
 
-borg_param_attack_throw_as_melee = 0
+borg_param_attack_throw_as_melee = 1
 
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
@@ -608,9 +608,10 @@ borg_param_town_oil_curve_scale_percent = 100
 
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
-# Read Minds or Seek Battle (items and rods still detect). 0 = C. The casters
-# set 10 in their class files.
-borg_param_light_detect_evil_spell_min_level = 0
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. Shipped 10
+# for every class (owner, 2026-11-20); the casters also set 10 in their class
+# files.
+borg_param_light_detect_evil_spell_min_level = 10
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
