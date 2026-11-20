@@ -931,7 +931,7 @@ borg_param_caution_breeder_stuck_turns = 20
 # to them and the breeder flees act (with caution_breeder_avoid the flight
 # avoids the colony). 0 = #503's stand and #558's hunt.
 
-borg_param_caution_breeder_stoppable = 0
+borg_param_caution_breeder_stoppable = 1
 borg_param_caution_breeder_stoppable_births_percent = 200
 borg_param_caution_breeder_stoppable_confirm = 5
 
