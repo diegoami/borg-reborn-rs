@@ -140,7 +140,8 @@ def citations(root):
 def unlisted_borg_commits(src, borg_dir, ledger):
     """The short ids of the commits touching BORG_DIR after the ledger's
     `since` line, up to the source's head, that the ledger does not list
-    (#724). None when the ledger is missing or has no `since` line."""
+    (#724). None when it cannot be verified: the ledger missing or without a
+    `since` line, no source head, or `git log` failing (a bad `since`)."""
     if not ledger.exists():
         return None
     since, listed = None, set()
@@ -153,10 +154,14 @@ def unlisted_borg_commits(src, borg_dir, ledger):
             since = word[1]
         else:
             listed.add(word[0])
-    if not since:
+    if not since or not src.head:
         return None
-    out = git(src.repo, 'log', '--format=%H', f'{since}..{src.head}', '--', borg_dir).stdout.split()
-    return [c[:8] for c in reversed(out) if not any(c.startswith(x) for x in listed)]
+    # Review of #729: a failed `git log` (a bad `since`, no clone) is
+    # unverifiable, never "all listed".
+    r = git(src.repo, 'log', '--format=%H', f'{since}..{src.head}', '--', borg_dir)
+    if r.returncode != 0:
+        return None
+    return [c[:8] for c in reversed(r.stdout.split()) if not any(c.startswith(x) for x in listed)]
 
 
 def changed_functions(src, cited, borg_dir):
@@ -247,7 +252,7 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
             # never missed.
             missing = unlisted_borg_commits(src, borg_dir, root / pin['borg_ledger'])
             if missing is None:
-                w(f"- **C Borg ledger** `{pin['borg_ledger']}`: missing or without a `since` line\n")
+                w(f"- **C Borg ledger** `{pin['borg_ledger']}`: cannot be verified (missing, no `since` line, or `since` not in the source)\n")
             elif missing:
                 w(f"- **upstream C Borg commits not in `{pin['borg_ledger']}`:** {', '.join(missing)} (carry, or list why not)\n")
             else:

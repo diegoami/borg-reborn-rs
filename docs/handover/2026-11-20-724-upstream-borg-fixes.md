@@ -10,7 +10,7 @@ PR (RULES 21).
   which gives 7 for slays of 3 and 5. Every read of a `BI_WS_*` trait is on
   or off (`borg_fight_attack.rs:479-488`, `borg_power.rs:355-402`,
   `borg_fight_defend.rs`, `borg_fight_perm.rs`, `borg_flow_stairs.rs`,
-  `borg_log.rs`), so play cannot change.
+  `borg_log.rs`, `borg_trait_swap.rs`), so play cannot change.
 - **`95387b06`** (check the teleport landing with either kind of teleport):
   `escape_teleport_landing_either`, compiled and shipped 0.
   `lacks_teleport` is a pure function with a unit test.
@@ -30,7 +30,9 @@ PR (RULES 21).
     Destruction or Teleport Level defences that ask for the landing check.
 
 **Left / for the owner:**
-- Whether to ship `escape_teleport_landing_either = 1` (upstream's
-  behaviour). It needs deeper games to act at all: a zoo run at 200,000
-  turns or on deeper starts.
-- A note in borg-rs, so its own translation gets the same two fixes.
+- Whether to ship `escape_teleport_landing_either = 1`: #733 (a zoo run
+  where it can act, then the owner).
+- borg-rs's own translation: diegoami/borg-rs#110.
+- The zoo, about the new engine (#730): borg-zoo#473.
+- The ledger check reports a ledger it cannot verify (a bad `since`, no
+  clone) as such, never as complete (review of #729).

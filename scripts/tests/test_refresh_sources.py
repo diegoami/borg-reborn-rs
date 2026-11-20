@@ -110,7 +110,11 @@ class RefreshTest(unittest.TestCase):
         pins = json.loads((self.root / 'pins.json').read_text())
         pins['pins']['src']['borg_ledger'] = 'engine/upstream-borg.txt'
         (self.root / 'pins.json').write_text(json.dumps(pins))
-        self.assertIn('C Borg ledger** `engine/upstream-borg.txt`: missing', self.report())
+        self.assertIn('C Borg ledger** `engine/upstream-borg.txt`: cannot be verified', self.report())
+        # Review of #729: a bad `since` is unverifiable, not "all listed".
+        write(self.root, {'engine/upstream-borg.txt': 'since 0123456789abcdef0123456789abcdef01234567\n'})
+        self.assertIn('cannot be verified', self.report())
+        self.assertNotIn('all listed', self.report())
         write(self.root, {'engine/upstream-borg.txt': f'# ledger\nsince {self.a}\n'})
         self.assertIn(f'**upstream C Borg commits not in `engine/upstream-borg.txt`:** {self.b[:8]}', self.report())
         write(self.root, {'engine/upstream-borg.txt': f'since {self.a}\n{self.b[:8]} carried borg-core/src/x.rs\n'})
