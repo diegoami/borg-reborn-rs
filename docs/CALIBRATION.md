@@ -10,6 +10,31 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Store at home only when overweight (#711)
+
+The registry now holds **2201** parameters (2200 before; one added).
+Owner, 2026-11-20: "only when it weighs too much they should stash the
+object with less value at home, untile they are not overcarrying again".
+
+- **`town_store_only_overweight`** (compiled 0, **shipped 1**: owner,
+  2026-11-20, "it is a no brainer, turn the switch on"). With it on, the
+  live town planner (`dispositions`, `borg_town_utility.rs`) moves a pack
+  stack to the Home only while the pack is over its weight allowance. The
+  pack is visited lowest keep value per weight first, so the least valuable
+  stack goes first, and the storing stops once the pack is under.
+- **0 (today):** a stack also goes home when its value kept for later
+  (times `borg_town_home_discount` / 1000, shipped 500) minus a home slot's
+  cost beats its value carried now minus its carrying cost. Next to a few
+  Cure Light Wounds the healing curve is nearly full, so a Cure Serious
+  Wounds went home with the pack light (#711; the pack power rule,
+  `power_inventory_maxclevel_threshold`, plays no part with
+  `borg_town_plan = 1`).
+- Taking stacks back from the Home is unchanged.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+
 ## No detection prayer by panel at low level (#685)
 
 The registry now holds **2200** parameters (2199 after #625; one added).
@@ -22,8 +47,14 @@ The registry now holds **2200** parameters (2199 after #625; one added).
   mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
   Paladins. Detect Evil also misses the animals that kill these classes on
   DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
-  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; 0 (C) for
-  Warrior, Rogue, Ranger and Blackguard.
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; since
+  2026-11-20 (owner) 10 for every class, so Rogue, Ranger and Blackguard too
+  (a Warrior casts none).
+  Shipped with #568 (PR #723, the same run as there): detection casts on
+  the 18 classes-18 starts 62 to 14, most of them the Blackguards' Seek
+  Battle (37 to 2 and 20 to 1). The 40% and 46% figures above are the
+  Priests' and Paladins' (#685's case); they were not re-measured for the
+  classes the global value newly covers.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -67,7 +98,7 @@ From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
 
-- **`attack_throw_as_melee`** (flag, 0 = C). With 1, `borg_attack_aux_object`
+- **`attack_throw_as_melee`** (flag, 0 = C; **shipped 1**, owner 2026-11-20). With 1, `borg_attack_aux_object`
   rates a throw on melee's footing:
   - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
     and `:1296`): dice average plus to-dam, times `2 + weight / 12` for a
@@ -104,6 +135,15 @@ one flask and Grip fled.
   the Priest walking in the dark next to an unseen floating eye at CL2,
   paralysed to death: no attack choice involved); sum of max CL 110 to 104;
   sum of max DL 41 to 40. Not a measure of benefit (RULES 14).
+- **Shipped together with #685's global 10** (owner, 2026-11-20, PR #723):
+  classes-18 through `harness/run.sh … SEED RACE CLASS 100000 exact,menu`
+  (races Human for the first nine, Half-Elf for the second nine, as listed in
+  `docs/handover/2026-11-20-723-ship-568-685.md`), base main `4c678c09`, both
+  values off against both on: deaths 0 and 0; sum of max CL 109 to 113, sum
+  of max DL 40 to 43; flasks thrown 855 to 1,043; all 18 games change. A
+  review on another set of starts measured flasks going down (1,413 to
+  1,214): the direction depends on the starts. Not a measure of benefit
+  (RULES 14); no zoo run.
 - **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
   turn 1,881, main melees (44); with the switch on the Borg throws a flask
   (80). Both arms survive the scene; with `keep-load-rng` too.

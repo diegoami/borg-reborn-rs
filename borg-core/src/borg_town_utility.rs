@@ -14,6 +14,7 @@ use crate::borg_town_dispose::{Disposition, Freed, KitItem, Place};
 use crate::borg_town_record::{StepInput, WareFact};
 use crate::borg_town_solve::{Choice, Group, GroupKey, Limits};
 use crate::borg_town_usefulness::{Need, Weights};
+use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
 /// Record utility and supply counts in thousandths. This prevents cheap
@@ -252,6 +253,11 @@ pub(crate) fn burden(space_weight: i64, slots: i32, weight: i64, free_slots: i32
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
 pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed) {
+    dispositions_with(input, u, st, param(Param::town_store_only_overweight) != 0)
+}
+
+/// `dispositions` with `town_store_only_overweight` given (#711).
+fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_overweight: bool) -> (Vec<Disposition>, Freed) {
     let mut out = vec![Disposition::Keep; input.kit.len()];
     let mut freed = Freed::default();
     let carry = i64::from(st.borg.tr(BI_CARRY)).max(2) / 2;
@@ -313,8 +319,17 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
         // borg-reborn-rs (#651, plan schema 12): what this visit bought is
         // carried, not stored: a Cure Light Wounds bought to carry went to
         // the Home and was bought again (borg-cemetery#75).
-        let store = !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (future - home_cost > loss - cost ||
-            input.limits.weight + freed.weight < 0 && (loss > 0 || future > 0 || protected));
+        // borg-reborn-rs (#711, owner 2026-11-20: "only when it weighs too
+        // much they should stash the object with less value at home, until
+        // they are not overcarrying again"): with
+        // `town_store_only_overweight`, a stack goes home only while the pack
+        // is over its weight allowance. The pack is visited lowest keep value
+        // per weight first, and `freed.weight` ends the storing once it is
+        // under; a stack worth more kept for later than carried now stays.
+        let overweight = input.limits.weight + freed.weight < 0;
+        let worth_more_at_home = !only_overweight && future - home_cost > loss - cost;
+        let store = !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (worth_more_at_home ||
+            overweight && (loss > 0 || future > 0 || protected));
         let action = if store { Disposition::Store }
             else if !protected && loss <= cost && future <= home_cost {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
@@ -616,6 +631,42 @@ mod tests {
         inp.revision = 12;
         let mut u = Utility::of(&st, inp.kit, false);
         assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+    }
+
+    /// #711 (owner): with `town_store_only_overweight`, nothing goes home
+    /// while the pack is within its weight allowance; over it, the stacks
+    /// with the least keep value per weight go home until it is under.
+    #[test]
+    fn only_an_overweight_pack_stores_the_least_valuable_first() {
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        // The shallow Recall goes home today even with room (the test below).
+        let kit = [recall(Place::Pack)];
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions_with(&input(&kit), &mut u, &st, false).0, [Disposition::Store], "today");
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions_with(&input(&kit), &mut u, &st, true).0, [Disposition::Keep], "within the allowance");
+        // Over the allowance by 3: one 5-weight stack is enough, the one
+        // worth least per weight (the shallow Recall, worth nothing now).
+        let food = KitItem { slot: 1, kind: 43, weight: 5, need: index(Need::Food) as i8, ..recall(Place::Pack) };
+        let kit = [recall(Place::Pack), food];
+        let mut inp = input(&kit);
+        inp.limits.weight = -3;
+        let mut u = Utility::of(&st, &kit, false);
+        let (d, freed) = dispositions_with(&inp, &mut u, &st, true);
+        assert_eq!(d.iter().filter(|&&x| x == Disposition::Store).count(), 1, "{d:?}");
+        assert_eq!(d[0], Disposition::Store, "the least valuable goes: {d:?}");
+        assert!(inp.limits.weight + freed.weight >= 0, "under the allowance after it");
+        // Review of #714: the public entry point reads the switch the right
+        // way round (at the value the registry gives this test process).
+        let kit = [recall(Place::Pack)];
+        let on = crate::params::value(crate::params::Param::town_store_only_overweight) != 0;
+        let mut u = Utility::of(&st, &kit, false);
+        let public = dispositions(&input(&kit), &mut u, &st).0;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(public, dispositions_with(&input(&kit), &mut u, &st, on).0);
+        let mut u = Utility::of(&st, &kit, false);
+        assert_ne!(public, dispositions_with(&input(&kit), &mut u, &st, !on).0, "the switch changes this case");
     }
 
     #[test]
