@@ -1655,6 +1655,16 @@ pub(crate) struct CLeash {
     pub take_max_level: i32,
 }
 
+/// borg-reborn-rs (#761, owner: "make sure it picks it up"): the floor rule
+/// for a Phase Door while the Borg holds fewer than `flow_take_phase_short_below`
+/// of them (0 = off): the stair leash of `take_select` does not apply to it;
+/// with `flow_take_phase_first` it is also the only object flowed to while one
+/// is in reach. Returns (short_below, first).
+pub(crate) fn take_phase_rule() -> (i32, bool) {
+    use crate::params::{value, Param};
+    (value(Param::flow_take_phase_short_below), value(Param::flow_take_phase_first) != 0)
+}
+
 /// The leash parameters (`CLeash`).
 pub(crate) fn c_leash() -> CLeash {
     use crate::params::{value, Param};

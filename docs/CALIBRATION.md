@@ -10,6 +10,67 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Phase Door first, unseen flavours, food and light (#761)
+
+The registry now holds **2247** parameters (2240 before; seven added). Owner, 2026-11-20:
+"we need to value phase doors much more, especially for rangers"; "increase
+phase door and decrease value of flask all over the board"; "make sure it
+picks it up". Every line ships at today's value (off or 100); the measuring
+moved to borg-zoo, so the arms below are a request, not a recommendation.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:700` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1665` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1665` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:514` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:678` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:659` |
+
+- **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
+  (weight `borg_town_w_escape` times exposure, scaled by
+  `town_phase_curve_scale_percent`). A scroll's first copy is worth about a
+  third of the trip's escape weight, so a 1-gold arrow or a 20-gold potion
+  outbids it. `town_phase_reserve` adds a second row, "phase reserve": the
+  first N scrolls are a requirement, each worth `town_phase_reserve_percent`
+  of the escape weight, nothing past N (as Recall's reserve, #557).
+- **Phase Door on the floor:** `take_select` (`borg_flow_take.rs:513`) skips an
+  item far from the stairs twice (the `flow_leash_take_*` checks, lines 582
+  and 631). While the Borg holds fewer than `flow_take_phase_short_below`
+  Scrolls of Phase Door in the pack (`carried_phase_scrolls`: a Phase Door
+  spell or an equipped activation is not a scroll), a Phase Door is exempt
+  from both; with `flow_take_phase_first`, when one is in reach it is the
+  only object flowed to — and when that Phase-only flow reaches nothing, the
+  dropped candidates are restored and the flow is tried once more
+  (`borg_flow_take`, review of #778).
+- **Unknown flavours:** the planner does not buy a flavour to learn it. The
+  buy-to-identify weight (`borg_town_w_knowledge`) is forced to 0 in the live
+  plan (`borg_town_shadow.rs:51`, `effective_params`; `borg_town_usefulness.rs:271`
+  with the trip policy), and a ware serving only knowledge is not bought
+  (test `a_flavour_unknown_ware_serving_only_knowledge_is_not_bought`). A shop
+  lists true names: the plan values the real kind (`supplies`,
+  `borg_town_capability.rs:519`). `{unseen}` only means the player has not seen
+  the flavour, and the message after the purchase then names the flavour
+  ("You bought 3 Gold Potions"). At birth every potion and scroll is unseen, so
+  in 200 Ranger games every one of the unknown-potion purchases was priced
+  20 gold (Cure Light Wounds) and the unknown scrolls 15 gold (Phase Door)
+  (`dump.jsonl` purchase records: "Potions of Cure Light Wounds {unseen}").
+  `town_unseen_percent` scales what any unseen shop ware supplies, Phase Door
+  excepted (it has `town_phase_*`); it lowers unseen Cure Light Wounds and
+  Cure Serious Wounds as much as unknown Resist Heat, and a ware whose supply
+  scales to zero drops out of the plan (`Model::valid` keeps no zero-unit
+  supply row; review of #778). For healing alone use
+  `town_heal_curve_scale_percent` and `town_heal_reserve_hp_percent`.
+- **Food and light per class:** `borg_town_w_food` and `borg_town_w_light` are
+  settings of the common file with no per-class spelling.
+  `town_food_percent` and `town_light_percent` are their per-class percent.
+
+**Local check** (100,000 turns, the 200 Rangers of the zoo pilot and 50 of each
+other class; paired by start; a handful of deaths, so the death counts are
+within chance): the tables are in `docs/handover/2026-11-20-761-ranger-phase.md`;
+borg-zoo measures the arms listed there.
+
 ## Flight tuning after the Ranger deaths (#747, #749, #750, #751, #753)
 
 Owner (2026-11-20), after the analysis of borg-zoo#488's 12 Ranger deaths
@@ -152,16 +213,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1662` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1663` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1659` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1660` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1661` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1662` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1663` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1664` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1665` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1666` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1672` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1673` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1669` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1670` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1671` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1672` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1673` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1679` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1680` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1681` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -253,7 +314,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:392` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:401` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
 
 
@@ -709,7 +770,7 @@ same way are healing objects"; no reserve, only the curve.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:639` |
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:711` |
 | `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:529` |
 
 ## No rest while breeders are known (#644)
@@ -1634,7 +1695,7 @@ against 38 (18 games: direction only).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:820` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
 
 
@@ -1753,9 +1814,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:454` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:461` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:309` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:445` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:452` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -1882,12 +1943,12 @@ digger 500 gold.
 | `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
-| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:407` |
+| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:410` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:694` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1371` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1452` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)

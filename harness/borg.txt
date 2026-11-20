@@ -610,6 +610,16 @@ borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
 
+# Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
+# up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
+# more steps from the stairs, taken by the leash check of take_select).
+# While the Borg holds fewer Scrolls of Phase Door than
+# flow_take_phase_short_below, a Phase Door on the floor is exempt from the
+# two leash checks; with flow_take_phase_first it is also the only object
+# flowed to while one is in reach. 0 = off (C's leash for everything).
+borg_param_flow_take_phase_short_below = 0
+borg_param_flow_take_phase_first = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
@@ -697,6 +707,28 @@ borg_param_town_oil_flasks = 10
 # Phase Door sent home). The Ranger sets 50 and 50 in its class file.
 borg_param_town_ranger_arrows_max = 0
 borg_param_town_ranger_arrows_curve_scale_percent = 0
+
+# Phase Door reserve (#761, owner 2026-11-20: "we need to value phase doors
+# much more, especially for rangers"): the first town_phase_reserve Phase
+# Doors are a requirement on top of the Phase Door curve, each worth
+# town_phase_reserve_percent of the trip's escape weight, nothing past the
+# reserve, so they are bought before arrows and potions. 0 = off (the curve
+# alone, whose first scroll is worth a fraction of one potion's cure).
+borg_param_town_phase_reserve = 0
+borg_param_town_phase_reserve_percent = 100
+
+# Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
+# town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
+# is forced to 0 in the plan); a shop lists true names, and a ware whose flavour
+# the player has not seen shows {unseen}: at birth that is every potion and
+# scroll, Cure Light Wounds and Phase Door included. town_unseen_percent scales
+# what such a ware supplies (Phase Door excepted, it has the town_phase_* lines
+# above). town_food_percent and town_light_percent scale borg_town_w_food and
+# borg_town_w_light for one class (those two have no per-class spelling).
+# 100 = today for all three.
+borg_param_town_unseen_percent = 100
+borg_param_town_food_percent = 100
+borg_param_town_light_percent = 100
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
