@@ -1087,6 +1087,9 @@ borg_scary_list = scary_monsters.txt
 borg_param_attack_on_sight = 0
 # #759: experimental damage-race fight test, compiled and shipped off.
 borg_param_caution_winning_fight = 0
+# #758: experimental flight Recall survival gate, compiled and shipped off.
+borg_param_caution_recall_survival = 0
+borg_param_caution_recall_survival_delay = 34
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this

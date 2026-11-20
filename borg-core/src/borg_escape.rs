@@ -96,6 +96,14 @@ fn phase_not_escape(st: &mut BorgState) {
 
 /// Attempt to induce WORD_OF_RECALL
 /// artifact activations added throughout this code
+/// #758: flight-only entry point. The failed-teleport fallback sets flight
+/// flags; borg_caution later reaches this same entry point. Trip-home calls
+/// continue to call borg_recall directly, without this gate.
+pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
+    crate::borg_caution::flight_recall_survivable(st) && borg_recall(st)
+}
+
+/// Ordinary Recall, including trips home; no flight-survival policy here.
 pub fn borg_recall(st: &mut BorgState) -> bool {
     // Multiple "recall" fails
     if st.borg.goal.recalling == 0 {
