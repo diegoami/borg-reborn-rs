@@ -13,6 +13,7 @@ path = "src/lib.rs"
 crate-type = ["rlib", "staticlib"]
 
 [features]
+test-r4-equipment = ["borg-next/test-r4-equipment"]
 test-r4-power = ["borg-next/test-r4-power"]
 test-r4-item-use = ["borg-next/test-r4-item-use"]
 test-r3-defence = ["borg-next/test-r3-defence"]

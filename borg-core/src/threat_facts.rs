@@ -72,3 +72,14 @@ pub mod item_use_fixture {
         state.io.queued_keys()
     }
 }
+
+#[cfg(feature="test-r4-equipment")]
+pub mod equipment_fixture {
+    pub use crate::borg_item_wear::fixture::{trial,critical,choice};
+    pub fn bind_note(item:&mut crate::borg_headers::borg_item_h::borg_item,origin:u16,offset:usize) {
+        crate::borg_item::set_item_note(item,crate::borg_item::NoteOrigin::Item(origin),offset);
+    }
+    pub fn needs_id(st:&crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item)->bool {
+        crate::borg_item_id::borg_item_note_needs_id(st,item)
+    }
+}

@@ -1840,5 +1840,9 @@
     "path": "docs/R434-NATIVE-SEAMS.patch",
     "sha256": "e2b95c4c0734561120bdd34451b0924189be6121874875cf6ea2516dd23bd51b",
     "scope": "R434 ordered dependency imports, private native entry markers, exact public facades; no valuation body changes"
+  },
+  "reviewed_equipment_seams": {
+    "path": "docs/R436-NATIVE-SEAMS.patch",
+    "sha256": "8cf7f6bb49887a8684b5b12a11eaad512205989608f2a12ed71ce9bbdb94bbc0"
   }
 }

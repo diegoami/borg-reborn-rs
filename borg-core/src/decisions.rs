@@ -4,6 +4,16 @@ use serde::Serialize;
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
 pub enum Decision {
+WearTestStuff,
+WearSwapRings,
+WearRings,
+WearBackupSwap { p:i32 },
+WearStuff,
+WearBestStuff,
+WearClearBest,
+WearRecharge,
+ObjectFullyId,
+
 Power,
 Caution,
 Recall,
@@ -50,9 +60,18 @@ ItemRecharging,
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32) }
+pub enum Value { Acted(bool), Score(i32), Unit }
 impl Decision {
 pub fn name(self)->&'static str { match self {
+Self::WearTestStuff=>"equipment.borg_test_stuff",
+Self::WearSwapRings=>"equipment.borg_swap_rings",
+Self::WearRings=>"equipment.borg_wear_rings",
+Self::WearBackupSwap {..}=>"equipment.borg_backup_swap",
+Self::WearStuff=>"equipment.borg_wear_stuff",
+Self::WearBestStuff=>"equipment.borg_best_stuff",
+Self::WearClearBest=>"equipment.borg_clear_best",
+Self::WearRecharge=>"equipment.borg_wear_recharge",
+Self::ObjectFullyId=>"equipment.borg_object_fully_id",
 Self::Power=>"power.borg_power",
 Self::Caution=>"caution.borg_caution",
 Self::Recall=>"escape.borg_recall",
@@ -99,6 +118,15 @@ Self::ItemRecharging=>"item_use.borg_recharging",
 
 } }
 pub fn native(self,st:&mut BorgState)->Value { match self {
+Self::WearTestStuff=>Value::Acted(crate::borg_item_wear::borg_test_stuff_native(st)),
+Self::WearSwapRings=>Value::Acted(crate::borg_item_wear::borg_swap_rings_native(st)),
+Self::WearRings=>Value::Acted(crate::borg_item_wear::borg_wear_rings_native(st)),
+Self::WearBackupSwap { p }=>Value::Acted(crate::borg_item_wear::borg_backup_swap_native(st,p)),
+Self::WearStuff=>Value::Acted(crate::borg_item_wear::borg_wear_stuff_native(st)),
+Self::WearBestStuff=>Value::Acted(crate::borg_item_wear::borg_best_stuff_native(st)),
+Self::WearClearBest=>{ crate::borg_item_wear::borg_clear_best_native(st); Value::Unit },
+Self::WearRecharge=>Value::Acted(crate::borg_item_wear::borg_wear_recharge_native(st)),
+Self::ObjectFullyId=>Value::Acted(crate::borg_item_id::borg_object_fully_id_native(st)),
 Self::Power=>Value::Score(crate::borg_power::borg_power_native(st)),
 Self::Caution=>Value::Acted(crate::borg_caution::borg_caution_native(st)),
 Self::Recall=>Value::Acted(crate::borg_escape::borg_recall_native(st)),

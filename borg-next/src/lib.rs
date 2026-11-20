@@ -745,3 +745,6 @@ impl<'a> Read<'a> {
 
 #[cfg(feature = "test-r4-power")]
 mod power_fixture;
+
+#[cfg(feature = "test-r4-equipment")]
+mod equipment_fixture;

@@ -49,14 +49,14 @@ pub struct StoreState {
 }
 
 /// check for the a full home
-pub fn borg_home_full(st: &mut BorgState) -> bool {
+pub fn borg_home_full(st: &BorgState) -> bool {
     // must have a free inventory slot and a free home slot
     let last = usize::from(engine::z_info().store_inven_max) - 1;
     st.store.shops[BORG_HOME].ware[last].iqty != 0
 }
 
 /// check for the a full inventory
-pub fn borg_inventory_full(st: &mut BorgState) -> bool {
+pub fn borg_inventory_full(st: &BorgState) -> bool {
     crate::borg_inventory::borg_first_empty_inventory_slot(st) == -1
 }
 
