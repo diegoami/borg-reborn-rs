@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Step-away from immobile creatures turned off (#736)
 
-The registry still holds **2210** parameters. Owner, 2026-11-20: "stepaway
+The registry still holds **2211** parameters. Owner, 2026-11-20: "stepaway
 flag is not a solution, I do not like it"; "why do we build 'step away',
 isn't it better 'do not get closer'?".
 
@@ -22,9 +22,32 @@ isn't it better 'do not get closer'?".
   - Replays on PR #717's head: the step-away loops against a flight whose
     path passes the monster, and it steps instead of reading Phase Door while
     a mobile attacker hits the Borg.
-- **Replaced by #736:** kill an immobile monster on sight, ranged first. Else
-  do not get closer: its reach as a path cost in every flow, flight
-  included. Else go back to the arrival stairs.
+- **Until #736:** the owner's reading of the replays: the step-away is not
+  the fault, its direction is (toward the exit, not the first safe grid), and
+  the stairs, the target and Phase Door around it. #736 fixes those, then
+  the step-away can come back.
+
+## Upstream C Borg fixes carried (#724)
+
+The registry now holds **2211** parameters (2210 before; one added). Owner,
+2026-11-20: "carry fixes from upstream Borg in Angband in borg-rs".
+
+| upstream | fix | in borg-core |
+|---|---|---|
+| `b5747369` | the healing-chance adjustments go the way their comments say (`borg_heal`) | carried before, borg-rs patch 0092 (`borg_caution.rs`) |
+| `007bea95` | keep the **largest** slay multiplier across equipment slots | carried now as upstream's maximum (`borg_trait.rs`); borg-rs used `\|=`, the same wherever a slay is read as on or off, which every read is |
+| `95387b06` | check the teleport landing with **either** kind of teleport | `escape_teleport_landing_either`, below |
+
+- **`escape_teleport_landing_either`** (compiled 0, shipped 0): 1 =
+  `borg_caution_teleport` runs with a teleport scroll or spell
+  (`BI_ATELEPORT`) **or** a teleport staff or activation (`BI_AESCAPE`), as
+  upstream; 0 = C and borg-rs (both needed).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_teleport_landing_either` | 0 | flag | 0–1 | `#724 (upstream Angband 95387b06): 1 = borg_caution_teleport checks the teleport landing with a teleport scroll or spell (BI_ATELEPORT) or a teleport staff or activation (BI_AESCAPE); 0 = C and borg-rs (both needed, so with only one the check never ran and the Destruction and Teleport Level defences never saw a safe landing).` |
+
+
 
 ## Immobile creatures kept at range (#713)
 
@@ -2527,14 +2550,14 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1266` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1328` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1337` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1344` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1353` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1380` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1428` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1439` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1442` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1443` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1448` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1444` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1455` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1452` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1453` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1464` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1469` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1487` |
 | `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1505` |
@@ -2568,9 +2591,9 @@ the vendored mechanics model:
 | `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1633` |
 | `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1634` |
 | `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1635` |
-| `escape_teleport_phase_tolerance` | 50 | count | 0–1000 | `borg_escape.rs:1444` |
-| `escape_teleport_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1444` |
-| `escape_phase_antisummon_delay` | 50 | turns | 0–100000 | `borg_escape.rs:1445` |
+| `escape_teleport_phase_tolerance` | 50 | count | 0–1000 | `borg_escape.rs:1671` |
+| `escape_teleport_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1671` |
+| `escape_phase_antisummon_delay` | 50 | turns | 0–100000 | `borg_escape.rs:1678` |
 | `escape_phase_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1462` |
 | `escape_phase_unique_min_count` | 2 | count | 1–9 | `borg_escape.rs:1462` |
 | `escape_phase_ordinary_danger_tenths` | 10 | tenths | 0–100 | `borg_escape.rs:1463` |
