@@ -234,6 +234,14 @@ borg_town_w_gold = 0
 borg_town_light_depth = 15
 borg_town_food_trip = 10
 
+# Store at home only when overweight (#711, owner): 1 = the town planner
+# moves a pack stack to the Home only while the pack is over its weight
+# allowance, the least valuable per weight first, until it is under. 0 = also
+# when its value kept for later (borg_town_home_discount) beats its value
+# carried now: cures, oil and Phase Door went home with the pack light.
+
+borg_param_town_store_only_overweight = 1
+
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer
 # supplies. 0 and 0 = spend freely.
