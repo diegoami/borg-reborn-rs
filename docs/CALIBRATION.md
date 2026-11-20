@@ -4087,3 +4087,13 @@ the character level, where errands' steps bind (CL7–14).
 The plan file shows the zoo's depth cost again; the formula keeps the depth.
 With no deaths in any arm, survival is unmeasured here (RULES 14): that's the
 zoo's to measure.
+
+## Fox Form's study rating (#694)
+
+The registry now holds **2212** parameters (2211 on main before it; one added).
+
+`magic_fox_form_study_rating` (compiled and shipped 0 = C's rating 5): above 0,
+the rating Fox Form is studied by (`borg_magic::study_rating`). C's 5 is below
+the 50 a spell needs unless the Borg is bored, so a Druid learns it once bored;
+100 puts it above Detect Life and Stinking Cloud (95), learned first. On 6
+Druid starts (100k turns) first cost levels: sum of max CL 45 → 33, one death.
