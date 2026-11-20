@@ -3569,8 +3569,19 @@ pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
     if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    // borg-reborn-rs (#753): not for a fleeing Borg at low HP (214960633:
+    // held at 2 of 47 HP on a down staircase, danger 0 there, beside a
+    // grey mold it kept walking past).
+    if fleeing_hurt(st.borg.goal.fleeing, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_rising_hold_min_hp_percent)) {
+        return false;
+    }
     let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
     rising_hold(here, st.borg.tr(BI_CURHP))
+}
+
+/// #753: fleeing with less than `min_percent` of the max HP (0 = off).
+fn fleeing_hurt(fleeing: bool, hp: i32, max_hp: i32, min_percent: i32) -> bool {
+    fleeing && min_percent > 0 && i64::from(hp) * 100 < i64::from(max_hp.max(1)) * i64::from(min_percent)
 }
 
 /// The danger test of `rising_holds_flee_descent` (#557): held unless the
@@ -5373,6 +5384,16 @@ mod throw_first_tests {
 #[cfg(test)]
 mod flight_tuning_tests {
     use super::{danger_share_reaches, flight_goal, recall_cure_hurt_enough, GOAL_BORE, GOAL_FLEE};
+
+    /// #753: the rising hold lets a hurt fleeing Borg down.
+    #[test]
+    fn a_hurt_flight_is_not_held() {
+        use super::fleeing_hurt;
+        assert!(fleeing_hurt(true, 2, 47, 50), "2 of 47 HP");
+        assert!(!fleeing_hurt(true, 30, 47, 50));
+        assert!(!fleeing_hurt(false, 2, 47, 50), "not fleeing");
+        assert!(!fleeing_hurt(true, 2, 47, 0), "0: today");
+    }
 
     /// #750: which stair flows are flights.
     #[test]
