@@ -68,6 +68,8 @@ struct Entry {
     /// #621: an ignore entry, not a scare: the Borg doesn't target or hunt
     /// the monster up to the level (it still attacks one in its way).
     ignore: bool,
+    /// #760: an attack-on-sight entry, with its required reason.
+    attack: Option<String>,
 }
 
 /// A parsed list: the class fragilities and the monsters.
@@ -144,8 +146,8 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
             continue;
         }
         let fields: Vec<&str> = line.split('|').map(str::trim).collect();
-        if fields.len() < 2 || fields.len() > 4 {
-            return Err(at(format!("expected 'monster | level [| classes [| flags]]', got '{line}'")));
+        if fields.len() < 2 || fields.len() > 5 {
+            return Err(at(format!("expected 'monster | level [| classes [| flags [| reason]]]', got '{line}'")));
         }
         let target = if let Some(base) = fields[0].strip_prefix("base:") {
             let base = base.trim().to_lowercase();
@@ -161,12 +163,17 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         // experiment appends its changes (#228). `monster | none | | ignore`
         // removes the ignore entry.
         let ignore = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "ignore"));
-        list.entries.retain(|e| e.target != target || e.ignore != ignore);
+        let attack = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "attack"));
+        if ignore && attack {
+            return Err(at("an entry cannot be both 'ignore' and 'attack'".into()));
+        }
+        list.entries.retain(|e| e.target != target || e.ignore != ignore || e.attack.is_some() != attack);
         if fields[1].eq_ignore_ascii_case("none") {
             if fields.get(2).is_some_and(|c| !c.is_empty())
-                || fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() != "ignore"))
+                || fields.get(3).is_some_and(|f| f.split(',').any(|x| !matches!(x.trim(), "ignore" | "attack")))
+                || fields.get(4).is_some_and(|r| !r.is_empty())
             {
-                return Err(at("'none' takes no class exceptions, and no flag but 'ignore'".into()));
+                return Err(at("'none' takes no class exceptions or reason, and only an 'ignore' or 'attack' kind".into()));
             }
             continue;
         }
@@ -183,6 +190,7 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
                 match flag {
                     "breeders" => breeders = true,
                     "ignore" => {}
+                    "attack" => {}
                     _ => return Err(at(format!("unknown flag '{flag}'"))),
                 }
             }
@@ -190,7 +198,11 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         if ignore && breeders {
             return Err(at("'ignore' takes no 'breeders' flag".into()));
         }
-        list.entries.push(Entry { target, tough, fragile, classes, breeders, ignore });
+        let reason = fields.get(4).copied().unwrap_or("");
+        if attack != !reason.is_empty() {
+            return Err(at("an attack entry requires a reason; other entries take no reason".into()));
+        }
+        list.entries.push(Entry { target, tough, fragile, classes, breeders, ignore, attack: attack.then(|| reason.to_owned()) });
     }
     Ok(list)
 }
@@ -200,10 +212,21 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
 /// for town races, `caution_town_scary_levels_less`).
 pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
     list.entries.iter().any(|e| {
-        !e.ignore
+        !e.ignore && e.attack.is_none()
             && hits(e, r_idx, base)
             && who.clevel <= up_to(list, e, who.class) - who.levels_less
             && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
+    })
+}
+
+/// #760: the reason to attack, within this entry's class/level range.
+/// A breeder entry applies while the existing policy stands against the
+/// colony; it never turns a lost colony into an unconditional stand.
+pub fn attack_reason<'a>(list: &'a List, r_idx: usize, base: &[u8], who: Situation) -> Option<&'a str> {
+    list.entries.iter().find_map(|e| {
+        e.attack.as_deref().filter(|_| hits(e, r_idx, base)
+            && who.clevel <= up_to(list, e, who.class)
+            && (!e.breeders || who.breeder_stand))
     })
 }
 
@@ -279,6 +302,37 @@ pub fn selected() -> Option<&'static List> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn attack_categories_keep_reasons_levels_and_breeder_policy() {
+        let resolve = |_: &str| Some(1);
+        let list = parse("wild cat | 50 | mage 3 | attack | fast-fragile\nwild cat | 8\n", &resolve).unwrap();
+        assert_eq!(attack_reason(&list, 1, b"feline", who(3, 1)), Some("fast-fragile"));
+        assert_eq!(attack_reason(&list, 1, b"feline", who(4, 1)), None);
+        assert!(is_scary(&list, 1, b"feline", who(1, 0)), "stored independently; runtime switch gives attack precedence");
+        let removed = parse("wild cat | 50 | | attack | fast-fragile\nwild cat | none | | attack\n", &resolve).unwrap();
+        assert_eq!(attack_reason(&removed, 1, b"feline", who(1, 0)), None);
+        let breeder = parse("giant white mouse | 50 | | attack,breeders | breeder\n", &resolve).unwrap();
+        assert_eq!(attack_reason(&breeder, 1, b"rodent", who(1, 0)), None);
+        let mut stand = who(1, 0);
+        stand.breeder_stand = true;
+        assert_eq!(attack_reason(&breeder, 1, b"rodent", stand), Some("breeder"));
+        assert!(!is_scary(&breeder, 1, b"rodent", stand));
+        assert!(parse("wild cat | 50 | | attack\n", &resolve).is_err());
+        assert!(parse("wild cat | 50 | | attack,ignore | fast-fragile\n", &resolve).is_err());
+        assert!(parse("wild cat | 50 | | | fast-fragile\n", &resolve).is_err());
+    }
+
+    #[test]
+    fn inactive_attack_range_does_not_remove_an_independent_scare() {
+        let list = parse("wild cat | 50 | mage 3 | attack | fast-fragile\nwild cat | 8\n", &|_| Some(1)).unwrap();
+        assert!(is_scary(&list, 1, b"feline", who(4, 1)));
+        assert_eq!(attack_reason(&list, 1, b"feline", who(4, 1)), None);
+        assert_eq!(attack_reason(&list, 1, b"feline", who(4, 7)), Some("fast-fragile"), "mage is a ceiling override, not a class restriction");
+        let attack_only = parse("wild cat | 3 | | attack | fast-fragile\n", &|_| Some(1)).unwrap();
+        assert_eq!(attack_reason(&attack_only, 1, b"feline", who(4, 7)), None);
+        assert!(!is_scary(&attack_only, 1, b"feline", who(4, 7)), "an attack row never invents a separate scare");
+    }
 
     fn race(name: &str) -> Option<usize> {
         ["", "soldier", "squint-eyed rogue", "giant white mouse", "Fang, Farmer Maggot's Dog"]
