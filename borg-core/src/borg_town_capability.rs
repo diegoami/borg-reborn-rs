@@ -675,8 +675,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // less when it carries flasks or attack-wand charges.
     let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
     let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
-    curve(RANGER_MISSILES, missiles_weight,
-          (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
+    // borg-reborn-rs (#716, owner: "they do not need that many arrows"): with
+    // `town_ranger_arrows_max` the reserve is a requirement, as Recall's: each
+    // arrow up to the cap is worth the same, past it nothing. C's curve grows
+    // with the trip and never stops paying (half value at turns / missile
+    // turns), so 1-gold arrows piled up to 150-200 and their weight sent
+    // Phase Door to the Home. 0 = C.
+    let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
+    if arrows_max > 0 {
+        curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
+    } else {
+        curve(RANGER_MISSILES, missiles_weight,
+              (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
+    }
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
