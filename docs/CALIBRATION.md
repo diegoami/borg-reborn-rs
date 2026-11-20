@@ -4544,8 +4544,9 @@ with the supplied off arm's exact key streams before implementation.
 Named-case validation is complete; canonical details are
 [borg-cemetery PR #88](https://github.com/diegoami/borg-cemetery/pull/88),
 `studies/reborn-flight-fights-20261120/local-cases.md`. The seven selected
-starts were replayed with individual switches/combinations; all-three reaches
-100k in each, while the Rogue control was already alive. These are case
+starts were replayed with individual switches/combinations. The corrected
+all-three specimen reaches 100k in six; 1976035382 still dies. The Rogue
+control was already alive. These are case
 checks, not a population improvement claim. Non-acting mode 2 preserves
 control keys/states on all seven and evaluates the original 425904011
 finishing opportunity as winning (1.044 turns versus about 1.064).
