@@ -28,8 +28,11 @@ stays shipped 1):
   (2095979189, wild cat). The mode is read inside `path_blocker`, so it
   applies to the desperate walk and to #743's check of every flight.
 - **`caution_stairs_clean_path` 3** (#751, owner on 93034700: "he has to
-  actually walk past his opponent"): on the path, or next to it and ahead
-  of the Borg (a lower flow cost than the Borg's own grid). Mode 2 let a
+  actually walk past his opponent"): on the path, or next to it (one of the
+  8 grids around a grid of the path) and ahead of the Borg: nearer the
+  staircase at the path's end, in grid steps (king moves), than the Borg.
+  A monster standing on the walk always blocks (the review of #757 found a
+  winding path where it did not; fixed, with a test). Mode 2 let a
   Necromancer at 11/11 HP walk past an adjacent apprentice to stairs 8
   steps beyond it, and it died on the way with 9 Cure Light Wounds, 6 Phase
   Door and 27 Flasks of oil. At mode 1 the same start reads Phase Door and

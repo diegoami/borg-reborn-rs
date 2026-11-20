@@ -415,7 +415,7 @@ fn first_blocker<C>(
     mut blocks: impl FnMut(&mut C, usize) -> bool,
 ) -> Option<usize> {
     let stairs = path.last().copied().unwrap_or(borg);
-    let borg_far = distance(borg, stairs);
+    let borg_far = grids_apart(borg, stairs);
     let mut seen = [false; 1024];
     for &(y, x) in path {
         for dy in -reach..=reach {
@@ -425,11 +425,14 @@ fn first_blocker<C>(
                 if k == 0 || k >= seen.len() || seen[k] {
                     continue;
                 }
-                seen[k] = true;
                 let beside = dy != 0 || dx != 0;
-                if beside && !beside_blocks(mode, distance((my, mx), stairs), borg_far) {
+                // The review of #757: a monster beside the path but not
+                // ahead is not marked seen, so the grid it stands on, if the
+                // walk reaches it, still judges it as on the path.
+                if beside && !beside_blocks(mode, grids_apart((my, mx), stairs), borg_far) {
                     continue;
                 }
+                seen[k] = true;
                 if blocks(ctx, k) {
                     return Some(k);
                 }
@@ -439,8 +442,9 @@ fn first_blocker<C>(
     None
 }
 
-/// Grid steps between two grids (king moves), for #751's mode 3.
-fn distance(a: (i32, i32), b: (i32, i32)) -> i32 {
+/// Grid steps between two grids (king moves, Chebyshev), for #751's mode 3;
+/// not `engine::distance`, the game's `max + min / 2`.
+fn grids_apart(a: (i32, i32), b: (i32, i32)) -> i32 {
     (a.0 - b.0).abs().max((a.1 - b.1).abs())
 }
 
@@ -720,6 +724,28 @@ mod blocker_reach_tests {
     fn blocked(mode: i32, at: (i32, i32), awake: bool) -> bool {
         let mut ctx = at;
         first_blocker(&mut ctx, &corridor(), (5, 10), mode, blocker_reach(mode), |m, y, x| usize::from(*m == (y, x)), |_, _| awake).is_some()
+    }
+
+    /// The review of #757, finding 1: a path that winds away from the
+    /// staircase. The monster on its second grid (10,22) is first met beside
+    /// the first grid, where it is not nearer the stairs than the Borg (8
+    /// steps each); it still blocks when the walk reaches it, in every mode.
+    #[test]
+    fn a_monster_on_a_winding_walk_blocks() {
+        let path = [(10, 20), (10, 21), (10, 22), (9, 23), (8, 24), (7, 25), (6, 26), (5, 26), (4, 26), (3, 26), (2, 26)];
+        let cost = |y: i32, x: i32| {
+            if !(0..30).contains(&y) || !(0..30).contains(&x) {
+                return None;
+            }
+            Some(path.iter().position(|&g| g == (y, x)).map_or(255, |i| (path.len() - 1 - i) as i32))
+        };
+        let walk = walk_path((10, 20), cost, |i| DIRS[i]);
+        assert_eq!(walk, path[1..].to_vec());
+        for mode in [1, 2, 3] {
+            let mut ctx = (10, 22);
+            let hit = first_blocker(&mut ctx, &walk, (10, 20), mode, blocker_reach(mode), |m, y, x| usize::from(*m == (y, x)), |_, _| true);
+            assert!(hit.is_some(), "on the walk, mode {mode}");
+        }
     }
 
     /// The ranged-first test (`stair_path_ahead`): mode 3 with a wider

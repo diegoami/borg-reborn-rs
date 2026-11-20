@@ -4188,12 +4188,13 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 /// any stair flow of `GOAL_BORE` while fleeing or leaving: the bored walk up
 /// (`borg_think_dungeon_util.rs:1047`), the bored walks down (`:1087`,
 /// `:1122`, `:1160`) and the powerdive (`borg_think_dungeon.rs:1264`).
-pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing: bool) -> bool {
-    p(Param::caution_stairs_flight_ignore_danger) != 0 && flight_goal(why, fleeing)
+pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -> bool {
+    p(Param::caution_stairs_flight_ignore_danger) != 0 && flight_goal(why, fleeing_or_leaving)
 }
 
-fn flight_goal(why: i32, fleeing: bool) -> bool {
-    why == GOAL_FLEE || (why == GOAL_BORE && fleeing)
+/// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
+fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+    why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
 }
 
 /// borg-reborn-rs (#751): `caution_stairs_clean_path`, the mode of the path
