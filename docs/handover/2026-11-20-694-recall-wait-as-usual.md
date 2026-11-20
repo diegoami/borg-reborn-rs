@@ -1,4 +1,4 @@
-## 2026-11-20: ship caution_recall_wait_as_usual = 1 (#694)
+## 2026-11-20: ship Recall wait-as-usual and Fox Form (#694)
 
 Owner (2026-11-20, on #694's first switch): "I would adopt it".
 
@@ -23,5 +23,12 @@ Owner (2026-11-20, on #694's first switch): "I would adopt it".
 - **Checked:** the smoke suite against the reference on main 6f03fea9 merged
   in. No code changed.
 
-**Left for the owner (#694):** the other two zoo-neutral switches,
-`attack_town_dangerous_on_sight` and `escape_fox_form`.
+- **Fox Form** (owner, 2026-11-20: "adopt fox form both switches"):
+  `escape_fox_form` 0 → 1 (a fleeing Druid casts Fox Form, #551) and
+  `escape_fox_form_town` 0 → 1 (on long walks in town, #620). Both are
+  zoo-neutral: borg-zoo#400, 1,800 starts, 105 deaths against 105, only Druid
+  games change; borg-zoo#413 small, 90 starts, 4 against 4. smoke-borg-rs is
+  still 3/3 identical (it has no Druid), so nothing was re-recorded.
+
+**Left (#694):** `attack_town_dangerous_on_sight` stays 0 for now; the owner
+hasn't decided it.
