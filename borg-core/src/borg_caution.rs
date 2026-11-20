@@ -70,6 +70,7 @@ const CLASS_PALADIN: i32 = 5;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
+const GOAL_BORE: i32 = 6;
 use crate::borg_flow_take::GOAL_TAKE;
 
 /// A literal key (`borg_keypress('R')` etc.).
@@ -4078,6 +4079,17 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
         && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
 }
 
+/// borg-reborn-rs (#750): whether a stair flow for `why` skips the danger
+/// limit (`caution_stairs_flight_ignore_danger`): a flight (`GOAL_FLEE`), or
+/// a bored walk up (`GOAL_BORE`) while fleeing or leaving.
+pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing: bool) -> bool {
+    p(Param::caution_stairs_flight_ignore_danger) != 0 && flight_goal(why, fleeing)
+}
+
+fn flight_goal(why: i32, fleeing: bool) -> bool {
+    why == GOAL_FLEE || (why == GOAL_BORE && fleeing)
+}
+
 /// borg-reborn-rs (#751): `caution_stairs_clean_path` at 2: a monster blocks
 /// the path to the stairs only when it stands on it (read here, as the
 /// registry asks of a caution parameter).
@@ -5353,7 +5365,16 @@ mod throw_first_tests {
 
 #[cfg(test)]
 mod flight_tuning_tests {
-    use super::{danger_share_reaches, recall_cure_hurt_enough};
+    use super::{danger_share_reaches, flight_goal, recall_cure_hurt_enough, GOAL_BORE, GOAL_FLEE};
+
+    /// #750: which stair flows are flights.
+    #[test]
+    fn flight_goals() {
+        assert!(flight_goal(GOAL_FLEE, false));
+        assert!(flight_goal(GOAL_BORE, true), "heading up while fleeing");
+        assert!(!flight_goal(GOAL_BORE, false), "a calm bored walk keeps the danger limit");
+        assert!(!flight_goal(1, true));
+    }
 
     /// #747: a faster neighbour counts only when dangerous enough.
     #[test]

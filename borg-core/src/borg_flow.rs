@@ -115,6 +115,10 @@ pub struct FlowState {
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
+    /// borg-reborn-rs (#750): the spread running is a flight's stair flow
+    /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
+    /// danger (as the desperate walk); a monster on the path is the test.
+    pub flight_no_danger: bool,
     /// borg-reborn-rs (#713): the spread running is a stair flow's
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
@@ -148,6 +152,7 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             hunting: false,
+            flight_no_danger: false,
             to_stairs: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
@@ -747,7 +752,7 @@ pub fn borg_flow_spread(
 /// been checked, and must not be remembered as checked: a later flow in the
 /// normal mode would otherwise accept it without ever assessing its danger.
 fn borg_flow_ignores_danger(st: &BorgState) -> bool {
-    st.borg.status.desperate || st.borg.status.digging
+    st.borg.status.desperate || st.borg.status.digging || st.flow.flight_no_danger
 }
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.

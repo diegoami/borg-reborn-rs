@@ -855,8 +855,8 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4232` |
-| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4235` |
+| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:4244` |
+| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:4247` |
 
 ## Kill on sight in town: caster walk, wands, a sure preference (#637)
 
@@ -1101,9 +1101,9 @@ measurement.
 |---|---|---|---|---|
 | `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:143` |
 | `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:164` |
-| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4130` |
-| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4129` |
-| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4129` |
+| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:4142` |
+| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:4141` |
+| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:4148` |
 
 ## Ignored town monsters (#618, #621)
 
@@ -1687,7 +1687,7 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:3851` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:3847` |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:3853` |
 | `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:3849` |
 | `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:3911` |
 | `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:3970` (buff spells only at or below this failure rate) |
@@ -1779,11 +1779,11 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4447` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:4459` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2948` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2955` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:3530` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
-| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:3529` (#549: the danger here above which the stair scum stops) |
+| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:3535` (#549: the danger here above which the stair scum stops) |
 | `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:3561` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
 | `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2627` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
 | `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2658` |
@@ -2231,7 +2231,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_move_max_hp` | 500 | hp | 0–10000 | `borg_caution.rs:1762` |
 | `caution_one_blow_monster_age` | 2 | turns | 0–100000 | `borg_caution.rs:1794` |
 | `caution_nasty_light_timeout` | 250 | turns | 0–100000 | `borg_caution.rs:1856` |
-| `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:1848` |
+| `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:1871` |
 | `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:1855` |
 | `caution_escape_absolute_limit` | 55 | count | 0–1000 | `borg_caution.rs:1856` |
 | `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:1858` |
@@ -2242,7 +2242,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:2131` |
 | `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:2132` |
 | `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:2133` |
-| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:1848` |
+| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:2135` |
 | `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1859` |
 | `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1864` |
 | `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1878` |
@@ -2273,13 +2273,13 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:2157` |
 | `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:2159` |
 | `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:2193` |
-| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4158` |
+| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:4177` |
 | `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:4183` |
 | `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:4191` |
 | `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:4192` |
 | `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:4193` |
-| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4331` |
-| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4332` |
+| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:4343` |
+| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:4344` |
 | `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:4338` |
 | `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:4339` |
 | `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:4344` |

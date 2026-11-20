@@ -634,7 +634,21 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
 /// through them, with `caution_breeder_avoid_fight_through`; the fight-through
 /// is noted in `breeder_through` so back-away and retreat do not undo it
 /// (`crate::borg_caution::breeder_fighting_through`).
-fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+/// borg-reborn-rs (#750, owner case 807683971: a black naga two grids
+/// beside a clear corridor made the corridor's first grid "too dangerous",
+/// so the flight never reached the up staircase 8 grids away). With
+/// `caution_stairs_flight_ignore_danger`, a flight's stair flow (`GOAL_FLEE`,
+/// or a bored walk up while fleeing or leaving) refuses no grid for its
+/// danger; whether a monster stands in between is #751's path test.
+fn fight_through(st: &mut BorgState, why: i32, flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+    let flight = crate::borg_caution::stairs_flight_ignores_danger(why, st.borg.goal.fleeing || st.borg.goal.leaving);
+    let was = std::mem::replace(&mut st.flow.flight_no_danger, flight);
+    let ok = fight_through_plain(st, why, flow);
+    st.flow.flight_no_danger = was;
+    ok
+}
+
+fn fight_through_plain(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
     if flow(st) {
         return true;
     }
