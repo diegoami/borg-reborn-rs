@@ -2093,7 +2093,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
-        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i, false) else { return false };
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
         let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
         plans.push((i, hp, attack));
     }

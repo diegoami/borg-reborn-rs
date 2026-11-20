@@ -4184,7 +4184,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5389` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5392` |
 
 ## The errands plan as a depth cap (#693)
 
@@ -4376,10 +4376,10 @@ separate evidence. This does not implement the YAML migration of #678.
 The fight rung runs before light/countdown and depth-return flight rungs,
 so they cannot preempt a winning fight. The focused planner considers every
 native attack kind against the chosen
-observed target, retaining availability and projection checks. For the
-category policy it chooses missiles, then damaging spells/devices, throws,
-then melee. Within a family it maximizes expected damage. The general
-winning-fight policy instead maximizes expected damage across families.
+observed target, retaining availability and projection checks. Both the category and
+winning-fight policies maximize expected damage across families. The requested
+missile, spell/device, throw, melee ordering breaks damage ties; it never
+puts a weak projectile ahead of a stronger available attack.
 `caution_winning_fight=2` is a diagnostic logging mode: it evaluates the
 original control fights without taking the priority attack. Its key/state
 neutrality must be checked; it is not a measurement arm.
@@ -4431,9 +4431,19 @@ checks, not a population improvement claim. Non-acting mode 2 preserves
 control keys/states on all seven and evaluates the original 425904011
 finishing opportunity as winning (1.044 turns versus about 1.064).
 Population measurement is [borg-zoo #511](https://github.com/diegoami/borg-zoo/issues/511),
-not dispatched. Owner 2026-11-20: local builds/smoke/named replays only;
+whose first pilot ran on `78b8f297`. Owner 2026-11-20: local builds/smoke/named replays only;
 no local population arms. The source tree does not own gameplay dossiers.
 
+
+The first zoo pilot on `78b8f297` exposed a selector bug: the initial
+category implementation put family order ahead of damage. Rogue1381972077
+fired pebbles at a crow while carrying eight flasks of oil. Damage now sorts
+first; a regression test requires strong oil to outrank weak pebbles and
+retains the family order only for ties. This correction was not in the
+initial pilot. The pilot had no survival-leading arm; see
+[Zoo #511 results](https://github.com/diegoami/borg-zoo/issues/511#issuecomment-7045769634).
+The later wake-aware Recall change was also absent from that pilot. All
+switches remain shipped off; no larger run was dispatched by this session.
 
 ## Flight Recall survival gate (#758)
 
