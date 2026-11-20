@@ -38,7 +38,8 @@ curve for additional arrows utility, configurable, say 75".
   - The most carried (80–120) comes from arrows picked up in the dungeon:
     pack power keeps up to 180 (`power_inventory_amissiles_limit_3`,
     unchanged).
-- **smoke-borg-rs re-recorded** (`scripts/rerecord-smoke-borg-rs.sh`).
+- **smoke-borg-rs:** no Ranger in it; the games match the reference merged
+  from #712 (`scripts/rerecord-smoke-borg-rs.sh`: nothing to re-record).
 - **Checked:** fmt, clippy `-D warnings`, both test commands (core 473),
   the class files check, `borg-core-vendor.py check`, citations (2204).
 
