@@ -4946,3 +4946,20 @@ shared ammunition/mana, walking/healing cost, unknown theft, harmless
 bystanders, mode scope, interaction steps, and all four engine-resolved
 list reasons/class ceilings with independent scares. Population effects
 remain unmeasured; local checks are smoke and named regressions, not a cohort.
+
+
+#788 verification at5f41b563, after accepted main d7e58cdf:537 core tests,
+4 ignored; required local workspace/fmt/Clippy/vendor checks and2266 parameter
+citations pass (0wrong/0disagreeing). Default borg-rs smoke is3/3 byte-identical
+keys/states/messages, all alive; no reference update. Twelve named100k
+replays all reach the cap alive; modes0/2 preserve baseline0 keys/states
+on Warrior101/Mage102, and enabled Ranger807683971 is unchanged. Nine new
+hunt-refusal notes occur, **no positive town-priority action** in these
+replays. Positive/wand execution is not runtime-validated by this sample.
+A town GOAL_KILL flow without a certified listed seed is declined, which
+can also forgo safe later generic resident hunts; ordinary incidental
+attacks and non-hunt flows remain available. Canonical exact versions,
+all attempts, build-failure accounting and first differences are in
+[Cemetery#95](https://github.com/diegoami/borg-cemetery/pull/95) at75ec9c68,
+`studies/reborn-town-winning-fight-20261120/`. No population claim or dispatch;
+existing Zoo#511/#528 remain pinned to their original source, not this task.
