@@ -555,6 +555,18 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# An unseen attacker (#697): "Something touches you" makes no monster, so no
+# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
+# an unseen attack counts that long: no rest within distance grids of where
+# it struck; hurt, the Borg walks at least that far (a corridor first) and
+# rests there; struck again that far away, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
+# Impact: see CALIBRATION (#697).
+
+borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_distance = 10
+borg_param_recover_unseen_heal_hp_percent = 0
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
@@ -956,6 +968,22 @@ borg_param_caution_breeder_through_turns = 5
 # many Borg turns. 0 = never.
 
 borg_param_caution_breeder_stuck_turns = 20
+
+# The breeder policy (#722, owner): one setting for the breeder switches.
+# -1 = the switches below as set. 0 = C. 1 = stand when there is no easy
+# escape, and hunt few breeders below CL10 (#503, #558). 2 = and never rest
+# while breeders are known: hunt them or leave (#644). 3 = and kill them first
+# while the kills outpace the breeding, at any count and level (#556); the
+# level is lost once more breeders are known than the class clears
+# (caution_breeder_hunt_max_count, per class) or the breeding wins; on a lost
+# level the Borg leaves, searching for stairs, and reads Recall after
+# lost_recall_turns game turns (owner: "search for stairs first, but if paths
+# are blocked by breeders, recall at some point"). 4 = and paths avoid
+# colonies (#556). 5 = and walk out of a breeder room (#544).
+# Impact: see CALIBRATION (#722).
+
+borg_param_caution_breeder_policy = 3
+borg_param_caution_breeder_lost_recall_turns = 500
 
 # Kill breeders first (#556, owner): stand and hunt breeders while the
 # breeding can be stopped (the known breeders' expected births a turn, times

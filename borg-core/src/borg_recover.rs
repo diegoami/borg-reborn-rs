@@ -40,6 +40,7 @@ use crate::borg_headers::borg_trait_h::{
 };
 use crate::headers::list_tvals_h::{TV_FOOD, TV_MUSHROOM, TV_ROD};
 use crate::headers::ui_event_h::keycode_t;
+use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// `GOAL_RECOVER` (borg-flow.h): the goal of flowing somewhere safe to rest.
@@ -250,6 +251,15 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // Almost dead
     if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::recover_critical_hp_divisor) {
         q -= param(Param::recover_critical_chance_bonus);
+    }
+
+    // borg-reborn-rs (#697): a monster the Borg cannot see is attacking
+    // (no monster, so no danger): walk away from where it struck, then, once
+    // clear (or with nowhere to walk), heal at low HP. The walk comes first
+    // so a low heal threshold cannot keep it drinking where it is struck
+    // (review of #698).
+    if unseen_away(st) || unseen_heal(st) {
+        return true;
     }
 
     /*** Use "cheap" cures ***/
@@ -528,6 +538,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && !rest_held_for_monster(st)
         // borg-reborn-rs (#644): the rest is due; breeders may hold it.
         && !hold_for_breeders(st)
+        // borg-reborn-rs (#697): not where an unseen attacker struck.
+        && !unseen_rest_held(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -572,7 +584,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && !rest_held_for_stairs(st)
         && !rest_held_for_monster(st)
         // borg-reborn-rs (#644): the rest is due; breeders may hold it.
-        && !hold_for_breeders(st);
+        && !hold_for_breeders(st)
+        // borg-reborn-rs (#697): not where an unseen attacker struck.
+        && !unseen_rest_held(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -626,6 +640,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && !rest_held_for_monster(st)
         // borg-reborn-rs (#644): the rest is due; breeders may hold it.
         && !hold_for_breeders(st)
+        // borg-reborn-rs (#697): not where an unseen attacker struck.
+        && !unseen_rest_held(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -727,6 +743,136 @@ fn hold_for_breeders(st: &mut BorgState) -> bool {
     let d = breeder_rest_decision(st);
     apply_breeder_rest(st, d);
     d != BreederRest::Rest
+}
+
+/// borg-reborn-rs (#697): whether `who` (a "HIT_BY:"/"MISS_BY:" name) is a
+/// monster the Borg cannot see. The blow's name is
+/// `monster_desc(..., MDESC_STANDARD)` (`mon-attack.c:778`): for a monster
+/// that is not visible, "Something" if it is neuter and "Someone" if it is
+/// male or female (`mon-desc.c:123-152`, `tests/monster/desc.c:390-392`).
+/// "It" is `MDESC_DEFAULT`'s, never a blow's (review of #698).
+fn unseen_name(who: &[u8]) -> bool {
+    let lower: Vec<u8> = who.iter().map(u8::to_ascii_lowercase).collect();
+    lower.starts_with(b"something") || lower.starts_with(b"someone")
+}
+
+/// borg-reborn-rs (#697): remember an attack by a monster the Borg cannot
+/// see: the game turn and the Borg's grid. One that strikes at least
+/// `recover_unseen_attack_distance` grids from the last one, within
+/// `recover_unseen_attack_turns`, has followed the Borg. State only: it
+/// draws no random number and decides nothing.
+pub(crate) fn note_unseen_attack(st: &mut BorgState, who: &[u8]) {
+    if !unseen_name(who) {
+        return;
+    }
+    let now = engine::game_turn();
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    let turns = param(Param::recover_unseen_attack_turns);
+    let recent = unseen_recent(turns, now, st.borg.unseen_turn);
+    let far = engine::distance(loc { x, y }, loc { x: st.borg.unseen_x, y: st.borg.unseen_y })
+        >= param(Param::recover_unseen_attack_distance);
+    st.borg.unseen_followed = unseen_followed_next(st.borg.unseen_followed, recent, far);
+    st.borg.unseen_turn = now;
+    st.borg.unseen_x = x;
+    st.borg.unseen_y = y;
+}
+
+/// borg-reborn-rs (#697): "followed" after a new unseen attack: set when it
+/// struck far (at least the distance) from the last one within the window;
+/// kept while the attacks stay within the window (it stays set, so the Borg
+/// leaves); cleared when the window had lapsed (and on a new level).
+fn unseen_followed_next(followed: bool, recent: bool, far: bool) -> bool {
+    recent && (followed || far)
+}
+
+/// borg-reborn-rs (#697): an unseen attack at game turn `at` (0: none) is
+/// recent at `now` under a window of `turns` game turns (0: off).
+fn unseen_recent(turns: i32, now: i32, at: i32) -> bool {
+    turns > 0 && at > 0 && now - at <= turns
+}
+
+/// borg-reborn-rs (#697): the rule applies: on, in the dungeon, an unseen
+/// attack is recent.
+fn unseen_active(st: &BorgState) -> bool {
+    st.borg.tr(BI_CDEPTH) > 0
+        && unseen_recent(param(Param::recover_unseen_attack_turns), engine::game_turn(), st.borg.unseen_turn)
+}
+
+/// borg-reborn-rs (#697): the Borg is within `recover_unseen_attack_distance`
+/// grids of the grid where the last unseen attack struck.
+fn unseen_near(st: &BorgState) -> bool {
+    engine::distance(st.borg.c, loc { x: st.borg.unseen_x, y: st.borg.unseen_y })
+        < param(Param::recover_unseen_attack_distance)
+}
+
+/// borg-reborn-rs (#697): no rest while an unseen attack is recent and the
+/// Borg is near where it struck, or the attacker has followed it. Noted once
+/// a think, as the other rest holds (review of #698).
+fn unseen_rest_held(st: &mut BorgState) -> bool {
+    let held = unseen_active(st) && (st.borg.unseen_followed || unseen_near(st));
+    if held && st.borg.unseen_rest_noted != Some(st.borg.time.now) {
+        st.borg.unseen_rest_noted = Some(st.borg.time.now);
+        let ago = engine::game_turn() - st.borg.unseen_turn;
+        borg_note(st, &format!("# No rest: an unseen attacker struck {ago} game turns ago."));
+    }
+    held
+}
+
+/// borg-reborn-rs (#697): below `percent` of the maximum HP, strictly (0 =
+/// off). `max * percent` stays in `i32` (HP up to a few thousand, percent up
+/// to 100).
+fn unseen_heal_due(percent: i32, cur: i32, max: i32) -> bool {
+    percent > 0 && cur * 100 < max * percent
+}
+
+/// borg-reborn-rs (#697), `recover_unseen_heal_hp_percent`: while an unseen
+/// attack is recent, below this share of the maximum HP, drink a cure: its
+/// HP loss counts as no danger, so `borg_heal`'s tests never fire.
+fn unseen_heal(st: &mut BorgState) -> bool {
+    let percent = param(Param::recover_unseen_heal_hp_percent);
+    if !unseen_heal_due(percent, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP)) || !unseen_active(st) {
+        return false;
+    }
+    let healed = borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        // The raw quaff, as #457's `borg_heal_outmatched`: `borg_quaff_crit`
+        // keeps the last two and draws a number (review of #698).
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical);
+    if healed {
+        borg_note(st, "# Healing: an unseen attacker, HP low.");
+    }
+    healed
+}
+
+/// borg-reborn-rs (#697): while an unseen attack is recent and the Borg is
+/// hurt (or short of mana) near where it struck, walk to a known grid at
+/// least `recover_unseen_attack_distance` grids from there (a corridor or
+/// doorway first, as #544's exit) and rest there. If the attacker has
+/// followed it, or no such grid can be reached, leave the level.
+fn unseen_away(st: &mut BorgState) -> bool {
+    if !unseen_active(st) {
+        return false;
+    }
+    if st.borg.unseen_followed {
+        if !st.borg.goal.leaving {
+            crate::borg_caution::start_leaving(st, "# Leaving (an unseen attacker followed)");
+        }
+        return false;
+    }
+    let wants_rest = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
+    if !wants_rest || !unseen_near(st) {
+        return false;
+    }
+    let at = loc { x: st.borg.unseen_x, y: st.borg.unseen_y };
+    let distance = param(Param::recover_unseen_attack_distance);
+    if crate::borg_caution::walk_away_from(st, at, distance, c"unseen-away") {
+        borg_note(st, &format!("# Walking away from an unseen attacker (struck at ({},{})).", at.y, at.x));
+        return true;
+    }
+    if !st.borg.goal.leaving {
+        crate::borg_caution::start_leaving(st, "# Leaving (an unseen attacker, nowhere to walk to)");
+    }
+    false
 }
 
 /// The test of `breeder_rest_decision`: on, in the dungeon, not impaired,
@@ -855,5 +1001,52 @@ mod tests {
         assert!(!hunt_before_rest(true, 30, 70, 50), "badly hurt: rest");
         assert!(!hunt_before_rest(false, 55, 70, 50), "no hunt");
         assert!(!hunt_before_rest(true, 55, 70, 0), "off");
+    }
+}
+
+#[cfg(test)]
+mod unseen_tests {
+    use super::{unseen_followed_next, unseen_heal_due, unseen_name, unseen_recent};
+
+    /// #697 (re-review of #698): the heal threshold is strict.
+    #[test]
+    fn heal_threshold() {
+        assert!(unseen_heal_due(50, 49, 100));
+        assert!(!unseen_heal_due(50, 50, 100), "at half, not below it");
+        assert!(!unseen_heal_due(0, 1, 100), "0 is off");
+        assert!(unseen_heal_due(100, 99, 100), "100: below the maximum");
+        assert!(!unseen_heal_due(100, 100, 100));
+    }
+
+    /// #697: the names the game gives a monster the Borg cannot see.
+    #[test]
+    fn unseen_names() {
+        assert!(unseen_name(b"Something"));
+        assert!(unseen_name(b"something"));
+        assert!(unseen_name(b"Someone"), "a male or female monster");
+        assert!(unseen_name(b"someone"));
+        assert!(!unseen_name(b"It"), "MDESC_DEFAULT's, never a blow's");
+        assert!(!unseen_name(b"the clear icky thing"));
+        assert!(!unseen_name(b"Smeagol"));
+    }
+
+    /// #697: the window, in game turns; 0 is off, and no attack is none.
+    #[test]
+    fn recent_window() {
+        assert!(unseen_recent(300, 1_300, 1_000));
+        assert!(!unseen_recent(300, 1_301, 1_000));
+        assert!(!unseen_recent(0, 1_000, 1_000), "0 is off");
+        assert!(!unseen_recent(300, 1_000, 0), "no attack on this level");
+    }
+
+    /// #697: "followed" is set by a far attack within the window, stays set
+    /// within it, and clears when the window has lapsed.
+    #[test]
+    fn followed_state() {
+        assert!(!unseen_followed_next(false, true, false), "near, within the window");
+        assert!(unseen_followed_next(false, true, true), "far, within the window");
+        assert!(unseen_followed_next(true, true, false), "stays set within the window");
+        assert!(!unseen_followed_next(true, false, true), "the window lapsed");
+        assert!(!unseen_followed_next(false, false, true), "a first attack");
     }
 }
