@@ -152,6 +152,9 @@ pub struct Borg {
     /// blocked path on this level (the note is once per level); cleared on a
     /// new level.
     pub flee_path_noted: bool,
+    /// borg-reborn-rs (#743): the last flight was refused for its path (so
+    /// `borg_flow_stair_both` tries each kind on its own).
+    pub flee_path_refused: bool,
     /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
     /// at or above its HP, so it does not stand against the breeders now.
     pub breeders_in_danger: bool,

@@ -19,11 +19,13 @@ ordinary flight to the stairs.
 - **`caution_stairs_clean_path_flee`** (compiled 0, shipped 0): every flight
   to the stairs (`GOAL_FLEE` through `borg_flow_stair_both`, `_less` and
   `_more`: a scary level, too much danger, "Looking for any stair") takes
-  only the kinds of stairs whose path is clean. #736's `stair_path_blocker`
-  walks the path. A kind with an awake monster on, or next to, its path,
-  whose danger is at least `caution_stairs_block_danger_percent` of the HP,
-  is not taken. With none left the flight does not start, and the escapes and
-  the attack decide. Noted once per level as #736's "# Stairs not reachable".
+  a staircase only by a clean path. The flight's own flow is walked before it
+  is committed (`commit_and_step`, #736's `path_blocker`; no second spread,
+  so a clean path changes nothing). An awake monster on, or next to, the
+  path, whose danger is at least `caution_stairs_block_danger_percent` of the
+  HP, refuses it; a flight to any stairs then tries the up and the down
+  stairs on their own. With none clean the flight does not start, and the
+  escapes and the attack decide. Noted once per level as #736's "# Stairs not reachable".
   The desperate walk keeps its own check (`caution_stairs_clean_path`).
 
 | parameter | default | unit | range | source |
