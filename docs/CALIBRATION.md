@@ -4847,3 +4847,17 @@ including outcomes/new deaths and actual Recall initiations. The owner
 adopts this policy before population confirmation; no measured benefit is
 claimed. Known awake/asleep counts in notes cover all known monsters; the
 reachable count is a subset. The note now states that relationship explicitly.
+
+
+Default-on adoption checks use f827f844 (source e0451e3e), after accepted
+main#778/#777:14 fresh named attempts, explicit off1/7 alive versus all1
+5/7, no named harness failures.425Fang3621 and151rock-lizard6299 remain
+deaths; the old a4 result is historical and agrees on these endpoints.
+Full canonical versioned evidence is [Cemetery adopted-cases.md](https://github.com/diegoami/borg-cemetery/blob/eecd3a4345fa4abaadb59ca9ffaf17dd14983d44/studies/reborn-flight-fights-20261120/adopted-cases.md).
+Both default-on smoke references were re-recorded with the repository script.
+Required local Rust/vendor/citation checks pass (527 core tests,2265
+parameters, zero wrong/disagreeing rows). Prepared population measurement is
+[Zoo#511](https://github.com/diegoami/borg-zoo/issues/511) (five-arm ablation)
+and [Zoo#528](https://github.com/diegoami/borg-zoo/issues/528) (original600,
+explicit off versus shipped, nested owner-gated tiers). No Zoo dispatch or
+population benefit claim; this known600 set is not independent confirmation.

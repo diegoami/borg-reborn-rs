@@ -132,3 +132,22 @@ historical and clarified known-monster versus reachable-subset note counts.
 New default-on smoke/checks and two Zoo experiment requests will supersede
 the previous off-only integration checks. Population benefit unconfirmed;
 no Zoo dispatch authorized by this source session.
+
+
+Adoption verification completed on f827f844 (sourcehash e0451e3e):14 fresh
+named replays, explicit all-off1/7 alive versus all-on5/7, no named harness
+failures.425 still dies to Fang3621;151 to rock lizard6299. No new natural
+key stream; all eight deaths reuse canonical cases. The ledger now186,
+with nine smoke games separately accounted for (all alive); the first
+suite failed its post-run tool check and the repeats use exact46978936.
+Combined default smoke reference is re-recorded and checked3/3. Required
+Rust/vendor checks pass,527 core tests/four ignored,2265 citations0wrong
+or disagreeing. Canonical latest evidence is Cemetery#88 eecd3a43,
+`adopted-cases.md` and `adopted-validation.json`; older evidence is retained.
+Prepared experiments: borg-zoo#511 five-arm ablation and#528 paired original
+600 manifest in owner-gated18/90/360/500/600-start tiers, all nine classes,
+explicit three-zero control because shipped defaults now all1. Both pin
+f827f844 and remain unmeasured; no dispatch. Main through#778/#777 and other
+session's#761 is preserved. The owner explicitly authorized merge after
+these fixes/checks; current-head CI and integration status are on the PR.
+Population benefit is not confirmed; owner scheduling is still required.
