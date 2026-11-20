@@ -288,10 +288,10 @@ canonical gameplay reports. No new gameplay measurement, population run,
 default change, bulk migration or evidence deletion is part of this milestone.
 Importer #397, recorder #409 and plan follow-ups #425 remain separate backlog.
 
-Task PRs target track-p and require green CI plus the owner's review disposition
-before integration (RULES 1a). Stop after the P5 tasks for a pinned track-p→main
-milestone review. Owner acceptance and explicit merge delegation still gate
-promotion; this kickoff does not choose or launch a reviewer.
+Historical P5 gate: task PRs targeted track-p and required green CI plus
+owner review disposition (RULES 1a), then a pinned track-p→main milestone
+review. That gate is complete through owner-accepted promotion #626; this
+paragraph records the original milestone process.
 
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
@@ -303,9 +303,12 @@ audit; it does not transfer that work to Track R.
 
 1. **Source startup (#706/#708):** synchronize accepted main `324697ed`
    into the next P branch, report all six moving sources and perform the
-   dedicated borg-rs reference update. The donor has no newer commit;
-   [the inventory](docs/research/P6-SOURCE-REFRESH.md) records current heads,
-   the refreshed reading date and reasons for retaining other pins. Merge
+   dedicated borg-rs reference update. The corrected
+   [inventory](docs/research/P6-SOURCE-REFRESH.md) records newer donor/zoo
+   heads, two changed donor documents and six changed mapped core files.
+   Retain the exact accepted pin/copies deliberately; a behavior-changing
+   donor carry is separate. The two #680 subject files are unchanged across
+   the observed donor interval. Merge
    this owner-reviewed source PR before kickoff integration.
 2. **Kickoff (#707):** record accepted P5 and this bounded P6 scope. This
    documentation-only task may stack on #708, but merges after it.
