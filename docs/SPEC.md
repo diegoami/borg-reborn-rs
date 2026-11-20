@@ -9,7 +9,7 @@ comparison, and this repository delivers only our Borg (§6, §11).*
 ## 1. What it is
 
 borg-reborn-rs is an automatic player (a Borg) for **Angband 4.2.6**,
-upstream commit `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`, written in Rust
+upstream commit `574b618c3bfec595f3503a58f8e488b1c4ae3a46`, written in Rust
 and designed from the ground up in how it plays. **borg-zoo measures it and
 compares it with other Borgs**: the comparisons, the controls and the
 statistics are borg-zoo's (owner, 2026-11-09). This repository delivers one
@@ -31,7 +31,8 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 > vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
 > Our changes to it are one patch: `src/shell.rs` (the errands) and the
 > hooks marked `borg-reborn-rs (#207)` and `(#208)`. The engine is
-> upstream `42cd156ac`, the commit borg-rs v12 plays (#215); borg-rs's one
+> upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs v12 plays, until
+> 2026-11-20, #215); borg-rs's one
 > fork correction (`cmd-wizard.c`, debug mode) is not carried. §2.1's "no
 > dependency" and §2.2's "no copy kept in sync" hold for everything else,
 > and our own core still needs nothing from borg-rs.
@@ -58,7 +59,7 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 
 ### 3.1 The game
 
-- Upstream Angband at `42cd156ac` (re-pinned from `e473720` on 2026-11-14, #215: the commit borg-rs v12 plays), vendored **byte for byte** as
+- Upstream Angband at `574b618c` (re-pinned from `42cd156ac` on 2026-11-20, #724, owner: "update engine"; `42cd156ac` was the pin from 2026-11-14, #215, the commit borg-rs v12 plays), vendored **byte for byte** as
   `engine/angband/`, next to the patch series and our build (TE.1). A test
   checks that the tree equals upstream's tree at that commit.
 - The game rules are never changed. The only differences from upstream are
