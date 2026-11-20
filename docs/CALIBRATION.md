@@ -4609,8 +4609,15 @@ Review corrections for #763 (MiniMax-M3 and Claude Opus 5.5):
   a scare outside its range. `mage 3` overrides that class's ceiling rather than
   excluding every other class. Additional regressions cover these distinctions.
 
-The future Zoo specimen must be explicitly revised after these corrections;
-`5acb8104` is the previous, unmeasured proposal, not the reviewed correction.
+The shared reviewed specimen is `394f2aea1f7c218359f182b0e55a3f6ae56ddeca`,
+after accepted main #768. New named-case checks reach100k in five of the
+original seven all-switch lives;425 and151 still die. Both reviewer-named
+pebble/oil starts reach100k, with actual spell/oil choices recorded. Full
+before/after controls, all failures and old versions are in Cemetery #88's
+`review-cases.md`. The original425 control-neutral diagnostic now charges two
+commands at3650 and does not certify that finishing state as winning. The
+future Zoo specimen is explicitly repinned after these corrections;5acb8104
+is a previous unmeasured proposal. No population improvement is claimed.
 
 ## Flight Recall survival gate (#758)
 

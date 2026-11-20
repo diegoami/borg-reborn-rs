@@ -93,3 +93,26 @@ retained and covered by additional independent-kind/class-ceiling tests.
 The original continuous 425 estimate is superseded; new named-case results
 and a future specimen pin must accompany the reviewed corrections. No
 review acceptance or merge permission was inferred from the reviews.
+
+
+Reviewed corrections are checked on shared specimen
+`394f2aea1f7c218359f182b0e55a3f6ae56ddeca`, after accepted main #768.
+Fresh controls and each switch were replayed on the original seven starts;
+two review-named starts were additionally checked (Mage1548306106,
+Rogue1381972077), and original425 was checked with non-acting mode2.
+The 42 new attempts have no harness failures. All-switch: five original
+lives reach100k;425 dies to Fang3621 and151 to rock lizard6299. Both added
+starts reach100k. Mage all casts Magic Missile at its cat; Rogue all throws
+oil at its crow. Mage category-only does not meet either fast/fragile race.
+The original425 diagnostic remains control-neutral and now says not-winning
+at3650 (two commands), superseding the old continuous-time certificate.
+Three distinct won encounters and terminal losing verdicts were inspected.
+Canonical latest report: Cemetery #88, `review-cases.md`; all prior attempts
+remain in its ledger. Do not duplicate that report here or treat repeats
+as independent samples. Local Rust/citation/vendor checks pass (2256 parent
+parameters, zero wrong/zero disagreeing rows), and combined borg-rs smoke
+is3/3 identical. Shared-code CI on394f2aea is green. Zoo #511 must use the
+explicit new394f2aea specimen; old78b8 and5acb results/proposals are retained
+as distinct provenance. Future specimen remains unmeasured. The exact
+final review head, CI and disposition comments are on the PR; owner-selected
+re-review and owner-controlled measurement remain. No merge or dispatch.

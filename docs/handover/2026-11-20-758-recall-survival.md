@@ -79,3 +79,19 @@ projectable immobile-caster case even without a walking route; an explicit
 regression rejects dropping that branch. New named replays and a common
 future Zoo pin must supersede the earlier 5acb8104 proposal. No population
 claim or owner merge authorization is inferred from either review.
+
+
+The reviewed shared specimen394f2aea is now checked:42 named attempts
+(original seven with fresh controls/individual switches/all, two additional
+review-named oil cases, and control-neutral diagnostic425). All-switch
+survives five original lives;425 dies to Fang3621 and151 to rock lizard6299.
+Recall-only still reaches100k for425,197 and807. The extra Mage/Rogue both
+reach100k; all-switch Mage uses Magic Missile on a cat and Rogue throws oil
+at a crow. Latest canonical evidence is Cemetery #88, `review-cases.md`,
+ede7ef08; prior versions remain retained. No population claim. The new
+shared Zoo pin is394f2aea (f9e15507 source hash); previous78b8 pilot and
+5acb proposal keep their own provenance. Specimen remains unmeasured.
+2258 citations0wrong/0CALdisagreements, local required Rust/vendor checks
+pass (518 core tests, four ignored); smoke3/3 identical and CI394f2aea green.
+Final documentation/review pins are on the PR. Owner-selected re-review and
+owner-scheduled measurement remain; no review acceptance, merge or dispatch.
