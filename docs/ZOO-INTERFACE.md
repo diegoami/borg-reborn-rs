@@ -2,7 +2,7 @@
 
 *docs/SPEC.md §4, §6; task TE.7 (#77). borg-zoo measures our Borg, and
 every comparison is the zoo's. This is the interface the zoo's adapter
-(`zoo/borgrs.py`, kind `borg-rs`, read at our borg-zoo pin `c5f1b042`)
+(`zoo/borgrs.py`, kind `borg-rs`, read at our borg-zoo pin `7b373a70`)
 calls. Our harness may change freely everywhere else; what is below may
 change only by agreement with the zoo (RULES 7: an issue there).
 `harness/zoo-check.py` runs that adapter against this checkout, and CI
@@ -18,6 +18,7 @@ runs `engine/tests/test_zoo_contract.py`.*
 | reads `build/<impl>/BUILD_ID` (`key=value` lines) | at least `binary_sha256` (equal to the copied binary's SHA-256) and `rustc` |
 | copies `harness/borg.txt` and writes it, with its profile's settings, as the run's `user/borg.txt` | the file exists. It is borg-rs's `borg.txt` (the vendored core reads it) with no stair-scumming and no town scumming, plus three keys this repository's Borg reads (#207, #208; docs/ERRANDS.md): `borg_reborn_core` (`borg-rs`/`1`, the shipped value since #479, or `reborn`/`0`), `borg_reborn_errand` (`none`, or a command line such as `/ladder`) and `borg_reborn_stopscared` (`off`, `flee` or a percentage). A zoo profile selects an arm by setting them. Since #479 (owner, 2026-11-17) the shipped file also sets the borg-zoo#170 speed30 bundle without its plan: `borg_town_plan = 1`, `borg_trip_policy = 1` with `borg_trip_unknown_stacks = 5` (2 since `fba1c6e0`, owner) and `borg_trip_pack_slack = 1`, and 18 `borg_param_*` lines (outmatched healing, speed 30, 16 class attack preferences). Since #485 it sets `attack_arrow_point_blank_divisor = 5` (the general divisor, borg-rs's), `attack_arrow_point_blank_divisor_ranger = 2` and `attack_arrow_point_blank_divisor_rogue = 3` (per-class overrides; 0 = the general divisor); since #491 three more set `town_heal_reserve_hp_percent = 400`, `town_heal_curve_scale_percent = 100` (now 100 and 125, each overridden by a value for every class in the class files, #520) and `town_heal_speed_percent = 66`. Since #493 it also sets `borg_town_w_gold = 0` and `borg_param_town_gold_reserve = 0`, `borg_param_town_gold_reserve_percent = 0` (the explicit gold reserve, off). Since #519 the shipped file has no formula section (Power, Depth, Restock): it was unused with the shipped `borg_uses_dynamic_calcs = FALSE`. A profile that names a key rewrites its line; one that omits it now gets the bundle's value, not borg-core's compiled default. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
 | copies `harness/plans/NAME` into the run's `user/` directory, as `user/NAME`, when a profile sets `borg_plan = NAME`, after checking the file against the specimen's pinned hash (`"plans": {NAME: sha256}` in the zoo catalogue; borg-zoo#123, adapter since borg-zoo `26d1044`, PR #125) | the file exists at the specimen's ref. `borg_plan` is a fourth key the shell reads (#305, #352; docs/GAME-PLAN-LANGUAGE.md); a relative name is resolved under the run's user directory. It needs `borg_reborn_core = borg-rs`, no automatic errand and no nonzero `BORG_ERRAND_BUDGET`. With `borg_plan` set the Borg either loads and validates the file or exits 2 before play (missing, unreadable or invalid file, a class without a section, the wrong core): a plan is never silently ignored. Two plans ship: `errands_plan.txt` and `errands_plan_ambitious.txt`. Since 2026-11-16 their phases are `max-depth N` caps (no errand; the core plays as itself under `borg_no_deeper` = N+1); `loop-levels` was removed and fails with exit 2. The zoo records the file's SHA-256 with the cell, and keeps it with the death evidence: a plan death reruns only with the same bytes |
+| generates a **world** (#704) when a profile sets `borg_world = NAME` (borg-zoo PR #486, `dd25ff61`, for borg-zoo#482): it runs the specimen's `scripts/make-world.py` on `harness/worlds/NAME.txt` into the cell, passes `-dgamedata`, `-dpref`, `-dhelp` and `-dscreens` from it, and keeps the key from the Borg, as `harness/run.sh` does. `none` (shipped) = the game's own data. **A loud guard:** a `borg_world` other than `none` that reaches the Borg unconsumed stops the game with exit 2 before play (`errands_plan.rs`, review of #740), so a cell can never play the game's own data under a world's name | the cell records `borg_world`, its config hash and the generated `gamedata/` hash; with `harness/run.sh`, `config.txt` has `borg_world`, `borg_world_sha256` and `borg_world_data_sha256`, and the run's `borg.txt` carries both hashes in a comment, so the world is part of `borg_txt_sha256`. A world's games compare only with games of the same world. Ships: `breeders-x4`, `breeders-x8` |
 
 ## Plan specimens (borg-zoo#123)
 
@@ -135,7 +136,7 @@ line for the same monster and kind replaces the earlier one of that kind:
 line. A later `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2203 entries in
+`borg_param_<name>` integer sets any of the 2266 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
@@ -204,9 +205,12 @@ rules; it does not launch a population experiment.
 
 Any `borg_param_<name>` can have a value for one class:
 
-- in `borg.txt` as `borg_param_<name>@<class> = <value>` (class names of
-  `class.txt`: warrior, mage, druid, priest, necromancer, paladin, rogue,
-  ranger, blackguard);
+- in `borg.txt` as `borg_param_<name>__<class> = <value>` or, the same,
+  `borg_param_<name>@<class> = <value>` (class names of `class.txt`: warrior,
+  mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard). The
+  `__<class>` form (#696) is in the characters a profile can write, so a zoo
+  arm can name any class value in `BORG_TXT_SET`; the shipped class lines are
+  folded in that form. No parameter or setting name has `__`;
 - in the environment as `BORG_PARAM_<NAME>__<CLASS>`, upper case as every
   `BORG_PARAM_*` name (shells cannot export a name with `@`);
 - through the pre-#520 per-class names of the folded families
@@ -222,8 +226,8 @@ its values (also after a reincarnation into another class).
 
 Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
 `BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
-`borg_town_w_*`) have class values too, as `borg_<name>@<class> = <value>`
-lines. The character's class applies at birth and at every reincarnation; a
+`borg_town_w_*`) have class values too, as `borg_<name>__<class> = <value>`
+(or `borg_<name>@<class>`) lines. The character's class applies at birth and at every reincarnation; a
 setting with no line for that class keeps its common value. A class line is
 strict: its value must be exactly an integer, or TRUE/FALSE/YES/NO/T/F/Y/N/1/0
 for a true/false setting. A line with an unknown class or setting, a retired
@@ -233,9 +237,20 @@ the common line, on top of the common values (each line, then each class's
 lines together); one they would change or reject is refused and the Borg does
 not start, as with an invalid common line. The keys the shell reads
 (`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
-and there is no environment form for these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
-are `[A-Za-z0-9_.-]`); it rewrites the common line, and a class line in the
-shipped file still wins for its class.
+and there is no environment form for these settings. A zoo profile writes a
+class value with the `__<class>` name (`BORG_TXT_SET` names are
+`[A-Za-z0-9_.-]`, so not with `@`). Which names can be written depends on the
+writer:
+- the zoo's adapter rewrites a name the shipped file carries and appends one
+  it doesn't, so a profile can set any class value;
+- `harness/run.sh`'s `BORG_TXT_SET` refuses a name that isn't a key of the
+  run's `borg.txt`, so it can only rewrite the class lines `harness/borg.txt`
+  ships (today the 27 `town_*` ones).
+
+The class name's case follows the form: in a `borg_param_*` name it is exact
+(`__mage`, not `__MAGE`), in a `borg_*` setting's name it is case-insensitive
+(`__RANGER` works), as with `@`. Rewriting the common line does not change a
+class that has its own line: that class line still wins for its class.
 
 The repository keeps each class's settings in `harness/borg_<class>.txt`;
 `scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a

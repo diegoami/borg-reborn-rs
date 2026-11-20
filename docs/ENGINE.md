@@ -5,15 +5,29 @@ frontend (TE.2), bindings (TE.3) and build (TE.4) follow.*
 
 ## The tree: `engine/angband/`
 
-Upstream Angband at `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`,
+Upstream Angband at `574b618c3bfec595f3503a58f8e488b1c4ae3a46`,
 **byte for byte** (`engine/UPSTREAM`). It was extracted from the upstream
 repository (`git archive` of that commit), not from borg-rs. Its tree id,
-`36257987a683646296e9c53a4535c085472d62dd`, equals the commit's tree.
+`88b243a5eba440cef82007fd5a2c6477467a95f7`, equals the commit's tree.
 `engine/tests/test_engine.py` checks that at `HEAD` and refuses local
 changes. The tree is never edited: changes are patches applied to a copy at
 build time (`engine/apply-patches.sh DEST`).
 
-Re-pinned from `e473720` on 2026-11-14 (#215, owner: every Borg plays
+Re-pinned from `42cd156ac` on 2026-11-20 (#724, owner: "update engine"):
+`574b618c` is upstream `master` 10 commits later. The changes that touch the
+game: trap display made consistent (`cave-map.c`, `ui-target.c`,
+`ui-display.c`, `trap.c`, `trap.h`), two effect handlers
+(`effect-handler-attack.c`, `effect-handler-general.c`), `datafile.c` and
+`obj-init.c`. Three commits are the C Borg's (`src/borg`, not built here; the
+fixes are carried into borg-core and listed in `engine/upstream-borg.txt`);
+the rest are CI, Windows and SDL2. The patch series applied unchanged (two
+hunks at new offsets: 02, 5 lines; 09, 2 lines), the core source list is
+unchanged, and the bindings are unchanged (`trap.h` adds a function they do
+not bind). Every game plays as before: smoke-borg-rs 3/3, smoke-rust 3/3,
+smoke-exact-rust 3/3, full-rust 45/45 identical, so no reference is
+re-recorded (each `REFERENCE` still names the engine it was made on).
+
+The previous re-pin: re-pinned from `e473720` on 2026-11-14 (#215, owner: every Borg plays
 upstream Angband): `42cd156ac` is upstream `master` 12 commits later, the
 commit borg-rs v12 plays. The changes that touch play: timed effects with
 `COMPLETE_REST` (`player_timed.txt`, `player-timed.c`) decide when a complete

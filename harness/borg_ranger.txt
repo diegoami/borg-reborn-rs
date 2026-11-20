@@ -11,3 +11,20 @@ borg_param_town_devices_percent = 115
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the ranger.
 borg_param_town_phase_curve_scale_percent = 150
 borg_param_town_oil_curve_scale_percent = 50
+# Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
+borg_param_caution_breeder_hunt_max_count = 6
+# #768: C Borg preparedness gates for this class.
+borg_param_prepared_dl34_min_hp = 50
+borg_param_prepared_dl34_min_clevel = 4
+borg_param_prepared_dl59_min_hp = 60
+borg_param_prepared_dl59_min_clevel = 6
+borg_param_prepared_mid_clevel_offset = 0
+borg_param_prepared_deep_clevel_offset = 8
+borg_param_prepared_deep_min_clevel = 29
+borg_param_prepared_deep_max_clevel = 41
+# #712 (owner, 2026-11-20): a Ranger has arrows; no thrown-oil curve.
+borg_param_town_oil_apart = 0
+# #716 (owner, 2026-11-20): a soft cap of 50 arrows, then a diminishing curve
+# (scale 50, as healing's) for the arrows past it.
+borg_param_town_ranger_arrows_max = 50
+borg_param_town_ranger_arrows_curve_scale_percent = 50

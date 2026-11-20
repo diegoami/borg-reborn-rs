@@ -189,20 +189,32 @@ pub fn borg_flow_reverse(
 /// returning to the stairs and trying to explore in anohter direction.
 /// The leash is different for exploring vs trying to get something.
 pub fn borg_get_leash(st: &BorgState, pick_up: bool) -> i32 {
-    let mut leash = 250;
+    // borg-reborn-rs (#732): C's numbers are parameters (`c_leash`).
+    leash_with(
+        crate::borg_flow::c_leash(),
+        st.borg.tr(BI_CLEVEL),
+        st.borg.tr(BI_CDEPTH),
+        i32::from(st.borg.times_twitch),
+        pick_up,
+    )
+}
 
-    if pick_up && st.borg.tr(BI_CLEVEL) < 20 {
-        leash = st.borg.tr(BI_CLEVEL) * 3 + 9;
+/// `borg_get_leash` with the parameters and the facts given (unit-tested).
+fn leash_with(c: crate::borg_flow::CLeash, clevel: i32, depth: i32, twitch: i32, pick_up: bool) -> i32 {
+    let mut leash = c.unbounded;
+
+    if pick_up && clevel < c.pickup_max_level {
+        leash = clevel * c.per_level + c.base;
     }
 
-    if !pick_up && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5 {
-        leash = st.borg.tr(BI_CLEVEL) * 3 + 9;
+    if !pick_up && depth >= clevel - c.depth_margin {
+        leash = clevel * c.per_level + c.base;
     }
 
     /* if the borg has run out of things to do, allow him to go a */
     /* little further afield */
-    if st.borg.times_twitch > 21 {
-        leash += i32::from(st.borg.times_twitch);
+    if twitch > c.twitch_after {
+        leash += twitch;
     }
 
     leash
@@ -1503,7 +1515,8 @@ pub fn borg_flow_far_from_stairs_dist(
     b_stair: i32,
     distance: i32,
 ) -> bool {
-    if st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5 && st.borg.tr(BI_CLEVEL) < 20 {
+    let c = crate::borg_flow::c_leash(); // borg-reborn-rs (#732)
+    if st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level {
         /* obtain the number of steps from this take to the stairs */
         let cost = borg_flow_cost_stair(st, y, x, b_stair);
 
@@ -1538,6 +1551,39 @@ pub fn borg_free_flow_misc(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    use crate::borg_flow::CLeash;
+
+    /// C's numbers, the compiled defaults (#732).
+    const C: CLeash = CLeash {
+        per_level: 3,
+        base: 9,
+        unbounded: 250,
+        pickup_max_level: 20,
+        depth_margin: 5,
+        twitch_after: 21,
+        stairs_max_level: 20,
+        take_near_max_level: 10,
+        take_nearness: 5,
+        take_max_level: 20,
+    };
+
+    /// #732 (owner): C's leash with its numbers as parameters; the defaults
+    /// give C's values, and each parameter moves the leash as it says.
+    #[test]
+    fn the_leash_follows_its_parameters() {
+        assert_eq!(super::leash_with(C, 10, 1, 0, true), 39, "pick up below CL20: 10 x 3 + 9");
+        assert_eq!(super::leash_with(C, 10, 1, 0, false), 250, "exploring well above the depth: none");
+        assert_eq!(super::leash_with(C, 10, 5, 0, false), 39, "exploring at depth >= CL - 5");
+        assert_eq!(super::leash_with(C, 10, 5, 22, false), 61, "bored: + the twitches");
+        assert_eq!(super::leash_with(C, 20, 5, 0, true), 250, "pick up at CL20: none");
+        let wider = CLeash { per_level: 5, base: 20, ..C };
+        assert_eq!(super::leash_with(wider, 4, 1, 0, false), 40, "4 x 5 + 20");
+        let deeper = CLeash { depth_margin: 20, ..C };
+        assert_eq!(super::leash_with(deeper, 10, 1, 0, false), 39, "the margin keeps the leash on");
+        let open = CLeash { unbounded: 120, pickup_max_level: 0, ..C };
+        assert_eq!(super::leash_with(open, 10, 1, 0, true), 120, "no pick-up leash: the unbounded value");
+    }
+
     use super::*;
 
     #[test]

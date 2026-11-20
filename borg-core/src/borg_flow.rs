@@ -115,6 +115,14 @@ pub struct FlowState {
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
+    /// borg-reborn-rs (#750): the spread running is a flight's stair flow
+    /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
+    /// danger (as the desperate walk); a monster on the path is the test.
+    pub flight_no_danger: bool,
+    /// borg-reborn-rs (#713): the spread running is a stair flow's
+    /// (`borg_flow_spread_stairs`), which may pass through the reach of an
+    /// immobile creature kept at range (never onto its grid).
+    pub to_stairs: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -144,6 +152,8 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             hunting: false,
+            flight_no_danger: false,
+            to_stairs: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -423,6 +433,18 @@ fn spread_blocked(
         return true;
     }
 
+    // borg-reborn-rs (#713): never into the reach of an immobile creature
+    // kept at range: its grid (a step into it is a blow) or a grid next to
+    // it (an item under a jelly drew the Borg back beside it, 60 touches).
+    // Not the Borg's own grid, so a flow can always lead out (as
+    // `breeder_blocks` keeps the grids next to the Borg open).
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_kept(st, x, y) {
+        return true;
+    }
+    if ag.kill != 0 && crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
+        return true;
+    }
+
     /* flowing into monsters */
     if ag.kill != 0 {
         /* Avoid if Desperate */
@@ -553,6 +575,24 @@ fn breeder_blocks(near: bool, hunting: bool, borg: crate::headers::z_type_h::loc
 }
 
 /// borg-reborn-rs (#556): `borg_flow_spread` for a flow toward monsters
+/// borg-reborn-rs (#713): `borg_flow_spread` for a flow to stairs: it may
+/// pass through the reach of an immobile creature kept at range (owner: "do
+/// not block the path through their reach if they need to go to their
+/// stairs"); its own grid stays blocked.
+pub fn borg_flow_spread_stairs(
+    st: &mut BorgState,
+    depth: i32,
+    optimize: bool,
+    avoid: bool,
+    tunneling: bool,
+    stair_idx: i32,
+    sneak: bool,
+) {
+    let was = std::mem::replace(&mut st.flow.to_stairs, true);
+    borg_flow_spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak);
+    st.flow.to_stairs = was;
+}
+
 /// (the kill flows, their digging): it may cross the grids near remembered
 /// breeders (#503's hunt goes to them).
 pub fn borg_flow_spread_hunting(
@@ -712,7 +752,7 @@ pub fn borg_flow_spread(
 /// been checked, and must not be remembered as checked: a later flow in the
 /// normal mode would otherwise accept it without ever assessing its danger.
 fn borg_flow_ignores_danger(st: &BorgState) -> bool {
-    st.borg.status.desperate || st.borg.status.digging
+    st.borg.status.desperate || st.borg.status.digging || st.flow.flight_no_danger
 }
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.
@@ -1140,6 +1180,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* can't attack someone if afraid! */
         if st.borg.tr(BI_ISAFRAID) != 0 || st.borg.tr(BI_CRSFEAR) != 0 {
+            return false;
+        }
+
+        // borg-reborn-rs (#713): no walking into an immobile creature kept
+        // at range (a flow made before it was known may still lead there).
+        if crate::borg_caution::immobile_kept_at_range(st, r_idx as usize) {
             return false;
         }
 
@@ -1587,5 +1633,51 @@ mod breeder_block_tests {
         assert!(!breeder_blocks(true, false, borg, 10, 10), "the Borg's grid");
         assert!(!breeder_blocks(true, true, borg, 12, 10), "a kill flow");
         assert!(!breeder_blocks(false, false, borg, 12, 10), "no breeder near");
+    }
+}
+
+/// borg-reborn-rs (#732; owner, 2026-11-20: "remove our leash completely and
+/// expose the leash of C with configuration parameters"): C's leash numbers
+/// (`borg_get_leash`, `borg_flow_far_from_stairs_dist`, `take_select`), each
+/// a parameter whose compiled default is C's literal, read here (the
+/// registry's `flow_` file).
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct CLeash {
+    pub per_level: i32,
+    pub base: i32,
+    pub unbounded: i32,
+    pub pickup_max_level: i32,
+    pub depth_margin: i32,
+    pub twitch_after: i32,
+    pub stairs_max_level: i32,
+    pub take_near_max_level: i32,
+    pub take_nearness: i32,
+    pub take_max_level: i32,
+}
+
+/// borg-reborn-rs (#761, owner: "make sure it picks it up"): the floor rule
+/// for a Phase Door while the Borg holds fewer than `flow_take_phase_short_below`
+/// of them (0 = off): the stair leash of `take_select` does not apply to it;
+/// with `flow_take_phase_first` it is also the only object flowed to while one
+/// is in reach. Returns (short_below, first).
+pub(crate) fn take_phase_rule() -> (i32, bool) {
+    use crate::params::{value, Param};
+    (value(Param::flow_take_phase_short_below), value(Param::flow_take_phase_first) != 0)
+}
+
+/// The leash parameters (`CLeash`).
+pub(crate) fn c_leash() -> CLeash {
+    use crate::params::{value, Param};
+    CLeash {
+        per_level: value(Param::flow_leash_per_level),
+        base: value(Param::flow_leash_base),
+        unbounded: value(Param::flow_leash_unbounded),
+        pickup_max_level: value(Param::flow_leash_pickup_max_level),
+        depth_margin: value(Param::flow_leash_depth_margin),
+        twitch_after: value(Param::flow_leash_twitch_after),
+        stairs_max_level: value(Param::flow_leash_stairs_max_level),
+        take_near_max_level: value(Param::flow_leash_take_near_max_level),
+        take_nearness: value(Param::flow_leash_take_nearness),
+        take_max_level: value(Param::flow_leash_take_max_level),
     }
 }

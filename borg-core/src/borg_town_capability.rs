@@ -68,6 +68,25 @@ const RANGER_MISSILES: usize = 57;
 /// it is worth the healing curve's first HP each (linear), past it nothing
 /// more than the curve. Zero weight when the parameter is 0.
 const HEAL_RESERVE: usize = 58;
+/// borg-reborn-rs (#712): flasks of oil kept to throw, apart from the shared
+/// ATTACK curve that launcher ammunition saturates. Each flask kept to throw
+/// counts one unit here as well as its damage in ATTACK (as an arrow counts
+/// in RANGER_MISSILES). Zero weight unless `town_oil_apart`.
+const THROWN_OIL: usize = 59;
+/// borg-reborn-rs (#716, owner): shots past the Ranger reserve's soft cap
+/// (`town_ranger_arrows_max`, the requirement row's negative demand) on a
+/// diminishing curve: C's shot curve, weight and demand scaled by
+/// `town_ranger_arrows_curve_scale_percent` (as healing's). Any number is
+/// worth something, each less than the last. Only the shots past the cap
+/// count here. Zero weight unless both are set.
+const EXTRA_SHOTS: usize = 60;
+/// borg-reborn-rs (#761, owner: "we need to value phase doors much more,
+/// especially for rangers"): the first `town_phase_reserve` Phase Doors as a
+/// requirement, on top of the PHASE curve (whose first scroll is worth about
+/// a third of the trip's escape weight, so 1-gold arrows and 20-gold potions
+/// outbid it). Each is worth `town_phase_reserve_percent` of the trip's
+/// escape weight; nothing past the reserve. Zero weight when the reserve is 0.
+const PHASE_RESERVE: usize = 61;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -83,14 +102,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 59] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 62] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -101,6 +120,17 @@ pub struct Model {
     pub packing: Option<crate::borg_town_packing::Packing>,
     pub curves: Vec<[i64; 5]>,
     pub supplies: Vec<[i64; 4]>,
+}
+
+/// borg-reborn-rs (#716): the extra shots past the soft cap, which the
+/// Ranger reserve's requirement row holds as its negative demand (no cap, no
+/// extra value): the curve counts the shots past it.
+fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
+    let Some(reserve) = m.curves.get(RANGER_MISSILES) else { return 0 };
+    if reserve[2] >= 0 { return 0; }
+    let cap = -reserve[2];
+    let past = |a: i64| (a - cap).max(0);
+    coverage(r, past((r[3] + n).max(0))) - coverage(r, past(r[3]))
 }
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
@@ -122,6 +152,7 @@ impl Model {
         sum.into_iter().map(|(id, n)| {
             let r = &self.curves[id];
             if id == RECHARGE && self.curves[RECHARGE_TARGET][3] == 0 { return 0; }
+            if id == EXTRA_SHOTS { return extra_gain(self, r, n); }
             coverage(r, (r[3] + n).max(0)) - coverage(r, r[3])
         }).sum()
     }
@@ -364,7 +395,11 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
     let mut out = Vec::new();
     let n = quantity.max(1);
     if fuel_bottles > 0 && fuel > 0 { out.push((LIGHT, fuel * UNIT * fuel_bottles / n)); }
-    if n > fuel_bottles { out.push((ATTACK, damage * (n - fuel_bottles) / n)); }
+    if n > fuel_bottles {
+        out.push((ATTACK, damage * (n - fuel_bottles) / n));
+        // borg-reborn-rs (#712): each flask kept to throw, on its own curve.
+        if param(Param::town_oil_apart) != 0 { out.push((THROWN_OIL, UNIT * (n - fuel_bottles) / n)); }
+    }
     out
 }
 
@@ -372,7 +407,11 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
 // arrow contributes both damage and one reliable shot, separate objectives.
 fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     let mut out = vec![(ATTACK, damage)];
-    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 { out.push((RANGER_MISSILES, UNIT)); }
+    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 {
+        out.push((RANGER_MISSILES, UNIT));
+        // borg-reborn-rs (#716): the same shot, counted past the soft cap.
+        out.push((EXTRA_SHOTS, UNIT));
+    }
     out
 }
 
@@ -466,7 +505,27 @@ fn worthless(tval: u32, sval: i32) -> bool {
             && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
 }
 
+/// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
+/// shop wares (`{unseen}`: a Potion or Scroll whose flavour the player has not
+/// seen) scaled by `town_unseen_percent`. Phase Door has its own
+/// coefficients (`town_phase_*`) and is not scaled. 100 = today.
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
+    let out = supplies_of_kind(item, ctx, origin);
+    let percent = param(Param::town_unseen_percent);
+    if percent == 100 || item.flavour_aware || origin.0 >= 7 { return out; }
+    unseen_scaled(out, percent)
+}
+
+/// borg-reborn-rs (#761): a flavour-unseen ware's supplies at `percent`,
+/// Phase Door's (its own coefficients) as they are. A row that scales to zero
+/// is dropped: the model keeps no zero-unit supply row (`Model::valid` asks
+/// `r[3] > 0`), and a kept one stopped the town replay of 425904011 with
+/// "invalid capability facts" (review of #778).
+fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
+    out.into_iter().map(|(cap, n)| if cap == PHASE || cap == PHASE_RESERVE { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
+}
+
+fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
     // A shop teaches its kind on purchase; carried unknown flavours/devices
@@ -476,7 +535,9 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
     let qty = i64::from(item.iqty).max(1);
     let mut effects = engine::kind_effect_values(item.kind as usize, ctx.journey.level as i32);
     if tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_phase_door {
-        return vec![(PHASE, UNIT)]; // TELEPORT(10) is not full Teleportation.
+        // TELEPORT(10) is not full Teleportation. A Phase Door also counts
+        // toward the reserve (#761).
+        return vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)];
     }
     if tval == TV_FLASK {
         // borg-reborn-rs (#649): the engine's thrown damage, not the dice alone.
@@ -602,7 +663,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     let ctx = Context { st, journey, lantern };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..COUNT).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
-    curve(LIGHT, cfg(BORG_TOWN_W_LIGHT) * UNIT, journey.turns * UNIT);
+    // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
+    // borg_town_w_light (100 = today).
+    curve(LIGHT, scale_percent(cfg(BORG_TOWN_W_LIGHT) * UNIT, param(Param::town_light_percent)), journey.turns * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
     // copy whitelist. One ration's nutrition (RATION_NUTRITION, 30) supports
     // food_turns actions.
@@ -619,11 +682,14 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // Below the floor, food is a requirement (negative demand: worth its
     // weight linearly up to five rations, nothing past them), so it is
     // bought up to the floor and never sold below it, but not hoarded.
+    // borg-reborn-rs (#761, owner): a class's own food weight, in percent of
+    // borg_town_w_food (100 = today).
+    let w_food = scale_percent(cfg(BORG_TOWN_W_FOOD), param(Param::town_food_percent));
     let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
     if rations < READY_FOOD * UNIT {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
+        curve(FOOD, w_food * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
     } else {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, RATION_NUTRITION * rations);
+        curve(FOOD, w_food * rations, RATION_NUTRITION * rations);
     }
     // borg-reborn-rs (#491, owner: "we can never have enough healing").
     // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
@@ -653,6 +719,16 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // healing's: weight and demand scale together (100 = today).
     let phase_scale = i64::from(param(Param::town_phase_curve_scale_percent));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE) * phase_scale / 100, exposure * phase_scale / 100);
+    // borg-reborn-rs (#761): the first `town_phase_reserve` Phase Doors are a
+    // requirement (as Recall's reserve): each worth `town_phase_reserve_percent`
+    // of the trip's escape weight, nothing past them (0 = off, today).
+    let phase_reserve = i64::from(param(Param::town_phase_reserve)).max(0);
+    if phase_reserve > 0 {
+        curve(PHASE_RESERVE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_phase_reserve_percent)) * phase_reserve,
+            -(phase_reserve * UNIT));
+    } else {
+        curve(PHASE_RESERVE, 0, UNIT);
+    }
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
     // (worth the full trip weight each, nothing past them) at any depth: the
     // walk it saves is always worth less than the full weight (the journey
@@ -675,8 +751,38 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // less when it carries flasks or attack-wand charges.
     let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
     let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
-    curve(RANGER_MISSILES, missiles_weight,
-          (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
+    // borg-reborn-rs (#716, owner: "they do not need that many arrows"): with
+    // `town_ranger_arrows_max` the reserve is a requirement, as Recall's: each
+    // arrow up to the cap is worth the same, past it nothing. C's curve grows
+    // with the trip and never stops paying (half value at turns / missile
+    // turns), so 1-gold arrows piled up to 150-200 and their weight sent
+    // Phase Door to the Home. 0 = C.
+    // Past the cap (owner: "a soft cap at 50 and then a curve for additional
+    // arrows utility", "a curve coefficient like we defined for healing ...
+    // the more he carries the less value they have"), shots count on
+    // EXTRA_SHOTS: C's shot curve (the reserve's weight, the trip's demand)
+    // with weight and demand scaled by `town_ranger_arrows_curve_scale_percent`.
+    let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
+    let arrows_scale = i64::from(param(Param::town_ranger_arrows_curve_scale_percent));
+    let c_demand = (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT);
+    if arrows_max > 0 {
+        curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
+    } else {
+        curve(RANGER_MISSILES, missiles_weight, c_demand);
+    }
+    let extra_on = arrows_max > 0 && arrows_scale > 0;
+    curve(EXTRA_SHOTS, if extra_on { missiles_weight * arrows_scale / 100 } else { 0 },
+          if extra_on { (c_demand * arrows_scale / 100).max(1) } else { UNIT });
+    // borg-reborn-rs (#712): flasks kept to throw, on a curve of their own
+    // that shots and wands cannot fill: a stack of sling shots saturated
+    // ATTACK, so the flasks' marginal damage was worth almost nothing and the
+    // weight repair stored them at the Home. Weighted as ATTACK (and by the
+    // class's oil scale, #682); half its value at `town_oil_flasks` flasks.
+    // 0 weight (C) unless `town_oil_apart`.
+    let thrown_weight = if param(Param::town_oil_apart) != 0 {
+        scale_percent(risk(BORG_TOWN_W_ATTACK), param(Param::town_oil_curve_scale_percent))
+    } else { 0 };
+    curve(THROWN_OIL, thrown_weight, i64::from(param(Param::town_oil_flasks)).max(1) * UNIT);
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
@@ -911,6 +1017,61 @@ mod tests {
     /// at 2 (demand -2 units) one potion is worth half the weight, two the
     /// whole weight, and a third adds nothing, where the diminishing curve
     /// gave each potion a small, never-zero value.
+    #[test]
+    fn ranger_soft_cap_then_a_diminishing_curve() {
+        // #716: 50 shots as a requirement, then a curve that never stops.
+        let w = 600 * UNIT;
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[RANGER_MISSILES] = [RANGER_MISSILES as i64, w, -50 * UNIT, 0, 0];
+        m.curves[EXTRA_SHOTS] = [EXTRA_SHOTS as i64, w * 75 / 100, 18 * UNIT, 0, 0];
+        let at = |m: &mut Model, a: i64| { m.curves[RANGER_MISSILES][3] = a * UNIT; m.curves[EXTRA_SHOTS][3] = a * UNIT;
+            m.gain(&[(RANGER_MISSILES, UNIT), (EXTRA_SHOTS, UNIT)]) };
+        let under = at(&mut m, 0);
+        assert_eq!(under, w / 50, "a shot under the cap: the requirement's share");
+        let (first, later, far) = (at(&mut m, 50), at(&mut m, 80), at(&mut m, 300));
+        assert!(first > later && later > far && far > 0, "past the cap: less and less, never nothing");
+        m.curves[RANGER_MISSILES][2] = 30 * UNIT; // no cap (C's curve): no extra value
+        m.curves[RANGER_MISSILES][3] = 0;
+        assert_eq!(m.gain(&[(EXTRA_SHOTS, UNIT)]), 0);
+    }
+
+    /// #761: `town_unseen_percent` scales what an unseen-flavour ware supplies
+    /// and leaves Phase Door's units alone; 100 changes nothing.
+    #[test]
+    fn the_unseen_percent_scales_all_but_phase_door() {
+        let out = vec![(HEAL, 20 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)];
+        assert_eq!(unseen_scaled(out.clone(), 100), out);
+        assert_eq!(unseen_scaled(out.clone(), 50), vec![(HEAL, 10 * UNIT), (PHASE, UNIT), (PHASE_RESERVE, UNIT)]);
+        assert_eq!(unseen_scaled(out, 0), vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)], "a row that scales to zero is dropped");
+    }
+
+    /// #761 (review of #778): rows that scale to zero are dropped, not kept —
+    /// the model rejects a zero-unit supply row (`Model::valid`), and the kept
+    /// rows stopped the town replay of Ranger 425904011 with "invalid
+    /// capability facts" on its first record.
+    #[test]
+    fn the_unseen_percent_drops_rows_that_scale_to_zero() {
+        assert_eq!(unseen_scaled(vec![(HEAL, UNIT), (LIGHT, 2 * UNIT)], 0), Vec::new());
+        assert_eq!(unseen_scaled(vec![(HEAL, 3 * UNIT)], 50), vec![(HEAL, 3 * UNIT / 2)]);
+        assert_eq!(unseen_scaled(vec![(PHASE, UNIT)], 0), vec![(PHASE, UNIT)], "Phase Door is not scaled");
+    }
+
+    /// #761: the first `town_phase_reserve` Phase Doors are a requirement on
+    /// top of the Phase Door curve: each worth the same up to the reserve,
+    /// nothing more past it; off (weight 0) it adds nothing.
+    #[test]
+    fn the_phase_reserve_is_a_requirement_on_top_of_the_curve() {
+        let w = 120 * UNIT;
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[PHASE] = [PHASE as i64, 180 * UNIT, 3600, 0, 0];
+        let curve_only = m.gain(&[(PHASE, UNIT)]);
+        assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only, "reserve off: nothing added");
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, w * 2, -2 * UNIT, 0, 0];
+        assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
+        assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
+        assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
     #[test]
     fn the_fear_cure_cap_values_potions_linearly_up_to_the_cap() {
         let w = 50_000;

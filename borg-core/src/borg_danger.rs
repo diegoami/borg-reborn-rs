@@ -2076,7 +2076,7 @@ pub fn borg_danger_one_kill(
 
 /// `borg_danger_one_kill()` on a copy of `borg_kills[i]`.
 #[allow(clippy::too_many_arguments)]
-fn danger_one_kill(
+pub(crate) fn danger_one_kill(
     st: &mut BorgState,
     kill: &BorgKill,
     y: i32,

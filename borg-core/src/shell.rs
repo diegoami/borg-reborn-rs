@@ -203,6 +203,14 @@ pub fn borg_txt_setting(name: &str) -> Option<String> {
     borg_txt_setting_at(&path, name)
 }
 
+/// borg-reborn-rs (#704, review of #740): `borg_txt_setting` that never
+/// reports a file it cannot read: `None` instead, so a check that runs before
+/// the parameter loader leaves the loader's own error to the loader.
+pub(crate) fn borg_txt_setting_lenient(name: &str) -> Option<String> {
+    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt")).ok()?;
+    borg_txt_value_at(&path, name).ok().flatten()
+}
+
 fn config_file_error(error: String) -> ! {
     eprintln!("borg-reborn-rs: configuration: {error}");
     std::process::exit(2)

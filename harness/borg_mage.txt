@@ -11,5 +11,16 @@ borg_param_town_devices_percent = 150
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the mage.
 borg_param_town_phase_curve_scale_percent = 175
 borg_param_town_oil_curve_scale_percent = 100
-# #685 (owner, 2026-11-19): no detection prayer by panel below CL10.
+# #744 (owner, 2026-11-20): no detection prayer by panel below CL10 again (undoes
+# #728 for this class; the common line stays 0). borg-zoo#480 (classes-1800,
+# starts 1-360, 100k turns): same deaths, +0.53 CL, no floating-eye deaths.
 borg_param_light_detect_evil_spell_min_level = 10
+# #768: C Borg preparedness gates for this class.
+borg_param_prepared_dl34_min_hp = 60
+borg_param_prepared_dl34_min_clevel = 11
+borg_param_prepared_dl59_min_hp = 80
+borg_param_prepared_dl59_min_clevel = 15
+borg_param_prepared_mid_clevel_offset = 5
+borg_param_prepared_deep_clevel_offset = 8
+borg_param_prepared_deep_min_clevel = 0
+borg_param_prepared_deep_max_clevel = 38

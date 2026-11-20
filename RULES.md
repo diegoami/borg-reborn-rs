@@ -138,7 +138,7 @@ not undo other-track work already authorized before the gate.
 ## Play and evidence
 
 9. **The game is not changed.** The engine tree, `engine/angband/`, is
-   upstream `42cd156ac` byte for byte (a test checks it). Our only changes are
+   upstream `574b618c` byte for byte (a test checks it). Our only changes are
    the declared patch series of `engine/patches/` (docs/ENGINE.md): harness
    hooks under `#ifdef BORG_HARNESS` or `USE_BORGH`, applied to a copy at
    build time, each shown not to change the game with the guards off. Birth
@@ -188,7 +188,7 @@ not undo other-track work already authorized before the gate.
     scum, stair-scumming, or cheat death inside the Borg.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
-    `file:function:lines` at `42cd156ac`. The **Angband Strategy Manual**
+    `file:function:lines` at `574b618c`. The **Angband Strategy Manual**
     (S14) and the **official user manual** under `reference/c-manual/` are
     the first reference for how the game behaves: read the relevant chapter
     before designing a rule, then check every number it gives in
@@ -208,6 +208,17 @@ not undo other-track work already authorized before the gate.
 19. No secrets in the repository or in run records.
 20. Population experiments run through borg-zoo and are started by the
     owner (they hold the account's Actions capacity for hours).
+    **Every comparison of settings or builds over a set of starts goes to
+    borg-zoo** (owner, 2026-11-20: "add a rule to always use the zoo for such
+    tasks"). The session pushes the code (a scratch branch is fine), then
+    files a request issue in diegoami/borg-zoo with the exact commit, the
+    arms as `borg_param_*` overrides on the shipped `harness/borg.txt`, the
+    runs and what it wants back (borg-zoo#510 is a model); a zoo session
+    dispatches it. Local games are for checking named cases (a death
+    replayed by seed, before and after a switch), builds and smoke, not for
+    cohorts: no local arm of more than a few dozen games without the
+    owner's word. A local number given for direction says so, and never
+    replaces the zoo's.
 
 ## Moving sources
 

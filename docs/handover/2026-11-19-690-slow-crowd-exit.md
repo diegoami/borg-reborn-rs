@@ -44,7 +44,10 @@ That is why the open grids and the descending distance were added.
 - CI's commands; `check-param-citations.py` (2203, after merging main `dbc92d18`).
 - Switch off: the 18 classes-18 starts play keys identical to main
   `a87b4c96` (18/18).
-- Switch on: the same 18 are unchanged too. The rule never fires in them.
+- Switch on at the original pin: the same 18 were unchanged. At
+  `0a76dc19`, the Half-Elf Necromancer (1574344917) walked out six
+  times and survived instead of dying to a blue worm mass. The
+  stoppable-only arm also rescued that start in [Zoo #460].
 - **The case**, replayed on its own build (`6e64ddb9`, #659's branch, with
   this change applied), shipped settings plus
   `caution_ranged_vs_immobile = 1`. These are local leads (RULES 14):
@@ -77,8 +80,18 @@ That is why the open grids and the descending distance were added.
   share.
 
 **Left / for the owner:**
-- A zoo pilot. The 18 starts never trigger the rule, so only a big cohort
-  can show an effect.
-- The distance (6) and the margin (25%).
-- How it interacts with #556's stoppable switch: kill first, or walk? This
-  rule only acts at danger at or above the HP while surrounded.
+- [Zoo #448] and [Zoo #460] measured older builds. The added effect
+  with the shipped breeder policy 3 still needs a paired comparison.
+- The owner kept the walk ahead of the escape block. [#756] tracks
+  testing how it interacts with live stair routes and escape items.
+
+**Conflict resolution:** preserved the current breeder policy and its
+shipped value of 3. The slow-crowd switch stays compiled and shipped at 0
+and is independent of the breeder policy. The breeder-only exit gets
+first try if enabled (policy 5), and the desperate flow still respects
+active breeder avoidance marks. The calibration section records the
+remaining interaction with the one-turn hunt pause.
+
+[Zoo #448]: https://github.com/diegoami/borg-zoo/issues/448#issuecomment-7023014570
+[Zoo #460]: https://github.com/diegoami/borg-zoo/issues/460#issuecomment-7026466575
+[#756]: https://github.com/diegoami/borg-reborn-rs/issues/756
