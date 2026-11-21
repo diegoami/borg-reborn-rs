@@ -725,6 +725,11 @@ possible."
   with Sense Invisible, Detection or Reveal Monsters. 0 is #663. A Staff of
   Detect Invisible (200 gold, 8+d15 charges) gives the same units at far more
   gold, so it is bought only when scrolls are not stocked and the gold allows.
+  A known Scroll of Detect Invisible is **never sold or dropped** by the town
+  plan (`borg_town_utility.rs`, `keeps_detect_invisible`: it is kept, or stored
+  at the Home while overweight), whatever the curve says; the one hard cap is
+  the planner's own, `borg_town_max_non_missile_copies` (35) for every
+  non-missile item, which the curve's diminishing value stays far below.
   - **First visits.** The old design needed a floor because a percent high
     enough to buy anything later also bought on the first visit: on the first
     visits of 2037495442 (151 gold) and 2078477958 (139 gold), CL1, 15% to 30%
@@ -852,7 +857,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:264` |
 
 ## No detection prayer by panel at low level (#685)
 

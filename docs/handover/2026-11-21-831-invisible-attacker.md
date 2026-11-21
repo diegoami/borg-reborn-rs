@@ -34,7 +34,10 @@ numbers):
   is by class: 20 with nothing to detect, 10 with a Detect Evil spell, 3 with Sense
   Invisible, Detection or Reveal Monsters (`borg_magic::detects_invisible`,
   `detects_evil`). A staff gives the same units at far more gold, so it is bought
-  when the scrolls are not stocked. The first version (three reads a requirement
+  when the scrolls are not stocked. A known Scroll of Detect Invisible is never
+  sold or dropped (`borg_town_utility.rs`, `keeps_detect_invisible`; kept, or
+  stored at the Home while overweight); the hard cap on copies is the planner's
+  own 35 (`borg_town_max_non_missile_copies`). The first version (three reads a requirement
   behind a 250-gold floor) was replaced: see *Found*.
 - **Eight new parameters**, four for the town plan (`town_invisible_count` 2,
   `town_invisible_percent` 20, `town_invisible_evil_percent` 10,
@@ -83,7 +86,7 @@ numbers):
 --all-targets -- -D warnings`, `cargo test --workspace --exclude borg-core`,
 `cargo test --release -p borg-core` (unit tests for the grid choice, the answers
 to a blind attack, the kill message and the reserve), `scripts/check-param-citations.py`;
-the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical; `smoke-warrior-1` diverges at game turn 19,592 in the first town visit: it keeps the three Detect Invisible scrolls it carries, where the old reference sold them, and buys a fourth for 15 gold with the gold left; the curve has no hard cap, see *Left*). The 12-Blackguard comparison below is of the first design and was not re-run. Local, for
+the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical; `smoke-warrior-1` diverges at game turn 19,592 in the first town visit: it keeps the three Detect Invisible scrolls it carries, where the old reference sold them, and buys a fourth for 15 gold with the gold left). The 12-Blackguard comparison below is of the first design and was not re-run. Local, for
 direction only (RULES 20): 12 Human Blackguards, off against on, 100,000 game
 turns: 0 deaths in both, sum of CL 75 and 76, sum of DL 34 and 34, HP rests 469
 and 404, the mode entered 29 times, no stalls. **No claim of improvement** (RULES
@@ -93,7 +96,6 @@ file touched is already on its HOOKED list.
 
 **Left / for the owner:**
 
-- **No hard cap on reads:** the curve only diminishes, so a purse with gold to spare buys several (the smoke warrior bought a 4th with 3 carried). Say if a cap (say twice `town_invisible_count`) is wanted.
 - **A zoo arm** (RULES 20; filed as borg-zoo#580): the shipped settings
   against `borg_param_recover_unseen_attack_turns` 0 and
   `borg_param_town_invisible_count` 0, on the classes suites, measuring deaths to
