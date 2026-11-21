@@ -239,6 +239,11 @@ fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Ve
 }
 
 fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
+    let healing = HealingValuation {
+        speed_percent: i64::from(param(Param::town_heal_speed_percent)),
+        reserve_real_hp: param(Param::town_heal_reserve_real_hp) != 0,
+        quaff_bonus_percent: i64::from(param(Param::town_heal_quaff_bonus_percent)),
+    };
     let mut sum = BTreeMap::<usize, i64>::new();
     let mut i = 0;
     while i < effects.len() {
@@ -246,7 +251,7 @@ fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turn
         if matches!(u32::from(e.0), EF_RANDOM | EF_SELECT) {
             let n = (e.2.max(0) as usize).min(effects.len() - i - 1);
             let branches: Vec<BTreeMap<usize, i64>> = effects[i+1..i+1+n].iter()
-                .map(|&b| effect_supply_linear(&[b], hp, service_turns, confusion).into_iter().collect()).collect();
+                .map(|&b| effect_supply_linear(&[b], hp, service_turns, confusion, healing).into_iter().collect()).collect();
             if let Some(first) = branches.first() {
                 for &id in first.keys() {
                     let amount = branches.iter().map(|b| *b.get(&id).unwrap_or(&0)).min().unwrap_or(0);
@@ -255,11 +260,18 @@ fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turn
             }
             i += n + 1;
         } else {
-            for (id, n) in effect_supply_linear(&[e], hp, service_turns, confusion) { *sum.entry(id).or_default() += n; }
+            for (id, n) in effect_supply_linear(&[e], hp, service_turns, confusion, healing) { *sum.entry(id).or_default() += n; }
             i += 1;
         }
     }
     sum.into_iter().filter(|&(_, n)| n > 0).collect()
+}
+
+#[derive(Clone, Copy)]
+struct HealingValuation {
+    speed_percent: i64,
+    reserve_real_hp: bool,
+    quaff_bonus_percent: i64,
 }
 
 /// borg-reborn-rs (#491, owner: "budget healing speed"): the healing units of
@@ -273,6 +285,15 @@ fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
     // The full-value heal in hundredths of an HP, so no rounding moves it.
     let full = hp.max(1) * speed_percent.clamp(0, 100);
     if full > heal * 100 { heal * heal * UNIT * 100 / full } else { heal * UNIT }
+}
+
+/// Extra value for restoring more HP in one action. The bonus starts when
+/// max HP exceeds one CCW (60 HP), reaches full strength at two, and grades
+/// the potion from CLW (20 HP, no bonus) to CCW (60 HP, full bonus).
+fn heal_quaff_bonus(heal: i64, real_heal: i64, hp: i64, percent: i64) -> i64 {
+    let strength = (real_heal / UNIT - 20).clamp(0, 40);
+    let growth = (hp - 60).clamp(0, 60);
+    heal * strength * growth * percent / (40 * 60 * 100)
 }
 
 /// borg-reborn-rs (#487): what a healing use puts in the reserve: the real
@@ -308,7 +329,7 @@ fn rod_uses(quantity: i64, timeout: i64, cooldown: i64, horizon: i64) -> i64 {
 
 /// Effects with contextual relevance, in physical units. Metadata/control
 /// effects do not earn utility by themselves. Harmful effects never do.
-fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
+fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool, healing: HealingValuation) -> Vec<(usize, i64)> {
     use crate::headers::list_projections_h::*;
     let mut out = BTreeMap::<usize, i64>::new();
     // borg-reborn-rs (#487): the real HP restored, for the healing reserve.
@@ -325,7 +346,7 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
             EF_NOURISH if subtype == 3 && amount > HUNGRY_PERCENT => Some((FOOD, (amount - HUNGRY_PERCENT) * UNIT)),
             EF_NOURISH if subtype == 3 => None,
             EF_NOURISH if subtype != 1 && amount > 0 => Some((FOOD, n)), // A decreasing food effect is not nourishment.
-            EF_HEAL_HP => Some((HEAL, heal_units(amount, hp, i64::from(param(Param::town_heal_speed_percent))))),
+            EF_HEAL_HP => Some((HEAL, heal_units(amount, hp, healing.speed_percent))),
             EF_CURE => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             EF_TIMED_DEC if amount > 0 => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             // borg-reborn-rs (#452): a speed effect is one emergency use, not
@@ -383,7 +404,9 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
     // the reserve. Speed-weighted, a Cure Light Wounds counted about 5.6 HP
     // at 108 max HP and the reserve took dozens of them.
     if let Some(&heal) = out.get(&HEAL) {
-        out.insert(HEAL_RESERVE, reserve_heal(heal, real_heal, param(Param::town_heal_reserve_real_hp) != 0));
+        out.insert(HEAL_RESERVE, reserve_heal(heal, real_heal, healing.reserve_real_hp));
+        let bonus = heal_quaff_bonus(heal, real_heal, hp, healing.quaff_bonus_percent);
+        out.insert(HEAL, heal + bonus);
     }
     out.into_iter().collect()
 }
@@ -1375,7 +1398,7 @@ mod tests {
     #[test]
     fn healing_reserve_is_linear_up_to_its_size_then_the_curve() {
         let hp = 40;
-        let units = effect_supply_linear(&[(EF_HEAL_HP as u16, 0, 20)], hp, 1, false);
+        let units = effect_supply(&[(EF_HEAL_HP as u16, 0, 20)], hp, 1);
         assert!(units.contains(&(HEAL, 20 * UNIT)) && units.contains(&(HEAL_RESERVE, 20 * UNIT)));
         let mut m = model();
         // Healing curve: weight 100 per HP of demand 1000 HP; reserve of 3
@@ -1418,6 +1441,132 @@ mod tests {
         assert!(cure_light < 6 * UNIT);
         assert_eq!(reserve_heal(cure_light, heal_units(20, 108, 0), true), 20 * UNIT);
         assert_eq!(reserve_heal(cure_light, heal_units(20, 108, 0), false), cure_light);
+    }
+
+    // Engine object.txt: CLW, CSW and CCW have different secondary cures.
+    fn wound_potion(tier: usize, hp: i64, healing: HealingValuation) -> Vec<(usize, i64)> {
+        let mut effects = vec![
+            (EF_HEAL_HP as u16, 0, 20 * (tier as i64 + 1)),
+            (EF_CURE as u16, TMD_BLIND as i32, 0),
+            (EF_NOURISH as u16, 0, 1),
+        ];
+        for timed in [TMD_CUT, TMD_CONFUSED] {
+            effects.push(if tier == 0 { (EF_TIMED_DEC as u16, timed as i32, 20) }
+                else { (EF_CURE as u16, timed as i32, 0) });
+        }
+        if tier == 2 {
+            for timed in [TMD_POISONED, TMD_STUN, TMD_AMNESIA] {
+                effects.push((EF_CURE as u16, timed as i32, 0));
+            }
+        }
+        effect_supply_linear(&effects, hp, 1, false, healing)
+    }
+
+    const SHIPPED_HEALING: HealingValuation = HealingValuation {
+        speed_percent: 66, reserve_real_hp: true, quaff_bonus_percent: 0,
+    };
+    const FASTER_QUAFFS: HealingValuation = HealingValuation {
+        quaff_bonus_percent: 200, ..SHIPPED_HEALING
+    };
+
+    #[test]
+    fn quaff_bonus_preserves_reserve_and_secondary_cures() {
+        for tier in 0..3 {
+            assert_eq!(wound_potion(tier, 30, SHIPPED_HEALING), wound_potion(tier, 30, FASTER_QUAFFS));
+            let shipped = wound_potion(tier, 108, SHIPPED_HEALING);
+            let faster = wound_potion(tier, 108, FASTER_QUAFFS);
+            let speed_only = wound_potion(tier, 108, HealingValuation { speed_percent: 100, ..SHIPPED_HEALING });
+            for (cap, shipped_units) in shipped {
+                let candidate_units = faster.iter().find(|(id, _)| *id == cap).unwrap().1;
+                if cap == HEAL {
+                    assert_eq!(candidate_units, shipped_units * (5 + 4 * tier as i64) / 5);
+                    let speed_only_units = speed_only.iter().find(|(id, _)| *id == cap).unwrap().1;
+                    assert!((100 * speed_only_units - 66 * shipped_units).abs() < 100);
+                } else {
+                    assert_eq!(candidate_units, shipped_units);
+                }
+            }
+        }
+        let ccw = wound_potion(2, 108, FASTER_QUAFFS);
+        assert!(ccw.contains(&(HEAL_RESERVE, 60 * UNIT)));
+        assert!(ccw.contains(&(STUN, UNIT)));
+        assert!(ccw.contains(&(POISON, UNIT)));
+    }
+
+    /// Construct the observations the live planner would supply to its engine-free solve.
+    /// An uninjured Ranger has zero active cure weight. 108 max HP is a
+    /// scenario input, not a recovered fact about FBorg.
+    fn wound_potion_plan(
+        level: i32, hp: i32, gold: i64, carried_clw: i32, stock: [i32; 4], healing: HealingValuation,
+    ) -> [i32; 4] {
+        use crate::borg_town_record::{PARAMS, PLAN_SCHEMA, StepInput, step};
+        use crate::borg_town_solve::Limits;
+        use crate::borg_town_stock::Candidate;
+        let mut traits = vec![0; BI_MAX as usize];
+        traits[BI_CLASS as usize] = CLASS_RANGER;
+        traits[BI_CLEVEL as usize] = level;
+        traits[BI_MAXHP as usize] = hp;
+        traits[BI_CARRY as usize] = 2_400;
+        let mut m = model();
+        for row in &mut m.curves {
+            row[1] = 0;
+        }
+        // Shipped target depth is known depth + 1, and the forecast uses
+        // 1,000 exploration turns plus 100 travel turns per depth.
+        let depth = if level == 1 { 1 } else { 3 };
+        let exposure = (1_000 + 100 * depth) * depth / i64::from(level);
+        let hp = i64::from(hp);
+        m.curves[HEAL] = [HEAL as i64, 100 * exposure, hp * exposure, 0, 0];
+        m.curves[HEAL_RESERVE] = [HEAL_RESERVE as i64, 200 * UNIT, -2 * hp * UNIT, 0, 0];
+        m.curves[PHASE] = [PHASE as i64, 75 * exposure, 150 * exposure / 100, 0, 0];
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, 100 * exposure, -2 * UNIT, 0, 0];
+        let candidates = [20, 70, 200, 15].into_iter().enumerate().map(|(i, price)| {
+            let slot = i as u8;
+            let tval = if i < 3 { TV_POTION } else { TV_SCROLL } as u8;
+            let stack_count = if i == 0 { carried_clw } else { 0 };
+            let supply = if i < 3 { wound_potion(i, hp, healing) } else { vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)] };
+            for (id, units) in supply {
+                m.curves[id][3] += i64::from(stack_count) * units;
+                m.supplies.push([4, i as i64, id as i64, units]);
+            }
+            Candidate { shop: 4, slot, kind: i as u32 + 1, tval, sval: slot, price, qty: stock[i],
+                weight: if i < 3 { 4 } else { 5 }, slots_cost: i32::from(stack_count == 0),
+                stack_count, class: i as u16 }
+        }).collect();
+        let mut params = [0; PARAMS];
+        params[(BORG_TOWN_W_SPACE - BORG_TOWN_PLAN) as usize] = 25;
+        let out = step(&StepInput {
+            revision: PLAN_SCHEMA, capability: Some(&m), utility: true, candidates,
+            facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 6, weight: 300 },
+            black_market_reserve: 500, black_market_percentage: 60, urgent: vec![], params,
+            traits: &traits, power: 0, carried: &[], cure_spell: false, kit: &[], home_slots: 10,
+        });
+        let mut bought = [0; 4];
+        for (group, option) in out.solution.ranked(&out.groups) {
+            for &(candidate, count) in &out.groups[group].options[option].picks {
+                bought[candidate] += count;
+            }
+        }
+        bought
+    }
+
+    #[test]
+    fn stronger_wound_potions_compete_without_removing_early_and_fallback_healing() {
+        let late = |healing| wound_potion_plan(11, 108, 7_899, 29, [6, 4, 3, 5], healing);
+        let shipped = late(SHIPPED_HEALING);
+        let speed_only = late(HealingValuation { speed_percent: 100, ..SHIPPED_HEALING });
+        let candidate = late(FASTER_QUAFFS);
+        assert_eq!(shipped, [6, 0, 0, 5]);
+        assert_eq!(speed_only, shipped);
+        assert_eq!(candidate, [0, 0, 3, 5]);
+
+        let early = |healing| wound_potion_plan(1, 18, 55, 0, [6, 4, 3, 5], healing);
+        assert_eq!(early(SHIPPED_HEALING), [2, 0, 0, 1]);
+        assert_eq!(early(FASTER_QUAFFS), early(SHIPPED_HEALING));
+
+        let no_ccw = |healing| wound_potion_plan(11, 108, 7_899, 10, [6, 6, 0, 5], healing);
+        let fallback = no_ccw(FASTER_QUAFFS);
+        assert!(fallback[1] > 0 && fallback[3] == no_ccw(SHIPPED_HEALING)[3], "{fallback:?}");
     }
 }
 
