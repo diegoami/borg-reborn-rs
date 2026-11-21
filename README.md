@@ -27,6 +27,10 @@ harness/run.sh OUT SEED RACE CLASS TURNS menu   # one deterministic headless run
 tools/rerun-death.py docs/deaths/DXXXX-... OUT  # rerun a recorded death with the Borg's logs
 ```
 
+A release (the Linux package: unpack, then `./watch-borg.sh`; see its
+`PLAYING.txt`) needs no build; [docs/RELEASING.md](docs/RELEASING.md) says
+how to install one and how releases are made.
+
 Saves and settings of `watch-borg.sh` are in `.angband-reborn/`. Until M3
 the Borg is a placeholder (it walks, rests and descends). Where the work
 stands now: [docs/handover/](docs/handover/README.md), one note per task, newest
