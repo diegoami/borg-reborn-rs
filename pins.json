@@ -14,7 +14,7 @@
       "repository": "diegoami/borg-rs",
       "commit": "8c5d000a58e9ddca1f1954ab9552e505856b313f",
       "role": "A reference only (docs/SPEC.md §2): the faithful Rust port of the C Borg. Its harness hooks and headless frontend were copied once and are ours (docs/PROVENANCE.md); nothing of it is a build input, an oracle or a control. Its docs/ are copied in reference/borg-rs/.",
-      "read_on": "2026-11-18",
+      "read_on": "2026-11-19",
       "issues": true,
       "watch_tags": "m*"
     },

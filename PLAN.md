@@ -262,12 +262,13 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 
 ## P5: validation reproducibility and evidence receipts (2026-11-18)
 
-**Done: owner accepted the P5 milestone review and delegated
+**Done: owner accepted the P5 milestone review and explicitly delegated
 [#626](https://github.com/diegoami/borg-reborn-rs/pull/626), promoted to main
-at `324697ed` (2026-11-19).** Owner authorized #579 into track-p at
-`f357404e` and #608 at `7e3ea58f`, both after green CI; #374 and #375 are
-complete; review fixes #629/#630. Earlier pending-review statements are
-historical.
+at `324697eda0c74ac0f462cfa78053d66dc97b66dc`.** Task #374/#579 integrated
+at `f357404e`, #375/#608 at `7e3ea58f`, and review fixes #629/#630 at
+`9e0402d4`, after green CI and owner review disposition. The final milestone
+check found no blockers; the owner authorized the promotion and then
+requested continuation. Earlier pending-review statements are historical.
 
 The owner accepted the kickoff re-review and merged source refresh #555 into
 track-p at `0336d44e`, then kickoff #537 at `6aa38d2b`; issues #554 and #536
@@ -305,16 +306,77 @@ canonical gameplay reports. No new gameplay measurement, population run,
 default change, bulk migration or evidence deletion is part of this milestone.
 Importer #397, recorder #409 and plan follow-ups #425 remain separate backlog.
 
-Task PRs target track-p and require green CI plus the owner's review disposition
-before integration (RULES 1a). Stop after the P5 tasks for a pinned track-p→main
-milestone review. Owner acceptance and explicit merge delegation still gate
-promotion; this kickoff does not choose or launch a reviewer.
+Historical P5 gate: task PRs targeted track-p and required green CI plus
+owner review disposition (RULES 1a), then a pinned track-p→main milestone
+review. That gate is complete through owner-accepted promotion #626; this
+paragraph records the original milestone process.
+
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In track-p; milestone review and promotion PR #822 open** (status updated 2026-11-21).
-The enchant/decurse contract #680 is integrated in `track-p` (#773), the
-pre-promotion reconciliation #774/#783 is merged there (`221a2504`), and the
-final promotion-candidate task #814 is done; the `track-p` → `main` review PR
-#822 awaits the owner-chosen milestone review. The scope, steps and
-exit are in `track-p`'s PLAN.md.
+**In track-p; milestone review/promotion #822 awaits fixes and re-review.**
+#680/#773, #774/#783 and #814/#818 are integrated. Review of exact
+`562979d3` found the neutral implementation sound and requested a main sync,
+clearer validation wording and this status update. Follow-up #860 reconciles
+accepted main `ab775d48`, including #799's P7 plan, without starting P7 work
+in this session. All accepted main behavior, settings and pins are retained.
+
+[Zoo #571](https://github.com/diegoami/borg-zoo/issues/571#issuecomment-7063705400)
+passed its pilot at exact `07aa4b1e` versus `a3635ad8`: 36/36 cells complete,
+18/18 paired play hashes equal, ten compiled defaults verified. Those results
+and the older Zoo #520 full45 remain scoped to their exact builds; neither
+proves compatibility of the #860 combination with newer main. A fresh pinned
+Zoo request covers that combination. P6 owner acceptance and main promotion
+remain pending. R4 ownership/carry remains separate.
+
+1. **Source startup (#706/#708):** synchronize accepted main `324697ed`
+   into the next P branch, report all six moving sources and perform the
+   dedicated borg-rs reference update. The corrected
+   [inventory](docs/research/P6-SOURCE-REFRESH.md) records newer donor/zoo
+   heads, two changed donor documents and six changed mapped core files.
+   Retain the exact accepted pin/copies deliberately; a behavior-changing
+   donor carry is separate. The two #680 subject files are unchanged across
+   the observed donor interval. Merge
+   this owner-reviewed source PR before kickoff integration.
+2. **Kickoff (#707):** record accepted P5 and this bounded P6 scope. This
+   documentation-only task may stack on #708, but merges after it.
+3. **Enchant/decurse contract (#680), after #706 and #707:** classify all
+   literals in `borg_item_enchant.rs` and `borg_item_decurse.rs` as policy,
+   game mechanics, UI/index bookkeeping or existing configuration. Name
+   actual policy controls only: spell-failure allowances, ammunition stack
+   thresholds and enchant targets where the audit establishes policy.
+   Preserve defaults, integer widths, evaluation/branch order, resource
+   preference, callers and the existing `BORG_ENCHANT_LIMIT` setting.
+
+4. **Pre-promotion reconciliation (#774), after #680:** synchronize exact
+   accepted newer main through its own reviewed task PR into track-p,
+   preserve the new engine/settings/other-track work and the neutral contract,
+   and revalidate against that synchronized receiving baseline. The #680
+   receipts at 760fae80 do not prove latest-main compatibility.
+
+5. **Final-candidate reconciliation (#814), after #774:** synchronize exact
+   accepted main07aa4b1e after the frozen #783 comparison; preserve main's
+   resolved-settings receipt/test and the P6 bounds test, recheck smoke and
+   a named native witness, and route the new paired comparison through Zoo571.
+   Freeze that candidate for task review, then the P6 milestone review.
+
+Exit: a source-grounded classification and parameter contract, registered
+bounded overrides/profile exposure and decision-trace coverage; focused
+boundary and real decision override witnesses; default compatibility against
+an exact accepted receiving baseline on the native borg-rs core. Record the
+suite, source/build/config identities and which streams were compared; retain
+strict failures and every new natural death in Cemetery. Run the required
+workspace/core/vendor and harness compatibility checks. Any gameplay evidence
+belongs in Cemetery; source keeps the contract, tests and immutable pointers.
+No tuning or survival-improvement claim follows from naming parameters.
+
+R4 continues to declare enchant/decurse as shared services until a separate
+carry of the owner-accepted P6 contract. Do not implement the R port here,
+close R4, change shopping policy, adopt engine/control behavior, dispatch a
+population experiment, migrate published evidence or sweep unrelated backlog
+#397/#409/#425 into this milestone.
+
+After P6's tasks merge into track-p with green CI and owner review disposition,
+stop and open a pinned track-p→main P6 milestone review. The owner chooses the
+reviewer. Keep promotion unmerged until owner acceptance, green required CI
+and an explicit merge instruction. No next milestone starts before that gate.

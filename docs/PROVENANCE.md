@@ -142,3 +142,12 @@ Angband developers', untouched in `engine/angband/docs/`.
 | `docs/design/` | diegoami/borg-rs `docs/` (town, trip, family, shop, joint-policy, c-bugs) | `8c5d000a58e9ddca1f1954ab9552e505856b313f` |
 | `docs/research/borg-agent/` | diegoami/borg-agent `knowledge/`, `docs/POST-MORTEM.md`, `docs/KNOWLEDGE.md` | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` |
 
+## P6 enchant/decurse extraction (#680)
+
+The existing borg-rs 8c5d000a copies of `borg_item_enchant.rs` and
+`borg_item_decurse.rs` gain named neutral policy controls; the vendor audit
+marks these two files hooked. Existing declarations and notices remain. No
+new donor source is copied or engine behavior adopted. The receiving parameter
+registry adds an automated test of bounds, precedence and provenance only.
+A recorded native harness run with an environment override exercises the
+production decision; it is not an automated decision-path regression test. See [the contract](CALIBRATION.md#enchantdecurse-policy-680--p6).
