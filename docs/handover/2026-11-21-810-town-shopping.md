@@ -17,4 +17,6 @@ purse after paying for the scroll. The planner accounts for urgent purchases,
 and the executor checks the native price. `borg_param_buy_recall_from_gold`
 sets the amount to leave in the purse.
 
-Cross-class measurement of shopping and fuel remains in #810.
+Cross-class measurement of shopping and fuel remains in #810. Pin the
+shopping profile for that comparison because the percentage, stock cap
+and Recall floor change the shipped baseline.

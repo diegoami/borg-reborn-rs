@@ -310,7 +310,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let mut purchase_gold = if protects_gold {
             crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32
         } else { gold };
-        let recall_floor = crate::params::value(crate::params::Param::buy_recall_from_gold);
+        let recall_floor = crate::borg_store_buy::recall_purchase_floor();
         let protects_recall = a.code == action::BUY && recall_floor > 0
             && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval);
         if protects_recall {

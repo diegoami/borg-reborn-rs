@@ -1,5 +1,6 @@
 """#520: the class files are folded into harness/borg.txt."""
 import importlib.util
+import re
 import subprocess
 import sys
 import unittest
@@ -36,7 +37,13 @@ class ClassFilesTest(unittest.TestCase):
         kinds = bcf.core_settings()
         self.assertEqual(kinds['borg_town_w_light'], 'i')
         self.assertEqual(kinds['borg_worships_damage'], 'b')
-        self.assertEqual(len(kinds), 72)
+        header = ROOT / 'borg-core/src/borg_headers/borg_h.rs'
+        count = re.search(r'^pub const BORG_MAX_SETTINGS: [^=]+ = (\d+);$', header.read_text(), re.M)
+        self.assertIsNotNone(count, 'BORG_MAX_SETTINGS is missing')
+        self.assertEqual(len(kinds), int(count.group(1)))
+        for name in ('borg_black_market_max_percentage', 'borg_sum_excluded_from_black_market',
+                     'borg_town_max_non_missile_copies'):
+            self.assertEqual(kinds[name], 'i')
 
     def test_bad_lines_are_refused(self):
         for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1', 'borg_param_caution_cornered__mage = 1', 'borg_town_w_light__mage = 1',

@@ -430,7 +430,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         i64::from(stock.candidates[purchase.candidate].price)).sum();
     let gold_after_urgent = i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD))
         .saturating_sub(urgent_cost);
-    let recall_floor = crate::params::value(crate::params::Param::buy_recall_from_gold);
+    let recall_floor = crate::borg_store_buy::recall_purchase_floor();
     if recall_floor > 0 {
         let recall_budget = budget.gold.min(crate::borg_store_buy::recall_purchase_budget(gold_after_urgent, recall_floor));
         for c in &mut stock.candidates {

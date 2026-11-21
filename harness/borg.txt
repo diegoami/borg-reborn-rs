@@ -213,8 +213,9 @@ borg_town_w_ranger_missiles = 250
 borg_town_ranger_missile_turns = 50
 
 # Black Market purchases may spend this percentage (0 to 100) of the
-# shopping budget above the excluded gold. Regular shops use the ordinary
-# shopping budget.
+# shopping budget above the excluded gold. Zero closes the Black Market.
+# Omit the percentage to use the legacy borg_town_share divisor. Regular
+# shops use the ordinary shopping budget.
 # Limit copies per non-missile item kind when leaving town. Zero disables
 # the limit. Excess goes to Home first, then to shops.
 # borg_town_w_space: the value of a free pack slot; higher keeps the pack

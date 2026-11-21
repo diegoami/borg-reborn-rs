@@ -1459,7 +1459,7 @@ fn scale_percent(value: i64, percent: i32) -> i64 {
 /// Only value the reserve when the purse after urgent purchases reaches the
 /// floor. A small purse still gets the ordinary Recall curve.
 pub(crate) fn recall_reserve_for_budget(gold: i64) -> i64 {
-    eligible_recall_reserve(gold, param(Param::buy_recall_from_gold), param(Param::town_recall_reserve))
+    eligible_recall_reserve(gold, crate::borg_store_buy::recall_purchase_floor(), param(Param::town_recall_reserve))
 }
 
 fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> i64 {

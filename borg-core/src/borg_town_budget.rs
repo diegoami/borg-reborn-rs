@@ -259,7 +259,7 @@ impl Budget {
         let percentage = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
         let market_gold = black_market_budget(facts.gold, black_market_reserve, percentage, 0);
         let mut budget = Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
-            if c.is_black_market() && i64::from(c.price) > market_gold {
+            if (black_market_reserve > 0 || percentage >= 0) && c.is_black_market() && i64::from(c.price) > market_gold {
                 return Vec::new();
             }
             let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
