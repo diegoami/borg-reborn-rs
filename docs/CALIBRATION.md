@@ -5684,8 +5684,13 @@ Word of Recall, weight 5).
   on their curve, and only those copies count as freed. The live executor
   moves one copy per store action and solves again (`borg_town_shadow.rs`,
   `evaluate`: every live action but a purchase moves one copy, #507), so a
-  stack goes down copy by copy and stops at the minimum or once the room is
-  free. The plan's own action (`first_action`) moves exactly the surplus
+  stack goes down copy by copy while it has a surplus. The minimum is an
+  order, not a floor (re-review of #864): at exactly the minimum the stack is
+  no longer a surplus, so it is priced whole and, if the pack is still short
+  of the room after every surplus and every other stack, its remaining copies
+  go home too, one per solve, down to none. Only the order changes: the
+  surplus first. Whether the minimum should be a floor is for the owner. The
+  plan's own action (`first_action`) moves exactly the surplus
   (review F1 of #864): twelve copies with three kept give a
   store of nine, and the whole stack when `town_store_keep_min` is 0 or the
   flavour is unknown. The live executor then cuts it to one copy
