@@ -12,7 +12,7 @@
 
 use crate::borg_headers::borg_item_h::{
     borg_item, BORG_CURSE_ANNOYANCE, BORG_CURSE_ANTI_TELEPORTATION, BORG_CURSE_COWARDICE,
-    BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, BORG_CURSE_PARALYSIS, BORG_CURSE_SLOWNESS,
+    BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, BORG_CURSE_PARALYSIS,
 };
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_FIRST_CURSED, BI_GOLD, BI_WHERE_CURSED, BORG_EQUIP};
 use crate::borg_io::{borg_keypress, borg_note_bytes};
@@ -28,18 +28,17 @@ use crate::state::BorgState;
 /// (`engine/angband/lib/gamedata/curse.txt`): annoyance is `SPEED[-10]`,
 /// `STEALTH[-10]` and `AGGRAVATE`; anti-teleportation is `NO_TELEPORT`
 /// (it also stops Phase Door, #829); paralysis can freeze the player;
-/// impair hitpoint recovery is `IMPAIR_HP`; cowardice is `AFRAID`;
-/// slowness is `SPEED[-5]`. The first five are the owner's list
-/// (#830, 2026-11-21); slowness is added because it is the same kind of
-/// loss as annoyance's speed penalty. Every other curse stays with the
-/// power model's prices and `borg_remove_stuff`.
-const HARMFUL: [(u32, &str); 6] = [
+/// impair hitpoint recovery is `IMPAIR_HP`; cowardice is `AFRAID`. This is
+/// the owner's list (#830, 2026-11-21) and nothing more: slowness
+/// (`SPEED[-5]`) was tried and left out (owner, 2026-11-21), as a good item
+/// may beat bare skin. Every other curse stays with the power model's prices
+/// and `borg_remove_stuff`.
+const HARMFUL: [(u32, &str); 5] = [
     (BORG_CURSE_ANNOYANCE, "annoyance: -10 speed, aggravate"),
     (BORG_CURSE_ANTI_TELEPORTATION, "anti-teleportation: no teleport, no Phase Door"),
     (BORG_CURSE_PARALYSIS, "paralysis"),
     (BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, "impair hitpoint recovery"),
     (BORG_CURSE_COWARDICE, "cowardice"),
-    (BORG_CURSE_SLOWNESS, "slowness: -5 speed"),
 ];
 
 /// The first harmful curse an item is known to carry, as text for the note.

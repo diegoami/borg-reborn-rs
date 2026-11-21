@@ -3,8 +3,8 @@
 The borg-rs core now takes off a worn item as soon as it is known to carry
 a harmful curse, before any fight or flight, and leaves the slot empty. The
 harmful curses are the owner's list (annoyance, anti-teleportation,
-paralysis, impair hitpoint recovery, cowardice) and slowness, which I added
-because it is the same loss as annoyance's speed penalty. The note reads
+paralysis, impair hitpoint recovery, cowardice); slowness was in it for a
+while and is out (owner's decision, below). The note reads
 `# Removing cursed <item> (annoyance: -10 speed, aggravate)`. `borg_cursed.rs`
 holds it; `borg_think_dungeon.rs` calls it right after `borg_notice`.
 
@@ -159,3 +159,13 @@ keys. Its findings, and what was done:
 - *The PR body was out of date (fixed)*, and *the footer is still there*: the
   session's GitHub tooling re-adds it on every write; it needs a manual edit.
 - *zoo#583 pins an old commit (moved).* See the issue.
+
+**The owner's decisions on the review's three questions (2026-11-21: "go with
+your recommendations").**
+- *Power model / slowness:* the five curses of the issue stay unconditional;
+  slowness is dropped from the list (one-line change in `HARMFUL`), so a slow
+  item is left to the power model's own, late check as before.
+- *Worn equipment:* the worth gate stays for pack items only; a worn item the
+  Borg keeps still gets a scroll. Revisit with the zoo pilot's count of scrolls
+  bought and read (diegoami/borg-zoo#583).
+- *The trip's priority:* unchanged, after the level timer.
