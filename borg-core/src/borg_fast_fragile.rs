@@ -66,12 +66,14 @@ pub(crate) struct Facts {
     pub others: i32,
 }
 
-/// Faster than the Borg, killed in `kill_turns` of its best attack, hurting
+/// Faster than the Borg by `speed_margin` speed points (monsters spread by
+/// about one point around their race's speed, mon-make.c:1158-1164, so +1 is
+/// no advantage), killed in `kill_turns` of its best attack, hurting
 /// at least `damage_percent` of the current HP per Borg turn, and not one of
 /// a swarm (more than `group_max` others of its race in view). Mobility,
 /// uniqueness and breeding are the caller's (race flags).
-pub(crate) fn verdict(f: &Facts, kill_turns: i32, damage_percent: i32, group_max: i32) -> bool {
-    f.speed_over > 0
+pub(crate) fn verdict(f: &Facts, speed_margin: i32, kill_turns: i32, damage_percent: i32, group_max: i32) -> bool {
+    f.speed_over >= speed_margin.max(1)
         && f.per_turn > 0.0
         && f.need_hp <= f.per_turn * f64::from(kill_turns)
         && f.cur_hp > 0
@@ -179,6 +181,7 @@ pub(crate) fn classify(st: &mut BorgState, i: usize) -> Option<(Source, Facts, F
     let (f, attack) = facts(st, i)?;
     verdict(
         &f,
+        param(Param::fast_fragile_speed_margin),
         param(Param::fast_fragile_kill_turns),
         param(Param::fast_fragile_damage_percent),
         param(Param::fast_fragile_group_max),
@@ -313,14 +316,16 @@ mod tests {
 
     #[test]
     fn the_crow_is_fast_fragile_at_level_one() {
-        assert!(verdict(&crow(), 2, 25, 2));
+        assert!(verdict(&crow(), 5, 2, 25, 2));
     }
 
     #[test]
     fn each_part_of_the_characterization_can_drop_the_category() {
-        let v = |f: Facts| verdict(&f, 2, 25, 2);
+        let v = |f: Facts| verdict(&f, 5, 2, 25, 2);
         assert!(!v(Facts { speed_over: 0, ..crow() }), "not faster than the Borg (Speed drops it)");
         assert!(!v(Facts { speed_over: -10, ..crow() }));
+        assert!(!v(Facts { speed_over: 1, ..crow() }), "+1 is the spread of a normal-speed race (the small kobold)");
+        assert!(v(Facts { speed_over: 5, ..crow() }));
         assert!(!v(Facts { need_hp: 9.1, ..crow() }), "not killed in two of the best attacks");
         assert!(v(Facts { need_hp: 9.0, per_turn: 4.5, ..crow() }), "exactly two turns is killed in two");
         assert!(!v(Facts { incoming: 3.7, ..crow() }), "under 25% of 15 HP is just a target");
@@ -335,8 +340,8 @@ mod tests {
     fn the_cave_spider_swarm_is_not_fast_fragile_in_the_open() {
         // 2d8 cave spiders: 7 HP, BITE 1d4, speed +10, eight in view.
         let spider = Facts { speed_over: 10, need_hp: 7.0, per_turn: 4.5, incoming: 4.0, cur_hp: 12, others: 7 };
-        assert!(!verdict(&spider, 2, 25, 2));
-        assert!(verdict(&Facts { others: 0, ..spider }, 2, 25, 2), "one alone is");
+        assert!(!verdict(&spider, 5, 2, 25, 2));
+        assert!(verdict(&Facts { others: 0, ..spider }, 5, 2, 25, 2), "one alone is");
     }
 
     #[test]

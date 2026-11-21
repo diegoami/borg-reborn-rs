@@ -5097,8 +5097,9 @@ chose 2 turns, 25% or 2 others.
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:37` |
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:173` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:283` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:236` |
 | `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:235` |
+| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:184` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:179` |
 | `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:180` |
 | `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:181` |
@@ -5111,8 +5112,10 @@ chose 2 turns, 25% or 2 others.
   the turn goes to the staircase underfoot, else Phase Door (scroll, or the
   spell at `escape_last_ditch_phase_fail`); with neither, it attacks.
 - `fast_fragile_by_stats=1`: besides the scary list's `fast-fragile` entries
-  (crow, wild cat), a monster is marked when it is faster than the Borg
-  (`forecast_monster_speed` against `player_combat_speed`), its HP is at most
+  (crow, wild cat), a monster is marked when it is faster than the Borg by
+  `fast_fragile_speed_margin` points (`forecast_monster_speed` against
+  `player_combat_speed`; the engine spreads a race's speed by about a point,
+  so +1 is no advantage: a small kobold was marked without a margin), its HP is at most
   `fast_fragile_kill_turns` turns of the best attack (hit chance, failure and
   the HP cap included), its expected damage per Borg turn is at least
   `fast_fragile_damage_percent` of the current HP, it moves, is not unique, is
