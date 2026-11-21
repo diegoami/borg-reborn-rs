@@ -6,7 +6,13 @@ symbol that is not here, or when a symbol here is no longer used. The
 generated bindings (`borg-reborn-rs/src/bindings.rs`, docs/SPEC.md §3.4)
 hold exactly the declarations these need.*
 
-Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
+> **Scope (updated 2026-11-21, #816).** This list and its test cover our own
+> reborn core's `borg-reborn-rs/src/engine.rs` (`BORG_CORE=reborn`, frozen
+> since the repivot of 2026-11-14). The default borg-rs core reads the
+> engine through its own boundary, `borg-core/src/engine.rs`, which they do
+> not cover.
+
+Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 §1.1) and the spec:
 
 - **A**: channel A, the screen;

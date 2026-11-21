@@ -140,9 +140,17 @@ fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
     if amount <= 0 || row[1] <= 0 { return 0; }
-    // Negative demand is an actual one-time repair/access requirement,
-    // not a stock quota: a second cure cannot restore the same lost XP.
-    if row[2] < 0 { return row[1] * amount.min(-row[2]) / -row[2]; }
+    if row[2] < 0 {
+        let target = -row[2];
+        let reserved = row[1] * amount.min(target) / target;
+        // Extra light has a smaller diminishing return above the reserve.
+        // Other negative-demand rows are satisfied once, such as a cure.
+        if row[0] == LIGHT as i64 && amount > target {
+            let extra = amount - target;
+            return reserved + (row[1] / 4).saturating_mul(extra) / (target + extra);
+        }
+        return reserved;
+    }
     row[1].saturating_mul(amount) / amount.saturating_add(row[2].max(1))
 }
 
@@ -173,6 +181,14 @@ impl Model {
         Some(picked.min(((short + per_copy - 1) / per_copy) as i32))
     }
     pub fn scope(it: &KitItem) -> i64 { if it.place == Place::Pack { PACK } else { HOME } }
+    /// The opt-in fuel curve uses negative demand for its reserve. Home
+    /// and other excess fuel cannot justify storing the last carried supply.
+    pub fn protects_fuel(&self, it: &KitItem) -> bool {
+        let Some(row) = self.curves.get(LIGHT) else { return false; };
+        if row[1] <= 0 || row[2] >= 0 { return false; }
+        self.units(Self::scope(it), i64::from(it.slot), i64::from(it.qty)).iter()
+            .any(|&(id, turns)| id == LIGHT && turns > 0 && row[3] - turns < -row[2])
+    }
     pub fn keep(&self, it: &KitItem) -> i64 {
         -self.gain(&self.units(Self::scope(it), i64::from(it.slot), -i64::from(it.qty)))
     }
@@ -212,6 +228,8 @@ struct Context<'a> {
     st: &'a BorgState,
     journey: Journey,
     lantern: bool,
+    light_goal: i64,
+    light_reserve: i64,
     ranged_reserve: i64,
 }
 
@@ -559,8 +577,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
             engine::flag_has(&item.flags, crate::headers::list_object_flags_h::OF_EXPLODE as i32));
         let fuel = i64::from(item.pval).max(0);
         let light = &st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
-        let needed = if ctx.lantern && fuel > 0 {
-            ((ctx.journey.turns - i64::from(light.timeout)).max(0) as u64).div_ceil(fuel as u64) as i64
+        let usable_oil = i32::from(item.sval) == st.item_val.sv_flask_oil && !item.cursed;
+        let needed = if ctx.lantern && fuel > 0 && (ctx.light_reserve == 0 || usable_oil) {
+            ((ctx.light_goal - i64::from(light.timeout)).max(0) as u64).div_ceil(fuel as u64) as i64
         } else { 0 };
         // Allocate whole bottles to fuel before ammunition. A bottle cannot
         // supply both uses. Shop options are prospective single copies; live
@@ -591,6 +610,8 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         return supply;
     }
     if tval == TV_LIGHT {
+        if ctx.light_reserve > 0 && item.cursed { return Vec::new(); }
+        // Supply rows are per copy. Kit and equipment quantities are applied in observe.
         return if item.timeout > 0 { vec![(LIGHT, i64::from(item.timeout) * UNIT)] } else { Vec::new() };
     }
     if tval == TV_DIGGING { return vec![(DIG, UNIT)]; }
@@ -688,7 +709,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let lantern = light.iqty > 0 && u32::from(light.tval) == TV_LIGHT && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
-    let ctx = Context { st, journey, lantern, ranged_reserve };
+    let light_reserve = i64::from(param(Param::town_light_reserve_turns));
+    let light_goal = journey.fuel_goal(light_reserve);
+    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
@@ -697,7 +720,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
     // borg_town_w_light (100 = today).
-    curve(LIGHT, scale_percent(cfg(BORG_TOWN_W_LIGHT) * UNIT, param(Param::town_light_percent)), journey.turns * UNIT);
+    let light_demand = if light_reserve > 0 { -light_goal } else { light_goal };
+    curve(LIGHT, scale_percent(cfg(BORG_TOWN_W_LIGHT) * UNIT, param(Param::town_light_percent)), light_demand * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
     // copy whitelist. One ration's nutrition (RATION_NUTRITION, 30) supports
     // food_turns actions.
@@ -737,7 +761,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // top of the curve. A requirement (negative demand, like food's floor):
     // linear up to the reserve, nothing more past it, so healing is bought
     // first and never sold below it (0 = off).
-    let reserve = journey.hp * i64::from(heal_reserve_hp_percent(class)) * UNIT / 100;
+    // borg-reborn-rs (#840 remedy b): at least the kit's cure reserve, in HP.
+    let reserve = (journey.hp * i64::from(heal_reserve_hp_percent(class)) * UNIT / 100)
+        .max(i64::from(crate::borg_kit::start_cure_reserve_hp()) * UNIT);
     curve(HEAL_RESERVE, if reserve > 0 { cfg(BORG_TOWN_W_BLEEDING) * reserve / journey.hp.max(1) } else { 0 }, -reserve.max(UNIT));
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
@@ -754,7 +780,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#761): the first `town_phase_reserve` Phase Doors are a
     // requirement (as Recall's reserve): each worth `town_phase_reserve_percent`
     // of the trip's escape weight, nothing past them (0 = off, today).
-    let phase_reserve = i64::from(param(Param::town_phase_reserve)).max(0);
+    // borg-reborn-rs (#840 remedy b): at least the kit's Phase Door reserve.
+    let phase_reserve = i64::from(param(Param::town_phase_reserve).max(crate::borg_kit::start_phase_reserve())).max(0);
     if phase_reserve > 0 {
         curve(PHASE_RESERVE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_phase_reserve_percent)) * phase_reserve,
             -(phase_reserve * UNIT));
@@ -835,7 +862,24 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // are "something you never buy": a read counted as borg_town_support_turns
     // of service, so each was worth about a Phase Door and they took a quarter
     // of the gold. A carried or found copy keeps a small value (kept, not sold).
-    for cap in [INVISIBLE, MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    for cap in [MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    // borg-reborn-rs (#831, owner: "Scrolls of Detect Invisible are not so
+    // worthless after all ... especially for Blackguards and those who do not
+    // have a spell to detect invisible"; "3 is already too big a reserve ...
+    // no reserve, better value and a curve that depends on class"): with
+    // `town_invisible_count` > 0 the reads are worth a diminishing curve, as
+    // Phase Door's and the flasks', not a requirement: `invisible_percent` of the trip's escape weight is the
+    // curve's first value per read (a read's realised first value is that times
+    // half / (half + 1)), the curve
+    // reaches half its value at `town_invisible_count` reads, and it
+    // competes with the rest of the purse (nothing is bought first, nothing
+    // is kept past what the next purchase is worth). 0 = #663's low value.
+    let (invisible_weight, invisible_demand) = invisible_curve(
+        i64::from(param(Param::town_invisible_count)),
+        scale_percent(risk(BORG_TOWN_W_ESCAPE), invisible_percent(st)),
+        cfg(BORG_TOWN_SUPPORT_TURNS).max(1) * UNIT,
+    ).unwrap_or((low_value(ordinary), journey.turns * UNIT));
+    curve(INVISIBLE, invisible_weight, invisible_demand);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -862,7 +906,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#516): not afraid, fear cures (a Potion of Boldness)
     // are worth only up to town_fear_cure_count in the pack (0 = the curve).
     let fear_cap = i64::from(param(Param::town_fear_cure_count));
+    // borg-reborn-rs (#837, owner): while not confused, the first
+    // `town_confusion_cure_reserve` confusion cures are a requirement (as
+    // Recall's reserve): a full cure (CURE:CONFUSED: Cure Serious or Critical
+    // Wounds, Clear Mind, a Curing staff) is one unit. Not confused, the timer
+    // is 0, so a Cure Light Wounds (TIMED_DEC, clamped to the timer in
+    // `item_supplies`) supplies none (review of #843, F1).
+    let confusion_reserve = i64::from(param(Param::town_confusion_cure_reserve)).max(0);
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
+        if cap == CONFUSION && confusion_reserve > 0 && t(condition) == 0 {
+            curve(cap, scale_percent(cfg(BORG_TOWN_W_RESTORE) * UNIT, param(Param::town_confusion_cure_reserve_percent)) * confusion_reserve,
+                -(confusion_reserve * UNIT));
+            continue;
+        }
         // borg-reborn-rs (#663, owner): a fear cure (Boldness) is worth very
         // little while not afraid.
         let calm = if cap == FEAR { low_value(ordinary) } else { ordinary };
@@ -922,7 +978,8 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let Ok(mut file) = std::fs::File::create(path) else { return; };
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
-    let ctx = Context { st, journey, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let light_reserve = i64::from(param(Param::town_light_reserve_turns));
+    let ctx = Context { st, journey, light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1271,6 +1328,36 @@ mod tests {
         assert_eq!(m.ware(0, 0, 1), 0);
     }
     #[test]
+    fn light_after_the_reserve_has_positive_diminishing_purchase_value() {
+        let mut m = model();
+        let torch = 5000 * UNIT;
+        let target = 4 * torch;
+        m.supplies.push([0, 0, LIGHT as i64, torch]);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -target, target - torch, 0];
+        let to_reserve = m.ware(0, 0, 1);
+        m.curves[LIGHT][3] = target;
+        let extra = m.ware(0, 0, 1);
+        m.curves[LIGHT][3] += torch;
+        let another = m.ware(0, 0, 1);
+        assert!(to_reserve > extra && extra > another && another > 0);
+    }
+
+    #[test]
+    fn fuel_reserve_protects_carried_light_even_when_home_has_enough() {
+        let mut m = model();
+        let spare = item(Place::Pack, 0, 1);
+        let torch_turns = 5000 * UNIT;
+        m.supplies.push([PACK, 0, LIGHT as i64, torch_turns]);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -2 * torch_turns, 2 * torch_turns, 4 * torch_turns];
+        assert!(m.protects_fuel(&spare));
+        m.curves[LIGHT][3] += torch_turns;
+        assert!(!m.protects_fuel(&spare));
+        m.curves[LIGHT][2] = torch_turns;
+        m.curves[LIGHT][3] = 2 * torch_turns;
+        assert!(!m.protects_fuel(&spare));
+    }
+
+    #[test]
     fn keeping_and_buying_use_identical_units_and_home_withdrawals_reprice() {
         let mut m = model();
         m.supplies = vec![[PACK, 0, ATTACK as i64, UNIT], [HOME, 0, ATTACK as i64, UNIT]];
@@ -1535,6 +1622,20 @@ mod class_heal_tests {
     }
 
     #[test]
+    fn detect_invisible_is_a_diminishing_curve_not_a_reserve() {
+        // #831: off, #663's low value stands; on, the first read is worth
+        // `first` * half / (half + 1), each next one less, none a requirement.
+        assert_eq!(invisible_curve(0, 500, 1000), None);
+        let (weight, demand) = invisible_curve(2, 500, 1000).unwrap();
+        assert_eq!((weight, demand), (1000, 2000));
+        let row = [INVISIBLE as i64, weight, demand, 0, 0];
+        let (one, two, three) = (coverage(&row, 1000), coverage(&row, 2000), coverage(&row, 3000));
+        assert_eq!(two, 500, "half of the most it pays, at `half` reads");
+        assert!(one > two - one && two - one > three - two, "diminishing: {one} {two} {three}");
+        assert!(coverage(&row, 9000) < weight, "never the whole: it is no requirement");
+    }
+
+    #[test]
     fn what_the_borg_never_buys_keeps_a_small_value() {
         // #663: one percent, above zero so a carried copy is kept.
         assert_eq!(low_value(55_000), 550);
@@ -1543,6 +1644,27 @@ mod class_heal_tests {
         let phase = coverage(&[PHASE as i64, 55_000, 1_100, 0, 0], 1_000);
         assert!(scroll * 50 < phase, "{scroll} against a Phase Door's {phase}");
     }
+}
+
+/// borg-reborn-rs (#831): the curve's first value per read, in percent of the
+/// trip's escape weight, by what the Borg can already do about an invisible
+/// monster: nothing (Warriors, Blackguards, and others until they learn a
+/// spell), cast Detect Evil (reveals the evil ones, ghosts and poltergeists,
+/// not a clear icky thing), or cast a spell that reveals invisible monsters.
+fn invisible_percent(st: &BorgState) -> i32 {
+    param(if crate::borg_magic::detects_invisible(st) { Param::town_invisible_spell_percent }
+        else if crate::borg_magic::detects_evil(st) { Param::town_invisible_evil_percent }
+        else { Param::town_invisible_percent })
+}
+
+/// borg-reborn-rs (#831): the Detect Invisible curve: `first` is the value of
+/// the first read, `half` reads (each `service` units of INVISIBLE supply)
+/// give half of the most the curve can pay (`first * half`): the diminishing
+/// shape of Phase Door and the flasks, so a second and a third read are worth
+/// less than the first and no number of them is a requirement. `None` with
+/// no `half`: the curve stays #663's low value.
+fn invisible_curve(half: i64, first: i64, service: i64) -> Option<(i64, i64)> {
+    (half > 0).then(|| (first * half, half * service))
 }
 
 /// borg-reborn-rs (#663, owner): the weight of what the Borg never buys

@@ -2031,6 +2031,13 @@ fn new_level(st: &mut BorgState) {
     b.unseen_turn = 0; // borg-reborn-rs (#697)
     b.unseen_bumps = Default::default(); // borg-reborn-rs (#781): new level
     b.unseen_followed = false;
+    // borg-reborn-rs (#831): a new level ends the invisible-attacker mode.
+    b.unseen_mode = false;
+    b.unseen_detects = 0;
+    b.unseen_probes = 0;
+    b.unseen_probe = None;
+    b.unseen_empty.clear();
+    b.unseen_found = None;
 
     // Assume not fleeing the level
     b.goal.fleeing = false;

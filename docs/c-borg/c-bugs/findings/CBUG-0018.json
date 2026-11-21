@@ -1,0 +1,101 @@
+{
+  "id": "CBUG-0018",
+  "source_groups": [
+    35
+  ],
+  "title": "Dimension Door destination lacks legality/range filters",
+  "site": "src/borg/borg-escape.c:borg_dimension_door",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "partially-shared",
+  "mandos": "partially-shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "An emergency target can be a rejected destination; actual engine outcome still needs a legal scenario."
+  },
+  "notes": "C also ignores borg_spell's result; TS returns it. Missing floor/occupancy/range selection guards are shared.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 21
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-escape.c",
+      "start": 569,
+      "end": 621,
+      "description": "borg_dimension_door"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/fight/escape.ts",
+      "start": 317,
+      "end": 342,
+      "description": "borgDimensionDoor"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/fight/escape.ts",
+      "start": 320,
+      "end": 345,
+      "description": "borgDimensionDoor"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 646,
+      "end": 670,
+      "description": "discovery group 35"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 666,
+      "end": 669,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 35,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 666,
+        "end": 669,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_dimension_door()` targets the least dangerous grid of the 100x100\n  box (offsets -50..49) that is in bounds, without checking that it is a\n  known floor grid without a monster, or in range of the spell; it ignores\n  the result of `borg_spell()`."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        35
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

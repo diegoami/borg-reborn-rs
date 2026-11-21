@@ -67,7 +67,7 @@ pub unsafe extern "C" fn ar_early_init(build: *const c_char) {
         getpid().into(),
     ));
     *SESSION.lock().unwrap() = Some(value);
-    if atexit(ar_finish_at_exit) != 0 {
+    if atexit(ar_finish) != 0 {
         fatal("cannot register recording finalization");
     }
 }
@@ -296,21 +296,23 @@ pub unsafe extern "C" fn ar_message(turn: i64, message_type: u16, message: *cons
 }
 #[no_mangle]
 pub extern "C" fn ar_finish() {
-    // The engine can leave without its quit hook (a headless frontend calls
-    // this and _exit()s), and its frames come before each command, so the
-    // turns after the last command, including a death, would be lost. Ask the
-    // host for one closing frame first, outside the session lock because the
-    // host calls ar_frame. A forked saver has no session here and is skipped.
-    // Only this direct call does so: the atexit handler below runs after the
-    // engine's own cleanup, when the host can no longer read the game.
+    // A recording must end with the end state. The engine's own `exit` frame
+    // (from its quit hook) does that when the game leaves normally. When it
+    // does not run, the turns after the last command, including a death,
+    // would be lost: a headless frontend calls this and _exit()s, and a closed
+    // or killed window makes Xlib exit() from its I/O error handler. So ask
+    // the host for one closing frame first, outside the session lock because
+    // the host calls ar_frame. A forked saver has no session here and is skipped.
+    //
+    // This also runs from the atexit handler. That is safe because the engine
+    // never cleans up before its quit hook has written the `exit` frame (which
+    // sets `closing_frame` and skips this) and registers no atexit handlers
+    // of its own, so a game that leaves without the hook is still intact.
     if with_session(|s| !(s.finished || s.failed || s.geometry_pending || s.closing_frame))
         == Some(true)
     {
         unsafe { ar_host_final_frame() };
     }
-    ar_finish_at_exit();
-}
-extern "C" fn ar_finish_at_exit() {
     // Never emit a receipt from the forked saver, even if the host uses exit().
     with_session(|s| checked(s.finish()));
 }

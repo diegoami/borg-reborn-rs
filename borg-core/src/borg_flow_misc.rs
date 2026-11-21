@@ -190,13 +190,13 @@ pub fn borg_flow_reverse(
 /// The leash is different for exploring vs trying to get something.
 pub fn borg_get_leash(st: &BorgState, pick_up: bool) -> i32 {
     // borg-reborn-rs (#732): C's numbers are parameters (`c_leash`).
-    leash_with(
-        crate::borg_flow::c_leash(),
-        st.borg.tr(BI_CLEVEL),
-        st.borg.tr(BI_CDEPTH),
-        i32::from(st.borg.times_twitch),
-        pick_up,
-    )
+    let c = crate::borg_flow::c_leash();
+    let twitch = i32::from(st.borg.times_twitch);
+    let base = leash_with(c, st.borg.tr(BI_CLEVEL), st.borg.tr(BI_CDEPTH), twitch, pick_up);
+    // borg-reborn-rs (#840): the leash follows the kit while it is short
+    // (`kit_leash`); the bored growth is C's.
+    let growth = if twitch > c.twitch_after { twitch } else { 0 };
+    crate::borg_kit::leash(st, base, st.borg.tr(BI_CLEVEL) * c.per_level + c.base, growth)
 }
 
 /// `borg_get_leash` with the parameters and the facts given (unit-tested).
@@ -1524,7 +1524,10 @@ pub fn borg_flow_far_from_stairs_dist(
     distance: i32,
 ) -> bool {
     let c = crate::borg_flow::c_leash(); // borg-reborn-rs (#732)
-    if st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level {
+    // borg-reborn-rs (#840): a short kit puts the stair check on at any depth.
+    if (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
+        || crate::borg_kit::leash_active(st)
+    {
         /* obtain the number of steps from this take to the stairs */
         let cost = borg_flow_cost_stair(st, y, x, b_stair);
 

@@ -1,6 +1,6 @@
 # Vendored-core decision trace
 
-With `BORG_CORE=borg-rs`, each completed core think writes one JSON line to
+With the borg-rs core (the default since #606, or `BORG_CORE=borg-rs`), each completed core think writes one JSON line to
 `BORG_RUN_DIR/trace-core.jsonl`. The harness sets that directory. Native borgh adapter calls use the parent
 of `-summary FILE` when BORG_RUN_DIR is absent (P3). Set
 `BORG_CORE_TRACE=off` (also `0` or `false`) to disable it; without a run
@@ -59,4 +59,4 @@ A natural death dossier preserves the last 200 rows as
 `trace-core-tail.jsonl`, hashes it, and records its line counts in
 `record.json`'s `core_decision_trace`. It also preserves `params-core.json`.
 The original core's `decision_trace` field and `trace-tail.jsonl` remain
-separate. See P1.4-VALIDATION.md for measured examples and limitations.
+separate. See [validation/P1.4-VALIDATION.md](validation/P1.4-VALIDATION.md) for measured examples and limitations.

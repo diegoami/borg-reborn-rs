@@ -308,6 +308,22 @@ borg_param_town_devices_percent = 100
 
 borg_param_town_fear_cure_count = 0
 
+# Ranged-only monsters (#838, owner 2026-11-21: "a list of monsters to never
+# melee ... and only attack from afar"): the scary list's `ranged` entries
+# (floating eye, grey mushroom patch, the jellies and eyes; harness/
+# scary_monsters.txt) are never melee targets, never hunted, and flows keep out
+# of their reach. 0 = the entries are not read. borg-zoo measures it against
+# shipped and against caution_ranged_vs_immobile 2.
+borg_param_caution_ranged_only = 0
+
+# Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
+# at least one Cure Serious Wounds from the start"): the first this many
+# confusion cures in the pack are a requirement, each worth this percent of
+# the town restore weight. 0 = the saturating curve (CSW are bought, then
+# stored at the Home).
+borg_param_town_confusion_cure_reserve = 0
+borg_param_town_confusion_cure_reserve_percent = 100
+
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
 # Impact: set to TRUE, 6 of 6 test games play differently.
@@ -606,17 +622,30 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
-# An unseen attacker (#697): "Something touches you" makes no monster, so no
-# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
-# an unseen attack counts that long: no rest within distance grids of where
-# it struck; hurt, the Borg walks at least that far (a corridor first) and
-# rests there; struck again that far away, or nowhere to walk, it leaves the
-# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
-# Impact: see CALIBRATION (#697).
+# An unseen attacker (#697, #831): "Something touches you" makes no monster,
+# so no danger, and the Borg rested through it until it died (Blackguards
+# 2078477958 and 2037495442: impaired regeneration, a clear icky thing).
+# attack_turns > 0 (game turns) is the "invisible attacker near" mode: it
+# starts at an unseen blow, ends that many game turns after the last one (or
+# on a new level), and holds every rest within distance grids of where it
+# struck. In it, a blow that has just struck (act_age game turns) makes the
+# Borg detect the attacker (detect_reads times an episode: Detect Invisible,
+# True Seeing, a staff, an activation or a spell) and fight what it sees, else
+# strike the adjacent grids in turn (probe_tries blind attacks an episode,
+# while at most probe_max_grids grids may hold it). Hurt, it walks at least
+# distance grids away (a corridor first) and rests there; struck again that
+# far away, or its blind attacks spent, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure.
+# 0 = C. Shipped on by the owner (2026-11-21). Impact: see CALIBRATION
+# (#697, #831).
 
-borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_turns = 500
 borg_param_recover_unseen_attack_distance = 10
-borg_param_recover_unseen_heal_hp_percent = 0
+borg_param_recover_unseen_heal_hp_percent = 50
+borg_param_recover_unseen_detect_reads = 2
+borg_param_recover_unseen_probe_tries = 10
+borg_param_recover_unseen_probe_max_grids = 3
+borg_param_recover_unseen_act_age = 30
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
@@ -753,6 +782,27 @@ borg_param_town_oil_flasks = 10
 borg_param_town_ranger_arrows_max = 0
 borg_param_town_ranger_arrows_curve_scale_percent = 0
 
+# Detect Invisible, the town planner (#831, owner: "Scrolls of Detect
+# Invisible are not so worthless after all ... especially for Blackguards and
+# those who do not have a spell to detect invisible"; then "3 is already too
+# big a reserve ... no reserve, better value and a curve that depends on
+# class"). Two Blackguards died resting beside a clear icky thing with no way
+# to reveal it (#663 had made it "never bought"). With town_invisible_count > 0
+# a read (a scroll at 15 gold, or a staff's charges) is worth a diminishing
+# curve like Phase Door's and the flasks': the first is worth
+# town_invisible_percent of the trip's escape weight for a class with no
+# detection (Warriors, Blackguards), town_invisible_evil_percent for one that
+# casts Detect Evil, town_invisible_spell_percent for one that casts Sense
+# Invisible, Detection or Reveal Monsters; the curve reaches half its value at
+# town_invisible_count reads. Nothing is a requirement and nothing is kept
+# aside: it competes with the rest of the purse. 0 = #663 (1% of the support
+# weight, never bought). Impact: see CALIBRATION (#831).
+
+borg_param_town_invisible_count = 2
+borg_param_town_invisible_percent = 20
+borg_param_town_invisible_evil_percent = 10
+borg_param_town_invisible_spell_percent = 3
+
 # Phase Door reserve (#761, owner 2026-11-20: "we need to value phase doors
 # much more, especially for rangers"): the first town_phase_reserve Phase
 # Doors are a requirement on top of the Phase Door curve, each worth
@@ -778,6 +828,14 @@ borg_param_town_ranged_reserve = 0
 borg_param_town_unseen_percent = 100
 borg_param_town_food_percent = 100
 borg_param_town_light_percent = 100
+# #810 pilot. Total usable fuel turns in equipment and pack, including oil
+# when using a lantern. While using a torch, top up from Home or the General
+# Store after immediate needs and within the normal shopping budget.
+# The separate try-on bonus applies to fueled lantern upgrades.
+# 20,000 turns covers a full 5,000-turn torch and three fresh spares.
+# Set to zero for the original light valuation and retention behavior.
+borg_param_town_light_reserve_turns = 20000
+borg_param_town_lantern_upgrade_power = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
@@ -933,6 +991,31 @@ borg_param_caution_stairs_flight_threat_weight = 5
 # flight does not start and the escapes and the attack decide. 0 = C.
 borg_param_caution_stairs_clean_path_flee = 1
 borg_param_caution_immobile_step_to_exit = 1
+
+# Confusion (#837, owner 2026-11-21, from the three deaths of borg-zoo#566:
+# Mage 834355294 and Necromancer 2074919561 at a grey mushroom patch, Mage
+# 470098014 at a kobold shaman, each with Cure Light Wounds in the pack). 0 = C
+# for each; borg-zoo measures them.
+# - caution_confused_clw_cure: a Potion of Cure Light Wounds is a confusion
+#   cure (20 turns off, object.txt), after Clear Mind, CSW and CCW.
+# - caution_confused_cure_before_walk: a confused Borg carrying a cure does not
+#   start a Desperate for Stairs walk before it. 2: none at all while confused.
+# - caution_confusion_cure_when_stuck: next to an immobile confuser the cure is
+#   held (#646) only while a step out of its reach can still be taken. This
+#   and caution_immobile_step_mobile_first act only with
+#   caution_ranged_vs_immobile >= 1, which ships 0.
+# - caution_immobile_step_mobile_first: the step away from an immobile
+#   attacker prefers the grid with the least danger from monsters that move,
+#   then the stairs.
+borg_param_caution_confused_clw_cure = 0
+borg_param_caution_confused_cure_before_walk = 0
+borg_param_caution_confusion_cure_when_stuck = 0
+borg_param_caution_immobile_step_mobile_first = 0
+# - caution_immobile_no_return (borg-zoo#576: the step away from a grey mold was
+#   undone by the next flow, in two deaths): after a step away from an immobile
+#   attacker the flows do not enter its reach again while it is known there.
+#   1: only while below full HP; 2: for the level.
+borg_param_caution_immobile_no_return = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
 
@@ -1233,10 +1316,55 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
+# underfoot as the only alternative; the stats characterization; no healing
+# potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
+# reviewed, can we ship with your suggested settings?"): the policy and the heal
+# ban on the named entries (crow, wild cat); by_stats, the landing test and the
+# 75% escape stay 0 / default until the zoo (borg-zoo#596) has measured them.
+# On the 8 crow cases of 3b4924ba: 8 dead of 8 off, 1 on (direction only).
+borg_param_fast_fragile_policy = 1
+borg_param_fast_fragile_by_stats = 0
+borg_param_fast_fragile_no_heal = 1
+borg_param_fast_fragile_escape_percent = 100
+borg_param_fast_fragile_phase_landing = 0
+borg_param_fast_fragile_speed_margin = 5
+borg_param_fast_fragile_kill_turns = 2
+borg_param_fast_fragile_damage_percent = 25
+borg_param_fast_fragile_group_max = 2
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
 borg_param_town_hunt_min_hp_percent = 0
+# The basic kit (#840, owner 2026-11-21: "we need a mode 'not enough basic
+# kit' and they have to scale down their curiosity until their kit is
+# sufficient again"). The kit score is the weighted share met of cures,
+# Phase Door, a ranged option (missiles or flasks of oil), light turns and
+# food, each capped at 1 (kit_*_target, kit_weight_*, two level bands at
+# kit_band_split_level, applied up to kit_max_level). Each switch below is
+# its own arm and every one ships 0 (today's play) until the zoo measures it
+# (borg-zoo request on the PR). The targets and weights are hypotheses.
+#   kit_leash = 1: leash = kit_leash_min + (C's leash - kit_leash_min) x
+#     score^kit_leash_power while the kit is short (the hunts and item
+#     detours the leash refuses stay refused);
+#   kit_descent_min_percent: no descent below this score (percent; 0 = off);
+#   kit_leave_danger_percent: at a danger of this share of its HP, a Borg
+#     short of kit takes the up stairs it stands on, or flees to the stairs;
+#   kit_restock = 1 (remedy a): the kit (and kit_restock_light_turns) in
+#     borg_restock at every depth, once the purse has grown by
+#     kit_restock_min_gold since the Borg left town;
+#   kit_start_reserve = 1 (remedy b): the town planner reserves
+#     kit_start_cure_reserve cures and kit_start_phase_reserve Phase Door
+#     before missiles and oil (per class: borg_param_kit_start_reserve__ranger = 1);
+#   kit_money_first = 1 (remedy c): up to kit_money_first_max_level, short of
+#     kit and too poor to fix it, no descent below DL1 and a leash of at
+#     least kit_money_leash until it can pay for a trip to town.
+borg_param_kit_leash = 0
+borg_param_kit_descent_min_percent = 0
+borg_param_kit_leave_danger_percent = 0
+borg_param_kit_restock = 0
+borg_param_kit_start_reserve = 0
+borg_param_kit_money_first = 0
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
@@ -1575,3 +1703,6 @@ borg_param_caution_unseen_bump_turns = 200
 borg_param_caution_unseen_bump_response = 1
 borg_param_caution_unseen_bump_heal_hp_percent = 50
 borg_param_caution_unseen_bump_throw_tries = 3
+
+# #829: a teleport curse stops every teleport (the engine's "Teleportation forbidden!").
+borg_param_escape_teleport_block = 1

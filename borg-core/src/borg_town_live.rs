@@ -132,8 +132,11 @@ pub struct LiveState {
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
     home_moves: Vec<(u32, bool)>,
-    /// #859: the level clock of the visit whose departure room was noted.
-    room_noted: Option<i32>,
+    /// #859: the level clock (`time.level`, when the current level was
+    /// entered) at the last departure-room note. A town visit starts on
+    /// arriving in town, so this notes once a visit; two departures with no
+    /// level change between them share one note.
+    room_noted_level: Option<i32>,
 }
 
 /// Consume one queued Home attempt after refreshing inventory. Count the kind
@@ -303,8 +306,8 @@ pub fn choose(st: &mut BorgState) -> bool {
 fn note_departure_room(st: &mut BorgState) {
     let room = crate::borg_town_utility::departure_room();
     if room == crate::borg_town_utility::Room::default() { return; }
-    let visit = st.borg.time.level;
-    if st.think.town_live.room_noted.replace(visit) == Some(visit) { return; }
+    let level = st.borg.time.level;
+    if st.think.town_live.room_noted_level.replace(level) == Some(level) { return; }
     let facts = crate::borg_town_budget::Facts::of(st);
     let pack = &st.items.items[..crate::borg_item::inven_wield() as usize];
     let slots = facts.pack_capacity - crate::borg_town_stock::pack_slots_used_of(pack);
