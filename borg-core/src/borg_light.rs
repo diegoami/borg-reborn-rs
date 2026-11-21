@@ -651,6 +651,24 @@ fn has_flag(item: &BorgItem, flag: u32) -> bool {
     engine::flag_has(&item.flags, flag as i32)
 }
 
+fn light_stack_turns(item: &BorgItem) -> i32 {
+    if item.cursed || u32::from(item.tval) != TV_LIGHT { return 0; }
+    i32::from(item.timeout.max(0)) * i32::from(item.iqty)
+}
+
+/// Fuel available to a character who is currently relying on a lit torch.
+pub(crate) fn torch_fuel_turns(st: &BorgState) -> Option<i32> {
+    let equipped = &st.items.items[inven_light() as usize];
+    if equipped.iqty == 0 || u32::from(equipped.tval) != TV_LIGHT
+        || i32::from(equipped.sval) != st.item_val.sv_light_torch || equipped.timeout <= 0
+        || has_flag(equipped, OF_NO_FUEL) || engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+    {
+        return None;
+    }
+    Some(light_stack_turns(equipped) + st.items.items[..inven_wield() as usize]
+        .iter().map(light_stack_turns).sum::<i32>())
+}
+
 /// Keep a usable fuel stack when discarding it would break the configured
 /// reserve. Torch-only characters cannot count oil as light.
 pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
@@ -664,13 +682,13 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
     }
     let lantern = has_flag(equipped, OF_TAKES_FUEL);
     let fuel = |item: &BorgItem| {
-        if item.cursed { return 0; }
-        let turns = match u32::from(item.tval) {
-            TV_LIGHT => item.timeout,
-            TV_FLASK if lantern && i32::from(item.sval) == st.item_val.sv_flask_oil => item.pval,
-            _ => 0,
-        };
-        i32::from(turns.max(0)) * i32::from(item.iqty)
+        if lantern && !item.cursed && u32::from(item.tval) == TV_FLASK
+            && i32::from(item.sval) == st.item_val.sv_flask_oil
+        {
+            i32::from(item.pval.max(0)) * i32::from(item.iqty)
+        } else {
+            light_stack_turns(item)
+        }
     };
     let pack = &st.items.items[..inven_wield() as usize];
     fuel(&pack[slot]) > 0 && fuel(equipped) + pack.iter().enumerate()

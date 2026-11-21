@@ -744,7 +744,9 @@ borg_param_town_unseen_percent = 100
 borg_param_town_food_percent = 100
 borg_param_town_light_percent = 100
 # #810 pilot. Total usable fuel turns in equipment and pack, including oil
-# when using a lantern. The try-on bonus applies to fueled lantern upgrades.
+# when using a lantern. While using a torch, top up from Home or the General
+# Store after immediate needs and within the normal shopping budget.
+# The separate try-on bonus applies to fueled lantern upgrades.
 # Zero keeps the shipped shopping and fuel retention policies.
 borg_param_town_light_reserve_turns = 0
 borg_param_town_lantern_upgrade_power = 0

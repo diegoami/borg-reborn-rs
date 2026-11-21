@@ -28,7 +28,7 @@ use crate::borg_headers::borg_h::{BORG_TOWN_PLAN, BORG_TOWN_W_KNOWLEDGE};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::borg_item::inven_wield;
-use crate::borg_town_budget::Budget;
+use crate::borg_town_budget::{Budget, UrgentPurchase};
 use crate::borg_store::BORG_HOME;
 use crate::borg_town_dispose::{Disposition, KitItem, Place};
 use crate::borg_town_record::{first_action, step, PlanRecord, StepInput, TryOn, WareFact, PARAMS};
@@ -36,7 +36,11 @@ use crate::borg_town_solve::Limits;
 use crate::borg_town_stock::{needs_served, Stock};
 use crate::borg_town_usefulness::{Need, Trip};
 use crate::engine;
+use crate::headers::list_tvals_h::TV_LIGHT;
+use crate::params::{value as param, Param};
 use crate::state::BorgState;
+
+const GENERAL_STORE: usize = 0;
 
 /// The 24 town settings the plan step actually runs on (borg-reborn-rs, #460;
 /// owner 2026-11-16: "turn off the buying of useless unknown objects").
@@ -122,12 +126,14 @@ fn ware_role(st: &BorgState, item: &borg_item) -> (i8, i64) {
 /// Diggers are evaluated as tools rather than worn as weapons. Without a free pack slot
 /// there is nowhere to put the worn item, and nothing is tried on.
 fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) {
-    use crate::headers::list_tvals_h::{TV_DIGGING, TV_LIGHT};
+    use crate::headers::list_tvals_h::TV_DIGGING;
     let hole = crate::borg_inventory::borg_first_empty_inventory_slot(st);
     let Ok(hole) = usize::try_from(hole) else {
         return (Vec::new(), Vec::new());
     };
     let wield = inven_wield() as usize;
+    let buy_spare_torches = param(Param::town_light_reserve_turns) > 0
+        && crate::borg_light::torch_fuel_turns(st).is_some();
     let wearables: Vec<(usize, usize)> = stock
         .candidates
         .iter()
@@ -135,7 +141,11 @@ fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) 
         .filter_map(|(i, c)| {
             let w = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
             let tval = u32::from(w.tval);
-            if tval == TV_DIGGING {
+            // General Store torches can refill the one already worn. Price
+            // them as pack supplies, where the planner can choose a stack.
+            if tval == TV_DIGGING || buy_spare_torches && usize::from(c.shop) == GENERAL_STORE
+                && tval == TV_LIGHT && i32::from(w.sval) == st.item_val.sv_light_torch
+            {
                 return None;
             }
             let eq = crate::borg_inventory::borg_wield_slot(w);
@@ -377,6 +387,36 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
     evaluate(st, true)
 }
 
+/// Refill the torch reserve after immediate needs and before other shopping.
+/// Spend the ordinary shopping budget and use the same one-copy action as
+/// the light emergency, then replan with the torch actually carried.
+fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
+    let reserve = param(Param::town_light_reserve_turns);
+    if reserve == 0 || !budget.urgent.is_empty()
+        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| turns >= reserve)
+    {
+        return;
+    }
+    let found = stock.candidates.iter().enumerate().filter(|(_, c)| {
+        let shop = usize::from(c.shop);
+        if !matches!(shop, BORG_HOME | GENERAL_STORE) || u32::from(c.tval) != TV_LIGHT
+            || i32::from(c.sval) != st.item_val.sv_light_torch || c.qty <= 0
+            || i64::from(c.price) > budget.gold || c.slots_cost > budget.pack_slots
+            || i64::from(c.weight) > budget.weight
+        {
+            return false;
+        }
+        let torch = &st.store.shops[shop].ware[usize::from(c.slot)];
+        torch.timeout > 0 && !torch.cursed
+    }).min_by_key(|(_, c)| (c.price, c.shop, c.slot));
+    if let Some((candidate, c)) = found {
+        budget.gold -= i64::from(c.price);
+        budget.pack_slots -= c.slots_cost;
+        budget.weight -= i64::from(c.weight);
+        budget.urgent.push(UrgentPurchase { candidate, needs: vec![Need::Light] });
+    }
+}
+
 fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
     unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_LIGHT && i32::from(sval) == torch
 }
@@ -436,7 +476,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         class = class.saturating_add(1);
     }
     let st: &BorgState = st;
-    let budget = Budget::of(st, &stock, &trip);
+    let mut budget = Budget::of(st, &stock, &trip);
+    replenish_torch_reserve(st, &stock, &mut budget);
     let urgent_cost: i64 = budget.urgent.iter().map(|purchase|
         i64::from(stock.candidates[purchase.candidate].price)).sum();
     let gold_after_urgent = i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD))
