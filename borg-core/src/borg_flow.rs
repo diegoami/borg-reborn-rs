@@ -1930,3 +1930,39 @@ pub(crate) fn c_leash() -> CLeash {
         take_max_level: value(Param::flow_leash_take_max_level),
     }
 }
+
+#[cfg(test)]
+mod stair_loop_tests {
+    use super::*;
+
+    #[test]
+    fn nearby_up_stair_with_a_long_walk_does_not_reverse_weighted_flight() {
+        let before = loc { x: 77, y: 10 };
+        let beside = loc { x: 76, y: 11 };
+        let up = loc { x: 96, y: 10 };
+        let down = loc { x: 97, y: 4 };
+        // The up stair looks close across the wall. Its approach wraps
+        // around the wall, and its first move opposes the ordinary flight.
+        let enter = |grid: loc| {
+            let loc { x, y } = grid;
+            (grid == before
+                || (x == 76 && (11..=60).contains(&y))
+                || (y == 60 && (76..=96).contains(&x))
+                || (x == 96 && (10..=60).contains(&y))
+                || ((78..=83).contains(&x) && x + y == 87)
+                || (y == 4 && (83..=97).contains(&x)))
+                .then_some(100)
+        };
+        let up_path = least_cost_stair_path(before, &[up], 249, enter).unwrap();
+        assert_eq!(up_path.grids.len() - 1, 118);
+        assert_eq!(up_path.grids[1], beside);
+        let any_path = least_cost_stair_path(beside, &[up, down], 249, enter).unwrap();
+        assert_eq!(any_path.grids.len() - 1, 21);
+        assert_eq!(any_path.grids[1], before);
+        // The scary-level shortcut requires strictly fewer than 20 moves.
+        assert!(least_cost_stair_path(before, &[up], 19, enter).is_none());
+        let next = least_cost_stair_path(before, &[up, down], 249, enter).unwrap();
+        assert_eq!(next.grids.last(), Some(&down));
+        assert_ne!(next.grids[1], beside);
+    }
+}
