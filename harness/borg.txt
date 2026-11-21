@@ -571,17 +571,30 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
-# An unseen attacker (#697): "Something touches you" makes no monster, so no
-# danger, and the Borg rests through it. With attack_turns > 0 (game turns),
-# an unseen attack counts that long: no rest within distance grids of where
-# it struck; hurt, the Borg walks at least that far (a corridor first) and
-# rests there; struck again that far away, or nowhere to walk, it leaves the
-# level. heal_hp_percent > 0: below that share of HP, drink a cure. 0 = C.
-# Impact: see CALIBRATION (#697).
+# An unseen attacker (#697, #831): "Something touches you" makes no monster,
+# so no danger, and the Borg rested through it until it died (Blackguards
+# 2078477958 and 2037495442: impaired regeneration, a clear icky thing).
+# attack_turns > 0 (game turns) is the "invisible attacker near" mode: it
+# starts at an unseen blow, ends that many game turns after the last one (or
+# on a new level), and holds every rest within distance grids of where it
+# struck. In it, a blow that has just struck (act_age game turns) makes the
+# Borg detect the attacker (detect_reads times an episode: Detect Invisible,
+# True Seeing, a staff, an activation or a spell) and fight what it sees, else
+# strike the adjacent grids in turn (probe_tries blind attacks an episode,
+# while at most probe_max_grids grids may hold it). Hurt, it walks at least
+# distance grids away (a corridor first) and rests there; struck again that
+# far away, or its blind attacks spent, or nowhere to walk, it leaves the
+# level. heal_hp_percent > 0: below that share of HP, drink a cure.
+# 0 = C. Shipped on by the owner (2026-11-21). Impact: see CALIBRATION
+# (#697, #831).
 
-borg_param_recover_unseen_attack_turns = 0
+borg_param_recover_unseen_attack_turns = 500
 borg_param_recover_unseen_attack_distance = 10
-borg_param_recover_unseen_heal_hp_percent = 0
+borg_param_recover_unseen_heal_hp_percent = 50
+borg_param_recover_unseen_detect_reads = 2
+borg_param_recover_unseen_probe_tries = 10
+borg_param_recover_unseen_probe_max_grids = 3
+borg_param_recover_unseen_act_age = 30
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
@@ -717,6 +730,27 @@ borg_param_town_oil_flasks = 10
 # Phase Door sent home). The Ranger sets 50 and 50 in its class file.
 borg_param_town_ranger_arrows_max = 0
 borg_param_town_ranger_arrows_curve_scale_percent = 0
+
+# Detect Invisible, the town planner (#831, owner: "Scrolls of Detect
+# Invisible are not so worthless after all ... especially for Blackguards and
+# those who do not have a spell to detect invisible"; then "3 is already too
+# big a reserve ... no reserve, better value and a curve that depends on
+# class"). Two Blackguards died resting beside a clear icky thing with no way
+# to reveal it (#663 had made it "never bought"). With town_invisible_count > 0
+# a read (a scroll at 15 gold, or a staff's charges) is worth a diminishing
+# curve like Phase Door's and the flasks': the first is worth
+# town_invisible_percent of the trip's escape weight for a class with no
+# detection (Warriors, Blackguards), town_invisible_evil_percent for one that
+# casts Detect Evil, town_invisible_spell_percent for one that casts Sense
+# Invisible, Detection or Reveal Monsters; the curve reaches half its value at
+# town_invisible_count reads. Nothing is a requirement and nothing is kept
+# aside: it competes with the rest of the purse. 0 = #663 (1% of the support
+# weight, never bought). Impact: see CALIBRATION (#831).
+
+borg_param_town_invisible_count = 2
+borg_param_town_invisible_percent = 20
+borg_param_town_invisible_evil_percent = 10
+borg_param_town_invisible_spell_percent = 3
 
 # Phase Door reserve (#761, owner 2026-11-20: "we need to value phase doors
 # much more, especially for rangers"): the first town_phase_reserve Phase
@@ -1206,6 +1240,22 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
+# underfoot as the only alternative; the stats characterization; no healing
+# potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
+# reviewed, can we ship with your suggested settings?"): the policy and the heal
+# ban on the named entries (crow, wild cat); by_stats, the landing test and the
+# 75% escape stay 0 / default until the zoo (borg-zoo#596) has measured them.
+# On the 8 crow cases of 3b4924ba: 8 dead of 8 off, 1 on (direction only).
+borg_param_fast_fragile_policy = 1
+borg_param_fast_fragile_by_stats = 0
+borg_param_fast_fragile_no_heal = 1
+borg_param_fast_fragile_escape_percent = 100
+borg_param_fast_fragile_phase_landing = 0
+borg_param_fast_fragile_speed_margin = 5
+borg_param_fast_fragile_kill_turns = 2
+borg_param_fast_fragile_damage_percent = 25
+borg_param_fast_fragile_group_max = 2
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0

@@ -230,6 +230,13 @@ pub fn attack_reason<'a>(list: &'a List, r_idx: usize, base: &[u8], who: Situati
     })
 }
 
+/// #842: whether any attack entry of the list names race `r_idx`, whatever
+/// its reason and whether or not it applies at the character's level. A name
+/// decides its monster; the stats-based fast-fragile rule leaves it alone.
+pub fn attack_named(list: &List, r_idx: usize, base: &[u8]) -> bool {
+    list.entries.iter().any(|e| e.attack.is_some() && hits(e, r_idx, base))
+}
+
 /// #621: whether race `r_idx` is on the list's ignore entries for `who`: up
 /// to its level the Borg doesn't target or hunt it.
 /// The base name is asked for only by a base entry.

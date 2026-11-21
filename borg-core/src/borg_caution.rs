@@ -235,6 +235,10 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
     ) {
         return false;
     }
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
+    if crate::borg_fast_fragile::heal_banned(st) {
+        return false;
+    }
     if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
         || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
         || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
@@ -497,6 +501,11 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // No further Healing considerations if fighting Questors
     if st.borg.near.unique >= 10 {
         // No further healing considerations right now
+        return false;
+    }
+
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
+    if crate::borg_fast_fragile::heal_banned(st) {
         return false;
     }
 
@@ -2369,6 +2378,13 @@ fn category_threat_safe(hp: i32, target_damage: f64, other_danger: i64, other_li
 /// quantity is other monsters' native danger, excluding the target and the
 /// regional/fear-map terms; it is not today's full borg_danger sum.
 pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
+    category_attack_safe_with(st, target, true)
+}
+
+/// #842: `gate_target` false drops the target's own damage test (`target
+/// damage < HP`, and its unmodelled-damage veto) for a fast-fragile monster,
+/// which is attacked whatever it does; the other foes' danger still counts.
+pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_target: bool) -> bool {
     let hp = st.borg.tr(BI_CURHP);
     let target_damage = fight_incoming_with(st, target, true);
     let mut other_danger = 0_i64;
@@ -2377,6 +2393,10 @@ pub(crate) fn category_attack_safe(st: &mut BorgState, target: usize) -> bool {
         other_danger += i64::from(crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
     }
     let limit = i64::from(hp) * i64::from(p(Param::caution_flee_danger_hp_multiplier));
+    if !gate_target {
+        // HP 0 is alive (the engine kills below zero).
+        return hp >= 0 && other_danger <= limit;
+    }
     !target_damage.unknown_damage && category_threat_safe(hp, target_damage.hp_per_turn, other_danger, limit)
 }
 
@@ -6595,7 +6615,7 @@ pub(crate) fn unseen_bump_step(st: &mut BorgState, x: i32, y: i32) {
     st.borg.unseen_bumps.step = usable.then_some((st.borg.c, loc { x, y }, false));
 }
 
-fn unseen_melee_message(msg: &[u8]) -> bool {
+pub(crate) fn unseen_melee_message(msg: &[u8]) -> bool {
     // Every melee verb at 574b618c: player-attack.c plus brand.txt,
     // slay.txt and shape.txt. Ranged feedback starts "Your", not "You".
     const VERBS: &[&[u8]] = &[
