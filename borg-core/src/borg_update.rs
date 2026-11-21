@@ -1898,6 +1898,7 @@ fn created_traps_here(st: &mut BorgState) {
 
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
+    st.light.detected_entries.clear();
     let b = &mut st.borg;
     // Restart the clock
     b.time.level = b.time.now;

@@ -25,7 +25,7 @@ use crate::borg_item_use::{
     borg_activate_item, borg_aim_wand, borg_equips_rod, borg_read_scroll, borg_use_staff,
     borg_zap_rod,
 };
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
 use crate::borg_update::Detect;
 use crate::engine;
@@ -33,11 +33,12 @@ use crate::params::{value as param, Param};
 use crate::borg_headers::borg_magic_h::{
     CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
     DETECT_STAIRS, FIND_TRAPS_DOORS_STAIRS, FUME_OF_MORDOR, LIGHT_ROOM, OBJECT_DETECTION,
-    READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS, SPEAR_OF_LIGHT,
+    MAGIC_MISSILE, NETHER_BOLT, PHASE_DOOR, READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS,
+    SPEAR_OF_LIGHT, TELEPORT_SELF,
 };
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
-    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
+    BI_CURSP, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
 use crate::headers::list_object_flags_h::OF_NO_FUEL;
 use crate::headers::list_terrain_h::FEAT_NONE;
@@ -282,6 +283,93 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     false
 }
 
+/// The arrival square or the forward sector after a single step. A wait,
+/// bump, teleport on the same level or redraw is not an entry.
+fn entry_direction(previous: Option<(i32, i32)>, current: (i32, i32)) -> Option<(i32, i32)> {
+    let Some((py, px)) = previous else { return Some((0, 0)); };
+    let (dy, dx) = (current.0 - py, current.1 - px);
+    (dy.abs().max(dx.abs()) == 1).then_some((dy, dx))
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FrontierGrid {
+    Floor,
+    Unknown,
+    Blocked,
+}
+
+fn dark_frontier(
+    (y, x): (i32, i32), direction: (i32, i32), radius: i32,
+    grid: impl Fn(i32, i32) -> FrontierGrid,
+) -> bool {
+    let (dy, dx) = direction;
+    (-1..=1).any(|sy| (-1..=1).any(|sx| {
+        if (sy == 0 && sx == 0) || ((dy != 0 || dx != 0) && sy * dy + sx * dx <= 0) {
+            return false;
+        }
+        grid(y + sy * (radius + 1), x + sx * (radius + 1)) == FrontierGrid::Unknown
+            && (1..=radius).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
+    }))
+}
+
+fn entering_unexamined_dark(st: &BorgState) -> bool {
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let steps = &st.flow.track_step;
+    if steps.num == 0 || engine::square_isglow(x, y) {
+        return false;
+    }
+    let previous = (steps.num >= 2).then(|| steps.at(steps.num as usize - 2));
+    let Some(direction) = entry_direction(previous, (y, x)) else { return false };
+    // The grid just beyond personal light must still be unknown, along a
+    // continuous run of known floor. Do not inspect that grid in the engine.
+    dark_frontier((y, x), direction, st.borg.tr(BI_LIGHT).max(1), |y, x| {
+        if !engine::square_in_bounds_fully(x, y) {
+            FrontierGrid::Blocked
+        } else if u32::from(st.cave.grid(x, y).feat) == FEAT_NONE {
+            FrontierGrid::Unknown
+        } else if borg_cave_floor_bold(st, y, x) {
+            FrontierGrid::Floor
+        } else {
+            FrontierGrid::Blocked
+        }
+    })
+}
+
+fn fits_detection_reserve(sp: i32, cost: i32, reserve: i32) -> bool {
+    cost >= 0 && sp - cost >= reserve
+}
+
+/// #796: the two broad detectors behind #685's level gate. Detect Evil
+/// misses non-evil monsters, and Seek Battle misses fear-immune ones (the
+/// floating eye is both). Keep those on the ordinary branch.
+fn detect_on_dark_entry(st: &mut BorgState, panel: (i32, i32)) -> bool {
+    if param(Param::light_detect_dark_entry) == 0 || st.borg.tr(BI_CDEPTH) == 0
+        || st.light.detected_entries.contains(&panel)
+        || st.borg.goal.fleeing || st.borg.goal.leaving || !entering_unexamined_dark(st)
+    {
+        return false;
+    }
+    let Some(response_cost) = [PHASE_DOOR, TELEPORT_SELF, MAGIC_MISSILE, NETHER_BOLT].into_iter()
+        .filter(|&spell| borg_spell_legal_fail(st, spell, 40))
+        .map(|spell| borg_get_spell_power(st, spell))
+        .min()
+    else {
+        return false;
+    };
+    let reserve = param(Param::light_detect_dark_entry_reserve_sp).max(response_cost)
+        .max(crate::borg_recover::recovery_sp_floor(st));
+    let sp = st.borg.tr(BI_CURSP);
+    for (spell, name) in [(DETECT_MONSTERS, "Detect Monsters"), (READ_MINDS, "Read Minds")] {
+        let cost = borg_get_spell_power(st, spell);
+        if fits_detection_reserve(sp, cost, reserve) && borg_spell_fail(st, spell, 40) {
+            st.light.detected_entries.insert(panel);
+            borg_note(st, &format!("# Dark entry detection: {name} (SP {sp}, cost {cost}, reserve {reserve})"));
+            return true;
+        }
+    }
+    false
+}
+
 /// Refuel, call lite, detect traps/doors/walls/evil, etc
 /// (`borg_check_light`).
 ///
@@ -363,14 +451,14 @@ pub fn borg_check_light(st: &mut BorgState) -> bool {
     // to it on every new panel and it then rests for mana; Detect Evil
     // misses the animals that kill it on DL1. 0 = C.
     let detect_spell_ok = st.borg.tr(BI_CLEVEL) >= param(Param::light_detect_evil_spell_min_level);
-    if do_evil
-        && detect_spell_ok
-        && due(st, st.borg.time.detect_evil, 20)
-        && (borg_spell_fail(st, DETECT_EVIL, 40)
+    if do_evil && due(st, st.borg.time.detect_evil, 20) && if detect_spell_ok {
+        borg_spell_fail(st, DETECT_EVIL, 40)
             || borg_spell_fail(st, DETECT_MONSTERS, 40)
             || borg_spell_fail(st, READ_MINDS, 40)
-            || borg_spell_fail(st, SEEK_BATTLE, 40))
-    {
+            || borg_spell_fail(st, SEEK_BATTLE, 40)
+    } else {
+        detect_on_dark_entry(st, (q_y, q_x))
+    } {
         borg_note(st, "# Checking for monsters.");
 
         borg_react(st, b"SELF:evil", b"SELF:evil");
@@ -725,4 +813,44 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
 
     /* cant do it */
     false
+}
+
+
+#[cfg(test)]
+mod dark_entry_tests {
+    use super::*;
+
+    #[test]
+    fn dark_entry_requires_a_new_level_or_a_single_step() {
+        assert_eq!(entry_direction(None, (12, 8)), Some((0, 0)));
+        assert_eq!(entry_direction(Some((12, 7)), (12, 8)), Some((0, 1)));
+        assert_eq!(entry_direction(Some((11, 9)), (12, 8)), Some((1, -1)));
+        assert_eq!(entry_direction(Some((12, 8)), (12, 8)), None);
+        assert_eq!(entry_direction(Some((16, 1)), (12, 8)), None);
+    }
+
+    #[test]
+    fn the_dark_frontier_is_unknown_forward_of_known_floor() {
+        use FrontierGrid::{Blocked, Floor, Unknown};
+
+        let grid = |y, x| match (y, x) {
+            (10, 11) => Floor,
+            (10, 12) => Unknown,
+            _ => Blocked,
+        };
+        assert!(dark_frontier((10, 10), (0, 1), 1, grid));
+        assert!(dark_frontier((10, 10), (0, 0), 1, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 2, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Unknown));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Floor));
+    }
+
+    #[test]
+    fn dark_entry_does_not_spend_its_response_reserve() {
+        assert!(!fits_detection_reserve(3, 2, 2));
+        assert!(fits_detection_reserve(4, 2, 2));
+        assert!(!fits_detection_reserve(5, 2, 4));
+        assert!(!fits_detection_reserve(10, -1, 2));
+    }
 }

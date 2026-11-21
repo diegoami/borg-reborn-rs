@@ -10,6 +10,37 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Dark-entry detection exception (#796)
+
+The registry now holds **2275** parameters (2273 before; two added).
+
+- `light_detect_dark_entry=0` (compiled and shipped). At 1, the exception
+  permits **Detect Monsters** and **Read Minds** below the regular level
+  gate. A dungeon arrival or adjacent step must be on a non-glowing tile
+  facing a ray of known floor into a grid still unknown beyond personal
+  light. Existing detection coverage, cooldown and spell failure checks
+  still apply. There is at most one exception cast attempt per panel per
+  level, even if the spell fails.
+- `light_detect_dark_entry_reserve_sp=2` (compiled and shipped). The spell
+  must leave at least this many SP and enough for the cheapest learned,
+  viable response among Phase Door, Teleport Self, Magic Missile and
+  Nether Bolt. If no listed response is legal, there is no exception.
+  The reserve also respects the two existing mana thresholds in
+  `borg_recover` at the observed level and maximum SP, so the cast does
+  not cross either threshold in that state.
+
+Detect Evil and Seek Battle keep the level gate. The engine predicates
+select non-invisible monsters for Detect Monsters, monsters with
+`RF_SPIRIT` for Read Minds, evil monsters for Detect Evil, and
+fear-susceptible monsters for Seek Battle
+(`effect-handler-general.c:1858–1943`, `mon-predicate.c:83–172`).
+The floating eye has neither `EVIL` nor `SPIRIT`, and is immune to fear
+(`monster.txt:694–708`, `monster_base.txt:128–132`). Its CL1 Necromancer
+also cannot know Read Minds before CL4 (`class.txt:1017–1025`).
+The exception can protect a Mage or Rogue against a visible-species eye
+while it is still unseen. The named Necromancer death cannot be prevented
+by this spell eligibility change.
+
 ## Ranger Phase Door reserve regression (#797)
 
 The Ranger check runs one fixed Half-Orc birth with reserve 0 and 2 and
@@ -715,7 +746,7 @@ The registry now holds **2200** parameters (2199 after #625; one added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:365` |
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:452` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
@@ -3123,12 +3154,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:418` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:418` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:418` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:461` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:461` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:462` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:909` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:910` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:912` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:919` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:920` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:921` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
