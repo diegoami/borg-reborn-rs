@@ -84,6 +84,7 @@ unchanged except `escape_phase_adjacent_only = 1`.
 | **recall wait** (`borg_caution`) | Word of Recall is counting down and the Borg buys time | landing, 50 | `caution_recall_phase_tolerance` 50, `_horizon` 1, `_phase_fail`, `_portal_fail` |
 | **twitchy move** (`borg_flow_misc::borg_twitchy`) | stuck, before moving at random | landing, 15 (fixed) | none |
 | **twitchy think** (`borg_think_dungeon`) | stuck, up to 3 times a level, before boosting bravery | **none** (as in C) | none |
+| **fast-fragile** (`borg_fast_fragile.rs`, #842) | `fast_fragile_policy = 1`: a marked monster, the expected damage of the marked monsters within two grids reaches `fast_fragile_escape_percent` of the HP and the kill needs more than one more turn of the best attack, no staircase underfoot; the owner's rule above also applies (an awake enemy adjacent, the fight lost) | landing, at most 75 of 100, anti-summon | `escape_emergency_phase_tolerance` 75, `_horizon` 2, `escape_phase_antisummon_delay`, `escape_last_ditch_phase_fail` (the spell), `fast_fragile_escape_percent` |
 | **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns`, `_response`, `_throw_tries`, `escape_emergency_phase_tolerance`, `_horizon` |
 
 Spell fail rates: `escape_normal_fail` 25%, `escape_healthy_fail` 10% when HP

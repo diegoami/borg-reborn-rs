@@ -1564,8 +1564,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:871` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:950` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:951` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:954` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:955` |
 
 ## Town less scary (#622)
 
@@ -3040,11 +3040,11 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1293` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1358` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1367` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1362` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1371` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1380` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1458` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1466` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1462` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1473` |
 | `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1469` |
 | `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1470` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1478` |
@@ -5095,10 +5095,10 @@ chose 2 turns, 25% or 2 others.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:37` |
+| `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:39` |
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:173` |
 | `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:236` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:235` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:239` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:184` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:179` |
 | `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:180` |
@@ -5122,8 +5122,19 @@ chose 2 turns, 25% or 2 others.
   not a breeder (`MULTIPLY`) and has at most `fast_fragile_group_max` others of
   its race in view. A scary-list attack entry of any reason names its monster
   and overrides the stats, so a name can add or remove a monster. Each mark is
-  noted with its numbers: `# Fast-fragile (stats): crow (speed +10 vs +0, 9 HP
-  vs 4.5 per turn, 6.4 damage/turn = 43% of HP 15, 0 others in view) (#842)`.
+  noted with its numbers, e.g. (from a run) `# Fast-fragile (named): crow
+  (speed +9 vs +0, 11 HP vs 8.9 per turn, 7.2 damage/turn = 66% of HP 11, 0
+  others in view) (#842)`; monsters spread about one speed point and roll
+  their HP, so the numbers are not the race's.
+- **Dropped veto.** The ungated attack drops both of `category_attack_safe`'s
+  tests of the target: `target damage < HP` (the point) and the veto on blows
+  the core cannot model (`unknown_damage`: only HURT, ACID, ELEC, FIRE, COLD
+  and NONE are modelled). A marked monster with a poison or other unmodelled
+  blow (a wood spider, by stats) is attacked on a lower bound of its damage.
+  The crow and wild cat are pure HURT. Read the `stats` arm with this in mind.
+- The Phase Door goes through the one decision point (`phase_door`, site
+  `fast-fragile`, docs/PHASE-DOOR.md): the owner's adjacent-enemy rule, the
+  landing test (emergency tolerance) and the anti-summon delay apply.
 - `fast_fragile_no_heal=1`: `borg_heal` (past its confusion, blindness and
   Morgoth cases) and the outmatched heal return without a quaff while a marked
   monster is awake next to the Borg. `=2` makes the issue's one exception:
@@ -5140,7 +5151,7 @@ listed in the handover note.
 
 ## Carried fuel and spare torches (#810)
 
-The registry holds **2285** parameters. The table gives the core fallback.
+The registry holds **2293** parameters. The table gives the core fallback.
 The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |

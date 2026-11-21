@@ -16,6 +16,7 @@
 
 use crate::borg_caution::{fight_incoming_with, forecast_monster_speed};
 use crate::borg_cave_view::BORG_VIEW;
+use crate::borg_escape::{phase_door, PhaseCheck, PhaseSite};
 use crate::borg_fight_attack::{
     attack_on_sight_reason, focused_attack, observed_kill_hp, FocusedAttack,
 };
@@ -265,11 +266,21 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
         borg_keypress(st, keycode_t::from(b'>'));
         return true;
     }
-    if crate::borg_escape::borg_allow_teleport(st)
-        && (crate::borg_item_use::borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-            || crate::borg_magic::borg_spell_fail(
-                st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)))
-    {
+    // Through the one Phase Door decision (docs/PHASE-DOOR.md), so the owner's
+    // adjacent-enemy rule (#584) and the landing test apply as at every other
+    // site: the emergency landing tolerance, as the next turn kills.
+    let check = PhaseCheck::Landing {
+        tolerance: param(Param::escape_emergency_phase_tolerance),
+        horizon: param(Param::escape_emergency_phase_horizon),
+    };
+    if phase_door(st, PhaseSite::FastFragile, check, None, |st| {
+        st.borg.time.now.wrapping_sub(st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
+            && crate::borg_escape::borg_allow_teleport(st)
+            && (crate::borg_item_use::borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || crate::borg_magic::borg_spell_fail(
+                    st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)))
+    }) {
+        crate::borg_escape::reset_antisummon(st);
         borg_note(st, &format!("# Fast-fragile: the next turn kills ({incoming:.1} damage/turn, HP {}), the kill needs {:.1} turns: Phase Door (#842)", f.cur_hp, f.need_hp / f.per_turn.max(0.001)));
         return true;
     }
