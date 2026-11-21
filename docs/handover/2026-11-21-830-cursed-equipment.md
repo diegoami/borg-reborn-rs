@@ -169,3 +169,19 @@ your recommendations").**
   Borg keeps still gets a scroll. Revisit with the zoo pilot's count of scrolls
   bought and read (diegoami/borg-zoo#583).
 - *The trip's priority:* unchanged, after the level timer.
+
+**Re-review of `af70b9e9`** (OpenCode; a comment). It confirmed the per-item count
+and the dropped slowness and re-ran fmt, clippy, tests (579) and smoke (3 of
+3). Its findings, and what was done:
+- *The item key was the description, which does not say which curse (fixed).*
+  The game writes only `{cursed}` into a description (`obj-desc.c`), so two
+  cloaks of one kind with the same modifiers look alike whatever they carry,
+  and my test passed only because I had named them differently. The count is
+  now keyed on `(kind, art_idx, ego_idx, curses)` of the item
+  (`Removal`'s `identity`); a curse learned later changes it, which gives the
+  same item a few more tries, one per curse at most. The test now uses two
+  cloaks with one description and different curses, and a third item of another
+  kind. The seven starts and smoke play unchanged.
+- *The PR body's first bullet still named slowness (fixed).*
+- *The footer* is the tooling's, and needs a manual edit if it is on the page
+  (it was absent when last read, by the API).

@@ -60,8 +60,18 @@ pub(crate) fn harmful_curse(item: &borg_item) -> Option<&'static str> {
 pub(crate) struct Removal {
     depth: i32,
     /// Take-offs tried, by equipment slot (`slot - inven_wield()`), with the
-    /// description of the item they were spent on.
-    tries: Vec<(u8, Option<Vec<u8>>)>,
+    /// item they were spent on (`None`: no candidate in the slot).
+    tries: Vec<(u8, Option<Identity>)>,
+}
+
+/// What tells one worn item from another for the count: its kind, artifact,
+/// ego and the curses it is known to carry. The description does not do it:
+/// the game writes only `{cursed}` in it, never which curse (`obj-desc.c`),
+/// so two cloaks with the same modifiers look alike whatever they carry.
+type Identity = (u32, u8, u8, [bool; 28]);
+
+fn identity(item: &borg_item) -> Identity {
+    (item.kind, item.art_idx, item.ego_idx, item.curses)
 }
 
 /// Attempts at one slot before the Borg stops trying it.
@@ -79,10 +89,9 @@ fn candidate(item: &borg_item) -> bool {
 impl Removal {
     /// Forget what no longer applies: everything on a new level, and the
     /// count of a slot that holds no candidate any more (the take-off worked)
-    /// or another item than the one the count was spent on. The description
-    /// tells items apart; it changes when a rune is learned, which gives the
-    /// same item a few more tries, a bounded number. `items[first..end]` is
-    /// the equipment.
+    /// or another item than the one the count was spent on. A curse learned
+    /// later changes the item's identity and gives it a few more tries, a
+    /// bounded number (one per curse). `items[first..end]` is the equipment.
     fn sync(&mut self, depth: i32, items: &[borg_item], first: usize, end: usize) {
         if self.depth != depth {
             *self = Removal { depth, tries: Vec::new() };
@@ -91,7 +100,7 @@ impl Removal {
         self.tries.resize(end.saturating_sub(first), (0, None));
         for (n, entry) in self.tries.iter_mut().enumerate() {
             let item = &items[first + n];
-            let now = candidate(item).then(|| desc(item));
+            let now = candidate(item).then(|| identity(item));
             if entry.1 != now {
                 *entry = (0, now);
             }
@@ -246,13 +255,6 @@ mod tests {
         item
     }
 
-    /// Give an item a description (the C `desc` buffer).
-    fn named(item: &mut borg_item, text: &[u8]) {
-        for (d, b) in item.desc.iter_mut().zip(text) {
-            *d = *b as core::ffi::c_char;
-        }
-    }
-
     #[test]
     fn the_owners_curses_are_harmful_at_any_power() {
         for curse in [
@@ -343,18 +345,32 @@ mod tests {
 
     #[test]
     fn a_different_item_in_an_exhausted_slot_is_tried() {
+        /* two cloaks of one kind with the same modifiers, so with one
+         * description, `Cloak [1,+0] {cursed}`; only the curse differs */
         let mut items = vec![blank_item(); 8];
         items[5] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
-        named(&mut items[5], b"a Cloak");
+        items[5].kind = 40;
         let mut removal = Removal::default();
         for _ in 0..MAX_TRIES {
             assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
         }
         assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
-        /* the emergency swap puts another cursed item into the same slot */
+        /* the emergency swap puts the other cloak into the same slot */
         items[5] = cursed(BORG_CURSE_PARALYSIS);
-        named(&mut items[5], b"a Robe");
+        items[5].kind = 40;
         assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
+        /* the same curse on another kind of item is another item too */
+        for _ in 1..MAX_TRIES {
+            turn(&mut removal, 5, &items, 2, 8);
+        }
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+        items[5].kind = 41;
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
+        /* the same item stays counted */
+        for _ in 1..MAX_TRIES {
+            turn(&mut removal, 5, &items, 2, 8);
+        }
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
     }
 
     #[test]
