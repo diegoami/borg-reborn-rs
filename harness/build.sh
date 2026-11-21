@@ -21,6 +21,18 @@ rm -f "$BUILD/BUILD_ID"
 if [ -f "$BUILD/CMakeCache.txt" ] && ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=$ROOT/engine" "$BUILD/CMakeCache.txt"; then
     rm -rf "$BUILD"
 fi
+# #855: the compiler decides the game. The engine draws random numbers in
+# function arguments, whose order C leaves to the compiler: the references
+# and the zoo's games are right to left's (GCC on x86-64); a left-to-right
+# build (clang, any arm64 compiler) plays other games from the same seed.
+# Refused unless BORG_ALLOW_OTHER_GAMES=1 says that is what is wanted (the
+# macOS release); BUILD_ID records the order either way.
+ARG_ORDER=$("$ROOT/harness/arg-order.sh") || { echo "build.sh: cannot probe the C compiler's argument order (harness/arg-order.sh)" >&2; exit 1; }
+if [ "$ARG_ORDER" != rtl ] && [ "${BORG_ALLOW_OTHER_GAMES:-0}" != 1 ]; then
+    echo "build.sh: ${CC:-cc} evaluates call arguments $ARG_ORDER (left to right): this build would play other games than" >&2
+    echo "  harness/reference/ and the zoo from the same seed (#855). Use GCC on x86-64, or set BORG_ALLOW_OTHER_GAMES=1." >&2
+    exit 2
+fi
 SRC_BEFORE=$("$ID" source-hash "$IMPL")
 cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DSUPPORT_BORG_RECORDING=OFF -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" \
@@ -56,6 +68,7 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     # The compiler is part of what plays (#824: clang and GCC order the
     # engine's random draws in function arguments differently).
     echo "cc=$(${CC:-cc} --version 2>/dev/null | head -1)"
+    echo "arg_order=$ARG_ORDER"
     echo "rustc=$(rustc --version 2>/dev/null || echo unknown)"
     echo "built_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     [ -z "$TEST_FEATURES" ] || echo "test_features=$TEST_FEATURES"

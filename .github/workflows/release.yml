@@ -252,6 +252,9 @@ jobs:
     # rustc both read it.
     env:
       MACOSX_DEPLOYMENT_TARGET: "14.0"
+      # arm64 compilers evaluate call arguments left to right: these games
+      # are not the references' (see above, #855); build.sh refuses without it.
+      BORG_ALLOW_OTHER_GAMES: "1"
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
