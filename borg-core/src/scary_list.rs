@@ -483,6 +483,21 @@ mod tests {
             }
         }
         assert!(matched > 0, "the compiled list fires somewhere");
+        let warrior = who(1, 0);
+        for name in ["squint-eyed rogue", "filthy street urchin", "battle-scarred veteran",
+            "mean-looking mercenary"] {
+            let r = resolve(name).unwrap();
+            assert_eq!(attack_reason(&shipped, r, b"", warrior), Some(crate::borg_town_hunt::REASON));
+            assert!(is_scary(&shipped, r, b"", warrior), "the off policy retains the scare");
+        }
+        let maggot = resolve("Farmer Maggot").unwrap();
+        assert_eq!(attack_reason(&shipped, maggot, b"", warrior), None);
+        assert!(is_ignored(&shipped, maggot, || b"", warrior));
+        for dog in ["Grip, Farmer Maggot's Dog", "Fang, Farmer Maggot's Dog"] {
+            let r = resolve(dog).unwrap();
+            assert_eq!(attack_reason(&shipped, r, b"", warrior), None);
+            assert!(is_scary(&shipped, r, b"", warrior));
+        }
         // The "ancient dragon" base: every race of that base, as C.
         let dragons = races.iter().filter(|(_, b)| b.to_lowercase().starts_with("ancient dragon")).count();
         assert!(dragons > 0);

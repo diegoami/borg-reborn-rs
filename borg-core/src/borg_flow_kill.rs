@@ -2062,7 +2062,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
         // borg-reborn-rs (#618, #621): no hunt for an ignored monster.
-        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx)) {
+        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx))
+            || crate::borg_town_hunt::controls_target(st, usize::from(kill.r_idx))
+        {
             continue;
         }
 
@@ -2152,6 +2154,24 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         return false;
     }
 
+    commit_kill_flow(st, nearness, !viewable)
+}
+
+/// #789: approach just the certified town target. Re-evaluate after each
+/// move using current HP, monster positions and available attacks.
+pub(crate) fn flow_town_hunt(st: &mut BorgState, target: usize, nearness: i32) -> bool {
+    let pos = st.kills.kills[target].pos;
+    st.flow.temp_n = 0;
+    st.flow.temp_push(pos.y, pos.x);
+    let moved = commit_kill_flow(st, nearness, true);
+    if st.borg.goal.type_0 == GOAL_KILL {
+        st.borg.goal.type_0 = 0;
+    }
+    moved
+}
+
+fn commit_kill_flow(st: &mut BorgState, nearness: i32, avoid_unknown: bool) -> bool {
+    let n = st.flow.temp_n;
     // Clear the flow codes
     borg_flow::borg_flow_clear(st);
 
@@ -2164,7 +2184,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // Spread the flow: if we are not flowing toward monsters that we can
     // see, make sure they are at least easily reachable.
-    borg_flow::borg_flow_spread_hunting(st, nearness, true, !viewable, false, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, nearness, true, avoid_unknown, false, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, c"kill", i32::from(GOAL_KILL)) {
@@ -2696,7 +2716,10 @@ pub fn borg_flow_kill_direct(st: &mut BorgState, twitchy: bool) -> bool {
             let kill = st.kills.kills[i as usize];
 
             // Skip "dead" monsters
-            if kill.r_idx == 0 {
+            if kill.r_idx == 0
+                || crate::borg_town_hunt::avoids_maggot(st, usize::from(kill.r_idx))
+                || crate::borg_town_hunt::controls_target(st, usize::from(kill.r_idx))
+            {
                 continue;
             }
 
@@ -2955,7 +2978,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // borg-reborn-rs (#539, review of #569): a hurt or afraid monster is
         // no named-list or damage-rule scare; the rule is classify_scare.
         let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
-        let attack_on_sight = crate::borg_fight_attack::attack_on_sight_reason(st, usize::from(r_idx)).is_some();
+        let attack_on_sight = crate::borg_fight_attack::attack_on_sight_reason(st, usize::from(r_idx)).is_some()
+            || crate::borg_town_hunt::controls_target(st, usize::from(r_idx))
+            || crate::borg_town_hunt::avoids_maggot(st, usize::from(r_idx));
         let scare = if attack_on_sight {
             crate::borg_caution::Scare { scary: false, calmed_scare: false }
         } else { crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {

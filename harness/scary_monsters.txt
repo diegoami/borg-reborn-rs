@@ -45,6 +45,8 @@ fragility: warrior 0, paladin 0, blackguard 0, ranger 33, rogue 33, priest 67, d
 # squint-eyed rogue scares Mages and Priests up to 6) is inside the range.
 
 # C: up to clevel 5 (squint-eyed rogue: Mages and Priests up to 6)
+# #789: the named scares for the four town targets and Farmer Maggot apply
+# with town_hunt = 0. The town hunt bypasses them at depth 0.
 squint-eyed rogue | 5-8
 Grip, Farmer Maggot's Dog | 5-8
 Fang, Farmer Maggot's Dog | 5-8
@@ -94,8 +96,15 @@ mangy-looking leper | 10-20 | | ignore
 boil-covered wretch | 10-20 | | ignore
 
 # Attack categories (#760): monster | up to CL | classes | attack[,breeders] | reason.
-# Only attack_on_sight=1 activates these. Scare/ignore entries remain independent.
+# attack_on_sight=1 activates the general categories. The town-melee-only
+# category uses town_hunt and its fight forecast.
 # CL50 for every class is a hypothesis: no measured class cutoff yet.
+# Town residents with no spells: monster.txt:242-257,396-411,452-486.
+squint-eyed rogue | 50 | | attack | town-melee-only
+filthy street urchin | 50 | | attack | town-melee-only
+battle-scarred veteran | 50 | | attack | town-melee-only
+mean-looking mercenary | 50 | | attack | town-melee-only
+
 # Fast and fragile: monster.txt:1133-1163 (120 speed, 9 average HP, 2x1d3).
 wild cat | 50 | | attack | fast-fragile
 crow | 50 | | attack | fast-fragile

@@ -635,6 +635,8 @@ pub struct StepInput<'a> {
 /// What a step produces.
 #[derive(Clone, Debug)]
 pub struct StepOutput {
+    /// The first planned purchase that fills an outstanding ranged reserve.
+    pub ranged_purchase: Option<(usize, i32)>,
     pub groups: Vec<Group>,
     pub solution: Solution,
     pub plan: Vec<PlanEntry>,
@@ -856,7 +858,14 @@ pub fn step(input: &StepInput) -> StepOutput {
             (utility.space_weight, i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY)).max(2) / 2, weights.knowledge))
     } else if input.utility { crate::borg_town_utility::shared_groups(groups, input, &stock.candidates, &utility, &limits, &st) } else { groups };
     let solution = if input.utility { crate::borg_town_solve::solve_cash(&groups, &limits, utility.gold_weight) } else { solve(&groups, &limits) };
-    let plan = solution.ranked(&groups).into_iter().map(|(g, o)| plan_entry(&groups[g], o)).collect();
+    let ranked = solution.ranked(&groups);
+    let plan = ranked.iter().map(|&(g, o)| plan_entry(&groups[g], o)).collect();
+    let ranged_purchase = utility.capability.as_ref().and_then(|model| {
+        ranked.iter().flat_map(|&(g, o)| &groups[g].options[o].picks).find_map(|&(i, copies)| {
+            let c = &input.candidates[i];
+            model.ranged_reserve_copies(c.shop, c.slot, copies).map(|n| (i, n))
+        })
+    });
     let flags = [
         (solution.optimal, flag::OPTIMAL),
         (solution.gold_exact, flag::GOLD_EXACT),
@@ -869,7 +878,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -979,16 +988,18 @@ fn first_action_with_room(
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
-    if let Some(&(g, o)) = out.solution.ranked(&out.groups).first() {
-        if let Some(&(i, copies)) = out.groups[g].options[o].picks.first() {
-            let c = &candidates[i];
-            return (
-                action::BUY,
-                [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)],
-                need_of(c),
-                false,
-            );
-        }
+    let purchase = out.ranged_purchase.or_else(|| {
+        let &(g, o) = out.solution.ranked(&out.groups).first()?;
+        out.groups[g].options[o].picks.first().copied()
+    });
+    if let Some((i, copies)) = purchase {
+        let c = &candidates[i];
+        return (
+            action::BUY,
+            [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)],
+            need_of(c),
+            false,
+        );
     }
     (action::LEAVE, [-1, -1, -1, -1], -1, false)
 }

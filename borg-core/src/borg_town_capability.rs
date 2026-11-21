@@ -87,6 +87,7 @@ const EXTRA_SHOTS: usize = 60;
 /// outbid it). Each is worth `town_phase_reserve_percent` of the trip's
 /// escape weight; nothing past the reserve. Zero weight when the reserve is 0.
 const PHASE_RESERVE: usize = 61;
+const RANGED_RESERVE: usize = 62;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -102,14 +103,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 62] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 63] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -159,6 +160,14 @@ impl Model {
     pub fn ware(&self, shop: u8, slot: u8, count: i32) -> i64 {
         self.gain(&self.units(i64::from(shop), i64::from(slot), i64::from(count)))
     }
+    pub fn ranged_reserve_copies(&self, shop: u8, slot: u8, picked: i32) -> Option<i32> {
+        let row = self.curves.get(RANGED_RESERVE)?;
+        let short = -row[2] - row[3];
+        if short <= 0 { return None; }
+        let per_copy = self.units(i64::from(shop), i64::from(slot), 1)
+            .into_iter().find_map(|(id, n)| (id == RANGED_RESERVE).then_some(n))?;
+        Some(picked.min(((short + per_copy - 1) / per_copy) as i32))
+    }
     pub fn scope(it: &KitItem) -> i64 { if it.place == Place::Pack { PACK } else { HOME } }
     pub fn keep(&self, it: &KitItem) -> i64 {
         -self.gain(&self.units(Self::scope(it), i64::from(it.slot), -i64::from(it.qty)))
@@ -199,6 +208,7 @@ struct Context<'a> {
     st: &'a BorgState,
     journey: Journey,
     lantern: bool,
+    ranged_reserve: i64,
 }
 
 fn timed_cap(timed: u32) -> Option<usize> {
@@ -522,7 +532,7 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
 /// `r[3] > 0`), and a kept one stopped the town replay of 425904011 with
 /// "invalid capability facts" (review of #778).
 fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
-    out.into_iter().map(|(cap, n)| if cap == PHASE || cap == PHASE_RESERVE { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
+    out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
 fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
@@ -558,14 +568,23 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         let quantity = if origin.0 < PACK { 1 } else { qty };
         // borg-reborn-rs (#682): a class's oil scale weights each throw.
         let damage = damage * i64::from(param(Param::town_oil_curve_scale_percent)) / 100;
-        return oil_supply(quantity, (needed - prior).clamp(0, quantity), damage, fuel);
+        let fuel_bottles = (needed - prior).clamp(0, quantity);
+        let mut supply = oil_supply(quantity, fuel_bottles, damage, fuel);
+        if ctx.ranged_reserve > 0 && i32::from(item.sval) == st.item_val.sv_flask_oil
+            && !item.cursed && fuel_bottles < quantity
+        {
+            supply.push((RANGED_RESERVE, (quantity - fuel_bottles) * UNIT / quantity));
+        }
+        return supply;
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
         if st.borg.tr(BI_AMMO_TVAL) != i32::from(item.tval) || item.cursed { return Vec::new(); }
         let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2
             + (i64::from(item.to_d) + i64::from(st.borg.tr(BI_BTODAM))) * UNIT).max(UNIT)
             * i64::from(st.borg.tr(BI_AMMO_POWER)).max(1);
-        return missile_supply(st.borg.tr(BI_CLASS), damage);
+        let mut supply = missile_supply(st.borg.tr(BI_CLASS), damage);
+        if ctx.ranged_reserve > 0 { supply.push((RANGED_RESERVE, UNIT)); }
+        return supply;
     }
     if tval == TV_LIGHT {
         return if item.timeout > 0 { vec![(LIGHT, i64::from(item.timeout) * UNIT)] } else { Vec::new() };
@@ -660,8 +679,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let lantern = light.iqty > 0 && u32::from(light.tval) == TV_LIGHT && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
-    let ctx = Context { st, journey, lantern };
-    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..COUNT).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
+    let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
+    let ctx = Context { st, journey, lantern, ranged_reserve };
+    // Keep the historical facts shape when the reserve is disabled.
+    let count = if ranged_reserve > 0 { COUNT } else { RANGED_RESERVE };
+    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
     // borg_town_w_light (100 = today).
@@ -728,6 +750,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
             -(phase_reserve * UNIT));
     } else {
         curve(PHASE_RESERVE, 0, UNIT);
+    }
+    if ranged_reserve > 0 {
+        // Oil kept to throw and matching missiles fill the same requirement.
+        let unit_weight = risk(BORG_TOWN_W_ESCAPE).max(risk(BORG_TOWN_W_ATTACK)).max(UNIT);
+        curve(RANGED_RESERVE, unit_weight * ranged_reserve, -(ranged_reserve * UNIT));
     }
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
     // (worth the full trip weight each, nothing past them) at any depth: the
@@ -878,7 +905,8 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let Ok(mut file) = std::fs::File::create(path) else { return; };
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
-    let ctx = Context { st, journey, lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
+    let ctx = Context { st, journey, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+        lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
     for kind in 1..usize::from(engine::z_info().k_max) {
@@ -1070,6 +1098,25 @@ mod tests {
         assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
         assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
         assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
+    #[test]
+    fn the_ranged_reserve_counts_both_supplies_and_caps_the_first_purchase() {
+        let mut model = Model {
+            available: Vec::new(), packing: None,
+            curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(),
+            supplies: vec![[0, 0, RANGED_RESERVE as i64, UNIT], [1, 0, RANGED_RESERVE as i64, UNIT]],
+        };
+        model.curves[RANGED_RESERVE] = [RANGED_RESERVE as i64, 300, -3 * UNIT, UNIT, 0];
+        assert_eq!(model.ware(0, 0, 1), 100);
+        assert_eq!(model.ware(1, 0, 3), 200);
+        assert_eq!(model.ranged_reserve_copies(1, 0, 8), Some(2));
+        assert_eq!(model.ranged_reserve_copies(1, 0, 1), Some(1));
+        assert_eq!(model.ranged_reserve_copies(1, 1, 8), None);
+        model.curves[RANGED_RESERVE][3] = 3 * UNIT;
+        assert_eq!(model.ranged_reserve_copies(0, 0, 5), None);
+        model.curves.pop();
+        assert_eq!(model.ranged_reserve_copies(0, 0, 5), None);
     }
 
     #[test]
