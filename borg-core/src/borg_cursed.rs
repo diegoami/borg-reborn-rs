@@ -53,27 +53,54 @@ pub(crate) fn harmful_curse(item: &borg_item) -> Option<&'static str> {
 }
 
 /// What `borg_remove_cursed` has tried, to give up on an item that stays on
-/// (a take-off the game refuses must not become a loop).
+/// (a take-off the game refuses must not become a loop). The count is kept
+/// per equipment slot, so a slot that will not come off does not hide the
+/// others, and per level, so an item met on another level starts afresh.
 #[derive(Default)]
 pub(crate) struct Removal {
-    slot: i32,
-    tries: u8,
+    depth: i32,
+    /// Take-offs tried, by equipment slot (`slot - inven_wield()`).
+    tries: Vec<u8>,
 }
 
 /// Attempts at one slot before the Borg stops trying it.
 const MAX_TRIES: u8 = 3;
 
+/// Whether an equipment item is a take-off candidate: a harmful curse that
+/// can come off. `The One Ring` is left to its own handling and a `STICKY`
+/// item cannot be taken off.
+fn candidate(item: &borg_item) -> bool {
+    !item.one_ring
+        && harmful_curse(item).is_some()
+        && !engine::flag_has(&item.flags, OF_STICKY as i32)
+}
+
+impl Removal {
+    /// Forget what no longer applies: everything on a new level, and the
+    /// count of a slot that holds no candidate any more (the take-off worked,
+    /// or another item is there now). `items[first..end]` is the equipment.
+    fn sync(&mut self, depth: i32, items: &[borg_item], first: usize, end: usize) {
+        if self.depth != depth {
+            *self = Removal { depth, tries: Vec::new() };
+        }
+        let end = end.min(items.len());
+        self.tries.resize(end.saturating_sub(first), 0);
+        for (n, tries) in self.tries.iter_mut().enumerate() {
+            if !candidate(&items[first + n]) {
+                *tries = 0;
+            }
+        }
+    }
+
+    fn tried(&self, slot: usize, first: usize) -> u8 {
+        self.tries.get(slot - first).copied().unwrap_or(0)
+    }
+}
+
 /// The slot to take off: the first equipment slot (indexes into `items`,
-/// `first..end`) holding an item with a harmful curse that can come off.
-/// `The One Ring` is left to its own handling and a `STICKY` item cannot
-/// be taken off.
-fn pick(items: &[borg_item], first: usize, end: usize) -> Option<usize> {
-    (first..end.min(items.len())).find(|&i| {
-        let item = &items[i];
-        !item.one_ring
-            && harmful_curse(item).is_some()
-            && !engine::flag_has(&item.flags, OF_STICKY as i32)
-    })
+/// `first..end`) that is a candidate and has not used up its tries.
+fn pick(items: &[borg_item], first: usize, end: usize, removal: &Removal) -> Option<usize> {
+    (first..end.min(items.len())).find(|&i| candidate(&items[i]) && removal.tried(i, first) < MAX_TRIES)
 }
 
 /// The bytes of a C `desc` buffer, up to its NUL.
@@ -91,29 +118,17 @@ pub(crate) fn borg_remove_cursed(st: &mut BorgState) -> bool {
     let first = inven_wield();
     let end = quiver_start();
 
-    /* the tracked slot is empty again: the take-off worked */
-    let tracked = st.think_dungeon.cursed.slot;
-    if st.think_dungeon.cursed.tries != 0
-        && st.items.items.get(tracked as usize).map_or(true, |i| i.iqty == 0)
-    {
-        st.think_dungeon.cursed = Removal::default();
-    }
+    let depth = st.borg.tr(BI_CDEPTH);
+    let removal = &mut st.think_dungeon.cursed;
+    removal.sync(depth, &st.items.items, first as usize, end as usize);
 
-    let Some(i) = pick(&st.items.items, first as usize, end as usize) else {
+    /* a slot that stays occupied after repeated tries is left alone, and the
+     * others are still looked at */
+    let Some(i) = pick(&st.items.items, first as usize, end as usize, removal) else {
         return false;
     };
     let slot = i as i32;
-
-    /* a slot that stays occupied after repeated tries is left alone */
-    let removal = &mut st.think_dungeon.cursed;
-    if removal.slot == slot && removal.tries >= MAX_TRIES {
-        return false;
-    }
-    if removal.slot != slot || removal.tries == 0 {
-        removal.slot = slot;
-        removal.tries = 0;
-    }
-    removal.tries += 1;
+    removal.tries[i - first as usize] += 1;
 
     let item = st.items.items[i];
     let why = harmful_curse(&item).unwrap_or("");
@@ -160,9 +175,11 @@ fn worn_cursed(depth: i32, first_cursed: i32, where_cursed: i32) -> bool {
 }
 
 /// The rest of the decision, once its inputs are known: no means to remove
-/// a curse in hand, and the purse covers the scroll's base price (the
-/// stores charge at least that: no trip is made for a scroll the Borg
-/// cannot pay for).
+/// a curse in hand, and the purse covers the scroll's base price. The
+/// Alchemist always stocks it at exactly that price (`store.txt`: `always`
+/// Remove Curse, cost 100), so that is the price that binds; the Black
+/// Market would charge more (`store.c`, 150%) and is not counted on. No trip
+/// is made for a scroll the Borg cannot pay for.
 fn needs_remove_curse_with(can_decurse: bool, gold: i32, price: i32) -> bool {
     !can_decurse && price > 0 && gold >= price
 }
@@ -253,10 +270,62 @@ mod tests {
         items[1] = cursed(BORG_CURSE_AIR_SWING);
         items[3] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
         items[5] = cursed(BORG_CURSE_ANNOYANCE);
-        assert_eq!(pick(&items, 2, 8), Some(3));
-        assert_eq!(pick(&items, 4, 8), Some(5));
+        let none = Removal::default();
+        assert_eq!(pick(&items, 2, 8, &none), Some(3));
+        assert_eq!(pick(&items, 4, 8, &none), Some(5));
         /* the pack (slots before `first`) is never taken off */
-        assert_eq!(pick(&items, 6, 8), None);
+        assert_eq!(pick(&items, 6, 8, &none), None);
+    }
+
+    /// One turn of `borg_remove_cursed` on `items[first..end]`, take-off
+    /// refused: the slot it would try, if any.
+    fn turn(removal: &mut Removal, depth: i32, items: &[borg_item], first: usize, end: usize) -> Option<usize> {
+        removal.sync(depth, items, first, end);
+        let i = pick(items, first, end, removal)?;
+        removal.tries[i - first] += 1;
+        Some(i)
+    }
+
+    #[test]
+    fn a_slot_that_will_not_come_off_does_not_hide_the_others() {
+        /* a cloak and boots, both harmful; the take-off of the cloak fails */
+        let mut items = vec![blank_item(); 8];
+        items[3] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
+        items[5] = cursed(BORG_CURSE_ANNOYANCE);
+        let mut removal = Removal::default();
+        let tried: Vec<_> = (0..6).map(|_| turn(&mut removal, 5, &items, 2, 8)).collect();
+        /* three tries on the cloak, then the boots get theirs, then nothing */
+        assert_eq!(tried, [Some(3), Some(3), Some(3), Some(5), Some(5), Some(5)]);
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+    }
+
+    #[test]
+    fn a_new_level_starts_the_counts_afresh() {
+        let mut items = vec![blank_item(); 8];
+        items[5] = cursed(BORG_CURSE_ANNOYANCE);
+        let mut removal = Removal::default();
+        for _ in 0..MAX_TRIES {
+            assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
+        }
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+        /* DL9: the same slot, tried again */
+        assert_eq!(turn(&mut removal, 9, &items, 2, 8), Some(5));
+    }
+
+    #[test]
+    fn a_slot_that_no_longer_holds_a_candidate_is_forgotten() {
+        let mut items = vec![blank_item(); 8];
+        items[5] = cursed(BORG_CURSE_ANNOYANCE);
+        let mut removal = Removal::default();
+        for _ in 0..MAX_TRIES {
+            turn(&mut removal, 5, &items, 2, 8);
+        }
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+        /* the take-off worked (slot empty), then another cursed item is worn */
+        items[5] = blank_item();
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+        items[5] = cursed(BORG_CURSE_PARALYSIS);
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
     }
 
     #[test]
@@ -264,7 +333,7 @@ mod tests {
         let mut items = vec![blank_item(); 4];
         items[2] = cursed(BORG_CURSE_ANNOYANCE);
         items[2].one_ring = true;
-        assert_eq!(pick(&items, 0, 4), None);
+        assert_eq!(pick(&items, 0, 4, &Removal::default()), None);
     }
 
     #[test]
