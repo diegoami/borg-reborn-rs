@@ -308,6 +308,13 @@ fn mark_confused_aim(st: &mut BorgState) {
     }
 }
 
+/// borg-reborn-rs (#867, review of #868): once an attack is sent, its
+/// confused aim is over; nothing after it may read the flag.
+fn clear_confused_aim(st: &mut BorgState) {
+    st.fight_attack.confused_aim = false;
+    st.fight_attack.confused_dir = 0;
+}
+
 /// borg-reborn-rs (#867): a confused aimed attack's value, damage and kills
 /// weighted by `CONFUSED_AIM`; anything else unchanged.
 fn confused_weight(st: &mut BorgState, raw: i32) -> i32 {
@@ -2150,6 +2157,11 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
     let mut b_o_y = 0;
     let mut b_o_x = 0;
     let mut b_d = max_range();
+    // borg-reborn-rs (#867, review of #868): a confused aim applies only to
+    // the attack being rated, and only while the Borg is confused: a flag
+    // left by an earlier think never restricts another caller (Teleport
+    // Other, `borg_fight_defend.rs`).
+    let confused_aim = st.fight_attack.confused_aim && confused_by_direction(st);
 
     /* Examine possible destinations */
 
@@ -2178,7 +2190,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 
                 // borg-reborn-rs (#867): confused, only a direction: the
                 // adjacent monster itself, no offset aim.
-                if st.fight_attack.confused_aim && (o_x != 0 || o_y != 0 || dist_to(st, tx, ty) != 1) {
+                if confused_aim && (o_x != 0 || o_y != 0 || dist_to(st, tx, ty) != 1) {
                     continue;
                 }
 
@@ -2284,7 +2296,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
     let g = st.borg.goal.g;
     // borg-reborn-rs (#867): confused, the direction to the adjacent
     // monster is the aim (`aim_key`); a target would always be redrawn.
-    if st.fight_attack.confused_aim {
+    if confused_aim {
         st.fight_attack.confused_dir = borg_extract_dir(st.borg.c.y, st.borg.c.x, g.y, g.x);
         return b_n;
     }
@@ -4310,8 +4322,7 @@ fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, 
 pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
     // borg-reborn-rs (#867): set by the attack rated now, if it is aimed by
     // a confused Borg.
-    st.fight_attack.confused_aim = false;
-    st.fight_attack.confused_dir = 0;
+    clear_confused_aim(st);
     let cl = tr(st, BI_CLEVEL);
     let mr = max_range();
     let iv = st.item_val;
@@ -5217,6 +5228,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Instantiate */
     let _ = borg_calculate_attack_effectiveness(st, b_g);
+    clear_confused_aim(st);
 
     st.traits.attacking = false;
 
@@ -5560,6 +5572,7 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
     st.traits.simulate = false;
     st.traits.attacking = true;
     let result = borg_calculate_attack_effectiveness(st, attack.kind);
+    clear_confused_aim(st);
     st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = prior_kill;
     st.fight_attack.focused_target = None;
     st.traits.attacking = false;

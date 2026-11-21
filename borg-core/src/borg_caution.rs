@@ -1711,12 +1711,15 @@ fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
 
 /// borg-reborn-rs (#867): the first known immobile attacker next to grid
 /// (`y`, `x`) with a blow that confuses (`CONFUSE`, blow_effects.txt; the
-/// grey mushroom patch's `SPORE:CONFUSE`), by kill index.
+/// grey mushroom patch's `SPORE:CONFUSE`), by kill index. Not a unique
+/// (review of #868: Wiruin, the Maelstrom, `ENGULF:CONFUSE:3d6`, is no 2-HP
+/// patch to swing at confused, and `mobile_danger` leaves its own blows out).
 fn immobile_confuser_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
         let kill = &st.kills.kills[i];
         let r_idx = usize::from(kill.r_idx);
         immobile_attacker(r_idx)
+            && !engine::race_flag_has(r_idx, RF_UNIQUE)
             && (i32::from(kill.pos.y) - y).abs() <= 1
             && (i32::from(kill.pos.x) - x).abs() <= 1
             && (0..usize::from(engine::z_info().mon_blows_max))
@@ -1857,10 +1860,13 @@ fn confusion_cure_held(st: &mut BorgState) -> bool {
     // confuses again before a cure is worth anything (a grey mushroom patch
     // has speed +10 and 2 HP, monster.txt), while a confused attack still
     // lands 11/32 of the time. Not while the moving monsters near are as
-    // dangerous as the HP left.
+    // dangerous as the HP left, and only while an attack is open (review of
+    // #868: afraid, no blow; hallucinating, no item attack; a magic mushroom
+    // patch does both, with `SCARE` and `SPORE:HALLU`, monster.txt).
     if p(Param::attack_confused_by_direction) != 0
         && immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
         && mobile_danger(st) < st.borg.tr(BI_CURHP)
+        && confused_attack_open(st)
     {
         borg_note(st, "# Next to an immobile confuser: attacking before the cure (#867)");
         return true;
@@ -1887,6 +1893,21 @@ fn confusion_cure_held(st: &mut BorgState) -> bool {
         }
     }
     true
+}
+
+/// borg-reborn-rs (#867, review of #868): whether `borg_attack` has an
+/// attack to make now: its estimate has a winner with damage or kills. The
+/// kills count too: a 2-HP patch caps the damage at 2, which the confused
+/// weight (11/32) truncates to 0. The dry run draws the Borg's random numbers
+/// and may clear the waiting flag: both are restored, so the check changes
+/// nothing (as `throw_first` does).
+fn confused_attack_open(st: &mut BorgState) -> bool {
+    let (quick, value) = engine::rand_state();
+    let waiting = st.borg.goal.waiting;
+    let estimate = crate::borg_fight_attack::borg_attack_estimate(st);
+    engine::set_rand_state(quick, value);
+    st.borg.goal.waiting = waiting;
+    estimate.is_some_and(|damage| damage > 0 || st.fight_attack.est_kills > 0.0)
 }
 
 /// borg-reborn-rs (#646): whether to step away from an adjacent immobile

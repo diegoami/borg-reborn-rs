@@ -625,8 +625,9 @@ borg_param_attack_throw_as_melee = 1
 # rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
 # the engine's confused aim, 11/32, and sent by direction key, never at a
 # target; a staff keeps its full value. The usual chooser picks the best.
-# Next to an immobile confuser (a grey mushroom patch) the confusion cure
-# waits and the attack goes first.
+# Next to an immobile confuser (a grey mushroom patch, not a unique) the
+# confusion cure waits and the attack goes first, while there is an attack
+# to make.
 # 0 = C (melee only while confused).
 
 borg_param_attack_confused_by_direction = 0

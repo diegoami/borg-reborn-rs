@@ -73,3 +73,28 @@ here.
 **Local note.** `~/projects/borg-cemetery` was not at `death-tools-pin.txt`
 (`PROVENANCE.md` differs), so smoke and `tools/tests` refused to run until
 `BORG_CEMETERY_DIR` pointed at a checkout of the pin.
+
+## Review fixes (review of #868, findings 1 and 2)
+
+- **The cure hold needs an attack** (`confusion_cure_held`,
+  `confused_attack_open`): the hold applies only while `borg_attack_estimate`
+  (random state and waiting flag restored) has a winner with damage or
+  kills. Afraid (no blow) and hallucinating (no item attack), as next to a
+  magic mushroom patch (`SCARE`, `SPORE:HALLU`), the cure is no longer held.
+  The kills count as well as the damage: the throw at a 2-HP patch has its
+  damage capped at 2, and the 11/32 weight truncates that to 0
+  (`confused_weight`'s integer `dmg_best`; a damage-only test held nothing in
+  the named case). `immobile_confuser_next_to` skips uniques (Wiruin, the
+  Maelstrom, `ENGULF:CONFUSE:3d6`), whose own blows `mobile_danger` leaves out.
+- **No stale confused aim**: `confused_aim`/`confused_dir` are cleared after
+  the attack is sent (`borg_attack`'s instantiation, `perform_focused_attack`),
+  and `borg_launch_bolt` reads the flag only while `confused_by_direction`
+  holds, so Teleport Other (`borg_fight_defend.rs`) on a later, unconfused
+  think is never limited to adjacent monsters or left without its target.
+- **Checked**: CI's Rust checks, `check-param-citations.py` (citations moved),
+  `borg-core-vendor.py check`; smoke on the default core 3/3 identical to
+  `smoke-borg-rs`; Gnome Necromancer 459443830 at 100,000 turns, switch 1
+  and switch 1 + CLW cure: both live, the throw comes at turn 5,181 with no
+  cure first, and the two runs part at turn 33,930, as before the fix.
+- **Left**: the integer truncation of the weighted `dmg_best` (2 → 0) also
+  reaches the fight-or-flee estimate and the no-mana fallback; not changed.
