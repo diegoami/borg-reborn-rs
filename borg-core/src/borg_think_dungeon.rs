@@ -91,6 +91,7 @@ pub struct ThinkDungeonState {
     pub feeling_danger: i32,
     /// `borg_feeling_stuff`
     pub feeling_stuff: i32,
+    pub(crate) lightless: crate::borg_lightless::Recovery,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -578,6 +579,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let mut b_j = -1;
+    let lightless = crate::borg_lightless::update(st);
 
     /* HACK: Prevent clock wrapping Step 1 */
     let now = st.borg.time.now;
@@ -611,12 +613,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* if standing on something valueless, destroy it */
     /* this can be done first because it takes no "turns" */
-    if borg_destroy_floor(st) {
+    if !lightless && borg_destroy_floor(st) {
         return choice!("borg_destroy_floor");
     }
 
     // borg-reborn-rs (#470): no Scroll of Deep Descent is kept.
-    if crate::borg_junk::borg_discard_deep_descent(st) {
+    if !lightless && crate::borg_junk::borg_discard_deep_descent(st) {
         return choice!("borg_discard_deep_descent");
     }
 
@@ -651,7 +653,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * 1, do a quick check for items near the stairs that I can pick up before
      * returning to town.
      */
-    if st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
+    if !lightless && st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
         /* Try to grab a close item while I'm down here */
         // borg-reborn-rs (#549): not while threatened
         // (`caution_stair_scum_threat`): go straight back up instead.
@@ -665,12 +667,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* check if we need to do something due to bouncing between spots
      * this will set flags to change behavior even if it doesn't force
      * an action */
-    if borg_check_bounciness(st) {
+    if !lightless && borg_check_bounciness(st) {
         return choice!("borg_check_bounciness");
     }
 
     /* check if we need to do something due to breeders */
-    if borg_check_breeders(st) {
+    if !lightless && borg_check_breeders(st) {
         return choice!("borg_check_breeders");
     }
 
@@ -742,6 +744,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("fight_before_flight");
     }
 
+    // borg-reborn-rs (#811): recovery owns the decision through handoff.
+    if lightless {
+        crate::borg_lightless::recover(st);
+        return choice!("lightless_recovery");
+    }
+
     /* Keep borg on a suitable level */
     if st.stairs.less.num != 0 && st.borg.tr(BI_CLEVEL) < 10 && !st.borg.goal.less && {
         let d = st.borg.tr(BI_CDEPTH);
@@ -763,7 +771,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /*** crucial goals ***/
 
     /* require light-- Special handle for being out of a light source.*/
-    if borg_think_dungeon_light(st) {
+    if borg_think_dungeon_light(st, false) {
         return choice!("borg_think_dungeon_light");
     }
 

@@ -6873,3 +6873,16 @@ mod unseen_oil_lifecycle_tests {
 pub(crate) fn unseen_bump_cancel_shot(st: &mut BorgState) {
     st.borg.unseen_bumps.shot = None;
 }
+
+/// #811: apply self-care before routing in darkness. This cannot start a flow.
+pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
+    // Cure known poison before paying for the walk with HP, even when the
+    // ordinary fight rule would wait for lower HP.
+    (st.borg.tr(BI_ISPOISONED) != 0
+        && danger <= i32::from(st.borg.avoidance) * p(Param::caution_cure_safe_danger_tenths) / 10
+        && borg_quaff_potion(st, st.item_val.sv_potion_cure_poison))
+        || borg_heal(st, danger)
+        || (st.borg.tr(BI_ISHUNGRY) != 0
+            && crate::borg_item_use::borg_eat_when_hungry(st))
+        || (st.borg.tr(BI_ISWEAK) != 0 && borg_eat_food_any(st))
+}

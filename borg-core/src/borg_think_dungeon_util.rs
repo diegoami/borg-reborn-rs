@@ -192,15 +192,15 @@ pub fn borg_money_scum(st: &mut BorgState) -> bool {
 }
 
 /// Attempt a series of maneuvers to stay alive when you run out of light
-pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
+pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
     /* Consume needed things */
-    if st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
+    if !lightless && st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
         return true;
     }
 
     let light = &st.items.items[inven_light()];
     let dying = light.iqty != 0 && light.timeout <= 3 && !engine::flag_has(&light.flags, OF_NO_FUEL as i32);
-    if !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
+    if !lightless && !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
         /* Nothing to do */
         return false;
     }
@@ -218,43 +218,46 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
         return true;
     }
 
-    /* wear stuff and see if it glows */
-    if borg_wear_stuff(st) {
-        return true;
-    }
-
-    /* attempt to refuel/swap */
-    let need = borg_maintain_light(st);
-    if need == BorgNeed::MetNeed {
-        return true;
-    }
-    if need == BorgNeed::NoNeed {
-        return false;
-    }
-
-    /* Can I recall out with a rod */
-    if st.borg.goal.recalling == 0 {
-        let sv = st.item_val.sv_rod_recall;
-        if borg_zap_rod(st, sv) {
+    if !lightless {
+        /* wear stuff and see if it glows */
+        if borg_wear_stuff(st) {
             return true;
         }
-    }
 
-    /* Can I recall out with a spell */
-    if st.borg.goal.recalling == 0 && borg_recall(st) {
-        return true;
-    }
+        /* attempt to refuel/swap */
+        let need = borg_maintain_light(st);
+        if need == BorgNeed::MetNeed {
+            return true;
+        }
+        if need == BorgNeed::NoNeed {
+            return false;
+        }
 
-    /* Test for stairs */
-    if !engine::player_opt(OPT_birth_force_descend)
-        && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_LESS
-    {
-        /* Usable stairs */
-        borg_note(st, "# Testing for stairs .");
-        borg_keypress(st, key(b'<'));
+        /* Can I recall out with a rod */
+        if st.borg.goal.recalling == 0 {
+            let sv = st.item_val.sv_rod_recall;
+            if borg_zap_rod(st, sv) {
+                return true;
+            }
+        }
 
-        /* Done */
-        return true;
+        /* Can I recall out with a spell */
+        if st.borg.goal.recalling == 0 && borg_recall(st) {
+            return true;
+        }
+
+        /* Test for stairs */
+        if !engine::player_opt(OPT_birth_force_descend)
+            && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_LESS
+        {
+            /* Usable stairs */
+            borg_note(st, "# Testing for stairs .");
+            borg_keypress(st, key(b'<'));
+
+            /* Done */
+            return true;
+        }
+
     }
 
     /* If on a glowing grid, got some food, and low mana, then rest here */
@@ -389,6 +392,10 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
                 return true;
             }
         }
+    }
+
+    if lightless {
+        return false;
     }
 
     /* don't flee to the stairs if already fleeing */

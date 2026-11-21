@@ -63,6 +63,7 @@ pub(crate) mod borg_item_val;
 pub(crate) mod borg_item_wear;
 pub(crate) mod borg_junk;
 pub(crate) mod borg_light;
+mod borg_lightless;
 pub(crate) mod borg_log;
 pub(crate) mod borg_magic;
 pub(crate) mod borg_magic_play;
