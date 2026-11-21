@@ -70,6 +70,7 @@ cannot pass unnoticed.
 | Output | Fields or format the zoo reads |
 | --- | --- |
 | `summary.json` | `dead`, `stop_reason`, `race`, `class`, `death_cause`, `game_turns`, `depth`, `max_depth`, `clevel`, `keys` |
+| `town-departure-fuel.jsonl` | First dungeon scan after each town departure. Written beside the town plan record when `BORG_TOWN_PLAN_RECORD` is set. Each row gives equipped light, pack light and oil, light radius, depth, turn, and gold. |
 | `keys.log` | one line per key: `<game turn> <event type> <key code hex> <mods hex>`; the zoo hashes it as the cell's play |
 | `state.log` (with `-statelog`) | one line per key, starting `<game turn> <x>,<y> d<depth>/<max depth>`; the zoo derives `first_turn_at_depth` and its milestones from it |
 
