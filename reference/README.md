@@ -2,6 +2,10 @@
 
 **What game knowledge is used, and by whom** (the Borg at run time, and
 the analysis), and the survey of strategy guides: [GAME-KNOWLEDGE.md](GAME-KNOWLEDGE.md).
+**Where every Borg repository's documentation is**, what was brought here and
+what was left and why: [DOCUMENTATION-MAP.md](DOCUMENTATION-MAP.md). This
+repository is the central place for the Borg's documentation (owner,
+2026-11-21).
 
 Copies of sources that sessions read often, so they are available offline
 and at a fixed version. The original repositories stay canonical, and they
@@ -19,7 +23,12 @@ PR that updates the pin and this table.
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
 | `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
-| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `7b373a702e7b9bb491ba468d97d34cf99ec3df2d` | Specimens, profiles and suites as of that commit |
+| `c-borg/c-bugs/`, `c-borg/C-BUGS.md`, `c-borg/borg-rs-c-bugs.md` | diegoami/neo-angband-tracker `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | `c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3` | The C Borg defect catalogue: every finding (`CBUG-0001`…) with its evidence, the catalogue index, and the audit of borg-rs's C-bug list (#816) |
+| `better-borg-c/measurement/`, `better-borg-c/VERIFICATION.md` | diegoami/better-borg-c `docs/measurement/` (every `.md`), `docs/VERIFICATION.md` | `46037038cb0ce3a248ea22c06f02454818dbe4b4` | One page per verified C Borg fix or measurement: the behaviour, why it was wrong, the fix, the evidence; the design lessons, the death-analysis workflow and the milestone write-ups; how fixes are verified (#816). Raw cohorts and JSON results left out |
+| `borg-rs/*.md` (beyond `FORK-CORRECTIONS.md`) | diegoami/borg-rs `docs/` | see `pins.json` (the vendored core's pin) | The design documents of the core we ship: the town planner (`TOWN-*.md`, the item catalogue), the trip policy, the class family, shop shortcuts, the joint-policy experiments, the C bugs it found and fixed (`c-bugs.md`), its harness, checkpoints, replay toolkit, engine upgrade and C-consumer adoption (#816). Reviews, status and progress logs left out |
+| `borg-runner/ACCUMULATED_BEHAVIOUR.md`, `borg-runner/docs/DESIGN.md` | diegoami/borg-runner | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | How the agent players behaved, and how borg-runner works (#816) |
+| `borg-agent/knowledge/`, `borg-agent/docs/` | diegoami/borg-agent (retired) | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` | Its knowledge pages (danger, dungeon, mechanics, monsters, readiness), the knowledge design and the post-mortem of why it was frozen (#816) |
+| `zoo/DESIGN.md`, `zoo/FINDINGS.md`, `zoo/PROFILES.md`, `zoo/catalogue/` | diegoami/borg-zoo | `7b373a702e7b9bb491ba468d97d34cf99ec3df2d` | The zoo's design, what its completed experiments showed (`FINDINGS.md`, #816), what can be asked of it (`PROFILES.md`, #816), and its specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 

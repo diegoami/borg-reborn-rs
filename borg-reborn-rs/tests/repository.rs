@@ -56,6 +56,7 @@ fn entry_documents_exist() {
         "docs/architecture/borg-core.md",
         "docs/architecture/reborn-plan.md",
         "reference/GAME-KNOWLEDGE.md",
+        "reference/DOCUMENTATION-MAP.md",
         "docs/SOURCES.md",
         "docs/HANDOVER.md",
         "reference/c-borg/BORG_SPEC.md",
@@ -86,6 +87,7 @@ fn current_documents_have_no_dangling_links() {
         "docs/handover/README.md",
         "reference/README.md",
         "reference/GAME-KNOWLEDGE.md",
+        "reference/DOCUMENTATION-MAP.md",
         "harness/README.md",
         "tools/README.md",
     ]

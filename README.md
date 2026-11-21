@@ -21,7 +21,10 @@ This page is for **playing**: setting up, building, watching the Borg and
 changing what it does. For how it works, see
 [docs/architecture/](docs/architecture/README.md); for the game knowledge it
 and its developers use, [reference/GAME-KNOWLEDGE.md](reference/GAME-KNOWLEDGE.md);
-for working on the repository, [AGENTS.md](AGENTS.md).
+for working on the repository, [AGENTS.md](AGENTS.md). This repository is
+the central place for the Borg's documentation: what the other Borg
+repositories wrote is copied here or mapped in
+[reference/DOCUMENTATION-MAP.md](reference/DOCUMENTATION-MAP.md).
 
 ## 1. Requirements
 

@@ -3,7 +3,9 @@
 The repository's documents, by audience. Playing the Borg starts at the
 [README](../README.md); working on the repository at [AGENTS.md](../AGENTS.md).
 Game knowledge (the manuals, the C Borg's documentation, what is used by
-whom) is in [reference/](../reference/GAME-KNOWLEDGE.md). Reorganised on
+whom) is in [reference/](../reference/GAME-KNOWLEDGE.md), with the
+documentation of the other Borg repositories
+([map](../reference/DOCUMENTATION-MAP.md)). Reorganised on
 2026-11-21 (#816).
 
 ## Using the Borg

@@ -1,0 +1,114 @@
+{
+  "id": "CBUG-0001",
+  "source_groups": [
+    13
+  ],
+  "title": "Cancelling a map dump dereferences a NULL file",
+  "site": "src/borg/borg-log.c:borg_write_map",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "no-counterpart",
+  "mandos": "no-counterpart",
+  "impact": {
+    "level": "observed",
+    "description": "Escape at the map filename prompt crashes the C game (SIGSEGV); the guard returns safely. No lost-progress claim."
+  },
+  "notes": "59 C Borg units, no Rust Borg linked; direct function diagnostic in a normally born C game. Top-level Ctrl-Z dispatch and failed-open branch were not separately runtime-tested.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 13
+  },
+  "evidence_path": "docs/audit/c-reports/B94/README.md",
+  "patch": "patches/upstream-c/B94-map-dump-cancel.patch",
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-log.c",
+      "start": 190,
+      "end": 204,
+      "description": "if (ask && get_string"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-log.c",
+      "start": 666,
+      "end": 668,
+      "description": "file_close(borg_map_file);"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 167,
+      "end": 181,
+      "description": "discovery group 13"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 173,
+      "end": 177,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 13,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 173,
+        "end": 177,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_write_map(true)` (the `^z` map command, not in any suite): when the\n  file prompt is cancelled or the file cannot be opened, the file stays\n  NULL. `file_putf()` ignores a NULL file, but `file_put()` (the \"Swap\n  ...: NONE\" lines, with `borg_uses_swaps`) and the final `file_close()`\n  dereference it, so the game crashes."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        13
+      ]
+    }
+  ],
+  "verification_sources": [
+    {
+      "kind": "Mandos native C-game reproduction",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 13
+      },
+      "report": "docs/audit/c-reports/B94/README.md"
+    }
+  ],
+  "evidence_at_import": "c-game-reproduced",
+  "status_at_import": "local-proposal",
+  "proposals_at_import": [
+    {
+      "repository": "diegoami/neo-angband-tracker",
+      "number": 1,
+      "url": "https://github.com/diegoami/neo-angband-tracker/pull/1",
+      "base": "c-borg-reference",
+      "head": "540f621960e674d9fde227a175eeb1d27cc02132",
+      "validation": "c-game-reproduced",
+      "branch": "pr/c-borg-map-dump-cancel"
+    }
+  ],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}
