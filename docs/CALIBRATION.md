@@ -164,9 +164,9 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1914` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1914` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:528` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:542` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:719` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:690` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:722` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -217,7 +217,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:682` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:711` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -461,7 +461,7 @@ the less value they have".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:684` |
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:843` |
 | `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
@@ -482,8 +482,8 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:411` |
-| `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:429` |
+| `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:863` |
 
 
 
@@ -1982,9 +1982,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:475` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:328` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:466` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:489` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:346` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:480` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2112,11 +2112,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:424` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:438` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1598` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1558` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1685` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1633` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5266,3 +5266,52 @@ Word of Recall, weight 5).
 | `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:336` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:252` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:772` |
+
+## #863: variety in the backpack (town, prepared remedies)
+
+Owner, 2026-11-21: "Better 4 cure poison, 4 detect invisible and 3 remove
+curse in the pack and 20 light wounds in the pack than 40 light wound
+potions"; "the point is being prepared to a variety of situations. You are
+never going to use 35 phase doors in a trip, but a remove curse or cure
+poison potion will help more." The valuation of every kind that is worth
+nothing unless its condition is present now (`observe`,
+`borg_town_capability.rs`) needed a redesign, not a per-curve patch (the
+owner, on #863). This is its first step, for potions and scrolls; devices
+(wands, staves, rods) and keeping a found device follow in a second PR.
+
+Checked in this engine version (`object.txt` at `574b618c`): Cure Light
+Wounds does not cure poison (HEAL_HP 20, CURE:BLIND, TIMED_DEC:CUT and
+CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
+(`CURE:POISONED`). A pack of 40 Cure Light Wounds has no poison cure.
+
+- **`town_prepared_percent`** (compiled 0, **shipped 0**; per class with
+  `@<class>` or `__<class>`). Above 0, `observe` adds one row per
+  situation's remedy (`PREP_POISON`, `PREP_CURSE`, `PREP_INVISIBLE`,
+  `PREP_CONFUSION`, `PREP_FEAR`), fed one unit per copy by whatever supplies
+  the situation's capability (`supplies_of_kind`; a device: one per charge),
+  so Neutralize Poison and Cure Critical Wounds fill the poison row,
+  Detect Invisible the invisible row, Remove Curse the curse row, and so on.
+  Each row is a diminishing curve (`prepared_row`) with its weight this
+  percent of the trip weight (`borg_town_w_trip` x exposure, as Recall's)
+  and its demand `town_prepared_copies` copies. The condition-present
+  curves (poisoned, cursed, afraid, ...) stay as they are, on top. 0 = the
+  model has the shape it had before (no rows).
+- **`town_prepared_copies`** (compiled 2): the copies at which each row is
+  at half its value.
+- Unit check (`the_first_remedies_are_worth_more_than_the_21st_cure_light_wounds`):
+  with the numbers `observe` makes at CL5, DL3, 100 HP and the shipped 125
+  percent healing scale, at 25 percent and 2 copies the first copy of each
+  remedy is worth more than twice the 21st Cure Light Wounds, the third and
+  later copies no more than it, every copy something. Those numbers are an
+  estimate, not a live reading.
+- The shipped value stays 0: no value is chosen before a zoo pilot (RULES
+  14, 20). Candidates to measure: 25 percent and 2 copies; 50 and 3.
+- The group mask (`Model::mask`) is 64 bits and capability ids reach 63
+  already, so the five prepared rows share bit 63 (with the Recall reserve
+  and the packing room): their groups are valued jointly, which only widens
+  the search, never changes a value.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:820` |
+| `town_prepared_copies` | 2 | copies | 1–20 | `borg_town_capability.rs:820` |

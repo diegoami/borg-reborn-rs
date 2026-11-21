@@ -92,6 +92,19 @@ const RANGED_RESERVE: usize = 62;
 /// the first `town_recall_reserve` Words of Recall as a requirement on top of
 /// the RECALL curve, as PHASE_RESERVE is on top of PHASE.
 const RECALL_RESERVE: usize = 63;
+/// borg-reborn-rs (#863, owner: "being prepared to a variety of situations"):
+/// with `town_prepared_percent` on, one small diminishing row per situation's
+/// remedy, fed one unit per copy by whatever supplies the situation's
+/// capability, so the first copies of each remedy are worth more than the
+/// 21st of a volume kind. They sit on top of the condition-present curves.
+const PREP_POISON: usize = 64;
+const PREP_CURSE: usize = 65;
+const PREP_INVISIBLE: usize = 66;
+const PREP_CONFUSION: usize = 67;
+const PREP_FEAR: usize = 68;
+/// Situation capability -> its prepared row.
+const PREPARED: [(usize, usize); 5] = [(POISON, PREP_POISON), (CURSE, PREP_CURSE),
+    (INVISIBLE, PREP_INVISIBLE), (CONFUSION, PREP_CONFUSION), (FEAR, PREP_FEAR)];
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -107,14 +120,15 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 64] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 69] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -198,7 +212,7 @@ impl Model {
         }
     }
     pub fn mask(&self, shop: u8, slot: u8) -> u64 {
-        self.units(i64::from(shop), i64::from(slot), 1).iter().fold(0, |m, &(id, _)| m | (1 << id))
+        self.units(i64::from(shop), i64::from(slot), 1).iter().fold(0, |m, &(id, _)| m | (1 << id.min(63)))
     }
     pub fn valid(&self) -> bool {
         self.available.iter().all(|r| (0..=7).contains(&r[0]) && (0..=255).contains(&r[1]) && (0..=255).contains(&r[2]))
@@ -650,6 +664,13 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     }
     let confusion = tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster;
     let mut out = effect_supply_for_consumer(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
+    // borg-reborn-rs (#863): a copy that answers a situation is also one
+    // copy on that situation's prepared row (a device: one per charge).
+    if prepared_on() {
+        for (cap, row) in PREPARED {
+            if out.iter().any(|&(id, _)| id == cap) { out.push((row, UNIT)); }
+        }
+    }
     let uses = if tval == TV_WAND || tval == TV_STAFF { i64::from(item.pval).max(0) * UNIT / qty }
         else if tval == TV_ROD {
             // MINIMISE/AVERAGE are pure; the rod's physical cooldown is not a level gate.
@@ -692,7 +713,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
-    let count = if recall_on { COUNT } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let prepared = prepared_on();
+    let count = if recall_on || prepared { COUNT } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
@@ -787,6 +809,18 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let ((weight, demand), reserve_row) = recall_curve(trip_weight, walk_value, recall_reserve, recall_scale);
     curve(RECALL, weight, demand);
     if let Some((weight, demand)) = reserve_row { curve(RECALL_RESERVE, weight, demand); }
+    // borg-reborn-rs (#863, owner: "the point is being prepared to a variety of
+    // situations"): below the Recall curve's reserve row, one small
+    // diminishing row per situation's remedy, on the trip weight: the first
+    // copy of each is worth more than the 21st of a volume kind, past a
+    // couple of copies each is worth little. The condition-present curves
+    // (poisoned, cursed, ...) stay as they are on top. 0 = off.
+    if !recall_on { curve(RECALL_RESERVE, 0, UNIT); }
+    let (prep_weight, prep_demand) = prepared_row(cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT),
+        param(Param::town_prepared_percent), param(Param::town_prepared_copies));
+    if prepared {
+        for (_, row) in PREPARED { curve(row, prep_weight, prep_demand); }
+    }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
@@ -1140,6 +1174,47 @@ mod tests {
         assert!(w200 > w110, "a higher scale values the spares more");
         let (_, reserve) = recall_curve(trip, walk, 0, 110);
         assert_eq!(reserve, Some((0, UNIT)), "no reserve: an empty row");
+    }
+
+    /// #863 (owner: "better 4 cure poison, 4 detect invisible and 3 remove
+    /// curse in the pack and 20 light wounds than 40 light wound potions"):
+    /// with 20 Cure Light Wounds carried, the first copies of each remedy are
+    /// worth more than the 21st Cure Light Wounds; past a couple they are
+    /// worth little; and every copy is worth something.
+    #[test]
+    fn the_first_remedies_are_worth_more_than_the_21st_cure_light_wounds() {
+        // The numbers `observe` makes at CL5, DL3, 100 HP: exposure 780, the
+        // trip weight 50 x 1000, healing at the shipped 125 percent scale,
+        // and a Cure Light Wounds worth 6.06 HP of speed-weighted units.
+        let exposure = 780;
+        let trip = 50 * exposure.max(UNIT);
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        let heal = 100 * exposure * 125 / 100;
+        m.curves[HEAL] = [HEAL as i64, heal, heal, 20 * 6060, 0];
+        let clw = 6060;
+        let twenty_first = m.gain(&[(HEAL, clw)]);
+        assert!(twenty_first > 0, "a copy is worth something: {twenty_first}");
+        let (w, d) = prepared_row(trip, 25, 2);
+        for (_, row) in PREPARED { m.curves[row] = [row as i64, w, d, 0, 0]; }
+        for (cap, row) in PREPARED {
+            let first = m.gain(&[(row, UNIT)]);
+            let gains: Vec<i64> = (1..=6).map(|n| m.gain(&[(row, n * UNIT)]) - m.gain(&[(row, (n - 1) * UNIT)])).collect();
+            assert!(first > 2 * twenty_first, "capability {cap}: the first copy {first} beats the 21st CLW {twenty_first}");
+            assert!(gains[2] <= twenty_first * 11 / 10 && gains[3] < twenty_first, "capability {cap}: the 3rd-4th copy is worth no more than the 21st CLW: {gains:?} vs {twenty_first}");
+            assert!(gains.windows(2).all(|g| g[1] < g[0] && g[1] > 0), "capability {cap}: each less, never nothing: {gains:?}");
+        }
+        assert_eq!(prepared_row(trip, 0, 2).0, 0, "0 percent: no weight");
+        assert_eq!(prepared_row(trip, 25, 0).1, UNIT, "at least one copy of demand");
+    }
+
+    /// #863: a capability id past 63 does not overflow the group mask.
+    #[test]
+    fn the_prepared_rows_have_a_mask_bit() {
+        let m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(),
+            supplies: vec![[5, 1, PREP_FEAR as i64, UNIT], [5, 2, POISON as i64, UNIT]] };
+        assert_eq!(m.mask(5, 1), 1 << 63);
+        assert_eq!(m.mask(5, 2), 1 << POISON);
+        assert!(m.valid());
     }
 
     /// #859: the room the Recall reserve still needs: the copies short,
@@ -1586,6 +1661,18 @@ pub(crate) fn recall_room(m: &Model, reserve: i64, candidates: &[crate::borg_tow
         .filter(|c| c.qty > 0 && m.units(i64::from(c.shop), i64::from(c.slot), 1).iter().any(|&(id, _)| id == RECALL))
         .map(|c| i64::from(c.weight)).min();
     lightest.map_or((0, 0), |w| (short * w, i32::from(row[3] == 0)))
+}
+
+/// borg-reborn-rs (#863): whether the prepared rows exist (`town_prepared_percent`
+/// above 0); off, the model has the shape it had before.
+fn prepared_on() -> bool { param(Param::town_prepared_percent) > 0 }
+
+/// borg-reborn-rs (#863): a prepared row's weight and demand. The weight is
+/// `percent` of the trip weight; the demand is `copies` copies, so the curve
+/// is at half its value at that many (each copy worth less than the last,
+/// never nothing).
+fn prepared_row(trip_weight: i64, percent: i32, copies: i32) -> (i64, i64) {
+    (scale_percent(trip_weight, percent), i64::from(copies.max(1)) * UNIT)
 }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {
