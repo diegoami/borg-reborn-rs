@@ -1240,6 +1240,22 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
+# underfoot as the only alternative; the stats characterization; no healing
+# potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
+# reviewed, can we ship with your suggested settings?"): the policy and the heal
+# ban on the named entries (crow, wild cat); by_stats, the landing test and the
+# 75% escape stay 0 / default until the zoo (borg-zoo#596) has measured them.
+# On the 8 crow cases of 3b4924ba: 8 dead of 8 off, 1 on (direction only).
+borg_param_fast_fragile_policy = 1
+borg_param_fast_fragile_by_stats = 0
+borg_param_fast_fragile_no_heal = 1
+borg_param_fast_fragile_escape_percent = 100
+borg_param_fast_fragile_phase_landing = 0
+borg_param_fast_fragile_speed_margin = 5
+borg_param_fast_fragile_kill_turns = 2
+borg_param_fast_fragile_damage_percent = 25
+borg_param_fast_fragile_group_max = 2
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
