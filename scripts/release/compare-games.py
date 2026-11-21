@@ -27,7 +27,12 @@ def main() -> int:
         for log in ('keys.log', 'messages.log', 'state.log'):
             plain = ref / name / log
             want = plain.read_bytes() if plain.exists() else lzma.decompress((ref / name / f'{log}.xz').read_bytes())
-            have = (pathlib.Path(game) / log).read_bytes()
+            have_path = pathlib.Path(game) / log
+            if not have_path.exists():
+                bad += 1
+                print(f'{name}/{log}: MISSING: the game wrote no {have_path}')
+                continue
+            have = have_path.read_bytes()
             if want == have:
                 print(f'{name}/{log}: identical ({len(have)} bytes)')
                 continue

@@ -1135,6 +1135,11 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_exact_turns && opt_turns <= 0) quit("borgh: exact turns requires a positive turn limit");
 	if (!!opt_checkpoint_every != !!opt_checkpoint_dir)
 		quit("borgh: checkpoint interval and directory are both required");
+#ifdef _WIN32
+	/* #823 (review of #851): refuse at startup, not at the first capture. */
+	if (opt_checkpoint_dir)
+		quit("borgh: checkpoints need fork(), not available on Windows");
+#endif
 	if (opt_checkpoint_dir) {
 		char path[1024];
 		if (strlen(opt_checkpoint_dir) > sizeof(path) - 128)

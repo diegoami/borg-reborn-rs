@@ -11,8 +11,10 @@ Needs
 -----
 Linux    x86_64, glibc 2.39 or newer (Ubuntu 24.04, Debian 13, or the like),
          OpenSSL 3's libcrypto (Ubuntu 24.04: apt install libssl3t64) and
-         ncurses (libncursesw6); for the window also the X11 library and
-         fonts (apt install libx11-6 xfonts-base).
+         ncurses (libncursesw6). To watch the Borg, in the window or in the
+         terminal, also the X11 library (apt install libx11-6: angband
+         links it either way) and, for the window, the X11 fonts
+         (xfonts-base). play-headless.sh needs neither.
 macOS    Apple silicon (arm64), macOS 14 or newer. Nothing else: OpenSSL is
          linked in, curses is the system's. The first start may need
          "Open Anyway" in System Settings > Privacy & Security, or
