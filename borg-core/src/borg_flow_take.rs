@@ -512,6 +512,8 @@ pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 /// Phase-first rule dropped, for the retry in `borg_flow_take`.
 fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: &mut Vec<(i32, i32)>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, true);
+    // borg-reborn-rs (#840): a short kit puts both leash checks on at any level.
+    let kit_leash = crate::borg_kit::leash_active(st);
     // borg-reborn-rs (#732): C's take-leash numbers are parameters (`c_leash`).
     let c = crate::borg_flow::c_leash();
 
@@ -579,7 +581,7 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         let is_phase = phase_short && take_is_phase(st, take.kidx);
 
         /* Skip ones that make me wander too far */
-        if !is_phase && b_stair != -1 && st.borg.tr(BI_CLEVEL) < c.take_near_max_level {
+        if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -630,7 +632,7 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         /* Check the distance to stair for this proposed grid and leash*/
         if !is_phase
             && nearness > c.take_nearness
-            && st.borg.tr(BI_CLEVEL) < c.take_max_level
+            && (st.borg.tr(BI_CLEVEL) < c.take_max_level || kit_leash)
             && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
         {
             continue;

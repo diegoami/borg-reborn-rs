@@ -87,20 +87,10 @@
       "from": ".",
       "select": "files",
       "files": [
-        "ACCUMULATED_KNOWLEDGE.md"
+        "ACCUMULATED_KNOWLEDGE.md",
+        "ACCUMULATED_BEHAVIOUR.md"
       ],
       "to": "reference/borg-runner"
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs/c-borg",
-      "to": "reference/c-borg",
-      "select": "files",
-      "files": [
-        "BORG_SPEC.md",
-        "TUNABLE-BORG-PLAN.md",
-        "README.md"
-      ]
     },
     {
       "pin": "better-borg-c",
@@ -120,7 +110,9 @@
       "to": "reference/zoo",
       "select": "files",
       "files": [
-        "DESIGN.md"
+        "DESIGN.md",
+        "FINDINGS.md",
+        "PROFILES.md"
       ]
     },
     {
@@ -136,14 +128,22 @@
       "select": "files",
       "files": [
         "FORK-CORRECTIONS.md",
-        "adoption/status.json"
+        "adoption/status.json",
+        "C-CONSUMER-ADOPTION.md",
+        "ENGINE-UPGRADE.md",
+        "REPLAY-TOOLKIT.md",
+        "checkpoints.md",
+        "harness.md"
       ]
     },
     {
-      "pin": "neo-angband-tracker",
-      "from": "docs/c-manual",
-      "to": "reference/c-manual",
-      "select": "all"
+      "pin": "borg-runner",
+      "from": "docs",
+      "to": "reference/borg-runner/docs",
+      "select": "files",
+      "files": [
+        "DESIGN.md"
+      ]
     }
   ]
 }

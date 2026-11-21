@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0025",
+  "source_groups": [
+    5
+  ],
+  "title": "borg_init_spell(), all caster seeds, startup: spell->status = spell_okay_to_cast(player, spell_num); stores a bool in a field that holds BORG_MAGIC\u2026",
+  "site": "src/borg/borg-magic.c:borg_init_spell",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 41
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-magic.c",
+      "start": 744,
+      "end": 766,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 57,
+      "end": 63,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        5
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 5,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 57,
+        "end": 63,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg-magic.c`, `borg_init_spell()`, all caster seeds, startup:\n  `spell->status = spell_okay_to_cast(player, spell_num);` stores a `bool`\n  in a field that holds `BORG_MAGIC_*` values, so a spell starts as 0\n  (`BORG_MAGIC_ICKY`) or 1 (`BORG_MAGIC_LOST`) until\n  `borg_cheat_spells()` sees its book in the pack. Harmless in practice:\n  every reader also requires the book to be carried, and carried books are\n  re-cheated first."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "review-only",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

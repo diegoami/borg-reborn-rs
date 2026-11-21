@@ -489,7 +489,7 @@ fn thrust_damage_with(st: &BorgState, i: i32, spell_blows: i32, focused_kind: Op
     /* Damage */
     // borg-reborn-rs (#713): no blow at an immobile creature kept at range
     // (`caution_ranged_vs_immobile` 2, 3): it is left, or attacked from afar.
-    if crate::borg_caution::immobile_kept_at_range(st, usize::from(r)) {
+    if crate::borg_caution::kept_at_range(st, usize::from(r)) {
         return 0;
     }
 
@@ -2795,8 +2795,9 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
             let reserve = if policy && lantern {
                 let journey = supply_journey.get_or_insert_with(||
                     crate::borg_town_utility::Journey::of(st));
-                ((journey.turns - i64::from(light.timeout)).max(0) as u64)
-                    .div_ceil(i64::from(item.pval).max(1) as u64) as i32
+                let goal = journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns)));
+                let shortage = (goal - i64::from(light.timeout)).max(0) as u64;
+                shortage.div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
             if oil_reserved(policy, reserve, tr(st, BI_AFUEL), st.borg.near.unique != 0) { continue; }
         }
@@ -5459,6 +5460,26 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
         if kill.r_idx == 0 { continue; }
+        // borg-reborn-rs (#842, owner): a fast-fragile monster is attacked
+        // with the best attack at hand, or Phase Door / the stairs underfoot
+        // when the next turn kills; no `target damage < HP` gate.
+        if crate::borg_fast_fragile::policy() {
+            if let Some((source, facts, attack)) = crate::borg_fast_fragile::classify(st, i) {
+                if !crate::borg_caution::category_attack_safe_with(st, i, false) { continue; }
+                let note = crate::borg_fast_fragile::describe(st, i, source, &facts);
+                borg_note(st, &note);
+                if crate::borg_fast_fragile::escape_instead(st, i, &facts) { return true; }
+                // The exception to the heal ban: cornered, a cure comes first.
+                if crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
+                    borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)");
+                    continue;
+                }
+                borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",
+                    String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
+                if perform_focused_attack(st, i, attack) { return true; }
+                continue;
+            }
+        }
         let Some(reason) = attack_on_sight_reason(st, usize::from(kill.r_idx)) else { continue };
         let Some(attack) = focused_attack(st, i) else { continue };
         if !crate::borg_caution::category_attack_safe(st, i) { continue; }

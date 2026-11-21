@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0057",
+  "source_groups": [
+    19
+  ],
+  "title": "item_bad is worked out (with its \"Lunal Item\" notes) but never read: every entry that passes the view and stairs tests is a target, worthless ones\u2026",
+  "site": "src/borg/borg-flow-take.c:borg_flow_take",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 73
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-flow-take.c",
+      "start": 426,
+      "end": 586,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 290,
+      "end": 292,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        19
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 19,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 290,
+        "end": 292,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`item_bad` is worked out (with its \"Lunal Item\" notes) but never\n    read: every entry that passes the view and stairs tests is a target,\n    worthless ones (value <= 0) included."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

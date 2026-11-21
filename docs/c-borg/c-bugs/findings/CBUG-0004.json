@@ -1,0 +1,101 @@
+{
+  "id": "CBUG-0004",
+  "source_groups": [
+    17
+  ],
+  "title": "Cold melee uses temporary acid resistance",
+  "site": "src/borg/borg-danger.c:borg_danger_physical",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "Can misestimate a cold blow when only one temporary resistance is active; real changed combat choice pending."
+  },
+  "notes": "Independent of the other danger slips in the same Rust group.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 26
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-danger.c",
+      "start": 262,
+      "end": 276,
+      "description": "case MONBLOW_COLD:"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/danger/danger.ts",
+      "start": 206,
+      "end": 219,
+      "description": "case MONBLOW.COLD:"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/danger/danger.ts",
+      "start": 209,
+      "end": 222,
+      "description": "case MONBLOW.COLD:"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 226,
+      "end": 264,
+      "description": "discovery group 17"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 231,
+      "end": 232,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 17,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 231,
+        "end": 232,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "COLD blows test the temporary *acid* resistance (`borg.temp.res_acid`),\n    not `res_cold`."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        17
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

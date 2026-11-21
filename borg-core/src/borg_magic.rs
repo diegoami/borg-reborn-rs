@@ -474,6 +474,20 @@ pub fn borg_spell_legal(st: &BorgState, spell: borg_spells) -> bool {
     true
 }
 
+/// borg-reborn-rs (#831): the Borg knows a spell that reveals invisible
+/// monsters (Sense Invisible, Detection or Reveal Monsters, the three
+/// `borg_defend_aux_inviso` casts) and has its book and the mana for it.
+pub fn detects_invisible(st: &BorgState) -> bool {
+    [SENSE_INVISIBLE, DETECTION, REVEAL_MONSTERS].into_iter().any(|spell| borg_spell_legal(st, spell))
+}
+
+/// borg-reborn-rs (#831): the Borg can cast Detect Evil (it has its book and
+/// the mana for it): that reveals the evil invisible monsters (ghosts, a
+/// poltergeist), not every one.
+pub fn detects_evil(st: &BorgState) -> bool {
+    borg_spell_legal(st, DETECT_EVIL)
+}
+
 /// Check a spell for a given effect (`borg_spell_has_effect`)
 fn borg_spell_has_effect(spell_num: i32, effect: u16) -> bool {
     engine::spell_effect_indices(spell_num).contains(&effect)
@@ -655,6 +669,11 @@ fn menu_letter(i: i32) -> keycode_t {
 
 /// Attempt to cast a spell (`borg_spell`)
 pub fn borg_spell(st: &mut BorgState, spell: borg_spells) -> bool {
+    // borg-reborn-rs (#829): not a teleport under a teleport curse
+    if crate::borg_escape::teleport_spell_blocked(st, spell) {
+        return false;
+    }
+
     let spell_num = borg_get_spell_number(st, spell);
     if spell_num < 0 {
         return false;
