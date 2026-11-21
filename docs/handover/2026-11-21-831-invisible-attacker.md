@@ -31,10 +31,10 @@ numbers):
   Borg can cast Sense Invisible, Detection or Reveal Monsters), only when the
   purse after the urgent purchases is at least 250 gold. A staff fills the same
   requirement at far more gold, so it is bought when the scrolls are not stocked.
-- **Seven new parameters, one shipped switch set** (eight added: the three
-  above, `town_invisible_count`, `town_invisible_min_gold`,
-  `town_invisible_percent`, `town_invisible_spell_percent`, and the four of the
-  mode: `recover_unseen_detect_reads`, `_probe_tries`, `_probe_max_grids`,
+- **Eight new parameters**, four for the town plan (`town_invisible_count`,
+  `town_invisible_min_gold`, `town_invisible_percent`,
+  `town_invisible_spell_percent`) and four for the mode
+  (`recover_unseen_detect_reads`, `_probe_tries`, `_probe_max_grids`,
   `_act_age`); #697's `recover_unseen_attack_turns` 500 and
   `recover_unseen_heal_hp_percent` 50 are now shipped. The compiled defaults
   stay off (a profile without these lines plays as before). Smoke re-recorded.
