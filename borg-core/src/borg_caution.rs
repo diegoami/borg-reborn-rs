@@ -960,7 +960,7 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
-fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
+fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -994,8 +994,10 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
         }
     }
     st.borg.status.desperate = true;
-    let ok = if weight > 0 && ranged_reach > 0 {
-        crate::borg_flow_stairs::weighted_desperate_flight(st, up, ranged_reach)
+    let ok = if weight > 0 {
+        // A stair that is close across the map may be far away on foot.
+        // Keep the proximity limit on the route, including any detour.
+        crate::borg_flow_stairs::weighted_desperate_flight(st, up, max_moves, ranged_reach)
     } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
@@ -1026,24 +1028,27 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // If you are within a few (3) steps of the stairs
     // and you can take some damage to get there
     // go for it
-    if b_j < p(Param::caution_desperate_stair_distance)
+    let near_up = p(Param::caution_desperate_stair_distance) - 1;
+    if b_j <= near_up
         && b_j != -1
         && pos_danger < st.borg.tr(BI_CURHP)
-        && desperate_flow(st, true, "# Desperate for Stairs (one)")
+        && desperate_flow(st, true, near_up, "# Desperate for Stairs (one)")
     {
         return true;
     }
 
     // If you are next to steps of the stairs go for it
-    if b_j <= p(Param::caution_desperate_adjacent_up_distance)
+    let adjacent_up = p(Param::caution_desperate_adjacent_up_distance);
+    if b_j <= adjacent_up
         && b_j != -1
-        && desperate_flow(st, true, "# Desperate for Stairs (two)")
+        && desperate_flow(st, true, adjacent_up, "# Desperate for Stairs (two)")
     {
         return true;
     }
 
     // Low level guys tend to waste money reading the recall scrolls
-    if b_j < p(Param::caution_desperate_scary_distance)
+    let scary_up = p(Param::caution_desperate_scary_distance) - 1;
+    if b_j <= scary_up
         && b_j != -1
         && st.borg.mon.scary
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_scary_level)
@@ -1084,15 +1089,16 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             || !safe
         {
             // try to take them on, you cant outrun them
-        } else if desperate_flow(st, true, "# Desperate for Stairs (three)") {
+        } else if desperate_flow(st, true, scary_up, "# Desperate for Stairs (three)") {
             return true;
         }
     }
 
     // If you are next to steps of the down stairs go for it
-    if b_m <= p(Param::caution_desperate_adjacent_down_distance)
+    let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
+    if b_m <= adjacent_down
         && b_m != -1
-        && desperate_flow(st, false, "# Desperate for Stairs (four)")
+        && desperate_flow(st, false, adjacent_down, "# Desperate for Stairs (four)")
     {
         return true;
     }
