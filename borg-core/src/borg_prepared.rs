@@ -1061,6 +1061,18 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
         return None;
     }
 
+    // borg-reborn-rs (#830): a cursed item that stays worn is worth a trip
+    // for Remove Curse (the harmful curses are taken off at once, so this
+    // is the mild curse on an item the Borg keeps).
+    if crate::borg_cursed::needs_remove_curse(st) {
+        return Some(Reason::fixed(
+            "restock remove curse",
+            "remove_curse",
+            st.borg.has[st.item_val.kv_scroll_remove_curse as usize],
+            1,
+        ));
+    }
+
     // need to return to town if restock is needed
     borg_restock(st, st.borg.tr(BI_CDEPTH))
 }

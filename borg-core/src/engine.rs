@@ -657,6 +657,12 @@ pub fn kind(kind: usize) -> ObjectKind {
     unsafe { *p }
 }
 
+/// `k_info[kidx].cost`: the base price of an object kind
+/// (borg-reborn-rs #830: the price of a Remove Curse scroll).
+pub fn kind_cost_of(kidx: usize) -> i32 {
+    self::kind(kidx).cost
+}
+
 /// `k_info[kind].base->max_stack`: how many objects of this kind fit in
 /// one stack (panics past `k_max` or for a kind without a base, where C
 /// would read out of bounds or through NULL).
