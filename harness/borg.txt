@@ -319,9 +319,9 @@ borg_self_scum = FALSE
 
 borg_param_town_recall_value_percent = 100
 
-# Aim to keep one Word of Recall only once at least 400 gold is available
-# after urgent shopping and the general gold reserve. Below that the planner
-# values Recall by the walk it saves. A reserve of 0 disables the target.
+# Aim to keep one Word of Recall when the purse after urgent shopping
+# reaches 400 gold. Buying a scroll must leave at least 400 gold after
+# paying its price. A reserve of 0 disables the target.
 
 borg_param_town_recall_reserve = 1
 borg_param_buy_recall_from_gold = 400

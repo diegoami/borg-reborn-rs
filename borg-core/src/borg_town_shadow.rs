@@ -426,6 +426,21 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     }
     let st: &BorgState = st;
     let budget = Budget::of(st, &stock, &trip);
+    let urgent_cost: i64 = budget.urgent.iter().map(|purchase|
+        i64::from(stock.candidates[purchase.candidate].price)).sum();
+    let gold_after_urgent = i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD))
+        .saturating_sub(urgent_cost);
+    let recall_floor = crate::params::value(crate::params::Param::buy_recall_from_gold);
+    if recall_floor > 0 {
+        let recall_budget = budget.gold.min(crate::borg_town_budget::recall_purchase_budget(gold_after_urgent, recall_floor));
+        for c in &mut stock.candidates {
+            if usize::from(c.shop) != BORG_HOME && c.price > 0
+                && crate::borg_town_budget::is_recall_scroll(st, c.tval, c.sval)
+            {
+                c.qty = i64::from(c.qty).min(recall_budget / i64::from(c.price)) as i32;
+            }
+        }
+    }
     let mask = |ns: &[Need]| ns.iter().fold(0u8, |m, &n| m | (1 << need_index(n)));
     let wares: Vec<WareFact> = stock
         .candidates
@@ -470,7 +485,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         .map(|it| (it.tval, i32::from(it.iqty)))
         .collect();
     let capability = crate::borg_town_capability::observe(st, &stock, &kit,
-        crate::borg_town_utility::Journey::of(st), budget.gold);
+        crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
     let out = step(&StepInput {

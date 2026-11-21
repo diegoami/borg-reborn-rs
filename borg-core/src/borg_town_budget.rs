@@ -271,6 +271,15 @@ impl Budget {
     }
 }
 
+pub(crate) fn is_recall_scroll(st: &BorgState, tval: u8, sval: u8) -> bool {
+    u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
+        && i32::from(sval) == st.item_val.sv_scroll_word_of_recall
+}
+
+pub(crate) fn recall_purchase_budget(gold: i64, minimum_remaining: i32) -> i64 {
+    gold.saturating_sub(i64::from(minimum_remaining)).max(0)
+}
+
 pub(crate) fn black_market_budget(gold: i64, reserve: i64, percentage: i64, legacy_share: i64) -> i64 {
     let eligible = gold.saturating_sub(reserve.max(0)).max(0);
     if percentage < 0 {

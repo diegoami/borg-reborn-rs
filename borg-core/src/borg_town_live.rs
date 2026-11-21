@@ -307,9 +307,15 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let reserve = st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET);
         let percentage = st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE);
         let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && (reserve > 0 || percentage >= 0);
-        let purchase_gold = if protects_gold {
+        let mut purchase_gold = if protects_gold {
             crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32
         } else { gold };
+        let recall_floor = crate::params::value(crate::params::Param::buy_recall_from_gold);
+        let protects_recall = a.code == action::BUY && recall_floor > 0
+            && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval);
+        if protects_recall {
+            purchase_gold = purchase_gold.min(crate::borg_town_budget::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
+        }
         let room_under_cap = if a.code == action::SELL_HOME { i32::MAX }
             else { acquisition_room(st, item.tval, item.kind) };
         let mut fits = room_under_cap > 0 && offer.is_some_and(|o| o.carry_capacity() > 0);
@@ -317,7 +323,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         if let Some(offer) = offer.filter(|_| fits && a.code == action::BUY) {
             qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap),
                 offer.purchase_quote(shop), purchase_gold);
-            if protects_gold {
+            if protects_gold || protects_recall {
                 let priced = (1..=qty).rev().find(|&n| offer.purchase_quote_quantity(shop, n) <= purchase_gold);
                 fits = priced.is_some();
                 qty = priced.unwrap_or(1);
