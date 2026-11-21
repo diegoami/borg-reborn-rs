@@ -818,7 +818,22 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // are "something you never buy": a read counted as borg_town_support_turns
     // of service, so each was worth about a Phase Door and they took a quarter
     // of the gold. A carried or found copy keeps a small value (kept, not sold).
-    for cap in [INVISIBLE, MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    for cap in [MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    // borg-reborn-rs (#831, owner: "Scrolls of Detect Invisible are not so
+    // worthless after all ... add some more value for them especially for
+    // Blackguards and those who do not have a spell to detect invisible"):
+    // with `town_invisible_count` > 0 and, after the urgent purchases, at least
+    // `town_invisible_min_gold` gold (spare money), that many reads are a requirement (as
+    // Phase Door's reserve: each worth `town_invisible_percent` of the trip's
+    // escape weight, or `town_invisible_spell_percent` when a spell the Borg
+    // can cast reveals invisible monsters, and nothing past them); 0 = #663's
+    // low value.
+    let (invisible_weight, invisible_demand) = invisible_curve(
+        invisible_count_for_budget(gold_after_urgent, param(Param::town_invisible_min_gold), param(Param::town_invisible_count)),
+        scale_percent(risk(BORG_TOWN_W_ESCAPE), invisible_percent(crate::borg_magic::detects_invisible(st))),
+        cfg(BORG_TOWN_SUPPORT_TURNS).max(1) * UNIT,
+    ).unwrap_or((low_value(ordinary), journey.turns * UNIT));
+    curve(INVISIBLE, invisible_weight, invisible_demand);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -1476,6 +1491,33 @@ mod class_heal_tests {
     }
 
     #[test]
+    fn detect_invisible_is_a_reserve_of_reads() {
+        // #831: off, #663's low value stands; on, `count` reads are a
+        // requirement worth `per_read` each and nothing past them.
+        assert_eq!(invisible_curve(0, 500, 1000), None);
+        let (weight, demand) = invisible_curve(3, 500, 1000).unwrap();
+        assert_eq!((weight, demand), (1500, -3000));
+        let row = [INVISIBLE as i64, weight, demand, 0, 0];
+        assert_eq!(coverage(&row, 1000), 500, "one read: its share");
+        assert_eq!(coverage(&row, 3000), 1500);
+        assert_eq!(coverage(&row, 9000), 1500, "past the reserve: nothing more");
+    }
+
+    #[test]
+    fn detect_invisible_is_for_spare_gold() {
+        // #831: a small purse (after the urgent purchases) keeps #663's value.
+        assert_eq!(invisible_count_for_budget(249, 250, 3), 0);
+        assert_eq!(invisible_count_for_budget(250, 250, 3), 3);
+        assert_eq!(invisible_count_for_budget(0, 0, 3), 3, "no floor");
+        assert_eq!(invisible_count_for_budget(1_000, 250, 0), 0, "off");
+    }
+
+    #[test]
+    fn a_class_with_no_detection_spell_values_the_reserve_more() {
+        assert!(invisible_percent(false) > invisible_percent(true));
+    }
+
+    #[test]
     fn what_the_borg_never_buys_keeps_a_small_value() {
         // #663: one percent, above zero so a carried copy is kept.
         assert_eq!(low_value(55_000), 550);
@@ -1484,6 +1526,28 @@ mod class_heal_tests {
         let phase = coverage(&[PHASE as i64, 55_000, 1_100, 0, 0], 1_000);
         assert!(scroll * 50 < phase, "{scroll} against a Phase Door's {phase}");
     }
+}
+
+/// borg-reborn-rs (#831, owner: "if you have the spare money"): the reserve
+/// counts only when the purse after the urgent purchases reaches `minimum`,
+/// as the Recall reserve's floor (`eligible_recall_reserve`). A small purse
+/// buys survival first.
+fn invisible_count_for_budget(gold: i64, minimum: i32, count: i32) -> i64 {
+    if gold < i64::from(minimum) { 0 } else { i64::from(count) }
+}
+
+/// borg-reborn-rs (#831): the weight per read, in percent of the trip's
+/// escape weight, of the Detect Invisible reserve.
+fn invisible_percent(has_spell: bool) -> i32 {
+    param(if has_spell { Param::town_invisible_spell_percent } else { Param::town_invisible_percent })
+}
+
+/// borg-reborn-rs (#831): the Detect Invisible requirement: `count` reads
+/// (each `service` units of INVISIBLE supply) worth `per_read` each, as a
+/// negative demand (linear up to it, nothing past it). `None` for no count:
+/// the curve stays #663's low value.
+fn invisible_curve(count: i64, per_read: i64, service: i64) -> Option<(i64, i64)> {
+    (count > 0).then(|| (per_read * count, -(count * service)))
 }
 
 /// borg-reborn-rs (#663, owner): the weight of what the Borg never buys

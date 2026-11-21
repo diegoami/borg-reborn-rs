@@ -258,7 +258,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // clear (or with nowhere to walk), heal at low HP. The walk comes first
     // so a low heal threshold cannot keep it drinking where it is struck
     // (review of #698).
-    if unseen_away(st) || unseen_heal(st) {
+    // borg-reborn-rs (#831): in the invisible-attacker mode, first detect the
+    // attacker or strike where it must be.
+    if unseen_deal(st) || unseen_away(st) || unseen_heal(st) {
         return true;
     }
 
@@ -773,6 +775,20 @@ pub(crate) fn note_unseen_attack(st: &mut BorgState, who: &[u8]) {
     st.borg.unseen_turn = now;
     st.borg.unseen_x = x;
     st.borg.unseen_y = y;
+    // borg-reborn-rs (#831): the blow is news about where the attacker is:
+    // the grids found empty are no longer known to be. A blow after the
+    // window lapsed starts a new episode, with its own budgets.
+    st.borg.unseen_empty.clear();
+    st.borg.unseen_found = None;
+    if turns > 0 && !recent {
+        st.borg.unseen_detects = 0;
+        st.borg.unseen_probes = 0;
+        st.borg.unseen_probe = None;
+    }
+    if turns > 0 && !st.borg.unseen_mode {
+        st.borg.unseen_mode = true;
+        borg_note(st, &format!("# Mode: invisible attacker near ({y},{x})"));
+    }
 }
 
 /// borg-reborn-rs (#697): "followed" after a new unseen attack: set when it
@@ -842,6 +858,169 @@ fn unseen_heal(st: &mut BorgState) -> bool {
     healed
 }
 
+/// borg-reborn-rs (#831): the directions a blind attack tries, in order, as
+/// (direction key, dx, dy): the keypad's, north first (`ddx`/`ddy`).
+const PROBE_DIRS: [(i32, i32, i32); 8] =
+    [(8, 0, -1), (2, 0, 1), (4, -1, 0), (6, 1, 0), (7, -1, -1), (9, 1, -1), (1, -1, 1), (3, 1, 1)];
+
+/// borg-reborn-rs (#831): the grids where an unseen attacker that has just
+/// struck may stand, in the order of `PROBE_DIRS`: the open adjacent grids
+/// (`open`) not found empty since the blow.
+fn probe_candidates(at: loc, open: impl Fn(loc) -> bool, empty: &[loc]) -> Vec<loc> {
+    PROBE_DIRS
+        .iter()
+        .map(|&(_, dx, dy)| loc { x: at.x + dx, y: at.y + dy })
+        .filter(|&g| open(g) && !empty.contains(&g))
+        .collect()
+}
+
+/// borg-reborn-rs (#831): the grid to attack, or none. The grid where a
+/// blind attack already struck something, while it is a candidate; else the
+/// first candidate, but only when there are at most `max` of them (in a
+/// corridor, not in the open, where it would be guesswork).
+fn probe_choice(candidates: &[loc], found: Option<loc>, max: i32) -> Option<loc> {
+    if let Some(f) = found.filter(|f| candidates.contains(f)) {
+        return Some(f);
+    }
+    if candidates.len() as i32 > max {
+        return None;
+    }
+    candidates.first().copied()
+}
+
+/// borg-reborn-rs (#831): the grid is one `alter` (`+`) may attack: bare
+/// floor or a staircase, with no known object, trap or monster. Alter would
+/// tunnel, open, close or disarm anything else (`cmd-cave.c:do_cmd_alter_aux`).
+fn probe_grid_open(st: &BorgState, g: loc) -> bool {
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS, FEAT_MORE};
+    if !engine::square_in_bounds_fully(g.x, g.y) {
+        return false;
+    }
+    let ag = st.cave.grid(g.x, g.y);
+    let feat = u32::from(ag.feat);
+    (feat == FEAT_FLOOR || feat == FEAT_LESS || feat == FEAT_MORE)
+        && !ag.trap
+        && ag.take == 0
+        && ag.kill == 0
+}
+
+/// borg-reborn-rs (#831): a blow this recent (game turns) means the attacker
+/// is next to the Borg now, so it is worth acting on.
+fn unseen_fresh(st: &BorgState) -> bool {
+    let age = param(Param::recover_unseen_act_age);
+    age > 0 && engine::game_turn() - st.borg.unseen_turn <= age
+}
+
+/// borg-reborn-rs (#831): the blind attacks of the episode are used up, and
+/// it still strikes (the mode is active).
+fn unseen_probes_spent(st: &BorgState) -> bool {
+    let tries = param(Param::recover_unseen_probe_tries);
+    tries > 0 && st.borg.unseen_probes >= tries
+}
+
+/// borg-reborn-rs (#831, owner: "when there is an invisible creature around,
+/// switch mode and deal with it"): the "invisible attacker near" mode. It is
+/// entered by an unseen blow (`note_unseen_attack`), holds the rest
+/// (`unseen_rest_held`) and ends `recover_unseen_attack_turns` game turns
+/// after the last blow, or on a new level. In it, a blow that has just
+/// struck is dealt with: reveal the attacker (`detect_invisible_now`, at
+/// most `recover_unseen_detect_reads` a stretch), else strike where it must
+/// be (`unseen_probe`); what is left (walking away, healing, leaving) is
+/// `unseen_away` and `unseen_heal`.
+fn unseen_deal(st: &mut BorgState) -> bool {
+    st.borg.unseen_probe = None;
+    if !unseen_active(st) {
+        if st.borg.unseen_mode {
+            st.borg.unseen_mode = false;
+            borg_note(st, "# Mode: invisible attacker gone (no blow for a while)");
+        }
+        return false;
+    }
+    if !unseen_fresh(st) {
+        return false;
+    }
+    unseen_detect(st) || unseen_probe(st)
+}
+
+/// borg-reborn-rs (#831): read, quaff, use or cast a detection of invisible
+/// monsters, at most `recover_unseen_detect_reads` times in the episode.
+fn unseen_detect(st: &mut BorgState) -> bool {
+    if st.borg.unseen_detects >= param(Param::recover_unseen_detect_reads) {
+        return false;
+    }
+    if !crate::borg_fight_defend::detect_invisible_now(st) {
+        return false;
+    }
+    st.borg.unseen_detects += 1;
+    borg_note(st, "# Detecting the invisible attacker.");
+    true
+}
+
+/// borg-reborn-rs (#831): strike the grid an unseen attacker that has just
+/// struck may be in, with `alter`, which attacks a monster there, seen or not,
+/// and otherwise only spends the turn ("You spin around."). At most
+/// `recover_unseen_probe_tries` a stretch. Not while afraid (the game refuses
+/// the blow), confused (it picks its own direction) or when the Borg is hurt
+/// enough to drink a cure first (`recover_unseen_heal_hp_percent`).
+fn unseen_probe(st: &mut BorgState) -> bool {
+    if param(Param::recover_unseen_probe_tries) <= 0
+        || unseen_probes_spent(st)
+        || st.borg.tr(BI_ISAFRAID) != 0
+        || st.borg.tr(BI_ISCONFUSED) != 0
+        || unseen_heal_due(param(Param::recover_unseen_heal_hp_percent), st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP))
+    {
+        return false;
+    }
+    let candidates = probe_candidates(st.borg.c, |g| probe_grid_open(st, g), &st.borg.unseen_empty);
+    let Some(g) = probe_choice(&candidates, st.borg.unseen_found, param(Param::recover_unseen_probe_max_grids)) else {
+        return false;
+    };
+    let dir = borg_flow_misc::borg_extract_dir(st.borg.c.y, st.borg.c.x, g.y, g.x);
+    borg_note(st, &format!("# Striking at ({},{}) for the unseen attacker.", g.y, g.x));
+    borg_keypress(st, keycode_t::from(b'+'));
+    borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
+    st.borg.unseen_probe = Some(g);
+    st.borg.unseen_probes += 1;
+    true
+}
+
+/// borg-reborn-rs (#831): the game's answer to a blind attack, read from the
+/// message: "You spin around." the grid was empty; a blow at "something" it
+/// is there; "You are too afraid to attack" the Borg cannot; "You have
+/// killed it/something/someone." the mode is over.
+pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) {
+    if !st.borg.unseen_mode {
+        return;
+    }
+    if unseen_kill_message(msg) {
+        st.borg.unseen_mode = false;
+        st.borg.unseen_turn = 0;
+        st.borg.unseen_followed = false;
+        st.borg.unseen_probe = None;
+        st.borg.unseen_found = None;
+        borg_note(st, "# Mode: invisible attacker killed");
+        return;
+    }
+    let Some(g) = st.borg.unseen_probe else { return };
+    if msg == b"You spin around." {
+        st.borg.unseen_empty.push(g);
+        st.borg.unseen_probe = None;
+    } else if crate::borg_caution::unseen_melee_message(msg) {
+        st.borg.unseen_found = Some(g);
+        st.borg.unseen_probe = None;
+    } else if msg.starts_with(b"You are too afraid to attack ") {
+        // Do not try again this episode.
+        st.borg.unseen_probes = param(Param::recover_unseen_probe_tries);
+        st.borg.unseen_probe = None;
+    }
+}
+
+/// The game's message for the melee death of a monster the Borg cannot see
+/// (`mon-util.c:mon_take_hit`: "You have killed %s." with "it").
+fn unseen_kill_message(msg: &[u8]) -> bool {
+    [b"You have killed it.".as_slice(), b"You have killed something.", b"You have killed someone."].contains(&msg)
+}
+
 /// borg-reborn-rs (#697): while an unseen attack is recent and the Borg is
 /// hurt (or short of mana) near where it struck, walk to a known grid at
 /// least `recover_unseen_attack_distance` grids from there (a corridor or
@@ -855,6 +1034,11 @@ fn unseen_away(st: &mut BorgState) -> bool {
         if !st.borg.goal.leaving {
             crate::borg_caution::start_leaving(st, "# Leaving (an unseen attacker followed)");
         }
+        return false;
+    }
+    // borg-reborn-rs (#831): the blind attacks are spent and it still strikes.
+    if unseen_probes_spent(st) {
+        crate::borg_caution::start_leaving(st, "# Leaving (an unseen attacker, not found)");
         return false;
     }
     let wants_rest = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
@@ -1026,7 +1210,95 @@ mod tests {
 
 #[cfg(test)]
 mod unseen_tests {
-    use super::{unseen_followed_next, unseen_heal_due, unseen_name, unseen_recent};
+    use super::{
+        probe_candidates, probe_choice, unseen_followed_next, unseen_heal_due, unseen_kill_message,
+        unseen_mode_message, unseen_name, unseen_recent,
+    };
+    use crate::headers::z_type_h::loc;
+    use crate::state::BorgState;
+
+    fn at(x: i32, y: i32) -> loc {
+        loc { x, y }
+    }
+
+    /// #831: a corridor running east-west: two open neighbours, north first
+    /// in the order of the directions; a found-empty grid is left out.
+    #[test]
+    fn candidates_in_a_corridor() {
+        let me = at(10, 10);
+        let open = |g: loc| g.y == 10 && (g.x == 9 || g.x == 11);
+        assert_eq!(probe_candidates(me, open, &[]), vec![at(9, 10), at(11, 10)], "west before east");
+        assert_eq!(probe_candidates(me, open, &[at(9, 10)]), vec![at(11, 10)]);
+        assert!(probe_candidates(me, |_| false, &[]).is_empty());
+        assert_eq!(probe_candidates(me, |_| true, &[]).len(), 8, "the open: all eight");
+    }
+
+    /// #831: the grid struck is kept; else the first candidate, but only
+    /// when there are at most `max`; none in the open.
+    #[test]
+    fn choosing_the_grid_to_strike() {
+        let (a, b, c, d) = (at(1, 1), at(2, 2), at(3, 3), at(4, 4));
+        assert_eq!(probe_choice(&[a], None, 3), Some(a), "the only candidate");
+        assert_eq!(probe_choice(&[a, b, c], None, 3), Some(a), "as many as the maximum");
+        assert_eq!(probe_choice(&[a, b, c, d], None, 3), None, "the open: guesswork");
+        assert_eq!(probe_choice(&[a, b, c, d], Some(c), 3), Some(c), "it struck something there: again");
+        assert_eq!(probe_choice(&[a, b], Some(d), 3), Some(a), "that grid is no longer a candidate");
+        assert_eq!(probe_choice(&[], None, 3), None);
+    }
+
+    /// #831: the game's answers to a blind attack.
+    #[test]
+    fn answers_to_a_blind_attack() {
+        let mut st = BorgState::default();
+        st.borg.unseen_mode = true;
+        // Without a blind attack under way, nothing is learnt.
+        unseen_mode_message(&mut st, b"You spin around.");
+        assert!(st.borg.unseen_empty.is_empty());
+        st.borg.unseen_probe = Some(at(5, 5));
+        unseen_mode_message(&mut st, b"You spin around.");
+        assert_eq!(st.borg.unseen_empty, vec![at(5, 5)]);
+        assert_eq!(st.borg.unseen_probe, None);
+        st.borg.unseen_probe = Some(at(6, 5));
+        unseen_mode_message(&mut st, b"You hit something (3).");
+        assert_eq!(st.borg.unseen_found, Some(at(6, 5)));
+        assert_eq!(st.borg.unseen_probe, None);
+        st.borg.unseen_probe = Some(at(7, 5));
+        unseen_mode_message(&mut st, b"You miss someone.");
+        assert_eq!(st.borg.unseen_found, Some(at(7, 5)));
+        // A blow at something seen is not an answer.
+        st.borg.unseen_probe = Some(at(8, 5));
+        unseen_mode_message(&mut st, b"You hit the kobold.");
+        assert_eq!(st.borg.unseen_found, Some(at(7, 5)));
+        assert_eq!(st.borg.unseen_probe, Some(at(8, 5)));
+        // Out of the mode, none of this is read.
+        st.borg.unseen_mode = false;
+        unseen_mode_message(&mut st, b"You spin around.");
+        assert_eq!(st.borg.unseen_empty, vec![at(5, 5)]);
+    }
+
+    /// #831: afraid, the game refuses the blow (`player-attack.c`: "You are
+    /// too afraid to attack %s!"): the pending attack is dropped, and the
+    /// episode's blind attacks are spent (`recover_unseen_probe_tries`).
+    #[test]
+    fn afraid_ends_the_blind_attacks() {
+        let mut st = BorgState::default();
+        st.borg.unseen_mode = true;
+        st.borg.unseen_probe = Some(at(5, 5));
+        unseen_mode_message(&mut st, b"You are too afraid to attack something!");
+        assert_eq!(st.borg.unseen_probe, None, "the pending attack is dropped");
+    }
+
+    /// #831: a melee kill of a monster the Borg cannot see (`mon-util.c`:
+    /// "You have killed %s.", "it"); a seen one's is "slain" or "destroyed".
+    #[test]
+    fn kill_of_the_unseen() {
+        for m in [b"You have killed it.".as_slice(), b"You have killed something.", b"You have killed someone."] {
+            assert!(unseen_kill_message(m));
+        }
+        for m in [b"You have slain the kobold.".as_slice(), b"You have destroyed it.", b"You have killed the kobold.", b"It dies."] {
+            assert!(!unseen_kill_message(m));
+        }
+    }
 
     /// #697 (re-review of #698): the heal threshold is strict.
     #[test]
