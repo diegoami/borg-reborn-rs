@@ -164,8 +164,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1914` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1914` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:524` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:678` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:528` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:719` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:690` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
@@ -1982,9 +1982,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:471` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:475` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:328` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:462` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:466` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2112,11 +2112,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:420` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:424` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1575` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1538` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1594` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1554` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5236,13 +5236,17 @@ Word of Recall, weight 5).
   weight, stacks with copies past the minimum come first, priced by one copy
   on their curve, and only those copies count as freed. The executor stores
   one copy and solves again, so a stack goes down copy by copy.
-- **`town_recall_curve_scale_percent`** (compiled 100, **shipped 110**;
+- **`town_recall_curve_scale_percent`** (compiled 0, **shipped 110**;
   owner: "a curve for word of recall starting from 1 and make it be 110 by
-  default, so that they buy a few"). It stretches the RECALL curve, weight
-  and demand together, as the healing and Phase Door scales do: with the
-  reserve the requirement reaches 1.1 scrolls, so a second is worth a tenth
-  of the first (`recall_curve`); without it, the walk curve values a spare.
-  Range 1–10,000; 100 = before #859.
+  default, so that they buy a few"; "use the trip weight"). Above 0, every
+  scroll is valued on a diminishing curve on the trip weight
+  (`borg_town_w_trip`), weight and demand scaled by the percent as the
+  healing and Phase Door scales do: each scroll is worth less than the last
+  and never nothing, so a Borg with gold and room carries spares. The
+  `town_recall_reserve` requirement stays on top of it, in a row of its own
+  (`RECALL_RESERVE`, as `PHASE_RESERVE` is on top of `PHASE`;
+  `recall_curve`). 0 = #557: the reserve alone, nothing past it, and below
+  the gold floor the walk a scroll saves.
 - The shipped values are hypotheses. The zoo request on the PR measures
   them (RULES 14, 20).
 
@@ -5251,4 +5255,4 @@ Word of Recall, weight 5).
 | `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:264` |
 | `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:265` |
 | `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:319` |
-| `town_recall_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:772` |
+| `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:772` |

@@ -341,9 +341,10 @@ borg_self_scum = FALSE
 borg_param_town_recall_value_percent = 100
 
 # The Word of Recall curve (#859, owner: "starting from 1 and make it be 110
-# by default, so that they buy a few"): stretches the curve, weight and
-# demand together. At 110 a scroll past the reserve is worth a tenth of the
-# first. 100 = before #859.
+# by default, so that they buy a few"; "use the trip weight"): above 0 every
+# scroll is valued on a diminishing curve on the trip weight, each worth less
+# than the last and never nothing, with the reserve a requirement on top.
+# Higher values the spares more. 0 = before #859 (the reserve alone).
 
 borg_param_town_recall_curve_scale_percent = 110
 
