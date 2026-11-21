@@ -441,6 +441,13 @@ jobs:
           cmd /c play-headless.cmd "$env:RUNNER_TEMP\g1" 101 0 0 20000; if ($LASTEXITCODE) { throw 'game 1' }
           cmd /c play-headless.cmd "$env:RUNNER_TEMP\g2" 102 2 1 20000; if ($LASTEXITCODE) { throw 'game 2' }
           cmd /c play-headless.cmd "$env:RUNNER_TEMP\g3" 103 5 3 20000; if ($LASTEXITCODE) { throw 'game 3' }
+          # Started directly (double-clicked: no -d options), the game saves in
+          # lib\save and reads the shipped settings from lib\user (the owner's
+          # "save failed" on v0.1.0-alpha.1).
+          $p = Start-Process -FilePath .\angband.exe -ArgumentList '-mborgh -n -uDirect -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters -save-on-stop lib/save/Direct' -NoNewWindow -Wait -PassThru -RedirectStandardError "$env:RUNNER_TEMP\direct.err"
+          Get-Content "$env:RUNNER_TEMP\direct.err" -Tail 5
+          if (-not (Test-Path lib\save\Direct) -or (Get-Item lib\save\Direct).Length -eq 0) { throw 'a game started directly did not save' }
+          if (-not (Select-String -Path lib\user\borg.txt -Pattern '^borg_reborn_core = borg-rs$' -Quiet)) { throw 'lib\user\borg.txt does not select the borg-rs core' }
       - run: |
           t=$(cygpath -u '${{ runner.temp }}')
           python3 scripts/release/compare-games.py harness/reference/smoke-borg-rs \

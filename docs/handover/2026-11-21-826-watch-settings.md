@@ -39,3 +39,27 @@
 - `harness/play.sh` now plays the borg-rs core by default. It played the
   frozen reborn core before, without anyone choosing that. `BORG_CORE=reborn`
   still selects the reborn core.
+
+## Added: a game started directly from a package (owner, on v0.1.0-alpha.1)
+
+The owner double-clicked `angband.exe` in the Windows package: "save
+failed". Started without `-d` options, the game uses `lib/save`,
+`lib/scores`, `lib/panic`, `lib/user` and `lib/user/archive`. The engine
+creates them only on Unix (`create_needed_dirs` is inside `#ifdef UNIX`), and
+the package shipped none of them. `lib/user` also had no `borg.txt`, so a
+game started that way played the frozen reborn core.
+
+- `scripts/release/package.sh`, on every platform:
+  - ships those folders, empty;
+  - drops anything games in the build tree left there;
+  - writes the shipped settings into `lib/user`;
+  - writes folder entries into the zip, so empty folders survive.
+- The release `windows` job:
+  - saves a game with the directories as `watch-borg.cmd` passes them
+    (backslash paths);
+  - starts the unzipped `angband.exe` with no `-d` options and saves to
+    `lib\save`;
+  - checks that `lib\user\borg.txt` selects the borg-rs core.
+- `PLAYING.txt`: a direct start works, with saves in `lib/save`.
+- `v0.1.0-alpha.1`'s draft has the old packages. It needs a new release
+  run after this merges, and its draft deleted first.

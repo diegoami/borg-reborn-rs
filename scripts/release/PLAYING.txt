@@ -35,6 +35,8 @@ a display the game opens a window; on macOS, on Windows, without a display
 or with --terminal it plays in the terminal (make it at least 80x24).
 Saves and the Borg's settings are kept in data/ (BORG_PLAY_DATA_DIR to put
 them elsewhere); edit data/user/borg.txt to change a setting.
+Starting angband (angband.exe) directly also works, with the same shipped
+settings: its saves and settings are then in lib/save and lib/user instead.
 
 A game without a window
 -----------------------

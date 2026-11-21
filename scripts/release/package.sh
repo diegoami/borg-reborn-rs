@@ -79,6 +79,17 @@ BT="$STAGE/borg/borg.txt"
 cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
 cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 
+# A game started directly (no -d options: double-clicking angband.exe, or
+# ./angband) uses lib/user, lib/save, lib/scores, lib/panic and
+# lib/user/archive (DEFAULT_LIB_PATH ./lib/). The engine creates them only on
+# Unix (create_needed_dirs), so on Windows a save failed (the owner, on
+# v0.1.0-alpha.1): ship them, empty, on every platform; drop what games in the
+# build tree may have left there; and give lib/user the shipped settings, so
+# that game plays the borg-rs core as the launchers' do (#826).
+rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user"
+mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
+"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"
+
 # Launchers and the short guide.
 if [ "$PLATFORM" = windows ]; then
     # CRLF, as cmd.exe and Notepad expect.
@@ -142,11 +153,23 @@ with open(os.path.join(stage, 'SHA256SUMS'), 'w', newline='\n') as sums:
             h = hashlib.sha256(open(os.path.join(stage, f), 'rb').read()).hexdigest()
             sums.write(f'{h}  {f.replace(os.sep, "/")}\n')
 files = sorted(set(files) | {'SHA256SUMS'})
+# Every directory, so that empty ones (lib/save, ...) are in the archive too.
+dirs = set()
+for f in files:
+    d = os.path.dirname(f)
+    while d:
+        dirs.add(d); d = os.path.dirname(d)
+dirs |= {os.path.relpath(os.path.join(r, x), stage) for r, ds, _ in os.walk(stage) for x in ds}
+dirs = sorted(dirs)
 def mode(f):
     return 0o755 if os.stat(os.path.join(stage, f)).st_mode & stat.S_IXUSR else 0o644
 if platform == 'windows':
     path = os.path.join(out, name + '.zip')
     with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
+        for d in [''] + dirs:
+            info = zipfile.ZipInfo(name + '/' + (d.replace(os.sep, '/') + '/' if d else ''), (1980, 1, 1, 0, 0, 0))
+            info.external_attr = (0o40755 << 16) | 0x10
+            z.writestr(info, b'')
         for f in files:
             info = zipfile.ZipInfo(name + '/' + f.replace(os.sep, '/'), (1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -155,12 +178,6 @@ if platform == 'windows':
 else:
     path = os.path.join(out, name + '.tar.gz')
     with tarfile.open(path, 'w:gz') as t:
-        dirs = set()
-        for f in files:
-            d = os.path.dirname(f)
-            while d:
-                dirs.add(d); d = os.path.dirname(d)
-        dirs = sorted(dirs)
         for d in [''] + dirs:
             info = tarfile.TarInfo(name + ('/' + d.replace(os.sep, '/') if d else ''))
             info.type, info.mode = tarfile.DIRTYPE, 0o755
