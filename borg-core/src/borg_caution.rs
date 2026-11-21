@@ -328,6 +328,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
                 || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
                 || borg_quaff_crit(st, false)
+                || (confusion_clw_cure() && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
                 || borg_quaff_potion(st, st.item_val.sv_potion_healing)
                 || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
                 || borg_activate_item(st, st.act.cure_confusion)
@@ -365,6 +366,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             // and try to fix the confusion
             if borg_quaff_crit(st, true)
                 || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+                || (confusion_clw_cure() && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
                 || borg_quaff_potion(st, st.item_val.sv_potion_healing)
             {
                 borg_note(st, "# Fixing Confusion. Level 5");
@@ -1019,6 +1021,19 @@ fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bo
 /// hop onto them in very few steps, try to head to them out of
 /// desperation.
 fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
+    // borg-reborn-rs (#837, owner): "while confused, don't start a Desperate
+    // for Stairs walk": 75% of its steps go astray (`player_confuse_dir`,
+    // `player-util.c:1353`; the walk into the wall of the Necromancer's last
+    // turns). With a cure in the pack the cures at the end of `borg_caution`
+    // come first, unless it is held next to an immobile attacker (#646).
+    if p(Param::caution_confused_cure_before_walk) != 0
+        && st.borg.tr(BI_ISCONFUSED) != 0
+        && confusion_cure_carried(st)
+        && !confusion_cure_held(st)
+    {
+        borg_note(st, "# Confused: no walk to the stairs before the cure (#837)");
+        return false;
+    }
     // Check for an existing "up stairs"
     let b_j = nearest_free_stair(st, true);
 
@@ -1634,6 +1649,13 @@ fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
 /// busy level): an immobile one is left by stepping away.
 fn mobile_danger(st: &mut BorgState) -> i32 {
     let (y, x) = (st.borg.c.y, st.borg.c.x);
+    mobile_danger_at(st, y, x)
+}
+
+/// `mobile_danger` for grid (`y`, `x`): what the monsters that move within
+/// two grids of it would do there (borg-reborn-rs #837: the ranking of the
+/// grids a step away may take).
+fn mobile_danger_at(st: &mut BorgState, y: i32, x: i32) -> i32 {
     let mut danger = 0i32;
     for i in 1..i32::from(st.kills.nxt) {
         let kill = &st.kills.kills[i as usize];
@@ -1682,15 +1704,76 @@ fn step_allowed(mon: &mut crate::borg::BorgMonInfo, level: BorgTime, pos: (u8, u
     }
 }
 
+/// borg-reborn-rs (#837, owner): `caution_confused_clw_cure`. A Potion of
+/// Cure Light Wounds takes 20 turns off confusion (`object.txt`
+/// `TIMED_DEC:CONFUSED`), which clears a grey mushroom patch's 3 + 1d(level)
+/// turns (`mon-blows.c:1001`); in C it cures blindness only.
+fn confusion_clw_cure() -> bool {
+    p(Param::caution_confused_clw_cure) != 0
+}
+
+/// borg-reborn-rs (#837): the Borg carries something its confusion chains
+/// would drink or eat (Clear Mind, Cure Serious or Critical Wounds, Cure
+/// Light Wounds with `caution_confused_clw_cure`, Healing, a Curing staff).
+fn confusion_cure_carried(st: &mut BorgState) -> bool {
+    let mut cures = vec![
+        (TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind),
+        (TV_POTION as i32, st.item_val.sv_potion_cure_serious),
+        (TV_POTION as i32, st.item_val.sv_potion_cure_critical),
+        (TV_POTION as i32, st.item_val.sv_potion_healing),
+        (TV_STAFF as i32, st.item_val.sv_staff_curing),
+    ];
+    if confusion_clw_cure() {
+        cures.push((TV_POTION as i32, st.item_val.sv_potion_cure_light));
+    }
+    cures.into_iter().any(|(tval, sval)| borg_slot(st, tval, sval) != -1)
+}
+
+/// borg-reborn-rs (#837): whether `step_allowed` would allow another step
+/// away from the attacker at `pos`, without recording one.
+fn step_left(mon: &crate::borg::BorgMonInfo, level: BorgTime, pos: (u8, u8), confused: bool) -> bool {
+    if mon.immobile_stepped_level != level {
+        return true;
+    }
+    let (count, limit) = if confused { (2, CONFUSED_STEPS) } else { (3, 1) };
+    let used = |e: &[u8; 4]| e[2] > 0 || e[3] > 0;
+    match mon.immobile_stepped.iter().find(|e| used(e) && (e[0], e[1]) == pos) {
+        Some(e) => e[count] < limit,
+        None => mon.immobile_stepped.iter().any(|e| !used(e)),
+    }
+}
+
 /// borg-reborn-rs (#646, review of #659): the confusion cure is held next to
 /// an immobile attacker, at both cure sites (`borg_heal` and the cures at
 /// the end of `borg_caution`), unless the moving monsters near are as
 /// dangerous as the HP left.
+///
+/// borg-reborn-rs (#837, `caution_confusion_cure_when_stuck`): held only
+/// while `immobile_step_away` can still step (a qualifying grid, tries left).
+/// With none the Borg neither stepped nor cured, and melee went on confused.
 fn confusion_cure_held(st: &mut BorgState) -> bool {
-    p(Param::caution_ranged_vs_immobile) != 0
-        && st.borg.tr(BI_ISCONFUSED) != 0
-        && immobile_attacker_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
-        && mobile_danger(st) < st.borg.tr(BI_CURHP)
+    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_ISCONFUSED) == 0 {
+        return false;
+    }
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+        return false;
+    };
+    if mobile_danger(st) >= st.borg.tr(BI_CURHP) {
+        return false;
+    }
+    if p(Param::caution_confusion_cure_when_stuck) != 0 {
+        let pos = (st.kills.kills[who].pos.y as u8, st.kills.kills[who].pos.x as u8);
+        // In town `immobile_step_away` never steps.
+        let can_step = st.borg.tr(BI_CDEPTH) != 0
+            && step_left(&st.borg.mon, st.borg.time.level, pos, true)
+            && best_step_away(st).is_some();
+        if !can_step {
+            borg_note(st, "# No step out of reach of the immobile attacker: curing confusion anyway (#837)");
+            return false;
+        }
+    }
+    true
 }
 
 /// borg-reborn-rs (#646): whether to step away from an adjacent immobile
@@ -1733,6 +1816,28 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     if !wanted {
         return false;
     }
+    let Some(i) = best_step_away(st) else { return false };
+    let pos = (st.kills.kills[who].pos.y as u8, st.kills.kills[who].pos.x as u8);
+    // #713: a creature kept at range allows the confused tries' count of
+    // steps (3), not the single ranged step.
+    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused || kept) {
+        return false;
+    }
+    let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
+    let why = if kept { ", kept at range (#713)" } else if confused { ", confused" } else { ", ranged first" };
+    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), why));
+    borg_keypress(st, i2d(i32::from(engine::ddd(i))));
+    st.borg.goal.type_0 = 0;
+    true
+}
+
+/// The grid `immobile_step_away` steps to (an index into the eight
+/// directions), if any: a free floor grid with no trap, out of the reach of
+/// every immobile attacker, less dangerous than this one. Chosen by
+/// `caution_immobile_step_to_exit` (#736) and `caution_immobile_step_mobile_first`
+/// (#837); records nothing (`confusion_cure_held` asks it too).
+fn best_step_away(st: &mut BorgState) -> Option<usize> {
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     // Review of #659: only a grid less dangerous than this one, and not the
     // grid of a bounce (as the back-away).
     let here = borg_danger(st, cy, cx, 1, true, false);
@@ -1742,8 +1847,8 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     // 0 = the least danger only.
     let to_exit = p(Param::caution_immobile_step_to_exit) != 0;
     let steps = if to_exit { crate::borg_flow_stairs::stair_steps_around(st) } else { [255; 8] };
-    let mut best: Option<(usize, i32)> = None;
-    let mut best_steps = i32::MAX;
+    let mobile_first = p(Param::caution_immobile_step_mobile_first) != 0;
+    let mut best: Option<(usize, (i32, i32, i32))> = None;
     for i in 0..8 {
         let x = cx + i32::from(engine::ddx_ddd(i));
         let y = cy + i32::from(engine::ddy_ddd(i));
@@ -1758,25 +1863,15 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         if k >= here {
             continue;
         }
-        let n = steps[i];
-        if best.is_none_or(|(_, b)| (n, k) < (best_steps, b)) {
-            best = Some((i, k));
-            best_steps = n;
+        // #837: with `caution_immobile_step_mobile_first`, the danger from the
+        // monsters that move there comes before the stairs.
+        let mobile = if mobile_first { mobile_danger_at(st, y, x) } else { 0 };
+        let key = (mobile, i32::from(steps[i]), k);
+        if best.is_none_or(|(_, b)| key < b) {
+            best = Some((i, key));
         }
     }
-    let Some((i, _)) = best else { return false };
-    let pos = (st.kills.kills[who].pos.y as u8, st.kills.kills[who].pos.x as u8);
-    // #713: a creature kept at range allows the confused tries' count of
-    // steps (3), not the single ranged step.
-    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused || kept) {
-        return false;
-    }
-    let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
-    let why = if kept { ", kept at range (#713)" } else if confused { ", confused" } else { ", ranged first" };
-    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), why));
-    borg_keypress(st, i2d(i32::from(engine::ddd(i))));
-    st.borg.goal.type_0 = 0;
-    true
+    best.map(|(i, _)| i)
 }
 
 /// The common start of the retreat and back-away tests: some danger and
@@ -2953,6 +3048,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         if borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_crit(st, false)
+            || (confusion_clw_cure() && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
             || borg_quaff_potion(st, st.item_val.sv_potion_healing)
             || borg_activate_item(st, st.act.cure_confusion)
             || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
@@ -6885,4 +6981,40 @@ pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
         || (st.borg.tr(BI_ISHUNGRY) != 0
             && crate::borg_item_use::borg_eat_when_hungry(st))
         || (st.borg.tr(BI_ISWEAK) != 0 && borg_eat_food_any(st))
+}
+
+#[cfg(test)]
+mod confused_step_tests {
+    use super::{step_allowed, step_left};
+
+    /// #837: the peek agrees with the recording check, for the confused
+    /// tries (three) and the ranged step (one), on a new level and a full memory.
+    #[test]
+    fn peek_matches_the_recorded_step() {
+        let mut mon = crate::borg::BorgMonInfo::default();
+        let pos = (10u8, 20u8);
+        for confused in [true, false] {
+            let level = if confused { 1 } else { 2 };
+            let limit = if confused { 3 } else { 1 };
+            for tried in 0..=limit {
+                let peek = step_left(&mon, level, pos, confused);
+                assert_eq!(peek, tried < limit, "confused {confused}, {tried} used");
+                // `step_allowed` agrees, and only it records.
+                assert_eq!(step_allowed(&mut mon, level, pos, confused), peek);
+            }
+        }
+    }
+
+    /// A full memory (sixteen attackers) refuses a new one, as `step_allowed` does.
+    #[test]
+    fn full_memory_refuses_a_new_attacker() {
+        let mut mon = crate::borg::BorgMonInfo::default();
+        for k in 0..16u8 {
+            assert!(step_allowed(&mut mon, 1, (k, k), true));
+        }
+        assert!(!step_left(&mon, 1, (99, 99), true));
+        assert!(!step_allowed(&mut mon, 1, (99, 99), true));
+        assert!(step_left(&mon, 1, (3, 3), true), "a known attacker keeps its tries");
+        assert!(step_left(&mon, 2, (99, 99), true), "a new level forgets them");
+    }
 }

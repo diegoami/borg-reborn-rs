@@ -444,6 +444,27 @@ mod tests {
         out
     }
 
+    /// #837: the two kobold shaman lines of the confusion arms append to the
+    /// shipped list: attack on sight (a missile, spell or throw first), or
+    /// leave (a scare up to CL 6-9). Neither is shipped.
+    #[test]
+    fn kobold_shaman_arm_lines_parse_over_the_shipped_list() {
+        let races = game_races();
+        let resolve = |name: &str| races.iter().position(|(n, _)| n == name).map(|i| i + 1);
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let shipped_text = std::fs::read_to_string(root.join("harness/scary_monsters.txt")).unwrap();
+        let shaman = resolve("kobold shaman").unwrap();
+        let shipped = parse(&shipped_text, &resolve).unwrap();
+        assert_eq!(attack_reason(&shipped, shaman, b"kobold", who(1, 0)), None, "not in the shipped list");
+        let attack = parse(&format!("{shipped_text}\nkobold shaman | 50 | | attack | confusing-caster\n"), &resolve).unwrap();
+        assert_eq!(attack_reason(&attack, shaman, b"kobold", who(1, 1)), Some("confusing-caster"));
+        assert_eq!(attack_reason(&attack, shaman, b"kobold", who(51, 1)), None);
+        let leave = parse(&format!("{shipped_text}\nkobold shaman | 6-9\n"), &resolve).unwrap();
+        assert!(is_scary(&leave, shaman, b"kobold", who(6, 0)), "a Warrior leaves it up to CL 6");
+        assert!(is_scary(&leave, shaman, b"kobold", who(9, 1)), "a Mage up to CL 9");
+        assert!(!is_scary(&leave, shaman, b"kobold", who(10, 1)));
+    }
+
     /// Review of #527: the C file reproduces the compiled C list (and the
     /// shipped ranges do for the toughest classes) over every race of the
     /// game data, every class, levels 0-60 and the breeder cases, not only
