@@ -122,3 +122,4 @@ pub fn do_cmd_borg() {
 // Owner-requested class/level errand-plan POC (#305).
 pub mod errands_plan;
 pub mod scary_list;
+mod borg_town_hunt;

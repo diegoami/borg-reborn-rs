@@ -130,6 +130,8 @@ pub struct PlanRecord {
     pub spells: u8,
     /// Town settings in index order (v4: 12, v5: 24).
     pub params: [i64; PARAMS],
+    pub black_market_reserve: i64,
+    pub black_market_percentage: i64,
     /// `[gold, pack_slots, home_slots, weight]` after the urgent needs.
     pub limits: [i64; 4],
     /// `[pack_capacity, home_capacity]`.
@@ -254,6 +256,14 @@ impl PlanRecord {
         num(out, self.spells);
         field(out, "params");
         ints(out, &self.params[..if self.schema == 4 { 12 } else { PARAMS }]);
+        if self.black_market_reserve != 0 {
+            field(out, "black_market_reserve");
+            num(out, self.black_market_reserve);
+        }
+        if self.black_market_percentage >= 0 {
+            field(out, "black_market_percentage");
+            num(out, self.black_market_percentage);
+        }
         field(out, "limits");
         ints(out, &self.limits);
         field(out, "caps");
@@ -515,6 +525,8 @@ impl PlanRecord {
             power: small("power")?,
             spells: small("spells")? as u8,
             params,
+            black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
+            black_market_percentage: j.get("black_market_percentage").map_or(Ok(-1), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
             caps: fixed(j.get("caps")?.ints()?, "caps")?,
             urgent: rows("urgent")?
@@ -602,6 +614,8 @@ pub struct StepInput<'a> {
     pub facts: &'a [WareFact],
     pub tryon: &'a [TryOn],
     pub limits: Limits,
+    pub black_market_reserve: i64,
+    pub black_market_percentage: i64,
     pub urgent: Vec<UrgentPurchase>,
     pub params: [i64; PARAMS],
     /// The whole trait vector.
@@ -621,6 +635,8 @@ pub struct StepInput<'a> {
 /// What a step produces.
 #[derive(Clone, Debug)]
 pub struct StepOutput {
+    /// The first planned purchase that fills an outstanding ranged reserve.
+    pub ranged_purchase: Option<(usize, i32)>,
     pub groups: Vec<Group>,
     pub solution: Solution,
     pub plan: Vec<PlanEntry>,
@@ -707,6 +723,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     // pack and the Home, and what they free.
     let mut utility = crate::borg_town_utility::Utility::of(&st, input.kit, input.cure_spell);
     utility.capability = input.capability.cloned();
+    utility.recall_reserve = crate::borg_town_capability::recall_reserve_for_budget(input.limits.gold);
     if input.utility && input.revision >= 9 {
         for purchase in &input.urgent {
             let c = &input.candidates[purchase.candidate];
@@ -790,6 +807,8 @@ pub fn step(input: &StepInput) -> StepOutput {
     let stock = Stock { candidates, ..Stock::default() };
     let budget = Budget {
         gold: limits.gold,
+        black_market_reserve: input.black_market_reserve,
+        black_market_percentage: input.black_market_percentage,
         pack_slots: limits.pack_slots,
         home_slots: 0,
         weight: limits.weight,
@@ -839,7 +858,14 @@ pub fn step(input: &StepInput) -> StepOutput {
             (utility.space_weight, i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY)).max(2) / 2, weights.knowledge))
     } else if input.utility { crate::borg_town_utility::shared_groups(groups, input, &stock.candidates, &utility, &limits, &st) } else { groups };
     let solution = if input.utility { crate::borg_town_solve::solve_cash(&groups, &limits, utility.gold_weight) } else { solve(&groups, &limits) };
-    let plan = solution.ranked(&groups).into_iter().map(|(g, o)| plan_entry(&groups[g], o)).collect();
+    let ranked = solution.ranked(&groups);
+    let plan = ranked.iter().map(|&(g, o)| plan_entry(&groups[g], o)).collect();
+    let ranged_purchase = utility.capability.as_ref().and_then(|model| {
+        ranked.iter().flat_map(|&(g, o)| &groups[g].options[o].picks).find_map(|&(i, copies)| {
+            let c = &input.candidates[i];
+            model.ranged_reserve_copies(c.shop, c.slot, copies).map(|n| (i, n))
+        })
+    });
     let flags = [
         (solution.optimal, flag::OPTIMAL),
         (solution.gold_exact, flag::GOLD_EXACT),
@@ -852,7 +878,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -962,16 +988,18 @@ fn first_action_with_room(
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
-    if let Some(&(g, o)) = out.solution.ranked(&out.groups).first() {
-        if let Some(&(i, copies)) = out.groups[g].options[o].picks.first() {
-            let c = &candidates[i];
-            return (
-                action::BUY,
-                [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)],
-                need_of(c),
-                false,
-            );
-        }
+    let purchase = out.ranged_purchase.or_else(|| {
+        let &(g, o) = out.solution.ranked(&out.groups).first()?;
+        out.groups[g].options[o].picks.first().copied()
+    });
+    if let Some((i, copies)) = purchase {
+        let c = &candidates[i];
+        return (
+            action::BUY,
+            [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)],
+            need_of(c),
+            false,
+        );
     }
     (action::LEAVE, [-1, -1, -1, -1], -1, false)
 }
@@ -1011,6 +1039,8 @@ impl ReplayParts {
             facts: &rec.wares,
             tryon: &self.tryon,
             limits: self.limits,
+            black_market_reserve: rec.black_market_reserve,
+            black_market_percentage: rec.black_market_percentage,
             urgent: self.urgent.clone(),
             params: rec.params,
             traits: &self.traits,
@@ -1239,6 +1269,8 @@ mod tests {
             facts: &wares,
             tryon,
             limits,
+            black_market_reserve: 0,
+            black_market_percentage: -1,
             urgent: budget.urgent.clone(),
             params: params(),
             traits,
@@ -1262,6 +1294,8 @@ mod tests {
             spells: 0,
             params: { let mut p = params(); p[12..].fill(0); p },
             limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
+            black_market_reserve: 0,
+            black_market_percentage: -1,
             caps: [23, 24],
             urgent: budget
                 .urgent

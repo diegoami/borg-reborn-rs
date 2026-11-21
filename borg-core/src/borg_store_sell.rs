@@ -27,7 +27,7 @@ use crate::borg_buy_strategy::{reserve410_unmet, retain_reserve410_item};
 use crate::borg_home_notice::borg_notice_home;
 use crate::borg_home_power::borg_power_home;
 use crate::borg_inventory::borg_item_worth_id;
-use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::borg_io::{borg_keypress, borg_keypresses, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item::inven_wield;
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_item_id::borg_item_note_needs_id;
@@ -1135,20 +1135,20 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
 /// Sell items to the current shop, if desired
 pub fn borg_think_shop_sell(st: &mut BorgState) -> bool {
-    sell_selected(st, false)
+    sell_selected(st, None)
 }
 
-pub fn sell_one_selected(st: &mut BorgState) -> bool {
-    sell_selected(st, true)
+pub fn sell_selected_quantity(st: &mut BorgState, quantity: i32) -> bool {
+    sell_selected(st, Some(quantity))
 }
 
-fn sell_selected(st: &mut BorgState, one: bool) -> bool {
+fn sell_selected(st: &mut BorgState, quantity: Option<i32>) -> bool {
     // Sell something if requested
     if st.borg.goal.shop == st.think.shop_num && st.borg.goal.item >= 0 {
         let idx = st.borg.goal.item as usize;
         let item = st.items.items[idx];
 
-        let qty = if one { 1 } else { borg_min_item_quantity(st, &item) };
+        let qty = quantity.unwrap_or_else(|| borg_min_item_quantity(st, &item));
 
         // Log
         let mut note = b"# Selling ".to_vec();
@@ -1164,17 +1164,8 @@ fn sell_selected(st: &mut BorgState, one: bool) -> bool {
 
         // Sell a single item
         if st.items.items[idx].iqty > 1 || qty >= 2 {
-            if qty == 5 {
-                borg_keypress(st, keycode_t::from(b'5'));
-            }
-            if qty == 4 {
-                borg_keypress(st, keycode_t::from(b'4'));
-            }
-            if qty == 3 {
-                borg_keypress(st, keycode_t::from(b'3'));
-            }
-            if qty == 2 {
-                borg_keypress(st, keycode_t::from(b'2'));
+            if qty > 1 && (quantity.is_some() || qty <= 5) {
+                borg_keypresses(st, qty.to_string().as_bytes());
             }
             borg_keypress(st, KC_ENTER);
         }

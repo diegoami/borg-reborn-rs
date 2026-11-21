@@ -212,8 +212,12 @@ borg_town_support_turns = 1000
 borg_town_w_ranger_missiles = 250
 borg_town_ranger_missile_turns = 50
 
-# Purse and pack. borg_town_share: no single purchase costs more than the
-# purse / this (0 = no cap); lower lets it spend more on one item.
+# Black Market purchases may spend this percentage (0 to 100) of the
+# shopping budget above the excluded gold. Zero closes the Black Market.
+# Omit the percentage to use the legacy borg_town_share divisor. Regular
+# shops use the ordinary shopping budget.
+# Limit copies per non-missile item kind when leaving town. Zero disables
+# the limit. Excess goes to Home first, then to shops.
 # borg_town_w_space: the value of a free pack slot; higher keeps the pack
 # emptier. borg_town_home_discount: what an item kept at home is worth, in
 # thousandths of one carried; higher stores more at home.
@@ -227,7 +231,9 @@ borg_town_ranger_missile_turns = 50
 # town_share 20: 0; town_w_space 50: 6; town_home_discount 1000: 6;
 # town_w_gold 1: 6; town_light_depth 30: 0; town_food_trip 20: 0.
 
-borg_town_share = 10
+borg_black_market_max_percentage = 60
+borg_sum_excluded_from_black_market = 500
+borg_town_max_non_missile_copies = 35
 borg_town_w_space = 25
 borg_town_home_discount = 500
 borg_town_w_gold = 0
@@ -314,12 +320,12 @@ borg_self_scum = FALSE
 
 borg_param_town_recall_value_percent = 100
 
-# Buying. Keep this many Word of Recall at any depth, valued at the full trip
-# weight (#557). 0 = off; 1 keeps a scroll for the trip home from CL1, but
-# flights then read it and the gold goes to replacements.
-# Impact: set to 2, 3 of 6 test games play differently.
+# Aim to keep one Word of Recall when the purse after urgent shopping
+# reaches 400 gold. Buying a scroll must leave at least 400 gold after
+# paying its price. A reserve of 0 disables the target.
 
-borg_param_town_recall_reserve = 0
+borg_param_town_recall_reserve = 1
+borg_param_buy_recall_from_gold = 400
 
 # Buying, C chooser only (borg_town_plan = 0): the C power scorer values
 # Recall only above this character level. The live planner does not read it.
@@ -720,6 +726,10 @@ borg_param_town_ranger_arrows_curve_scale_percent = 0
 # alone, whose first scroll is worth a fraction of one potion's cure).
 borg_param_town_phase_reserve = 0
 borg_param_town_phase_reserve_percent = 100
+
+# #789: reserve of oil available to throw and missiles for the equipped
+# launcher, counted together. Use __<class> for a class override.
+borg_param_town_ranged_reserve = 0
 
 # Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
 # town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
@@ -1188,6 +1198,10 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #789: town hunt, ranged scoring bonus, and HP retreat floor.
+borg_param_town_hunt = 0
+borg_param_town_hunt_ranged_bonus_percent = 0
+borg_param_town_hunt_min_hp_percent = 0
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
