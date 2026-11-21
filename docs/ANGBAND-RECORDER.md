@@ -86,23 +86,23 @@ unchanged, no interface changes (a v0.3.0 host links v0.3.1), and recorder-off
 builds still never compile the vendor directory. The schema is still
 `angband-recorder-streams@2`.
 
-What the release changes for this repository:
-- **A closed or killed game window keeps its end state.** v0.3.0 wrote the
-  closing `final` frame only when the frontend called `ar_finish` itself (our
-  headless borgh). A recording of an X11 window that was closed or killed was
-  sealed but ended at the last command/wait frame: Xlib exits from its I/O error
-  handler, the engine's quit hook (which writes the `exit` frame) never runs,
-  and nothing else wrote a frame. `ar_finish` is now also the `atexit` handler,
-  so that recording ends with a `final` frame. A normal quit (Ctrl-X) still ends
-  with `exit` and gets no `final` after it.
-- The release also carries the recorder repository's scripts and docs for the
-  recording build and the window launcher (`angband-reborn-record`); they are
-  vendored verbatim with the rest and not used by this repository's build.
+When the X11 connection breaks, Xlib exits through its I/O error handler
+and bypasses the engine's quit hook. In v0.3.1 the recorder's process-exit
+handler captures the end state in a `final` frame and seals the recording.
+When Ctrl-X completes the engine's normal quit path, the engine writes the
+`exit` frame and the recorder seals the recording with that frame. Headless
+borgh calls `ar_finish` before leaving the process.
 
-Checked in the recorder repository: a scratch build of borg-reborn-rs 88d98537
-with the recorder code of this release, a game window under a virtual display:
-killing the window ends the sealed recording with `final`, a Ctrl-X quit with
-`exit`. `harness/check-recorder.py` here covers the headless frontend only.
+Both X11 paths were checked under a private virtual display on consumer
+commit `ec651363` (PR #839). Disconnecting the X11 client with `xkill`
+produced a sealed recording ending in `final`. Ctrl-X completed normally
+and produced a sealed recording ending in `exit`. Both closing frames
+recorded game turn 81. `harness/check-recorder.py` covers headless borgh
+capture and replay.
+
+The release also carries the recorder repository's build and window
+launcher scripts. They are vendored verbatim. See the recorder repository
+for installation and launcher usage.
 
 Not checked: replaying a windowed recording that ended by a closed window, a
 window on a real display, a death in a window, a kill by signal. The local
