@@ -55,12 +55,14 @@ pub(crate) fn harmful_curse(item: &borg_item) -> Option<&'static str> {
 /// What `borg_remove_cursed` has tried, to give up on an item that stays on
 /// (a take-off the game refuses must not become a loop). The count is kept
 /// per equipment slot, so a slot that will not come off does not hide the
-/// others, and per level, so an item met on another level starts afresh.
+/// others; per item, so a different item that arrives in the slot (the
+/// emergency swap replaces one in place) starts afresh; and per level.
 #[derive(Default)]
 pub(crate) struct Removal {
     depth: i32,
-    /// Take-offs tried, by equipment slot (`slot - inven_wield()`).
-    tries: Vec<u8>,
+    /// Take-offs tried, by equipment slot (`slot - inven_wield()`), with the
+    /// description of the item they were spent on.
+    tries: Vec<(u8, Option<Vec<u8>>)>,
 }
 
 /// Attempts at one slot before the Borg stops trying it.
@@ -77,23 +79,28 @@ fn candidate(item: &borg_item) -> bool {
 
 impl Removal {
     /// Forget what no longer applies: everything on a new level, and the
-    /// count of a slot that holds no candidate any more (the take-off worked,
-    /// or another item is there now). `items[first..end]` is the equipment.
+    /// count of a slot that holds no candidate any more (the take-off worked)
+    /// or another item than the one the count was spent on. The description
+    /// tells items apart; it changes when a rune is learned, which gives the
+    /// same item a few more tries, a bounded number. `items[first..end]` is
+    /// the equipment.
     fn sync(&mut self, depth: i32, items: &[borg_item], first: usize, end: usize) {
         if self.depth != depth {
             *self = Removal { depth, tries: Vec::new() };
         }
         let end = end.min(items.len());
-        self.tries.resize(end.saturating_sub(first), 0);
-        for (n, tries) in self.tries.iter_mut().enumerate() {
-            if !candidate(&items[first + n]) {
-                *tries = 0;
+        self.tries.resize(end.saturating_sub(first), (0, None));
+        for (n, entry) in self.tries.iter_mut().enumerate() {
+            let item = &items[first + n];
+            let now = candidate(item).then(|| desc(item));
+            if entry.1 != now {
+                *entry = (0, now);
             }
         }
     }
 
     fn tried(&self, slot: usize, first: usize) -> u8 {
-        self.tries.get(slot - first).copied().unwrap_or(0)
+        self.tries.get(slot - first).map_or(0, |entry| entry.0)
     }
 }
 
@@ -128,7 +135,7 @@ pub(crate) fn borg_remove_cursed(st: &mut BorgState) -> bool {
         return false;
     };
     let slot = i as i32;
-    removal.tries[i - first as usize] += 1;
+    removal.tries[i - first as usize].0 += 1;
 
     let item = st.items.items[i];
     let why = harmful_curse(&item).unwrap_or("");
@@ -240,6 +247,13 @@ mod tests {
         item
     }
 
+    /// Give an item a description (the C `desc` buffer).
+    fn named(item: &mut borg_item, text: &[u8]) {
+        for (d, b) in item.desc.iter_mut().zip(text) {
+            *d = *b as core::ffi::c_char;
+        }
+    }
+
     #[test]
     fn the_owners_curses_are_harmful_at_any_power() {
         for curse in [
@@ -282,7 +296,7 @@ mod tests {
     fn turn(removal: &mut Removal, depth: i32, items: &[borg_item], first: usize, end: usize) -> Option<usize> {
         removal.sync(depth, items, first, end);
         let i = pick(items, first, end, removal)?;
-        removal.tries[i - first] += 1;
+        removal.tries[i - first].0 += 1;
         Some(i)
     }
 
@@ -325,6 +339,22 @@ mod tests {
         items[5] = blank_item();
         assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
         items[5] = cursed(BORG_CURSE_PARALYSIS);
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
+    }
+
+    #[test]
+    fn a_different_item_in_an_exhausted_slot_is_tried() {
+        let mut items = vec![blank_item(); 8];
+        items[5] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
+        named(&mut items[5], b"a Cloak");
+        let mut removal = Removal::default();
+        for _ in 0..MAX_TRIES {
+            assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
+        }
+        assert_eq!(turn(&mut removal, 5, &items, 2, 8), None);
+        /* the emergency swap puts another cursed item into the same slot */
+        items[5] = cursed(BORG_CURSE_PARALYSIS);
+        named(&mut items[5], b"a Robe");
         assert_eq!(turn(&mut removal, 5, &items, 2, 8), Some(5));
     }
 

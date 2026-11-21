@@ -143,3 +143,19 @@ skip of worth-0 items. Its findings, and what was done:
   `task/Tn.m-…` (RULES 5); the PR is already open from it.
 - *zoo#583* pins `9cbe0348`, which has the old guard; none of its sanity cells
   or any case above plays differently with the new one.
+
+**Re-review of `a0262bf5`** (OpenCode again; a comment). It confirmed findings
+1, 2 and 6 fixed, re-ran fmt, clippy, tests (578) and smoke (3 of 3), and
+showed that when every take-off works the old and new guards send the same
+keys. Its findings, and what was done:
+- *The count is per slot, so a different cursed item arriving in an
+  exhausted slot inherits it (fixed).* The emergency swap (`borg_backup_swap`)
+  replaces the worn item in place and refuses only a *known* harmful curse, so
+  a `{??}` item can arrive. `Removal` now also remembers the description of the
+  item each count was spent on, and a slot whose item differs, or that holds
+  no candidate, starts at zero (`a_different_item_in_an_exhausted_slot_is_tried`).
+  The description changes when a rune is learned, which gives the same item a
+  few more tries, a bounded number. The seven starts and smoke play unchanged.
+- *The PR body was out of date (fixed)*, and *the footer is still there*: the
+  session's GitHub tooling re-adds it on every write; it needs a manual edit.
+- *zoo#583 pins an old commit (moved).* See the issue.
