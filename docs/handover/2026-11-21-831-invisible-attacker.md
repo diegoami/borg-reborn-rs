@@ -57,9 +57,9 @@ numbers):
   setting, not missing code; the mode adds what the owner asked for on top.
 - **After** (the current curve, replayed from the zoo bundles' own `user/` files;
   the off settings reproduce the zoo's key hashes `b19d7b6a...` and `8acb6b08...`
-  exactly): both seeds reach 100,000 turns (CL8 and CL5), identical to the old games
+  exactly): both seeds reach 100,000 turns (CL6, max DL3 and CL6, max DL2), identical to the old games
   until the first unseen blow. The mode strikes, kills the attacker ("You have killed
-  it.") or leaves; seed 1 buys 2 Scrolls of Detect Invisible (30 gold) at turn 29,885.
+  it.") or leaves; seed 1 buys 3 Scrolls of Detect Invisible (45 gold) at turn 50,982.
 - **The first design flip-flopped** (the owner asked to fix it). The 250-gold floor
   was read on the purse as it is spent: `smoke-warrior-1` had 401 gold, 242 after
   the flasks and Phase Door, and sold the three scrolls it carried. The reserve is
@@ -86,7 +86,7 @@ numbers):
 --all-targets -- -D warnings`, `cargo test --workspace --exclude borg-core`,
 `cargo test --release -p borg-core` (unit tests for the grid choice, the answers
 to a blind attack, the kill message and the reserve), `scripts/check-param-citations.py`;
-the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical; `smoke-warrior-1` diverges at game turn 19,592 in the first town visit: it keeps the three Detect Invisible scrolls it carries, where the old reference sold them, and buys a fourth for 15 gold with the gold left). The 12-Blackguard comparison below is of the first design and was not re-run. Local, for
+the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical; `smoke-warrior-1` diverges at game turn 19,397 in the first town visit: it keeps the identified Detect Invisible scrolls it carries, where the old reference sold them, and buys one more for 15 gold with the gold left). The 12-Blackguard comparison below is of the first design and was not re-run. Local, for
 direction only (RULES 20): 12 Human Blackguards, off against on, 100,000 game
 turns: 0 deaths in both, sum of CL 75 and 76, sum of DL 34 and 34, HP rests 469
 and 404, the mode entered 29 times, no stalls. **No claim of improvement** (RULES

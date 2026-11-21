@@ -743,13 +743,14 @@ possible."
   hash to the zoo's `b19d7b6a...` and `8acb6b08...` exactly):
   - **Old behaviour, shipped before the change:** both die as the zoo's did
     (game turns 14,317 and 39,236).
-  - **This change:** both reach 100,000 game turns: 2078477958 at CL8, 2037495442
-    at CL5. Both follow the old game exactly, first-visit purchases included,
-    to the first unseen blow (game turns 5,384 and 3,532), then diverge.
-    2078477958 enters the mode four times, strikes ("# Striking at ..."),
-    leaves the level once, and buys 2 Scrolls of Detect Invisible at turn
-    29,885 (30 gold); 2037495442 enters it twice, strikes four times (it ends
-    `# Mode: invisible attacker killed`) and leaves once.
+  - **This change:** both reach 100,000 game turns: 2078477958 at CL6 (max DL3),
+    2037495442 at CL6 (max DL2). Both follow the old game exactly, first-visit
+    purchases included, to the first unseen blow (game turns 5,384 and 3,532),
+    then diverge. 2078477958 enters the mode three times, kills the attacker
+    once (`# Mode: invisible attacker killed`), leaves the level once, and buys
+    3 Scrolls of Detect Invisible at turn 50,982 (45 gold); 2037495442 enters it
+    five times, strikes three times (`# Striking at ...`; one ends `killed`) and
+    leaves once.
   - **#697's switches alone** also save both seeds (earlier local result:
     alive CL8 and CL6): the death was mainly a shipped-off setting.
   - **Not shown:** that 1,426 gold buys Detect Invisible in 2037495442's
