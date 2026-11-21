@@ -70,5 +70,18 @@ class StairHandoffTest(unittest.TestCase):
             self.assertNotIn("129,22", [state[1] for state in state_at(states, turn)])
         self.assertTrue(state_at(states, 118879))
 
+    def test_known_up_route_continues_past_adjacent_down_stair(self):
+        messages, states, _ = self.run_case(224, 0, 144000)
+        self.assertTrue(any(" 143021 0 # Standing on dn-stairs" in row for row in messages))
+        self.assertTrue(any(" 143021 0 # Flowing toward up-stairs at cost 4" in row for row in messages))
+        self.assertEqual(state_at(states, 143021)[0][1], "162,35")
+        self.assertEqual(state_at(states, 143031)[0][1], "163,34")
+
+        later = state_at(states, 143041)
+        self.assertTrue(later)
+        self.assertNotIn("162,35", [state[1] for state in later])
+        self.assertTrue(any(int(state[0]) > 143041 and state[2].startswith("d0/") for state in states))
+
+
 if __name__ == "__main__":
     unittest.main()
