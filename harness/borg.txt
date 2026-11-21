@@ -132,6 +132,8 @@ borg_respawn_winners = FALSE
 # Impact: set to 0, 6 of 6 test games play differently.
 
 borg_town_plan = 1
+# #828 pilot. Enable for the candidate arm only.
+borg_param_town_short_gold = 0
 
 # The next trip, as the planner forecasts it. It goes borg_town_depth_gain
 # levels below the deepest so far (or to borg_town_target_depth, if not 0)

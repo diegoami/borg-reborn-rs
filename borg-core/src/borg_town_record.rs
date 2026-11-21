@@ -635,8 +635,8 @@ pub struct StepInput<'a> {
 /// What a step produces.
 #[derive(Clone, Debug)]
 pub struct StepOutput {
-    /// The first planned purchase that fills an outstanding ranged reserve.
-    pub ranged_purchase: Option<(usize, i32)>,
+    /// The first planned purchase that fills an outstanding reserve.
+    pub reserve_purchase: Option<(usize, i32)>,
     pub groups: Vec<Group>,
     pub solution: Solution,
     pub plan: Vec<PlanEntry>,
@@ -860,8 +860,15 @@ pub fn step(input: &StepInput) -> StepOutput {
     let solution = if input.utility { crate::borg_town_solve::solve_cash(&groups, &limits, utility.gold_weight) } else { solve(&groups, &limits) };
     let ranked = solution.ranked(&groups);
     let plan = ranked.iter().map(|&(g, o)| plan_entry(&groups[g], o)).collect();
-    let ranged_purchase = utility.capability.as_ref().and_then(|model| {
-        ranked.iter().flat_map(|&(g, o)| &groups[g].options[o].picks).find_map(|&(i, copies)| {
+    let reserve_purchase = utility.capability.as_ref().and_then(|model| {
+        let picks = || ranked.iter().flat_map(|&(g, o)| &groups[g].options[o].picks);
+        if let Some((_, i, count)) = picks().filter_map(|&(i, _)| {
+            let c = &input.candidates[i];
+            model.short_gold_purchase_priority(c.shop, c.slot).map(|(rank, count)| (rank, i, count))
+        }).min_by_key(|&(rank, _, _)| rank) {
+            return Some((i, count));
+        }
+        picks().find_map(|&(i, copies)| {
             let c = &input.candidates[i];
             model.ranged_reserve_copies(c.shop, c.slot, copies).map(|n| (i, n))
         })
@@ -878,7 +885,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { reserve_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -988,7 +995,7 @@ fn first_action_with_room(
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
-    let purchase = out.ranged_purchase.or_else(|| {
+    let purchase = out.reserve_purchase.or_else(|| {
         let &(g, o) = out.solution.ranked(&out.groups).first()?;
         out.groups[g].options[o].picks.first().copied()
     });

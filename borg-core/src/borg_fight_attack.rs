@@ -60,7 +60,7 @@ use crate::headers::list_terrain_h::{
     FEAT_BROKEN, FEAT_FLOOR, FEAT_MAGMA, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM,
 };
 use crate::headers::list_tvals_h::{
-    TV_BOOTS, TV_FLASK, TV_POTION, TV_RING, TV_ROD, TV_WAND,
+    TV_BOOTS, TV_FLASK, TV_POTION, TV_RING, TV_ROD, TV_SHOT, TV_WAND,
 };
 use crate::headers::list_object_flags_h::{OF_EXPLODE, OF_THROWING};
 use crate::headers::ui_event_h::keycode_t;
@@ -958,6 +958,15 @@ fn commission_value(st: &mut BorgState, i: i32, f: SpellFlag, afraid_bonus: bool
 /// We will also decrease the value of the missile attack on breeders or
 /// high clevel borgs town scumming.
 fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, ammo_location: i32) -> i32 {
+    if st.fight_attack.throwing && param(Param::town_short_gold) != 0 && ammo_location >= 0 {
+        let item = st.items.items[ammo_location as usize];
+        if short_gold_oil(st, &item)
+            && short_gold_throwable_oil(st, &item) <= crate::borg_town_capability::SHORT_GOLD_OIL_HELD
+            && !held_oil_target(st, i, &item)
+        {
+            return 0;
+        }
+    }
     if st.fight_attack.focused_target.is_some_and(|k| k != i as usize) {
         return 0;
     }
@@ -2703,6 +2712,98 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
     1
 }
 
+/// Attack spells dispatched by the normal combat scorer. Use its fail gate
+/// and current mana/book availability when deciding whether to buy missiles.
+pub(crate) fn short_gold_ranged_spell(st: &BorgState) -> bool {
+    !cant_aim(st) && [
+        MAGIC_MISSILE, FROST_BOLT, SPEAR_OF_LIGHT, STINKING_CLOUD, FIRE_BALL,
+        ICE_STORM, RIFT, MANA_STORM, SHOCK_WAVE, EXPLOSION, ORB_OF_DRAINING,
+        ANNIHILATE, ELECTRIC_ARC, ACID_SPRAY, MANA_BOLT, LIGHTNING_STRIKE,
+        EARTH_RISING, RIVER_OF_LIGHTNING, SPEAR_OF_OROME, LIGHT_OF_VARDA,
+        NETHER_BOLT, DISENCHANT,
+    ].into_iter().any(|spell| borg_spell_okay_fail(st, spell, param(Param::attack_spell_fail)))
+}
+
+pub(crate) fn short_gold_throwable_shot(item: &borg_item) -> bool {
+    u32::from(item.tval) == TV_SHOT && !item.cursed
+        && item.dd > 0 && item.ds > 0 && (item.art_idx == 0 && item.ego_idx == 0)
+        && item.value <= param(Param::attack_throw_min_item_value)
+}
+
+fn short_gold_oil(st: &BorgState, item: &borg_item) -> bool {
+    u32::from(item.tval) == TV_FLASK && i32::from(item.sval) == st.item_val.sv_flask_oil
+}
+
+fn short_gold_throwable_oil(st: &BorgState, item: &borg_item) -> i32 {
+    let light = st.items.items[(inven_wield() + 5) as usize];
+    let fuel = if u32::from(light.tval) == crate::headers::list_tvals_h::TV_LIGHT
+        && i32::from(light.sval) == st.item_val.sv_light_lantern
+        && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32)
+    {
+        let turns = crate::borg_town_utility::Journey::of(st).turns;
+        ((turns - i64::from(light.timeout)).max(0) as u64)
+            .div_ceil(i64::from(item.pval).max(1) as u64) as i32
+    } else {
+        0
+    };
+    let carried: i32 = st.items.items[..inven_wield() as usize].iter()
+        .filter(|i| i.aware && short_gold_oil(st, i))
+        .map(|i| i32::from(i.iqty)).sum();
+    (carried - fuel).max(0)
+}
+
+fn held_oil_target(st: &mut BorgState, i: i32, oil: &borg_item) -> bool {
+    let kill = st.kills.kills[i as usize];
+    let distance = engine::distance(st.borg.c, kill.pos);
+    let immobile = rf(kill.r_idx, RF_NEVER_MOVE);
+    let fast = i32::from(kill.speed) > tr(st, BI_SPEED);
+    let threatening = held_oil_threat(
+        immobile, fast, kill.awake, kill.afraid, kill.ranged_attack != 0, distance,
+    );
+    if !threatening {
+        return false;
+    }
+
+    // A cheaper throw that can finish this target is already a candidate.
+    let (_, cheap_damage) = best_throw_of(st, ThrowSupply::NonOil);
+    let hp = observed_kill_hp(&kill).unwrap_or(i32::from(kill.power).max(1));
+    if cheap_damage >= hp.max(1) {
+        return false;
+    }
+    if immobile {
+        if danger_one_here(st, 1, i, true) <= 0 { return false; }
+        // An immobile monster cannot follow a safe step out of its reach.
+        let retreat = (0..8).any(|dir| {
+            let x = st.borg.c.x + i32::from(engine::ddx_ddd(dir));
+            let y = st.borg.c.y + i32::from(engine::ddy_ddd(dir));
+            if !engine::square_in_bounds_fully(x, y)
+                || engine::distance(loc { x, y }, kill.pos) <= distance
+            {
+                return false;
+            }
+            let grid = grid(st, x, y);
+            grid.kill == 0 && u32::from(grid.feat) != FEAT_NONE
+                && borg_cave_floor_grid(&grid)
+                && borg_danger(st, y, x, 1, true, false) == 0
+        });
+        return !retreat;
+    }
+
+    let damage = thrown_damage(
+        i32::from(oil.dd), i32::from(oil.ds), i32::from(oil.to_d), i32::from(oil.weight),
+        engine::flag_has(&oil.flags, OF_THROWING as i32),
+        engine::flag_has(&oil.flags, OF_EXPLODE as i32),
+    );
+    // A faster pursuer at the usual fast-monster frontier can close on
+    // the next exchange; farther out require danger over two turns.
+    damage > cheap_damage && (distance <= param(Param::attack_fast_monster_distance) + 1
+        || danger_one_here(st, 2, i, true) > 0)
+}
+
+fn held_oil_threat(immobile: bool, fast: bool, awake: bool, afraid: bool, ranged: bool, distance: i32) -> bool {
+    awake && !afraid && if immobile { ranged || distance <= 1 } else { fast }
+}
+
 /// Simulate/Apply the optimal result of throwing an object
 /// (`borg_attack_aux_object`).
 ///
@@ -2714,6 +2815,33 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
+    if param(Param::town_short_gold) != 0 {
+        if cant_aim(st) { return 0; }
+        let mut chosen = best_throw_of(st, ThrowSupply::NonOil);
+        let oil = best_throw_of(st, ThrowSupply::FuelSafeOil);
+        if oil.0 >= 0 && oil.0 != chosen.0 {
+            // Score both choices before firing. The normal dispatcher
+            // evaluates the attack once in simulation and again to act.
+            let was_simulating = simulating(st);
+            let saved = st.fight_attack.clone();
+            st.traits.simulate = true;
+            let ordinary = if chosen.0 >= 0 {
+                borg_attack_aux_object_fire(st, chosen.0, chosen.1)
+            } else { 0 };
+            let cheap_kill = ordinary > 0 && st.fight_attack.kill_best >= 1.0;
+            st.fight_attack = saved.clone();
+            st.traits.simulate = true;
+            let oil_value = if cheap_kill { 0 } else {
+                borg_attack_aux_object_fire(st, oil.0, oil.1)
+            };
+            st.fight_attack = saved;
+            st.traits.simulate = was_simulating;
+            if oil_value > ordinary { chosen = oil; }
+        }
+        return if chosen.0 >= 0 {
+            borg_attack_aux_object_fire(st, chosen.0, chosen.1)
+        } else { 0 };
+    }
     let (b_k, b_d) = best_throw(st);
 
     /* Nothing to use */
@@ -2733,23 +2861,39 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
 /// object it would throw and its average damage, as `(slot, damage)`
 /// (`(-1, -1)`: nothing). `ranged_means` asks it too.
 fn best_throw(st: &BorgState) -> (i32, i32) {
-    best_throw_of(st, false)
+    best_throw_of(st, ThrowSupply::Routine)
 }
 
-// borg-reborn-rs (#781): same fuel reserves, restricted to oil for a bump.
-fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ThrowSupply {
+    Routine,
+    NonOil,
+    SpareOil,
+    FuelSafeOil,
+}
+
+fn best_throw_of(st: &BorgState, supply: ThrowSupply) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
     let mut supply_journey: Option<crate::borg_town_utility::Journey> = None;
     let mut b_k: i32 = -1;
     let mut b_d: i32 = -1;
+    let short_gold = param(Param::town_short_gold) != 0;
 
-    /* Scan the pack */
-    for k in 0..i32::from(engine::z_info().pack_size) {
+    let pack = 0..inven_wield();
+    let quiver = if short_gold && matches!(supply, ThrowSupply::Routine | ThrowSupply::NonOil)
+        && tr(st, BI_AMMO_TVAL) != TV_SHOT as i32 { quiver_start()..quiver_end() } else { 0..0 };
+    for k in pack.chain(quiver) {
         let item = st.items.items[k as usize];
+        if k >= quiver_start() && !short_gold_throwable_shot(&item) { continue; }
 
-        if flasks_only && u32::from(item.tval) != TV_FLASK { continue; }
+        let flask = u32::from(item.tval) == TV_FLASK;
+        match supply {
+            ThrowSupply::NonOil if flask => continue,
+            ThrowSupply::SpareOil | ThrowSupply::FuelSafeOil if !flask => continue,
+            _ => {}
+        }
 
         /* Skip empty items */
         if item.iqty == 0 {
@@ -2762,7 +2906,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
         }
 
         /* Skip "equipment" items (not ammo) */
-        if borg_wield_slot(&item) >= 0 {
+        if borg_wield_slot(&item) >= 0 && !(short_gold && short_gold_throwable_shot(&item)) {
             continue;
         }
 
@@ -2786,7 +2930,10 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
         }
 
         /* Save last flasks for fuel, if needed */
-        if u32::from(item.tval) == TV_FLASK {
+        if short_gold && short_gold_oil(st, &item) {
+            let held = if supply == ThrowSupply::FuelSafeOil { 0 } else { crate::borg_town_capability::SHORT_GOLD_OIL_HELD };
+            if !item.aware || item.cursed || short_gold_throwable_oil(st, &item) <= held { continue; }
+        } else if u32::from(item.tval) == TV_FLASK {
             let light = st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
             let lantern = u32::from(light.tval) == crate::headers::list_tvals_h::TV_LIGHT
                 && i32::from(light.sval) == st.item_val.sv_light_lantern
@@ -2809,7 +2956,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
         // borg-reborn-rs (#568): with `attack_throw_as_melee`, the engine's
         // damage of the throw ranks the objects and is the attack's damage
         // (the gates above keep the dice average).
-        let d = if st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0 {
+        let d = if short_gold || st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0 {
             thrown_damage(
                 i32::from(item.dd),
                 i32::from(item.ds),
@@ -2842,7 +2989,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
 /// direction can hit an unseen monster; a monster target cannot be set.
 /// Uses the normal chooser's fuel reservation; never throws an unknown item.
 pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
-    let (slot, _) = best_throw_of(st, true);
+    let (slot, _) = best_throw_of(st, ThrowSupply::SpareOil);
     if slot < 0 || !st.items.items[slot as usize].aware { return false; }
     let dir = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
     borg_note(st, &format!("# Throwing oil at unseen bump ({},{})", grid.y, grid.x));
@@ -2858,10 +3005,19 @@ pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
 /// `borg_attack_aux_object` after its scan: aim and throw `b_k`.
 fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
-    let power = 6 + 2 * tr(st, BI_AMMO_POWER);
-    st.fight_attack.throwing = st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
+    let short_gold = param(Param::town_short_gold) != 0;
+    let power = if short_gold {
+        // player-attack.c, do_cmd_throw: the range is based on the object
+        // being thrown, even with a launcher equipped.
+        let strength = i32::from(engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize));
+        let weight = i32::from(st.items.items[b_k as usize].weight).max(10);
+        ((strength + 20) * 10 / weight).min(10)
+    } else { 6 + 2 * tr(st, BI_AMMO_POWER) };
+    st.fight_attack.throwing = short_gold
+        || st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
     st.fight_attack.throwing = false;
+    if short_gold && b_n <= 0 { return 0; }
 
     /* Simulation */
     if simulating(st) {
@@ -2874,11 +3030,20 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     m.push(b'\'');
     borg_note_bytes(st, &m);
 
+    if short_gold {
+        let item = st.items.items[b_k as usize];
+        crate::borg_object_log::log_use(st, "throw", &item);
+    }
     /* Fire */
     borg_keypress(st, key(b'v'));
 
     /* Use the object */
-    borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
+    if b_k >= quiver_start() {
+        borg_keypress(st, key(b'|'));
+        borg_keypress(st, key(b'0') + (b_k - quiver_start()) as keycode_t);
+    } else {
+        borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
+    }
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -5564,7 +5729,18 @@ mod fight_speed_tests {
 
 #[cfg(test)]
 mod town_oil_tests {
-    use super::oil_reserved;
+    use super::{held_oil_threat, oil_reserved};
+
+    #[test]
+    fn oil_reserve_targets_awake_fast_monsters_and_harmful_immobile_targets() {
+        assert!(held_oil_threat(false, true, true, false, false, 3));
+        assert!(!held_oil_threat(false, false, true, false, false, 2));
+        assert!(!held_oil_threat(false, true, false, false, false, 2));
+        assert!(!held_oil_threat(false, true, true, true, false, 2));
+        assert!(held_oil_threat(true, false, true, false, true, 3));
+        assert!(!held_oil_threat(true, false, true, false, false, 3));
+        assert!(held_oil_threat(true, false, true, false, false, 1));
+    }
     #[test]
     fn throwing_oil_does_not_wait_for_unneeded_lantern_fuel_with_a_torch() {
         assert!(!oil_reserved(true, 0, 0, false));
