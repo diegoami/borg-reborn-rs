@@ -95,16 +95,21 @@ target_compile_definitions(angband PRIVATE
 if(WIN32)
     target_compile_definitions(angband PRIVATE WIN32_CONSOLE_MODE)
 endif()
-if(SUPPORT_GCU)
+if(SUPPORT_GCU AND WIN32)
+    # The static executable links MSYS2's static ncursesw (pkg-config
+    # --static), not the DLL import library upstream's detection finds.
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(NCURSESW REQUIRED ncursesw)
+    target_compile_options(angband PRIVATE ${NCURSESW_STATIC_CFLAGS})
+    target_compile_definitions(angband PRIVATE USE_GCU USE_NCURSES HAVE_USE_DEFAULT_COLORS
+        NCURSES_STATIC MSYS2_ENCODING_WORKAROUND)
+    target_link_options(angband PRIVATE ${NCURSESW_STATIC_LDFLAGS})
+elseif(SUPPORT_GCU)
     # Upstream's curses detection (ncursesw by pkg-config, then the system's
-    # curses: macOS's, MSYS2's ncurses), from the patched tree.
+    # curses, as macOS's), from the patched tree.
     list(APPEND CMAKE_MODULE_PATH "${TREE}/src/cmake/modules")
     include("${TREE}/src/cmake/macros/GCU_Frontend.cmake")
     configure_gcu_frontend(angband)
-    # The static executable links MSYS2's static ncurses, not its DLL.
-    if(WIN32)
-        target_compile_definitions(angband PRIVATE NCURSES_STATIC)
-    endif()
 endif()
 if(SUPPORT_X11)
     find_package(X11 REQUIRED)

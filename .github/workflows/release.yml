@@ -250,9 +250,17 @@ jobs:
           ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
+      # GCC, not Apple's clang: the engine evaluates function arguments that
+      # draw random numbers (loc(randint0(w), randint0(h))) in an order C
+      # leaves to the compiler, so a clang build plays other games from the
+      # same seed (a clang build on Linux plays the macOS clang build's keys).
+      # With GCC every platform plays the same game.
       - run: |
-          brew install bash coreutils gnu-sed findutils openssl@3 xz
+          brew install bash coreutils gnu-sed findutils openssl@3 xz gcc
           b=$(brew --prefix)
+          cc=$(ls "$b"/bin/gcc-[0-9]* | sort -V | tail -1)
+          "$cc" --version | head -1
+          echo "CC=$cc" >> "$GITHUB_ENV"
           for p in "$b/opt/findutils/libexec/gnubin" "$b/opt/gnu-sed/libexec/gnubin" "$b/opt/coreutils/libexec/gnubin" "$b/bin"; do
             echo "$p" >> "$GITHUB_PATH"
           done

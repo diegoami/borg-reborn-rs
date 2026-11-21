@@ -53,7 +53,9 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     echo "engine_upstream=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")"
     echo "binary=$BIN"
     echo "binary_sha256=$(sha256sum < "$BIN" | cut -d' ' -f1)"
-    echo "cc=$(cc --version 2>/dev/null | head -1)"
+    # The compiler is part of what plays (#824: clang and GCC order the
+    # engine's random draws in function arguments differently).
+    echo "cc=$(${CC:-cc} --version 2>/dev/null | head -1)"
     echo "rustc=$(rustc --version 2>/dev/null || echo unknown)"
     echo "built_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     [ -z "$TEST_FEATURES" ] || echo "test_features=$TEST_FEATURES"

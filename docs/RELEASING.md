@@ -73,6 +73,13 @@ MSYS2's ncurses (MIT-style, as upstream's own Windows console build).
   `time`/`localtime` through the libc crate on Windows.
 - `engine/frontend/main-borgh.c`: checkpoints (`-checkpoint-every`) need
   `fork()` and are refused on Windows; `setenv` is `_putenv_s` there.
+- **GCC on every platform** (macOS: Homebrew's): the engine evaluates
+  function arguments that draw random numbers (`loc(randint0(w),
+  randint0(h))`, `mon-make.c`, `generate.c`, ...) in an order C leaves to
+  the compiler. Clang and GCC pick differently, so a clang build plays other
+  games from the same seed: a clang build on Linux plays exactly the keys
+  of the macOS clang build, both different from `smoke-borg-rs`.
+  `BUILD_ID` records the compiler (`cc=`).
 - `harness/build.sh` builds with `cmake --build` (Ninja under MSYS2);
   `harness/identity.sh` recognises the Rust Borg in Mach-O and PE files.
 
