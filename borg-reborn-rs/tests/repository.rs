@@ -50,6 +50,12 @@ fn entry_documents_exist() {
         "PLAN.md",
         "docs/GOALS.md",
         "docs/ARCHITECTURE.md",
+        "docs/README.md",
+        "docs/architecture/README.md",
+        "docs/architecture/original-c-borg.md",
+        "docs/architecture/borg-core.md",
+        "docs/architecture/reborn-plan.md",
+        "reference/GAME-KNOWLEDGE.md",
         "docs/SOURCES.md",
         "docs/HANDOVER.md",
         "reference/c-borg/BORG_SPEC.md",
@@ -57,6 +63,92 @@ fn entry_documents_exist() {
     ] {
         assert!(root().join(rel).is_file(), "missing {rel}");
     }
+}
+
+/// #816: every relative Markdown link in the current documents resolves.
+/// Checked: the entry documents at the root, every `.md` directly in
+/// `docs/`, `docs/architecture/`, the index pages of `docs/validation/`,
+/// `docs/archive/`, `docs/research/` and `docs/handover/`, and the pages of
+/// `reference/`, `harness/` and `tools/` written here. Not checked: the
+/// archived and receipt files (kept byte for byte at their new paths, so
+/// their links resolve against their old directory), the handover notes,
+/// and copies of other repositories. Fenced code and inline code are
+/// skipped; external links and bare anchors are not followed.
+#[test]
+fn current_documents_have_no_dangling_links() {
+    let mut files: Vec<PathBuf> = [
+        "README.md",
+        "AGENTS.md",
+        "RULES.md",
+        "PLAN.md",
+        "docs/validation/README.md",
+        "docs/archive/README.md",
+        "docs/handover/README.md",
+        "reference/README.md",
+        "reference/GAME-KNOWLEDGE.md",
+        "harness/README.md",
+        "tools/README.md",
+    ]
+    .iter()
+    .map(|rel| root().join(rel))
+    .collect();
+    for dir in ["docs", "docs/architecture", "docs/research"] {
+        for entry in std::fs::read_dir(root().join(dir)).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().is_some_and(|e| e == "md") {
+                files.push(path);
+            }
+        }
+    }
+    let mut checked = 0;
+    let mut dangling = Vec::new();
+    for path in &files {
+        let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{path:?}: {e}"));
+        for link in markdown_targets(&without_code(&text)) {
+            let target = link.split('#').next().unwrap_or_default();
+            if target.is_empty() || target.contains("://") || target.starts_with("mailto:") {
+                continue;
+            }
+            checked += 1;
+            if !path.parent().unwrap().join(target).exists() {
+                dangling.push(format!("{} -> {link}", path.display()));
+            }
+        }
+    }
+    assert!(
+        checked > 200,
+        "only {checked} links checked: the scan is broken"
+    );
+    assert!(
+        dangling.is_empty(),
+        "dangling links:\n{}",
+        dangling.join("\n")
+    );
+}
+
+/// The text without fenced code blocks and inline code spans.
+fn without_code(text: &str) -> String {
+    let mut out = String::new();
+    let mut fenced = false;
+    for line in text.lines() {
+        if line.trim_start().starts_with("```") {
+            fenced = !fenced;
+            continue;
+        }
+        if fenced {
+            continue;
+        }
+        let mut code = false;
+        for c in line.chars() {
+            if c == '`' {
+                code = !code;
+            } else if !code {
+                out.push(c);
+            }
+        }
+        out.push('\n');
+    }
+    out
 }
 
 #[test]

@@ -1,5 +1,8 @@
 # Reference sources
 
+**What game knowledge is used, and by whom** (the Borg at run time, and
+the analysis), and the survey of strategy guides: [GAME-KNOWLEDGE.md](GAME-KNOWLEDGE.md).
+
 Copies of sources that sessions read often, so they are available offline
 and at a fixed version. The original repositories stay canonical, and they
 keep moving. Do not edit these files: replace them with a newer copy in a

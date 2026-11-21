@@ -167,7 +167,7 @@ are reviewed.
   `owner-manual-branch.json` of bbc D0010, D0012, D0013 and D0014 gives a
   verified prefix and a known-feasible alternative. Starting from the same
   state, our decision must be at least as good. The full lesson-to-design
-  map is [docs/LESSONS-TRACE.md](docs/LESSONS-TRACE.md).
+  map is [docs/LESSONS-TRACE.md](docs/archive/LESSONS-TRACE.md).
 - **Our own deaths** are recorded from the first game played in M1
   (T1.2's death export, RULES 12), whichever arm died, and each milestone
   review lists them with causes.

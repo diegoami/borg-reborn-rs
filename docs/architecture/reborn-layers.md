@@ -1,7 +1,18 @@
-# Architecture (draft)
+# The layered design: the reborn core, and the target of track R
 
-*The design direction that [GOALS.md](GOALS.md) implies. A draft: each
-part is a hypothesis that a milestone in [PLAN.md](../PLAN.md) builds and
+> **Status (2026-11-21, #816).** This was `docs/ARCHITECTURE.md` until
+> 2026-11-21, written 2026-11-08..11 for **our own reborn core**
+> (`borg-reborn-rs/`, `BORG_CORE=reborn`), which the repivot of 2026-11-14
+> froze. It does not describe the core that plays by default
+> ([borg-core.md](borg-core.md)). It stays as the **target design of track
+> R**: borg-rs's decisions re-expressed in these layers (typed state, named
+> parameters, one trace line per think, modes, goals and budgets); see
+> [reborn-plan.md](reborn-plan.md). The text below is unchanged from that
+> draft except for its links; "M3", "M4" and the open questions refer to
+> the reborn core's milestones, now paused.
+
+*The design direction that [GOALS.md](../GOALS.md) implies. A draft: each
+part is a hypothesis that a milestone in [PLAN.md](../../PLAN.md) builds and
 checks. Revise this file when a milestone shows a part was wrong, and say
 so in its review PR.*
 
@@ -221,7 +232,7 @@ A read-only facade, `query`, over L2–L5 lets a separate workspace crate,
 `borg-mcp`, answer a language model's questions with the Borg's own
 functions, on replayed state. It is not a layer of play: the control loop
 above never calls it, and nothing of it is linked into the game. Draft:
-[QUERY-SURFACE.md](QUERY-SURFACE.md).
+[QUERY-SURFACE.md](../QUERY-SURFACE.md).
 
 ## What comes from where
 

@@ -3197,7 +3197,7 @@ item preference, random roll or effect was changed.
 
 The vendored core writes `trace-core.jsonl` and death dossiers retain its
 last 200 rows. See [CORE-TRACE.md](CORE-TRACE.md) for the schema, sampling
-point and opt-out, and [P1.4-VALIDATION.md](P1.4-VALIDATION.md) for default
+point and opt-out, and [P1.4-VALIDATION.md](validation/P1.4-VALIDATION.md for default
 parity and the recovery override's named divergence.
 
 ## Attack (P2.1, #240)
@@ -4451,7 +4451,7 @@ unchanged; enabling it delegates valuation to the borg.txt formula rules.
 The earlier tables describe the historical v12 registry. M13 changes potion
 healing estimate defaults to zero percent plus fixed 20/40/60 HP for
 CLW/CSW/CCW and removes five parameters whose branches no longer exist.
-See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
+See [M13 integration](validation/M13-INTEGRATION.md for the complete list and sources.
 The live registry remains borg-core/src/params.rs; historical profiles are
 not rewritten or repinned. Both optional town/trip policies default off.
 
