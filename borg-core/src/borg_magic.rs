@@ -474,6 +474,13 @@ pub fn borg_spell_legal(st: &BorgState, spell: borg_spells) -> bool {
     true
 }
 
+/// borg-reborn-rs (#831): the Borg knows a spell that reveals invisible
+/// monsters (Sense Invisible, Detection or Reveal Monsters, the three
+/// `borg_defend_aux_inviso` casts) and has its book and the mana for it.
+pub fn detects_invisible(st: &BorgState) -> bool {
+    [SENSE_INVISIBLE, DETECTION, REVEAL_MONSTERS].into_iter().any(|spell| borg_spell_legal(st, spell))
+}
+
 /// Check a spell for a given effect (`borg_spell_has_effect`)
 fn borg_spell_has_effect(spell_num: i32, effect: u16) -> bool {
     engine::spell_effect_indices(spell_num).contains(&effect)
