@@ -111,3 +111,13 @@ weights/thresholds without changing neutral arithmetic, quantities or RNG
 order. The source inventory and retained mechanics classification are in
 M13-INVENTORY-PARAMETERS.md/.json. No engine, recorder or donor code is
 updated. #293's explicit shopping replacement remains separate.
+
+
+## Unseen bump observation (#781)
+
+Receiving-owned hooks in borg-core's caution, flow, messages, update, attack
+and escape modules remember a failed step with unseen melee feedback and act
+on that bounded observation. The normal oil chooser is shared to preserve its
+fuel reserve. No donor refresh or hidden engine monster read is added. Message
+semantics were checked in upstream 574b618c `player-attack.c:738-743,767,840-860`,
+`mon-desc.h:45`, and `mon-desc.c:143-165`; the engine is unchanged.
