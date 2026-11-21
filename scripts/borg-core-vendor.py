@@ -48,6 +48,7 @@ HOOKED = {
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
     'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
     'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
