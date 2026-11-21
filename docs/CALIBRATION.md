@@ -10,6 +10,15 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Ranger Phase Door reserve regression (#797)
+
+The Ranger check runs one fixed Half-Orc birth with reserve 0 and 2 and
+weight 100 in both. It compares completed purchases before the first
+departure, the Alchemist's stock and the first observed dungeon-contact
+inventory. See [ZOO-INTERFACE.md](ZOO-INTERFACE.md#phase-door-observations-797)
+for the additional receipt. The registry, compiled values and shipped
+profile are unchanged.
+
 ## Resolved settings at birth (#798)
 
 `settings-resolved.json` records the active class and every parameter

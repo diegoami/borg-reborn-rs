@@ -49,6 +49,7 @@ pub struct ThinkState {
     pub just_saved: bool,
     pub town_action: Option<crate::borg_town_shadow::TownAction>,
     pub town_live: crate::borg_town_live::LiveState,
+    pub phase_observation: crate::borg_town_dump::PhaseObservation,
 }
 
 impl Default for ThinkState {
@@ -60,6 +61,7 @@ impl Default for ThinkState {
             just_saved: false,
             town_action: None,
             town_live: crate::borg_town_live::LiveState::default(),
+            phase_observation: crate::borg_town_dump::PhaseObservation::default(),
         }
     }
 }
@@ -238,6 +240,8 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::core_trace::selected("borg_think_store", concat!(file!(), ":", line!()));
         return done;
     }
+
+    crate::borg_town_dump::record_phase_observation(st, None);
 
     /* Check spells again later */
     st.think.do_spell = true;
