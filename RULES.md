@@ -311,3 +311,14 @@ No strategy, default frontend flags or measured baseline changes are implied.
     Watched sessions retain rule 12's distinction from measured runs;
     publishing recordings is a
     separate owner request.
+
+## Inventory and shopping
+
+27. **Use reserves for minimum readiness and curves for additional supplies.**
+    A reserve can protect enough stock for a trip. Keep valuing useful
+    copies above it at diminishing rates. The Borg may buy and carry
+    more when the extra supply is worth the gold, pack space, and weight
+    and fits the applicable limits. Apply this to torches, healing, Phase
+    Door, food, and other replenishable supplies. When investigating an
+    inventory problem, check offers, purchases, and departure stock at
+    both low and ample budgets before proposing a new reserve.
