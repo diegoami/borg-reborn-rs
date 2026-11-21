@@ -1983,7 +1983,7 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:506` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:346` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:364` |
 | `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:497` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
@@ -5311,7 +5311,30 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   and the packing room): their groups are valued jointly, which only widens
   the search, never changes a value.
 
+- **`town_staple_free_copies`** (compiled 0, **shipped 0**) and
+  **`town_staple_past_percent`** (compiled 25; owner: "make staple objects
+  start losing value starting from the 8th, compared to the objects that are
+  not supposed to be in the starter's shopping list"). Above 0 the healing
+  potions (a copy counted as a Cure Light Wounds of 20 HP in the curve's own
+  speed-weighted units) and Phase Door, the starter's staples, keep only the
+  percent of their marginal value after that many copies, carried ones
+  counted (`Model::value`; two parameter rows, `STAPLE_HEAL` and
+  `STAPLE_PHASE`, hold the knee as a negative demand and carry no supplies;
+  `Model::gain` and `Model::reserve` read them). Light, food, oil and arrows
+  have their own caps and are not touched. 7 free copies is the owner's
+  "the 8th"; 25 percent is a first hypothesis.
+- Unit check (`staples_lose_value_from_the_eighth_copy`): seven copies as
+  before, every later one about a quarter and never nothing, and with 20
+  Cure Light Wounds carried the 3rd Remove Curse is worth more than the 21st
+  Cure Light Wounds.
+- Engine check (this branch, on the default core): a 60,000-turn game
+  (seed 101, Human Warrior) with each switch on runs the town plan without
+  a panic and plays differently from the game with both off; the smoke suite
+  at the shipped settings is 3/3 identical to `smoke-borg-rs`.
+
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:820` |
 | `town_prepared_copies` | 2 | copies | 1–20 | `borg_town_capability.rs:820` |
+| `town_staple_free_copies` | 0 | copies | 0–99 | `borg_town_capability.rs:734` |
+| `town_staple_past_percent` | 25 | percent | 0–100 | `borg_town_capability.rs:849` |
