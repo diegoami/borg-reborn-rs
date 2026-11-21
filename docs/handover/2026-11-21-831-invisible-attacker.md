@@ -37,7 +37,8 @@ numbers):
   (`recover_unseen_detect_reads`, `_probe_tries`, `_probe_max_grids`,
   `_act_age`); #697's `recover_unseen_attack_turns` 500 and
   `recover_unseen_heal_hp_percent` 50 are now shipped. The compiled defaults
-  stay off (a profile without these lines plays as before). Smoke re-recorded.
+  stay off (a profile without these lines plays as before). Smoke re-recorded: see
+  *Checked*.
 
 **Found:**
 
@@ -73,7 +74,20 @@ numbers):
 --all-targets -- -D warnings`, `cargo test --workspace --exclude borg-core`,
 `cargo test --release -p borg-core` (unit tests for the grid choice, the answers
 to a blind attack, the kill message and the reserve), `scripts/check-param-citations.py`;
-the default-core smoke suite re-recorded (see the PR for its result). Local, for
+the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical,
+`smoke-warrior-1` diverges at game turn 19,397, the first town visit's first sale:
+it sold Treasure Detection before Detect Invisible where the old reference sold
+Detect Invisible first. It had 401 gold, above the 250 floor, so the reserve was
+on: explained by the town change; no `# Mode: invisible attacker` line in any smoke
+game). **Found, not fixed:** the floor is read on the purse as it is spent. In that
+game the gold fell to 242 after the flasks and Phase Door, the reserve went off,
+and the Borg sold the three Detect Invisible scrolls it carried at turn 19,722
+(the old reference sold them too, so this is #663's low value, but the new gate now
+turns a kept copy into a sold one in the middle of the visit). A fix would keep
+carried reads at the requirement's weight below the floor and apply the floor to
+buying only; left for the owner's word because it changes shipped play again. Zoo bundles
+checked (runs 44894233710 and 44894253654): `play_sha256` b19d7b6a... and 8acb6b08...
+match the dossiers, `user/borg.txt` hashes c96f0148... in both. Local, for
 direction only (RULES 20): 12 Human Blackguards, off against on, 100,000 game
 turns: 0 deaths in both, sum of CL 75 and 76, sum of DL 34 and 34, HP rests 469
 and 404, the mode entered 29 times, no stalls. **No claim of improvement** (RULES
@@ -93,5 +107,10 @@ file touched is already on its HOOKED list.
   same reads in scrolls (today it is bought only when scrolls are not stocked).
 - An unseen caster ("Something mumbles", #699) is not a blow and does not enter
   the mode.
-- The branch is `claude/funny-ptolemy-t4a5xz` (the cloud session's), not rule 5's
-  `task/...` name, and was worked in the session's own checkout.
+- The branch is `claude/loving-knuth-y3cjl8` (the cloud session's; the work began
+  on `claude/funny-ptolemy-t4a5xz`, merged in), not rule 5's `task/...` name, and was
+  worked in the session's own checkout.
+- **Cemetery:** `scripts/native/rerun-death.py` omits the step borg-zoo takes to
+  build a cell's `borg.txt` (`zoo/borgrs.py:config_text`, #704: harness `borg.txt`
+  plus the cell's overrides, `borg_world` line removed), so it cannot rebuild these
+  cells (hash 53a19330 against c96f0148). A cemetery-side fix; no issue filed.
