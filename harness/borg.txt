@@ -743,6 +743,14 @@ borg_param_town_ranged_reserve = 0
 borg_param_town_unseen_percent = 100
 borg_param_town_food_percent = 100
 borg_param_town_light_percent = 100
+# #810 pilot. Total usable fuel turns in equipment and pack, including oil
+# when using a lantern. While using a torch, top up from Home or the General
+# Store after immediate needs and within the normal shopping budget.
+# The separate try-on bonus applies to fueled lantern upgrades.
+# 20,000 turns covers a full 5,000-turn torch and three fresh spares.
+# Set to zero for the original light valuation and retention behavior.
+borg_param_town_light_reserve_turns = 20000
+borg_param_town_lantern_upgrade_power = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure

@@ -651,6 +651,55 @@ fn has_flag(item: &BorgItem, flag: u32) -> bool {
     engine::flag_has(&item.flags, flag as i32)
 }
 
+fn light_stack_turns(item: &BorgItem) -> i32 {
+    if item.cursed || u32::from(item.tval) != TV_LIGHT { return 0; }
+    // Angband's object_split copies the light's full timeout to the wielded
+    // copy and leaves the other copies at the same timeout (obj-pile.c).
+    i32::from(item.timeout.max(0)) * i32::from(item.iqty)
+}
+
+/// Fuel available to a character who is currently relying on a lit torch.
+pub(crate) fn torch_fuel_turns(st: &BorgState) -> Option<i32> {
+    let equipped = &st.items.items[inven_light() as usize];
+    if equipped.iqty == 0 || u32::from(equipped.tval) != TV_LIGHT
+        || i32::from(equipped.sval) != st.item_val.sv_light_torch || equipped.timeout <= 0
+        || has_flag(equipped, OF_NO_FUEL) || engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+    {
+        return None;
+    }
+    Some(light_stack_turns(equipped) + st.items.items[..inven_wield() as usize]
+        .iter().map(light_stack_turns).sum::<i32>())
+}
+
+/// Keep a usable fuel stack when discarding it would break the configured
+/// reserve. Torch-only characters cannot count oil as light.
+pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
+    let reserve = param(Param::town_light_reserve_turns);
+    if reserve == 0 || !crate::borg_town_live::active(st) || slot >= inven_wield() as usize {
+        return false;
+    }
+    let equipped = &st.items.items[inven_light() as usize];
+    if has_flag(equipped, OF_NO_FUEL) || engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) {
+        return false;
+    }
+    let lantern = has_flag(equipped, OF_TAKES_FUEL);
+    let fuel = |item: &BorgItem| {
+        if lantern && !item.cursed && u32::from(item.tval) == TV_FLASK
+            && i32::from(item.sval) == st.item_val.sv_flask_oil
+        {
+            i32::from(item.pval.max(0)) * i32::from(item.iqty)
+        } else {
+            light_stack_turns(item)
+        }
+    };
+    let pack = &st.items.items[..inven_wield() as usize];
+    if fuel(&pack[slot]) == 0 { return false; }
+    let remaining = fuel(equipped) + pack.iter().enumerate()
+        .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>();
+    let goal = crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve));
+    i64::from(remaining) < goal
+}
+
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
     // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
     let refillable = |item: &BorgItem| {
@@ -959,6 +1008,15 @@ mod lightless_tests {
             item.flags[offset / 8] |= 1 << (offset % 8);
         }
         item
+    }
+
+    #[test]
+    fn each_torch_in_a_stack_has_its_own_full_timeout() {
+        let mut torch = light(&[OF_LIGHT_2], 5000);
+        torch.iqty = 3;
+        assert_eq!(light_stack_turns(&torch), 15000);
+        torch.iqty -= 1;
+        assert_eq!(light_stack_turns(&torch), 10000);
     }
 
     #[test]

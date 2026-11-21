@@ -26,6 +26,11 @@ the central place for our Borg documentation, including our
 [Angband Strategy Manual](docs/strategy/README.md); what is ours and what is
 other authors' is in [docs/DOCUMENTATION-MAP.md](docs/DOCUMENTATION-MAP.md).
 
+**Without building:** a release's Linux package plays as it is: unpack it,
+then `./watch-borg.sh` (see its `PLAYING.txt`).
+[docs/RELEASING.md](docs/RELEASING.md) says how to install one and how
+releases are made.
+
 ## 1. Requirements
 
 A Linux machine (the commands below were checked on Ubuntu) with:

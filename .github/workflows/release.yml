@@ -1,0 +1,241 @@
+name: release
+
+# #819 (owner, 2026-11-21): bundle Angband with the Borg and make a draft
+# GitHub release, adapted from upstream's release.yaml
+# (engine/angband/.github/workflows/release.yaml). Unlike upstream it never
+# runs on an ordinary push or pull request: only on demand, when a milestone
+# is reached (the runner slots are shared with borg-zoo's experiments).
+#   - Actions > release > Run workflow: a version (v...), a ref, optionally
+#     the milestone (its PLAN.md row goes into the notes) and the zoo's
+#     measurement of the commit;
+#   - or push a tag v...: the release of that tag's commit.
+# The release is always a draft; the owner reviews and publishes it.
+# docs/RELEASING.md says how to cut one and how to make a dry run.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version and tag, v... (e.g. v0.1.0 or v0.0.0-dryrun.1)"
+        required: true
+      ref:
+        description: "Branch, tag or commit to release"
+        required: true
+        default: main
+      milestone:
+        description: "Milestone label whose PLAN.md row goes into the notes (e.g. P7); optional"
+        required: false
+        default: ""
+      zoo:
+        description: "URL of borg-zoo's measurement of this exact commit; optional (the notes then say it is missing)"
+        required: false
+        default: ""
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.inputs.version || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      sha: ${{ steps.v.outputs.sha }}
+      milestone: ${{ steps.v.outputs.milestone }}
+      zoo: ${{ steps.v.outputs.zoo }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.sha || github.event.inputs.ref }}
+          fetch-depth: 0
+      - id: v
+        env:
+          IN_VERSION: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
+          IN_MILESTONE: ${{ github.event.inputs.milestone }}
+          IN_ZOO: ${{ github.event.inputs.zoo }}
+        run: |
+          [[ "$IN_VERSION" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || { echo "version '$IN_VERSION' is not v<digit>..."; exit 1; }
+          [[ -z "$IN_MILESTONE" || "$IN_MILESTONE" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "milestone '$IN_MILESTONE': a label is expected"; exit 1; }
+          [[ -z "$IN_ZOO" || "$IN_ZOO" =~ ^https://[A-Za-z0-9./_#?=%:-]+$ ]] || { echo "zoo: an https URL is expected"; exit 1; }
+          # A dispatched version that is already a tag must name the commit released.
+          sha=$(git rev-parse HEAD)
+          if git rev-parse -q --verify "refs/tags/$IN_VERSION" >/dev/null; then
+            tagged=$(git rev-parse "refs/tags/$IN_VERSION^{commit}")
+            [ "$tagged" = "$sha" ] || { echo "tag $IN_VERSION is $tagged, not the ref's $sha"; exit 1; }
+          fi
+          {
+            echo "version=$IN_VERSION"
+            echo "sha=$sha"
+            echo "milestone=$IN_MILESTONE"
+            echo "zoo=$IN_ZOO"
+          } >> "$GITHUB_OUTPUT"
+          echo "release $IN_VERSION of $sha"
+
+  docs:
+    # Upstream's docconvert: the Angband manual to HTML with Sphinx.
+    needs: setup
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+      - run: |
+          python3 -m venv "$RUNNER_TEMP/sphinx"
+          "$RUNNER_TEMP/sphinx/bin/pip" install -q sphinx sphinx-better-theme
+      # conf.py takes its version from upstream's scripts/version.sh, which
+      # here would describe our repository: name the upstream commit instead.
+      - run: |
+          upstream=$(sed -n 's/^commit=//p' engine/UPSTREAM)
+          "$RUNNER_TEMP/sphinx/bin/sphinx-build" -q -b html -D version="${upstream:0:8}" -D release="upstream ${upstream:0:8}" \
+            engine/angband/docs "$RUNNER_TEMP/docs/html"
+          test -s "$RUNNER_TEMP/docs/html/index.html"
+          git diff --exit-code -- engine/angband
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-docs
+          path: ${{ runner.temp }}/docs
+          retention-days: 3
+
+  source:
+    needs: setup
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+      - uses: dtolnay/rust-toolchain@stable
+      - run: scripts/release/source-archive.sh "${{ needs.setup.outputs.version }}" "$RUNNER_TEMP/source"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-source
+          path: ${{ runner.temp }}/source/*.tar.gz
+          retention-days: 3
+
+  linux:
+    needs: [setup, docs]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+      # harness/run.sh refuses to play without the death tools (it exports a
+      # natural death to the registry above, RULES 12). Smoke has no death
+      # today, but a suite or play change that dies is then still recorded.
+      - uses: ./.github/actions/cemetery-tools
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: cmake libx11-dev libssl-dev
+      # The headless build, checked as CI checks it: the default core plays
+      # the smoke suite with the same keys, messages and states as
+      # harness/reference/smoke-borg-rs.
+      - run: BORG_IMPL=rust harness/build.sh
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-headless
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-headless harness/reference/smoke-borg-rs
+      - run: cp -a build/rust build/release-headless
+      # The window build (X11 and borgh frontends in one binary): the same check.
+      - run: BORG_IMPL=rust BORG_X11=ON harness/build.sh
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-x11
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-x11 harness/reference/smoke-borg-rs
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-docs
+          path: ${{ runner.temp }}/docs
+      - run: scripts/release/package-linux.sh "${{ needs.setup.outputs.version }}" build/release-headless build/rust "$RUNNER_TEMP/package" "$RUNNER_TEMP/docs"
+      - run: |
+          mkdir -p "$RUNNER_TEMP/identity"
+          cp build/release-headless/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.angband-headless"
+          cp build/rust/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.angband"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-linux
+          path: ${{ runner.temp }}/package/*.tar.gz
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-identity
+          path: ${{ runner.temp }}/identity
+          retention-days: 3
+
+  linux-clean:
+    # The package on a clean machine: a bare Ubuntu 24.04 with only the
+    # runtime libraries PLAYING.txt names. The headless game plays the
+    # reference's keys, and the window opens (under Xvfb).
+    needs: [setup, linux]
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    # In a job container run steps default to sh (dash): use bash, as the
+    # scripts and local checks do (review of #827). bash is an Essential
+    # package of ubuntu:24.04, so the image has it.
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
+            libssl3t64 libx11-6 xfonts-base xvfb xauth xz-utils ca-certificates git >/dev/null
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-linux
+          path: /tmp/release
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+          path: src
+          sparse-checkout: harness/reference/smoke-borg-rs
+      - run: |
+          mkdir /tmp/clean && cd /tmp/clean
+          tar -xzf /tmp/release/*.tar.gz
+          cd borg-reborn-rs-*
+          sha256sum -c --quiet SHA256SUMS
+          ls LICENSES/angband-copying.rst LICENSES/borg-reborn-rs-GPL-2.0.txt LICENSES/rust-crates.txt PLAYING.txt
+          ./play-headless.sh /tmp/game 101 0 0 20000
+          ref="$GITHUB_WORKSPACE/src/harness/reference/smoke-borg-rs/smoke-warrior-1"
+          for f in keys messages state; do xz -dc "$ref/$f.log.xz" | cmp - "/tmp/game/$f.log"; done
+          echo "the package plays smoke-warrior-1's keys, messages and states"
+      - run: |
+          cd /tmp/clean/borg-reborn-rs-*
+          set +e
+          timeout 15 xvfb-run -a ./watch-borg.sh ReleaseCheck
+          rc=$?
+          set -e
+          # 124: still running when the timeout stopped it, i.e. the window opened.
+          [ "$rc" = 124 ] || { echo "watch-borg.sh exited with $rc before the timeout"; exit 1; }
+
+  release:
+    needs: [setup, source, linux, linux-clean]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/artifacts
+      - id: files
+        run: |
+          d="$RUNNER_TEMP/upload"; mkdir -p "$d"
+          cp "$RUNNER_TEMP"/artifacts/release-linux/*.tar.gz "$RUNNER_TEMP"/artifacts/release-source/*.tar.gz "$d/"
+          (cd "$d" && sha256sum *.tar.gz > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          python3 scripts/release/notes.py --version "${{ needs.setup.outputs.version }}" \
+            --milestone "${{ needs.setup.outputs.milestone }}" --zoo "${{ needs.setup.outputs.zoo }}" \
+            --build-id "$RUNNER_TEMP/artifacts/release-identity/BUILD_ID.angband" \
+            --build-id "$RUNNER_TEMP/artifacts/release-identity/BUILD_ID.angband-headless" > "$RUNNER_TEMP/notes.md"
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.setup.outputs.version }}
+          SHA: ${{ needs.setup.outputs.sha }}
+        run: |
+          gh release create "$VERSION" --repo "$GITHUB_REPOSITORY" --draft --target "$SHA" \
+            --title "borg-reborn-rs $VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
+            $([[ "$VERSION" == *-* ]] && echo --prerelease) \
+            "$RUNNER_TEMP"/upload/*
