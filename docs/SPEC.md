@@ -53,7 +53,7 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
    we changed). No copy is kept "in sync".
 3. **References stay references.** Other projects' documents, specifications
    and results may be read and cited like any source (docs/SOURCES.md). The C
-   Borg specification (`reference/c-borg/BORG_SPEC.md`), the strategy manual
+   Borg specification (`docs/c-borg/BORG_SPEC.md`), the strategy manual
    (S14) and the death registries remain inputs to design. A citation is not
    a dependency.
 4. **Truth is the game.** Where a check needs ground truth (perception,
@@ -374,7 +374,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own; the canonical registry now lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery) | §4 |
 | `pins.json`: borg-rs | build source, `engine_tree` record, `borg_dir` | **Reference only**: `engine_tree` and borg-rs's `borg_dir` removed; the refresh report's watch of cited C Borg functions uses the angband pin's `src/borg` | §2 |
 | `reference/borg-rs/` | copies of borg-rs docs | **Keep** as reference | §2.3 |
-| `reference/c-borg/`, `reference/c-manual/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
+| `docs/c-borg/`, `docs/strategy/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
 | S12 (`reference/strategy/`) | draft manual | **Retired** in TE.8 (owner, 2026-11-09) | S14 supersedes it |
 | `docs/ZOO-CHANGE-REQUEST.md` | the request done by borg-zoo#32 | **Superseded** by `docs/ZOO-INTERFACE.md`; kept as history | §4 |
 | borg-zoo specimens `4.2.6-reborn-*` | at `2dd11fd`, through the zoo's borg-rs adapter | **Re-specify** `4.2.6-reborn-rust` after the new integration; the `-c-*` specimens are the zoo's to keep or retire | §4, §6 |

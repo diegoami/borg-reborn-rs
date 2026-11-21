@@ -20,11 +20,11 @@ first-principles core (`BORG_CORE=reborn`) is frozen. Details:
 This page is for **playing**: setting up, building, watching the Borg and
 changing what it does. For how it works, see
 [docs/architecture/](docs/architecture/README.md); for the game knowledge it
-and its developers use, [reference/GAME-KNOWLEDGE.md](reference/GAME-KNOWLEDGE.md);
+and its developers use, [docs/GAME-KNOWLEDGE.md](docs/GAME-KNOWLEDGE.md);
 for working on the repository, [AGENTS.md](AGENTS.md). This repository is
-the central place for the Borg's documentation: what the other Borg
-repositories wrote is copied here or mapped in
-[reference/DOCUMENTATION-MAP.md](reference/DOCUMENTATION-MAP.md).
+the central place for our Borg documentation, including our
+[Angband Strategy Manual](docs/strategy/README.md); what is ours and what is
+other authors' is in [docs/DOCUMENTATION-MAP.md](docs/DOCUMENTATION-MAP.md).
 
 ## 1. Requirements
 
@@ -190,7 +190,7 @@ once per game process).
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port; its decision core is vendored in `borg-core/` at a pin ([docs/architecture/borg-core.md](docs/architecture/borg-core.md)). |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
 | [borg-cemetery](https://github.com/diegoami/borg-cemetery) | The death registry: recorded runs, investigations, scenarios. |
-| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | Where the C Borg specification, the Angband Strategy Manual and the C Borg defect catalogue were written; they are kept in `reference/` now. |
+| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | Where the C Borg specification, the Angband Strategy Manual and the C Borg defect catalogue were written; they are kept in `docs/` now. |
 | [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents playing from the screen; what they learn is a source of game knowledge. |
 | [borg-agent](https://github.com/diegoami/borg-agent) | Retired 2026-11-11. |
 

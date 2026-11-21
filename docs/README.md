@@ -2,11 +2,22 @@
 
 The repository's documents, by audience. Playing the Borg starts at the
 [README](../README.md); working on the repository at [AGENTS.md](../AGENTS.md).
-Game knowledge (the manuals, the C Borg's documentation, what is used by
-whom) is in [reference/](../reference/GAME-KNOWLEDGE.md), with the
-documentation of the other Borg repositories
-([map](../reference/DOCUMENTATION-MAP.md)). Reorganised on
-2026-11-21 (#816).
+Everything here is **ours**: written in this project, here or in our other
+repositories, and ours to change. Other authors' documents (the game's
+manual, the original C Borg's) stay untouched in `engine/angband/`;
+copies that a live tool still produces are in `reference/`. Which is which:
+[DOCUMENTATION-MAP.md](DOCUMENTATION-MAP.md). Reorganised on 2026-11-21
+(#816).
+
+## The game and the Borgs
+
+| Document | What |
+| --- | --- |
+| [strategy/](strategy/README.md) | **The Angband Strategy Manual**: how the game works underneath and how to survive it, every number cited to the engine; *notes for the borg* in chapter 15 |
+| [c-borg/](c-borg/README.md) | **The C Borg**: its specification, the Tunable Borg plan, the defect catalogue ([c-bugs/](c-borg/c-bugs/README.md)), and its verified fixes ([fixes/](c-borg/fixes/README.md)) |
+| [design/](DOCUMENTATION-MAP.md#design-the-shipped-cores-design-documents) | **The shipped core's design**: the town planner, the trip policy, the class family, shop shortcuts |
+| [GAME-KNOWLEDGE.md](GAME-KNOWLEDGE.md) | What game knowledge the Borg reads while playing, what analysis reads and in which order, and the survey of strategy guides |
+| [research/](research/KNOWLEDGE.md) | Digests of the moving sources; [borg-agent's knowledge](research/borg-agent/knowledge/README.md) |
 
 ## Using the Borg
 
@@ -41,7 +52,6 @@ documentation of the other Borg repositories
 | [VALIDATION-RECEIPTS.md](VALIDATION-RECEIPTS.md), [REFERENCE-RECEIPTS.md](REFERENCE-RECEIPTS.md), [DOSSIER-IMPORT.md](DOSSIER-IMPORT.md) | How validation evidence is recorded and imported |
 | [CORE-SWEEP.md](CORE-SWEEP.md) | Track P's owner-run sweep prompt |
 | [handover/](handover/README.md), [HANDOVER.md](HANDOVER.md) | Where the work stands, one note per task; the older archive |
-| [research/](research/KNOWLEDGE.md) | Digests of the moving sources |
 | [examples/](examples/) | Example calibration catalogues and profiles |
 
 ## Records

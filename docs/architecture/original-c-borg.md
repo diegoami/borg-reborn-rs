@@ -16,7 +16,7 @@ in `vendor/better-borg-c/src/borg/` at better-borg-c
 carries 76 verified fixes). Citations take the form
 `borg-<file>.c:<function>` followed by line numbers at that pin. The full
 specification,
-[BORG_SPEC.md](../../reference/c-borg/BORG_SPEC.md), was written against
+[BORG_SPEC.md](../c-borg/BORG_SPEC.md), was written against
 *upstream* Angband `e473720e`. Its section numbers are the ones to follow,
 but its line numbers differ slightly from the ones given here. Where
 better-borg-c differs in behaviour, this document says so.
@@ -40,8 +40,8 @@ list, plus three numeric judgements that the list keeps asking:
 ## Perception: what it reads
 
 There are two input channels and one output channel
-([BORG_SPEC §1.1](../../reference/c-borg/BORG_SPEC.md#11-the-mechanism-two-input-channels-one-output),
-[§4](../../reference/c-borg/BORG_SPEC.md#4-perception-borg_update)).
+([BORG_SPEC §1.1](../c-borg/BORG_SPEC.md#11-the-mechanism-two-input-channels-one-output),
+[§4](../c-borg/BORG_SPEC.md#4-perception-borg_update)).
 
 * **The screen.** `borg-io.c:borg_what_text` (line 55) reads the terminal's
   character buffer. The Borg uses it for the message line (prompts,
@@ -86,7 +86,7 @@ hit points and timers of the ones it has observed.
 
 `borg.c:generate_keypress` (lines 268–394) runs every time the engine
 wants a key
-([BORG_SPEC §2.2](../../reference/c-borg/BORG_SPEC.md#22-one-call-of-generate_keypress)):
+([BORG_SPEC §2.2](../c-borg/BORG_SPEC.md#22-one-call-of-generate_keypress)):
 
 1. Read the player's state, and check for death or a stop condition.
 2. Read the message line. A prompt that needs an answer returns its key
@@ -167,7 +167,7 @@ In the bravery passes, `borg.avoidance` is raised (to 2 × current HP, then
 (`borg-think-dungeon.c`, line 950). That reduced ladder starts with
 `borg_defend()` at depth 100 and `borg_attack(true)`. A stuck Borg
 therefore walks through danger it would otherwise route around
-([BORG_SPEC §2.8](../../reference/c-borg/BORG_SPEC.md#28-the-dungeon-decision-ladder)).
+([BORG_SPEC §2.8](../c-borg/BORG_SPEC.md#28-the-dungeon-decision-ladder)).
 
 Read the ladder as a policy: safety first, then fighting, then loot that
 is close, then housekeeping, then loot that is far, then descending, then
@@ -216,14 +216,14 @@ Danger feeds almost every decision:
 * **Rest.** The Borg rests only where the danger is 0, or below a small
   fraction of avoidance.
 
-See [BORG_SPEC §8](../../reference/c-borg/BORG_SPEC.md#8-danger-estimation).
+See [BORG_SPEC §8](../c-borg/BORG_SPEC.md#8-danger-estimation).
 
 ## Flows
 
 The flow is the Borg's pathfinder: a breadth-first flood **from the goal
 grids outward**, one cost byte per grid, followed by a greedy downhill step
 from the Borg's own grid. It is not A*. Each goal builder follows the same
-five steps ([BORG_SPEC §6](../../reference/c-borg/BORG_SPEC.md#6-flow-how-the-borg-decides-where-to-go)):
+five steps ([BORG_SPEC §6](../c-borg/BORG_SPEC.md#6-flow-how-the-borg-decides-where-to-go)):
 
 1. `borg-flow.c:borg_flow_clear` (lines 180–200) sets every grid to
    unreached. The know and icky danger caches are wiped only when
@@ -268,7 +268,7 @@ the Borg would otherwise refuse.
 
 `borg-caution.c:borg_caution` (lines 834–2078) runs before every routine
 goal. It is a chain of "if the situation is X, do Y" checks
-([BORG_SPEC §9.1](../../reference/c-borg/BORG_SPEC.md#91-borg_caution--the-reactive-layer)).
+([BORG_SPEC §9.1](../c-borg/BORG_SPEC.md#91-borg_caution--the-reactive-layer)).
 In source order:
 
 1. Note nasty conditions: light running out, hunger, blindness,
@@ -342,7 +342,7 @@ first.
 ## Attack choice
 
 `borg-fight-attack.c:borg_attack` (lines 5153–5324)
-([BORG_SPEC §7](../../reference/c-borg/BORG_SPEC.md#7-fighting)) works in
+([BORG_SPEC §7](../c-borg/BORG_SPEC.md#7-fighting)) works in
 four steps:
 
 1. Collect the targets: tracked monsters seen in the last two thinks, on
@@ -391,7 +391,7 @@ activations.
 ### Power
 
 `borg-power.c:borg_power` (lines 1883–1914) adds four things
-([BORG_SPEC §5](../../reference/c-borg/BORG_SPEC.md#5-scoring-itself-borg_power)):
+([BORG_SPEC §5](../c-borg/BORG_SPEC.md#5-scoring-itself-borg_power)):
 
 * `borg_power_equipment()` (line 43): weapon damage, blows, slays, to-hit,
   speed, HP, mana, AC, resistances and abilities;
@@ -444,14 +444,14 @@ from depth 82, and unique gates near the bottom of the dungeon.
   small memory of recent purchases (`bought_item_*`) prevents buy/sell
   loops.
 
-See [BORG_SPEC §12](../../reference/c-borg/BORG_SPEC.md#12-the-borg-in-town).
+See [BORG_SPEC §12](../c-borg/BORG_SPEC.md#12-the-borg-in-town).
 
 ## Configuration: `borg.txt`
 
 `borg-init.c:borg_init_txt_file` (lines 203–383) reads
 `src/borg/borg.txt`. The defaults are in the `borg_settings[]` table
 (`borg-init.c`, line 57). At this pin it has **37** settings: the 35 in
-[BORG_SPEC §13](../../reference/c-borg/BORG_SPEC.md#13-configuration-borgtxt)
+[BORG_SPEC §13](../c-borg/BORG_SPEC.md#13-configuration-borgtxt)
 plus better-borg-c's `borg_munchkin_by_class` (true) and
 `borg_munchkin_class_depth` (6). With those two, warriors, druids and
 rangers get a munchkin start even when `borg_munchkin_start` is off.
@@ -471,7 +471,7 @@ The settings fall into these groups:
 The modes (lunal, munchkin, stair scum, money scum, digging, vault,
 desperate, boosted bravery) do not add rungs to the ladder. They replace
 part of it for a while, or relax the flow's danger check
-([BORG_SPEC §13.1](../../reference/c-borg/BORG_SPEC.md#131-modes-that-change-goal-selection)).
+([BORG_SPEC §13.1](../c-borg/BORG_SPEC.md#131-modes-that-change-goal-selection)).
 
 The player starts the Borg from the `^Z` menu,
 `borg-commands.c:do_cmd_borg` (line 1557).
@@ -523,17 +523,17 @@ are not part of the C Borg; [borg-core.md](borg-core.md) describes them.
 
 All kept in this repository ([reference/](../../reference/README.md)):
 
-- [the C Borg specification](../../reference/c-borg/BORG_SPEC.md): every
+- [the C Borg specification](../c-borg/BORG_SPEC.md): every
   decision, cited `file:function:lines` (at upstream `e473720e`), with the
   contracts a rebuild must keep (§16) and the defect shapes it must not
-  inherit (§11, §17); and [the Tunable Borg plan](../../reference/c-borg/TUNABLE-BORG-PLAN.md);
-- [the C Borg defect catalogue](../../reference/c-borg/c-bugs/README.md):
+  inherit (§11, §17); and [the Tunable Borg plan](../c-borg/TUNABLE-BORG-PLAN.md);
+- [the C Borg defect catalogue](../c-borg/c-bugs/README.md):
   152 findings (`CBUG-0001`…), each with its evidence;
-- [better-borg-c's fix pages](../../reference/better-borg-c/measurement/README.md):
+- [better-borg-c's fix pages](../c-borg/fixes/README.md):
   one page per verified fix (the behaviour, why it was wrong, the fix, the
-  measurement), the design lessons, and [how fixes were verified](../../reference/better-borg-c/VERIFICATION.md);
-- [borg-rs's list of C bugs](../../reference/borg-core/c-bugs.md): which
+  measurement), the design lessons, and [how fixes were verified](../c-borg/fixes/VERIFICATION.md);
+- [borg-rs's list of C bugs](../design/c-bugs.md): which
   ones its translation reproduces on purpose and which it fixed;
-- the game itself: [the Angband Strategy Manual](../../reference/c-manual/README.md),
+- the game itself: [the Angband Strategy Manual](../strategy/README.md),
   whose chapter 15 has *notes for the borg*.
 

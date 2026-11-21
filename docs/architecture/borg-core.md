@@ -9,7 +9,7 @@ tracks that work on it (P: calibration, R: the redesign) are in
 [reborn-plan.md](reborn-plan.md). The core's own design documents (the
 town planner, the trip policy, the class family), written in borg-rs and
 kept here since 2026-11-21, are in
-[reference/borg-core/](../../reference/borg-core/) (§7).
+[docs/design/](../design/) (§7).
 
 Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
@@ -368,16 +368,16 @@ re-records the reference ([AGENTS.md](../../AGENTS.md)).
 ## 7. Design documents and further reading
 
 The core is borg-rs's, and so is most of its design. Its design documents
-moved here from borg-rs on 2026-11-21 and are originals now, in
-[reference/borg-core/](../../reference/borg-core/), unchanged from borg-rs (their links follow borg-rs's layout):
+moved here from borg-rs on 2026-11-21 and are ours now, in
+[docs/design/](../design/):
 
 | Subsystem (§2) | Read |
 | --- | --- |
-| town planner (`borg_town_*.rs`, `borg_buy_strategy.rs`) | [TOWN-INVENTORY.md](../../reference/borg-core/TOWN-INVENTORY.md) (architecture), [TOWN-UTILITY.md](../../reference/borg-core/TOWN-UTILITY.md) (the utility model), [TOWN-ITEM-CATALOGUE.md](../../reference/borg-core/TOWN-ITEM-CATALOGUE.md), [TOWN-LIVE.md](../../reference/borg-core/TOWN-LIVE.md) (the live executor), [TOWN-SESSION.md](../../reference/borg-core/TOWN-SESSION.md) |
-| preparedness and trips (`borg_prepared.rs`, `borg_trip.rs`) | [TRIP-POLICY.md](../../reference/borg-core/TRIP-POLICY.md), [JOINT-POLICY-TRIALS.md](../../reference/borg-core/JOINT-POLICY-TRIALS.md) |
-| shops (`borg_store*.rs`, `borg_think_store.rs`) | [BORG-SHOP-SHORTCUTS.md](../../reference/borg-core/BORG-SHOP-SHORTCUTS.md) |
-| what borg-rs kept or fixed of the C Borg's bugs | [c-bugs.md](../../reference/borg-core/c-bugs.md), with the C defect catalogue [c-borg/c-bugs/](../../reference/c-borg/c-bugs/README.md) |
-| the family of versions | [FAMILY.md](../../reference/borg-core/FAMILY.md) |
+| town planner (`borg_town_*.rs`, `borg_buy_strategy.rs`) | [TOWN-INVENTORY.md](../design/TOWN-INVENTORY.md) (architecture), [TOWN-UTILITY.md](../design/TOWN-UTILITY.md) (the utility model), [TOWN-ITEM-CATALOGUE.md](../design/TOWN-ITEM-CATALOGUE.md), [TOWN-LIVE.md](../design/TOWN-LIVE.md) (the live executor), [TOWN-SESSION.md](../design/TOWN-SESSION.md) |
+| preparedness and trips (`borg_prepared.rs`, `borg_trip.rs`) | [TRIP-POLICY.md](../design/TRIP-POLICY.md), [JOINT-POLICY-TRIALS.md](../design/JOINT-POLICY-TRIALS.md) |
+| shops (`borg_store*.rs`, `borg_think_store.rs`) | [BORG-SHOP-SHORTCUTS.md](../design/BORG-SHOP-SHORTCUTS.md) |
+| what borg-rs kept or fixed of the C Borg's bugs | [c-bugs.md](../design/c-bugs.md), with the C defect catalogue [c-borg/c-bugs/](../c-borg/c-bugs/README.md) |
+| the family of versions | [FAMILY.md](../design/FAMILY.md) |
 
 What we added to it since the repivot is in the handover notes of each
 task ([docs/handover/](../handover/README.md)) and, for its settings, in

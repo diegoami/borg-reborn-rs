@@ -125,16 +125,19 @@ semantics were checked in upstream 574b618c `player-attack.c:738-743,767,840-860
 
 ## Documentation moved here (#816, owner 2026-11-21)
 
-This repository is the central place for the Borg's documentation. These
-documents were written in other repositories, moved here and are
-originals now. Each file is byte for byte the source's at the commit below
-(checked file by file); nothing was added to these directories.
+This repository is the central place for our Borg documentation. These
+documents of ours were written in our other repositories and moved here;
+they are edited here from now on. They were taken whole at the commit
+below; on the move only their links changed, to their new places (or, for
+files that stayed behind, to the source at that commit). The official
+user manual the strategy manual carried as a copy was not moved: it is the
+Angband developers', untouched in `engine/angband/docs/`.
 
 | Here | From | Commit |
 | --- | --- | --- |
-| `reference/c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` | `dbde80762dd45857c7840f1af9df1bd39930d4ab` |
-| `reference/c-borg/` (the whole `docs/c-borg/`, `c-bugs/`, `C-BUGS.md`, `borg-rs-c-bugs.md`) | neo-angband-tracker `docs/c-borg/`, `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | same |
-| `reference/better-borg-c/` | diegoami/better-borg-c `docs/measurement/*.md`, `docs/VERIFICATION.md` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` |
-| `reference/borg-core/` | diegoami/borg-rs `docs/` (town, trip, family, shop, joint-policy, c-bugs) | `8c5d000a58e9ddca1f1954ab9552e505856b313f` |
-| `reference/borg-agent/` | diegoami/borg-agent `knowledge/`, `docs/POST-MORTEM.md`, `docs/KNOWLEDGE.md` | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` |
+| `docs/strategy/` | diegoami/neo-angband-tracker `docs/c-manual/` | `dbde80762dd45857c7840f1af9df1bd39930d4ab` |
+| `docs/c-borg/` (the whole `docs/c-borg/`, `c-bugs/`, `C-BUGS.md`, `borg-rs-c-bugs.md`) | neo-angband-tracker `docs/c-borg/`, `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | same |
+| `docs/c-borg/fixes/` | diegoami/better-borg-c `docs/measurement/*.md`, `docs/VERIFICATION.md` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` |
+| `docs/design/` | diegoami/borg-rs `docs/` (town, trip, family, shop, joint-policy, c-bugs) | `8c5d000a58e9ddca1f1954ab9552e505856b313f` |
+| `docs/research/borg-agent/` | diegoami/borg-agent `knowledge/`, `docs/POST-MORTEM.md`, `docs/KNOWLEDGE.md` | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` |
 

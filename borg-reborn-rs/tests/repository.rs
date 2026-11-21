@@ -55,12 +55,13 @@ fn entry_documents_exist() {
         "docs/architecture/original-c-borg.md",
         "docs/architecture/borg-core.md",
         "docs/architecture/reborn-plan.md",
-        "reference/GAME-KNOWLEDGE.md",
-        "reference/DOCUMENTATION-MAP.md",
+        "docs/GAME-KNOWLEDGE.md",
+        "docs/DOCUMENTATION-MAP.md",
+        "docs/strategy/README.md",
         "docs/SOURCES.md",
         "docs/HANDOVER.md",
-        "reference/c-borg/BORG_SPEC.md",
-        "reference/c-borg/TUNABLE-BORG-PLAN.md",
+        "docs/c-borg/BORG_SPEC.md",
+        "docs/c-borg/TUNABLE-BORG-PLAN.md",
     ] {
         assert!(root().join(rel).is_file(), "missing {rel}");
     }
@@ -69,10 +70,12 @@ fn entry_documents_exist() {
 /// #816: every relative Markdown link in the current documents resolves.
 /// Checked: the entry documents at the root, every `.md` directly in
 /// `docs/`, `docs/architecture/`, the index pages of `docs/validation/`,
-/// `docs/archive/`, `docs/research/` and `docs/handover/`, and the pages of
-/// `reference/`, `harness/` and `tools/` written here. Not the documents
-/// moved into `reference/` from other repositories: they are kept byte for
-/// byte as their source had them, so their links follow its layout. Not checked: the
+/// `docs/archive/`, `docs/research/` and `docs/handover/`, the pages of
+/// `reference/`, `harness/` and `tools/` written here, and our documents
+/// moved into `docs/` from our other repositories (the strategy manual,
+/// the C Borg documents and fixes, the core's design, borg-agent's
+/// knowledge). Not the copies in `reference/`, checked byte for byte by
+/// `scripts/check-reference.py`. Not checked: the
 /// archived and receipt files (kept byte for byte at their new paths, so
 /// their links resolve against their old directory), the handover notes,
 /// and copies of other repositories. Fenced code and inline code are
@@ -88,8 +91,6 @@ fn current_documents_have_no_dangling_links() {
         "docs/archive/README.md",
         "docs/handover/README.md",
         "reference/README.md",
-        "reference/GAME-KNOWLEDGE.md",
-        "reference/DOCUMENTATION-MAP.md",
         "harness/README.md",
         "tools/README.md",
     ]
@@ -100,6 +101,27 @@ fn current_documents_have_no_dangling_links() {
         for entry in std::fs::read_dir(root().join(dir)).unwrap() {
             let path = entry.unwrap().path();
             if path.extension().is_some_and(|e| e == "md") {
+                files.push(path);
+            }
+        }
+    }
+    // Our documents moved here from our other repositories (#816), every
+    // page at any depth.
+    let mut stack: Vec<PathBuf> = [
+        "docs/strategy",
+        "docs/c-borg",
+        "docs/design",
+        "docs/research/borg-agent",
+    ]
+    .iter()
+    .map(|rel| root().join(rel))
+    .collect();
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "md") {
                 files.push(path);
             }
         }

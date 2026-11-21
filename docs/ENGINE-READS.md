@@ -12,7 +12,7 @@ hold exactly the declarations these need.*
 > engine through its own boundary, `borg-core/src/engine.rs`, which they do
 > not cover.
 
-Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
+Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 §1.1) and the spec:
 
 - **A**: channel A, the screen;
