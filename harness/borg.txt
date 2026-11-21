@@ -747,8 +747,9 @@ borg_param_town_light_percent = 100
 # when using a lantern. While using a torch, top up from Home or the General
 # Store after immediate needs and within the normal shopping budget.
 # The separate try-on bonus applies to fueled lantern upgrades.
-# Zero keeps the shipped shopping and fuel retention policies.
-borg_param_town_light_reserve_turns = 0
+# 20,000 turns covers a full 5,000-turn torch and three fresh spares.
+# Set to zero for the original light valuation and retention behavior.
+borg_param_town_light_reserve_turns = 20000
 borg_param_town_lantern_upgrade_power = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts

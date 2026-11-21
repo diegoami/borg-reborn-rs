@@ -136,9 +136,17 @@ fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
     if amount <= 0 || row[1] <= 0 { return 0; }
-    // Negative demand is an actual one-time repair/access requirement,
-    // not a stock quota: a second cure cannot restore the same lost XP.
-    if row[2] < 0 { return row[1] * amount.min(-row[2]) / -row[2]; }
+    if row[2] < 0 {
+        let target = -row[2];
+        let reserved = row[1] * amount.min(target) / target;
+        // Extra light has a smaller diminishing return above the reserve.
+        // Other negative-demand rows are satisfied once, such as a cure.
+        if row[0] == LIGHT as i64 && amount > target {
+            let extra = amount - target;
+            return reserved + (row[1] / 4).saturating_mul(extra) / (target + extra);
+        }
+        return reserved;
+    }
     row[1].saturating_mul(amount) / amount.saturating_add(row[2].max(1))
 }
 
@@ -599,6 +607,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     }
     if tval == TV_LIGHT {
         if ctx.light_reserve > 0 && item.cursed { return Vec::new(); }
+        // Supply rows are per copy. Kit and equipment quantities are applied in observe.
         return if item.timeout > 0 { vec![(LIGHT, i64::from(item.timeout) * UNIT)] } else { Vec::new() };
     }
     if tval == TV_DIGGING { return vec![(DIG, UNIT)]; }
@@ -693,7 +702,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let light_goal = journey.turns.max(light_reserve);
+    let light_goal = journey.fuel_goal(light_reserve);
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     let count = if ranged_reserve > 0 { COUNT } else { RANGED_RESERVE };
@@ -921,7 +930,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, light_goal: journey.turns.max(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1227,6 +1236,21 @@ mod tests {
         m.curves[ATTACK][2] = -UNIT; // one-time access/repair, such as a class book
         assert_eq!(m.ware(0, 0, 1), 0);
     }
+    #[test]
+    fn light_after_the_reserve_has_positive_diminishing_purchase_value() {
+        let mut m = model();
+        let torch = 5000 * UNIT;
+        let target = 4 * torch;
+        m.supplies.push([0, 0, LIGHT as i64, torch]);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -target, target - torch, 0];
+        let to_reserve = m.ware(0, 0, 1);
+        m.curves[LIGHT][3] = target;
+        let extra = m.ware(0, 0, 1);
+        m.curves[LIGHT][3] += torch;
+        let another = m.ware(0, 0, 1);
+        assert!(to_reserve > extra && extra > another && another > 0);
+    }
+
     #[test]
     fn fuel_reserve_protects_carried_light_even_when_home_has_enough() {
         let mut m = model();

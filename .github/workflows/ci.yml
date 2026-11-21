@@ -241,12 +241,13 @@ jobs:
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
       # #606: the harness default, the borg-rs core (it reads harness/borg.txt),
-      # plays smoke twice with the same keys, and the same keys, messages and
-      # states as its own reference.
+      # plays the shipped profile twice. Keep the historical reference at its
+      # original fuel setting for the keys, messages and states comparison.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2
-      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-1 harness/reference/smoke-borg-rs
+      - run: BORG_PARAM_TOWN_LIGHT_RESERVE_TURNS=0 BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-reference
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-borg-rs-reference harness/reference/smoke-borg-rs
       - id: ranger-phase
         run: python3 harness/check-ranger-phase.py --out "$RUNNER_TEMP/ranger-phase"
       - uses: actions/upload-artifact@v4
@@ -307,7 +308,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/smoke-borg-rs-reference harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and the dossiers carry their core's trace and parameters (T2.4):
       # the reborn core's trace-tail.jsonl and params.json, or the borg-rs
       # core's trace-core-tail.jsonl and params-core.json (#606). A borg-rs

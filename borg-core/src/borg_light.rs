@@ -653,6 +653,8 @@ fn has_flag(item: &BorgItem, flag: u32) -> bool {
 
 fn light_stack_turns(item: &BorgItem) -> i32 {
     if item.cursed || u32::from(item.tval) != TV_LIGHT { return 0; }
+    // Angband's object_split copies the light's full timeout to the wielded
+    // copy and leaves the other copies at the same timeout (obj-pile.c).
     i32::from(item.timeout.max(0)) * i32::from(item.iqty)
 }
 
@@ -691,8 +693,11 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
         }
     };
     let pack = &st.items.items[..inven_wield() as usize];
-    fuel(&pack[slot]) > 0 && fuel(equipped) + pack.iter().enumerate()
-        .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>() < reserve
+    if fuel(&pack[slot]) == 0 { return false; }
+    let remaining = fuel(equipped) + pack.iter().enumerate()
+        .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>();
+    let goal = crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve));
+    i64::from(remaining) < goal
 }
 
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
@@ -1003,6 +1008,15 @@ mod lightless_tests {
             item.flags[offset / 8] |= 1 << (offset % 8);
         }
         item
+    }
+
+    #[test]
+    fn each_torch_in_a_stack_has_its_own_full_timeout() {
+        let mut torch = light(&[OF_LIGHT_2], 5000);
+        torch.iqty = 3;
+        assert_eq!(light_stack_turns(&torch), 15000);
+        torch.iqty -= 1;
+        assert_eq!(light_stack_turns(&torch), 10000);
     }
 
     #[test]

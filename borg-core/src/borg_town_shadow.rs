@@ -393,7 +393,9 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
 fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
     let reserve = param(Param::town_light_reserve_turns);
     if reserve == 0 || !budget.urgent.is_empty()
-        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| turns >= reserve)
+        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| {
+            i64::from(turns) >= crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve))
+        })
     {
         return;
     }

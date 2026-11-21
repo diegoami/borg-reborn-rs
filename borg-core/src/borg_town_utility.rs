@@ -59,6 +59,10 @@ impl Journey {
             hp: i64::from(st.borg.tr(BI_MAXHP)).max(1) }
     }
 
+    pub(crate) fn fuel_goal(self, reserve: i64) -> i64 {
+        self.turns.max(reserve)
+    }
+
     pub(crate) fn exposure(self) -> i64 {
         (self.turns * self.depth * self.risk / (UNIT * self.level)).max(0)
     }
