@@ -319,12 +319,12 @@ borg_self_scum = FALSE
 
 borg_param_town_recall_value_percent = 100
 
-# Buying. Keep this many Word of Recall at any depth, valued at the full trip
-# weight (#557). 0 = off; 1 keeps a scroll for the trip home from CL1, but
-# flights then read it and the gold goes to replacements.
-# Impact: set to 2, 3 of 6 test games play differently.
+# Aim to keep one Word of Recall only once at least 400 gold is available
+# after urgent shopping and the general gold reserve. Below that the planner
+# values Recall by the walk it saves. A reserve of 0 disables the target.
 
-borg_param_town_recall_reserve = 0
+borg_param_town_recall_reserve = 1
+borg_param_buy_recall_from_gold = 400
 
 # Buying, C chooser only (borg_town_plan = 0): the C power scorer values
 # Recall only above this character level. The live planner does not read it.

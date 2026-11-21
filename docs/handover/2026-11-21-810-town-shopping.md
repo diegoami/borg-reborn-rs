@@ -12,4 +12,8 @@ It also limits purchases and ordinary Home withdrawals. Dungeon pickups
 remain available. The visit can still end early for danger or if the
 Borg has no reachable store that accepts the excess.
 
+The shipped Recall target is one with at least 400 discretionary gold after
+urgent shopping and the general gold reserve. Smaller budgets retain ordinary
+Recall valuation. `borg_param_buy_recall_from_gold` sets the threshold.
+
 Cross-class measurement of shopping and fuel remains in #810.

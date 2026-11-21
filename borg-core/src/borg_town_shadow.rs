@@ -470,7 +470,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         .map(|it| (it.tval, i32::from(it.iqty)))
         .collect();
     let capability = crate::borg_town_capability::observe(st, &stock, &kit,
-        crate::borg_town_utility::Journey::of(st));
+        crate::borg_town_utility::Journey::of(st), budget.gold);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
     let out = step(&StepInput {

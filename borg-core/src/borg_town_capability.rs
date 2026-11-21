@@ -649,7 +649,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
 
 /// Physical supply curves use the same forecast, gold opportunity cost and
 /// capacity constraints as the core town model. No consumable calls borg_power.
-pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey) -> Model {
+pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey, spendable_gold: i64) -> Model {
     let t = |id| i64::from(st.borg.tr(id)).max(0);
     let cfg = |id| i64::from(st.cfg(id)).clamp(0, 1_000_000);
     let exposure = journey.exposure();
@@ -737,7 +737,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // borg-reborn-rs (#557, owner): `town_recall_value_percent` scales what
     // the walk a scroll saves is worth (100 = as computed).
     let walk_value = recall_value_scaled(cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1));
-    let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
+    let recall_reserve = recall_reserve_for_budget(spendable_gold);
     if recall_reserve > 0 {
         curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
     } else {
@@ -1456,8 +1456,27 @@ fn scale_percent(value: i64, percent: i32) -> i64 {
     value.saturating_mul(i64::from(percent.max(0))) / 100
 }
 
+/// The discretionary budget is computed after urgent purchases and the
+/// general gold reserve. A small purse still gets the ordinary Recall curve.
+pub(crate) fn recall_reserve_for_budget(gold: i64) -> i64 {
+    eligible_recall_reserve(gold, param(Param::buy_recall_from_gold), param(Param::town_recall_reserve))
+}
+
+fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> i64 {
+    if gold < i64::from(minimum) { 0 } else { i64::from(reserve) }
+}
+
 #[cfg(test)]
 mod recall_value_tests {
+    #[test]
+    fn recall_reserve_starts_at_the_spendable_gold_floor() {
+        use super::eligible_recall_reserve;
+        assert_eq!(eligible_recall_reserve(399, 400, 1), 0);
+        assert_eq!(eligible_recall_reserve(400, 400, 1), 1);
+        assert_eq!(eligible_recall_reserve(800, 400, 0), 0);
+        assert_eq!(eligible_recall_reserve(0, 0, 1), 1);
+    }
+
     use super::scale_percent;
 
     #[test]
