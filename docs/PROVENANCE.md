@@ -32,9 +32,10 @@ crate and `harness/measurement/`.
 
 ## Angband Recorder (owner integration, 2026-11-14)
 
-Optional recorder crate/host adapter v0.3.0 at
-`5146ba6ff5187ec2320b9fd310dea466820db160`, adopted in #356 (v0.2.0 at
-`ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd` in #351). All 55
+Optional recorder crate/host adapter v0.3.1 at
+`88c9324b9958b7b08fad161841fb1a7fc0c2a3f4`, adopted in #834 (v0.3.0 at
+`5146ba6ff5187ec2320b9fd310dea466820db160` in #356; v0.2.0 at
+`ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd` in #351). All 58
 release files remain verbatim and sealed in recorder-pin.json. The receiving
 hook patch derives from the release adapter, preserving our harness hooks
 and applying only to the generated upstream-574b618c copy. Donor licences
