@@ -15,15 +15,14 @@ under Xvfb, driven with xdotool, recorded through the recorder CLI.
 Requires Xvfb, xdotool, libx11-dev and an X11-enabled recorder build
 (cmake -DSUPPORT_X11_FRONTEND=ON). Takes /tmp/angband-validation.lock.
 
-STATUS 2026-11-15 (re-review follow-up): the harness records and replays
-the X11 sessions, and the F3 decision path is proven up to the load
-(`newer=true` recorded, the panic prompt answered, the captured panic
-bytes loaded into a living character). The replayed post-load save then
-diverges: the replay asks for one more input than recorded and dies
-mid-save, leaving `<savefile>*.new` behind and one frame short of the
-recording. This reproduces deterministically and is filed as open
-evidence on the review issue; the script exits with this failure until
-the divergence is fixed, so it is deliberately NOT wired into CI."""
+STATUS 2026-11-16 (post re-review): the harness records and replays the
+X11 sessions on a verified-private display, and CI runs this script
+(.github/workflows/verify.yml). An earlier draft of this control reported
+a deterministic post-load save divergence; that run derived its engine
+export from a vendor tree already carrying recorder wiring, the report
+was retracted on the review issue, and the control passes against true
+upstream-vanilla builds: panic continuation, font isolation and menu
+selection replay with byte-identical saves."""
 import argparse
 import fcntl
 import hashlib

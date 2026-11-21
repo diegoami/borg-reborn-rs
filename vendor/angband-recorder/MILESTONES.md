@@ -12,3 +12,12 @@ acceptance after findings/corrections are recorded on issue #2.
 The branch-tree container, rolling save points, in-game enable/menu/branching,
 portable slim recordings and broader platform qualification remain future work.
 No next milestone starts automatically.
+
+## Owner-requested incident support, 2026-11-15
+
+The owner explicitly requested rolling save points and quick turn inspection
+after borg-reborn-rs#350. This standalone implementation/PR covers optional
+native save retention and CLI viewing only. It does not accept M1, publish an
+acceptance tag, open the full branch-tree/menu batch, or authorize consumers
+to bypass tagged release pins. The owner retains milestone review/release
+sequencing; the implementation supplies tests and a concrete review input.

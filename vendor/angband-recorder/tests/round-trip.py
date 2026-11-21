@@ -87,6 +87,13 @@ def main():
                       'BORG_REPLAY_KEY_SIZE':'256','BORG_REPLAY_SOFT_CURSOR':'0','BORG_REPLAY_COMPLEX_INPUT':'0'}
         run([cli,'record',out/'record','--',*command], cwd=build/'game', env=record_env, text=keys, log=log, timeout=30)
         saved = save_hashes(out / 'profile/save')
+        save_points = None
+        if os.environ.get('ANGBAND_SAVE_WINDOW') or os.environ.get('ANGBAND_SAVE_EVERY'):
+            save_points = json.loads((out / 'record/checkpoints/index.json').read_text())
+            require(save_points['saves'], 'rolling native saves were not captured')
+            for point in save_points['saves']:
+                data = (out / 'record/checkpoints' / point['file']).read_bytes()
+                require(hashlib.sha256(data).hexdigest() == point['sha256'], 'save-point hash differs')
         # Preserve the originals as evidence, then remove the old targets. A
         # no-op replay saver must fail rather than reuse old bytes.
         original_saves = out / 'original-saves'; original_saves.mkdir()
@@ -114,7 +121,8 @@ def main():
                   'frames':len(frames),'turn':frames[-1]['turn'],'inputs':len(events),'hook_families':families,'messages':len(messages),
                   'final_saves':saved,'replay_recreated_separate_saves':True,'ambient_environment_isolated':True,
                   'round_trip':'PASS','changed_rng_rejected':True,'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
-                  'prepared_build':bool(args.prepared_build),'python_optimization':__debug__ is False}
+                  'prepared_build':bool(args.prepared_build),'python_optimization':__debug__ is False,
+                  'native_save_points':len(save_points['saves']) if save_points else 0}
         (out/'result.json').write_text(json.dumps(result,indent=2)+'\n'); print(json.dumps(result))
 
 if __name__ == '__main__':
