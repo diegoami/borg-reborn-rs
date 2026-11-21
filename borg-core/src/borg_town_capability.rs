@@ -765,11 +765,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // the walk a scroll saves is worth (100 = as computed).
     let walk_value = recall_value_scaled(cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1));
     let recall_reserve = recall_reserve_for_budget(gold_after_urgent);
-    if recall_reserve > 0 {
-        curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
-    } else {
-        curve(RECALL, walk_value, UNIT);
-    }
+    // borg-reborn-rs (#859, owner): `town_recall_curve_scale_percent`
+    // stretches either curve, weight and demand together (100 = as before):
+    // at 110 the reserve's requirement reaches 1.1 scrolls, so a second one is
+    // worth a tenth of the first and a Borg with gold and room carries a spare.
+    let (weight, demand) = recall_curve(cfg(BORG_TOWN_W_TRIP) * UNIT, walk_value, recall_reserve,
+        param(Param::town_recall_curve_scale_percent));
+    curve(RECALL, weight, demand);
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
@@ -1098,6 +1100,43 @@ mod tests {
         assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
         assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
         assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
+    /// #859 (owner: "make it be 110 by default, so that they buy a few"):
+    /// the scale stretches the Recall curve; 100 is the curve before it.
+    #[test]
+    fn the_recall_curve_scale_adds_value_past_the_first_scroll() {
+        let (trip, walk) = (500 * UNIT, 80 * UNIT);
+        assert_eq!(recall_curve(trip, walk, 1, 100), (trip, -UNIT), "100: the #557 requirement");
+        assert_eq!(recall_curve(trip, walk, 0, 100), (walk, UNIT), "100: the walk curve");
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        let (w, d) = recall_curve(trip, walk, 1, 110);
+        m.curves[RECALL] = [RECALL as i64, w, d, 0, 0];
+        let first = m.gain(&[(RECALL, UNIT)]);
+        let second = m.gain(&[(RECALL, 2 * UNIT)]) - first;
+        assert_eq!(first, trip, "the first scroll keeps its value");
+        assert_eq!(second, trip / 10, "the second is worth a tenth of it");
+        assert_eq!(m.gain(&[(RECALL, 3 * UNIT)]), first + second, "a third adds nothing");
+        let (w, d) = recall_curve(trip, walk, 0, 110);
+        m.curves[RECALL] = [RECALL as i64, w, d, 0, 0];
+        assert!(m.gain(&[(RECALL, 2 * UNIT)]) > m.gain(&[(RECALL, UNIT)]), "the walk curve values a spare too");
+    }
+
+    /// #859: the room the Recall reserve still needs: the copies short,
+    /// the lightest offered copy's weight, and a slot when none is carried.
+    #[test]
+    fn the_recall_room_counts_the_copies_short_of_the_reserve() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: vec![[5, 3, RECALL as i64, UNIT]] };
+        let scroll = crate::borg_town_stock::Candidate { shop: 5, slot: 3, kind: 1, tval: 0, sval: 0, price: 125,
+            qty: 4, weight: 5, slots_cost: 1, stack_count: 0, class: 0 };
+        let other = crate::borg_town_stock::Candidate { slot: 4, weight: 1, ..scroll };
+        let offers = [scroll, other];
+        assert_eq!(recall_room(&m, 1, &offers), (5, 1), "one scroll and its slot");
+        assert_eq!(recall_room(&m, 0, &offers), (0, 0), "no reserve");
+        m.curves[RECALL][3] = UNIT;
+        assert_eq!(recall_room(&m, 1, &offers), (0, 0), "carried");
+        assert_eq!(recall_room(&m, 2, &offers), (5, 0), "one more joins the carried stack");
+        assert_eq!(recall_room(&m, 2, &[other]), (0, 0), "none on offer");
     }
 
     #[test]
@@ -1497,6 +1536,33 @@ fn low_value(ordinary: i64) -> i64 {
 /// saves) times `town_recall_value_percent` / 100.
 pub(crate) fn recall_value_scaled(value: i64) -> i64 {
     scale_percent(value, param(Param::town_recall_value_percent))
+}
+
+/// borg-reborn-rs (#557, #859): the RECALL curve's weight and demand. With a
+/// reserve, a requirement (negative demand) worth the full trip weight a
+/// scroll; without, the walk a scroll saves on a one-scroll diminishing
+/// curve. `scale` stretches either, weight and demand together, so each
+/// scroll keeps its value and the curve reaches further (100 = as before).
+fn recall_curve(trip_weight: i64, walk_value: i64, reserve: i64, scale: i32) -> (i64, i64) {
+    if reserve > 0 {
+        (scale_percent(trip_weight * reserve, scale), -scale_percent(reserve * UNIT, scale))
+    } else {
+        (scale_percent(walk_value, scale), scale_percent(UNIT, scale))
+    }
+}
+
+/// borg-reborn-rs (#859): the room the Word of Recall reserve still needs in
+/// the pack: the copies short of `reserve` (whole scrolls, the carried ones
+/// counted on the RECALL curve), times the lightest copy on offer, and a slot
+/// when none is carried. Nothing when no offered ware supplies Recall.
+pub(crate) fn recall_room(m: &Model, reserve: i64, candidates: &[crate::borg_town_stock::Candidate]) -> (i64, i32) {
+    let Some(row) = m.curves.get(RECALL) else { return (0, 0) };
+    let short = reserve - row[3] / UNIT;
+    if reserve <= 0 || short <= 0 { return (0, 0); }
+    let lightest = candidates.iter()
+        .filter(|c| c.qty > 0 && m.units(i64::from(c.shop), i64::from(c.slot), 1).iter().any(|&(id, _)| id == RECALL))
+        .map(|c| i64::from(c.weight)).min();
+    lightest.map_or((0, 0), |w| (short * w, i32::from(row[3] == 0)))
 }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {

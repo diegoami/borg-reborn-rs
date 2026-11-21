@@ -132,6 +132,8 @@ pub struct LiveState {
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
     home_moves: Vec<(u32, bool)>,
+    /// #859: the level clock of the visit whose departure room was noted.
+    room_noted: Option<i32>,
 }
 
 /// Consume one queued Home attempt after refreshing inventory. Count the kind
@@ -291,7 +293,24 @@ pub fn choose(st: &mut BorgState) -> bool {
         return true;
     }
     let a = crate::borg_town_shadow::live_action(st);
+    if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
+}
+
+/// borg-reborn-rs (#859): what a departure leaves free, against the room
+/// `town_departure_free_weight` and `town_departure_free_slots` ask for, in
+/// the messages a zoo run counts. Nothing when both are off.
+fn note_departure_room(st: &mut BorgState) {
+    let room = crate::borg_town_utility::departure_room();
+    if room == crate::borg_town_utility::Room::default() { return; }
+    let visit = st.borg.time.level;
+    if st.think.town_live.room_noted.replace(visit) == Some(visit) { return; }
+    let facts = crate::borg_town_budget::Facts::of(st);
+    let pack = &st.items.items[..crate::borg_item::inven_wield() as usize];
+    let slots = facts.pack_capacity - crate::borg_town_stock::pack_slots_used_of(pack);
+    let note = format!("# Town departure room: weight {} free (keep {}), slots {} free (keep {})",
+        facts.allowance(), room.weight, slots, room.slots);
+    borg_note(st, &note);
 }
 
 pub fn execute_store(st: &mut BorgState) -> bool {

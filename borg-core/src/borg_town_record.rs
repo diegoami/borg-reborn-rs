@@ -785,11 +785,13 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    // Stage 2: the purchases, with what the dispositions freed.
+    // Stage 2: the purchases, with what the dispositions freed. They leave
+    // the departure room free (#859; zero when off).
+    let room = if input.utility { crate::borg_town_utility::departure_room() } else { Default::default() };
     let limits = Limits {
         gold: input.limits.gold + freed.gold,
-        pack_slots: input.limits.pack_slots + freed.pack_slots,
-        weight: input.limits.weight + freed.weight,
+        pack_slots: input.limits.pack_slots + freed.pack_slots - room.slots,
+        weight: input.limits.weight + freed.weight - room.weight,
     };
     let st = st;
     let facts: BTreeMap<(u8, u8), &WareFact> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
