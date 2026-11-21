@@ -668,6 +668,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         set_errand(None, 0);
     }
     // `/stopscared`: with or without an errand, a scared core hands over.
+    crate::core_trace::sample_stop_scared(st, depth);
     let level = STOP_SCARED.load(Ordering::Relaxed);
     if level > 0 && depth > 0 && scared(st, level) {
         finish(st, "scared");

@@ -325,8 +325,8 @@ For `borg-zoo#536`, use retained cell evidence in both arms.
 
 ## Preparedness trace (#795)
 
-The vendored core adds optional fields to `trace-core.jsonl` with
-`core-trace@2`. On a think that checked preparedness from a live dive,
+The vendored core added optional preparedness fields to `trace-core.jsonl`
+under `core-trace@2`; `@3` retains them. On a think that checked preparedness from a live dive,
 stair, errand or trip caller, `prepared` holds the checks in call order.
 Each has `current_depth`, `proposed_depth`, `source` (call site), and
 `requirement`. A null requirement means prepared. A failure has a stable
@@ -360,7 +360,20 @@ aliases of the class values, so existing profiles work unchanged. All default to
 1000; bounds are 500..2000. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md) for family semantics,
 floor rounding, precedence and provenance. For example a profile can set
 `borg_param_attack_preference_mage_spell_permille` to 1600. The registry default is 1000; since #479
-the shipped `harness/borg.txt` sets 16 of them (the borg-zoo#170 speed30 bundle). Core trace output is now core-trace@2, retaining
-the old fields and adding per-invocation candidate/winner data. Historical @1 data
-and zoo profile/adapter formats remain unchanged. Freeze effective settings and
+the shipped `harness/borg.txt` sets 16 of them (the borg-zoo#170 speed30 bundle).
+The candidate and winner data was added in `core-trace@2` and remains in
+`@3`. Historical trace data and Zoo profile/adapter formats remain unchanged. Freeze effective settings and
 hashes and clear ambient BORG_PARAM_* overrides in profile-only comparisons.
+
+## Death-risk calibration trace (#790)
+
+`borg-reborn-rs/core-trace@3` adds `death_risk` to every traced think.
+It contains three 0–100 scores, `stop_eligible`, and the observed
+`features`. Keep the full trace and cell summary for calibration.
+`tools/calibrate-death-risk.py` uses the schema tag: `@1` and `@2` support
+only the legacy F1 proxy, while `@3` supplies F1–F3 and features for an
+offline F4 fit. The original Zoo #534 draft pilot used `@2` with risk fields
+before the schema bump. Analyze that set separately using `--draft-v2-risk`.
+F4 can distinguish `hurt_hp_per_action` from
+`fallback_danger`. The trace leaves the live stop policy unchanged. See
+[CORE-TRACE.md](CORE-TRACE.md) for the trace contract.

@@ -161,7 +161,12 @@ jobs:
           assert 'params_core_sha256=' + hashlib.sha256(data).hexdigest() in (run / 'config.txt').read_text()
           rows = [json.loads(l) for l in (run / 'trace-core.jsonl').read_text().splitlines()]
           assert rows and [r['think'] for r in rows] == list(range(1, len(rows) + 1))
-          assert all(r['schema'] == 'borg-reborn-rs/core-trace@2' and r['check'] != 'unclassified' for r in rows)
+          assert all(r['schema'] == 'borg-reborn-rs/core-trace@3' and r['check'] != 'unclassified' for r in rows)
+          for r in rows:
+              risk = r['death_risk']
+              assert isinstance(risk['stop_eligible'], bool)
+              assert all(0 <= risk[key] <= 100 for key in ('f1_danger_hp', 'f2_time_to_die', 'f3_race_escapes'))
+              assert {'hurt_hp_per_action', 'fallback_danger'} <= risk['features'].keys()
           assert all(isinstance(r['keys'], list) and set(r['goals']) == {'leaving', 'fleeing', 'fleeing_to_town', 'rising'} for r in rows)
           PYCORE
           if BORG_CORE=borg-rs BORG_PARAM_CAUTION_CLW_MIN_LOSS=101 harness/run.sh harness/out/core-invalid 1010 0 0 3000 menu; then

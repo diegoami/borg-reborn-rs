@@ -1905,7 +1905,7 @@ fn complete_attack_commands(value: f64) -> f64 {
     } else { value.ceil() }
 }
 
-fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
+pub(crate) fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration: f64, fallback_hp_per_turn: f64) -> Option<(f64, i32)> {
     if hp <= 0 || !hp_per_turn.is_finite() || hp_per_turn <= 0.0 || !duration.is_finite() || duration <= 0.0 { return None; }
     let hp = f64::from(hp);
     if fallback_hp_per_turn >= hp_per_turn && fallback_hp_per_turn > 0.0 { return Some((complete_attack_commands(hp / fallback_hp_per_turn), 0)); }
@@ -2164,11 +2164,11 @@ mod recall_survival_tests {
 #[derive(Clone, Copy, Debug, Default)]
 pub(crate) struct IncomingDamage {
     pub hp_per_turn: f64,
+    pub hurt_hp_per_turn: Option<f64>,
     pub unknown_damage: bool,
     pub unknown_fight: bool,
     pub ranged_risk: bool,
 }
-
 /// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
 /// persists during a future fight or the Recall delay.
 pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
@@ -2231,7 +2231,7 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         };
         let chance = crate::borg_fight_attack::hit_permyriad(3 * i32::from(race.level).max(1) + blow.hit_power, st.borg.tr(crate::borg_headers::borg_trait_h::BI_ARMOR));
         let average = blow_average_tenths(blow.base, blow.dice, blow.sides, blow.m_bonus, i32::from(race.level)) as f64 / 10.0;
-        out.hp_per_turn += blow_hp_per_action(average, chance, ratio, vulnerable);
+        out.add_blow(effect, blow_hp_per_action(average, chance, ratio, vulnerable));
     }
     use crate::headers::list_mon_spells_h::RSF_MAX;
     for spell in 1..RSF_MAX {
@@ -6865,4 +6865,13 @@ mod unseen_oil_lifecycle_tests {
 /// Cancelled input cannot later attribute another command's death to oil.
 pub(crate) fn unseen_bump_cancel_shot(st: &mut BorgState) {
     st.borg.unseen_bumps.shot = None;
+}
+
+impl IncomingDamage {
+    fn add_blow(&mut self, effect: &[u8], hp: f64) {
+        self.hp_per_turn += hp;
+        if effect == b"HURT" {
+            *self.hurt_hp_per_turn.get_or_insert(0.0) += hp;
+        }
+    }
 }
