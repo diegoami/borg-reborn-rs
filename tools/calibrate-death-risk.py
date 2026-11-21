@@ -19,7 +19,8 @@ from pathlib import Path
 import sys
 
 
-LEGACY_SCHEMAS = {f"borg-reborn-rs/core-trace@{version}" for version in (1, 2)}
+V2_SCHEMA = "borg-reborn-rs/core-trace@2"
+LEGACY_SCHEMAS = {"borg-reborn-rs/core-trace@1", V2_SCHEMA}
 RISK_SCHEMA = "borg-reborn-rs/core-trace@3"
 FORMULAS = ("f1_danger_hp", "f2_time_to_die", "f3_race_escapes")
 FITTED = "f4_fitted"
@@ -52,7 +53,7 @@ class Cell:
         return len(self.turns), bisect_right(self.turns, self.end - horizon)
 
 
-def read_cell(summary, path, include_features):
+def read_cell(summary, path, include_features, *, draft_v2_risk=False):
     trace = path.with_name("trace-core.jsonl")
     if not trace.is_file():
         return None
@@ -77,10 +78,11 @@ def read_cell(summary, path, include_features):
                 if schema is not None and row_schema != schema:
                     raise ValueError("mixed trace schemas within the same cell")
                 schema = row_schema
-                risk = row["death_risk"] if schema == RISK_SCHEMA else None
-                if schema in LEGACY_SCHEMAS:
+                instrumented = schema == RISK_SCHEMA or (schema == V2_SCHEMA and draft_v2_risk)
+                risk = row["death_risk"] if instrumented else None
+                if not instrumented:
                     if "death_risk" in row:
-                        raise ValueError("death_risk requires core-trace@3")
+                        raise ValueError("death_risk requires core-trace@3 or --draft-v2-risk for the draft pilot")
                     f1 = min(100.0, max(0.0, 100.0 * row["danger"] / max(1, row["hp"])))
                     cell.scores[FORMULAS[0]].append(f1)
                 else:
@@ -104,7 +106,7 @@ def read_cell(summary, path, include_features):
     return cell if cell.turns else None
 
 
-def load_cells(roots, include_features):
+def load_cells(roots, include_features, *, draft_v2_risk=False):
     summaries = {path.resolve() for root in roots for path in root.rglob("summary.json")}
     traces = {path.resolve() for root in roots for path in root.rglob("trace-core.jsonl")}
     cells = []
@@ -119,7 +121,7 @@ def load_cells(roots, include_features):
         else:
             excluded[f"summary outcome {summary['stop_reason']} (dead={summary['dead']})"] += 1
             continue
-        cell = read_cell(summary, path, include_features)
+        cell = read_cell(summary, path, include_features, draft_v2_risk=draft_v2_risk)
         if cell is None:
             excluded["missing or empty trace"] += 1
         else:
@@ -301,6 +303,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("roots", type=Path, nargs="+", help="directories containing extracted Zoo cells")
     parser.add_argument("--horizons", type=int, nargs="+", default=(100, 300, 1000))
+    parser.add_argument("--draft-v2-risk", action="store_true",
+                        help="read instrumented @2 rows from the original Zoo #534 draft pilot only")
     parser.add_argument("--no-fit", action="store_true", help="score F1–F3 over all available cells")
     parser.add_argument("--json", action="store_true", help="print machine-readable metrics")
     args = parser.parse_args()
@@ -309,7 +313,7 @@ def main():
     if any(not root.is_dir() for root in args.roots):
         parser.error("each root must be a directory")
     try:
-        cells, excluded = load_cells(args.roots, not args.no_fit)
+        cells, excluded = load_cells(args.roots, not args.no_fit, draft_v2_risk=args.draft_v2_risk)
         if not cells:
             raise ValueError(f"no scoreable cells ({dict(excluded)})")
         report = {

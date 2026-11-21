@@ -372,6 +372,8 @@ It contains three 0–100 scores, `stop_eligible`, and the observed
 `features`. Keep the full trace and cell summary for calibration.
 `tools/calibrate-death-risk.py` uses the schema tag: `@1` and `@2` support
 only the legacy F1 proxy, while `@3` supplies F1–F3 and features for an
-offline F4 fit. F4 can distinguish `hurt_hp_per_action` from
+offline F4 fit. The original Zoo #534 draft pilot used `@2` with risk fields
+before the schema bump. Analyze that set separately using `--draft-v2-risk`.
+F4 can distinguish `hurt_hp_per_action` from
 `fallback_danger`. The trace leaves the live stop policy unchanged. See
 [CORE-TRACE.md](CORE-TRACE.md) for the trace contract.

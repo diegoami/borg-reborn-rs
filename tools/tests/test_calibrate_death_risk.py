@@ -84,6 +84,18 @@ class CalibrationTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "trace-core.jsonl:1:.*death_risk"):
                 risk.read_cell(summary, root / "summary.json", True)
 
+    def test_draft_v2_pilot_requires_explicit_compatibility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            summary = dict(seed=1, race_idx=2, class_idx=3, game_turns=100, dead=False)
+            scores = dict(zip(risk.FORMULAS, (30, 40, 50)))
+            row = dict(schema=risk.V2_SCHEMA, turn=1, death_risk=dict(scores, stop_eligible=True))
+            (root / "trace-core.jsonl").write_text(json.dumps(row))
+            with self.assertRaisesRegex(ValueError, "--draft-v2-risk"):
+                risk.read_cell(summary, root / "summary.json", False)
+            loaded = risk.read_cell(summary, root / "summary.json", False, draft_v2_risk=True)
+            self.assertEqual([loaded.scores[name][0] for name in risk.FORMULAS], [30, 40, 50])
+
 
 if __name__ == "__main__":
     unittest.main()
