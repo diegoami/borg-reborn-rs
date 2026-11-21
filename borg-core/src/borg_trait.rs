@@ -2198,6 +2198,7 @@ fn borg_notice_inventory(st: &mut BorgState) {
 
         {
             let needs_id = borg_item_note_needs_id(st, &item);
+            let worth_a_scroll = item.uncursable && crate::borg_cursed::worth_a_scroll(st, slot);
             let mut t = tr(st);
 
             /* total up the weight of the items */
@@ -2209,7 +2210,10 @@ fn borg_notice_inventory(st: &mut BorgState) {
             }
 
             /* track first uncursable item */
-            if item.uncursable {
+            /* borg-reborn-rs (#830): a pack item only counts when it is worth
+             * a Remove Curse scroll (the read, the purchase and the town's
+             * CURSE capability all key on this trait) */
+            if worth_a_scroll {
                 t[BI_WHERE_CURSED] |= BORG_INVEN as i32;
                 if t[BI_FIRST_CURSED] == 0 {
                     t[BI_FIRST_CURSED] = slot + 1;
