@@ -80,7 +80,7 @@ large effects; record them anyway, marked "anecdotal".
 ### Recording
 
 Every trial gets a record (Section 16.3), including failed and inconclusive ones. Record the source
-commit of the game (`e473720ed` for this manual) and of the borg.
+commit of the game (`574b618c` for this manual) and of the borg.
 
 ---
 
@@ -104,7 +104,7 @@ Copy this block into a results log (one per trial):
 ```markdown
 ### Result: T-XXX-n <short name>
 - Date / tester:
-- Game commit: e473720ed   Borg commit (if any):
+- Game commit: 574b618c   Borg commit (if any):
 - Birth options: connect_stairs=Y force_descend=N no_recall=N no_selling=Y start_kit=Y ai_learn=Y
   feelings=Y know_runes=N know_flavors=N levels_persist=N percent_damage=N
 - Race/class (or stratification):

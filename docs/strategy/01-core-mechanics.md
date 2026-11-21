@@ -4,7 +4,7 @@ How the game engine actually works: time and energy, speed, hitting and being hi
 criticals, blows, the five stats and every table derived from them, skills, stealth and
 monster awareness, hit points and regeneration, experience, food, light, spell and device
 failure, saving throws, burden, digging, disarming and searching. Every formula below was read
-from the game source (angband master `e473720ed`, i.e. 4.2.6 plus later master changes); where a
+from the game source (angband master `574b618c`, i.e. 4.2.6 plus later master changes); where a
 number differs from older versions or wikis, the source wins.
 
 **Contents**
@@ -888,13 +888,22 @@ Blackguards (`COMBAT_REGEN`, intrinsic `IMPAIR_HP`): HP regen is halved; their m
 (percent becomes negative) and the lost mana heals HP; they gain mana from taking damage and
 from each melee round (see [Chapter 14](14-class-playbooks.md)).
 
-Resting modes (`src/player-util.c`): `R` with a count, `R&` "as needed" (stops when HP and SP
-are full and no blindness, confusion, poison, fear, terror, stun, cut, slow, paralysis,
-hallucination, recall or deep descent remain), `R*` "HP or SP" (stops when either is full).
+Resting modes (`src/ui-command.c:textui_cmd_rest()`,
+`src/player-util.c:player_resting_complete_special()`): `R` with a count, `R&` "as needed"
+(stops when HP and SP are full, SP not needed for a Blackguard, no recall or deep descent is
+pending and no timed effect flagged `COMPLETE_REST` remains), `R*` "HP and SP" (stops when
+both are full), `R!` "HP or SP" (stops when either is full). The `COMPLETE_REST` effects
+(`lib/gamedata/player_timed.txt`, checked by `src/player-timed.c:player_timed_continues_rest()`)
+are blindness, confusion, poison, fear, terror, stun, cut, slow, paralysis, hallucination,
+amnesia and scrambled stats; amnesia and scrambled stats are new in `574b618c`.
 Special modes get the resting bonus from the first turn; a counted rest only after 5 turns.
+Each new `R` clears what an interrupted rest left, and the turns that continue a rest are
+background commands, so repeating the last command repeats the `R` you typed
+(`src/cmd-cave.c:do_cmd_rest()`).
 
 **ADVICE.** Always rest with `R&` rather than a number. Cure cuts, poison and stun before resting:
-any of them stops HP regeneration completely.
+any of them stops HP regeneration completely. Expect `R&` to run on through amnesia and
+scrambled stats too; cure them (CCW cures amnesia) or rest by count if you do not want to wait.
 
 ## 1.15 Experience and levels
 

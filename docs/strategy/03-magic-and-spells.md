@@ -1,6 +1,6 @@
 # 3. Magic and Spells
 
-Everything about spellcasting in Angband 4.2.x (upstream master `e473720ed`): the four realms, how
+Everything about spellcasting in Angband 4.2.x (upstream master `574b618c`): the four realms, how
 spells are learned, the exact failure and mana formulas, every book and where it comes from, and
 every spell of every casting class with its resolved numbers, alternatives and advice. It ends with
 a cross-class "I need X" lookup and a casting decision procedure for an automated player.
@@ -39,8 +39,8 @@ interprets them. Warriors have no spells (`NO_MANA`).
 
 The official manual covers the commands (`b`rowse, `G`ain a spell, `m` cast) in
 [command](https://angband.readthedocs.io/en/latest/command.html) (vendored:
-[user-manual/command.rst](../../engine/angband/docs/command.rst)) and the class descriptions in
-[birth](https://angband.readthedocs.io/en/latest/birth.html) ([user-manual/birth.rst](../../engine/angband/docs/birth.rst)).
+[engine/angband/docs/command.rst](../../engine/angband/docs/command.rst)) and the class descriptions in
+[birth](https://angband.readthedocs.io/en/latest/birth.html) ([engine/angband/docs/birth.rst](../../engine/angband/docs/birth.rst)).
 It says only that failure "starts out fairly large but decreases as you gain levels", that casting
 without enough mana risks paralysis and CON damage, and that you need light (except necromancers)
 and must not be blind or confused. Everything below goes further, with the numbers.
@@ -1267,7 +1267,7 @@ when you need to drink potions reliably; recasting Bloodlust; Unholy Reprieve at
 
 FACT (`lib/gamedata/shape.txt`, `src/player-calcs.c:calc_shapechange()`, `src/player-util.c`,
 `src/cmd-core.c:cmd_get_item()`; official manual: [playing — Shape Changes](https://angband.readthedocs.io/en/latest/playing.html),
-vendored [user-manual/playing.rst](../../engine/angband/docs/playing.rst)).
+vendored [engine/angband/docs/playing.rst](../../engine/angband/docs/playing.rst)).
 
 **What you can't do while shapechanged:** cast or study, read scrolls, quaff potions, aim wands, use
 staves, zap rods, activate, wield/take off, inscribe, refuel, fire missiles, throw, or enter a shop

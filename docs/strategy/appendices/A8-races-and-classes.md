@@ -1,6 +1,6 @@
 # Appendix A8. Races, classes and player tables
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/p_race.txt`, `lib/gamedata/class.txt`, `lib/gamedata/player_property.txt`, `src/player-calcs.c`, `src/player-spell.c`, `src/player.c` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/p_race.txt`, `lib/gamedata/class.txt`, `lib/gamedata/player_property.txt`, `src/player-calcs.c`, `src/player-spell.c`, `src/player.c` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 Race and class statistics (stat modifiers, skills, hit dice, experience factor, infravision, intrinsic flags), class melee-blow parameters, class skill progressions, starting kits and titles, the player experience table and the stat-to-bonus tables from the C source. Choosing a combination: [Chapter 2](../02-character-creation.md); the formulas behind the tables: [Chapter 1](../01-core-mechanics.md).
 

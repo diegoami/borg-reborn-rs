@@ -5,7 +5,7 @@ sometimes stocks, how stock turns over, the exact price formulas, selling and th
 `birth_no_selling` rule, the home; then shopping lists by class and phase (with measured starting
 gold), money-making, and what not to buy.
 
-FACT statements cite the game source (angband master `e473720ed`, paths relative to the source
+FACT statements cite the game source (angband master `574b618c`, paths relative to the source
 root). Prices marked "observed" were measured by generating fresh games in a scratch build of this
 exact source (store stock is random, so they are samples, not guarantees). ADVICE is judgement.
 
@@ -29,7 +29,7 @@ Related: [Chapter 6](06-equipment.md) (what equipment is worth), [Chapter 7](07-
 (what consumables do, carry kits), [Chapter 9](09-dungeon.md) (the town as a level),
 [Chapter 12](12-game-plan-by-phase.md) (when to go back to town). Full store tables:
 [A9 stores](appendices/A9-stores.md). The official manual's town and store description is in
-[user-manual/dungeon.rst](../../engine/angband/docs/dungeon.rst) ("Townspeople", "Town Buildings").
+[engine/angband/docs/dungeon.rst](../../engine/angband/docs/dungeon.rst) ("Townspeople", "Town Buildings").
 
 ---
 
@@ -254,7 +254,7 @@ FACT (`src/game-world.c`, `src/store.c:store_update()`, `store_maint()`):
 
 * While you are **in the dungeon**, every `10 * store:turns` = 10,000 game turns (1,000 player
   turns at normal speed) increments a day counter. Nothing changes while you are in town, even
-  across save/load ([user-manual/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
+  across save/load ([engine/angband/docs/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
 * On returning to town, each store (not the home) runs `store_maint()` once per counted day:
   1. Black Market: discard items that no longer pass `black_market_ok()`.
   2. If turnover > 0: delete random items down to `stock_num - randint1(turnover)` (bounded by the
@@ -412,7 +412,7 @@ FACT:
 * **Selling or giving identifies.** The store learns the flavour and all unknown runes of the item
   before taking it (`src/store.c:do_cmd_sell()`), and you learn them too (runes become known for
   all items). With no_selling the store even accepts unknown `{??}` items of variable power that
-  look worthless, so you can learn their runes ([user-manual/option.rst](../../engine/angband/docs/option.rst)).
+  look worthless, so you can learn their runes ([engine/angband/docs/option.rst](../../engine/angband/docs/option.rst)).
 * A store only accepts kinds on its "buy" list; the home takes anything. Known-worthless items
   (value 0, e.g. cursed or bad potions) are refused.
 * The store may delete what you sold at the next turnover; with no_selling you can only buy it back

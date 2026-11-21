@@ -1,6 +1,6 @@
 # Appendix A4. Standard artifacts
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/artifact.txt`, `lib/gamedata/activation.txt`, `lib/gamedata/object.txt`, `lib/gamedata/slay.txt`, `lib/gamedata/brand.txt` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/artifact.txt`, `lib/gamedata/activation.txt`, `lib/gamedata/object.txt`, `lib/gamedata/slay.txt`, `lib/gamedata/brand.txt` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 All 138 standard artifacts (not used with the `birth_randarts` option), grouped by item type and sorted by level: base item, level and allocation, combat values, modifiers, slays/brands, resistances and flags, curses, and activation resolved through `activation.txt`. How to judge and use them: [Chapter 6](../06-equipment.md).
 

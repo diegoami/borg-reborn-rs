@@ -1,6 +1,6 @@
 # Appendix A1. Monsters by depth
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/monster.txt`, `lib/gamedata/monster_base.txt`, `lib/gamedata/monster_spell.txt`, `lib/gamedata/projection.txt`, `src/list-mon-spells.h` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/monster.txt`, `lib/gamedata/monster_base.txt`, `lib/gamedata/monster_spell.txt`, `lib/gamedata/projection.txt`, `src/list-mon-spells.h` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 Every **non-unique** monster race, grouped in 5-level depth bands by native depth, with its combat statistics, melee blows, spells (with computed maximum damage), defences and tactically relevant flags. Uniques are in [A2](A2-uniques.md); spell definitions and breath rules are in [A3](A3-monster-spells.md). Narrative advice is in [Chapter 8](../08-monsters.md).
 

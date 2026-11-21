@@ -24,8 +24,8 @@ Related: per-class strategy is in [Chapter 14](14-class-playbooks.md), every spe
 tables in [A8](appendices/A8-races-and-classes.md), and the underlying formulas (to-hit, blows,
 skills, regeneration) in [Chapter 1](01-core-mechanics.md). The official page is
 [Creating a Character](https://angband.readthedocs.io/en/latest/birth.html)
-(vendored: [user-manual/birth.rst](../../engine/angband/docs/birth.rst)); the birth options are documented in
-[user-manual/option.rst](../../engine/angband/docs/option.rst).
+(vendored: [engine/angband/docs/birth.rst](../../engine/angband/docs/birth.rst)); the birth options are documented in
+[engine/angband/docs/option.rst](../../engine/angband/docs/option.rst).
 
 ---
 

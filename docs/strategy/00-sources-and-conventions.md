@@ -5,6 +5,7 @@ the game's source code. This chapter says which version it describes, what it wa
 from, and how to read its citations, numbers and advice.
 
 - [The game version](#the-game-version)
+- [Changes for 574b618c](#changes-for-574b618c)
 - [The official user manual (required companion)](#the-official-user-manual-required-companion)
 - [The game source](#the-game-source)
 - [Other sources and how they were used](#other-sources-and-how-they-were-used)
@@ -14,14 +15,17 @@ from, and how to read its citations, numbers and advice.
 ## The game version
 
 The manual describes **upstream Angband (the C game)** at
-[angband/angband `e473720ed`](https://github.com/angband/angband/commit/e473720ed88a0f0c7ca66815cef3000eb4a38bc3).
-That commit is Angband 4.2.6 plus the later master changes. This repository mirrors it
-on the branch
-[`c-borg-reference`](https://github.com/diegoami/neo-angband-tracker/tree/c-borg-reference).
-The [C Borg documents](../c-borg/README.md) read the same commit.
+[angband/angband `574b618c`](https://github.com/angband/angband/commit/574b618c3bfec595f3503a58f8e488b1c4ae3a46),
+the version this repository plays. That commit is Angband 4.2.6 plus the later master
+changes. It is in this repository byte for byte, at `engine/angband/` (`engine/UPSTREAM`,
+[ENGINE](../ENGINE.md)); every citation of `src/` or `lib/gamedata/` here is to that tree.
+The manual was first written against the earlier master commit
+[`e473720ed`](https://github.com/angband/angband/commit/e473720ed88a0f0c7ca66815cef3000eb4a38bc3),
+which the [C Borg documents](../c-borg/README.md) still read; what changed between the
+two is listed in [Changes for 574b618c](#changes-for-574b618c).
 
 The 4.2.6 release tree in this repository's `reference/` directory is **not** the same
-game. The master commit changes 18 of the files in `lib/gamedata` and adds or removes
+game. The master commits change 18 of the files in `lib/gamedata` and add or remove
 none:
 
 - 16 change the rules: `activation.txt`, `artifact.txt`, `chest_trap.txt`, `class.txt`,
@@ -45,13 +49,31 @@ for 4.2. Examples:
 
 Be suspicious of any figure that is not cited to the source.
 
+## Changes for 574b618c
+
+Upstream made 22 commits between `e473720ed` and `574b618c`
+(`git log e473720ed..574b618c`). In `lib/gamedata/` only `player_timed.txt` changed. Most of
+the rest is the interface (Windows, SDL2, terminal redraws), the build and the C Borg. The
+changes a player can notice, and where this manual now describes them:
+
+| Change | Source at `574b618c` | Where |
+|---|---|---|
+| A complete rest (`R&`) now ends only when no timed effect with the new `COMPLETE_REST` flag remains. The flag is on the ten effects the code used to list, plus **amnesia** and **scrambled stats**: `R&` now also waits for those to wear off. | `lib/gamedata/player_timed.txt`, `src/player-timed.c:player_timed_continues_rest()`, `src/player-util.c:player_resting_complete_special()` | [01](01-core-mechanics.md), [10](10-exploration.md), [A10](appendices/A10-curses-traps-timed-effects.md) |
+| Starting a rest clears what an interrupted rest left behind, and the turns that continue a rest are background commands, so repeating the last command repeats the rest you asked for. | `src/ui-command.c:textui_cmd_rest()`, `src/cmd-cave.c:do_cmd_rest()` | [01](01-core-mechanics.md) |
+| Deep Descent flushes the command queue when the floor opens, so a queued command is not spent on the new level. | `src/game-world.c:process_world()` | [09](09-dungeon.md) |
+| Traps are shown the same way everywhere: the map, the look command and the terrain on the status line show every trap you remember that is not disabled. Noticing a trap no longer maps its grid. Trap detection forgets remembered traps that are gone; earthquake and *Destruction* forget every remembered trap within their radius. | `src/cave-map.c:map_info()`, `src/ui-target.c:aux_trap()`, `src/ui-display.c:prt_terrain()`, `src/trap.c:square_reveal_trap()`, `src/effect-handler-general.c:effect_handler_DETECT_TRAPS()`, `src/effect-handler-attack.c` | [10](10-exploration.md) |
+
+No other rule, number or message the manual cites changed. The C Borg's changes
+(`src/borg/`: healing-chance signs in `borg_heal()`, the reaction gate, slay multipliers,
+emergency swaps, teleport landing checks) leave the borg facts quoted here true.
+
 ## The official user manual (required companion)
 
 The official manual is at **<https://angband.readthedocs.io/en/latest/>**. It covers how to
 play: the commands, the screens and the options. This strategy manual assumes you have
-it, or at least know where it is. A copy of its source, from the same commit, is
-included in [`user-manual/`](../../engine/angband/docs) so you can read it offline. The in-game help
-files from `lib/help/` are copied there too.
+it, or at least know where it is. Its source, from the same commit, is in the engine
+tree at [`engine/angband/docs/`](../../engine/angband/docs) so you can read it offline. The in-game help
+files are at [`engine/angband/lib/help/`](../../engine/angband/lib/help).
 
 | Official page | What it covers | Where this manual extends it |
 |---|---|---|
@@ -160,11 +182,12 @@ than a design choice, it should go through this repository's triage rules
 
 ## Keeping this manual current
 
-The appendices are generated. After any change to `lib/gamedata/`, run this against an
-up-to-date game checkout:
+The appendices are generated. After any change to `lib/gamedata/`, run this from the
+repository root (it reads `engine/angband/` and records the commit in `engine/UPSTREAM`;
+`--src` points it at another tree):
 
 ```bash
-python3 docs/c-manual/tools/gen_appendices.py --src /path/to/angband
+python3 docs/strategy/tools/gen_appendices.py
 ```
 
 The chapters are written by hand. When the upstream source changes:

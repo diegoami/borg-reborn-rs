@@ -6,7 +6,7 @@ rune-based identification system, curses, ignoring, a per-depth "what should I b
 swap strategy, and a numeric scoring method a borg can use to compare two items.
 
 FACT statements cite the game source (`lib/gamedata/*.txt`, `src/*.c`, relative to the game source
-root, angband master at `e473720ed`). ADVICE is marked as such and is judgement, not source.
+root, angband master at `574b618c`). ADVICE is marked as such and is judgement, not source.
 
 ## Contents
 
@@ -154,7 +154,7 @@ FACT: heavy body armour carries a negative to-hit in its `attack:` line (`lib/ga
 e.g. Metal Scale Mail `1d4:-2:0`, Full Plate `2d4:-3:0`, Adamantite Plate `2d4:-4:0`. Because body
 armour is not the weapon slot, that to-hit penalty applies to all your melee and missile attacks
 (`src/player-calcs.c:calc_bonuses()`). The official manual shows it as the `(-#)` before the
-AC brackets ([user-manual/attack.rst](../../engine/angband/docs/attack.rst), "Your Armor Class").
+AC brackets ([engine/angband/docs/attack.rst](../../engine/angband/docs/attack.rst), "Your Armor Class").
 
 ---
 
@@ -724,7 +724,7 @@ FACT: `src/obj-randart.c` regenerates every artifact except The One Ring and the
 (Grond and the Massive Iron Crown, flag `QUEST_ART`) with new names, bases and powers. Power per
 tval is sampled around the standard set's average/min/max for that tval, and allocation
 probability and depth are recomputed from power, so the count, findability and power "match the
-standard set approximately" ([user-manual/option.rst](../../engine/angband/docs/option.rst)). Randart
+standard set approximately" ([engine/angband/docs/option.rst](../../engine/angband/docs/option.rst)). Randart
 activations use the activation's own level for device difficulty
 (`src/obj-util.c:get_use_device_chance()`: artifact level first, then activation level).
 
@@ -837,7 +837,7 @@ artifact (`object_touch()` marks it "assessed").
   teaches you its runes for every future item.
 * **Selling (or, with `birth_no_selling`, giving) to a store** also learns every rune on the item
   and makes its flavour known (`src/store.c:do_cmd_sell()`). The store keeps the item, so this is
-  "ID by sacrifice"; the official manual mentions it ([user-manual/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
+  "ID by sacrifice"; the official manual mentions it ([engine/angband/docs/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
 * `birth_know_runes` / `birth_know_flavors` make everything known from the start.
 * Wearing an unknown item is mostly safe in 4.2 because curses can be removed by taking the item
   off (except STICKY). The risk is a curse that acts while worn (paralysis, summon, teleport).
@@ -944,7 +944,7 @@ skipped by pickup. Ignoring works by:
 * Inscribing `!k` or `!*` protects an item from ignoring; artifacts are never quality-ignored.
 
 The store-side equivalent is the ignore option in the knowledge menu; see
-[user-manual/command.rst](../../engine/angband/docs/command.rst) and [user-manual/customize.rst](../../engine/angband/docs/customize.rst).
+[engine/angband/docs/command.rst](../../engine/angband/docs/command.rst) and [engine/angband/docs/customize.rst](../../engine/angband/docs/customize.rst).
 
 ADVICE (a sane ignore setup by phase):
 

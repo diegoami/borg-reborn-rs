@@ -1,6 +1,6 @@
 # Appendix A6. Object kinds
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/object.txt`, `lib/gamedata/object_base.txt`, `lib/gamedata/class.txt`, `lib/gamedata/projection.txt`, `lib/gamedata/player_timed.txt`, `src/list-effects.h` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/object.txt`, `lib/gamedata/object_base.txt`, `lib/gamedata/class.txt`, `lib/gamedata/projection.txt`, `lib/gamedata/player_timed.txt`, `src/list-effects.h` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 Every base object kind (371 in `object.txt`, not counting the 4 `type:none` display placeholders, plus the 20 spell books defined in `class.txt`), grouped by item type: allocation, cost and base statistics; for consumables and devices the effect in words, charges and recharge time. See [Chapter 7](../07-consumables-and-devices.md) and [Chapter 6](../06-equipment.md).
 

@@ -86,7 +86,7 @@ your current hit points. [Chapter 15](15-notes-for-the-borg.md) turns it into a 
 The official manual is blunt: "Your one and only mission is to slay Morgoth on dungeon level 100. In
 order to get there, you need to go down a lot of stairs and kill Sauron on dungeon level 99"
 ([guide](https://angband.readthedocs.io/en/latest/guide.html), vendored at
-[user-manual/guide.rst](../../engine/angband/docs/guide.rst)). In code terms the game has exactly two quests,
+[engine/angband/docs/guide.rst](../../engine/angband/docs/guide.rst)). In code terms the game has exactly two quests,
 `lib/gamedata/quest.txt`:
 
 ```

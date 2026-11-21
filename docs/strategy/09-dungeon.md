@@ -40,7 +40,7 @@ See also: [Chapter 10 (exploration)](10-exploration.md),
 [Chapter 8 (monsters)](08-monsters.md), [Chapter 5 (traps and status)](05-elements-and-status.md),
 and the official manual's "Exploring the Dungeon" page
 (<https://angband.readthedocs.io/en/latest/dungeon.html>, vendored as
-[user-manual/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
+[engine/angband/docs/dungeon.rst](../../engine/angband/docs/dungeon.rst)).
 
 ---
 
@@ -742,7 +742,9 @@ FACT (`effect_handler_DEEP_DESCENT()` and the countdown in `process_world()`):
   `stair-skip` 1 the increment is `4/1 + 1 = 5`.)
 * If the target is deeper than your current level, the countdown is `3 + 1d4` = **4–7
   world ticks** ("The air around you starts to swirl..."), then "The floor opens beneath
-  you!" and you arrive at the target with no connected staircase.
+  you!" and you arrive at the target with no connected staircase. Since `574b618c` the
+  command queue is flushed just before the drop (`cmdq_flush()` in `process_world()`), so
+  a queued or repeating command is not carried onto the new level.
 * If the target is not deeper than your current level (e.g. you are already at a quest
   level that blocks), you get "a malevolent presence blocking passage"; and if that
   becomes true during the countdown you are "thrown back in an explosion" — a radius-5

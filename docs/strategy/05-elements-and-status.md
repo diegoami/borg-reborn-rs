@@ -4,7 +4,7 @@ Everything that hurts you other than plain physical damage: the 25 elemental pro
 how resistance, immunity and vulnerability change them; breath damage and its caps; every timed
 effect, what prevents it and what cures it; experience and stat drain; monster melee effects;
 curses; traps; and a resistance checklist by dungeon level derived from `lib/gamedata/monster.txt`.
-All numbers were checked against the game source (angband master `e473720ed`, 4.2.6+).
+All numbers were checked against the game source (angband master `574b618c`, 4.2.6+).
 
 **Contents**
 

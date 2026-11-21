@@ -5,7 +5,7 @@ resolved from the effect code; device skill and failure rates; charges, rechargi
 timeouts; activations of artifacts, rings and dragon armour; pack and quiver limits; element
 damage to carried items; and standard carry kits per phase with the stock source of each item.
 
-FACT statements cite the game source (angband master `e473720ed`, paths relative to the source
+FACT statements cite the game source (angband master `574b618c`, paths relative to the source
 root). ADVICE is marked and is judgement. Effect handlers live in
 `src/effect-handler-general.c` and `src/effect-handler-attack.c`; item data in
 `lib/gamedata/object.txt`; activations in `lib/gamedata/activation.txt`.
@@ -40,7 +40,7 @@ Related: [Chapter 1](01-core-mechanics.md) (device skill, food, light),
 [Chapter 13](13-escapes-and-emergencies.md) (emergency procedures). Full kind table:
 [A6](appendices/A6-object-kinds.md). The official manual covers the commands to use items
 (`q`uaff, `r`ead, `E`at, `u`se staff, `a`im wand, `z`ap rod, `A`ctivate, `F`uel, `v` throw) in
-[user-manual/command.rst](../../engine/angband/docs/command.rst).
+[engine/angband/docs/command.rst](../../engine/angband/docs/command.rst).
 
 ---
 
@@ -286,7 +286,7 @@ can be aimed at a grid to catch groups.
 | Scroll of Rune of Protection | glyph of warding under you | 60 | 70-100 | - | 500 | - |
 
 Monster status effects (what hold/stun/confuse/slow/scare do) are listed in the official manual,
-[user-manual/attack.rst](../../engine/angband/docs/attack.rst) ("Monster status effects"), and in
+[engine/angband/docs/attack.rst](../../engine/angband/docs/attack.rst) ("Monster status effects"), and in
 [Chapter 4](04-combat.md). Uniques and many deep monsters resist.
 
 ADVICE: Banishment is the strongest "solve this level" item: banish `Z` (hounds), `D` (great

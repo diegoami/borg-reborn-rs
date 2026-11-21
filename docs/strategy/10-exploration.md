@@ -34,9 +34,9 @@ escapes in [Chapter 13](13-escapes-and-emergencies.md); stealth, noise and monst
 waking in [Chapter 1](01-core-mechanics.md); monster families in
 [Chapter 8](08-monsters.md). Official manual pages: commands
 (<https://angband.readthedocs.io/en/latest/command.html>, vendored
-[user-manual/command.rst](../../engine/angband/docs/command.rst)), playing / disturb / pathfinding
+[engine/angband/docs/command.rst](../../engine/angband/docs/command.rst)), playing / disturb / pathfinding
 (<https://angband.readthedocs.io/en/latest/playing.html>,
-[user-manual/playing.rst](../../engine/angband/docs/playing.rst)), options
+[engine/angband/docs/playing.rst](../../engine/angband/docs/playing.rst)), options
 (<https://angband.readthedocs.io/en/latest/option.html>).
 
 ---
@@ -300,6 +300,15 @@ FACT (`src/trap.c`, `lib/gamedata/trap.txt`):
 * Detection (`DETECT_TRAPS`) reveals all traps in the area and marks it `DTrap`; the
   status bar shows **DTrap** (yellow when you stand on the edge of the detected area).
   Running/pathing stops before you step out of a detected area.
+* What you remember of traps (since `574b618c`): the map (`src/cave-map.c:map_info()`), the
+  look command (`src/ui-target.c:aux_trap()`) and the terrain field of the status line
+  (`src/ui-display.c:prt_terrain()`) all show every trap, rune or web you remember that is
+  not disabled, even on a grid whose terrain you have not mapped. Noticing or detecting a
+  trap remembers the trap only, not the grid's terrain (`square_reveal_trap()`). Detection
+  also forgets remembered traps that are no longer there
+  (`src/effect-handler-general.c:effect_handler_DETECT_TRAPS()`), and an earthquake or
+  *Destruction* forgets every remembered trap within its radius
+  (`src/effect-handler-attack.c:effect_handler_EARTHQUAKE()`, `effect_handler_DESTRUCTION()`).
 * Trap-immune characters (item rune `TRAP_IMMUNE` or a trap-safe timed effect) walk over
   traps without triggering them; the pathfinder and runs then ignore traps.
 * Random corridor traps are rare on classic/modified levels (0–2 per level) but common in
@@ -520,8 +529,11 @@ FACT (`src/player-util.c:player_regen_hp()`):
 * **No HP regeneration at all while poisoned, stunned, cut or paralysed.** Cure those
   first (CLW reduces cuts; CSW/CCW cure cuts; CCW cures poison and stun).
 * Hunger: Weak or worse halves or cuts regeneration.
-* `R&` rests until HP/SP are full and no bad timed effect remains (and no recall or deep
-  descent pending); `R*` until HP and SP are full; or a number of turns.
+* `R&` rests until HP/SP are full and no timed effect flagged `COMPLETE_REST` remains (and
+  no recall or deep descent pending); `R*` until HP and SP are full; `R!` until either is;
+  or a number of turns (`src/player-util.c:player_resting_complete_special()`). Since
+  `574b618c` the flag (`lib/gamedata/player_timed.txt`) also covers amnesia and scrambled
+  stats, so `R&` waits for those as well (list in [Chapter 1](01-core-mechanics.md#114-regeneration-and-resting)).
 * Resting checks for keypress interrupts only every 128 turns, but any disturbance stops
   it (a monster appearing in view with `disturb_near`, damage, etc.).
 

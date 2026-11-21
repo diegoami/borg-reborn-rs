@@ -22,7 +22,7 @@ no-teleport areas), [Chapter 10](10-exploration.md) (when to leave),
 [Chapter 8](08-monsters.md) and [A3](appendices/A3-monster-spells.md) (monster
 attacks). The official manual covers the commands only
 (<https://angband.readthedocs.io/en/latest/command.html>,
-[user-manual/command.rst](../../engine/angband/docs/command.rst)).
+[engine/angband/docs/command.rst](../../engine/angband/docs/command.rst)).
 
 ---
 

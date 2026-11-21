@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
 Generate the data appendices (A1-A10) of the Angband strategy manual
-(docs/c-manual/appendices/) directly from the game data files
+(docs/strategy/appendices/) directly from the game data files
 lib/gamedata/*.txt and a few tables in src/*.c of an Angband source tree.
 
 Usage (from the repository root):
 
-    python3 docs/c-manual/tools/gen_appendices.py [--src ANGBAND_SRC] [--out DIR]
+    python3 docs/strategy/tools/gen_appendices.py [--src ANGBAND_SRC] [--out DIR]
+        [--commit HASH | --no-commit]
 
---src defaults to $ANGBAND_SRC, else to ./angband-src.  The manual was
-generated from the `c-borg-reference` branch of this repository (angband/angband
-e473720ed), e.g. `git worktree add ../angband-src origin/c-borg-reference`.  --out defaults to ../appendices relative
+--src defaults to $ANGBAND_SRC, else to engine/angband, the upstream tree this
+repository plays (angband/angband 574b618c, byte for byte; engine/UPSTREAM).
+The commit recorded in the headers is --commit, else the `commit=` line of an
+UPSTREAM file next to the source root (engine/UPSTREAM), else the last commit
+of a git checkout given as --src.  --out defaults to ../appendices relative
 to this script.  Python 3 standard library only; output is deterministic for
 a given source tree.
 
@@ -27,9 +30,9 @@ import sys
 from collections import OrderedDict, defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_SRC = os.environ.get("ANGBAND_SRC", "angband-src")
+DEFAULT_SRC = os.environ.get("ANGBAND_SRC", os.path.join("engine", "angband"))
 DEFAULT_OUT = os.path.normpath(os.path.join(HERE, "..", "appendices"))
-SCRIPT_REL = "docs/c-manual/tools/gen_appendices.py"
+SCRIPT_REL = "docs/strategy/tools/gen_appendices.py"
 
 SRC = DEFAULT_SRC
 OUT = DEFAULT_OUT
@@ -2851,7 +2854,10 @@ def gen_a10(curses, timed, kinds, acts, classes, props, slays, brands, shapes_sr
                 extra.append("gives the %s flag (plus other effects)" % fl)
         if "NONSTACKING" in t["flags"]:
             extra.append("NONSTACKING: cannot be extended while active")
-        others = [f for f in t["flags"] if f != "NONSTACKING"]
+        if "COMPLETE_REST" in t["flags"]:
+            # player_timed_continues_rest(), src/player-timed.c
+            extra.append("COMPLETE_REST: a complete rest (`R&`) does not end while it lasts")
+        others = [f for f in t["flags"] if f not in ("NONSTACKING", "COMPLETE_REST")]
         if others:
             extra.append(", ".join(others))
         if t["lower"]:
@@ -2917,8 +2923,25 @@ def load_shapes():
 # Main
 # ---------------------------------------------------------------------------
 
+def upstream_commit(src):
+    """The `commit=` line of an UPSTREAM file next to the source root
+    (engine/UPSTREAM for engine/angband), abbreviated to 8 characters."""
+    path = os.path.join(os.path.dirname(os.path.abspath(src)), "UPSTREAM")
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                key, _, val = line.strip().partition("=")
+                if key == "commit" and val:
+                    return val[:8]
+    except OSError:
+        pass
+    return ""
+
+
 def git_commit(src):
     """Last commit touching the game source (src/, lib/), ignoring doc-only commits."""
+    if not os.path.isdir(os.path.join(src, ".git")) and not os.path.isfile(os.path.join(src, ".git")):
+        return ""
     try:
         r = subprocess.run(["git", "-C", src, "log", "-1", "--format=%h", "--abbrev=9",
                             "--", "src", "lib"],
@@ -2935,6 +2958,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--src", default=DEFAULT_SRC, help="Angband source root")
     ap.add_argument("--out", default=DEFAULT_OUT, help="output directory")
+    ap.add_argument("--commit", default="",
+                    help="the commit to record in the headers")
     ap.add_argument("--no-commit", action="store_true",
                     help="do not record the source git commit in the headers")
     args = ap.parse_args(argv)
@@ -2943,7 +2968,8 @@ def main(argv=None):
     if not os.path.isfile(gd("monster.txt")):
         sys.exit("no lib/gamedata/monster.txt under %s (use --src)" % SRC)
     os.makedirs(OUT, exist_ok=True)
-    COMMIT = "" if args.no_commit else git_commit(SRC)
+    COMMIT = "" if args.no_commit else (args.commit or upstream_commit(SRC)
+                                        or git_commit(SRC))
 
     load_effect_descs()
     consts = load_constants()

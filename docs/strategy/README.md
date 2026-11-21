@@ -1,6 +1,6 @@
 # The Angband Strategy Manual
 
-*A strategy guide to upstream Angband (the C game, 4.2.6 plus master at `e473720ed`),
+*A strategy guide to upstream Angband (the C game, 4.2.6 plus master at `574b618c`, the version this repository plays),
 grounded in the game's source code. It is for players and for automatic players (borgs).*
 
 The [official user manual](https://angband.readthedocs.io/en/latest/) explains the
@@ -15,8 +15,8 @@ survive and win. Use it to look things up:
 
 Every number comes from the game's data (`lib/gamedata/`) or code (`src/`), with a
 citation so you can check it. [Chapter 0](00-sources-and-conventions.md) gives the
-version, the sources (including the official manual, a copy of which is in
-[`user-manual/`](../../engine/angband/docs)) and the conventions.
+version, the sources (including the official manual, the Angband developers', in
+[`engine/angband/docs/`](../../engine/angband/docs)) and the conventions.
 
 ## How to use this manual
 
@@ -72,13 +72,15 @@ version, the sources (including the official manual, a copy of which is in
 | A9 | [Stores](appendices/A9-stores.md) | Store stock and price rules |
 | A10 | [Curses, traps and timed effects](appendices/A10-curses-traps-timed-effects.md) | Curses, traps, timed effects and their cures, properties, runes |
 
-### Official user manual (copy)
+### Official user manual
 
-[`user-manual/`](../../engine/angband/docs) holds the reStructuredText source of
-<https://angband.readthedocs.io/en/latest/> and the in-game help files, both from the
-same commit. They are included so that the game version and its official manual can be
-read together. The text and its licence belong to the Angband developers (see
-[`user-manual/copying.rst`](../../engine/angband/docs/copying.rst)).
+The official manual is the Angband developers' text, not part of this
+manual. Its reStructuredText source, published at
+<https://angband.readthedocs.io/en/latest/>, is in
+[`engine/angband/docs/`](../../engine/angband/docs), and the in-game help
+files are in [`engine/angband/lib/help/`](../../engine/angband/lib/help), both
+at the commit this repository plays, untouched. Its licence:
+[`engine/angband/docs/copying.rst`](../../engine/angband/docs/copying.rst).
 
 ## Rules that keep characters alive
 

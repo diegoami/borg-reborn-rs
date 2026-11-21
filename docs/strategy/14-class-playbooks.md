@@ -27,7 +27,7 @@ depth-readiness checklists live in [Chapter 12](12-game-plan-by-phase.md). Full 
 descriptions are in [Chapter 3](03-magic-and-spells.md) and [A7](appendices/A7-class-spells.md);
 race/class numbers in [Chapter 2](02-character-creation.md) and
 [A8](appendices/A8-races-and-classes.md). The official manual's class paragraphs are in
-[user-manual/birth.rst](../../engine/angband/docs/birth.rst)
+[engine/angband/docs/birth.rst](../../engine/angband/docs/birth.rst)
 ([online](https://angband.readthedocs.io/en/latest/birth.html)).
 
 ---

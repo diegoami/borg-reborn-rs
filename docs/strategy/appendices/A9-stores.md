@@ -1,6 +1,6 @@
 # Appendix A9. Stores
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/store.txt`, `lib/gamedata/terrain.txt`, `lib/gamedata/object.txt`, `lib/gamedata/constants.txt`, `src/store.c` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/store.txt`, `lib/gamedata/terrain.txt`, `lib/gamedata/object.txt`, `lib/gamedata/constants.txt`, `src/store.c` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 Each town store: owners and purse limits, stock slots and turnover, items always stocked, the list normal stock is drawn from (with base cost and effect), what the store buys; then the pricing and restocking rules from `src/store.c`. Shopping strategy: [Chapter 11](../11-town-and-shopping.md).
 

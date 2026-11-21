@@ -1,6 +1,6 @@
 # Appendix A2. Uniques
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/monster.txt`, `lib/gamedata/monster_base.txt`, `lib/gamedata/monster_spell.txt`, `lib/gamedata/projection.txt`, `src/list-mon-spells.h` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/monster.txt`, `lib/gamedata/monster_base.txt`, `lib/gamedata/monster_spell.txt`, `lib/gamedata/projection.txt`, `src/list-mon-spells.h` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 One card per unique monster (101 in total), in order of native depth: statistics, melee, every spell with its maximum damage, defences and flags, escorts, drops and the in-game description. Uniques always have exactly their listed HP (`src/mon-make.c`: "Uniques get a fixed amount of HP"), so their breath damage is exact at full health and drops as they are wounded. Tactics are in [Chapter 8](../08-monsters.md).
 

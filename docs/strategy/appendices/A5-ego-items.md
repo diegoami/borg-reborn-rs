@@ -1,6 +1,6 @@
 # Appendix A5. Ego items
 
-> **Generated file - do not edit by hand.** Produced by `docs/c-manual/tools/gen_appendices.py` from `lib/gamedata/ego_item.txt`, `lib/gamedata/object_property.txt`, `lib/gamedata/slay.txt`, `lib/gamedata/brand.txt`, `src/obj-make.c` of the Angband source tree at commit `e473720ed`. Regenerate with `python3 docs/c-manual/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
+> **Generated file - do not edit by hand.** Produced by `docs/strategy/tools/gen_appendices.py` from `lib/gamedata/ego_item.txt`, `lib/gamedata/object_property.txt`, `lib/gamedata/slay.txt`, `lib/gamedata/brand.txt`, `src/obj-make.c` of the Angband source tree at commit `574b618c`. Regenerate with `python3 docs/strategy/tools/gen_appendices.py --src <angband-source-root>` (run from the repository root).
 
 All 107 ego-item types, grouped by the kind of item they apply to: applicable item types, allocation, value, combat bonuses, modifiers, flags, slays/brands and random extra powers. Use with [Chapter 6](../06-equipment.md).
 
