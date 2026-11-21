@@ -125,10 +125,6 @@ pub struct FlowState {
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
     pub to_stairs: bool,
-    /// borg-reborn-rs (#838, `caution_kept_reach_threat_percent`): the monsters
-    /// that move are a threat now, so the reach of a monster kept at range
-    /// does not stop this spread (set once per `borg_flow_spread`).
-    pub kept_reach_open: bool,
     /// A weighted stair route gives one step per observation.
     weighted_flight: WeightedFlight,
     /// `borg_temp_n`: entries in use in the temporary grid list
@@ -162,7 +158,6 @@ impl Default for FlowState {
             hunting: false,
             flight_no_danger: false,
             to_stairs: false,
-            kept_reach_open: false,
             weighted_flight: WeightedFlight::None,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
@@ -771,10 +766,6 @@ pub fn borg_flow_spread(
     sneak: bool,
 ) {
     let mut o = 0;
-
-    // borg-reborn-rs (#838): hunted by monsters that move, the reach of a
-    // monster kept at range does not stop the flow.
-    st.flow.kept_reach_open = crate::borg_caution::kept_reach_threat(st);
 
     /* Default starting points */
     let mut origin_y = st.borg.c.y;

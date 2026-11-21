@@ -295,13 +295,6 @@ borg_param_town_fear_cure_count = 0
 # of their reach. 0 = the entries are not read. borg-zoo measures it against
 # shipped and against caution_ranged_vs_immobile 2.
 borg_param_caution_ranged_only = 0
-# Hunted by monsters that move (#838, owner: the reach of a monster kept at
-# range "must not override threats from mobile monsters"): above 0, the reach
-# of a monster kept at range (caution_ranged_only, or caution_ranged_vs_immobile
-# 2) does not stop a flow while the danger from the monsters that move is at
-# least this percent of the HP. Never onto its grid; the melee ban stays. 0 =
-# the reach always stops a flow (a flow to the stairs may pass, as before).
-borg_param_caution_kept_reach_threat_percent = 0
 
 # Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
 # at least one Cure Serious Wounds from the start"): the first this many
