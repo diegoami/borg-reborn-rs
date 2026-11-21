@@ -24,3 +24,11 @@ borg_param_prepared_mid_clevel_offset = 5
 borg_param_prepared_deep_clevel_offset = 8
 borg_param_prepared_deep_min_clevel = 0
 borg_param_prepared_deep_max_clevel = 38
+# #863 (owner: staples start losing value after a few copies, by class):
+# free copies per staple, close to what this class carries now (measured on 36
+# games, scaled to the common 6 for Phase Door, Cure Light Wounds and oil, 4 for
+# Cure Serious Wounds; docs/CALIBRATION.md, #863).
+borg_param_town_staple_clw = 6
+borg_param_town_staple_csw = 3
+borg_param_town_staple_phase = 8
+borg_param_town_staple_oil = 6

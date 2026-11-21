@@ -34,3 +34,11 @@ borg_param_town_oil_apart = 0
 # (scale 50, as healing's) for the arrows past it.
 borg_param_town_ranger_arrows_max = 50
 borg_param_town_ranger_arrows_curve_scale_percent = 50
+# #863 (owner: staples start losing value after a few copies, by class):
+# free copies per staple, close to what this class carries now (measured on 36
+# games, scaled to the common 6 for Phase Door, Cure Light Wounds and oil, 4 for
+# Cure Serious Wounds; docs/CALIBRATION.md, #863).
+borg_param_town_staple_clw = 7
+borg_param_town_staple_csw = 4
+borg_param_town_staple_phase = 7
+borg_param_town_staple_oil = 6

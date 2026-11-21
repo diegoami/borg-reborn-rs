@@ -278,15 +278,23 @@ borg_param_town_store_keep_min = 3
 borg_param_town_prepared_percent = 0
 borg_param_town_prepared_copies = 2
 
-# Staples lose value (#863, owner: "make staple objects start losing value
-# starting from the 8th"; "it must be a decaying curve"): the healing potions
-# (counted as Cure Light Wounds), Phase Door, flasks of oil, food and, without
-# a lantern, torches. After this many copies carried or bought, each further
-# copy keeps staple_decay_percent of the previous copy's marginal value, so
-# 40 Cure Light Wounds do not outbid a first Remove Curse. 0 = off.
+# Staples lose value (#863, owner: "make staple objects start losing value";
+# "it must be a decaying curve"; "Food and Light start decaying from 4, phase
+# door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
+# dependent"): after this many copies of a staple carried or bought, each
+# further copy is worth staple_decay_percent of the copy before, so 40 Cure
+# Light Wounds do not outbid a first Remove Curse. 0 = no decay for that
+# kind. The class files (below) set Cure Light and Serious Wounds, Phase Door
+# and oil per class; food, light and Cure Critical Wounds are common.
 
-borg_param_town_staple_free_copies = 0
 borg_param_town_staple_decay_percent = 80
+borg_param_town_staple_clw = 6
+borg_param_town_staple_csw = 4
+borg_param_town_staple_ccw = 2
+borg_param_town_staple_phase = 6
+borg_param_town_staple_oil = 6
+borg_param_town_staple_food = 4
+borg_param_town_staple_light = 4
 
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer
@@ -1448,6 +1456,10 @@ borg_param_prepared_mid_clevel_offset__warrior = -4
 borg_param_prepared_deep_clevel_offset__warrior = 5
 borg_param_prepared_deep_min_clevel__warrior = 0
 borg_param_prepared_deep_max_clevel__warrior = 38
+borg_param_town_staple_clw__warrior = 7
+borg_param_town_staple_csw__warrior = 4
+borg_param_town_staple_phase__warrior = 5
+borg_param_town_staple_oil__warrior = 6
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1465,6 +1477,10 @@ borg_param_prepared_mid_clevel_offset__mage = 5
 borg_param_prepared_deep_clevel_offset__mage = 8
 borg_param_prepared_deep_min_clevel__mage = 0
 borg_param_prepared_deep_max_clevel__mage = 38
+borg_param_town_staple_clw__mage = 6
+borg_param_town_staple_csw__mage = 3
+borg_param_town_staple_phase__mage = 8
+borg_param_town_staple_oil__mage = 6
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1481,6 +1497,10 @@ borg_param_prepared_mid_clevel_offset__druid = 0
 borg_param_prepared_deep_clevel_offset__druid = 13
 borg_param_prepared_deep_min_clevel__druid = 0
 borg_param_prepared_deep_max_clevel__druid = 46
+borg_param_town_staple_clw__druid = 5
+borg_param_town_staple_csw__druid = 3
+borg_param_town_staple_phase__druid = 8
+borg_param_town_staple_oil__druid = 6
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1497,6 +1517,10 @@ borg_param_prepared_mid_clevel_offset__priest = 0
 borg_param_prepared_deep_clevel_offset__priest = 13
 borg_param_prepared_deep_min_clevel__priest = 0
 borg_param_prepared_deep_max_clevel__priest = 46
+borg_param_town_staple_clw__priest = 6
+borg_param_town_staple_csw__priest = 3
+borg_param_town_staple_phase__priest = 4
+borg_param_town_staple_oil__priest = 6
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1514,6 +1538,10 @@ borg_param_prepared_mid_clevel_offset__necromancer = 5
 borg_param_prepared_deep_clevel_offset__necromancer = 8
 borg_param_prepared_deep_min_clevel__necromancer = 0
 borg_param_prepared_deep_max_clevel__necromancer = 38
+borg_param_town_staple_clw__necromancer = 5
+borg_param_town_staple_csw__necromancer = 3
+borg_param_town_staple_phase__necromancer = 7
+borg_param_town_staple_oil__necromancer = 6
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1532,6 +1560,10 @@ borg_param_prepared_mid_clevel_offset__paladin = 0
 borg_param_prepared_deep_clevel_offset__paladin = 7
 borg_param_prepared_deep_min_clevel__paladin = 0
 borg_param_prepared_deep_max_clevel__paladin = 40
+borg_param_town_staple_clw__paladin = 5
+borg_param_town_staple_csw__paladin = 4
+borg_param_town_staple_phase__paladin = 6
+borg_param_town_staple_oil__paladin = 6
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1550,6 +1582,10 @@ borg_param_prepared_mid_clevel_offset__rogue = 0
 borg_param_prepared_deep_clevel_offset__rogue = 10
 borg_param_prepared_deep_min_clevel__rogue = 0
 borg_param_prepared_deep_max_clevel__rogue = 43
+borg_param_town_staple_clw__rogue = 6
+borg_param_town_staple_csw__rogue = 4
+borg_param_town_staple_phase__rogue = 7
+borg_param_town_staple_oil__rogue = 6
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1571,6 +1607,10 @@ borg_param_prepared_deep_max_clevel__ranger = 41
 borg_param_town_oil_apart__ranger = 0
 borg_param_town_ranger_arrows_max__ranger = 50
 borg_param_town_ranger_arrows_curve_scale_percent__ranger = 50
+borg_param_town_staple_clw__ranger = 7
+borg_param_town_staple_csw__ranger = 4
+borg_param_town_staple_phase__ranger = 7
+borg_param_town_staple_oil__ranger = 6
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -1588,6 +1628,10 @@ borg_param_prepared_mid_clevel_offset__blackguard = -4
 borg_param_prepared_deep_clevel_offset__blackguard = 5
 borg_param_prepared_deep_min_clevel__blackguard = 0
 borg_param_prepared_deep_max_clevel__blackguard = 38
+borg_param_town_staple_clw__blackguard = 7
+borg_param_town_staple_csw__blackguard = 4
+borg_param_town_staple_phase__blackguard = 4
+borg_param_town_staple_oil__blackguard = 6
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
