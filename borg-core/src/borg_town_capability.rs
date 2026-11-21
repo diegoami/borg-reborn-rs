@@ -847,14 +847,15 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let fear_cap = i64::from(param(Param::town_fear_cure_count));
     // borg-reborn-rs (#837, owner): while not confused, the first
     // `town_confusion_cure_reserve` confusion cures are a requirement (as
-    // Recall's reserve): a cure of the full timer is one unit, a Cure Light
-    // Wounds the fraction its 20 turns make of it.
+    // Recall's reserve): a full cure (CURE:CONFUSED: Cure Serious or Critical
+    // Wounds, Clear Mind, a Curing staff) is one unit. Not confused, the timer
+    // is 0, so a Cure Light Wounds (TIMED_DEC, clamped to the timer in
+    // `item_supplies`) supplies none (review of #843, F1).
     let confusion_reserve = i64::from(param(Param::town_confusion_cure_reserve)).max(0);
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
         if cap == CONFUSION && confusion_reserve > 0 && t(condition) == 0 {
-            let timer = i64::from(engine::player_timed(TMD_CONFUSED)).max(1);
             curve(cap, scale_percent(cfg(BORG_TOWN_W_RESTORE) * UNIT, param(Param::town_confusion_cure_reserve_percent)) * confusion_reserve,
-                -(confusion_reserve * timer * UNIT));
+                -(confusion_reserve * UNIT));
             continue;
         }
         // borg-reborn-rs (#663, owner): a fear cure (Boldness) is worth very

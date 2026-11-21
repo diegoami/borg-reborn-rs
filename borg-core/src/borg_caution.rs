@@ -1769,17 +1769,25 @@ fn confusion_clw_cure() -> bool {
     p(Param::caution_confused_clw_cure) != 0
 }
 
-/// borg-reborn-rs (#837): the Borg carries something its confusion chains
-/// would drink or eat (Clear Mind, Cure Serious or Critical Wounds, Cure
-/// Light Wounds with `caution_confused_clw_cure`, Healing, a Curing staff).
+/// borg-reborn-rs (#837, review): the Borg carries something the cures at the
+/// end of `borg_caution` (the chain `caution_confused_cure_before_walk` hands
+/// the turn to; see "# Healing.  Confusion.") would use: Clear Mind, Cure
+/// Serious Wounds, Cure Critical Wounds (only above `item_use_ccw_min_stock`,
+/// as `borg_quaff_crit` keeps the last ones), Cure Light Wounds with
+/// `caution_confused_clw_cure`, a Healing potion, a Staff of Healing. Keep it
+/// the same as that chain. A Staff of Curing is not in it (it is in
+/// `borg_heal`'s level 2, behind its danger gate), and an equipped activation
+/// is not carried in the pack.
 fn confusion_cure_carried(st: &mut BorgState) -> bool {
     let mut cures = vec![
         (TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind),
         (TV_POTION as i32, st.item_val.sv_potion_cure_serious),
-        (TV_POTION as i32, st.item_val.sv_potion_cure_critical),
         (TV_POTION as i32, st.item_val.sv_potion_healing),
-        (TV_STAFF as i32, st.item_val.sv_staff_curing),
+        (TV_STAFF as i32, st.item_val.sv_staff_healing),
     ];
+    if st.borg.tr(BI_ACCW) >= p(Param::item_use_ccw_min_stock) {
+        cures.push((TV_POTION as i32, st.item_val.sv_potion_cure_critical));
+    }
     if confusion_clw_cure() {
         cures.push((TV_POTION as i32, st.item_val.sv_potion_cure_light));
     }

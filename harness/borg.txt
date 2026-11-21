@@ -924,7 +924,9 @@ borg_param_caution_immobile_step_to_exit = 1
 # - caution_confused_cure_before_walk: a confused Borg carrying a cure does not
 #   start a Desperate for Stairs walk before it. 2: none at all while confused.
 # - caution_confusion_cure_when_stuck: next to an immobile confuser the cure is
-#   held (#646) only while a step out of its reach can still be taken.
+#   held (#646) only while a step out of its reach can still be taken. This
+#   and caution_immobile_step_mobile_first act only with
+#   caution_ranged_vs_immobile >= 1, which ships 0.
 # - caution_immobile_step_mobile_first: the step away from an immobile
 #   attacker prefers the grid with the least danger from monsters that move,
 #   then the stairs.
