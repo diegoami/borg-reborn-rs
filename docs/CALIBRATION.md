@@ -1073,7 +1073,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:346` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:353` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -5685,8 +5685,11 @@ Word of Recall, weight 5).
   moves one copy per store action and solves again (`borg_town_shadow.rs`,
   `evaluate`: every live action but a purchase moves one copy, #507), so a
   stack goes down copy by copy while it has a surplus. The minimum is a
-  floor for a stack that serves a need (potions, scrolls, flasks, food):
-  at the minimum it is no longer stored, so the live walk stops there and
+  floor for a stack that serves a need (potions, scrolls, torches, food,
+  through the kit's `need` or `serves`) and for flasks of oil (by tval:
+  oil serves no `need`; owner: "check that flasks are taken"): at the
+  minimum it is kept whole, not stored, sold or dropped, so the live walk
+  stops there and
   the stack frees no slot (the re-review of #864 found it went on down to
   none). An item that serves no need (a lone armour piece) has no floor,
   and short of slots whole stacks go. A pack whose only storable weight is
@@ -5727,6 +5730,6 @@ Word of Recall, weight 5).
 |---|---|---|---|---|
 | `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
 | `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:348` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:355` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:812` |
