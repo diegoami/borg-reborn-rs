@@ -864,7 +864,7 @@ pub(crate) fn phase_door(
     // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
     // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
     // grid does not (`dis` 10 is not above 10), so the grid is not asked.
-    if teleport_curse(st) {
+    if teleport_stopped(st) {
         borg_note(st, &format!("# Phase ({}): no, teleport is blocked", site.label()));
         return false;
     }
@@ -1424,6 +1424,9 @@ fn teleport_message(msg: &[u8]) -> Option<TeleportMessage> {
 /// teleporting." and from "Teleportation forbidden!", lift it on "The
 /// anti-teleportation curse is removed!".
 pub(crate) fn teleport_block_message(st: &mut BorgState, msg: &[u8]) {
+    if param(Param::escape_teleport_block) == 0 {
+        return;
+    }
     match teleport_message(msg) {
         Some(TeleportMessage::Removed) => {
             if st.borg.teleport_block.take().is_some() {
@@ -1474,25 +1477,31 @@ fn learn_teleport_block(st: &mut BorgState, name: Option<&str>) {
     st.borg.teleport_block = Some(block);
 }
 
+/// borg-reborn-rs (#829, `escape_teleport_block`): whether a teleport curse
+/// stops the Borg's teleports now. Off (0): never, as before.
+pub(crate) fn teleport_stopped(st: &mut BorgState) -> bool {
+    param(Param::escape_teleport_block) != 0 && teleport_curse(st)
+}
+
 /// borg-reborn-rs (#829): a scroll that teleports the player (Phase Door,
 /// Teleportation, Teleport Level), read under a teleport curse. The choke
 /// point of every site that reads one, `borg_read_scroll`.
 pub(crate) fn teleport_scroll_blocked(st: &mut BorgState, sval: i32) -> bool {
     let v = &st.item_val;
     let teleports = sval == v.sv_scroll_phase_door || sval == v.sv_scroll_teleport || sval == v.sv_scroll_teleport_level;
-    teleports && teleport_curse(st)
+    teleports && teleport_stopped(st)
 }
 
 /// borg-reborn-rs (#829): a staff of Teleportation (`borg_use_staff`).
 pub(crate) fn teleport_staff_blocked(st: &mut BorgState, sval: i32) -> bool {
-    sval == st.item_val.sv_staff_teleportation && teleport_curse(st)
+    sval == st.item_val.sv_staff_teleportation && teleport_stopped(st)
 }
 
 /// borg-reborn-rs (#829): an activation that teleports the player
 /// (`borg_activate_item`).
 pub(crate) fn teleport_activation_blocked(st: &mut BorgState, activation: i32) -> bool {
     let a = &st.act;
-    (activation == a.tele_phase || activation == a.tele_long || activation == a.tele_level) && teleport_curse(st)
+    (activation == a.tele_phase || activation == a.tele_long || activation == a.tele_level) && teleport_stopped(st)
 }
 
 /// borg-reborn-rs (#829): a spell whose effect teleports the player
@@ -1501,7 +1510,7 @@ pub(crate) fn teleport_activation_blocked(st: &mut BorgState, activation: i32) -
 /// by `borg_spell`.
 pub(crate) fn teleport_spell_blocked(st: &mut BorgState, spell: crate::borg_headers::borg_magic_h::borg_spells) -> bool {
     let teleports = [PHASE_DOOR, TELEPORT_SELF, TELEPORT_LEVEL, DIMENSION_DOOR, PORTAL, SHADOW_SHIFT].contains(&spell);
-    teleports && teleport_curse(st)
+    teleports && teleport_stopped(st)
 }
 
 /// borg-reborn-rs (#829): whether a teleport curse stops the Borg now: one it

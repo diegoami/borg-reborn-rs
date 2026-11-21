@@ -24,6 +24,16 @@ engine's own words and stops.
 - `borg_messages.rs` feeds the messages in; `borg.rs` holds the state.
 - docs/PHASE-DOOR.md says where the check sits.
 
+### The flag
+
+`escape_teleport_block` (compiled 0, shipped 1 in `harness/borg.txt`, row in
+docs/CALIBRATION.md). At 0 the message hook, `phase_door` and the choke points
+do nothing new: the Ranger replayed with it at 0 is byte-identical to the
+original (`messages.log` and `keys.log`). It exists so that borg-zoo can run a
+control (`borg_param_escape_teleport_block = 0`) against the shipped build.
+The param citations in params.rs and CALIBRATION.md moved with the new lines
+(`scripts/check-param-citations.py --fix`).
+
 ### Decisions to look at
 
 - `phase_door` asks only the curse, not `borg_allow_teleport` as the issue
@@ -37,11 +47,13 @@ engine's own words and stops.
 
 ### Checked
 
-- The three cases replay exactly from seed, race and class (the zoo bundles
-  were not reachable from this session, so the key hashes were not compared;
-  the death turns and the `messages.log` lines match the issue's: 15401 and
-  15710, 1404, 7762): Priest and Ranger on 3b4924ba, Warrior on e8b3acfd
-  with the six `reborn-flight-flight` settings.
+- The three cases replay exactly from seed, race and class, and their
+  `keys.log` SHA-256 equals the one borg-cemetery records for each dossier
+  (D-c78e3d5a, D-0c44ce2b, D-7a8b9fc3): Priest and Ranger on 3b4924ba,
+  Warrior on e8b3acfd with the six `reborn-flight-flight` settings. (The
+  zoo bundles themselves were not reachable from this session; the
+  Cemetery's records were. My `borg.txt` is the commit's shipped file with
+  the arm's settings, not the zoo's rebuilt one, and plays the same keys.)
 - With the change on those commits, after the first "forbidden" there is no
   Phase Door and no further "forbidden". The Priest (CL9) and the Warrior
   (CL13) now live to the 400,000-turn cap; the Ranger lives to turn 7,450

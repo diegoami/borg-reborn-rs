@@ -1540,3 +1540,6 @@ borg_param_caution_unseen_bump_turns = 200
 borg_param_caution_unseen_bump_response = 1
 borg_param_caution_unseen_bump_heal_hp_percent = 50
 borg_param_caution_unseen_bump_throw_tries = 3
+
+# #829: a teleport curse stops every teleport (the engine's "Teleportation forbidden!").
+borg_param_escape_teleport_block = 1
