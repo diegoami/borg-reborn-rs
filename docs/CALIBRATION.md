@@ -5193,3 +5193,16 @@ Broader new-engine/build parity remains pending [Zoo #520](https://github.com/di
 under RULES20, pilot first and further starts only after owner-gated results.
 Neither local smoke nor original 760fae80 full45 is proof of that comparison.
 This note does not accept the reconciliation PR or the P6 milestone.
+
+
+### Final receiving candidate (#814)
+
+Accepted main07aa4b1e plus reviewed track-p221a2504 merge at a3635ad8.
+Main's resolved-settings receipt and its test, parser, settings and native
+pin46978936 are preserved, alongside the reviewed ten controls. Local smoke
+matches3/3; the current native witness is dungeon-limit0 at turn19991,
+not the old town-limit witness. The town-limit trials at100k and300k are
+retained negative controls. This is local named-case coverage, not a cohort.
+Core568/4 ignored, engine93/4 skipped,2293 citations, scripts39/tools96 pass.
+The new broader comparison is Zoo571, pending; old Zoo520 full45 cannot be
+relabelled as new07aa4b1e proof. This status does not accept P6 or main promotion.
