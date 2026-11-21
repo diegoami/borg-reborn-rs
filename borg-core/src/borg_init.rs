@@ -161,6 +161,7 @@ pub const BORG_SETTINGS: [BorgSetting; BORG_MAX_SETTINGS as usize] = [
     i(c"borg_town_support_turns", 1000),
     i(c"borg_town_w_ranger_missiles", 250),
     i(c"borg_town_ranger_missile_turns", 50),
+    i(c"borg_town_reserve", 0),
 ];
 
 /// What a retired setting may still say in an old borg.txt (borg-rs#60).
@@ -1485,7 +1486,7 @@ mod tests {
              borg_trip_policy = 0\nborg_trip_depth_margin = 0\nborg_trip_pack_slack = 2\n\
              borg_trip_unknown_stacks = 4\nborg_trip_return_gold = 0\n\
              borg_town_w_attack = 100\nborg_town_w_magic = 100\nborg_town_w_support = 50\n\
-             borg_town_w_restore = 100\nborg_town_attack_turns = 100\nborg_town_support_turns = 1000\nborg_town_w_ranger_missiles = 250\nborg_town_ranger_missile_turns = 50\n"
+             borg_town_w_restore = 100\nborg_town_attack_turns = 100\nborg_town_support_turns = 1000\nborg_town_w_ranger_missiles = 250\nborg_town_ranger_missile_turns = 50\nborg_town_reserve = 0\n"
         ));
         assert!(!text.contains("munchkin") && !text.contains("lunal"));
     }
@@ -1632,6 +1633,7 @@ mod tests {
         ("borg_town_support_turns", b'i', 1000, "1000"),
         ("borg_town_w_ranger_missiles", b'i', 250, "250"),
         ("borg_town_ranger_missile_turns", b'i', 50, "50"),
+        ("borg_town_reserve", b'i', 0, "0"),
 
     ];
 
@@ -1764,7 +1766,7 @@ mod tests {
         }
         let (retired, live): (Vec<_>, Vec<_>) =
             entries.iter().partition(|(name, ..)| retired_setting(name).is_some());
-        assert_eq!(live.len(), BORG_SETTINGS.len());
+        assert_eq!(live.len(), crate::borg_headers::borg_h::BORG_TOWN_RESERVE as usize);
         for (i, (name, kind, value)) in live.iter().enumerate() {
             let s = &BORG_SETTINGS[i];
             assert_eq!(s.name.to_str().unwrap(), *name);
@@ -1791,7 +1793,7 @@ mod tests {
         let harness = borg_txt_settings(include_str!("../borg.txt"));
         let shipped = borg_txt_settings(include_str!("../c-reference/borg.txt"));
         assert_eq!(harness, shipped, "the two borg.txt copies disagree");
-        for s in BORG_SETTINGS.iter() {
+        for s in BORG_SETTINGS.iter().take(crate::borg_headers::borg_h::BORG_TOWN_RESERVE as usize) {
             let name = s.name.to_str().unwrap();
             assert!(
                 harness.iter().any(|(n, _)| n == name),
@@ -1832,8 +1834,17 @@ mod tests {
             assert_eq!(value_of(name), want, "{name}");
         }
         for (name, _, _, configured) in NEW_SETTINGS {
+            if *name == "borg_town_reserve" { continue; }
             assert_eq!(value_of(name), configured.to_ascii_uppercase(), "{name}");
         }
+    }
+
+    #[test]
+    fn reborn_profile_sets_the_black_market_limits() {
+        use crate::borg_headers::borg_h::{BORG_TOWN_RESERVE, BORG_TOWN_SHARE};
+        let (cfg, _) = cfg_of(include_bytes!("../../harness/borg.txt"));
+        assert_eq!(cfg[BORG_TOWN_SHARE as usize], 50);
+        assert_eq!(cfg[BORG_TOWN_RESERVE as usize], 500);
     }
 
 

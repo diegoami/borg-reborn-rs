@@ -130,6 +130,7 @@ pub struct PlanRecord {
     pub spells: u8,
     /// Town settings in index order (v4: 12, v5: 24).
     pub params: [i64; PARAMS],
+    pub black_market_reserve: i64,
     /// `[gold, pack_slots, home_slots, weight]` after the urgent needs.
     pub limits: [i64; 4],
     /// `[pack_capacity, home_capacity]`.
@@ -254,6 +255,10 @@ impl PlanRecord {
         num(out, self.spells);
         field(out, "params");
         ints(out, &self.params[..if self.schema == 4 { 12 } else { PARAMS }]);
+        if self.black_market_reserve != 0 {
+            field(out, "black_market_reserve");
+            num(out, self.black_market_reserve);
+        }
         field(out, "limits");
         ints(out, &self.limits);
         field(out, "caps");
@@ -515,6 +520,7 @@ impl PlanRecord {
             power: small("power")?,
             spells: small("spells")? as u8,
             params,
+            black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
             caps: fixed(j.get("caps")?.ints()?, "caps")?,
             urgent: rows("urgent")?
@@ -602,6 +608,7 @@ pub struct StepInput<'a> {
     pub facts: &'a [WareFact],
     pub tryon: &'a [TryOn],
     pub limits: Limits,
+    pub black_market_reserve: i64,
     pub urgent: Vec<UrgentPurchase>,
     pub params: [i64; PARAMS],
     /// The whole trait vector.
@@ -790,6 +797,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     let stock = Stock { candidates, ..Stock::default() };
     let budget = Budget {
         gold: limits.gold,
+        black_market_reserve: input.black_market_reserve,
         pack_slots: limits.pack_slots,
         home_slots: 0,
         weight: limits.weight,
@@ -1011,6 +1019,7 @@ impl ReplayParts {
             facts: &rec.wares,
             tryon: &self.tryon,
             limits: self.limits,
+            black_market_reserve: rec.black_market_reserve,
             urgent: self.urgent.clone(),
             params: rec.params,
             traits: &self.traits,
@@ -1239,6 +1248,7 @@ mod tests {
             facts: &wares,
             tryon,
             limits,
+            black_market_reserve: 0,
             urgent: budget.urgent.clone(),
             params: params(),
             traits,
@@ -1262,6 +1272,7 @@ mod tests {
             spells: 0,
             params: { let mut p = params(); p[12..].fill(0); p },
             limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
+            black_market_reserve: 0,
             caps: [23, 24],
             urgent: budget
                 .urgent

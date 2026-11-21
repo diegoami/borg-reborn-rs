@@ -477,6 +477,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         facts: &wares,
         tryon: &tryon,
         limits,
+        black_market_reserve: budget.black_market_reserve,
         urgent: budget.urgent.clone(),
         params,
         traits: &st.borg.trait_,
@@ -531,6 +532,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         spells: u8::from(cure_spell),
         params,
         limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
+        black_market_reserve: budget.black_market_reserve,
         caps: [
             i64::from(engine::z_info().pack_size),
             i64::from(engine::z_info().store_inven_max),
@@ -663,7 +665,7 @@ mod knowledge_only_purchase_tests {
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
         let out = step(&StepInput {
-            revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, candidates, facts: &wares,
+            revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
         out.plan.iter().map(|e| e.copies).sum()

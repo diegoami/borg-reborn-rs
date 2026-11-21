@@ -238,10 +238,16 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let Some(item) = st.store.shops[shop].ware.get(slot).copied().filter(|i| i.iqty > 0) else { clear(st); return false; };
         let offer = crate::engine::store_stock(&st.access, shop).get(slot)
             .map(|o| (o.carry_capacity(), o.purchase_quote(shop)));
-        let fits = offer.is_some_and(|(room, _)| room > 0);
+        let gold = st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD);
+        let reserve = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_RESERVE);
+        let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && reserve > 0;
+        let purchase_gold = if protects_gold {
+            crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), 0) as i32
+        } else { gold };
+        let fits = offer.is_some_and(|(room, price)| room > 0 && (!protects_gold || price <= purchase_gold));
         let qty = match (a.code, offer) {
             (action::BUY, Some((room, price))) => purchase_quantity(a.at[2], item.iqty, room, price,
-                st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD)),
+                purchase_gold),
             _ => 1,
         };
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
