@@ -2210,12 +2210,18 @@ fn borg_notice_inventory(st: &mut BorgState) {
             }
 
             /* track first uncursable item */
-            /* borg-reborn-rs (#830): a pack item only counts when it is worth
-             * a Remove Curse scroll (the read, the purchase and the town's
-             * CURSE capability all key on this trait) */
-            if worth_a_scroll {
+            /* borg-reborn-rs (#830): the inventory bit stays set for every
+             * uncursable pack item, as it mirrors the game's own "Uncurse
+             * which item?" prompt (it opens on the pack while any pack item
+             * qualifies, and `borg_decurse_any` presses `/` to reach a worn
+             * one). Only the demand depends on the worth: a pack item is the
+             * first cursed item only when it is worth a Remove Curse scroll
+             * (the read, the purchase and the town's CURSE capability all key
+             * on `BI_FIRST_CURSED`). */
+            let (marks_pack, may_be_first) = crate::borg_cursed::pack_curse(item.uncursable, worth_a_scroll);
+            if marks_pack {
                 t[BI_WHERE_CURSED] |= BORG_INVEN as i32;
-                if t[BI_FIRST_CURSED] == 0 {
+                if may_be_first && t[BI_FIRST_CURSED] == 0 {
                     t[BI_FIRST_CURSED] = slot + 1;
                 }
             }

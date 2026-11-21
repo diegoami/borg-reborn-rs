@@ -195,6 +195,19 @@ fn worth_a_scroll_with(worth: i32, price: i32) -> bool {
     price <= 0 || worth >= price
 }
 
+/// What an uncursable pack item adds to the curse traits, as `(sets the
+/// inventory bit of BI_WHERE_CURSED, may become BI_FIRST_CURSED)`. The bit
+/// follows the item alone: it mirrors the game's "Uncurse which item?"
+/// prompt, which opens on the pack while any pack item qualifies, and
+/// `borg_decurse_any` presses `/` to reach a worn one only when the bit is
+/// set. Dropping it for an item not worth a scroll made the Borg type the
+/// equipment letter into the pack list and retry it at the same game turn
+/// for good (Human Priest 1569794094, seen live). Only the demand depends on
+/// the worth: such an item must not be the one a scroll is bought and read for.
+pub(crate) fn pack_curse(uncursable: bool, worth_a_scroll: bool) -> (bool, bool) {
+    (uncursable, uncursable && worth_a_scroll)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +279,18 @@ mod tests {
         assert!(!worn_cursed(1, 0, 0));
         /* a cursed pack item is not worn (`BORG_INVEN` and `BORG_QUILL` only) */
         assert!(!worn_cursed(1, 7, BORG_INVEN as i32 | BORG_QUILL as i32));
+    }
+
+    #[test]
+    fn an_item_not_worth_a_scroll_still_marks_the_pack_for_the_prompt() {
+        /* worth a scroll: marks the pack and may be the first cursed item */
+        assert_eq!(pack_curse(true, true), (true, true));
+        /* not worth one: the pack bit stays (the game's prompt opens on the
+         * pack), the demand goes */
+        assert_eq!(pack_curse(true, false), (true, false));
+        /* nothing to uncurse */
+        assert_eq!(pack_curse(false, true), (false, false));
+        assert_eq!(pack_curse(false, false), (false, false));
     }
 
     #[test]
