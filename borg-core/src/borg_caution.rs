@@ -1774,16 +1774,18 @@ fn confusion_clw_cure() -> bool {
 /// the turn to; see "# Healing.  Confusion.") would use: Clear Mind, Cure
 /// Serious Wounds, Cure Critical Wounds (only above `item_use_ccw_min_stock`,
 /// as `borg_quaff_crit` keeps the last ones), Cure Light Wounds with
-/// `caution_confused_clw_cure`, a Healing potion, a Staff of Healing. Keep it
-/// the same as that chain. A Staff of Curing is not in it (it is in
-/// `borg_heal`'s level 2, behind its danger gate), and an equipped activation
-/// is not carried in the pack.
+/// `caution_confused_clw_cure`, a Healing, *Healing* or Life potion, a Staff
+/// of Healing with a charge (`borg_use_staff_fail`). Keep it the same as that
+/// chain. A Staff of Curing is not in it (it is in `borg_heal`'s level 2,
+/// behind its danger gate), and an equipped activation is not carried in the
+/// pack.
 fn confusion_cure_carried(st: &mut BorgState) -> bool {
     let mut cures = vec![
         (TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind),
         (TV_POTION as i32, st.item_val.sv_potion_cure_serious),
         (TV_POTION as i32, st.item_val.sv_potion_healing),
-        (TV_STAFF as i32, st.item_val.sv_staff_healing),
+        (TV_POTION as i32, st.item_val.sv_potion_star_healing),
+        (TV_POTION as i32, st.item_val.sv_potion_life),
     ];
     if st.borg.tr(BI_ACCW) >= p(Param::item_use_ccw_min_stock) {
         cures.push((TV_POTION as i32, st.item_val.sv_potion_cure_critical));
@@ -1791,7 +1793,12 @@ fn confusion_cure_carried(st: &mut BorgState) -> bool {
     if confusion_clw_cure() {
         cures.push((TV_POTION as i32, st.item_val.sv_potion_cure_light));
     }
-    cures.into_iter().any(|(tval, sval)| borg_slot(st, tval, sval) != -1)
+    if cures.into_iter().any(|(tval, sval)| borg_slot(st, tval, sval) != -1) {
+        return true;
+    }
+    // A staff the chain can use has a charge left (`borg_use_staff_fail`).
+    let staff = borg_slot(st, TV_STAFF as i32, st.item_val.sv_staff_healing);
+    staff != -1 && st.items.items[staff as usize].pval != 0
 }
 
 /// borg-reborn-rs (#837): whether `step_allowed` would allow another step
