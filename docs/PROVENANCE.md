@@ -122,3 +122,12 @@ on that bounded observation. The normal oil chooser is shared to preserve its
 fuel reserve. No donor refresh or hidden engine monster read is added. Message
 semantics were checked in upstream 574b618c `player-attack.c:738-743,767,840-860`,
 `mon-desc.h:45`, and `mon-desc.c:143-165`; the engine is unchanged.
+
+## P6 enchant/decurse extraction (#680)
+
+The existing borg-rs 8c5d000a copies of `borg_item_enchant.rs` and
+`borg_item_decurse.rs` gain named neutral policy controls; the vendor audit
+marks these two files hooked. Existing declarations and notices remain. No
+new donor source is copied or engine behavior adopted. The receiving parameter
+registry adds bounds/provenance tests; the native override check exercises
+the production decision. See [the contract](CALIBRATION.md#enchantdecurse-policy-680--p6).

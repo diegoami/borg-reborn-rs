@@ -40,6 +40,8 @@ use crate::headers::list_tvals_h::{
 };
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+// borg-reborn-rs (#680): neutral policy extraction; preserve C order and widths.
+use crate::params::{value as param, Param};
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`). `i` is never negative here.
@@ -82,15 +84,16 @@ fn pack_has(st: &BorgState, tvals: &[u32]) -> bool {
     })
 }
 
-/// The "Skip boring items" test: with the spell (65% fail allowed) or a
-/// "*enchant*" scroll (`star_trait`) an item is done at `limit`, else at 8.
+/// The "Skip boring items" test: with an acceptable spell or a
+/// "*enchant*" scroll (`star_trait`) an item is done at `limit`, else the
+/// plain-scroll target (default 8).
 /// `borg_spell_okay_fail` is tested first, as in C (it has no side
 /// effects).
 fn enchanted(st: &BorgState, spell: borg_spells, star_trait: u32, a: i32, limit: i32) -> bool {
-    if borg_spell_okay_fail(st, spell, 65) || st.borg.tr(star_trait) >= 1 {
+    if borg_spell_okay_fail(st, spell, param(Param::enchant_spell_fail)) || st.borg.tr(star_trait) >= 1 {
         a >= limit
     } else {
-        a >= 8
+        a >= param(Param::enchant_plain_target)
     }
 }
 
@@ -216,7 +219,7 @@ fn borg_enchant_to_a(st: &mut BorgState) -> bool {
     let sv_plain = st.item_val.sv_scroll_enchant_armor;
     if borg_read_scroll(st, sv_star)
         || borg_read_scroll(st, sv_plain)
-        || borg_spell_fail(st, ENCHANT_ARMOUR, 65)
+        || borg_spell_fail(st, ENCHANT_ARMOUR, param(Param::enchant_spell_fail))
     {
         borg_pick_armor(st, b_i);
 
@@ -309,7 +312,7 @@ fn enchant_weapon(st: &mut BorgState, bonus: Bonus) -> bool {
         /* Most classes store the enchants until they get a 3x shooter
          * (like a long bow); skip a plain x2 shooter (see the C comment). */
         if i == inven_bow() /* bow */
-            && st.borg.tr(BI_AMMO_POWER) < 3 /* 3x shooter */
+            && st.borg.tr(BI_AMMO_POWER) < param(Param::enchant_min_shooter_power) /* 3x shooter */
             && (item.art_idx == 0 && item.ego_idx == 0)
         /* Not artifact or ego */
         {
@@ -357,14 +360,14 @@ fn enchant_weapon(st: &mut BorgState, bonus: Bonus) -> bool {
              * (borg_enchant_to_d tests BI_AMMO_POWER < 3 a second time:
              * no effect.) */
             let bow = &st.items.items[inven_bow() as usize];
-            if st.borg.tr(BI_AMMO_POWER) < 3 || (bow.art_idx == 0 && bow.ego_idx == 0) {
+            if st.borg.tr(BI_AMMO_POWER) < param(Param::enchant_min_shooter_power) || (bow.art_idx == 0 && bow.ego_idx == 0) {
                 continue;
             }
 
             let item = &st.items.items[i as usize];
 
             /* Only enchant if qty >= 5 */
-            if item.iqty < 5 {
+            if i32::from(item.iqty) < param(Param::enchant_ammo_min_quantity) {
                 continue;
             }
 
@@ -382,7 +385,7 @@ fn enchant_weapon(st: &mut BorgState, bonus: Bonus) -> bool {
             let a = bonus.of(item);
 
             /* Skip items that are already enchanted */
-            if enchanted(st, ENCHANT_WEAPON, BI_AENCH_SWEP, a, 10) {
+            if enchanted(st, ENCHANT_WEAPON, BI_AENCH_SWEP, a, param(Param::enchant_ammo_target)) {
                 continue;
             }
 
@@ -406,7 +409,7 @@ fn enchant_weapon(st: &mut BorgState, bonus: Bonus) -> bool {
     let sv_star = st.item_val.sv_scroll_star_enchant_weapon;
     if borg_read_scroll(st, sv_star)
         || borg_read_scroll(st, sv_scroll)
-        || borg_spell_fail(st, ENCHANT_WEAPON, 65)
+        || borg_spell_fail(st, ENCHANT_WEAPON, param(Param::enchant_spell_fail))
     {
         borg_pick_weapon(st, b_i);
 
@@ -438,7 +441,7 @@ fn borg_brand_weapon(st: &mut BorgState) -> bool {
         let item = &st.items.items[i as usize];
 
         /* Only enchant if qty >= 20 */
-        if item.iqty < 20 {
+        if i32::from(item.iqty) < param(Param::enchant_brand_min_quantity) {
             continue;
         }
 
@@ -477,7 +480,7 @@ fn borg_brand_weapon(st: &mut BorgState) -> bool {
 
     /* Enchant it */
     let act = st.act.firebrand;
-    if borg_activate_item(st, act) || borg_spell_fail(st, BRAND_AMMUNITION, 65) {
+    if borg_activate_item(st, act) || borg_spell_fail(st, BRAND_AMMUNITION, param(Param::enchant_brand_spell_fail)) {
         borg_pick_weapon(st, b_i);
 
         /* Success */
@@ -498,8 +501,8 @@ pub fn borg_enchanting(st: &mut BorgState) -> bool {
     /* Forbid if been sitting on level forever */
     /*    Just come back and finish the job later */
     let level = st.borg.time.level;
-    if (borg_timer(st, level) > 5500 && st.borg.tr(BI_CDEPTH) >= 1)
-        || (borg_timer(st, level) > 3501 && st.borg.tr(BI_CDEPTH) == 0)
+    if (borg_timer(st, level) > param(Param::enchant_dungeon_max_turns) && st.borg.tr(BI_CDEPTH) >= 1)
+        || (borg_timer(st, level) > param(Param::enchant_town_max_turns) && st.borg.tr(BI_CDEPTH) == 0)
     {
         return false;
     }
