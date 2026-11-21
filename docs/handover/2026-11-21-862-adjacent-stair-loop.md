@@ -9,3 +9,8 @@ A marked increase in danger restores the original stair choice.
 
 The original recording, build and exact turn ranges are identified in
 [#862](https://github.com/diegoami/borg-reborn-rs/issues/862).
+
+The native Warrior smoke run reproduces the same transition at game
+turn 7,456 in the old reference. With the fix it uses Recall instead
+of walking straight back to the staircase. The Mage and Priest
+smoke runs match their previous play.
