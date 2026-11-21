@@ -644,9 +644,13 @@ pub struct StepOutput {
     pub displaced: Option<PlanEntry>,
     /// Stage 1: the disposition of each `StepInput::kit` stack.
     pub dispositions: Vec<Disposition>,
-    /// What the dispositions freed for the purchases, and the copies of a
-    /// split stack they move (#859, review F1).
+    /// What the dispositions freed for the purchases.
+    #[cfg_attr(not(test), expect(dead_code))]
     pub freed: Freed,
+    /// Per kit row, the copies a split stack's disposition moves, the
+    /// surplus past `town_store_keep_min`; 0 or absent: the whole stack
+    /// (#859, review F1). Empty unless a stack was split.
+    pub copies: Vec<i32>,
 }
 
 /// A state the usefulness function can read: the traits, the power, and
@@ -747,17 +751,20 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    let (dispositions, freed) = if input.utility {
+    let (dispositions, freed, copies) = if input.utility {
         crate::borg_town_utility::dispositions(input, &mut utility, &st)
-    } else { dispose(
-        input.kit,
-        &st,
-        &trip,
-        &weights,
-        input.limits.pack_slots,
-        input.home_slots,
-        input.limits.weight,
-    ) };
+    } else {
+        let (d, f) = dispose(
+            input.kit,
+            &st,
+            &trip,
+            &weights,
+            input.limits.pack_slots,
+            input.home_slots,
+            input.limits.weight,
+        );
+        (d, f, Vec::new())
+    };
     // What they change in the needs the purchases see: a stack that leaves
     // the pack takes its copies out of its need, one taken from the Home
     // brings them in.
@@ -880,7 +887,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed, copies }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -989,7 +996,7 @@ fn first_action_with_room(
             // borg-reborn-rs (#859, review F1): a stack split at
             // `town_store_keep_min` moves the surplus the plan priced, not
             // the whole stack. Only the pack's stacks are split.
-            let copies = out.freed.copies.get(i).copied().filter(|&n| n > 0 && place == Place::Pack && n < k.qty);
+            let copies = out.copies.get(i).copied().filter(|&n| n > 0 && place == Place::Pack && n < k.qty);
             return (code, [at, i64::from(k.slot), i64::from(copies.unwrap_or(k.qty)), k.proceeds], i64::from(k.need), false);
         }
     }

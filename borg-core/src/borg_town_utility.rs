@@ -341,7 +341,7 @@ fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
 /// Compare carrying, storing and selling on marginal utility, updating
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
-pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed) {
+pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed, Vec<i32>) {
     dispositions_by(input, u, st, Storing {
         only_overweight: param(Param::town_store_only_overweight) != 0,
         room: departure_room(),
@@ -351,15 +351,19 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
 
 /// `dispositions` with `town_store_only_overweight` given (#711).
 #[cfg(test)]
-fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_overweight: bool) -> (Vec<Disposition>, Freed) {
+fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_overweight: bool) -> (Vec<Disposition>, Freed, Vec<i32>) {
     dispositions_by(input, u, st, Storing { only_overweight, ..Storing::default() })
 }
 
 /// `dispositions` with the storing settings given.
-fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: Storing) -> (Vec<Disposition>, Freed) {
+/// The third value is, per kit row, the copies a split stack moves (the
+/// surplus past `town_store_keep_min`); 0, or absent: the whole stack (#859,
+/// review F1). Empty unless a surplus was split.
+fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: Storing) -> (Vec<Disposition>, Freed, Vec<i32>) {
     let Storing { only_overweight, room, keep_min } = storing;
     let mut out = vec![Disposition::Keep; input.kit.len()];
     let mut freed = Freed::default();
+    let mut copies: Vec<i32> = Vec::new();
     let carry = i64::from(st.borg.tr(BI_CARRY)).max(2) / 2;
     let mut home_free = input.home_slots;
     let target = storing_target(input, u, room);
@@ -370,7 +374,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     for i in store_order(input, u, surplus) {
         let whole = &input.kit[i];
         // The copies past the minimum, when they go first. They travel with
-        // the disposition (`Freed::copies`), so the plan's action moves the
+        // the disposition (the third value returned), so the plan's action moves the
         // surplus and not the whole stack (#859, review F1). The live
         // executor still moves one copy and solves again (#507).
         let part = KitItem { qty: whole.qty - keep_min, ..*whole };
@@ -456,8 +460,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             freed.pack_slots += i32::from(!partial);
             freed.weight += weight;
             if partial {
-                freed.copies.resize(input.kit.len(), 0);
-                freed.copies[i] = it.qty;
+                copies.resize(input.kit.len(), 0);
+                copies[i] = it.qty;
             }
             if action == Disposition::Store {
                 if home_free <= 0 {
@@ -522,7 +526,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             freed.gold += it.proceeds;
         }
     }
-    (out, freed)
+    (out, freed, copies)
 }
 
 /// Merge substitute supplies into one group per NEED. Every option is
@@ -775,7 +779,7 @@ mod tests {
         let mut inp = input(&kit);
         inp.limits.weight = -3;
         let mut u = Utility::of(&st, &kit, false);
-        let (d, freed) = dispositions_with(&inp, &mut u, &st, true);
+        let (d, freed, _) = dispositions_with(&inp, &mut u, &st, true);
         assert_eq!(d.iter().filter(|&&x| x == Disposition::Store).count(), 1, "{d:?}");
         assert_eq!(d[0], Disposition::Store, "the least valuable goes: {d:?}");
         assert!(inp.limits.weight + freed.weight >= 0, "under the allowance after it");
@@ -797,7 +801,7 @@ mod tests {
         st.borg.trait_[BI_RECALL as usize] = 1;
         let kit = [recall(Place::Pack)];
         let mut u = Utility::of(&st, &kit, false);
-        let (actions, freed) = dispositions(&input(&kit), &mut u, &st);
+        let (actions, freed, _) = dispositions(&input(&kit), &mut u, &st);
         assert_eq!(actions, [Disposition::Store]);
         assert_eq!((freed.gold, freed.home_slots), (0, -1), "no sale or purchase needed");
         assert_eq!(u.carried[index(Need::Trip)], 0);
@@ -805,7 +809,7 @@ mod tests {
         st.core.cfg[BORG_TOWN_TARGET_DEPTH as usize] = 30;
         let kit = [recall(Place::Home)];
         let mut u = Utility::of(&st, &kit, false);
-        let (actions, _) = dispositions(&input(&kit), &mut u, &st);
+        let (actions, _, _) = dispositions(&input(&kit), &mut u, &st);
         assert_eq!(actions, [Disposition::Take]);
     }
 
@@ -850,7 +854,7 @@ mod tests {
         let kit = [recall(Place::Pack)];
         let mut u = Utility::of(&st, &kit, false);
         u.recall_reserve = 1;
-        let (actions, _) = dispositions(&input(&kit), &mut u, &st);
+        let (actions, _, _) = dispositions(&input(&kit), &mut u, &st);
         assert_eq!(actions, [Disposition::Keep], "the reserve scroll stays in the pack");
     }
 
@@ -1012,7 +1016,7 @@ mod tests {
         let mut inp = input(&kit);
         inp.home_slots = 0;
         inp.limits.weight = -1900;
-        let (actions, freed) = dispositions(&inp, &mut u, &st);
+        let (actions, freed, _) = dispositions(&inp, &mut u, &st);
         assert_eq!(actions, [Disposition::Sell, Disposition::Store]);
         assert_eq!((freed.gold, freed.home_slots, freed.weight), (0, 0, 2000));
     }
@@ -1042,7 +1046,7 @@ mod tests {
         let kit=[KitItem {joins_pack:true,just_bought:true,..recall(Place::Home)}];
         let mut inp=input(&kit);inp.revision=9;inp.limits.pack_slots=0;
         let mut u=Utility::of(&st,&kit,false);u.home_discount=0;
-        let (d,freed)=dispositions(&inp,&mut u,&st);assert_eq!(d,[Disposition::Take]);assert_eq!(freed.pack_slots,0);
+        let (d,freed,_)=dispositions(&inp,&mut u,&st);assert_eq!(d,[Disposition::Take]);assert_eq!(freed.pack_slots,0);
         let kit=[KitItem {joins_pack:false,..kit[0]}];let mut inp=input(&kit);inp.revision=9;inp.limits.pack_slots=0;
         let mut u=Utility::of(&st,&kit,false);u.home_discount=0;
         assert_eq!(dispositions(&inp,&mut u,&st).0,[Disposition::Keep]);
@@ -1150,10 +1154,10 @@ mod tests {
         // With the room and three copies kept: nine potions free 36, the
         // Phase Door stays, and no slot is freed (the stack stays).
         let mut u = Utility::of(&st, &kit, false);
-        let (d, freed) = dispositions_by(&inp, &mut u, &st, storing(3));
+        let (d, freed, copies) = dispositions_by(&inp, &mut u, &st, storing(3));
         assert_eq!(d, [Disposition::Store, Disposition::Keep], "the surplus goes first");
         assert_eq!((freed.weight, freed.pack_slots), (36, 0));
-        assert_eq!(freed.copies, [9, 0], "the nine travel with the disposition");
+        assert_eq!(copies, [9, 0], "the nine travel with the disposition");
         // Kept copies past the stack: the whole stack is no surplus.
         let mut u = Utility::of(&st, &kit, false);
         assert_eq!(dispositions_by(&inp, &mut u, &st, storing(12)).1.pack_slots, 1, "a whole stack went");
@@ -1173,10 +1177,10 @@ mod tests {
             inp.limits.weight = 0;
             let mut out = step(&inp);
             let mut u = Utility::of(&st, kit, false);
-            let (d, freed) = dispositions_by(&inp, &mut u, &st,
+            let (d, _, copies) = dispositions_by(&inp, &mut u, &st,
                 Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min });
             out.dispositions = d;
-            out.freed = freed;
+            out.copies = copies;
             first_action(&inp.candidates, &[], &out, &[], kit)
         };
         let kit = [potions];
@@ -1199,7 +1203,7 @@ mod tests {
         let mut inp = input(&kit);
         inp.limits.pack_slots = 0;
         let mut u = Utility::of(&st, &kit, false);
-        let (_, freed) = dispositions_by(&inp, &mut u, &st,
+        let (_, freed, _) = dispositions_by(&inp, &mut u, &st,
             Storing { only_overweight: true, room: Room { weight: 0, slots: 2 }, keep_min: 3 });
         assert_eq!(freed.pack_slots, 2, "two stacks, not their surplus");
     }

@@ -5685,8 +5685,11 @@ Word of Recall, weight 5).
   moves one copy per store action and solves again (`borg_town_shadow.rs`,
   `evaluate`: every live action but a purchase moves one copy, #507), so a
   stack goes down copy by copy and stops at the minimum or once the room is
-  free. (The recorded plan's action shows the whole stack's count; only the
-  live one is cut to one copy.)
+  free. The plan's own action (`first_action`) moves exactly the surplus
+  (review F1 of #864): twelve copies with three kept give a
+  store of nine, and the whole stack when `town_store_keep_min` is 0 or the
+  flavour is unknown. The live executor then cuts it to one copy
+  (`executed_copies`).
 - **`town_recall_curve_scale_percent`** (compiled 0, **shipped 110**;
   owner: "a curve for word of recall starting from 1 and make it be 110 by
   default, so that they buy a few"; "use the trip weight"). Above 0, every
