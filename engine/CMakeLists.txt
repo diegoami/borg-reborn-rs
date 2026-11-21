@@ -139,7 +139,7 @@ if(WIN32)
     # The Rust standard library's Windows imports, and a static executable
     # (no MinGW runtime DLLs next to it).
     target_link_libraries(angband PRIVATE "${BORG_LIB}" OpenSSL::Crypto
-        ws2_32 crypt32 userenv bcrypt ntdll advapi32 m)
+        ws2_32 crypt32 userenv bcrypt ntdll advapi32 synchronization m)
     target_link_options(angband PRIVATE -static)
 else()
     target_link_libraries(angband PRIVATE "${BORG_LIB}" OpenSSL::Crypto pthread dl m)
