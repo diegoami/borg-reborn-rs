@@ -42,7 +42,7 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_mon_race_flags_h::RF_UNIQUE;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
-    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
+    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
     FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::list_tvals_h::{TV_DIGGING, TV_SHOT, TV_STAFF};
@@ -1633,8 +1633,26 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     /* Try it */
     if let Some(loc { x, y }) = next {
+        let here = st.borg.c;
+        let departure = if why == GOAL_DARK && st.borg.tr(BI_CDEPTH) > 0
+            && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
+            && u32::from(st.cave.grid(here.x, here.y).feat) == FEAT_MORE
+        {
+            Some(borg_flow_stairs::UpSearchDeparture {
+                stair: here,
+                next: loc { x, y },
+                level_started: st.borg.time.level,
+                turn: st.borg.time.now,
+                expected_danger: borg_danger(st, y, x, 1, true, false),
+            })
+        } else {
+            None
+        };
         /* Attempt motion */
         if borg_play_step(st, y, x) {
+            if departure.is_some() {
+                st.stairs.up_search_departure = departure;
+            }
             return true;
         }
     }
@@ -1650,6 +1668,21 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     /* Nothing to do */
     false
+}
+
+/// A committed exploration flow has a next step that moves away from the
+/// down staircase it just left. The normal flow validates that move again.
+pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
+    if i32::from(st.borg.goal.type_0) != GOAL_DARK {
+        return false;
+    }
+    let step = select_step(st);
+    if step < 0 {
+        return false;
+    }
+    let x = st.borg.c.x + i32::from(engine::ddx_ddd(step as usize));
+    let y = st.borg.c.y + i32::from(engine::ddy_ddd(step as usize));
+    loc { x, y } != stair && !crate::borg_caution::unseen_bump_blocked(st, x, y)
 }
 
 /// The "Look around" part of `borg_flow_old()`: the direction index
