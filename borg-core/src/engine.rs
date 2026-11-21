@@ -1561,7 +1561,38 @@ fn native_sale_quote(obj: *const crate::headers::object_h::object, shop: usize, 
     unsafe { crate::headers::store_h::store_sale_quote(crate::headers::store_h::stores.add(shop), obj, quantity) }
 }
 
+fn with_object_quantity<T>(
+    source: *const crate::headers::object_h::object,
+    quantity: i32,
+    read: impl FnOnce(*const crate::headers::object_h::object) -> T,
+) -> T {
+    use crate::headers::object_h::object;
+    extern "C" {
+        fn object_copy_amt(dest: *mut object, src: *const object, amount: i32);
+        fn object_wipe(obj: *mut object);
+    }
+    // SAFETY: callers hold a live object handle. The native copy owns its
+    // allocated fields, which are released after the read-only query.
+    unsafe {
+        assert!(quantity > 0 && quantity <= i32::from((*source).number));
+        let mut split = std::mem::MaybeUninit::<object>::zeroed();
+        object_copy_amt(split.as_mut_ptr(), source, quantity);
+        let result = read(split.as_ptr());
+        object_wipe(split.as_mut_ptr());
+        result
+    }
+}
+
 impl StoreObject<'_> {
+
+    /// Quote the same split stack the purchase prompt will confirm.
+    pub fn purchase_quote_quantity(self, shop: usize, quantity: i32) -> i32 {
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(shop), split, false, quantity) }
+        })
+    }
 
     /// The native shop quote for one copy, as displayed to the player.
     /// This is not the historical Borg's optimistic price approximation.
@@ -1788,6 +1819,19 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    /// Check the store's capacity for the same quantity the command would split.
+    pub fn store_accepts_quantity(self, shop: usize, quantity: i32) -> bool {
+        use crate::headers::{object_h::object, store_h::{store, stores}};
+        extern "C" {
+            fn store_check_num(shop: *mut store, obj: *const object) -> bool;
+        }
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { store_check_num(stores.add(shop), split) }
+        })
+    }
+
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
         // SAFETY: handle is a live carried object; reading number cannot re-enter.
         assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });

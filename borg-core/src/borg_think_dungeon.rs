@@ -801,6 +801,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
     }
 
+    if crate::borg_town_live::choose_overflow(st)
+        && borg_flow_shop_entry(st, i32::from(st.borg.goal.shop))
+    {
+        return choice!("town_excess_to_shop");
+    }
+
     // borg-reborn-rs (#208): an errand steers here, after caution.
     if crate::shell::steer(st) {
         return choice!("errand_steer");

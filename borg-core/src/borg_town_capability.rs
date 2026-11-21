@@ -668,7 +668,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
 
 /// Physical supply curves use the same forecast, gold opportunity cost and
 /// capacity constraints as the core town model. No consumable calls borg_power.
-pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey) -> Model {
+pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey, gold_after_urgent: i64) -> Model {
     let t = |id| i64::from(st.borg.tr(id)).max(0);
     let cfg = |id| i64::from(st.cfg(id)).clamp(0, 1_000_000);
     let exposure = journey.exposure();
@@ -764,7 +764,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // borg-reborn-rs (#557, owner): `town_recall_value_percent` scales what
     // the walk a scroll saves is worth (100 = as computed).
     let walk_value = recall_value_scaled(cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1));
-    let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
+    let recall_reserve = recall_reserve_for_budget(gold_after_urgent);
     if recall_reserve > 0 {
         curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
     } else {
@@ -938,6 +938,7 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
                      candidates: &[crate::borg_town_stock::Candidate], model: &Model, limits: &crate::borg_town_solve::Limits,
                      economics: (i64, i64, i64)) -> Vec<crate::borg_town_solve::Group> {
     let (space, carry, knowledge) = economics;
+    let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, input.black_market_percentage, input.params[9]);
     use crate::borg_town_solve::{Choice, Group, GroupKey};
     let facts: BTreeMap<_, _> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
     let mut out = Vec::new();
@@ -1016,8 +1017,7 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
                 let gain = next.value - current.value;
                 let bm: i64 = next.picks.iter().filter(|&&(i, _)| candidates[i].is_black_market())
                     .map(|&(i, n)| i64::from(candidates[i].price) * i64::from(n)).sum();
-                let caution = input.params[9].max(1);
-                if gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots || bm.saturating_mul(caution) > limits.gold { continue; }
+                if gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots || bm > market_budget { continue; }
                 let price = (next.cost - current.cost).max(1);
                 if best.as_ref().is_none_or(|(_, _, b)| i128::from(gain) * i128::from((b.cost - current.cost).max(1)) > i128::from(b.value - current.value) * i128::from(price)) { best = Some((gi, oi, next)); }
                 }
@@ -1352,7 +1352,7 @@ mod tests {
         let groups=vec![Group {key:GroupKey::Slot(5),options:vec![Choice::default(),choice(0),choice(1)]},
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
-        let input=crate::borg_town_record::StepInput {revision:9,capability:Some(&m),utility:true,candidates:cs.clone(),facts:&[],tryon:&[],limits,
+        let input=crate::borg_town_record::StepInput {revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
             urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {
@@ -1503,8 +1503,32 @@ fn scale_percent(value: i64, percent: i32) -> i64 {
     value.saturating_mul(i64::from(percent.max(0))) / 100
 }
 
+/// Only value the reserve when the purse after urgent purchases reaches the
+/// floor. A small purse still gets the ordinary Recall curve.
+pub(crate) fn recall_reserve_for_budget(gold: i64) -> i64 {
+    eligible_recall_reserve(gold, crate::borg_store_buy::recall_purchase_floor(), param(Param::town_recall_reserve))
+}
+
+fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> i64 {
+    if gold < i64::from(minimum) { 0 } else { i64::from(reserve) }
+}
+
 #[cfg(test)]
 mod recall_value_tests {
+    #[test]
+    fn recall_reserve_and_purchase_respect_the_gold_floor() {
+        use super::eligible_recall_reserve;
+        assert_eq!(eligible_recall_reserve(399, 400, 1), 0);
+        assert_eq!(eligible_recall_reserve(400, 400, 1), 1);
+        assert_eq!(eligible_recall_reserve(800, 400, 0), 0);
+        assert_eq!(eligible_recall_reserve(0, 0, 1), 1);
+        use crate::borg_store_buy::recall_purchase_budget;
+        assert_eq!(recall_purchase_budget(524, 400) / 125, 0);
+        assert_eq!(recall_purchase_budget(525, 400) / 125, 1);
+        assert_eq!(recall_purchase_budget(649, 400) / 125, 1);
+        assert_eq!(recall_purchase_budget(650, 400) / 125, 2);
+    }
+
     use super::scale_percent;
 
     #[test]
