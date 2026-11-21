@@ -11,8 +11,8 @@
 # (macOS: Homebrew's) and Python 3.
 # The package plays what a harness run plays: harness/borg.txt (class files
 # folded in) and its scary list, prepared as harness/run.sh prepares a run's
-# user/borg.txt; the launchers in scripts/release/ copy them into the
-# player's data directory.
+# user/borg.txt, written into the package's lib/user/, which a game started
+# directly reads (no launcher is shipped).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 5 ] || { sed -n '2,15p' "$0" >&2; exit 2; }
