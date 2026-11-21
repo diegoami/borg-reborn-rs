@@ -285,7 +285,7 @@ before a paid purchase. Full-pack urgent actions first free feasible room.
 Capability IDs 54–56 append cut reduction, stun reduction and monster control;
 prior IDs are preserved, including the historical combined wound/stun row.
 Active condition demands and reductions use actual native timer units.
-See [the review disposition map](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/TOWN-PR83-FIXES.md) for classifier, rod,
+See [the review disposition map](TOWN-PR83-FIXES.md) for classifier, rod,
 random-branch, shared-slot and reserve changes. Native receipts and observed
 wallet/inventory changes establish transactions; a queued command does not.
 

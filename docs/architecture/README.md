@@ -12,7 +12,7 @@ going. Read in this order:
 
 The documents they build on are kept in [reference/](../../reference/README.md):
 the C Borg's specification, defect catalogue and fix pages, the shipped
-core's design documents ([reference/borg-core/](../../reference/borg-core/README.md)),
+core's design documents ([reference/borg-core/](../../reference/borg-core/)),
 and the strategy manual. The contracts these documents answer to are [SPEC.md](../SPEC.md) (top
 level) and [GOALS.md](../GOALS.md) (the owner's decisions). The engine
 integration under all of it is [ENGINE.md](../ENGINE.md).

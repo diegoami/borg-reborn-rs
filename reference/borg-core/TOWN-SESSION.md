@@ -149,7 +149,7 @@ own command ("which shop does the Borg visit") is a separate thing, in
 this option.
 
 This is a change to the engine's store screen, not to the Borg: see
-[FORK-CORRECTIONS.md](../borg-rs/FORK-CORRECTIONS.md) for the fork question it raises.
+[FORK-CORRECTIONS.md](FORK-CORRECTIONS.md) for the fork question it raises.
 
 ## The end of the session
 

@@ -387,7 +387,7 @@ to descend. At 100,000 turns the enabled policy reaches clevel 7/depth 3 versus
 9/depth 5 for the off control; these are descriptive observations, not an
 acceptance criterion. The owner clarified that slower progress and earlier
 returns are intended. The gear threshold never fires in either arm.
-See [the return-policy check](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/return-policy.md)
+See [the return-policy check](validation/2026-11-14-trip-policy/return-policy.md)
 for the run bounds and remaining limitations.
 
 **Deeper inventory investigation (2026-11-14):** five bounded checkpoint
@@ -399,7 +399,7 @@ rule distinguishes the missing knowledge, matching town mechanisms and
 confirmed versus exploratory opportunities; known artifacts/random-power
 egos with a confirmed matching resource can receive priority. This is a
 proposal, not a change to the acting formula or thresholds. Read the
-[case-backed proposal](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/knowledge-value.md)
+[case-backed proposal](validation/2026-11-14-trip-policy/knowledge-value.md)
 and its linked curated snapshots before implementing weights. Town-side
 opportunity facts and shared-model integration remain with the buying session.
 
@@ -469,7 +469,7 @@ they can also reflect disposal, use or equipping. Policy return votes in
 the inbound trip are evidence of intent, not proof that the policy caused
 every return. No descent-speed score or automatic usefulness label is assigned.
 
-See [the town-outcome trace](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/town-outcomes.md)
+See [the town-outcome trace](validation/2026-11-14-trip-policy/town-outcomes.md)
 for the bounded functional runs and the existing no-upstairs routing fallback.
 
 ## 9. Coordination with the town plan
@@ -572,7 +572,7 @@ to.
    on the owner's schedule. **Re-earned after the town merge on
    2026-11-14:** smoke 3/3, full 45/45, deep 9/9, options 24/24 and
    remaining synthetic tactics 3/3; family buying 8/8 and the seed-101 hash
-   also pass. See [the merge validation receipt](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/README.md).
+   also pass. See [the merge validation receipt](validation/2026-11-14-trip-policy/README.md).
 
 ## Return thresholds and the general Borg rules
 

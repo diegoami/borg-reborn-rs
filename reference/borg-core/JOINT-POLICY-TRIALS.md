@@ -82,5 +82,5 @@ choices can then be considered separately. No new default has been chosen.
 
 ## Further detail, if needed
 
-- [Exact settings, test results and limitations](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/live-integration-technical.md)
-- [Recorded numbers for every run](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-trip-policy/joint-live-results.json)
+- [Exact settings, test results and limitations](validation/2026-11-14-trip-policy/live-integration-technical.md)
+- [Recorded numbers for every run](validation/2026-11-14-trip-policy/joint-live-results.json)

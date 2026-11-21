@@ -255,10 +255,10 @@ Viewer exit, saving a human branch, and agent assessment do not mark owner revie
 complete or close an investigation. Local reversible overrides are shared across
 worktrees in primary artifacts, separate from committed owner receipts.
 
-Follow [FEEDBACK.md](../../deaths/better-borg-c/FEEDBACK.md): retain owner observations on the
+Follow [FEEDBACK.md](../deaths/FEEDBACK.md): retain owner observations on the
 case's linked GitHub investigation; check the actual source/build and knowledge,
 resources, routes and action order; distinguish observation, hypothesis and
-native proof. Complete [REVIEW-TEMPLATE.md](../../deaths/better-borg-c/REVIEW-TEMPLATE.md), including
+native proof. Complete [REVIEW-TEMPLATE.md](../deaths/REVIEW-TEMPLATE.md), including
 timeline, brainstorming/competing explanations, costs, priorities and next tests.
 Update assessment actions and aggregate registry; acknowledgement alone is not
 resolution. New original-C defects route through the source tracker and separate

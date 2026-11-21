@@ -10,7 +10,7 @@ candidate, change, budget and acceptance plan before work starts.
 
 For the canonical architecture specification, revision3 tuning plan/reviews,
 source-check limits and quick gains368–371/toolkit376, read the
-[reference inventory in PLAN.md](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/PLAN.md#borg-design-tuning-proposal-and-evidence-references).
+[reference inventory in PLAN.md](../../PLAN.md#borg-design-tuning-proposal-and-evidence-references).
 These references inform scoped candidates and do not start their implementation.
 
 ## Process 1: analyse a death and evaluate candidates
@@ -140,4 +140,4 @@ weighting and whether economic penalties trigger harmful early escape decisions.
 room/door/upstairs retreat before repeated phases AND after scroll exhaustion.
 Both are focused children of34, linked to the same encounter evaluation rather
 than new independent death claims. Sleep timing, safe fight and retreat outcomes
-remain unproved. [Current overall assessment](../../deaths/better-borg-c/D0004-named-headless/overall-assessment.md).
+remain unproved. [Current overall assessment](../deaths/D0004-named-headless/overall-assessment.md).

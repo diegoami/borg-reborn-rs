@@ -102,7 +102,7 @@ Known consumer limits are explicit: this Borg has no known-use action for
 Infravision potions or Disable Traps devices, and Deep Descent is outside the
 trip router. These are excluded rather than assigned a fictitious benefit.
 
-[Validation and confirmed shopping ledgers](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-15-town-capabilities/README.md)
+[Validation and confirmed shopping ledgers](validation/2026-11-15-town-capabilities/README.md)
 cover the committed combined runtime. All 104 ordinary kinds are accounted for;
 all 530 observed purchases pass native receipt/wallet checks. The nine-start
 comparison has two deaths versus one baseline death, so these checks establish
@@ -122,11 +122,11 @@ learning tasks, covering equipment and quiver as well as pack contents. See
 
 ## PR83 correction candidate
 
-The [combined review repairs](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/TOWN-PR83-FIXES.md) move new records to schema 9,
+The [combined review repairs](TOWN-PR83-FIXES.md) move new records to schema 9,
 remove unsupported Monster Confusion combat value, correct branch/condition/rod
 supply facts, and make gear/fuel and ammo capacity share their actual limits.
 Known Home supplies participate in urgent planning; live purchase completion
 requires observed native progress. Earlier receipts above describe their
-original source and are preserved. The [new validation receipt](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-15-town-pr83-fixes/README.md)
+original source and are preserved. The [new validation receipt](validation/2026-11-15-town-pr83-fixes/README.md)
 separates correctness checks, selected class diagnostics and remaining policy
 questions. No fresh zoo performance claim or promotion follows from it.

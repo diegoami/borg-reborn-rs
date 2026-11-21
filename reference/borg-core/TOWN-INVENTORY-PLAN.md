@@ -5,7 +5,7 @@
 **Owner-directed live comparison (2026-11-14):** opt-in `borg_town_plan = 1`
 now executes the planner; default 0 remains the parity control. The matched
 45-start/four-arm local full suite is complete (180 valid outcomes).
-[Results and parameter subset](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-town-live-full/README.md) ·
+[Results and parameter subset](validation/2026-11-14-town-live-full/README.md) ·
 [live contract](TOWN-LIVE.md). New records are revision 6; older shadow slice
 notes below describe historical checkpoints. No default change, accepted
 class tuning, tag or PR merge is implied.
@@ -18,7 +18,7 @@ quotas. New settings declare destination, duration and retained-gold priority.
 Historical slice notes below describe the earlier v4 model and remain replayable.
 Bounded validation passes: 229 tests, both Clippy versions, C/Rust smoke 3/3,
 21 calibration executions and all 1827 records replayed;
-[receipt](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-town-utility/README.md). This is still shadow mode.
+[receipt](validation/2026-11-14-town-utility/README.md). This is still shadow mode.
 
 Status: **accepted**. Phases 0-2 landed 2026-11-12, phase 3 on 2026-11-13; the owner decisions of
 2026-11-12 (the epic log, full record on PR #42) are applied inline.
@@ -202,7 +202,7 @@ diffed against the current policy's visit.
 
 **Item catalogue for owner review (2026-11-14):**
 [the GitHub review table](TOWN-ITEM-CATALOGUE.md) and
-[the offline review page](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/town-item-catalogue.html) list 369 kinds: 104 distinct
+[the offline review page](town-item-catalogue.html) list 369 kinds: 104 distinct
 kinds from the ordinary shops (107 offers), plus possible Black Market
 allocations. It records the current primary need, unit and known mapping gaps
 against `5203a06`, including Remove Hunger, fuel, books, ammunition and devices.

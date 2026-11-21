@@ -7,15 +7,15 @@ the owner-authorized exceptions so changes are deliberate and reviewable.
 This file is not where new findings get catalogued any more. It is the
 record of what was found through M5; existing sections only grow a new
 "MilestoneN" bullet when a better-borg-c adoption supersedes them (see
-[C-CONSUMER-ADOPTION.md](../borg-rs/C-CONSUMER-ADOPTION.md)). A new suspected C defect
+[C-CONSUMER-ADOPTION.md](C-CONSUMER-ADOPTION.md)). A new suspected C defect
 is coordinated through the C consumer's own ownership/tracker instead of
 being added here fresh.
 
-The seven milestone2 carries in [adoption/c-m2](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m2/README.md)
+The seven milestone2 carries in [adoption/c-m2](adoption/c-m2/README.md)
 correct selected findings below in local C and Rust. Their source ownership
 and historical descriptions remain; consumer adoption is not upstream closure.
 
-The milestone3 carries in [adoption/c-m3](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m3/README.md)
+The milestone3 carries in [adoption/c-m3](adoption/c-m3/README.md)
 (better-borg-c `702f091f6`, [Rust#8](https://github.com/diegoami/borg-rs/issues/8))
 correct further findings below; each affected section has a "Milestone3"
 bullet. Fixes the C lane found after these sections were written (caster
@@ -23,37 +23,37 @@ grid in `borg_projectable_pure()`, glow-array bound in `borg_flow_light()`,
 trapped walls counted once in `borg_surrounded()`, both lunal flags cleared
 on the town/weak scum bail) are listed in that batch's ledger.
 
-The milestone4 carries in [adoption/c-m4](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m4/README.md)
+The milestone4 carries in [adoption/c-m4](adoption/c-m4/README.md)
 (better-borg-c `70993393a`, [Rust#11](https://github.com/diegoami/borg-rs/issues/11))
 are marked with "Milestone4" bullets in the same way.
 
-The milestone5 carries in [adoption/c-m5](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m5/README.md)
+The milestone5 carries in [adoption/c-m5](adoption/c-m5/README.md)
 (better-borg-c `5384f12ed`, [Rust#13](https://github.com/diegoami/borg-rs/issues/13))
 are marked with "Milestone5" bullets. Two of them have no section here: the
 endgame recall-depth prompt answers `y` at max depth 99 with few uniques left
 (source310), and flows that skip the danger check no longer mark grids as
 checked (`borg_flow_ignores_danger`, source404).
 
-The milestone6 carries in [adoption/c-m6](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m6/README.md)
+The milestone6 carries in [adoption/c-m6](adoption/c-m6/README.md)
 (better-borg-c `b3c825c97`, [Rust#15](https://github.com/diegoami/borg-rs/issues/15))
 are marked with "Milestone6" bullets.
 
-The milestone7 carries in [adoption/c-m7](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m7/README.md)
+The milestone7 carries in [adoption/c-m7](adoption/c-m7/README.md)
 (better-borg-c `3573d741e`, [Rust#17](https://github.com/diegoami/borg-rs/issues/17))
 are marked with "Milestone7" bullets. Two of them replace retained local
 corrections: 0068 supersedes #287 and 0065 supersedes #345.
 
-The milestone8 carries in [adoption/c-m8](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m8/README.md)
+The milestone8 carries in [adoption/c-m8](adoption/c-m8/README.md)
 (better-borg-c `017e038e8`, [Rust#19](https://github.com/diegoami/borg-rs/issues/19))
 are marked with "Milestone8" bullets. The same target also carries the
 owner's munchkin-by-class change (PR302), which is not a C bug fix.
 
-The milestone9 carries in [adoption/c-m9](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-m9/README.md)
+The milestone9 carries in [adoption/c-m9](adoption/c-m9/README.md)
 (better-borg-c `33207fbee`, [Rust#21](https://github.com/diegoami/borg-rs/issues/21))
 are marked with "Milestone9" bullets. 0098 replaces the local #295
 correction; 0098 and 0099 are each carried with a local crash guard.
 
-The owner-directed v11R carry in [adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)
+The owner-directed v11R carry in [adoption/c-v11r](adoption/c-v11r/README.md)
 (the consumer's `4.2.6-impact-v11`, 18 units 0100-0117) is marked with
 "v11R" bullets. It is the Rust counterpart of the consumer's milestone 11,
 not an automatic post-M10 adoption queue. The C Borg sources in this tree
@@ -272,7 +272,7 @@ with its issues.
 * Original Rust reset the unused struct field. Milestone2/source14 now resets
   `st.msgs.dont_react` after parsing in `borg.rs`. The unrelated prompted-key
   return convention remains. Adoption: [Rust#6](https://github.com/diegoami/borg-rs/issues/6).
-* v12R ([adoption/c-v12r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v12r/README.md)): the defect is
+* v12R ([adoption/c-v12r](adoption/c-v12r/README.md)): the defect is
   gone upstream and in the C oracle. The official import unified the gate on
   the borg struct field (`borg.dont_react`); the global `borg_dont_react` no
   longer exists, and the reset in `borg.c` clears the field that
@@ -306,7 +306,7 @@ with its issues.
   buy/wear/remove code that needs a hole gives up. (Unlikely in play:
   the Borg nearly always carries something.)
 * Rust (`borg_inventory.rs`): the pval slip is kept.
-* v11R ([0111](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): an empty pack returns slot 0,
+* v11R ([0111](adoption/c-v11r/README.md)): an empty pack returns slot 0,
   not -1, in C and Rust.
 ## 17. Danger slips (danger)
 
@@ -351,14 +351,14 @@ with its issues.
   the Teleport Other list only below its count, in C and Rust.
 * Milestone8 ([Rust#19](https://github.com/diegoami/borg-rs/issues/19)): source62 removes the dead HURT stun test (patch 0085, an
   owner-decided cleanup with no behaviour change).
-* v11R ([adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)):
-  * [0103](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the partial melee hit chance divides
+* v11R ([adoption/c-v11r](adoption/c-v11r/README.md)):
+  * [0103](adoption/c-v11r/README.md): the partial melee hit chance divides
     the armour term by `(level + power) * 3` and is capped at 100%, in C and
     Rust.
-  * [0107](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): LOSE_CON fear tests `BI_CCON`, not
+  * [0107](adoption/c-v11r/README.md): LOSE_CON fear tests `BI_CCON`, not
     `BI_CSTR`.
-  * [0108](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the ranged Crush check clears `v2`.
-  * [0109](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the ranged move simulation treats only
+  * [0108](adoption/c-v11r/README.md): the ranged Crush check clears `v2`.
+  * [0109](adoption/c-v11r/README.md): the ranged move simulation treats only
     granite (and the same seam types) as a wall, not everything above it.
   * The COLD, bolt/summon and dead-stun findings remain in the sections above.
 
@@ -406,10 +406,10 @@ with its issues.
 * Rust (`borg_flow_take.rs`): the remaining findings are kept.
 * Milestone8 ([Rust#19](https://github.com/diegoami/borg-rs/issues/19)): source72 skips dead entries (`kidx == 0`) in
   `borg_flow_take_lunal()` (patch 0088), in C and Rust.
-* v11R ([adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)):
-  * [0104](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the three flows keep the *nearest*
+* v11R ([adoption/c-v11r](adoption/c-v11r/README.md)):
+  * [0104](adoption/c-v11r/README.md): the three flows keep the *nearest*
     up staircase (first of equally near ones), in C and Rust.
-  * [0101/0101a](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the Lunal take routine skips an
+  * [0101/0101a](adoption/c-v11r/README.md): the Lunal take routine skips an
     `item_bad` object outside munchkin mode. The runtime `borg.munchkin_mode`
     gate is used, not the class/config flag.
   * The `k_ptr`, `borg_follow_take` and `observe_take_move` findings remain.
@@ -442,7 +442,7 @@ with its issues.
   `borg_item_use.rs`.
 * Milestone4 ([Rust#11](https://github.com/diegoami/borg-rs/issues/11)): source81 quaffs a recognised Enlightenment potion in
   the dungeon (never in town), in C and Rust.
-* v11R ([0112](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): `borg_eat_food_any()` uses
+* v11R ([0112](adoption/c-v11r/README.md)): `borg_eat_food_any()` uses
   `BI_CURHP < BI_MAXHP`, so a full-health Borg does not quaff cures for food,
   in C and Rust.
 ## 21. Equipment swaps and the "best" list (item wear)
@@ -478,10 +478,10 @@ with its issues.
   Other findings remain; `swap_letter(-1)` itself still gives the 0 key.
 * Milestone7 ([Rust#17](https://github.com/diegoami/borg-rs/issues/17)): source85 sets `skipping` once, before the loop in
   `borg_one_step_wearing_best()` (patch 0075), in C and Rust.
-* v11R ([0113](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): the stale left-ring duplicate
+* v11R ([0113](adoption/c-v11r/README.md)): the stale left-ring duplicate
   check in `borg_best_stuff_aux()` is removed; the left ring is chosen first,
   so only the right ring needs it, in C and Rust.
-* v12R ([adoption/c-v12r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v12r/README.md)): the "keeps the
+* v12R ([adoption/c-v12r](adoption/c-v12r/README.md)): the "keeps the
   higher danger" finding is fixed upstream (`bc67c099e`), and the consumer's
   carry 0001 is retired in favour of that upstream form. Both candidates now
   start at 9999, the early "make sure we have an appropriate swap" return is
@@ -564,13 +564,13 @@ with its issues.
   starts with "it" (any case) as an invisible monster.
 * Rust (`borg_flow_kill.rs`): milestone2/source102 requires the exact unseen
   name "It" (case-insensitive, C-string termination semantics).
-* v11R ([adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)):
-  * [0102](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): `skip_monster` is cleared and
+* v11R ([adoption/c-v11r](adoption/c-v11r/README.md)):
+  * [0102](adoption/c-v11r/README.md): `skip_monster` is cleared and
     `hall_walls` zeroed for each monster; the "fewer than four walls" test
     runs once after the nine-grid scan.
-  * [0110](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): `borg_shoot_scoot_safe()` passes the
+  * [0110](adoption/c-v11r/README.md): `borg_shoot_scoot_safe()` passes the
     adjacent monster's kill index (`ag->kill`), not the direction index.
-  * v12R ([0118](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v12r/README.md)): the "force the grid to floor /
+  * v12R ([0118](adoption/c-v12r/README.md)): the "force the grid to floor /
     granite" step is removed from `borg_new_kill()`, so a newly seen monster
     keeps the grid it was seen on instead of one derived from the slot's
     previous race; the stale-race read goes with it. C and Rust.
@@ -619,7 +619,7 @@ with its issues.
 * `borg_flow_cost_stair()` does not check `b_stair` against
   `track_less.num` (it reads any allocated entry).
 * Rust (`borg_flow_stairs.rs`): the `b_stair` check remains as before.
-* v11R ([0105](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): `no_rest_prep` is an `int` in C
+* v11R ([0105](adoption/c-v11r/README.md)): `no_rest_prep` is an `int` in C
   and `i32` in Rust, so the timer no longer wraps at character level 33; the
   three assignment sites follow the same type.
 
@@ -770,10 +770,10 @@ with its issues.
   single item in `borg_count_sell()`.
 * Milestone9 ([Rust#21](https://github.com/diegoami/borg-rs/issues/21)): source20 makes `sold_item_num` count the newest sale (patch
   0094), in C and Rust.
-* v11R ([adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)):
-  * [0116](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): after each home-sell trial the pack
+* v11R ([adoption/c-v11r](adoption/c-v11r/README.md)):
+  * [0116](adoption/c-v11r/README.md): after each home-sell trial the pack
     item's staff/wand charges are restored with its quantity, in C and Rust.
-  * [0117](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): `borg_good_sell()` checks the sold
+  * [0117](adoption/c-v11r/README.md): `borg_good_sell()` checks the sold
     item's own ego for an unknown random power, not the worn cloak's.
   * The other findings in this section remain.
 ## 34. Shopping slips (store buy)
@@ -815,10 +815,10 @@ with its issues.
   Alchemist and fixes the Remove Hunger test (0090); source19 restores the
   home ware when a home-buy trial is skipped (0093); source20 makes
   `bought_item_num` count the newest purchase (0094), in C and Rust.
-* v11R ([adoption/c-v11r](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)):
-  * [0115](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): `borg_think_home_grab_useless()`
+* v11R ([adoption/c-v11r](adoption/c-v11r/README.md)):
+  * [0115](adoption/c-v11r/README.md): `borg_think_home_grab_useless()`
     resets `skip_it` for every home ware.
-  * [0114](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md): the home-swap trial slot is restored
+  * [0114](adoption/c-v11r/README.md): the home-swap trial slot is restored
     from `safe_items` after each candidate, not just its `iqty` cleared.
   * The Black Market Rod and `bought_item_num` findings above remain.
 
@@ -849,7 +849,7 @@ with its issues.
 * Rust (`borg_escape.rs`): the remaining findings are kept.
 * Milestone8 ([Rust#19](https://github.com/diegoami/borg-rs/issues/19)): source21 aims Dimension Door only at a known floor grid
   without a monster (patch 0086), in C and Rust.
-* v11R ([0100](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): danger levels 3.1, 4.1, 5.1,
+* v11R ([0100](adoption/c-v11r/README.md)): danger levels 3.1, 4.1, 5.1,
   6.1 and 8 treat the stair escape as a complete alternative. Either the
   Borg climbs, or it phases when the landing zone and timers allow; it no
   longer queues `<` and then phase keys behind it, in C and Rust.
@@ -1336,7 +1336,7 @@ with its issues.
   `borg_feeling_stuff` outside 0..11 panics in
   `borg_time_to_stay_on_level` (C reads past `borg_stuff_feeling`), and a
   grid outside the map panics (C reads outside `borg_grids`).
-* v11R ([0106](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/adoption/c-v11r/README.md)): `borg_leave_level()` copies the
+* v11R ([0106](adoption/c-v11r/README.md)): `borg_leave_level()` copies the
   current depth's reason immediately, before the later `borg_prepared()`
   calls overwrite the static buffer; the notes and the "Collect from house"
   test use the copy, in C and Rust.
@@ -1792,5 +1792,5 @@ The C source is unchanged; no correction is proposed in this pass.
   official master `e473720ed`.
 * Corrected locally (owner-directed narrow engine fix): cure-all also frees the
   known list. See `FORK-CORRECTIONS.md` and
-  [validation/2026-11-08-c-m4](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-08-c-m4/README.md).
+  [validation/2026-11-08-c-m4](validation/2026-11-08-c-m4/README.md).
 * Tracker: diegoami/neo-angband-tracker#474. Adoption: [Rust#11](https://github.com/diegoami/borg-rs/issues/11).

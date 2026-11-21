@@ -33,14 +33,38 @@ of the C Borg, the shipped core and the redesign; the player's
 [GAME-PLAN-LANGUAGE.md](../docs/GAME-PLAN-LANGUAGE.md),
 [PHASE-DOOR.md](../docs/PHASE-DOOR.md).
 
-## Taken at
+## Taken at, and checked
 
-The originals were taken at the source heads of 2026-11-19/20 (neo-angband-tracker
-`dbde80762dd4`, better-borg-c `cc4c3e43aa0a`, including its 30 fix pages
-newer than the pin), except the core's design documents, taken at the
-vendored core's pin `8c5d000a58e9` so that they describe the code we ship.
+The originals were taken at the source heads of 2026-11-19/20
+(neo-angband-tracker `dbde80762dd4`, better-borg-c `cc4c3e43aa0a`,
+including its 30 fix pages newer than the pin), except the core's design
+documents, taken at the vendored core's pin `8c5d000a58e9` so that they
+describe the code we ship. **Every file is byte for byte its source's at
+that commit, and no file was added to these directories** (checked file
+by file on 2026-11-21; the copies were checked against their pins the
+same way: 693 files, no difference). Their links follow the source
+repository's layout.
+
 Copies follow their pins; borg-rs's pin is also the vendored core's and
 moves only with a core refresh (`scripts/borg-core-vendor.py refresh`).
+
+### `borg-core/`: the shipped core's design documents
+
+borg-rs has no index page for these; they are:
+
+| Document | What |
+| --- | --- |
+| [TOWN-INVENTORY.md](borg-core/TOWN-INVENTORY.md) | The town inventory strategy: its architecture |
+| [TOWN-INVENTORY-PLAN.md](borg-core/TOWN-INVENTORY-PLAN.md), [TOWN-INVENTORY-B2.md](borg-core/TOWN-INVENTORY-B2.md), [TOWN-INVENTORY-PHASE4.md](borg-core/TOWN-INVENTORY-PHASE4.md) | Its implementation plan, the kind-only alternatives, the Stay rules and the plan record |
+| [TOWN-UTILITY.md](borg-core/TOWN-UTILITY.md) | Trip-relative town utility (model v5) |
+| [TOWN-ITEM-CATALOGUE.md](borg-core/TOWN-ITEM-CATALOGUE.md) | Every item kind the town planner knows, and how it is valued |
+| [TOWN-BASELINE.md](borg-core/TOWN-BASELINE.md), [TOWN-CAPABILITIES.md](borg-core/TOWN-CAPABILITIES.md), [TOWN-CLASS-CALIBRATION.md](borg-core/TOWN-CLASS-CALIBRATION.md) | The baseline of inventory choices, capability coverage, class profiles and their calibration |
+| [TOWN-LIVE.md](borg-core/TOWN-LIVE.md), [TOWN-SESSION.md](borg-core/TOWN-SESSION.md), [TOWN-DUMP.md](borg-core/TOWN-DUMP.md) | The live town executor, the interactive session, the town-visit dump |
+| [TRIP-POLICY.md](borg-core/TRIP-POLICY.md) | When a trip ends and the Borg goes home |
+| [JOINT-POLICY-OPTIMISATION.md](borg-core/JOINT-POLICY-OPTIMISATION.md), [JOINT-POLICY-TRIALS.md](borg-core/JOINT-POLICY-TRIALS.md) | Trip and shopping settings chosen together; coming home and preparing the next trip |
+| [BORG-SHOP-SHORTCUTS.md](borg-core/BORG-SHOP-SHORTCUTS.md) | The shortcuts the Borg takes in shops |
+| [FAMILY.md](borg-core/FAMILY.md) | The family of Borg versions after impact v10 |
+| [c-bugs.md](borg-core/c-bugs.md) | The C Borg bugs borg-rs reproduces faithfully, and the ones it fixed |
 
 ## Left where they are, and why
 

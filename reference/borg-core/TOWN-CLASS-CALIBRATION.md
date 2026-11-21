@@ -1,7 +1,7 @@
 # Class profiles and the calibration sequence
 
 **Active combined study:** the owner has already dispatched the milestone-12
-trip + live inventory experiments. See [exact pins and evidence boundaries](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ACTIVE-JOINT-EXPERIMENT.md).
+trip + live inventory experiments. See [exact pins and evidence boundaries](ACTIVE-JOINT-EXPERIMENT.md).
 The standalone local results and unrun Knowledge/Home grid below remain separate.
 
 Zoo integration request: [borg-zoo#88](https://github.com/diegoami/borg-zoo/issues/88).
@@ -20,7 +20,7 @@ not accepted class recommendations. The class-calibration runner remains shadow-
 
 ## Resolution and the zoo format
 
-The portable [profile file](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/tools/town-plan/zoo-profiles.json), schema 2,
+The portable [profile file](../tools/town-plan/zoo-profiles.json), schema 2,
 contains shared `base`, optional `class_defaults`, and named experiment `arms`.
 Each arm has `settings` and optional `class_overrides`.
 
@@ -45,7 +45,7 @@ advances the destination with progress; it does not pin it at a dungeon level.
 
 The zoo already implements class selection at
 [`catalogue.resolve_profile`](https://github.com/diegoami/borg-zoo/blob/7ae123b8240e92428470e9c2b6145eebc9ef614b/zoo/catalogue.py).
-The [generated native catalogue](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/tools/town-plan/zoo-class-profiles.json)
+The [generated native catalogue](../tools/town-plan/zoo-class-profiles.json)
 uses that format: complete ordinary `settings` profiles plus a selector:
 
 ```json
@@ -97,7 +97,7 @@ manifest-based reports include Ranger/Blackguard and group results per class.
 
 ## What has passed
 
-[Validation receipt](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-town-class-profiles/README.md):
+[Validation receipt](validation/2026-11-14-town-class-profiles/README.md):
 14 Python tests; 36 native zoo cells through the pinned, unmodified adapter;
 18 further runner/report cells; all nine classes and shared fallbacks checked;
 1952 new v5 records replayed. Both game-parsed settings and recorded vectors

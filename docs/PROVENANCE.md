@@ -127,13 +127,13 @@ semantics were checked in upstream 574b618c `player-attack.c:738-743,767,840-860
 
 This repository is the central place for the Borg's documentation. These
 documents were written in other repositories, moved here and are
-originals now; their links to files that stayed behind point to the
-source at the commit below.
+originals now. Each file is byte for byte the source's at the commit below
+(checked file by file); nothing was added to these directories.
 
 | Here | From | Commit |
 | --- | --- | --- |
 | `reference/c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` | `dbde80762dd45857c7840f1af9df1bd39930d4ab` |
-| `reference/c-borg/` (spec, plan, index, `c-bugs/`, `C-BUGS.md`, `borg-rs-c-bugs.md`) | neo-angband-tracker `docs/c-borg/`, `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | same |
+| `reference/c-borg/` (the whole `docs/c-borg/`, `c-bugs/`, `C-BUGS.md`, `borg-rs-c-bugs.md`) | neo-angband-tracker `docs/c-borg/`, `docs/c-bugs/`, `docs/C-BUGS.md`, `docs/audit/c-reports/borg-rs-c-bugs.md` | same |
 | `reference/better-borg-c/` | diegoami/better-borg-c `docs/measurement/*.md`, `docs/VERIFICATION.md` | `cc4c3e43aa0a863ad2fc4adab8f930277d181900` |
 | `reference/borg-core/` | diegoami/borg-rs `docs/` (town, trip, family, shop, joint-policy, c-bugs) | `8c5d000a58e9ddca1f1954ab9552e505856b313f` |
 | `reference/borg-agent/` | diegoami/borg-agent `knowledge/`, `docs/POST-MORTEM.md`, `docs/KNOWLEDGE.md` | `57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86` |

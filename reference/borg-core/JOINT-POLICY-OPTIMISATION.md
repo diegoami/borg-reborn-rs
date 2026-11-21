@@ -78,7 +78,7 @@ The trip still uses a depth margin of 0, returns with 2 free spaces or
 4 unknown gear stacks, and has the purse-return trigger disabled. Gold
 retention stays at weight 25, healing at 100 and learning at 25. Trip
 length is estimated automatically. The
-[complete candidate dictionary](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-joint-optimisation/candidate-settings.json)
+[complete candidate dictionary](validation/2026-11-14-joint-optimisation/candidate-settings.json)
 records every declared setting.
 
 Both policies remain off in the shipped defaults. No default was changed
@@ -131,7 +131,7 @@ before testing the live candidates. Each game also has a 50,000-key and
 
 The experiment is isolated on `experiment/joint-policy-m12`, based on the
 trip/inventory branch plus the accepted milestone-12 snapshot. The earlier
-published trip branch is left unchanged. The [complete results](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-joint-optimisation/results.json)
+published trip branch is left unchanged. The [complete results](validation/2026-11-14-joint-optimisation/results.json)
 include each case, its settings, actual class/race, source/build identity
 and channel hashes.
 

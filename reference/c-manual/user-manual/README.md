@@ -11,4 +11,4 @@ the Angband developers; its licence is in [copying.rst](copying.rst).
 repository's private-information scan (`tools/private-scan.mjs`) rejects some
 of the names it contains. Read it in the official manual
 (<https://angband.readthedocs.io/en/latest/thanks.html>) or in this repository's
-pristine upstream copy, [`reference/docs/thanks.rst`](https://github.com/diegoami/neo-angband-tracker/blob/dbde80762dd45857c7840f1af9df1bd39930d4ab/reference/docs/thanks.rst).
+pristine upstream copy, [`reference/docs/thanks.rst`](../../../reference/docs/thanks.rst).

@@ -69,10 +69,10 @@ fn entry_documents_exist() {
 /// #816: every relative Markdown link in the current documents resolves.
 /// Checked: the entry documents at the root, every `.md` directly in
 /// `docs/`, `docs/architecture/`, the index pages of `docs/validation/`,
-/// `docs/archive/`, `docs/research/` and `docs/handover/`, the pages of
-/// `reference/`, `harness/` and `tools/` written here, and the originals
-/// kept in `reference/` (the manuals, the C Borg documents, the core's
-/// design documents). Not checked: the
+/// `docs/archive/`, `docs/research/` and `docs/handover/`, and the pages of
+/// `reference/`, `harness/` and `tools/` written here. Not the documents
+/// moved into `reference/` from other repositories: they are kept byte for
+/// byte as their source had them, so their links follow its layout. Not checked: the
 /// archived and receipt files (kept byte for byte at their new paths, so
 /// their links resolve against their old directory), the handover notes,
 /// and copies of other repositories. Fenced code and inline code are
@@ -100,27 +100,6 @@ fn current_documents_have_no_dangling_links() {
         for entry in std::fs::read_dir(root().join(dir)).unwrap() {
             let path = entry.unwrap().path();
             if path.extension().is_some_and(|e| e == "md") {
-                files.push(path);
-            }
-        }
-    }
-    // The originals kept in reference/ (#816), every page at any depth.
-    let mut stack: Vec<PathBuf> = [
-        "reference/c-manual",
-        "reference/c-borg",
-        "reference/better-borg-c",
-        "reference/borg-core",
-        "reference/borg-agent",
-    ]
-    .iter()
-    .map(|rel| root().join(rel))
-    .collect();
-    while let Some(dir) = stack.pop() {
-        for entry in std::fs::read_dir(&dir).unwrap() {
-            let path = entry.unwrap().path();
-            if path.is_dir() {
-                stack.push(path);
-            } else if path.extension().is_some_and(|e| e == "md") {
                 files.push(path);
             }
         }

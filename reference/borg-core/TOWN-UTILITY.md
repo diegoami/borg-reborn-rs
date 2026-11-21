@@ -177,7 +177,7 @@ Neither this change nor shadow comparisons establish improved survival.
 Records use **schema 5**, with 24 parameters and physical supply units. Historical
 schema-4 records retain their old units and code path; replay still reproduces
 the original fixed-target decisions rather than applying the new model to them.
-See [the item catalogue](TOWN-ITEM-CATALOGUE.md) and [the validation receipt](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-town-utility/README.md) for executable examples and runtime comparisons.
+See [the item catalogue](TOWN-ITEM-CATALOGUE.md) and [the validation receipt](validation/2026-11-14-town-utility/README.md) for executable examples and runtime comparisons.
 
 ## Zoo calibration parameters
 
@@ -208,7 +208,7 @@ rates `e`, `s`, `f`, `l`, `r`, the default equations become `T=e*A+2*s*D`,
 `E=(T/1000)*(D/L)*(r/1000)`, `d_food=T/f`, `d_light=T/l`, and gear scale
 `power_scale*A`. HP per potion is game data, not a zoo tuning parameter.
 
-[Portable sample arms](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/tools/town-plan/zoo-profiles.json) declare normal mode
+[Portable sample arms](../tools/town-plan/zoo-profiles.json) declare normal mode
 and all active utility parameters. They are dictionaries for configuring runs,
 not a claim of compatibility with the zoo's native import schema. The bounded
 runner now uses seeds 501–509, race 0, all nine classes, 30000 game turns each by default
@@ -227,7 +227,7 @@ Each run records the complete configured dictionary in `town-parameters.json`,
 the ordinary harness build/config/seed identity, and the v5 plan JSONL. The
 runner refuses to overwrite existing evidence. For zoo-native profiles, use
 these same setting names/values in the specimen's `borg.txt` and keep the
-normal/munchkin mode explicit under [the zoo contract](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ZOO-INTERFACE.md).
+normal/munchkin mode explicit under [the zoo contract](ZOO-INTERFACE.md).
 
 **These arms measure shadow-plan choices, not different survival outcomes.**
 Actual decisions still come from the current Borg, so gameplay and survival

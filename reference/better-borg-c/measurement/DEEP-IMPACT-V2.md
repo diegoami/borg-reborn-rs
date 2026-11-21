@@ -19,8 +19,8 @@ qualified native observed binary; six-carry is the rebuilt actual merge
 45eac63bd9f7cabe3c4ef1607703324ca8dae0fc. Both retain the official game base
 e473720ed88a0f0c7ca66815cef3000eb4a38bc3. Exact source/build/binary/data/tool/
 calendar/RNG/command identity and all individual summaries are in
-[machine results](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-results.json); the prospective configuration is
-[cohort.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-cohort.json). Observer instrumentation is unchanged,
+[machine results](deep-impact-v2-results.json); the prospective configuration is
+[cohort.json](deep-impact-v2-cohort.json). Observer instrumentation is unchanged,
 reads state and uses forked saves; no decisions/RNG/game rules changed by logging.
 No cheat-death, hidden-information input or favorable intervention was used.
 
@@ -43,13 +43,13 @@ can coexist with shallower maximum depth; there is no single proven fitness win.
 ## Deaths, replay and diagnoses
 
 The five-carry seed11 death has exactly the full trace/start save/final RNG of
-[D0001](../../deaths/better-borg-c/D0001-stegocentipede/report.md), now appended as a versioned
+[D0001](../deaths/D0001-stegocentipede/report.md), now appended as a versioned
 reference. The original D0001 source337e50eb is immutable. The fixed seed11 full
 repeat survives400000 with byte-identical trace/start save; that replay is a
 control, not another independent survivor. No assertion that healing rescued
 the same stegocentipede encounter is justified.
 
-[D0002](../../deaths/better-borg-c/D0002-gallant/report.md) records the seed29 gallant death at
+[D0002](../deaths/D0002-gallant/report.md) records the seed29 gallant death at
 20445, both versions and pristine reference, exact binary/build identities,
 native logs/inventory/maps, assessment and issue34 actions. The unchanged fixed
 repeat matches the entire trace/start save/terminal RNG. Four original-start
@@ -68,7 +68,7 @@ change. Original-C defects, if proved, route to source207 before fix/adoption.
 
 All three fixed v1 observation prefixes were repeated by the deep runs. Fixed
 seed47's complete400000-turn trajectory was not repeated; only its first20000
-observations are qualified. [Replay receipts](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/deep-impact-v2-repeatability.json)
+observations are qualified. [Replay receipts](deep-impact-v2-repeatability.json)
 state that limitation. Runtime calendar/timezone is recorded for these runs;
 native seasonal monster rules still limit cross-calendar reproduction.
 

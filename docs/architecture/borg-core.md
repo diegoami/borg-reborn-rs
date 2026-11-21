@@ -9,7 +9,7 @@ tracks that work on it (P: calibration, R: the redesign) are in
 [reborn-plan.md](reborn-plan.md). The core's own design documents (the
 town planner, the trip policy, the class family), written in borg-rs and
 kept here since 2026-11-21, are in
-[reference/borg-core/](../../reference/borg-core/README.md) (§7).
+[reference/borg-core/](../../reference/borg-core/) (§7).
 
 Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
@@ -369,7 +369,7 @@ re-records the reference ([AGENTS.md](../../AGENTS.md)).
 
 The core is borg-rs's, and so is most of its design. Its design documents
 moved here from borg-rs on 2026-11-21 and are originals now, in
-[reference/borg-core/](../../reference/borg-core/README.md):
+[reference/borg-core/](../../reference/borg-core/), unchanged from borg-rs (their links follow borg-rs's layout):
 
 | Subsystem (§2) | Read |
 | --- | --- |

@@ -8,7 +8,7 @@
 > Home withdrawals; do not infer urgent Home-source support from this old report.
 
 **Active combined study:** the owner has already dispatched the milestone-12
-trip + live inventory experiments. See [exact pins and evidence boundaries](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ACTIVE-JOINT-EXPERIMENT.md).
+trip + live inventory experiments. See [exact pins and evidence boundaries](ACTIVE-JOINT-EXPERIMENT.md).
 The standalone local results and unrun Knowledge/Home grid below remain separate.
 
 Owner-directed on 2026-11-14: execute the utility planner and produce a matched
@@ -82,7 +82,7 @@ improvement from five starts per class alone.
 
 ## Measured result and next grid
 
-The corrected [full-suite report](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/validation/2026-11-14-town-live-full/README.md)
+The corrected [full-suite report](validation/2026-11-14-town-live-full/README.md)
 contains 180/180 valid games. Utility reference: 11 deaths, mean level 4.29,
 mean maximum depth 2.18, seven reaching DL3+. Current: 13, 4.11, 2.24, nine.
 Cash priority 50: 11, 3.71, 1.71, one. This is not a demonstrated improvement.
