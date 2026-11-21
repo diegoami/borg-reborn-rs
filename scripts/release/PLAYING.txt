@@ -4,42 +4,63 @@ borg-reborn-rs: Angband with the Borg, a computer player
 This package is upstream Angband (the commit RELEASE.txt names) with no change
 to the game: the Borg's harness hooks, a headless frontend and the Borg
 itself (a Rust library) are linked in. RELEASE.txt says exactly what it was
-built from; SHA256SUMS lists every file.
+built from; SHA256SUMS lists every file. Unpack anywhere you can write;
+nothing is installed.
 
-Needs: Linux x86_64 with glibc 2.39 or newer (Ubuntu 24.04, Debian 13, or the
-like) and OpenSSL 3's libcrypto (Ubuntu 24.04: apt install libssl3t64); for
-the window also the X11 library and fonts (apt install libx11-6 xfonts-base).
-Unpack anywhere you can write; nothing is installed.
+Needs
+-----
+Linux    x86_64, glibc 2.39 or newer (Ubuntu 24.04, Debian 13, or the like),
+         OpenSSL 3's libcrypto (Ubuntu 24.04: apt install libssl3t64) and
+         ncurses (libncursesw6); for the window also the X11 library and
+         fonts (apt install libx11-6 xfonts-base).
+macOS    Apple silicon (arm64), macOS 14 or newer. Nothing else: OpenSSL is
+         linked in, curses is the system's. The first start may need
+         "Open Anyway" in System Settings > Privacy & Security, or
+         xattr -dr com.apple.quarantine on the unpacked folder (the
+         binaries are not signed).
+Windows  64-bit Windows 10 or 11. Nothing else: one static angband.exe.
+         Windows may warn that the program is unrecognised (it is not
+         signed): More info > Run anyway.
 
-Watch the Borg in a window
---------------------------
-    ./watch-borg.sh [NAME]
+Watch the Borg
+--------------
+Linux, macOS:   ./watch-borg.sh [--terminal] [NAME]
+Windows:        watch-borg.cmd [NAME]
 
 Create a character (or load NAME's save), then press Ctrl-Z and then z: the
-Borg plays. Any key stops it and gives you the controls back. Saves and the
-Borg's settings are kept in data/ (BORG_PLAY_DATA_DIR to put them
-elsewhere); edit data/user/borg.txt to change a setting.
+Borg plays. Any key stops it and gives you the controls back. On Linux with
+a display the game opens a window; on macOS, on Windows, without a display
+or with --terminal it plays in the terminal (make it at least 80x24).
+Saves and the Borg's settings are kept in data/ (BORG_PLAY_DATA_DIR to put
+them elsewhere); edit data/user/borg.txt to change a setting.
 
 A game without a window
 -----------------------
-    ./play-headless.sh OUTDIR [SEED [RACE [CLASS [TURNS]]]]
+Linux, macOS:   ./play-headless.sh OUTDIR [SEED [RACE [CLASS [TURNS]]]]
+Windows:        play-headless.cmd OUTDIR [SEED [RACE [CLASS [TURNS]]]]
 
 Plays a new character to game turn TURNS (default 50000) or its death and
 writes the keys, messages, engine states and a summary to OUTDIR. The same
-seed, race, class and turns play the same game every time.
+seed, race, class and turns play the same game every time. Linux and
+Windows play the same games as each other (and as the project's
+references); macOS (Apple silicon) plays different ones from the same seed,
+because the compiler orders some of the game's random draws differently on
+that processor (the game itself is unchanged).
 
 What is where
 -------------
-    angband             the game, X11 and headless frontends (needs libX11)
-    angband-headless    the game, headless frontend only
+    angband[.exe]       the game with its frontends (Linux: X11, curses and
+                        headless; macOS and Windows: curses and headless)
+    angband-headless    Linux only: the headless frontend alone, no X11
     lib/                the game's data (upstream's lib/)
     borg/borg.txt       the Borg's settings (the class files are folded in;
                         borg/class/ has them on their own, for reading)
     borg/plans/         errands plans (optional, see docs/ in the source)
     docs/               the Angband manual and, when present, the guide
     LICENSES/           Angband's licence, the GPL-2.0 of the Borg, and the
-                        licences of the Rust crates it is built from
-    BUILD_ID.*          the build identity of each binary
+                        licences of the Rust crates (and on macOS and
+                        Windows OpenSSL) it is built from
+    BUILD_ID.*          the build identity of each executable
 
 The source of this exact release is the source archive next to this package
 on the release page, or the tagged commit of

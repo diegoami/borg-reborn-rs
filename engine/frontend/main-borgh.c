@@ -110,7 +110,13 @@
 #include "ui-term.h"
 
 #include <sys/time.h>
+#ifndef _WIN32
 #include <sys/wait.h>
+#else
+/* #823: Windows' C runtime names it _putenv_s; the one caller sets an
+ * unset variable, so the no-overwrite flag makes no difference. */
+#define setenv(name, value, overwrite) _putenv_s((name), (value))
+#endif
 #include <unistd.h>
 #include <errno.h>
 #ifdef __linux__
@@ -283,7 +289,7 @@ static void borgh_finish(const char *reason)
 	}
 
 	if (opt_summary) {
-		fp = fopen(opt_summary, "w");
+		fp = fopen(opt_summary, "wb");
 		if (!fp) fp = stdout;
 	}
 	fprintf(fp, "{\n");
@@ -643,6 +649,12 @@ static void borgh_key(struct keypress k)
  * serialised. Capturing must not send keys, reseed RNG or add messages. */
 static void borgh_checkpoint(void)
 {
+#ifdef _WIN32
+	/* #823: a checkpoint saves from a fork()ed copy of the engine, which
+	 * Windows has not; -checkpoint-every is refused there. */
+	if (checkpoint_fp) quit("borgh: checkpoints need fork(), not available on Windows");
+}
+#else
 	char name[128], path[1024];
 	pid_t snapshot, parent_pid;
 	int status;
@@ -714,6 +726,7 @@ static void borgh_checkpoint(void)
 	 * several thresholds: capture once at the next safe boundary. */
 	checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
 }
+#endif
 
 
 /**
@@ -1128,25 +1141,26 @@ errr init_borgh(int argc, char *argv[])
 			quit("borgh: checkpoint directory path too long");
 		path_build(path, sizeof(path), opt_checkpoint_dir, "index.jsonl");
 		if (file_exists(path)) quit("borgh: checkpoint index already exists");
-		checkpoint_fp = fopen(path, "w");
+		checkpoint_fp = fopen(path, "wb");
 		if (!checkpoint_fp) quit("borgh: cannot open checkpoint index");
 	}
 
 	if (opt_keylog) {
 		static char keylog_buf[1 << 16];
-		keylog_fp = fopen(opt_keylog, "w");
+		/* #823: binary, so Windows writes the same bytes (no CRLF). */
+		keylog_fp = fopen(opt_keylog, "wb");
 		if (!keylog_fp) quit_fmt("borgh: cannot open %s", opt_keylog);
 		setvbuf(keylog_fp, keylog_buf, _IOFBF, sizeof(keylog_buf));
 	}
 	if (opt_msglog) {
 		static char msglog_buf[1 << 16];
-		msglog_fp = fopen(opt_msglog, "w");
+		msglog_fp = fopen(opt_msglog, "wb");
 		if (!msglog_fp) quit_fmt("borgh: cannot open %s", opt_msglog);
 		setvbuf(msglog_fp, msglog_buf, _IOFBF, sizeof(msglog_buf));
 	}
 	if (opt_statelog) {
 		static char statelog_buf[1 << 16];
-		statelog_fp = fopen(opt_statelog, "w");
+		statelog_fp = fopen(opt_statelog, "wb");
 		if (!statelog_fp) quit_fmt("borgh: cannot open %s", opt_statelog);
 		setvbuf(statelog_fp, statelog_buf, _IOFBF, sizeof(statelog_buf));
 	}
