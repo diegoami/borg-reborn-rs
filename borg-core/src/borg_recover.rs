@@ -991,21 +991,23 @@ fn unseen_probe(st: &mut BorgState) -> bool {
 /// message: "You spin around." the grid was empty; a blow at "something" it
 /// is there; "You are too afraid to attack" the Borg cannot; "You have
 /// killed it/something/someone." the mode is over (so is the death of a
-/// monster the Borg could see, once it has read a detection in the episode);
-/// true when the episode has just ended (the caller notes it).
-pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) -> bool {
+/// monster, once a detection was read in the episode); the note to write when the
+/// episode has just ended, which says whether the unseen attacker is known to
+/// be dead.
+pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) -> Option<&'static str> {
     if !st.borg.unseen_mode {
-        return false;
+        return None;
     }
     if mode_ends_on(msg, st.borg.unseen_detects) {
+        let note = if unseen_kill_message(msg) { "# Mode: invisible attacker killed" } else { "# Mode: over (a monster died after a detection was read)" };
         st.borg.unseen_mode = false;
         st.borg.unseen_turn = 0;
         st.borg.unseen_followed = false;
         st.borg.unseen_probe = None;
         st.borg.unseen_found = None;
-        return true;
+        return Some(note);
     }
-    let Some(g) = st.borg.unseen_probe else { return false };
+    let Some(g) = st.borg.unseen_probe else { return None };
     if msg == b"You spin around." {
         st.borg.unseen_empty.push(g);
         st.borg.unseen_probe = None;
@@ -1017,11 +1019,12 @@ pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) -> bool {
         st.borg.unseen_probes = param(Param::recover_unseen_probe_tries);
         st.borg.unseen_probe = None;
     }
-    false
+    None
 }
 
 /// A kill message that ends the mode: that of an unseen monster, or (with a
-/// detection read in the episode, `detects`) that of one the Borg could see.
+/// detection read in the episode, `detects`) any of the game's death messages
+/// of a monster the Borg did not necessarily see.
 #[inline(always)]
 fn mode_ends_on(msg: &[u8], detects: i32) -> bool {
     unseen_kill_message(msg) || (detects > 0 && revealed_kill_message(msg))
@@ -1036,12 +1039,16 @@ fn unseen_kill_message(msg: &[u8]) -> bool {
     [b"You have killed it.".as_slice(), b"You have killed something.", b"You have killed someone."].contains(&msg)
 }
 
-/// borg-reborn-rs (#831, owner: "make it consistent"): the death of a monster
-/// the Borg could see ("You have slain/destroyed %s." in melee, "%s dies." or
-/// "%s is destroyed." from a distance). In an episode where the Borg has read
-/// a detection (`unseen_detects` > 0) the attacker is probably revealed, so
-/// its death ends the mode as the kill of an unseen one does; if it was
-/// another monster, the next unseen blow starts a new episode.
+/// borg-reborn-rs (#831, owner: "make it consistent"): a death message of a
+/// monster the Borg may have seen ("You have slain/destroyed %s." in melee,
+/// "%s dies." or "%s is destroyed." from a distance). It is used once a
+/// detection was read at some point in the episode (`unseen_detects` > 0: an
+/// attempt, which the engine may still fail), when the attacker is probably
+/// revealed and its death ends the mode as the kill of an unseen one does.
+/// The engine also gives these forms for an unseen monster shot or thrown at
+/// ("It dies.", `player-attack.c:1123,1191`) and for monsters killing each
+/// other (`mon-util.c:1227`): the episode then ends too, and the next unseen
+/// blow starts a new one.
 #[inline(always)]
 fn revealed_kill_message(msg: &[u8]) -> bool {
     msg.starts_with(b"You have slain ") || msg.starts_with(b"You have destroyed ")
@@ -1315,8 +1322,8 @@ mod unseen_tests {
         assert_eq!(st.borg.unseen_probe, None, "the pending attack is dropped");
     }
 
-    /// #831: a monster the Borg could see dying ends the episode only when it
-    /// has read a detection in it (the attacker was probably revealed).
+    /// #831: a death message of a monster the Borg may have seen ends the episode
+    /// only when a detection was read in it (the attacker was probably revealed).
     #[test]
     fn the_death_of_a_revealed_attacker_ends_the_mode() {
         for m in [b"You have slain a clear icky thing.".as_slice(), b"You have destroyed a poltergeist.", b"The clear icky thing dies.", b"The poltergeist is destroyed."] {
@@ -1329,7 +1336,7 @@ mod unseen_tests {
         st.borg.unseen_mode = true;
         st.borg.unseen_turn = 100;
         st.borg.unseen_detects = 1;
-        assert!(unseen_mode_message(&mut st, b"The clear icky thing dies."));
+        assert_eq!(unseen_mode_message(&mut st, b"The clear icky thing dies."), Some("# Mode: over (a monster died after a detection was read)"));
         assert!(!st.borg.unseen_mode && st.borg.unseen_turn == 0, "the episode is over");
     }
 

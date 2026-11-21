@@ -91,16 +91,18 @@ direction only (RULES 20): 12 Human Blackguards, off against on, 100,000 game
 turns: 0 deaths in both, sum of CL 75 and 76, sum of DL 34 and 34, HP rests 469
 and 404, the mode entered 29 times, no stalls. **No claim of improvement** (RULES
 14): those games did not die of an invisible monster off either.
-`scripts/borg-core-vendor.py check` was not run (no `vendor/borg-rs` here); every
-file touched is already on its HOOKED list.
+`scripts/borg-core-vendor.py check` was run on the final tree (after
+`bash scripts/setup.sh` cloned `vendor/borg-rs`): ok, pin `8c5d000a58e9`.
 
 **Left / for the owner:**
 
-- Dungeon-side: a known Detect Invisible scroll is protected from junking (`junk_keep_some`); whether other cheap utility consumables are junked is borg-reborn-rs#846 (to verify, no change proposed). The mode now also ends when a monster the Borg could see dies after a detection was read in the episode (review finding 3).
+- Dungeon-side: a known Detect Invisible scroll is protected from junking (`junk_keep_some`); whether other cheap utility consumables are junked is borg-reborn-rs#846 (to verify, no change proposed). The mode now also ends on any death message of a monster the Borg may have seen once a detection was read in the episode (it is noted `# Mode: over (a monster died after a detection was read)`, since it may be another monster; review finding 3).
 
 - **A zoo arm** (RULES 20; filed as borg-zoo#580): the shipped settings
-  against `borg_param_recover_unseen_attack_turns` 0 and
-  `borg_param_town_invisible_count` 0, on the classes suites, measuring deaths to
+  against arm A (`recover_unseen_attack_turns`, `recover_unseen_heal_hp_percent`,
+  `recover_unseen_detect_reads`, `recover_unseen_probe_tries` and
+  `town_invisible_count` all 0) and an arm C (`town_invisible_percent` 40), on
+  the classes suites, measuring deaths to
   invisible monsters, resting stalls, the gold spent on Detect Invisible and the
   survival items it displaced. All eight numbers are hypotheses.
 - **Decide:** whether 500 game turns and 20/10/3% with half value at 2 reads are the right

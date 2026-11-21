@@ -679,10 +679,13 @@ possible."
   (`# Mode: invisible attacker near (y,x)`), the last blow plus that many game
   turns, or a new level, ends it (`# Mode: invisible attacker gone ...`), and
   killing the attacker ends it too (`You have killed it.`, `# Mode: invisible
-  attacker killed`); so does the death of a monster the Borg could see
-  (`You have slain ...`, `... dies.`) once it has read a detection in the
-  episode, the attacker then being probably revealed (if it was another
-  monster, the next unseen blow starts a new episode). While it lasts, every rest within
+  attacker killed`); so does any death message of a monster the Borg may have
+  seen (`You have slain ...`, `... dies.`, `... is destroyed.`) once a
+  detection was read at some point in the episode (an attempt), the attacker
+  then being probably revealed. The engine also gives those forms for an
+  unseen monster shot at and for monsters killing each other; the episode then
+  ends too and the next unseen blow starts a new one (`# Mode: over (a monster
+  died after a detection was read)`, not `attacker killed`, is noted). While it lasts, every rest within
   `recover_unseen_attack_distance` grids of the blow is held (#697, unchanged).
   What is new is what the Borg does with a blow that has *just* struck
   (`recover_unseen_act_age`, **30** game turns: the attacker is next to it now):
@@ -732,7 +735,7 @@ possible."
   gold, so it is bought only when scrolls are not stocked and the gold allows.
   In the dungeon it is not junk either: `junk_keep_some` (`borg_junk.rs`) keeps
   a known one whatever its price (the value tiers would crush a 15-gold item
-  from depth 10 once dropping it raises `borg_power`; the pickup already walks
+  from depth 5 (the tier `depth < 10 && value > 15` fails at exactly 15) once dropping it raises `borg_power`; the pickup already walks
   to it, at the engine's price). Whether other cheap utility items suffer the
   same is borg-reborn-rs#846. A known Scroll of Detect Invisible is **never sold or dropped** by the town
   plan (`borg_town_utility.rs`, `keeps_detect_invisible`: it is kept, or stored
@@ -3312,12 +3315,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1120` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1121` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1123` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1130` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1131` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1132` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1127` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1128` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1130` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1137` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1138` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1139` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |

@@ -506,7 +506,7 @@ fn junk_keep_some(st: &BorgState, item: &borg_item) -> bool {
                 && st.borg.tr(BI_ATELEPORTLVL) < 1000)
             || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil)
             // borg-reborn-rs (#831, owner): Detect Invisible is not worthless; at 15
-            // gold the value tiers would junk it from depth 10.
+            // gold the value tiers would junk it from depth 5 (`value > 15` fails).
             || is(item, TV_SCROLL, v.sv_scroll_detect_invis))
 }
 
