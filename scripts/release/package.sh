@@ -102,7 +102,16 @@ if [ "$PLATFORM" = windows ]; then
 else
     cp "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 fi
-cp "$ROOT/README.md" "$STAGE/README.md"
+# The README players get (owner): upstream Angband's own, without its
+# screenshots (not in the package), then what this package adds, the Borg.
+python3 - "$ROOT/engine/angband/README.md" "$ROOT/scripts/release/README-borg.md" "$STAGE/README.md" "$PLATFORM" <<'PYREADME'
+import re, sys
+upstream, borg, out, platform = sys.argv[1:]
+text = re.sub(r'\n<p align="center">.*?</p>\n', '', open(upstream).read(), flags=re.S).rstrip() + '\n'
+text += open(borg).read()
+nl = '\r\n' if platform == 'windows' else '\n'
+open(out, 'w', newline='').write(text.replace('\n', nl))
+PYREADME
 [ ! -f "$ROOT/docs/user/GUIDE.md" ] || cp "$ROOT/docs/user/GUIDE.md" "$STAGE/docs/GUIDE.md"
 if [ "$DOCS" != - ] && [ -d "$DOCS/html" ]; then
     cp -R "$DOCS/html" "$STAGE/docs/angband-manual"

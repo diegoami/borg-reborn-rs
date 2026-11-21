@@ -74,6 +74,13 @@ class ReleaseWorkflowTest(unittest.TestCase):
         for launcher in ('watch-borg', 'play-headless.sh"', 'play-headless.ps1 ', 'install -m'):
             self.assertNotIn(launcher, shipped.split('\nif [')[1], launcher)
 
+    def test_the_shipped_readme_is_angbands_with_the_borg(self):
+        # Owner: players get upstream Angband's README with the Borg added,
+        # not the repository's.
+        text = (ROOT / 'scripts/release/package.sh').read_text()
+        self.assertIn('"$ROOT/engine/angband/README.md" "$ROOT/scripts/release/README-borg.md" "$STAGE/README.md"', text)
+        self.assertNotIn('cp "$ROOT/README.md"', text)
+
     def test_scripts_parse(self):
         for script in sorted((ROOT / 'scripts/release').glob('*.sh')):
             result = subprocess.run(['bash', '-n', str(script)], capture_output=True, text=True)

@@ -26,13 +26,10 @@ sha256sum -c --ignore-missing SHA256SUMS.txt
 (macOS: `shasum -a 256 -c --ignore-missing SHA256SUMS.txt`; Windows:
 compare `Get-FileHash` in PowerShell with the file's line.)
 
-`PLAYING.txt` in the package says what each platform needs, how to watch
-the Borg (create a character, Ctrl-Z then z) and how to play a game without
-a window (`play-headless.sh` / `play-headless.cmd OUTDIR SEED RACE CLASS
-TURNS`). Linux watches in an X11 window, or in the terminal with
-`--terminal`; macOS and Windows watch in the terminal (the curses
-frontend). Nothing is installed: saves and settings go to `data/` next to
-the launchers.
+`PLAYING.txt` in the package says what each platform needs and how to start
+the game; its `README.md` is upstream Angband's, with a section on the Borg
+(`scripts/release/README-borg.md`): Ctrl-Z, then z. Nothing is installed:
+saves go to `lib/save`, the Borg's settings are `lib/user/borg.txt`.
 
 No `watch-borg` launcher and no `play-headless` runner are shipped (owner,
 `v0.1.0-alpha.1`): the game is started directly; CI plays the packages with
@@ -109,7 +106,7 @@ MSYS2's ncurses (MIT-style, as upstream's own Windows console build).
 | `linux` | `harness/build.sh` headless, then with `BORG_X11=ON BORG_GCU=ON`; each binary plays the smoke suite on the default core with the same keys, messages and states as `harness/reference/smoke-borg-rs`; `scripts/release/package.sh linux` |
 | `linux-clean` | in a bare `ubuntu:24.04` container with only the runtime libraries: the checksums, the licence files, `play-headless.sh` playing smoke-warrior-1's keys, messages and states byte for byte, and `watch-borg.sh` opening its window under Xvfb |
 | `macos` | `macos-latest` (Apple silicon; `MACOSX_DEPLOYMENT_TARGET` 14.0), with Homebrew's GNU tools for the harness: the build, smoke twice with the same keys (arm64 plays other games than `smoke-borg-rs`, see above; the job prints how they differ), no Homebrew library linked, `package.sh macos`; then the unpacked package with macOS's own tools only (bash 3.2): the checksums and the three smoke games through `play-headless.sh`, byte for byte the harness's (`scripts/release/compare-games.py`); `watch-borg.sh` in a pseudo-terminal (informative) |
-| `windows` | `windows-latest` with MSYS2's UCRT64 toolchain: the build (Ninja), no MSYS2 DLL linked, `package.sh windows`; then the unzipped package with PowerShell: the checksums and the three smoke games through `play-headless.cmd`, byte for byte |
+| `windows` | `windows-latest` with MSYS2's UCRT64 toolchain: the build (Ninja), no MSYS2 DLL linked, `package.sh windows`; then the unzipped package with PowerShell: the checksums, the three smoke games through CI's `windows/play-headless.ps1` byte for byte, and `angband.exe` started directly saving to `lib\save` |
 | `release` | only when `release` is on (always for a tag push): the notes (`scripts/release/notes.py`), `SHA256SUMS.txt` and `gh release create --draft`; a version with a `-` is marked a prerelease |
 
 ## Cutting a release
