@@ -189,7 +189,7 @@ not undo other-track work already authorized before the gate.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
     `file:function:lines` at `574b618c`. The **Angband Strategy Manual**
-    (S14) and the **official user manual** under `reference/c-manual/` are
+    (S14) and the **official user manual** under `docs/strategy/` are
     the first reference for how the game behaves: read the relevant chapter
     before designing a rule, then check every number it gives in
     `engine/angband/` (`src/` or `lib/gamedata/`) and cite the engine there.
@@ -228,7 +228,15 @@ not undo other-track work already authorized before the gate.
     what it reports, new deaths first. Each milestone starts with a
     `--update` PR that moves the pins and refreshes `reference/` and the
     death index; a task may also do one when it needs a newer source. Pin
-    moves are their own PRs, never mixed with other work.
+    moves are their own PRs, never mixed with other work. Since 2026-11-21
+    (owner, #816) this repository is the central place for our Borg
+    documentation. Our documents, including those moved from our other
+    repositories (the strategy manual, the C Borg documents and fixes, the
+    core's design), live in `docs/` and are ours to change; only copies of
+    what a live tool still produces or reads stay in `reference/`, never
+    edited (`scripts/check-reference.py`). Other authors' documents (the
+    game's manual, the original C Borg's) stay untouched where they are
+    (docs/DOCUMENTATION-MAP.md).
 22. **Baselines are exact.** A comparison names exact zoo specimens and
     builds, never "latest"; comparisons are borg-zoo's (docs/SPEC.md §6). A
     change to the engine's patch series, the frontend or the build is a

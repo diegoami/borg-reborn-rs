@@ -17,6 +17,12 @@ gave is covered by determinism and the Borg's own logs.*
 | `check-perception.py` | T2.5: over runs of a `test-perception` build, fails on any think whose observation or world disagrees with the engine (map memory, visible monsters, gear list, pack count) or whose status is in no `state.log` line of its turn; counts what the Borg does not see by design (off the map panel). Every run of a suite directory needs a truth log with one line per Borg decision (M2 review, finding 4) |
 | `depth-stream.py` | Run by `harness/run.sh`: `depths.json`, the first turn at each depth |
 | `import-deaths.py` | Qualifies immutable native evidence packages for historical/CI integration; preserves original records and all payload bytes; `--check` verifies the retained archive (docs/DOSSIER-IMPORT.md) |
+| `cemetery_tools.py` | The shared forwarder of the four death-tool pointers above: checks `death-tools-pin.txt` and runs borg-cemetery's implementation (below) |
+| `check-no-time.py` | Fails a run's decision trace on loops hidden at one game turn (level changes or actions past the profile's budget; the reborn core's `trace.jsonl`) |
+| `calibrate.py` | T4.7 (#124): the reborn core's predicted damage against damage taken, per think window (docs/M4-CALIBRATION.md) |
+| `progress.py` | How much a suite's runs played, not only whether they lived: frozen windows and progress per run (#201) |
+| `shopping-audit.py` | Read only: what a run's Borg bought, used, stored, sold and left unspent, from its `messages.log` and `state.log` |
+| `try-errands-plan.py` | Runs an errands plan outside the measured harness, for bounded diagnostics (docs/GAME-PLAN-LANGUAGE.md) |
 | `tests/` | Unit tests of the above (`python3 -m unittest discover -s tools/tests`) |
 
 To watch the Borg play: `./watch-borg.sh` at the repository's root.

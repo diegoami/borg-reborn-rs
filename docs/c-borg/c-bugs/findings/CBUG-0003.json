@@ -1,0 +1,119 @@
+{
+  "id": "CBUG-0003",
+  "source_groups": [
+    4
+  ],
+  "title": "West radius-two shoulder grids are omitted",
+  "site": "src/borg/borg-cave-light.c:borg_update_light",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "Native C marks 19 distinct grids versus 21 after correction; no meaningful gameplay outcome established."
+  },
+  "notes": "Duplicate light-list entries are a separate symptom; avoid claiming two missing flags saved a life.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 10
+  },
+  "evidence_url": "https://github.com/diegoami/mandos/issues/89",
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-cave-light.c",
+      "start": 135,
+      "end": 143,
+      "description": "/* West of the player */"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/perceive.ts",
+      "start": 285,
+      "end": 290,
+      "description": "if (floorAt(cy, cx - 2))"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/perceive.ts",
+      "start": 288,
+      "end": 293,
+      "description": "if (floorAt(cy, cx - 2))"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 41,
+      "end": 54,
+      "description": "discovery group 4"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 45,
+      "end": 52,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 4,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 45,
+        "end": 52,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "The \"East\" block lights (y, x+2), (y+1, x+2), (y-1, x+2), but the \"West\"\n  block lights (y, x-2), (y+2, x-2), (y-2, x-2) instead of (y+1, x-2) and\n  (y-1, x-2). So (y+-1, x-2) never get `BORG_LIGHT`, and (y+-2, x-2) can be\n  added a second time to `borg_light_x/y` (already added by the South/North\n  blocks), contrary to the macro's comment. Also, with radius 4+ the four\n  (y+-3, x+-3) grids can be entered twice (once by the diagonal checks and\n  once by the box scan). Duplicates only make readers of the array\n  (`borg_flow_dark`, `borg_update`) visit a grid twice."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        4
+      ]
+    }
+  ],
+  "verification_sources": [
+    {
+      "kind": "Mandos native C flag observation; practical impact unproven",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 11
+      }
+    }
+  ],
+  "evidence_at_import": "c-game-flags-only",
+  "status_at_import": "held-impact",
+  "proposals_at_import": [
+    {
+      "repository": "diegoami/mandos",
+      "number": 88,
+      "url": "https://github.com/diegoami/mandos/pull/88",
+      "base": "main",
+      "validation": "impact-unproven"
+    }
+  ],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

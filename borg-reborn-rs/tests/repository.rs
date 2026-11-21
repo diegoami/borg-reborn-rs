@@ -50,13 +50,159 @@ fn entry_documents_exist() {
         "PLAN.md",
         "docs/GOALS.md",
         "docs/ARCHITECTURE.md",
+        "docs/README.md",
+        "docs/architecture/README.md",
+        "docs/architecture/original-c-borg.md",
+        "docs/architecture/borg-core.md",
+        "docs/architecture/reborn-plan.md",
+        "docs/GAME-KNOWLEDGE.md",
+        "docs/DOCUMENTATION-MAP.md",
+        "docs/strategy/README.md",
         "docs/SOURCES.md",
         "docs/HANDOVER.md",
-        "reference/c-borg/BORG_SPEC.md",
-        "reference/c-borg/TUNABLE-BORG-PLAN.md",
+        "docs/c-borg/BORG_SPEC.md",
+        "docs/c-borg/TUNABLE-BORG-PLAN.md",
     ] {
         assert!(root().join(rel).is_file(), "missing {rel}");
     }
+}
+
+/// #816: every relative Markdown link in the current documents resolves.
+/// Checked: the entry documents at the root, every `.md` directly in
+/// `docs/`, `docs/architecture/`, the index pages of `docs/validation/`,
+/// `docs/archive/`, `docs/research/` and `docs/handover/`, the pages of
+/// `reference/`, `harness/` and `tools/` written here, and our documents
+/// moved into `docs/` from our other repositories (the strategy manual,
+/// the C Borg documents and fixes, the core's design, borg-agent's
+/// knowledge). Not the copies in `reference/`, checked byte for byte by
+/// `scripts/check-reference.py`. Not checked: the
+/// archived and receipt files (kept byte for byte at their new paths, so
+/// their links resolve against their old directory), the handover notes,
+/// and copies of other repositories. Fenced code and inline code are
+/// skipped; external links and bare anchors are not followed.
+#[test]
+fn current_documents_have_no_dangling_links() {
+    let mut files: Vec<PathBuf> = [
+        "README.md",
+        "AGENTS.md",
+        "RULES.md",
+        "PLAN.md",
+        "docs/validation/README.md",
+        "docs/archive/README.md",
+        "docs/handover/README.md",
+        "reference/README.md",
+        "harness/README.md",
+        "tools/README.md",
+    ]
+    .iter()
+    .map(|rel| root().join(rel))
+    .collect();
+    for dir in ["docs", "docs/architecture", "docs/research"] {
+        for entry in std::fs::read_dir(root().join(dir)).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().is_some_and(|e| e == "md") {
+                files.push(path);
+            }
+        }
+    }
+    // Our documents moved here from our other repositories (#816), every
+    // page at any depth.
+    let mut stack: Vec<PathBuf> = [
+        "docs/strategy",
+        "docs/c-borg",
+        "docs/design",
+        "docs/research/borg-agent",
+    ]
+    .iter()
+    .map(|rel| root().join(rel))
+    .collect();
+    while let Some(dir) = stack.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "md") {
+                files.push(path);
+            }
+        }
+    }
+    let mut checked = 0;
+    let mut dangling = Vec::new();
+    for path in &files {
+        let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{path:?}: {e}"));
+        let text = without_code(&text);
+        for target in unclosed_targets(&text) {
+            dangling.push(format!(
+                "{} -> {target} (no closing parenthesis)",
+                path.display()
+            ));
+        }
+        for link in markdown_targets(&text) {
+            let target = link.split('#').next().unwrap_or_default();
+            if target.is_empty() || target.contains("://") || target.starts_with("mailto:") {
+                continue;
+            }
+            checked += 1;
+            if !path.parent().unwrap().join(target).exists() {
+                dangling.push(format!("{} -> {link}", path.display()));
+            }
+        }
+    }
+    assert!(
+        checked > 200,
+        "only {checked} links checked: the scan is broken"
+    );
+    assert!(
+        dangling.is_empty(),
+        "dangling links:\n{}",
+        dangling.join("\n")
+    );
+}
+
+/// Link targets that run into whitespace before their closing `)`: a
+/// `](path` whose path ends in `.md`, `.json` or `/` and is followed by a
+/// space or the end of the line (the shape a lost parenthesis leaves,
+/// review of #825). `markdown_targets` skips such spans, so this catches
+/// what it cannot.
+fn unclosed_targets(text: &str) -> Vec<String> {
+    text.match_indices("](")
+        .filter_map(|(i, _)| {
+            let rest = &text[i + 2..];
+            let end = rest.find(|c: char| c == ')' || c.is_whitespace())?;
+            let target = &rest[..end];
+            let path = target.split('#').next().unwrap_or_default();
+            let unclosed = !rest[end..].starts_with(')');
+            (unclosed
+                && !target.contains("://")
+                && (path.ends_with(".md") || path.ends_with(".json") || path.ends_with('/')))
+            .then(|| target.to_string())
+        })
+        .collect()
+}
+
+/// The text without fenced code blocks and inline code spans.
+fn without_code(text: &str) -> String {
+    let mut out = String::new();
+    let mut fenced = false;
+    for line in text.lines() {
+        if line.trim_start().starts_with("```") {
+            fenced = !fenced;
+            continue;
+        }
+        if fenced {
+            continue;
+        }
+        let mut code = false;
+        for c in line.chars() {
+            if c == '`' {
+                code = !code;
+            } else if !code {
+                out.push(c);
+            }
+        }
+        out.push('\n');
+    }
+    out
 }
 
 #[test]

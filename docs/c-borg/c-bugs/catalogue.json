@@ -1,0 +1,2948 @@
+{
+  "schema": "angband/c-bugs@3",
+  "updated": "2026-11-05",
+  "owner": "diegoami",
+  "policy": {
+    "scope": "local-catalogue-and-proposals",
+    "upstream_c_submissions": "paused",
+    "automatic_upstream_posts": false,
+    "local_pr_base": {
+      "repository": "diegoami/neo-angband-tracker",
+      "branch": "c-borg-reference",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3"
+    },
+    "note": "Local proposal ownership, evidence and application are independent. A local C PR never implies a Neo parity fix or an applied Mandos correction.",
+    "carry_priority": "validated-bugs-from-both-C-and-Neo",
+    "management_evaluation": "https://github.com/diegoami/neo-angband-tracker/issues/2",
+    "intake_tracker": {
+      "repository": "diegoami/neo-angband-tracker",
+      "number": 12
+    },
+    "integration_queue": {
+      "repository": "diegoami/mandos",
+      "number": 111
+    }
+  },
+  "sources": {
+    "borg_rs": {
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "previous_commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": 41,
+      "previous_groups": 40,
+      "unchanged_groups": "1-40",
+      "snapshot": {
+        "path": "docs/audit/c-reports/borg-rs-c-bugs-c375a824.md",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "sha256": "b8f0a99538040d008d726bec19e656d7fe7d503f58d9b6fdb682f0d27a1a1b01"
+      }
+    },
+    "c": {
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3"
+    },
+    "neo_borg": {
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568"
+    },
+    "mandos": {
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f"
+    }
+  },
+  "groups": [
+    {
+      "number": 1,
+      "title": "`borg.has[BI_CURHP]` instead of `borg.trait[BI_CURHP]`",
+      "area": "banishment",
+      "summary": "Activation reads object counts as HP",
+      "review": "source comparison: C uses has[BI_CURHP]; Mandos already uses the HP trait",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0021"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 8,
+        "end": 22,
+        "description": "discovery group 1"
+      }
+    },
+    {
+      "number": 2,
+      "title": "Copy-and-paste slips in sval lookups",
+      "area": "item-ids",
+      "summary": "Subtype lookup names copied incorrectly",
+      "review": "lookup/registration audit pending",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0022"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 23,
+        "end": 31,
+        "description": "discovery group 2"
+      }
+    },
+    {
+      "number": 3,
+      "title": "Last token of each block not ordered (formulas)",
+      "area": "formulas",
+      "summary": "Malformed formula block ordering",
+      "review": "configuration-only lead; valid-input impact unproven",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0023"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 32,
+        "end": 40,
+        "description": "discovery group 3"
+      }
+    },
+    {
+      "number": 4,
+      "title": "\"West of the player\" lights the wrong grids",
+      "area": "light",
+      "summary": "West shoulders omitted and light-list duplicates",
+      "review": "west-light existing #87/#89; flags reproduced, practical impact pending",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0003",
+        "CBUG-0024"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 41,
+        "end": 54,
+        "description": "discovery group 4"
+      }
+    },
+    {
+      "number": 5,
+      "title": "Spell status set from a bool; books 0-7 only (magic)",
+      "area": "magic",
+      "summary": "Initial spell status and book iteration",
+      "review": "catalogue notes effective guards; no independent play defect established",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0025",
+        "CBUG-0026",
+        "CBUG-0027"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 55,
+        "end": 69,
+        "description": "discovery group 5"
+      }
+    },
+    {
+      "number": 6,
+      "title": "Formula error text lost to `format()`'s static buffer",
+      "area": "formulas",
+      "summary": "Formula errors overwritten by static formatting buffer",
+      "review": "diagnostic lead; large-input memory behavior needs reachability proof",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0028"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 70,
+        "end": 88,
+        "description": "discovery group 6"
+      }
+    },
+    {
+      "number": 7,
+      "title": "`range()` errors (formulas)",
+      "area": "formulas",
+      "summary": "range() errors misleading or silent",
+      "review": "configuration-diagnostic lead",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0029"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 89,
+        "end": 95,
+        "description": "discovery group 7"
+      }
+    },
+    {
+      "number": 8,
+      "title": "Home power: spell-stat drop at +26 and a dead neck branch",
+      "area": "home",
+      "summary": "Spell-stat score discontinuity and dead neck branch",
+      "review": "needs an actual keep/retrieve/equip consequence",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0030",
+        "CBUG-0031"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 96,
+        "end": 108,
+        "description": "discovery group 8"
+      }
+    },
+    {
+      "number": 9,
+      "title": "Dark-grid test uses `==` instead of `&` (magic play)",
+      "area": "magic",
+      "summary": "Dark flag tested by equality",
+      "review": "still present in magic-play.ts; interaction with no-light guards needs scenario",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0032"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 109,
+        "end": 119,
+        "description": "discovery group 9"
+      }
+    },
+    {
+      "number": 10,
+      "title": "Unreachable and mislabelled preparedness checks (prepared)",
+      "area": "preparedness",
+      "summary": "Dead or mislabelled readiness checks",
+      "review": "separate diagnostic text from reachable policy behavior",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0033",
+        "CBUG-0034",
+        "CBUG-0035"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 120,
+        "end": 140,
+        "description": "discovery group 10"
+      }
+    },
+    {
+      "number": 11,
+      "title": "Respawn picks the race/class with the wrong menu letters",
+      "area": "birth-ui",
+      "summary": "Respawn menu letters",
+      "review": "C UI lead; Neo uses direct birth commands",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0036"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 141,
+        "end": 153,
+        "description": "discovery group 11"
+      }
+    },
+    {
+      "number": 12,
+      "title": "Home notice: item sustains all count as STR; banishment never counted",
+      "area": "home",
+      "summary": "All item sustains counted as STR; banishment counts missing",
+      "review": "sustain bug still visible in Mandos home.ts; transaction consequence pending",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0037",
+        "CBUG-0038"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 154,
+        "end": 166,
+        "description": "discovery group 12"
+      }
+    },
+    {
+      "number": 13,
+      "title": "Log and status slips (log)",
+      "area": "diagnostics",
+      "summary": "Map-dump NULL-file crash plus display slips",
+      "review": "map cancellation C-game reproduced; other slips separate",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0001",
+        "CBUG-0039",
+        "CBUG-0040"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 167,
+        "end": 181,
+        "description": "discovery group 13"
+      }
+    },
+    {
+      "number": 14,
+      "title": "`borg_dont_react` is never cleared",
+      "area": "messages",
+      "summary": "Reaction suppression reset uses wrong variable",
+      "review": "current C mismatch; old imported C resets global correctly",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0002",
+        "CBUG-0041"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 182,
+        "end": 198,
+        "description": "discovery group 14"
+      }
+    },
+    {
+      "number": 15,
+      "title": "Inscribing a quiver item types an equipment letter",
+      "area": "item-ui",
+      "summary": "Debug quiver inscriptions use equipment keys",
+      "review": "C debug-key path; no direct Neo counterpart assumed",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0042"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 199,
+        "end": 211,
+        "description": "discovery group 15"
+      }
+    },
+    {
+      "number": 16,
+      "title": "Slot lookups: dead \"largest pval\" test; empty pack has no hole (inventory)",
+      "area": "inventory",
+      "summary": "Unreachable pval tie-break and empty-pack lookup",
+      "review": "pval condition preserved; empty-pack symptom must be classified separately",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0043",
+        "CBUG-0044"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 212,
+        "end": 225,
+        "description": "discovery group 16"
+      }
+    },
+    {
+      "number": 17,
+      "title": "Danger slips (danger)",
+      "area": "danger",
+      "summary": "Resistance/stat/bolt-state/index errors",
+      "review": "cold-vs-acid source checked; other compound symptoms remain leads",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0004",
+        "CBUG-0045",
+        "CBUG-0046",
+        "CBUG-0047",
+        "CBUG-0048",
+        "CBUG-0049",
+        "CBUG-0050",
+        "CBUG-0051",
+        "CBUG-0052",
+        "CBUG-0053"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 226,
+        "end": 264,
+        "description": "discovery group 17"
+      }
+    },
+    {
+      "number": 18,
+      "title": "Item value: stat bonuses tested as object flags (item analyze)",
+      "area": "valuation",
+      "summary": "Stat bonuses tested as flags",
+      "review": "current Neo perItemValue explicitly preserves C's sustain-flag mixup",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0054"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 265,
+        "end": 277,
+        "description": "discovery group 18"
+      }
+    },
+    {
+      "number": 19,
+      "title": "Object tracking and item flows (flow take)",
+      "area": "flow",
+      "summary": "Farthest stairs and item tracking slips",
+      "review": "normal flow and optional-mode symptoms must be separated",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0055",
+        "CBUG-0056",
+        "CBUG-0057",
+        "CBUG-0058",
+        "CBUG-0059"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 278,
+        "end": 304,
+        "description": "discovery group 19"
+      }
+    },
+    {
+      "number": 20,
+      "title": "Device use slips (item use)",
+      "area": "items",
+      "summary": "Device fail math, staff/ring/food use",
+      "review": "TS division guard and both-ring scan differ; staff gates still suspect",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0060",
+        "CBUG-0061",
+        "CBUG-0062",
+        "CBUG-0063",
+        "CBUG-0064",
+        "CBUG-0065"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 305,
+        "end": 328,
+        "description": "discovery group 20"
+      }
+    },
+    {
+      "number": 21,
+      "title": "Equipment swaps and the \"best\" list (item wear)",
+      "area": "equipment",
+      "summary": "Swap chooses higher danger; best-search bookkeeping",
+      "review": "C/port comparison needed after B99 ring/home adoption; #4 remains partly absent",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0066",
+        "CBUG-0067",
+        "CBUG-0068",
+        "CBUG-0069",
+        "CBUG-0070",
+        "CBUG-0071"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 329,
+        "end": 358,
+        "description": "discovery group 21"
+      }
+    },
+    {
+      "number": 22,
+      "title": "Light beam edge test and lantern refuel scan (light)",
+      "area": "light",
+      "summary": "Panel-relative beams and last-lantern refuel",
+      "review": "panel UI differs; current TS refuel still starts at borgSlot's selected lantern",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0072",
+        "CBUG-0073",
+        "CBUG-0074"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 359,
+        "end": 378,
+        "description": "discovery group 22"
+      }
+    },
+    {
+      "number": 23,
+      "title": "Curse removal item letters (item decurse)",
+      "area": "item-ui",
+      "summary": "Curse-removal item letters",
+      "review": "C menu path; direct-command port applicability unproven",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0075",
+        "CBUG-0076",
+        "CBUG-0077"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 379,
+        "end": 394,
+        "description": "discovery group 23"
+      }
+    },
+    {
+      "number": 24,
+      "title": "Monster tracking slips (flow-kill)",
+      "area": "tracking",
+      "summary": "Wrong monster indices, sticky state and pursuit checks",
+      "review": "multiple candidates; compare with B99 deletion/history fixes",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0078",
+        "CBUG-0079",
+        "CBUG-0080",
+        "CBUG-0081",
+        "CBUG-0082",
+        "CBUG-0083",
+        "CBUG-0084",
+        "CBUG-0085",
+        "CBUG-0086"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 395,
+        "end": 428,
+        "description": "discovery group 24"
+      }
+    },
+    {
+      "number": 25,
+      "title": "Enchant item prompt keys (item enchant)",
+      "area": "item-ui",
+      "summary": "Enchant prompt inventory context",
+      "review": "C menu-selection lead; no direct-command bug inferred",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0087",
+        "CBUG-0088"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 429,
+        "end": 444,
+        "description": "discovery group 25"
+      }
+    },
+    {
+      "number": 26,
+      "title": "Recovery notes and checks (recover)",
+      "area": "recovery",
+      "summary": "Recovery note, duplicate cure and unchecked rod slot",
+      "review": "split harmless note/duplicate from reachable missing-rod access",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0089",
+        "CBUG-0090",
+        "CBUG-0091"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 445,
+        "end": 458,
+        "description": "discovery group 26"
+      }
+    },
+    {
+      "number": 27,
+      "title": "Protection from Evil rest timer overflows (flow stairs)",
+      "area": "timers",
+      "summary": "No-rest int16 overflow from level 33",
+      "review": "C narrow-integer effect is absent from the JS number assignment",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0092",
+        "CBUG-0093"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 459,
+        "end": 473,
+        "description": "discovery group 27"
+      }
+    },
+    {
+      "number": 28,
+      "title": "Perma-spell simulation and costs (fight perm)",
+      "area": "buffs",
+      "summary": "Regeneration simulation side effect and wrong Venom cost",
+      "review": "TS guards regen simulation already; Venom cost still references Smite Evil",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0094",
+        "CBUG-0095",
+        "CBUG-0096",
+        "CBUG-0097",
+        "CBUG-0092"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 474,
+        "end": 494,
+        "description": "discovery group 28"
+      }
+    },
+    {
+      "number": 29,
+      "title": "Sea of Runes scan slips (flow glyph)",
+      "area": "glyphs",
+      "summary": "Terrain, counters and array bounds in glyph flow",
+      "review": "legal message/state sequence needed before claiming reachable memory failure",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0098",
+        "CBUG-0099",
+        "CBUG-0100",
+        "CBUG-0101",
+        "CBUG-0102"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 495,
+        "end": 516,
+        "description": "discovery group 29"
+      }
+    },
+    {
+      "number": 30,
+      "title": "Munchkin attacks leave the attack flags set (attack munchkin)",
+      "area": "optional-mode",
+      "summary": "Munchkin attack/simulation flags leak",
+      "review": "optional-mode lead; not ordinary-mode proof",
+      "priority": "low",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0103",
+        "CBUG-0104",
+        "CBUG-0105"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 517,
+        "end": 533,
+        "description": "discovery group 30"
+      }
+    },
+    {
+      "number": 31,
+      "title": "Exploration flow quirks (flow dark)",
+      "area": "exploration",
+      "summary": "Farthest stairs, trap interest and forgotten danger marks",
+      "review": "stair cause overlaps group19; split remaining symptoms",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0055",
+        "CBUG-0106",
+        "CBUG-0107",
+        "CBUG-0108"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 534,
+        "end": 554,
+        "description": "discovery group 31"
+      }
+    },
+    {
+      "number": 32,
+      "title": "Flow core slips (flow)",
+      "area": "flow",
+      "summary": "Shop/door predicates, bounds and dead cleanup",
+      "review": "legal border/door scenarios needed; dead no-op is not a crash proof",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0109",
+        "CBUG-0110",
+        "CBUG-0111",
+        "CBUG-0112",
+        "CBUG-0113",
+        "CBUG-0114"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 555,
+        "end": 581,
+        "description": "discovery group 32"
+      }
+    },
+    {
+      "number": 33,
+      "title": "Selling and stashing slips (store sell)",
+      "area": "selling",
+      "summary": "Trial charges, wrong ego and transaction history",
+      "review": "history counter shared with34; other symptoms need separate verification",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0013",
+        "CBUG-0014",
+        "CBUG-0115",
+        "CBUG-0116",
+        "CBUG-0117",
+        "CBUG-0118"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 582,
+        "end": 610,
+        "description": "discovery group 33"
+      }
+    },
+    {
+      "number": 34,
+      "title": "Shopping slips (store buy)",
+      "area": "shopping",
+      "summary": "Purchase filters, home trial state and history",
+      "review": "ten symptoms classified below; no new native C scenario claimed",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0005",
+        "CBUG-0006",
+        "CBUG-0007",
+        "CBUG-0008",
+        "CBUG-0009",
+        "CBUG-0010",
+        "CBUG-0011",
+        "CBUG-0012",
+        "CBUG-0013",
+        "CBUG-0014"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 611,
+        "end": 645,
+        "description": "discovery group 34"
+      }
+    },
+    {
+      "number": 35,
+      "title": "Escape slips (escape)",
+      "area": "escape",
+      "summary": "Emergency mana, queued stairs, timer and destination checks",
+      "review": "four symptoms classified below; returned-command port has a distinct stair issue",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0015",
+        "CBUG-0016",
+        "CBUG-0017",
+        "CBUG-0018"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 646,
+        "end": 670,
+        "description": "discovery group 35"
+      }
+    },
+    {
+      "number": 36,
+      "title": "Shop choice slips (think store)",
+      "area": "shopping",
+      "summary": "Urgent shop goal/stale ware and redundant town guard",
+      "review": "C and current port share the forced-goal flow; source checked, transaction scenario pending",
+      "priority": "high",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0019",
+        "CBUG-0020"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 671,
+        "end": 685,
+        "description": "discovery group 36"
+      }
+    },
+    {
+      "number": 37,
+      "title": "Junk and drop choices (junk)",
+      "area": "inventory",
+      "summary": "Junk and drop choices (junk)",
+      "review": "Reported by borg-rs; C contexts located only, no independent fault/outcome validation or port attribution yet.",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0119",
+        "CBUG-0120",
+        "CBUG-0121",
+        "CBUG-0122",
+        "CBUG-0123",
+        "CBUG-0124"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 687,
+        "end": 715,
+        "description": "discovery group 37"
+      }
+    },
+    {
+      "number": 38,
+      "title": "borg.txt parsing slips (init)",
+      "area": "configuration",
+      "summary": "borg.txt parsing slips (init)",
+      "review": "Reported by borg-rs; C contexts located only, no independent fault/outcome validation or port attribution yet.",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0125",
+        "CBUG-0126",
+        "CBUG-0127",
+        "CBUG-0128",
+        "CBUG-0129"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 716,
+        "end": 741,
+        "description": "discovery group 38"
+      }
+    },
+    {
+      "number": 39,
+      "title": "Misc flow slips (flow misc)",
+      "area": "flow",
+      "summary": "Misc flow slips (flow misc)",
+      "review": "Reported by borg-rs; C contexts located only, no independent fault/outcome validation or port attribution yet.",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0130",
+        "CBUG-0131",
+        "CBUG-0132",
+        "CBUG-0133",
+        "CBUG-0134",
+        "CBUG-0135"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 742,
+        "end": 777,
+        "description": "discovery group 39"
+      }
+    },
+    {
+      "number": 40,
+      "title": "Caution slips (caution)",
+      "area": "caution",
+      "summary": "Caution slips (caution)",
+      "review": "Reported by borg-rs; C contexts located only, no independent fault/outcome validation or port attribution yet.",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0136",
+        "CBUG-0137",
+        "CBUG-0138",
+        "CBUG-0139",
+        "CBUG-0140",
+        "CBUG-0141",
+        "CBUG-0142",
+        "CBUG-0143"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 778,
+        "end": 816,
+        "description": "discovery group 40"
+      }
+    },
+    {
+      "number": 41,
+      "title": "Debug command slips (commands)",
+      "area": "manual-debug",
+      "summary": "Source-reported debug command bounds, terminal, formatting and delay state",
+      "review": "Nine reported leads; native practical validation not performed here",
+      "priority": "med",
+      "coverage": "reported-claims-listed",
+      "findings": [
+        "CBUG-0144",
+        "CBUG-0145",
+        "CBUG-0146",
+        "CBUG-0147",
+        "CBUG-0148",
+        "CBUG-0149",
+        "CBUG-0150",
+        "CBUG-0151",
+        "CBUG-0152"
+      ],
+      "discovery_reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 818,
+        "end": 853,
+        "description": "discovery group41"
+      }
+    }
+  ],
+  "source_changes": {
+    "added_groups": [
+      41
+    ],
+    "changed_groups": [],
+    "summary": "Read-only borg-rs intake discovered nine further debug-command reports in group41. Added as reported candidates, not independent native reproductions."
+  },
+  "report_coverage": {
+    "source_claims": [
+      {
+        "group": 1,
+        "ordinal": 1,
+        "start": 15,
+        "end": 19,
+        "finding_ids": [
+          "CBUG-0021"
+        ]
+      },
+      {
+        "group": 2,
+        "ordinal": 1,
+        "start": 25,
+        "end": 30,
+        "finding_ids": [
+          "CBUG-0022"
+        ]
+      },
+      {
+        "group": 3,
+        "ordinal": 1,
+        "start": 34,
+        "end": 40,
+        "finding_ids": [
+          "CBUG-0023"
+        ]
+      },
+      {
+        "group": 4,
+        "ordinal": 1,
+        "start": 45,
+        "end": 52,
+        "finding_ids": [
+          "CBUG-0003",
+          "CBUG-0024"
+        ]
+      },
+      {
+        "group": 5,
+        "ordinal": 1,
+        "start": 57,
+        "end": 63,
+        "finding_ids": [
+          "CBUG-0025"
+        ]
+      },
+      {
+        "group": 5,
+        "ordinal": 2,
+        "start": 64,
+        "end": 65,
+        "finding_ids": [
+          "CBUG-0026"
+        ]
+      },
+      {
+        "group": 5,
+        "ordinal": 3,
+        "start": 66,
+        "end": 67,
+        "finding_ids": [
+          "CBUG-0027"
+        ]
+      },
+      {
+        "group": 6,
+        "ordinal": 1,
+        "start": 75,
+        "end": 85,
+        "finding_ids": [
+          "CBUG-0028"
+        ]
+      },
+      {
+        "group": 7,
+        "ordinal": 1,
+        "start": 91,
+        "end": 95,
+        "finding_ids": [
+          "CBUG-0029"
+        ]
+      },
+      {
+        "group": 8,
+        "ordinal": 1,
+        "start": 101,
+        "end": 103,
+        "finding_ids": [
+          "CBUG-0030"
+        ]
+      },
+      {
+        "group": 8,
+        "ordinal": 2,
+        "start": 104,
+        "end": 106,
+        "finding_ids": [
+          "CBUG-0031"
+        ]
+      },
+      {
+        "group": 9,
+        "ordinal": 1,
+        "start": 111,
+        "end": 117,
+        "finding_ids": [
+          "CBUG-0032"
+        ]
+      },
+      {
+        "group": 10,
+        "ordinal": 1,
+        "start": 126,
+        "end": 134,
+        "finding_ids": [
+          "CBUG-0033"
+        ]
+      },
+      {
+        "group": 10,
+        "ordinal": 2,
+        "start": 135,
+        "end": 136,
+        "finding_ids": [
+          "CBUG-0034"
+        ]
+      },
+      {
+        "group": 10,
+        "ordinal": 3,
+        "start": 137,
+        "end": 139,
+        "finding_ids": [
+          "CBUG-0035"
+        ]
+      },
+      {
+        "group": 11,
+        "ordinal": 1,
+        "start": 143,
+        "end": 152,
+        "finding_ids": [
+          "CBUG-0036"
+        ]
+      },
+      {
+        "group": 12,
+        "ordinal": 1,
+        "start": 158,
+        "end": 161,
+        "finding_ids": [
+          "CBUG-0037"
+        ]
+      },
+      {
+        "group": 12,
+        "ordinal": 2,
+        "start": 162,
+        "end": 164,
+        "finding_ids": [
+          "CBUG-0038"
+        ]
+      },
+      {
+        "group": 13,
+        "ordinal": 1,
+        "start": 170,
+        "end": 172,
+        "finding_ids": [
+          "CBUG-0039"
+        ]
+      },
+      {
+        "group": 13,
+        "ordinal": 2,
+        "start": 173,
+        "end": 177,
+        "finding_ids": [
+          "CBUG-0001"
+        ]
+      },
+      {
+        "group": 13,
+        "ordinal": 3,
+        "start": 178,
+        "end": 180,
+        "finding_ids": [
+          "CBUG-0040"
+        ]
+      },
+      {
+        "group": 14,
+        "ordinal": 1,
+        "start": 184,
+        "end": 193,
+        "finding_ids": [
+          "CBUG-0002"
+        ]
+      },
+      {
+        "group": 14,
+        "ordinal": 2,
+        "start": 194,
+        "end": 196,
+        "finding_ids": [
+          "CBUG-0041"
+        ]
+      },
+      {
+        "group": 15,
+        "ordinal": 1,
+        "start": 201,
+        "end": 209,
+        "finding_ids": [
+          "CBUG-0042"
+        ]
+      },
+      {
+        "group": 16,
+        "ordinal": 1,
+        "start": 215,
+        "end": 219,
+        "finding_ids": [
+          "CBUG-0043"
+        ]
+      },
+      {
+        "group": 16,
+        "ordinal": 2,
+        "start": 220,
+        "end": 224,
+        "finding_ids": [
+          "CBUG-0044"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 1,
+        "start": 231,
+        "end": 232,
+        "finding_ids": [
+          "CBUG-0004"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 2,
+        "start": 233,
+        "end": 233,
+        "finding_ids": [
+          "CBUG-0045"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 3,
+        "start": 234,
+        "end": 235,
+        "finding_ids": [
+          "CBUG-0046"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 4,
+        "start": 236,
+        "end": 238,
+        "finding_ids": [
+          "CBUG-0047"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 5,
+        "start": 240,
+        "end": 242,
+        "finding_ids": [
+          "CBUG-0048"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 6,
+        "start": 243,
+        "end": 247,
+        "finding_ids": [
+          "CBUG-0049"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 7,
+        "start": 249,
+        "end": 250,
+        "finding_ids": [
+          "CBUG-0050"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 8,
+        "start": 251,
+        "end": 256,
+        "finding_ids": [
+          "CBUG-0051"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 9,
+        "start": 257,
+        "end": 259,
+        "finding_ids": [
+          "CBUG-0052"
+        ]
+      },
+      {
+        "group": 17,
+        "ordinal": 10,
+        "start": 260,
+        "end": 262,
+        "finding_ids": [
+          "CBUG-0053"
+        ]
+      },
+      {
+        "group": 18,
+        "ordinal": 1,
+        "start": 269,
+        "end": 275,
+        "finding_ids": [
+          "CBUG-0054"
+        ]
+      },
+      {
+        "group": 19,
+        "ordinal": 1,
+        "start": 281,
+        "end": 284,
+        "finding_ids": [
+          "CBUG-0055"
+        ]
+      },
+      {
+        "group": 19,
+        "ordinal": 2,
+        "start": 286,
+        "end": 289,
+        "finding_ids": [
+          "CBUG-0056"
+        ]
+      },
+      {
+        "group": 19,
+        "ordinal": 3,
+        "start": 290,
+        "end": 292,
+        "finding_ids": [
+          "CBUG-0057"
+        ]
+      },
+      {
+        "group": 19,
+        "ordinal": 4,
+        "start": 295,
+        "end": 299,
+        "finding_ids": [
+          "CBUG-0058"
+        ]
+      },
+      {
+        "group": 19,
+        "ordinal": 5,
+        "start": 300,
+        "end": 302,
+        "finding_ids": [
+          "CBUG-0059"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 1,
+        "start": 308,
+        "end": 312,
+        "finding_ids": [
+          "CBUG-0060"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 2,
+        "start": 313,
+        "end": 315,
+        "finding_ids": [
+          "CBUG-0061"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 3,
+        "start": 316,
+        "end": 317,
+        "finding_ids": [
+          "CBUG-0062"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 4,
+        "start": 318,
+        "end": 322,
+        "finding_ids": [
+          "CBUG-0063"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 5,
+        "start": 323,
+        "end": 325,
+        "finding_ids": [
+          "CBUG-0064"
+        ]
+      },
+      {
+        "group": 20,
+        "ordinal": 6,
+        "start": 326,
+        "end": 327,
+        "finding_ids": [
+          "CBUG-0065"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 1,
+        "start": 333,
+        "end": 335,
+        "finding_ids": [
+          "CBUG-0066"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 2,
+        "start": 336,
+        "end": 341,
+        "finding_ids": [
+          "CBUG-0067"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 3,
+        "start": 342,
+        "end": 342,
+        "finding_ids": [
+          "CBUG-0068"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 4,
+        "start": 343,
+        "end": 347,
+        "finding_ids": [
+          "CBUG-0069"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 5,
+        "start": 348,
+        "end": 352,
+        "finding_ids": [
+          "CBUG-0070"
+        ]
+      },
+      {
+        "group": 21,
+        "ordinal": 6,
+        "start": 353,
+        "end": 356,
+        "finding_ids": [
+          "CBUG-0071"
+        ]
+      },
+      {
+        "group": 22,
+        "ordinal": 1,
+        "start": 362,
+        "end": 367,
+        "finding_ids": [
+          "CBUG-0072"
+        ]
+      },
+      {
+        "group": 22,
+        "ordinal": 2,
+        "start": 368,
+        "end": 371,
+        "finding_ids": [
+          "CBUG-0073"
+        ]
+      },
+      {
+        "group": 22,
+        "ordinal": 3,
+        "start": 372,
+        "end": 377,
+        "finding_ids": [
+          "CBUG-0074"
+        ]
+      },
+      {
+        "group": 23,
+        "ordinal": 1,
+        "start": 382,
+        "end": 385,
+        "finding_ids": [
+          "CBUG-0075"
+        ]
+      },
+      {
+        "group": 23,
+        "ordinal": 2,
+        "start": 386,
+        "end": 388,
+        "finding_ids": [
+          "CBUG-0076"
+        ]
+      },
+      {
+        "group": 23,
+        "ordinal": 3,
+        "start": 389,
+        "end": 393,
+        "finding_ids": [
+          "CBUG-0077"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 1,
+        "start": 398,
+        "end": 399,
+        "finding_ids": [
+          "CBUG-0078"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 2,
+        "start": 400,
+        "end": 403,
+        "finding_ids": [
+          "CBUG-0079"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 3,
+        "start": 404,
+        "end": 408,
+        "finding_ids": [
+          "CBUG-0080"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 4,
+        "start": 409,
+        "end": 411,
+        "finding_ids": [
+          "CBUG-0081"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 5,
+        "start": 412,
+        "end": 415,
+        "finding_ids": [
+          "CBUG-0082"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 6,
+        "start": 416,
+        "end": 417,
+        "finding_ids": [
+          "CBUG-0083"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 7,
+        "start": 418,
+        "end": 420,
+        "finding_ids": [
+          "CBUG-0084"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 8,
+        "start": 421,
+        "end": 424,
+        "finding_ids": [
+          "CBUG-0085"
+        ]
+      },
+      {
+        "group": 24,
+        "ordinal": 9,
+        "start": 425,
+        "end": 426,
+        "finding_ids": [
+          "CBUG-0086"
+        ]
+      },
+      {
+        "group": 25,
+        "ordinal": 1,
+        "start": 432,
+        "end": 440,
+        "finding_ids": [
+          "CBUG-0087"
+        ]
+      },
+      {
+        "group": 25,
+        "ordinal": 2,
+        "start": 441,
+        "end": 442,
+        "finding_ids": [
+          "CBUG-0088"
+        ]
+      },
+      {
+        "group": 26,
+        "ordinal": 1,
+        "start": 448,
+        "end": 450,
+        "finding_ids": [
+          "CBUG-0089"
+        ]
+      },
+      {
+        "group": 26,
+        "ordinal": 2,
+        "start": 451,
+        "end": 453,
+        "finding_ids": [
+          "CBUG-0090"
+        ]
+      },
+      {
+        "group": 26,
+        "ordinal": 3,
+        "start": 454,
+        "end": 456,
+        "finding_ids": [
+          "CBUG-0091"
+        ]
+      },
+      {
+        "group": 27,
+        "ordinal": 1,
+        "start": 462,
+        "end": 468,
+        "finding_ids": [
+          "CBUG-0092"
+        ]
+      },
+      {
+        "group": 27,
+        "ordinal": 2,
+        "start": 469,
+        "end": 470,
+        "finding_ids": [
+          "CBUG-0093"
+        ]
+      },
+      {
+        "group": 28,
+        "ordinal": 1,
+        "start": 477,
+        "end": 481,
+        "finding_ids": [
+          "CBUG-0094"
+        ]
+      },
+      {
+        "group": 28,
+        "ordinal": 2,
+        "start": 482,
+        "end": 483,
+        "finding_ids": [
+          "CBUG-0095"
+        ]
+      },
+      {
+        "group": 28,
+        "ordinal": 3,
+        "start": 484,
+        "end": 485,
+        "finding_ids": [
+          "CBUG-0096"
+        ]
+      },
+      {
+        "group": 28,
+        "ordinal": 4,
+        "start": 486,
+        "end": 488,
+        "finding_ids": [
+          "CBUG-0097"
+        ]
+      },
+      {
+        "group": 28,
+        "ordinal": 5,
+        "start": 489,
+        "end": 492,
+        "finding_ids": [
+          "CBUG-0092"
+        ]
+      },
+      {
+        "group": 29,
+        "ordinal": 1,
+        "start": 498,
+        "end": 501,
+        "finding_ids": [
+          "CBUG-0098"
+        ]
+      },
+      {
+        "group": 29,
+        "ordinal": 2,
+        "start": 502,
+        "end": 503,
+        "finding_ids": [
+          "CBUG-0099"
+        ]
+      },
+      {
+        "group": 29,
+        "ordinal": 3,
+        "start": 504,
+        "end": 507,
+        "finding_ids": [
+          "CBUG-0100"
+        ]
+      },
+      {
+        "group": 29,
+        "ordinal": 4,
+        "start": 508,
+        "end": 509,
+        "finding_ids": [
+          "CBUG-0101"
+        ]
+      },
+      {
+        "group": 29,
+        "ordinal": 5,
+        "start": 510,
+        "end": 513,
+        "finding_ids": [
+          "CBUG-0102"
+        ]
+      },
+      {
+        "group": 30,
+        "ordinal": 1,
+        "start": 520,
+        "end": 526,
+        "finding_ids": [
+          "CBUG-0103"
+        ]
+      },
+      {
+        "group": 30,
+        "ordinal": 2,
+        "start": 527,
+        "end": 528,
+        "finding_ids": [
+          "CBUG-0104"
+        ]
+      },
+      {
+        "group": 30,
+        "ordinal": 3,
+        "start": 529,
+        "end": 531,
+        "finding_ids": [
+          "CBUG-0105"
+        ]
+      },
+      {
+        "group": 31,
+        "ordinal": 1,
+        "start": 537,
+        "end": 540,
+        "finding_ids": [
+          "CBUG-0055"
+        ]
+      },
+      {
+        "group": 31,
+        "ordinal": 2,
+        "start": 541,
+        "end": 546,
+        "finding_ids": [
+          "CBUG-0106"
+        ]
+      },
+      {
+        "group": 31,
+        "ordinal": 3,
+        "start": 547,
+        "end": 550,
+        "finding_ids": [
+          "CBUG-0107"
+        ]
+      },
+      {
+        "group": 31,
+        "ordinal": 4,
+        "start": 551,
+        "end": 552,
+        "finding_ids": [
+          "CBUG-0108"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 1,
+        "start": 558,
+        "end": 562,
+        "finding_ids": [
+          "CBUG-0109"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 2,
+        "start": 563,
+        "end": 567,
+        "finding_ids": [
+          "CBUG-0110"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 3,
+        "start": 568,
+        "end": 570,
+        "finding_ids": [
+          "CBUG-0111"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 4,
+        "start": 571,
+        "end": 572,
+        "finding_ids": [
+          "CBUG-0112"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 5,
+        "start": 573,
+        "end": 575,
+        "finding_ids": [
+          "CBUG-0113"
+        ]
+      },
+      {
+        "group": 32,
+        "ordinal": 6,
+        "start": 576,
+        "end": 578,
+        "finding_ids": [
+          "CBUG-0114"
+        ]
+      },
+      {
+        "group": 33,
+        "ordinal": 1,
+        "start": 585,
+        "end": 589,
+        "finding_ids": [
+          "CBUG-0115"
+        ]
+      },
+      {
+        "group": 33,
+        "ordinal": 2,
+        "start": 590,
+        "end": 595,
+        "finding_ids": [
+          "CBUG-0116"
+        ]
+      },
+      {
+        "group": 33,
+        "ordinal": 3,
+        "start": 596,
+        "end": 598,
+        "finding_ids": [
+          "CBUG-0117"
+        ]
+      },
+      {
+        "group": 33,
+        "ordinal": 4,
+        "start": 599,
+        "end": 603,
+        "finding_ids": [
+          "CBUG-0013",
+          "CBUG-0014"
+        ]
+      },
+      {
+        "group": 33,
+        "ordinal": 5,
+        "start": 604,
+        "end": 608,
+        "finding_ids": [
+          "CBUG-0118"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 1,
+        "start": 614,
+        "end": 617,
+        "finding_ids": [
+          "CBUG-0005"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 2,
+        "start": 618,
+        "end": 622,
+        "finding_ids": [
+          "CBUG-0006"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 3,
+        "start": 623,
+        "end": 629,
+        "finding_ids": [
+          "CBUG-0007",
+          "CBUG-0008",
+          "CBUG-0009"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 4,
+        "start": 630,
+        "end": 631,
+        "finding_ids": [
+          "CBUG-0010"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 5,
+        "start": 632,
+        "end": 638,
+        "finding_ids": [
+          "CBUG-0011",
+          "CBUG-0012"
+        ]
+      },
+      {
+        "group": 34,
+        "ordinal": 6,
+        "start": 639,
+        "end": 643,
+        "finding_ids": [
+          "CBUG-0013",
+          "CBUG-0014"
+        ]
+      },
+      {
+        "group": 35,
+        "ordinal": 1,
+        "start": 649,
+        "end": 654,
+        "finding_ids": [
+          "CBUG-0015"
+        ]
+      },
+      {
+        "group": 35,
+        "ordinal": 2,
+        "start": 655,
+        "end": 662,
+        "finding_ids": [
+          "CBUG-0016"
+        ]
+      },
+      {
+        "group": 35,
+        "ordinal": 3,
+        "start": 663,
+        "end": 665,
+        "finding_ids": [
+          "CBUG-0017"
+        ]
+      },
+      {
+        "group": 35,
+        "ordinal": 4,
+        "start": 666,
+        "end": 669,
+        "finding_ids": [
+          "CBUG-0018"
+        ]
+      },
+      {
+        "group": 36,
+        "ordinal": 1,
+        "start": 674,
+        "end": 682,
+        "finding_ids": [
+          "CBUG-0019"
+        ]
+      },
+      {
+        "group": 36,
+        "ordinal": 2,
+        "start": 683,
+        "end": 684,
+        "finding_ids": [
+          "CBUG-0020"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 1,
+        "start": 690,
+        "end": 692,
+        "finding_ids": [
+          "CBUG-0119"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 2,
+        "start": 693,
+        "end": 699,
+        "finding_ids": [
+          "CBUG-0120"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 3,
+        "start": 700,
+        "end": 703,
+        "finding_ids": [
+          "CBUG-0121"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 4,
+        "start": 704,
+        "end": 706,
+        "finding_ids": [
+          "CBUG-0122"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 5,
+        "start": 707,
+        "end": 711,
+        "finding_ids": [
+          "CBUG-0123"
+        ]
+      },
+      {
+        "group": 37,
+        "ordinal": 6,
+        "start": 712,
+        "end": 713,
+        "finding_ids": [
+          "CBUG-0124"
+        ]
+      },
+      {
+        "group": 38,
+        "ordinal": 1,
+        "start": 720,
+        "end": 724,
+        "finding_ids": [
+          "CBUG-0125"
+        ]
+      },
+      {
+        "group": 38,
+        "ordinal": 2,
+        "start": 725,
+        "end": 728,
+        "finding_ids": [
+          "CBUG-0126"
+        ]
+      },
+      {
+        "group": 38,
+        "ordinal": 3,
+        "start": 729,
+        "end": 731,
+        "finding_ids": [
+          "CBUG-0127"
+        ]
+      },
+      {
+        "group": 38,
+        "ordinal": 4,
+        "start": 732,
+        "end": 735,
+        "finding_ids": [
+          "CBUG-0128"
+        ]
+      },
+      {
+        "group": 38,
+        "ordinal": 5,
+        "start": 736,
+        "end": 738,
+        "finding_ids": [
+          "CBUG-0129"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 1,
+        "start": 745,
+        "end": 752,
+        "finding_ids": [
+          "CBUG-0130"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 2,
+        "start": 753,
+        "end": 755,
+        "finding_ids": [
+          "CBUG-0131"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 3,
+        "start": 756,
+        "end": 760,
+        "finding_ids": [
+          "CBUG-0132"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 4,
+        "start": 761,
+        "end": 767,
+        "finding_ids": [
+          "CBUG-0133"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 5,
+        "start": 768,
+        "end": 771,
+        "finding_ids": [
+          "CBUG-0134"
+        ]
+      },
+      {
+        "group": 39,
+        "ordinal": 6,
+        "start": 772,
+        "end": 773,
+        "finding_ids": [
+          "CBUG-0135"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 1,
+        "start": 782,
+        "end": 787,
+        "finding_ids": [
+          "CBUG-0136"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 2,
+        "start": 788,
+        "end": 791,
+        "finding_ids": [
+          "CBUG-0137"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 3,
+        "start": 792,
+        "end": 793,
+        "finding_ids": [
+          "CBUG-0138"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 4,
+        "start": 794,
+        "end": 798,
+        "finding_ids": [
+          "CBUG-0139"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 5,
+        "start": 799,
+        "end": 801,
+        "finding_ids": [
+          "CBUG-0140"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 6,
+        "start": 802,
+        "end": 804,
+        "finding_ids": [
+          "CBUG-0141"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 7,
+        "start": 805,
+        "end": 810,
+        "finding_ids": [
+          "CBUG-0142"
+        ]
+      },
+      {
+        "group": 40,
+        "ordinal": 8,
+        "start": 811,
+        "end": 813,
+        "finding_ids": [
+          "CBUG-0143"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 1,
+        "start": 822,
+        "end": 825,
+        "finding_ids": [
+          "CBUG-0144"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 2,
+        "start": 826,
+        "end": 828,
+        "finding_ids": [
+          "CBUG-0145"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 3,
+        "start": 829,
+        "end": 832,
+        "finding_ids": [
+          "CBUG-0146"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 4,
+        "start": 833,
+        "end": 836,
+        "finding_ids": [
+          "CBUG-0147"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 5,
+        "start": 837,
+        "end": 838,
+        "finding_ids": [
+          "CBUG-0148"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 6,
+        "start": 839,
+        "end": 841,
+        "finding_ids": [
+          "CBUG-0149"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 7,
+        "start": 842,
+        "end": 844,
+        "finding_ids": [
+          "CBUG-0150"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 8,
+        "start": 845,
+        "end": 847,
+        "finding_ids": [
+          "CBUG-0151"
+        ]
+      },
+      {
+        "group": 41,
+        "ordinal": 9,
+        "start": 848,
+        "end": 852,
+        "finding_ids": [
+          "CBUG-0152"
+        ]
+      }
+    ],
+    "leaf_reports": 150,
+    "groups": 41,
+    "note": "Every substantive leaf report is mapped. One leaf report can contain related sub-symptoms; findings and report counts are not counts of independently confirmed bugs.",
+    "non_report_bullets": [
+      {
+        "line": 10,
+        "text": "* File: `angband/src/borg/borg-fight-defend.c:2498`,",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 12,
+        "text": "* Seen: by code reading during M2/M3 (not tied to a seed). The banishment",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 20,
+        "text": "* Rust: `crate::bridge::st().borg.has[BI_CURHP as usize]` (same index into the",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 43,
+        "text": "* `borg-cave-light.c`, `borg_update_light`, every run with a radius-2+",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 53,
+        "text": "* Rust: kept as is in `borg_cave_light.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 68,
+        "text": "* Rust (`borg_magic.rs`): all kept (`u8::from(status)`, `0..8`, no check).",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 72,
+        "text": "* borg-formulas.c, `parse_value()` and `get_value_index()`, only when a",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 86,
+        "text": "* Rust: `formula_error_format()` in `borg_formulas.rs` notes the \"error for",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 98,
+        "text": "* `borg-home-power.c`, `borg_power_home_aux1()`, by code reading (no suite",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 107,
+        "text": "* Rust: both kept in `borg_home_power.rs` (the dead branch is left out, as",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 118,
+        "text": "* Rust: kept as `== BORG_DARK` in `borg_magic_play.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 122,
+        "text": "* borg-prepared.c, `borg_prepared()`/`borg_prepared_aux()`/`borg_restock()`,",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 140,
+        "text": "* Rust (`borg_prepared.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 153,
+        "text": "* Rust: kept (`engine::all_letters`) in `borg_reincarnate.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 156,
+        "text": "* `borg-home-notice.c`, `borg_notice_home_aux()`, by code reading (any run",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 165,
+        "text": "* Rust: all kept in `borg_home_notice.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 169,
+        "text": "* `borg-log.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 181,
+        "text": "* Rust (`borg_log.rs`): all kept; the NULL-file crash is a panic.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 197,
+        "text": "* Rust: kept (`st.msgs.dont_react` is only ever set; `st.borg.dont_react`",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 210,
+        "text": "* Rust: kept in `borg_item_id.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 214,
+        "text": "* `borg-inventory.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 225,
+        "text": "* Rust (`borg_inventory.rs`): both kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 228,
+        "text": "* `borg-danger.c`, found by code reading; all are in every danger",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 230,
+        "text": "* `borg_danger_physical()`:",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 239,
+        "text": "* `borg_danger_spell()`:",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 248,
+        "text": "* `borg_danger_one_kill()`:",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 263,
+        "text": "* Rust: all kept in `borg_danger.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 267,
+        "text": "* `borg-item-analyze.c`, `borg_object_value_known()`, by code reading",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 276,
+        "text": "* Rust: kept (`engine::flag_has(&item.flags, STAT_*)`) in",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 280,
+        "text": "* `borg-flow-take.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 285,
+        "text": "* `borg_flow_take_lunal()`:",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 293,
+        "text": "  * Only reached in lunal/munchkin mode (`borg_lunal_mode`,",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 303,
+        "text": "* Rust (`borg_flow_take.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 307,
+        "text": "* `borg-item-use.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 328,
+        "text": "* Rust: all kept in `borg_item_use.rs`.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 331,
+        "text": "* `borg-item-wear.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 332,
+        "text": "* `borg_backup_swap()`:",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 357,
+        "text": "* Rust (`borg_item_wear.rs`): all kept (`swap_letter(-1)` gives the 0 key).",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 361,
+        "text": "* `borg-light.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 378,
+        "text": "* Rust (`borg_light.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 381,
+        "text": "* `borg-item-decurse.c`, `borg_decurse_any()`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 394,
+        "text": "* Rust (`borg_item_decurse.rs`): all kept (`letter(-1)` gives the 0 key).",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 397,
+        "text": "* `borg-flow-kill.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 427,
+        "text": "* Rust (`borg_flow_kill.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 431,
+        "text": "* `borg-item-enchant.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 443,
+        "text": "* Rust (`borg_item_enchant.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 447,
+        "text": "* `borg-recover.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 457,
+        "text": "* Rust (`borg_recover.rs`): all kept (a missing rod panics instead of",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 461,
+        "text": "* `borg-flow-stairs.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 471,
+        "text": "* Rust (`borg_flow_stairs.rs`): kept (`no_rest as i16` truncates the same",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 476,
+        "text": "* `borg-fight-perm.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 493,
+        "text": "* Rust (`borg_fight_perm.rs`): all kept (`as i16` truncation for the",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 497,
+        "text": "* `borg-flow-glyph.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 514,
+        "text": "* Rust (`borg_flow_glyph.rs`): all kept; an index of -1 panics instead",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 519,
+        "text": "* `borg-attack-munchkin.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 532,
+        "text": "* Rust (`borg_attack_munchkin.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 536,
+        "text": "* `borg-flow-dark.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 553,
+        "text": "* Rust (`borg_flow_dark.rs`): all kept (the two identical branches are one",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 557,
+        "text": "* `borg-flow.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 579,
+        "text": "* Rust (`borg_flow.rs`): all kept (the index -1 read panics; the dead",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 584,
+        "text": "* `borg-store-sell.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 609,
+        "text": "* Rust (`borg_store_sell.rs`): all kept (`test_item`/`best_item` clear",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 613,
+        "text": "* `borg-store-buy.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 644,
+        "text": "* Rust (`borg_store_buy.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 648,
+        "text": "* `borg-escape.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 670,
+        "text": "* Rust (`borg_escape.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 673,
+        "text": "* `borg-think-store.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 685,
+        "text": "* Rust (`borg_think_store.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 689,
+        "text": "* `borg-junk.c`, found by code reading.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 714,
+        "text": "* Rust (`borg_junk.rs`): all kept.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 718,
+        "text": "* `borg-init.c`, found by code reading; checked with the C parser on",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 739,
+        "text": "* Rust (`borg_init.rs`): all kept (the hang is the same loop; the NULL",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 744,
+        "text": "* `borg-flow-misc.c`, found by code reading and the cross-check.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 774,
+        "text": "* Rust (`borg_flow_misc.rs`): all kept. Where C would read or write out of",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 780,
+        "text": "* `borg-caution.c`, found by code reading; all checked against the c2rust",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 814,
+        "text": "* Rust (`borg_caution.rs`): all kept. `borg_heal()` divides by `BI_MAXHP`",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 820,
+        "text": "* `borg-commands.c` (the `^z` commands; the suites only use `z`), found by",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      },
+      {
+        "line": 853,
+        "text": "* Rust (`borg_commands.rs`): all kept; the out-of-bounds reads are panics.",
+        "reason": "Rust/provenance/container note, not a separate C report"
+      }
+    ]
+  },
+  "finding_files": [
+    "CBUG-0001.json",
+    "CBUG-0002.json",
+    "CBUG-0003.json",
+    "CBUG-0004.json",
+    "CBUG-0005.json",
+    "CBUG-0006.json",
+    "CBUG-0007.json",
+    "CBUG-0008.json",
+    "CBUG-0009.json",
+    "CBUG-0010.json",
+    "CBUG-0011.json",
+    "CBUG-0012.json",
+    "CBUG-0013.json",
+    "CBUG-0014.json",
+    "CBUG-0015.json",
+    "CBUG-0016.json",
+    "CBUG-0017.json",
+    "CBUG-0018.json",
+    "CBUG-0019.json",
+    "CBUG-0020.json",
+    "CBUG-0021.json",
+    "CBUG-0022.json",
+    "CBUG-0023.json",
+    "CBUG-0024.json",
+    "CBUG-0025.json",
+    "CBUG-0026.json",
+    "CBUG-0027.json",
+    "CBUG-0028.json",
+    "CBUG-0029.json",
+    "CBUG-0030.json",
+    "CBUG-0031.json",
+    "CBUG-0032.json",
+    "CBUG-0033.json",
+    "CBUG-0034.json",
+    "CBUG-0035.json",
+    "CBUG-0036.json",
+    "CBUG-0037.json",
+    "CBUG-0038.json",
+    "CBUG-0039.json",
+    "CBUG-0040.json",
+    "CBUG-0041.json",
+    "CBUG-0042.json",
+    "CBUG-0043.json",
+    "CBUG-0044.json",
+    "CBUG-0045.json",
+    "CBUG-0046.json",
+    "CBUG-0047.json",
+    "CBUG-0048.json",
+    "CBUG-0049.json",
+    "CBUG-0050.json",
+    "CBUG-0051.json",
+    "CBUG-0052.json",
+    "CBUG-0053.json",
+    "CBUG-0054.json",
+    "CBUG-0055.json",
+    "CBUG-0056.json",
+    "CBUG-0057.json",
+    "CBUG-0058.json",
+    "CBUG-0059.json",
+    "CBUG-0060.json",
+    "CBUG-0061.json",
+    "CBUG-0062.json",
+    "CBUG-0063.json",
+    "CBUG-0064.json",
+    "CBUG-0065.json",
+    "CBUG-0066.json",
+    "CBUG-0067.json",
+    "CBUG-0068.json",
+    "CBUG-0069.json",
+    "CBUG-0070.json",
+    "CBUG-0071.json",
+    "CBUG-0072.json",
+    "CBUG-0073.json",
+    "CBUG-0074.json",
+    "CBUG-0075.json",
+    "CBUG-0076.json",
+    "CBUG-0077.json",
+    "CBUG-0078.json",
+    "CBUG-0079.json",
+    "CBUG-0080.json",
+    "CBUG-0081.json",
+    "CBUG-0082.json",
+    "CBUG-0083.json",
+    "CBUG-0084.json",
+    "CBUG-0085.json",
+    "CBUG-0086.json",
+    "CBUG-0087.json",
+    "CBUG-0088.json",
+    "CBUG-0089.json",
+    "CBUG-0090.json",
+    "CBUG-0091.json",
+    "CBUG-0092.json",
+    "CBUG-0093.json",
+    "CBUG-0094.json",
+    "CBUG-0095.json",
+    "CBUG-0096.json",
+    "CBUG-0097.json",
+    "CBUG-0098.json",
+    "CBUG-0099.json",
+    "CBUG-0100.json",
+    "CBUG-0101.json",
+    "CBUG-0102.json",
+    "CBUG-0103.json",
+    "CBUG-0104.json",
+    "CBUG-0105.json",
+    "CBUG-0106.json",
+    "CBUG-0107.json",
+    "CBUG-0108.json",
+    "CBUG-0109.json",
+    "CBUG-0110.json",
+    "CBUG-0111.json",
+    "CBUG-0112.json",
+    "CBUG-0113.json",
+    "CBUG-0114.json",
+    "CBUG-0115.json",
+    "CBUG-0116.json",
+    "CBUG-0117.json",
+    "CBUG-0118.json",
+    "CBUG-0119.json",
+    "CBUG-0120.json",
+    "CBUG-0121.json",
+    "CBUG-0122.json",
+    "CBUG-0123.json",
+    "CBUG-0124.json",
+    "CBUG-0125.json",
+    "CBUG-0126.json",
+    "CBUG-0127.json",
+    "CBUG-0128.json",
+    "CBUG-0129.json",
+    "CBUG-0130.json",
+    "CBUG-0131.json",
+    "CBUG-0132.json",
+    "CBUG-0133.json",
+    "CBUG-0134.json",
+    "CBUG-0135.json",
+    "CBUG-0136.json",
+    "CBUG-0137.json",
+    "CBUG-0138.json",
+    "CBUG-0139.json",
+    "CBUG-0140.json",
+    "CBUG-0141.json",
+    "CBUG-0142.json",
+    "CBUG-0143.json",
+    "CBUG-0144.json",
+    "CBUG-0145.json",
+    "CBUG-0146.json",
+    "CBUG-0147.json",
+    "CBUG-0148.json",
+    "CBUG-0149.json",
+    "CBUG-0150.json",
+    "CBUG-0151.json",
+    "CBUG-0152.json"
+  ]
+}

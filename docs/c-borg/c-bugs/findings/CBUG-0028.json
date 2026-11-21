@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0028",
+  "source_groups": [
+    6
+  ],
+  "title": "Three callers pass format(...) as the error argument of borg_formula_error(): \"value type (first parameter '%s') not found\" and (twice) \"value erro\u2026",
+  "site": "src/borg/borg-formulas.c:borg_formula_error",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 44
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-formulas.c",
+      "start": 123,
+      "end": 132,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 75,
+      "end": 85,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        6
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 6,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 75,
+        "end": 85,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "Three callers pass `format(...)` as the `error` argument of\n  `borg_formula_error()`: \"value type (first parameter '%s') not found\" and\n  (twice) \"value error for object type '%s' subtype '%s'\". `format()`\n  returns its static buffer, and `borg_formula_error()` formats its own\n  notes with `format()` before it notes `error`. So the error note repeats\n  the \"** error for section value '...'\" note and the caller's message is\n  never shown. (That message also has an off-by-one: it prints\n  `value_type_names[t].name`, but the table starts at `VT_NONE`, so it is\n  the name of type `t - 1`, e.g. 'scroll' for a potion.) If the \"error on\n  line\" note grew `format()`'s buffer (a line of more than ~1000 bytes), C\n  would read freed memory instead; the Rust port assumes it does not."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}
