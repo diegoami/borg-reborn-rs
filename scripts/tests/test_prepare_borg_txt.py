@@ -26,6 +26,13 @@ class PrepareBorgTxtTest(unittest.TestCase):
             kept = [l for l in shipped.splitlines() if not l.lstrip().startswith(('borg_world', 'borg_scary_list'))]
             self.assertEqual(text.splitlines()[:len(kept)], kept)
 
+    def test_watch_borg_restores_a_missing_scary_list(self):
+        # Review of #866: a kept borg.txt naming a list that is not there
+        # made the core exit at start.
+        text = (ROOT / 'watch-borg.sh').read_text()
+        self.assertIn('for f in "$SHIPPED"/*; do', text)
+        self.assertIn('names the scary list $LIST, which is not in', text)
+
     def test_every_launcher_uses_it(self):
         for f in ('watch-borg.sh', 'harness/play.sh', 'scripts/release/package.sh'):
             self.assertIn('harness/prepare-borg-txt.sh', (ROOT / f).read_text(), f)

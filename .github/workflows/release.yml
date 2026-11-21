@@ -383,15 +383,17 @@ jobs:
       # engine/tests/test_character_build.py: the capture accepts its level-5
       # warrior (smoke-warrior-1's seed).
       - run: |
-          d=$(cygpath -m '${{ runner.temp }}')/excl
+          # POSIX paths for the MSYS tools, Windows ones for angband.exe.
+          d=$(cygpath -u '${{ runner.temp }}')/excl
+          m=$(cygpath -m "$d")
           mkdir -p "$d"/{user,save,archive,panic,scores}
           harness/prepare-borg-txt.sh "$d/user"
           printf 'keep me\n' > "$d/existing.build"
           cd build/rust/game
           set +e
-          BORG_CORE=reborn ./angband.exe -mborgh -n -uBorg -duser="$d/user" -dsave="$d/save" -darchive="$d/archive" \
-            -dpanic="$d/panic" -dscores="$d/scores" -- -seed 101 -race 0 -class 0 -turns 20000 -menu-letters \
-            -capture-build "$d/existing.build" -capture-build-level 5 -summary "$d/summary.json" 2>"$d/stderr.log"
+          BORG_CORE=reborn ./angband.exe -mborgh -n -uBorg -duser="$m/user" -dsave="$m/save" -darchive="$m/archive" \
+            -dpanic="$m/panic" -dscores="$m/scores" -- -seed 101 -race 0 -class 0 -turns 20000 -menu-letters \
+            -capture-build "$m/existing.build" -capture-build-level 5 -summary "$m/summary.json" 2>"$d/stderr.log"
           rc=$?
           set -e
           tail -3 "$d/stderr.log"
@@ -401,7 +403,7 @@ jobs:
       # directories as watch-borg.cmd passes them (backslashes), the save at
       # the path the game builds from -u (save\NAME).
       - run: |
-          d=$(cygpath -m '${{ runner.temp }}')/savecheck
+          d=$(cygpath -u '${{ runner.temp }}')/savecheck
           w=$(cygpath -w "$d")
           mkdir -p "$d"/{user,save,archive,panic,scores}
           harness/prepare-borg-txt.sh "$d/user"
@@ -409,7 +411,7 @@ jobs:
           set +e
           ./angband.exe -mborgh -n -uBorg "-duser=$w\user" "-dsave=$w\save" "-darchive=$w\archive" \
             "-dpanic=$w\panic" "-dscores=$w\scores" -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters \
-            -save-on-stop "$w\save\Borg" -summary "$d/summary.json" 2>"$d/stderr.log"
+            -save-on-stop "$w\save\Borg" -summary "$w\summary.json" 2>"$d/stderr.log"
           rc=$?
           set -e
           echo "rc=$rc"; ls -la "$d/save" "$d/user"; tail -5 "$d/stderr.log"

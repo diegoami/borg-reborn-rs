@@ -63,3 +63,19 @@ game started that way played the frozen reborn core.
 - `PLAYING.txt`: a direct start works, with saves in `lib/save`.
 - `v0.1.0-alpha.1`'s draft has the old packages. It needs a new release
   run after this merges, and its draft deleted first.
+
+## Review of #866 (`7fed1031`)
+
+- **Finding 1, fixed.** On later starts, `watch-borg.sh` copied nothing, so
+  a kept `borg.txt` (identical or edited) whose scary list was missing made
+  the borg-rs core exit at start. Now every missing shipped file is copied
+  on every start, and a `borg.txt` naming a list that is not there stops the
+  launcher with a clear message. The empty-glob trap is gone, and
+  `--build-only --reset-settings` says the reset waits for the next start.
+- **Finding 2, fixed.** The Windows steps give MSYS tools POSIX paths
+  (`cygpath -u`) and `angband.exe` Windows ones (`-m`/`-w`).
+- Checked under Xvfb:
+  - an identical or edited `borg.txt` gets its list back;
+  - a missing named list stops the launcher with exit code 2.
+- The class files and plans are not copied by the source launcher: they are
+  folded into `borg.txt` and shipped for reading only (unchanged).

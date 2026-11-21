@@ -52,7 +52,10 @@ cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DSUPPORT_X11=ON 
     cat "$BUILD.cmake.log"; exit 1; }
 make -C "$BUILD" -j"$(nproc)" >"$BUILD.make.log" 2>&1 || { tail -50 "$BUILD.make.log"; exit 1; }
 echo "Built: $BUILD/game/angband"
-[ "$BUILD_ONLY" = 0 ] || exit 0
+if [ "$BUILD_ONLY" = 1 ]; then
+    [ "$RESET" = 0 ] || echo "watch-borg.sh: --reset-settings applies when the game starts, not with --build-only" >&2
+    exit 0
+fi
 mkdir -p "$DATA"/{user,save,archive,panic,scores}
 # #826: without a borg.txt the Borg writes the C Borg's defaults, which name
 # no core, and the frozen reborn core plays instead of borg-rs.
@@ -60,12 +63,24 @@ SHIPPED=$(mktemp -d "${TMPDIR:-/tmp}/borg-settings.XXXXXXXX")
 trap 'rm -rf "$SHIPPED"' EXIT
 "$ROOT/harness/prepare-borg-txt.sh" "$SHIPPED"
 if [ "$RESET" = 1 ] || [ ! -e "$DATA/user/borg.txt" ]; then
-    cp "$SHIPPED"/* "$DATA/user/"
+    cp "$SHIPPED/borg.txt" "$DATA/user/"
     echo "Settings: the shipped harness/borg.txt, in $DATA/user/borg.txt"
 elif cmp -s "$SHIPPED/borg.txt" "$DATA/user/borg.txt"; then
     echo "Settings: the shipped harness/borg.txt"
 else
     echo "Settings: your $DATA/user/borg.txt (it differs from the shipped harness/borg.txt; --reset-settings takes the shipped one)"
+fi
+# The files borg.txt names (the scary list): every shipped one that is
+# missing, whatever borg.txt is (review of #866: a kept borg.txt naming a
+# list that is not there made the core exit at start).
+for f in "$SHIPPED"/*; do
+    [ -e "$f" ] && [ "$(basename "$f")" != borg.txt ] || continue
+    { [ "$RESET" = 1 ] || [ ! -e "$DATA/user/$(basename "$f")" ]; } && cp "$f" "$DATA/user/"
+done
+LIST="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$DATA/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+if [ -n "$LIST" ] && [ "$LIST" != none ] && [ ! -e "$DATA/user/$LIST" ]; then
+    echo "watch-borg.sh: $DATA/user/borg.txt names the scary list $LIST, which is not in $DATA/user/ (the Borg would stop at start): copy it there, or --reset-settings" >&2
+    exit 2
 fi
 rm -rf "$SHIPPED"; trap - EXIT   # exec below would skip the trap
 echo "Create or load a character; Ctrl-Z then z starts the Rust Borg. Any key stops it."
