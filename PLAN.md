@@ -126,13 +126,14 @@ create them, and a session then files each issue in its milestone as well.
 
 ## Releases (owner, 2026-11-21)
 
-Releases ship the Borg as it plays on `main`, bundled with Angband, for people who want to watch or play with it. They do not wait for a track to finish: each release is its own milestone, built on demand by the release workflow (#819) when the owner tags it, never on ordinary pushes.
+Releases ship the Borg as it plays on `main`, bundled with Angband, for people who want to watch or play with it. They do not wait for a track to finish: each release is its own milestone, built on demand by the release workflow (#819) when the owner tags it, never on ordinary pushes. The owner, on the first one: "let us do a prerelease though, we are still very buggy, S1 is too optimistic".
 
 | Milestone | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- |
-| **S1. The first playable release** (`v0.1.0`) | The shipped borg-rs core on `main` at the release commit, with its shipped `harness/borg.txt`, class files, scary list and plans. Upstream Angband `574b618c` unchanged, with our harness hooks and frontend. A Linux package (window and headless builds) and a source archive, with licences. The user guide (#817), the README's setup (#816's player part), release notes | The release workflow (#819) makes a draft release on demand; the package, unpacked on a clean Linux machine, runs `watch-borg.sh` and a headless game as the guide says; smoke on the release commit matches `smoke-borg-rs`; the notes give borg-zoo's measurement of that exact commit (deaths, CL, depth, alive at DL5) as a description, with no claim of improvement (RULES 14), and its known limits (the Borg rarely gets past DL2-3: P7's work); the owner publishes the draft | not started; issues #816, #817, #819 |
+| **S0. A preview prerelease** (`v0.1.0-alpha.1`, marked pre-release on GitHub) | The shipped borg-rs core on `main` at the release commit, with its shipped `harness/borg.txt`, class files, scary list and plans. Upstream Angband `574b618c` unchanged, with our harness hooks and frontend. A Linux package and a source archive, with licences. A short `PLAYING.md` (install, watch, stop, the main settings; the README's setup part of #816) and release notes that say plainly it is experimental | The release workflow (#819) makes a draft **pre-release**; the package, unpacked on a clean Linux machine, runs `watch-borg.sh` and a headless game as `PLAYING.md` says; smoke on the release commit matches `smoke-borg-rs`; the notes list the known problems (the Borg rarely gets past DL2-3, which is P7's work; the open bug issues) and, if a zoo run of that commit exists, its numbers as a description (RULES 14), not as a claim; the owner publishes it | not started; issues #816 (README part), #819 |
+| **S1. The first playable release** (`v0.1.0`) | As S0, at a later commit, with the full user guide (#817) | As S0, not marked pre-release; and borg-zoo's measurement of that exact commit in the notes (deaths, CL, depth, alive at DL5); the owner judges the known problems small enough for a release | not started; after S0, typically once P7 is accepted |
 
-Later releases (S2, …) follow the same exit at a later commit, typically after a track milestone is accepted.
+Later releases follow the same exit at later commits.
 
 ## Secondary track Q: the query surface
 

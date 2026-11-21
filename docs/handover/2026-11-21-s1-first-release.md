@@ -4,7 +4,7 @@ The owner accepted P7 ("accept it, merge to main", PR #799), and asked: "set up 
 
 **What was done:**
 - PLAN.md: P7 marked in progress.
-- A new "Releases" section with **S1, the first playable release** (`v0.1.0`): the shipped core on main, bundled with Angband, Linux first.
+- A new "Releases" section. First **S0, a preview prerelease** (`v0.1.0-alpha.1`, pre-release on GitHub; owner: "we are still very buggy, S1 is too optimistic"), with a short `PLAYING.md` and the known problems in its notes. Then **S1, the first playable release** (`v0.1.0`), with the full user guide and the zoo's measurement.
 - Its work: the release workflow (#819, on demand only: `workflow_dispatch` or a milestone tag), the user guide (#817) and the documentation split (#816).
 
 **For the owner:**
