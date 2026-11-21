@@ -44,6 +44,18 @@ pub(crate) fn controls_target(st: &BorgState, race: usize) -> bool {
         && engine::race(race).level == 0
 }
 
+/// The town hunt can act only on a current, visible target. Use the same
+/// gate when yielding the ordinary fight planner to the town hunt.
+pub(crate) fn viewed_target(st: &BorgState, kill: &BorgKill) -> bool {
+    let race = usize::from(kill.r_idx);
+    controls_target(st, race)
+        && !ignored(st, race)
+        && kill.ranged_attack == 0
+        && observed_kill_hp(kill).is_some()
+        && st.borg.time.now.wrapping_sub(kill.when) <= value(Param::attack_max_target_age)
+        && st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Hunt {
     Continue,
@@ -101,14 +113,7 @@ pub(crate) fn think(st: &mut BorgState) -> Hunt {
     let mut targets = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
-        let race = usize::from(kill.r_idx);
-        if !controls_target(st, race)
-            || ignored(st, race)
-            || kill.ranged_attack != 0
-            || observed_kill_hp(&kill).is_none()
-            || st.borg.time.now.wrapping_sub(kill.when) > value(Param::attack_max_target_age)
-            || st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW == 0
-        {
+        if !viewed_target(st, &kill) {
             continue;
         }
         // Rank by danger at contact, even when the threat is currently out

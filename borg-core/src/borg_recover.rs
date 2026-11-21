@@ -562,7 +562,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     /*** Just Rest ***/
 
     // Rest until healed
-    let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
+    let rest_sp = rest_sp_floor(st);
     let rest_hp = st.borg.tr(BI_ISBLIND) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_ISCUT) == 0
@@ -574,7 +574,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             || st.borg.tr(BI_ISSTUN) != 0
             || st.borg.tr(BI_ISHEAVYSTUN) != 0
             || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP)
-            || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) * sp_tenths / 10)
+            || st.borg.tr(BI_CURSP) < rest_sp)
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !st.borg.mon.scary
         && p <= i32::from(
@@ -625,9 +625,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Hack to recharge mana if a low level mage or priest
-    if st.borg.tr(BI_MAXSP) != 0
-        && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level) || st.borg.tr(BI_CDEPTH) >= param(Param::recover_mana_rest_deep_depth))
-        && st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) * param(Param::recover_mana_rest_sp_tenths) / 10
+    if mana_rest_sp_floor(st).is_some_and(|floor| st.borg.tr(BI_CURSP) < floor)
         && p < i32::from(st.borg.avoidance) / param(Param::recover_mana_rest_danger_divisor)
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && st.borg.tr(BI_ISWEAK) == 0
@@ -905,6 +903,28 @@ fn hunt_now(st: &mut BorgState) -> bool {
 /// 0 = off (C's rest).
 fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
     hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+fn rest_sp_floor(st: &BorgState) -> i32 {
+    let tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) {
+        param(Param::recover_rest_high_sp_tenths)
+    } else {
+        param(Param::recover_rest_sp_tenths)
+    };
+    st.borg.tr(BI_MAXSP) * tenths / 10
+}
+
+fn mana_rest_sp_floor(st: &BorgState) -> Option<i32> {
+    let sp = st.borg.tr(BI_MAXSP);
+    (sp != 0 && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level)
+        || st.borg.tr(BI_CDEPTH) >= param(Param::recover_mana_rest_deep_depth)))
+        .then(|| sp * param(Param::recover_mana_rest_sp_tenths) / 10)
+}
+
+/// #796: a discretionary spell should not make either existing recovery
+/// branch start resting solely because of mana. No recovery decision changes.
+pub(crate) fn recovery_sp_floor(st: &BorgState) -> i32 {
+    rest_sp_floor(st).max(mana_rest_sp_floor(st).unwrap_or(0))
 }
 
 #[cfg(test)]
