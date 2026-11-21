@@ -71,20 +71,10 @@ for b in "${BUILDS[@]}"; do
 done
 
 # The Borg's settings, as harness/run.sh writes a run's user/borg.txt
-# before it substitutes the run's race and class: the world key removed
-# (none: upstream's data), the scary list's selecting line moved to the end
-# under its SHA-256.
+# before it substitutes the run's race and class (harness/prepare-borg-txt.sh,
+# shared with watch-borg.sh and harness/play.sh).
 BT="$STAGE/borg/borg.txt"
-sed '/^[[:space:]]*borg_world[[:space:]]*=/d' "$ROOT/harness/borg.txt" > "$BT"
-SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$BT" | tail -1 | tr -d '[:space:]')"
-if [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
-    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] && [ -f "$ROOT/harness/$SCARY_NAME" ] || {
-        echo "package.sh: scary list '$SCARY_NAME' not in harness/" >&2; exit 1; }
-    cp "$ROOT/harness/$SCARY_NAME" "$STAGE/borg/$SCARY_NAME"
-    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$BT"
-    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
-        "$(sha "$ROOT/harness/$SCARY_NAME")" "$SCARY_NAME" >> "$BT"
-fi
+"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/borg"
 # The class files are already folded into borg.txt; shipped for reading.
 cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
 cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"

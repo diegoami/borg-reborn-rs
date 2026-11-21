@@ -86,17 +86,16 @@ git -C ../borg-cemetery checkout "$(cat death-tools-pin.txt)"
 ```
 
 builds the game with the X11 window into `build/watch/` (about a minute).
-Before the first game, give the Borg its settings: the game's user directory
-for watched games is `.angband-reborn/user/`.
+The game's user directory for watched games is `.angband-reborn/user/`. On
+its first start `watch-borg.sh` writes the shipped settings there
+(`harness/borg.txt` and its scary list, prepared as a headless run's, #826),
+so the borg-rs core plays them. Later starts keep that `borg.txt`, yours to
+edit, and say when it differs from the shipped one. After updating the
+repository, take the new shipped settings with:
 
 ```bash
-mkdir -p .angband-reborn/user && cp harness/borg.txt harness/scary_monsters.txt .angband-reborn/user/
+./watch-borg.sh --reset-settings --name MyBorg
 ```
-
-**Do not skip this.** Without a `borg.txt` there, the Borg writes one with
-the C Borg's defaults, which names no core, and the frozen reborn core plays
-instead of the borg-rs core. Copy the files again whenever you update the
-repository and want the new shipped settings.
 
 ```bash
 LANG=C.UTF-8 ./watch-borg.sh --name MyBorg
