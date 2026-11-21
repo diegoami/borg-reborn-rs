@@ -56,7 +56,7 @@ The param citations in params.rs and CALIBRATION.md moved with the new lines
   the arm's settings, not the zoo's rebuilt one, and plays the same keys.)
 - With the change on those commits, after the first "forbidden" there is no
   Phase Door and no further "forbidden". The Priest (CL9) and the Warrior
-  (CL13) now live to the 400,000-turn cap; the Ranger lives to turn 7,450
+  (CL13) now live to the 100,000-turn cap of the zoo cells; the Ranger lives to turn 7,450
   (6,761 before), quaffing all 8 Cure Light Wounds, and dies of poison.
 - The Borg took off the cursed item in the Priest and Warrior games, which
   lifted the block; the Phase Doors read after that are not refused.
