@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0125",
+  "source_groups": [
+    38
+  ],
+  "title": "Malformed integer settings can leave the configuration parser spinning",
+  "site": "src/borg/borg-init.c:borg_proc_setting",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 141
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-init.c",
+      "start": 100,
+      "end": 150,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 720,
+      "end": 724,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        38
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 38,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 720,
+        "end": 724,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_proc_setting()`: for an int setting, a byte after the name that is\n  not ` `, `=`, `-` or a digit (e.g. `borg_stop_dlevel = x`, or an unknown\n  key that starts with an int setting's name, `borg_stop_dlevelx 5`) is\n  never consumed: the loop spins forever and the game hangs at start-up\n  (seen with the C parser at -O2)."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

@@ -1,0 +1,2061 @@
+{
+  "schema": "angband/c-bugs-watch@1",
+  "sources": {
+    "borg_rs": {
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "previous_commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": 41,
+      "previous_groups": 40,
+      "unchanged_groups": "1-40",
+      "snapshot": {
+        "path": "docs/audit/c-reports/borg-rs-c-bugs-c375a824.md",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "sha256": "b8f0a99538040d008d726bec19e656d7fe7d503f58d9b6fdb682f0d27a1a1b01"
+      }
+    },
+    "c": {
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3"
+    },
+    "neo_borg": {
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568"
+    },
+    "mandos": {
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f"
+    }
+  },
+  "findings": [
+    {
+      "id": "CBUG-0001",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 13
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-log.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-log.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0002",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 14
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-messages-react.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-messages.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0003",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 10
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-cave-light.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0004",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 26
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0005",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 17
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0006",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 18
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0007",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 19
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0008",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 27
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0009",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 28
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0010",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 29
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0011",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 30
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0012",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 31
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0013",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 20
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0014",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 32
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-buy.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0015",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 33
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-escape.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0016",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 34
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-escape.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-escape.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0017",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 35
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-escape.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0018",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 21
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-escape.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0019",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 23
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-think-store.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0020",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 36
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-think-store.c"
+        },
+        {
+          "role": "c",
+          "path": "src/borg/borg-think-store.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0021",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 37
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-fight-defend.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0022",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 38
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-val.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0023",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 39
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-formulas-calc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0024",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 40
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-cave-light.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0025",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 41
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-magic.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0026",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 42
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-magic.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0027",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 43
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-magic.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0028",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 44
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-formulas.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0029",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 45
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-formulas.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0030",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 46
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-home-power.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0031",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 47
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-home-power.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0032",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 48
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-magic-play.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0033",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 49
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-prepared.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0034",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 50
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-prepared.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0035",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 51
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-prepared.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0036",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 52
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-reincarnate.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0037",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 53
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-home-notice.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0038",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 54
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-home-notice.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0039",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 55
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-log.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0040",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 56
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-log.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0041",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 57
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-messages-react.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0042",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 58
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-id.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0043",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 59
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-inventory.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0044",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 60
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-inventory.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0045",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 61
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0046",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 62
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0047",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 63
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0048",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 64
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0049",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 65
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0050",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 66
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0051",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 67
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0052",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 68
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0053",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 69
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-danger.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0054",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 70
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-analyze.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0055",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 71
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-take.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0056",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 72
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-take.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0057",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 73
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-take.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0058",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 74
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-take.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0059",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 75
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-take.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0060",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 76
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0061",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 77
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0062",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 78
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0063",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 79
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0064",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 80
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0065",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 81
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-use.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0066",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 82
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0067",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 83
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0068",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 84
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0069",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 85
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0070",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 86
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0071",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 87
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-wear.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0072",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 88
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-light.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0073",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 89
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-light.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0074",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 90
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-light.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0075",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 91
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-decurse.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0076",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 92
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-decurse.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0077",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 93
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-decurse.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0078",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 94
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0079",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 95
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0080",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 96
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0081",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 97
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0082",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 98
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0083",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 99
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0084",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 100
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0085",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 101
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0086",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 102
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-kill.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0087",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 103
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-enchant.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0088",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 104
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-item-enchant.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0089",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 105
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-recover.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0090",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 106
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-recover.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0091",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 107
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-recover.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0092",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 108
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-stairs.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0093",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 109
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-stairs.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0094",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 110
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-fight-perm.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0095",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 111
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-fight-perm.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0096",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 112
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-fight-perm.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0097",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 113
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-fight-perm.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0098",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 114
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-glyph.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0099",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 115
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-glyph.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0100",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 116
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-glyph.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0101",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 117
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-glyph.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0102",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 118
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-glyph.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0103",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 119
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-attack-munchkin.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0104",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 120
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-attack-munchkin.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0105",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 121
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-attack-munchkin.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0106",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 122
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-dark.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0107",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 123
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-dark.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0108",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 124
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-dark.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0109",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 125
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0110",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 126
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0111",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 127
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0112",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 128
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0113",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 129
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0114",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 130
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0115",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 131
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0116",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 132
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0117",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 133
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0118",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 134
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-store-sell.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0119",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 135
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0120",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 136
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0121",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 137
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0122",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 138
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0123",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 139
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0124",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 140
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-junk.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0125",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 141
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-init.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0126",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 142
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-init.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0127",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 143
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-init.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0128",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 144
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-init.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0129",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 145
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-init.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0130",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 146
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0131",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 147
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0132",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 148
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0133",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 149
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0134",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 150
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0135",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 151
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-flow-misc.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0136",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 152
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0137",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 153
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0138",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 154
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0139",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 155
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0140",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 156
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0141",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 157
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0142",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 158
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0143",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 159
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-caution.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0144",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 160
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0145",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 161
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0146",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 162
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0147",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 163
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0148",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 164
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0149",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 165
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0150",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 166
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0151",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 167
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    },
+    {
+      "id": "CBUG-0152",
+      "tracker": {
+        "repository": "diegoami/neo-angband-tracker",
+        "number": 168
+      },
+      "references": [
+        {
+          "role": "c",
+          "path": "src/borg/borg-commands.c"
+        }
+      ]
+    }
+  ]
+}

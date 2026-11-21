@@ -2871,7 +2871,7 @@ actual locations; reconciliation does not copy evidence.
 - `danger_maximum=1` changes seed 1000's first key at turn 4430 and its
   state trace at the same turn. The escape-threshold trial on that seed
   has no play change; both results are recorded without an improvement
-  claim. See [P1.2-VALIDATION.md](P1.2-VALIDATION.md).
+  claim. See [P1.2-VALIDATION.md](validation/P1.2-VALIDATION.md).
 - Rust tests, Clippy, formatting, Python tests and vendoring check pass.
   D2183–D2201 preserve the validation deaths; none are missing. The shared
   lock covers every build and game run. The read-only source refresh was
@@ -2898,7 +2898,7 @@ actual locations; reconciliation does not copy evidence.
   keys/messages/states; all shared game-summary fields agree. The standard
   cross-repository diff still fails on three existing frontend telemetry
   fields (our frontend reports 0/0/{} for the vendored core), documented in
-  [P1.1-VALIDATION.md](P1.1-VALIDATION.md). Full 45/45 against the earlier
+  [P1.1-VALIDATION.md](validation/P1.1-VALIDATION.md). Full 45/45 against the earlier
   main baseline passes the standard diff. Original-core smoke is 3/3;
   a 20,000-turn ladder errand matches main exactly.
 - **Override evidence:** seed 1000 Human Warrior, only
@@ -4302,7 +4302,7 @@ PR #135's review rejected the first G0 baseline: T3.7's up/down reroll
 could generate levels forever at one game turn, reset both no-time and
 goal budgets, and select fresh levels (stair-scumming in substance).
 The dedicated fix replaces those references and rewrites
-[docs/G0.md](G0.md).
+[docs/G0.md](archive/G0.md).
 
 - Level generations are unique; travel goals die on generation change,
   so fresh levels Explore. Only an exhausted frontier or cooling Explore
@@ -4359,7 +4359,7 @@ The reviewer is the owner's choice; do not start #118.
 
 ## 2026-11-10: T3.7, G0 (#23)
 
-**G0 passes; the report is [docs/G0.md](G0.md).** The first attempt did
+**G0 passes; the report is [docs/G0.md](archive/G0.md).** The first attempt did
 not pass honestly: seven long runs held in Explore/cooldown loops until
 starvation, 53,497 Holds in the full suite. T3.7 fixes the causes:
 frontier-underfoot is finished, empty Explore falls to Descend, the
@@ -5732,7 +5732,7 @@ D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
 2. Tag `m1` on the merge of #39. The zoo specimens should point at it.
 3. Routing the zoo change request. The owner asked for a prompt for a
    borg-zoo session; it is the appendix of
-   [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md). The zoo work happens in
+   [ZOO-CHANGE-REQUEST.md](archive/ZOO-CHANGE-REQUEST.md). The zoo work happens in
    borg-zoo, not here.
 4. Whether the self-produced `harness/reference/smoke-c-bbc-m7` is enough as a
    regression reference.
@@ -5768,7 +5768,7 @@ D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
   (in-memory specimens, no zoo change). All three arms run on the zoo's
   smoke with no harness failure or config error. The gaps are survivors
   stopping after the cap and an empty `first_turn_at_depth`.
-  [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md) is **for the owner to
+  [ZOO-CHANGE-REQUEST.md](archive/ZOO-CHANGE-REQUEST.md) is **for the owner to
   route**: three catalogue specimens; the adapter's `-exact-turns`,
   boundary field and depth stream; optionally the endpoint in stats.
 - Controls now build from a fresh checkout: the pinned sources are cloned on
@@ -5894,7 +5894,7 @@ already has `opt_exact_turns`).
 - better-borg-c wrote `docs/deaths/REDESIGN-LESSONS.md` for this repository:
   thirteen lessons from D0001–D0014 and four owner manual takeovers. It came
   in with refresh #31, together with death D0014.
-- [LESSONS-TRACE.md](LESSONS-TRACE.md) maps each lesson to our principle,
+- [LESSONS-TRACE.md](archive/LESSONS-TRACE.md) maps each lesson to our principle,
   our architecture section and the task that builds it.
 - GOALS principles 4–8 are extended, and principle 14 is new (equipment by
   what it does). D3 now states that the threat model uses full race data
@@ -5937,7 +5937,7 @@ already has `opt_exact_turns`).
   `git subtree --ignore-joins` into 29 commits and added unsquashed. The tree id
   `5cc1b1c…` is recorded in `pins.json` (`engine_tree`), and a repository test
   pins it.
-- [ENGINE-TREE.md](ENGINE-TREE.md) lists what differs from upstream
+- `ENGINE-TREE.md` (since replaced by [ENGINE.md](ENGINE.md)) listed what differs from upstream
   `e473720`:
   - 8 added files (borgh, recording);
   - 14 engine files, all behind `BORG_HARNESS`/`BORG_RECORDING` except

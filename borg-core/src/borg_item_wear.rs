@@ -637,11 +637,15 @@ fn lost_critical(st: &BorgState, save_rconf: i32, save_rblind: i32, save_fract: 
     ]
 }
 
-/// The swap item may not be used: an un-*ID*'d random artifact or a
-/// curse that cannot be removed.
+/// The swap item may not be used: an un-*ID*'d random artifact, a
+/// curse that cannot be removed or a known harmful curse.
 fn backup_forbidden(st: &BorgState, i: i32) -> [bool; 2] {
     let item = &st.items.items[i as usize];
-    [randarts() && item.art_idx != 0 && !item.ident, item.cursed && !item.uncursable]
+    // borg-reborn-rs (#830): an emergency swap never wears a known harmful curse
+    [
+        randarts() && item.art_idx != 0 && !item.ident,
+        (item.cursed && !item.uncursable) || crate::borg_cursed::harmful_curse(item).is_some(),
+    ]
 }
 
 /// The emergency-swap choice (`borg_backup_swap`).

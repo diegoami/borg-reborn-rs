@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0142",
+  "source_groups": [
+    40
+  ],
+  "title": "Critical poison and bleeding healing can return with pretend full mana",
+  "site": "src/borg/borg-caution.c:borg_heal",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage. Related pretend-mana state mechanism: CBUG-0015 (escape); this report concerns distinct heal branches.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 158
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-caution.c",
+      "start": 60,
+      "end": 667,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 805,
+      "end": 810,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        40
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 40,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 805,
+        "end": 810,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_heal()`: the two critical blocks (poisoned, bleeding) set\n  `BI_CURSP = BI_MAXSP` and put the real value back only after their spells\n  fail. When a spell is cast, or (bleeding block, where the fake mana is set\n  before the potions) a cure or restore-mana potion is quaffed first, the\n  function returns with `BI_CURSP` still at `BI_MAXSP` until the traits are\n  next recomputed (as C bug 35)."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}
