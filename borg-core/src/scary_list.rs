@@ -70,6 +70,9 @@ struct Entry {
     ignore: bool,
     /// #760: an attack-on-sight entry, with its required reason.
     attack: Option<String>,
+    /// #838: a ranged-only entry, with its required reason: never a melee
+    /// target, no walk to it, flows keep out of its reach; not a scare.
+    ranged: Option<String>,
 }
 
 /// A parsed list: the class fragilities and the monsters.
@@ -164,16 +167,17 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         // removes the ignore entry.
         let ignore = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "ignore"));
         let attack = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "attack"));
-        if ignore && attack {
-            return Err(at("an entry cannot be both 'ignore' and 'attack'".into()));
+        let ranged = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "ranged"));
+        if usize::from(ignore) + usize::from(attack) + usize::from(ranged) > 1 {
+            return Err(at("an entry is one of 'ignore', 'attack' and 'ranged'".into()));
         }
-        list.entries.retain(|e| e.target != target || e.ignore != ignore || e.attack.is_some() != attack);
+        list.entries.retain(|e| e.target != target || e.ignore != ignore || e.attack.is_some() != attack || e.ranged.is_some() != ranged);
         if fields[1].eq_ignore_ascii_case("none") {
             if fields.get(2).is_some_and(|c| !c.is_empty())
-                || fields.get(3).is_some_and(|f| f.split(',').any(|x| !matches!(x.trim(), "ignore" | "attack")))
+                || fields.get(3).is_some_and(|f| f.split(',').any(|x| !matches!(x.trim(), "ignore" | "attack" | "ranged")))
                 || fields.get(4).is_some_and(|r| !r.is_empty())
             {
-                return Err(at("'none' takes no class exceptions or reason, and only an 'ignore' or 'attack' kind".into()));
+                return Err(at("'none' takes no class exceptions or reason, and only an 'ignore', 'attack' or 'ranged' kind".into()));
             }
             continue;
         }
@@ -190,7 +194,7 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
                 match flag {
                     "breeders" => breeders = true,
                     "ignore" => {}
-                    "attack" => {}
+                    "attack" | "ranged" => {}
                     _ => return Err(at(format!("unknown flag '{flag}'"))),
                 }
             }
@@ -199,10 +203,17 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
             return Err(at("'ignore' takes no 'breeders' flag".into()));
         }
         let reason = fields.get(4).copied().unwrap_or("");
-        if attack != !reason.is_empty() {
-            return Err(at("an attack entry requires a reason; other entries take no reason".into()));
+        if ranged && breeders {
+            return Err(at("'ranged' takes no 'breeders' flag".into()));
         }
-        list.entries.push(Entry { target, tough, fragile, classes, breeders, ignore, attack: attack.then(|| reason.to_owned()) });
+        if (attack || ranged) != !reason.is_empty() {
+            return Err(at("an attack or ranged entry requires a reason; other entries take no reason".into()));
+        }
+        list.entries.push(Entry {
+            target, tough, fragile, classes, breeders, ignore,
+            attack: attack.then(|| reason.to_owned()),
+            ranged: ranged.then(|| reason.to_owned()),
+        });
     }
     Ok(list)
 }
@@ -212,7 +223,7 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
 /// for town races, `caution_town_scary_levels_less`).
 pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
     list.entries.iter().any(|e| {
-        !e.ignore && e.attack.is_none()
+        !e.ignore && e.attack.is_none() && e.ranged.is_none()
             && hits(e, r_idx, base)
             && who.clevel <= up_to(list, e, who.class) - who.levels_less
             && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
@@ -227,6 +238,22 @@ pub fn attack_reason<'a>(list: &'a List, r_idx: usize, base: &[u8], who: Situati
         e.attack.as_deref().filter(|_| hits(e, r_idx, base)
             && who.clevel <= up_to(list, e, who.class)
             && (!e.breeders || who.breeder_stand))
+    })
+}
+
+/// #838: the reason to keep race `r_idx` at range (a ranged entry), within
+/// this entry's class/level range: never a melee target, no walk to it, flows
+/// keep out of its reach. Never a scare.
+/// The base name is asked for only by a base entry (this runs in the flows).
+pub fn ranged_reason<'a, 'b>(list: &'a List, r_idx: usize, base: impl Fn() -> &'b [u8], who: Situation) -> Option<&'a str> {
+    list.entries.iter().find_map(|e| {
+        e.ranged.as_deref().filter(|_| {
+            let named = match &e.target {
+                Target::Race(r) => *r == r_idx,
+                Target::Base(_) => hits(e, r_idx, base()),
+            };
+            named && who.clevel <= up_to(list, e, who.class)
+        })
     })
 }
 
@@ -463,6 +490,32 @@ mod tests {
         assert!(is_scary(&leave, shaman, b"kobold", who(6, 0)), "a Warrior leaves it up to CL 6");
         assert!(is_scary(&leave, shaman, b"kobold", who(9, 1)), "a Mage up to CL 9");
         assert!(!is_scary(&leave, shaman, b"kobold", who(10, 1)));
+    }
+
+    /// #838: a ranged entry is its own kind: it keeps a reason, a level and class
+    /// range, is never a scare and never an attack entry, is replaced or removed
+    /// independently, and the flag excludes the others.
+    #[test]
+    fn ranged_entries_are_a_kind_of_their_own() {
+        let resolve = |_: &str| Some(1);
+        let list = parse("floating eye | 50 | mage 3 | ranged | paralysing-gaze\nfloating eye | 8\n", &resolve).unwrap();
+        assert_eq!(ranged_reason(&list, 1, || b"eye", who(3, 1)), Some("paralysing-gaze"));
+        assert_eq!(ranged_reason(&list, 1, || b"eye", who(4, 1)), None);
+        assert_eq!(ranged_reason(&list, 2, || b"eye", who(1, 0)), None, "another race");
+        assert_eq!(attack_reason(&list, 1, b"eye", who(1, 0)), None);
+        assert!(is_scary(&list, 1, b"eye", who(1, 0)), "the scare line is separate");
+        let only = parse("floating eye | 50 | | ranged | paralysing-gaze\n", &resolve).unwrap();
+        assert!(!is_scary(&only, 1, b"eye", who(1, 0)), "a ranged row is not a scare");
+        let removed = parse("floating eye | 50 | | ranged | r\nfloating eye | none | | ranged\n", &resolve).unwrap();
+        assert_eq!(ranged_reason(&removed, 1, || b"eye", who(1, 0)), None);
+        let kept = parse("floating eye | 50 | | ranged | r\nfloating eye | none | | attack\n", &resolve).unwrap();
+        assert_eq!(ranged_reason(&kept, 1, || b"eye", who(1, 0)), Some("r"), "none removes its own kind");
+        assert!(parse("floating eye | 50 | | ranged\n", &resolve).is_err(), "a reason is required");
+        assert!(parse("floating eye | 50 | | ranged,attack | r\n", &resolve).is_err());
+        assert!(parse("floating eye | 50 | | ranged,ignore | r\n", &resolve).is_err());
+        assert!(parse("floating eye | 50 | | ranged,breeders | r\n", &resolve).is_err());
+        let base = parse("base:floating | 50 | | ranged | r\n", &resolve).unwrap();
+        assert_eq!(ranged_reason(&base, 9, || b"floating eye", who(1, 0)), Some("r"));
     }
 
     /// Review of #527: the C file reproduces the compiled C list (and the
