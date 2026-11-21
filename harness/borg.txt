@@ -288,6 +288,22 @@ borg_param_town_devices_percent = 100
 
 borg_param_town_fear_cure_count = 0
 
+# Ranged-only monsters (#838, owner 2026-11-21: "a list of monsters to never
+# melee ... and only attack from afar"): the scary list's `ranged` entries
+# (floating eye, grey mushroom patch, the jellies and eyes; harness/
+# scary_monsters.txt) are never melee targets, never hunted, and flows keep out
+# of their reach. 0 = the entries are not read. borg-zoo measures it against
+# shipped and against caution_ranged_vs_immobile 2.
+borg_param_caution_ranged_only = 0
+
+# Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
+# at least one Cure Serious Wounds from the start"): the first this many
+# confusion cures in the pack are a requirement, each worth this percent of
+# the town restore weight. 0 = the saturating curve (CSW are bought, then
+# stored at the Home).
+borg_param_town_confusion_cure_reserve = 0
+borg_param_town_confusion_cure_reserve_percent = 100
+
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
 # Impact: set to TRUE, 6 of 6 test games play differently.
@@ -906,6 +922,31 @@ borg_param_caution_stairs_flight_threat_weight = 5
 # flight does not start and the escapes and the attack decide. 0 = C.
 borg_param_caution_stairs_clean_path_flee = 1
 borg_param_caution_immobile_step_to_exit = 1
+
+# Confusion (#837, owner 2026-11-21, from the three deaths of borg-zoo#566:
+# Mage 834355294 and Necromancer 2074919561 at a grey mushroom patch, Mage
+# 470098014 at a kobold shaman, each with Cure Light Wounds in the pack). 0 = C
+# for each; borg-zoo measures them.
+# - caution_confused_clw_cure: a Potion of Cure Light Wounds is a confusion
+#   cure (20 turns off, object.txt), after Clear Mind, CSW and CCW.
+# - caution_confused_cure_before_walk: a confused Borg carrying a cure does not
+#   start a Desperate for Stairs walk before it. 2: none at all while confused.
+# - caution_confusion_cure_when_stuck: next to an immobile confuser the cure is
+#   held (#646) only while a step out of its reach can still be taken. This
+#   and caution_immobile_step_mobile_first act only with
+#   caution_ranged_vs_immobile >= 1, which ships 0.
+# - caution_immobile_step_mobile_first: the step away from an immobile
+#   attacker prefers the grid with the least danger from monsters that move,
+#   then the stairs.
+borg_param_caution_confused_clw_cure = 0
+borg_param_caution_confused_cure_before_walk = 0
+borg_param_caution_confusion_cure_when_stuck = 0
+borg_param_caution_immobile_step_mobile_first = 0
+# - caution_immobile_no_return (borg-zoo#576: the step away from a grey mold was
+#   undone by the next flow, in two deaths): after a step away from an immobile
+#   attacker the flows do not enter its reach again while it is known there.
+#   1: only while below full HP; 2: for the level.
+borg_param_caution_immobile_no_return = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
 
