@@ -20,7 +20,7 @@ use crate::borg_cave_light::BORG_LIGHT;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
-use crate::borg_item::inven_wield;
+use crate::borg_item::{inven_wield, BorgItem};
 use crate::borg_item_use::{
     borg_activate_item, borg_aim_wand, borg_equips_rod, borg_read_scroll, borg_use_staff,
     borg_zap_rod,
@@ -40,7 +40,8 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
     BI_CURSP, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
-use crate::headers::list_object_flags_h::OF_NO_FUEL;
+use crate::headers::list_object_flags_h::{OF_LIGHT_2, OF_LIGHT_3, OF_NO_FUEL, OF_STICKY, OF_TAKES_FUEL};
+use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
 use crate::headers::list_terrain_h::FEAT_NONE;
 use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT, TV_WAND};
 use crate::headers::ui_event_h::keycode_t;
@@ -618,6 +619,11 @@ fn borg_refuel_lantern(st: &mut BorgState) -> bool {
         return false;
     }
 
+    refuel_with(st, i);
+    true
+}
+
+fn refuel_with(st: &mut BorgState, i: i32) {
     /* Log the message */
     let item = &st.items.items[i as usize];
     let mut note = b"# Refueling with ".to_vec();
@@ -634,7 +640,92 @@ fn borg_refuel_lantern(st: &mut BorgState) -> bool {
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
 
-    /* Success */
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum LightAction {
+    Refuel(usize),
+    Wear(usize),
+}
+
+fn has_flag(item: &BorgItem, flag: u32) -> bool {
+    engine::flag_has(&item.flags, flag as i32)
+}
+
+fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
+    // cmd-obj.c: do_cmd_refill; obj-util.c: obj_can_refill.
+    let refillable = |item: &BorgItem| {
+        item.iqty != 0
+            && u32::from(item.tval) == TV_LIGHT
+            && has_flag(item, OF_TAKES_FUEL)
+            && !has_flag(item, OF_NO_FUEL)
+    };
+    let fuel = |item: &BorgItem| {
+        item.iqty != 0
+            && !has_flag(item, OF_NO_FUEL)
+            && ((u32::from(item.tval) == TV_FLASK && i32::from(item.sval) == oil)
+                || (refillable(item) && item.timeout > 0))
+    };
+    let fuel_slot = pack.iter().position(fuel);
+    if refillable(equipped) && equipped.timeout == 0 {
+        if let Some(slot) = fuel_slot {
+            return Some(LightAction::Refuel(slot));
+        }
+    }
+
+    if has_flag(equipped, OF_STICKY) {
+        return None;
+    }
+
+    // player-calcs.c: calc_light. Replace a dimmed light only if the new
+    // contribution makes the total positive.
+    let contribution = |item: &BorgItem| {
+        let innate = if has_flag(item, OF_LIGHT_2) {
+            2
+        } else if has_flag(item, OF_LIGHT_3) {
+            3
+        } else {
+            0
+        };
+        innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
+    };
+    let powered = |item: &BorgItem| item.timeout > 0 || has_flag(item, OF_NO_FUEL);
+    let current = if equipped.iqty != 0 && powered(equipped) {
+        contribution(equipped)
+    } else {
+        0
+    };
+
+    pack.iter()
+        .enumerate()
+        .filter(|(_, item)| {
+            item.iqty != 0
+                && u32::from(item.tval) == TV_LIGHT
+                && !item.cursed
+                && (powered(item) || (refillable(item) && fuel_slot.is_some()))
+                && radius - current + contribution(item) > 0
+        })
+        .min_by_key(|(_, item)| !powered(item))
+        .map(|(slot, _)| LightAction::Wear(slot))
+}
+
+/// Restore carried light without relying on ordinary equipment power or wear cooldowns.
+pub(crate) fn borg_restore_light(st: &mut BorgState) -> bool {
+    let action = light_action(
+        &st.items.items[inven_light() as usize],
+        &st.items.items[..inven_wield() as usize],
+        st.item_val.sv_flask_oil,
+        st.borg.tr(BI_LIGHT),
+    );
+    match action {
+        Some(LightAction::Refuel(slot)) => refuel_with(st, slot as i32),
+        Some(LightAction::Wear(slot)) => {
+            borg_note(st, "# Wearing a working light source.");
+            borg_keypress(st, key(b'w'));
+            borg_keypress(st, letter(slot as i32));
+        }
+        None => return false,
+    }
     true
 }
 
@@ -852,5 +943,36 @@ mod dark_entry_tests {
         assert!(fits_detection_reserve(4, 2, 2));
         assert!(!fits_detection_reserve(5, 2, 4));
         assert!(!fits_detection_reserve(10, -1, 2));
+    }
+}
+
+#[cfg(test)]
+mod lightless_tests {
+    use super::*;
+    use crate::borg_item::blank_item;
+
+    fn light(flags: &[u32], timeout: i16) -> BorgItem {
+        let mut item = blank_item();
+        item.iqty = 1;
+        item.tval = TV_LIGHT as u8;
+        item.timeout = timeout;
+        for flag in flags {
+            let offset = (*flag as i32 - engine::FLAG_START) as usize;
+            item.flags[offset / 8] |= 1 << (offset % 8);
+        }
+        item
+    }
+
+    #[test]
+    fn refuels_an_empty_lantern_before_replacing_it() {
+        let equipped = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 0);
+        let spare_torch = light(&[OF_LIGHT_2], 30);
+        let mut flask = blank_item();
+        flask.iqty = 1;
+        flask.tval = TV_FLASK as u8;
+        flask.sval = 1;
+        assert_eq!(light_action(&equipped, &[spare_torch, flask], 1, 0), Some(LightAction::Refuel(1)));
+        assert_eq!(light_action(&equipped, &[spare_torch], 1, 0), Some(LightAction::Wear(0)));
+        assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
 }
