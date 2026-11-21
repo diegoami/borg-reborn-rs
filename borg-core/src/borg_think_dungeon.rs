@@ -91,7 +91,7 @@ pub struct ThinkDungeonState {
     pub feeling_danger: i32,
     /// `borg_feeling_stuff`
     pub feeling_stuff: i32,
-    pub(crate) lightless: crate::lightless_recovery::Recovery,
+    pub(crate) lightless: crate::borg_lightless::Recovery,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -579,7 +579,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let mut b_j = -1;
-    let lightless = crate::lightless_recovery::update(st);
+    let lightless = crate::borg_lightless::update(st);
 
     /* HACK: Prevent clock wrapping Step 1 */
     let now = st.borg.time.now;
@@ -733,7 +733,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     // borg-reborn-rs (#811): recovery owns the decision through handoff.
     if lightless {
-        crate::lightless_recovery::recover(st);
+        crate::borg_lightless::recover(st);
         return choice!("lightless_recovery");
     }
 
