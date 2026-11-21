@@ -236,6 +236,26 @@ fn review_f1_rejects_extra_blobs_and_truncated_observations() {
     fs::write(f.0.join("record/frames.jsonl"), "{}").unwrap();
     assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
 }
+
+#[test]
+fn review_f33_rejects_unexpected_and_nonregular_entries() {
+    let f = Fixture::new();
+    f.record();
+    // Documented host artifacts beside the capture stay acceptable.
+    fs::write(f.0.join("record/engine.log"), "host startup").unwrap();
+    fs::create_dir(f.0.join("record/archive")).unwrap();
+    fs::write(f.0.join("record/launch.json"), "{}").unwrap();
+    assert!(verify(&f.0.join("record"), &f.0.join("record")).is_ok());
+    fs::remove_file(f.0.join("record/launch.json")).unwrap();
+    // A foreign entry is rejected.
+    fs::write(f.0.join("record/unexpected.bin"), "extra").unwrap();
+    assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
+    fs::remove_file(f.0.join("record/unexpected.bin")).unwrap();
+    // A stream name backed by a non-regular entry is rejected.
+    fs::remove_file(f.0.join("record/clock.txt")).unwrap();
+    fs::create_dir(f.0.join("record/clock.txt")).unwrap();
+    assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
+}
 #[test]
 fn review_f2_rejects_native_narrowing_and_invalid_queue_domains() {
     let bad: &[(&str, i64)] = &[

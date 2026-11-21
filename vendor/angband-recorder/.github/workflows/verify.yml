@@ -28,12 +28,15 @@ jobs:
           flock /tmp/angband-validation.lock cmake --build /tmp/x11/build --target OurExecutable -j4
           python3 "$GITHUB_WORKSPACE/tests/x11-controls.py" --build /tmp/x11/build --output /tmp/recorder-x11
       - run: git clone --bare https://github.com/angband/angband.git /tmp/vanilla.git
-      - run: python3 tests/round-trip.py --engine /tmp/vanilla.git --output /tmp/recorder-proof
+      - run: ANGBAND_SAVE_WINDOW=3 ANGBAND_SAVE_EVERY=20 python3 tests/round-trip.py --engine /tmp/vanilla.git --output /tmp/recorder-proof
+      - run: flock /tmp/angband-validation.lock xvfb-run -a python3 tests/save-point-resume.py --proof /tmp/recorder-proof --output /tmp/recorder-save-resume
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: verification
           path: |
+            /tmp/recorder-save-resume/result.json
+            /tmp/recorder-save-resume/test.log
             /tmp/recorder-proof/result.json
             /tmp/recorder-proof/test.log
             /tmp/recorder-abi/result.json

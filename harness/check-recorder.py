@@ -51,6 +51,12 @@ with open('/tmp/angband-validation.lock', 'a') as lock:
     events = [json.loads(l) for l in (out / 'record/inputs.jsonl').read_text().splitlines()]
     assert any(e['kind'] == 'bot' for e in events), 'no bot actions captured'
     assert (out / 'record/frames.jsonl').stat().st_size, 'no observed frames'
+    # v0.3.0: the headless frontend leaves through ar_finish and _exit, so the
+    # recording must end with the closing frame (the end state), in both runs.
+    for mode in ['record', 'replay']:
+        last = json.loads((out / mode / 'frames.jsonl').read_text().splitlines()[-1])
+        assert last['phase'] in ('final', 'exit'), mode + ': recording lacks its closing frame'
+        assert last['turn'] >= 300, mode + ': closing frame is not the end state'
     # Replaying a loaded capture must read its sealed starting save even when
     # that working path is absent, then save using live private-session state.
     loaded_profile = out / 'loaded-profile'
