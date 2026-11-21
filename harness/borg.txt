@@ -212,10 +212,11 @@ borg_town_support_turns = 1000
 borg_town_w_ranger_missiles = 250
 borg_town_ranger_missile_turns = 50
 
-# Purse and pack. The Black Market cannot spend the first borg_town_reserve
-# gold. For a discretionary plan option, its Black Market purchases can
-# spend at most the remaining budget divided by borg_town_share (0 leaves
-# the reserve in force and disables the division).
+# Black Market purchases may spend this percentage (0 to 100) of the
+# shopping budget above the excluded gold. Regular shops use the ordinary
+# shopping budget.
+# Limit copies per non-missile item kind when leaving town. Zero disables
+# the limit. Excess goes to Home first, then to shops.
 # borg_town_w_space: the value of a free pack slot; higher keeps the pack
 # emptier. borg_town_home_discount: what an item kept at home is worth, in
 # thousandths of one carried; higher stores more at home.
@@ -229,8 +230,9 @@ borg_town_ranger_missile_turns = 50
 # town_share 20: 0; town_w_space 50: 6; town_home_discount 1000: 6;
 # town_w_gold 1: 6; town_light_depth 30: 0; town_food_trip 20: 0.
 
-borg_town_share = 50
-borg_town_reserve = 500
+borg_black_market_max_percentage = 60
+borg_sum_excluded_from_black_market = 500
+borg_town_max_non_missile_copies = 35
 borg_town_w_space = 25
 borg_town_home_discount = 500
 borg_town_w_gold = 0

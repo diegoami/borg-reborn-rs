@@ -415,7 +415,7 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
     let mut out = Vec::new();
     let input = StepInput {
         revision: input.revision, capability: input.capability, utility: input.utility, candidates: candidates.to_vec(), facts: input.facts, tryon: input.tryon, limits: input.limits,
-        black_market_reserve: input.black_market_reserve, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
+        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
         cure_spell: input.cure_spell, kit: input.kit, home_slots: input.home_slots };
     let input = &input;
     for group in groups {
@@ -448,8 +448,8 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
                 let price = (next.cost - current.cost).max(1);
                 let bm: i64 = next.picks.iter().filter(|&&(i, _)| input.candidates[i].is_black_market())
                     .map(|&(i, k)| i64::from(input.candidates[i].price) * i64::from(k)).sum();
-                let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, u.weights.caution);
-                if ((u.weights.caution > 0 || input.black_market_reserve > 0) && bm > market_budget) || gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots { continue; }
+                let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, input.black_market_percentage, u.weights.caution);
+                if ((u.weights.caution > 0 || input.black_market_reserve > 0 || input.black_market_percentage >= 0) && bm > market_budget) || gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots { continue; }
                 if best.as_ref().is_none_or(|(_, _, b)| i128::from(gain) * i128::from((b.cost - current.cost).max(1))
                     > i128::from(b.value - current.value) * i128::from(price)) {
                     best = Some((gi, oi, next));
@@ -565,7 +565,7 @@ mod tests {
     }
 
     fn input<'a>(kit: &'a [KitItem]) -> StepInput<'a> {
-        StepInput { revision: 7, capability: None, utility: true, black_market_reserve: 0, candidates: Vec::new(), facts: &[], tryon: &[],
+        StepInput { revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
             limits: Limits { gold: 300, pack_slots: 15, weight: 1000 }, urgent: Vec::new(),
             params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit, home_slots: 20 }
     }

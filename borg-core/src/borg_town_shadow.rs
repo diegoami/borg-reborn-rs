@@ -406,12 +406,16 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         // Unlight supplies sight without a carried torch. Keep this physical
         // suitability gate ahead of fuel, gear try-on and learning bonuses.
         if unusable_torch(unlight, c.tval, c.sval, st.item_val.sv_light_torch) { c.qty = 0; }
-        if live && crate::borg_town_live::buy_rejected(st, c.shop as i16, c.slot as usize) { c.qty = 0; }
+        if live {
+            c.qty = c.qty.min(crate::borg_town_live::acquisition_room(st, c.tval, c.kind));
+            if crate::borg_town_live::buy_rejected(st, c.shop as i16, c.slot as usize) { c.qty = 0; }
+        }
     }
     let mut class = stock.candidates.iter().map(|c| c.class).max().unwrap_or(0).saturating_add(1);
     for (slot, item) in st.store.shops[BORG_HOME].ware.iter().enumerate() {
         if item.iqty == 0 { continue; }
-        let available = item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
+        let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
+            && item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && crate::borg_town_live::home_moved(st, item.kind, true));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
@@ -478,6 +482,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         tryon: &tryon,
         limits,
         black_market_reserve: budget.black_market_reserve,
+        black_market_percentage: budget.black_market_percentage,
         urgent: budget.urgent.clone(),
         params,
         traits: &st.borg.trait_,
@@ -533,6 +538,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         params,
         limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
         black_market_reserve: budget.black_market_reserve,
+        black_market_percentage: budget.black_market_percentage,
         caps: [
             i64::from(engine::z_info().pack_size),
             i64::from(engine::z_info().store_inven_max),
@@ -665,7 +671,7 @@ mod knowledge_only_purchase_tests {
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
         let out = step(&StepInput {
-            revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, candidates, facts: &wares,
+            revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
         out.plan.iter().map(|e| e.copies).sum()

@@ -1,13 +1,15 @@
-## 2026-11-21: Black Market spending (#810)
+## 2026-11-21: Black Market spending and departure stock (#810)
 
-The owner chose a share of 50 and a Black Market reserve of 500 gold.
-The planner deducts the reserve before dividing the discretionary Black
-Market allowance. The purchase preflight uses the native quote to protect
-the reserve for urgent purchases too. Regular shops still use the ordinary
-shopping budget. Plan records carry the reserve when configured. Older
-records and configurations default to a zero reserve.
+The shipped planner gives the Black Market 60% of the shopping budget
+above the excluded 500 gold. The shop checks that limit against the
+current purse before buying. Older configurations and plan traces can
+still use the legacy divisor when the percentage is absent.
 
-The remaining #810 measurements cover a carried-item cap across purchases,
-pickup and Home withdrawals, fuel reserves, and high-gold visits across
-classes. The named headless Ranger picked up both second stacks off the
-floor, so a purchase cap alone would leave that path open.
+The town planner limits each non-missile item kind to 35 carried copies
+by default. It stashes the excess at Home, including into compatible
+stacks, and uses a shop that accepts the item when Home has no room.
+It also limits purchases and ordinary Home withdrawals. Dungeon pickups
+remain available. The visit can still end early for danger or if the
+Borg has no reachable store that accepts the excess.
+
+Cross-class measurement of shopping and fuel remains in #810.

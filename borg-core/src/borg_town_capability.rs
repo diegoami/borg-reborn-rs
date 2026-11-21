@@ -910,7 +910,7 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
                      candidates: &[crate::borg_town_stock::Candidate], model: &Model, limits: &crate::borg_town_solve::Limits,
                      economics: (i64, i64, i64)) -> Vec<crate::borg_town_solve::Group> {
     let (space, carry, knowledge) = economics;
-    let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, input.params[9]);
+    let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, input.black_market_percentage, input.params[9]);
     use crate::borg_town_solve::{Choice, Group, GroupKey};
     let facts: BTreeMap<_, _> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
     let mut out = Vec::new();
@@ -1305,7 +1305,7 @@ mod tests {
         let groups=vec![Group {key:GroupKey::Slot(5),options:vec![Choice::default(),choice(0),choice(1)]},
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
-        let input=crate::borg_town_record::StepInput {revision:9,capability:Some(&m),utility:true,black_market_reserve:0,candidates:cs.clone(),facts:&[],tryon:&[],limits,
+        let input=crate::borg_town_record::StepInput {revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
             urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {

@@ -422,9 +422,9 @@ pub fn solve_cash(groups: &[Group], limits: &Limits, gold_weight: i64) -> Soluti
 
 /// Build the groups from the stock, after the budget's urgent needs.
 ///
-/// * An option's Black Market copies may spend the budget above the market
-///   reserve divided by `caution` (`borg_town_share`). Zero disables the
-///   division. Regular-shop purchases use the full budget;
+/// * An option's Black Market copies may spend the configured percentage of
+///   the budget above the excluded gold. Legacy settings use the `caution`
+///   divisor. Regular shops use the full budget;
 /// * `wearable(c)` names the equipment slot a ware is worn in and the
 ///   value of wearing it (the try-on), or `None` for a ware that stacks;
 /// * `value(c, n)` is the usefulness of `n` copies of `c`'s class - the
@@ -449,8 +449,9 @@ pub fn groups(
         qty[f.candidate] -= 1;
     }
     let purse = budget.gold.max(0);
-    let cap = crate::borg_town_budget::black_market_budget(purse, budget.black_market_reserve, caution);
-    let allowed = |bm_cost: i64| (caution <= 0 && budget.black_market_reserve == 0) || bm_cost <= cap;
+    let cap = crate::borg_town_budget::black_market_budget(purse, budget.black_market_reserve, budget.black_market_percentage, caution);
+    let configured = budget.black_market_reserve > 0 || budget.black_market_percentage >= 0;
+    let allowed = |bm_cost: i64| (!configured && caution <= 0) || bm_cost <= cap;
 
     let mut by_class: BTreeMap<u16, Vec<usize>> = BTreeMap::new();
     let mut by_slot: BTreeMap<u8, Vec<(usize, i64)>> = BTreeMap::new();
@@ -489,7 +490,7 @@ pub fn groups(
                 }
                 let mut take = left.min(qty[i]);
                 let price = i64::from(cands[i].price);
-                if budget.black_market_reserve > 0 && cands[i].is_black_market() && price > 0 {
+                if configured && cands[i].is_black_market() && price > 0 {
                     take = take.min((market_left / price).min(i64::from(take)) as i32);
                     market_left -= i64::from(take) * price;
                 }
@@ -1043,19 +1044,19 @@ mod tests {
         let mut b = budget(500);
         b.black_market_reserve = 500;
         let options = |b: &Budget, share| groups(&s, b, share, |_| None, capped(4, 50));
-        let regular = options(&b, 50);
+        b.black_market_percentage = 60;
+        let regular = options(&b, 10);
         assert_eq!(regular[0].options.last().unwrap().cost, 122);
         assert!(regular[0].options.iter().flat_map(|o| &o.picks)
             .all(|&(i, _)| !s.candidates[i].is_black_market()));
 
-        b.gold = 3_499;
-        assert_eq!(options(&b, 50)[0].options.len(), 3);
+        b.gold = 599;
+        assert_eq!(options(&b, 10)[0].options.len(), 3);
         b.gold += 1;
-        assert_eq!(options(&b, 50)[0].options.last().unwrap().cost, 182);
-        b.gold = 559;
-        assert_eq!(options(&b, 0)[0].options.len(), 3);
-        b.gold += 1;
-        assert_eq!(options(&b, 0)[0].options.last().unwrap().cost, 182);
+        assert_eq!(options(&b, 10)[0].options.last().unwrap().cost, 182);
+        assert_eq!(crate::borg_town_budget::black_market_budget(4580, 500, 60, 10), 2448);
+        b.black_market_percentage = 0;
+        assert_eq!(options(&b, 10)[0].options.len(), 3);
     }
 
     /// Two rings of one kind with different bonuses are two classes,

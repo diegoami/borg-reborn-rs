@@ -131,6 +131,7 @@ pub struct PlanRecord {
     /// Town settings in index order (v4: 12, v5: 24).
     pub params: [i64; PARAMS],
     pub black_market_reserve: i64,
+    pub black_market_percentage: i64,
     /// `[gold, pack_slots, home_slots, weight]` after the urgent needs.
     pub limits: [i64; 4],
     /// `[pack_capacity, home_capacity]`.
@@ -258,6 +259,10 @@ impl PlanRecord {
         if self.black_market_reserve != 0 {
             field(out, "black_market_reserve");
             num(out, self.black_market_reserve);
+        }
+        if self.black_market_percentage >= 0 {
+            field(out, "black_market_percentage");
+            num(out, self.black_market_percentage);
         }
         field(out, "limits");
         ints(out, &self.limits);
@@ -521,6 +526,7 @@ impl PlanRecord {
             spells: small("spells")? as u8,
             params,
             black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
+            black_market_percentage: j.get("black_market_percentage").map_or(Ok(-1), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
             caps: fixed(j.get("caps")?.ints()?, "caps")?,
             urgent: rows("urgent")?
@@ -609,6 +615,7 @@ pub struct StepInput<'a> {
     pub tryon: &'a [TryOn],
     pub limits: Limits,
     pub black_market_reserve: i64,
+    pub black_market_percentage: i64,
     pub urgent: Vec<UrgentPurchase>,
     pub params: [i64; PARAMS],
     /// The whole trait vector.
@@ -798,6 +805,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     let budget = Budget {
         gold: limits.gold,
         black_market_reserve: input.black_market_reserve,
+        black_market_percentage: input.black_market_percentage,
         pack_slots: limits.pack_slots,
         home_slots: 0,
         weight: limits.weight,
@@ -1020,6 +1028,7 @@ impl ReplayParts {
             tryon: &self.tryon,
             limits: self.limits,
             black_market_reserve: rec.black_market_reserve,
+            black_market_percentage: rec.black_market_percentage,
             urgent: self.urgent.clone(),
             params: rec.params,
             traits: &self.traits,
@@ -1249,6 +1258,7 @@ mod tests {
             tryon,
             limits,
             black_market_reserve: 0,
+            black_market_percentage: -1,
             urgent: budget.urgent.clone(),
             params: params(),
             traits,
@@ -1273,6 +1283,7 @@ mod tests {
             params: { let mut p = params(); p[12..].fill(0); p },
             limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
             black_market_reserve: 0,
+            black_market_percentage: -1,
             caps: [23, 24],
             urgent: budget
                 .urgent

@@ -58,7 +58,54 @@ struct HomeMove {
 }
 
 fn carried_kind(st: &BorgState, kind: u32) -> u32 {
-    st.items.items.iter().filter(|i| i.kind == kind).map(|i| u32::from(i.iqty)).sum()
+    count_kind(&st.items.items, kind)
+}
+
+fn count_kind(items: &[crate::borg_headers::borg_item_h::borg_item], kind: u32) -> u32 {
+    items.iter().filter(|i| i.kind == kind).map(|i| u32::from(i.iqty)).sum()
+}
+
+fn copy_limit(limit: i32, tval: u8, kind: u32) -> Option<u32> {
+    use crate::headers::list_tvals_h::{TV_ARROW, TV_BOLT, TV_SHOT};
+    (limit > 0 && kind > 0 && !matches!(u32::from(tval), TV_ARROW | TV_BOLT | TV_SHOT))
+        .then_some(limit as u32)
+}
+
+fn excess_copies(items: &[crate::borg_headers::borg_item_h::borg_item], item: &crate::borg_headers::borg_item_h::borg_item, limit: i32) -> u32 {
+    copy_limit(limit, item.tval, item.kind).map_or(0, |cap|
+        count_kind(items, item.kind).saturating_sub(cap).min(u32::from(item.iqty)))
+}
+
+fn configured_limit(st: &BorgState) -> i32 {
+    st.cfg(crate::borg_headers::borg_h::BORG_TOWN_MAX_NON_MISSILE_COPIES)
+}
+
+pub fn acquisition_room(st: &BorgState, tval: u8, kind: u32) -> i32 {
+    copy_limit(configured_limit(st), tval, kind)
+        .map_or(i32::MAX, |limit| limit.saturating_sub(carried_kind(st, kind)) as i32)
+}
+
+fn overflow_action(st: &BorgState) -> Option<TownAction> {
+    let limit = configured_limit(st);
+    if limit <= 0 { return None; }
+    let pack = st.items.items.iter().take(crate::borg_item::inven_wield() as usize);
+    let excess: Vec<_> = pack.enumerate().rev().filter_map(|(slot, item)| {
+        let quantity = excess_copies(&st.items.items, item, limit);
+        (quantity > 0).then_some((slot, item, quantity as i32))
+    }).collect();
+    // Try Home even when it has no empty slot. A matching partial stack
+    // may still take some or all of the excess.
+    for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
+        for &(slot, item, excess) in &excess {
+            if sale_rejected(st, shop as i16, item) { continue; }
+            if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
+            let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
+            let Some(quantity) = (1..=excess).rev().find(|&n| native.store_accepts_quantity(shop, n)) else { continue; };
+            let code = if shop == BORG_HOME { action::STORE } else { action::SELL };
+            return Some(TownAction { code, at: [shop as i64, slot as i64, i64::from(quantity), 0] });
+        }
+    }
+    None
 }
 
 impl HomeMove {
@@ -210,9 +257,32 @@ fn visit_gate(st: &mut BorgState) -> Option<bool> {
     None
 }
 
+fn set_action(st: &mut BorgState, a: TownAction) -> bool {
+    let Some((shop, ware, item)) = goal(a) else { clear(st); return false; };
+    st.borg.goal.shop = shop;
+    st.borg.goal.ware = ware;
+    st.borg.goal.item = item;
+    st.think.town_action = Some(a);
+    true
+}
+
+pub fn choose_overflow(st: &mut BorgState) -> bool {
+    if st.borg.tr(BI_CDEPTH) != 0 || !active(st) || configured_limit(st) <= 0
+        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some() {
+        return false;
+    }
+    let Some(action) = overflow_action(st) else { return false; };
+    settle_sale(st);
+    if sale_rejected(st, action.at[0] as i16, &st.items.items[action.at[1] as usize]) {
+        return overflow_action(st).is_some_and(|a| set_action(st, a));
+    }
+    set_action(st, action)
+}
+
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
+    if let Some(a) = overflow_action(st) { return set_action(st, a); }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
         || st.borg.antibounce_count > 1350 { clear(st); return false; }
     // While walking, retain only the destination. On entering a store the
@@ -221,12 +291,7 @@ pub fn choose(st: &mut BorgState) -> bool {
         return true;
     }
     let a = crate::borg_town_shadow::live_action(st);
-    let Some((shop, ware, item)) = goal(a) else { clear(st); return false; };
-    st.borg.goal.shop = shop;
-    st.borg.goal.ware = ware;
-    st.borg.goal.item = item;
-    st.think.town_action = Some(a);
-    true
+    set_action(st, a)
 }
 
 pub fn execute_store(st: &mut BorgState) -> bool {
@@ -237,19 +302,27 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let slot = a.at[1] as usize;
         let Some(item) = st.store.shops[shop].ware.get(slot).copied().filter(|i| i.iqty > 0) else { clear(st); return false; };
         let offer = crate::engine::store_stock(&st.access, shop).get(slot)
-            .map(|o| (o.carry_capacity(), o.purchase_quote(shop)));
+            .copied();
         let gold = st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD);
-        let reserve = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_RESERVE);
-        let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && reserve > 0;
+        let reserve = st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET);
+        let percentage = st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE);
+        let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && (reserve > 0 || percentage >= 0);
         let purchase_gold = if protects_gold {
-            crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), 0) as i32
+            crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32
         } else { gold };
-        let fits = offer.is_some_and(|(room, price)| room > 0 && (!protects_gold || price <= purchase_gold));
-        let qty = match (a.code, offer) {
-            (action::BUY, Some((room, price))) => purchase_quantity(a.at[2], item.iqty, room, price,
-                purchase_gold),
-            _ => 1,
-        };
+        let room_under_cap = if a.code == action::SELL_HOME { i32::MAX }
+            else { acquisition_room(st, item.tval, item.kind) };
+        let mut fits = room_under_cap > 0 && offer.is_some_and(|o| o.carry_capacity() > 0);
+        let mut qty = 1;
+        if let Some(offer) = offer.filter(|_| fits && a.code == action::BUY) {
+            qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap),
+                offer.purchase_quote(shop), purchase_gold);
+            if protects_gold {
+                let priced = (1..=qty).rev().find(|&n| offer.purchase_quote_quantity(shop, n) <= purchase_gold);
+                fits = priced.is_some();
+                qty = priced.unwrap_or(1);
+            }
+        }
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
             context: CarryContext::of(st), item, keep: a.code != action::SELL_HOME, qty };
         if !fits {
@@ -266,10 +339,8 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
         action::SELL_HOME => crate::borg_store_buy::take_selected_for_sale(st),
         action::SELL | action::STORE => {
-            if a.code == action::SELL {
-                st.think.town_live.pending_sale = Some(SaleStamp::of(st.think.shop_num, a.at[1] as usize, &st.items.items[a.at[1] as usize]));
-            }
-            crate::borg_store_sell::sell_one_selected(st)
+            st.think.town_live.pending_sale = Some(SaleStamp::of(st.think.shop_num, a.at[1] as usize, &st.items.items[a.at[1] as usize]));
+            crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32)
         }
         _ => false,
     };
@@ -500,4 +571,29 @@ mod tests {
         st.items.items[0].iqty=0;st.store.shops[4].ware[0].iqty=2;assert!(!buy_rejected(&st,4,0));
     }
 
+}
+
+
+#[cfg(test)]
+mod departure_limit_tests {
+    use super::*;
+    use crate::headers::list_tvals_h::{TV_ARROW, TV_BOLT, TV_POTION, TV_SHOT};
+
+    #[test]
+    fn limits_the_total_across_stacks_and_exempts_all_missiles() {
+        let mut full = crate::borg_item::blank_item();
+        full.kind = 1;
+        full.tval = TV_POTION as u8;
+        full.iqty = 40;
+        let partial = crate::borg_headers::borg_item_h::borg_item { iqty: 6, ..full };
+        let items = [full, partial];
+        assert_eq!(excess_copies(&items, &full, 35), 11);
+        assert_eq!(excess_copies(&items, &partial, 35), 6);
+        assert_eq!(excess_copies(&items, &full, 30), 16);
+        assert_eq!(excess_copies(&items, &full, 0), 0);
+        for missile in [TV_ARROW, TV_BOLT, TV_SHOT] {
+            let item = crate::borg_headers::borg_item_h::borg_item { tval: missile as u8, ..full };
+            assert_eq!(excess_copies(&[item], &item, 35), 0);
+        }
+    }
 }
