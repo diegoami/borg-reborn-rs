@@ -740,7 +740,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     let mut out = effect_supply_for_consumer(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
     // borg-reborn-rs (#863): a copy that answers a situation is also one
     // copy on that situation's prepared row (a device: one per charge).
-    if prepared_on() {
+    if prepared_on(st) {
         for (cap, row) in PREPARED {
             if out.iter().any(|&(id, _)| id == cap) { out.push((row, UNIT)); }
         }
@@ -748,7 +748,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // borg-reborn-rs (#863): each healing potion is one copy on its own
     // staple row, whose knee and decay are the kind's (the three share the
     // HEAL curve).
-    if staple_on() && tval == TV_POTION && out.iter().any(|&(id, _)| id == HEAL) {
+    if staple_on(st) && tval == TV_POTION && out.iter().any(|&(id, _)| id == HEAL) {
         let sval = i32::from(item.sval);
         let row = if sval == st.item_val.sv_potion_cure_light { Some(STAPLE_CLW) }
             else if sval == st.item_val.sv_potion_cure_serious { Some(STAPLE_CSW) }
@@ -797,8 +797,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
-    let prepared = prepared_on();
-    let staples = staple_on();
+    let prepared = prepared_on(st);
+    let staples = staple_on(st);
     let count = if prepared || staples { COUNT } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
@@ -1870,13 +1870,24 @@ pub(crate) fn recall_room(m: &Model, reserve: i64, candidates: &[crate::borg_tow
 
 /// borg-reborn-rs (#863): whether the prepared rows exist (`town_prepared_percent`
 /// above 0); off, the model has the shape it had before.
+/// borg-reborn-rs (#863, owner: "it is important that in the first level we
+/// have the staples"): the variety logic (the staples' decay and the prepared
+/// remedies) starts once the Borg has been `town_variety_min_depth` deep. Before
+/// it the first purchases are the staples' alone: healing, escapes, oil, food,
+/// light, missiles and Recall, as before #863. Constant within a town visit.
+fn variety_started(st: &BorgState) -> bool {
+    st.borg.tr(BI_MAXDEPTH) >= param(Param::town_variety_min_depth)
+}
+
 /// borg-reborn-rs (#863): the staple rows exist when any staple has a knee.
-fn staple_on() -> bool {
-    [Param::town_staple_clw, Param::town_staple_csw, Param::town_staple_ccw, Param::town_staple_phase,
+fn staple_on(st: &BorgState) -> bool {
+    variety_started(st) && [Param::town_staple_clw, Param::town_staple_csw, Param::town_staple_ccw, Param::town_staple_phase,
      Param::town_staple_oil, Param::town_staple_food, Param::town_staple_light].into_iter().any(|p| param(p) > 0)
 }
 
-fn prepared_on() -> bool { param(Param::town_prepared_percent) > 0 }
+/// borg-reborn-rs (#863): whether the prepared rows exist (`town_prepared_percent`
+/// above 0, the variety started); off, the model has the shape it had before.
+fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_prepared_percent) > 0 }
 
 /// borg-reborn-rs (#863): a prepared row's weight and demand. A requirement
 /// (negative demand, as Phase Door's reserve): each of the first `copies`

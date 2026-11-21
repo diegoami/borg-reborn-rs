@@ -2115,7 +2115,7 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:510` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:949` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:701` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1898` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1909` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1837` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
@@ -5357,28 +5357,40 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   borg-zoo not used; median of the stack kept at each departure after the
   first, last count of "You have N ..." lines):
 
-  | class | Cure Light | Cure Serious | Phase Door | Food | Torches |
-  |---|---|---|---|---|---|
-  | Warrior | 23 | 3 | 7 | 10 | 3 |
-  | Mage | 18 | 2 | 13 | 8 | 0 |
-  | Druid | 15 | 0 | 12 | 5 | 0 |
-  | Priest | 18 | 0 | 3 | 10 | 2 |
-  | Necromancer | 17 | 0 | 10 | 6 | 0 |
-  | Paladin | 16 | 3 | 9 | 10 | 2 |
-  | Rogue | 19 | 2 | 11 | 9 | 5 |
-  | Ranger | 22 | 0 | 11 | 10 | 2 |
-  | Blackguard | 22 | 2 | 5 | 11 | 3 |
+  | class | Cure Light | Cure Serious | Phase Door | Oil | Food | Torches |
+  |---|---|---|---|---|---|---|
+  | Warrior | 23 | 3 | 7 | 15 | 10 | 3 |
+  | Mage | 18 | 2 | 13 | 10 | 8 | 0 |
+  | Druid | 15 | 0 | 12 | 9 | 5 | 0 |
+  | Priest | 18 | 0 | 3 | 8 | 10 | 2 |
+  | Necromancer | 17 | 0 | 10 | 14 | 6 | 0 |
+  | Paladin | 16 | 3 | 9 | 11 | 10 | 2 |
+  | Rogue | 19 | 2 | 11 | 10 | 9 | 5 |
+  | Ranger | 22 | 0 | 11 | 0 | 10 | 2 |
+  | Blackguard | 22 | 2 | 5 | 14 | 11 | 3 |
 
-  Nobody carried a Flask of Oil, a Cure Critical Wounds or a Remove Curse
-  at a departure, so oil keeps the owner's 6 for every class and Cure
-  Critical Wounds its 2. The class values: Phase Door = 6 x the class's
-  median / 10 (the median of the classes), rounded and at least 4 (Warrior
-  5, Mage 8, Druid 8, Priest 4, Necromancer 7, Paladin 6, Rogue 7, Ranger 7,
-  Blackguard 4); Cure Light Wounds = 6 x median / 19 (Warrior 7, Mage 6,
+  (A first count matched "Flasks of Oil" with a capital O; the game writes
+  "Flasks of oil", so it saw none and this section said nobody carried oil.
+  Corrected here: the table above has the real medians, and the first-visit
+  purchases are 20-55 flasks for every class but the Ranger, who buys 63-90
+  arrows.) Usage matters more than what is carried: per game (200,000
+  turns) the Borg reads about 6-29 Phase Doors and throws 60-160 flasks, and
+  the stack hit zero 0.2-2.5 times for Phase Door (Blackguard 2.5, Priest
+  1.5) and 3-13 times for oil, so the decay must not cut what a trip uses.
+  Cure Light and Serious Wounds are used 1-6 a game against 15-23 carried:
+  the staples' decay is aimed at them.
+  Cure Light Wounds = 6 x median / 19 (Warrior 7, Mage 6,
   Druid 5, Priest 6, Necromancer 5, Paladin 5, Rogue 6, Ranger 7,
   Blackguard 7); Cure Serious Wounds 4 for the classes that fight in
   melee or shoot (Warrior, Paladin, Rogue, Ranger, Blackguard), 3 for the
-  casters. All of it is a hypothesis for the zoo to measure (RULES 14).
+  casters; Cure Critical Wounds 2, food 4 and torches 4 (the owner's). **Phase
+  Door and oil start above the carried medians**, near what a class uses
+  (owner, 2026-11-21: "they tend to run out of them, especially rangers"):
+  Phase Door Warrior 12, Mage 10, Druid 10, Priest 10, Necromancer 10,
+  Paladin 12, Rogue 12, Ranger 15, Blackguard 12; oil = the class's median
+  carried (Warrior 15, Mage 10, Druid 9, Priest 8, Necromancer 14, Paladin 11,
+  Rogue 10, Ranger 6, Blackguard 14). All of it is a hypothesis for the zoo to
+  measure (RULES 14).
 - Same 36 games with the shipped values (staples only): the stacks at
   departure stay close to the baseline (Cure Light medians 11-23 against
   15-23, Phase Door 4-17 against 3-13); mean CL 8.6 against 8.8, mean max
@@ -5407,6 +5419,36 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   values change every town visit); 80,000-turn games run the town plan
   without a panic.
 
+- **Recall and Phase Door, bought more** (owner, 2026-11-21: "current
+  characters do not buy enough world of recall and should buy more, and
+  probably more phase doors as well, they tend to run out of them, especially
+  rangers"). Shipped: `town_recall_reserve` 1 -> 2, `buy_recall_from_gold`
+  400 -> 200 (a scroll is bought only when that much gold remains after it),
+  `town_phase_reserve` 0 -> 4 for every class (Ranger 2 -> 8, Blackguard 8,
+  Priest 6, class files). Neither Word of Recall nor missiles are touched by
+  the staples' decay (Recall keeps its own curve, #864; missiles their own
+  caps). Before (36 games, 200,000 turns, the share of town departures after
+  the first that carry no Word of Recall): Warrior 39 percent, Mage 94,
+  Druid 80, Priest 62, Necromancer 100, Paladin 31, Rogue 57, Ranger 68,
+  Blackguard 75. After the reserve alone (2): 40, 78, 99, 61, 66, 55, 64, 57,
+  81, no better, since the 400 gold floor held it back. With the floor at
+  200: 57, 57, 62, 33, 40, 71, 29, 41, 85: better for the casters, Rogue and
+  Ranger, worse for Warrior, Paladin and Blackguard (4 starts a class, noise
+  or the floor; the zoo arm will say). Departures with 5 or fewer Phase
+  Doors before / after: Warrior 24 / 22 percent, Mage 2 / 3, Druid 15 / 0,
+  Priest 64 / 18, Necromancer 0 / 3, Paladin 15 / 10, Rogue 15 / 13, Ranger 5 /
+  3, Blackguard 50 / 0; Phase Doors bought per game 3.5-12 before, 7.8-14.5
+  after (Rogue 3.5 -> 9.0, Blackguard 3.8 -> 14.5); times the stack hit zero
+  at most 1.5 a game against up to 2.5. Mean CL 8.8 / 8.75, max depth 3.64 /
+  3.50, 2 / 1 of 36 stopped early: no change beyond noise.
+- **`town_variety_min_depth`** (compiled 0, **shipped 2**; owner: "it is
+  important that in the first level we have the staples"): the staples'
+  decay and the remedies only apply once the deepest level reached
+  (`BI_MAXDEPTH`) is this, so the first visits buy as before #863: a first
+  count showed one to five Detect Invisible bought on the first visit
+  (15 gold each, at starting gold) and the oil decay cutting first-visit
+  flasks by a quarter to a third.
+
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:908` |
@@ -5423,3 +5465,4 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:1879` |

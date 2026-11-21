@@ -22,11 +22,16 @@ borg_param_prepared_mid_clevel_offset = -4
 borg_param_prepared_deep_clevel_offset = 5
 borg_param_prepared_deep_min_clevel = 0
 borg_param_prepared_deep_max_clevel = 38
-# #863 (owner: staples start losing value after a few copies, by class):
-# free copies per staple, close to what this class carries now (measured on 36
-# games, scaled to the common 6 for Phase Door, Cure Light Wounds and oil, 4 for
-# Cure Serious Wounds; docs/CALIBRATION.md, #863).
+# #863 (owner: staples start losing value after a few copies, by class; "current
+# characters do not buy enough world of recall ... and probably more phase doors
+# as well, they tend to run out of them, especially rangers"): free copies per
+# staple. Cure Light and Serious Wounds are 6 x what the class carries at a town
+# departure now / 19 (the baseline of 36 games, docs/CALIBRATION.md, #863);
+# Phase Door and oil are what the class uses, above what it carries now, so the
+# decay starts past a trip's real need.
 borg_param_town_staple_clw = 7
 borg_param_town_staple_csw = 4
-borg_param_town_staple_phase = 4
-borg_param_town_staple_oil = 6
+borg_param_town_staple_phase = 12
+borg_param_town_staple_oil = 14
+# #863 (owner: they run out of Phase Door): the first 8 are a requirement.
+borg_param_town_phase_reserve = 8
