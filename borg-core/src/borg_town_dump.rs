@@ -830,6 +830,7 @@ pub struct PhaseObservation {
     town_stock: Option<Vec<i32>>,
     seen_town_monster: bool,
     seen_dungeon_monster: bool,
+    observed_town_for_fuel: bool,
 }
 
 #[derive(serde::Serialize)]
@@ -865,6 +866,7 @@ fn write_phase_event(file: &Mutex<File>, turn: i32, event: PhaseEvent<'_>) {
 /// next action. The stock snapshot also captures stock at unvisited shops.
 pub(crate) fn record_phase_observation(st: &mut BorgState, shop: Option<usize>) {
     static FILE: OnceLock<Option<Mutex<File>>> = OnceLock::new();
+    record_departure_fuel(st);
     let Some(file) = FILE.get_or_init(|| {
         let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR")?).join("phase-observations.jsonl");
         match File::create(&path) {
@@ -895,6 +897,7 @@ pub(crate) fn record_phase_observation(st: &mut BorgState, shop: Option<usize>) 
         }
     } else {
         state.town_stock = None;
+
     }
     state.shop = shop;
     let seen = if depth == 0 { &mut state.seen_town_monster } else { &mut state.seen_dungeon_monster };
@@ -907,6 +910,54 @@ pub(crate) fn record_phase_observation(st: &mut BorgState, shop: Option<usize>) 
         write_phase_event(file, turn, PhaseEvent::FirstMonsterContact { depth, phase_scrolls });
         *seen = true;
     }
+}
+
+/// Keep departure receipts alongside the town planner records, including in
+/// kept Zoo cells where full run tracing is disabled.
+fn record_departure_fuel(st: &mut BorgState) {
+    use crate::headers::list_object_flags_h::OF_NO_FUEL;
+    use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT};
+
+    static FILE: OnceLock<Option<Mutex<File>>> = OnceLock::new();
+    let Some(file) = FILE.get_or_init(|| {
+        let path = std::env::var_os("BORG_TOWN_PLAN_RECORD").filter(|path| !path.is_empty())?;
+        let path = std::path::PathBuf::from(path).with_file_name("town-departure-fuel.jsonl");
+        match File::create(&path) {
+            Ok(file) => Some(Mutex::new(file)),
+            Err(err) => {
+                eprintln!("borg: {}: {err}", path.display());
+                None
+            }
+        }
+    }).as_ref() else { return };
+
+    let depth = st.borg.tr(BI_CDEPTH);
+    let state = &mut st.think.phase_observation;
+    if depth == 0 {
+        state.observed_town_for_fuel = true;
+        return;
+    }
+    if !std::mem::take(&mut state.observed_town_for_fuel) { return; }
+
+    let pack_end = inven_wield() as usize;
+    let equipped = &st.items.safe_items[pack_end + 5];
+    let item_row = |item: &borg_item| serde_json::json!({
+        "tval": item.tval, "sval": item.sval, "quantity": item.iqty,
+        "timeout": item.timeout, "pval": item.pval, "cursed": item.cursed,
+        "no_fuel": engine::flag_has(&item.flags, OF_NO_FUEL as i32),
+    });
+    let pack: Vec<_> = st.items.safe_items[..pack_end].iter()
+        .filter(|item| item.iqty > 0 && (u32::from(item.tval) == TV_LIGHT
+            || u32::from(item.tval) == TV_FLASK && i32::from(item.sval) == st.item_val.sv_flask_oil))
+        .map(item_row)
+        .collect();
+    let row = serde_json::json!({
+        "schema": "borg-town-departure-fuel@1", "game_turn": engine::game_turn(),
+        "depth": depth, "gold": st.borg.tr(BI_GOLD), "radius": st.borg.tr(BI_LIGHT),
+        "unlight": engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT),
+        "equipped": (equipped.iqty > 0).then(|| item_row(equipped)), "pack": pack,
+    });
+    write_record(Some(file), &row.to_string());
 }
 
 #[cfg(test)]
