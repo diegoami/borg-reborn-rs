@@ -1599,10 +1599,36 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
         )
 }
 
-/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
-/// immobile creature kept at range (its reach). Off: no scan.
+/// borg-reborn-rs (#838, owner: "a list of monsters to never melee ... and
+/// only attack from afar"): race `r_idx` is on the scary list's `ranged`
+/// entries for this character (`caution_ranged_only`). Off: no lookup.
+pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
+    if p(Param::caution_ranged_only) == 0 || r_idx == 0 || r_idx >= engine::r_max().saturating_sub(1) || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let Some(list) = crate::scary_list::selected() else { return false };
+    let who = crate::scary_list::Situation {
+        clevel: st.borg.tr(BI_CLEVEL),
+        class: st.borg.tr(BI_CLASS),
+        breeder_count: 0,
+        breeder_stand: false,
+        levels_less: 0,
+    };
+    crate::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
+}
+
+/// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
+/// attacker (`caution_ranged_vs_immobile` 2, 3) or a `ranged` entry of the
+/// scary list (`caution_ranged_only`): never a melee target, no walk to it,
+/// flows keep out of its reach.
+pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
+    immobile_kept_at_range(st, r_idx) || listed_ranged(st, r_idx)
+}
+
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of a
+/// creature kept at range (its reach). Off: no scan.
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
+    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0) || st.flow.to_stairs {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -1610,7 +1636,7 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
             let (gx, gy) = (x + dx, y + dy);
             engine::square_in_bounds_fully(gx, gy) && {
                 let k = st.cave.grid(gx, gy).kill;
-                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
         })
     })

@@ -288,6 +288,14 @@ borg_param_town_devices_percent = 100
 
 borg_param_town_fear_cure_count = 0
 
+# Ranged-only monsters (#838, owner 2026-11-21: "a list of monsters to never
+# melee ... and only attack from afar"): the scary list's `ranged` entries
+# (floating eye, grey mushroom patch, the jellies and eyes; harness/
+# scary_monsters.txt) are never melee targets, never hunted, and flows keep out
+# of their reach. 0 = the entries are not read. borg-zoo measures it against
+# shipped and against caution_ranged_vs_immobile 2.
+borg_param_caution_ranged_only = 0
+
 # Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
 # at least one Cure Serious Wounds from the start"): the first this many
 # confusion cures in the pack are a requirement, each worth this percent of

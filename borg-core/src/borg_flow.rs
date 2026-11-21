@@ -456,7 +456,7 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_stepped_from(st, x, y) {
         return true;
     }
-    if ag.kill != 0 && crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
+    if ag.kill != 0 && crate::borg_caution::kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }
 
@@ -1372,7 +1372,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         // borg-reborn-rs (#713): no walking into an immobile creature kept
         // at range (a flow made before it was known may still lead there).
-        if crate::borg_caution::immobile_kept_at_range(st, r_idx as usize) {
+        if crate::borg_caution::kept_at_range(st, r_idx as usize) {
             return false;
         }
 
