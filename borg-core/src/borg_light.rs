@@ -639,7 +639,6 @@ fn refuel_with(st: &mut BorgState, i: i32) {
     st.borg.goal.item = -1;
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
-
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -660,13 +659,12 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
             && has_flag(item, OF_TAKES_FUEL)
             && !has_flag(item, OF_NO_FUEL)
     };
-    let fuel = |item: &BorgItem| {
+    let fuel_slot = pack.iter().position(|item| {
         item.iqty != 0
+            && u32::from(item.tval) == TV_FLASK
+            && i32::from(item.sval) == oil
             && !has_flag(item, OF_NO_FUEL)
-            && ((u32::from(item.tval) == TV_FLASK && i32::from(item.sval) == oil)
-                || (refillable(item) && item.timeout > 0))
-    };
-    let fuel_slot = pack.iter().position(fuel);
+    }).or_else(|| pack.iter().position(|item| refillable(item) && item.timeout > 0));
     if refillable(equipped) && equipped.timeout == 0 {
         if let Some(slot) = fuel_slot {
             return Some(LightAction::Refuel(slot));
@@ -971,8 +969,15 @@ mod lightless_tests {
         flask.iqty = 1;
         flask.tval = TV_FLASK as u8;
         flask.sval = 1;
-        assert_eq!(light_action(&equipped, &[spare_torch, flask], 1, 0), Some(LightAction::Refuel(1)));
-        assert_eq!(light_action(&equipped, &[spare_torch], 1, 0), Some(LightAction::Wear(0)));
+        let spare_lantern = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 30);
+        assert_eq!(
+            light_action(&equipped, &[spare_torch, spare_lantern, flask], 1, 0),
+            Some(LightAction::Refuel(2)),
+        );
+        assert_eq!(
+            light_action(&equipped, &[spare_torch], 1, 0),
+            Some(LightAction::Wear(0)),
+        );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
 }
