@@ -32,7 +32,8 @@ before space and weight costs, and at speed 100 they add 3,784. Their
 combined slot and weight cost is 3,821. The candidate brings the same
 three CCW to 4,460 utility before those costs.
 
-The Zoo pilot still needs native receipts for availability, prices,
+[Zoo #597](https://github.com/diegoami/borg-zoo/issues/597) requests
+the native pilot at gameplay commit `bba5e4be`. It needs receipts for availability, prices,
 pickups and purchases, departure healing and escapes, and quaffs during
 danger. The historical X11 run also needs a verified replay or its
 original plan records before attributing its stock imbalance to pricing.
