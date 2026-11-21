@@ -288,8 +288,8 @@ fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
 }
 
 /// Extra value for restoring more HP in one action. The bonus starts when
-/// max HP exceeds one CCW (60 HP), reaches full strength at two, and grades
-/// the potion from CLW (20 HP, no bonus) to CCW (60 HP, full bonus).
+/// max HP exceeds 60 and reaches full strength at 120. HP restored per use,
+/// capped at max HP, supplies a second factor from zero at 20 to full at 60.
 fn heal_quaff_bonus(heal: i64, real_heal: i64, hp: i64, percent: i64) -> i64 {
     let strength = (real_heal / UNIT - 20).clamp(0, 40);
     let growth = (hp - 60).clamp(0, 60);

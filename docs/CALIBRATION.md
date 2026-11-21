@@ -2018,10 +2018,14 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   to before.
 - **Quaff bonus (#845).** The opt-in bonus increases the healing curve's
   credit for a single larger heal. Max HP ramps it from zero at 60 to full at
-  120. HP restored ramps it from zero at 20 to full at 60. The two factors
+  120. HP restored per use, capped at max HP, ramps the strength factor
+  from zero at 20 HP to full at 60 HP. The two factors
   multiply the configured percentage, so at 108 max HP and 200 percent a
   40-HP heal receives 80 percent extra curve credit and a 60-HP heal receives
-  160 percent extra. Real HP, reserve units and status cure effects retain
+  160 percent extra. A Potion of Berserk Strength's 30-HP heal gets a
+  partial bonus. Potion of Healing and `*Healing*` reach the same maximum
+  bonus rate as Cure Critical Wounds when they restore at least 60 HP.
+  Real HP, reserve units and status cure effects retain
   their own valuation. Keep the shipped bonus at zero pending Zoo results.
 
 ## Rising to town explores for an up staircase (#483)
