@@ -727,7 +727,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // top of the curve. A requirement (negative demand, like food's floor):
     // linear up to the reserve, nothing more past it, so healing is bought
     // first and never sold below it (0 = off).
-    let reserve = journey.hp * i64::from(heal_reserve_hp_percent(class)) * UNIT / 100;
+    // borg-reborn-rs (#840 remedy b): at least the kit's cure reserve, in HP.
+    let reserve = (journey.hp * i64::from(heal_reserve_hp_percent(class)) * UNIT / 100)
+        .max(i64::from(crate::borg_kit::start_cure_reserve_hp()) * UNIT);
     curve(HEAL_RESERVE, if reserve > 0 { cfg(BORG_TOWN_W_BLEEDING) * reserve / journey.hp.max(1) } else { 0 }, -reserve.max(UNIT));
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
@@ -744,7 +746,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#761): the first `town_phase_reserve` Phase Doors are a
     // requirement (as Recall's reserve): each worth `town_phase_reserve_percent`
     // of the trip's escape weight, nothing past them (0 = off, today).
-    let phase_reserve = i64::from(param(Param::town_phase_reserve)).max(0);
+    // borg-reborn-rs (#840 remedy b): at least the kit's Phase Door reserve.
+    let phase_reserve = i64::from(param(Param::town_phase_reserve).max(crate::borg_kit::start_phase_reserve())).max(0);
     if phase_reserve > 0 {
         curve(PHASE_RESERVE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_phase_reserve_percent)) * phase_reserve,
             -(phase_reserve * UNIT));

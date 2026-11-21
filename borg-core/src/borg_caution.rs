@@ -2711,6 +2711,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
             st.borg.goal.fleeing = true;
         }
     }
+    // borg-reborn-rs (#840): short of kit, a real danger sends it to the stairs.
+    else if crate::borg_kit::leave_danger_percent(st)
+        .is_some_and(|pct| pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1))
+        && !st.borg.goal.fleeing
+        && st.borg.near.unique == 0
+        && !st.borg.status.vault
+    {
+        start_fleeing(st, "# Fleeing (short of kit)");
+    }
     // Potential danger (near death) in town
     else if st.borg.tr(BI_CDEPTH) == 0
         && pos_danger > st.borg.tr(BI_CURHP)
@@ -4937,7 +4946,11 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
         && p(Param::caution_stairs_leave_down) != 0
         && !rising_holds_descent(st, pos_danger)
         && !rising_holds_flee_descent(st);
-    if !stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold) {
+    // borg-reborn-rs (#840): a Borg short of kit, on an up staircase, leaves at
+    // the first danger of `kit_leave_danger_percent` of its HP.
+    let kit = crate::borg_kit::leave_danger_percent(st)
+        .is_some_and(|pct| up && pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1));
+    if !(kit || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
         return false;
     }
     // The staircase under the Borg decides the way: choose_stairs alone may
@@ -4947,7 +4960,8 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     } else {
         st.borg.stair_more = true;
     }
-    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
+    let why = if kit { "short of kit" } else { "while recovering" };
+    borg_note(st, &format!("# Leaving by the stairs: a monster {why} (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
     true
 }
 

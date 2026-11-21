@@ -1202,6 +1202,35 @@ borg_param_attack_on_sight = 1
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
 borg_param_town_hunt_min_hp_percent = 0
+# The basic kit (#840, owner 2026-11-21: "we need a mode 'not enough basic
+# kit' and they have to scale down their curiosity until their kit is
+# sufficient again"). The kit score is the weighted share met of cures,
+# Phase Door, a ranged option (missiles or flasks of oil), light turns and
+# food, each capped at 1 (kit_*_target, kit_weight_*, two level bands at
+# kit_band_split_level, applied up to kit_max_level). Each switch below is
+# its own arm and every one ships 0 (today's play) until the zoo measures it
+# (borg-zoo request on the PR). The targets and weights are hypotheses.
+#   kit_leash = 1: leash = kit_leash_min + (C's leash - kit_leash_min) x
+#     score^kit_leash_power while the kit is short (the hunts and item
+#     detours the leash refuses stay refused);
+#   kit_descent_min_percent: no descent below this score (percent; 0 = off);
+#   kit_leave_danger_percent: at a danger of this share of its HP, a Borg
+#     short of kit takes the up stairs it stands on, or flees to the stairs;
+#   kit_restock = 1 (remedy a): the kit (and kit_restock_light_turns) in
+#     borg_restock at every depth, once the purse has grown by
+#     kit_restock_min_gold since the Borg left town;
+#   kit_start_reserve = 1 (remedy b): the town planner reserves
+#     kit_start_cure_reserve cures and kit_start_phase_reserve Phase Door
+#     before missiles and oil (per class: borg_param_kit_start_reserve__ranger = 1);
+#   kit_money_first = 1 (remedy c): up to kit_money_first_max_level, short of
+#     kit and too poor to fix it, no descent below DL1 and a leash of at
+#     least kit_money_leash until it can pay for a trip to town.
+borg_param_kit_leash = 0
+borg_param_kit_descent_min_percent = 0
+borg_param_kit_leave_danger_percent = 0
+borg_param_kit_restock = 0
+borg_param_kit_start_reserve = 0
+borg_param_kit_money_first = 0
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
