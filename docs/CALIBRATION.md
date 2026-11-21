@@ -10,6 +10,42 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Confused attacks by direction (#867)
+
+The registry now holds **2353** parameters (2352 before; one added). Owner,
+2026-11-21, from the play pack of borg-zoo#581's Gnome Necromancer
+459443830: confused next to a grey mushroom patch, the owner threw flasks of
+oil by direction and the second one killed it, where the Borg only swung and
+walked into walls. Then: "attack must be dependent by class ... It should
+choose the best attack available, and in case of mage without spells, that
+would be the flask", and "if it has a wand/rod that must be an option too".
+
+- **`attack_confused_by_direction`** (flag, compiled and shipped 0). The
+  engine refuses a confused player only spells (`player_can_cast`,
+  `player-util.c:1102`) and scrolls (`:1182`). Melee (`cmd-cave.c:1301`),
+  missiles (`player-attack.c:1350`), throws (`:1393`) and aimed devices
+  (`cmd-obj.c:440`) pass through `player_confuse_dir`
+  (`player-util.c:1353-1377`): a direction key is kept 25% of the time,
+  otherwise one of the 8 directions is drawn, so the aim holds 11/32 of the
+  time; a target (direction 5) is always redrawn. C forbids every item attack
+  while confused (`cant_aim`). On, while confused but neither blind nor
+  hallucinating:
+  - throws, missiles, wands and rods are rated against an **adjacent**
+    monster only, aimed at it (no offset aim), and sent by **direction key**
+    (`# Confused: aiming by direction N, not at a target`), not at a target;
+  - every aimed attack, melee included, is rated at the aim chance (value,
+    damage and kills times 11/32), so the usual chooser compares them on
+    damage: a weak-armed caster with no spell throws oil, a fighter swings;
+  - a staff needs no aim (`cmd-obj.c:431-441`) and keeps its full value.
+  The aim chance also reaches `borg_attack_estimate`, the fight-or-flee
+  tests' damage. Not changed: `ranged_means` (still no ranged means while
+  confused), activations, rings and dragon armour (C never stopped them while
+  confused; they still aim at a target).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:274` |
+
 ## Ranged-only monsters (#838)
 
 The registry now holds **2291** parameters (2290 before; one added). Owner,
@@ -634,8 +670,8 @@ idea ... target the mobile one"; "I would put them already on".
 | `caution_stairs_clean_path` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:977` |
 | `caution_stairs_block_danger_percent` | 50 | percent | 0–10000 | `borg_caution.rs:978` |
 | `caution_immobile_step_to_exit` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:1929` |
-| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:4881` |
-| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:4882` |
+| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5069` |
+| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5070` |
 
 ## Ranger arrows: a soft cap, then a diminishing curve (#716)
 
@@ -4869,7 +4905,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5522` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5636` |
 
 ## C Borg dive gates (#768)
 
