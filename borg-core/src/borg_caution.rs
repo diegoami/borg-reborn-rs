@@ -1026,12 +1026,13 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // `player-util.c:1353`; the walk into the wall of the Necromancer's last
     // turns). With a cure in the pack the cures at the end of `borg_caution`
     // come first, unless it is held next to an immobile attacker (#646).
-    if p(Param::caution_confused_cure_before_walk) != 0
+    // At 2, no confused walk at all, cure or not.
+    let walk_mode = p(Param::caution_confused_cure_before_walk);
+    if walk_mode != 0
         && st.borg.tr(BI_ISCONFUSED) != 0
-        && confusion_cure_carried(st)
-        && !confusion_cure_held(st)
+        && (walk_mode >= 2 || (confusion_cure_carried(st) && !confusion_cure_held(st)))
     {
-        borg_note(st, "# Confused: no walk to the stairs before the cure (#837)");
+        borg_note(st, "# Confused: no walk to the stairs (#837)");
         return false;
     }
     // Check for an existing "up stairs"
@@ -1612,6 +1613,36 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
                 k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
         })
+    })
+}
+
+/// borg-reborn-rs (#837, borg-zoo#576): `caution_immobile_no_return`. Grid
+/// (`x`, `y`) is, or is next to, the grid of an immobile attacker the Borg has
+/// stepped away from on this level and that is still known there. The step
+/// away (#646) was undone by the next flow in the two grey mold deaths of
+/// #576 (`Flowing toward dark-3` led back beside the mold in the dark), and
+/// the monster is not "kept at range" (a grey mold's blows are plain damage),
+/// so `in_reach_of_kept` did not see it. 1: only while the Borg is below its
+/// full HP (it rests, then the usual rules decide again); 2: for the level.
+/// Off: no scan. A flight to the stairs is not stopped, as for the kept ones.
+pub(crate) fn in_reach_of_stepped_from(st: &BorgState, x: i32, y: i32) -> bool {
+    let mode = p(Param::caution_immobile_no_return);
+    if mode == 0 || st.flow.to_stairs || st.borg.mon.immobile_stepped_level != st.borg.time.level {
+        return false;
+    }
+    if mode == 1 && st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) {
+        return false;
+    }
+    st.borg.mon.immobile_stepped.iter().any(|e| {
+        let (ey, ex) = (i32::from(e[0]), i32::from(e[1]));
+        (e[2] > 0 || e[3] > 0)
+            && (ey - y).abs() <= 1
+            && (ex - x).abs() <= 1
+            && engine::square_in_bounds_fully(ex, ey)
+            && {
+                let k = st.cave.grid(ex, ey).kill;
+                k != 0 && immobile_attacker(usize::from(st.kills.kills[usize::from(k)].r_idx))
+            }
     })
 }
 
@@ -7003,6 +7034,17 @@ mod confused_step_tests {
                 assert_eq!(step_allowed(&mut mon, level, pos, confused), peek);
             }
         }
+    }
+
+    /// #837: `caution_immobile_no_return` ships 0: no grid is ever in the reach
+    /// of an attacker the Borg stepped away from, however many it recorded.
+    #[test]
+    fn no_return_is_off_by_default() {
+        let mut st = crate::state::BorgState::default();
+        st.borg.mon.immobile_stepped_level = st.borg.time.level;
+        st.borg.mon.immobile_stepped[0] = [10, 20, 1, 0];
+        assert!(!super::in_reach_of_stepped_from(&st, 20, 10));
+        assert!(!super::in_reach_of_stepped_from(&st, 21, 11));
     }
 
     /// A full memory (sixteen attackers) refuses a new one, as `step_allowed` does.

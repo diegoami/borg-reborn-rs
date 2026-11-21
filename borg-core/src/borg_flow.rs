@@ -451,6 +451,11 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_kept(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#837): nor back into the reach of an immobile attacker
+    // it has just stepped away from (`caution_immobile_no_return`).
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_stepped_from(st, x, y) {
+        return true;
+    }
     if ag.kill != 0 && crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }

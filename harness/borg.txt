@@ -914,7 +914,7 @@ borg_param_caution_immobile_step_to_exit = 1
 # - caution_confused_clw_cure: a Potion of Cure Light Wounds is a confusion
 #   cure (20 turns off, object.txt), after Clear Mind, CSW and CCW.
 # - caution_confused_cure_before_walk: a confused Borg carrying a cure does not
-#   start a Desperate for Stairs walk before it.
+#   start a Desperate for Stairs walk before it. 2: none at all while confused.
 # - caution_confusion_cure_when_stuck: next to an immobile confuser the cure is
 #   held (#646) only while a step out of its reach can still be taken.
 # - caution_immobile_step_mobile_first: the step away from an immobile
@@ -924,6 +924,11 @@ borg_param_caution_confused_clw_cure = 0
 borg_param_caution_confused_cure_before_walk = 0
 borg_param_caution_confusion_cure_when_stuck = 0
 borg_param_caution_immobile_step_mobile_first = 0
+# - caution_immobile_no_return (borg-zoo#576: the step away from a grey mold was
+#   undone by the next flow, in two deaths): after a step away from an immobile
+#   attacker the flows do not enter its reach again while it is known there.
+#   1: only while below full HP; 2: for the level.
+borg_param_caution_immobile_no_return = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
 
