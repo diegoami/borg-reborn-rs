@@ -45,7 +45,7 @@ const DESC_SIZE: usize = 80;
 /// The `long` sums are done in `i64` and truncated to `int32_t` as in C;
 /// the stat bonus test reads the positive `OBJ_MOD_*` modifiers
 /// (better-borg-c milestone8 patch 0082).
-fn borg_object_value_known(iv: &ItemValState, item: &borg_item) -> i32 {
+pub(crate) fn borg_object_value_known(iv: &ItemValState, item: &borg_item) -> i32 {
     let k_ptr = engine::kind(item.kind as usize);
 
     /* Worthless items */

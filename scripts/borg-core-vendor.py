@@ -36,11 +36,12 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
     'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
     'src/borg_trip.rs',  # #795: trace the live trip preparedness check
