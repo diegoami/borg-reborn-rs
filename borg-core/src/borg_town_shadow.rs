@@ -171,7 +171,18 @@ fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) 
         } else { (i64::from(crate::borg_power::borg_power(st)), base) };
         st.items.items[eq] = items[eq];
         st.items.items[hole] = items[hole];
-        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before });
+        let lantern_preference = crate::params::value(crate::params::Param::town_lantern_upgrade_power);
+        let lantern_bonus = if lantern_preference > 0 && u32::from(ware.tval) == TV_LIGHT
+            && i32::from(ware.sval) == st.item_val.sv_light_lantern && ware.timeout > 0 && !ware.cursed
+            && u32::from(worn.tval) == TV_LIGHT
+            && i32::from(worn.sval) == st.item_val.sv_light_torch && p >= before
+            && !engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+            && !engine::flag_has(&worn.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
+            && !engine::flag_has(&worn.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32)
+        {
+            i64::from(lantern_preference)
+        } else { 0 };
+        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before + lantern_bonus });
         slots.push((i, i32::from(worn.iqty != 0)));
     }
 

@@ -272,6 +272,9 @@ fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_ov
     });
     for i in pack {
         let it = &input.kit[i];
+        if u.capability.as_ref().is_some_and(|model| model.protects_fuel(it)) {
+            continue;
+        }
         if it.unknown_flavour && !it.just_bought && (input.revision < 8 || it.sell_shop >= 0) {
             out[i] = if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
             u.change(it, -1);

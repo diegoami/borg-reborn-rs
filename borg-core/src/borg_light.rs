@@ -651,6 +651,32 @@ fn has_flag(item: &BorgItem, flag: u32) -> bool {
     engine::flag_has(&item.flags, flag as i32)
 }
 
+/// Keep a usable fuel stack when discarding it would break the configured
+/// reserve. Torch-only characters cannot count oil as light.
+pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
+    let reserve = param(Param::town_light_reserve_turns);
+    if reserve == 0 || !crate::borg_town_live::active(st) || slot >= inven_wield() as usize {
+        return false;
+    }
+    let equipped = &st.items.items[inven_light() as usize];
+    if has_flag(equipped, OF_NO_FUEL) || engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) {
+        return false;
+    }
+    let lantern = has_flag(equipped, OF_TAKES_FUEL);
+    let fuel = |item: &BorgItem| {
+        if item.cursed { return 0; }
+        let turns = match u32::from(item.tval) {
+            TV_LIGHT => item.timeout,
+            TV_FLASK if lantern && i32::from(item.sval) == st.item_val.sv_flask_oil => item.pval,
+            _ => 0,
+        };
+        i32::from(turns.max(0)) * i32::from(item.iqty)
+    };
+    let pack = &st.items.items[..inven_wield() as usize];
+    fuel(&pack[slot]) > 0 && fuel(equipped) + pack.iter().enumerate()
+        .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>() < reserve
+}
+
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
     // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
     let refillable = |item: &BorgItem| {

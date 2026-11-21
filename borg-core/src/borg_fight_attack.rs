@@ -2795,8 +2795,9 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
             let reserve = if policy && lantern {
                 let journey = supply_journey.get_or_insert_with(||
                     crate::borg_town_utility::Journey::of(st));
-                ((journey.turns - i64::from(light.timeout)).max(0) as u64)
-                    .div_ceil(i64::from(item.pval).max(1) as u64) as i32
+                let goal = journey.turns.max(i64::from(param(Param::town_light_reserve_turns)));
+                let shortage = (goal - i64::from(light.timeout)).max(0) as u64;
+                shortage.div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
             if oil_reserved(policy, reserve, tr(st, BI_AFUEL), st.borg.near.unique != 0) { continue; }
         }
