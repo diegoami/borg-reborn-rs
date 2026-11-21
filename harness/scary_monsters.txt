@@ -105,6 +105,27 @@ filthy street urchin | 50 | | attack | town-melee-only
 battle-scarred veteran | 50 | | attack | town-melee-only
 mean-looking mercenary | 50 | | attack | town-melee-only
 
+# Ranged only (#838): monster | up to CL | classes | ranged | reason. With
+# caution_ranged_only=1 (shipped 0, so these lines are inert) the Borg never
+# melees one of these, never walks to it, and keeps its flows out of its grid
+# and the eight around it; missiles, spells and throws reach it, or it is left
+# alone. Not a scare. Never-moving monsters to DL12 whose blows do more than
+# damage (monster.txt). CL50 for every class is a hypothesis, as above.
+floating eye | 50 | | ranged | paralysing-gaze
+grey mushroom patch | 50 | | ranged | confusing-spores
+yellow mushroom patch | 50 | | ranged | terrifying-spores
+spotted mushroom patch | 50 | | ranged | poisonous-spores
+purple mushroom patch | 50 | | ranged | con-draining-spores
+white jelly | 50 | | ranged | poison-touch
+yellow jelly | 50 | | ranged | poison-touch-drains-mana
+silver jelly | 50 | | ranged | light-eating-touch
+rot jelly | 50 | | ranged | food-eating-wis-draining-touch
+red jelly | 50 | | ranged | str-draining-touch
+grape jelly | 50 | | ranged | exp-draining-touch
+radiation eye | 50 | | ranged | str-draining-gaze
+disenchanter eye | 50 | | ranged | disenchanting-gaze
+bloodshot eye | 50 | | ranged | blinding-gaze
+
 # Fast and fragile: monster.txt:1133-1163 (120 speed, 9 average HP, 2x1d3).
 wild cat | 50 | | attack | fast-fragile
 crow | 50 | | attack | fast-fragile
