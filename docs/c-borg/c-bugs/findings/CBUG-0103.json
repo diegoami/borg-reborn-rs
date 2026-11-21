@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0103",
+  "source_groups": [
+    30
+  ],
+  "title": "borg_munchkin_mage() sets borg_attacking = true before its monster scan, but the two return false inside the scan (a monster adjacent, or within 2\u2026",
+  "site": "src/borg/borg-attack-munchkin.c:borg_munchkin_mage",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 119
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-attack-munchkin.c",
+      "start": 47,
+      "end": 182,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 520,
+      "end": 526,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        30
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 30,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 520,
+        "end": 526,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_munchkin_mage()` sets `borg_attacking = true` before its monster\n  scan, but the two `return false` inside the scan (a monster adjacent,\n  or within 2 grids and faster than the Borg; `borg.mon.scary`) do not\n  clear it. `borg_munchkin_melee()` has the same leak on its\n  `borg.mon.scary` return. While the flag stays set, `borg_danger()`\n  ignores Protection from Evil (`pfe && !borg_attacking`), until the\n  next `borg_attack()` (borg-fight-attack.c) clears it."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

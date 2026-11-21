@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0132",
+  "source_groups": [
+    39
+  ],
+  "title": "Vault flow reuses uncleared queue/cost state and lists duplicate excavation grids",
+  "site": "src/borg/borg-flow-misc.c:borg_flow_vault",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 148
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-flow-misc.c",
+      "start": 879,
+      "end": 970,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 756,
+      "end": 760,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        39
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 39,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 756,
+        "end": 760,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_flow_vault()`: the flow is not cleared before the grids are\n  enqueued, so the queue and costs left by the previous flow are spread\n  further; each excavatable grid is listed once per adjacent permanent\n  wall (duplicate entries; up to 8 per grid, so `borg_temp_*` could in\n  theory overflow)."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

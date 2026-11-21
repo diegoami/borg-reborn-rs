@@ -36,12 +36,13 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_kit.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
     'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
     'src/borg_trip.rs',  # #795: trace the live trip preparedness check
@@ -53,6 +54,7 @@ HOOKED = {
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
+    'src/state.rs',  # #840: the basic kit's state
     'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan

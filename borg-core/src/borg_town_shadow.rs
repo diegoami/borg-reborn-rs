@@ -28,7 +28,7 @@ use crate::borg_headers::borg_h::{BORG_TOWN_PLAN, BORG_TOWN_W_KNOWLEDGE};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::borg_item::inven_wield;
-use crate::borg_town_budget::Budget;
+use crate::borg_town_budget::{Budget, UrgentPurchase};
 use crate::borg_store::BORG_HOME;
 use crate::borg_town_dispose::{Disposition, KitItem, Place};
 use crate::borg_town_record::{first_action, step, PlanRecord, StepInput, TryOn, WareFact, PARAMS};
@@ -36,7 +36,11 @@ use crate::borg_town_solve::Limits;
 use crate::borg_town_stock::{needs_served, Stock};
 use crate::borg_town_usefulness::{Need, Trip};
 use crate::engine;
+use crate::headers::list_tvals_h::TV_LIGHT;
+use crate::params::{value as param, Param};
 use crate::state::BorgState;
+
+const GENERAL_STORE: usize = 0;
 
 /// The 24 town settings the plan step actually runs on (borg-reborn-rs, #460;
 /// owner 2026-11-16: "turn off the buying of useless unknown objects").
@@ -122,12 +126,14 @@ fn ware_role(st: &BorgState, item: &borg_item) -> (i8, i64) {
 /// Diggers are evaluated as tools rather than worn as weapons. Without a free pack slot
 /// there is nowhere to put the worn item, and nothing is tried on.
 fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) {
-    use crate::headers::list_tvals_h::{TV_DIGGING, TV_LIGHT};
+    use crate::headers::list_tvals_h::TV_DIGGING;
     let hole = crate::borg_inventory::borg_first_empty_inventory_slot(st);
     let Ok(hole) = usize::try_from(hole) else {
         return (Vec::new(), Vec::new());
     };
     let wield = inven_wield() as usize;
+    let buy_spare_torches = param(Param::town_light_reserve_turns) > 0
+        && crate::borg_light::torch_fuel_turns(st).is_some();
     let wearables: Vec<(usize, usize)> = stock
         .candidates
         .iter()
@@ -135,7 +141,11 @@ fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) 
         .filter_map(|(i, c)| {
             let w = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
             let tval = u32::from(w.tval);
-            if tval == TV_DIGGING {
+            // General Store torches can refill the one already worn. Price
+            // them as pack supplies, where the planner can choose a stack.
+            if tval == TV_DIGGING || buy_spare_torches && usize::from(c.shop) == GENERAL_STORE
+                && tval == TV_LIGHT && i32::from(w.sval) == st.item_val.sv_light_torch
+            {
                 return None;
             }
             let eq = crate::borg_inventory::borg_wield_slot(w);
@@ -171,7 +181,18 @@ fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) 
         } else { (i64::from(crate::borg_power::borg_power(st)), base) };
         st.items.items[eq] = items[eq];
         st.items.items[hole] = items[hole];
-        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before });
+        let lantern_preference = crate::params::value(crate::params::Param::town_lantern_upgrade_power);
+        let lantern_bonus = if lantern_preference > 0 && u32::from(ware.tval) == TV_LIGHT
+            && i32::from(ware.sval) == st.item_val.sv_light_lantern && ware.timeout > 0 && !ware.cursed
+            && u32::from(worn.tval) == TV_LIGHT
+            && i32::from(worn.sval) == st.item_val.sv_light_torch && p >= before
+            && !engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+            && !engine::flag_has(&worn.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
+            && !engine::flag_has(&worn.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32)
+        {
+            i64::from(lantern_preference)
+        } else { 0 };
+        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before + lantern_bonus });
         slots.push((i, i32::from(worn.iqty != 0)));
     }
 
@@ -366,8 +387,49 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
     evaluate(st, true)
 }
 
+/// Refill the torch reserve after immediate needs and before other shopping.
+/// Spend the ordinary shopping budget and use the same one-copy action as
+/// the light emergency, then replan with the torch actually carried.
+fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
+    let reserve = param(Param::town_light_reserve_turns);
+    if reserve == 0 || !budget.urgent.is_empty()
+        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| {
+            i64::from(turns) >= crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve))
+        })
+    {
+        return;
+    }
+    let found = stock.candidates.iter().enumerate().filter(|(_, c)| {
+        let shop = usize::from(c.shop);
+        if !matches!(shop, BORG_HOME | GENERAL_STORE) || u32::from(c.tval) != TV_LIGHT
+            || i32::from(c.sval) != st.item_val.sv_light_torch || c.qty <= 0
+            || i64::from(c.price) > budget.gold || c.slots_cost > budget.pack_slots
+            || i64::from(c.weight) > budget.weight
+        {
+            return false;
+        }
+        let torch = &st.store.shops[shop].ware[usize::from(c.slot)];
+        torch.timeout > 0 && !torch.cursed
+    }).min_by_key(|(_, c)| (c.price, c.shop, c.slot));
+    if let Some((candidate, c)) = found {
+        budget.gold -= i64::from(c.price);
+        budget.pack_slots -= c.slots_cost;
+        budget.weight -= i64::from(c.weight);
+        budget.urgent.push(UrgentPurchase { candidate, needs: vec![Need::Light] });
+    }
+}
+
 fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
     unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_LIGHT && i32::from(sval) == torch
+}
+
+/// The copies the live executor moves for a planned action (#507): a
+/// purchase keeps the copies the plan picked, every other action moves one
+/// copy and the plan is solved again. A planned quantity larger than one
+/// (a whole stack, or the surplus past `town_store_keep_min`, #859) is
+/// therefore reached one copy at a time.
+fn executed_copies(code: i64, planned: i64) -> i64 {
+    if code != crate::borg_town_record::action::BUY { 1 } else { planned.max(1) }
 }
 
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
@@ -425,7 +487,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         class = class.saturating_add(1);
     }
     let st: &BorgState = st;
-    let budget = Budget::of(st, &stock, &trip);
+    let mut budget = Budget::of(st, &stock, &trip);
+    replenish_torch_reserve(st, &stock, &mut budget);
     let urgent_cost: i64 = budget.urgent.iter().map(|purchase|
         i64::from(stock.candidates[purchase.candidate].price)).sum();
     let gold_after_urgent = i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD))
@@ -537,7 +600,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
         // types them at the quantity prompt, capped by the native offer.
         // Every other action moves one copy and re-solves.
-        if paction != crate::borg_town_record::action::BUY { act[2] = 1; } else { act[2] = act[2].max(1); }
+        act[2] = executed_copies(paction, act[2]);
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
@@ -607,6 +670,18 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
 mod tests {
     use super::*;
     use crate::headers::list_tvals_h::*;
+
+    /// #859 (review F1): what reaches the executor. The live path moves one
+    /// copy of a store and solves again; a purchase keeps its planned copies.
+    #[test]
+    fn the_live_executor_moves_one_copy_of_a_store_and_the_planned_copies_of_a_purchase() {
+        use crate::borg_town_record::action;
+        for code in [action::STORE, action::SELL, action::SELL_HOME, action::TAKE_HOME] {
+            assert_eq!(executed_copies(code, 9), 1, "action {code}: one copy, then solve again");
+        }
+        assert_eq!(executed_copies(action::BUY, 3), 3);
+        assert_eq!(executed_copies(action::BUY, 0), 1);
+    }
 
     #[test]
     fn unaware_devices_are_protected_even_when_no_runes_are_missing() {

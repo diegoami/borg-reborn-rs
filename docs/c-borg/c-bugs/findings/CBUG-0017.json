@@ -1,0 +1,119 @@
+{
+  "id": "CBUG-0017",
+  "source_groups": [
+    35
+  ],
+  "title": "Guarded anti-summon timer reset is unreachable",
+  "site": "src/borg/borg-escape.c:borg_escape",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared-helper-semantics",
+  "mandos": "shared-helper-semantics",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "A >50 guarded branch cannot execute its nested <50 reset; practical need for that reset unproven."
+  },
+  "notes": "TS resetAntisummon applies the same <50 test in those branches. Other call sites can still reset it.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 35
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-escape.c",
+      "start": 879,
+      "end": 889,
+      "description": "borg_caution_phase(50, 2)"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/fight/escape.ts",
+      "start": 435,
+      "end": 437,
+      "description": "resetAntisummon"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/fight/escape.ts",
+      "start": 438,
+      "end": 440,
+      "description": "resetAntisummon"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/fight/escape.ts",
+      "start": 597,
+      "end": 612,
+      "description": "borgCautionPhase(ctx, 50, 2)"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/fight/escape.ts",
+      "start": 600,
+      "end": 615,
+      "description": "borgCautionPhase(ctx, 50, 2)"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 646,
+      "end": 670,
+      "description": "discovery group 35"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 663,
+      "end": 665,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 35,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 663,
+        "end": 665,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "The anti-summon reset (`if (borg_timer(borg.time.antisummon) < 50)\n  borg.time.antisummon = 0;`) after 2.2, 3.1, 3.3, 4.1, 4.3, 6.1 and the\n  first level 8 test is dead: those branches require the timer to be > 50."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        35
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "review-only",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

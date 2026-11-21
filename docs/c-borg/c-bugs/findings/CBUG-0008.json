@@ -1,0 +1,110 @@
+{
+  "id": "CBUG-0008",
+  "source_groups": [
+    34
+  ],
+  "title": "Ring-side scores persist across home wares",
+  "site": "src/borg/borg-store-buy.c:borg_think_home_buy_useful",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "absent-different-ring-simulation",
+  "mandos": "absent-different-ring-simulation",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "C can compare a ring using an earlier ware's score when the other slot holds the One Ring."
+  },
+  "notes": "p_left/p_right declared outside the loop; current TS helper has no corresponding accumulators. Broader ring parity is independent.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 27
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-buy.c",
+      "start": 455,
+      "end": 475,
+      "description": "int32_t p_left"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-buy.c",
+      "start": 542,
+      "end": 548,
+      "description": "p_left = borg_power();"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/buy.ts",
+      "start": 348,
+      "end": 387,
+      "description": "borgThinkHomeBuyUseful"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/buy.ts",
+      "start": 348,
+      "end": 387,
+      "description": "borgThinkHomeBuyUseful"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 611,
+      "end": 645,
+      "description": "discovery group 34"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 623,
+      "end": 629,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 34,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 623,
+        "end": 629,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_think_home_buy_useful()`: the two \"require two empty slots\"\n  `continue`s come after the ware was taken out of the home\n  (`iqty -= qty`, and `pval` for staffs/wands), so that home ware keeps the\n  reduced count until the next store read. `p_left`/`p_right` are not\n  reset per ware: when a ring slot holds the One Ring, the other hand's\n  value comes from an earlier ring. The left-hand trial uses one ring, the\n  right-hand trial `qty` rings."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        34
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

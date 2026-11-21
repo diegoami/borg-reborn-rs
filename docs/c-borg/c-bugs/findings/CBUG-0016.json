@@ -1,0 +1,110 @@
+{
+  "id": "CBUG-0016",
+  "source_groups": [
+    35
+  ],
+  "title": "Stair predicate queues a climb before phase guards finish",
+  "site": "src/borg/borg-escape.c:borg_escape levels3/4/5/6/8",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "different-port-defect",
+  "mandos": "different-port-defect",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "C may leave climb keys queued or queue both climb and phase while applying phase bookkeeping."
+  },
+  "notes": "C queues keys as a side effect. The command-returning port has a separate omission tracked in internal issue108; it is not a C-list entry or a claim that the same C queued-key symptom occurs there.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 34
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-escape.c",
+      "start": 521,
+      "end": 537,
+      "description": "borg_escape_stair"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-escape.c",
+      "start": 905,
+      "end": 920,
+      "description": "(borg_escape_stair() || borg_caution_phase(25"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/fight/escape.ts",
+      "start": 618,
+      "end": 632,
+      "description": "(borgEscapeStair(ctx) || borgCautionPhase(ctx, 25"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/fight/escape.ts",
+      "start": 621,
+      "end": 635,
+      "description": "(borgEscapeStair(ctx) || borgCautionPhase(ctx, 25"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 646,
+      "end": 670,
+      "description": "discovery group 35"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 655,
+      "end": 662,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 35,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 655,
+        "end": 662,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "Danger levels 3.1, 4.1, 5.1, 6.1 and 8 test\n  `(borg_escape_stair() || borg_caution_phase(..)) && ... && (phase spell\n  || scroll ...)`. On an up staircase `borg_escape_stair()` already queues\n  `<` (and its note) and skips the landing-zone check. If no phase is then\n  possible (or the anti-summon timer is <= 50), the `<` stays queued and\n  the function goes on to the next tests; if a phase is possible, both the\n  `<` and the phase keys are queued and the phase bookkeeping\n  (`borg.escapes--`, \"Danger Level 3.1\" etc.) is applied."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        35
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

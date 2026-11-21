@@ -1,5 +1,10 @@
 # M4: threat calibration and the survival gate
 
+> **Historical (#816, 2026-11-21).** The M4 calibration of our own reborn
+> core, frozen by the repivot of 2026-11-14; it does not describe the
+> shipped borg-rs core ([architecture](architecture/README.md)). It stays
+> at this path because `borg-reborn-rs/src/danger.rs` cites it.
+
 *T4.7 (#124). The M4 calibration deliverable (ARCHITECTURE L4,
 *Calibration*) and the M4 exit evidence (PLAN.md). Date: 2026-11-12.*
 

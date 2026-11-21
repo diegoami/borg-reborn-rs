@@ -92,6 +92,8 @@ pub struct ThinkDungeonState {
     /// `borg_feeling_stuff`
     pub feeling_stuff: i32,
     pub(crate) lightless: crate::borg_lightless::Recovery,
+    /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
+    pub(crate) cursed: crate::borg_cursed::Removal,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -695,7 +697,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
 
-        let leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
+        let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+        // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
+        // enough" below clears the return, so a smaller one would flap).
+        if crate::borg_kit::leash_active(st) {
+            leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
+        }
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
@@ -721,6 +730,16 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* examine equipment and swaps */
     borg_notice(st, true);
+
+    // borg-reborn-rs (#840): the purse in town, and a note when the kit's
+    // score or leash moves (only with a kit switch on).
+    crate::borg_kit::tick(st);
+
+    // borg-reborn-rs (#830): a harmful curse comes off at once, before any
+    // fight or flight (the curse itself keeps monsters awake and in view).
+    if !lightless && crate::borg_cursed::borg_remove_cursed(st) {
+        return choice!("borg_remove_cursed");
+    }
 
     let town_hunt = crate::borg_town_hunt::think(st);
     if town_hunt == crate::borg_town_hunt::Hunt::Retreat {
