@@ -692,7 +692,8 @@ possible."
   2. **Strike where it must be.** `recover_unseen_probe_tries` (**10** an
      episode): `alter` (`+` and a direction) attacks a monster in the grid seen
      or not, and otherwise spends the turn without moving ("You spin around.",
-     `cmd-cave.c:do_cmd_alter_aux`). The candidates are the open adjacent
+     `cmd-cave.c:do_cmd_alter_aux:950-1001`, the monster branch first at 975-977,
+     "You spin around." at 998). The candidates are the open adjacent
      grids (bare floor or a staircase, with no known object, trap or monster:
      alter would tunnel, open, close or disarm anything else), north first.
      One where a blow struck "something" is attacked again; one that spun is
@@ -713,7 +714,8 @@ possible."
   three scrolls it carried), so it is now a value curve and no reserve: with
   `town_invisible_count` (**2**) > 0 a read (scrolls at 15 gold, or a staff's
   charges) is worth a diminishing curve like Phase Door's and the flasks', the
-  first about `town_invisible_percent` (**20**) of the trip's escape weight,
+  first value `town_invisible_percent` (**20**) of the trip's escape weight per
+  read (a read's realised first value is that times count / (count + 1): 13.3%),
   half the most the curve pays at `town_invisible_count` reads, nothing a
   requirement, nothing kept aside; it competes with the rest of the purse and
   does not depend on the gold, so a carried read is never sold because the
@@ -3303,12 +3305,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1093` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1092` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1094` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1101` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1102` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1103` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1099` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1100` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1102` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1109` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1110` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1111` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |

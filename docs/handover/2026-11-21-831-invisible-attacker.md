@@ -29,7 +29,7 @@ numbers):
 - **The town plan** (`borg_town_capability.rs`): a value curve, no reserve (owner:
   "3 is already too big a reserve ... no reserve, better value and a curve that
   depends on class"). A read of Detect Invisible is worth a diminishing curve like
-  Phase Door's and the flasks': the first about 20% of the trip's escape weight, half
+  Phase Door's and the flasks': the first value 20% of the trip's escape weight per read (13.3% realised for the first read), half
   the most it pays at 2 reads, and it competes with the rest of the purse. The percent
   is by class: 20 with nothing to detect, 10 with a Detect Evil spell, 3 with Sense
   Invisible, Detection or Reveal Monsters (`borg_magic::detects_invisible`,

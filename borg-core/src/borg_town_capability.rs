@@ -824,8 +824,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // have a spell to detect invisible"; "3 is already too big a reserve ...
     // no reserve, better value and a curve that depends on class"): with
     // `town_invisible_count` > 0 the reads are worth a diminishing curve, as
-    // Phase Door's and the flasks', not a requirement: the first read is
-    // worth about `invisible_percent` of the trip's escape weight, the curve
+    // Phase Door's and the flasks', not a requirement: `invisible_percent` of the trip's escape weight is the
+    // curve's first value per read (a read's realised first value is that times
+    // half / (half + 1)), the curve
     // reaches half its value at `town_invisible_count` reads, and it
     // competes with the rest of the purse (nothing is bought first, nothing
     // is kept past what the next purchase is worth). 0 = #663's low value.
@@ -1516,7 +1517,7 @@ mod class_heal_tests {
     }
 }
 
-/// borg-reborn-rs (#831): the weight of the first read, in percent of the
+/// borg-reborn-rs (#831): the curve's first value per read, in percent of the
 /// trip's escape weight, by what the Borg can already do about an invisible
 /// monster: nothing (Warriors, Blackguards, and others until they learn a
 /// spell), cast Detect Evil (reveals the evil ones, ghosts and poltergeists,

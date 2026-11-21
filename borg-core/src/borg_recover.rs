@@ -890,7 +890,10 @@ fn probe_choice(candidates: &[loc], found: Option<loc>, max: i32) -> Option<loc>
 
 /// borg-reborn-rs (#831): the grid is one `alter` (`+`) may attack: bare
 /// floor or a staircase, with no known object, trap or monster. Alter would
-/// tunnel, open, close or disarm anything else (`cmd-cave.c:do_cmd_alter_aux`).
+/// tunnel, open, close or disarm anything else (`cmd-cave.c:do_cmd_alter_aux`,
+/// lines 950-1001: the monster branch comes first, 975-977, so a monster on a
+/// grid holding an object or a trap would still be attacked; leaving such a
+/// grid out is deliberate caution, not the engine's rule).
 fn probe_grid_open(st: &BorgState, g: loc) -> bool {
     use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS, FEAT_MORE};
     if !engine::square_in_bounds_fully(g.x, g.y) {
@@ -1016,7 +1019,10 @@ pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) {
 }
 
 /// The game's message for the melee death of a monster the Borg cannot see
-/// (`mon-util.c:mon_take_hit`: "You have killed %s." with "it").
+/// (`mon-util.c:player_kill_monster`, lines 1022-1071: "You have killed %s." at
+/// 1070, named with `MDESC_DEFAULT` (1029), which gives "it" for a hidden monster,
+/// `mon-desc.c:117-121`). "something" and "someone" are accepted defensively; the
+/// engine at `574b618c` does not produce them here.
 fn unseen_kill_message(msg: &[u8]) -> bool {
     [b"You have killed it.".as_slice(), b"You have killed something.", b"You have killed someone."].contains(&msg)
 }
@@ -1276,7 +1282,7 @@ mod unseen_tests {
         assert_eq!(st.borg.unseen_empty, vec![at(5, 5)]);
     }
 
-    /// #831: afraid, the game refuses the blow (`player-attack.c`: "You are
+    /// #831: afraid, the game refuses the blow (`player-attack.c:750-756`: "You are
     /// too afraid to attack %s!"): the pending attack is dropped, and the
     /// episode's blind attacks are spent (`recover_unseen_probe_tries`).
     #[test]
@@ -1288,8 +1294,8 @@ mod unseen_tests {
         assert_eq!(st.borg.unseen_probe, None, "the pending attack is dropped");
     }
 
-    /// #831: a melee kill of a monster the Borg cannot see (`mon-util.c`:
-    /// "You have killed %s.", "it"); a seen one's is "slain" or "destroyed".
+    /// #831: a melee kill of a monster the Borg cannot see (`mon-util.c:1070`:
+    /// "You have killed %s.", "it"; the other two names are accepted defensively); a seen one's is "slain" or "destroyed".
     #[test]
     fn kill_of_the_unseen() {
         for m in [b"You have killed it.".as_slice(), b"You have killed something.", b"You have killed someone."] {
