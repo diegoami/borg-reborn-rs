@@ -59,21 +59,40 @@ single games, not measurements):
   64,904, "Your Cloak prevents you teleporting" at 83,138, cloak off at
   83,148); the take-off and the gate (no Remove Curse scroll bought or read
   for the cloak, the `{??}` cloak never worn again, alive at 100,000).
-- The smoke suite on the branch is identical to `smoke-borg-rs` (3 of 3), so
+- The smoke suite on the branch (at `7225eb02`) is identical to `smoke-borg-rs` (3 of 3), so
   the reference is not re-recorded. fmt, clippy `-D warnings`,
   `cargo test --workspace --exclude borg-core` and
-  `cargo test --release -p borg-core` (574) pass;
+  `cargo test --release -p borg-core` (575) pass;
   `scripts/borg-core-vendor.py check` passes with `borg_cursed.rs` declared as
   ours and `borg_item_decurse.rs`, `borg_item_analyze.rs`, `borg_trait.rs`
   as hooked.
 
+**A bug the gate had, found by the pilot starts, fixed in `7225eb02`.** At
+`3be3f186` (this PR as first pushed) the Human Priest 1569794094 of the zoo's
+`classes-18` pilot never finished: at turn 58,971 the game clock stopped and
+the Borg wrote "# Reading Scroll of Remove Curse." without end (1.75 million
+keys in 20 minutes). It wore a steelskin torch and carried a cursed pack
+torch. The gate stopped counting the pack torch, and with it dropped the
+inventory bit of `BI_WHERE_CURSED`; the game's "Uncurse which item?" prompt
+still opens on the pack, and `borg_decurse_any` presses `/` to reach a worn
+item only when that bit is set. The bit now follows the item alone and only
+the demand (`BI_FIRST_CURSED`) depends on the worth (`pack_curse`, with a
+test). The same start now ends at 100,000 turns; four pilot starts at the
+base and at the head are in the case (three identical to the base, the Priest
+different only from the second scroll on). Why smoke and the three cases did
+not show it: none of them has a worn mild curse and a worthless cursed pack
+item together. The prompt/bit pairing is older code; a read that fails to
+select its item still retries at the same turn without end, and nothing in
+this PR guards that. That is a separate issue, not done here.
+
 **Not checked.**
-- The trip for Remove Curse has still not been seen in a game: in none of the
-  runs above does the Borg keep a worn item with a mild curse and enough gold.
-  Its decision is unit-tested. A live check needs a worn item with a mild
-  known curse, which `start-build` cannot construct (it rejects curses,
-  harness/README.md) and which a natural start would reach only by chance. The
-  zoo request counts the "restock remove curse" trips instead.
+- The trip for Remove Curse ("restock remove curse") is in no trace of any
+  run, still. Its decision is unit-tested. The read path for a *worn* item is
+  seen now (Priest 1569794094: "The steelskin curse is removed!"), but that
+  Borg went to town for other reasons. A live check needs a worn item with a
+  mild known curse, which `start-build` cannot construct (it rejects curses,
+  harness/README.md) and which a natural start reaches by chance. The zoo
+  request counts the "restock remove curse" trips.
 - Survival: no measurement. The zoo request is the way (RULES 14, 20).
 - The Ranger and Priest runs above are at 3b4924ba with the changes applied
   by hand (the main branch moved since); the Warrior's at e8b3acfd without
