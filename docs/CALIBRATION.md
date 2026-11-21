@@ -5222,9 +5222,13 @@ did not measure a population effect.
 
 Owner, 2026-11-21: attack a fast, fragile monster "with all that we have got,
 unless we want a phase door or a stair", and never drink a cure against it.
-Six parameters; the three switches compile and ship **0** (today's play) until
-borg-zoo has measured them. The three numbers are hypotheses: no measurement
-chose 2 turns, 25% or 2 others.
+Nine parameters, all compiled **0** / their defaults. **Shipped** (owner,
+2026-11-21, after the review of #847 and before the zoo result of borg-zoo#596):
+`fast_fragile_policy = 1` and `fast_fragile_no_heal = 1`, on the named entries.
+`fast_fragile_by_stats`, `fast_fragile_phase_landing` and
+`fast_fragile_escape_percent` ship at their defaults (0, 0, 100). The numbers
+(2 turns, 25%, 2 others, +5 speed, 100%) are hypotheses: no measurement chose
+them.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
@@ -5289,7 +5293,7 @@ listed in the handover note.
 
 ## Carried fuel and spare torches (#810)
 
-The registry holds **2293** parameters. The table gives the core fallback.
+The registry holds **2302** parameters. The table gives the core fallback.
 The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
