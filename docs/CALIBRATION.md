@@ -164,9 +164,9 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1914` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1914` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:524` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:678` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:690` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:542` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:724` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:714` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -217,7 +217,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:682` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:694` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -461,7 +461,7 @@ the less value they have".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:684` |
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:816` |
 | `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
@@ -482,7 +482,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:411` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:429` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
 
 
@@ -737,7 +737,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:260` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -1982,9 +1982,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:471` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:328` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:462` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:489` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:346` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:480` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2112,11 +2112,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:420` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:438` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1509` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1499` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1564` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1554` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5084,3 +5084,31 @@ from current-main checks. Canonical prior attempts and reproduction patches
 are pinned in the [Cemetery case](https://github.com/diegoami/borg-cemetery/tree/b20537c68830e415c79a8766135a1b32c7e539c2/validation/borg-reborn-rs/unseen-bump-781).
 Review follow-up receipts are published with Cemetery PR #92. Those trials
 did not measure a population effect.
+
+## Carried fuel and spare torches (#810)
+
+The registry holds **2285** parameters. The table gives the core fallback.
+The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:704` |
+| `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
+
+The reserve target is the larger of the configured amount and planned
+journey length. The Borg counts the equipped light and usable pack fuel.
+Each torch in a stack contributes its own timeout. Oil counts toward
+light when using a fuel-burning lantern. Home stock counts once carried.
+The reserve skips fuel selection for characters who can see without it.
+
+While a torch is lit, the Borg replenishes from Home or the General
+Store after immediate needs and within ordinary gold, weight, and pack
+limits. Additional usable light has diminishing shopping value above
+the reserve and competes with other supplies. `town_light_percent`
+scales the shopping value. It does not change the fuel target. Zero
+restores the original shopping curve and discard policy, including its
+legacy flask valuation.
+
+The lantern bonus adds power points to the normal try-on score before
+the diminishing equipment curve. It defaults to zero in the shipped
+profile.

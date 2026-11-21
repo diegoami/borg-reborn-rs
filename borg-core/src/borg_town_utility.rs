@@ -59,6 +59,10 @@ impl Journey {
             hp: i64::from(st.borg.tr(BI_MAXHP)).max(1) }
     }
 
+    pub(crate) fn fuel_goal(self, reserve: i64) -> i64 {
+        self.turns.max(reserve)
+    }
+
     pub(crate) fn exposure(self) -> i64 {
         (self.turns * self.depth * self.risk / (UNIT * self.level)).max(0)
     }
@@ -272,6 +276,9 @@ fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_ov
     });
     for i in pack {
         let it = &input.kit[i];
+        if u.capability.as_ref().is_some_and(|model| model.protects_fuel(it)) {
+            continue;
+        }
         if it.unknown_flavour && !it.just_bought && (input.revision < 8 || it.sell_shop >= 0) {
             out[i] = if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
             u.change(it, -1);
