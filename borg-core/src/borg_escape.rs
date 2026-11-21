@@ -861,6 +861,13 @@ pub(crate) fn phase_door(
     danger: Option<i32>,
     cast: impl FnOnce(&mut BorgState) -> bool,
 ) -> bool {
+    // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
+    // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
+    // grid does not (`dis` 10 is not above 10), so the grid is not asked.
+    if teleport_curse(st) {
+        borg_note(st, &format!("# Phase ({}): no, teleport is blocked", site.label()));
+        return false;
+    }
     // borg-reborn-rs (#584, owner): the one rule, before the site's own check.
     // It only refuses the Phase Door: the site goes on with its other escapes,
     // and the rule's attack or boost waits until no escape acted
@@ -1345,11 +1352,172 @@ pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
     }
 
     // Check for a no teleport curse
-    if st.borg.tr(BI_CRSNOTEL) != 0 {
+    // borg-reborn-rs (#829): known from the item's curses (`BI_CRSNOTEL`), or
+    // learned from the engine's own messages (`TeleportBlock`).
+    if teleport_curse(st) {
         return false;
     }
 
     true
+}
+
+/// borg-reborn-rs (#829): what the Borg learned from "Your X prevents you
+/// teleporting." / "Teleportation forbidden!": the player cannot teleport
+/// (effect-handler-general.c: `effect_handler_TELEPORT`,
+/// `effect_handler_TELEPORT_TO`, `effect_handler_TELEPORT_LEVEL` at
+/// 574b618c, all `player_of_has(player, OF_NO_TELEPORT)`), whatever the
+/// identification state of the item that carries the curse (`BI_CRSNOTEL` is
+/// set only from the curses the Borg's item read shows).
+///
+/// It lasts until the item that carries it changes, or a Remove Curse takes
+/// the curse away.
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
+pub struct TeleportBlock {
+    /// The item the engine named (`ODESC_BASE`: "Cloak"), if it did.
+    pub item: Option<String>,
+    /// The equipment the curse may sit on, as it was when learned:
+    /// `(slot, kind, artifact, weight)`. The named item's slot alone; every
+    /// worn item when the message named none.
+    watched: Vec<(usize, u32, u8, i16)>,
+}
+
+/// The identity of a worn item that survives learning its runes.
+fn worn_identity(st: &BorgState, slot: usize) -> Option<(usize, u32, u8, i16)> {
+    let item = st.items.items.get(slot)?;
+    (item.iqty != 0).then_some((slot, item.kind, item.art_idx, item.weight))
+}
+
+/// `borg_item_desc` of `slot`, as text.
+fn worn_desc(st: &BorgState, slot: usize) -> String {
+    let desc = &st.items.items[slot].desc;
+    let bytes: Vec<u8> = desc.iter().take_while(|&&c| c != 0).map(|&c| c as u8).collect();
+    String::from_utf8_lossy(&bytes).into_owned()
+}
+
+/// What a message says about teleporting.
+#[derive(Debug, PartialEq, Eq)]
+enum TeleportMessage {
+    /// "Your Cloak prevents you teleporting." (object_property.txt, the
+    /// message of `OF_NO_TELEPORT`, printed once, when the rune is learned).
+    Prevents(String),
+    /// "Teleportation forbidden!": the curse, or a no-teleport grid.
+    Forbidden,
+    /// "The anti-teleportation curse is removed!" (`remove_object_curse`).
+    Removed,
+}
+
+fn teleport_message(msg: &[u8]) -> Option<TeleportMessage> {
+    let text = String::from_utf8_lossy(msg);
+    let text = text.trim_end();
+    if text == "The anti-teleportation curse is removed!" {
+        return Some(TeleportMessage::Removed);
+    }
+    if text == "Teleportation forbidden!" {
+        return Some(TeleportMessage::Forbidden);
+    }
+    let name = text.strip_prefix("Your ")?.strip_suffix(" prevents you teleporting.")?;
+    Some(TeleportMessage::Prevents(name.to_owned()))
+}
+
+/// What `msg` (one parsed message) tells about teleporting
+/// (`borg_parse_aux`): learn the block from "Your X prevents you
+/// teleporting." and from "Teleportation forbidden!", lift it on "The
+/// anti-teleportation curse is removed!".
+pub(crate) fn teleport_block_message(st: &mut BorgState, msg: &[u8]) {
+    match teleport_message(msg) {
+        Some(TeleportMessage::Removed) => {
+            if st.borg.teleport_block.take().is_some() {
+                borg_note(st, "# Teleport block lifted: the anti-teleportation curse is removed");
+            }
+        }
+        Some(TeleportMessage::Prevents(name)) => learn_teleport_block(st, Some(&name)),
+        Some(TeleportMessage::Forbidden) => {
+            // A no-teleport grid forbids the long teleports as well; the grid
+            // is asked for by `borg_allow_teleport`, and leaving it frees the
+            // Borg. Phase Door (`dis` 10) is never stopped by a grid.
+            if !engine::square_isno_teleport(st.borg.c.x, st.borg.c.y) {
+                learn_teleport_block(st, None);
+            }
+        }
+        None => {}
+    }
+}
+
+impl TeleportBlock {
+    /// Whether every item the curse may sit on is still the one worn when it
+    /// was learned; `worn` is the identity of a slot now.
+    fn holds(&self, worn: impl Fn(usize) -> Option<(usize, u32, u8, i16)>) -> bool {
+        self.watched.iter().all(|&w| worn(w.0) == Some(w))
+    }
+}
+
+fn learn_teleport_block(st: &mut BorgState, name: Option<&str>) {
+    if st.borg.teleport_block.is_some() && name.is_none() {
+        return;
+    }
+    let first = engine::z_info().pack_size as usize;
+    let slots: Vec<usize> = (first..first + 12).filter(|&s| worn_identity(st, s).is_some()).collect();
+    let named: Vec<usize> = match name {
+        Some(n) => slots.iter().copied().filter(|&s| worn_desc(st, s).contains(n)).collect(),
+        None => Vec::new(),
+    };
+    // One item the message names, else any of them could be the cursed one.
+    let watched: Vec<usize> = if named.len() == 1 { named } else { slots };
+    let block = TeleportBlock {
+        item: name.map(str::to_owned),
+        watched: watched.iter().filter_map(|&s| worn_identity(st, s)).collect(),
+    };
+    if st.borg.teleport_block.as_ref() != Some(&block) {
+        let on = block.item.as_deref().map_or(String::new(), |i| format!(" on {i}"));
+        borg_note(st, &format!("# Teleport blocked (anti-teleportation{on}): no phase/teleport"));
+    }
+    st.borg.teleport_block = Some(block);
+}
+
+/// borg-reborn-rs (#829): a scroll that teleports the player (Phase Door,
+/// Teleportation, Teleport Level), read under a teleport curse. The choke
+/// point of every site that reads one, `borg_read_scroll`.
+pub(crate) fn teleport_scroll_blocked(st: &mut BorgState, sval: i32) -> bool {
+    let v = &st.item_val;
+    let teleports = sval == v.sv_scroll_phase_door || sval == v.sv_scroll_teleport || sval == v.sv_scroll_teleport_level;
+    teleports && teleport_curse(st)
+}
+
+/// borg-reborn-rs (#829): a staff of Teleportation (`borg_use_staff`).
+pub(crate) fn teleport_staff_blocked(st: &mut BorgState, sval: i32) -> bool {
+    sval == st.item_val.sv_staff_teleportation && teleport_curse(st)
+}
+
+/// borg-reborn-rs (#829): an activation that teleports the player
+/// (`borg_activate_item`).
+pub(crate) fn teleport_activation_blocked(st: &mut BorgState, activation: i32) -> bool {
+    let a = &st.act;
+    (activation == a.tele_phase || activation == a.tele_long || activation == a.tele_level) && teleport_curse(st)
+}
+
+/// borg-reborn-rs (#829): a spell whose effect teleports the player
+/// (class.txt at 574b618c: `TELEPORT` for Phase Door, Teleport Self, Portal
+/// and Shadow Shift; `TELEPORT_LEVEL`; `TELEPORT_TO` for Dimension Door), cast
+/// by `borg_spell`.
+pub(crate) fn teleport_spell_blocked(st: &mut BorgState, spell: crate::borg_headers::borg_magic_h::borg_spells) -> bool {
+    let teleports = [PHASE_DOOR, TELEPORT_SELF, TELEPORT_LEVEL, DIMENSION_DOOR, PORTAL, SHADOW_SHIFT].contains(&spell);
+    teleports && teleport_curse(st)
+}
+
+/// borg-reborn-rs (#829): whether a teleport curse stops the Borg now: one it
+/// knows from its items (`BI_CRSNOTEL`) or one the engine's messages told it
+/// about, while the item that carries it is still worn.
+pub fn teleport_curse(st: &mut BorgState) -> bool {
+    if st.borg.tr(BI_CRSNOTEL) != 0 {
+        return true;
+    }
+    let Some(block) = &st.borg.teleport_block else { return false };
+    if block.holds(|slot| worn_identity(st, slot)) {
+        return true;
+    }
+    st.borg.teleport_block = None;
+    borg_note(st, "# Teleport block lifted: the equipment changed");
+    false
 }
 
 /// short range teleport + pain
@@ -2233,4 +2401,42 @@ pub(crate) fn unseen_bump_phase(st: &mut BorgState, danger: i32) -> bool {
         borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
             || borg_activate_item(st, st.act.tele_phase) || borg_spell(st, PHASE_DOOR)
     })
+}
+
+/// borg-reborn-rs (#829): what the Borg learns of a teleport curse.
+#[cfg(test)]
+mod teleport_block_tests {
+    use super::*;
+
+    #[test]
+    fn the_engine_s_teleport_messages_are_understood() {
+        // The lines of Priest 354395849 (messages.log 15401-15403).
+        assert_eq!(teleport_message(b"Your Cloak prevents you teleporting."), Some(TeleportMessage::Prevents("Cloak".into())));
+        assert_eq!(
+            teleport_message(b"Your Pair of Leather Sandals prevents you teleporting."),
+            Some(TeleportMessage::Prevents("Pair of Leather Sandals".into()))
+        );
+        assert_eq!(teleport_message(b"Teleportation forbidden!"), Some(TeleportMessage::Forbidden));
+        assert_eq!(teleport_message(b"The anti-teleportation curse is removed!"), Some(TeleportMessage::Removed));
+        // Nothing else is one.
+        assert_eq!(teleport_message(b"You have learned the rune of anti-teleportation curse."), None);
+        assert_eq!(teleport_message(b"The vulnerability curse is removed!"), None);
+        assert_eq!(teleport_message(b"Your Cloak glows."), None);
+        assert_eq!(teleport_message(b""), None);
+    }
+
+    #[test]
+    fn the_block_lasts_while_the_watched_items_are_worn_and_ends_when_one_changes() {
+        // (slot, kind, artifact, weight): the Priest's Cloak in slot 28.
+        let cloak = (28, 7, 0, 10);
+        let block = TeleportBlock { item: Some("Cloak".into()), watched: vec![cloak] };
+        assert!(block.holds(|_| Some(cloak)), "the same Cloak");
+        assert!(!block.holds(|_| None), "taken off");
+        assert!(!block.holds(|_| Some((28, 8, 0, 10))), "another kind of Cloak");
+        assert!(!block.holds(|_| Some((28, 7, 3, 10))), "an artifact in its place");
+        // A message that named no item watches everything worn.
+        let any = TeleportBlock { item: None, watched: vec![(24, 1, 0, 50), cloak] };
+        assert!(any.holds(|s| if s == 24 { Some((24, 1, 0, 50)) } else { Some(cloak) }));
+        assert!(!any.holds(|s| if s == 24 { Some((24, 2, 0, 50)) } else { Some(cloak) }), "the weapon changed");
+    }
 }

@@ -29,9 +29,25 @@ The notes in `messages.log`:
 | note | meaning |
 |---|---|
 | `# Phase (<site>): no, no monster next to me` | #539's test refused it |
+| `# Phase (<site>): no, teleport is blocked` | a teleport curse (known from the item, or learned from "Teleportation forbidden!", #829) refused it before the site's own check |
 | `# Phase (<site>): no, N scary landing grids of 100 (at most T)` | the landing test refused it |
 | `# Phase (<site>): landing ok, N scary landing grids of 100 (at most T)` | the landing test passed |
 | `# Phase (<site>): done, HP h/H, danger d, nearest awake monster n` | the Borg phased (or used the site's teleport) |
+
+**A teleport curse stops it first (#829).** `phase_door` asks
+`teleport_curse` before anything else, so no site can skip it. The curse is
+known from `BI_CRSNOTEL` (an item whose anti-teleportation curse the Borg
+reads), or learned from the engine's messages: "Your X prevents you
+teleporting." and "Teleportation forbidden!" (`effect_handler_TELEPORT`,
+`_TELEPORT_TO` and `_TELEPORT_LEVEL`, `OF_NO_TELEPORT`). It lasts until the
+item it was learned on is no longer worn, or "The anti-teleportation curse is
+removed!". A no-teleport *grid* is not asked here: Phase Door (distance 10)
+is not stopped by one (`dis > 10` in `effect_handler_TELEPORT`). The same
+test sits in `borg_read_scroll` (Phase Door, Teleportation, Teleport Level),
+`borg_use_staff*` (Teleportation), `borg_activate_item` (the teleport
+activations) and `borg_spell` (Phase Door, Teleport Self, Teleport Level,
+Portal, Shadow Shift, Dimension Door), so a site that does not go through
+`phase_door` cannot teleport either.
 
 The old notes (`# Safe to Phase. scary squares`, `# No Phase …`) are gone;
 the `# Danger Level N` notes after an escape are unchanged.

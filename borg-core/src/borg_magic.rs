@@ -655,6 +655,11 @@ fn menu_letter(i: i32) -> keycode_t {
 
 /// Attempt to cast a spell (`borg_spell`)
 pub fn borg_spell(st: &mut BorgState, spell: borg_spells) -> bool {
+    // borg-reborn-rs (#829): not a teleport under a teleport curse
+    if crate::borg_escape::teleport_spell_blocked(st, spell) {
+        return false;
+    }
+
     let spell_num = borg_get_spell_number(st, spell);
     if spell_num < 0 {
         return false;
