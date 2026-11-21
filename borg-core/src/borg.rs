@@ -36,6 +36,8 @@ pub const fn ktrl(c: u8) -> u32 {
 /// All the information the Borg knows about itself (`struct borg_struct`).
 #[derive(Clone, Default)]
 pub struct Borg {
+    /// borg-reborn-rs (#781): observed bumps, never hidden engine monsters.
+    pub unseen_bumps: crate::borg_caution::UnseenBumps,
     /// Indexed by `BI_*` (`borg.trait`, allocated by borg-trait.c).
     pub trait_: Vec<i32>,
     /// Indexed by object kind (`borg.has`).

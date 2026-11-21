@@ -2722,6 +2722,11 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
 /// object it would throw and its average damage, as `(slot, damage)`
 /// (`(-1, -1)`: nothing). `ranged_means` asks it too.
 fn best_throw(st: &BorgState) -> (i32, i32) {
+    best_throw_of(st, false)
+}
+
+// borg-reborn-rs (#781): same fuel reserves, restricted to oil for a bump.
+fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
@@ -2732,6 +2737,8 @@ fn best_throw(st: &BorgState) -> (i32, i32) {
     /* Scan the pack */
     for k in 0..i32::from(engine::z_info().pack_size) {
         let item = st.items.items[k as usize];
+
+        if flasks_only && u32::from(item.tval) != TV_FLASK { continue; }
 
         /* Skip empty items */
         if item.iqty == 0 {
@@ -2818,6 +2825,23 @@ fn best_throw(st: &BorgState) -> (i32, i32) {
         let _ = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
     }
     (b_k, b_d)
+}
+
+/// borg-reborn-rs (#781): throw oil in the observed bump's direction. A
+/// direction can hit an unseen monster; a monster target cannot be set.
+/// Uses the normal chooser's fuel reservation; never throws an unknown item.
+pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
+    let (slot, _) = best_throw_of(st, true);
+    if slot < 0 || !st.items.items[slot as usize].aware { return false; }
+    let dir = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
+    borg_note(st, &format!("# Throwing oil at unseen bump ({},{})", grid.y, grid.x));
+    crate::borg_object_log::log_use(st, "throw", &st.items.items[slot as usize]);
+    borg_keypress(st, key(b'v'));
+    borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(slot)));
+    crate::borg_io::borg_queue_direction(st, (dir + i32::from(b'0')) as keycode_t);
+    // This is a direction, not a tracked target: no unknown-wall inference.
+    st.fight_attack.successful_target = 0;
+    true
 }
 
 /// `borg_attack_aux_object` after its scan: aim and throw `b_k`.

@@ -695,7 +695,7 @@ pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
         /* not unless safe or brave */
         if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;
-            if crate::borg_prepared::borg_prepared_c(st, depth).is_some() {
+            if crate::borg_prepared::prepared_c_for_decision(st, depth).is_some() {
                 return true;
             }
         }

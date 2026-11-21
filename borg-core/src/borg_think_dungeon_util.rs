@@ -700,6 +700,7 @@ fn borg_time_to_stay_on_level(st: &mut BorgState, bored: bool) -> i32 {
 
 /// `borg_prepared(depth)`, keeping C's pointer: a formatted reason is the
 /// one static buffer, which later formatted reasons overwrite.
+#[track_caller]
 fn prepared(st: &mut BorgState, depth: i32) -> Option<PreparedC> {
     crate::borg_prepared::borg_prepared_buf(st, depth)
 }

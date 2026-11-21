@@ -43,11 +43,13 @@ HOOKED = {
     'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
+    'src/borg_trip.rs',  # #795: trace the live trip preparedness check
     'src/borg_prepared.rs',  # #447: independent plan cap
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
     'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
     'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
@@ -64,6 +66,7 @@ HOOKED = {
     'src/borg.rs',  # #530: the scary goals and scary stand flags
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
+    'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
     'src/borg_light.rs',  # #685: no detection spell by panel below a level
     'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path

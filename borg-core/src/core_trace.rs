@@ -22,6 +22,7 @@ struct Selection {
     errand: Option<(String, Option<i32>)>,
     attacks: Vec<AttackRanking>,
     death_risk: Option<death_risk::Observation>,
+    prepared: Vec<PreparedCheck>,
 }
 
 /// One native attack-selector invocation. Multiple attempts in one think are
@@ -88,6 +89,88 @@ pub(crate) fn record_attack_ranking(trace: Option<AttackRanking>, winner: Option
     }
 }
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct PreparedCheck {
+    current_depth: i32,
+    proposed_depth: i32,
+    source: String,
+    requirement: Option<FailedRequirement>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct FailedRequirement {
+    name: String,
+    actual: i32,
+    required: i32,
+    relation: String,
+    message: String,
+}
+
+pub(crate) fn record_prepared(
+    st: &BorgState, depth: i32, result: Option<&crate::borg_prepared::Reason>,
+    source: &std::panic::Location<'_>,
+) {
+    FRAMES.with(|frames| {
+        let mut frames = frames.borrow_mut();
+        let Some(frame) = frames.last_mut() else { return };
+        frame.prepared.push(PreparedCheck {
+            current_depth: st.borg.tr(BI_CDEPTH),
+            proposed_depth: depth,
+            source: source.to_string(),
+            requirement: result.map(|reason| FailedRequirement {
+                name: reason.requirement.name.into(),
+                actual: reason.requirement.actual,
+                required: reason.requirement.required,
+                relation: reason.requirement.relation.into(),
+                message: String::from_utf8_lossy(reason.text(st)).into_owned(),
+            }),
+        });
+    });
+}
+
+#[derive(Debug, Default)]
+struct ObservedTrip {
+    depth: i32,
+    trip_id: u64,
+    pending_think: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct PreparedOutcome {
+    think: u64,
+    action: DepthOutcome,
+    depth: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum DepthOutcome {
+    Descended,
+    ReturnedToTown,
+    Ascended,
+    Stayed,
+}
+
+impl ObservedTrip {
+    fn observe(&mut self, depth: i32, next_pending: Option<u64>) -> Option<PreparedOutcome> {
+        let action = if depth > self.depth {
+            DepthOutcome::Descended
+        } else if depth == self.depth {
+            DepthOutcome::Stayed
+        } else if depth == 0 {
+            DepthOutcome::ReturnedToTown
+        } else {
+            DepthOutcome::Ascended
+        };
+        if depth > 0 && self.depth == 0 {
+            self.trip_id += 1;
+        }
+        self.depth = depth;
+        std::mem::replace(&mut self.pending_think, next_pending)
+            .map(|think| PreparedOutcome { think, action, depth })
+    }
+}
+
 thread_local! {
     // Nested engine message handling may invoke another think. A stack keeps
     // its selection separate from the outer think, without holding a lock.
@@ -99,6 +182,7 @@ static WRITER: OnceLock<Mutex<Recorder>> = OnceLock::new();
 struct Recorder {
     file: File,
     think: u64,
+    trip: ObservedTrip,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -139,6 +223,12 @@ struct Line {
     acted: bool,
     #[serde(default)]
     attacks: Vec<AttackRanking>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    prepared: Vec<PreparedCheck>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    trip_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    previous_prepared_outcome: Option<PreparedOutcome>,
 }
 
 fn failure(error: impl std::fmt::Display) -> ! {
@@ -260,6 +350,9 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         keys: st.io.queued_keys(),
         acted,
         attacks: frame.attacks,
+        prepared: frame.prepared,
+        trip_id: None,
+        previous_prepared_outcome: None,
     };
     let writer = WRITER.get_or_init(|| {
         let path = PATH
@@ -268,11 +361,14 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
             .expect("enabled core trace path");
         let file =
             File::create(path).unwrap_or_else(|e| failure(format!("{}: {e}", path.display())));
-        Mutex::new(Recorder { file, think: 0 })
+        Mutex::new(Recorder { file, think: 0, trip: ObservedTrip::default() })
     });
     let mut writer = writer.lock().unwrap_or_else(|e| e.into_inner());
     writer.think = writer.think.wrapping_add(1);
     line.think = writer.think;
+    let checked = !line.prepared.is_empty();
+    line.previous_prepared_outcome = writer.trip.observe(depth, checked.then_some(line.think));
+    line.trip_id = checked.then_some(writer.trip.trip_id);
     let mut bytes = serde_json::to_vec(&line).unwrap_or_else(|e| failure(e));
     bytes.push(b'\n');
     // A direct write per line leaves no userspace buffer stranded when the C
@@ -283,6 +379,24 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trip_outcomes_link_to_the_previous_think_and_keep_one_id_until_town() {
+        let mut trip = ObservedTrip::default();
+        assert_eq!(trip.observe(0, Some(2)), None);
+        assert_eq!(trip.trip_id, 0);
+        assert_eq!(trip.observe(1, Some(5)), Some(PreparedOutcome {
+            think: 2, action: DepthOutcome::Descended, depth: 1,
+        }));
+        assert_eq!(trip.trip_id, 1);
+        assert_eq!(trip.observe(1, Some(6)).unwrap().action, DepthOutcome::Stayed);
+        assert_eq!(trip.observe(2, Some(7)).unwrap().action, DepthOutcome::Descended);
+        assert_eq!(trip.observe(1, Some(8)).unwrap().action, DepthOutcome::Ascended);
+        assert_eq!(trip.trip_id, 1);
+        assert_eq!(trip.observe(0, Some(9)).unwrap().action, DepthOutcome::ReturnedToTown);
+        assert_eq!(trip.observe(2, None).unwrap().action, DepthOutcome::Descended);
+        assert_eq!(trip.trip_id, 2);
+    }
 
     #[test]
     fn nested_frames_keep_their_own_selected_check() {
@@ -359,6 +473,9 @@ mod tests {
             keys: vec![27, 82, 49, 48, 48, 13, 0x80],
             acted: true,
             attacks: vec![],
+            prepared: vec![],
+            trip_id: None,
+            previous_prepared_outcome: None,
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));

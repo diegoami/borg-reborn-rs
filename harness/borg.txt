@@ -680,6 +680,10 @@ borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
 
+# Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
+borg_param_light_detect_dark_entry = 0
+borg_param_light_detect_dark_entry_reserve_sp = 2
+
 # No detection prayer by panel at low level (#685, owner 2026-11-19): below
 # this character level the panel check casts no Detect Evil, Detect Monsters,
 # Read Minds or Seek Battle (items and rods still detect). 0 = C. #728
@@ -1099,6 +1103,17 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
 
+# Slower crowd exit (#690, generalising the breeder exit): surrounded, the
+# danger here at or above the HP, and every awake monster within reach
+# slower than the Borg by the margin (energy per game turn) or never moving:
+# walk to the nearest known corridor, doorway or staircase at least this
+# distance from all of them, else to any open grid that far; with neither,
+# the distance comes down to 2. A faster awake monster near holds it. 0 = off.
+
+borg_param_caution_slow_crowd_exit = 0
+borg_param_caution_slow_crowd_exit_distance = 6
+borg_param_caution_slow_crowd_exit_margin_percent = 25
+
 # Avoid breeder colonies (#556): remember where breeders were seen for
 # caution_breeder_avoid_turns Borg turns; every flow but a kill flow (stairs,
 # flight, exploration, items, the breeder exit) refuses the grids within
@@ -1505,3 +1520,9 @@ borg_param_prepared_deep_clevel_offset__blackguard = 5
 borg_param_prepared_deep_min_clevel__blackguard = 0
 borg_param_prepared_deep_max_clevel__blackguard = 38
 # ---- END CLASS FILES ----
+
+# #802: ship the unseen blocker profile exercised in #781's review trials.
+borg_param_caution_unseen_bump_turns = 200
+borg_param_caution_unseen_bump_response = 1
+borg_param_caution_unseen_bump_heal_hp_percent = 50
+borg_param_caution_unseen_bump_throw_tries = 3
