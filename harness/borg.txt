@@ -279,13 +279,14 @@ borg_param_town_prepared_percent = 0
 borg_param_town_prepared_copies = 2
 
 # Staples lose value (#863, owner: "make staple objects start losing value
-# starting from the 8th"): the healing potions (counted as Cure Light Wounds)
-# and Phase Door keep only staple_past_percent of their marginal value after
-# this many copies carried or bought, so 40 Cure Light Wounds do not outbid a
-# first Remove Curse. 0 = off.
+# starting from the 8th"; "it must be a decaying curve"): the healing potions
+# (counted as Cure Light Wounds), Phase Door, flasks of oil, food and, without
+# a lantern, torches. After this many copies carried or bought, each further
+# copy keeps staple_decay_percent of the previous copy's marginal value, so
+# 40 Cure Light Wounds do not outbid a first Remove Curse. 0 = off.
 
 borg_param_town_staple_free_copies = 0
-borg_param_town_staple_past_percent = 25
+borg_param_town_staple_decay_percent = 80
 
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer

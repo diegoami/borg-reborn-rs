@@ -164,9 +164,9 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:799` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1914` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1914` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:559` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:719` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:722` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:581` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:781` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:762` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -217,7 +217,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:728` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:750` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -462,7 +462,7 @@ the less value they have".
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:843` |
-| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
+| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:908` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
 
@@ -482,7 +482,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:446` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:468` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:863` |
 
 
@@ -1982,9 +1982,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:506` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:364` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:497` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:528` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:385` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:519` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2112,11 +2112,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:421` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:455` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:477` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:701` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1752` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1700` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1797` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1745` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5312,29 +5312,41 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   the search, never changes a value.
 
 - **`town_staple_free_copies`** (compiled 0, **shipped 0**) and
-  **`town_staple_past_percent`** (compiled 25; owner: "make staple objects
+  **`town_staple_decay_percent`** (compiled 80; owner: "make staple objects
   start losing value starting from the 8th, compared to the objects that are
-  not supposed to be in the starter's shopping list"). Above 0 the healing
-  potions (a copy counted as a Cure Light Wounds of 20 HP in the curve's own
-  speed-weighted units) and Phase Door, the starter's staples, keep only the
-  percent of their marginal value after that many copies, carried ones
-  counted (`Model::value`; two parameter rows, `STAPLE_HEAL` and
-  `STAPLE_PHASE`, hold the knee as a negative demand and carry no supplies;
-  `Model::gain` and `Model::reserve` read them). Light, food, oil and arrows
-  have their own caps and are not touched. 7 free copies is the owner's
-  "the 8th"; 25 percent is a first hypothesis.
-- Unit check (`staples_lose_value_from_the_eighth_copy`): seven copies as
-  before, every later one about a quarter and never nothing, and with 20
-  Cure Light Wounds carried the 3rd Remove Curse is worth more than the 21st
-  Cure Light Wounds.
-- Engine check (this branch, on the default core): a 60,000-turn game
-  (seed 101, Human Warrior) with each switch on runs the town plan without
-  a panic and plays differently from the game with both off; the smoke suite
-  at the shipped settings is 3/3 identical to `smoke-borg-rs`.
+  not supposed to be in the starter's shopping list"; "if Flasks of Oil,
+  torches (without lantern) and food belong to it, of course. it must be a
+  decaying curve"). Above 0 the staples keep their curves for the first
+  `free` copies and each later copy adds the curve's marginal value times
+  the decay percent once more than the copy before it: with 7 free copies
+  and 80 percent the 8th copy keeps 80 percent, the 9th 64, the 12th 33,
+  the 21st 4 (`Model::value`; integer fixed point, at most 200 steps, the
+  rest at the last share): the value keeps growing, ever more slowly, never
+  flat. Staples (`STAPLES`): healing potions (a copy is a Cure Light Wounds
+  of 20 HP in the curve's speed-weighted units), Phase Door, flasks of oil
+  (the thrown-oil curve, so with `town_oil_apart`), food (a copy is a Ration,
+  30 nutrition; a Remove Hunger scroll counts as the food it adds) and
+  torches (a copy is `borg_town_light_turns` of light), the last only
+  without a lantern: with one, spare torches are not light and the row is
+  off. Carried copies count. One row per staple (`STAPLE_HEAL`, `STAPLE_PHASE`,
+  `STAPLE_OIL`, `STAPLE_FOOD`, `STAPLE_LIGHT`) holds the knee (negative
+  demand), the decay (weight) and one copy's units (carried); none carries
+  supplies; `Model::gain` and `Model::reserve` read them. Ammunition keeps
+  its own caps (`town_ranger_arrows_max`) and is not touched.
+- Unit check (`staples_lose_value_from_the_eighth_copy_on_a_decaying_curve`):
+  for each of the five staples the first seven copies are as before, copy
+  n past the knee keeps 0.8^(n-7) of the plain marginal (within 2 percent),
+  every copy something and less than the copy before; with 20 Cure Light
+  Wounds carried the 21st is worth a tenth or less of its plain value and
+  the 3rd Remove Curse is worth more.
+- Engine check (this branch, default core): smoke at the shipped settings is
+  3/3 identical to `smoke-borg-rs`; 80,000-turn games (a Human Warrior,
+  seed 101; with both switches on, a Human Mage seed 3) run the town plan
+  without a panic and play differently from the game with the switches off.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:820` |
 | `town_prepared_copies` | 2 | copies | 1–20 | `borg_town_capability.rs:820` |
-| `town_staple_free_copies` | 0 | copies | 0–99 | `borg_town_capability.rs:734` |
-| `town_staple_past_percent` | 25 | percent | 0–100 | `borg_town_capability.rs:849` |
+| `town_staple_free_copies` | 0 | copies | 0–99 | `borg_town_capability.rs:756` |
+| `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:849` |

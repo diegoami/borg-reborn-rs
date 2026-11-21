@@ -103,12 +103,20 @@ const PREP_INVISIBLE: usize = 66;
 const PREP_CONFUSION: usize = 67;
 const PREP_FEAR: usize = 68;
 /// borg-reborn-rs (#863, owner: "make staple objects start losing value
-/// starting from the 8th"): with `town_staple_free_copies` on, two rows that
-/// carry no supplies and only hold a staple's knee: weight = the percent of
-/// the marginal value kept past it, demand = minus the knee in the
-/// capability's own units (a positive demand: no knee). `Model::value` reads them for HEAL and PHASE.
+/// starting from the 8th"; "it must be a decaying curve"): with
+/// `town_staple_free_copies` on, one row per staple that carries no supplies
+/// and only holds its knee: weight = the percent of the previous copy's
+/// marginal value each copy past the knee keeps, demand = minus the knee in
+/// the capability's own units (a positive demand: no knee), carried = the
+/// units of one copy. `Model::value` reads them.
 const STAPLE_HEAL: usize = 69;
 const STAPLE_PHASE: usize = 70;
+const STAPLE_OIL: usize = 71;
+const STAPLE_FOOD: usize = 72;
+const STAPLE_LIGHT: usize = 73;
+/// A staple's capability -> its knee row.
+const STAPLES: [(usize, usize); 5] = [(HEAL, STAPLE_HEAL), (PHASE, STAPLE_PHASE),
+    (THROWN_OIL, STAPLE_OIL), (FOOD, STAPLE_FOOD), (LIGHT, STAPLE_LIGHT)];
 /// Situation capability -> its prepared row.
 const PREPARED: [(usize, usize); 5] = [(POISON, PREP_POISON), (CURSE, PREP_CURSE),
     (INVISIBLE, PREP_INVISIBLE), (CONFUSION, PREP_CONFUSION), (FEAR, PREP_FEAR)];
@@ -127,7 +135,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 71] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 74] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -135,7 +143,7 @@ pub const NAMES: [&str; 71] = ["light turns", "nutrition", "healing HP", "poison
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
-    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple knee: healing", "staple knee: phase"];
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple knee: healing", "staple knee: phase", "staple knee: oil", "staple knee: food", "staple knee: light"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -169,15 +177,28 @@ fn coverage(row: &[i64; 5], amount: i64) -> i64 {
 
 impl Model {
     /// The coverage of `amount` on a curve, with a staple's knee (#863):
-    /// past the knee each unit keeps only the knee row's percent of the
-    /// curve's marginal value. Without the knee rows, `coverage`.
+    /// each copy past the knee adds the curve's marginal value times the
+    /// knee row's percent once more than the copy before (the 8th copy keeps
+    /// 80 percent, the 9th 64, ...), so the value keeps growing but ever
+    /// more slowly. Without the knee rows, `coverage`.
     fn value(&self, id: usize, r: &[i64; 5], amount: i64) -> i64 {
-        let knee = match id { HEAL => STAPLE_HEAL, PHASE => STAPLE_PHASE, _ => return coverage(r, amount) };
-        let Some(k) = self.curves.get(knee) else { return coverage(r, amount) };
+        let knee = STAPLES.iter().find(|&&(cap, _)| cap == id).map(|&(_, row)| row);
+        let Some(k) = knee.and_then(|row| self.curves.get(row)) else { return coverage(r, amount) };
         // Negative demand is the knee (as a requirement's), a default row is off.
-        if k[2] >= 0 || amount <= -k[2] { return coverage(r, amount); }
-        let at = coverage(r, -k[2]);
-        at + (coverage(r, amount) - at) * k[1].clamp(0, 100) / 100
+        let (free, copy) = (-k[2], k[3]);
+        if k[2] >= 0 || copy <= 0 || amount <= free { return coverage(r, amount); }
+        const ONE: i64 = 1_000_000;
+        let decay = k[1].clamp(0, 100);
+        let (mut value, mut at, mut keep) = (coverage(r, free), free, ONE);
+        for _ in 0..200 {
+            if at >= amount { break; }
+            let next = (at + copy).min(amount);
+            keep = keep * decay / 100;
+            value += (coverage(r, next) - coverage(r, at)) * keep / ONE;
+            at = next;
+        }
+        // A stack past 200 copies: the rest at the last copy's share.
+        value + (coverage(r, amount) - coverage(r, at)) * keep / ONE
     }
     pub fn units(&self, scope: i64, slot: i64, count: i64) -> Vec<(usize, i64)> {
         self.supplies.iter().filter(|r| r[0] == scope && r[1] == slot)
@@ -842,19 +863,28 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     // borg-reborn-rs (#863, owner: "make staple objects start losing value
     // starting from the 8th, compared to the objects that are not in the
-    // starter's shopping list"): healing potions and Phase Door, the starter's
-    // staples, keep `town_staple_past_percent` of their marginal value from
-    // the copy after `town_staple_free_copies`. A healing copy is a Cure Light
-    // Wounds (20 HP, object.txt) in the curve's own speed-weighted units.
+    // starter's shopping list"; "it must be a decaying curve"): healing
+    // potions, Phase Door, flasks of oil, food and, without a lantern,
+    // torches. From the copy after `town_staple_free_copies` each copy keeps
+    // `town_staple_decay_percent` of the previous copy's marginal value. A
+    // healing copy is a Cure Light Wounds (20 HP, object.txt) in the curve's
+    // own speed-weighted units, a food copy a Ration (RATION_NUTRITION), a
+    // light copy `borg_town_light_turns`. With a lantern spare torches are
+    // not light, so the light row stays off.
+    let mut staple_copies = Vec::new();
     if staple_free > 0 {
-        let percent = i64::from(param(Param::town_staple_past_percent));
+        let decay = i64::from(param(Param::town_staple_decay_percent));
         let clw = heal_units(20, journey.hp, i64::from(param(Param::town_heal_speed_percent)));
-        curve(STAPLE_HEAL, percent, -(staple_free * clw).max(1));
-        curve(STAPLE_PHASE, percent, -(staple_free * UNIT));
-    } else if count > STAPLE_PHASE {
+        let copy = |units: i64| units.max(1);
+        for (row, units) in [(STAPLE_HEAL, clw), (STAPLE_PHASE, UNIT), (STAPLE_OIL, UNIT),
+            (STAPLE_FOOD, RATION_NUTRITION * UNIT), (STAPLE_LIGHT, cfg(BORG_TOWN_LIGHT_TURNS).max(1) * UNIT)] {
+            if row == STAPLE_LIGHT && lantern { curve(row, 0, UNIT); continue; }
+            curve(row, decay, -(staple_free * copy(units)));
+            staple_copies.push((row, copy(units)));
+        }
+    } else if count > STAPLE_LIGHT {
         // Unset rows hold the default weight and demand: a knee must be off.
-        curve(STAPLE_HEAL, 0, UNIT);
-        curve(STAPLE_PHASE, 0, UNIT);
+        for (_, row) in STAPLES { curve(row, 0, UNIT); }
     }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
@@ -975,6 +1005,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // conflate different effects (treasure sensing is not mapping, Detect
     // Monsters misses invisible races). Scrolls, devices and potions keep
     // their supply value next to the spells.
+    // The knee rows hold one copy's units in `carried` (nothing supplies them).
+    for (row, units) in staple_copies { model.curves[row][3] = units; }
     debug_assert!(model.valid());
     model
 }
@@ -1243,30 +1275,44 @@ mod tests {
     }
 
     /// #863 (owner: "make staple objects start losing value starting from the
-    /// 8th"): the first `free` copies of Phase Door and healing are valued as
-    /// before, each later one keeps only the percent of its marginal value;
-    /// off (no knee rows, or a zero knee) it is the plain curve.
+    /// 8th"; "it must be a decaying curve"): the first seven copies of each
+    /// staple are valued as before, the 8th keeps the decay percent of its
+    /// marginal value, the 9th that of the 8th, and so on: never nothing.
+    /// Without knee rows (or with a positive demand) it is the plain curve.
     #[test]
-    fn staples_lose_value_from_the_eighth_copy() {
-        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
-        m.curves[PHASE] = [PHASE as i64, 180 * UNIT, 3600, 0, 0];
+    fn staples_lose_value_from_the_eighth_copy_on_a_decaying_curve() {
         let clw = 6060;
+        let staples = [(HEAL, STAPLE_HEAL, clw), (PHASE, STAPLE_PHASE, UNIT), (THROWN_OIL, STAPLE_OIL, UNIT),
+            (FOOD, STAPLE_FOOD, 30 * UNIT), (LIGHT, STAPLE_LIGHT, 5000 * UNIT)];
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
         m.curves[HEAL] = [HEAL as i64, 97_500, 97_500, 0, 0];
+        m.curves[PHASE] = [PHASE as i64, 180 * UNIT, 3600, 0, 0];
+        m.curves[THROWN_OIL] = [THROWN_OIL as i64, 40 * UNIT, 10 * UNIT, 0, 0];
+        m.curves[FOOD] = [FOOD as i64, 100_000, 150 * UNIT, 0, 0];
+        m.curves[LIGHT] = [LIGHT as i64, 100_000, 40_000 * UNIT, 0, 0];
         let marginal = |m: &Model, cap: usize, unit: i64, n: i64| m.gain(&[(cap, n * unit)]) - m.gain(&[(cap, (n - 1) * unit)]);
-        let plain: Vec<(i64, i64)> = (1..=12).map(|n| (marginal(&m, PHASE, UNIT, n), marginal(&m, HEAL, clw, n))).collect();
-        let off: Vec<(i64, i64)> = (1..=12).map(|n| (marginal(&m, PHASE, UNIT, n), marginal(&m, HEAL, clw, n))).collect();
-        assert_eq!(off, plain, "default rows (no knee) are the plain curve");
-        m.curves[STAPLE_PHASE] = [STAPLE_PHASE as i64, 25, -7 * UNIT, 0, 0];
-        m.curves[STAPLE_HEAL] = [STAPLE_HEAL as i64, 25, -7 * clw, 0, 0];
-        let kneed: Vec<(i64, i64)> = (1..=12).map(|n| (marginal(&m, PHASE, UNIT, n), marginal(&m, HEAL, clw, n))).collect();
-        assert_eq!(&kneed[..7], &plain[..7], "the first seven copies are as before");
-        for n in 7..12 {
-            assert!(kneed[n].0 > 0 && kneed[n].1 > 0, "past the knee a copy is still worth something");
-            assert!(kneed[n].0 * 100 <= plain[n].0 * 26 && kneed[n].1 * 100 <= plain[n].1 * 26, "copy {}: about a quarter: {:?} vs {:?}", n + 1, kneed[n], plain[n]);
+        let plain: Vec<Vec<i64>> = staples.iter().map(|&(cap, _, unit)| (1..=14).map(|n| marginal(&m, cap, unit, n)).collect()).collect();
+        for &(_, row, _) in &staples { assert_eq!(m.curves[row][2], UNIT, "an unset row is off"); }
+        for (&(cap, row, unit), plain) in staples.iter().zip(&plain) {
+            m.curves[row] = [row as i64, 80, -7 * unit, unit, 0];
+            let kneed: Vec<i64> = (1..=14).map(|n| marginal(&m, cap, unit, n)).collect();
+            assert_eq!(&kneed[..7], &plain[..7], "capability {cap}: the first seven copies are as before");
+            for n in 7..14 {
+                let keep = 0.8f64.powi(n as i32 - 6);
+                let (k, p) = (kneed[n] as f64, plain[n] as f64);
+                assert!(k > 0.0, "capability {cap}: copy {} is still worth something", n + 1);
+                assert!((k - p * keep).abs() <= p * 0.02 + 2.0, "capability {cap}: copy {} keeps {keep:.2}: {k} vs {p}", n + 1);
+            }
+            assert!(kneed[8] * plain[7] < kneed[7] * plain[8], "capability {cap}: each copy keeps less than the one before");
+            m.curves[row] = [row as i64, 0, UNIT, 0, 0];
         }
-        // Copies carried count: 20 carried, the 21st is past the knee.
+        // Copies carried count: 20 carried, the 21st is far down the curve, and the
+        // 3rd Remove Curse is worth more.
         m.curves[HEAL][3] = 20 * clw;
+        let plain_21st = m.gain(&[(HEAL, clw)]);
+        m.curves[STAPLE_HEAL] = [STAPLE_HEAL as i64, 80, -7 * clw, clw, 0];
         let twenty_first = m.gain(&[(HEAL, clw)]);
+        assert!(twenty_first * 10 < plain_21st, "the 21st is worth a tenth or less: {twenty_first} vs {plain_21st}");
         let (w, d) = prepared_row(50 * 1000, 25, 2);
         m.curves[PREP_CURSE] = [PREP_CURSE as i64, w, d, 0, 0];
         let third_remove_curse = m.gain(&[(PREP_CURSE, 3 * UNIT)]) - m.gain(&[(PREP_CURSE, 2 * UNIT)]);
