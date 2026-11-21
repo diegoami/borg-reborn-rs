@@ -61,8 +61,10 @@ pub(crate) mod borg_item_id;
 pub(crate) mod borg_item_use;
 pub(crate) mod borg_item_val;
 pub(crate) mod borg_item_wear;
+pub(crate) mod borg_kit;
 pub(crate) mod borg_junk;
 pub(crate) mod borg_light;
+mod borg_cursed;
 mod borg_lightless;
 pub(crate) mod borg_log;
 pub(crate) mod borg_magic;
@@ -122,4 +124,5 @@ pub fn do_cmd_borg() {
 // Owner-requested class/level errand-plan POC (#305).
 pub mod errands_plan;
 pub mod scary_list;
+mod borg_fast_fragile;
 mod borg_town_hunt;

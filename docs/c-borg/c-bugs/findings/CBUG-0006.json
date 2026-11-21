@@ -1,0 +1,101 @@
+{
+  "id": "CBUG-0006",
+  "source_groups": [
+    34
+  ],
+  "title": "Starvation shopping exception admits unrelated scrolls/subtypes",
+  "site": "src/borg/borg-store-buy.c:borg_think_shop_buy_useful",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "A starving character can consider unrelated supplies; no observed starvation or loss of gold proved."
+  },
+  "notes": "Both C and src/store/buy.ts use the conjunction that exempts every scroll and any matching numeric sval.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 18
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-store-buy.c",
+      "start": 281,
+      "end": 288,
+      "description": "/* Special check for 'immediate shopping' */"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/buy.ts",
+      "start": 294,
+      "end": 303,
+      "description": "/* immediate-shopping food gate"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/buy.ts",
+      "start": 294,
+      "end": 303,
+      "description": "/* immediate-shopping food gate"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 611,
+      "end": 645,
+      "description": "discovery group 34"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 618,
+      "end": 622,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 34,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 618,
+        "end": 622,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_think_shop_buy_useful()`: the \"immediate shopping\" test (no food)\n  is `tval != TV_FOOD && (tval != TV_SCROLL && sval !=\n  sv_scroll_satisfy_hunger)`: every scroll, and every item whose sval\n  happens to equal Satisfy Hunger's, gets through; `!(tval == TV_SCROLL &&\n  sval == ...)` was meant."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        34
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

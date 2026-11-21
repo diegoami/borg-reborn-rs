@@ -95,6 +95,20 @@ pub struct Borg {
     pub unseen_followed: bool,
     /// #697: the think that last noted a rest held for an unseen attacker.
     pub unseen_rest_noted: Option<BorgTime>,
+    /// borg-reborn-rs (#831): the "invisible attacker near" mode's state, for
+    /// the episode that began with the first unseen blow after the window
+    /// had lapsed: the mode was noted (`unseen_mode`), the detections read
+    /// (`unseen_detects`) and the blind attacks made (`unseen_probes`) in it,
+    /// the grid a blind attack was just sent at (`unseen_probe`, until its
+    /// message), the grids those found empty since the last blow
+    /// (`unseen_empty`) and the grid where one struck something
+    /// (`unseen_found`).
+    pub unseen_mode: bool,
+    pub unseen_detects: i32,
+    pub unseen_probes: i32,
+    pub unseen_probe: Option<loc>,
+    pub unseen_empty: Vec<loc>,
+    pub unseen_found: Option<loc>,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of

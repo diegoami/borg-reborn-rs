@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0033",
+  "source_groups": [
+    10
+  ],
+  "title": "borg_prepared() calls borg_restock() first and returns \"Clevel < depth\" when max clevel < depth (below 50), so in borg_prepared_aux(): \"1 Lite\" and\u2026",
+  "site": "src/borg/borg-prepared.c:borg_prepared",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 49
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-prepared.c",
+      "start": 538,
+      "end": 686,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 126,
+      "end": 134,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        10
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 10,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 126,
+        "end": 134,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_prepared()` calls `borg_restock()` first and returns \"Clevel <\n  depth\" when `max clevel < depth` (below 50), so in `borg_prepared_aux()`:\n  \"1 Lite\" and \"5 Fuel\" (light 0 is already \"restock light radius < 1\"),\n  \"2 tele + teleport staffs\" (same test as \"restock tele + tele staff < 2\")\n  and the dlevel 10-19 class checks \"dlevel - 4 >= clevel\" and \"dlevel >=\n  clevel\" never fire. \"2 cures (clw + csw + ccw)\" repeats the \"2 cure\"\n  test exactly. The level-100 block (\"10 restore mana\", which tests for 15,\n  \"5 Heal\", \"15 *heal* or life\", \"10 speed potions\") is dead because\n  `borg_prepared_aux()` is only called for `depth <= 99`."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

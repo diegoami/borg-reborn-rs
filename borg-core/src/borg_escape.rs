@@ -83,7 +83,7 @@ fn rand_spread(a: i32, d: i32) -> i32 {
 }
 
 /// "Reset timer if borg was in a anti-summon corridor".
-fn reset_antisummon(st: &mut BorgState) {
+pub(crate) fn reset_antisummon(st: &mut BorgState) {
     if borg_timer(st, st.borg.time.antisummon) < param(Param::escape_antisummon_reset_turns) {
         st.borg.time.antisummon = 0;
     }
@@ -806,6 +806,9 @@ pub(crate) enum PhaseSite {
     TwitchyMove,
     /// `borg_think_dungeon`: stuck, up to 3 times a level; no check at all.
     TwitchyThink,
+    /// #842: a fast-fragile monster next to the Borg, the next turn kills it
+    /// and the kill needs more than one more turn (`borg_fast_fragile.rs`).
+    FastFragile,
 }
 
 impl PhaseSite {
@@ -829,6 +832,7 @@ impl PhaseSite {
             PhaseSite::RecallWait => "recall wait",
             PhaseSite::TwitchyMove => "twitchy move",
             PhaseSite::TwitchyThink => "twitchy think",
+            PhaseSite::FastFragile => "fast-fragile",
         }
     }
 }

@@ -504,7 +504,10 @@ fn junk_keep_some(st: &BorgState, item: &borg_item) -> bool {
             || (item.ego_idx != 0 && borg_ego_has_random_power(usize::from(item.ego_idx)))
             || (is(item, TV_SCROLL, v.sv_scroll_teleport_level)
                 && st.borg.tr(BI_ATELEPORTLVL) < 1000)
-            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil))
+            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil)
+            // borg-reborn-rs (#831, owner): Detect Invisible is not worthless; at 15
+            // gold the value tiers would junk it from depth 5 (`value > 15` fails).
+            || is(item, TV_SCROLL, v.sv_scroll_detect_invis))
 }
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
@@ -537,7 +540,7 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         let tval = u32::from(item.tval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
@@ -872,8 +875,8 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
 
         let mut value_boost: i32 = 0;
 
-        /* Skip empty items */
-        if item.iqty == 0 {
+        /* Skip empty items. A desperate pack clear can spend the reserve. */
+        if item.iqty == 0 || !desperate && crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
@@ -1163,7 +1166,7 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
         let sval = i32::from(item.sval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
