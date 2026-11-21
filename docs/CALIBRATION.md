@@ -10,6 +10,25 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Thrown objects at point blank (#870)
+
+`attack_throw_point_blank_divisor` (0..1000, compiled **0**, no shipped
+override) separates the native `attack_throw_as_melee` throw rating from
+`attack_arrow_point_blank_divisor`. Zero inherits the resolved arrow divisor,
+including class/profile overrides, so existing games retain their policy.
+One removes the throw penalty; 2..1000 divide the damage before hit chance.
+Only adjacent non-unique targets receive it. Arrows and legacy throws with
+`attack_throw_as_melee = 0` retain their arrow divisor.
+
+This is missile conservation policy, not an engine penalty: at `574b618c`,
+`player-attack.c:156-165` subtracts distance from missile hit chance and
+halves it against non-obvious targets; it has no adjacent damage divisor.
+See the Strategy Manual, chapter 4 §4.11. The focused attack-on-sight /
+fast-fragile planner already bypasses conservation policy, including this
+penalty. This parameter does not change that planner's ranking of oil
+against melee. A Zoo comparison is required before the owner chooses a
+shipped override; no survival improvement is claimed.
+
 ## Ranged-only monsters (#838)
 
 The registry now holds **2291** parameters (2290 before; one added). Owner,
@@ -4869,7 +4888,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5522` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5536` |
 
 ## C Borg dive gates (#768)
 

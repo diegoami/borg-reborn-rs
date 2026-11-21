@@ -43,7 +43,7 @@ parameters! {
     caution_recall_survival_delay => (34, "world_ticks", 15, 100, "borg_caution.rs:2258", "#758: flight Recall survival horizon, in ten-game-turn world ticks, converted with monster/player energy. 34 is the engine's maximum random delay (15 + randint0(20)); a conservative hypothesis."),
     caution_winning_fight => (0, "mode", 0, 2, "borg_caution.rs:2445", "#759: 1 attacks while estimated turns to kill every attacker are strictly fewer than turns to die; 2 only logs estimates and retains control actions. Uses remaining HP once, attack success, finite supplies, and monster/player speed. Unknown estimates fall through to ordinary caution. 0 retains today's play."),
     caution_ranged_only => (0, "flag", 0, 1, "borg_caution.rs:1615", "#838 (owner): 1 = the scary list's ranged entries (`monster | up to CL | classes | ranged | reason`) are kept at range, up to the level for the class: no melee blow at it, no hunt walk to it, and flows keep out of its grid and the eight around it (a flow to the stairs may pass, never onto its grid), as caution_ranged_vs_immobile 2 does for the immobile ones; missiles, spells, throws and devices still reach it, or it is left alone. Not a scare. Works for any listed monster, and needs no step away (caution_ranged_vs_immobile stays as it is). 0 = ranged entries are not read."),
-    attack_on_sight => (0, "flag", 0, 1, "borg_fight_attack.rs:5233", "#760: prioritize attack-category monsters with their recorded reasons, never classify them as scares. Breeder entries honor the existing stoppable-colony policy. 0 retains today's play."),
+    attack_on_sight => (0, "flag", 0, 1, "borg_fight_attack.rs:5247", "#760: prioritize attack-category monsters with their recorded reasons, never classify them as scares. Breeder entries honor the existing stoppable-colony policy. 0 retains today's play."),
     fast_fragile_policy => (0, "flag", 0, 1, "borg_fast_fragile.rs:39", "#842 (owner, 2026-11-21): a fast-fragile monster (a `fast-fragile` entry of the scary list, or by stats with fast_fragile_by_stats) is attacked with the best attack at hand every turn, without attack-on-sight's `target damage < HP` gate; the only alternatives are Phase Door or a staircase underfoot, when the next turn kills the Borg and the kill needs more than one more turn. Needs attack_on_sight = 1. 0 retains today's play."),
     fast_fragile_by_stats => (0, "flag", 0, 1, "borg_fast_fragile.rs:173", "#842: besides the named entries, mark a monster fast-fragile by its stats for this character: faster than the Borg, killed in fast_fragile_kill_turns of its best attack, at least fast_fragile_damage_percent of the current HP per Borg turn, mobile, not unique, not a breeder, at most fast_fragile_group_max others of its race in view. A named attack entry (any reason) decides its monster over the stats. Acts with fast_fragile_policy and fast_fragile_no_heal. 0 = the names only."),
     fast_fragile_no_heal => (0, "flag", 0, 2, "borg_fast_fragile.rs:236", "#842: 1 = no healing potion (borg_heal, the outmatched heal) while a fast-fragile attacker is awake next to the Borg: the cure buys a turn and loses the race (owner: a death sentence); the attack, the escapes and the flight decide instead. 2 = the same, except when cornered (the next turn kills, the kill needs more than one more turn, and neither Phase Door nor a staircase underfoot is at hand): then a cure comes before the attack. Needs attack_on_sight = 1. 0 retains today\'s play."),
@@ -930,7 +930,8 @@ parameters! {
     attack_status_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:934", "Attack status danger horizon: existing policy turns."),
     attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:937", "Attack fear bonus max level: existing policy level."),
     attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:938", "Attack fear danger bonus: existing policy danger."),
-    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:3453", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
+    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:3467", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
+    attack_throw_point_blank_divisor => (0, "divisor (0 = inherit arrow)", 0, 1000, "borg_fight_attack.rs:1020", "#870: divisor for adjacent non-unique throws rated with attack_throw_as_melee. 0 (compiled) inherits the resolved attack_arrow_point_blank_divisor, preserving existing class/profile behavior; 1 removes this policy penalty. Arrows and the focused planner are unchanged."),
     attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:984", "Attack arrow min hit tenths: existing policy tenths."),
     attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:992", "Attack mana unique min potions: existing policy count."),
     attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:994", "Attack mana unique multiplier: existing policy multiplier."),
@@ -985,18 +986,18 @@ parameters! {
     attack_throw_min_item_value => (100, "gold", 0, 100000, "borg_fight_attack.rs:2748", "Attack throw min item value: existing policy gold."),
     attack_throw_low_damage => (5, "damage", 0, 5000, "borg_fight_attack.rs:2748", "Attack throw low damage: existing policy damage."),
     attack_throw_as_melee => (0, "flag", 0, 1, "borg_fight_attack.rs:2786", "#568: 1 = a throw is rated on melee's footing: the engine's throw damage (a flask of oil 22, not its 1d4), the engine's hit chance with the throwing skill, no launcher, and melee's danger term (its horizon, full damage, the partial-kill division). 0 = C (the dice average, the bow skill and launcher, the bolt's one-turn danger)."),
-    attack_reserve_mage_sp => (6, "mana", 0, 1000, "borg_fight_attack.rs:2946", "Attack reserve mage sp: existing policy mana."),
-    attack_reserve_ranger_sp => (22, "mana", 0, 1000, "borg_fight_attack.rs:2947", "Attack reserve ranger sp: existing policy mana."),
-    attack_reserve_rogue_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2948", "Attack reserve rogue sp: existing policy mana."),
-    attack_reserve_priest_sp => (8, "mana", 0, 1000, "borg_fight_attack.rs:2949", "Attack reserve priest sp: existing policy mana."),
-    attack_reserve_paladin_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2950", "Attack reserve paladin sp: existing policy mana."),
-    attack_reserve_necromancer_sp => (10, "mana", 0, 1000, "borg_fight_attack.rs:2951", "Attack reserve necromancer sp: existing policy mana."),
-    attack_spell_paranoia_max_level => (2, "level", 0, 51, "borg_fight_attack.rs:2966", "Attack spell paranoia max level: existing policy level."),
-    attack_spell_paranoia_chance => (1, "percent", 0, 100, "borg_fight_attack.rs:2967", "Attack spell paranoia chance: existing policy percent."),
+    attack_reserve_mage_sp => (6, "mana", 0, 1000, "borg_fight_attack.rs:2960", "Attack reserve mage sp: existing policy mana."),
+    attack_reserve_ranger_sp => (22, "mana", 0, 1000, "borg_fight_attack.rs:2961", "Attack reserve ranger sp: existing policy mana."),
+    attack_reserve_rogue_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2962", "Attack reserve rogue sp: existing policy mana."),
+    attack_reserve_priest_sp => (8, "mana", 0, 1000, "borg_fight_attack.rs:2963", "Attack reserve priest sp: existing policy mana."),
+    attack_reserve_paladin_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2964", "Attack reserve paladin sp: existing policy mana."),
+    attack_reserve_necromancer_sp => (10, "mana", 0, 1000, "borg_fight_attack.rs:2965", "Attack reserve necromancer sp: existing policy mana."),
+    attack_spell_paranoia_max_level => (2, "level", 0, 51, "borg_fight_attack.rs:2991", "Attack spell paranoia max level: existing policy level."),
+    attack_spell_paranoia_chance => (1, "percent", 0, 100, "borg_fight_attack.rs:2992", "Attack spell paranoia chance: existing policy percent."),
     attack_spell_unique_fail => (40, "percent", 0, 100, "borg_fight_attack.rs:2978", "Attack spell unique fail: existing policy percent."),
     attack_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:2978", "Attack spell fail: existing policy percent."),
-    attack_primary_teleport_fail => (15, "percent", 0, 100, "borg_fight_attack.rs:2969", "Attack primary teleport fail: existing policy percent."),
-    attack_primary_max_level => (30, "level", 0, 51, "borg_fight_attack.rs:2969", "Attack primary max level: existing policy level."),
+    attack_primary_teleport_fail => (15, "percent", 0, 100, "borg_fight_attack.rs:3019", "Attack primary teleport fail: existing policy percent."),
+    attack_primary_max_level => (30, "level", 0, 51, "borg_fight_attack.rs:3019", "Attack primary max level: existing policy level."),
     attack_spell_low_max_sp => (50, "mana", 0, 1000, "borg_fight_attack.rs:3007", "Attack spell low max sp: existing policy mana."),
     attack_spell_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3012", "Attack spell reserve divisor: existing policy divisor."),
     attack_spell_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:2981", "Attack spell reserve penalty: existing policy multiplier."),
@@ -1004,35 +1005,35 @@ parameters! {
     attack_spell_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:2986", "Attack spell deep reserve penalty: existing policy multiplier."),
     attack_escape_reserve_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:2992", "Attack escape reserve min max sp: existing policy mana."),
     attack_escape_reserve_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:2993", "Attack escape reserve penalty: existing policy multiplier."),
-    attack_reserve_spell_max_level => (15, "level", 0, 51, "borg_fight_attack.rs:3063", "Attack reserve spell max level: existing policy level."),
+    attack_reserve_spell_max_level => (15, "level", 0, 51, "borg_fight_attack.rs:3088", "Attack reserve spell max level: existing policy level."),
     attack_reserve_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3078", "Attack reserve spell fail: existing policy percent."),
     attack_reserve_spell_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3094", "Attack reserve spell danger horizon: existing policy turns."),
     attack_reserve_spell_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3094", "Attack reserve spell danger multiplier: existing policy multiplier."),
     attack_reserve_spell_near_distance => (7, "grids", 1, 20, "borg_fight_attack.rs:3111", "Attack reserve spell near distance: existing policy grids."),
     attack_reserve_spell_damage_margin => (4, "damage", 0, 5000, "borg_fight_attack.rs:3086", "Attack reserve spell damage margin: existing policy damage."),
-    attack_dispel_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3195", "Attack dispel paranoia chance: existing policy percent."),
-    attack_dispel_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3200", "Attack dispel fail: existing policy percent."),
+    attack_dispel_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3220", "Attack dispel paranoia chance: existing policy percent."),
+    attack_dispel_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3225", "Attack dispel fail: existing policy percent."),
     attack_dispel_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3213", "Attack dispel reserve divisor: existing policy divisor."),
     attack_dispel_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:3214", "Attack dispel reserve penalty: existing policy multiplier."),
     attack_dispel_deep_reserve_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:3229", "Attack dispel deep reserve divisor: existing policy divisor."),
     attack_dispel_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:3230", "Attack dispel deep reserve penalty: existing policy multiplier."),
     attack_dispel_escape_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:3235", "Attack dispel escape min max sp: existing policy mana."),
     attack_dispel_escape_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:3236", "Attack dispel escape penalty: existing policy multiplier."),
-    attack_wand_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3267", "Attack wand paranoia chance: existing policy percent."),
-    attack_wand_charge_penalty => (50, "score", 0, 100000, "borg_fight_attack.rs:3269", "Attack wand charge penalty: existing policy score."),
-    attack_rod_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3303", "Attack rod paranoia chance: existing policy percent."),
-    attack_rod_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:3298", "Attack rod max failure: existing policy permille."),
-    attack_unknown_device_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3362", "Attack unknown device paranoia chance: existing policy percent."),
+    attack_wand_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3281", "Attack wand paranoia chance: existing policy percent."),
+    attack_wand_charge_penalty => (50, "score", 0, 100000, "borg_fight_attack.rs:3294", "Attack wand charge penalty: existing policy score."),
+    attack_rod_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3317", "Attack rod paranoia chance: existing policy percent."),
+    attack_rod_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:3323", "Attack rod max failure: existing policy permille."),
+    attack_unknown_device_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3387", "Attack unknown device paranoia chance: existing policy percent."),
     attack_unknown_wand_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:3392", "Attack unknown wand max failure: existing policy permille."),
     attack_unknown_wand_penalty_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:3392", "Attack unknown wand penalty min level: existing policy level."),
     attack_unknown_wand_penalty => (5, "score", 0, 100000, "borg_fight_attack.rs:3393", "Attack unknown wand penalty: existing policy score."),
     attack_unknown_wand_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3404", "Attack unknown wand danger horizon: existing policy turns."),
     attack_unknown_wand_danger_tenths => (7, "tenths", 0, 14, "borg_fight_attack.rs:3404", "Attack unknown wand danger tenths: existing policy tenths."),
     attack_unknown_wand_emergency_value => (999, "score", 0, 100000, "borg_fight_attack.rs:3406", "Attack unknown wand emergency value: existing policy score."),
-    attack_activation_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3462", "Attack activation paranoia chance: existing policy percent."),
-    attack_ring_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3517", "Attack ring paranoia chance: existing policy percent."),
-    attack_dragon_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3556", "Attack dragon paranoia chance: existing policy percent."),
-    attack_leap_min_target_score => (10, "score", 0, 100000, "borg_fight_attack.rs:3670", "Attack leap min target score: existing policy score."),
+    attack_activation_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3487", "Attack activation paranoia chance: existing policy percent."),
+    attack_ring_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3531", "Attack ring paranoia chance: existing policy percent."),
+    attack_dragon_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3570", "Attack dragon paranoia chance: existing policy percent."),
+    attack_leap_min_target_score => (10, "score", 0, 100000, "borg_fight_attack.rs:3695", "Attack leap min target score: existing policy score."),
     attack_leap_max_distance => (4, "grids", 1, 4, "borg_fight_attack.rs:3682", "Attack leap max distance: existing policy grids."),
     attack_vampire_max_distance => (20, "grids", 1, 20, "borg_fight_attack.rs:3933", "Attack vampire max distance: existing policy grids."),
     attack_vampire_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3963", "Attack vampire sleep danger horizon: existing policy turns."),
@@ -1040,15 +1041,15 @@ parameters! {
     attack_vampire_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:3971", "Attack vampire danger horizon: existing policy turns."),
     attack_vampire_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:3974", "Attack vampire partial min level: existing policy level."),
     attack_vampire_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:3975", "Attack vampire partial danger divisor: existing policy divisor."),
-    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:4042", "Attack flag danger horizon: existing policy turns."),
-    attack_crush_hp_margin => (10, "hp", 0, 10000, "borg_fight_attack.rs:4060", "Attack crush hp margin: existing policy hp."),
-    attack_crush_hp_level_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4060", "Attack crush hp level multiplier: existing policy multiplier."),
-    attack_crush_post_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:4061", "Attack crush post danger multiplier: existing policy multiplier."),
-    attack_crush_min_post_hp => (50, "hp", 0, 10000, "borg_fight_attack.rs:4061", "Attack crush min post hp: existing policy hp."),
+    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:4056", "Attack flag danger horizon: existing policy turns."),
+    attack_crush_hp_margin => (10, "hp", 0, 10000, "borg_fight_attack.rs:4074", "Attack crush hp margin: existing policy hp."),
+    attack_crush_hp_level_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4074", "Attack crush hp level multiplier: existing policy multiplier."),
+    attack_crush_post_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:4086", "Attack crush post danger multiplier: existing policy multiplier."),
+    attack_crush_min_post_hp => (50, "hp", 0, 10000, "borg_fight_attack.rs:4086", "Attack crush min post hp: existing policy hp."),
     attack_crush_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4082", "Attack crush reserve divisor: existing policy divisor."),
     attack_crush_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:4083", "Attack crush reserve penalty: existing policy multiplier."),
-    attack_trance_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4117", "Attack trance reserve divisor: existing policy divisor."),
-    attack_trance_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:4118", "Attack trance reserve penalty: existing policy multiplier."),
+    attack_trance_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4142", "Attack trance reserve divisor: existing policy divisor."),
+    attack_trance_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:4143", "Attack trance reserve penalty: existing policy multiplier."),
     attack_holy_word_min_loss => (300, "hp", 0, 10000, "borg_fight_attack.rs:4251", "Attack holy word min loss: existing policy hp."),
     attack_curse_min_hp => (120, "hp", 0, 10000, "borg_fight_attack.rs:4364", "Attack curse min hp: existing policy hp."),
     attack_holy_staff_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4575", "Attack holy staff hp divisor: existing policy divisor."),
@@ -1065,7 +1066,7 @@ parameters! {
     attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4890", "Attack scary max town time: existing policy turns."),
     attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4915", "Attack scary depth multiplier: existing policy multiplier."),
     attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4915", "Attack scary min level: existing policy level."),
-    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:5522", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
+    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:5536", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
 
     // borg-reborn-rs (#241): defend source at 5d9abb8f.
     defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:293", "Defend bless fail: existing policy percent."),
@@ -2817,6 +2818,23 @@ mod tests {
         assert!(!settings_receipt(&values, 1).effective_settings.contains_key("town_phase_reserve"));
         assert!(settings_receipt(&resolve(&parse("", &BTreeMap::new(), SPECS).unwrap()), 7)
             .effective_settings.is_empty());
+    }
+
+    #[test]
+    fn throw_point_blank_preserves_inheritance_and_validates_bounds() {
+        let p = Param::attack_throw_point_blank_divisor;
+        assert_eq!(SPECS[p as usize].default, 0);
+        for valid in [0, 1, 5, 1000] {
+            let settings = parse(&format!("borg_param_attack_throw_point_blank_divisor = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+            assert_eq!(settings[p as usize].value, valid);
+        }
+        for invalid in [-1, 1001] {
+            assert!(parse(&format!("borg_param_attack_throw_point_blank_divisor = {invalid}"), &BTreeMap::new(), SPECS).is_err());
+        }
+        let settings = parse("borg_param_attack_throw_point_blank_divisor__necromancer = 1", &BTreeMap::new(), SPECS).unwrap();
+        let values = resolve(&settings);
+        assert_eq!(pick(&values[p as usize], Some(4)).0, 1);
+        assert_eq!(pick(&values[p as usize], Some(7)).0, 0);
     }
 
     #[test]
