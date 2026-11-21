@@ -261,6 +261,20 @@ jobs:
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-macos
       - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-macos harness/reference/smoke-borg-rs
+      # A platform that plays differently: where the messages first part, and
+      # every run's logs as an artifact.
+      - if: failure()
+        run: |
+          for r in smoke-warrior-1 smoke-mage-2 smoke-priest-3; do
+            echo "== $r"; xz -dc "harness/reference/smoke-borg-rs/$r/messages.log.xz" | diff - "harness/out/release-smoke-macos/$r/messages.log" | head -30 || true
+            tail -20 "harness/out/release-smoke-macos/$r/stderr.log" || true
+          done
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-smoke-failure
+          path: harness/out/release-smoke-macos
+          retention-days: 7
       # Nothing outside the system: no Homebrew library is linked.
       - run: |
           otool -L build/rust/game/angband
@@ -381,6 +395,24 @@ jobs:
           t=$(cygpath -u '${{ runner.temp }}')
           python3 scripts/release/compare-games.py harness/reference/smoke-borg-rs \
             smoke-warrior-1="$t/g1" smoke-mage-2="$t/g2" smoke-priest-3="$t/g3"
+      - if: failure()
+        run: |
+          t=$(cygpath -u '${{ runner.temp }}')
+          for g in 1 2 3; do
+            r=$(echo smoke-warrior-1 smoke-mage-2 smoke-priest-3 | cut -d' ' -f$g)
+            echo "== $r"; [ -f "$t/g$g/messages.log" ] && { xz -dc "harness/reference/smoke-borg-rs/$r/messages.log.xz" | diff - "$t/g$g/messages.log" | head -30 || true; }
+            tail -20 "$t/g$g/stderr.log" 2>/dev/null || true
+          done
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-smoke-failure
+          path: |
+            ${{ runner.temp }}/g1
+            ${{ runner.temp }}/g2
+            ${{ runner.temp }}/g3
+            build/rust.make.log
+          retention-days: 7
       - run: |
           t=$(cygpath -u '${{ runner.temp }}')
           mkdir -p "$t/identity"

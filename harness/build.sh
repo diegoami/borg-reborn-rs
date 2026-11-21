@@ -32,8 +32,9 @@ JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
 cmake --build "$BUILD" -j"$JOBS" >"$BUILD.make.log" 2>&1 || {
     tail -50 "$BUILD.make.log"; exit 1; }
 BIN="$BUILD/game/angband"
-# Windows: the executable is angband.exe.
-[ -e "$BIN" ] || [ ! -e "$BIN.exe" ] || BIN="$BIN.exe"
+# Windows: the executable is angband.exe (MSYS2 also answers for the name
+# without .exe, which other tools then cannot open).
+[ ! -e "$BIN.exe" ] || BIN="$BIN.exe"
 SRC_AFTER=$("$ID" source-hash "$IMPL")
 if [ "$SRC_BEFORE" != "$SRC_AFTER" ]; then
     echo "build inputs changed during the build; no BUILD_ID written" >&2; exit 1
