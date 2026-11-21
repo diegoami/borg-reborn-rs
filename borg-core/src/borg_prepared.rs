@@ -693,6 +693,12 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return None;
     }
 
+    // borg-reborn-rs (#840): no descent while the kit score is below its
+    // floor, or while the money-first hold is on (each its own switch).
+    if let Some((name, score, need)) = crate::borg_kit::descent_blocked(st, depth) {
+        return Some(Reason::threshold(format!("kit score {score}% of {need}%"), name, score, need));
+    }
+
     // borg-reborn-rs (#447): the optional plan applies before either calculation mode.
     prepared_with_limit(depth, crate::errands_plan::plan_cap(), || {
         borg_prepared_calculated(st, depth)
@@ -869,6 +875,16 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
 /// Note that we ignore "restock" issues for the first several turns
 /// on each level, to prevent repeated "level bouncing".
 pub fn borg_restock(st: &mut BorgState, depth: i32) -> Option<Reason> {
+    if let Some(reason) = borg_restock_base(st, depth) {
+        return Some(reason);
+    }
+    // borg-reborn-rs (#840, remedies a and c): the kit is part of the rule at
+    // every depth (each switch off: nothing here).
+    crate::borg_kit::restock(st).map(|(text, actual, required)| Reason::fixed(text, "kit_restock", actual, required))
+}
+
+/// `borg_restock` as C has it.
+fn borg_restock_base(st: &mut BorgState, depth: i32) -> Option<Reason> {
     // We are now looking at our preparedness
     if -1 == st.borg.ready_morgoth {
         st.borg.ready_morgoth = 0;
