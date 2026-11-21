@@ -1,15 +1,14 @@
 //! Lightless dungeon recovery (#811). No ordinary exploration goal runs
 //! while this recovery owns the turn.
 
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
-use crate::borg_caution::{unseen_bump_blocked, unseen_bump_step};
+use crate::borg_caution::{lightless_self_care, unseen_bump_blocked, unseen_bump_step};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::borg_recall;
 use crate::borg_flow::borg_ddxy_ddd;
-use crate::borg_headers::borg_trait_h::{
-    BI_CDEPTH, BI_CLASS, BI_CURHP, BI_ISCONFUSED, BI_LIGHT, BI_RECALL,
-};
+use crate::borg_flow_misc::borg_extract_dir;
+use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CURHP, BI_ISCONFUSED, BI_LIGHT, BI_RECALL};
 use crate::borg_io::{borg_keypress, borg_queue_direction, ESCAPE};
 use crate::borg_think::borg_oops;
 use crate::borg_think_dungeon_util::borg_think_dungeon_light;
@@ -22,12 +21,9 @@ use crate::headers::list_terrain_h::{
 use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
-const CLASS_NECROMANCER: i32 = 4;
 const BORG_GLOW: u16 = 0x02;
-// Use the existing stair flow's maximum distance as the total action limit.
-// Allow a shorter search when the map contains no known route out.
-const MAX_ACTIONS: usize = 250;
-const MAX_SEARCH_ACTIONS: usize = 32;
+const NO_EXIT: &str = "lightless recovery found no reachable safe exit";
+const SEARCH_LIMIT: &str = "lightless recovery search limit reached";
 
 type Grid = (i32, i32);
 
@@ -54,22 +50,24 @@ pub(crate) struct Recovery {
     search_left: usize,
     climbed: HashSet<Grid>,
     stood_on: HashSet<Grid>,
-    failed: HashSet<(Grid, Step)>,
+    failed: HashMap<(Grid, Step), usize>,
+    door_attempts: usize,
     pending: Option<(Grid, Step)>,
 }
 
 pub(crate) fn update(st: &mut BorgState) -> bool {
     let depth = st.borg.tr(BI_CDEPTH);
-    let needs_light =
-        depth > 0 && st.borg.tr(BI_LIGHT) <= 0 && st.borg.tr(BI_CLASS) != CLASS_NECROMANCER;
+    // borg_trait.rs sets the effective radius for necromancers to one.
+    let needs_light = depth > 0 && st.borg.tr(BI_LIGHT) <= 0;
     let recovery = &mut st.think_dungeon.lightless;
     if !needs_light {
         *recovery = Recovery::default();
     } else if recovery.depth != depth {
         *recovery = Recovery {
             depth,
-            actions_left: MAX_ACTIONS,
-            search_left: MAX_SEARCH_ACTIONS,
+            actions_left: param(Param::lightless_recovery_actions) as usize,
+            search_left: param(Param::lightless_search_actions) as usize,
+            door_attempts: param(Param::lightless_door_attempts) as usize,
             ..Recovery::default()
         };
     }
@@ -89,7 +87,7 @@ impl Recovery {
         if let Some((from, step)) = self.pending.take() {
             if at == from {
                 // An opened door will now be a Floor, so it can be entered.
-                self.failed.insert((from, step));
+                *self.failed.entry((from, step)).or_default() += 1;
             }
         }
     }
@@ -120,7 +118,16 @@ impl Recovery {
                     tile => tile,
                 };
                 let step = Step { to, tile };
-                if self.failed.contains(&(from, step)) {
+                let limit = if tile == Tile::Door {
+                    self.door_attempts
+                } else {
+                    1
+                };
+                if self
+                    .failed
+                    .get(&(from, step))
+                    .is_some_and(|&count| count >= limit)
+                {
                     continue;
                 }
                 seen.insert(to);
@@ -172,6 +179,7 @@ fn terrain(st: &mut BorgState, at: Grid, up_allowed: bool, seek_recall_light: bo
         FEAT_NONE => Tile::Unknown,
         _ => return Tile::Blocked,
     };
+    // Use actual HP so temporary flight bravery cannot relax this gate.
     let danger_limit = st.borg.tr(BI_CURHP) / param(Param::recover_danger_divisor);
     if at != (st.borg.c.x, st.borg.c.y) && borg_danger(st, y, x, 1, true, false) > danger_limit {
         return Tile::Blocked;
@@ -187,6 +195,52 @@ fn handoff(st: &mut BorgState, reason: &str) {
     borg_keypress(st, ESCAPE);
 }
 
+#[derive(Debug, PartialEq, Eq)]
+enum Decision {
+    Recall,
+    Climb,
+    Move {
+        step: Step,
+        searching: bool,
+        direction: u32,
+    },
+    Stop(&'static str),
+}
+
+fn decide(
+    route: Option<Route>,
+    at: Grid,
+    search_left: usize,
+    recall: impl FnOnce() -> bool,
+) -> Decision {
+    if matches!(route, None | Some(Route::Search(_))) && recall() {
+        return Decision::Recall;
+    }
+    match route {
+        Some(Route::Climb) => Decision::Climb,
+        Some(Route::Return(step) | Route::Search(step)) => Decision::Move {
+            step,
+            searching: matches!(route, Some(Route::Search(_))),
+            direction: u32::from(b'0') + borg_extract_dir(at.1, at.0, step.to.1, step.to.0) as u32,
+        },
+        None if search_left == 0 => Decision::Stop(SEARCH_LIMIT),
+        None => Decision::Stop(NO_EXIT),
+    }
+}
+
+fn prepare_for_return(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling == 0 {
+        if crate::borg_light::borg_restore_light(st) {
+            return true;
+        }
+        let danger = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if lightless_self_care(st, danger) {
+            return true;
+        }
+    }
+    borg_think_dungeon_light(st, true)
+}
+
 pub(crate) fn recover(st: &mut BorgState) {
     st.borg.goal.type_0 = 0;
     let at = (st.borg.c.x, st.borg.c.y);
@@ -195,12 +249,16 @@ pub(crate) fn recover(st: &mut BorgState) {
         handoff(st, "lightless recovery action limit reached");
         return;
     }
-    if borg_think_dungeon_light(st, true) {
+    if prepare_for_return(st) {
         st.think_dungeon.lightless.actions_left -= 1;
         return;
     }
     if st.borg.tr(BI_ISCONFUSED) != 0 {
-        handoff(st, "lightless recovery cannot navigate while confused");
+        if borg_recall(st) {
+            st.think_dungeon.lightless.actions_left -= 1;
+        } else {
+            handoff(st, "lightless recovery cannot navigate while confused");
+        }
         return;
     }
 
@@ -211,38 +269,35 @@ pub(crate) fn recover(st: &mut BorgState) {
     st.think_dungeon.lightless = recovery;
     st.think_dungeon.lightless.actions_left -= 1;
 
-    if matches!(route, None | Some(Route::Search(_))) && borg_recall(st) {
-        return;
-    }
-
-    match route {
-        Some(Route::Climb) => {
+    let search_left = st.think_dungeon.lightless.search_left;
+    match decide(route, at, search_left, || borg_recall(st)) {
+        Decision::Recall => {}
+        Decision::Climb => {
             st.think_dungeon.lightless.climbed.insert(at);
             borg_keypress(st, u32::from(b'<'));
         }
-        Some(Route::Return(step) | Route::Search(step)) => {
+        Decision::Move {
+            step,
+            searching,
+            direction,
+        } => {
             let recovery = &mut st.think_dungeon.lightless;
-            if matches!(route, Some(Route::Search(_))) {
+            if searching {
                 recovery.search_left -= 1;
             }
             recovery.pending = Some((at, step));
 
             let (x, y) = step.to;
-            // The movement keys use the Angband keypad layout (cave.c).
-            let dir = u32::from(b'0') + (5 + (x - at.0) - 3 * (y - at.1)) as u32;
             if step.tile == Tile::Door {
-                // cmd-cave.c: do_cmd_open can open an adjacent known door.
+                // cmd-cave.c:235 (do_cmd_open).
                 borg_keypress(st, u32::from(b'o'));
-                borg_queue_direction(st, dir);
+                borg_queue_direction(st, direction);
             } else {
                 unseen_bump_step(st, x, y);
-                borg_keypress(st, dir);
+                borg_keypress(st, direction);
             }
         }
-        None if st.think_dungeon.lightless.search_left == 0 => {
-            handoff(st, "lightless recovery search limit reached");
-        }
-        None => handoff(st, "lightless recovery found no reachable safe exit"),
+        Decision::Stop(reason) => handoff(st, reason),
     }
 }
 
@@ -252,8 +307,9 @@ mod tests {
 
     fn recovery() -> Recovery {
         Recovery {
-            actions_left: MAX_ACTIONS,
-            search_left: MAX_SEARCH_ACTIONS,
+            actions_left: 250,
+            search_left: 32,
+            door_attempts: 3,
             ..Recovery::default()
         }
     }
@@ -318,6 +374,57 @@ mod tests {
         recovery.observe(west);
         assert_eq!(recovery.route(west, map), None);
         assert_eq!(recovery.route(east, map), None);
+    }
+
+    #[test]
+    fn retries_an_unopened_door_only_within_the_budget() {
+        let at = (85, 12);
+        let door = Step {
+            to: (86, 12),
+            tile: Tile::Door,
+        };
+        let map = |grid| match grid {
+            (85, 12) => Tile::Floor,
+            (86, 12) => Tile::Door,
+            (87, 12) => Tile::Up,
+            _ => Tile::Blocked,
+        };
+        let mut recovery = recovery();
+        for _ in 0..recovery.door_attempts {
+            let route = recovery.route(at, map);
+            assert_eq!(
+                decide(route, at, recovery.search_left, || panic!(
+                    "known exit takes priority"
+                )),
+                Decision::Move {
+                    step: door,
+                    searching: false,
+                    direction: u32::from(b'6')
+                },
+            );
+            recovery.pending = Some((at, door));
+            recovery.observe(at);
+        }
+        assert_eq!(recovery.route(at, map), None);
+    }
+
+    #[test]
+    fn recalls_before_probing_or_handing_back_control() {
+        let at = (85, 12);
+        let probe = Route::Search(Step {
+            to: (86, 12),
+            tile: Tile::Unknown,
+        });
+        assert_eq!(decide(Some(probe), at, 1, || true), Decision::Recall);
+        assert_eq!(decide(None, at, 1, || true), Decision::Recall);
+        assert_eq!(decide(None, at, 1, || false), Decision::Stop(NO_EXIT));
+        assert_eq!(decide(None, at, 0, || false), Decision::Stop(SEARCH_LIMIT));
+        assert_eq!(
+            decide(Some(Route::Climb), at, 1, || panic!(
+                "already on known upstairs"
+            )),
+            Decision::Climb,
+        );
     }
 
     #[test]

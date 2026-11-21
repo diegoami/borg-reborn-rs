@@ -652,7 +652,7 @@ fn has_flag(item: &BorgItem, flag: u32) -> bool {
 }
 
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
-    // cmd-obj.c: do_cmd_refill; obj-util.c: obj_can_refill.
+    // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
     let refillable = |item: &BorgItem| {
         item.iqty != 0
             && u32::from(item.tval) == TV_LIGHT
@@ -675,7 +675,7 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
         return None;
     }
 
-    // player-calcs.c: calc_light. Replace a dimmed light only if the new
+    // player-calcs.c:1598 (calc_light). Replace a dimmed light only if the new
     // contribution makes the total positive.
     let contribution = |item: &BorgItem| {
         let innate = if has_flag(item, OF_LIGHT_2) {
@@ -703,7 +703,7 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
                 && (powered(item) || (refillable(item) && fuel_slot.is_some()))
                 && radius - current + contribution(item) > 0
         })
-        .min_by_key(|(_, item)| !powered(item))
+        .max_by_key(|(slot, item)| (powered(item), contribution(item), std::cmp::Reverse(*slot)))
         .map(|(slot, _)| LightAction::Wear(slot))
 }
 
@@ -980,4 +980,15 @@ mod lightless_tests {
         );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
+    #[test]
+    fn wears_the_brightest_powered_spare() {
+        let empty = blank_item();
+        let torch = light(&[OF_LIGHT_2], 30);
+        let lantern = light(&[OF_LIGHT_3], 30);
+        assert_eq!(
+            light_action(&empty, &[torch, lantern], 1, 0),
+            Some(LightAction::Wear(1)),
+        );
+    }
+
 }

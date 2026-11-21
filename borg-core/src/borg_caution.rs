@@ -247,6 +247,19 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
 
 /// Try healing.
 ///
+/// #811: apply self-care before routing in darkness. This cannot start a flow.
+pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
+    // Cure known poison before paying for the walk with HP, even when the
+    // ordinary fight rule would wait for lower HP.
+    (st.borg.tr(BI_ISPOISONED) != 0
+        && danger <= i32::from(st.borg.avoidance) * p(Param::caution_cure_safe_danger_tenths) / 10
+        && borg_quaff_potion(st, st.item_val.sv_potion_cure_poison))
+        || borg_heal(st, danger)
+        || (st.borg.tr(BI_ISHUNGRY) != 0
+            && crate::borg_item_use::borg_eat_when_hungry(st))
+        || (st.borg.tr(BI_ISWEAK) != 0 && borg_eat_food_any(st))
+}
+
 /// This function tries to heal the borg before trying to flee.
 /// The ez_heal items (*Heal* and Life) are reserved for Morgoth.
 /// In severe emergencies the borg can drink an ez_heal item but that is

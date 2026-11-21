@@ -783,6 +783,9 @@ parameters! {
     // borg-reborn-rs (#221): recovery source lines at 30ab9d66.
     recover_danger_horizon => (1, "turns", 1, 10, "borg_recover.rs:233", "Sets danger horizon, in turns, in the existing recovery rule."),
     recover_danger_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:236", "Sets danger divisor, in divisor, in the existing recovery rule."),
+    lightless_recovery_actions => (250, "actions", 1, 1000, "lightless_recovery.rs", "#811: action budget per lightless episode on one dungeon level."),
+    lightless_search_actions => (32, "actions", 0, 250, "lightless_recovery.rs", "#811: action budget for walking to and probing map edges without a known return route. 0 disables probes."),
+    lightless_door_attempts => (3, "attempts", 1, 10, "lightless_recovery.rs", "#811: attempts from one approach to open a closed door during lightless recovery."),
     recover_hurt_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:229", "Sets hurt hp divisor, in divisor, in the existing recovery rule."),
     recover_hurt_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:230", "Sets hurt chance bonus, in percent, in the existing recovery rule."),
     recover_critical_hp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:234", "Sets critical hp divisor, in divisor, in the existing recovery rule."),

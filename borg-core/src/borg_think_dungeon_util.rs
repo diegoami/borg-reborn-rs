@@ -218,11 +218,7 @@ pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
         return true;
     }
 
-    if lightless {
-        if crate::borg_light::borg_restore_light(st) {
-            return true;
-        }
-    } else {
+    if !lightless {
         /* wear stuff and see if it glows */
         if borg_wear_stuff(st) {
             return true;
