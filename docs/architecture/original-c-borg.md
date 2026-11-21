@@ -518,3 +518,22 @@ Rust file in `borg-core/src/`.
 borg-core also has files with no C counterpart: the `borg_town_*.rs`
 files, `params.rs`, `core_trace.rs`, `errands_plan.rs` and others. Those
 are not part of the C Borg; [borg-core.md](borg-core.md) describes them.
+
+## Further reading
+
+All kept in this repository ([reference/](../../reference/README.md)):
+
+- [the C Borg specification](../../reference/c-borg/BORG_SPEC.md): every
+  decision, cited `file:function:lines` (at upstream `e473720e`), with the
+  contracts a rebuild must keep (§16) and the defect shapes it must not
+  inherit (§11, §17); and [the Tunable Borg plan](../../reference/c-borg/TUNABLE-BORG-PLAN.md);
+- [the C Borg defect catalogue](../../reference/c-borg/c-bugs/README.md):
+  152 findings (`CBUG-0001`…), each with its evidence;
+- [better-borg-c's fix pages](../../reference/better-borg-c/measurement/README.md):
+  one page per verified fix (the behaviour, why it was wrong, the fix, the
+  measurement), the design lessons, and [how fixes were verified](../../reference/better-borg-c/VERIFICATION.md);
+- [borg-rs's list of C bugs](../../reference/borg-core/c-bugs.md): which
+  ones its translation reproduces on purpose and which it fixed;
+- the game itself: [the Angband Strategy Manual](../../reference/c-manual/README.md),
+  whose chapter 15 has *notes for the borg*.
+

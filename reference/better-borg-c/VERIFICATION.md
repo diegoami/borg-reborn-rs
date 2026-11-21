@@ -31,4 +31,4 @@ public-repository inactivity; ongoing issue24 records run receipts and follow-up
 
 See [docs/measurement/RECORD-REPLAY.md](measurement/RECORD-REPLAY.md) for the
 native recording/replay qualification results and limitations, and
-[docs/deaths/README.md](deaths/README.md) for how natural deaths are recorded.
+[docs/deaths/README.md](../deaths/better-borg-c/README.md) for how natural deaths are recorded.

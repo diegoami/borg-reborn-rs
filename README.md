@@ -190,7 +190,7 @@ once per game process).
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port; its decision core is vendored in `borg-core/` at a pin ([docs/architecture/borg-core.md](docs/architecture/borg-core.md)). |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
 | [borg-cemetery](https://github.com/diegoami/borg-cemetery) | The death registry: recorded runs, investigations, scenarios. |
-| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | The C Borg specification, the Angband Strategy Manual and the official user manual (copied in `reference/`). |
+| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | Where the C Borg specification, the Angband Strategy Manual and the C Borg defect catalogue were written; they are kept in `reference/` now. |
 | [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents playing from the screen; what they learn is a source of game knowledge. |
 | [borg-agent](https://github.com/diegoami/borg-agent) | Retired 2026-11-11. |
 

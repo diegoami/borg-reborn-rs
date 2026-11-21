@@ -26,7 +26,7 @@ claims. A test fails if a view in git is stale.
 
 Two guards, and they are not the same:
 
-- the **schema** ([`claim@1`](../schemas/claim@1.json)) checks the shape: one
+- the **schema** ([`claim@1`](https://github.com/diegoami/borg-agent/blob/57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86/schemas/claim@1.json)) checks the shape: one
   plain statement, an area, a scope, a basis, evidence that names a run and a
   turn, a confidence in words, the phase and the sources;
 - **`borg_agent.checks`** checks what a schema cannot, because it compares one

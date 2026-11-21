@@ -75,7 +75,7 @@ and rebuild/verification are needed for fixed/close. No official posting/tactics
 ## Actual merged-source cohort
 
 Merge2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f was rebuilt and measured under
-unchanged frozen v1. [Every case/run summary](itangast-v1.json) records3/3cap
+unchanged frozen v1. [Every case/run summary](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/itangast-v1.json) records3/3cap
 survivors,0deaths/completions/stalls/timeouts/crashes/harness failures. All three
 starting saves and complete traces match the prior **six-carry45eac63bd** build,
 not the pristine baseline. Levels3/3/2,max depths1/3/2. Earlier potion-related

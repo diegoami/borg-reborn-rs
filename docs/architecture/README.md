@@ -10,6 +10,9 @@ going. Read in this order:
 | [reborn-plan.md](reborn-plan.md) | **Borg reborn, the plan**: track P (calibrate the shipped core), track R (re-express its decisions in our own domain behind a shadow check), track Q (the query surface), and how the tracks hand over |
 | [reborn-layers.md](reborn-layers.md) | The layered design (L0 engine boundary … L6 executor) of our own frozen reborn core, kept as the **target of track R** |
 
-The contracts these documents answer to are [SPEC.md](../SPEC.md) (top
+The documents they build on are kept in [reference/](../../reference/README.md):
+the C Borg's specification, defect catalogue and fix pages, the shipped
+core's design documents ([reference/borg-core/](../../reference/borg-core/README.md)),
+and the strategy manual. The contracts these documents answer to are [SPEC.md](../SPEC.md) (top
 level) and [GOALS.md](../GOALS.md) (the owner's decisions). The engine
 integration under all of it is [ENGINE.md](../ENGINE.md).

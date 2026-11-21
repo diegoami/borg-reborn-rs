@@ -58,12 +58,6 @@
       "role": "Language-model agents play upstream 4.2.6 (e473720, our engine until #215) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
       "read_on": "2026-11-13",
       "issues": true
-    },
-    "borg-agent": {
-      "repository": "diegoami/borg-agent",
-      "commit": "57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86",
-      "role": "Retired 2026-11-11 (frozen 2026-11-09): a language-model player meant to produce knowledge a Rust Borg could be built from. Pinned only for its knowledge pages and post-mortem, copied in reference/borg-agent/ (#816); never a dependency.",
-      "read_on": "2026-11-21"
     }
   },
   "copies": [
@@ -97,17 +91,6 @@
         "ACCUMULATED_BEHAVIOUR.md"
       ],
       "to": "reference/borg-runner"
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs/c-borg",
-      "to": "reference/c-borg",
-      "select": "files",
-      "files": [
-        "BORG_SPEC.md",
-        "TUNABLE-BORG-PLAN.md",
-        "README.md"
-      ]
     },
     {
       "pin": "better-borg-c",
@@ -146,77 +129,11 @@
       "files": [
         "FORK-CORRECTIONS.md",
         "adoption/status.json",
-        "BORG-SHOP-SHORTCUTS.md",
         "C-CONSUMER-ADOPTION.md",
         "ENGINE-UPGRADE.md",
-        "FAMILY.md",
-        "JOINT-POLICY-OPTIMISATION.md",
-        "JOINT-POLICY-TRIALS.md",
         "REPLAY-TOOLKIT.md",
-        "TOWN-BASELINE.md",
-        "TOWN-CAPABILITIES.md",
-        "TOWN-CLASS-CALIBRATION.md",
-        "TOWN-DUMP.md",
-        "TOWN-INVENTORY.md",
-        "TOWN-INVENTORY-PLAN.md",
-        "TOWN-INVENTORY-B2.md",
-        "TOWN-INVENTORY-PHASE4.md",
-        "TOWN-ITEM-CATALOGUE.md",
-        "TOWN-LIVE.md",
-        "TOWN-SESSION.md",
-        "TOWN-UTILITY.md",
-        "TRIP-POLICY.md",
-        "c-bugs.md",
         "checkpoints.md",
         "harness.md"
-      ]
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs/c-manual",
-      "to": "reference/c-manual",
-      "select": "all"
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs/c-bugs",
-      "to": "reference/c-borg/c-bugs",
-      "select": "all"
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs",
-      "to": "reference/c-borg",
-      "select": "files",
-      "files": [
-        "C-BUGS.md"
-      ]
-    },
-    {
-      "pin": "neo-angband-tracker",
-      "from": "docs/audit/c-reports",
-      "to": "reference/c-borg",
-      "select": "files",
-      "files": [
-        "borg-rs-c-bugs.md"
-      ]
-    },
-    {
-      "pin": "better-borg-c",
-      "from": "docs/measurement",
-      "to": "reference/better-borg-c/measurement",
-      "select": "suffix",
-      "suffixes": [
-        ".md"
-      ]
-    },
-    {
-      "pin": "better-borg-c",
-      "from": "docs",
-      "to": "reference/better-borg-c",
-      "select": "files",
-      "files": [
-        "VERIFICATION.md"
       ]
     },
     {
@@ -226,22 +143,6 @@
       "select": "files",
       "files": [
         "DESIGN.md"
-      ]
-    },
-    {
-      "pin": "borg-agent",
-      "from": "knowledge",
-      "to": "reference/borg-agent/knowledge",
-      "select": "all"
-    },
-    {
-      "pin": "borg-agent",
-      "from": "docs",
-      "to": "reference/borg-agent/docs",
-      "select": "files",
-      "files": [
-        "POST-MORTEM.md",
-        "KNOWLEDGE.md"
       ]
     }
   ]

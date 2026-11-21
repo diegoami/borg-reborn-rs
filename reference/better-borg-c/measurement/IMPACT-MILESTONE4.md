@@ -19,7 +19,7 @@ carried/open+patch-active corrections. Process, documentation and tooling
 merges in the same interval are listed as context and are not counted.
 
 Exact source head, imported commit, evidence pin, credit and removal unit
-for every correction are in [series.json](../../patches/series.json).
+for every correction are in [series.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json).
 Canonical defect ownership remains in neo-angband-tracker; no source issue
 is marked resolved by a consumer merge.
 

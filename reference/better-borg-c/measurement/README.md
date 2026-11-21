@@ -5,7 +5,7 @@ neo-angband-tracker/checkpoint207; the first carry is consumer #4/source #82.
 
 Accumulated [milestone2 review package](IMPACT-MILESTONE2.md) links all seven
 carried corrections, [paired deep results](DEEP-IMPACT-V2.md) and
-[versioned death dossiers](../deaths/README.md), including unfavorable outcomes
+[versioned death dossiers](../../deaths/better-borg-c/README.md), including unfavorable outcomes
 and replay limits. External review remains pending; bugs take priority.
 The subsequent bug-fix wave is collected in
 [milestone3](https://github.com/diegoami/better-borg-c/milestone/3) and

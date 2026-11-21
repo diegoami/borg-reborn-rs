@@ -4,7 +4,7 @@ What "reborn" means today, how the work is split into tracks, and how the
 tracks hand over. The milestones, their exit criteria and their state are
 kept in [PLAN.md](../../PLAN.md); the owner's decisions in
 [GOALS.md](../GOALS.md); the contract in [SPEC.md](../SPEC.md). This page
-is the map between them. State as of 2026-11-21.
+is the map between them. State as of 2026-11-21. A first playable release outside the tracks, milestone S1, is proposed in PR #820.
 
 ## Where it started, and the repivot
 
@@ -73,6 +73,7 @@ What it built, as the shipped core has it now:
 | P4 | M13 inventory calibration (#433) | promoted to `main` (#477) |
 | P5 | validation reproducibility and evidence receipts | promoted to `main` (#626) |
 | P6 | enchant and decurse calibration (#707) | integrated in `track-p`; promotion candidate #814 open |
+| P7 | through the first five levels: what keeps a Borg from descending to DL5, changed one class at a time, with a descent endpoint of its own | accepted 2026-11-20 (#799); issues #795–#798 |
 
 **How P works** (AGENTS.md *Track P integration and review gate*): task
 PRs target the integration branch `track-p`; each milestone stops for an

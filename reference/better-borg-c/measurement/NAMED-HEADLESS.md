@@ -72,7 +72,7 @@ executable, with no X11 instance. Hosted gate receipts are on the PR/issue.
 
 ## Death protocol
 
-[D0003](../deaths/D0003-named-headless/report.md) retains its actual29-carry source
+[D0003](../../deaths/better-borg-c/D0003-named-headless/report.md) retains its actual29-carry source
 and binary, not a later checkout's version. All native Borg notes and all23
 noncheckpoint state records (with sampled game/Borg RNG) match D0002's recorded
 six-carry life. A verified assessment groups it with D0002's encounter family:

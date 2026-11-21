@@ -44,7 +44,7 @@ The Borg's knowledge of the game has three inputs, in this order:
 1. **The engine** (`engine/angband/`, at `574b618c`). It is the only
    authority: a formula, a table, a prompt or a key sequence is checked in
    `src/` or `lib/gamedata/` and cited there (RULES 16).
-2. **The manuals**, copied in [`reference/c-manual/`](reference/c-manual/README.md)
+2. **The manuals**, kept in [`reference/c-manual/`](reference/c-manual/README.md) (originals here since 2026-11-21)
    (S14): the **Angband Strategy Manual**, a source-grounded guide to how the
    game works underneath and how to survive it, with *notes for the borg* in
    chapter 15 (decision rules and candidate parameters) and experiments in
@@ -251,7 +251,7 @@ review PR.
 | `README.md` | For players: requirements, setup, building, watching the Borg, a headless run, which core plays, changing its settings |
 | `docs/` | Current documents by audience, indexed in [docs/README.md](docs/README.md); `architecture/` (the C Borg, borg-core, the reborn plan, the layered design), `validation/` (per-PR receipts and dossier maps, with a map of their old `docs/` paths), `reviews/`, `archive/` (documents that no longer apply, each with when and why), `handover/` |
 | `pins.json` | The pinned commits of every related repository |
-| `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, **the Angband Strategy Manual and the official user manual (`c-manual/`, S14)**, what agent players learned (`borg-runner/`, S15), curated death dossiers, the zoo's catalogue (see docs/SOURCES.md); [GAME-KNOWLEDGE.md](reference/GAME-KNOWLEDGE.md): what game knowledge the Borg and the analysis use, and the strategy-guide survey; [DOCUMENTATION-MAP.md](reference/DOCUMENTATION-MAP.md): this repository is the central place for the Borg's documentation, and the map says where every Borg repository's documents are and which are copied here |
+| `reference/` | Game knowledge and the Borg's documentation, the central place for it (owner, 2026-11-21): **originals** kept here (the strategy manual and user manual, the C Borg spec, plan and defect catalogue, better-borg-c's fix pages, the shipped core's design documents in `borg-core/`, borg-agent's knowledge) and **copies** that follow a live tool (see reference/README.md). Formerly copies of sources read often: C Borg spec and Tunable Borg Plan, **the Angband Strategy Manual and the official user manual (`c-manual/`, S14)**, what agent players learned (`borg-runner/`, S15), curated death dossiers, the zoo's catalogue (see docs/SOURCES.md); [GAME-KNOWLEDGE.md](reference/GAME-KNOWLEDGE.md): what game knowledge the Borg and the analysis use, and the strategy-guide survey; [DOCUMENTATION-MAP.md](reference/DOCUMENTATION-MAP.md): this repository is the central place for the Borg's documentation, and the map says where every Borg repository's documents are and which are copied here |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
 | `borg-core/` | borg-rs's decision core, vendored at its pin with our declared files and hooks: the core that plays by default ([docs/architecture/borg-core.md](docs/architecture/borg-core.md)) |
 | `harness/borg.txt`, `harness/borg_<class>.txt`, `harness/scary_monsters.txt`, `harness/plans/` | The shipped core's settings, per-class values, scary list and plans |

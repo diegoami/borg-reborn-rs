@@ -11,7 +11,7 @@ Original [v1](MILESTONE-1.md) and its snapshot remain immutable.
 ## Independent corrections and controls
 
 Exact source/applied commits, original credit and patch removal units are in
-[series.json](../../patches/series.json), with a separate consumer issue per fix.
+[series.json](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/patches/series.json), with a separate consumer issue per fix.
 Canonical reusable C defects/proposals remain in neo-angband-tracker. All seven
 are locally carried/open and patch-active; none is called upstream resolved.
 
@@ -40,7 +40,7 @@ timing changes private Borg RNG consumption and later behavior: all three still
 survive the cap, but seed47 reaches level2 versus4 at unchanged maxdepth2.
 That unfavorable result remains visible. Actual seven-carry merge was rebuilt;
 its starts/full traces match six-carry45eac63bd exactly, with levels3/3/2 and
-maxdepth1/3/2. [Every latest run/control summary](itangast-v1.json). No shallow
+maxdepth1/3/2. [Every latest run/control summary](https://github.com/diegoami/better-borg-c/blob/cc4c3e43aa0a863ad2fc4adab8f930277d181900/docs/measurement/itangast-v1.json). No shallow
 cohort survival benefit, runtime speedup or general no-regression claim.
 
 [Deep v2](DEEP-IMPACT-V2.md), prospectively declared on33, measures the actual
@@ -51,7 +51,7 @@ is no demonstrated population survival gain or causal same-encounter rescue.
 Fixed11 cap/fixed29death full repeats match; fixed47 only first20000 observations
 repeat. Later seven-carry code does not relabel these six-carry measurements.
 
-[D0001/D0002 registry](../deaths/README.md) records actual original versions,
+[D0001/D0002 registry](../../deaths/better-borg-c/README.md) records actual original versions,
 build/binary/data/patch/RNG/options/input/calendar identity, selected exact native
 logs/maps/windows, assessment confidence and action issues22/34. Two starting
 families/eight death process attempts include repetitions/version references;

@@ -228,7 +228,12 @@ not undo other-track work already authorized before the gate.
     what it reports, new deaths first. Each milestone starts with a
     `--update` PR that moves the pins and refreshes `reference/` and the
     death index; a task may also do one when it needs a newer source. Pin
-    moves are their own PRs, never mixed with other work.
+    moves are their own PRs, never mixed with other work. Since 2026-11-21
+    (owner, #816) this repository is the central place for the Borg's
+    documentation: the strategy and user manuals, the C Borg documents, the
+    C Borg fix pages and the core's design documents are originals kept in
+    `reference/` and edited here; only what a live tool generates or reads
+    is still refreshed from its source (reference/README.md).
 22. **Baselines are exact.** A comparison names exact zoo specimens and
     builds, never "latest"; comparisons are borg-zoo's (docs/SPEC.md §6). A
     change to the engine's patch series, the frontend or the build is a

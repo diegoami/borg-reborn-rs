@@ -6,7 +6,10 @@ C Borg), vendored at a pin, with our own declared files and hooks around
 it. This page describes that core as it stands in this repository. Its C
 ancestor is described in [original-c-borg.md](original-c-borg.md); the two
 tracks that work on it (P: calibration, R: the redesign) are in
-[reborn-plan.md](reborn-plan.md).
+[reborn-plan.md](reborn-plan.md). The core's own design documents (the
+town planner, the trip policy, the class family), written in borg-rs and
+kept here since 2026-11-21, are in
+[reference/borg-core/](../../reference/borg-core/README.md) (§7).
 
 Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
@@ -39,7 +42,8 @@ The declared lists are the authority on what is ours. Today `OURS` holds
 `PIN`, `ladders.txt` and eight modules: `shell.rs`, `params.rs`,
 `core_trace.rs`, `attack_preference.rs`, `errands_plan.rs`,
 `scary_list.rs`, `borg_lightless.rs`, `borg_town_hunt.rs`. `HOOKED` holds
-38 borg-rs files (`borg_store_buy.rs` is listed twice), from `Cargo.toml` (package rename, a lints table
+53 borg-rs files (2026-11-21; the set grows with each task that hooks
+the core), from `Cargo.toml` (package rename, a lints table
 that allows clippy on borg-rs's code) and `lib.rs` (our module
 declarations) to most of the decision modules. Source comments marked
 `borg-reborn-rs (#` number 585 across `borg-core/src`.
@@ -360,3 +364,22 @@ The default core's regression reference is
 `harness/reference/smoke-borg-rs`. A change to a shipped value in
 `harness/borg.txt` is committed, then `scripts/rerecord-smoke-borg-rs.sh`
 re-records the reference ([AGENTS.md](../../AGENTS.md)).
+
+## 7. Design documents and further reading
+
+The core is borg-rs's, and so is most of its design. Its design documents
+moved here from borg-rs on 2026-11-21 and are originals now, in
+[reference/borg-core/](../../reference/borg-core/README.md):
+
+| Subsystem (§2) | Read |
+| --- | --- |
+| town planner (`borg_town_*.rs`, `borg_buy_strategy.rs`) | [TOWN-INVENTORY.md](../../reference/borg-core/TOWN-INVENTORY.md) (architecture), [TOWN-UTILITY.md](../../reference/borg-core/TOWN-UTILITY.md) (the utility model), [TOWN-ITEM-CATALOGUE.md](../../reference/borg-core/TOWN-ITEM-CATALOGUE.md), [TOWN-LIVE.md](../../reference/borg-core/TOWN-LIVE.md) (the live executor), [TOWN-SESSION.md](../../reference/borg-core/TOWN-SESSION.md) |
+| preparedness and trips (`borg_prepared.rs`, `borg_trip.rs`) | [TRIP-POLICY.md](../../reference/borg-core/TRIP-POLICY.md), [JOINT-POLICY-TRIALS.md](../../reference/borg-core/JOINT-POLICY-TRIALS.md) |
+| shops (`borg_store*.rs`, `borg_think_store.rs`) | [BORG-SHOP-SHORTCUTS.md](../../reference/borg-core/BORG-SHOP-SHORTCUTS.md) |
+| what borg-rs kept or fixed of the C Borg's bugs | [c-bugs.md](../../reference/borg-core/c-bugs.md), with the C defect catalogue [c-borg/c-bugs/](../../reference/c-borg/c-bugs/README.md) |
+| the family of versions | [FAMILY.md](../../reference/borg-core/FAMILY.md) |
+
+What we added to it since the repivot is in the handover notes of each
+task ([docs/handover/](../handover/README.md)) and, for its settings, in
+[CALIBRATION.md](../CALIBRATION.md); single decisions are mapped in
+[PHASE-DOOR.md](../PHASE-DOOR.md) and [ATTACK-PREFERENCES.md](../ATTACK-PREFERENCES.md).

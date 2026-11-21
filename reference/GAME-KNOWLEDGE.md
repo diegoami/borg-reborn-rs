@@ -10,7 +10,7 @@ things:
   of recorded play.
 
 As of 2026-11-21 (#816). The copies in this directory, their sources and
-pins are listed in [README.md](README.md); where every Borg repository's
+pins are listed in [README.md](README.md) (since 2026-11-21 the manuals, the C Borg documents and the core's design documents are originals kept here); where every Borg repository's
 documentation is, in [DOCUMENTATION-MAP.md](DOCUMENTATION-MAP.md).
 
 ## 1. What the shipped Borg reads at run time
@@ -40,8 +40,8 @@ instead ([reborn-layers.md](../docs/architecture/reborn-layers.md)).
 | 2 | **The Angband Strategy Manual** | [`c-manual/`](c-manual/README.md) | A source-grounded guide to how 4.2 works underneath and how to survive it: mechanics (ch. 1–9), exploration, town, the game plan by phase, escapes (ch. 10–13), **class playbooks (ch. 14)**, *notes for the borg* (ch. 15) and experiments (ch. 16), appendices A1–A10. Read the chapter before designing a rule, then check its numbers in the engine |
 | 3 | **The official user manual** of this version | [`c-manual/user-manual/`](c-manual/user-manual/), also [`engine/angband/docs/`](../engine/angband/docs/) | Commands, screens, options, birth, and upstream's own *Players' Guide* (`guide.rst`, written for 3.5 and marked by upstream as a little out of date) |
 | 4 | **The C Borg's own documentation** | [`engine/angband/docs/hacking/borg.rst`](../engine/angband/docs/hacking/borg.rst) (running it, its commands), [`vendor/angband` `src/borg/borg.txt`](https://github.com/angband/angband/blob/574b618c3bfec595f3503a58f8e488b1c4ae3a46/src/borg/borg.txt) (its annotated settings); [`c-borg/BORG_SPEC.md`](c-borg/BORG_SPEC.md) (a specification of how it plays) and [`c-borg/TUNABLE-BORG-PLAN.md`](c-borg/TUNABLE-BORG-PLAN.md) | What the C Borg intends; the architecture of [original-c-borg.md](../docs/architecture/original-c-borg.md) |
-| 4b | **How the C Borg went wrong, and how it was fixed** | [`c-borg/c-bugs/`](c-borg/c-bugs/README.md) (the defect catalogue), [`better-borg-c/measurement/`](better-borg-c/measurement/README.md) (one page per verified fix), [`borg-rs/c-bugs.md`](borg-rs/c-bugs.md) | Why a rule of the shipped core is written as it is, and which of the C Borg's behaviours are defects rather than strategy |
-| 4c | **The shipped core's own design** | [`borg-rs/`](borg-rs/) (town planner, trip policy, class family, shop shortcuts) | The intent behind borg-core's town and trip code, which borg-rs added to the C Borg |
+| 4b | **How the C Borg went wrong, and how it was fixed** | [`c-borg/c-bugs/`](c-borg/c-bugs/README.md) (the defect catalogue), [`better-borg-c/measurement/`](better-borg-c/measurement/README.md) (one page per verified fix), [`borg-core/c-bugs.md`](borg-core/c-bugs.md) | Why a rule of the shipped core is written as it is, and which of the C Borg's behaviours are defects rather than strategy |
+| 4c | **The shipped core's own design** | [`borg-core/`](borg-core/) (town planner, trip policy, class family, shop shortcuts) | The intent behind borg-core's town and trip code, which borg-rs added to the C Borg |
 | 5 | **What agent players learned** | [`borg-runner/`](borg-runner/) (S15), and the retired [`borg-agent/knowledge/`](borg-agent/knowledge/README.md) | Language-model agents playing from the screen; every line traced to the run that found it. Leads, not rules |
 | 6 | **Evidence from recorded play** | [`deaths/`](deaths/INDEX.md) (the C Borg's and borg-rs's death dossiers), [borg-cemetery](https://github.com/diegoami/borg-cemetery) (ours), each run's `trace-core.jsonl` | What actually killed a Borg. A lead until the zoo measures it (RULES 14) |
 
