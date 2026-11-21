@@ -30,5 +30,5 @@ A handoff ends the headless run as `borg_stopped`.
 
 The tests cover the route, Recall priority, the movement direction and the
 reason selected for handoff. Full engine playback of those recovery paths
-requires a retained or constructed lightless scenario. The original
-recording remains the evidence for the observed loop in #811.
+is tracked in [#815](https://github.com/diegoami/borg-reborn-rs/issues/815).
+The original recording remains the evidence for the observed loop in #811.
