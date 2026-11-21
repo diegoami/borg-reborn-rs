@@ -1,5 +1,9 @@
 # Decision fixtures (T4.1, #118; T4.2, #119; T4.3, #120; T4.4, #121; T4.5, #122; T4.6, #123)
 
+> **Status (updated 2026-11-21, #816).** These fixtures test our own reborn
+> core (`borg-reborn-rs/`, `BORG_CORE=reborn`), frozen by the repivot of
+> 2026-11-14; they do not test the shipped borg-rs core.
+
 *Death-derived `Observation` fixtures. Each one records a decision the Borg must not make, and the verified feasible alternative where a branch exists. The scenario files, with their citations and construction notes, are in [`borg-reborn-rs/tests/fixtures/decisions/`](../borg-reborn-rs/tests/fixtures/decisions/); the engine data they read is [`knowledge.json`](../borg-reborn-rs/tests/fixtures/knowledge.json); the format is in [`tests/fixtures/README.md`](../borg-reborn-rs/tests/fixtures/README.md). A **gap** is not a skip: `tests/decision_fixtures.rs` pins what the Borg does today and fails when the behaviour changes, and the fixture names the open issue that owns the missing capability.*
 
 | Fixture | Dossier | Forbidden | Feasible / verified alternative | Status | Now (pinned) |

@@ -2,88 +2,205 @@
 
 # borg-reborn-rs
 
-The Angband Borg reborn, in Rust: an automatic player for Angband, redesigned
-from the ground up in how it **plays**. It stands on its own: the game is
-upstream Angband 4.2.6 at `574b618c3bfec595f3503a58f8e488b1c4ae3a46`, byte for
-byte, behind upstream's own Borg seam (`do_cmd_borg`, `inkey_hack`; started
-with **Ctrl-Z**, **z**), and the integration around it (a small patch series of
-harness hooks, the headless frontend, the bindings, the build, the harness) is
-ours ([docs/SPEC.md](docs/SPEC.md)). [borg-zoo](https://diegoami.github.io/borg-zoo/)
-measures it and compares it with other Borgs.
+An automatic player (a "Borg") for [Angband](https://github.com/angband/angband)
+4.2.6, in Rust. The game is upstream Angband at
+`574b618c3bfec595f3503a58f8e488b1c4ae3a46`, byte for byte, entered through
+upstream's own Borg command (**Ctrl-Z**). The Borg that plays is the
+**borg-rs core**: a line-by-line Rust translation of the original C Borg,
+vendored in `borg-core/`, with named settings, errands and a decision trace
+added here. [borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
 
-**Status (2026-11-10):** M1 is reviewed (tag `m1`); M2 has its Observation,
-world model, knowledge tables, decision trace and parameters (T2.1–T2.4);
-milestone **E, our own integration** (docs/SPEC.md §10), is merged (tag `e`)
-and its review's findings are being fixed. M2 resumes with T2.5. The
-Rust Borg plays, but only as a placeholder until M3. Tasks are GitHub issues
-([milestones](https://github.com/diegoami/borg-reborn-rs/milestones)).
+**Status (2026-11-21):** the borg-rs core plays every class from birth and
+is the default core (#479, #606). Its thresholds are being turned into named
+settings (track P, P1–P5 on `main`, P6 under review) and its decisions are
+being redesigned on a separate branch (track R, R4 in progress). Our own
+first-principles core (`BORG_CORE=reborn`) is frozen. Details:
+[docs/architecture/reborn-plan.md](docs/architecture/reborn-plan.md).
 
-## Playing
+This page is for **playing**: setting up, building, watching the Borg and
+changing what it does. For how it works, see
+[docs/architecture/](docs/architecture/README.md); for the game knowledge it
+and its developers use, [docs/GAME-KNOWLEDGE.md](docs/GAME-KNOWLEDGE.md);
+for working on the repository, [AGENTS.md](AGENTS.md). This repository is
+the central place for our Borg documentation, including our
+[Angband Strategy Manual](docs/strategy/README.md); what is ours and what is
+other authors' is in [docs/DOCUMENTATION-MAP.md](docs/DOCUMENTATION-MAP.md).
 
-```sh
-./watch-borg.sh --name MyBorg        # build (X11) and open the game; create/load a character, then Ctrl-Z, z
-BORG_IMPL=rust harness/build.sh      # the headless build (the zoo's entry point)
-harness/run.sh OUT SEED RACE CLASS TURNS menu   # one deterministic headless run
-tools/rerun-death.py docs/deaths/DXXXX-... OUT  # rerun a recorded death with the Borg's logs
+**Without building:** a release's Linux package plays as it is: unpack it,
+then `./watch-borg.sh` (see its `PLAYING.txt`).
+[docs/RELEASING.md](docs/RELEASING.md) says how to install one and how
+releases are made.
+
+## 1. Requirements
+
+A Linux machine (the commands below were checked on Ubuntu) with:
+
+| What | Why | Debian/Ubuntu |
+| --- | --- | --- |
+| git, Python 3, CMake, a C compiler | the build and the harness | `git python3 cmake build-essential` |
+| Rust (stable, with cargo) | the Borg | [rustup](https://rustup.rs/) |
+| OpenSSL's crypto library | the engine links libcrypto | `libssl-dev` |
+| X11 headers and bitmap fonts, a display | only to **watch** the Borg in a window | `libx11-dev xfonts-base` |
+| a UTF-8 locale | the game refuses to start without one ("Angband requires UTF-8 support") | e.g. `export LANG=C.UTF-8` |
+
+```bash
+sudo apt-get install -y git python3 cmake build-essential libssl-dev libx11-dev xfonts-base
 ```
 
-A release (the Linux package: unpack, then `./watch-borg.sh`; see its
-`PLAYING.txt`) needs no build; [docs/RELEASING.md](docs/RELEASING.md) says
-how to install one and how releases are made.
+## 2. Get the code
 
-Saves and settings of `watch-borg.sh` are in `.angband-reborn/`. Until M3
-the Borg is a placeholder (it walks, rests and descends). Where the work
-stands now: [docs/handover/](docs/handover/README.md), one note per task, newest
-first; older entries in [docs/HANDOVER.md](docs/HANDOVER.md), the archive. [tools/README.md](tools/README.md)
-documents the death records. The death registry itself is in
-[borg-cemetery](https://github.com/diegoami/borg-cemetery); a dossier is
-addressed by its source-qualified identity and case directory. Historical
-`docs/deaths/` cases remain here; their IDs may collide with cemetery IDs.
+```bash
+git clone https://github.com/diegoami/borg-reborn-rs.git
+```
 
-The character name defaults to `RustBorg`; use the same `--name` to reload
-its save. The positional form `./watch-borg.sh MyBorg` also works.
+```bash
+cd borg-reborn-rs && bash scripts/setup.sh
+```
 
-Working on this repository: start at [AGENTS.md](AGENTS.md), then
-[RULES.md](RULES.md). It is model agnostic: any coding agent, or a person,
-follows the same files.
+`scripts/setup.sh` checks the tools above and clones the related
+repositories into `vendor/` at their pins (the original Angband, the C Borg,
+borg-rs, borg-zoo, ...). Playing does not need them; developing does. It is
+safe to rerun.
 
-## Game knowledge
+**For headless runs**, also clone
+[borg-cemetery](https://github.com/diegoami/borg-cemetery) next to this
+repository, at the commit named in `death-tools-pin.txt`: every run ends by
+handing a death (if any) to its tools, and `harness/run.sh` fails without
+them.
 
-What the Borg knows about the game comes, in this order, from the engine,
-from two manuals, and from recorded play. The engine
-([`engine/angband/`](engine/angband/), upstream `574b618c`) is the only
-authority: every formula, table and prompt is checked in `src/` or
-`lib/gamedata/` and cited there (RULES 16). The manuals are copied in
-[`reference/c-manual/`](reference/c-manual/README.md) (S14): the **Angband
-Strategy Manual**, a source-grounded guide to how the game works underneath
-and how to survive it (chapters 0–16, appendices A1–A10, and *notes for the
-borg* for automatic players), and the **official user manual** for this exact
-version (`user-manual/`) for commands, screens and options. The third input
-is evidence from play: the death dossiers, borg-runner's accumulated
-knowledge and our own decision traces. Nothing is a claim until
-[borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
+```bash
+git clone https://github.com/diegoami/borg-cemetery.git ../borg-cemetery
+```
+
+```bash
+git -C ../borg-cemetery checkout "$(cat death-tools-pin.txt)"
+```
+
+(Or set `BORG_CEMETERY_DIR` to a checkout elsewhere; see
+[tools/README.md](tools/README.md#cemetery-owned-death-tools).)
+
+## 3. Watch the Borg play
+
+```bash
+./watch-borg.sh --build-only
+```
+
+builds the game with the X11 window into `build/watch/` (about a minute).
+Before the first game, give the Borg its settings: the game's user directory
+for watched games is `.angband-reborn/user/`.
+
+```bash
+mkdir -p .angband-reborn/user && cp harness/borg.txt harness/scary_monsters.txt .angband-reborn/user/
+```
+
+**Do not skip this.** Without a `borg.txt` there, the Borg writes one with
+the C Borg's defaults, which names no core, and the frozen reborn core plays
+instead of the borg-rs core. Copy the files again whenever you update the
+repository and want the new shipped settings.
+
+```bash
+LANG=C.UTF-8 ./watch-borg.sh --name MyBorg
+```
+
+1. The game opens. Create a character (Enter through the birth screens), or
+   load `MyBorg` if it exists: the same `--name` reloads the same save.
+2. In the game, press **Ctrl-Z**. Dismiss the two warnings (Enter) and
+   answer **y** to "Are you sure you want to use the borg commands?".
+3. At `Borg command (? for help):` press **z**. The Borg plays.
+4. Any key stops it. Ctrl-Z, z starts it again.
+
+Saves and settings stay in `.angband-reborn/` (ignored by git).
+`BORG_PLAY_DATA_DIR` moves them elsewhere. A watched game is not a measured
+run: its death is not recorded (to record one, reproduce it with
+`harness/run.sh`).
+
+## 4. A headless run
+
+```bash
+BORG_IMPL=rust harness/build.sh
+```
+
+builds the headless game into `build/rust/` (the zoo's entry point,
+[docs/ZOO-INTERFACE.md](docs/ZOO-INTERFACE.md)). Then:
+
+```bash
+harness/run.sh /tmp/run1 1 0 0 5000 menu
+```
+
+plays seed 1, race 0 (Human), class 0 (Warrior; indices in the order of the
+game's `p_race.txt` and `class.txt`) for 5,000 game turns, deterministically.
+The output directory holds `keys.log`, `messages.log`, `state.log`,
+`summary.json` (the outcome), `trace-core.jsonl` (one line per decision),
+`params-core.json` and `settings-resolved.json` (the settings it played
+with). Flags and environment variables are listed at the top of
+[harness/run.sh](harness/run.sh) and in [harness/README.md](harness/README.md).
+A suite of runs: `harness/suite.sh smoke OUTDIR`.
+
+## 5. Which core plays
+
+| Core | What | How to select |
+| --- | --- | --- |
+| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core = borg-rs` in `borg.txt` (shipped) |
+| reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core = reborn` |
+
+`BORG_CORE` in the environment wins over the file. The reborn core reads
+`harness/profiles/reborn-default.txt`, not `borg.txt`, and none of the
+settings below apply to it.
+
+## 6. Changing what the Borg does
+
+Everything is in **`borg.txt`**: `harness/borg.txt` for headless runs (each
+run copies it), `.angband-reborn/user/borg.txt` for a watched game. Each
+setting is commented: what it does, what raising or lowering it does, and
+how many short test games it changed. The values shipped are the ones the
+zoo measures; a change you make is your own experiment.
+
+| To change | Where |
+| --- | --- |
+| the C Borg's own settings (`borg_stop_dlevel`, `borg_no_deeper`, `borg_plays_risky`, ...) | their lines in `borg.txt` |
+| a named threshold of the core | its `borg_param_<name>` line in `borg.txt`; the full list with units, ranges and the code each one reaches is [docs/CALIBRATION.md](docs/CALIBRATION.md) |
+| one class only | `harness/borg_<class>.txt`, then `python3 scripts/borg-class-files.py fold` (folds them into `borg.txt`'s CLASS FILES block); or a line `borg_param_<name>@<class> = value` |
+| a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `BORG_TXT_SET="name=value;..."` for `harness/run.sh` |
+| the monsters that make a level "scary" | `harness/scary_monsters.txt` (format in its header), selected by `borg_scary_list` |
+| a long-term goal: go to town, dive to a depth, a ladder, a trip plan | an **errand**: `borg_reborn_errand` in `borg.txt`, `BORG_ERRAND`, or in the game (below); [docs/ERRANDS.md](docs/ERRANDS.md) |
+| a whole game plan by class and level | a plan file ([docs/GAME-PLAN-LANGUAGE.md](docs/GAME-PLAN-LANGUAGE.md); examples in `harness/plans/`), `borg_plan = FILE` or `BORG_ERRANDS_PLAN` |
+| when the Borg hands control back to you | `borg_reborn_stopscared` (off, a percent of HP, or `flee`) |
+
+**In the game**, Ctrl-Z then **/** opens the Borg's command line
+([docs/ERRANDS.md](docs/ERRANDS.md)): `/town`, `/dive 5`, `/ladder`,
+`/explore-level`, `/stopscared flee`, `/stopscared off`, `/stop`, several
+joined with `;`. Ctrl-Z then **?** lists the C Borg's other commands
+(**$** reloads `borg.txt`'s C settings; the `borg_param_*` values are read
+once per game process).
+
+## 7. Deaths and measurement
+
+- **Deaths.** A headless run that dies is exported as a dossier (the trace's
+  tail, the settings, the keys) to
+  [borg-cemetery](https://github.com/diegoami/borg-cemetery), the registry of
+  every recorded death, its investigations and replayable scenarios.
+  [tools/README.md](tools/README.md) explains the tools and how to rerun a
+  death.
+- **Measurement.** Whether a change makes the Borg better is decided by
+  [borg-zoo](https://diegoami.github.io/borg-zoo/), which plays frozen seed
+  suites with a given build and settings and compares Borgs, not by a few
+  local games ([docs/ZOO-INTERFACE.md](docs/ZOO-INTERFACE.md)).
 
 ## Related repositories
 
 | Repository | Role here |
 | --- | --- |
 | [angband/angband](https://github.com/angband/angband) | The game and the original C Borg (`src/borg/`), at the pin above. Read only. |
-| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | The C Borg specification and the Tunable Borg Plan (`docs/c-borg/`); the Angband Strategy Manual and the official user manual of our game version (`docs/c-manual/`, copied in `reference/c-manual/`); the issue board for C Borg defects. |
-| [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes; native measurement runner; death dossiers. |
-| [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. A reference to copy from, never a dependency (docs/SPEC.md §2); what was copied is ours and listed in docs/PROVENANCE.md. |
+| [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes: the C ancestor the architecture documents cite. |
+| [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port; its decision core is vendored in `borg-core/` at a pin ([docs/architecture/borg-core.md](docs/architecture/borg-core.md)). |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
-| [borg-agent](https://github.com/diegoami/borg-agent) | *Retired 2026-11-11* (a failed experiment): no longer an input. Its roles, model-played games and claims with evidence, moved to secondary goal Q (docs/GOALS.md D12). Its pin goes in the next source-refresh PR. |
-| [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents play the game from the screen and record every key; what they learn accumulates in one page (`manuals/INSTRUCTIONS.md`). A source of game knowledge (S15). |
-| [borg-cemetery](https://github.com/diegoami/borg-cemetery) | The canonical death registry: recorded Borg runs, written death investigations and playable saved scenarios. This repository writes and reconciles it through `BORG_DEATH_RECORDS_DIR` ([docs/deaths/POINTER.md](docs/deaths/POINTER.md)). |
+| [borg-cemetery](https://github.com/diegoami/borg-cemetery) | The death registry: recorded runs, investigations, scenarios. |
+| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | Where the C Borg specification, the Angband Strategy Manual and the C Borg defect catalogue were written; they are kept in `docs/` now. |
+| [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents playing from the screen; what they learn is a source of game knowledge. |
+| [borg-agent](https://github.com/diegoami/borg-agent) | Retired 2026-11-11. |
+
+More on each: [docs/SOURCES.md](docs/SOURCES.md).
 
 Licence: GPLv2 (see `LICENSE`), as borg-rs. Angband itself is dual-licensed
 GPLv2 / Angband licence; files copied from other projects keep their
-headers and are listed with their provenance.
-
-## Death evidence and analysis
-
-Canonical new death dossiers, human-readable investigations, replay/scenario
-reports and human alternatives belong in [borg-cemetery](https://github.com/diegoami/borg-cemetery).
-The existing `tools/export-death.py`, `rerun-death.py`, `death_registry.py` and
-`reconcile-deaths.py` paths forward to its owned implementation.
-[Setup and historical/CI compatibility](tools/README.md#cemetery-owned-death-tools).
+headers and are listed with their provenance ([docs/PROVENANCE.md](docs/PROVENANCE.md)).

@@ -52,9 +52,9 @@ as history; M1's engine tree and harness came from borg-rs and are replaced in E
 | **M1. The seam and the yardstick** | The engine and harness from borg-rs; the reborn crate linked behind `inkey_hack` as `BORG_IMPL=rust`; same-frontend control C Borgs; the run contract (exact boundary, depth stream); death export before the first playing run; a minimal Borg; same launchers; the endpoint calculator | `harness/build.sh` builds `c`, `c-pristine`, `c-bbc-m7` and `rust`; `c-pristine` reproduces borg-rs's pristine-C references (T1.3); a seed run twice gives identical `keys.log`; on every arm, `rust` included, the smoke suite runs end to end with no harness failure and the run-contract check holds (T1.8); every natural death has a dossier, from the first game played; launchers start a GUI game with Ctrl-Z, z; the zoo change request is with the owner (T1.8) | **done**: reviewed in #39, tag `m1` (2026-11-09) |
 | **E. Our own integration** | docs/SPEC.md §3–§4: upstream Angband byte for byte, our patch series, our headless frontend, generated bindings, our build and harness, only our Borg, the zoo contract written down and checked; the removals of SPEC.md §8 and the documents of §9 | SPEC.md §10, all eight points | **done**: merged in #92, tag `e` (2026-11-09), **merged before review**; reviewed after the fact on #92 (2026-11-10), findings fixed in #94–#96 |
 | **M2. Perception and world model** | `Observation`, world model, knowledge tables, decision trace, parameter table | Perception agrees with the engine on recorded runs (declared exceptions only; SPEC.md §7); observations serialise and replay into the world model without the game; every engine read is listed (D3 audit, SPEC.md §5) | **done**: reviewed in #99 (Kimi K3.1 Pro, four passes; findings fixed in #100–#104), tag `m2` (2026-11-10) |
-| **M3. A Borg that plays** | Executor and prompts, paths, exploration, melee, pickup, stairs, rest, town restock; the first strategy without the full tactical layer; death dossiers | **G0**: no stall, crash or harness failure on the smoke suites; deterministic replay; every natural death recorded with its decision trace | in review (#135) |
-| **M4. Danger and survival** | The threat model and its calibration, reserves, escapes, the tactical layer, survival invariants | Calibration report on recorded runs; fixtures from the death cases (below) pass; early-suite deaths set beside the zoo's existing C Borg results (descriptive; no control run requested) | in progress: T4.1–T4.7 done ([calibration and gate](docs/M4-CALIBRATION.md), #124); T4.8 (#157) and the deferred M3 review findings #137–#139 done; the milestone's tasks are complete and the M4 review is next |
-| **M5. Readiness and progression** (paused: the repivot) | Readiness policy per class, equipment valuation, item use, spells for casters, ranged combat | **G1** on `classes-1800` against the zoo's existing control results (owner starts the zoo run of our Borg only; prerequisites in [GOALS.md](docs/GOALS.md#observation-and-scoring-rule)) | in progress (M4 review findings #163–#165, the source refresh T5.1 #125, T5.2 #126 and the starvation residue #172 done; #127 in progress) |
+| **M3. A Borg that plays** | Executor and prompts, paths, exploration, melee, pickup, stairs, rest, town restock; the first strategy without the full tactical layer; death dossiers | **G0**: no stall, crash or harness failure on the smoke suites; deterministic replay; every natural death recorded with its decision trace | **done**: reviewed in #135, re-reviewed after #140, tag `m3` (2026-11-10) |
+| **M4. Danger and survival** | The threat model and its calibration, reserves, escapes, the tactical layer, survival invariants | Calibration report on recorded runs; fixtures from the death cases (below) pass; early-suite deaths set beside the zoo's existing C Borg results (descriptive; no control run requested) | **done**: T4.1–T4.8 ([calibration and gate](docs/M4-CALIBRATION.md), #124, #157); reviewed in #162 (GLM-5.3), merged at `ae5aa11` (2026-11-13); the `m4` tag is the owner's to create there |
+| **M5. Readiness and progression** (paused: the repivot) | Readiness policy per class, equipment valuation, item use, spells for casters, ranged combat | **G1** on `classes-1800` against the zoo's existing control results (owner starts the zoo run of our Borg only; prerequisites in [GOALS.md](docs/GOALS.md#observation-and-scoring-rule)) | **paused** since the repivot (2026-11-14): M4 review findings #163–#165, T5.1 #125, T5.2 #126 and the starvation residue #172 done; #127 left open |
 | **M6. The family** | Class profiles, the first class-specific strategy where M5's data shows the need, a tuning loop (screening and racing) | **G2**, confirmed on fresh seeds | not started |
 | **M7+** | Deeper suites, mid game, death-driven iterations | **G3**, then G4 | not started |
 
@@ -62,10 +62,13 @@ as history; M1's engine tree and harness came from borg-rs and are replaced in E
 
 The POC showed that a Borg built here from first principles does not beat
 borg-rs. The repository now hosts **borg-rs's decision core**
-(`borg-core/`, vendored at borg-rs v12; docs/SPEC.md §2 amendment) with
-**errands** around it (docs/ERRANDS.md). The engine is upstream
-`574b618c` (#724; `42cd156ac`, the commit borg-rs plays, until 2026-11-20, #216). Our own core stays the
-default and is frozen: **M5–M7 are paused**, their open issues kept.
+(`borg-core/`, vendored at borg-rs v12, now at `8c5d000a`, `borg-core/PIN`;
+docs/SPEC.md §2 amendment) with **errands** around it (docs/ERRANDS.md). The
+engine is upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs plays,
+until 2026-11-20, #216). borg-rs's core is the one that plays: shipped in
+`harness/borg.txt` since #479, and the harness default since #606. Our own
+core (`BORG_CORE=reborn`) is frozen: **M5–M7 are paused**, their open issues
+kept.
 
 Work now runs in two tracks, side by side, each with its own milestones,
 labels and review PRs (AGENTS.md *Choosing the work*). A session is
@@ -90,7 +93,7 @@ v12).
 | **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | implementation on main; owner accepted retrospective review; #260 promotion delegated (supersedes #251) |
 | **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | implementation on main (#247, #249, #250, #252); owner accepted retrospective review; #260 promotion delegated |
 | **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | implementation on main (#253, #254); owner accepted retrospective review; #260 promotion delegated |
-| **P7. Through the first five levels** (owner, 2026-11-20, after an external review) | `P7` | Safe progress through DL2–5 on the shipped borg-rs core. Find what keeps a Borg from descending: the first failed preparedness requirement per trip (#795), and the resolved settings of every character (#798). Change only the most frequent actionable DL3/DL5 blocker, one class at a time. Measure the shipped fight and Recall switches (borg-zoo#535), the Ranger Phase Door reserve (#797, borg-zoo#536), the Blackguard reading of the Phase Door rule (borg-zoo#537) and the low-level detection exception (#796) | Two endpoints, fixed before each comparison. **Tactical changes:** deaths by 100,000 engine turns, with mean CL and depth within a prespecified margin. **Descent changes:** alive at the cap having reached DL5 (primary), with a prespecified survival margin. Every report gives rescued/newly-killed pairs, unfinished games and per-class results. Confirmation on a seed block not yet read for any decision (`classes-1800-b` has been read several times; the zoo opens a new one) | not started; issues #795–#798 |
+| **P7. Through the first five levels** (owner, 2026-11-20, after an external review) | `P7` | Safe progress through DL2–5 on the shipped borg-rs core. Find what keeps a Borg from descending: the first failed preparedness requirement per trip (#795), and the resolved settings of every character (#798). Change only the most frequent actionable DL3/DL5 blocker, one class at a time. Measure the shipped fight and Recall switches (borg-zoo#535), the Ranger Phase Door reserve (#797, borg-zoo#536), the Blackguard reading of the Phase Door rule (borg-zoo#537) and the low-level detection exception (#796) | Two endpoints, fixed before each comparison. **Tactical changes:** deaths by 100,000 engine turns, with mean CL and depth within a prespecified margin. **Descent changes:** alive at the cap having reached DL5 (primary), with a prespecified survival margin. Every report gives rescued/newly-killed pairs, unfinished games and per-class results. Confirmation on a seed block not yet read for any decision (`classes-1800-b` has been read several times; the zoo opens a new one) | **in progress** (accepted 2026-11-21, PR #799); issues #795–#798 |
 
 Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
 For those milestones, owner acceptance of the retrospective review #259
@@ -102,19 +105,21 @@ not undo other-track work already authorized before the gate.
 ### Track R: the redesign epic (epic #217)
 
 borg-rs's decisions re-expressed subsystem by subsystem in our domain, in a
-new crate `borg-next/`. Each port runs beside the original every think
-(**shadow check**) and switches over only when the full suite's keys stay
-byte-identical. Ported code reads borg-rs's memory through a typed view,
-not our perception, until R6. A subsystem is ported after track P has
+new crate `borg-next/`, on the integration branch `feature/track-r` (its
+PLAN.md holds the track's current state; this table is updated from it).
+Each port runs beside the original every think (**shadow check**) and
+switches over only when the full suite's keys stay byte-identical. Ported
+code reads borg-rs's memory through a typed view, not our perception, until
+R6. A subsystem is ported after track P has
 named its thresholds and the relevant P milestone has been reviewed and
 promoted to `main`.
 
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
-| **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **in progress** |
-| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | not started |
-| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | not started |
-| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |
+| **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **done**: accepted and merged in #266; tag `r1` |
+| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted #302/#329; tags `r2`, `r2.1` |
+| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **done**: owner accepted #427 (2026-11-16) |
+| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | **in progress**: final review #438 |
 | **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 
@@ -123,6 +128,17 @@ Estimates (2026-11-14, to be redone after R2): R1 1–2 weeks, R2 2–3, R3–R5
 
 GitHub milestones are not used for P and R (labels are); the owner may
 create them, and a session then files each issue in its milestone as well.
+
+## Releases (owner, 2026-11-21)
+
+Releases ship the Borg as it plays on `main`, bundled with Angband, for people who want to watch or play with it. They do not wait for a track to finish: each release is its own milestone, built on demand by the release workflow (#819) when the owner tags it, never on ordinary pushes. The owner, on the first one: "let us do a prerelease though, we are still very buggy, S1 is too optimistic".
+
+| Milestone | What it delivers | Exit (all must hold) | State |
+| --- | --- | --- | --- |
+| **S0. A preview prerelease** (`v0.1.0-alpha.1`, marked pre-release on GitHub) | The shipped borg-rs core on `main` at the release commit, with its shipped `harness/borg.txt`, class files, scary list and plans. Upstream Angband `574b618c` unchanged, with our harness hooks and frontend. A Linux package and a source archive, with licences. A short `PLAYING.md` (install, watch, stop, the main settings; the README's setup part of #816) and release notes that say plainly it is experimental | The release workflow (#819) makes a draft **pre-release**; the package, unpacked on a clean Linux machine, runs `watch-borg.sh` and a headless game as `PLAYING.md` says; smoke on the release commit matches `smoke-borg-rs`; the notes list the known problems (the Borg rarely gets past DL2-3, which is P7's work; the open bug issues) and, if a zoo run of that commit exists, its numbers as a description (RULES 14), not as a claim; the owner publishes it | not started; issues #816 (README part), #819 |
+| **S1. The first playable release** (`v0.1.0`) | As S0, at a later commit, with the full user guide (#817) | As S0, not marked pre-release; and borg-zoo's measurement of that exact commit in the notes (deaths, CL, depth, alive at DL5); the owner judges the known problems small enough for a release | not started; after S0, typically once P7 is accepted |
+
+Later releases follow the same exit at later commits.
 
 ## Secondary track Q: the query surface
 
@@ -134,8 +150,8 @@ owner merges it. A Q milestone never blocks a primary one.
 
 | Milestone | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- |
-| **Q0. Pilot** | No code: a session diagnoses deaths from the dossiers as they are (`trace-tail.jsonl`, `params.json`, `record.json`), on the reference deaths with known explanations (`reference/deaths/` bbc and rs, and the cases written up in `docs/FIXTURES.md` and REDESIGN-LESSONS) and on our own | Hit rate on the known deaths reported, by deciding **turn**, cause and alternative (the reference dossiers hold no trace or parameter table); triage table of our deaths: deciding think where the trace reaches it, the turn otherwise (`trace-tail.jsonl` keeps the last 200 thinks, `tools/export-death.py`; most of our dossiers are at that cap, and the `-c-` ones have no trace); draft fixtures for the clearest, not committed as tests; the tools it missed, which adjust Q2–Q3, a longer trace among them | not started; #153 (TQ0), runs beside M4 when the owner opens it |
-| **Q1. The facade** | `borg_reborn_rs::query`: `State` rebuilt from a run's logs (observations, knowledge, params, trace), the strategy replayed with the run's seed and profile; read-only reports with units; `query::VERSION`; `harness/run.sh --record-state` | Facade tests on every decision fixture and on a recorded smoke run; replay reproduces every trace choice of the smoke references, as a CI step; play unchanged: the smoke, smoke-exact and full references reproduce key for key and trace for trace. The build's source hash (`harness/identity.sh`) does change, since it covers `borg-reborn-rs/` and `Cargo.lock`; with play unchanged that is not a new measurement baseline (RULES 22) | not started (may start once M4 is merged); tasks #149 (TQ1.1), #150 (TQ1.2), #151 (TQ1.3) |
+| **Q0. Pilot** | No code: a session diagnoses deaths from the dossiers as they are (`trace-tail.jsonl`, `params.json`, `record.json`), on the reference deaths with known explanations (`reference/deaths/` bbc and rs, and the cases written up in `docs/FIXTURES.md` and REDESIGN-LESSONS) and on our own | Hit rate on the known deaths reported, by deciding **turn**, cause and alternative (the reference dossiers hold no trace or parameter table); triage table of our deaths: deciding think where the trace reaches it, the turn otherwise (`trace-tail.jsonl` keeps the last 200 thinks, `tools/export-death.py`; most of our dossiers are at that cap, and the `-c-` ones have no trace); draft fixtures for the clearest, not committed as tests; the tools it missed, which adjust Q2–Q3, a longer trace among them | not started; #153 (TQ0), when the owner opens track Q |
+| **Q1. The facade** | `borg_reborn_rs::query`: `State` rebuilt from a run's logs (observations, knowledge, params, trace), the strategy replayed with the run's seed and profile; read-only reports with units; `query::VERSION`; `harness/run.sh --record-state` | Facade tests on every decision fixture and on a recorded smoke run; replay reproduces every trace choice of the smoke references, as a CI step; play unchanged: the smoke, smoke-exact and full references reproduce key for key and trace for trace. The build's source hash (`harness/identity.sh`) does change, since it covers `borg-reborn-rs/` and `Cargo.lock`; with play unchanged that is not a new measurement baseline (RULES 22) | not started; tasks #149 (TQ1.1), #150 (TQ1.2), #151 (TQ1.3) |
 | **Q2. The server** | `borg-mcp` workspace crate over stdio with the diagnosis tools: `load_run`, `seek`, `view`, `why`, `threats`, `danger_at`, `reserves`, `params`, `knowledge`; trace and params as resources; schemas generated and checked in | An MCP client loads a death dossier and gets cited answers (`query_version`, run identity, think, turn); CI runs the crate's tests; sealed seeds refused | not started |
 | **Q3. Counterfactuals** | `responses`, `decide`, `what_if` (closed `Hypothesis` set); `branch`: rerun the run's seed and profile, take an alternative action at a think, let the Borg continue for N game turns, report what followed (a build feature the zoo never gets); claims and draft fixtures (the docs/FIXTURES.md format, not committed as tests: an alternative may not be constructible as a fixture) as outputs; a `branch` build marked in `BUILD_ID` (`features=branch`, as `test_features` is today), so its results stay with their own build (RULES 22); snapshots for fast seeking | `what_if` reproduces each death fixture's alternative; `branch` with no alternative reproduces the original `keys.log`; facade purity test (world digest unchanged after every tool at every think); a new zoo-contract assertion refuses a build whose `BUILD_ID` carries features (the check does not exist yet) | not started |
 | **Q4. Diagnosis** | The workflows of docs/QUERY-SURFACE.md: evaluation on deaths with known explanations, triage of a zoo batch into cause frequencies, review of a strategy change at its divergence points | The evaluation meets the hit-rate threshold (**open: the owner fixes the threshold and the cases counted before Q4 starts**, after Q0's numbers); one zoo batch triaged, its draft fixtures and issues reviewed and filed | not started |
@@ -168,7 +184,7 @@ are reviewed.
   `owner-manual-branch.json` of bbc D0010, D0012, D0013 and D0014 gives a
   verified prefix and a known-feasible alternative. Starting from the same
   state, our decision must be at least as good. The full lesson-to-design
-  map is [docs/LESSONS-TRACE.md](docs/LESSONS-TRACE.md).
+  map is [docs/archive/LESSONS-TRACE.md](docs/archive/LESSONS-TRACE.md).
 - **Our own deaths** are recorded from the first game played in M1
   (T1.2's death export, RULES 12), whichever arm died, and each milestone
   review lists them with causes.
@@ -245,11 +261,12 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 
 ## P5: validation reproducibility and evidence receipts (2026-11-18)
 
-**P5 task implementation complete; awaiting milestone review/acceptance in
-[#626](https://github.com/diegoami/borg-reborn-rs/pull/626).** Owner authorized
-#579 into track-p at `f357404e` and #608 at `7e3ea58f`, both after green CI;
-#374 and #375 are complete. Review follow-up #629 updates this status and
-handover discoverability; promotion remains unmerged pending owner acceptance.
+**Done: owner accepted the P5 milestone review and delegated
+[#626](https://github.com/diegoami/borg-reborn-rs/pull/626), promoted to main
+at `324697ed` (2026-11-19).** Owner authorized #579 into track-p at
+`f357404e` and #608 at `7e3ea58f`, both after green CI; #374 and #375 are
+complete; review fixes #629/#630. Earlier pending-review statements are
+historical.
 
 The owner accepted the kickoff re-review and merged source refresh #555 into
 track-p at `0336d44e`, then kickoff #537 at `6aa38d2b`; issues #554 and #536
@@ -291,3 +308,12 @@ Task PRs target track-p and require green CI plus the owner's review disposition
 before integration (RULES 1a). Stop after the P5 tasks for a pinned track-p→main
 milestone review. Owner acceptance and explicit merge delegation still gate
 promotion; this kickoff does not choose or launch a reviewer.
+
+## P6: neutral enchant/decurse calibration contract (2026-11-19)
+
+**In track-p; milestone review and promotion PR #822 open** (status updated 2026-11-21).
+The enchant/decurse contract #680 is integrated in `track-p` (#773), the
+pre-promotion reconciliation #774/#783 is merged there (`221a2504`), and the
+final promotion-candidate task #814 is done; the `track-p` → `main` review PR
+#822 awaits the owner-chosen milestone review. The scope, steps and
+exit are in `track-p`'s PLAN.md.

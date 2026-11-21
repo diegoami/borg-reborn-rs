@@ -2,7 +2,7 @@
 
 *Commands that give the Borg a job: go home, dive to a depth, explore a
 level, climb a ladder of trips. They run over **borg-rs's decision core**,
-vendored at the M13 town/trip integration tag as `borg-core/` (docs/PROVENANCE.md). The
+vendored at its pin (`borg-core/PIN`) as `borg-core/` (docs/PROVENANCE.md, [architecture/borg-core.md](architecture/borg-core.md)). The
 errand code is `borg-core/src/shell.rs`, plus the hook calls marked
 `borg-reborn-rs (#207)` / `(#208)` in the vendored files. The original
 evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reborn-rs/pull/206).*
@@ -65,8 +65,9 @@ a ladders file), and `tools/rerun-death.py` sets them again when it reruns a
 death (review #227, finding 8).
 
 `harness/borg.txt` is borg-rs's `borg.txt` with its munchkin start by class
-and its town scumming off (owner, 2026-11-14) and these keys added; the
-zoo copies it. `BORG_CORE_OVERRIDES=off` runs borg-rs's own copy
+and its town scumming off (owner, 2026-11-14; borg-rs has since removed the
+munchkin start) and these keys added, and since #479 the shipped values of
+its settings and the track P parameters (`borg_param_*`); the zoo copies it. `BORG_CORE_OVERRIDES=off` runs borg-rs's own copy
 (`borg-core/borg.txt`), for the parity check.
 
 ## Commands

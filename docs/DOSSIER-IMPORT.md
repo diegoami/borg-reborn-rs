@@ -110,7 +110,7 @@ qualified packages. A deliberate historical migration requires an explicit
 reviewed inventory/map change, never a silent overwrite.
 
 The ten #317 validation dossiers are qualified at adoption; their original
-IDs and full qualified paths are listed in `P318-DOSSIER-MAP.json`. No legacy
+IDs and full qualified paths are listed in `docs/validation/P318-DOSSIER-MAP.json`. No legacy
 P dossier or R implementation is imported or renamed. The same command can
 qualify isolated R validation evidence when that track integrates it; the
 current overlapping R numbers do not need a special range.

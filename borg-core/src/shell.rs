@@ -1,7 +1,9 @@
 //! borg-reborn-rs's errands over this core (#208, docs/ERRANDS.md). Not part of borg-rs: this file and the hook calls marked
-//! `borg-reborn-rs (#208)` are the shell's whole footprint in the vendored
-//! core, so borg-rs's later changes still apply to the rest as plain
-//! patches.
+//! `borg-reborn-rs (#208)` are the errand shell's footprint in the vendored
+//! core. borg-reborn-rs's whole footprint, its own files and the borg-rs
+//! files carrying its hooks, is listed in `scripts/borg-core-vendor.py`
+//! (`OURS`, `HOOKED`), so borg-rs's later changes still apply to the rest
+//! as plain patches.
 //!
 //! The errand is **trips** (owner, 2026-11-14): explore DL1 and go back to
 //! town; then explore DL1, DL2, DL1 and go back to town; and so on. The

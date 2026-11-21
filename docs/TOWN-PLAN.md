@@ -1,7 +1,11 @@
 # The town plan: decisions from data, judged by the zoo
 
-*Status: draft for the owner's review (2026-11-13). No code lands before it
-is accepted. Source: borg-rs's town inventory strategy (borg-rs#36, PR #42,
+*Status (updated 2026-11-21, #816): written for our own reborn core as a
+draft for the owner's review (2026-11-13). Step 1 (#191: town sessions, the
+state records and the object log, `borg-reborn-rs/src/town.rs`) landed on
+2026-11-13; steps 2–8 (#192–#198) are open and paused with that core since
+the repivot of 2026-11-14. The core that plays now is borg-rs's, with its own
+town planner (`borg-core/src/borg_town_*.rs`). Source: borg-rs's town inventory strategy (borg-rs#36, PR #42,
 branches `feature/town-*`), read at their heads of 2026-11-13; S5 (docs/SOURCES.md):
 a reference to copy from, recorded in docs/PROVENANCE.md, never a dependency.*
 

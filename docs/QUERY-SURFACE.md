@@ -5,6 +5,11 @@
 in [PLAN.md](../PLAN.md#secondary-track-q-the-query-surface). Where this
 draft and GOALS differ, GOALS wins.*
 
+> **Status (updated 2026-11-21, #816).** Track Q has not started. This
+> draft was written over our own reborn core (`borg_reborn_rs`), frozen by
+> the repivot of 2026-11-14; the core that plays is now borg-rs's
+> (`borg-core/`).
+
 ## What it is
 
 A server speaking the Model Context Protocol (MCP), `borg-mcp`, that lets a

@@ -2,7 +2,7 @@
 
 This is a handoff, not a launched experiment or an improvement claim.
 The review-fix pin must pass validation and owner milestone acceptance
-before dispatch; see P269-VALIDATION.md.
+before dispatch; see [validation/P269-VALIDATION.md](validation/P269-VALIDATION.md).
 The owner starts population experiments and agrees confirmation suites
 (borg-zoo RULES 8 and this repository RULES 20). Owner review acceptance
 and promotion of the pinned code gate dispatch. No sealed suite is opened here.
