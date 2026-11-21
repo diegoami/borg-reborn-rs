@@ -68,3 +68,21 @@ Docker daemon).
   `v0.0.0-dryrun.1` on `main`; check the draft, then delete it.
 - Version scheme: the workflow accepts any `v<digit>...`; a version with a
   `-` is marked a prerelease. Which numbers milestones get is yours.
+
+## Review of #827 (owner, at `972aab91`): all seven findings fixed
+
+1. `notes.py plan_rows()` matches the milestone in a row's label cell
+   (`` `P1` ``) only; P2's "as P1" no longer brings its row in. A test pins
+   P1 and R2 to their own row. The older table (M1-M13) has no label column,
+   so the notes say PLAN.md has no row for those.
+2. The handover notes listed are the ones added **or changed** since the
+   previous tag (RULES 5b lets a task amend its note).
+3. `linux-clean` runs its steps with `bash` (`defaults.run.shell`); bash is
+   Essential in `ubuntu:24.04`, so nothing is installed for it.
+4. `test_release.py` byte-compiles every `scripts/release/*.py`.
+5. docs/RELEASING.md: a version that already has a release fails; delete
+   the draft first.
+6. The `linux` job keeps the cemetery tools, now with the reason: harness/run.sh
+   refuses to play without them, and a smoke that dies is then still recorded.
+7. RELEASE.txt gives the SHA-256 of the packaged `borg/borg.txt` (and the
+   `harness/borg.txt` it comes from).

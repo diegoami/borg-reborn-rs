@@ -123,6 +123,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.setup.outputs.sha }}
+      # harness/run.sh refuses to play without the death tools (it exports a
+      # natural death to the registry above, RULES 12). Smoke has no death
+      # today, but a suite or play change that dies is then still recorded.
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       - uses: ./.github/actions/apt-install
@@ -166,6 +169,12 @@ jobs:
     needs: [setup, linux]
     runs-on: ubuntu-24.04
     container: ubuntu:24.04
+    # In a job container run steps default to sh (dash): use bash, as the
+    # scripts and local checks do (review of #827). bash is an Essential
+    # package of ubuntu:24.04, so the image has it.
+    defaults:
+      run:
+        shell: bash
     steps:
       - run: |
           apt-get update -qq

@@ -92,7 +92,8 @@ ENGINE=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")
     echo "angband:         upstream $ENGINE, unchanged (engine/angband/), with the"
     echo "                 harness hooks of engine/patches/ and the borgh frontend"
     echo "borg core:       borg-rs, vendored as borg-core/ ($(head -1 "$ROOT/borg-core/PIN" 2>/dev/null || echo 'see borg-core/PIN'))"
-    echo "settings:        harness/borg.txt sha256 $(sha256sum < "$ROOT/harness/borg.txt" | cut -d' ' -f1)"
+    echo "settings:        borg/borg.txt sha256 $(sha256sum < "$BT" | cut -d' ' -f1)"
+    echo "                 (from harness/borg.txt sha256 $(sha256sum < "$ROOT/harness/borg.txt" | cut -d' ' -f1))"
     echo "source_sha256:   $SRC"
     echo
     echo "Licences: LICENSES/ (Angband: angband-copying.rst; borg-rs's core and"

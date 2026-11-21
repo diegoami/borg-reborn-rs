@@ -75,6 +75,10 @@ listed by `scripts/release/rust-licenses.py`.
    previous `v*` tag, the PLAN.md row and the build identities; edit them,
    then publish. Publishing creates the tag when it does not exist yet.
 
+A version that already has a release, draft or published, fails in the
+`release` job (`gh release create` never overwrites one). To re-run a failed
+or wrong release, delete its draft first (Releases → the draft → Delete).
+
 The workflow runs from the default branch's copy of `release.yml`
 (`workflow_dispatch`) or the tag's (`push`).
 

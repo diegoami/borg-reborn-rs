@@ -13,7 +13,6 @@ identities. A draft for the owner to edit before publishing.
 
 import argparse
 import pathlib
-import re
 import subprocess
 import sys
 
@@ -33,7 +32,8 @@ def previous_tag(version: str) -> str | None:
 
 def handover_notes(since: str | None) -> list[tuple[str, str]]:
     if since:
-        names = git("diff", "--name-only", "--diff-filter=A", f"{since}..HEAD", "--", "docs/handover/").splitlines()
+        # Added or changed: a task's later commits may amend its note (RULES 5b).
+        names = git("diff", "--name-only", "--diff-filter=AM", f"{since}..HEAD", "--", "docs/handover/").splitlines()
     else:
         names = git("ls-files", "docs/handover/").splitlines()
     notes = []
@@ -47,12 +47,14 @@ def handover_notes(since: str | None) -> list[tuple[str, str]]:
 
 
 def plan_rows(milestone: str) -> list[str]:
-    """The PLAN.md table rows naming the milestone, each under its table's header."""
-    pat = re.compile(rf"(?<![A-Za-z0-9]){re.escape(milestone)}(?![0-9])")
+    """The PLAN.md table rows whose label cell is the milestone (`P1`), each
+    under its table's header. Other cells may cite a milestone ("as P1"):
+    they do not make a row that milestone's."""
+    label = f"`{milestone}`"
     lines = [l.rstrip() for l in (ROOT / "PLAN.md").read_text().splitlines()]
     out: list[str] = []
     for i, line in enumerate(lines):
-        if not line.lstrip().startswith("|") or not pat.search(line):
+        if not line.lstrip().startswith("|") or label not in (c.strip() for c in line.split("|")):
             continue
         start = i
         while start > 0 and lines[start - 1].lstrip().startswith("|"):
