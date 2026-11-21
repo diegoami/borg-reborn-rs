@@ -22,8 +22,12 @@ No broader local cohort. Source-refresh Zoo fetch was stopped to avoid disk
 exhaustion; its error and direct upstream HEAD observation are retained,
 not interpreted as no source advances. No source/pin change.
 
-Left: canonical local packet and source task PR review/CI, plus Zoo571's
-new pinned comparison disposition, then integration into track-p and pinned
+Canonical local evidence: [immutable packet](https://github.com/diegoami/borg-cemetery/tree/274b9dfea1fd3075f9f8e1cdf12b2745a2045f09/validation/borg-reborn-rs/p6-final-reconciliation-814/),
+Cemetery PR #97 (196 verified artifact hashes and exact executable). Source
+PR #818 carries the exact review prompt; runtime remains a3635ad8.
+
+Left: source/evidence owner review and CI, plus Zoo571's new pinned
+comparison disposition, then integration into track-p and pinned
 P6 milestone review. Zoo520's successful full45 remains historical to its
 own4e9af99e/d0657712 refs. No main promotion or R4 carry/closure authorized.
 Old handovers and immutable0529ff6f/be61aeff packets remain unchanged.
