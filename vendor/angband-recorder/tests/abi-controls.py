@@ -14,18 +14,21 @@ SOURCE=r'''
 #include "recorder.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
-int ar_host_save(const char *path) { (void)path; return -1; }
+int ar_host_save(const char *path) { FILE *f = fopen(path, "w"); if (!f) return -1; fputs("save", f); return fclose(f) ? -1 : 0; }
 const char *ar_host_extra(bool full) { (void)full; return "{}"; }
 static int finals;
-void ar_host_final_frame(void) {
+static void emit_frame(const char *phase) {
     static const ar_cell cells[80*24];
     ar_observation o={0};
     o.turn=7;o.dead=1;o.width=80;o.height=24;o.cells=cells;
-    finals++;ar_frame("final",&o);
+    ar_frame(phase,&o);
 }
+void ar_host_final_frame(void) { finals++; emit_frame("final"); }
 void ar_host_free_extra(const char *text) { (void)text; }
-int main(void) {
+int main(int argc, char **argv) {
+    const char *mode = argc > 1 ? argv[1] : "";
     int64_t geometry[5]={80,24,256,0,0};
     ar_early_init("abi-review-control"); ar_init("abi-review-control",geometry);
     ar_input input={0};input.take=1;input.event_type=1;input.code=32;
@@ -35,7 +38,12 @@ int main(void) {
     struct tm *date=localtime(&christmas_boundary);char message[128];
     if (!date) return 4;
     snprintf(message,sizeof(message),"%d-%02d-%02d:%ld",date->tm_year+1900,date->tm_mon+1,date->tm_mday,(long)recorded);
-    ar_message(1,0,message);ar_finish();ar_finish();return finals==1?0:5;
+    ar_message(1,0,message);
+    /* A game that leaves without calling ar_finish (a closed window): atexit finishes it. */
+    if (!strcmp(mode,"atexit")) return 0;
+    /* A normal quit: the engine's hook wrote the exit frame; no closing frame follows. */
+    if (!strcmp(mode,"exit-frame")) { emit_frame("exit"); return 0; }
+    ar_finish();ar_finish();return finals==1?0:5;
 }
 '''
 
@@ -51,13 +59,13 @@ def main():
         source=out/'host.c';source.write_text(SOURCE)
         for mode,flags in [('release',['-O2']),('debug',['-O0','-g'])]:
             subprocess.run(['cc',*flags,'-I'+str(ROOT/'include'),str(source),str(ROOT/'target/release/libangband_recorder.a'),'-Wl,--wrap=time','-lpthread','-ldl','-lm','-o',str(out/mode)],check=True,stdout=log,stderr=subprocess.STDOUT)
-        def run(binary,name,original=None,tz='UTC0'):
+        def run(binary,name,original=None,tz='UTC0',args=()):
             env=dict(os.environ)
             for key in ['BORG_RECORD_DIR','BORG_REPLAY_DIR','ANGBAND_RECORD_DIR','ANGBAND_REPLAY_DIR']:
                 env.pop(key,None)
             env.update(ANGBAND_RECORD_DIR=str(out/name),TZ=tz)
             if original:env['ANGBAND_REPLAY_DIR']=str(original)
-            result=subprocess.run([str(out/binary)],env=env,capture_output=True,text=True,timeout=15)
+            result=subprocess.run([str(out/binary),*args],env=env,capture_output=True,text=True,timeout=15)
             (out/(name+'.log')).write_text(result.stdout+result.stderr)
             return result
         require(run('release','record',tz='Pacific/Kiritimati').returncode==0,'native capture failed')
@@ -67,6 +75,15 @@ def main():
         frames=[json.loads(l) for l in (out/'record/frames.jsonl').read_text().splitlines()]
         require(len(frames)==1 and frames[0]['phase']=='final' and frames[0]['dead']==1 and frames[0]['world'] is None,'ar_finish did not write one closing frame')
         require(json.loads((out/'record/complete.json').read_text())['frames']==1,'receipt does not count the closing frame')
+        # Leaving without ar_finish (the atexit handler): the closing frame is still written, once.
+        require(run('release','exit-no-finish',args=['atexit']).returncode==0,'atexit run failed')
+        frames=[json.loads(l) for l in (out/'exit-no-finish/frames.jsonl').read_text().splitlines()]
+        require([f['phase'] for f in frames]==['final'],'atexit did not write exactly one closing frame')
+        require(json.loads((out/'exit-no-finish/complete.json').read_text())['frames']==1,'atexit receipt does not count the frame')
+        # An exit frame already ends the recording: no closing frame after it.
+        require(run('release','exit-hook',args=['exit-frame']).returncode==0,'exit-frame run failed')
+        frames=[json.loads(l) for l in (out/'exit-hook/frames.jsonl').read_text().splitlines()]
+        require([f['phase'] for f in frames]==['exit'],'a closing frame followed the exit frame')
         require(run('release','replay',out/'record',tz='UTC0').returncode==0,'captured calendar context did not replay')
         subprocess.run(['cargo','run','--quiet','--locked','--manifest-path',str(ROOT/'Cargo.toml'),'--','verify',str(out/'record'),str(out/'replay')],check=True,stdout=log,stderr=subprocess.STDOUT)
         # F24: a named zone that only resolves through TZDIR. Recording with
@@ -98,7 +115,7 @@ def main():
         row=(malformed/'events.txt').read_text().split();row[4]=str(2**32+32);(malformed/'events.txt').write_text(' '.join(row)+'\n')
         require(run('release','wide-key',malformed).returncode!=0,'wide key truncated and accepted')
         require(not (out/'wide-key/complete.json').exists(),'wide key wrote a receipt')
-        result={'calendar_boundary_replayed':True,'tzdir_reapplied':True,'different_binary_rejected':True,'native_wide_key_rejected':True,
+        result={'closing_frame_at_exit':True,'no_final_after_exit_frame':True,'calendar_boundary_replayed':True,'tzdir_reapplied':True,'different_binary_rejected':True,'native_wide_key_rejected':True,
                 'release_sha256':hashlib.sha256((out/'release').read_bytes()).hexdigest(),'debug_sha256':hashlib.sha256((out/'debug').read_bytes()).hexdigest()}
         (out/'result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result))
 
