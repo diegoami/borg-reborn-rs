@@ -1213,6 +1213,7 @@ borg_param_fast_fragile_policy = 0
 borg_param_fast_fragile_by_stats = 0
 borg_param_fast_fragile_no_heal = 0
 borg_param_fast_fragile_escape_percent = 100
+borg_param_fast_fragile_phase_landing = 0
 borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25

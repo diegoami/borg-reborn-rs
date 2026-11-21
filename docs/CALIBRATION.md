@@ -5099,6 +5099,7 @@ chose 2 turns, 25% or 2 others.
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:173` |
 | `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:236` |
 | `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:239` |
+| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:276` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:184` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:179` |
 | `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:180` |
@@ -5133,8 +5134,12 @@ chose 2 turns, 25% or 2 others.
   blow (a wood spider, by stats) is attacked on a lower bound of its damage.
   The crow and wild cat are pure HURT. Read the `stats` arm with this in mind.
 - The Phase Door goes through the one decision point (`phase_door`, site
-  `fast-fragile`, docs/PHASE-DOOR.md): the owner's adjacent-enemy rule, the
-  landing test (emergency tolerance) and the anti-summon delay apply.
+  `fast-fragile`, docs/PHASE-DOOR.md): the owner's adjacent-enemy rule (#584)
+  and the anti-summon delay apply. The landing test is behind
+  `fast_fragile_phase_landing` (0 = skipped): at HP 3–6 against a crow every
+  landing grid counts as scary (100 of 100) and the test refuses the Phase
+  Door in the fights it is for. On the 8 crow cases: with the test 4 dead of
+  8, without 1.
 - `fast_fragile_no_heal=1`: `borg_heal` (past its confusion, blindness and
   Morgoth cases) and the outmatched heal return without a quaff while a marked
   monster is awake next to the Borg. `=2` makes the issue's one exception:

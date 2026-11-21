@@ -266,12 +266,20 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
         borg_keypress(st, keycode_t::from(b'>'));
         return true;
     }
-    // Through the one Phase Door decision (docs/PHASE-DOOR.md), so the owner's
-    // adjacent-enemy rule (#584) and the landing test apply as at every other
-    // site: the emergency landing tolerance, as the next turn kills.
-    let check = PhaseCheck::Landing {
-        tolerance: param(Param::escape_emergency_phase_tolerance),
-        horizon: param(Param::escape_emergency_phase_horizon),
+    // Through the one Phase Door decision (docs/PHASE-DOOR.md): the owner's
+    // adjacent-enemy rule (#584) and the anti-summon gate apply as at every
+    // other site. The landing test (the emergency tolerance) is behind
+    // `fast_fragile_phase_landing`: at the HP this fires at (3 to 6 against a
+    // crow's danger of 18) every landing grid is "scary", 100 of 100, so the
+    // test refuses the Phase Door in the fights it is for (8 crow cases: 4
+    // dead of 8 with it, 1 without).
+    let check = if param(Param::fast_fragile_phase_landing) != 0 {
+        PhaseCheck::Landing {
+            tolerance: param(Param::escape_emergency_phase_tolerance),
+            horizon: param(Param::escape_emergency_phase_horizon),
+        }
+    } else {
+        PhaseCheck::None
     };
     if phase_door(st, PhaseSite::FastFragile, check, None, |st| {
         st.borg.time.now.wrapping_sub(st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
