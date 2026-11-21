@@ -1,0 +1,4 @@
+# A breeder world (#704): breeders 4 times as likely against every other race,
+# and 2 levels shallower, so DL1-3 characters meet the DL3-5 worm masses.
+breeder_weight = 4
+breeder_depth_shift = 2

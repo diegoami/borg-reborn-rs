@@ -33,7 +33,7 @@ def code(text):
 class EngineTreeTest(unittest.TestCase):
     def test_the_tree_is_upstreams_bytes(self):
         tree = git('rev-parse', 'HEAD:engine/angband').stdout.strip()
-        self.assertEqual(tree, UPSTREAM['tree'], 'engine/angband/ differs from upstream 42cd156ac at HEAD')
+        self.assertEqual(tree, UPSTREAM['tree'], 'engine/angband/ differs from upstream 574b618c at HEAD')
         dirty = git('status', '--porcelain', '--', 'engine/angband').stdout.strip()
         self.assertEqual(dirty, '', 'engine/angband/ has local changes')
 

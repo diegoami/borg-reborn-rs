@@ -926,17 +926,22 @@ fn borg_notice_equipment(st: &mut BorgState) {
         t[BI_ADEX] += m(OBJ_MOD_DEX) * known(OBJ_MOD_DEX);
         t[BI_ACON] += m(OBJ_MOD_CON) * known(OBJ_MOD_CON);
 
-        /* various slays: accumulate across slots.  Assigning them per
-         * slot made the last occupied slot (usually the light or boots,
-         * with no slays) erase the wielded weapon's slays. */
-        t[BI_WS_ANIMAL] |= item.slays[RF_ANIMAL as usize];
-        t[BI_WS_EVIL] |= item.slays[RF_EVIL as usize];
-        t[BI_WS_UNDEAD] |= item.slays[RF_UNDEAD as usize];
-        t[BI_WS_DEMON] |= item.slays[RF_DEMON as usize];
-        t[BI_WS_ORC] |= item.slays[RF_ORC as usize];
-        t[BI_WS_TROLL] |= item.slays[RF_TROLL as usize];
-        t[BI_WS_GIANT] |= item.slays[RF_GIANT as usize];
-        t[BI_WS_DRAGON] |= item.slays[RF_DRAGON as usize];
+        /* various slays: keep the largest multiplier across slots, as
+         * the combat code does.  Assigning them per slot made the last
+         * occupied slot (usually the light or boots, with no slays) erase
+         * the wielded weapon's slays.
+         * borg-reborn-rs (#724): upstream Angband 007bea95 keeps the
+         * largest; borg-rs accumulated with `|=`, which is the same
+         * wherever a slay trait is read as on or off (every read today) but
+         * gives 7 for slays of 3 and 5. */
+        t[BI_WS_ANIMAL] = t[BI_WS_ANIMAL].max(item.slays[RF_ANIMAL as usize]);
+        t[BI_WS_EVIL] = t[BI_WS_EVIL].max(item.slays[RF_EVIL as usize]);
+        t[BI_WS_UNDEAD] = t[BI_WS_UNDEAD].max(item.slays[RF_UNDEAD as usize]);
+        t[BI_WS_DEMON] = t[BI_WS_DEMON].max(item.slays[RF_DEMON as usize]);
+        t[BI_WS_ORC] = t[BI_WS_ORC].max(item.slays[RF_ORC as usize]);
+        t[BI_WS_TROLL] = t[BI_WS_TROLL].max(item.slays[RF_TROLL as usize]);
+        t[BI_WS_GIANT] = t[BI_WS_GIANT].max(item.slays[RF_GIANT as usize]);
+        t[BI_WS_DRAGON] = t[BI_WS_DRAGON].max(item.slays[RF_DRAGON as usize]);
 
         /* the greater, race-destroying slays are stored under the same
          * race flag with the largest multiplier */

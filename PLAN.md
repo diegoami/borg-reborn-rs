@@ -64,7 +64,7 @@ The POC showed that a Borg built here from first principles does not beat
 borg-rs. The repository now hosts **borg-rs's decision core**
 (`borg-core/`, vendored at borg-rs v12; docs/SPEC.md §2 amendment) with
 **errands** around it (docs/ERRANDS.md). The engine is upstream
-`42cd156ac`, the commit borg-rs plays (#216). Our own core stays the
+`574b618c` (#724; `42cd156ac`, the commit borg-rs plays, until 2026-11-20, #216). Our own core stays the
 default and is frozen: **M5–M7 are paused**, their open issues kept.
 
 Work now runs in two tracks, side by side, each with its own milestones,
@@ -296,9 +296,14 @@ paragraph records the original milestone process.
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In progress: #680 enchant/decurse extraction.** Source startup #706/#708
-and kickoff #707/#709 are integrated after owner-accepted re-reviews and
-green CI; current task baseline is track-p `760fae80`. The owner
+**In progress: #774 pre-promotion reconciliation and revalidation.** #680
+integrated through owner-reviewed #773 at track-p `e9670cab`; canonical
+evidence PR Cemetery #90 is merged. Source startup #706/#708 and kickoff
+#707/#709 are complete. The original #680 receiving baseline was `760fae80`;
+#774 synchronizes exact accepted main `4e9af99e` (engine `574b618c`) and
+keeps broader compatibility verification pending [Zoo #520](https://github.com/diegoami/borg-zoo/issues/520).
+Local smoke and the named override pass at that synchronized engine; this is
+not the broader comparison result. The owner
 requested continuation after accepting and promoting P5. P6 addresses the
 remaining adjacent item-policy dependency #680 reported by the R4 ownership
 audit; it does not transfer that work to Track R.
