@@ -73,3 +73,6 @@ pub(crate) fn read_decision(state:&BorgState,request:crate::decisions::ReadDecis
     if crate::decision_tape::active() { return request.native(state); }
     match SHADOW.get() {Some(s)=>s.read_decision(state,request),None=>request.native(state)}
 }
+
+/// Avoid allocating owned item requests when shadow mode is disabled.
+pub(crate) fn registered() -> bool { SHADOW.get().is_some() }

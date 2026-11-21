@@ -7,6 +7,7 @@ publish = false
 description = "Track R decision code over borg-rs memory"
 
 [features]
+test-r4-store = ["test-r4-equipment", "borg-core/test-r4-store"]
 test-r4-equipment = ["test-r4-power", "borg-core/test-r4-equipment"]
 test-r4-power = ["test-r4-item-use"]
 test-r4-item-use = ["borg-core/test-r4-item-use"]

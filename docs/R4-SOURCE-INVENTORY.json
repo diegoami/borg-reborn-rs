@@ -7,8 +7,8 @@
   "totals": {
     "primary": {
       "files": 9,
-      "physical_lines_including_tests": 9565,
-      "function_definitions_including_tests": 241
+      "physical_lines_including_tests": 9690,
+      "function_definitions_including_tests": 260
     },
     "adjacent": {
       "files": 5,
@@ -1315,11 +1315,20 @@
     {
       "path": "borg-core/src/borg_store_buy.rs",
       "role": "primary",
-      "sha256": "0628f142f12ffab082a29f8f14c5fd297015745a412eb4477de3d7d404ffa02a",
-      "physical_lines_including_tests": 1521,
-      "function_definitions_including_tests": 43,
+      "sha256": "d8976c40f100046044cfb748d944f62fd6e3e139543fb5390485cc1c1e43ba1c",
+      "physical_lines_including_tests": 1580,
+      "function_definitions_including_tests": 52,
       "public_function_spellings_including_methods": [
         "bought_item",
+        "borg_think_shop_buy_useful_native",
+        "borg_think_home_buy_useful_native",
+        "borg_think_shop_grab_interesting_native",
+        "borg_think_home_grab_useless_native",
+        "borg_think_home_buy_swap_weapon_native",
+        "borg_think_home_buy_swap_armour_native",
+        "borg_think_shop_buy_native",
+        "take_selected_for_sale_native",
+        "confirm_purchase_native",
         "borg_think_shop_buy_useful",
         "borg_think_home_buy_useful",
         "borg_think_shop_grab_interesting",
@@ -1347,24 +1356,13 @@
         "buy_hybrid_extra_book_max_level"
       ],
       "direct_crate_namespaces": [
-        "borg_buy_strategy",
         "borg_headers",
-        "borg_home_notice",
-        "borg_home_power",
-        "borg_inventory",
-        "borg_io",
-        "borg_item",
-        "borg_magic",
-        "borg_object_log",
-        "borg_power",
-        "borg_store",
-        "borg_store_sell",
-        "borg_town_dump",
-        "borg_town_live",
-        "borg_trait",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
@@ -1416,21 +1414,27 @@
     {
       "path": "borg-core/src/borg_store_sell.rs",
       "role": "primary",
-      "sha256": "78042fc5d2d4967c4f2e7a1f25d06e41d9446306488d1f01950bcaf5cd999802",
-      "physical_lines_including_tests": 1387,
-      "function_definitions_including_tests": 31,
+      "sha256": "34af08fdff8da864bae954e9571f580e5bc6aa5eebf126f1715ed524bde34c2e",
+      "physical_lines_including_tests": 1426,
+      "function_definitions_including_tests": 37,
       "public_function_spellings_including_methods": [
         "sold_item",
         "borg_object_similar",
+        "borg_min_item_quantity_native",
+        "borg_think_home_sell_useful_native",
+        "borg_store_buys",
+        "borg_think_shop_sell_useless_native",
+        "borg_think_shop_sell_native",
+        "sell_one_selected_native",
+        "borg_count_sell_native",
+        "borg_init_store_sell",
+        "borg_free_store_sell",
         "borg_min_item_quantity",
         "borg_think_home_sell_useful",
-        "borg_store_buys",
         "borg_think_shop_sell_useless",
         "borg_think_shop_sell",
         "sell_one_selected",
-        "borg_count_sell",
-        "borg_init_store_sell",
-        "borg_free_store_sell"
+        "borg_count_sell"
       ],
       "named_parameters": [
         "sell_ammo_batch_count",
@@ -1469,22 +1473,13 @@
         "sell_value_cap"
       ],
       "direct_crate_namespaces": [
-        "borg_buy_strategy",
         "borg_headers",
-        "borg_home_notice",
-        "borg_home_power",
-        "borg_inventory",
-        "borg_io",
-        "borg_item",
-        "borg_item_analyze",
-        "borg_item_id",
-        "borg_power",
-        "borg_store",
-        "borg_store_buy",
-        "borg_trait",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
@@ -1521,13 +1516,16 @@
     {
       "path": "borg-core/src/borg_think_store.rs",
       "role": "primary",
-      "sha256": "4a3ebd5108ad9d86837883919d283bc3a8658f71ff51e8c4d5311c792be1a970",
-      "physical_lines_including_tests": 526,
-      "function_definitions_including_tests": 18,
+      "sha256": "38f91bfb3d7c7f9b4c2e6513bf5364848535af812f51f094548f7a27f11e27db",
+      "physical_lines_including_tests": 544,
+      "function_definitions_including_tests": 21,
       "public_function_spellings_including_methods": [
-        "town_strategy_disabled",
+        "town_strategy_disabled_native",
+        "borg_choose_shop_native",
+        "borg_think_store_native",
         "borg_choose_shop",
-        "borg_think_store"
+        "borg_think_store",
+        "town_strategy_disabled"
       ],
       "named_parameters": [
         "shopping_emergency_light_max_level",
@@ -1538,22 +1536,13 @@
         "shopping_upgrade_light_radius"
       ],
       "direct_crate_namespaces": [
-        "borg",
         "borg_headers",
-        "borg_init",
-        "borg_io",
-        "borg_item",
-        "borg_item_wear",
-        "borg_store",
-        "borg_store_buy",
-        "borg_store_sell",
-        "borg_town_dump",
-        "borg_town_live",
-        "borg_town_shadow",
-        "borg_trait",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
@@ -1581,10 +1570,11 @@
     {
       "path": "borg-core/src/borg_home_power.rs",
       "role": "primary",
-      "sha256": "6dd98e54bf536129e1c0a204be6051ce55de305c290a99449789e9dd7c164614",
-      "physical_lines_including_tests": 514,
-      "function_definitions_including_tests": 14,
+      "sha256": "c7e5ad0934c2de6a2158b69ad7202c553b4ed9775c339c4cd660b8c4a1c8b019",
+      "physical_lines_including_tests": 523,
+      "function_definitions_including_tests": 15,
       "public_function_spellings_including_methods": [
+        "borg_power_home_native",
         "borg_power_home"
       ],
       "named_parameters": [
@@ -1828,14 +1818,16 @@
       ],
       "direct_crate_namespaces": [
         "borg_headers",
-        "borg_magic",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
-        "kb_info"
+        "base_max_stack"
       ],
       "direct_state_group_spellings": [
         "borg",

@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-20: wear accepted; store/home implementation active
+
+- Owner-approved #683 merged into feature/track-r at `64acb1f1`; #436 closed.
+  Reviewed-head CI, full native/check/switch parity, strict coverage and
+  canonical reconciliation passed. No main/global-reviewed promotion.
+- #437 starts from that accepted merge on `task/T437-store-home`.
+  The first implementation pass and exact source proof are recorded in
+  [R437-HANDOVER.md](R437-HANDOVER.md). Native controls, full validation and
+  owner review remain gates; it is not complete or review-ready.
+- #293 is not delivered by a parity port; #438 freezes the combined milestone
+  review after #437. Shared maintenance dependency #680 remains explicit.
+
 ## 2026-11-16: accessor merged; attack #401 validation underway
 
 - #367 passed all CI and merged feature-only at ca7ab365; #363 closed.

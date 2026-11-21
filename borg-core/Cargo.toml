@@ -12,6 +12,7 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [features]
+test-r4-store = ["test-r4-equipment"]
 test-r4-equipment = ["test-r4-item-use"]
 test-r4-item-use = []
 test-r3-defence = []

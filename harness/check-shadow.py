@@ -27,6 +27,7 @@ ATTACK_SURFACE = R2_ENTRY_POINTS + ATTACK_ENTRY_POINTS
 ENTRY_POINTS = ATTACK_SURFACE + ('defence.borg_defend',)
 ITEM_USE_ENTRY_POINTS = ('item_use.borg_quaff_crit', 'item_use.borg_quaff_potion', 'item_use.borg_quaff_unknown', 'item_use.borg_read_scroll', 'item_use.borg_read_unknown', 'item_use.borg_eat', 'item_use.borg_eat_unknown', 'item_use.borg_eat_food_any', 'item_use.borg_equips_rod', 'item_use.borg_zap_rod', 'item_use.borg_use_staff', 'item_use.borg_use_unknown', 'item_use.borg_use_staff_fail', 'item_use.borg_equips_staff_fail', 'item_use.borg_aim_wand', 'item_use.borg_equips_ring', 'item_use.borg_activate_ring', 'item_use.borg_equips_dragon', 'item_use.borg_activate_dragon', 'item_use.borg_activate_item', 'item_use.borg_equips_item', 'item_use.borg_activate_failure', 'item_use.borg_use_things', 'item_use.borg_recharging')
 R4_ENTRY_POINTS = ENTRY_POINTS + ITEM_USE_ENTRY_POINTS
+STORE_ENTRY_POINTS = ('store.borg_power_home', 'store.borg_think_shop_buy_useful', 'store.borg_think_home_buy_useful', 'store.borg_think_shop_grab_interesting', 'store.borg_think_home_grab_useless', 'store.borg_think_home_buy_swap_weapon', 'store.borg_think_home_buy_swap_armour', 'store.borg_think_shop_buy', 'store.take_selected_for_sale', 'store.confirm_purchase', 'store.borg_min_item_quantity', 'store.borg_think_home_sell_useful', 'store.borg_think_shop_sell_useless', 'store.borg_think_shop_sell', 'store.sell_one_selected', 'store.borg_count_sell', 'store.borg_choose_shop', 'store.borg_think_store', 'store.town_strategy_disabled')
 R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
 NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
            'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
@@ -40,14 +41,15 @@ def checked_map(value, allowed, path):
     return value
 
 
-def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False):
+def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False, r4_store=False):
     if expected_mode not in (None, 'check', 'switch'):
         raise ValueError('expected mode must be check or switch')
     if legacy_r2 and legacy_attack:
         raise ValueError('select only one legacy surface')
-    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use, r4_power, r4_equipment))) > 1:
+    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use, r4_power, r4_equipment, r4_store))) > 1:
         raise ValueError("select only one shadow surface")
-    equipment_surface = r4_equipment
+    store_surface = r4_store
+    equipment_surface = r4_equipment or store_surface
     power_surface = r4_power or equipment_surface
     r4_item_use = r4_item_use or power_surface
     item_surface = r4_item_use or legacy_item_use
@@ -57,15 +59,19 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     files = sorted({p for root in roots for p in Path(root).rglob('shadow-stats.jsonl')})
     if not files:
         raise ValueError('no shadow statistics found')
-    schema = 'borg-reborn-rs/shadow-stats@' + ('7' if equipment_surface else '6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
+    schema = 'borg-reborn-rs/shadow-stats@' + ('8' if store_surface else '7' if equipment_surface else '6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
     allowed = R4_ENTRY_POINTS + ('power.borg_power', 'power.borg_power_equipment') if power_surface else R4_ENTRY_POINTS if item_surface else R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS if complete else ATTACK_SURFACE
     if equipment_surface:
         allowed = allowed + ('equipment.borg_test_stuff', 'equipment.borg_swap_rings', 'equipment.borg_wear_rings', 'equipment.borg_backup_swap', 'equipment.borg_wear_stuff', 'equipment.borg_best_stuff', 'equipment.borg_clear_best', 'equipment.borg_wear_recharge', 'equipment.borg_object_fully_id')
-    fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ()) + (('equipment_calls',) if equipment_surface else ())
+    if store_surface:
+        allowed = allowed + STORE_ENTRY_POINTS
+    fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ()) + (('equipment_calls',) if equipment_surface else ()) + (('store_calls',) if store_surface else ())
     totals = dict.fromkeys((*fields, 'tape_events', 'policy_markers', 'dependency_requests'), 0)
     entries = dict.fromkeys(allowed, 0)
     pure_totals = dict.fromkeys(PURE_POINTS, 0) if not legacy_r2 else {}
     readonly_allowed = ({'item_use.borg_equips_item', 'power.borg_power_equipment'} if power_surface else {'item_use.borg_equips_item'} if r4_item_use else set())
+    if store_surface:
+        readonly_allowed = readonly_allowed | {'store.town_strategy_disabled','store.borg_power_home','store.borg_min_item_quantity'}
     readonly_totals = dict.fromkeys(readonly_allowed, 0)
     for path in files:
         previous, last, file_mode = 0, None, None
@@ -84,9 +90,9 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             previous, last = row['counts']['thinks'], row
         if last is None:
             raise ValueError(f'{path}: empty statistics')
-        if not legacy_r2 and last.get('surface') != ('r4-equipment' if equipment_surface else 'r4-power' if power_surface else 'r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
+        if not legacy_r2 and last.get('surface') != ('r4-store' if store_surface else 'r4-equipment' if equipment_surface else 'r4-power' if power_surface else 'r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
             raise ValueError(f'{path}: unexpected entry surface')
-        if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack', 'defence'] if complete else ['attack']) + (['item_use'] if item_surface else []) + (['power'] if power_surface else []) + (['equipment'] if equipment_surface else []):
+        if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack', 'defence'] if complete else ['attack']) + (['item_use'] if item_surface else []) + (['power'] if power_surface else []) + (['equipment'] if equipment_surface else []) + (['store'] if store_surface else []):
             raise ValueError(f'{path}: unexpected port coverage')
         if last.get('unported_points') != []:
             raise ValueError(f'{path}: unexpected unported boundaries')
@@ -110,7 +116,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             raise ValueError(f'{path}: inconsistent root comparison counts')
         # Both values come from one visits loop: this is integrity, not an
         # independent proof of coverage or of any branch/effect executing.
-        for prefix in ('caution', 'escape', 'recovery') + (() if legacy_r2 else ('attack',)) + (('defence',) if complete else ()) + (('item_use',) if item_surface else ()) + (('power',) if power_surface else ()) + (('equipment',) if equipment_surface else ()):
+        for prefix in ('caution', 'escape', 'recovery') + (() if legacy_r2 else ('attack',)) + (('defence',) if complete else ()) + (('item_use',) if item_surface else ()) + (('power',) if power_surface else ()) + (('equipment',) if equipment_surface else ()) + (('store',) if store_surface else ()):
             observed = sum(v for k, v in stateful.items() if k.startswith(prefix + '.'))
             if prefix == 'attack':
                 observed += sum(pure.values())
@@ -175,6 +181,7 @@ def main():
     parser.add_argument('--legacy-r3-attack', action='store_true',
                         help='explicit @2 attack reader; cannot satisfy complete defence coverage')
     parser.add_argument('--legacy-r4-item-use', action='store_true', help='explicit historical @4 all-stateful item-use reader')
+    parser.add_argument('--r4-store', action='store_true', help='require complete @8 store/home surface')
     parser.add_argument('--r4-equipment', action='store_true', help='require complete @7 equipment surface')
     parser.add_argument('--r4-power', action='store_true', help='require complete @6 power and item-use surface')
     parser.add_argument('--r4-item-use', action='store_true', help='require complete @5 read-only/mutable item-use surface; historical readers cannot satisfy it')
@@ -182,7 +189,7 @@ def main():
                         help='require this mode for every record in the supplied arm')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment, args.r4_store)
     except (ValueError, KeyError, OSError) as error:
         parser.exit(1, f'shadow check failed: {error}\n')
     print(f'{count} shadow runs (legacy_r2={args.legacy_r2}): {totals}; zero mismatches')

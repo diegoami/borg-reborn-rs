@@ -67,6 +67,14 @@ def verify(root):
             destination = target / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
+        store = metadata.get('reviewed_store_seams')
+        if store:
+            store_path = root / store['path']
+            if store['path'] != 'docs/R437-NATIVE-SEAMS.patch' or digest(store_path.read_bytes()) != store['sha256']:
+                raise ValueError('store seam patch changed')
+            result = subprocess.run(['git', 'apply', '--reverse', str(store_path.resolve())], cwd=target, capture_output=True, text=True)
+            if result.returncode:
+                raise ValueError('source includes changes beyond accepted P4 delta: cannot reverse store seams')
         # R434 facades are reversed separately before verifying the immutable P4 delta.
         equipment = metadata.get('reviewed_equipment_seams')
         if equipment:

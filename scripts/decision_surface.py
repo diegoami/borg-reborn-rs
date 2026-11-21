@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power', 'borg_item_wear', 'borg_item_id')
-PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power', 'equipment_wear', 'equipment_identify')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power', 'borg_item_wear', 'borg_item_id', 'borg_home_power', 'borg_store_buy', 'borg_store_sell', 'borg_think_store')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power', 'equipment_wear', 'equipment_identify', 'home_power', 'store_buy', 'store_sell', 'think_store')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', 'borg_inventory', *NATIVE}
@@ -49,6 +49,11 @@ def inspect(text, port=False, dispatch=False, policy=None):
             module = {'attack':'borg_fight_attack', 'defence':'borg_fight_defend', 'item_use':'borg_item_use', 'power':'borg_power'}[policy]
             if re.search(r'\bborg_rs::decision_api::'+module+'::', code):
                 errors.append(policy+' may not delegate its own policy through a shared native result')
+        if policy in ('home_power','store_buy','store_sell','think_store'):
+            owned_native = 'borg_' + policy
+            scoped = code
+            if re.search(r'\bborg_rs::decision_api::' + owned_native + r'::', scoped):
+                errors.append('store policy may not delegate its own results through a native service')
         if policy in ('equipment_wear', 'equipment_identify'):
             if re.search(r'\bborg_rs::decision_api::(?:borg_item_wear|borg_item_id)::',code) or re.search(r'\bborg_rs::decision_api::borg_inventory::borg_item_worth_id\b',code):
                 errors.append('equipment may not delegate its owned policy through a native result')
@@ -94,7 +99,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
                 errors.append(f'unrecorded local namespace crate::{match[1]}')
     else:
         errors = []
-    if re.search(r'\b(?:borg_rs|crate)::decision_api::(?:item_use_fixture|equipment_fixture)\b', code):
+    if re.search(r'\b(?:borg_rs|crate)::decision_api::(?:item_use_fixture|equipment_fixture|store_fixture)\b', code):
         errors.append('policy may not invoke the constructed test driver')
     code = re.sub(r'\s*::\s*', '::', code)
     prefix = 'borg_rs' if port else 'crate'
@@ -146,7 +151,7 @@ def check(root):
     for path, port in paths:
         errors = inspect(path.read_text(), port,
                          dispatch=port and path == directory / 'mod.rs',
-                         policy=next((name for name in ('attack','defence','item_use','power','equipment_wear','equipment_identify') if port and
+                         policy=next((name for name in ('attack','defence','item_use','power','equipment_wear','equipment_identify','home_power','store_buy','store_sell','think_store') if port and
                              (path.stem == name or name in path.relative_to(directory).parts[:-1])),None))
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))

@@ -554,7 +554,7 @@ fn check(
 ) {
     let mut state = initial.clone();
     let before = queued_keys(&state);
-    let value = dispatch(&mut state, request);
+    let value = dispatch(&mut state, request.clone());
     let after = queued_keys(&state);
     let unchanged_items = state.items == initial.items;
     let row = serde_json::json!({"schema":"borg-reborn-rs/r4-item-use-constructed@1","synthetic":true,

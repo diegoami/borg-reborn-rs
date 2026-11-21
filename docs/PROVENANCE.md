@@ -188,3 +188,14 @@ body and the native receiving hashes. The exact seam patch folds back native
 wear, ID, inventory and the shared note implementation. The latter retains
 its original state logic; only constructed test builds can suppress engine UI.
 Adjacent enchant/decurse policy remains shared pending accepted P contract #680.
+
+### R437 store/home ownership (in progress)
+
+`borg-next/src/stateful/{home_power,store_buy,store_sell,think_store}.rs`
+re-express 87 production bodies from the corresponding vendored `borg-core`
+modules at accepted feature commit `64acb1f1e5c269eff258d8696494b120051e9b87`.
+Original license/copyright notices are retained. R437-SOURCE.json names all
+bodies and receiving hashes; audit-store-port.py checks correspondence to
+both the accepted native source and the owned code. Shared data services,
+M13 planner scope and validation limits are in R437-HANDOVER.md. No donor,
+engine, parameter-default or policy change is implied by this ownership pass.

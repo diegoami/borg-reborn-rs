@@ -748,3 +748,6 @@ mod power_fixture;
 
 #[cfg(feature = "test-r4-equipment")]
 mod equipment_fixture;
+
+#[cfg(feature = "test-r4-store")]
+mod store_fixture;

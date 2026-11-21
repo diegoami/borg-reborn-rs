@@ -1,9 +1,27 @@
 //! borg-reborn-rs (#286): typed requests for all stateful R2 entry points.
 use crate::state::BorgState;
 use serde::Serialize;
-#[derive(Clone,Copy,Debug,PartialEq,Serialize)]
+#[derive(Clone,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
 pub enum Decision {
+HomePower,
+StoreBuyUseful,
+HomeBuyUseful,
+StoreGrabInteresting,
+HomeGrabUseless,
+HomeBuySwapWeapon,
+HomeBuySwapArmour,
+StoreBuy,
+StoreTakeForSale,
+StoreConfirmPurchase {item:ItemSnapshot,shop:i32,keep:bool},
+StoreMinimumQuantity {item:ItemSnapshot},
+HomeSellUseful {best_home_power:i32},
+StoreSellUseless,
+StoreSell,
+StoreSellOne,
+StoreCountSell,
+StoreChooseShop,
+StoreThink,
 WearTestStuff,
 WearSwapRings,
 WearRings,
@@ -60,9 +78,27 @@ ItemRecharging,
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
-pub enum Value { Acted(bool), Score(i32), Unit }
+pub enum Value { Acted(bool), Score(i32), Unit, HomeSale {acted:bool,best_home_power:i32} }
 impl Decision {
-pub fn name(self)->&'static str { match self {
+pub fn name(&self)->&'static str { match self {
+Self::HomePower=>"store.borg_power_home",
+Self::StoreBuyUseful=>"store.borg_think_shop_buy_useful",
+Self::HomeBuyUseful=>"store.borg_think_home_buy_useful",
+Self::StoreGrabInteresting=>"store.borg_think_shop_grab_interesting",
+Self::HomeGrabUseless=>"store.borg_think_home_grab_useless",
+Self::HomeBuySwapWeapon=>"store.borg_think_home_buy_swap_weapon",
+Self::HomeBuySwapArmour=>"store.borg_think_home_buy_swap_armour",
+Self::StoreBuy=>"store.borg_think_shop_buy",
+Self::StoreTakeForSale=>"store.take_selected_for_sale",
+Self::StoreConfirmPurchase {..}=>"store.confirm_purchase",
+Self::StoreMinimumQuantity {..}=>"store.borg_min_item_quantity",
+Self::HomeSellUseful {..}=>"store.borg_think_home_sell_useful",
+Self::StoreSellUseless=>"store.borg_think_shop_sell_useless",
+Self::StoreSell=>"store.borg_think_shop_sell",
+Self::StoreSellOne=>"store.sell_one_selected",
+Self::StoreCountSell=>"store.borg_count_sell",
+Self::StoreChooseShop=>"store.borg_choose_shop",
+Self::StoreThink=>"store.borg_think_store",
 Self::WearTestStuff=>"equipment.borg_test_stuff",
 Self::WearSwapRings=>"equipment.borg_swap_rings",
 Self::WearRings=>"equipment.borg_wear_rings",
@@ -118,6 +154,24 @@ Self::ItemRecharging=>"item_use.borg_recharging",
 
 } }
 pub fn native(self,st:&mut BorgState)->Value { match self {
+Self::HomePower=>Value::Score(crate::borg_home_power::borg_power_home_native(st)),
+Self::StoreBuyUseful=>Value::Acted(crate::borg_store_buy::borg_think_shop_buy_useful_native(st)),
+Self::HomeBuyUseful=>Value::Acted(crate::borg_store_buy::borg_think_home_buy_useful_native(st)),
+Self::StoreGrabInteresting=>Value::Acted(crate::borg_store_buy::borg_think_shop_grab_interesting_native(st)),
+Self::HomeGrabUseless=>Value::Acted(crate::borg_store_buy::borg_think_home_grab_useless_native(st)),
+Self::HomeBuySwapWeapon=>Value::Acted(crate::borg_store_buy::borg_think_home_buy_swap_weapon_native(st)),
+Self::HomeBuySwapArmour=>Value::Acted(crate::borg_store_buy::borg_think_home_buy_swap_armour_native(st)),
+Self::StoreBuy=>Value::Acted(crate::borg_store_buy::borg_think_shop_buy_native(st)),
+Self::StoreTakeForSale=>Value::Acted(crate::borg_store_buy::take_selected_for_sale_native(st)),
+Self::StoreConfirmPurchase {item,shop,keep}=>{crate::borg_store_buy::confirm_purchase_native(st,&item.0,shop,keep);Value::Unit},
+Self::StoreMinimumQuantity {item}=>Value::Score(crate::borg_store_sell::borg_min_item_quantity_native(st,&item.0)),
+Self::HomeSellUseful {mut best_home_power}=>{let acted=crate::borg_store_sell::borg_think_home_sell_useful_native(st,&mut best_home_power);Value::HomeSale{acted,best_home_power}},
+Self::StoreSellUseless=>Value::Acted(crate::borg_store_sell::borg_think_shop_sell_useless_native(st)),
+Self::StoreSell=>Value::Acted(crate::borg_store_sell::borg_think_shop_sell_native(st)),
+Self::StoreSellOne=>Value::Acted(crate::borg_store_sell::sell_one_selected_native(st)),
+Self::StoreCountSell=>Value::Score(crate::borg_store_sell::borg_count_sell_native(st)),
+Self::StoreChooseShop=>Value::Acted(crate::borg_think_store::borg_choose_shop_native(st)),
+Self::StoreThink=>Value::Acted(crate::borg_think_store::borg_think_store_native(st)),
 Self::WearTestStuff=>Value::Acted(crate::borg_item_wear::borg_test_stuff_native(st)),
 Self::WearSwapRings=>Value::Acted(crate::borg_item_wear::borg_swap_rings_native(st)),
 Self::WearRings=>Value::Acted(crate::borg_item_wear::borg_wear_rings_native(st)),
@@ -175,13 +229,23 @@ Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(
 }
 
 /// Audited immutable policy requests; implementations cannot write caller memory.
-#[derive(Clone,Copy,Debug,PartialEq,Serialize)]
+#[derive(Clone,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
-pub enum ReadDecision { PowerEquipment, ItemEquipsItem {activation:i32,check_charge:bool} }
+pub enum ReadDecision { HomePower, StoreMinimumQuantity {item:ItemSnapshot}, StoreDisabled, PowerEquipment, ItemEquipsItem {activation:i32,check_charge:bool} }
 impl ReadDecision {
-    pub fn name(self)->&'static str { match self { Self::PowerEquipment=>"power.borg_power_equipment", Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
+    pub fn name(&self)->&'static str { match self { Self::HomePower=>"store.borg_power_home", Self::StoreMinimumQuantity{..}=>"store.borg_min_item_quantity", Self::StoreDisabled=>"store.town_strategy_disabled", Self::PowerEquipment=>"power.borg_power_equipment", Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
     pub fn native(self,state:&BorgState)->Value { match self {
+Self::HomePower=>Value::Score(crate::borg_home_power::borg_power_home_native(state)),
+Self::StoreMinimumQuantity{item}=>Value::Score(crate::borg_store_sell::borg_min_item_quantity_native(state,&item.0)),
+Self::StoreDisabled=>Value::Acted(crate::borg_think_store::town_strategy_disabled_native(state)),
         Self::PowerEquipment=>Value::Score(crate::borg_power::borg_power_equipment_native(state)),
         Self::ItemEquipsItem {activation,check_charge}=>Value::Acted(crate::borg_item_use::borg_equips_item_native(state,activation,check_charge)),
     } }
 }
+
+
+/// Exact copied item input; notes retain their logical live origin, never a raw pointer.
+#[derive(Clone,Debug,PartialEq)]
+pub struct ItemSnapshot(pub std::sync::Arc<crate::borg_headers::borg_item_h::borg_item>);
+impl ItemSnapshot {pub fn new(item:crate::borg_headers::borg_item_h::borg_item)->Self {Self(std::sync::Arc::new(item))}}
+impl serde::Serialize for ItemSnapshot {fn serialize<S:serde::Serializer>(&self,serializer:S)->Result<S::Ok,S::Error>{serializer.serialize_str(&format!("{:?}",self.0))}}
