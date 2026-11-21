@@ -38,6 +38,8 @@ pub const fn ktrl(c: u8) -> u32 {
 pub struct Borg {
     /// borg-reborn-rs (#781): observed bumps, never hidden engine monsters.
     pub unseen_bumps: crate::borg_caution::UnseenBumps,
+    /// borg-reborn-rs (#829): a teleport curse the engine's messages showed.
+    pub teleport_block: Option<crate::borg_escape::TeleportBlock>,
     /// Indexed by `BI_*` (`borg.trait`, allocated by borg-trait.c).
     pub trait_: Vec<i32>,
     /// Indexed by object kind (`borg.has`).
