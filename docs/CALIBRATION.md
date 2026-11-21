@@ -707,57 +707,52 @@ possible."
      still strikes**, leave the level (`# Leaving (an unseen attacker, not
      found)`); below 50% of HP drink a cure.
 - **Detect Invisible in the town plan.** #663 had put the scroll at 1% of the
-  support weight ("never buy"). With `town_invisible_count` (**3**) > 0 those
-  reads (scrolls at 15 gold, or a staff's charges) are a requirement, as
-  Phase Door's reserve: each worth `town_invisible_percent` (**30**) of the
-  trip's escape weight, or `town_invisible_spell_percent` (**5**) when the
-  Borg has the book and mana for Sense Invisible, Detection or Reveal Monsters
-  (`borg_magic::detects_invisible`), and nothing past them. So Warriors and
-  Blackguards value it most, always, and a caster less, and only until it
-  learns a spell. It counts only with spare money: the purse after the urgent
-  purchases must reach `town_invisible_min_gold` (**250**), as the Recall
-  reserve's floor; below that the scroll keeps #663's low value. 0 is #663. A
-  Staff of Detect Invisible (200 gold, 8+d15 charges) fills the same
-  requirement at far more gold, so it is bought only when the scrolls are not
-  stocked and the gold allows.
-  - **Why a floor.** Without one, a percent high enough to buy anything later
-    also bought on the first visit. On the first visits of 2037495442 (151
-    gold) and 2078477958 (139 gold), CL1: 15% already swapped a Cure Light
-    Wounds for a scroll in the second; 20% swapped 2 scrolls for a Cure Light
-    Wounds and 3 flasks in the first, and 30% 3 scrolls (45 gold) for 3 flasks,
-    a Cure Light Wounds and another scroll. With the floor, both first visits
-    buy exactly what the old plan bought. The owner's "if you have the spare
-    money" is read as: survival items first.
-- **Replay of the two cases** (borg-zoo bundles were out of reach of this
-  session, so each game was replayed from its Cemetery dossier: `config.txt`
-  gives the seed, race, class and `borg_txt_sha256`, which the zoo's overrides
-  of `harness/borg.txt` at `3b4924ba` reproduce once its `borg_world` line is
-  removed; the keys of the replay are the dossiers' recorded hashes):
-  - **`3b4924ba` and this tree before the change, shipped settings:** both
-    die as the zoo's did (14,317 and 39,236; keys `b19d7b6a...` and
-    `8acb6b08...`, the dossiers').
-  - **#697's switches on alone (500, 50%):** both reach 100,000 game turns
-    (CL8/DL3 and CL6/DL2).
-  - **This change:** both reach 100,000 (CL6/DL2 and CL6/DL3). Both follow
-    the old game exactly, first-visit purchases included, to the first unseen
-    blow (game turns 5,384 and 3,532), then diverge. 2078477958 enters the
-    mode five times, strikes four times (it leaves the level twice), and
-    buys its first Detect Invisible at turn 82,482 with 213 gold; 2037495442
-    enters it six times, strikes five times (one strike kills "it", `You have
-    killed it.`), and buys scrolls at turn 61,750 with 678 gold, 3 for 45.
-  - **The detect step**, exercised by turning the older defence off
-    (`defend_see_invis_max_age` 1, local only): `# Detecting the invisible
-    attacker.` is followed by "You sense the presence of invisible creatures!"
-    and the clear icky thing appears as a monster the Borg fights (`# Facing
-    clear icky thing`). With the defence on (shipped), when a scroll is
-    carried the defence reads it first and the mode's step finds `see_inv` set.
+  support weight ("never buy"). The first version made three reads a
+  requirement behind a 250-gold floor; the owner found 3 too big a reserve and
+  the floor flip-flopped (the smoke warrior had 401 gold, then 242, and sold the
+  three scrolls it carried), so it is now a value curve and no reserve: with
+  `town_invisible_count` (**2**) > 0 a read (scrolls at 15 gold, or a staff's
+  charges) is worth a diminishing curve like Phase Door's and the flasks', the
+  first about `town_invisible_percent` (**20**) of the trip's escape weight,
+  half the most the curve pays at `town_invisible_count` reads, nothing a
+  requirement, nothing kept aside; it competes with the rest of the purse and
+  does not depend on the gold, so a carried read is never sold because the
+  purse shrank. The percent depends on the class, by what it can already do
+  about an invisible monster (`borg_magic`): **20** with nothing (Warriors,
+  Blackguards, and others until they learn a spell); `town_invisible_evil_percent`
+  (**10**) with Detect Evil (it reveals the evil ones, ghosts and a
+  poltergeist, not a clear icky thing); `town_invisible_spell_percent` (**3**)
+  with Sense Invisible, Detection or Reveal Monsters. 0 is #663. A Staff of
+  Detect Invisible (200 gold, 8+d15 charges) gives the same units at far more
+  gold, so it is bought only when scrolls are not stocked and the gold allows.
+  - **First visits.** The old design needed a floor because a percent high
+    enough to buy anything later also bought on the first visit: on the first
+    visits of 2037495442 (151 gold) and 2078477958 (139 gold), CL1, 15% to 30%
+    swapped a Cure Light Wounds or flasks for scrolls. With this curve, at 20%,
+    both first visits buy exactly what the old plan bought (4 rations, flasks,
+    3 Cure Light Wounds, 1 scroll).
+- **Replay of the two cases** (from the zoo bundles of runs 44894233710 and
+  44894253654: their `user/` files, `harness/borg.txt` of this tree with the
+  cell's race and class and without its `borg_world` line; the old behaviour
+  is these settings with the mode and the town plan off, and its key streams
+  hash to the zoo's `b19d7b6a...` and `8acb6b08...` exactly):
+  - **Old behaviour, shipped before the change:** both die as the zoo's did
+    (game turns 14,317 and 39,236).
+  - **This change:** both reach 100,000 game turns: 2078477958 at CL8, 2037495442
+    at CL5. Both follow the old game exactly, first-visit purchases included,
+    to the first unseen blow (game turns 5,384 and 3,532), then diverge.
+    2078477958 enters the mode four times, strikes ("# Striking at ..."),
+    leaves the level once, and buys 2 Scrolls of Detect Invisible at turn
+    29,885 (30 gold); 2037495442 enters it twice, strikes four times (it ends
+    `# Mode: invisible attacker killed`) and leaves once.
+  - **#697's switches alone** also save both seeds (earlier local result:
+    alive CL8 and CL6): the death was mainly a shipped-off setting.
   - **Not shown:** that 1,426 gold buys Detect Invisible in 2037495442's
     original game. That gold was found in the dungeon at about turn 38,000 and
-    the original never returned to town; with the mode the game takes
-    another path, and the harness has no way to give a Blackguard a purse.
-    The valuation is checked by its unit tests, by the first-visit
-    comparison above and by the 678-gold purchase.
-- **Local direction only** (RULES 20): 12 Human Blackguards (seeds 7001..7012,
+    the original never returned to town; the harness has no way to give a
+    Blackguard a purse. The valuation is checked by its unit tests and the
+    identical first visits.
+- **Local direction only, the first design (requirement and floor; not re-run)** (RULES 20): 12 Human Blackguards (seeds 7001..7012,
   zoo `reborn-head-shipped` settings, 100,000 game turns), the mode and the
   town plan off against on: deaths 0 and 0; sum of max CL 75 and 76; sum of
   max DL 34 and 34; HP rests 469 and 404; on, the mode was entered 29 times
@@ -766,9 +761,8 @@ possible."
   (RULES 14): in these 12 games the baseline did not die of an invisible
   monster either. A zoo arm against the shipped settings (the owner's) is the
   measurement: `borg_param_recover_unseen_attack_turns` 0 and 500 (with the
-  mode's other settings), and `borg_param_town_invisible_count` 0 and 3.
-- **Hypotheses, none measured:** all eight numbers (500, 30, 2, 10, 3, 250,
-  30, 5). The mode's 500 is #697's example; the 30 game turns are three player
+  mode's other settings), and `borg_param_town_invisible_count` 0 and 2.
+- **Hypotheses, none measured:** all the numbers of this change. The mode's 500 is #697's example; the 30 game turns are three player
   turns at normal speed; 10 blind attacks cover a kill of a few hit points
   through the unseen penalty to hit.
 - **Left:** an unseen caster ("Something mumbles", #699) is not a blow and
@@ -2236,8 +2230,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:420` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1573` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1563` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1560` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1550` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)

@@ -26,14 +26,19 @@ numbers):
   candidates, remembering the grid that struck something and those that spun;
   10 attacks an episode, then, still struck, it **leaves the level**. Hurt, it
   drinks below 50% (#697's heal, now on).
-- **The town plan** (`borg_town_capability.rs`): three reads of Detect Invisible
-  are a requirement, worth 30% of the trip's escape weight each (5% when the
-  Borg can cast Sense Invisible, Detection or Reveal Monsters), only when the
-  purse after the urgent purchases is at least 250 gold. A staff fills the same
-  requirement at far more gold, so it is bought when the scrolls are not stocked.
-- **Eight new parameters**, four for the town plan (`town_invisible_count`,
-  `town_invisible_min_gold`, `town_invisible_percent`,
-  `town_invisible_spell_percent`) and four for the mode
+- **The town plan** (`borg_town_capability.rs`): a value curve, no reserve (owner:
+  "3 is already too big a reserve ... no reserve, better value and a curve that
+  depends on class"). A read of Detect Invisible is worth a diminishing curve like
+  Phase Door's and the flasks': the first about 20% of the trip's escape weight, half
+  the most it pays at 2 reads, and it competes with the rest of the purse. The percent
+  is by class: 20 with nothing to detect, 10 with a Detect Evil spell, 3 with Sense
+  Invisible, Detection or Reveal Monsters (`borg_magic::detects_invisible`,
+  `detects_evil`). A staff gives the same units at far more gold, so it is bought
+  when the scrolls are not stocked. The first version (three reads a requirement
+  behind a 250-gold floor) was replaced: see *Found*.
+- **Eight new parameters**, four for the town plan (`town_invisible_count` 2,
+  `town_invisible_percent` 20, `town_invisible_evil_percent` 10,
+  `town_invisible_spell_percent` 3) and four for the mode
   (`recover_unseen_detect_reads`, `_probe_tries`, `_probe_max_grids`,
   `_act_age`); #697's `recover_unseen_attack_turns` 500 and
   `recover_unseen_heal_hp_percent` 50 are now shipped. The compiled defaults
@@ -47,20 +52,24 @@ numbers):
   Cemetery's hashes). **#697's two switches alone already save both seeds**
   (CL8/DL3 and CL6/DL2 at the 100,000-turn cap), so the death was a shipped
   setting, not missing code; the mode adds what the owner asked for on top.
-- **After.** Both seeds reach 100,000 turns (CL6/DL2 and CL6/DL3), identical to the
-  old games until the first unseen blow. In them the mode strikes, kills the
-  attacker ("You have killed it.") or leaves, and the scrolls are bought with 213
-  and 678 gold.
-- **The borg-zoo bundles could not be downloaded** (the session had git access to
-  borg-zoo, not the Actions artifacts API), so repro.sh failed at `gh run
-  download`. The games were replayed from the Cemetery dossiers instead: the
-  zoo's `borg.txt` is the shipped one with the cell's overrides **and with the
-  `borg_world` line removed** (`borg-zoo/zoo/borgrs.py:config_text`, #704);
-  `borg-cemetery/scripts/native/rerun-death.py` omits that last step, which is
-  why it cannot rebuild these cells' `borg.txt` (its hash then differs).
-- **The first town visit.** A percent high enough to buy scrolls later also
-  bought them at CL1 with 139–151 gold, at the cost of a Cure Light Wounds or
-  flasks; the 250-gold floor keeps both first visits identical to the old plan.
+- **After** (the current curve, replayed from the zoo bundles' own `user/` files;
+  the off settings reproduce the zoo's key hashes `b19d7b6a...` and `8acb6b08...`
+  exactly): both seeds reach 100,000 turns (CL8 and CL5), identical to the old games
+  until the first unseen blow. The mode strikes, kills the attacker ("You have killed
+  it.") or leaves; seed 1 buys 2 Scrolls of Detect Invisible (30 gold) at turn 29,885.
+- **The first design flip-flopped** (the owner asked to fix it). The 250-gold floor
+  was read on the purse as it is spent: `smoke-warrior-1` had 401 gold, 242 after
+  the flasks and Phase Door, and sold the three scrolls it carried. The reserve is
+  gone for a diminishing curve that does not depend on the gold, so no carried
+  scroll is sold because the purse shrank, and the first visits (139 and 151 gold)
+  still buy exactly what the old plan bought.
+- **Zoo bundles** (runs 44894233710 and 44894253654) were downloaded after the
+  session's environment allowed their blob hosts: `play_sha256` and `user/borg.txt`
+  (`c96f0148...`) match the dossiers. The cemetery's
+  `scripts/native/rerun-death.py` omits the step borg-zoo takes to build a cell's
+  `borg.txt` (`zoo/borgrs.py:config_text`, #704: harness `borg.txt` plus the
+  overrides, `borg_world` line removed), so it cannot rebuild these cells (hash
+  53a19330 against c96f0148): a cemetery-side fix, no issue filed.
 - **Not shown:** that 2037495442's 1,426 gold would have bought scrolls. That
   gold was found in the dungeon around turn 38,000 and the original never
   returned to town; the harness cannot give a Blackguard a purse. The
@@ -74,20 +83,7 @@ numbers):
 --all-targets -- -D warnings`, `cargo test --workspace --exclude borg-core`,
 `cargo test --release -p borg-core` (unit tests for the grid choice, the answers
 to a blind attack, the kill message and the reserve), `scripts/check-param-citations.py`;
-the default-core smoke suite re-recorded (`smoke-borg-rs`, 2 of 3 games identical,
-`smoke-warrior-1` diverges at game turn 19,397, the first town visit's first sale:
-it sold Treasure Detection before Detect Invisible where the old reference sold
-Detect Invisible first. It had 401 gold, above the 250 floor, so the reserve was
-on: explained by the town change; no `# Mode: invisible attacker` line in any smoke
-game). **Found, not fixed:** the floor is read on the purse as it is spent. In that
-game the gold fell to 242 after the flasks and Phase Door, the reserve went off,
-and the Borg sold the three Detect Invisible scrolls it carried at turn 19,722
-(the old reference sold them too, so this is #663's low value, but the new gate now
-turns a kept copy into a sold one in the middle of the visit). A fix would keep
-carried reads at the requirement's weight below the floor and apply the floor to
-buying only; left for the owner's word because it changes shipped play again. Zoo bundles
-checked (runs 44894233710 and 44894253654): `play_sha256` b19d7b6a... and 8acb6b08...
-match the dossiers, `user/borg.txt` hashes c96f0148... in both. Local, for
+the default-core smoke suite re-recorded (`smoke-borg-rs`; the result is in the PR). The 12-Blackguard comparison below is of the first design and was not re-run. Local, for
 direction only (RULES 20): 12 Human Blackguards, off against on, 100,000 game
 turns: 0 deaths in both, sum of CL 75 and 76, sum of DL 34 and 34, HP rests 469
 and 404, the mode entered 29 times, no stalls. **No claim of improvement** (RULES
@@ -97,12 +93,12 @@ file touched is already on its HOOKED list.
 
 **Left / for the owner:**
 
-- **A zoo arm** (RULES 20; I cannot file it on borg-zoo): the shipped settings
+- **A zoo arm** (RULES 20; filed as borg-zoo#580): the shipped settings
   against `borg_param_recover_unseen_attack_turns` 0 and
   `borg_param_town_invisible_count` 0, on the classes suites, measuring deaths to
   invisible monsters, resting stalls, the gold spent on Detect Invisible and the
   survival items it displaced. All eight numbers are hypotheses.
-- **Decide:** whether 500 game turns, a 250-gold floor and 30% are the right
+- **Decide:** whether 500 game turns and 20/10/3% with half value at 2 reads are the right
   strength, and whether a Staff of Detect Invisible should be worth more than the
   same reads in scrolls (today it is bought only when scrolls are not stocked).
 - An unseen caster ("Something mumbles", #699) is not a blow and does not enter

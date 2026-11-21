@@ -732,22 +732,25 @@ borg_param_town_ranger_arrows_max = 0
 borg_param_town_ranger_arrows_curve_scale_percent = 0
 
 # Detect Invisible, the town planner (#831, owner: "Scrolls of Detect
-# Invisible are not so worthless after all ... buy them if you have the spare
-# money, especially for Blackguards and those who do not have a spell to
-# detect invisible"). Two Blackguards died resting beside a clear icky thing
-# with no way to reveal it (#663 had made it "never bought"). With
-# town_invisible_count > 0 that many reads (scrolls at 15 gold, or a staff's
-# charges) are a requirement: each worth town_invisible_percent of the trip's
-# escape weight (town_invisible_spell_percent for a class that can cast Sense
-# Invisible, Detection or Reveal Monsters), nothing past them, and only when
-# the purse after the urgent purchases is at least town_invisible_min_gold
-# (spare money: a poor first visit buys survival items first). 0 = #663 (1% of
-# the support weight, never bought). Impact: see CALIBRATION (#831).
+# Invisible are not so worthless after all ... especially for Blackguards and
+# those who do not have a spell to detect invisible"; then "3 is already too
+# big a reserve ... no reserve, better value and a curve that depends on
+# class"). Two Blackguards died resting beside a clear icky thing with no way
+# to reveal it (#663 had made it "never bought"). With town_invisible_count > 0
+# a read (a scroll at 15 gold, or a staff's charges) is worth a diminishing
+# curve like Phase Door's and the flasks': the first is worth
+# town_invisible_percent of the trip's escape weight for a class with no
+# detection (Warriors, Blackguards), town_invisible_evil_percent for one that
+# casts Detect Evil, town_invisible_spell_percent for one that casts Sense
+# Invisible, Detection or Reveal Monsters; the curve reaches half its value at
+# town_invisible_count reads. Nothing is a requirement and nothing is kept
+# aside: it competes with the rest of the purse. 0 = #663 (1% of the support
+# weight, never bought). Impact: see CALIBRATION (#831).
 
-borg_param_town_invisible_count = 3
-borg_param_town_invisible_min_gold = 250
-borg_param_town_invisible_percent = 30
-borg_param_town_invisible_spell_percent = 5
+borg_param_town_invisible_count = 2
+borg_param_town_invisible_percent = 20
+borg_param_town_invisible_evil_percent = 10
+borg_param_town_invisible_spell_percent = 3
 
 # Phase Door reserve (#761, owner 2026-11-20: "we need to value phase doors
 # much more, especially for rangers"): the first town_phase_reserve Phase

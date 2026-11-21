@@ -481,6 +481,13 @@ pub fn detects_invisible(st: &BorgState) -> bool {
     [SENSE_INVISIBLE, DETECTION, REVEAL_MONSTERS].into_iter().any(|spell| borg_spell_legal(st, spell))
 }
 
+/// borg-reborn-rs (#831): the Borg can cast Detect Evil (it has its book and
+/// the mana for it): that reveals the evil invisible monsters (ghosts, a
+/// poltergeist), not every one.
+pub fn detects_evil(st: &BorgState) -> bool {
+    borg_spell_legal(st, DETECT_EVIL)
+}
+
 /// Check a spell for a given effect (`borg_spell_has_effect`)
 fn borg_spell_has_effect(spell_num: i32, effect: u16) -> bool {
     engine::spell_effect_indices(spell_num).contains(&effect)
