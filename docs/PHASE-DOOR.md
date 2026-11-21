@@ -84,6 +84,7 @@ unchanged except `escape_phase_adjacent_only = 1`.
 | **recall wait** (`borg_caution`) | Word of Recall is counting down and the Borg buys time | landing, 50 | `caution_recall_phase_tolerance` 50, `_horizon` 1, `_phase_fail`, `_portal_fail` |
 | **twitchy move** (`borg_flow_misc::borg_twitchy`) | stuck, before moving at random | landing, 15 (fixed) | none |
 | **twitchy think** (`borg_think_dungeon`) | stuck, up to 3 times a level, before boosting bravery | **none** (as in C) | none |
+| **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns`, `_response`, `_throw_tries`, `escape_emergency_phase_tolerance`, `_horizon` |
 
 Spell fail rates: `escape_normal_fail` 25%, `escape_healthy_fail` 10% when HP
 is above `escape_healthy_hp_percent` (70%); the emergency levels have their
@@ -188,3 +189,10 @@ With no enemy adjacent the Borg no longer phases to get unstuck.
 
 Whether the rule saves or costs games is the zoo pilot's question
 (borg-zoo#334, RULES 14): the 100 % threshold is a hypothesis.
+
+
+#781 adds the off-by-default `unseen bump` site in the table. It bypasses
+known-race fight and adjacency tests, since the observed bump supplies the
+adjacent occupied grid. It retains the emergency landing test and counts
+successful phases toward the level's ordinary escape accounting. Both
+`caution_unseen_bump_turns` and `_response` must be enabled.

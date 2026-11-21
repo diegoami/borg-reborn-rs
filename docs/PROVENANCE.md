@@ -32,12 +32,13 @@ crate and `harness/measurement/`.
 
 ## Angband Recorder (owner integration, 2026-11-14)
 
-Optional recorder crate/host adapter v0.2.0 at
-`ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd`, adopted in #351. All 41
+Optional recorder crate/host adapter v0.3.0 at
+`5146ba6ff5187ec2320b9fd310dea466820db160`, adopted in #356 (v0.2.0 at
+`ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd` in #351). All 55
 release files remain verbatim and sealed in recorder-pin.json. The receiving
 hook patch derives from the release adapter, preserving our harness hooks
 and applying only to the generated upstream-574b618c copy. Donor licences
-and credits remain in the vendor. The earlier v0.1.0 pin was
+and credits remain in the vendor. The v0.1.0 pin was
 `c4986b26b9fd1c14852df4f1b7393d9030cf812a`; its sessions retain their
 original identity and are not migrated. See ANGBAND-RECORDER.md for the
 schema boundary and consumer validation.
@@ -111,6 +112,16 @@ weights/thresholds without changing neutral arithmetic, quantities or RNG
 order. The source inventory and retained mechanics classification are in
 M13-INVENTORY-PARAMETERS.md/.json. No engine, recorder or donor code is
 updated. #293's explicit shopping replacement remains separate.
+
+
+## Unseen bump observation (#781)
+
+Receiving-owned hooks in borg-core's caution, flow, messages, update, attack
+and escape modules remember a failed step with unseen melee feedback and act
+on that bounded observation. The normal oil chooser is shared to preserve its
+fuel reserve. No donor refresh or hidden engine monster read is added. Message
+semantics were checked in upstream 574b618c `player-attack.c:738-743,767,840-860`,
+`mon-desc.h:45`, and `mon-desc.c:143-165`; the engine is unchanged.
 
 ## P6 enchant/decurse extraction (#680)
 

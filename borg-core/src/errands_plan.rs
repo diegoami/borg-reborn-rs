@@ -610,15 +610,15 @@ mod tests {
             for mode in ["static", "dynamic"] {
                 let reason = crate::borg_prepared::prepared_with_limit(2, plan_cap(),
                     || panic!("{mode} calculations must not bypass the cap"));
-                assert!(matches!(reason, Some(crate::borg_prepared::Reason::Formatted(_))));
+                assert_eq!(reason.unwrap().requirement.name, "plan_depth_limit");
                 assert!(crate::borg_prepared::prepared_with_limit(1, plan_cap(), || None).is_none());
             }
             // Without a plan, dispatch retains both a successful dynamic
             // result and an earlier static-mode refusal unchanged.
             assert!(crate::borg_prepared::prepared_with_limit(25, None, || None).is_none());
-            assert!(matches!(crate::borg_prepared::prepared_with_limit(25, None,
-                || Some(crate::borg_prepared::Reason::Text("restock first"))),
-                Some(crate::borg_prepared::Reason::Text("restock first"))));
+            let restock = crate::borg_prepared::Reason::fixed("restock first", "food", 0, 1);
+            assert_eq!(crate::borg_prepared::prepared_with_limit(25, None, || Some(restock.clone())),
+                Some(restock));
             // Manual cancellation is visible to preparedness immediately;
             // no tick/phase installation or Recall completion is needed.
             cancel();

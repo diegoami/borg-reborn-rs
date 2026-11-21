@@ -91,6 +91,9 @@ pub struct Budget {
     /// The purse minus the urgent needs' cost and the gold reserve (#493),
     /// never below zero.
     pub gold: i64,
+    /// Gold excluded from Black Market purchases.
+    pub black_market_reserve: i64,
+    pub black_market_percentage: i64,
     /// Free pack slots after the carried stacks and the urgent needs.
     pub pack_slots: i32,
     /// Free Home slots.
@@ -217,6 +220,8 @@ impl Budget {
 
         Budget {
             gold: facts.gold - cost,
+            black_market_reserve: 0,
+            black_market_percentage: -1,
             pack_slots: facts.pack_capacity - stock.pack_slots_used() - opened.len() as i32,
             home_slots: facts.home_capacity - stock.home_slots_used(),
             weight: facts.allowance() - weight,
@@ -250,10 +255,33 @@ impl Budget {
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve)),
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
         );
-        Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
+        let black_market_reserve = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET)).max(0);
+        let percentage = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
+        let market_gold = black_market_budget(facts.gold, black_market_reserve, percentage, 0);
+        let mut budget = Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
+            if (black_market_reserve > 0 || percentage >= 0) && c.is_black_market() && i64::from(c.price) > market_gold {
+                return Vec::new();
+            }
             let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
             crate::borg_town_stock::needs_served(st, ware)
-        })
+        });
+        budget.black_market_reserve = black_market_reserve;
+        budget.black_market_percentage = percentage;
+        budget
+    }
+}
+
+pub(crate) fn is_recall_scroll(st: &BorgState, tval: u8, sval: u8) -> bool {
+    u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
+        && i32::from(sval) == st.item_val.sv_scroll_word_of_recall
+}
+
+pub(crate) fn black_market_budget(gold: i64, reserve: i64, percentage: i64, legacy_share: i64) -> i64 {
+    let eligible = gold.saturating_sub(reserve.max(0)).max(0);
+    if percentage < 0 {
+        eligible / legacy_share.max(1)
+    } else {
+        (i128::from(eligible) * i128::from(percentage.min(100)) / 100) as i64
     }
 }
 

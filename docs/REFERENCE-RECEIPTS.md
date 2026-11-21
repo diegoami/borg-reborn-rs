@@ -22,11 +22,15 @@ No format, pin, index, exporter or runtime changes are delivered by this design.
 
 ## Contracts inspected
 
-The source snapshot is `f357404ea30177887f020a42b0faeeb794c61413`, after #579.
-Native tools are pinned by `death-tools-pin.txt` to Cemetery
-`09225018dd5f2d4336a16b29478793d902c70dc3` (API `1`).
+The source snapshot inspected for this design was
+`f357404ea30177887f020a42b0faeeb794c61413`, after #579. At that historical
+snapshot, native tools used Cemetery
+`09225018dd5f2d4336a16b29478793d902c70dc3` (API `1`). That is inspection
+provenance, not the current execution pin. The authoritative current commit
+is recorded once in [death-tools-pin.txt](../death-tools-pin.txt); subsequent
+adoptions do not relabel this historical snapshot.
 
-| Contract | Current behavior and consequence |
+| Contract | Inspected behavior and consequence |
 |---|---|
 | `tools/import-deaths.py:package` | Requires local regular files, rejects symlinks, checks required payloads and declared file hashes. A qualified ID hashes the original record plus the full payload manifest. Re-import verifies exact inventory and bytes. An omitted payload/reference manifest cannot stand in for the original bytes. |
 | `.source-record.json` and `import.json` | Preserve the original record and the complete fingerprint. Different source/build/config/provenance or payload bytes intentionally produce another qualified package; family/result equality is not package equality. |

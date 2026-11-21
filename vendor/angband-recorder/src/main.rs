@@ -88,7 +88,7 @@ fn run(
 }
 fn main_result() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
-    let usage = "Usage: angband-recorder record OUTPUT -- EXECUTABLE [ARG...]\n       angband-recorder replay --verify SOURCE OUTPUT\n       angband-recorder verify SOURCE REPLAY\n       angband-recorder list SOURCE\n       angband-recorder view SOURCE [FRAME]";
+    let usage = "Usage: angband-recorder record OUTPUT -- EXECUTABLE [ARG...]\n       angband-recorder replay --verify SOURCE OUTPUT\n       angband-recorder verify SOURCE REPLAY\n       angband-recorder list SOURCE\n       angband-recorder view SOURCE [FRAME | --turn TURN]";
     match args.first().map(String::as_str) {
         Some("record") if args.len() >= 4 && args[2] == "--" => {
             let output = absolute(&args[1])?;
@@ -124,8 +124,22 @@ fn main_result() -> Result<(), Box<dyn std::error::Error>> {
                 fs::read_to_string(Path::new(&args[1]).join("complete.json"))?
             );
         }
-        Some("view") if args.len() == 2 || args.len() == 3 => {
-            let wanted: u64 = args.get(2).map_or(Ok(1), |v| v.parse())?;
+        Some("view")
+            if args.len() == 2 || args.len() == 3 || (args.len() == 4 && args[2] == "--turn") =>
+        {
+            let turn: Option<i64> = if args.len() == 4 {
+                Some(args[3].parse()?)
+            } else {
+                None
+            };
+            let wanted: u64 = if turn.is_none() {
+                args.get(2).map_or(Ok(1), |v| v.parse())?
+            } else {
+                0
+            };
+            if turn.is_some_and(|t| t < 0) || (turn.is_none() && wanted == 0) {
+                return Err("view needs a positive frame or nonnegative turn".into());
+            }
             let mut screen = Vec::new();
             let mut dimensions = (0, 0);
             for line in
@@ -148,7 +162,11 @@ fn main_result() -> Result<(), Box<dyn std::error::Error>> {
                         .filter(|c| !c.is_control())
                         .unwrap_or(' ');
                 }
-                if frame["index"].as_u64() == Some(wanted) {
+                if turn.map_or(frame["index"].as_u64() == Some(wanted), |target| {
+                    matches!(frame["phase"].as_str(), Some("command" | "final" | "exit"))
+                        && frame["turn"].as_i64().is_some_and(|t| t >= target)
+                }) {
+                    let wanted = frame["index"].as_u64().ok_or("missing frame index")?;
                     println!(
                         "Frame {wanted}, turn {}, depth {}, HP {}/{}",
                         frame["turn"], frame["depth"], frame["hp"], frame["max_hp"]

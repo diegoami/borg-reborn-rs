@@ -136,7 +136,7 @@ line for the same monster and kind replaces the earlier one of that kind:
 line. A later `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2240 entries in
+`borg_param_<name>` integer sets any of the 2269 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
@@ -264,6 +264,92 @@ the class values.
 The core trace's `parameter_name` for an attack candidate is the family's
 parameter (`attack_preference_spell_permille`); the row's `class_name` gives the
 class.
+
+### Resolved settings at birth (#798)
+
+The vendored core writes `settings-resolved.json` beside `params-core.json`
+when it first attaches to a character. It uses the run directory described
+above. The receipt is also refreshed on reincarnation. A standard zoo cell
+plays one character.
+
+```json
+{
+  "schema": "borg-settings-resolved@1",
+  "class_index": 7,
+  "class_name": "ranger",
+  "effective_settings": {"town_phase_reserve": 2}
+}
+```
+
+The example shows one entry. The map includes every registered parameter
+whose live value differs from its compiled default for that class, with
+canonical names and integer values. It accounts for file and environment
+precedence, class overrides, and policy-derived values such as breeder
+switches. An explicit setting equal to its compiled class default is
+omitted, so an empty map can come from a populated `borg.txt`. A missing
+file means no receipt is available.
+
+Preserve the canonical map, class identity, schema and SHA-256 of the
+original file with the Zoo cell. For comparisons using written names,
+match each applicable `borg_param_*` name to its canonical registry name
+using the played class and the core's alias rules. For example,
+`borg_param_town_phase_reserve__ranger` maps to `town_phase_reserve`
+for a Ranger. If projecting into the existing Zoo `effective_settings`
+field, keep the written keys its consumers expect. An omitted parameter
+needs independent default information before it can be verified against a
+specific value. Native `summary.json` keeps its existing format.
+
+## Phase Door observations (#797)
+
+The vendored core writes `phase-observations.jsonl` alongside the native
+summary when a run directory is present. Each line has
+`schema: "borg-phase-observations@1"`, `game_turn` and `type`.
+
+- `town_stock` has `shops`, Phase Door stock counts indexed by retail shop
+  (indices 0–6). The first town observation on each arrival and a change
+  in noticed stock emit a snapshot, even for unvisited shops. This cache
+  reflects the latest inventory scan and can lag shelf changes between
+  scans. A return to town can emit the same counts again.
+- `shop_visit` has the entered `shop` and its `phase_scrolls` stock before
+  the Borg's first action on that visit. Zero is an observed count.
+- `first_monster_contact` has `depth` and `phase_scrolls` in the pack at
+  the first think that saw a tracked monster. Town and dungeon each emit
+  at most one such row per character. Counts include physical scrolls
+  even if their flavor is unidentified. The receipt uses the inventory
+  cache and does not feed the decision.
+
+Keep the stream alongside the Zoo's `town-transactions.jsonl` (the latter
+comes from native purchase receipts). The contact count can include scrolls
+picked up since departure. Missing contact is an unobserved endpoint.
+For `borg-zoo#536`, use retained cell evidence in both arms.
+
+## Preparedness trace (#795)
+
+The vendored core adds optional fields to `trace-core.jsonl` with
+`core-trace@2`. On a think that checked preparedness from a live dive,
+stair, errand or trip caller, `prepared` holds the checks in call order.
+Each has `current_depth`, `proposed_depth`, `source` (call site), and
+`requirement`. A null requirement means prepared. A failure has a stable
+`name`, integer `actual` and `required`, the pass `relation`, and the
+original `message`. Formula failures report a false predicate (0 vs 1).
+Alternative healing types are compared in their equivalent minimum units.
+
+`trip_id` is local to the cell. It starts at 0 and advances on each
+observed town-to-dungeon transition. A subsequent think carries
+`previous_prepared_outcome` with the checked `think`, the observed
+`depth`, and an `action` of `descended`, `ascended`,
+`returned_to_town` or `stayed`. The latest checked think can lack an
+outcome if the cell ends before another observation. The outcome describes
+the next observation even when a later check on that think selected the
+action.
+
+Run `python3 scripts/summarize-prepared.py RETAINED_CELL_ROOT...` on the
+selected Zoo arms. The report counts the first observed failure for each
+(cell, trip, proposed depth) and uses only one-level descent proposals.
+Repeated checks and speculative farther depths do not multiply counts.
+For historical cells, `--legacy` extracts only the explicit
+“bored and unable to dive” note and joins it to the state log by turn.
+Historical counts cover this one path.
 
 ## Class/family preference profiles (#403)
 

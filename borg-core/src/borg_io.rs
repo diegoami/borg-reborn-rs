@@ -298,6 +298,7 @@ pub fn borg_inkey(st: &mut BorgState, take: bool) -> keycode_t {
 
 /// Forget all queued keys (`borg_flush`).
 pub fn borg_flush(st: &mut BorgState) {
+    crate::borg_caution::unseen_bump_cancel_shot(st); // #781 review: command cancelled
     st.io.key_tail = st.io.key_head;
     st.io.queued_direction = 0;
     // borg-reborn-rs (#551, review of #594): the flag belongs to the queued
