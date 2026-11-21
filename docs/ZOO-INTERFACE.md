@@ -70,6 +70,7 @@ cannot pass unnoticed.
 | Output | Fields or format the zoo reads |
 | --- | --- |
 | `summary.json` | `dead`, `stop_reason`, `race`, `class`, `death_cause`, `game_turns`, `depth`, `max_depth`, `clevel`, `keys` |
+| `town-departure-fuel.jsonl` | First dungeon scan after each town departure. Written beside the town plan record when `BORG_TOWN_PLAN_RECORD` is set. Each row gives equipped light, pack light and oil, light radius, depth, turn, and gold. |
 | `keys.log` | one line per key: `<game turn> <event type> <key code hex> <mods hex>`; the zoo hashes it as the cell's play |
 | `state.log` (with `-statelog`) | one line per key, starting `<game turn> <x>,<y> d<depth>/<max depth>`; the zoo derives `first_turn_at_depth` and its milestones from it |
 
@@ -96,12 +97,16 @@ them. `exact_turns` and `loaded` are in every summary, `true` or `false`
 
 ## Specimens
 
-- `4.2.6-reborn-rust`: `impl` `rust`, `exact_turns` and `depth_stream` on.
-  Its `ref` is `2dd11fd` today (M1, built on borg-rs's tree). Milestone E
-  is merged (tag `e`); the `ref` moves to the commit that fixes E's review
-  (borg-zoo#48), since those fixes change the full suite's play.
+- `4.2.6-reborn-rust`: `impl` `rust`, `exact_turns` and `depth_stream` on,
+  at `fab71554` (tag `m1`, built on borg-rs's tree). Since then the zoo adds
+  a specimen per measured commit of this repository, each at its exact
+  `ref`: `4.2.6-reborn-rust-e` and `-e-reviewed` (milestone E, borg-zoo#48),
+  `4.2.6-reborn-core-pilot` (the repivot's pilot), and the
+  `4.2.6-reborn-rust-*` specimens since (for example
+  `4.2.6-reborn-rust-main-<sha>`). The list is the zoo's catalogue
+  (`reference/zoo/catalogue/specimens.json`, copied at the zoo pin).
 - `4.2.6-reborn-c-pristine` and `4.2.6-reborn-c-bbc-m7` were built by this
-  repository at `2dd11fd`. Since milestone E it builds no C Borg (docs/SPEC.md
+  repository at `fab71554`. Since milestone E it builds no C Borg (docs/SPEC.md
   §6), so those specimens keep their old `ref` or are retired: the zoo's
   call.
 

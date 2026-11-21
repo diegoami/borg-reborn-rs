@@ -1,0 +1,128 @@
+{
+  "id": "CBUG-0020",
+  "source_groups": [
+    36
+  ],
+  "title": "Money-scumming repeats an already-satisfied town predicate",
+  "site": "src/borg/borg-think-store.c:borg_choose_shop",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "No independent behavior effect established; the duplicate depth test is redundant."
+  },
+  "notes": "The function has already returned when CDEPTH is nonzero. Removing the duplicate test alone is cleanup, not a demonstrated gameplay correction.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 36
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-think-store.c",
+      "start": 90,
+      "end": 94,
+      "description": "/* Must be in town */"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-think-store.c",
+      "start": 164,
+      "end": 168,
+      "description": "!borg.trait[BI_CDEPTH]"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/think-store.ts",
+      "start": 60,
+      "end": 63,
+      "description": "/* Must be in town"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/think-store.ts",
+      "start": 63,
+      "end": 66,
+      "description": "/* Must be in town"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/think-store.ts",
+      "start": 113,
+      "end": 117,
+      "description": "!st(ctx, BI.CDEPTH)"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/think-store.ts",
+      "start": 116,
+      "end": 120,
+      "description": "!st(ctx, BI.CDEPTH)"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 671,
+      "end": 685,
+      "description": "discovery group 36"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 683,
+      "end": 684,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 36,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 683,
+        "end": 684,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "The money-scumming test repeats `!borg.trait[BI_CDEPTH]`, already\n  returned on at the top of the function."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        36
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "review-only",
+  "proposals_at_import": [],
+  "next_at_import": "Validate a legal normal-rule scene and negative controls before calling a gameplay correction carried.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

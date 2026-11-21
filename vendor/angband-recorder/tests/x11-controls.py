@@ -30,6 +30,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import subprocess
 import time
 
@@ -120,13 +121,31 @@ class Session:
             self.game_stderr.close()
             raise
 
+    def where_it_stopped(self):
+        """What the stuck session had recorded: its last frame and stderr."""
+        text = []
+        try:
+            lines = (self.record_dir / 'frames.jsonl').read_text().splitlines()
+            last = json.loads(lines[-1]) if lines else None
+            text.append('frames recorded: %d; last: %s' % (len(lines), last and
+                        {k: last[k] for k in ('index', 'phase', 'turn', 'depth', 'dead')}))
+        except (OSError, ValueError, KeyError) as error:
+            text.append('no readable frames: %s' % error)
+        try:
+            stderr = Path(str(self.record_dir) + '.stderr').read_text().splitlines()[-10:]
+            text.append('stderr tail: ' + (' | '.join(stderr) if stderr else '(empty)'))
+        except OSError:
+            pass
+        return '\n'.join(text)
+
     def wait(self, timeout=240):
         try:
             self.process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
             self.game_stderr.close()
-            raise RuntimeError('the recorded X11 session did not exit: ' + str(self.record_dir))
+            raise RuntimeError('the recorded X11 session did not exit after %ds: %s\n%s'
+                               % (timeout, self.record_dir, self.where_it_stopped()))
         self.game_stderr.close()
         require(self.process.returncode == 0, 'a recorded X11 session failed: ' +
                 str(self.record_dir) + '; see ' + str(self.record_dir) + '.stderr')

@@ -10,24 +10,39 @@ The scripts are in this directory. `S` below means this directory, e.g.
 
 | Script | What |
 |---|---|
-| `setup.sh [REV]` | Makes the recording build: a detached worktree of borg-reborn-rs at `$BRR_BUILD` (default `~/angband-builds/borg-reborn-rs-recording`), the return settings in its `harness/borg.txt`, and a headless game with the recorder on in `build/rec` (`-DSUPPORT_BORG_RECORDING=ON`). |
+| `setup.sh [REV]` | Makes the recording build of `REV` (default `origin/main`, fetched): a detached worktree of borg-reborn-rs at `$BRR_BUILD` (default `~/angband-builds/borg-reborn-rs-recording-<REV>`), the return settings in its `harness/borg.txt`, and a headless game with the recorder on in `build/rec` (`-DSUPPORT_BORG_RECORDING=ON`), and the `~/angband-builds/current` link. |
 | `record.sh` | Records a game and shows it live in the terminal. |
+| `angband-reborn-record` | Plays a game **in a window**, recorded from startup (the command you run; installed by `install-launcher.sh`). |
+| `install-launcher.sh [BUILD]` | Builds the game with X11 and the recorder for a build, and installs `angband-reborn-record` from it. |
 | `rewind.sh` | Shows the last turns before a game's end and names (or opens) the save just before them. |
 | `run-env.sh` | The parameters and recording settings as environment variables; the other scripts source it. |
 | `replay.sh` | Replays a recording and compares it with the original. |
 | `open-save.sh` | Opens a copy of a save in an X11 game window. |
 | `watch-recording.py` | Plays a recording's screens in the terminal, also live (`--follow`). |
 
-Environment: `BRR_BUILD` (the recording build, default above) and
+Environment: `BRR_BUILD` (the recording build; when unset, the build `~/angband-builds/current` points at) and
 `BORG_REBORN_RS` (the main checkout, default `~/projects/angband/borg-reborn-rs`).
 
 ## The current build
 
-`~/angband-builds/borg-reborn-rs-recording`, borg-reborn-rs commit `f02cd294`,
-executable SHA-256 `57b1885509ee88024b670845c137ca62098fa92af1c3e049eb68c862621b8cb0`.
+`~/angband-builds/borg-reborn-rs-recording-88d98537`, borg-reborn-rs commit
+`88d98537` (made 2026-11-21), recorder v0.3.0, executable SHA-256
+`4d4642c0a77eaa7ee4752b00147f9e5a87a1834c985435431aa356b54ff0fe21`. Its
+recordings end with the `final` frame. `~/angband-builds/current` points at it:
+the scripts use the build that link names when `BRR_BUILD` is not set, and
+`setup.sh` moves the link to every build it makes. `export BRR_BUILD=DIR` still
+overrides it (e.g. to replay with an older build).
+
+Older builds, kept to replay their recordings (check `ls ~/angband-builds` for any others):
+
+| Directory | Commit | Recorder | Executable SHA-256 |
+|---|---|---|---|
+| `~/angband-builds/borg-reborn-rs-recording` | `f02cd294` | v0.2.0 (no closing frame) | `57b1885509ee88024b670845c137ca62098fa92af1c3e049eb68c862621b8cb0` |
+| `~/angband-builds/borg-reborn-rs-recording-v0.3.0` | `78fb330f` | v0.3.0 | `a8ad694bd5423ad3b1d6a90e6d0daabba2a012a3655469af6e51fcabc68b51e6` |
+
 The recorder ties a recording to its executable's hash: **don't rebuild a build
-whose recordings you want to replay**. Make a new one with
-`BRR_BUILD=~/angband-builds/NEW $S/setup.sh` instead.
+whose recordings you want to replay**. Make a new one instead (see
+*A new build, and how to get the latest*).
 
 ## The parameters
 
@@ -69,8 +84,8 @@ without the view; `VIEW_DELAY=S` sets the seconds per screen (default 0.02).
 `record.sh` runs this, which you can also run yourself:
 
 ```sh
-cd ~/angband-builds/borg-reborn-rs-recording   # $BRR_BUILD
-source $S/run-env.sh
+source $S/run-env.sh                              # sets BRR_BUILD (the current build)
+cd "$BRR_BUILD"
 flock /tmp/angband-validation.lock harness/run.sh ~/angband-recordings/NAME SEED RACE CLASS TURNS menu,terminal-save
 ```
 
@@ -109,6 +124,13 @@ died, and it doesn't affect the game or the recording.
 | `messages.log`, `keys.log`, `state.log` | Game messages (Borg notes start with `#`), keys, one state line per key |
 | `trace-core.jsonl`, `params-core.json` | The Borg's decisions and the parameter values it used |
 | `config.txt`, `process.json`, `stderr.log` | Run settings and hashes, process outcome, the last screen |
+
+`native/frames.jsonl` ends with the end state when the build's recorder is v0.3.0
+or later: a `final` frame for the headless runs here (a death, with `dead: 1`,
+or the turn limit), or an `exit` frame for a run that leaves through the game's
+own quit (e.g. a game window). Builds with an older recorder end a headless run
+at the last command's frame, so the final turns, including a death, are missing
+from their recordings.
 
 A 1,000,000-turn run takes a few minutes and about **1.1 GB**, almost all of
 it `native/frames.jsonl`.
@@ -189,15 +211,125 @@ Add `--follow` to watch a recording that is still being written. Ctrl-C
 stops. These only show recorded screens; `replay.sh` is the check
 that the game reproduces.
 
-## A new build
+## 6. Play in a window, recorded: `angband-reborn-record`
 
-Only when you need one, e.g. after borg-reborn-rs changes. Keep the old build
-for its recordings.
+The headless scripts above have no window. To watch or play the Borg in an X11
+window with the recorder on from process startup, use the launcher command:
 
 ```sh
-BRR_BUILD=~/angband-builds/NEWDIR $S/setup.sh main     # or a commit
-export BRR_BUILD=~/angband-builds/NEWDIR               # for run-env.sh, replay.sh
+angband-reborn-record CHARACTER            # a game window (default character: RustBorg)
+angband-reborn-record --watch ~/angband-recordings/SESSION [--from-turn TURN]   # play the screens in the terminal
+angband-reborn-record --frame ~/angband-recordings/SESSION [FRAME]              # one screen (default: the last)
 ```
+
+It needs a desktop session (`DISPLAY`). Each run writes
+`~/angband-recordings/<date-time>-<CHARACTER>.XXXXXX/native` and copies the
+`borg.txt`, `errands_plan.txt` and `scary_monsters.txt` it used into
+`borg-settings/` beside it. The character's saves and settings live in
+`$BORG_REBORN_RS/.angband-reborn` (override with `BORG_PLAY_DATA_DIR`;
+recordings with `BORG_RECORDINGS_DIR`), not in the recording. In the game,
+Ctrl-Z then `z` starts the Borg and any key stops it; **Ctrl-X saves and
+quits**.
+
+A window build is not the headless build: `setup.sh` builds with X11 off, and
+a recorder variable does nothing in a binary built without the recorder. So the
+launcher has its own install, made from a build:
+
+```sh
+$S/install-launcher.sh                  # for ~/angband-builds/current (or give a build directory)
+```
+
+It builds that revision with `-DSUPPORT_X11=ON -DSUPPORT_BORG_RECORDING=ON`
+(into `build/rec-x11`) and the recorder's command-line tool from the build's
+vendored copy, then copies the game, its data, the tool, the launcher and
+`watch-recording.py` into `BUILD/launcher/` (frozen: a later rebuild cannot
+replace the executable that recordings need), writes `BUILD/launcher/INSTALL-RECEIPT`
+(revision, recorder pin, hashes) and points `~/.local/bin/angband-reborn-record`
+at it. It prints the link's previous target; `NO_LINK=1` leaves the link alone.
+It needs the libX11 and OpenSSL headers, takes the validation lock and a few
+minutes, and refuses an existing `BUILD/launcher`. Install again after making a
+new build (section *A new build*); the older installs keep working for their
+recordings.
+
+Current install: `~/angband-builds/borg-reborn-rs-recording-88d98537/launcher`
+(borg-reborn-rs `88d98537`, recorder v0.3.0, game SHA-256
+`29bc3092a67d64bb5934af0bcac78f58cfe4360ea159600fc68ef28e36e6a582`). The
+previous one, made by hand, was
+`~/projects/angband/borg-reborn-rs/build/installed/d4471de7…/recording`
+(`d4471de7`, recorder v0.2.0); it is not in any repository and no script made it.
+
+**How a windowed recording ends** (checked with a test character under a virtual
+display, 2026-11-21):
+- **Quit through the game (Ctrl-X):** the recording is sealed and its last frame is
+  `exit`, holding the end state (turn, `dead`). A death is recorded the same way
+  once you quit.
+- **The window is closed or killed abruptly** (the X connection breaks): the
+  game exits and the recording is sealed (`complete.json`). With recorder
+  v0.3.0 its last frame was the last `command`/`wait` frame, so what happened
+  after it was lost. From the release after v0.3.0 (planned v0.3.1) the exit
+  handler writes a `final` frame of the end state, as the headless frontend
+  does. Checked under a virtual display on a scratch build of that change: a
+  killed window ends with `final`, a Ctrl-X quit with `exit` (no `final` after
+  it). Quit with Ctrl-X when you can; the `exit` frame is the game's own.
+
+Not checked: a window on a real display, a death in a window, killing the game
+with a signal, and replaying a windowed recording (`replay --verify` needs a
+`launch.json`, which the launcher's recordings do not have).
+
+## A new build, and how to get the latest
+
+Make one when borg-reborn-rs has changed: a new Borg, or a recorder pin update.
+A build is a snapshot of borg-reborn-rs at one revision with the Borg compiled
+into the game, so a changed Borg needs a new build. **Keep the old builds**: a
+recording replays only with the executable that made it.
+
+1. **Build the latest.** With no arguments `setup.sh` fetches borg-reborn-rs and
+   builds `origin/main` into `~/angband-builds/borg-reborn-rs-recording-<revision>`
+   (the revision as 8 hex digits, so the name says which Borg it has). It takes
+   the validation lock and a few minutes, refuses an existing directory, and
+   points `~/angband-builds/current` at the new build, which is what the other
+   scripts then use.
+   ```sh
+   $S/setup.sh
+   ```
+   For another revision give it (a commit hash or branch of borg-reborn-rs):
+   `$S/setup.sh 88d98537`. `NO_CURRENT=1 $S/setup.sh REV` builds without moving
+   the link. To choose the directory: `BRR_BUILD=~/angband-builds/NAME $S/setup.sh`.
+   The parameters in `run-env.sh` and the `borg_trip_*` settings carry over:
+   `setup.sh` applies them to every new build.
+   For the window launcher, install it for the new build too:
+   `$S/install-launcher.sh` (section 6); `angband-reborn-record` keeps running the
+   previous install until you do.
+
+   Don't give it plain `main` and don't fetch by hand: `main` is the checkout's
+   local branch, which a fetch doesn't move, so it can be hundreds of commits
+   behind and carry an old recorder pin. `origin/main` (the default) is right.
+2. **Check the recorder** the build carries. It comes from the `recorder-pin.json`
+   of that revision, not from this repository, and a Borg update alone never
+   changes it. From v0.3.0 on, a headless recording ends with a `final` frame
+   holding the end state (the death turn); older recorders lose the turns after
+   the last command.
+   ```sh
+   source $S/run-env.sh
+   grep '"tag"' "$BRR_BUILD/recorder-pin.json"      # "tag": "v0.3.0" or later
+   ```
+   To see it work, record a game that dies and look at the last frame:
+   ```sh
+   tail -n1 ~/angband-recordings/NAME/native/frames.jsonl | python3 -c "import sys,json;f=json.loads(sys.stdin.read());print(f['phase'],f['turn'],f['dead'])"   # final <death turn> 1 (alive at the turn limit: final <turn> 0)
+   ```
+3. **Remove a build you no longer need** with git, not `rm -rf`: the build is a
+   git worktree of borg-reborn-rs, and deleting the directory leaves a record
+   that makes `setup.sh` fail ("missing but already registered worktree").
+   ```sh
+   git -C ~/projects/angband/borg-reborn-rs worktree remove --force ~/angband-builds/DIR
+   # if the directory is already gone:  git -C ~/projects/angband/borg-reborn-rs worktree prune
+   ```
+   Recordings made with a removed build can no longer be replayed. If `current`
+   pointed at it, run `setup.sh` again or `ln -sfnT ~/angband-builds/DIR ~/angband-builds/current`.
+
+A recorder release reaches the builds only through a pin-update change in
+borg-reborn-rs (v0.3.0: its PR #809). After one is merged, a build made from a
+revision at or after the merge has it.
 
 ## Recordings so far
 

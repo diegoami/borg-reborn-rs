@@ -175,6 +175,11 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
         return false;
     }
 
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::borg_escape::teleport_scroll_blocked(st, sval) {
+        return false;
+    }
+
     /* Look for that scroll */
     let i = borg_slot(st, TV_SCROLL as i32, sval);
 
@@ -431,6 +436,11 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
 
 /// Attempt to use the given (charged) staff (by sval).
 pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::borg_escape::teleport_staff_blocked(st, sval) {
+        return false;
+    }
+
     /* Look for that staff */
     let i = borg_slot(st, TV_STAFF as i32, sval);
 
@@ -461,6 +471,11 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
 /// Attempt to use the given (charged) staff (by sval) and make a fail
 /// check on it.
 pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::borg_escape::teleport_staff_blocked(st, sval) {
+        return false;
+    }
+
     /* Look for that staff */
     let i = borg_slot(st, TV_STAFF as i32, sval);
 
@@ -806,6 +821,11 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 
 /// Attempt to use the given artifact.
 pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::borg_escape::teleport_activation_blocked(st, activation) {
+        return false;
+    }
+
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;

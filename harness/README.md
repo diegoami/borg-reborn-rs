@@ -86,7 +86,7 @@ With no `BORG_CORE` a run plays the core `harness/borg.txt` names, borg-rs
 | File | What |
 | --- | --- |
 | `build.sh` | Builds `engine/` (docs/ENGINE.md) into `build/rust/game/angband` and writes `build/rust/BUILD_ID` (source and binary hashes, `engine_upstream`, compilers). `BORG_TEST_FEATURES=F` builds a test variant into `build/rust-test/`. The zoo calls it (docs/ZOO-INTERFACE.md) |
-| `identity.sh` | Build identity: the inputs (`engine/` without its tests, `borg-reborn-rs/`, `Cargo.toml`, `Cargo.lock`), their source hash, and the implementation a binary carries |
+| `identity.sh` | Build identity: the inputs (`engine/` without its tests, `borg-reborn-rs/`, `borg-core/`, `Cargo.toml`, `Cargo.lock`, and the optional recorder's hooks, pin and checkout), their source hash, and the implementation a binary carries |
 | `run.sh` | One deterministic run: `run.sh OUTDIR SEED RACE CLASS TURNS [FLAGS] [-- borgh options]`, with the flags `menu`, `exact`, `random-birth`, `finalsave`, `living-save`, `terminal-save`, `keep-load-rng`, `key-limit=N`, `save=NAME`. It fixes the environment (`TZ=UTC`, `C.UTF-8`), gives the Borg its profile and run directory, and writes the run's `config.txt`. Then `tools/depth-stream.py` (`depths.json`) and `tools/export-death.py` (a death's dossier) |
 | `suite.sh` | Runs a suite file of `suites/` in parallel into `OUTDIR` with a manifest (suite and binary hashes at start and end), `RUN/run_exit` and `DONE` or `FAILED` |
 | `diff` | Compares two suite outputs, or an output and a reference: keys, messages and state logs byte for byte, and `summary.json` (fields added later, such as `game_options`, only when both sides have them) |
@@ -97,10 +97,11 @@ With no `BORG_CORE` a run plays the core `harness/borg.txt` names, borg-rs
 | `supervise.py` | Runs the game as a supervised child (wall and stall timeouts); `process.json` records its outcome |
 | `play.sh` | A town session (#191): `play.sh OUTDIR [CHARACTERS]`. The X11 build (`watch-borg.sh --build-only`), `BORG_TOWN_PLAYER=1` (the player has the controls in town, the Borg in the dungeon), the state records (`state.jsonl`), the object log (`objects.log`), the trace, then `feedback.sh`. Not a measured run. Needs a display, X11 bitmap fonts (`xfonts-base`) and a UTF-8 locale |
 | `feedback.sh` | The end-of-session feedback: `feedback.md` and `corrections.jsonl` (`{"line": N, "text": ...}`, N an object log line). Copied from borg-rs |
-| `borg.txt` | The C Borg's configuration file. The Rust Borg does not read it; it stays because the zoo copies it |
-| `profiles/` | The Rust Borg's profiles (`reborn-default.txt`), docs/ARCHITECTURE.md *Parameters* |
+| `borg.txt` | The shipped settings of the default (borg-rs) core: the C Borg's settings, the `borg_param_*` thresholds, the `borg_reborn_*` keys (core, errand, stopscared) and the CLASS FILES block. `run.sh` copies it to the run's `user/borg.txt`, which the core reads; the zoo copies it too. The reborn core does not read it (it reads `profiles/`). See [docs/architecture/borg-core.md](../docs/architecture/borg-core.md) |
+| `borg_<class>.txt`, `scary_monsters.txt`, `plans/` | Per-class values (folded into `borg.txt` by `scripts/borg-class-files.py fold`), the scary list `borg_scary_list` names, and errands plans |
+| `profiles/` | The reborn core's profiles (`reborn-default.txt`; `BORG_CORE=reborn` only), [docs/architecture/reborn-layers.md](../docs/architecture/reborn-layers.md) *Cross-cutting*, *Parameters* |
 | `suites/` | `smoke`, `full` (9 classes × 5 seeds × 100,000 turns, race = (class + k) % 11), and their `-exact` variants |
-| `reference/` | `smoke-borg-rs`: the default (borg-rs) core's smoke outputs (#606). `smoke-rust`, `full-rust`, `smoke-exact-rust`: the reborn core's (`BORG_CORE=reborn`) outputs at the commit their `REFERENCE` names; regression references, not oracles. CI compares smoke and smoke-exact |
+| `reference/` | `smoke-borg-rs`: the default (borg-rs) core's smoke outputs (#606). `smoke-rust`, `full-rust`, `smoke-exact-rust`: the reborn core's (`BORG_CORE=reborn`) outputs at the commit their `REFERENCE` names; regression references, not oracles. CI compares `smoke-borg-rs`, `smoke-rust` and `smoke-exact-rust`, and `full-rust` with the test-features build when its scope asks for full |
 
 ## The run contract and the logs
 

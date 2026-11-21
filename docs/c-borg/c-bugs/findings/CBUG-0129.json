@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0129",
+  "source_groups": [
+    38
+  ],
+  "title": "Ignore-reset assumes the saved ego-ignore array has already been allocated",
+  "site": "src/borg/borg-init.c:borg_reset_ignore",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 145
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-init.c",
+      "start": 337,
+      "end": 369,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 736,
+      "end": 738,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        38
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 38,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 736,
+        "end": 738,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_reset_ignore()` frees `borg.init_save.ego_ignore_types[i]` for every\n  ego without checking the array for NULL (only reached without an earlier\n  `borg_reinit_options()`, which no command path does)."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "review-only",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

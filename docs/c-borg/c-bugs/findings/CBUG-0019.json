@@ -1,0 +1,101 @@
+{
+  "id": "CBUG-0019",
+  "source_groups": [
+    36
+  ],
+  "title": "Urgent shop goal is overwritten or paired with stale ware",
+  "site": "src/borg/borg-think-store.c:borg_choose_shop",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "shared",
+  "mandos": "shared",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "A poisoned, bleeding or hungry character can select another shop or a ware from an earlier goal; actual game transaction outcome pending."
+  },
+  "notes": "Forced shop assignment is followed by helpers that ignore that forced shop and by unconditional goal reset. A stale ware can instead make the second already-flowing test accept the forced shop.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 23
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-think-store.c",
+      "start": 105,
+      "end": 157,
+      "description": "/* If poisoned or bleeding"
+    },
+    {
+      "role": "neo",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "commit": "74a017d2f695939eb2f046b7c9ff286ef1e82568",
+      "path": "src/store/think-store.ts",
+      "start": 70,
+      "end": 118,
+      "description": "/* If poisoned or bleeding"
+    },
+    {
+      "role": "mandos",
+      "repository": "diegoami/mandos",
+      "commit": "48405e9621ffc400f7af43e7fd1ed2385225ca1f",
+      "path": "src/store/think-store.ts",
+      "start": 73,
+      "end": 121,
+      "description": "/* If poisoned or bleeding"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 671,
+      "end": 685,
+      "description": "discovery group 36"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 674,
+      "end": 682,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 36,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 674,
+        "end": 682,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_choose_shop()`: \"If poisoned or bleeding -- flow to temple\"\n  (`goal.shop = 3`) and \"flow to general store\" (`goal.shop = 0`) have no\n  effect on the choice: none of the buy/sell helpers reads `goal.shop`, and\n  unless one of them sets a ware the next step resets\n  `goal.shop = goal.ware = goal.item = -1`. They matter only if\n  `goal.ware != -1` came in with `goal.shop == -1`: then\n  `borg_think_shop_buy_useful()` returns false at once (\"already have a\n  target\") and the second \"already flowing\" test returns true with the\n  forced shop and the stale ware."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        36
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Validate a legal normal-rule scene and negative controls before calling a gameplay correction carried.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}
