@@ -1,0 +1,253 @@
+//! Cursed equipment (#830): never live with a harmful curse, and when the
+//! Borg keeps a cursed item, go to town for Remove Curse.
+//!
+//! Angband 4.2 curses do not stick: any worn item can be taken off unless it
+//! has `STICKY` (`engine/angband/src/obj-util.c:obj_can_takeoff`, line 796),
+//! so one "take off" ends every effect of every curse on the item. The
+//! power model already prices curses (`borg_power.rs`, the `crs*` weights),
+//! but its take-off check, `borg_remove_stuff`, runs after the fight and
+//! caution branches of `borg_think_dungeon`, and a curse that aggravates
+//! keeps monsters in view, so it never ran (Ranger 1088421828: annoyance
+//! boots, -10 speed, dead 110 game turns after putting them on).
+
+use crate::borg_headers::borg_item_h::{
+    borg_item, BORG_CURSE_ANNOYANCE, BORG_CURSE_ANTI_TELEPORTATION, BORG_CURSE_COWARDICE,
+    BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, BORG_CURSE_PARALYSIS, BORG_CURSE_SLOWNESS,
+};
+use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_FIRST_CURSED, BI_GOLD, BI_WHERE_CURSED, BORG_EQUIP};
+use crate::borg_io::{borg_keypress, borg_note_bytes};
+use crate::borg_item::{inven_wield, quiver_start};
+use crate::borg_item_decurse::can_decurse;
+use crate::engine;
+use crate::headers::list_object_flags_h::OF_STICKY;
+use crate::headers::ui_event_h::keycode_t;
+use crate::state::BorgState;
+
+/// Curses the Borg does not wear at any power, with what each costs
+/// (`engine/angband/lib/gamedata/curse.txt`): annoyance is `SPEED[-10]`,
+/// `STEALTH[-10]` and `AGGRAVATE`; anti-teleportation is `NO_TELEPORT`
+/// (it also stops Phase Door, #829); paralysis can freeze the player;
+/// impair hitpoint recovery is `IMPAIR_HP`; cowardice is `AFRAID`;
+/// slowness is `SPEED[-5]`. The first five are the owner's list
+/// (#830, 2026-11-21); slowness is added because it is the same kind of
+/// loss as annoyance's speed penalty. Every other curse stays with the
+/// power model's prices and `borg_remove_stuff`.
+const HARMFUL: [(u32, &str); 6] = [
+    (BORG_CURSE_ANNOYANCE, "annoyance: -10 speed, aggravate"),
+    (BORG_CURSE_ANTI_TELEPORTATION, "anti-teleportation: no teleport, no Phase Door"),
+    (BORG_CURSE_PARALYSIS, "paralysis"),
+    (BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, "impair hitpoint recovery"),
+    (BORG_CURSE_COWARDICE, "cowardice"),
+    (BORG_CURSE_SLOWNESS, "slowness: -5 speed"),
+];
+
+/// The first harmful curse an item is known to carry, as text for the note.
+/// Only what the Borg has learned counts: `borg_item.curses` is read from
+/// the player's knowledge of the object (a `{??}` item shows none).
+pub(crate) fn harmful_curse(item: &borg_item) -> Option<&'static str> {
+    if item.iqty == 0 || !item.cursed {
+        return None;
+    }
+    HARMFUL.iter().find(|(k, _)| item.curses[*k as usize]).map(|&(_, why)| why)
+}
+
+/// What `borg_remove_cursed` has tried, to give up on an item that stays on
+/// (a take-off the game refuses must not become a loop).
+#[derive(Default)]
+pub(crate) struct Removal {
+    slot: i32,
+    tries: u8,
+}
+
+/// Attempts at one slot before the Borg stops trying it.
+const MAX_TRIES: u8 = 3;
+
+/// The slot to take off: the first equipment slot (indexes into `items`,
+/// `first..end`) holding an item with a harmful curse that can come off.
+/// `The One Ring` is left to its own handling and a `STICKY` item cannot
+/// be taken off.
+fn pick(items: &[borg_item], first: usize, end: usize) -> Option<usize> {
+    (first..end.min(items.len())).find(|&i| {
+        let item = &items[i];
+        !item.one_ring
+            && harmful_curse(item).is_some()
+            && !engine::flag_has(&item.flags, OF_STICKY as i32)
+    })
+}
+
+/// The bytes of a C `desc` buffer, up to its NUL.
+fn desc(item: &borg_item) -> Vec<u8> {
+    item.desc.iter().take_while(|&&c| c != 0).map(|&c| c as u8).collect()
+}
+
+/// Take off a worn item with a harmful curse, leaving the slot empty
+/// (the engine puts it in the pack). It runs before the fight and caution
+/// branches: a curse that aggravates, slows or blocks teleportation is
+/// worth one turn at once. The item is then worthless to the Borg (every
+/// cursed item is, `borg_item_analyze.rs`), so no wear routine puts it
+/// back on.
+pub(crate) fn borg_remove_cursed(st: &mut BorgState) -> bool {
+    let first = inven_wield();
+    let end = quiver_start();
+
+    /* the tracked slot is empty again: the take-off worked */
+    let tracked = st.think_dungeon.cursed.slot;
+    if st.think_dungeon.cursed.tries != 0
+        && st.items.items.get(tracked as usize).map_or(true, |i| i.iqty == 0)
+    {
+        st.think_dungeon.cursed = Removal::default();
+    }
+
+    let Some(i) = pick(&st.items.items, first as usize, end as usize) else {
+        return false;
+    };
+    let slot = i as i32;
+
+    /* a slot that stays occupied after repeated tries is left alone */
+    let removal = &mut st.think_dungeon.cursed;
+    if removal.slot == slot && removal.tries >= MAX_TRIES {
+        return false;
+    }
+    if removal.slot != slot || removal.tries == 0 {
+        removal.slot = slot;
+        removal.tries = 0;
+    }
+    removal.tries += 1;
+
+    let item = st.items.items[i];
+    let why = harmful_curse(&item).unwrap_or("");
+    let mut note = b"# Removing cursed ".to_vec();
+    note.extend_from_slice(&desc(&item));
+    note.extend_from_slice(format!(" ({why})").as_bytes());
+    borg_note_bytes(st, &note);
+
+    /* `borg_remove_stuff`'s take-off: `t` and the equipment letter */
+    borg_keypress(st, keycode_t::from(b't'));
+    borg_keypress(st, engine::all_letters_nohjkl(slot - first) as i8 as keycode_t);
+    true
+}
+
+/// Whether the Borg must go to town for Remove Curse: it wears an item with
+/// a removable curse, has no way to remove it (no scroll, staff, spell or
+/// activation), and can pay for a scroll. In the dungeon only. This is the
+/// case where it keeps the item: `borg_remove_cursed` has already taken off
+/// every harmful one it can, so what is left is a mild curse on an item the
+/// power model prefers to bare skin, or a curse the take-off cannot end.
+/// In town the shopping round buys the scroll and `borg_enchanting` reads it
+/// (`borg_store_buy.rs`: Remove Curse is acceptable while `BI_FIRST_CURSED`
+/// is set).
+pub(crate) fn needs_remove_curse(st: &mut BorgState) -> bool {
+    let kind = st.item_val.kv_scroll_remove_curse;
+    let price = usize::try_from(kind).ok().map_or(0, engine::kind_cost_of);
+    let (depth, first, wh, gold) = (
+        st.borg.tr(BI_CDEPTH),
+        st.borg.tr(BI_FIRST_CURSED),
+        st.borg.tr(BI_WHERE_CURSED),
+        st.borg.tr(BI_GOLD),
+    );
+    /* the cheap tests first: `can_decurse` looks through the pack */
+    if !worn_cursed(depth, first, wh) {
+        return false;
+    }
+    needs_remove_curse_with(can_decurse(st), gold, price)
+}
+
+/// A removable curse on worn equipment, in the dungeon (a cursed arrow in
+/// the quiver is not worth a trip).
+fn worn_cursed(depth: i32, first_cursed: i32, where_cursed: i32) -> bool {
+    depth != 0 && first_cursed != 0 && where_cursed & BORG_EQUIP as i32 != 0
+}
+
+/// The rest of the decision, once its inputs are known: no means to remove
+/// a curse in hand, and the purse covers the scroll's base price (the
+/// stores charge at least that: no trip is made for a scroll the Borg
+/// cannot pay for).
+fn needs_remove_curse_with(can_decurse: bool, gold: i32, price: i32) -> bool {
+    !can_decurse && price > 0 && gold >= price
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_item_h::BORG_CURSE_AIR_SWING;
+    use crate::borg_headers::borg_trait_h::{BORG_INVEN, BORG_QUILL};
+    use crate::borg_item::blank_item;
+
+    fn cursed(curse: u32) -> borg_item {
+        let mut item = blank_item();
+        item.iqty = 1;
+        item.cursed = true;
+        item.curses[curse as usize] = true;
+        item
+    }
+
+    #[test]
+    fn the_owners_curses_are_harmful_at_any_power() {
+        for curse in [
+            BORG_CURSE_ANNOYANCE,
+            BORG_CURSE_ANTI_TELEPORTATION,
+            BORG_CURSE_PARALYSIS,
+            BORG_CURSE_IMPAIR_HITPOINT_RECOVERY,
+            BORG_CURSE_COWARDICE,
+        ] {
+            assert!(harmful_curse(&cursed(curse)).is_some(), "curse {curse}");
+        }
+        assert!(harmful_curse(&cursed(BORG_CURSE_AIR_SWING)).is_none());
+    }
+
+    #[test]
+    fn an_empty_or_uncursed_slot_is_not_harmful() {
+        let mut item = cursed(BORG_CURSE_ANNOYANCE);
+        item.iqty = 0;
+        assert!(harmful_curse(&item).is_none());
+        let mut item = cursed(BORG_CURSE_ANNOYANCE);
+        item.cursed = false;
+        assert!(harmful_curse(&item).is_none());
+    }
+
+    #[test]
+    fn the_first_harmful_equipment_slot_is_taken_off() {
+        let mut items = vec![blank_item(); 8];
+        items[1] = cursed(BORG_CURSE_AIR_SWING);
+        items[3] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
+        items[5] = cursed(BORG_CURSE_ANNOYANCE);
+        assert_eq!(pick(&items, 2, 8), Some(3));
+        assert_eq!(pick(&items, 4, 8), Some(5));
+        /* the pack (slots before `first`) is never taken off */
+        assert_eq!(pick(&items, 6, 8), None);
+    }
+
+    #[test]
+    fn the_one_ring_is_left_alone() {
+        let mut items = vec![blank_item(); 4];
+        items[2] = cursed(BORG_CURSE_ANNOYANCE);
+        items[2].one_ring = true;
+        assert_eq!(pick(&items, 0, 4), None);
+    }
+
+    #[test]
+    fn only_worn_equipment_in_the_dungeon_is_worth_a_trip() {
+        let eq = BORG_EQUIP as i32;
+        assert!(worn_cursed(1, 7, eq));
+        /* the bit set may name the quiver as well */
+        assert!(worn_cursed(1, 7, eq | BORG_QUILL as i32));
+        /* in town the shopping round already buys it */
+        assert!(!worn_cursed(0, 7, eq));
+        /* nothing cursed */
+        assert!(!worn_cursed(1, 0, 0));
+        /* a cursed pack item is not worn (`BORG_INVEN` and `BORG_QUILL` only) */
+        assert!(!worn_cursed(1, 7, BORG_INVEN as i32 | BORG_QUILL as i32));
+    }
+
+    #[test]
+    fn a_trip_for_remove_curse_needs_no_other_way_and_the_gold() {
+        assert!(needs_remove_curse_with(false, 100, 100));
+        assert!(needs_remove_curse_with(false, 500, 100));
+        /* cannot pay */
+        assert!(!needs_remove_curse_with(false, 99, 100));
+        /* a scroll, staff, spell or activation is in hand */
+        assert!(!needs_remove_curse_with(true, 500, 100));
+        /* the scroll kind is unknown to the Borg */
+        assert!(!needs_remove_curse_with(false, 500, 0));
+    }
+}

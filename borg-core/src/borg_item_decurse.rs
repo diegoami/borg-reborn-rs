@@ -52,7 +52,7 @@ fn key(c: u8) -> keycode_t {
 
 /// The "Ability for curses" test: false when the Borg has no scroll,
 /// staff, spell or activation that removes a curse.
-fn can_decurse(st: &mut BorgState) -> bool {
+pub(crate) fn can_decurse(st: &mut BorgState) -> bool {
     let sv_scroll = st.item_val.sv_scroll_remove_curse;
     let sv_staff = st.item_val.sv_staff_remove_curse;
     let sv_star = st.item_val.sv_scroll_star_remove_curse;
