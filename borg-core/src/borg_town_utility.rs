@@ -237,8 +237,24 @@ impl Utility {
 /// the old helper unchanged so historical v4 records retain their semantics.
 pub fn urgent_needs(st: &BorgState, trip: &crate::borg_town_usefulness::Trip) -> Vec<Need> {
     let advanced_cure = [BI_AHEAL, BI_AEZHEAL, BI_ALIFE].iter().any(|&i| st.borg.tr(i) > 0);
-    crate::borg_town_usefulness::urgent_needs(st, trip).into_iter()
-        .filter(|n| !advanced_cure || !matches!(n, Need::Healing | Need::Poison)).collect()
+    let mut out: Vec<Need> = crate::borg_town_usefulness::urgent_needs(st, trip).into_iter()
+        .filter(|n| !advanced_cure || !matches!(n, Need::Healing | Need::Poison)).collect();
+    if recall_urgent(st) { out.push(Need::Trip); }
+    out
+}
+
+/// borg-reborn-rs (#859, owner: "Word of recall should have a high value"):
+/// with `town_recall_urgent`, the first Word of Recall is urgent when the
+/// next trip reaches the dive gate (`prepared_recall_depth`) and none is
+/// carried: without it the Borg cannot dive, whatever else it buys.
+pub(crate) fn recall_urgent(st: &BorgState) -> bool {
+    let gate = param(Param::prepared_recall_depth);
+    param(Param::town_recall_urgent) != 0
+        && recall_gate_reached(Journey::of(st).depth, gate, st.borg.tr(BI_RECALL))
+}
+
+fn recall_gate_reached(trip_depth: i64, gate: i32, carried: i32) -> bool {
+    gate > 0 && trip_depth >= i64::from(gate) && carried < 1
 }
 
 /// Opportunity cost of occupying pack room: the utility of finding an
@@ -1140,6 +1156,17 @@ mod tests {
             qty: 4, weight: 5, slots_cost: 1, stack_count: 0, class: 0 }];
         assert_eq!(storing_target(&inp, &u, Room { weight: 30, slots: 2 }), Room { weight: 35, slots: 3 });
         assert_eq!(storing_target(&inp, &u, Room::default()), Room::default());
+    }
+
+    /// #859: the first Recall is urgent once the next trip reaches the dive
+    /// gate and none is carried; never with the gate off.
+    #[test]
+    fn the_first_recall_is_urgent_at_the_dive_gate() {
+        assert!(recall_gate_reached(5, 5, 0));
+        assert!(recall_gate_reached(9, 5, 0));
+        assert!(!recall_gate_reached(4, 5, 0), "the trip stays above the gate");
+        assert!(!recall_gate_reached(5, 5, 1), "one is carried");
+        assert!(!recall_gate_reached(5, 0, 0), "no gate");
     }
 
 }

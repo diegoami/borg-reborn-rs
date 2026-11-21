@@ -779,8 +779,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // `town_recall_curve_scale_percent` on (> 0) values every scroll on a
     // diminishing curve on the trip weight, never zero, with the reserve a
     // requirement on top of it (RECALL_RESERVE, as Phase Door's). 0 = #557.
-    let ((weight, demand), reserve_row) = recall_curve(cfg(BORG_TOWN_W_TRIP) * UNIT, walk_value, recall_reserve,
-        param(Param::town_recall_curve_scale_percent));
+    // With the curve on, the trip weight grows with the trip's exposure, as
+    // healing's and the escapes' do (#859): deeper and longer, a scroll is
+    // worth more, never less than before.
+    let recall_scale = param(Param::town_recall_curve_scale_percent);
+    let trip_weight = if recall_scale > 0 { cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT) } else { cfg(BORG_TOWN_W_TRIP) * UNIT };
+    let ((weight, demand), reserve_row) = recall_curve(trip_weight, walk_value, recall_reserve, recall_scale);
     curve(RECALL, weight, demand);
     if let Some((weight, demand)) = reserve_row { curve(RECALL_RESERVE, weight, demand); }
     let damage_scale = journey.level * 2 + 4;

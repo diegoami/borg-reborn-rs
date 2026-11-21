@@ -330,8 +330,10 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32
         } else { gold };
         let recall_floor = crate::borg_store_buy::recall_purchase_floor();
+        // #859: an urgent Recall (the dive gate's) is not held back by the floor.
         let protects_recall = a.code == action::BUY && recall_floor > 0
-            && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval);
+            && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval)
+            && !crate::borg_town_utility::recall_urgent(st);
         if protects_recall {
             purchase_gold = purchase_gold.min(crate::borg_store_buy::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
         }

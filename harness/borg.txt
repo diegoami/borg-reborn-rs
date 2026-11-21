@@ -348,6 +348,13 @@ borg_param_town_recall_value_percent = 100
 
 borg_param_town_recall_curve_scale_percent = 110
 
+# The first Word of Recall is urgent (#859, owner: "Word of recall should have
+# a high value"): when the next trip reaches prepared_recall_depth and none
+# is carried, it is bought first, before anything is weighed, and the
+# buy_recall_from_gold floor does not hold it back. 0 = off.
+
+borg_param_town_recall_urgent = 1
+
 # Aim to keep one Word of Recall when the purse after urgent shopping
 # reaches 400 gold. Buying a scroll must leave at least 400 gold after
 # paying its price. A reserve of 0 disables the target.

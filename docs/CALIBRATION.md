@@ -737,7 +737,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:318` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:334` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -2115,8 +2115,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:424` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1594` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1554` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1598` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1558` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5210,7 +5210,7 @@ relabelled as new07aa4b1e proof. This status does not accept P6 or main promotio
 
 ## Departure room, the Recall curve and surplus-first storing (#859)
 
-The registry now holds **2297** parameters (2293 before; four added).
+The registry now holds **2298** parameters (2293 before; five added).
 Owner, 2026-11-21: a Borg with 20,000 gold did not buy a Word of Recall, so
 the dive gate (`prepared_recall_depth`, DL5) held it shallow: "it seems that
 purchases are stopped because of carry weight". With #711's
@@ -5247,12 +5247,22 @@ Word of Recall, weight 5).
   (`RECALL_RESERVE`, as `PHASE_RESERVE` is on top of `PHASE`;
   `recall_curve`). 0 = #557: the reserve alone, nothing past it, and below
   the gold floor the walk a scroll saves.
+- **`town_recall_urgent`** (compiled 0, **shipped 1**; owner: "Word of
+  recall should have a high value"). When the next trip reaches
+  `prepared_recall_depth` and no scroll is carried (`recall_urgent`,
+  `borg_town_utility.rs`), the first Word of Recall is an urgent need: the
+  urgent pass (`Budget::of`) buys it before the solver weighs anything, as
+  missing light or food, and `buy_recall_from_gold` does not hold it back
+  (`execute_store`). With the curve on, the Recall trip weight is also
+  multiplied by the trip's exposure (never below the flat weight), as
+  healing's and the escapes' are, so a scroll is worth more deeper.
 - The shipped values are hypotheses. The zoo request on the PR measures
   them (RULES 14, 20).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:264` |
-| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:265` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:319` |
+| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:280` |
+| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:281` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:336` |
+| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:252` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:772` |
