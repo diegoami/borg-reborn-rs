@@ -276,7 +276,12 @@ enough" test would flap).
 
 **Curiosity**: `kit_descent_min_percent` refuses a descent below DL1 while the
 score is below it (`borg_prepared`: a descent from DL1 to DL2 and deeper;
-the way out of town is never refused); `kit_leave_danger_percent` takes the up
+the way out of town is never refused). `borg_prepared` is asked about many
+depths (the power dives at +5, the recall probes at +20 and 60% of the
+deepest level, 99), so the floor refuses every depth below the Borg's own,
+not only the next, while the mode applies (CL up to `kit_max_level`); a depth
+at or above its own is never refused, so it never keeps a Borg from going up
+or to town; `kit_leave_danger_percent` takes the up
 stairs under the Borg at the first danger of that share of its HP, as #614's
 rule does for a Borg that has to recover, and starts a flight to the stairs
 when it is off them (`borg_caution`).

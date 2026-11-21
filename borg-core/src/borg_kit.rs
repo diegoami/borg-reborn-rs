@@ -233,7 +233,8 @@ fn light_turns(st: &BorgState) -> i32 {
             continue;
         }
         // Each torch of a stack has its own fuel; only the wielded light burns
-        // (`player-util.c`, player_update_light), so the spares keep theirs.
+        // (`player-util.c`, player_update_light), so the spares keep theirs: the
+        // core's own convention (`borg_light.rs`, `light_stack_turns`).
         if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch && !lantern {
             turns += i32::from(item.timeout).max(0) * i32::from(item.iqty);
         }
