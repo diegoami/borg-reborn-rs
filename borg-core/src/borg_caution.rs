@@ -1625,10 +1625,52 @@ pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     immobile_kept_at_range(st, r_idx) || listed_ranged(st, r_idx)
 }
 
+/// borg-reborn-rs (#838): the danger from the monsters that move is at least
+/// `percent` of the HP.
+fn threat_over(danger: i32, hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#838, owner: the reach of a monster kept at range "must not
+/// override threats from mobile monsters"): with
+/// `caution_kept_reach_threat_percent`, whether the known monsters that move
+/// threaten the Borg now (their danger over `defend_danger_horizon` turns,
+/// as `borg_fight_speed` sums it), while some monster kept at range is known.
+/// Then its reach does not stop a flow. Off (0): never, with no scan.
+pub(crate) fn kept_reach_threat(st: &mut BorgState) -> bool {
+    let percent = p(Param::caution_kept_reach_threat_percent);
+    if percent == 0 {
+        return false;
+    }
+    let nxt = i32::from(st.kills.nxt);
+    let any_kept = (1..nxt).any(|i| {
+        let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
+        r_idx != 0 && kept_at_range(st, r_idx)
+    });
+    if !any_kept {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let horizon = p(Param::defend_danger_horizon);
+    let mut danger = 0i32;
+    for i in 1..nxt {
+        let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
+        if r_idx == 0 || engine::race_flag_has(r_idx, RF_NEVER_MOVE) {
+            continue;
+        }
+        danger = danger.saturating_add(crate::borg_danger::borg_danger_one_kill(st, y, x, horizon, i, true, true));
+    }
+    threat_over(danger, st.borg.tr(BI_CURHP), percent)
+}
+
 /// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of a
-/// creature kept at range (its reach). Off: no scan.
+/// creature kept at range (its reach). Off: no scan. Not while the monsters
+/// that move are a threat (`kept_reach_open`, #838).
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0) || st.flow.to_stairs {
+    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0)
+        || st.flow.to_stairs
+        || st.flow.kept_reach_open
+    {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -7099,5 +7141,20 @@ mod confused_step_tests {
         assert!(!step_allowed(&mut mon, 1, (99, 99), true));
         assert!(step_left(&mon, 1, (3, 3), true), "a known attacker keeps its tries");
         assert!(step_left(&mon, 2, (99, 99), true), "a new level forgets them");
+    }
+}
+
+#[cfg(test)]
+mod kept_reach_threat_tests {
+    use super::threat_over;
+
+    /// #838: the comparison is danger against a percent of the HP; 0 is off.
+    #[test]
+    fn a_threat_is_danger_at_a_percent_of_the_hp() {
+        assert!(threat_over(50, 100, 50), "exactly 50% of 100 HP");
+        assert!(!threat_over(49, 100, 50));
+        assert!(threat_over(10, 0, 50), "no HP left is any danger");
+        assert!(!threat_over(1_000_000, 100, 0), "0 = off");
+        assert!(threat_over(i32::MAX, i32::MAX, 100), "no overflow");
     }
 }
