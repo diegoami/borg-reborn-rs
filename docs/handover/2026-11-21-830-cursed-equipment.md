@@ -93,7 +93,8 @@ this PR guards that. That is a separate issue, not done here.
   mild known curse, which `start-build` cannot construct (it rejects curses,
   harness/README.md) and which a natural start reaches by chance. The zoo
   request counts the "restock remove curse" trips.
-- Survival: no measurement. The zoo request is the way (RULES 14, 20).
+- Survival: no measurement. The zoo pilot is requested in diegoami/borg-zoo#583
+  (base 88d98537 against this branch, with a no-stall gate; RULES 14, 20).
 - The Ranger and Priest runs above are at 3b4924ba with the changes applied
   by hand (the main branch moved since); the Warrior's at e8b3acfd without
   the trip and the gate. They show what the changes do in the zoo's own
