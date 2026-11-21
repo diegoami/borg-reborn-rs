@@ -45,6 +45,7 @@ HOOKED = {
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
     'src/borg_trip.rs',  # #795: trace the live trip preparedness check
     'src/borg_prepared.rs',  # #447: independent plan cap
+    'src/borg_headers/borg_h.rs', 'src/borg_town_solve.rs',  # #810: Black Market reserve
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
     'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
