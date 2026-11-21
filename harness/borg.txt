@@ -269,14 +269,19 @@ borg_param_town_departure_free_slots = 2
 borg_param_town_store_keep_min = 3
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
-# situations"). Above 0, each situation's remedy (Neutralize Poison or Cure
-# Critical Wounds, Remove Curse, Detect Invisible, a confusion cure, a fear
-# cure) is worth a small diminishing amount even while the condition is
-# absent: this percent of the trip weight, at half its value with
-# prepared_copies copies. 0 = off. Hypotheses, not yet measured in the zoo.
+# situations"; "if I have 20 CLW I would have say 4 detect invisible and 2
+# remove curse"). Above 0, each situation's remedy is worth a small
+# diminishing amount even while the condition is absent: this percent of the
+# trip weight, at half its value with the copies below. The planner buys them
+# after the urgent needs and the staples, by value per gold, so a richer Borg
+# buys more. 0 = off. Hypotheses, not yet measured in the zoo.
 
-borg_param_town_prepared_percent = 0
-borg_param_town_prepared_copies = 2
+borg_param_town_prepared_percent = 8
+borg_param_town_prepared_poison = 3
+borg_param_town_prepared_invisible = 4
+borg_param_town_prepared_curse = 2
+borg_param_town_prepared_confusion = 2
+borg_param_town_prepared_fear = 2
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

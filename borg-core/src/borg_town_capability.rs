@@ -901,10 +901,17 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // couple of copies each is worth little. The condition-present curves
     // (poisoned, cursed, ...) stay as they are on top. 0 = off.
     if count > RECALL_RESERVE && !recall_on { curve(RECALL_RESERVE, 0, UNIT); }
-    let (prep_weight, prep_demand) = prepared_row(cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT),
-        param(Param::town_prepared_percent), param(Param::town_prepared_copies));
     if prepared {
-        for (_, row) in PREPARED { curve(row, prep_weight, prep_demand); }
+        // borg-reborn-rs (#863, owner: "if I have 20 CLW I would have say 4
+        // detect invisible and 2 remove curse"): each remedy's own copies.
+        let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
+        let percent = param(Param::town_prepared_percent);
+        for (row, copies) in [(PREP_POISON, Param::town_prepared_poison), (PREP_CURSE, Param::town_prepared_curse),
+            (PREP_INVISIBLE, Param::town_prepared_invisible), (PREP_CONFUSION, Param::town_prepared_confusion),
+            (PREP_FEAR, Param::town_prepared_fear)] {
+            let (weight, demand) = prepared_row(trip_weight, percent, param(copies));
+            curve(row, weight, demand);
+        }
     }
     // borg-reborn-rs (#863, owner: "make staple objects start losing value
     // from [a few] copies, compared to the objects that are not in the
@@ -1300,7 +1307,7 @@ mod tests {
     /// curse in the pack and 20 light wounds than 40 light wound potions"):
     /// with 20 Cure Light Wounds carried, the first copies of each remedy are
     /// worth more than the 21st Cure Light Wounds; past a couple they are
-    /// worth little; and every copy is worth something.
+    /// worth nothing.
     #[test]
     fn the_first_remedies_are_worth_more_than_the_21st_cure_light_wounds() {
         // The numbers `observe` makes at CL5, DL3, 100 HP: exposure 780, the
@@ -1314,17 +1321,17 @@ mod tests {
         let clw = 6060;
         let twenty_first = m.gain(&[(HEAL, clw)]);
         assert!(twenty_first > 0, "a copy is worth something: {twenty_first}");
-        let (w, d) = prepared_row(trip, 25, 2);
+        let (w, d) = prepared_row(trip, 8, 2);
         for (_, row) in PREPARED { m.curves[row] = [row as i64, w, d, 0, 0]; }
         for (cap, row) in PREPARED {
-            let first = m.gain(&[(row, UNIT)]);
-            let gains: Vec<i64> = (1..=6).map(|n| m.gain(&[(row, n * UNIT)]) - m.gain(&[(row, (n - 1) * UNIT)])).collect();
-            assert!(first > 2 * twenty_first, "capability {cap}: the first copy {first} beats the 21st CLW {twenty_first}");
-            assert!(gains[2] <= twenty_first * 11 / 10 && gains[3] < twenty_first, "capability {cap}: the 3rd-4th copy is worth no more than the 21st CLW: {gains:?} vs {twenty_first}");
-            assert!(gains.windows(2).all(|g| g[1] < g[0] && g[1] > 0), "capability {cap}: each less, never nothing: {gains:?}");
+            let gains: Vec<i64> = (1..=4).map(|n| m.gain(&[(row, n * UNIT)]) - m.gain(&[(row, (n - 1) * UNIT)])).collect();
+            assert!(gains[0] > 2 * twenty_first && gains[1] > 2 * twenty_first, "capability {cap}: the target copies {gains:?} beat the 21st CLW {twenty_first}");
+            assert_eq!(gains[0], gains[1], "capability {cap}: each target copy is worth the same");
+            assert_eq!(gains[2..], [0, 0], "capability {cap}: nothing past the target");
         }
         assert_eq!(prepared_row(trip, 0, 2).0, 0, "0 percent: no weight");
-        assert_eq!(prepared_row(trip, 25, 0).1, UNIT, "at least one copy of demand");
+        assert_eq!(prepared_row(trip, 8, 0), (scale_percent(trip, 8), -UNIT), "at least one copy");
+        assert_eq!(prepared_row(trip, 8, 4), (4 * scale_percent(trip, 8), -4 * UNIT), "the same value a copy, whatever the target");
     }
 
     fn staple_model() -> Model {
@@ -1393,10 +1400,16 @@ mod tests {
         let plain_21st = { let mut p = staple_model(); p.curves[HEAL][3] = 20 * clw; p.gain(&[(HEAL, clw)]) };
         let twenty_first = one(&m, STAPLE_CLW, clw, 20);
         assert!(twenty_first * 10 < plain_21st * 2, "the 21st: {twenty_first} vs {plain_21st}");
-        let (w, d) = prepared_row(50 * 1000, 25, 2);
+        let (w, d) = prepared_row(50 * 1000, 8, 2);
         m.curves[PREP_CURSE] = [PREP_CURSE as i64, w, d, 0, 0];
-        let third_remove_curse = m.gain(&[(PREP_CURSE, 3 * UNIT)]) - m.gain(&[(PREP_CURSE, 2 * UNIT)]);
-        assert!(third_remove_curse > twenty_first, "the 3rd Remove Curse {third_remove_curse} beats the 21st Cure Light Wounds {twenty_first}");
+        let second_remove_curse = m.gain(&[(PREP_CURSE, 2 * UNIT)]) - m.gain(&[(PREP_CURSE, UNIT)]);
+        assert!(second_remove_curse > twenty_first, "the 2nd Remove Curse {second_remove_curse} beats the 21st Cure Light Wounds {twenty_first}");
+        // The owner's pack: 20 Cure Light Wounds, 4 Detect Invisible, 2 Remove Curse.
+        let (w, d) = prepared_row(50 * 1000, 8, 4);
+        m.curves[PREP_INVISIBLE] = [PREP_INVISIBLE as i64, w, d, 0, 0];
+        let fourth_detect = m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 3 * UNIT)]);
+        assert!(fourth_detect > twenty_first, "the 4th Detect Invisible {fourth_detect} beats the 21st Cure Light Wounds {twenty_first}");
+        assert_eq!(m.gain(&[(PREP_INVISIBLE, 5 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]), 0, "the 5th is worth nothing");
     }
 
     /// #863: a capability id past 63 does not overflow the group mask.
@@ -1865,12 +1878,14 @@ fn staple_on() -> bool {
 
 fn prepared_on() -> bool { param(Param::town_prepared_percent) > 0 }
 
-/// borg-reborn-rs (#863): a prepared row's weight and demand. The weight is
-/// `percent` of the trip weight; the demand is `copies` copies, so the curve
-/// is at half its value at that many (each copy worth less than the last,
-/// never nothing).
+/// borg-reborn-rs (#863): a prepared row's weight and demand. A requirement
+/// (negative demand, as Phase Door's reserve): each of the first `copies`
+/// copies is worth `percent` of the trip weight, a copy past them nothing, so
+/// a cheap remedy (an 8 gold Potion of Boldness) is bought to its target and
+/// no further (the diminishing curve it replaced let it pile up to 8).
 fn prepared_row(trip_weight: i64, percent: i32, copies: i32) -> (i64, i64) {
-    (scale_percent(trip_weight, percent), i64::from(copies.max(1)) * UNIT)
+    let copies = i64::from(copies.max(1));
+    (scale_percent(trip_weight, percent) * copies, -copies * UNIT)
 }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {

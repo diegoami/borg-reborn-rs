@@ -2115,8 +2115,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:510` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:949` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:701` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1883` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1825` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1898` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1837` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5291,21 +5291,31 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   the situation's capability (`supplies_of_kind`; a device: one per charge),
   so Neutralize Poison and Cure Critical Wounds fill the poison row,
   Detect Invisible the invisible row, Remove Curse the curse row, and so on.
-  Each row is a diminishing curve (`prepared_row`) with its weight this
-  percent of the trip weight (`borg_town_w_trip` x exposure, as Recall's)
-  and its demand `town_prepared_copies` copies. The condition-present
+  Each row is a requirement (`prepared_row`, as Phase Door's reserve): each
+  of the first N copies is worth this percent of the trip weight
+  (`borg_town_w_trip` x exposure, as Recall's), a copy past them nothing; N is the remedy's own copies (`town_prepared_poison` 3, `_invisible` 4, `_curse` 2, `_confusion` 2, `_fear` 2). The condition-present
   curves (poisoned, cursed, afraid, ...) stay as they are, on top. 0 = the
   model has the shape it had before (no rows).
-- **`town_prepared_copies`** (compiled 2): the copies at which each row is
-  at half its value.
+- **`town_prepared_poison`, `_invisible`, `_curse`, `_confusion`, `_fear`**
+  (compiled and shipped 3, 4, 2, 2, 2; owner: "if I have 20 CLW I would
+  have say 4 detect invisible and 2 remove curse"): the copies of each
+  remedy wanted (nothing past them; a diminishing curve first tried let an
+  8 gold Boldness pile up to 8 carried). Neutralize Poison, Resist Poison
+  (also `CURE:POISONED`, 30 gold) and Cure Critical Wounds fill the poison
+  row; Cure Serious and Critical Wounds the confusion row; Boldness, Heroism
+  and Berserk Strength the fear row (`object.txt`). Remove Curse (100 gold)
+  is always in the Alchemist's stock and Detect Invisible (15 gold) is a
+  normal item there (`store.txt`): the planner buys them by value per gold
+  after the urgent needs and the staples, so a richer Borg buys more of the
+  dearer ones.
 - Unit check (`the_first_remedies_are_worth_more_than_the_21st_cure_light_wounds`):
   with the numbers `observe` makes at CL5, DL3, 100 HP and the shipped 125
-  percent healing scale, at 25 percent and 2 copies the first copy of each
-  remedy is worth more than twice the 21st Cure Light Wounds, the third and
-  later copies no more than it, every copy something. Those numbers are an
+  percent healing scale, at 8 percent and 2 copies each target copy of each
+  remedy is worth the same and more than twice the 21st Cure Light Wounds, a
+  copy past the target nothing. Those numbers are an
   estimate, not a live reading.
-- The shipped value stays 0: no value is chosen before a zoo pilot (RULES
-  14, 20). Candidates to measure: 25 percent and 2 copies; 50 and 3.
+- **Shipped 8** (`town_prepared_percent`: a copy is worth 8 percent of the trip weight, about what the first copy of the diminishing curve was at 25 percent), with the copies above: before it,
+  the Borg never bought Detect Invisible or Remove Curse (owner: "that is what we want to change"). A hypothesis for the zoo (RULES 14, 20); candidates 25 and 50.
 - The group mask (`Model::mask`) is 64 bits and capability ids reach 63
   already, so the five prepared rows share bit 63 (with the Recall reserve
   and the packing room): their groups are valued jointly, which only widens
@@ -5373,11 +5383,19 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   departure stay close to the baseline (Cure Light medians 11-23 against
   15-23, Phase Door 4-17 against 3-13); mean CL 8.6 against 8.8, mean max
   depth 3.58 against 3.64, 2 of 36 stopped early in both. That is a sanity
-  check on 36 games, not a measurement. With `town_prepared_percent` 25 as
-  well: Cure Light medians 13-20, Neutralize Poison 2-5 for six classes
-  (0-2 before), mean CL 8.8, mean max depth 3.53, 1 of 36 stopped early.
-  Detect Invisible and Remove Curse stayed at a median of 0: the shops visited did not
-  offer them or the planner did not buy them in these games (#810).
+  check on 36 games, not a measurement.
+- Same 36 games with the remedies shipped on (`town_prepared_percent` 8,
+  copies 3, 4, 2, 2, 2) as well: bought per game, Detect Invisible 0 ->
+  9.6 (the core reads them fast against invisible attackers, #831), Remove
+  Curse 1.0 -> 1.0, Neutralize or Resist Poison 0 -> 0.4, a fear remedy 0.6
+  -> 2.4; Cure Light Wounds 7.5 -> 6.9. Carried at a departure, the median
+  is 2-4 Detect Invisible for seven classes (target 4), 0-3 poison cures,
+  0 Remove Curse: it costs 100 gold, so by value per gold it comes after the
+  staples and the cheaper remedies, and these games (mean CL 9) seldom have
+  the gold. Mean CL 9.2, mean max depth 4.0, 1 of 36 stopped early (the
+  baseline 8.6, 3.6, 2 of 36): within the noise of 36 games, no claim. A
+  first version (a diminishing curve, 25 percent) let an 8 gold Boldness
+  pile up (6.1 bought a game, 8 carried); the requirement shape caps it.
 - Unit checks (`staples_decay_after_their_free_copies`): for Phase Door, oil,
   food and light the free copies are as before, the next keeps about 80
   percent, every later copy is worth something and less than the one
@@ -5391,8 +5409,12 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:820` |
-| `town_prepared_copies` | 2 | copies | 1–20 | `borg_town_capability.rs:820` |
+| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:908` |
+| `town_prepared_poison` | 3 | copies | 1–20 | `borg_town_capability.rs:909` |
+| `town_prepared_invisible` | 4 | copies | 1–20 | `borg_town_capability.rs:910` |
+| `town_prepared_curse` | 2 | copies | 1–20 | `borg_town_capability.rs:909` |
+| `town_prepared_confusion` | 2 | copies | 1–20 | `borg_town_capability.rs:910` |
+| `town_prepared_fear` | 2 | copies | 1–20 | `borg_town_capability.rs:911` |
 | `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:919` |
 | `town_staple_clw` | 0 | copies | 0–99 | `borg_town_capability.rs:923` |
 | `town_staple_csw` | 0 | copies | 0–99 | `borg_town_capability.rs:924` |
