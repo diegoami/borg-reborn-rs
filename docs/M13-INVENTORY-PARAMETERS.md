@@ -90,7 +90,8 @@ slopes may remain discontinuous, as in the original policy.
 ## Shopping replacement and R4 handoff
 
 #293 remains open. The historical chooser is still selected by
-`borg_town_plan = 0` (the harness default); the explicit M13 planner is chosen
+`borg_town_plan = 0` (the compiled default; the shipped `harness/borg.txt`
+sets 1 since #479); the explicit M13 planner is chosen
 by `borg_town_plan = 1` in `borg_choose_shop`. This work names the existing
 reachable policy; it does not endorse it as the replacement specification,
 restore removed opportunism or create a second shopping implementation.

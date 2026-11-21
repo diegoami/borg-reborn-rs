@@ -21,7 +21,8 @@ the build, the harness, the evidence tools and the Borg itself. No part
 depends on, follows, or is limited by any other Borg project, borg-rs in
 particular, with one exception made on purpose: borg-rs's decision core,
 vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
-(§2 amendment, 2026-11-14).
+(§2 amendment, 2026-11-14); since #606 it is also the core a run with no
+`BORG_CORE` plays (updated 2026-11-21, #816).
 
 ## 2. Independence
 
@@ -30,7 +31,11 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 > milestone the owner picks. **The decision core:** borg-rs's crate is
 > vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
 > Our changes to it are one patch: `src/shell.rs` (the errands) and the
-> hooks marked `borg-reborn-rs (#207)` and `(#208)`. The engine is
+> hooks marked `borg-reborn-rs (#207)` and `(#208)`. *(Updated 2026-11-21,
+> #816: the core is the default since #606, and the patch has grown with
+> track P and the errands; `scripts/borg-core-vendor.py` lists it, our own
+> files as `OURS`, `PIN`, `ladders.txt` and eight modules, and the borg-rs
+> files carrying our hooks as `HOOKED`, 53 of them.)* The engine is
 > upstream `574b618c` (#724; `42cd156ac`, the commit borg-rs v12 plays, until
 > 2026-11-20, #215); borg-rs's one
 > fork correction (`cmd-wizard.c`, debug mode) is not carried. §2.1's "no
@@ -215,7 +220,10 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     three keys of ours that select the decision core (`borg_reborn_core`),
     an errand (`borg_reborn_errand`) and the fear stop
     (`borg_reborn_stopscared`). Our own core still reads nothing else in
-    it. Until 2026-11-14 it was inert here, and its `borg_self_scum = TRUE`
+    it. *(Updated 2026-11-21, #816: it now also carries its own shipped
+    values for borg-rs's settings, #479, the track P parameters as
+    `borg_param_*` lines, and further keys of ours such as `borg_scary_list`
+    and `borg_world`.)* Until 2026-11-14 it was inert here, and its `borg_self_scum = TRUE`
     (upstream's default) let the C Borgs money-scum in the zoo's
     `4.2.6-reborn-c-*` specimens; the zoo was told (RULES 7).
 - **Environment:** `TZ=UTC`, `LANG=C.UTF-8` and `LC_ALL=C.UTF-8` for every
