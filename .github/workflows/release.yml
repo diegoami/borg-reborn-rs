@@ -238,7 +238,11 @@ jobs:
     # Then the unpacked package plays the smoke games with macOS's own
     # tools only (bash 3.2, BSD sed), as a player's machine would.
     needs: [setup, docs]
-    runs-on: macos-14
+    runs-on: macos-latest
+    # The oldest macOS the package runs on (PLAYING.txt): the C compiler and
+    # rustc both read it.
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
