@@ -92,6 +92,8 @@ pub struct ThinkDungeonState {
     /// `borg_feeling_stuff`
     pub feeling_stuff: i32,
     pub(crate) lightless: crate::borg_lightless::Recovery,
+    /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
+    pub(crate) cursed: crate::borg_cursed::Removal,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -721,6 +723,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* examine equipment and swaps */
     borg_notice(st, true);
+
+    // borg-reborn-rs (#830): a harmful curse comes off at once, before any
+    // fight or flight (the curse itself keeps monsters awake and in view).
+    if !lightless && crate::borg_cursed::borg_remove_cursed(st) {
+        return choice!("borg_remove_cursed");
+    }
 
     let town_hunt = crate::borg_town_hunt::think(st);
     if town_hunt == crate::borg_town_hunt::Hunt::Retreat {

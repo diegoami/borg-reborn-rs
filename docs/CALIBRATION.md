@@ -335,7 +335,7 @@ borg-zoo#501, and every switch stays at 0 until it reports.
 | `caution_desperate_ranged_first_reach` | 0 | grids | 0–10 | `borg_caution.rs:981` |
 | `caution_recall_cure_min_loss_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:5149` |
 | `caution_stairs_flight_ignore_danger` | 0 | flag | 0–1 | `borg_caution.rs:4892` |
-| `caution_rising_hold_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4361` |
+| `caution_rising_hold_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_caution.rs:4362` |
 
 ## A clean path for every flight to the stairs (#743)
 
@@ -655,6 +655,139 @@ somewhere else, and use healing potions". The default core's version of
   after that the Borg is back to C's behaviour there. The fear decays by one
   every 10 thinks and covers an 11x11 region. The rule is therefore a
   first-touch rule: it saves the case by walking away at once.
+## An invisible attacker near: a mode, and Detect Invisible (#831)
+
+The registry now holds **2291** parameters (2283 before; eight added).
+Owner, 2026-11-21: "when there is an invisible creature around, switch
+mode and deal with it. Scroll of detect invisible are not so worthless after
+all and make it that you can buy them if you have the spare money (or staff of
+detect invisible), add some more value for them especially for blackguards and
+those who do not have a spell to detect invisible, and if not available,
+switch mode to knowing 'invisible creatures around' and stop resting until you
+know that the invisible creature is gone and / or leave the level if
+possible."
+
+- **The cases** (borg-zoo#566, main `3b4924ba`): Human Blackguards 2078477958
+  (CL2, DL1, game turn 14,317) and 2037495442 (CL5, DL1, 39,236) died to a
+  clear icky thing (an invisible monster, touch 1d2) that "Something touches
+  you" announced 23 and 44 times, each time followed by `# Resting to recover
+  HP/SP...`. Blackguards have impaired HP regeneration (`class.txt`
+  `IMPAIR_HP`), so no rest outpaces the touches. #697's switches existed but
+  shipped off (`recover_unseen_attack_turns` 0).
+- **The mode** is #697's state made explicit. `recover_unseen_attack_turns`
+  (now **500** game turns) is its length: an unseen blow enters it
+  (`# Mode: invisible attacker near (y,x)`), the last blow plus that many game
+  turns, or a new level, ends it (`# Mode: invisible attacker gone ...`), and
+  killing the attacker ends it too (`You have killed it.`, `# Mode: invisible
+  attacker killed`); so does any death message of a monster the Borg may have
+  seen (`You have slain ...`, `... dies.`, `... is destroyed.`) once a
+  detection was read at some point in the episode (an attempt), the attacker
+  then being probably revealed. The engine also gives those forms for an
+  unseen monster shot at and for monsters killing each other; the episode then
+  ends too and the next unseen blow starts a new one (`# Mode: over (a monster
+  died after a detection was read)`, not `attacker killed`, is noted). While it lasts, every rest within
+  `recover_unseen_attack_distance` grids of the blow is held (#697, unchanged).
+  What is new is what the Borg does with a blow that has *just* struck
+  (`recover_unseen_act_age`, **30** game turns: the attacker is next to it now):
+  1. **Detect.** `recover_unseen_detect_reads` (**2** an episode): read Detect
+     Invisible, quaff True Seeing, use a Staff of Detect Invisible or Detect
+     Evil, an activation or cast Sense Invisible, Detection or Reveal Monsters
+     (the list of `borg_defend_aux_inviso`, now shared:
+     `detect_invisible_now`; not blind, confused, amnesic or in the dark). The
+     revealed monster is a monster like any other: `borg_attack` fights it.
+  2. **Strike where it must be.** `recover_unseen_probe_tries` (**10** an
+     episode): `alter` (`+` and a direction) attacks a monster in the grid seen
+     or not, and otherwise spends the turn without moving ("You spin around.",
+     `cmd-cave.c:do_cmd_alter_aux:950-1001`, the monster branch first at 975-977,
+     "You spin around." at 998). The candidates are the open adjacent
+     grids (bare floor or a staircase, with no known object, trap or monster:
+     alter would tunnel, open, close or disarm anything else), north first.
+     One where a blow struck "something" is attacked again; one that spun is
+     left out until the next blow (the attacker moves). Only while at most
+     `recover_unseen_probe_max_grids` (**3**) grids are candidates (a corridor
+     or a doorway; in the open it is guesswork and the Borg walks away
+     instead); not afraid (the game refuses the blow), not confused, and not
+     hurt enough to drink first.
+  3. **Away, heal, leave** (#697's, `unseen_away` and `unseen_heal`, now
+     **50%**): hurt and near the blow, walk at least 10 grids away and rest
+     there; followed, or nowhere to walk, or **the blind attacks spent and it
+     still strikes**, leave the level (`# Leaving (an unseen attacker, not
+     found)`); below 50% of HP drink a cure.
+- **Detect Invisible in the town plan.** #663 had put the scroll at 1% of the
+  support weight ("never buy"). The first version made three reads a
+  requirement behind a 250-gold floor; the owner found 3 too big a reserve and
+  the floor flip-flopped (the smoke warrior had 401 gold, then 242, and sold the
+  three scrolls it carried), so it is now a value curve and no reserve: with
+  `town_invisible_count` (**2**) > 0 a read (scrolls at 15 gold, or a staff's
+  charges) is worth a diminishing curve like Phase Door's and the flasks', the
+  first value `town_invisible_percent` (**20**) of the trip's escape weight per
+  read (a read's realised first value is that times count / (count + 1): 13.3%),
+  half the most the curve pays at `town_invisible_count` reads, nothing a
+  requirement, nothing kept aside; it competes with the rest of the purse and
+  does not depend on the gold, so a carried read is never sold because the
+  purse shrank. The percent depends on the class, by what it can already do
+  about an invisible monster (`borg_magic`): **20** with nothing (Warriors,
+  Blackguards, and others until they learn a spell); `town_invisible_evil_percent`
+  (**10**) with Detect Evil (it reveals the evil ones, ghosts and a
+  poltergeist, not a clear icky thing); `town_invisible_spell_percent` (**3**)
+  with Sense Invisible, Detection or Reveal Monsters. 0 is #663. A Staff of
+  Detect Invisible (200 gold, 8+d15 charges) gives the same units at far more
+  gold, so it is bought only when scrolls are not stocked and the gold allows.
+  In the dungeon it is not junk either: `junk_keep_some` (`borg_junk.rs`) keeps
+  a known one whatever its price (the value tiers would crush a 15-gold item
+  from depth 5 (the tier `depth < 10 && value > 15` fails at exactly 15) once dropping it raises `borg_power`; the pickup already walks
+  to it, at the engine's price). Whether other cheap utility items suffer the
+  same is borg-reborn-rs#846. A known Scroll of Detect Invisible is **never sold or dropped** by the town
+  plan (`borg_town_utility.rs`, `keeps_detect_invisible`: it is kept, or stored
+  at the Home while overweight), whatever the curve says; the one hard cap is
+  the planner's own, `borg_town_max_non_missile_copies` (35) for every
+  non-missile item, which the curve's diminishing value stays far below.
+  - **First visits.** The old design needed a floor because a percent high
+    enough to buy anything later also bought on the first visit: on the first
+    visits of 2037495442 (151 gold) and 2078477958 (139 gold), CL1, 15% to 30%
+    swapped a Cure Light Wounds or flasks for scrolls. With this curve, at 20%,
+    both first visits buy exactly what the old plan bought (4 rations, flasks,
+    3 Cure Light Wounds, 1 scroll).
+- **Replay of the two cases** (from the zoo bundles of runs 44894233710 and
+  44894253654: their `user/` files, `harness/borg.txt` of this tree with the
+  cell's race and class and without its `borg_world` line; the old behaviour
+  is these settings with the mode and the town plan off, and its key streams
+  hash to the zoo's `b19d7b6a...` and `8acb6b08...` exactly):
+  - **Old behaviour, shipped before the change:** both die as the zoo's did
+    (game turns 14,317 and 39,236).
+  - **This change:** both reach 100,000 game turns: 2078477958 at CL6 (max DL3),
+    2037495442 at CL6 (max DL2). Both follow the old game exactly, first-visit
+    purchases included, to the first unseen blow (game turns 5,384 and 3,532),
+    then diverge. 2078477958 enters the mode three times, kills the attacker
+    once (`# Mode: invisible attacker killed`), leaves the level once, and buys
+    3 Scrolls of Detect Invisible at turn 50,982 (45 gold); 2037495442 enters it
+    five times, strikes three times (`# Striking at ...`; one ends `killed`) and
+    leaves once.
+  - **#697's switches alone** also save both seeds (earlier local result:
+    alive CL8 and CL6): the death was mainly a shipped-off setting.
+  - **Not shown:** that 1,426 gold buys Detect Invisible in 2037495442's
+    original game. That gold was found in the dungeon at about turn 38,000 and
+    the original never returned to town; the harness has no way to give a
+    Blackguard a purse. The valuation is checked by its unit tests and the
+    identical first visits.
+- **Local direction only, the first design (requirement and floor; not re-run)** (RULES 20): 12 Human Blackguards (seeds 7001..7012,
+  zoo `reborn-head-shipped` settings, 100,000 game turns), the mode and the
+  town plan off against on: deaths 0 and 0; sum of max CL 75 and 76; sum of
+  max DL 34 and 34; HP rests 469 and 404; on, the mode was entered 29 times
+  (32 blind attacks, 3 leaves, no detection: they carried none) and Detect
+  Invisible was bought twice. No game stalled. This is no measure of benefit
+  (RULES 14): in these 12 games the baseline did not die of an invisible
+  monster either. A zoo arm against the shipped settings (the owner's) is the
+  measurement: `borg_param_recover_unseen_attack_turns` 0 and 500 (with the
+  mode's other settings), and `borg_param_town_invisible_count` 0 and 2.
+- **Hypotheses, none measured:** all the numbers of this change. The mode's 500 is #697's example; the 30 game turns are three player
+  turns at normal speed; 10 blind attacks cover a kill of a few hit points
+  through the unseen penalty to hit.
+- **Left:** an unseen caster ("Something mumbles", #699) is not a blow and
+  does not enter the mode; the attack on the revealed monster is the ordinary
+  fight's; Deep Descent and Recall as a way out are the level-leaving
+  machinery's (`borg_leave_level`), not chosen here.
+
 ## One breeder policy (#722)
 
 The registry now holds **2207** parameters (2205 after #693; two added). Owner,
@@ -737,7 +870,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:260` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:268` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -2115,8 +2248,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:438` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1564` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1554` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1616` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1606` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -2155,7 +2288,7 @@ death with the list, 4 without), 1.
 | `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:3326` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:3327` |
 | `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:3688` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:4020` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:4021` |
 | `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:3702` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
 | `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:3705` (#544 B: the exit's distance from every breeder) |
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
@@ -2164,9 +2297,9 @@ death with the list, 4 without), 1.
 | `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:5290` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3535` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3542` (#597: a monster on every known staircase no longer hides them from the stair flows) |
-| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:4324` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
-| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:4328` (#549: the danger here above which the stair scum stops) |
-| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:4355` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
+| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:4325` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
+| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:4329` (#549: the danger here above which the stair scum stops) |
+| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:4356` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
 | `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:3213` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
 | `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:3249` |
 | `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:3250` |
@@ -3182,12 +3315,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:909` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:910` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:912` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:919` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:920` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:921` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1127` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1128` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1130` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1137` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1138` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1139` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |

@@ -842,7 +842,24 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // are "something you never buy": a read counted as borg_town_support_turns
     // of service, so each was worth about a Phase Door and they took a quarter
     // of the gold. A carried or found copy keeps a small value (kept, not sold).
-    for cap in [INVISIBLE, MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    for cap in [MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
+    // borg-reborn-rs (#831, owner: "Scrolls of Detect Invisible are not so
+    // worthless after all ... especially for Blackguards and those who do not
+    // have a spell to detect invisible"; "3 is already too big a reserve ...
+    // no reserve, better value and a curve that depends on class"): with
+    // `town_invisible_count` > 0 the reads are worth a diminishing curve, as
+    // Phase Door's and the flasks', not a requirement: `invisible_percent` of the trip's escape weight is the
+    // curve's first value per read (a read's realised first value is that times
+    // half / (half + 1)), the curve
+    // reaches half its value at `town_invisible_count` reads, and it
+    // competes with the rest of the purse (nothing is bought first, nothing
+    // is kept past what the next purchase is worth). 0 = #663's low value.
+    let (invisible_weight, invisible_demand) = invisible_curve(
+        i64::from(param(Param::town_invisible_count)),
+        scale_percent(risk(BORG_TOWN_W_ESCAPE), invisible_percent(st)),
+        cfg(BORG_TOWN_SUPPORT_TURNS).max(1) * UNIT,
+    ).unwrap_or((low_value(ordinary), journey.turns * UNIT));
+    curve(INVISIBLE, invisible_weight, invisible_demand);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -1531,6 +1548,20 @@ mod class_heal_tests {
     }
 
     #[test]
+    fn detect_invisible_is_a_diminishing_curve_not_a_reserve() {
+        // #831: off, #663's low value stands; on, the first read is worth
+        // `first` * half / (half + 1), each next one less, none a requirement.
+        assert_eq!(invisible_curve(0, 500, 1000), None);
+        let (weight, demand) = invisible_curve(2, 500, 1000).unwrap();
+        assert_eq!((weight, demand), (1000, 2000));
+        let row = [INVISIBLE as i64, weight, demand, 0, 0];
+        let (one, two, three) = (coverage(&row, 1000), coverage(&row, 2000), coverage(&row, 3000));
+        assert_eq!(two, 500, "half of the most it pays, at `half` reads");
+        assert!(one > two - one && two - one > three - two, "diminishing: {one} {two} {three}");
+        assert!(coverage(&row, 9000) < weight, "never the whole: it is no requirement");
+    }
+
+    #[test]
     fn what_the_borg_never_buys_keeps_a_small_value() {
         // #663: one percent, above zero so a carried copy is kept.
         assert_eq!(low_value(55_000), 550);
@@ -1539,6 +1570,27 @@ mod class_heal_tests {
         let phase = coverage(&[PHASE as i64, 55_000, 1_100, 0, 0], 1_000);
         assert!(scroll * 50 < phase, "{scroll} against a Phase Door's {phase}");
     }
+}
+
+/// borg-reborn-rs (#831): the curve's first value per read, in percent of the
+/// trip's escape weight, by what the Borg can already do about an invisible
+/// monster: nothing (Warriors, Blackguards, and others until they learn a
+/// spell), cast Detect Evil (reveals the evil ones, ghosts and poltergeists,
+/// not a clear icky thing), or cast a spell that reveals invisible monsters.
+fn invisible_percent(st: &BorgState) -> i32 {
+    param(if crate::borg_magic::detects_invisible(st) { Param::town_invisible_spell_percent }
+        else if crate::borg_magic::detects_evil(st) { Param::town_invisible_evil_percent }
+        else { Param::town_invisible_percent })
+}
+
+/// borg-reborn-rs (#831): the Detect Invisible curve: `first` is the value of
+/// the first read, `half` reads (each `service` units of INVISIBLE supply)
+/// give half of the most the curve can pay (`first * half`): the diminishing
+/// shape of Phase Door and the flasks, so a second and a third read are worth
+/// less than the first and no number of them is a requirement. `None` with
+/// no `half`: the curve stays #663's low value.
+fn invisible_curve(half: i64, first: i64, service: i64) -> Option<(i64, i64)> {
+    (half > 0).then(|| (first * half, half * service))
 }
 
 /// borg-reborn-rs (#663, owner): the weight of what the Borg never buys

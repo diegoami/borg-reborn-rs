@@ -253,6 +253,14 @@ pub(crate) fn burden(space_weight: i64, slots: i32, weight: i64, free_slots: i32
         + space_weight.max(0) * UNIT * weight.max(0) / carry.max(1)
 }
 
+/// borg-reborn-rs (#831): a pack stack of Scrolls of Detect Invisible whose
+/// flavour is known (an unknown flavour is a scroll nobody has read yet).
+fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
+    use crate::headers::list_tvals_h::TV_SCROLL;
+    it.place == Place::Pack && !it.unknown_flavour && st.items.items.get(usize::from(it.slot))
+        .is_some_and(|i| i.iqty > 0 && u32::from(i.tval) == TV_SCROLL && i32::from(i.sval) == st.item_val.sv_scroll_detect_invis)
+}
+
 /// Compare carrying, storing and selling on marginal utility, updating
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
@@ -322,7 +330,12 @@ fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_ov
                 _ => false,
             }
         });
-        let protected = it.unknown || it.just_bought || urgent_loss;
+        // borg-reborn-rs (#831, owner: "selling detect invisible scrolls is
+        // wrong in the first place, once identified"): a known Scroll of
+        // Detect Invisible is carried, or stored while overweight, never
+        // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
+        // still sends the copies past it away.
+        let protected = it.unknown || it.just_bought || urgent_loss || keeps_detect_invisible(st, it);
         // borg-reborn-rs (#651, plan schema 12): what this visit bought is
         // carried, not stored: a Cure Light Wounds bought to carry went to
         // the Home and was bought again (borg-cemetery#75).
@@ -848,6 +861,29 @@ mod tests {
         let needs = urgent_needs(&st, &trip);
         assert!(!needs.contains(&Need::Healing) && !needs.contains(&Need::Poison));
         assert!(crate::borg_town_usefulness::urgent_needs(&st, &trip).contains(&Need::Healing), "legacy helper unchanged");
+    }
+
+    #[test]
+    fn a_known_detect_invisible_scroll_is_never_sold() {
+        // #831 (owner): worth nothing to the plan (no need, no power) and
+        // sellable, a known Scroll of Detect Invisible is still kept (or stored); the
+        // same stack in another kind is sold.
+        let mut st = state(0, 1, 20);
+        st.item_val.sv_scroll_detect_invis = 31;
+        let scroll = KitItem { joins_pack: false, need: -1, reduction: 0, sell_shop: 4, ..recall(Place::Pack) };
+        let kit = [scroll];
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Sell], "any other worthless stack");
+        st.items.items.push(crate::borg_item::blank_item());
+        st.items.items[0].tval = crate::headers::list_tvals_h::TV_SCROLL as u8;
+        st.items.items[0].sval = 31;
+        st.items.items[0].iqty = 1;
+        let mut u = Utility::of(&st, &kit, false);
+        let kept = dispositions(&input(&kit), &mut u, &st).0[0];
+        assert!(matches!(kept, Disposition::Keep | Disposition::Store), "Detect Invisible is never sold or dropped: {kept:?}");
+        let unread = [KitItem { unknown_flavour: true, ..scroll }];
+        let mut u = Utility::of(&st, &unread, false);
+        assert_eq!(dispositions(&input(&unread), &mut u, &st).0, [Disposition::Sell], "not yet identified: sold as before");
     }
 
     #[test]

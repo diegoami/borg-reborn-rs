@@ -6598,7 +6598,7 @@ pub(crate) fn unseen_bump_step(st: &mut BorgState, x: i32, y: i32) {
     st.borg.unseen_bumps.step = usable.then_some((st.borg.c, loc { x, y }, false));
 }
 
-fn unseen_melee_message(msg: &[u8]) -> bool {
+pub(crate) fn unseen_melee_message(msg: &[u8]) -> bool {
     // Every melee verb at 574b618c: player-attack.c plus brand.txt,
     // slay.txt and shape.txt. Ranged feedback starts "Your", not "You".
     const VERBS: &[&[u8]] = &[
