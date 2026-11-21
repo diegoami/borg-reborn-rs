@@ -679,7 +679,10 @@ possible."
   (`# Mode: invisible attacker near (y,x)`), the last blow plus that many game
   turns, or a new level, ends it (`# Mode: invisible attacker gone ...`), and
   killing the attacker ends it too (`You have killed it.`, `# Mode: invisible
-  attacker killed`). While it lasts, every rest within
+  attacker killed`); so does the death of a monster the Borg could see
+  (`You have slain ...`, `... dies.`) once it has read a detection in the
+  episode, the attacker then being probably revealed (if it was another
+  monster, the next unseen blow starts a new episode). While it lasts, every rest within
   `recover_unseen_attack_distance` grids of the blow is held (#697, unchanged).
   What is new is what the Borg does with a blow that has *just* struck
   (`recover_unseen_act_age`, **30** game turns: the attacker is next to it now):
@@ -727,7 +730,11 @@ possible."
   with Sense Invisible, Detection or Reveal Monsters. 0 is #663. A Staff of
   Detect Invisible (200 gold, 8+d15 charges) gives the same units at far more
   gold, so it is bought only when scrolls are not stocked and the gold allows.
-  A known Scroll of Detect Invisible is **never sold or dropped** by the town
+  In the dungeon it is not junk either: `junk_keep_some` (`borg_junk.rs`) keeps
+  a known one whatever its price (the value tiers would crush a 15-gold item
+  from depth 10 once dropping it raises `borg_power`; the pickup already walks
+  to it, at the engine's price). Whether other cheap utility items suffer the
+  same is borg-reborn-rs#846. A known Scroll of Detect Invisible is **never sold or dropped** by the town
   plan (`borg_town_utility.rs`, `keeps_detect_invisible`: it is kept, or stored
   at the Home while overweight), whatever the curve says; the one hard cap is
   the planner's own, `borg_town_max_non_missile_copies` (35) for every

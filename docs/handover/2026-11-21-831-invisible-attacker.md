@@ -96,6 +96,8 @@ file touched is already on its HOOKED list.
 
 **Left / for the owner:**
 
+- Dungeon-side: a known Detect Invisible scroll is protected from junking (`junk_keep_some`); whether other cheap utility consumables are junked is borg-reborn-rs#846 (to verify, no change proposed). The mode now also ends when a monster the Borg could see dies after a detection was read in the episode (review finding 3).
+
 - **A zoo arm** (RULES 20; filed as borg-zoo#580): the shipped settings
   against `borg_param_recover_unseen_attack_turns` 0 and
   `borg_param_town_invisible_count` 0, on the classes suites, measuring deaths to

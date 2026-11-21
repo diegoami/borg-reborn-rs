@@ -625,7 +625,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
-    crate::borg_recover::unseen_mode_message(st, msg);
+    if crate::borg_recover::unseen_mode_message(st, msg) {
+        borg_note(st, "# Mode: invisible attacker killed");
+    }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
     let ag_feat = |st: &BorgState| i32::from(st.cave.grid(g.x, g.y).feat);
