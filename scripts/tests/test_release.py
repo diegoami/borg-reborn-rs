@@ -53,6 +53,11 @@ class ReleaseWorkflowTest(unittest.TestCase):
             rows = notes.plan_rows(milestone)
             self.assertEqual(len(rows), 3, rows)
             self.assertIn(f'| `{milestone}` |', rows[2])
+        # The older table has no label column: the bold title names the row.
+        rows = notes.plan_rows('M3')
+        self.assertEqual(len(rows), 3, rows)
+        self.assertTrue(rows[2].startswith('| **M3. '))
+        self.assertFalse(notes.plan_rows('M7'))
 
 
 if __name__ == '__main__':

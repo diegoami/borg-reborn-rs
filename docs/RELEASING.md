@@ -71,7 +71,7 @@ listed by `scripts/release/rust-licenses.py`.
    notes, e.g. `P7`) and `zoo` (the measurement's URL). Or push a tag
    `v...` on the commit (the notes then have no milestone and no zoo link:
    edit them).
-3. Read the draft: the notes list the handover notes added since the
+3. Read the draft: the notes list the handover notes added or changed since the
    previous `v*` tag, the PLAN.md row and the build identities; edit them,
    then publish. Publishing creates the tag when it does not exist yet.
 

@@ -73,8 +73,8 @@ Docker daemon).
 
 1. `notes.py plan_rows()` matches the milestone in a row's label cell
    (`` `P1` ``) only; P2's "as P1" no longer brings its row in. A test pins
-   P1 and R2 to their own row. The older table (M1-M13) has no label column,
-   so the notes say PLAN.md has no row for those.
+   P1 and R2 to their own row. The older table (M0-M7) has no label column:
+   there the row's bold title (`**M3.`) names it (re-review at `9531468a`).
 2. The handover notes listed are the ones added **or changed** since the
    previous tag (RULES 5b lets a task amend its note).
 3. `linux-clean` runs its steps with `bash` (`defaults.run.shell`); bash is

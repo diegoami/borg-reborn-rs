@@ -6,7 +6,7 @@ Usage: scripts/release/notes.py --version V [--milestone NAME] [--since REF]
 
 Markdown on stdout: what the release is (the commit, upstream Angband's, the
 borg-rs core's pin), the PLAN.md lines naming the milestone, the handover
-notes added since REF (by default the newest earlier v* tag; none: every
+notes added or changed since REF (by default the newest earlier v* tag; none: every
 note), the zoo's measurement of the commit when given, and the build
 identities. A draft for the owner to edit before publishing.
 """
@@ -47,14 +47,19 @@ def handover_notes(since: str | None) -> list[tuple[str, str]]:
 
 
 def plan_rows(milestone: str) -> list[str]:
-    """The PLAN.md table rows whose label cell is the milestone (`P1`), each
-    under its table's header. Other cells may cite a milestone ("as P1"):
+    """The PLAN.md table rows whose label cell is the milestone (`P1`), or
+    whose title is (`**M3.`, the older table without labels), each under its
+    table's header. Other cells may cite a milestone ("as P1"):
     they do not make a row that milestone's."""
     label = f"`{milestone}`"
+    # The older M table has no label column: its rows start "| **M3. ...".
+    def title_of(cells: list[str]) -> bool:
+        return len(cells) > 1 and cells[1].startswith(f"**{milestone}.")
     lines = [l.rstrip() for l in (ROOT / "PLAN.md").read_text().splitlines()]
     out: list[str] = []
     for i, line in enumerate(lines):
-        if not line.lstrip().startswith("|") or label not in (c.strip() for c in line.split("|")):
+        cells = [c.strip() for c in line.split("|")]
+        if not line.lstrip().startswith("|") or not (label in cells or title_of(cells)):
             continue
         start = i
         while start > 0 and lines[start - 1].lstrip().startswith("|"):
