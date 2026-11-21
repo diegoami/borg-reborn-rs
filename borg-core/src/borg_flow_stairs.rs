@@ -79,11 +79,11 @@ pub struct StairsState {
     pub less: StairTrack,
     /// `track_more`: the "down" stairs
     pub more: StairTrack,
-    /// Down stair left while the Borg had a route to search for an up stair.
+    /// Down stair left while exploring for or following a route to an up stair.
     pub(crate) up_search_departure: Option<UpSearchDeparture>,
 }
 
-/// Let the exploration flow take a second step before a fallback can undo
+/// Let the up-stair route take a second step before a fallback can undo
 /// its first one. A short window also covers a door or another one-turn action.
 const UP_SEARCH_HANDOFF_TURNS: i32 = 3;
 
@@ -94,6 +94,7 @@ pub(crate) struct UpSearchDeparture {
     pub level_started: i32,
     pub turn: i32,
     pub expected_danger: i32,
+    pub known: bool,
 }
 
 impl UpSearchDeparture {
@@ -105,6 +106,10 @@ impl UpSearchDeparture {
     fn permits_deferral(self, danger: i32, hp: i32) -> bool {
         danger <= self.expected_danger || danger.saturating_mul(2) < hp
     }
+
+    pub(crate) fn can_renew(self, st: &BorgState, known: bool) -> bool {
+        self.known == known && self.still_at_handoff(st.borg.c, st.borg.time.level, st.borg.time.now)
+    }
 }
 
 /// A viable up-stair search outranks a down-stair fallback. Including an
@@ -112,7 +117,8 @@ impl UpSearchDeparture {
 /// think chooses the original down stair again.
 pub(crate) fn continuing_up_stair_search(st: &mut BorgState) -> bool {
     let Some(departure) = st.stairs.up_search_departure else { return false; };
-    if !departure.still_at_handoff(st.borg.c, st.borg.time.level, st.borg.time.now)
+    if departure.known { return false; }
+    if !departure.can_renew(st, false)
         || !st.borg.stair_less || !(st.borg.goal.leaving || st.borg.goal.fleeing)
         || !borg_flow::up_stair_search_can_continue(st, departure.stair)
     {
@@ -127,6 +133,22 @@ pub(crate) fn continuing_up_stair_search(st: &mut BorgState) -> bool {
         return false;
     }
     true
+}
+
+/// Follow a known up stair before trying a nearby down stair again. Replan
+/// from the current square so a blocked route does not reserve the flight.
+pub(crate) fn resume_known_up_stair_flight(st: &mut BorgState, danger: i32) -> bool {
+    let Some(departure) = st.stairs.up_search_departure else { return false; };
+    if !departure.known { return false; }
+    if departure.can_renew(st, true)
+        && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
+        && departure.permits_deferral(danger, st.borg.tr(BI_CURHP))
+        && borg_flow_stair_less(st, GOAL_FLEE, false)
+    {
+        return true;
+    }
+    st.stairs.up_search_departure = None;
+    false
 }
 
 /// Which stair list to enqueue.
@@ -1189,7 +1211,7 @@ mod up_search_handoff_tests {
         let stair = loc { x: 59, y: 42 };
         let next = loc { x: 58, y: 42 };
         let departure = UpSearchDeparture {
-            stair, next, level_started: 10, turn: 100, expected_danger: 10,
+            stair, next, level_started: 10, turn: 100, expected_danger: 10, known: false,
         };
         assert!(departure.still_at_handoff(next, 10, 101));
         assert!(!departure.still_at_handoff(stair, 10, 101), "allow use of the stair from its square");

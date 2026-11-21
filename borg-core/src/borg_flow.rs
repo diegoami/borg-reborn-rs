@@ -127,6 +127,8 @@ pub struct FlowState {
     pub to_stairs: bool,
     /// A weighted stair route gives one step per observation.
     weighted_flight: WeightedFlight,
+    /// This committed flight explicitly chose an up staircase.
+    up_stair_flight: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -159,6 +161,7 @@ impl Default for FlowState {
             flight_no_danger: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
+            up_stair_flight: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -976,6 +979,7 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
     let f = &mut st.flow;
     copy_data(&mut f.data_flow, &f.data_cost);
     f.weighted_flight = WeightedFlight::None;
+    f.up_stair_flight = why == GOAL_FLEE && who == Some(b"up-stairs");
 
     /* Save the goal type */
     st.borg.goal.type_0 = why as i16;
@@ -1634,11 +1638,16 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     /* Try it */
     if let Some(loc { x, y }) = next {
         let here = st.borg.c;
-        let departure = if why == GOAL_DARK && st.borg.tr(BI_CDEPTH) > 0
+        let known = why == GOAL_FLEE && st.flow.up_stair_flight;
+        let departure = if (why == GOAL_DARK || known) && st.borg.tr(BI_CDEPTH) > 0
             && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
         {
             let stair = if u32::from(st.cave.grid(here.x, here.y).feat) == FEAT_MORE {
                 Some(here)
+            } else if known {
+                st.stairs.up_search_departure
+                    .filter(|search| search.can_renew(st, true) && search.stair != (loc { x, y }))
+                    .map(|search| search.stair)
             } else if borg_flow_stairs::continuing_up_stair_search(st) {
                 st.stairs.up_search_departure.map(|search| search.stair)
             } else {
@@ -1650,6 +1659,7 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
                 level_started: st.borg.time.level,
                 turn: st.borg.time.now,
                 expected_danger: borg_danger(st, y, x, 1, true, false),
+                known,
             })
         } else {
             None
