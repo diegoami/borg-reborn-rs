@@ -73,13 +73,18 @@ MSYS2's ncurses (MIT-style, as upstream's own Windows console build).
   `time`/`localtime` through the libc crate on Windows.
 - `engine/frontend/main-borgh.c`: checkpoints (`-checkpoint-every`) need
   `fork()` and are refused on Windows; `setenv` is `_putenv_s` there.
-- **GCC on every platform** (macOS: Homebrew's): the engine evaluates
-  function arguments that draw random numbers (`loc(randint0(w),
-  randint0(h))`, `mon-make.c`, `generate.c`, ...) in an order C leaves to
-  the compiler. Clang and GCC pick differently, so a clang build plays other
-  games from the same seed: a clang build on Linux plays exactly the keys
-  of the macOS clang build, both different from `smoke-borg-rs`.
-  `BUILD_ID` records the compiler (`cc=`).
+- **One seed, one game, per kind of processor.** The engine draws random
+  numbers inside function arguments (`loc(randint0(w), randint0(h))` in
+  `mon-make.c`, `generate.c`, ...), and C leaves the order of a call's
+  arguments to the compiler: GCC evaluates them right to left on x86-64,
+  every arm64 compiler (Apple's clang, GCC) left to right, as clang does on
+  x86-64 too. So the Linux and Windows packages (x86-64, GCC) play the
+  games of `smoke-borg-rs` and of the zoo, while the macOS package (arm64)
+  plays other games from the same seed, as deterministically: the `macos`
+  job plays smoke twice with the same keys and the package replays them. A
+  clang build on Linux plays exactly the macOS keys. The engine is
+  upstream's, unchanged (RULES 9), so this is not fixed here; `BUILD_ID`
+  records the compiler (`cc=`).
 - `harness/build.sh` builds with `cmake --build` (Ninja under MSYS2);
   `harness/identity.sh` recognises the Rust Borg in Mach-O and PE files.
 
@@ -92,7 +97,7 @@ MSYS2's ncurses (MIT-style, as upstream's own Windows console build).
 | `source` | `scripts/release/source-archive.sh` |
 | `linux` | `harness/build.sh` headless, then with `BORG_X11=ON BORG_GCU=ON`; each binary plays the smoke suite on the default core with the same keys, messages and states as `harness/reference/smoke-borg-rs`; `scripts/release/package.sh linux` |
 | `linux-clean` | in a bare `ubuntu:24.04` container with only the runtime libraries: the checksums, the licence files, `play-headless.sh` playing smoke-warrior-1's keys, messages and states byte for byte, and `watch-borg.sh` opening its window under Xvfb |
-| `macos` | `macos-latest` (Apple silicon; `MACOSX_DEPLOYMENT_TARGET` 14.0), with Homebrew's GNU tools for the harness: the build, smoke against `smoke-borg-rs`, no Homebrew library linked, `package.sh macos`; then the unpacked package with macOS's own tools only (bash 3.2): the checksums and the three smoke games through `play-headless.sh`, byte for byte (`scripts/release/compare-games.py`); `watch-borg.sh` in a pseudo-terminal (informative) |
+| `macos` | `macos-latest` (Apple silicon; `MACOSX_DEPLOYMENT_TARGET` 14.0), with Homebrew's GNU tools for the harness: the build, smoke twice with the same keys (arm64 plays other games than `smoke-borg-rs`, see above; the job prints how they differ), no Homebrew library linked, `package.sh macos`; then the unpacked package with macOS's own tools only (bash 3.2): the checksums and the three smoke games through `play-headless.sh`, byte for byte the harness's (`scripts/release/compare-games.py`); `watch-borg.sh` in a pseudo-terminal (informative) |
 | `windows` | `windows-latest` with MSYS2's UCRT64 toolchain: the build (Ninja), no MSYS2 DLL linked, `package.sh windows`; then the unzipped package with PowerShell: the checksums and the three smoke games through `play-headless.cmd`, byte for byte |
 | `release` | only when `release` is on (always for a tag push): the notes (`scripts/release/notes.py`), `SHA256SUMS.txt` and `gh release create --draft`; a version with a `-` is marked a prerelease |
 

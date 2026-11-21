@@ -41,8 +41,11 @@ Windows:        play-headless.cmd OUTDIR [SEED [RACE [CLASS [TURNS]]]]
 
 Plays a new character to game turn TURNS (default 50000) or its death and
 writes the keys, messages, engine states and a summary to OUTDIR. The same
-seed, race, class and turns play the same game every time, on every
-platform.
+seed, race, class and turns play the same game every time. Linux and
+Windows play the same games as each other (and as the project's
+references); macOS (Apple silicon) plays different ones from the same seed,
+because the compiler orders some of the game's random draws differently on
+that processor (the game itself is unchanged).
 
 What is where
 -------------

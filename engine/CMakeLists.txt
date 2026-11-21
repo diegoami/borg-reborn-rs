@@ -103,7 +103,8 @@ if(SUPPORT_GCU AND WIN32)
     target_compile_options(angband PRIVATE ${NCURSESW_STATIC_CFLAGS})
     target_compile_definitions(angband PRIVATE USE_GCU USE_NCURSES HAVE_USE_DEFAULT_COLORS
         NCURSES_STATIC MSYS2_ENCODING_WORKAROUND)
-    target_link_options(angband PRIVATE ${NCURSESW_STATIC_LDFLAGS})
+    # After the objects that use it (link order), with its own static deps.
+    target_link_libraries(angband PRIVATE ${NCURSESW_STATIC_LDFLAGS})
 elseif(SUPPORT_GCU)
     # Upstream's curses detection (ncursesw by pkg-config, then the system's
     # curses, as macOS's), from the patched tree.

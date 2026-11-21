@@ -237,6 +237,15 @@ jobs:
     # harness needs GNU tools and a modern bash: Homebrew's, first on PATH.
     # Then the unpacked package plays the smoke games with macOS's own
     # tools only (bash 3.2, BSD sed), as a player's machine would.
+    #
+    # Not the Linux games: the engine draws random numbers inside function
+    # arguments (loc(randint0(w), randint0(h)), mon-make.c, generate.c) and
+    # C leaves their order to the compiler. GCC evaluates them right to left
+    # on x86-64, every arm64 compiler (Apple's clang, GCC) left to right: an
+    # arm64 build plays other games from the same seed, deterministically
+    # (a clang build on Linux plays exactly this job's keys). The engine is
+    # upstream's, unchanged (RULES 9), so this job checks determinism on
+    # macOS: smoke twice with the same keys, and the package replaying them.
     needs: [setup, docs]
     runs-on: macos-latest
     # The oldest macOS the package runs on (PLAYING.txt): the C compiler and
@@ -250,17 +259,9 @@ jobs:
           ref: ${{ needs.setup.outputs.sha }}
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
-      # GCC, not Apple's clang: the engine evaluates function arguments that
-      # draw random numbers (loc(randint0(w), randint0(h))) in an order C
-      # leaves to the compiler, so a clang build plays other games from the
-      # same seed (a clang build on Linux plays the macOS clang build's keys).
-      # With GCC every platform plays the same game.
       - run: |
-          brew install bash coreutils gnu-sed findutils openssl@3 xz gcc
+          brew install bash coreutils gnu-sed findutils openssl@3 xz
           b=$(brew --prefix)
-          cc=$(ls "$b"/bin/gcc-[0-9]* | sort -V | tail -1)
-          "$cc" --version | head -1
-          echo "CC=$cc" >> "$GITHUB_ENV"
           for p in "$b/opt/findutils/libexec/gnubin" "$b/opt/gnu-sed/libexec/gnubin" "$b/opt/coreutils/libexec/gnubin" "$b/bin"; do
             echo "$p" >> "$GITHUB_PATH"
           done
@@ -268,13 +269,14 @@ jobs:
       - run: BORG_IMPL=rust BORG_GCU=ON harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-macos
-      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-macos harness/reference/smoke-borg-rs
-      # A platform that plays differently: where the messages first part, and
-      # every run's logs as an artifact.
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-macos-2
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-macos harness/out/release-smoke-macos-2
+      # For the record: how far the arm64 games are from Linux's (they differ).
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-macos harness/reference/smoke-borg-rs | grep -E '^(== |[0-9]+/[0-9]+ runs)' || true
       - if: failure()
         run: |
           for r in smoke-warrior-1 smoke-mage-2 smoke-priest-3; do
-            echo "== $r"; xz -dc "harness/reference/smoke-borg-rs/$r/messages.log.xz" | diff - "harness/out/release-smoke-macos/$r/messages.log" | head -30 || true
+            echo "== $r"; diff harness/out/release-smoke-macos/$r/messages.log harness/out/release-smoke-macos-2/$r/messages.log | head -30 || true
             tail -20 "harness/out/release-smoke-macos/$r/stderr.log" || true
           done
       - if: failure()
@@ -304,7 +306,8 @@ jobs:
           /bin/bash ./play-headless.sh "$RUNNER_TEMP/g1" 101 0 0 20000 >/dev/null
           /bin/bash ./play-headless.sh "$RUNNER_TEMP/g2" 102 2 1 20000 >/dev/null
           /bin/bash ./play-headless.sh "$RUNNER_TEMP/g3" 103 5 3 20000 >/dev/null
-          python3 "$GITHUB_WORKSPACE/scripts/release/compare-games.py" "$GITHUB_WORKSPACE/harness/reference/smoke-borg-rs" \
+          # The package replays the harness's macOS games (see above).
+          python3 "$GITHUB_WORKSPACE/scripts/release/compare-games.py" "$GITHUB_WORKSPACE/harness/out/release-smoke-macos" \
             smoke-warrior-1="$RUNNER_TEMP/g1" smoke-mage-2="$RUNNER_TEMP/g2" smoke-priest-3="$RUNNER_TEMP/g3"
       # The terminal window: the curses frontend starts and keeps running
       # (stopped by the alarm) in a pseudo-terminal. Informative only: a

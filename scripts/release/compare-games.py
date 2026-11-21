@@ -4,7 +4,8 @@
 Usage: scripts/release/compare-games.py REFERENCE_DIR NAME=GAME_DIR [...]
 
 REFERENCE_DIR is harness/reference/smoke-borg-rs (each NAME/ holds keys.log,
-messages.log and state.log, xz-compressed); each GAME_DIR is the OUTDIR of a
+messages.log and state.log, xz-compressed) or a harness/suite.sh output of
+the same platform (the logs uncompressed); each GAME_DIR is the OUTDIR of a
 package's play-headless run. Every log must be byte-identical. Python only
 (lzma), so it runs where no xz is installed: a clean macOS or Windows.
 Exit 1 on the first difference, naming the file and the first differing line.
@@ -24,7 +25,8 @@ def main() -> int:
     for spec in sys.argv[2:]:
         name, _, game = spec.partition('=')
         for log in ('keys.log', 'messages.log', 'state.log'):
-            want = lzma.decompress((ref / name / f'{log}.xz').read_bytes())
+            plain = ref / name / log
+            want = plain.read_bytes() if plain.exists() else lzma.decompress((ref / name / f'{log}.xz').read_bytes())
             have = (pathlib.Path(game) / log).read_bytes()
             if want == have:
                 print(f'{name}/{log}: identical ({len(have)} bytes)')
