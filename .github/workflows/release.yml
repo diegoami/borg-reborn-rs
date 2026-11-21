@@ -378,6 +378,25 @@ jobs:
           rustc -vV
           CMAKE_GENERATOR=Ninja BORG_IMPL=rust BORG_GCU=ON harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband.exe | grep -qx rust
+      # #858: a build capture never overwrites an existing file on Windows
+      # (the C runtime ignores fopen's "x"). The reborn core, as
+      # engine/tests/test_character_build.py: the capture accepts its level-5
+      # warrior (smoke-warrior-1's seed).
+      - run: |
+          d=$(cygpath -m '${{ runner.temp }}')/excl
+          mkdir -p "$d"/{user,save,archive,panic,scores}
+          harness/prepare-borg-txt.sh "$d/user"
+          printf 'keep me\n' > "$d/existing.build"
+          cd build/rust/game
+          set +e
+          BORG_CORE=reborn ./angband.exe -mborgh -n -uBorg -duser="$d/user" -dsave="$d/save" -darchive="$d/archive" \
+            -dpanic="$d/panic" -dscores="$d/scores" -- -seed 101 -race 0 -class 0 -turns 20000 -menu-letters \
+            -capture-build "$d/existing.build" -capture-build-level 5 -summary "$d/summary.json" 2>"$d/stderr.log"
+          rc=$?
+          set -e
+          tail -3 "$d/stderr.log"
+          [ "$rc" != 0 ] && grep -q 'cannot create synthetic build capture' "$d/stderr.log" \
+            && [ "$(cat "$d/existing.build")" = 'keep me' ] || { echo "the capture did not refuse the existing file"; exit 1; }
       # One static executable: no MSYS2 DLL next to it.
       - run: |
           ldd build/rust/game/angband.exe
