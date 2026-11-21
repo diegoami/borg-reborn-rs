@@ -3586,3 +3586,11 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
     /* Success */
     true
 }
+
+
+/// borg-reborn-rs (#781 review): reuse See Invisible's danger and darkness
+/// gates for the bump response. borg_read_scroll retains blindness,
+/// confusion, amnesia and no-light refusals too.
+pub(crate) fn unseen_detection_safe(st: &BorgState, danger: i32) -> bool {
+    danger <= avoid(st) * param(Param::defend_see_invis_max_danger_multiplier) && !dark_here(st)
+}

@@ -1550,6 +1550,8 @@ pub fn borg_update(st: &mut BorgState) {
     // *** Defaults ***
 
     // Default "goal" location
+    // borg-reborn-rs (#781): the new position confirms whether the step failed.
+    crate::borg_caution::unseen_bump_update(st);
     st.borg.goal.g = st.borg.c;
 }
 
@@ -1896,6 +1898,7 @@ fn created_traps_here(st: &mut BorgState) {
 
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
+    st.light.detected_entries.clear();
     let b = &mut st.borg;
     // Restart the clock
     b.time.level = b.time.now;
@@ -2026,6 +2029,7 @@ fn new_level(st: &mut BorgState) {
     b.goal.leaving = false;
     b.breeder_leaving = false; // borg-reborn-rs (#644, re-review of #656)
     b.unseen_turn = 0; // borg-reborn-rs (#697)
+    b.unseen_bumps = Default::default(); // borg-reborn-rs (#781): new level
     b.unseen_followed = false;
 
     // Assume not fleeing the level

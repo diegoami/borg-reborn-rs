@@ -1402,6 +1402,25 @@ pub struct PlayerSummary {
     pub word_recall: i16,
 }
 
+/// #759: computed attack rates from the player's own state, already in
+/// the permitted player_state read category (docs/ENGINE-READS.md). Blows
+/// are hundredths and shots tenths (player-attack.c:991,1087).
+pub fn player_attack_rates() -> (i32, i32) {
+    let p = player_ref();
+    (p.state.num_blows, p.state.num_shots)
+}
+
+/// #759 review: own computed blessed-weapon hit bonus, as in
+/// player-attack.c:chance_of_melee_hit_base:89-95 (574b618c).
+pub fn player_blessed_weapon_bonus() -> i32 {
+    if player_ref().state.bless_wield { 2 } else { 0 }
+}
+
+/// #759/#758: own displayed speed, including current haste/slow effects.
+pub fn player_combat_speed() -> i32 {
+    player_ref().state.speed
+}
+
 /// Read the player's summary fields.
 pub fn player_summary() -> PlayerSummary {
     let p = player_ref();
@@ -1542,7 +1561,38 @@ fn native_sale_quote(obj: *const crate::headers::object_h::object, shop: usize, 
     unsafe { crate::headers::store_h::store_sale_quote(crate::headers::store_h::stores.add(shop), obj, quantity) }
 }
 
+fn with_object_quantity<T>(
+    source: *const crate::headers::object_h::object,
+    quantity: i32,
+    read: impl FnOnce(*const crate::headers::object_h::object) -> T,
+) -> T {
+    use crate::headers::object_h::object;
+    extern "C" {
+        fn object_copy_amt(dest: *mut object, src: *const object, amount: i32);
+        fn object_wipe(obj: *mut object);
+    }
+    // SAFETY: callers hold a live object handle. The native copy owns its
+    // allocated fields, which are released after the read-only query.
+    unsafe {
+        assert!(quantity > 0 && quantity <= i32::from((*source).number));
+        let mut split = std::mem::MaybeUninit::<object>::zeroed();
+        object_copy_amt(split.as_mut_ptr(), source, quantity);
+        let result = read(split.as_ptr());
+        object_wipe(split.as_mut_ptr());
+        result
+    }
+}
+
 impl StoreObject<'_> {
+
+    /// Quote the same split stack the purchase prompt will confirm.
+    pub fn purchase_quote_quantity(self, shop: usize, quantity: i32) -> i32 {
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(shop), split, false, quantity) }
+        })
+    }
 
     /// The native shop quote for one copy, as displayed to the player.
     /// This is not the historical Borg's optimistic price approximation.
@@ -1769,6 +1819,19 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    /// Check the store's capacity for the same quantity the command would split.
+    pub fn store_accepts_quantity(self, shop: usize, quantity: i32) -> bool {
+        use crate::headers::{object_h::object, store_h::{store, stores}};
+        extern "C" {
+            fn store_check_num(shop: *mut store, obj: *const object) -> bool;
+        }
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { store_check_num(stores.add(shop), split) }
+        })
+    }
+
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
         // SAFETY: handle is a live carried object; reading number cannot re-enter.
         assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
@@ -1983,6 +2046,8 @@ pub fn feat_is_shop(feat: i32) -> bool {
 pub struct RaceBlow {
     /// `effect->name`
     pub effect_name: &'static CStr,
+    /// Static hit power from blow_effects.txt (mon-attack.c:336-355).
+    pub hit_power: i32,
     /// `dice.dice`
     pub dice: i32,
     /// `dice.sides`
@@ -2011,7 +2076,7 @@ pub fn race_blow(r_idx: usize, k: usize) -> Option<RaceBlow> {
         assert!(!b.effect.is_null(), "race {r_idx} blow {k} has no effect");
         let name = (*b.effect).name;
         assert!(!name.is_null(), "race {r_idx} blow {k} effect has no name");
-        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
+        Some(RaceBlow { effect_name: CStr::from_ptr(name), hit_power: (*b.effect).power, dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
     }
 }
 

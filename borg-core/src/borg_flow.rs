@@ -19,6 +19,8 @@
 //! list (`borg_temp_*`) and the step/door tracks live in `FlowState`.
 //! C bugs kept are listed in `docs/c-bugs.md` (section 31).
 
+use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 use std::ffi::CStr;
 
 use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
@@ -123,6 +125,8 @@ pub struct FlowState {
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
     pub to_stairs: bool,
+    /// A weighted stair route gives one step per observation.
+    weighted_flight: WeightedFlight,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -154,6 +158,7 @@ impl Default for FlowState {
             hunting: false,
             flight_no_danger: false,
             to_stairs: false,
+            weighted_flight: WeightedFlight::None,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -410,6 +415,11 @@ fn spread_blocked(
     let b = &st.borg;
     let feat = u32::from(ag.feat);
 
+    // borg-reborn-rs (#781): observed unseen occupancy blocks every spread.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        return true;
+    }
+
     /* Avoid "wall" grids (not doors) unless tunneling*/
     /* HACK depends on FEAT order, kinda evil */
     if !tunneling && (feat >= FEAT_SECRET && feat != FEAT_PASS_RUBBLE && feat != FEAT_LAVA) {
@@ -572,6 +582,138 @@ fn spread_blocked(
 /// grid is next to the Borg at `borg` (its first step).
 fn breeder_blocks(near: bool, hunting: bool, borg: crate::headers::z_type_h::loc, x: i32, y: i32) -> bool {
     near && !hunting && (x - borg.x).abs().max((y - borg.y).abs()) > 1
+}
+
+/// #765: search from the Borg so entering a square pays its danger, including
+/// the staircase. A second search can exclude grids refused by the clean-path
+/// check. The old flow's cached fear veto does not apply to weighted routes.
+pub(crate) fn weighted_stair_path(
+    st: &mut BorgState,
+    stairs: &[loc],
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+    mut allowed: impl FnMut(&mut BorgState, loc) -> bool,
+) -> Option<StairPath> {
+    let was = std::mem::replace(&mut st.flow.to_stairs, true);
+    let twitchy = i32::from(st.borg.avoidance) > st.borg.tr(BI_CURHP);
+    let hp = st.borg.tr(BI_CURHP);
+    let path = least_cost_stair_path(st.borg.c, stairs, depth.min(249), |grid| {
+        let loc { x, y } = grid;
+        if !engine::square_in_bounds_fully(x, y) {
+            return None;
+        }
+        let ag = *st.cave.grid(x, y);
+        if (ag.kill != 0 && st.kills.kills[usize::from(ag.kill)].awake)
+            || spread_blocked(st, &ag, x, y, avoid, false, twitchy)
+            || (sneak && !st.borg.status.desperate && !twitchy && monster_adjacent(st, x, y))
+            || breeder_blocks(crate::borg_caution::near_known_breeder(st, x, y), st.flow.hunting, st.borg.c, x, y)
+            || !allowed(st, grid)
+        {
+            return None;
+        }
+        Some(stair_entry_cost(borg_danger(st, y, x, 1, true, false), hp, weight))
+    });
+    st.flow.to_stairs = was;
+    path
+}
+
+pub(crate) struct StairPath {
+    pub grids: Vec<loc>,
+    pub cost: u64,
+}
+
+/// Hundredths of a step. The weight is the extra steps for danger equal to
+/// current HP. Even fractional steps of danger can matter on low-weight runs.
+fn stair_entry_cost(danger: i32, hp: i32, weight: i32) -> u64 {
+    100 + 100 * weight as u64 * danger.max(0) as u64 / hp.max(1) as u64
+}
+
+struct StairLabel {
+    grid: loc,
+    cost: u64,
+    steps: i32,
+    previous: usize,
+}
+
+fn stair_grid_index(grid: loc) -> usize {
+    (grid.y * AUTO_MAX_X + grid.x) as usize
+}
+
+/// The straight-line number of king moves is a lower bound on both the
+/// remaining moves and the remaining cost (100 per move before danger).
+fn stair_moves_lower_bound(grid: loc, stairs: &[loc]) -> i32 {
+    stairs.iter().map(|goal| (goal.x - grid.x).abs().max((goal.y - grid.y).abs())).min().unwrap_or(0)
+}
+
+/// A* with both weighted cost and a move limit. A cheaper route to a
+/// grid may use more moves, so keep each arrival that trades cost for moves.
+/// Queue ties use fewer projected moves, then greater progress and insertion order.
+fn least_cost_stair_path(
+    start: loc,
+    stairs: &[loc],
+    depth: i32,
+    mut enter: impl FnMut(loc) -> Option<u64>,
+) -> Option<StairPath> {
+    if stairs.is_empty() {
+        return None;
+    }
+    let grid_count = (AUTO_MAX_Y * AUTO_MAX_X) as usize;
+    let mut arrivals = vec![Vec::<usize>::new(); grid_count];
+    let mut entry_costs = vec![None; grid_count];
+    let mut labels = vec![StairLabel { grid: start, cost: 0, steps: 0, previous: 0 }];
+    arrivals[stair_grid_index(start)].push(0);
+    let initial_moves = stair_moves_lower_bound(start, stairs);
+    let mut queue = BinaryHeap::from([Reverse((100 * initial_moves as u64, initial_moves, Reverse(0), 0))]);
+
+    while let Some(Reverse((_, _, _, id))) = queue.pop() {
+        let StairLabel { grid, cost, steps, .. } = labels[id];
+        if !arrivals[stair_grid_index(grid)].contains(&id) {
+            continue;
+        }
+        if stairs.contains(&grid) {
+            let mut path = vec![grid];
+            let mut previous = id;
+            while previous != 0 {
+                previous = labels[previous].previous;
+                path.push(labels[previous].grid);
+            }
+            path.reverse();
+            return Some(StairPath { grids: path, cost });
+        }
+        if steps >= depth {
+            continue;
+        }
+
+        for i in 0..8 {
+            let (dx, dy) = borg_ddxy_ddd(i);
+            let next = loc { x: grid.x + dx, y: grid.y + dy };
+            if !(1..AUTO_MAX_X - 1).contains(&next.x) || !(1..AUTO_MAX_Y - 1).contains(&next.y) {
+                continue;
+            }
+            let index = stair_grid_index(next);
+            let next_steps = steps + 1;
+            let remaining = stair_moves_lower_bound(next, stairs);
+            if next_steps + remaining > depth {
+                continue;
+            }
+            let Some(entry) = *entry_costs[index].get_or_insert_with(|| enter(next)) else {
+                continue;
+            };
+            let next_cost = cost + entry;
+            let at = &mut arrivals[index];
+            if at.iter().any(|&other| labels[other].cost <= next_cost && labels[other].steps <= next_steps) {
+                continue;
+            }
+            at.retain(|&other| labels[other].cost < next_cost || labels[other].steps < next_steps);
+            let next_id = labels.len();
+            labels.push(StairLabel { grid: next, cost: next_cost, steps: next_steps, previous: id });
+            at.push(next_id);
+            queue.push(Reverse((next_cost + 100 * remaining as u64, next_steps + remaining, Reverse(next_cost), next_id)));
+        }
+    }
+    None
 }
 
 /// borg-reborn-rs (#556): `borg_flow_spread` for a flow toward monsters
@@ -757,6 +899,10 @@ fn borg_flow_ignores_danger(st: &BorgState) -> bool {
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.
 pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
+    // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        return;
+    }
     /* Avoid icky grids */
     if st.flow.data_icky[y as usize][x as usize] != 0 {
         return;
@@ -824,6 +970,7 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
     /* Obtain the "flow" information */
     let f = &mut st.flow;
     copy_data(&mut f.data_flow, &f.data_cost);
+    f.weighted_flight = WeightedFlight::None;
 
     /* Save the goal type */
     st.borg.goal.type_0 = why as i16;
@@ -832,6 +979,35 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
 
     /* Success */
     true
+}
+
+#[derive(Clone, Copy)]
+enum WeightedFlight {
+    None,
+    Step(loc),
+    Replan,
+}
+
+/// Expose actual move counts to the existing flight and rest checks.
+/// The chosen first grid also gets stored explicitly, since two distant
+/// points on a weighted path can be adjacent on the map.
+pub(crate) fn commit_weighted_stair_path(
+    st: &mut BorgState,
+    who: &CStr,
+    why: i32,
+    path: &[loc],
+) -> bool {
+    let Some(&next) = path.get(1) else { return false };
+    copy_data(&mut st.flow.data_cost, &st.flow.data_hard);
+    for (steps, grid) in path.iter().rev().enumerate() {
+        st.flow.data_cost[grid.y as usize][grid.x as usize] = steps as u8;
+    }
+    if !borg_flow_commit(st, who, why) {
+        return false;
+    }
+    st.flow.weighted_flight = WeightedFlight::Step(next);
+    st.borg.flight_to_stairs = true;
+    borg_flow_old(st, why)
 }
 
 /// A note `prefix` + `name` + `' at (y,x)`.
@@ -1164,6 +1340,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     /* Access the grid we are stepping on */
     let ag = *st.cave.grid(x, y);
 
+    // borg-reborn-rs (#781): also refuse an old flow made before the bump.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+
     /* Set goal */
     st.borg.goal.g.x = x;
     st.borg.goal.g.y = y;
@@ -1233,6 +1415,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
         borg_note(st, "# Walking onto a glyph of warding.");
 
         /* Walk onto it */
+        crate::borg_caution::unseen_bump_step(st, x, y); // borg-reborn-rs (#781)
         borg_keypress(st, i2d(dir));
         return true;
     }
@@ -1365,6 +1548,8 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     }
 
     /* Actually enter the direction */
+    // borg-reborn-rs (#781): only a real movement command supplies a grid.
+    crate::borg_caution::unseen_bump_step(st, x, y);
     borg_keypress(st, i2d(dir));
 
     /* I'm not in a store */
@@ -1404,10 +1589,27 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         return false;
     }
 
-    let b_i = select_step(st);
+    let next = match st.flow.weighted_flight {
+        WeightedFlight::None => {
+            let i = select_step(st);
+            (i >= 0).then(|| loc {
+                x: st.borg.c.x + i32::from(engine::ddx_ddd(i as usize)),
+                y: st.borg.c.y + i32::from(engine::ddy_ddd(i as usize)),
+            })
+        }
+        WeightedFlight::Step(next) => {
+            st.flow.weighted_flight = WeightedFlight::Replan;
+            Some(next)
+        }
+        // Let the caller spread again using the current monster positions and HP.
+        WeightedFlight::Replan => {
+            st.borg.goal.type_0 = 0;
+            return false;
+        }
+    };
 
     // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
-    if b_i >= 0 && why == GOAL_FLEE {
+    if next.is_some() && why == GOAL_FLEE {
         let steps_left = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
         // borg-reborn-rs (#614): remember a flight to stairs (rests wait for them).
         if st.borg.flight_to_stairs {
@@ -1420,16 +1622,12 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         }
     }
     // borg-reborn-rs (#620): a low-level Druid's walk in town: Fox Form first.
-    if b_i >= 0 && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
+    if next.is_some() && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
         return true;
     }
 
     /* Try it */
-    if b_i >= 0 {
-        /* Access the location */
-        let x = st.borg.c.x + i32::from(engine::ddx_ddd(b_i as usize));
-        let y = st.borg.c.y + i32::from(engine::ddy_ddd(b_i as usize));
-
+    if let Some(loc { x, y }) = next {
         /* Attempt motion */
         if borg_play_step(st, y, x) {
             return true;
@@ -1634,6 +1832,57 @@ mod breeder_block_tests {
         assert!(!breeder_blocks(true, true, borg, 12, 10), "a kill flow");
         assert!(!breeder_blocks(false, false, borg, 12, 10), "no breeder near");
     }
+
+    #[test]
+    fn weighted_stairs_take_a_longer_detour_within_the_move_cap() {
+        let start = loc { x: 2, y: 3 };
+        let stair = loc { x: 6, y: 3 };
+        let enter = |loc { x, y }| match (x, y) {
+            (3..=5, 3) => Some(stair_entry_cost(50, 25, 2)),
+            (2 | 6, 4) | (3..=5, 5) | (6, 3) => Some(100),
+            _ => None,
+        };
+        let route = least_cost_stair_path(start, &[stair], 6, enter).unwrap().grids;
+        assert_eq!(route.len() - 1, 6);
+        assert_eq!(route[1], loc { x: 2, y: 4 });
+        let route = least_cost_stair_path(start, &[stair], 4, enter).unwrap().grids;
+        assert_eq!(route[1], loc { x: 3, y: 3 });
+        assert!(least_cost_stair_path(start, &[stair], 3, enter).is_none());
+    }
+
+    #[test]
+    fn weighted_stairs_pay_for_entering_the_goal_and_keep_costs_above_a_byte() {
+        let start = loc { x: 2, y: 3 };
+        let near = loc { x: 3, y: 3 };
+        let far = loc { x: 4, y: 4 };
+        let enter = |grid| {
+            if grid == near {
+                Some(stair_entry_cost(5, 10, 5))
+            } else {
+                Some(stair_entry_cost(0, 10, 5))
+            }
+        };
+        let route = least_cost_stair_path(start, &[near, far], 2, enter).unwrap();
+        assert_eq!(route.grids.last(), Some(&far));
+        let route = least_cost_stair_path(start, &[near], 1, enter).unwrap();
+        assert_eq!(route.grids, vec![start, near]);
+        assert_eq!(stair_entry_cost(1, 20, 1), 105);
+    }
+
+    #[test]
+    fn weighted_stairs_route_around_blocked_grids_or_refuse_the_only_corridor() {
+        let start = loc { x: 2, y: 3 };
+        let stair = loc { x: 4, y: 3 };
+        let blocked = loc { x: 3, y: 3 };
+        let detour = loc { x: 3, y: 4 };
+        let enter = |grid| [blocked, stair].contains(&grid).then_some(100);
+        let route = least_cost_stair_path(start, &[stair], 2, enter).unwrap();
+        assert_eq!(route.grids[1], blocked);
+        let enter = |grid| [detour, stair].contains(&grid).then_some(100);
+        let route = least_cost_stair_path(start, &[stair], 2, enter).unwrap();
+        assert_eq!(route.grids[1], detour);
+        assert!(least_cost_stair_path(start, &[stair], 2, |grid| (grid == stair).then_some(100)).is_none());
+    }
 }
 
 /// borg-reborn-rs (#732; owner, 2026-11-20: "remove our leash completely and
@@ -1655,6 +1904,16 @@ pub(crate) struct CLeash {
     pub take_max_level: i32,
 }
 
+/// borg-reborn-rs (#761, owner: "make sure it picks it up"): the floor rule
+/// for a Phase Door while the Borg holds fewer than `flow_take_phase_short_below`
+/// of them (0 = off): the stair leash of `take_select` does not apply to it;
+/// with `flow_take_phase_first` it is also the only object flowed to while one
+/// is in reach. Returns (short_below, first).
+pub(crate) fn take_phase_rule() -> (i32, bool) {
+    use crate::params::{value, Param};
+    (value(Param::flow_take_phase_short_below), value(Param::flow_take_phase_first) != 0)
+}
+
 /// The leash parameters (`CLeash`).
 pub(crate) fn c_leash() -> CLeash {
     use crate::params::{value, Param};
@@ -1669,5 +1928,41 @@ pub(crate) fn c_leash() -> CLeash {
         take_near_max_level: value(Param::flow_leash_take_near_max_level),
         take_nearness: value(Param::flow_leash_take_nearness),
         take_max_level: value(Param::flow_leash_take_max_level),
+    }
+}
+
+#[cfg(test)]
+mod stair_loop_tests {
+    use super::*;
+
+    #[test]
+    fn nearby_up_stair_with_a_long_walk_does_not_reverse_weighted_flight() {
+        let before = loc { x: 77, y: 10 };
+        let beside = loc { x: 76, y: 11 };
+        let up = loc { x: 96, y: 10 };
+        let down = loc { x: 97, y: 4 };
+        // The up stair looks close across the wall. Its approach wraps
+        // around the wall, and its first move opposes the ordinary flight.
+        let enter = |grid: loc| {
+            let loc { x, y } = grid;
+            (grid == before
+                || (x == 76 && (11..=60).contains(&y))
+                || (y == 60 && (76..=96).contains(&x))
+                || (x == 96 && (10..=60).contains(&y))
+                || ((78..=83).contains(&x) && x + y == 87)
+                || (y == 4 && (83..=97).contains(&x)))
+                .then_some(100)
+        };
+        let up_path = least_cost_stair_path(before, &[up], 249, enter).unwrap();
+        assert_eq!(up_path.grids.len() - 1, 118);
+        assert_eq!(up_path.grids[1], beside);
+        let any_path = least_cost_stair_path(beside, &[up, down], 249, enter).unwrap();
+        assert_eq!(any_path.grids.len() - 1, 21);
+        assert_eq!(any_path.grids[1], before);
+        // The scary-level shortcut requires strictly fewer than 20 moves.
+        assert!(least_cost_stair_path(before, &[up], 19, enter).is_none());
+        let next = least_cost_stair_path(before, &[up, down], 249, enter).unwrap();
+        assert_eq!(next.grids.last(), Some(&down));
+        assert_ne!(next.grids[1], beside);
     }
 }

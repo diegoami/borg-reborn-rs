@@ -1,5 +1,7 @@
 //! External inputs are replayed; engine decisions and RNG are never supplied.
 //! Adapted from better-borg-c and borg-rs; see CREDITS.md.
+pub mod checkpoints;
+
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -231,14 +233,50 @@ fn receipt_new(path: &Path, value: &Receipt) -> io::Result<()> {
     result
 }
 
+/// Streams participate in cross-side comparison. Other documented entries
+/// are validated per side: the launch receipt (`launch.json`), the world
+/// fingerprint save the recorder forks on every command frame
+/// (`world-fingerprint.save`), the optional native save-point directory
+/// (`checkpoints/`, whose inventory `checkpoints::validate` checks in
+/// full), the replay engine's private profile (`profile/`, created by the
+/// replay CLI), and the host artifacts a capture must tolerate beside it —
+/// console logs and an `archive/` directory (see `Session::start`).
+fn is_stream(name: &str) -> bool {
+    REQUIRED.contains(&name) || name.starts_with("file-input-") || name == "timezone.tzif"
+}
+
+/// The recording directory admits only documented entries, so a foreign
+/// file cannot sit beside the streams (spec v2: extra and non-regular
+/// entries are rejected).
+fn check_entries(root: &Path) -> io::Result<()> {
+    for item in fs::read_dir(root)? {
+        let item = item?;
+        let name = item.file_name().to_string_lossy().into_owned();
+        let file_type = item.file_type()?;
+        let stream = is_stream(&name);
+        let documented = stream
+            || name == "launch.json"
+            || name == "world-fingerprint.save"
+            || (name == "checkpoints" && file_type.is_dir())
+            || (name == "profile" && file_type.is_dir())
+            || (name == "archive" && file_type.is_dir())
+            || (name.ends_with(".log") && file_type.is_file());
+        if !documented {
+            return Err(invalid(format!("unexpected recording entry: {name}")));
+        }
+        if stream && !file_type.is_file() {
+            return Err(invalid(format!("non-regular recording entry: {name}")));
+        }
+    }
+    Ok(())
+}
+
 fn recording_files(root: &Path) -> io::Result<std::collections::BTreeSet<String>> {
     let mut result = std::collections::BTreeSet::new();
     for item in fs::read_dir(root)? {
         let item = item?;
         let name = item.file_name().to_string_lossy().into_owned();
-        if REQUIRED.contains(&name.as_str())
-            || (name.starts_with("file-input-") || name == "timezone.tzif")
-        {
+        if is_stream(&name) {
             result.insert(name);
         }
     }
@@ -375,6 +413,8 @@ pub fn validate_recording(root: &Path) -> io::Result<Metadata> {
     if recording_files(root)? != expected {
         return Err(invalid("recording file set differs from captured inputs"));
     }
+    check_entries(root)?;
+    checkpoints::validate(root)?;
     Ok(meta)
 }
 
@@ -419,10 +459,15 @@ pub struct Session {
     file_count: u64,
     failed: bool,
     finished: bool,
+    /// An `exit` or `final` frame was written: the end state is recorded.
+    #[cfg(feature = "ffi")]
+    closing_frame: bool,
     #[cfg(feature = "ffi")]
     previous_cells: Vec<(u32, i32)>,
     #[cfg(feature = "ffi")]
     previous_size: (i32, i32),
+    #[cfg(feature = "ffi")]
+    checkpoints: Option<checkpoints::RollingSaves>,
 }
 
 impl Session {
@@ -513,9 +558,15 @@ impl Session {
             failed: false,
             finished: false,
             #[cfg(feature = "ffi")]
+            closing_frame: false,
+            #[cfg(feature = "ffi")]
             previous_cells: Vec::new(),
             #[cfg(feature = "ffi")]
             previous_size: (0, 0),
+            #[cfg(feature = "ffi")]
+            checkpoints: checkpoints::Config::environment()?
+                .map(|config| checkpoints::RollingSaves::new(output, config))
+                .transpose()?,
         })
     }
     fn operation<T>(&mut self, work: impl FnOnce(&mut Self) -> io::Result<T>) -> io::Result<T> {

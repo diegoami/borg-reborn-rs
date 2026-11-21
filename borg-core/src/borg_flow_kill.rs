@@ -58,7 +58,7 @@ use crate::headers::list_mon_spells_h::{
     RSF_S_HI_DEMON, RSF_S_HI_DRAGON, RSF_S_HI_UNDEAD, RSF_S_HOUND, RSF_S_HYDRA, RSF_S_KIN,
     RSF_S_MONSTER, RSF_S_MONSTERS, RSF_S_SPIDER, RSF_S_UNDEAD, RSF_S_UNIQUE, RSF_S_WRAITH,
 };
-use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FEAR, MON_TMD_STUN};
+use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FAST, MON_TMD_FEAR, MON_TMD_STUN};
 use crate::headers::list_terrain_h::{
     FEAT_FLOOR, FEAT_GRANITE, FEAT_MAGMA, FEAT_MORE, FEAT_NONE, FEAT_PERM, FEAT_QUARTZ_K,
 };
@@ -117,6 +117,9 @@ pub struct BorgKill {
     pub oy: u8,
     /// Estimated speed
     pub speed: u8,
+    /// #759/#758: Haste observed in the same permitted timer snapshot.
+    /// Legacy speed remains the base mspeed so off behavior is unchanged.
+    pub observed_fast: bool,
     /// Estimates moves
     pub moves: u8,
     /// qty of ranged attacks
@@ -125,6 +128,10 @@ pub struct BorgKill {
     pub spell: [u8; RSF_MAX as usize],
     /// Estimated hit-points
     pub power: i16,
+    /// #759: the HP/max HP from the same permitted observation that feeds
+    /// set_health. Retain the observation without rounding it twice; None
+    /// means no observed health, not a zero-HP living monster.
+    pub observed_health: Option<(i16, i16)>,
     /// Percent wounded
     pub injury: i16,
     /// Estimated something
@@ -156,10 +163,12 @@ impl BorgKill {
         ox: 0,
         oy: 0,
         speed: 0,
+        observed_fast: false,
         moves: 0,
         ranged_attack: 0,
         spell: [0; RSF_MAX as usize],
         power: 0,
+        observed_health: None,
         injury: 0,
         other: 0,
         level: 0,
@@ -348,6 +357,7 @@ fn race_name(r_idx: impl Into<i32>) -> &'static [u8] {
 /// The parts shared by `borg_update_kill_new` and `borg_update_kill_old`
 /// after the hit points.
 fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
+    kill.observed_fast = m.m_timed[MON_TMD_FAST as usize] != 0;
     // Is it sleeping
     kill.awake = m.m_timed[MON_TMD_SLEEP] == 0;
 
@@ -363,6 +373,7 @@ fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
 
 /// Cheat the health (`pct`, `power`, `injury`) from the game monster.
 fn set_health(kill: &mut BorgKill, m: &MonsterView) {
+    kill.observed_health = Some((m.hp, m.maxhp));
     let pct: i32 = if m.maxhp != 0 {
         // Cheat the "percent" of health (a C `long` division)
         let max = if m.maxhp > 1 { i64::from(m.maxhp) } else { 1 };
@@ -2051,7 +2062,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
         // borg-reborn-rs (#618, #621): no hunt for an ignored monster.
-        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx)) {
+        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx))
+            || crate::borg_town_hunt::controls_target(st, usize::from(kill.r_idx))
+        {
             continue;
         }
 
@@ -2141,6 +2154,24 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         return false;
     }
 
+    commit_kill_flow(st, nearness, !viewable)
+}
+
+/// #789: approach just the certified town target. Re-evaluate after each
+/// move using current HP, monster positions and available attacks.
+pub(crate) fn flow_town_hunt(st: &mut BorgState, target: usize, nearness: i32) -> bool {
+    let pos = st.kills.kills[target].pos;
+    st.flow.temp_n = 0;
+    st.flow.temp_push(pos.y, pos.x);
+    let moved = commit_kill_flow(st, nearness, true);
+    if st.borg.goal.type_0 == GOAL_KILL {
+        st.borg.goal.type_0 = 0;
+    }
+    moved
+}
+
+fn commit_kill_flow(st: &mut BorgState, nearness: i32, avoid_unknown: bool) -> bool {
+    let n = st.flow.temp_n;
     // Clear the flow codes
     borg_flow::borg_flow_clear(st);
 
@@ -2153,7 +2184,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // Spread the flow: if we are not flowing toward monsters that we can
     // see, make sure they are at least easily reachable.
-    borg_flow::borg_flow_spread_hunting(st, nearness, true, !viewable, false, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, nearness, true, avoid_unknown, false, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, c"kill", i32::from(GOAL_KILL)) {
@@ -2685,7 +2716,10 @@ pub fn borg_flow_kill_direct(st: &mut BorgState, twitchy: bool) -> bool {
             let kill = st.kills.kills[i as usize];
 
             // Skip "dead" monsters
-            if kill.r_idx == 0 {
+            if kill.r_idx == 0
+                || crate::borg_town_hunt::avoids_maggot(st, usize::from(kill.r_idx))
+                || crate::borg_town_hunt::controls_target(st, usize::from(kill.r_idx))
+            {
                 continue;
             }
 
@@ -2944,11 +2978,16 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // borg-reborn-rs (#539, review of #569): a hurt or afraid monster is
         // no named-list or damage-rule scare; the rule is classify_scare.
         let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
-        let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
+        let attack_on_sight = crate::borg_fight_attack::attack_on_sight_reason(st, usize::from(r_idx)).is_some()
+            || crate::borg_town_hunt::controls_target(st, usize::from(r_idx))
+            || crate::borg_town_hunt::avoids_maggot(st, usize::from(r_idx));
+        let scare = if attack_on_sight {
+            crate::borg_caution::Scare { scary: false, calmed_scare: false }
+        } else { crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
             // borg-reborn-rs (#604, review): no "Scary by damage" note in a town
             // that cannot be scary
             crate::borg_caution::scary_by_damage(st, i, note && !town_calm)
-        });
+        }) };
         let mut scary = scare.scary && !town_calm;
 
         if stand_mode && !town_calm {

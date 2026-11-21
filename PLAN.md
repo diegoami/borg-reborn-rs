@@ -296,14 +296,13 @@ paragraph records the original milestone process.
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In progress: #774 pre-promotion reconciliation and revalidation.** #680
-integrated through owner-reviewed #773 at track-p `e9670cab`; canonical
-evidence PR Cemetery #90 is merged. Source startup #706/#708 and kickoff
-#707/#709 are complete. The original #680 receiving baseline was `760fae80`;
-#774 synchronizes exact accepted main `4e9af99e` (engine `574b618c`) and
-keeps broader compatibility verification pending [Zoo #520](https://github.com/diegoami/borg-zoo/issues/520).
-Local smoke and the named override pass at that synchronized engine; this is
-not the broader comparison result. The owner
+**In progress: #814 final-candidate reconciliation.** #774/#783 integrated
+into track-p at `221a2504`, with Zoo #520 full45 showing45/45 paired
+key/message/state/complete-trace hashes equal at its frozen4e9af99e/d0657712
+builds. #814 reconciles exact accepted main `07aa4b1e`, preserving the ten
+reviewed controls and all newer main runtime/settings/pins. Its own broader
+comparison is requested in [Zoo #571](https://github.com/diegoami/borg-zoo/issues/571);
+old full45 evidence is not proof of this newer baseline. The owner
 requested continuation after accepting and promoting P5. P6 addresses the
 remaining adjacent item-policy dependency #680 reported by the R4 ownership
 audit; it does not transfer that work to Track R.
@@ -332,6 +331,12 @@ audit; it does not transfer that work to Track R.
    preserve the new engine/settings/other-track work and the neutral contract,
    and revalidate against that synchronized receiving baseline. The #680
    receipts at 760fae80 do not prove latest-main compatibility.
+
+5. **Final-candidate reconciliation (#814), after #774:** synchronize exact
+   accepted main07aa4b1e after the frozen #783 comparison; preserve main's
+   resolved-settings receipt/test and the P6 bounds test, recheck smoke and
+   a named native witness, and route the new paired comparison through Zoo571.
+   Freeze that candidate for task review, then the P6 milestone review.
 
 Exit: a source-grounded classification and parameter contract, registered
 bounded overrides/profile exposure and decision-trace coverage; focused

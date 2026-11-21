@@ -1033,32 +1033,28 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         }
     }
 
-    /* Eat food */
-    if st.borg.tr(BI_ISHUNGRY) != 0 {
-        let food = TV_FOOD as i32;
-        /* Attempt to satisfy hunger */
-        // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
-        if borg_satisfy_hunger_before_food(st)
-            || borg_spell(st, REMOVE_HUNGER)
-            || borg_spell(st, HERBAL_CURING)
-            || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
-            || borg_eat(st, food, st.item_val.sv_food_slime_mold)
-            || borg_eat(st, food, st.item_val.sv_food_slice)
-            || borg_eat(st, food, st.item_val.sv_food_apple)
-            || borg_eat(st, food, st.item_val.sv_food_pint)
-            || borg_eat(st, food, st.item_val.sv_food_handful)
-            || borg_eat(st, food, st.item_val.sv_food_honey_cake)
-            || borg_eat(st, food, st.item_val.sv_food_ration)
-            || borg_eat(st, food, st.item_val.sv_food_waybread)
-            || borg_eat(st, food, st.item_val.sv_food_draught)
-            || borg_activate_item(st, st.act.food_waybread)
-        {
-            return true;
-        }
-    }
+    st.borg.tr(BI_ISHUNGRY) != 0 && borg_eat_when_hungry(st)
+}
 
-    /* Nothing to do */
-    false
+/// Satisfy hunger using known supplies without using unrelated items.
+pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
+    let food = TV_FOOD as i32;
+    /* Attempt to satisfy hunger */
+    // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
+    borg_satisfy_hunger_before_food(st)
+        || borg_spell(st, REMOVE_HUNGER)
+        || borg_spell(st, HERBAL_CURING)
+        || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
+        || borg_eat(st, food, st.item_val.sv_food_slime_mold)
+        || borg_eat(st, food, st.item_val.sv_food_slice)
+        || borg_eat(st, food, st.item_val.sv_food_apple)
+        || borg_eat(st, food, st.item_val.sv_food_pint)
+        || borg_eat(st, food, st.item_val.sv_food_handful)
+        || borg_eat(st, food, st.item_val.sv_food_honey_cake)
+        || borg_eat(st, food, st.item_val.sv_food_ration)
+        || borg_eat(st, food, st.item_val.sv_food_waybread)
+        || borg_eat(st, food, st.item_val.sv_food_draught)
+        || borg_activate_item(st, st.act.food_waybread)
 }
 
 /// Recharge things.

@@ -20,12 +20,12 @@ use crate::borg_cave_light::BORG_LIGHT;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
-use crate::borg_item::inven_wield;
+use crate::borg_item::{inven_wield, BorgItem};
 use crate::borg_item_use::{
     borg_activate_item, borg_aim_wand, borg_equips_rod, borg_read_scroll, borg_use_staff,
     borg_zap_rod,
 };
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
 use crate::borg_update::Detect;
 use crate::engine;
@@ -33,13 +33,15 @@ use crate::params::{value as param, Param};
 use crate::borg_headers::borg_magic_h::{
     CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
     DETECT_STAIRS, FIND_TRAPS_DOORS_STAIRS, FUME_OF_MORDOR, LIGHT_ROOM, OBJECT_DETECTION,
-    READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS, SPEAR_OF_LIGHT,
+    MAGIC_MISSILE, NETHER_BOLT, PHASE_DOOR, READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS,
+    SPEAR_OF_LIGHT, TELEPORT_SELF,
 };
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
-    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
+    BI_CURSP, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
-use crate::headers::list_object_flags_h::OF_NO_FUEL;
+use crate::headers::list_object_flags_h::{OF_LIGHT_2, OF_LIGHT_3, OF_NO_FUEL, OF_STICKY, OF_TAKES_FUEL};
+use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
 use crate::headers::list_terrain_h::FEAT_NONE;
 use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT, TV_WAND};
 use crate::headers::ui_event_h::keycode_t;
@@ -282,6 +284,93 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     false
 }
 
+/// The arrival square or the forward sector after a single step. A wait,
+/// bump, teleport on the same level or redraw is not an entry.
+fn entry_direction(previous: Option<(i32, i32)>, current: (i32, i32)) -> Option<(i32, i32)> {
+    let Some((py, px)) = previous else { return Some((0, 0)); };
+    let (dy, dx) = (current.0 - py, current.1 - px);
+    (dy.abs().max(dx.abs()) == 1).then_some((dy, dx))
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FrontierGrid {
+    Floor,
+    Unknown,
+    Blocked,
+}
+
+fn dark_frontier(
+    (y, x): (i32, i32), direction: (i32, i32), radius: i32,
+    grid: impl Fn(i32, i32) -> FrontierGrid,
+) -> bool {
+    let (dy, dx) = direction;
+    (-1..=1).any(|sy| (-1..=1).any(|sx| {
+        if (sy == 0 && sx == 0) || ((dy != 0 || dx != 0) && sy * dy + sx * dx <= 0) {
+            return false;
+        }
+        grid(y + sy * (radius + 1), x + sx * (radius + 1)) == FrontierGrid::Unknown
+            && (1..=radius).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
+    }))
+}
+
+fn entering_unexamined_dark(st: &BorgState) -> bool {
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let steps = &st.flow.track_step;
+    if steps.num == 0 || engine::square_isglow(x, y) {
+        return false;
+    }
+    let previous = (steps.num >= 2).then(|| steps.at(steps.num as usize - 2));
+    let Some(direction) = entry_direction(previous, (y, x)) else { return false };
+    // The grid just beyond personal light must still be unknown, along a
+    // continuous run of known floor. Do not inspect that grid in the engine.
+    dark_frontier((y, x), direction, st.borg.tr(BI_LIGHT).max(1), |y, x| {
+        if !engine::square_in_bounds_fully(x, y) {
+            FrontierGrid::Blocked
+        } else if u32::from(st.cave.grid(x, y).feat) == FEAT_NONE {
+            FrontierGrid::Unknown
+        } else if borg_cave_floor_bold(st, y, x) {
+            FrontierGrid::Floor
+        } else {
+            FrontierGrid::Blocked
+        }
+    })
+}
+
+fn fits_detection_reserve(sp: i32, cost: i32, reserve: i32) -> bool {
+    cost >= 0 && sp - cost >= reserve
+}
+
+/// #796: the two broad detectors behind #685's level gate. Detect Evil
+/// misses non-evil monsters, and Seek Battle misses fear-immune ones (the
+/// floating eye is both). Keep those on the ordinary branch.
+fn detect_on_dark_entry(st: &mut BorgState, panel: (i32, i32)) -> bool {
+    if param(Param::light_detect_dark_entry) == 0 || st.borg.tr(BI_CDEPTH) == 0
+        || st.light.detected_entries.contains(&panel)
+        || st.borg.goal.fleeing || st.borg.goal.leaving || !entering_unexamined_dark(st)
+    {
+        return false;
+    }
+    let Some(response_cost) = [PHASE_DOOR, TELEPORT_SELF, MAGIC_MISSILE, NETHER_BOLT].into_iter()
+        .filter(|&spell| borg_spell_legal_fail(st, spell, 40))
+        .map(|spell| borg_get_spell_power(st, spell))
+        .min()
+    else {
+        return false;
+    };
+    let reserve = param(Param::light_detect_dark_entry_reserve_sp).max(response_cost)
+        .max(crate::borg_recover::recovery_sp_floor(st));
+    let sp = st.borg.tr(BI_CURSP);
+    for (spell, name) in [(DETECT_MONSTERS, "Detect Monsters"), (READ_MINDS, "Read Minds")] {
+        let cost = borg_get_spell_power(st, spell);
+        if fits_detection_reserve(sp, cost, reserve) && borg_spell_fail(st, spell, 40) {
+            st.light.detected_entries.insert(panel);
+            borg_note(st, &format!("# Dark entry detection: {name} (SP {sp}, cost {cost}, reserve {reserve})"));
+            return true;
+        }
+    }
+    false
+}
+
 /// Refuel, call lite, detect traps/doors/walls/evil, etc
 /// (`borg_check_light`).
 ///
@@ -363,14 +452,14 @@ pub fn borg_check_light(st: &mut BorgState) -> bool {
     // to it on every new panel and it then rests for mana; Detect Evil
     // misses the animals that kill it on DL1. 0 = C.
     let detect_spell_ok = st.borg.tr(BI_CLEVEL) >= param(Param::light_detect_evil_spell_min_level);
-    if do_evil
-        && detect_spell_ok
-        && due(st, st.borg.time.detect_evil, 20)
-        && (borg_spell_fail(st, DETECT_EVIL, 40)
+    if do_evil && due(st, st.borg.time.detect_evil, 20) && if detect_spell_ok {
+        borg_spell_fail(st, DETECT_EVIL, 40)
             || borg_spell_fail(st, DETECT_MONSTERS, 40)
             || borg_spell_fail(st, READ_MINDS, 40)
-            || borg_spell_fail(st, SEEK_BATTLE, 40))
-    {
+            || borg_spell_fail(st, SEEK_BATTLE, 40)
+    } else {
+        detect_on_dark_entry(st, (q_y, q_x))
+    } {
         borg_note(st, "# Checking for monsters.");
 
         borg_react(st, b"SELF:evil", b"SELF:evil");
@@ -530,6 +619,11 @@ fn borg_refuel_lantern(st: &mut BorgState) -> bool {
         return false;
     }
 
+    refuel_with(st, i);
+    true
+}
+
+fn refuel_with(st: &mut BorgState, i: i32) {
     /* Log the message */
     let item = &st.items.items[i as usize];
     let mut note = b"# Refueling with ".to_vec();
@@ -545,8 +639,91 @@ fn borg_refuel_lantern(st: &mut BorgState) -> bool {
     st.borg.goal.item = -1;
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
+}
 
-    /* Success */
+#[derive(Debug, PartialEq, Eq)]
+enum LightAction {
+    Refuel(usize),
+    Wear(usize),
+}
+
+fn has_flag(item: &BorgItem, flag: u32) -> bool {
+    engine::flag_has(&item.flags, flag as i32)
+}
+
+fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
+    // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
+    let refillable = |item: &BorgItem| {
+        item.iqty != 0
+            && u32::from(item.tval) == TV_LIGHT
+            && has_flag(item, OF_TAKES_FUEL)
+            && !has_flag(item, OF_NO_FUEL)
+    };
+    let fuel_slot = pack.iter().position(|item| {
+        item.iqty != 0
+            && u32::from(item.tval) == TV_FLASK
+            && i32::from(item.sval) == oil
+            && !has_flag(item, OF_NO_FUEL)
+    }).or_else(|| pack.iter().position(|item| refillable(item) && item.timeout > 0));
+    if refillable(equipped) && equipped.timeout == 0 {
+        if let Some(slot) = fuel_slot {
+            return Some(LightAction::Refuel(slot));
+        }
+    }
+
+    if has_flag(equipped, OF_STICKY) {
+        return None;
+    }
+
+    // player-calcs.c:1598 (calc_light). Replace a dimmed light only if the new
+    // contribution makes the total positive.
+    let contribution = |item: &BorgItem| {
+        let innate = if has_flag(item, OF_LIGHT_2) {
+            2
+        } else if has_flag(item, OF_LIGHT_3) {
+            3
+        } else {
+            0
+        };
+        innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
+    };
+    let powered = |item: &BorgItem| item.timeout > 0 || has_flag(item, OF_NO_FUEL);
+    let current = if equipped.iqty != 0 && powered(equipped) {
+        contribution(equipped)
+    } else {
+        0
+    };
+
+    pack.iter()
+        .enumerate()
+        .filter(|(_, item)| {
+            item.iqty != 0
+                && u32::from(item.tval) == TV_LIGHT
+                && !item.cursed
+                && (powered(item) || (refillable(item) && fuel_slot.is_some()))
+                && radius - current + contribution(item) > 0
+        })
+        .max_by_key(|(slot, item)| (powered(item), contribution(item), std::cmp::Reverse(*slot)))
+        .map(|(slot, _)| LightAction::Wear(slot))
+}
+
+/// Restore carried light without relying on ordinary equipment power or wear cooldowns.
+pub(crate) fn borg_restore_light(st: &mut BorgState) -> bool {
+    let action = light_action(
+        &st.items.items[inven_light() as usize],
+        &st.items.items[..inven_wield() as usize],
+        st.item_val.sv_flask_oil,
+        st.borg.tr(BI_LIGHT),
+    );
+    match action {
+        Some(LightAction::Refuel(slot)) => refuel_with(st, slot as i32),
+        Some(LightAction::Wear(slot)) => {
+            borg_note(st, "# Wearing a working light source.");
+            borg_keypress(st, key(b'w'));
+            borg_keypress(st, letter(slot as i32));
+        }
+        None => return false,
+    }
     true
 }
 
@@ -725,4 +902,93 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
 
     /* cant do it */
     false
+}
+
+
+#[cfg(test)]
+mod dark_entry_tests {
+    use super::*;
+
+    #[test]
+    fn dark_entry_requires_a_new_level_or_a_single_step() {
+        assert_eq!(entry_direction(None, (12, 8)), Some((0, 0)));
+        assert_eq!(entry_direction(Some((12, 7)), (12, 8)), Some((0, 1)));
+        assert_eq!(entry_direction(Some((11, 9)), (12, 8)), Some((1, -1)));
+        assert_eq!(entry_direction(Some((12, 8)), (12, 8)), None);
+        assert_eq!(entry_direction(Some((16, 1)), (12, 8)), None);
+    }
+
+    #[test]
+    fn the_dark_frontier_is_unknown_forward_of_known_floor() {
+        use FrontierGrid::{Blocked, Floor, Unknown};
+
+        let grid = |y, x| match (y, x) {
+            (10, 11) => Floor,
+            (10, 12) => Unknown,
+            _ => Blocked,
+        };
+        assert!(dark_frontier((10, 10), (0, 1), 1, grid));
+        assert!(dark_frontier((10, 10), (0, 0), 1, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 2, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Unknown));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Floor));
+    }
+
+    #[test]
+    fn dark_entry_does_not_spend_its_response_reserve() {
+        assert!(!fits_detection_reserve(3, 2, 2));
+        assert!(fits_detection_reserve(4, 2, 2));
+        assert!(!fits_detection_reserve(5, 2, 4));
+        assert!(!fits_detection_reserve(10, -1, 2));
+    }
+}
+
+#[cfg(test)]
+mod lightless_tests {
+    use super::*;
+    use crate::borg_item::blank_item;
+
+    fn light(flags: &[u32], timeout: i16) -> BorgItem {
+        let mut item = blank_item();
+        item.iqty = 1;
+        item.tval = TV_LIGHT as u8;
+        item.timeout = timeout;
+        for flag in flags {
+            let offset = (*flag as i32 - engine::FLAG_START) as usize;
+            item.flags[offset / 8] |= 1 << (offset % 8);
+        }
+        item
+    }
+
+    #[test]
+    fn refuels_an_empty_lantern_before_replacing_it() {
+        let equipped = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 0);
+        let spare_torch = light(&[OF_LIGHT_2], 30);
+        let mut flask = blank_item();
+        flask.iqty = 1;
+        flask.tval = TV_FLASK as u8;
+        flask.sval = 1;
+        let spare_lantern = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 30);
+        assert_eq!(
+            light_action(&equipped, &[spare_torch, spare_lantern, flask], 1, 0),
+            Some(LightAction::Refuel(2)),
+        );
+        assert_eq!(
+            light_action(&equipped, &[spare_torch], 1, 0),
+            Some(LightAction::Wear(0)),
+        );
+        assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
+    }
+    #[test]
+    fn wears_the_brightest_powered_spare() {
+        let empty = blank_item();
+        let torch = light(&[OF_LIGHT_2], 30);
+        let lantern = light(&[OF_LIGHT_3], 30);
+        assert_eq!(
+            light_action(&empty, &[torch, lantern], 1, 0),
+            Some(LightAction::Wear(1)),
+        );
+    }
+
 }
