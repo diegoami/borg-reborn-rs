@@ -10,6 +10,36 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Kill on sight, with the attack kinds named (#869)
+
+No parameter added (the registry still holds **2352**): a scary-list reason
+and a field. Owner, 2026-11-21, after playing borg-zoo#581's Gnome
+Necromancer 459443830 and Elf Necromancer 412975293 (both killed by a grey
+mushroom patch; a flask of oil thrown while confused killed it in both):
+"Always attack, confused or not. Unless there is something more dangerous",
+"maybe should put it on another list", "add what type of attack are allowed:
+melee, missiles, wands, picks the best one".
+
+- **`kill-on-sight`** (a reason of an `attack` entry,
+  `borg_fight_attack::KILL_ON_SIGHT`). `attack_on_sight` runs in
+  `fight_before_flight`, before `borg_caution`'s cures and Phase Door; for
+  this reason it drops the target's own damage test
+  (`category_attack_safe_with(.., false)`, as #842 does for fast-fragile
+  monsters), so it attacks confused or not; the other monsters' danger above
+  HP x `caution_flee_danger_hp_multiplier` still stops it. Unlike
+  fast-fragile, no heal ban and no fast-fragile escape.
+- **Attack kinds** (an optional sixth field of an attack entry,
+  `scary_list::ATTACK_KINDS`): `melee`, `missiles`, `throws`, `spells`,
+  `devices` (wands, rods, staffs), `activations`, by
+  `attack_preference::Family`; none named = all. `focused_attack` ranks only
+  those, best first; it serves attack on sight, fast-fragile and the winning
+  fight test (#759) for that monster.
+- **Shipped:** `grey mushroom patch | 50 | | attack | kill-on-sight | melee,
+  missiles, throws, devices` (monster.txt:545: speed +10, 2 HP,
+  `SPORE:CONFUSE`, NEVER_MOVE), beside its inert #838 `ranged` entry. Confused,
+  the attack is melee unless #867's `attack_confused_by_direction` allows the
+  throw by direction.
+
 ## Ranged-only monsters (#838)
 
 The registry now holds **2291** parameters (2290 before; one added). Owner,
@@ -4869,7 +4899,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5522` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5576` |
 
 ## C Borg dive gates (#768)
 
