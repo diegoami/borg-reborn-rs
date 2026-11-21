@@ -315,15 +315,22 @@ fn clear_confused_aim(st: &mut BorgState) {
     st.fight_attack.confused_dir = 0;
 }
 
-/// borg-reborn-rs (#867): a confused aimed attack's value, damage and kills
-/// weighted by `CONFUSED_AIM`; anything else unchanged.
-fn confused_weight(st: &mut BorgState, raw: i32) -> i32 {
+/// borg-reborn-rs (#867): a confused aimed attack's value weighted by
+/// `CONFUSED_AIM`, and its damage and kills too when `damage_too`; anything
+/// else unchanged. `borg_attack` weights a blow's value only (review of
+/// #868): its damage is what the fight-or-flee tests read
+/// (`borg_attack_estimate`), and C rated a confused blow at full damage, so
+/// a confused fight that melee wins is judged as in C. The focused ranking
+/// ranks on the damage, so it weights it for every aimed attack.
+fn confused_weight(st: &mut BorgState, raw: i32, damage_too: bool) -> i32 {
     if !st.fight_attack.confused_aim {
         return raw;
     }
     let (num, den) = CONFUSED_AIM;
-    st.fight_attack.dmg_best = st.fight_attack.dmg_best * num / den;
-    st.fight_attack.kill_best *= f64::from(num) / f64::from(den);
+    if damage_too {
+        st.fight_attack.dmg_best = st.fight_attack.dmg_best * num / den;
+        st.fight_attack.kill_best *= f64::from(num) / f64::from(den);
+    }
     raw * num / den
 }
 
@@ -5149,7 +5156,8 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         st.fight_attack.kill_best = 0.0;
         let raw = borg_calculate_attack_effectiveness(st, g);
         // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
-        let raw = confused_weight(st, raw);
+        // Not a blow's damage (`confused_weight`): fight-or-flee as in C.
+        let raw = confused_weight(st, raw, g != BF_THRUST as i32);
         // borg-reborn-rs (#625): the candidates that need no mana, for the
         // fight test's fallback once the chosen attack's uses run out.
         if raw > 0 && !st.fight_attack.cost.is_some_and(|c| c.spell) {
@@ -5518,7 +5526,7 @@ fn focused_attack_ranked(
         st.fight_attack.cost = None;
         let utility = borg_calculate_attack_effectiveness(st, kind);
         // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
-        let utility = confused_weight(st, utility);
+        let utility = confused_weight(st, utility, true);
         let damage = st.fight_attack.dmg_best;
         let mut cost = st.fight_attack.cost;
         if kind == BF_OBJECT as i32 {
@@ -5847,7 +5855,7 @@ mod confused_attack_tests {
             st.fight_attack.confused_aim = aimed;
             st.fight_attack.dmg_best = dmg;
             st.fight_attack.kill_best = 1.0;
-            let v = confused_weight(&mut st, raw);
+            let v = confused_weight(&mut st, raw, true);
             (v, st.fight_attack.dmg_best, st.fight_attack.kill_best)
         };
         assert_eq!(weigh(64, 64, true), (22, 22, 11.0 / 32.0));
@@ -5859,5 +5867,17 @@ mod confused_attack_tests {
         assert!(warrior_blow > oil);
         let (staff, _, _) = weigh(20, 20, false);
         assert!(staff > oil, "a staff needs no aim");
+    }
+
+    /// Review of #868: `borg_attack` weights a blow's value, not the damage
+    /// the fight-or-flee tests read, which stays C's.
+    #[test]
+    fn a_blows_damage_stays_cs_for_fight_or_flee() {
+        let mut st = BorgState::default();
+        st.fight_attack.confused_aim = true;
+        st.fight_attack.dmg_best = 64;
+        st.fight_attack.kill_best = 1.0;
+        assert_eq!(confused_weight(&mut st, 64, false), 22, "the value is weighted");
+        assert_eq!((st.fight_attack.dmg_best, st.fight_attack.kill_best), (64, 1.0), "the damage is not");
     }
 }

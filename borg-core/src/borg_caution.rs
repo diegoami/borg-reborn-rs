@@ -308,10 +308,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // borg-reborn-rs (#646): no cure next to an immobile confuser, which
     // confuses again at once (borg-cemetery#75), unless the monsters that
     // move are as dangerous as the HP left.
-    let hold_cure = confusion_cure_held(st);
-    if hold_cure {
-        borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646)");
+    // borg-reborn-rs (#867): or next to an immobile confuser, the attack
+    // first. One note, naming the reason (review of #868).
+    let hold = confusion_cure_hold(st);
+    match hold {
+        Some(CureHold::Attack) => borg_note(st, "# Not fixing Confusion next to an immobile confuser: attacking first (#867)"),
+        Some(CureHold::Step) => borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646)"),
+        None => {}
     }
+    let hold_cure = hold.is_some();
     if st.borg.tr(BI_ISCONFUSED) != 0 && !hold_cure {
         if pct_down >= p(Param::caution_confused_heal_loss)
             && danger - heal_heal < st.borg.tr(BI_CURHP)
@@ -1035,11 +1040,13 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // `player-util.c:1353`; the walk into the wall of the Necromancer's last
     // turns). With a cure in the pack the cures at the end of `borg_caution`
     // come first, unless it is held next to an immobile attacker (#646).
+    // Not the #867 hold (review of #868): it holds the cure for an attack,
+    // which a confused walk would replace.
     // At 2, no confused walk at all, cure or not.
     let walk_mode = p(Param::caution_confused_cure_before_walk);
     if walk_mode != 0
         && st.borg.tr(BI_ISCONFUSED) != 0
-        && (walk_mode >= 2 || (confusion_cure_carried(st) && !confusion_cure_held(st)))
+        && (walk_mode >= 2 || (confusion_cure_carried(st) && !cure_held_for_step(st)))
     {
         borg_note(st, "# Confused: no walk to the stairs (#837)");
         return false;
@@ -1842,36 +1849,55 @@ fn step_left(mon: &crate::borg::BorgMonInfo, level: BorgTime, pos: (u8, u8), con
     }
 }
 
+/// Why the confusion cure is held (`confusion_cure_hold`).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum CureHold {
+    /// #867: next to an immobile confuser, the attack goes first.
+    Attack,
+    /// #646: next to an immobile attacker, the step away goes first.
+    Step,
+}
+
+/// Whether the confusion cure is held, and why, at both cure sites
+/// (`borg_heal` and the cures at the end of `borg_caution`), which note the
+/// reason once each (review of #868: the hold no longer notes it itself).
+/// The attack (#867) is asked first.
+fn confusion_cure_hold(st: &mut BorgState) -> Option<CureHold> {
+    if cure_held_for_attack(st) {
+        Some(CureHold::Attack)
+    } else if cure_held_for_step(st) {
+        Some(CureHold::Step)
+    } else {
+        None
+    }
+}
+
+/// borg-reborn-rs (#867, owner: "I threw flasks at the patch immediately"):
+/// with `attack_confused_by_direction`, next to an immobile monster whose
+/// blow confuses, the cure waits and the attack goes first: the monster
+/// confuses again before a cure is worth anything (a grey mushroom patch
+/// has speed +10 and 2 HP, monster.txt), while a confused attack still
+/// lands 11/32 of the time. Not while the moving monsters near are as
+/// dangerous as the HP left, and only while an attack is open (review of
+/// #868: afraid, no blow; hallucinating, no item attack; a magic mushroom
+/// patch does both, with `SCARE` and `SPORE:HALLU`, monster.txt).
+fn cure_held_for_attack(st: &mut BorgState) -> bool {
+    st.borg.tr(BI_ISCONFUSED) != 0
+        && p(Param::attack_confused_by_direction) != 0
+        && immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+        && mobile_danger(st) < st.borg.tr(BI_CURHP)
+        && confused_attack_open(st)
+}
+
 /// borg-reborn-rs (#646, review of #659): the confusion cure is held next to
-/// an immobile attacker, at both cure sites (`borg_heal` and the cures at
-/// the end of `borg_caution`), unless the moving monsters near are as
-/// dangerous as the HP left.
+/// an immobile attacker, so the step away (`immobile_step_away`) comes
+/// first, unless the moving monsters near are as dangerous as the HP left.
 ///
 /// borg-reborn-rs (#837, `caution_confusion_cure_when_stuck`): held only
 /// while `immobile_step_away` can still step (a qualifying grid, tries left).
 /// With none the Borg neither stepped nor cured, and melee went on confused.
-fn confusion_cure_held(st: &mut BorgState) -> bool {
-    if st.borg.tr(BI_ISCONFUSED) == 0 {
-        return false;
-    }
-    // borg-reborn-rs (#867, owner: "I threw flasks at the patch immediately"):
-    // with `attack_confused_by_direction`, next to an immobile monster whose
-    // blow confuses, the cure waits and the attack goes first: the monster
-    // confuses again before a cure is worth anything (a grey mushroom patch
-    // has speed +10 and 2 HP, monster.txt), while a confused attack still
-    // lands 11/32 of the time. Not while the moving monsters near are as
-    // dangerous as the HP left, and only while an attack is open (review of
-    // #868: afraid, no blow; hallucinating, no item attack; a magic mushroom
-    // patch does both, with `SCARE` and `SPORE:HALLU`, monster.txt).
-    if p(Param::attack_confused_by_direction) != 0
-        && immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
-        && mobile_danger(st) < st.borg.tr(BI_CURHP)
-        && confused_attack_open(st)
-    {
-        borg_note(st, "# Next to an immobile confuser: attacking before the cure (#867)");
-        return true;
-    }
-    if p(Param::caution_ranged_vs_immobile) == 0 {
+fn cure_held_for_step(st: &mut BorgState) -> bool {
+    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_ISCONFUSED) == 0 {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
@@ -1969,7 +1995,7 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
 /// directions), if any: a free floor grid with no trap, out of the reach of
 /// every immobile attacker, less dangerous than this one. Chosen by
 /// `caution_immobile_step_to_exit` (#736) and `caution_immobile_step_mobile_first`
-/// (#837); records nothing (`confusion_cure_held` asks it too).
+/// (#837); records nothing (`cure_held_for_step` asks it too).
 fn best_step_away(st: &mut BorgState) -> Option<usize> {
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     // Review of #659: only a grid less dangerous than this one, and not the
@@ -3189,10 +3215,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // cure confusion, second check, first (slightly different) in
     // borg_heal; borg-reborn-rs (#646): held there too.
-    let held = st.borg.tr(BI_ISCONFUSED) != 0 && confusion_cure_held(st);
-    if held {
-        borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646, cures)");
+    let hold = if st.borg.tr(BI_ISCONFUSED) != 0 { confusion_cure_hold(st) } else { None };
+    match hold {
+        Some(CureHold::Attack) => borg_note(st, "# Not fixing Confusion next to an immobile confuser: attacking first (#867, cures)"),
+        Some(CureHold::Step) => borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646, cures)"),
+        None => {}
     }
+    let held = hold.is_some();
     if st.borg.tr(BI_ISCONFUSED) != 0 && !held {
         if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= p(Param::caution_confused_emergency_loss)
             && (borg_quaff_potion(st, st.item_val.sv_potion_healing)

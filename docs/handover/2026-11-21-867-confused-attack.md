@@ -98,3 +98,26 @@ here.
   cure first, and the two runs part at turn 33,930, as before the fix.
 - **Left**: the integer truncation of the weighted `dmg_best` (2 → 0) also
   reaches the fight-or-flee estimate and the no-mana fallback; not changed.
+
+## Review fixes (review of #868, findings 3 to 5)
+
+- **Fight-or-flee keeps C's blow** (finding 3): in `borg_attack`,
+  `confused_weight` weights a confused blow's value (the chooser still
+  compares it with the item attacks at 11/32) but not its `dmg_best` and
+  `kill_best`, which `borg_attack_estimate` hands the fight-or-flee tests;
+  C rated a confused blow at full damage, so a confused fight that melee
+  wins is judged as in C. The item attacks, new to confused play, report
+  weighted damage. The focused ranking ranks on damage, so it still weights
+  every aimed attack's damage. A hypothesis either way until the zoo arm.
+- **The stairs walk asks only the step hold** (finding 4):
+  `confusion_cure_held` is split into `cure_held_for_attack` (#867) and
+  `cure_held_for_step` (#646, #837); `desperate_for_stairs` asks only the
+  second, so the #867 hold no longer lets a confused Borg start a walk
+  that would replace the attack.
+- **One note per cure site, with its reason** (finding 5):
+  `confusion_cure_hold` returns the reason and the two cure sites note it
+  once each (`# Not fixing Confusion next to an immobile confuser:
+  attacking first (#867[, cures])`, or the #646 notes, unchanged). The hold
+  itself notes nothing.
+- **Checked**: as for findings 1 and 2, the same commands; one new unit test
+  (`a_blows_damage_stays_cs_for_fight_or_flee`).
