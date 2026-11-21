@@ -2,8 +2,8 @@
 """Score #790 death-risk forecasts on extracted Zoo cells.
 
 Pass one or more roots containing summary.json and trace-core.jsonl (for
-example, the extracted raw shards). Legacy cells support F1. Instrumented
-cells also support F2/F3 and a held-out F4 fit (pip install scikit-learn).
+example, the extracted raw shards). Legacy @1/@2 cells support F1. Instrumented
+@3 cells also support F2/F3 and a held-out F4 fit (pip install scikit-learn).
 By default, compare all four on the same held-out starts when fitting.
 """
 
@@ -19,11 +19,14 @@ from pathlib import Path
 import sys
 
 
+LEGACY_SCHEMAS = {f"borg-reborn-rs/core-trace@{version}" for version in (1, 2)}
+RISK_SCHEMA = "borg-reborn-rs/core-trace@3"
 FORMULAS = ("f1_danger_hp", "f2_time_to_die", "f3_race_escapes")
 FITTED = "f4_fitted"
 THRESHOLDS = (10, 25, 50, 75, 90)
 FEATURES = (
-    "hp_fraction", "incoming_over_hp", "adjacent_monsters", "fastest_speed_delta",
+    "hp_fraction", "incoming_over_hp", "hurt_hp_per_action", "fallback_danger",
+    "adjacent_monsters", "fastest_speed_delta",
     "phase_scrolls", "phase_usable", "other_escape_held", "cure_potions",
     "cure_usable", "stairs_distance", "stairs_usable", "clevel", "depth",
     "confused", "blind", "poisoned", "paralyzed",
@@ -58,6 +61,7 @@ def read_cell(summary, path, include_features):
         summary["game_turns"], summary["dead"], array("q"), bytearray(),
         {name: array("d") for name in FORMULAS}, array("f"),
     )
+    schema = None
     with trace.open() as lines:
         for number, line in enumerate(lines, 1):
             try:
@@ -67,15 +71,19 @@ def read_cell(summary, path, include_features):
                     raise ValueError("game turn decreased within the same cell")
                 if turn > cell.end:
                     raise ValueError("think follows the summary's final game turn")
-                risk = row.get("death_risk")
-                if risk is None:
+                row_schema = row["schema"]
+                if row_schema != RISK_SCHEMA and row_schema not in LEGACY_SCHEMAS:
+                    raise ValueError(f"unsupported trace schema {row_schema!r}")
+                if schema is not None and row_schema != schema:
+                    raise ValueError("mixed trace schemas within the same cell")
+                schema = row_schema
+                risk = row["death_risk"] if schema == RISK_SCHEMA else None
+                if schema in LEGACY_SCHEMAS:
+                    if "death_risk" in row:
+                        raise ValueError("death_risk requires core-trace@3")
                     f1 = min(100.0, max(0.0, 100.0 * row["danger"] / max(1, row["hp"])))
                     cell.scores[FORMULAS[0]].append(f1)
-                    if cell.scores[FORMULAS[1]]:
-                        raise ValueError("mixed legacy and instrumented rows")
                 else:
-                    if len(cell.turns) != len(cell.scores[FORMULAS[1]]):
-                        raise ValueError("mixed legacy and instrumented rows")
                     for name in FORMULAS:
                         percent = float(risk[name])
                         if not 0 <= percent <= 100:

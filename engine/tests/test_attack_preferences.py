@@ -59,7 +59,7 @@ class AttackPreferencesTest(unittest.TestCase):
             with (root / 'on/trace-core.jsonl').open() as trace:
                 for line in trace:
                     row = json.loads(line)
-                    self.assertEqual(row['schema'], 'borg-reborn-rs/core-trace@2')
+                    self.assertEqual(row['schema'], 'borg-reborn-rs/core-trace@3')
                     for ranking in row['attacks']:
                         candidates = ranking['candidates']
                         self.assertEqual([c['attack_id'] for c in candidates],

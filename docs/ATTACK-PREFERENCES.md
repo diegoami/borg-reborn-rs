@@ -78,8 +78,9 @@ Canonical evidence: [PlanMage analysis](https://github.com/diegoami/borg-cemeter
 
 ## Trace schema
 
-New lines use `borg-reborn-rs/core-trace@2`; historical @1 evidence is unchanged.
-All @1 fields remain. The additional `attacks` array holds each invocation of the
+Current lines use `borg-reborn-rs/core-trace@3`, which adds observational
+`death_risk` and retains the `attacks` array introduced by `@2`. Historical
+`@1` and `@2` evidence is unchanged. The `attacks` array holds each invocation of the
 attack ranking loop in this think, including attempts with no positive winner.
 Each invocation has `candidates` in original order and `winner` (BF ID or null).
 Candidate fields are attack_id/name, family, class_id/name, eligibility,
@@ -93,7 +94,7 @@ captured without reexecution. Candidate vectors are local across effectful calls
 only the completed ranking is attached to the current think frame, before action
 execution. Nested thinks use their own frame. Repeated selector attempts append
 rather than overwrite. Trace data is never consumed by policy. Consumers retain
-@1 support; new-output assertions use @2. R's shadow telemetry schema (#339) is a
+`@1` and `@2` support; new-output assertions use `@3`. R's shadow telemetry schema (#339) is a
 separate contract, not silently renamed by this native trace expansion.
 
 ## Review and Track R dependency

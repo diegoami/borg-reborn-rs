@@ -3,6 +3,7 @@
 //! Nothing here is read by policy. Snapshots use the core's own state after
 //! a selected check and before its queued keys are consumed. Danger is a
 //! read-only evaluation (no RNG); full-suite parity checks guard that seam.
+//! The observational death-risk scores are implemented in `death_risk.rs`.
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CURHP, BI_CURSP, BI_MAXHP, BI_MAXSP};
 use crate::state::BorgState;
 
@@ -325,7 +326,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
     .map(|(name, target)| Errand { name, target });
     let death_risk = frame.death_risk.unwrap_or_else(|| death_risk::observe(st, danger, false));
     let mut line = Line {
-        schema: "borg-reborn-rs/core-trace@2".into(),
+        schema: "borg-reborn-rs/core-trace@3".into(),
         think: 0,
         turn: crate::engine::game_turn(),
         borg_turn: st.borg.time.now,

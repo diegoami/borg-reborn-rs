@@ -42,17 +42,47 @@ class CalibrationTest(unittest.TestCase):
         self.assertEqual((report[0]["false_stops"], report[-1]["false_stops"]), (1, 0))
 
     def test_legacy_trace_reconstructs_the_danger_score(self):
+        for schema in sorted(risk.LEGACY_SCHEMAS):
+            with self.subTest(schema=schema), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                summary = dict(seed=1, race_idx=2, class_idx=3, game_turns=100, dead=False, stop_reason="turns")
+                (root / "summary.json").write_text(json.dumps(summary))
+                rows = [dict(schema=schema, turn=1, hp=20, danger=5, depth=0),
+                        dict(schema=schema, turn=10, hp=2, danger=9, depth=1)]
+                (root / "trace-core.jsonl").write_text("\n".join(map(json.dumps, rows)))
+                loaded, excluded = risk.load_cells([root], True)
+                self.assertEqual(sum(excluded.values()), 0)
+                self.assertEqual(list(loaded[0].scores[risk.FORMULAS[0]]), [25.0, 100.0])
+                self.assertEqual(list(loaded[0].stop_eligible), [0, 1])
+                self.assertEqual(list(loaded[0].features), [])
+
+    def test_v3_keeps_plain_melee_and_fallback_separate_for_f4(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            summary = dict(seed=1, race_idx=2, class_idx=3, game_turns=100, dead=False, stop_reason="turns")
-            (root / "summary.json").write_text(json.dumps(summary))
-            rows = [dict(turn=1, hp=20, danger=5, depth=0), dict(turn=10, hp=2, danger=9, depth=1)]
+            summary = dict(seed=1, race_idx=2, class_idx=3, game_turns=100, dead=True)
+            scores = dict(zip(risk.FORMULAS, (30, 40, 50)))
+            rows = []
+            for turn, hurt, fallback in [(1, 5, 0), (2, 0, 5)]:
+                features = dict.fromkeys(risk.FEATURES, 0)
+                features.update(incoming_over_hp=0.5, hurt_hp_per_action=hurt, fallback_danger=fallback)
+                rows.append(dict(schema=risk.RISK_SCHEMA, turn=turn,
+                                 death_risk=dict(scores, features=features, stop_eligible=True)))
             (root / "trace-core.jsonl").write_text("\n".join(map(json.dumps, rows)))
-            loaded, excluded = risk.load_cells([root], True)
-        self.assertEqual(sum(excluded.values()), 0)
-        self.assertEqual(list(loaded[0].scores[risk.FORMULAS[0]]), [25.0, 100.0])
-        self.assertEqual(list(loaded[0].stop_eligible), [0, 1])
-        self.assertEqual(list(loaded[0].features), [])
+            loaded = risk.read_cell(summary, root / "summary.json", True)
+            width = len(risk.FEATURES) + len(risk.NULLABLE_FEATURES)
+            hurt = risk.FEATURES.index("hurt_hp_per_action")
+            fallback = risk.FEATURES.index("fallback_danger")
+            self.assertEqual([loaded.features[hurt], loaded.features[hurt + width]], [5, 0])
+            self.assertEqual([loaded.features[fallback], loaded.features[fallback + width]], [0, 5])
+
+    def test_v3_cannot_silently_fall_back_to_legacy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            summary = dict(seed=1, race_idx=2, class_idx=3, game_turns=100, dead=False)
+            row = dict(schema=risk.RISK_SCHEMA, turn=1, hp=20, danger=5, depth=1)
+            (root / "trace-core.jsonl").write_text(json.dumps(row))
+            with self.assertRaisesRegex(ValueError, "trace-core.jsonl:1:.*death_risk"):
+                risk.read_cell(summary, root / "summary.json", True)
 
 
 if __name__ == "__main__":
