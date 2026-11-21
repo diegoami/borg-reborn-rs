@@ -45,7 +45,7 @@ exact pin, not inferred from Cemetery's moving default branch.
 
 ## Why repeated results do not make interchangeable packages
 
-Read-only inspection of [the P341 map](validation/P341-DOSSIER-MAP.json verifies all 25
+Read-only inspection of [the P341 map](validation/P341-DOSSIER-MAP.json) verifies all 25
 mapped packages and finds earlier qualified family/key matches for each of
 its 13 receiving packages. The selected earlier matches all exist in source
 `2f74e1c5`, before the fresh P341 evidence was added.

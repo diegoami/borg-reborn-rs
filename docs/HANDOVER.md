@@ -2871,7 +2871,7 @@ actual locations; reconciliation does not copy evidence.
 - `danger_maximum=1` changes seed 1000's first key at turn 4430 and its
   state trace at the same turn. The escape-threshold trial on that seed
   has no play change; both results are recorded without an improvement
-  claim. See [P1.2-VALIDATION.md](validation/P1.2-VALIDATION.md.
+  claim. See [P1.2-VALIDATION.md](validation/P1.2-VALIDATION.md).
 - Rust tests, Clippy, formatting, Python tests and vendoring check pass.
   D2183–D2201 preserve the validation deaths; none are missing. The shared
   lock covers every build and game run. The read-only source refresh was
@@ -2898,7 +2898,7 @@ actual locations; reconciliation does not copy evidence.
   keys/messages/states; all shared game-summary fields agree. The standard
   cross-repository diff still fails on three existing frontend telemetry
   fields (our frontend reports 0/0/{} for the vendored core), documented in
-  [P1.1-VALIDATION.md](validation/P1.1-VALIDATION.md. Full 45/45 against the earlier
+  [P1.1-VALIDATION.md](validation/P1.1-VALIDATION.md). Full 45/45 against the earlier
   main baseline passes the standard diff. Original-core smoke is 3/3;
   a 20,000-turn ladder errand matches main exactly.
 - **Override evidence:** seed 1000 Human Warrior, only

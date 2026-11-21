@@ -130,7 +130,14 @@ fn current_documents_have_no_dangling_links() {
     let mut dangling = Vec::new();
     for path in &files {
         let text = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("{path:?}: {e}"));
-        for link in markdown_targets(&without_code(&text)) {
+        let text = without_code(&text);
+        for target in unclosed_targets(&text) {
+            dangling.push(format!(
+                "{} -> {target} (no closing parenthesis)",
+                path.display()
+            ));
+        }
+        for link in markdown_targets(&text) {
             let target = link.split('#').next().unwrap_or_default();
             if target.is_empty() || target.contains("://") || target.starts_with("mailto:") {
                 continue;
@@ -150,6 +157,27 @@ fn current_documents_have_no_dangling_links() {
         "dangling links:\n{}",
         dangling.join("\n")
     );
+}
+
+/// Link targets that run into whitespace before their closing `)`: a
+/// `](path` whose path ends in `.md`, `.json` or `/` and is followed by a
+/// space or the end of the line (the shape a lost parenthesis leaves,
+/// review of #825). `markdown_targets` skips such spans, so this catches
+/// what it cannot.
+fn unclosed_targets(text: &str) -> Vec<String> {
+    text.match_indices("](")
+        .filter_map(|(i, _)| {
+            let rest = &text[i + 2..];
+            let end = rest.find(|c: char| c == ')' || c.is_whitespace())?;
+            let target = &rest[..end];
+            let path = target.split('#').next().unwrap_or_default();
+            let unclosed = !rest[end..].starts_with(')');
+            (unclosed
+                && !target.contains("://")
+                && (path.ends_with(".md") || path.ends_with(".json") || path.ends_with('/')))
+            .then(|| target.to_string())
+        })
+        .collect()
 }
 
 /// The text without fenced code blocks and inline code spans.

@@ -43,7 +43,7 @@ in-game branching, hot activation or v1 migration support.
 
 The adoption changes source/build identity. Recorder-off play comparisons,
 actual new-build death retention and required CI are linked from
-[P351-VALIDATION.md](validation/P351-VALIDATION.md. Canonical reports and packets live
+[P351-VALIDATION.md](validation/P351-VALIDATION.md). Canonical reports and packets live
 in borg-cemetery; raw recording/build proof stays outside Git. No population
 experiment is part of this integration.
 

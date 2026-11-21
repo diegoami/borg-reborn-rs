@@ -300,8 +300,9 @@ promotion; this kickoff does not choose or launch a reviewer.
 
 ## P6: neutral enchant/decurse calibration contract (2026-11-19)
 
-**In track-p; promotion candidate #814 open** (status updated 2026-11-21).
+**In track-p; milestone review and promotion PR #822 open** (status updated 2026-11-21).
 The enchant/decurse contract #680 is integrated in `track-p` (#773), the
 pre-promotion reconciliation #774/#783 is merged there (`221a2504`), and the
-final promotion candidate #814 awaits the owner-chosen milestone review. The scope, steps and
+final promotion-candidate task #814 is done; the `track-p` → `main` review PR
+#822 awaits the owner-chosen milestone review. The scope, steps and
 exit are in `track-p`'s PLAN.md.

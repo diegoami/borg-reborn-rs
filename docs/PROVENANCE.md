@@ -48,7 +48,7 @@ schema boundary and consumer validation.
 borg-core now vendors diegoami/borg-rs tag `4.2.6-rs-town-trip-m13-v1`,
 peeled commit `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, GPL-2.0-only.
 The three-way refresh preserves declared OURS/HOOKED changes.
-[Integration decisions](validation/M13-INTEGRATION.md enumerate conflicts, the native
+[Integration decisions](validation/M13-INTEGRATION.md) enumerate conflicts, the native
 read-only query patch, receiving option ABI adapter and parameter migration.
 Engine/harness, recorder and cemetery integration remain receiving-owned.
 

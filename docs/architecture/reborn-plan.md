@@ -72,8 +72,8 @@ What it built, as the shipped core has it now:
 | P3 | parameters as zoo profile settings; an owner sweep prompt ([CORE-SWEEP.md](../CORE-SWEEP.md)) | on `main`; same review |
 | P4 | M13 inventory calibration (#433) | promoted to `main` (#477) |
 | P5 | validation reproducibility and evidence receipts | promoted to `main` (#626) |
-| P6 | enchant and decurse calibration (#707) | integrated in `track-p`; promotion candidate #814 open |
-| P7 | through the first five levels: what keeps a Borg from descending to DL5, changed one class at a time, with a descent endpoint of its own | accepted 2026-11-20 (#799); issues #795–#798 |
+| P6 | enchant and decurse calibration (#707) | integrated in `track-p`; milestone review and promotion PR #822 (`track-p` → `main`) open |
+| P7 | through the first five levels: what keeps a Borg from descending to DL5, changed one class at a time, with a descent endpoint of its own | added to PLAN 2026-11-21 (#799) and accepted by the owner the same day; in progress (PR #820); issues #795–#798 |
 
 **How P works** (AGENTS.md *Track P integration and review gate*): task
 PRs target the integration branch `track-p`; each milestone stops for an
