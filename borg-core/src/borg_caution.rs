@@ -1028,6 +1028,12 @@ fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bo
 /// hop onto them in very few steps, try to head to them out of
 /// desperation.
 fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
+    // borg-reborn-rs (#849): no walk from a faster fast-fragile monster next
+    // to the Borg, in any of the branches below.
+    if crate::borg_fast_fragile::walk_blocked(st) {
+        return false;
+    }
+
     // Check for an existing "up stairs"
     let b_j = nearest_free_stair(st, true);
 

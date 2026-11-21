@@ -323,6 +323,34 @@ pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
     false
 }
 
+/// #849 (review of #847, finding 4): whether the desperate walk to the stairs
+/// is refused because a fast-fragile monster next to the Borg is faster than
+/// it. Walking from a monster that moves twice as fast only gives it free
+/// bites; the attack, Phase Door and the other escapes decide. #747's test
+/// (`caution_desperate_fast_danger_percent`, 50% of the HP) covers only one
+/// of the walk's branches; this covers all of them, for a monster the policy
+/// would attack (the 25% mark, or the named entries).
+pub(crate) fn walk_blocked(st: &mut BorgState) -> bool {
+    if param(Param::fast_fragile_no_walk) == 0 || param(Param::attack_on_sight) == 0 {
+        return false;
+    }
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > 1 {
+            continue;
+        }
+        if forecast_monster_speed(&kill) <= engine::player_combat_speed() {
+            continue;
+        }
+        if let Some((source, f, _)) = classify(st, i) {
+            let note = describe(st, i, source, &f);
+            borg_note(st, &format!("# No walk to the stairs from a faster fast-fragile attacker (#849); {}", note.trim_start_matches("# ")));
+            return true;
+        }
+    }
+    false
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
