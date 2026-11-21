@@ -10,6 +10,8 @@ name: release
 #     measurement of the commit;
 #   - or push a tag v...: the release of that tag's commit.
 # The release is always a draft; the owner reviews and publishes it.
+# Packages: Linux x86_64, macOS arm64 (#824) and Windows x86_64 (#823); each
+# is played from its own unpacked package against the smoke reference.
 # docs/RELEASING.md says how to cut one and how to make a dry run.
 on:
   workflow_dispatch:
@@ -29,6 +31,15 @@ on:
         description: "URL of borg-zoo's measurement of this exact commit; optional (the notes then say it is missing)"
         required: false
         default: ""
+      since:
+        description: "List the handover notes added or changed since this tag or commit; optional (default: the previous v* tag, or all)"
+        required: false
+        default: ""
+      release:
+        description: "Make the draft release (off: build and check the packages only, keep them as run artifacts)"
+        type: boolean
+        required: false
+        default: true
   push:
     tags: ["v*"]
 
@@ -47,6 +58,8 @@ jobs:
       sha: ${{ steps.v.outputs.sha }}
       milestone: ${{ steps.v.outputs.milestone }}
       zoo: ${{ steps.v.outputs.zoo }}
+      since: ${{ steps.v.outputs.since }}
+      release: ${{ steps.v.outputs.release }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,10 +70,17 @@ jobs:
           IN_VERSION: ${{ github.event_name == 'push' && github.ref_name || github.event.inputs.version }}
           IN_MILESTONE: ${{ github.event.inputs.milestone }}
           IN_ZOO: ${{ github.event.inputs.zoo }}
+          IN_SINCE: ${{ github.event.inputs.since }}
+          # A tag push has no inputs: it always makes the draft.
+          IN_RELEASE: ${{ github.event_name == 'push' || github.event.inputs.release != 'false' }}
         run: |
           [[ "$IN_VERSION" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || { echo "version '$IN_VERSION' is not v<digit>..."; exit 1; }
           [[ -z "$IN_MILESTONE" || "$IN_MILESTONE" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "milestone '$IN_MILESTONE': a label is expected"; exit 1; }
           [[ -z "$IN_ZOO" || "$IN_ZOO" =~ ^https://[A-Za-z0-9./_#?=%:-]+$ ]] || { echo "zoo: an https URL is expected"; exit 1; }
+          if [ -n "$IN_SINCE" ]; then
+            [[ "$IN_SINCE" =~ ^[A-Za-z0-9._/-]+$ ]] && git rev-parse -q --verify "$IN_SINCE^{commit}" >/dev/null \
+              || { echo "since '$IN_SINCE': not a tag or commit of this repository"; exit 1; }
+          fi
           # A dispatched version that is already a tag must name the commit released.
           sha=$(git rev-parse HEAD)
           if git rev-parse -q --verify "refs/tags/$IN_VERSION" >/dev/null; then
@@ -72,8 +92,10 @@ jobs:
             echo "sha=$sha"
             echo "milestone=$IN_MILESTONE"
             echo "zoo=$IN_ZOO"
+            echo "since=$IN_SINCE"
+            echo "release=$IN_RELEASE"
           } >> "$GITHUB_OUTPUT"
-          echo "release $IN_VERSION of $sha"
+          echo "release $IN_VERSION of $sha (draft release: $IN_RELEASE)"
 
   docs:
     # Upstream's docconvert: the Angband manual to HTML with Sphinx.
@@ -130,7 +152,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: ./.github/actions/apt-install
         with:
-          packages: cmake libx11-dev libssl-dev
+          packages: cmake libx11-dev libssl-dev libncurses-dev
       # The headless build, checked as CI checks it: the default core plays
       # the smoke suite with the same keys, messages and states as
       # harness/reference/smoke-borg-rs.
@@ -138,19 +160,20 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-headless
       - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-headless harness/reference/smoke-borg-rs
       - run: cp -a build/rust build/release-headless
-      # The window build (X11 and borgh frontends in one binary): the same check.
-      - run: BORG_IMPL=rust BORG_X11=ON harness/build.sh
+      # The window build (X11, curses and borgh frontends in one binary): the
+      # same check.
+      - run: BORG_IMPL=rust BORG_X11=ON BORG_GCU=ON harness/build.sh
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-x11
       - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-x11 harness/reference/smoke-borg-rs
       - uses: actions/download-artifact@v4
         with:
           name: release-docs
           path: ${{ runner.temp }}/docs
-      - run: scripts/release/package-linux.sh "${{ needs.setup.outputs.version }}" build/release-headless build/rust "$RUNNER_TEMP/package" "$RUNNER_TEMP/docs"
+      - run: scripts/release/package.sh linux "${{ needs.setup.outputs.version }}" "$RUNNER_TEMP/package" "$RUNNER_TEMP/docs" angband=build/rust angband-headless=build/release-headless
       - run: |
           mkdir -p "$RUNNER_TEMP/identity"
-          cp build/release-headless/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.angband-headless"
-          cp build/rust/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.angband"
+          cp build/release-headless/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.linux-angband-headless"
+          cp build/rust/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.linux-angband"
       - uses: actions/upload-artifact@v4
         with:
           name: release-linux
@@ -158,7 +181,7 @@ jobs:
           retention-days: 3
       - uses: actions/upload-artifact@v4
         with:
-          name: release-identity
+          name: release-identity-linux
           path: ${{ runner.temp }}/identity
           retention-days: 3
 
@@ -179,7 +202,7 @@ jobs:
       - run: |
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-            libssl3t64 libx11-6 xfonts-base xvfb xauth xz-utils ca-certificates git >/dev/null
+            libssl3t64 libx11-6 libncursesw6 xfonts-base xvfb xauth xz-utils ca-certificates git >/dev/null
       - uses: actions/download-artifact@v4
         with:
           name: release-linux
@@ -208,8 +231,170 @@ jobs:
           # 124: still running when the timeout stopped it, i.e. the window opened.
           [ "$rc" = 124 ] || { echo "watch-borg.sh exited with $rc before the timeout"; exit 1; }
 
+  macos:
+    # #824: Apple silicon. The curses and headless frontends in one binary,
+    # OpenSSL linked in statically (Homebrew's), the system's curses. The
+    # harness needs GNU tools and a modern bash: Homebrew's, first on PATH.
+    # Then the unpacked package plays the smoke games with macOS's own
+    # tools only (bash 3.2, BSD sed), as a player's machine would.
+    needs: [setup, docs]
+    runs-on: macos-14
+    steps:
+      - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+      - uses: ./.github/actions/cemetery-tools
+      - uses: dtolnay/rust-toolchain@stable
+      - run: |
+          brew install bash coreutils gnu-sed findutils openssl@3 xz
+          b=$(brew --prefix)
+          for p in "$b/opt/findutils/libexec/gnubin" "$b/opt/gnu-sed/libexec/gnubin" "$b/opt/coreutils/libexec/gnubin" "$b/bin"; do
+            echo "$p" >> "$GITHUB_PATH"
+          done
+          echo "OPENSSL_ROOT_DIR=$b/opt/openssl@3" >> "$GITHUB_ENV"
+      - run: BORG_IMPL=rust BORG_GCU=ON harness/build.sh
+      - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/release-smoke-macos
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/release-smoke-macos harness/reference/smoke-borg-rs
+      # Nothing outside the system: no Homebrew library is linked.
+      - run: |
+          otool -L build/rust/game/angband
+          ! otool -L build/rust/game/angband | grep -E '/(opt|usr/local)/'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-docs
+          path: ${{ runner.temp }}/docs
+      - run: scripts/release/package.sh macos "${{ needs.setup.outputs.version }}" "$RUNNER_TEMP/package" "$RUNNER_TEMP/docs" angband=build/rust
+      - name: The package with macOS's own tools
+        env:
+          PATH: /usr/bin:/bin:/usr/sbin:/sbin
+        run: |
+          mkdir "$RUNNER_TEMP/clean" && cd "$RUNNER_TEMP/clean"
+          tar -xzf "$RUNNER_TEMP"/package/*.tar.gz
+          cd borg-reborn-rs-*
+          shasum -a 256 -c --quiet SHA256SUMS
+          ls LICENSES/angband-copying.rst LICENSES/openssl.txt PLAYING.txt
+          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g1" 101 0 0 20000 >/dev/null
+          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g2" 102 2 1 20000 >/dev/null
+          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g3" 103 5 3 20000 >/dev/null
+          python3 "$GITHUB_WORKSPACE/scripts/release/compare-games.py" "$GITHUB_WORKSPACE/harness/reference/smoke-borg-rs" \
+            smoke-warrior-1="$RUNNER_TEMP/g1" smoke-mage-2="$RUNNER_TEMP/g2" smoke-priest-3="$RUNNER_TEMP/g3"
+      # The terminal window: the curses frontend starts and keeps running
+      # (stopped by the alarm) in a pseudo-terminal. Informative only: a
+      # runner's terminal is not a player's.
+      - name: watch-borg.sh in a pseudo-terminal
+        continue-on-error: true
+        env:
+          PATH: /usr/bin:/bin:/usr/sbin:/sbin
+          TERM: xterm-256color
+        run: |
+          cd "$RUNNER_TEMP"/clean/borg-reborn-rs-*
+          set +e
+          perl -e 'alarm 15; exec @ARGV' script -q /dev/null /bin/bash -c 'stty cols 100 rows 30; ./watch-borg.sh MacCheck' </dev/null >/dev/null
+          rc=$?
+          set -e
+          [ "$rc" = 142 ] || { echo "watch-borg.sh ended with $rc before the alarm"; exit 1; }
+      - run: |
+          mkdir -p "$RUNNER_TEMP/identity"
+          cp build/rust/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.macos-angband"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: ${{ runner.temp }}/package/*.tar.gz
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-identity-macos
+          path: ${{ runner.temp }}/identity
+          retention-days: 3
+
+  windows:
+    # #823: 64-bit Windows, built with MSYS2's UCRT64 toolchain (GCC, Rust,
+    # OpenSSL, ncurses) as upstream builds its Windows release. Upstream's
+    # main.c in console mode with the curses and headless frontends; one
+    # static angband.exe. The unpacked package then plays the smoke games
+    # through its PowerShell runner, as a player would.
+    needs: [setup, docs]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      # The game data and patches are compared byte for byte: no CRLF.
+      - shell: pwsh
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.setup.outputs.sha }}
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git patch diffutils xz
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-ncurses
+            mingw-w64-ucrt-x86_64-rust
+            mingw-w64-ucrt-x86_64-python
+      - run: |
+          git config --global --add safe.directory "$(pwd)"
+          rustc -vV
+          CMAKE_GENERATOR=Ninja BORG_IMPL=rust BORG_GCU=ON harness/build.sh
+      - run: harness/identity.sh binary-impl build/rust/game/angband.exe | grep -qx rust
+      # One static executable: no MSYS2 DLL next to it.
+      - run: |
+          ldd build/rust/game/angband.exe
+          ! ldd build/rust/game/angband.exe | grep -i '/ucrt64/'
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-docs
+          path: ${{ runner.temp }}/docs
+      - run: |
+          t=$(cygpath -u '${{ runner.temp }}')
+          scripts/release/package.sh windows "${{ needs.setup.outputs.version }}" "$t/package" "$t/docs" angband=build/rust
+      - name: The package with Windows' own tools
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip = Get-ChildItem "$env:RUNNER_TEMP\package\*.zip" | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath "$env:RUNNER_TEMP\clean"
+          $pkg = Get-ChildItem "$env:RUNNER_TEMP\clean" -Directory | Select-Object -First 1
+          Set-Location $pkg.FullName
+          foreach ($line in Get-Content SHA256SUMS) {
+            $hash, $file = $line -split '  ', 2
+            if ((Get-FileHash -Algorithm SHA256 $file).Hash.ToLower() -ne $hash) { throw "checksum: $file" }
+          }
+          foreach ($f in 'LICENSES\angband-copying.rst', 'LICENSES\openssl.txt', 'PLAYING.txt', 'watch-borg.cmd') { if (-not (Test-Path $f)) { throw "missing $f" } }
+          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g1" 101 0 0 20000; if ($LASTEXITCODE) { throw 'game 1' }
+          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g2" 102 2 1 20000; if ($LASTEXITCODE) { throw 'game 2' }
+          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g3" 103 5 3 20000; if ($LASTEXITCODE) { throw 'game 3' }
+      - run: |
+          t=$(cygpath -u '${{ runner.temp }}')
+          python3 scripts/release/compare-games.py harness/reference/smoke-borg-rs \
+            smoke-warrior-1="$t/g1" smoke-mage-2="$t/g2" smoke-priest-3="$t/g3"
+      - run: |
+          t=$(cygpath -u '${{ runner.temp }}')
+          mkdir -p "$t/identity"
+          cp build/rust/BUILD_ID "$t/identity/BUILD_ID.windows-angband"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: ${{ runner.temp }}/package/*.zip
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-identity-windows
+          path: ${{ runner.temp }}/identity
+          retention-days: 3
+
   release:
-    needs: [setup, source, linux, linux-clean]
+    needs: [setup, source, linux, linux-clean, macos, windows]
+    if: needs.setup.outputs.release == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -224,12 +409,14 @@ jobs:
       - id: files
         run: |
           d="$RUNNER_TEMP/upload"; mkdir -p "$d"
-          cp "$RUNNER_TEMP"/artifacts/release-linux/*.tar.gz "$RUNNER_TEMP"/artifacts/release-source/*.tar.gz "$d/"
-          (cd "$d" && sha256sum *.tar.gz > SHA256SUMS.txt && cat SHA256SUMS.txt)
+          cp "$RUNNER_TEMP"/artifacts/release-linux/*.tar.gz "$RUNNER_TEMP"/artifacts/release-macos/*.tar.gz \
+            "$RUNNER_TEMP"/artifacts/release-windows/*.zip "$RUNNER_TEMP"/artifacts/release-source/*.tar.gz "$d/"
+          (cd "$d" && sha256sum *.tar.gz *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt)
           python3 scripts/release/notes.py --version "${{ needs.setup.outputs.version }}" \
             --milestone "${{ needs.setup.outputs.milestone }}" --zoo "${{ needs.setup.outputs.zoo }}" \
-            --build-id "$RUNNER_TEMP/artifacts/release-identity/BUILD_ID.angband" \
-            --build-id "$RUNNER_TEMP/artifacts/release-identity/BUILD_ID.angband-headless" > "$RUNNER_TEMP/notes.md"
+            --since "${{ needs.setup.outputs.since }}" \
+            $(for f in "$RUNNER_TEMP"/artifacts/release-identity-*/BUILD_ID.*; do printf -- '--build-id %s ' "$f"; done) \
+            > "$RUNNER_TEMP/notes.md"
       - env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.setup.outputs.version }}

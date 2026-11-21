@@ -991,7 +991,7 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
     }
 
     // Count up out list of Nasties
-    let d_char = engine::race(usize::from(kill.r_idx)).d_char;
+    let d_char = engine::race(usize::from(kill.r_idx)).d_char as i32; // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     for k in 0..usize::from(st.kills.nasties_num) {
         // Count them up
         if d_char == i32::from(st.kills.nasties[k]) {
@@ -1110,7 +1110,7 @@ pub fn observe_kill_move(
         }
 
         // Verify matching char so long as not hallucinating
-        if st.borg.tr(BI_ISIMAGE) == 0 && c != r.d_char {
+        if st.borg.tr(BI_ISIMAGE) == 0 && c != r.d_char as i32 { // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
             continue;
         }
 

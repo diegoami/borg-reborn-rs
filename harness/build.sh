@@ -2,6 +2,7 @@
 # Build the Rust Borg on our own integration (docs/SPEC.md §3.6; task TE.4).
 #   BORG_IMPL=rust harness/build.sh       -> build/rust/game/angband
 #   BORG_TEST_FEATURES=F harness/build.sh -> build/rust-test/ (test builds)
+#   BORG_X11=ON / BORG_GCU=ON also build the X11 / curses frontend (watching)
 # The zoo calls this script by name and reads build/<impl>/game/angband and
 # build/<impl>/BUILD_ID (docs/ZOO-INTERFACE.md). BORG_IMPL defaults to rust,
 # the only implementation built here (docs/SPEC.md §6). Prints the binary.
@@ -22,11 +23,17 @@ if [ -f "$BUILD/CMakeCache.txt" ] && ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=$
 fi
 SRC_BEFORE=$("$ID" source-hash "$IMPL")
 cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DSUPPORT_BORG_RECORDING=OFF -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
+    -DSUPPORT_BORG_RECORDING=OFF -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" \
+    -DSUPPORT_GCU="${BORG_GCU:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
     cat "$BUILD.cmake.log"; exit 1; }
-make -C "$BUILD" -j"$(nproc)" >"$BUILD.make.log" 2>&1 || {
+# #823/#824: whichever generator CMake chose (Make here, Ninja under MSYS2),
+# with as many jobs as the machine has (no nproc on macOS).
+JOBS=$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)
+cmake --build "$BUILD" -j"$JOBS" >"$BUILD.make.log" 2>&1 || {
     tail -50 "$BUILD.make.log"; exit 1; }
 BIN="$BUILD/game/angband"
+# Windows: the executable is angband.exe.
+[ -e "$BIN" ] || [ ! -e "$BIN.exe" ] || BIN="$BIN.exe"
 SRC_AFTER=$("$ID" source-hash "$IMPL")
 if [ "$SRC_BEFORE" != "$SRC_AFTER" ]; then
     echo "build inputs changed during the build; no BUILD_ID written" >&2; exit 1

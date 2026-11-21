@@ -110,7 +110,13 @@
 #include "ui-term.h"
 
 #include <sys/time.h>
+#ifndef _WIN32
 #include <sys/wait.h>
+#else
+/* #823: Windows' C runtime names it _putenv_s; the one caller sets an
+ * unset variable, so the no-overwrite flag makes no difference. */
+#define setenv(name, value, overwrite) _putenv_s((name), (value))
+#endif
 #include <unistd.h>
 #include <errno.h>
 #ifdef __linux__
@@ -643,6 +649,12 @@ static void borgh_key(struct keypress k)
  * serialised. Capturing must not send keys, reseed RNG or add messages. */
 static void borgh_checkpoint(void)
 {
+#ifdef _WIN32
+	/* #823: a checkpoint saves from a fork()ed copy of the engine, which
+	 * Windows has not; -checkpoint-every is refused there. */
+	if (checkpoint_fp) quit("borgh: checkpoints need fork(), not available on Windows");
+}
+#else
 	char name[128], path[1024];
 	pid_t snapshot, parent_pid;
 	int status;
@@ -714,6 +726,7 @@ static void borgh_checkpoint(void)
 	 * several thresholds: capture once at the next safe boundary. */
 	checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
 }
+#endif
 
 
 /**

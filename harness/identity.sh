@@ -17,7 +17,9 @@
 # change is committed, nor when files outside the inputs change.
 #
 # binary-impl reads the executable itself: "rust" if its .comment section
-# names rustc (the Rust staticlib is linked in), "c" if not and it defines
+# names rustc (the Rust staticlib is linked in; for a Mach-O or PE file, which
+# has no .comment, if it embeds the /rustc/<commit>/ paths of Rust's standard
+# library), "c" if not and it defines
 # do_cmd_borg (the C Borg is linked in), "unknown" otherwise (no Borg, a
 # stripped C binary, not an ELF file, no readelf/nm).
 set -euo pipefail
@@ -69,6 +71,11 @@ case "${1:-}" in
     binary-impl)
         BIN="$2"
         if readelf -p .comment "$BIN" 2>/dev/null | grep -q 'rustc version '; then
+            echo rust
+        # #823/#824: Mach-O and PE executables have no .comment section; the
+        # Rust standard library's panic locations name /rustc/<commit>/.
+        elif ! readelf -h "$BIN" >/dev/null 2>&1 && [ -f "$BIN" ] \
+                && LC_ALL=C grep -aqE '/rustc/[0-9a-f]{40}/' "$BIN"; then
             echo rust
         elif nm --defined-only "$BIN" 2>/dev/null | awk '$2=="T" && $3=="do_cmd_borg"{f=1} END{exit !f}'; then
             echo c

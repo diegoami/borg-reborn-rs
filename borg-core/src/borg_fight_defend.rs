@@ -2169,7 +2169,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
                 let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
 
                 /* Our char of the monster */
-                if engine::race(r_idx).d_char != i32::from(tmp_genocide_target) {
+                if engine::race(r_idx).d_char as i32 != i32::from(tmp_genocide_target) { // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
                     continue;
                 }
 
@@ -2275,7 +2275,7 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
             let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
 
             /* Our char of the monster */
-            if engine::race(r_idx).d_char != i32::from(st.kills.nasties[b]) {
+            if engine::race(r_idx).d_char as i32 != i32::from(st.kills.nasties[b]) { // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
                 continue;
             }
 
