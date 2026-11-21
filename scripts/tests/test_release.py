@@ -40,7 +40,7 @@ class ReleaseWorkflowTest(unittest.TestCase):
         for name in ('since:', 'release:', 'type: boolean'):
             self.assertIn(name, on_block(text))
         job = text[text.index('\n  release:\n'):]
-        self.assertIn("if: needs.setup.outputs.release == 'true'", job)
+        self.assertIn("needs.setup.outputs.release == 'true'", job.split('runs-on')[0])
         self.assertIn("github.event_name == 'push' || github.event.inputs.release != 'false'", text)
 
     def test_every_platform_is_packaged_and_played(self):
@@ -60,6 +60,19 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertIn('mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"', text)
         self.assertIn('"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"', text)
         self.assertIn("info.external_attr = (0o40755 << 16) | 0x10", text)
+
+    def test_macos_only_when_asked_and_no_launcher(self):
+        # Owner, v0.1.0-alpha.1: no watch-borg launcher, no macOS package by default.
+        text = WORKFLOW.read_text()
+        block = on_block(text)
+        macos = block[block.index('      macos:'):]
+        self.assertIn('default: false', macos.split('\n      ', 1)[1].split('\n  ', 1)[0] + macos)
+        self.assertIn("if: needs.setup.outputs.macos == 'true'", text)
+        self.assertFalse((ROOT / 'scripts/release/watch-borg.sh').exists())
+        self.assertFalse((ROOT / 'scripts/release/windows/watch-borg.cmd').exists())
+        shipped = (ROOT / 'scripts/release/package.sh').read_text().split('# The short guide.')[1].split('cp "$ROOT/README.md"')[0]
+        for launcher in ('watch-borg', 'play-headless.sh"', 'play-headless.ps1 ', 'install -m'):
+            self.assertNotIn(launcher, shipped.split('\nif [')[1], launcher)
 
     def test_scripts_parse(self):
         for script in sorted((ROOT / 'scripts/release').glob('*.sh')):

@@ -90,18 +90,18 @@ rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user
 mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
 "$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"
 
-# Launchers and the short guide.
+# The short guide. The game is started directly (angband, angband.exe): the
+# owner, for v0.1.0-alpha.1, ships no launcher and no headless runner (lib/
+# above holds what the launcher used to set up; CI plays the package with
+# scripts/release/play-headless.sh and windows/play-headless.ps1, which take
+# the package folder as BORG_PACKAGE_DIR).
 if [ "$PLATFORM" = windows ]; then
-    # CRLF, as cmd.exe and Notepad expect.
-    for f in play-headless.ps1 play-headless.cmd watch-borg.cmd PLAYING.txt; do
-        src="$ROOT/scripts/release/windows/$f"; [ -f "$src" ] || src="$ROOT/scripts/release/$f"
-        python3 -c 'import sys; d=open(sys.argv[1],"rb").read().replace(b"\r\n",b"\n"); open(sys.argv[2],"wb").write(d.replace(b"\n",b"\r\n"))' "$src" "$STAGE/$f"
-    done
+    # CRLF, as Notepad expects.
+    python3 -c 'import sys; d=open(sys.argv[1],"rb").read().replace(b"\r\n",b"\n"); open(sys.argv[2],"wb").write(d.replace(b"\n",b"\r\n"))' \
+        "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 else
-    install -m 755 "$ROOT/scripts/release/watch-borg.sh" "$STAGE/watch-borg.sh"
-    install -m 755 "$ROOT/scripts/release/play-headless.sh" "$STAGE/play-headless.sh"
+    cp "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 fi
-[ "$PLATFORM" = windows ] || cp "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 cp "$ROOT/README.md" "$STAGE/README.md"
 [ ! -f "$ROOT/docs/user/GUIDE.md" ] || cp "$ROOT/docs/user/GUIDE.md" "$STAGE/docs/GUIDE.md"
 if [ "$DOCS" != - ] && [ -d "$DOCS/html" ]; then
