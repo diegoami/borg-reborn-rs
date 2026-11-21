@@ -695,6 +695,8 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
 
+        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
         let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
         // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
         // enough" below clears the return, so a smaller one would flap).

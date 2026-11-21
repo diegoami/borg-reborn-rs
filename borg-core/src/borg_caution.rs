@@ -2711,15 +2711,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
             st.borg.goal.fleeing = true;
         }
     }
-    // borg-reborn-rs (#840): short of kit, a real danger sends it to the stairs.
-    else if crate::borg_kit::leave_danger_percent(st)
-        .is_some_and(|pct| pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1))
-        && !st.borg.goal.fleeing
-        && st.borg.near.unique == 0
-        && !st.borg.status.vault
-    {
-        start_fleeing(st, "# Fleeing (short of kit)");
-    }
     // Potential danger (near death) in town
     else if st.borg.tr(BI_CDEPTH) == 0
         && pos_danger > st.borg.tr(BI_CURHP)
@@ -2727,6 +2718,18 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     {
         // Flee now
         start_leaving(st, "# Leaving (potential danger)");
+    }
+
+    // borg-reborn-rs (#840): short of kit, a real danger sends it to the stairs.
+    // Its own test, not a branch of the chain above: with `kit_restock` on the
+    // restock branch fires first and would mask it (review of #844, finding 3).
+    if crate::borg_kit::leave_danger_percent(st)
+        .is_some_and(|pct| pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1))
+        && !st.borg.goal.fleeing
+        && st.borg.near.unique == 0
+        && !st.borg.status.vault
+    {
+        start_fleeing(st, "# Fleeing (short of kit)");
     }
 
     /*** Stairs ***/

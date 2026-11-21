@@ -14,7 +14,13 @@
 //!   (`kit_leash_min + (C's leash - kit_leash_min) x score^kit_leash_power`),
 //!   and applies (as C's own leash does, but at any depth) while the kit is
 //!   short; the hunts and item detours that the leash refuses stay refused.
-//! * `kit_descent_min_percent`: no descent below a score.
+//! * `kit_descent_min_percent`: no descent below a score. `borg_prepared` is
+//!   asked about many depths (the power dives at +5, the recall probes at +20
+//!   and 60% of the deepest level, 99), so the floor refuses every depth below
+//!   the current one, not only the next: a Borg short of kit is not prepared
+//!   for any of them. A depth at or above the Borg's own (the probe of 99
+//!   from DL100) is never refused, so nothing here keeps a Borg from going
+//!   up or to town.
 //! * `kit_leave_danger_percent`: at the first real danger, take the stairs.
 //! * `kit_restock` (remedy a): the kit is part of `borg_restock` at every
 //!   depth, with a light-turns check.
@@ -63,6 +69,10 @@ pub struct KitState {
     pub town_gold: Option<i32>,
     /// The (score permille, leash) last written in a note.
     pub noted: Option<(i32, i32)>,
+    /// The last tick was in town: the first think in the dungeon records the
+    /// purse again, so a purchase made after the last town think still counts
+    /// (review of #844, finding 4).
+    pub was_in_town: bool,
 }
 
 /// What the Borg holds, in the units of the targets.
@@ -222,6 +232,8 @@ fn light_turns(st: &BorgState) -> i32 {
         if item.iqty == 0 {
             continue;
         }
+        // Each torch of a stack has its own fuel; only the wielded light burns
+        // (`player-util.c`, player_update_light), so the spares keep theirs.
         if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch && !lantern {
             turns += i32::from(item.timeout).max(0) * i32::from(item.iqty);
         }
@@ -426,7 +438,13 @@ pub fn tick(st: &mut BorgState) {
     if st.borg.tr(BI_CDEPTH) == 0 {
         st.kit.town_gold = Some(st.borg.tr(BI_GOLD));
         st.kit.noted = None;
+        st.kit.was_in_town = true;
         return;
+    }
+    if st.kit.was_in_town {
+        // The first think below: the purse the Borg left town with.
+        st.kit.was_in_town = false;
+        st.kit.town_gold = Some(st.borg.tr(BI_GOLD));
     }
     if !applies(st) {
         return;
@@ -570,6 +588,9 @@ mod tests {
         assert_eq!(descent_decision(2, 2, 0, 50, false), None, "staying is not a descent");
         assert_eq!(descent_decision(3, 2, 0, 50, false), None, "going up is not a descent");
         assert_eq!(descent_decision(1, 2, 0, 0, false), None, "switch off");
+        // The probes deeper than the next level are refused too; one at or above the Borg's own is not.
+        assert_eq!(descent_decision(10, 15, 0, 50, false), Some(("kit_descent_min_percent", 0, 50)));
+        assert_eq!(descent_decision(100, 99, 0, 50, false), None, "the probe of 99 from DL100");
         assert_eq!(descent_decision(1, 2, 900, 0, true), Some(("kit_money_first", 90, 100)), "money first holds it on DL1");
     }
 
