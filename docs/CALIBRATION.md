@@ -223,7 +223,7 @@ before any ships (RULES 14).
 | `kit_leash` | 0 | flag | 0–1 | `borg_kit.rs:201` |
 | `kit_leash_min` | 1 | steps | 0–20 | `borg_kit.rs:314` |
 | `kit_leash_power` | 1 | power | 1–4 | `borg_kit.rs:314` |
-| `kit_max_level` | 15 | level | 1–51 | `borg_kit.rs:277` |
+| `kit_max_level` | 15 | level | 1–51 | `borg_kit.rs:279` |
 | `kit_band_split_level` | 5 | level | 1–51 | `borg_kit.rs:178` |
 | `kit_cure_target` | 3 | count | 0–20 | `borg_kit.rs:180` |
 | `kit_phase_target` | 2 | count | 0–20 | `borg_kit.rs:181` |
@@ -241,13 +241,13 @@ before any ships (RULES 14).
 | `kit_descent_min_percent` | 0 | percent | 0–100 | `borg_kit.rs:202` |
 | `kit_leave_danger_percent` | 0 | percent of HP | 0–1000 | `borg_kit.rs:203` |
 | `kit_restock` | 0 | flag | 0–1 | `borg_kit.rs:204` |
-| `kit_restock_below_percent` | 75 | percent | 0–100 | `borg_kit.rs:371` |
+| `kit_restock_below_percent` | 75 | percent | 0–100 | `borg_kit.rs:385` |
 | `kit_restock_min_gold` | 50 | gold | 0–100000 | `borg_kit.rs:365` |
 | `kit_restock_light_turns` | 0 | turns | 0–100000 | `borg_kit.rs:384` |
-| `kit_start_reserve` | 0 | flag | 0–1 | `borg_kit.rs:418` |
+| `kit_start_reserve` | 0 | flag | 0–1 | `borg_kit.rs:420` |
 | `kit_start_cure_reserve` | 3 | count | 0–20 | `borg_kit.rs:424` |
 | `kit_start_cure_hp` | 20 | hp | 1–1000 | `borg_kit.rs:424` |
-| `kit_start_phase_reserve` | 2 | count | 0–10 | `borg_kit.rs:418` |
+| `kit_start_phase_reserve` | 2 | count | 0–10 | `borg_kit.rs:420` |
 | `kit_money_first` | 0 | flag | 0–1 | `borg_kit.rs:205` |
 | `kit_money_first_max_level` | 2 | level | 1–51 | `borg_kit.rs:298` |
 | `kit_money_leash` | 6 | steps | 0–250 | `borg_kit.rs:317` |

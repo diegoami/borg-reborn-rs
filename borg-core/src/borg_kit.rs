@@ -229,7 +229,8 @@ fn light_turns(st: &BorgState) -> i32 {
     let lantern = i32::from(light.sval) == st.item_val.sv_light_lantern;
     let mut turns = i32::from(light.timeout).max(0);
     for item in st.items.items.iter().take(wield) {
-        if item.iqty == 0 {
+        // A cursed torch gives no light (the core's `light_stack_turns` skips it too).
+        if item.iqty == 0 || item.cursed {
             continue;
         }
         // Each torch of a stack has its own fuel; only the wielded light burns
