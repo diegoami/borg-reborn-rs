@@ -1,0 +1,160 @@
+{
+  "recorder_base": "ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd",
+  "runtime_input_hashes": {
+    "Cargo.lock": "d7d1248b1ebbd399f2e7042a545e53ccb06dc2a9c4462aba65739825e567dc2b",
+    "Cargo.toml": "2855cd831b3e1e0b22a4beb8b897c9befb6e7fab162913e37fe1ab16feb83e7f",
+    "host/angband.c": "8f341343a88009a20ba55a690b0ca368035675bf06857bd25bb4b89fd5c6f974",
+    "host/native-replay.h": "5bb20c10d76552aade97a2d1bbe6f8c45adaea1c6a99b9ff7b3aae261bdb1a98",
+    "host/observations.c": "1a0d65d1e9fc211e5ea961dd2a996d920402d59f26656e579cdc12bd2b5befd8",
+    "host/replay-native-inventory.h": "f4e8bf4e48b976c9f6c4c24b27313a10267e9470063aa10554ed7366e2a676f4",
+    "host/replay-native-spells.h": "834ad8f6be0e9d84d378d21b67dcaadd6bc2d1485a316fddb013ba9309a13b18",
+    "host/replay-observations.h": "2ef7cbf3f9c09a5b99c2765a0f5d56492dc4a38646dcaecf9c5d85074beedaee",
+    "include/recorder.h": "c2b471573f5e76ea7dd938ae03119976c1f42f231419f4079efed8a527056b10",
+    "src/checkpoints.rs": "ec2ca04183a43b4c55ac969e698ee4d5fe1a508b7a02e6cf314366defd045daf",
+    "src/environment.rs": "bb3eac1cb66e5a3d4a27e879e2ecbfb8bae3cff885abf9a4049a932ec73442bd",
+    "src/ffi.rs": "5802a092af2f0aba798d20020fdb7b057b687a319ffffb0af4da0fc820a82ffd",
+    "src/lib.rs": "644c453cdee143546b6f6daedc36d3318f92c302701324d2bd91d2a71f22fede",
+    "src/main.rs": "82dd9cd2b3aeebba7ce26fa4ac2dab68aaada9cfc9f802e4dc22325c3af0036a"
+  },
+  "runtime_inputs_sha256": "c3bad4f6a2d4601579d30c684c3cd5029c8a57a2e36d44b4ca11d60570e4af25",
+  "native_proof": {
+    "engine": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+    "source_identity": "verified export+patch",
+    "frames": 89,
+    "turn": 81,
+    "inputs": 209,
+    "hook_families": {
+      "poll": 67,
+      "clock": 7,
+      "file": 111,
+      "exists": 23,
+      "terminal_init": 1
+    },
+    "messages": 6,
+    "final_saves": {
+      "RecorderTest": "45f06ed1a027825cf8e93fd59bd5d235a37c53ff9a0694f07640a32daeb1f7a0"
+    },
+    "replay_recreated_separate_saves": true,
+    "ambient_environment_isolated": true,
+    "round_trip": "PASS",
+    "changed_rng_rejected": true,
+    "binary_sha256": "561e1b0e5b70d944c153582fa2e0eda1c98b278f4c90553017dd78bb8171643f",
+    "prepared_build": false,
+    "python_optimization": false
+  },
+  "save_resume_proof": {
+    "source_proof": "/tmp/recorder-rolling-native-proof-v2",
+    "binary_sha256": "561e1b0e5b70d944c153582fa2e0eda1c98b278f4c90553017dd78bb8171643f",
+    "parent_save_point": {
+      "sequence": 12,
+      "frame": 56,
+      "turn": 41,
+      "input": 49,
+      "file": "frame-000000000056-turn-000000000041.save",
+      "sha256": "4c2ba68cdd3288811601f7c42a9cee0fde6ccfb0cd9ac8c4fa9f20fd8d3d8b84",
+      "world": "fb0ec230b650ee36",
+      "periodic": true
+    },
+    "first_loaded_turn": 41,
+    "last_turn": 81,
+    "native_save_branch_replay": "PASS",
+    "parent_suffix_equality_claimed": false,
+    "bot_memory_restored": false,
+    "independent_life": false
+  },
+  "capture_settings": {
+    "ANGBAND_SAVE_WINDOW": 3,
+    "ANGBAND_SAVE_EVERY": 20
+  },
+  "retained_record_points": [
+    {
+      "sequence": 1,
+      "frame": 2,
+      "turn": 1,
+      "input": 17,
+      "file": "frame-000000000002-turn-000000000001.save",
+      "sha256": "5c1df5f84e2e74dc99a074b8a948498f64b64eb39e0d56c94d3b9c0a5c5b3f77",
+      "world": "909e95f272599ec1",
+      "periodic": true
+    },
+    {
+      "sequence": 10,
+      "frame": 48,
+      "turn": 21,
+      "input": 45,
+      "file": "frame-000000000048-turn-000000000021.save",
+      "sha256": "13f214ccd5fa4c787b3a9886fdc4cef6de23e7673f6768305f993f489fa9c156",
+      "world": "4cf2e32dd24589dd",
+      "periodic": true
+    },
+    {
+      "sequence": 12,
+      "frame": 56,
+      "turn": 41,
+      "input": 49,
+      "file": "frame-000000000056-turn-000000000041.save",
+      "sha256": "4c2ba68cdd3288811601f7c42a9cee0fde6ccfb0cd9ac8c4fa9f20fd8d3d8b84",
+      "world": "fb0ec230b650ee36",
+      "periodic": true
+    },
+    {
+      "sequence": 14,
+      "frame": 64,
+      "turn": 61,
+      "input": 53,
+      "file": "frame-000000000064-turn-000000000061.save",
+      "sha256": "6267463d879b981f146fa90247d3f0a58a716e4053f58805e4e69d131e7baac4",
+      "world": "68253563e413cf16",
+      "periodic": true
+    },
+    {
+      "sequence": 16,
+      "frame": 72,
+      "turn": 81,
+      "input": 57,
+      "file": "frame-000000000072-turn-000000000081.save",
+      "sha256": "0cc5634e9647b9cfb2049ffece91d3e0cd6fc50f29ce6768ebac040a2b902a7e",
+      "world": "b49a7e0bfd7f1cbd",
+      "periodic": true
+    },
+    {
+      "sequence": 17,
+      "frame": 76,
+      "turn": 81,
+      "input": 59,
+      "file": "frame-000000000076-turn-000000000081.save",
+      "sha256": "0cc5634e9647b9cfb2049ffece91d3e0cd6fc50f29ce6768ebac040a2b902a7e",
+      "world": "b49a7e0bfd7f1cbd",
+      "periodic": false
+    },
+    {
+      "sequence": 18,
+      "frame": 80,
+      "turn": 81,
+      "input": 61,
+      "file": "frame-000000000080-turn-000000000081.save",
+      "sha256": "0cc5634e9647b9cfb2049ffece91d3e0cd6fc50f29ce6768ebac040a2b902a7e",
+      "world": "b49a7e0bfd7f1cbd",
+      "periodic": false
+    },
+    {
+      "sequence": 19,
+      "frame": 84,
+      "turn": 81,
+      "input": 63,
+      "file": "frame-000000000084-turn-000000000081.save",
+      "sha256": "0cc5634e9647b9cfb2049ffece91d3e0cd6fc50f29ce6768ebac040a2b902a7e",
+      "world": "b49a7e0bfd7f1cbd",
+      "periodic": false
+    }
+  ],
+  "failed_setup_attempts_retained": [
+    "/tmp/recorder-rolling-native-proof (wrong engine repository argument)",
+    "/tmp/recorder-rolling-save-resume-proof (stock test frontend clears savefile)",
+    "/tmp/recorder-rolling-save-resume-proof-v2 (same frontend limitation)"
+  ],
+  "gui_display": ":0",
+  "gui_profile_isolated": true,
+  "recordings_or_binaries_committed": false,
+  "consumer_integration": "requires a tagged release and separate pin update; current consumers are not silently changed"
+}

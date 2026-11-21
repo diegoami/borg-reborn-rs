@@ -18,6 +18,7 @@ extern "C" {
     fn ar_host_save(path: *const c_char) -> i32;
     fn ar_host_extra(full: bool) -> *const c_char;
     fn ar_host_free_extra(buffer: *const c_char);
+    fn ar_host_final_frame();
     fn getpid() -> i32;
     fn _exit(code: i32) -> !;
     fn atexit(callback: extern "C" fn()) -> i32;
@@ -66,7 +67,7 @@ pub unsafe extern "C" fn ar_early_init(build: *const c_char) {
         getpid().into(),
     ));
     *SESSION.lock().unwrap() = Some(value);
-    if atexit(ar_finish) != 0 {
+    if atexit(ar_finish_at_exit) != 0 {
         fatal("cannot register recording finalization");
     }
 }
@@ -225,7 +226,7 @@ pub unsafe extern "C" fn ar_frame(phase: *const c_char, observation: *const Obse
         s.previous_size = size;
         s.previous_cells = current;
         let phase = text(phase);
-        let world = if phase == "tick" {
+        let world = if phase == "tick" || phase == "final" {
             None
         } else {
             let path = s.output.join("world-fingerprint.save");
@@ -254,6 +255,10 @@ pub unsafe extern "C" fn ar_frame(phase: *const c_char, observation: *const Obse
         ar_host_free_extra(extra);
         checked(merge_host_observation(&mut frame, observation));
         checked(s.frame(&frame));
+        s.closing_frame |= phase == "exit" || phase == "final";
+        if let Some(saves) = &mut s.checkpoints {
+            checked(saves.capture(&frame, &s.output.join("world-fingerprint.save")));
+        }
     });
 }
 #[no_mangle]
@@ -291,6 +296,21 @@ pub unsafe extern "C" fn ar_message(turn: i64, message_type: u16, message: *cons
 }
 #[no_mangle]
 pub extern "C" fn ar_finish() {
+    // The engine can leave without its quit hook (a headless frontend calls
+    // this and _exit()s), and its frames come before each command, so the
+    // turns after the last command, including a death, would be lost. Ask the
+    // host for one closing frame first, outside the session lock because the
+    // host calls ar_frame. A forked saver has no session here and is skipped.
+    // Only this direct call does so: the atexit handler below runs after the
+    // engine's own cleanup, when the host can no longer read the game.
+    if with_session(|s| !(s.finished || s.failed || s.geometry_pending || s.closing_frame))
+        == Some(true)
+    {
+        unsafe { ar_host_final_frame() };
+    }
+    ar_finish_at_exit();
+}
+extern "C" fn ar_finish_at_exit() {
     // Never emit a receipt from the forked saver, even if the host uses exit().
     with_session(|s| checked(s.finish()));
 }

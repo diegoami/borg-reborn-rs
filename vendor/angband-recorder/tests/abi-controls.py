@@ -17,6 +17,13 @@ SOURCE=r'''
 #include <time.h>
 int ar_host_save(const char *path) { (void)path; return -1; }
 const char *ar_host_extra(bool full) { (void)full; return "{}"; }
+static int finals;
+void ar_host_final_frame(void) {
+    static const ar_cell cells[80*24];
+    ar_observation o={0};
+    o.turn=7;o.dead=1;o.width=80;o.height=24;o.cells=cells;
+    finals++;ar_frame("final",&o);
+}
 void ar_host_free_extra(const char *text) { (void)text; }
 int main(void) {
     int64_t geometry[5]={80,24,256,0,0};
@@ -28,7 +35,7 @@ int main(void) {
     struct tm *date=localtime(&christmas_boundary);char message[128];
     if (!date) return 4;
     snprintf(message,sizeof(message),"%d-%02d-%02d:%ld",date->tm_year+1900,date->tm_mon+1,date->tm_mday,(long)recorded);
-    ar_message(1,0,message);ar_finish();return 0;
+    ar_message(1,0,message);ar_finish();ar_finish();return finals==1?0:5;
 }
 '''
 
@@ -56,6 +63,10 @@ def main():
         require(run('release','record',tz='Pacific/Kiritimati').returncode==0,'native capture failed')
         text=json.loads((out/'record/messages.jsonl').read_text())['text']
         require(text.startswith('2020-12-25:'),'calendar boundary did not exercise the selected timezone')
+        # The closing frame: written once, last, and counted by the receipt.
+        frames=[json.loads(l) for l in (out/'record/frames.jsonl').read_text().splitlines()]
+        require(len(frames)==1 and frames[0]['phase']=='final' and frames[0]['dead']==1 and frames[0]['world'] is None,'ar_finish did not write one closing frame')
+        require(json.loads((out/'record/complete.json').read_text())['frames']==1,'receipt does not count the closing frame')
         require(run('release','replay',out/'record',tz='UTC0').returncode==0,'captured calendar context did not replay')
         subprocess.run(['cargo','run','--quiet','--locked','--manifest-path',str(ROOT/'Cargo.toml'),'--','verify',str(out/'record'),str(out/'replay')],check=True,stdout=log,stderr=subprocess.STDOUT)
         # F24: a named zone that only resolves through TZDIR. Recording with
