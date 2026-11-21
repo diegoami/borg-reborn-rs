@@ -35,7 +35,12 @@ The notes in `messages.log`:
 | `# Phase (<site>): done, HP h/H, danger d, nearest awake monster n` | the Borg phased (or used the site's teleport) |
 
 **A teleport curse stops it first (#829).** `phase_door` asks
-`teleport_curse` before anything else, so no site can skip it. The curse is
+`teleport_stopped` (which asks `teleport_curse` what the curse is) before
+anything else, so no site can skip it. The whole check is behind
+`escape_teleport_block` (compiled 0 = as before, shipped 1;
+docs/CALIBRATION.md): with it at 0 neither the learning from messages nor
+this asking happens, and only the old `BI_CRSNOTEL` check at the sites that
+ask `borg_allow_teleport` remains. The curse is
 known from `BI_CRSNOTEL` (an item whose anti-teleportation curse the Borg
 reads), or learned from the engine's messages: "Your X prevents you
 teleporting." and "Teleportation forbidden!" (`effect_handler_TELEPORT`,
