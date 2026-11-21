@@ -51,12 +51,12 @@ Docker daemon).
   `harness/borg.txt` settings (and, per the comment in `harness/run.sh`,
   without a borg.txt naming a core the game falls back to the reborn core).
   The package's launcher copies `borg/borg.txt` and its scary list, so a
-  release plays the shipped settings. Worth an issue for the source launcher.
+  release plays the shipped settings. #826 for the source launcher.
 
 ## Left
 
 - Windows and macOS packages: not attempted (our CMake integration and the
-  Rust staticlib have only been built on Linux). Follow-up issues.
+  Rust staticlib have only been built on Linux): #823 (Windows), #824 (macOS).
 - docs/user/GUIDE.md (#817) does not exist yet; when it does,
   `package-linux.sh` ships it as `docs/GUIDE.md` and its install section can
   point to docs/RELEASING.md.
