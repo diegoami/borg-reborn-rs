@@ -397,6 +397,23 @@ jobs:
           tail -3 "$d/stderr.log"
           [ "$rc" != 0 ] && grep -q 'cannot create synthetic build capture' "$d/stderr.log" \
             && [ "$(cat "$d/existing.build")" = 'keep me' ] || { echo "the capture did not refuse the existing file"; exit 1; }
+      # A game saves on Windows (the owner: "save failed" on Windows 11): the
+      # directories as watch-borg.cmd passes them (backslashes), the save at
+      # the path the game builds from -u (save\NAME).
+      - run: |
+          d=$(cygpath -m '${{ runner.temp }}')/savecheck
+          w=$(cygpath -w "$d")
+          mkdir -p "$d"/{user,save,archive,panic,scores}
+          harness/prepare-borg-txt.sh "$d/user"
+          cd build/rust/game
+          set +e
+          ./angband.exe -mborgh -n -uBorg "-duser=$w\user" "-dsave=$w\save" "-darchive=$w\archive" \
+            "-dpanic=$w\panic" "-dscores=$w\scores" -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters \
+            -save-on-stop "$w\save\Borg" -summary "$d/summary.json" 2>"$d/stderr.log"
+          rc=$?
+          set -e
+          echo "rc=$rc"; ls -la "$d/save" "$d/user"; tail -5 "$d/stderr.log"
+          [ "$rc" = 0 ] && [ -s "$d/save/Borg" ] || { echo "the game did not save"; exit 1; }
       # One static executable: no MSYS2 DLL next to it.
       - run: |
           ldd build/rust/game/angband.exe
