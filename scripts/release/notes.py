@@ -98,8 +98,8 @@ def main() -> int:
         "settings of `harness/borg.txt`.",
         "",
         f"- commit: [`{commit[:12]}`](https://github.com/diegoami/borg-reborn-rs/commit/{commit})",
-        "- platforms: Linux x86_64 only (Windows and macOS are not built yet)",
-        "- install: unpack the Linux package and read `PLAYING.txt`; `SHA256SUMS.txt` on this page checks the downloads",
+        "- platforms: Linux x86_64, macOS arm64 (Apple silicon) and Windows x86_64",
+        "- install: unpack your platform's package and read `PLAYING.txt`; `SHA256SUMS.txt` on this page checks the downloads",
         "",
     ]
     if a.milestone:

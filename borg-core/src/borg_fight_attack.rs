@@ -1153,7 +1153,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if engine::distance(st.borg.c, kill.pos) == 1 {
                 dam /= param(Param::attack_nether_point_blank_divisor);
             }
-            if rf(r, RF_UNDEAD) || rf(r, RF_DEMON) || strchr_egv(r_ptr.d_char) {
+            if rf(r, RF_UNDEAD) || rf(r, RF_DEMON) || strchr_egv(r_ptr.d_char as i32) { // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
                 dam = 0;
             }
         }
