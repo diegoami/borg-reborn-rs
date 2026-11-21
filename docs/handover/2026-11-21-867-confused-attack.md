@@ -24,6 +24,14 @@ thrown by direction while confused killed the grey mushroom patch), then:
   (`confused_weight`, in `borg_attack` and the focused ranking), so the usual
   chooser picks on damage; a staff keeps its full value. `borg_attack_estimate`
   sees the weighted damage.
+- **The cure waits** (owner, after the first named cases: "I threw flasks at
+  the patch immediately"). The cures run in `borg_caution`, before
+  `borg_attack`, so a confused Borg with a cure drank it first (a CSW in C)
+  and only attacked after. On, next to an immobile monster whose blow
+  confuses (`immobile_confuser_next_to`: `CONFUSE` among its blows),
+  `confusion_cure_held` holds the cure at both sites (note `# Next to an
+  immobile confuser: attacking before the cure (#867)`), unless the moving
+  monsters near are as dangerous as the HP left. A heal for HP still runs.
 
 **Checked.** CI's Rust and Python checks; `check-param-citations.py`; unit
 tests `confused_attack_tests` (the 11/32 counted over the engine's draws, the
@@ -33,17 +41,23 @@ turns, `menu,exact`:
 
 | start | settings | switch 0 | switch 1 |
 |---|---|---|---|
-| Gnome Necromancer 459443830 | shipped | lives | lives; at turn 5,191 oil by direction, the 4th throw kills the patch |
-| Gnome Necromancer 459443830 | + `caution_confused_clw_cure` 1 (csw's death) | **dies, turn 5,297** (as in the zoo) | **lives**; the 3rd throw kills the patch |
+| Gnome Necromancer 459443830 | shipped | lives (CSW first, Phase Door) | lives: throws from turn 5,181, the first confused turn, no cure first; 5 throws all astray (about 12%: (21/32)^5), HP heals at 3/12 and 6/12 clear the confusion, then Phase Door and the stairs |
+| Gnome Necromancer 459443830 | + `caution_confused_clw_cure` 1 (csw's death) | **dies, turn 5,297** (as in the zoo) | **lives**: the same game as shipped with the switch on through the patch fight (the CLW is held as a confusion cure there); they part at turn 33,930, where the CLW cures a trap's confusion |
 | Elf Necromancer 412975293 | shipped / + CLW cure | lives | lives (never confused next to a monster) |
 
-**Found.** With the CLW cure on, the cure chain still runs before the attack:
-the Borg drinks its CSW and six CLW against the patch first and throws only
-when they are gone. The switch rescues the game, but the potions are spent;
-`caution_confusion_cure_when_stuck` / `caution_ranged_vs_immobile` are the
-settings about that ordering.
+(An earlier commit of this branch, without the cure hold, drank the CSW and,
+with the CLW switch, all six CLW before its first throw; the oil then killed
+the patch on the 3rd/4th throw.)
+
+**Found.** Unconfused again after an HP heal, the Borg reads Phase Door and
+leaves the level rather than throw oil, now at full aim, at a 2-HP patch: the
+Phase rule's "fight looks lost" fires on the patch's danger (408 against 12
+HP at CL2). A lead for the danger of confusing immobile monsters, not changed
+here.
 
 **Not done / left.**
+- `immobile_confuser_next_to` reads the engine's blow table, so it has no
+  unit test; the named case shows it.
 - The unit tests are on the pure parts; the scenario tests #867 lists (a
   confused Mage throws, a Warrior melees, a wand or staff is chosen) need an
   engine-backed state, which these tests do not have. The named cases cover

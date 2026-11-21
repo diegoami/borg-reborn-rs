@@ -1709,6 +1709,21 @@ fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     })
 }
 
+/// borg-reborn-rs (#867): the first known immobile attacker next to grid
+/// (`y`, `x`) with a blow that confuses (`CONFUSE`, blow_effects.txt; the
+/// grey mushroom patch's `SPORE:CONFUSE`), by kill index.
+fn immobile_confuser_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
+        let kill = &st.kills.kills[i];
+        let r_idx = usize::from(kill.r_idx);
+        immobile_attacker(r_idx)
+            && (i32::from(kill.pos.y) - y).abs() <= 1
+            && (i32::from(kill.pos.x) - x).abs() <= 1
+            && (0..usize::from(engine::z_info().mon_blows_max))
+                .any(|k| engine::race_blow_effect_name(r_idx, k) == Some(b"CONFUSE".as_slice()))
+    })
+}
+
 /// The danger at the Borg's grid from the monsters that can move and are
 /// within two grids (they can reach it before a step and a cure are done;
 /// review of #659: the whole level's spell danger kept the rule off on a
@@ -1833,7 +1848,24 @@ fn step_left(mon: &crate::borg::BorgMonInfo, level: BorgTime, pos: (u8, u8), con
 /// while `immobile_step_away` can still step (a qualifying grid, tries left).
 /// With none the Borg neither stepped nor cured, and melee went on confused.
 fn confusion_cure_held(st: &mut BorgState) -> bool {
-    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_ISCONFUSED) == 0 {
+    if st.borg.tr(BI_ISCONFUSED) == 0 {
+        return false;
+    }
+    // borg-reborn-rs (#867, owner: "I threw flasks at the patch immediately"):
+    // with `attack_confused_by_direction`, next to an immobile monster whose
+    // blow confuses, the cure waits and the attack goes first: the monster
+    // confuses again before a cure is worth anything (a grey mushroom patch
+    // has speed +10 and 2 HP, monster.txt), while a confused attack still
+    // lands 11/32 of the time. Not while the moving monsters near are as
+    // dangerous as the HP left.
+    if p(Param::attack_confused_by_direction) != 0
+        && immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+        && mobile_danger(st) < st.borg.tr(BI_CURHP)
+    {
+        borg_note(st, "# Next to an immobile confuser: attacking before the cure (#867)");
+        return true;
+    }
+    if p(Param::caution_ranged_vs_immobile) == 0 {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
