@@ -529,10 +529,11 @@ pub fn plan_trip(i: &TripInputs, p: &TripParams) -> PlannedTrip {
 
 /// `borg_prepared(depth)` without its side effects: it sets
 /// `ready_morgoth` and, deep down, re-notices the Home; both are put back.
+#[track_caller]
 fn prepared_probe(st: &mut BorgState, depth: i32) -> bool {
     let ready = st.borg.ready_morgoth;
     let home = st.home.clone();
-    let ok = crate::borg_prepared::borg_prepared(st, depth).is_none();
+    let ok = crate::borg_prepared::prepared_for_decision(st, depth).is_none();
     st.borg.ready_morgoth = ready;
     st.home = home;
     ok

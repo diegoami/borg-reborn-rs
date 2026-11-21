@@ -323,6 +323,34 @@ comes from native purchase receipts). The contact count can include scrolls
 picked up since departure. Missing contact is an unobserved endpoint.
 For `borg-zoo#536`, use retained cell evidence in both arms.
 
+## Preparedness trace (#795)
+
+The vendored core adds optional fields to `trace-core.jsonl` with
+`core-trace@2`. On a think that checked preparedness from a live dive,
+stair, errand or trip caller, `prepared` holds the checks in call order.
+Each has `current_depth`, `proposed_depth`, `source` (call site), and
+`requirement`. A null requirement means prepared. A failure has a stable
+`name`, integer `actual` and `required`, the pass `relation`, and the
+original `message`. Formula failures report a false predicate (0 vs 1).
+Alternative healing types are compared in their equivalent minimum units.
+
+`trip_id` is local to the cell. It starts at 0 and advances on each
+observed town-to-dungeon transition. A subsequent think carries
+`previous_prepared_outcome` with the checked `think`, the observed
+`depth`, and an `action` of `descended`, `ascended`,
+`returned_to_town` or `stayed`. The latest checked think can lack an
+outcome if the cell ends before another observation. The outcome describes
+the next observation even when a later check on that think selected the
+action.
+
+Run `python3 scripts/summarize-prepared.py RETAINED_CELL_ROOT...` on the
+selected Zoo arms. The report counts the first observed failure for each
+(cell, trip, proposed depth) and uses only one-level descent proposals.
+Repeated checks and speculative farther depths do not multiply counts.
+For historical cells, `--legacy` extracts only the explicit
+“bored and unable to dive” note and joins it to the state log by turn.
+Historical counts cover this one path.
+
 ## Class/family preference profiles (#403)
 
 Since #520 there is one preference per family, `borg_param_attack_preference_<family>_permille`,

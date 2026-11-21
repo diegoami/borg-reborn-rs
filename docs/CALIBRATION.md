@@ -27,6 +27,15 @@ uses the decision core's parameter lookup after applying the class
 override. See [ZOO-INTERFACE.md](ZOO-INTERFACE.md#resolved-settings-at-birth-798)
 for the schema.
 
+## Preparedness trace (#795)
+
+The trace records each live preparedness check at dive and trip call sites.
+A failed row carries the first rule evaluated that failed, its compared
+values, and the original diagnostic text. The next observation links a
+depth outcome to that check's think. No parameter changes. See
+[ZOO-INTERFACE.md](ZOO-INTERFACE.md#preparedness-trace-795) for the schema
+and trip-counting method.
+
 ## Walk out of a slower crowd (#690)
 
 The registry now holds **2269** parameters (2266 before; three added).
@@ -2049,7 +2058,7 @@ digger 500 gold.
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:694` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1452` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
-| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -4508,17 +4517,17 @@ retired #693 settings load with a warning and use these checks.
 
 | Parameter | Default | Unit | Range | Source |
 |---|---|---|---|---|
-| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:675` |
-| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:229` |
-| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:243` |
-| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:247` |
-| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:255` |
-| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:256` |
-| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:271` |
-| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:275` |
-| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:318` |
-| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:316` |
-| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:314` |
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:718` |
+| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:257` |
+| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:271` |
+| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:275` |
+| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:283` |
+| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:284` |
+| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:299` |
+| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:303` |
+| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:372` |
+| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:370` |
+| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:368` |
 | `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:386` |
 | `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:387` |
 | `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:385` |
