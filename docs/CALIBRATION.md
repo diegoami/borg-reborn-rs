@@ -5349,4 +5349,4 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:820` |
 | `town_prepared_copies` | 2 | copies | 1–20 | `borg_town_capability.rs:820` |
 | `town_staple_free_copies` | 0 | copies | 0–99 | `borg_town_capability.rs:756` |
-| `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:849` |
+| `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:875` |
