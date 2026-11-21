@@ -92,3 +92,28 @@ played a package on a real Windows or Mac.
 - Should `harness/build.sh` refuse (or warn about) a compiler other than
   GCC on x86-64, since such a build plays games the references and the zoo
   never see?
+
+## Added in review
+
+- **#855, the compiler guard:** `harness/arg-order.sh` probes whether the C
+  compiler evaluates call arguments right to left (`rtl`) or left to right
+  (`ltr`). `harness/build.sh` refuses `ltr` unless `BORG_ALLOW_OTHER_GAMES=1`
+  (which the macOS release job sets) and records `arg_order=` in `BUILD_ID`.
+  `docs/ZOO-INTERFACE.md` documents the new key; a zoo build on clang or
+  arm64 now needs the override.
+- **Review of `fca3bf0f`**, findings fixed in `4c5ad03e` and after:
+  - `generate.sh` checks bindgen's exit status inside `gen` and names the
+    target that failed. The `ERR` trap is gone. Its "is not what the headers
+    generate" message now prints: `diff`'s exit status had stopped the
+    script first, a bug already on `main`.
+  - `package.sh` checks each build's frontends against what `PLAYING.txt`
+    promises. `angband-headless` has no X11 and no curses; Linux's
+    `angband` has both; macOS's and Windows' have curses and no X11.
+  - `compare-games.py` names a missing log instead of printing a traceback.
+  - `PLAYING.txt`: watching on Linux needs libX11 in both the window and
+    the terminal modes.
+  - Windows refuses `-checkpoint-*` at startup, not at the first capture.
+  - Finding 6, `fopen "wx"` ignored on Windows, predates this PR: #858.
+- The build-only release run at `4c5ad03e`
+  ([44941895805](https://github.com/diegoami/borg-reborn-rs/actions/runs/44941895805))
+  passed every job.

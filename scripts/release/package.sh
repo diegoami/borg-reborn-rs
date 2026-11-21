@@ -36,12 +36,12 @@ for spec in "$@"; do
         echo "package.sh: $dir/game/angband$EXE does not match its BUILD_ID" >&2; exit 2; }
     # The frontends the package promises (PLAYING.txt; review of #851, the
     # check package-linux.sh had): angband-headless without X11 or curses,
-    # Linux's angband with both, macOS's and Windows' with curses.
+    # Linux's angband with both, macOS's and Windows' with curses only.
     want=""
     case "$name:$PLATFORM" in
         angband-headless:*) want="SUPPORT_X11:BOOL=OFF SUPPORT_GCU:BOOL=OFF";;
         angband:linux) want="SUPPORT_X11:BOOL=ON SUPPORT_GCU:BOOL=ON";;
-        angband:*) want="SUPPORT_GCU:BOOL=ON";;
+        angband:*) want="SUPPORT_X11:BOOL=OFF SUPPORT_GCU:BOOL=ON";;
     esac
     for w in $want; do
         grep -qx "$w" "$dir/CMakeCache.txt" || { echo "package.sh: $name ($dir) is not built with $w" >&2; exit 2; }
