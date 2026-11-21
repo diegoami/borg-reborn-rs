@@ -107,22 +107,27 @@ impl UpSearchDeparture {
     }
 }
 
-/// #862: don't spend the next move returning to the exact down staircase
-/// we just stepped off to find an up staircase. Other stairs remain eligible.
-/// The search needs a real onward step and gives way to increased danger.
-fn deferred_down_stair(st: &mut BorgState) -> Option<loc> {
-    let departure = st.stairs.up_search_departure?;
+/// A viable up-stair search outranks a down-stair fallback. Including an
+/// alternate down stair can send the search one step away before the next
+/// think chooses the original down stair again.
+pub(crate) fn continuing_up_stair_search(st: &mut BorgState) -> bool {
+    let Some(departure) = st.stairs.up_search_departure else { return false; };
     if !departure.still_at_handoff(st.borg.c, st.borg.time.level, st.borg.time.now)
         || !st.borg.stair_less || !(st.borg.goal.leaving || st.borg.goal.fleeing)
         || !borg_flow::up_stair_search_can_continue(st, departure.stair)
     {
-        return None;
+        st.stairs.up_search_departure = None;
+        return false;
     }
     let loc { x, y } = st.borg.c;
+    // The danger calculation uses the Borg's mutable tactical scratch state.
     let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
-    departure.permits_deferral(danger, st.borg.tr(BI_CURHP)).then_some(departure.stair)
+    if !departure.permits_deferral(danger, st.borg.tr(BI_CURHP)) {
+        st.stairs.up_search_departure = None;
+        return false;
+    }
+    true
 }
-
 
 /// Which stair list to enqueue.
 #[derive(Clone, Copy)]
@@ -149,17 +154,15 @@ fn enqueue_stairs(st: &mut BorgState, which: Which) {
 /// on them. Returns how many entered the flow (a grid the flow refuses, icky
 /// or too dangerous, does not count) and the parked ones.
 fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i32)>) {
-    let deferred = matches!(which, Which::More).then(|| deferred_down_stair(st)).flatten();
+    if matches!(which, Which::More) && continuing_up_stair_search(st) {
+        // Even a monster-occupied down stair is unavailable during the search.
+        return (0, Vec::new());
+    }
     let mut parked = Vec::new();
     let mut enqueued = 0;
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
-        if deferred == Some(loc { x, y }) {
-            i += 1;
-            continue;
-        }
-
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
             parked.push((y, x));
@@ -234,19 +237,18 @@ fn weighted_route(
     sneak: bool,
     weight: i32,
 ) -> Result<Option<borg_flow::StairPath>, usize> {
-    let deferred = if kinds.iter().any(|which| matches!(which, Which::More)) {
-        deferred_down_stair(st)
-    } else {
-        None
-    };
+    let search = kinds.iter().any(|which| matches!(which, Which::More))
+        && continuing_up_stair_search(st);
     let mut stairs = Vec::new();
     for &which in kinds {
+        if search && matches!(which, Which::More) {
+            continue;
+        }
         let track = track(st, which);
         for i in 0..track.num.max(0) as usize {
             let (y, x) = track.at(i);
-            let stair = loc { x, y };
-            if st.cave.grid(x, y).kill == 0 && (!matches!(which, Which::More) || deferred != Some(stair)) {
-                stairs.push(stair);
+            if st.cave.grid(x, y).kill == 0 {
+                stairs.push(loc { x, y });
             }
         }
     }
@@ -1183,7 +1185,7 @@ mod up_search_handoff_tests {
     use super::*;
 
     #[test]
-    fn deferral_is_local_and_expires_when_the_search_cannot_advance() {
+    fn an_unrenewed_step_expires_and_a_danger_increase_restores_fallback() {
         let stair = loc { x: 59, y: 42 };
         let next = loc { x: 58, y: 42 };
         let departure = UpSearchDeparture {

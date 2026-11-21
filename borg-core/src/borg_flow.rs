@@ -1636,10 +1636,16 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         let here = st.borg.c;
         let departure = if why == GOAL_DARK && st.borg.tr(BI_CDEPTH) > 0
             && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
-            && u32::from(st.cave.grid(here.x, here.y).feat) == FEAT_MORE
         {
-            Some(borg_flow_stairs::UpSearchDeparture {
-                stair: here,
+            let stair = if u32::from(st.cave.grid(here.x, here.y).feat) == FEAT_MORE {
+                Some(here)
+            } else if borg_flow_stairs::continuing_up_stair_search(st) {
+                st.stairs.up_search_departure.map(|search| search.stair)
+            } else {
+                None
+            };
+            stair.map(|stair| borg_flow_stairs::UpSearchDeparture {
+                stair,
                 next: loc { x, y },
                 level_started: st.borg.time.level,
                 turn: st.borg.time.now,
@@ -1650,9 +1656,7 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         };
         /* Attempt motion */
         if borg_play_step(st, y, x) {
-            if departure.is_some() {
-                st.stairs.up_search_departure = departure;
-            }
+            st.stairs.up_search_departure = departure;
             return true;
         }
     }
