@@ -268,6 +268,25 @@ borg_param_town_departure_free_slots = 2
 
 borg_param_town_store_keep_min = 3
 
+# Variety in the backpack (#863, owner: "being prepared to a variety of
+# situations"). Above 0, each situation's remedy (Neutralize Poison or Cure
+# Critical Wounds, Remove Curse, Detect Invisible, a confusion cure, a fear
+# cure) is worth a small diminishing amount even while the condition is
+# absent: this percent of the trip weight, at half its value with
+# prepared_copies copies. 0 = off. Hypotheses, not yet measured in the zoo.
+
+borg_param_town_prepared_percent = 0
+borg_param_town_prepared_copies = 2
+
+# Staples lose value (#863, owner: "make staple objects start losing value
+# starting from the 8th"): the healing potions (counted as Cure Light Wounds)
+# and Phase Door keep only staple_past_percent of their marginal value after
+# this many copies carried or bought, so 40 Cure Light Wounds do not outbid a
+# first Remove Curse. 0 = off.
+
+borg_param_town_staple_free_copies = 0
+borg_param_town_staple_past_percent = 25
+
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer
 # supplies. 0 and 0 = spend freely.
