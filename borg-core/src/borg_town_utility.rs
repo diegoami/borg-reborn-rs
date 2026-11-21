@@ -369,9 +369,10 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     let surplus = |k: &KitItem| surplus_first && k.qty > keep_min;
     for i in store_order(input, u, surplus) {
         let whole = &input.kit[i];
-        // The copies past the minimum, when they go first. The live executor
-        // stores one copy and solves again, so the stack goes down copy by
-        // copy while the pack is short of room.
+        // The copies past the minimum, when they go first. They travel with
+        // the disposition (`Freed::copies`), so the plan's action moves the
+        // surplus and not the whole stack (#859, review F1). The live
+        // executor still moves one copy and solves again (#507).
         let part = KitItem { qty: whole.qty - keep_min, ..*whole };
         let partial = surplus(whole) && !whole.unknown_flavour;
         let it = if partial { &part } else { whole };
@@ -454,6 +455,10 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             u.change(it, -1);
             freed.pack_slots += i32::from(!partial);
             freed.weight += weight;
+            if partial {
+                freed.copies.resize(input.kit.len(), 0);
+                freed.copies[i] = it.qty;
+            }
             if action == Disposition::Store {
                 if home_free <= 0 {
                     if let Some(j) = spare {
@@ -1148,9 +1153,41 @@ mod tests {
         let (d, freed) = dispositions_by(&inp, &mut u, &st, storing(3));
         assert_eq!(d, [Disposition::Store, Disposition::Keep], "the surplus goes first");
         assert_eq!((freed.weight, freed.pack_slots), (36, 0));
+        assert_eq!(freed.copies, [9, 0], "the nine travel with the disposition");
         // Kept copies past the stack: the whole stack is no surplus.
         let mut u = Utility::of(&st, &kit, false);
         assert_eq!(dispositions_by(&inp, &mut u, &st, storing(12)).1.pack_slots, 1, "a whole stack went");
+    }
+
+    /// #859 (review F1): the plan's first action stores the surplus the
+    /// disposition priced, and the whole stack when nothing is split.
+    #[test]
+    fn the_first_store_action_moves_the_surplus_not_the_stack() {
+        use crate::borg_town_record::{action, first_action, step};
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_ACLW as usize] = 12;
+        let potions = KitItem { slot: 3, kind: 50, qty: 12, weight: 4, need: index(Need::Healing) as i8,
+            reduction: 20 * UNIT, ..recall(Place::Pack) };
+        let first_store = |kit: &[KitItem], keep_min: i32| {
+            let mut inp = input(kit);
+            inp.limits.weight = 0;
+            let mut out = step(&inp);
+            let mut u = Utility::of(&st, kit, false);
+            let (d, freed) = dispositions_by(&inp, &mut u, &st,
+                Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min });
+            out.dispositions = d;
+            out.freed = freed;
+            first_action(&inp.candidates, &[], &out, &[], kit)
+        };
+        let kit = [potions];
+        let (code, at, _, _) = first_store(&kit, 3);
+        assert_eq!((code, at[1], at[2]), (action::STORE, 3, 9), "twelve copies, three kept: nine go");
+        let (code, at, _, _) = first_store(&kit, 0);
+        assert_eq!((code, at[2]), (action::STORE, 12), "keep_min 0: the whole stack");
+        // An unknown flavour is never split: it is sold whole, as before.
+        let unknown = [KitItem { need: -1, reduction: 0, unknown: true, unknown_flavour: true, ..potions }];
+        let (code, at, _, _) = first_store(&unknown, 3);
+        assert_eq!((code, at[2]), (action::SELL, 12), "an unknown flavour is not split");
     }
 
     /// #859: short of slots, whole stacks go until the room is free.

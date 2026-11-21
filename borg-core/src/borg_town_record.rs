@@ -644,8 +644,8 @@ pub struct StepOutput {
     pub displaced: Option<PlanEntry>,
     /// Stage 1: the disposition of each `StepInput::kit` stack.
     pub dispositions: Vec<Disposition>,
-    /// What the dispositions freed for the purchases.
-    #[cfg_attr(not(test), expect(dead_code))]
+    /// What the dispositions freed for the purchases, and the copies of a
+    /// split stack they move (#859, review F1).
     pub freed: Freed,
 }
 
@@ -976,7 +976,7 @@ fn first_action_with_room(
         (Place::Home, Disposition::Take),
     ] };
     for (place, d) in order {
-        if let Some((k, _)) = kit.iter().zip(&out.dispositions).find(|(k, &x)| k.place == place && x == d
+        if let Some((i, k)) = kit.iter().enumerate().find(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
             && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
             && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !k.joins_pack)) {
             let (code, at) = match (place, d) {
@@ -986,7 +986,11 @@ fn first_action_with_room(
                 (Place::Home, Disposition::Sell) => (action::SELL_HOME, i64::from(k.sell_shop)),
                 _ => (action::TAKE_HOME, 7),
             };
-            return (code, [at, i64::from(k.slot), i64::from(k.qty), k.proceeds], i64::from(k.need), false);
+            // borg-reborn-rs (#859, review F1): a stack split at
+            // `town_store_keep_min` moves the surplus the plan priced, not
+            // the whole stack. Only the pack's stacks are split.
+            let copies = out.freed.copies.get(i).copied().filter(|&n| n > 0 && place == Place::Pack && n < k.qty);
+            return (code, [at, i64::from(k.slot), i64::from(copies.unwrap_or(k.qty)), k.proceeds], i64::from(k.need), false);
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }

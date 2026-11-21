@@ -89,7 +89,7 @@ pub struct KitItem {
 }
 
 /// What the dispositions free for the purchases (the second stage).
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Freed {
     /// Pack slots: stacks stored, sold or dropped, less stacks taken.
     pub pack_slots: i32,
@@ -99,6 +99,11 @@ pub struct Freed {
     pub weight: i64,
     /// Gold from the sales.
     pub gold: i64,
+    /// borg-reborn-rs (#859, review F1): per kit row, the copies a pack
+    /// stack's disposition moves when it is not the whole stack (the surplus
+    /// past `town_store_keep_min`); 0 or absent: the whole stack. Empty
+    /// unless a surplus was split, so every other plan is as it was.
+    pub copies: Vec<i32>,
 }
 
 /// The keep value of a stack: its need value plus its power value.
@@ -311,7 +316,7 @@ mod tests {
         let kit = [item(Place::Pack, 0, 1, 3), junk, unsellable];
         let (d, f) = run(&kit, &st, 5, 5, 1000);
         assert_eq!(d, [Disposition::Keep, Disposition::Sell, Disposition::Drop]);
-        assert_eq!(f, Freed { pack_slots: 2, home_slots: 0, weight: 20, gold: 5 });
+        assert_eq!(f, Freed { pack_slots: 2, home_slots: 0, weight: 20, gold: 5, copies: vec![] });
         // power alone keeps a stack (a spellbook, a wand)
         junk.power = 50_000;
         let (d, _) = run(&[junk], &st, 5, 5, 1000);
