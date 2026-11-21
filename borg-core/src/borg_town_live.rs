@@ -314,7 +314,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let protects_recall = a.code == action::BUY && recall_floor > 0
             && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval);
         if protects_recall {
-            purchase_gold = purchase_gold.min(crate::borg_town_budget::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
+            purchase_gold = purchase_gold.min(crate::borg_store_buy::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
         }
         let room_under_cap = if a.code == action::SELL_HOME { i32::MAX }
             else { acquisition_room(st, item.tval, item.kind) };

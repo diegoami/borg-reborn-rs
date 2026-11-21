@@ -1475,7 +1475,7 @@ mod recall_value_tests {
         assert_eq!(eligible_recall_reserve(400, 400, 1), 1);
         assert_eq!(eligible_recall_reserve(800, 400, 0), 0);
         assert_eq!(eligible_recall_reserve(0, 0, 1), 1);
-        use crate::borg_town_budget::recall_purchase_budget;
+        use crate::borg_store_buy::recall_purchase_budget;
         assert_eq!(recall_purchase_budget(524, 400) / 125, 0);
         assert_eq!(recall_purchase_budget(525, 400) / 125, 1);
         assert_eq!(recall_purchase_budget(649, 400) / 125, 1);

@@ -362,6 +362,11 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     true
 }
 
+/// Gold available for Word of Recall after reserving the required balance.
+pub(crate) fn recall_purchase_budget(gold: i64, minimum_remaining: i32) -> i64 {
+    gold.saturating_sub(i64::from(minimum_remaining)).max(0)
+}
+
 /// Point the Borg at one shop ware for purchase. A pending pack-sale goal
 /// (`goal.item`) is cleared first: `borg_think_shop_sell` would otherwise sell
 /// it on entering the chosen shop instead of buying the ware.

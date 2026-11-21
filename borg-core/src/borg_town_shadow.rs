@@ -432,7 +432,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         .saturating_sub(urgent_cost);
     let recall_floor = crate::params::value(crate::params::Param::buy_recall_from_gold);
     if recall_floor > 0 {
-        let recall_budget = budget.gold.min(crate::borg_town_budget::recall_purchase_budget(gold_after_urgent, recall_floor));
+        let recall_budget = budget.gold.min(crate::borg_store_buy::recall_purchase_budget(gold_after_urgent, recall_floor));
         for c in &mut stock.candidates {
             if usize::from(c.shop) != BORG_HOME && c.price > 0
                 && crate::borg_town_budget::is_recall_scroll(st, c.tval, c.sval)
