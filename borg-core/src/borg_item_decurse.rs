@@ -89,10 +89,15 @@ fn decurse_swap(st: &mut BorgState, swap: fn(&BorgState) -> i32) -> bool {
         return false;
     }
 
+    /* borg-reborn-rs (#830): not for an item the scroll costs more than */
+    let i = swap(st) - 1;
+    if i >= 0 && !crate::borg_cursed::worth_a_scroll(st, i) {
+        return false;
+    }
+
     /* remove the curse */
     if start_decurse(st) {
         /* pick the item */
-        let i = swap(st) - 1;
         borg_keypress(st, letter(i));
         /* pick first curse */
         borg_keypress(st, KC_ENTER);

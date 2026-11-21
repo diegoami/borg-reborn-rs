@@ -17,6 +17,7 @@ use crate::borg_headers::borg_item_h::{
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_FIRST_CURSED, BI_GOLD, BI_WHERE_CURSED, BORG_EQUIP};
 use crate::borg_io::{borg_keypress, borg_note_bytes};
 use crate::borg_item::{inven_wield, quiver_start};
+use crate::borg_item_analyze::borg_object_value_known;
 use crate::borg_item_decurse::can_decurse;
 use crate::engine;
 use crate::headers::list_object_flags_h::OF_STICKY;
@@ -166,6 +167,34 @@ fn needs_remove_curse_with(can_decurse: bool, gold: i32, price: i32) -> bool {
     !can_decurse && price > 0 && gold >= price
 }
 
+/// Whether a pack item is worth a Remove Curse scroll, for the swap decurse
+/// (`borg_decurse_armour`, `borg_decurse_weapon`): what it would be worth
+/// without its curse must reach the scroll's own price. A cursed item is
+/// worth 0 to the Borg (`borg_item_analyze.rs`), so its worth is taken
+/// again here: the value of a known item, the kind's price for one only
+/// identified by kind, nothing for an unknown kind. A `[1,+0]` cloak is worth
+/// 3 gold, not 100 (Priest 354395849 read a scroll on one and wore it again,
+/// with a second curse still on it).
+pub(crate) fn worth_a_scroll(st: &BorgState, i: i32) -> bool {
+    let kind = st.item_val.kv_scroll_remove_curse;
+    let price = usize::try_from(kind).ok().map_or(0, engine::kind_cost_of);
+    let item = &st.items.items[i as usize];
+    let worth = if item.ident {
+        borg_object_value_known(&st.item_val, item)
+    } else if item.aware {
+        engine::kind_cost_of(item.kind as usize)
+    } else {
+        0
+    };
+    worth_a_scroll_with(worth, price)
+}
+
+/// The test of `worth_a_scroll`, once its inputs are known. With no known
+/// price for the scroll the old behaviour stays.
+fn worth_a_scroll_with(worth: i32, price: i32) -> bool {
+    price <= 0 || worth >= price
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -237,6 +266,17 @@ mod tests {
         assert!(!worn_cursed(1, 0, 0));
         /* a cursed pack item is not worn (`BORG_INVEN` and `BORG_QUILL` only) */
         assert!(!worn_cursed(1, 7, BORG_INVEN as i32 | BORG_QUILL as i32));
+    }
+
+    #[test]
+    fn a_scroll_is_for_an_item_worth_its_price() {
+        /* a plain cloak (3 gold) against a 100-gold scroll */
+        assert!(!worth_a_scroll_with(3, 100));
+        assert!(!worth_a_scroll_with(99, 100));
+        assert!(worth_a_scroll_with(100, 100));
+        assert!(worth_a_scroll_with(2500, 100));
+        /* the scroll's price unknown: unchanged */
+        assert!(worth_a_scroll_with(3, 0));
     }
 
     #[test]
