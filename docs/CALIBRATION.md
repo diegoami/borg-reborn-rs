@@ -1140,7 +1140,7 @@ the mana, and that its spells are likely enough to work.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:953` |
+| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:967` |
 
 
 ## Throws on melee's footing (#568)
@@ -1900,8 +1900,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:871` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:954` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:955` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:961` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:962` |
 
 ## Town less scary (#622)
 
@@ -3376,47 +3376,47 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1293` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1362` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1371` |
-| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1380` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1462` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1473` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1469` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1470` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1478` |
-| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1469` |
-| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1487` |
-| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1505` |
-| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1513` |
-| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1514` |
-| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1517` |
-| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:1518` |
-| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1521` |
-| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1522` |
-| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:1524` |
-| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1525` |
-| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1526` |
-| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1527` |
-| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1529` |
-| `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1533` |
-| `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1542` |
-| `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1582` |
-| `escape_emergency_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1582` |
-| `escape_last_ditch_max_level` | 10 | level | 1–51 | `borg_escape.rs:1571` |
-| `escape_last_ditch_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1572` |
-| `escape_last_ditch_dimension_fail` | 90 | percent | 0–100 | `borg_escape.rs:1574` |
-| `escape_critical_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1586` |
-| `escape_last_ditch_phase_max_level` | 10 | level | 1–51 | `borg_escape.rs:1600` |
-| `escape_last_ditch_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1601` |
-| `escape_last_ditch_phase_fail` | 15 | percent | 0–100 | `borg_escape.rs:1603` |
-| `escape_endgame_stay_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1618` |
-| `escape_endgame_stay_unique_count` | 3 | count | 1–9 | `borg_escape.rs:1620` |
-| `escape_endgame_stay_min_depth` | 97 | depth | 0–127 | `borg_escape.rs:1621` |
-| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1630` |
-| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:1632` |
-| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1633` |
-| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1634` |
-| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1635` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1539` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1548` |
+| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1591` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1639` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1650` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1653` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1654` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1659` |
+| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1680` |
+| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1698` |
+| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1716` |
+| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1724` |
+| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1725` |
+| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1728` |
+| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:1729` |
+| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1732` |
+| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1733` |
+| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:1735` |
+| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1736` |
+| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1737` |
+| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1738` |
+| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1740` |
+| `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1744` |
+| `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1753` |
+| `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1763` |
+| `escape_emergency_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1763` |
+| `escape_last_ditch_max_level` | 10 | level | 1–51 | `borg_escape.rs:1782` |
+| `escape_last_ditch_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1783` |
+| `escape_last_ditch_dimension_fail` | 90 | percent | 0–100 | `borg_escape.rs:1785` |
+| `escape_critical_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1797` |
+| `escape_last_ditch_phase_max_level` | 10 | level | 1–51 | `borg_escape.rs:1811` |
+| `escape_last_ditch_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1812` |
+| `escape_last_ditch_phase_fail` | 15 | percent | 0–100 | `borg_escape.rs:1814` |
+| `escape_endgame_stay_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1829` |
+| `escape_endgame_stay_unique_count` | 3 | count | 1–9 | `borg_escape.rs:1831` |
+| `escape_endgame_stay_min_depth` | 97 | depth | 0–127 | `borg_escape.rs:1832` |
+| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1841` |
+| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:1843` |
+| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1844` |
+| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1845` |
+| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1846` |
 | `escape_teleport_phase_tolerance` | 50 | count | 0–1000 | `borg_escape.rs:1671` |
 | `escape_teleport_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1671` |
 | `escape_phase_antisummon_delay` | 50 | turns | 0–100000 | `borg_escape.rs:1678` |
@@ -3424,28 +3424,28 @@ the vendored mechanics model:
 | `escape_phase_unique_min_count` | 2 | count | 1–9 | `borg_escape.rs:1709` |
 | `escape_phase_ordinary_danger_tenths` | 10 | tenths | 0–100 | `borg_escape.rs:1710` |
 | `escape_afraid_warrior_danger_tenths` | 10 | tenths | 0–100 | `borg_escape.rs:1711` |
-| `escape_phase_tolerance` | 25 | count | 0–1000 | `borg_escape.rs:1470` |
-| `escape_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1470` |
-| `escape_fallback_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1505` |
-| `escape_fallback_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1505` |
-| `escape_failed_teleport_flee_max_level` | 35 | level | 1–51 | `borg_escape.rs:1535` |
-| `escape_failed_teleport_leave_max_level` | 35 | level | 1–51 | `borg_escape.rs:1547` |
-| `escape_compromised_danger_tenths` | 8 | tenths | 0–100 | `borg_escape.rs:1559` |
-| `escape_compromised_max_level` | 35 | level | 1–51 | `borg_escape.rs:1560` |
-| `escape_compromised_hp_divisor` | 3 | divisor | 1–1000 | `borg_escape.rs:1560` |
-| `escape_compromised_unique_danger_tenths` | 9 | tenths | 0–100 | `borg_escape.rs:1561` |
-| `escape_compromised_unique_max_level` | 35 | level | 1–51 | `borg_escape.rs:1563` |
-| `escape_compromised_unique_hp_divisor` | 3 | divisor | 1–1000 | `borg_escape.rs:1563` |
-| `escape_compromised_ordinary_danger_tenths` | 6 | tenths | 0–100 | `borg_escape.rs:1564` |
-| `escape_compromised_ordinary_max_level` | 20 | level | 1–51 | `borg_escape.rs:1564` |
-| `escape_compromised_general_danger_tenths` | 6 | tenths | 0–100 | `borg_escape.rs:1565` |
-| `escape_compromised_general_max_level` | 35 | level | 1–51 | `borg_escape.rs:1565` |
-| `escape_compromised_phase_tolerance` | 20 | count | 0–1000 | `borg_escape.rs:1569` |
-| `escape_compromised_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1569` |
-| `escape_failed_compromised_flee_max_level` | 25 | level | 1–51 | `borg_escape.rs:1608` |
-| `escape_weak_caster_max_level` | 35 | level | 1–51 | `borg_escape.rs:1628` |
-| `escape_weak_caster_phase_tolerance` | 65 | count | 0–1000 | `borg_escape.rs:1629` |
-| `escape_weak_caster_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1629` |
+| `escape_phase_tolerance` | 25 | count | 0–1000 | `borg_escape.rs:1894` |
+| `escape_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1894` |
+| `escape_fallback_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1929` |
+| `escape_fallback_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1929` |
+| `escape_failed_teleport_flee_max_level` | 35 | level | 1–51 | `borg_escape.rs:1959` |
+| `escape_failed_teleport_leave_max_level` | 35 | level | 1–51 | `borg_escape.rs:1971` |
+| `escape_compromised_danger_tenths` | 8 | tenths | 0–100 | `borg_escape.rs:1983` |
+| `escape_compromised_max_level` | 35 | level | 1–51 | `borg_escape.rs:1984` |
+| `escape_compromised_hp_divisor` | 3 | divisor | 1–1000 | `borg_escape.rs:1984` |
+| `escape_compromised_unique_danger_tenths` | 9 | tenths | 0–100 | `borg_escape.rs:1985` |
+| `escape_compromised_unique_max_level` | 35 | level | 1–51 | `borg_escape.rs:1987` |
+| `escape_compromised_unique_hp_divisor` | 3 | divisor | 1–1000 | `borg_escape.rs:1987` |
+| `escape_compromised_ordinary_danger_tenths` | 6 | tenths | 0–100 | `borg_escape.rs:1988` |
+| `escape_compromised_ordinary_max_level` | 20 | level | 1–51 | `borg_escape.rs:1988` |
+| `escape_compromised_general_danger_tenths` | 6 | tenths | 0–100 | `borg_escape.rs:1989` |
+| `escape_compromised_general_max_level` | 35 | level | 1–51 | `borg_escape.rs:1989` |
+| `escape_compromised_phase_tolerance` | 20 | count | 0–1000 | `borg_escape.rs:1993` |
+| `escape_compromised_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1993` |
+| `escape_failed_compromised_flee_max_level` | 25 | level | 1–51 | `borg_escape.rs:2032` |
+| `escape_weak_caster_max_level` | 35 | level | 1–51 | `borg_escape.rs:2052` |
+| `escape_weak_caster_phase_tolerance` | 65 | count | 0–1000 | `borg_escape.rs:2053` |
+| `escape_weak_caster_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:2053` |
 | `escape_low_level_max_level` | 10 | level | 1–51 | `borg_escape.rs:1647` |
 | `escape_low_level_danger_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1648` |
 | `escape_low_level_unique_danger_tenths` | 7 | tenths | 0–100 | `borg_escape.rs:1648` |
@@ -5420,6 +5420,16 @@ from current-main checks. Canonical prior attempts and reproduction patches
 are pinned in the [Cemetery case](https://github.com/diegoami/borg-cemetery/tree/b20537c68830e415c79a8766135a1b32c7e539c2/validation/borg-reborn-rs/unseen-bump-781).
 Review follow-up receipts are published with Cemetery PR #92. Those trials
 did not measure a population effect.
+
+## A teleport curse stops every teleport (#829)
+
+One flag. Compiled 0 (the Borg plays as before); shipped 1 in `harness/borg.txt`.
+A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
+(see docs/PHASE-DOOR.md for where the check sits).
+
+| Parameter | Default | Range | Unit | Source | Meaning |
+| --- | --- | --- | --- | --- | --- |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1431` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
