@@ -58,10 +58,14 @@ sys.stdout.write(text)
 }
 tmp="$(mktemp)"; tmpw="$(mktemp)"
 trap 'rm -f "$tmp" "$tmpw"' EXIT
+# bindgen's diagnostics go to /dev/null above (libclang's notes vary by
+# version): say that it failed rather than exit silently (#823).
+trap 'echo "generate.sh: bindgen failed (headers missing? run its command without 2>/dev/null)" >&2' ERR
 gen "$tmp" ""
 # #823: Windows (MinGW-w64) has its own layouts: wchar_t is 16 bits there.
 # Needs the MinGW-w64 headers (Debian/Ubuntu: mingw-w64-x86-64-dev).
-gen "$tmpw" "Windows (x86_64-w64-mingw32) layouts, #823." --target=x86_64-w64-mingw32
+gen "$tmpw" "Windows (x86_64-w64-mingw32) layouts, #823." --target=x86_64-w64-mingw32 \
+    --sysroot="${MINGW_SYSROOT:-/usr/x86_64-w64-mingw32}"
 grep -q 'pub type wchar_t = ' "$tmpw" && grep -q 'size_of::<keypress>' "$tmpw" || {
     echo "generate.sh: the Windows bindings came out empty (MinGW-w64 headers missing?)" >&2; exit 1; }
 if [ "${1:-}" = --check ]; then
