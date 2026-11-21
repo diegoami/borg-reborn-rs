@@ -23,7 +23,7 @@ before routing. It uses the brightest working spare light. The action,
 search and door retry budgets can be set in borg.txt through
 `borg_param_lightless_recovery_actions`, `borg_param_lightless_search_actions`
 and `borg_param_lightless_door_attempts`. Their defaults are 250 total
-actions, 32 search actions and three door attempts from each approach.
+actions, 32 search actions and three single door attempts from each approach.
 A handoff ends the headless run as `borg_stopped`.
 
 ### Remaining validation

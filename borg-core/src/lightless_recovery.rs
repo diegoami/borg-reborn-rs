@@ -9,7 +9,7 @@ use crate::borg_escape::borg_recall;
 use crate::borg_flow::borg_ddxy_ddd;
 use crate::borg_flow_misc::borg_extract_dir;
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CURHP, BI_ISCONFUSED, BI_LIGHT, BI_RECALL};
-use crate::borg_io::{borg_keypress, borg_queue_direction, ESCAPE};
+use crate::borg_io::{borg_keypress, borg_keypresses, borg_queue_direction, ESCAPE};
 use crate::borg_think::borg_oops;
 use crate::borg_think_dungeon_util::borg_think_dungeon_light;
 use crate::engine;
@@ -289,8 +289,10 @@ pub(crate) fn recover(st: &mut BorgState) {
 
             let (x, y) = step.to;
             if step.tile == Tile::Door {
-                // cmd-cave.c:235 (do_cmd_open).
-                borg_keypress(st, u32::from(b'o'));
+                // ui-input.c:1817 accepts a count prefixed by '0'.
+                // A count of one avoids CMD_OPEN's default 99 repeats
+                // (cmd-core.c:82,342,391) so we reassess after each try.
+                borg_keypresses(st, b"01o");
                 borg_queue_direction(st, direction);
             } else {
                 unseen_bump_step(st, x, y);
