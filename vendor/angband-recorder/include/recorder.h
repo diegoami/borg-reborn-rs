@@ -41,9 +41,11 @@ void ar_damage(int64_t turn, int requested, int before, int after, const char *c
  * parent game's memory. Returns 0 on success. Child calls ar_snapshot_enter. */
 int ar_host_save(const char *path);
 const char *ar_host_extra(bool full);
-/* Called once by an explicit ar_finish call (not the atexit handler, which runs
- * after engine cleanup) before it closes the recording, unless an exit or final
- * frame was already written. Emit ar_frame("final", ...) of the end state. */
+/* Called once by ar_finish, explicitly or from the atexit handler, before it closes
+ * the recording, unless an exit or final frame was already written. It must be
+ * safe on a game that left without its quit hook (the engine is intact then);
+ * the hook writes the exit frame before it cleans up. Emit ar_frame("final", ...)
+ * of the end state. */
 void ar_host_final_frame(void);
 void ar_host_free_extra(const char *buffer);
 #endif

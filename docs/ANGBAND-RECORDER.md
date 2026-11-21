@@ -1,7 +1,7 @@
-# Opt-in recorder (#210, v0.2.0 adoption #351, v0.3.0 adoption #356)
+# Opt-in recorder (#210, v0.2.0 adoption #351, v0.3.0 adoption #356, v0.3.1 adoption #834)
 
-The optional recorder is vendored verbatim from tag `v0.3.0`, commit
-`5146ba6ff5187ec2320b9fd310dea466820db160`, with all 55 files sealed in
+The optional recorder is vendored verbatim from tag `v0.3.1`, commit
+`88c9324b9958b7b08fad161841fb1a7fc0c2a3f4`, with all 58 files sealed in
 recorder-pin.json. Cargo and recorder-enabled CMake run the external pin
 checker. The crate links through the existing libborg_reborn_rs.a; a second
 Rust staticlib is not linked. Recording stays off in the measured harness.
@@ -77,3 +77,35 @@ What the release adds for this repository:
 
 Not checked here: GUI sessions, and recordings made by older builds replayed
 with this one (they need their own executable).
+
+## v0.3.1 adoption (#834)
+
+A pin update only: the 58 release files replace the 55 of v0.3.0, and the build
+label is `borg-reborn-recorder-v0.3.1`. engine/recorder-hooks.patch is
+unchanged, no interface changes (a v0.3.0 host links v0.3.1), and recorder-off
+builds still never compile the vendor directory. The schema is still
+`angband-recorder-streams@2`.
+
+What the release changes for this repository:
+- **A closed or killed game window keeps its end state.** v0.3.0 wrote the
+  closing `final` frame only when the frontend called `ar_finish` itself (our
+  headless borgh). A recording of an X11 window that was closed or killed was
+  sealed but ended at the last command/wait frame: Xlib exits from its I/O error
+  handler, the engine's quit hook (which writes the `exit` frame) never runs,
+  and nothing else wrote a frame. `ar_finish` is now also the `atexit` handler,
+  so that recording ends with a `final` frame. A normal quit (Ctrl-X) still ends
+  with `exit` and gets no `final` after it.
+- The release also carries the recorder repository's scripts and docs for the
+  recording build and the window launcher (`angband-reborn-record`); they are
+  vendored verbatim with the rest and not used by this repository's build.
+
+Checked in the recorder repository: a scratch build of borg-reborn-rs 88d98537
+with the recorder code of this release, a game window under a virtual display:
+killing the window ends the sealed recording with `final`, a Ctrl-X quit with
+`exit`. `harness/check-recorder.py` here covers the headless frontend only.
+
+Not checked: replaying a windowed recording that ended by a closed window, a
+window on a real display, a death in a window, a kill by signal. The local
+launcher `angband-reborn-record` keeps running its previous install until it is
+installed again from a build of a revision with this pin (recorder repository,
+`docs/borg-reborn-rs-recording/install-launcher.sh`).

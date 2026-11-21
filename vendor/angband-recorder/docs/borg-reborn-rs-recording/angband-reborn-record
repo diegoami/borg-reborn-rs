@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# The window launcher: a game window, recorded from startup. Installed by install-launcher.sh.
+# BORG_REBORN_RS: the main checkout, which holds the character's data dir (.angband-reborn).
+repo=${BORG_REBORN_RS:-$HOME/projects/angband/borg-reborn-rs}
+install_dir=$(cd "$(dirname "$(realpath "$0")")" && pwd)
+recorder="$install_dir/angband-recorder"
+recording_streams() {
+    if [ -d "$1/native" ]; then printf '%s\n' "$1/native"; else printf '%s\n' "$1"; fi
+}
+case "${1:-}" in
+    -h|--help)
+        printf '%s\n' 'Usage: angband-reborn-record [CHARACTER]' \
+            '       angband-reborn-record --watch RECORDING [--from-turn TURN]' \
+            '       angband-reborn-record --frame RECORDING [FRAME]' \
+            'Default character: RustBorg. Recordings go to ~/angband-recordings.'
+        exit 0 ;;
+    --watch|--frame)
+        mode=$1
+        streams=$(recording_streams "${2:?give the recording directory}")
+        shift 2
+        if [ "$mode" = --watch ]; then
+            exec python3 "$install_dir/watch-recording.py" "$streams" "$@"
+        fi
+        if [ "$#" -eq 0 ]; then
+            last=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["frames"])' "$streams/complete.json")
+            set -- "$last"
+        fi
+        exec "$recorder" view "$streams" "$@" ;;
+    -*) printf 'Unknown option: %s\n' "$1" >&2; exit 2 ;;
+esac
+if [ "$#" -gt 1 ]; then
+    printf 'Usage: angband-reborn-record [CHARACTER]\n' >&2
+    exit 2
+fi
+name=${1:-RustBorg}
+if [ -z "${DISPLAY:-}" ]; then
+    printf 'Angband needs an X11 display. Start this launcher from your desktop session.\n' >&2
+    exit 1
+fi
+data=${BORG_PLAY_DATA_DIR:-$repo/.angband-reborn}
+recordings=${BORG_RECORDINGS_DIR:-$HOME/angband-recordings}
+mkdir -p "$data"/{user,save,archive,panic,scores} "$recordings"
+data=$(realpath "$data")
+recordings=$(realpath "$recordings")
+if [ ! -e "$data/user/borg.txt" ]; then
+    cp "$repo/.angband-reborn/user/borg.txt" "$data/user/borg.txt"
+    for setting_file in errands_plan.txt scary_monsters.txt; do
+        if [ ! -e "$data/user/$setting_file" ]; then
+            cp "$repo/.angband-reborn/user/$setting_file" "$data/user/$setting_file"
+        fi
+    done
+fi
+label=${name//[^a-zA-Z0-9_-]/_}
+session=$(mktemp -d "$recordings/$(date +%Y%m%d-%H%M%S)-${label:0:40}.XXXXXX")
+mkdir "$session/borg-settings"
+for setting_file in borg.txt errands_plan.txt scary_monsters.txt; do
+    if [ -f "$data/user/$setting_file" ]; then
+        cp "$data/user/$setting_file" "$session/borg-settings/$setting_file"
+    fi
+done
+printf 'Recording to %s\n' "$session"
+cd "$install_dir/game"
+exec "$recorder" record "$session/native" -- ./angband -mx11 \
+    -duser="$data/user" -dsave="$data/save" -darchive="$data/archive" \
+    -dpanic="$data/panic" -dscores="$data/scores" -u"$name"

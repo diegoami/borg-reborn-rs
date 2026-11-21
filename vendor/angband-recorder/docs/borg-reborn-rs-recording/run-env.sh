@@ -1,7 +1,18 @@
 # Source this before harness/run.sh in the recording build directory.
 # The owner's Borg parameters (2026-11-17) plus the recording settings.
-# BRR_BUILD: the recording build directory made by setup.sh.
-: "${BRR_BUILD:=$HOME/angband-builds/borg-reborn-rs-recording}"
+# BRR_BUILD: the recording build directory made by setup.sh. When it is not set, the build that
+# ~/angband-builds/current points at (the latest setup.sh made), else the first build.
+# The link is resolved, so a recording keeps the path of the build that made it.
+if [ -z "${BRR_BUILD:-}" ]; then
+    if [ -d "$HOME/angband-builds/current" ]; then
+        BRR_BUILD="$(realpath "$HOME/angband-builds/current")"
+    else
+        if [ -L "$HOME/angband-builds/current" ]; then
+            echo "run-env.sh: warning: ~/angband-builds/current is a dangling link; using the first build (recorder v0.2.0, no closing frame). Re-run setup.sh or re-point the link." >&2
+        fi
+        BRR_BUILD="$HOME/angband-builds/borg-reborn-rs-recording"
+    fi
+fi
 export BRR_BUILD
 export BORG_CORE=borg-rs
 export BORG_ERRANDS_PLAN=harness/plans/errands_plan.txt
