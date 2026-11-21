@@ -29,35 +29,62 @@ curse on an item the power model prefers worn. In town the existing shopping
 round buys the scroll (`borg_store_buy.rs`) and `borg_enchanting` reads it.
 The gold test is there so a Borg with no money does not walk to town and back.
 
-**Checked.** The three cases at the zoo's commits, then the branch (main
-plus the fix) on the same seeds; see the PR for the table. Ranger
-1088421828 and Priest 354395849 reproduced the zoo's `messages.log` lines
-exactly at 3b4924ba with the shipped settings. The Warrior did not: its zoo
-cell ran at e8b3acfd with cell settings that live in the bundle's `user/`
-files, which this session could not download (the artifact needs API access to
-borg-zoo, and the attach request was refused). So the Warrior is **not** rerun;
-the Priest's cloak is the same case (anti-teleportation on body armour).
-Unit tests cover the curse classification, the slot choice and the trip's
-decision. The smoke suite is identical to `smoke-borg-rs`, so the reference
-is not re-recorded. `scripts/borg-core-vendor.py check` passes with
-`borg_cursed.rs` declared as ours and `borg_item_decurse.rs` as hooked.
+**No scroll for an item not worth one** (owner: "don't spend a Remove Curse
+scroll on an item not worth keeping"). The Priest's `Cloak [1,+0]` is worth
+3 gold; the scroll costs 100. The read (`borg_decurse_any`), both purchases
+(`borg_store_buy.rs`, `borg_town_capability.rs`) and the power bonus for
+carrying a scroll all key on `BI_FIRST_CURSED`, and `borg_notice` sets it for
+a pack item as well as for worn equipment (`borg_trait.rs`, the inventory
+scan). So the gate sits there: a pack item sets it only when its worth
+without the curse reaches the scroll's own price (`worth_a_scroll` in
+`borg_cursed.rs`: the value of a known item, the kind's price for one only
+identified by kind, nothing for an unknown kind; no new constant). The swap
+decurse (`borg_decurse_armour`, `borg_decurse_weapon`) has the same test.
+Worn equipment is unchanged.
+
+**Checked.** All three cases, each with the zoo's own build as the control
+(logs and patches in the borg-cemetery case `studies/cursed-equipment-830`;
+single games, not measurements):
+- *Warrior 1653223723*, reproduced from the zoo bundle at e8b3acfd (the key
+  stream hashes to the cell's `play_sha256`, `messages.log` byte-identical).
+  With the take-off applied to that commit, the game is the same until
+  68,279 ("Your Robe prevents you teleporting"); the robe comes off at
+  68,289 and the Warrior lives to the 100,000-turn limit (the zoo's game died
+  to a yellow jelly at 68,399).
+- *Ranger 1088421828*, at 3b4924ba: sandals off at 6,671 (the zoo's game
+  died at 6,761); alive at 100,000.
+- *Priest 354395849*, at 3b4924ba, three builds: the zoo's (reads Remove
+  Curse on the pack cloak at 71,751, wears it again, dies at 93,357); the
+  take-off alone (reads a scroll on the cloak at 64,884, buys another at
+  64,904, "Your Cloak prevents you teleporting" at 83,138, cloak off at
+  83,148); the take-off and the gate (no Remove Curse scroll bought or read
+  for the cloak, the `{??}` cloak never worn again, alive at 100,000).
+- The smoke suite on the branch is identical to `smoke-borg-rs` (3 of 3), so
+  the reference is not re-recorded. fmt, clippy `-D warnings`,
+  `cargo test --workspace --exclude borg-core` and
+  `cargo test --release -p borg-core` (574) pass;
+  `scripts/borg-core-vendor.py check` passes with `borg_cursed.rs` declared as
+  ours and `borg_item_decurse.rs`, `borg_item_analyze.rs`, `borg_trait.rs`
+  as hooked.
 
 **Not checked.**
-- The trip for Remove Curse has no live game that shows it. With the
-  take-off disabled in a scratch build, the Ranger and the Priest died in the
-  fight that the curse caused, before the restock check (it runs after the fight
-  and caution branches); no case keeps a harmful curse alive long enough. Its
-  decision is unit-tested; the purchase and the reading are the existing
-  paths, seen in the Ranger and Priest runs on items the Borg had taken off.
-- No measurement of the effect on survival: that is a zoo request
-  (RULES 14, 20), not a few local seeds.
+- The trip for Remove Curse has still not been seen in a game: in none of the
+  runs above does the Borg keep a worn item with a mild curse and enough gold.
+  Its decision is unit-tested. A live check needs a worn item with a mild
+  known curse, which `start-build` cannot construct (it rejects curses,
+  harness/README.md) and which a natural start would reach only by chance. The
+  zoo request counts the "restock remove curse" trips instead.
+- Survival: no measurement. The zoo request is the way (RULES 14, 20).
+- The Ranger and Priest runs above are at 3b4924ba with the changes applied
+  by hand (the main branch moved since); the Warrior's at e8b3acfd without
+  the trip and the gate. They show what the changes do in the zoo's own
+  games, not the branch's.
 
-**Found, not changed.**
-- After a take-off, the existing swap-decurse (`borg_decurse_armour`) reads
-  Remove Curse on the item in the pack and wears it again. The Priest did
-  this with the cloak (read at 71,751, worn again `{??}` at 71,761, the
-  second curse at 93,200). It is now taken off again, one scroll per round,
-  so the loop ends when the curses do; whether a worth-0 cloak is worth 100
-  gold of scroll is a decision for the owner.
-- Gameplay evidence for this task belongs in borg-cemetery (AGENTS.md); this
-  session could not push there.
+**Decision for the owner.** The gate's test is the item's worth without
+its curse against the scroll's price, for items in the pack. It spends no
+scroll on a `[1,+0]` cloak and still spends one on an item worth 100 gold or
+more. A worn item with a known removable curse is unchanged: it is what the
+trip check and the town purchase serve. If a different test is wanted (the
+item's power contribution, say), it is one function, `worth_a_scroll`.
+
+**Evidence** is in borg-cemetery (AGENTS.md): `studies/cursed-equipment-830`.
