@@ -1,4 +1,4 @@
-## 2026-11-22: First cures before the Phase Door reserve, off by default (#987)
+## 2026-11-22: First cures before the Phase Door reserve; the Ranger ships 2 (#987)
 
 Every check below ran on the **default core, borg-rs** (`borg-core/`), on
 the shipped `harness/borg.txt`, built from `origin/track-p` (first `4b2c2fcf`,
@@ -160,6 +160,30 @@ documentation points it raised are fixed:
   and from this note.
 - The review section above says how the code works now.
 - The baselines and counts are the current ones.
+
+### Shipped for the Ranger (owner, 2026-11-22)
+
+The owner asked: "let us merge like that having the value 2 for clw for
+rangers". `harness/borg_ranger.txt` now sets `town_first_cure = 2`, folded
+into `harness/borg.txt` as `town_first_cure__ranger = 2` with
+`scripts/borg-class-files.py fold`. Every other class stays at 0. The row
+still counts every potion with `HEAL_HP`; the owner kept that scope ("let us
+merge like that").
+
+- Smoke has no Ranger, so `scripts/rerecord-smoke-borg-rs.sh` found its 3
+  games identical and re-recorded nothing.
+- `harness/check-ranger-phase.py` (#797's Phase Door purchase trace) already
+  pins its own settings. It now also pins `town_first_cure__ranger=0`. With
+  the floor on, the trace's 3 CLW come before the rations, and nothing else
+  changes.
+- Seeds at the new shipped settings (default core, a build of this branch on
+  `track-p` `4383976b`), leads only:
+  - 681096527 buys 2 CLW at turn 541 and reaches the cap, CL6
+    (`5b8d3f58c1a265ad`).
+  - 282602274 plays the zoo's recorded game (`13e34b27193b2e8c`). It already
+    bought 2 CLW; its grey mold death is #975's case.
+  - 1895660873 reaches the cap, CL7. Other `track-p` changes are in that
+    game too, so it is not evidence for the rule.
 
 ### Left, and for the owner
 

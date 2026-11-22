@@ -6422,9 +6422,11 @@ the order holds at any HP. Low gold only decides whether anything is left
 after the reserve. `town_first_cure` adds a row, "first cure": the first N
 healing potions are a requirement, each worth `town_first_cure_percent` of
 the escape weight, nothing past N. Off (0) the model keeps its shape: the
-seed plays the same keys with byte-identical plan records. Shipped values
-wait for borg-zoo#669. Unmeasured: on the one seed, 1 and 2 reach the
-100,000-turn cap (a lead only, RULES 14).
+seed plays the same keys with byte-identical plan records. **Shipped: 2 for
+the Ranger** (owner, 2026-11-22: "let us merge like that having the value 2
+for clw for rangers"), 0 for every other class. Unmeasured by the zoo
+(#1006): on the one seed the result flipped between two `track-p` builds (a
+lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

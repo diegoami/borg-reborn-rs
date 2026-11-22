@@ -903,7 +903,8 @@ borg_param_town_phase_reserve_percent = 150
 # requirement, each worth town_first_cure_percent of the trip's escape weight.
 # The percent is a margin on the cure's whole value, not a threshold against
 # town_phase_reserve_percent (the purse decides on whole wares). 0 = off (today).
-# Per class with __<class>. Shipped values wait for borg-zoo#669.
+# Per class with __<class>. The Ranger ships 2 (owner, 2026-11-22, borg_ranger.txt);
+# the other classes 0 until the zoo measures it (#1006).
 borg_param_town_first_cure = 0
 borg_param_town_first_cure_percent = 200
 
