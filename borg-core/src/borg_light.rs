@@ -16,7 +16,7 @@
 
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
-use crate::borg_cave_light::{own_light_radius, BORG_LIGHT};
+use crate::borg_cave_light::{engine_distance, engine_light_shape, own_light_radius, BORG_LIGHT};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
@@ -307,7 +307,7 @@ enum FrontierGrid {
 }
 
 fn dark_frontier(
-    (y, x): (i32, i32), direction: (i32, i32), radius: i32,
+    (y, x): (i32, i32), direction: (i32, i32), radius: i32, engine_shape: bool,
     grid: impl Fn(i32, i32) -> FrontierGrid,
 ) -> bool {
     let (dy, dx) = direction;
@@ -315,9 +315,22 @@ fn dark_frontier(
         if (sy == 0 && sx == 0) || ((dy != 0 || dx != 0) && sy * dy + sx * dx <= 0) {
             return false;
         }
-        grid(y + sy * (radius + 1), x + sx * (radius + 1)) == FrontierGrid::Unknown
-            && (1..=radius).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
+        let lit = lit_steps((sy, sx), radius, engine_shape);
+        grid(y + sy * (lit + 1), x + sx * (lit + 1)) == FrontierGrid::Unknown
+            && (1..=lit).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
     }))
+}
+
+/// borg-reborn-rs (#884, review of #894): how many steps along the ray
+/// `(sy, sx)` are within the light. With the engine's shape, the steps at
+/// engine `distance()` <= radius (a diagonal step at radius 2: only the
+/// first, since (2,2) is at distance 3); otherwise the radius itself, the
+/// shape of C's light (which lights (2,2)).
+fn lit_steps((sy, sx): (i32, i32), radius: i32, engine_shape: bool) -> i32 {
+    if !engine_shape {
+        return radius;
+    }
+    (1..=radius).take_while(|&k| engine_distance(sy * k, sx * k) <= radius).count() as i32
 }
 
 fn entering_unexamined_dark(st: &BorgState) -> bool {
@@ -332,7 +345,7 @@ fn entering_unexamined_dark(st: &BorgState) -> bool {
     // continuous run of known floor. Do not inspect that grid in the engine.
     // borg-reborn-rs (#884): the Borg's own light radius (BI_LIGHT - 1
     // under cave_light_engine_radius 1, so a torch looks at distance 2).
-    dark_frontier((y, x), direction, own_light_radius(st).max(1), |y, x| {
+    dark_frontier((y, x), direction, own_light_radius(st).max(1), engine_light_shape(), |y, x| {
         if !engine::square_in_bounds_fully(x, y) {
             FrontierGrid::Blocked
         } else if u32::from(st.cave.grid(x, y).feat) == FEAT_NONE {
@@ -987,12 +1000,37 @@ mod dark_entry_tests {
             (10, 12) => Unknown,
             _ => Blocked,
         };
-        assert!(dark_frontier((10, 10), (0, 1), 1, grid));
-        assert!(dark_frontier((10, 10), (0, 0), 1, grid));
-        assert!(!dark_frontier((10, 10), (0, -1), 1, grid));
-        assert!(!dark_frontier((10, 10), (0, 1), 2, grid));
-        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Unknown));
-        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Floor));
+        assert!(dark_frontier((10, 10), (0, 1), 1, false, grid));
+        assert!(dark_frontier((10, 10), (0, 0), 1, false, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, false, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 2, false, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, false, |_, _| Unknown));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, false, |_, _| Floor));
+        // The engine's shape gives the same rays at radius 1.
+        assert!(dark_frontier((10, 10), (0, 1), 1, true, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, true, grid));
+    }
+
+    /// #884 (review of #894): with the engine's shape a lantern (radius 2)
+    /// lights two orthogonal steps but one diagonal step, (2,2) being at
+    /// distance 3; C's shape counts two steps on every ray.
+    #[test]
+    fn lit_steps_follow_the_engine_distance() {
+        assert_eq!(lit_steps((0, 1), 2, true), 2);
+        assert_eq!(lit_steps((1, 1), 2, true), 1);
+        assert_eq!(lit_steps((1, 1), 1, true), 1);
+        assert_eq!(lit_steps((1, 1), 3, true), 2);
+        assert_eq!(lit_steps((1, 1), 2, false), 2);
+        use FrontierGrid::{Blocked, Floor, Unknown};
+        // Diagonal at radius 2: (1,1) floor and (2,2) unknown is the
+        // frontier with the engine's shape, not with C's.
+        let grid = |y, x| match (y, x) {
+            (11, 11) => Floor,
+            (12, 12) => Unknown,
+            _ => Blocked,
+        };
+        assert!(dark_frontier((10, 10), (1, 1), 2, true, grid));
+        assert!(!dark_frontier((10, 10), (1, 1), 2, false, grid));
     }
 
     #[test]

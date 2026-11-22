@@ -5782,13 +5782,15 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
   sees by unlight (src/cave-view.c:777–779) and keeps C's radius. 0 = C's
   radius, today's play. The zoo measures it (RULES 14, 20) before it ships.
 - With 1 the grids lit also take the engine's shape, `distance() <= radius`
-  (#884): radius 2 lights the grids at distance 2, (2,0) and (2,1), behind an
-  open orthogonal grid, where C lights (2,2) north and south (distance 3) and
+  (#884): radius 2 lights the grids at distance 2, (2,0) and (2,1), each in
+  line of sight on the Borg's map (`borg_los`, as `add_light` tests `los()`
+  per grid, src/cave-view.c:625-640), where C lights (2,2) north and south (distance 3) and
   misses (2,1); C's floor-gated (3,3) corners (distance 4) go, and the
   radius-3+ box skips grids by distance <= 2, so (2,2) is lit at radius 3.
   The code that looks at the edge of the light reads the same radius
   (`own_light_radius`): `borg_flow_dark_2` (just outside the light,
-  `borg_flow_dark.rs`), the dark frontier (#796) and Light Beam
+  `borg_flow_dark.rs`), the dark frontier (#796; each ray's lit steps by
+  engine distance, so a lantern's diagonal ray has one lit step) and Light Beam
   (`borg_light.rs`), and Call Light's radius-1 / radius-2+ branches
   (`borg_check_light_only`), so a torch takes the radius-1 corner test and
   a lantern the 5x5 lit-floor count. `BI_LIGHT` 1 (a Ring of Light,

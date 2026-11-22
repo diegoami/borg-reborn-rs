@@ -17,6 +17,7 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
+use crate::borg_projection::borg_los;
 use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
 use crate::params::{value, Param};
 use crate::state::BorgState;
@@ -152,13 +153,13 @@ pub fn borg_update_light(st: &mut BorgState) {
 
     /* Radius 2 -- lantern radius */
     if engine_shape && light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
-        /* #884: the grids at distance 2, (2,0) and (2,1), behind an open
-         * orthogonal grid (C's line-of-sight proxy) */
-        for ((gy, gx), grids) in RADIUS_2 {
-            if borg_cave_floor_bold(st, cy + gy, cx + gx) {
-                for (dy, dx) in grids {
-                    borg_cave_light_hack(st, cy + dy, cx + dx);
-                }
+        /* #884: the grids at distance 2, (2,0) and (2,1), each in line of
+         * sight on the Borg's map (review of #894: the engine's add_light
+         * tests los() per grid, src/cave-view.c:625-640; C's proxy gated
+         * (2,1) on (2,0) being floor) */
+        for (dy, dx) in RADIUS_2 {
+            if borg_los(st, cy, cx, cy + dy, cx + dx) {
+                borg_cave_light_hack(st, cy + dy, cx + dx);
             }
         }
     } else if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
@@ -272,31 +273,35 @@ pub(crate) fn own_light_radius(st: &BorgState) -> i32 {
     light_radius(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), value(Param::cave_light_engine_radius))
 }
 
-/// #884: the radius-2 grids of the engine's shape, `(dy, dx)` from the
-/// player: each orthogonal grid at distance 2 (the gate, which must be open)
-/// with the two grids beside it, (2,1) at `distance()` 2. C lights (2,2)
-/// north and south, at distance 3, and misses (2,1).
-const RADIUS_2: [((i32, i32), [(i32, i32); 3]); 4] = [
-    ((2, 0), [(2, 0), (2, 1), (2, -1)]),
-    ((-2, 0), [(-2, 0), (-2, 1), (-2, -1)]),
-    ((0, 2), [(0, 2), (1, 2), (-1, 2)]),
-    ((0, -2), [(0, -2), (1, -2), (-1, -2)]),
+/// #884: whether the Borg's own light takes the engine's shape
+/// (`cave_light_engine_radius` 1), for the code outside this file that
+/// walks to the edge of the light (the dark frontier).
+pub(crate) fn engine_light_shape() -> bool {
+    value(Param::cave_light_engine_radius) != 0
+}
+
+/// #884: the grids of the engine's shape at `distance()` 2, `(dy, dx)` from
+/// the player: (2,0) and (2,1) in each direction. C lights (2,2) north and
+/// south, at distance 3, and misses (2,1).
+const RADIUS_2: [(i32, i32); 12] = [
+    (2, 0), (2, 1), (2, -1), (-2, 0), (-2, 1), (-2, -1),
+    (0, 2), (1, 2), (-1, 2), (0, -2), (1, -2), (-1, -2),
 ];
+
+/// The game's `distance()` (engine src/cave-view.c:38): the longer leg plus
+/// half the shorter.
+pub(crate) fn engine_distance(dy: i32, dx: i32) -> i32 {
+    let (ay, ax) = (dy.abs(), dx.abs());
+    if ay > ax { ay + (ax >> 1) } else { ax + (ay >> 1) }
+}
 
 #[cfg(test)]
 mod tests_884 {
-    use super::RADIUS_2;
-
-    /// The game's `distance()` (engine src/cave-view.c:38).
-    fn distance(dy: i32, dx: i32) -> i32 {
-        let (ay, ax) = (dy.abs(), dx.abs());
-        if ay > ax { ay + (ax >> 1) } else { ax + (ay >> 1) }
-    }
+    use super::{engine_distance as distance, RADIUS_2};
 
     #[test]
     fn radius_two_grids_are_the_distance_two_grids() {
-        let mut lit: Vec<(i32, i32)> =
-            RADIUS_2.iter().flat_map(|(_, grids)| grids.iter().copied()).collect();
+        let mut lit: Vec<(i32, i32)> = RADIUS_2.to_vec();
         lit.sort_unstable();
         let mut want: Vec<(i32, i32)> = (-2..=2)
             .flat_map(|dy| (-2..=2).map(move |dx| (dy, dx)))
@@ -304,9 +309,6 @@ mod tests_884 {
             .collect();
         want.sort_unstable();
         assert_eq!(lit, want);
-        for (gate, grids) in RADIUS_2 {
-            assert!(grids.contains(&gate));
-        }
     }
 }
 
