@@ -2202,6 +2202,40 @@ pub(crate) fn race_turns(hp: i32, hp_per_turn: f64, uses: Option<i32>, duration:
     Some((primary_time + complete_attack_commands(remaining / fallback_hp_per_turn), uses))
 }
 
+/// borg-reborn-rs (#910): `wins_race` with a margin. The race wins only when
+/// the expected damage taken stays below (100 - margin) percent of the HP;
+/// 0 = `wins_race` (Rogue 381988580: 28.5 against 31 was "winning", a
+/// one-on-one an engine-rule simulation wins 82% of the time).
+pub(crate) fn wins_race_margin(turns: f64, incoming: f64, hp: i32, margin_percent: i32) -> bool {
+    if margin_percent <= 0 {
+        return wins_race(turns, incoming, hp);
+    }
+    wins_race(turns, incoming, hp)
+        && turns * incoming * 100.0 < f64::from(hp) * f64::from(100 - margin_percent.min(100))
+}
+
+/// borg-reborn-rs (#910): a monster generated with a group (friends lines)
+/// counts `100 + percent` percent of its incoming damage, for the members not
+/// yet seen. 0 = unchanged.
+pub(crate) fn group_scaled_incoming(hp_per_turn: f64, has_friends: bool, percent: i32) -> f64 {
+    if !has_friends || percent <= 0 {
+        return hp_per_turn;
+    }
+    hp_per_turn * f64::from(100 + percent) / 100.0
+}
+
+#[cfg(test)]
+mod race_margin_tests {
+    #[test]
+    fn the_soldier_race_is_not_won_with_a_margin_or_a_group() {
+        assert!(super::wins_race_margin(3.0, 9.502, 31, 0), "today: 28.5 < 31");
+        assert!(!super::wins_race_margin(3.0, 9.502, 31, 20), "28.5 >= 80% of 31");
+        let grouped = super::group_scaled_incoming(9.502, true, 100);
+        assert!(!super::wins_race_margin(3.0, grouped, 31, 0));
+        assert_eq!(super::group_scaled_incoming(9.502, false, 100), 9.502);
+    }
+}
+
 pub(crate) fn wins_race(turns: f64, incoming: f64, hp: i32) -> bool {
     turns.is_finite() && turns > 0.0 && incoming.is_finite() && incoming >= 0.0
         && hp > 0 && turns * incoming < f64::from(hp)
@@ -2763,7 +2797,9 @@ fn winning_fight(st: &mut BorgState) -> bool {
         }
         let forecast = fight_incoming(st, i);
         if forecast.unknown_fight || forecast.unknown_damage { return false; }
-        let danger = forecast.hp_per_turn;
+        // borg-reborn-rs (#910): the rest of a group the Borg has not seen
+        // (caution_winning_fight_group_percent; 0 = only what it sees).
+        let danger = group_scaled_incoming(forecast.hp_per_turn, engine::race_has_friends(usize::from(kill.r_idx)), p(Param::caution_winning_fight_group_percent));
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
@@ -2808,7 +2844,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         }
     }
     let hp = st.borg.tr(BI_CURHP);
-    let won = wins_race(turns, incoming, hp);
+    let won = wins_race_margin(turns, incoming, hp, p(Param::caution_winning_fight_margin_percent));
     let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
         String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
