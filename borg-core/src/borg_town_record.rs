@@ -740,12 +740,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     // pack and the Home, and what they free.
     let mut utility = crate::borg_town_utility::Utility::of(&st, input.kit, input.cure_spell);
     utility.capability = input.capability.cloned();
-    // #957 (review of #962): a v13 record's reserve and floor, else the
-    // process's.
-    utility.recall_reserve = match input.storing {
-        Some(s) => crate::borg_town_capability::eligible_recall_reserve(input.limits.gold, s.recall_floor, s.recall_reserve),
-        None => crate::borg_town_capability::recall_reserve_for_budget(input.limits.gold),
-    };
+    utility.recall_reserve = step_recall_reserve(input.storing, input.limits.gold);
     if input.utility && input.revision >= 9 {
         for purchase in &input.urgent {
             let c = &input.candidates[purchase.candidate];
@@ -1059,6 +1054,16 @@ pub fn replay(line: &str) -> Result<(PlanRecord, StepOutput), String> {
     Ok((rec, out))
 }
 
+/// #957 (reviews of #962): the Word of Recall reserve a step values, with
+/// the purse after the urgent purchases: a v13 record's reserve and gold
+/// floor, else the process's settings (a live solve, an older record).
+fn step_recall_reserve(storing: Option<crate::borg_town_utility::Storing>, gold: i64) -> i64 {
+    match storing {
+        Some(s) => crate::borg_town_capability::eligible_recall_reserve(gold, s.recall_floor, s.recall_reserve),
+        None => crate::borg_town_capability::recall_reserve_for_budget(gold),
+    }
+}
+
 /// A step's inputs as a replay rebuilds them from a v4 line (the
 /// borrowed parts of [`StepInput`] owned here).
 pub struct ReplayParts {
@@ -1370,6 +1375,17 @@ mod tests {
     /// #957 (P7 review): a v13 record writes the storing settings and a
     /// replay uses them, not the process's; an older record has none and
     /// keeps reading the process's settings, as before.
+    #[test]
+    fn a_recorded_reserve_and_floor_decide_the_step_s_recall_reserve() {
+        use crate::borg_town_utility::Storing;
+        let recorded = |floor| Some(Storing { recall_reserve: 2, recall_floor: floor, ..Storing::default() });
+        assert_eq!(super::step_recall_reserve(recorded(200), 250), 2, "the purse reaches the recorded floor");
+        assert_eq!(super::step_recall_reserve(recorded(400), 250), 0, "it does not: no reserve");
+        // Without recorded settings, the process's (the registry's defaults
+        // in a test): the same as before #957.
+        assert_eq!(super::step_recall_reserve(None, 250), crate::borg_town_capability::recall_reserve_for_budget(250));
+    }
+
     #[test]
     fn the_storing_settings_travel_with_a_v13_record() {
         use crate::borg_town_utility::{Room, Storing};
