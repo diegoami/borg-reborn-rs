@@ -644,6 +644,14 @@ borg_param_attack_arrow_point_blank_divisor = 5
 
 borg_param_kill_live_min_power = 1
 
+# The floor above also covers a monster at exactly 0 HP (#975, owner
+# 2026-11-22: "the flag should be turned on"). The engine kills a monster only
+# below 0 (mon-util.c:1300), so a 2-HP grey mold hit for 2 lives; at 0 the
+# Borg rated it at 0 HP, scored every attack 0 and walked next to it (Hobbit
+# Ranger 282602274). Needs kill_live_min_power above 0. borg-zoo#670 measures it.
+
+borg_param_kill_live_zero_hp = 1
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
