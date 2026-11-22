@@ -1,7 +1,9 @@
-# A grey mushroom patch world: the patch 8 times as likely against every other
-# race (its depth unchanged: monster.txt, depth 1, rarity 1), so the Borg meets
-# the confusing immobile pest about 8 times as often on the early levels. The
-# level's monster count is unchanged. A stress test for the kill-on-sight
-# policy (#869) and the confused-attack settings (#867, #901).
+# A grey mushroom patch world: every other race's rarity is multiplied by 8
+# (monster.txt; the patch keeps depth 1, rarity 1), so the patch's allocation
+# weight against a rarity-r race is about 8x (the engine truncates 100 / rarity,
+# mon-make.c:112, so the realised odds and the patch's share of a level's pool
+# differ; borg-zoo#665 measures the encounters). The level's monster count is
+# unchanged. A stress test for the kill-on-sight policy (#869) and the
+# confused-attack settings (#867, #901).
 favour = grey mushroom patch
 favour_weight = 8

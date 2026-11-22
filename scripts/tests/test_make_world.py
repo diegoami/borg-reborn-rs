@@ -109,7 +109,11 @@ class MakeWorldTest(unittest.TestCase):
                     'favour = soldier\nfavour_weight = 4\nbreeder_depth_shift = 1\n',
                     'favour = soldier\nfavour_weight = 51\n',
                     'favour = , ,\nbreeder_weight = 4\n',   # review of #971: an empty list is not "no favour"
-                    'favour =\nfavour_weight = 4\n'):
+                    'favour =\nfavour_weight = 4\n',
+                    # review of #971: favour alone (weight 1) changed nothing
+                    # and reported success; a weight of 1 is no world either.
+                    'favour = soldier\n',
+                    'favour = soldier\nfavour_weight = 1\n'):
             with self.assertRaises(SystemExit, msg=bad):
                 self.make(bad)
 
