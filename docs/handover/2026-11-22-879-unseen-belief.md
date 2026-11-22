@@ -102,3 +102,25 @@ Branch `task/T879-unseen-belief`, track P (P7, owner 2026-11-22), stacked on
   cancels it. Stubbed I/O tests cover rejection, flushing, and multi-target
   blast settlement.
 - F4 acknowledged. The `borg_target` guard currently always succeeds.
+
+## Review of #890 by MiniMax-M3 at 37f037d7 (owner's choices, 2026-11-22)
+
+- **F1 (fixed):** a believed record no longer counts as the monster next to
+  the Borg in `borg_attack`'s adjacent test (`borg_fight_attack.rs`, the
+  "close and fast" clause). With the switch on, a fast monster believed two
+  grids away could otherwise turn a scary level's flight into a fight.
+  `believed_weight` is `None` at `unseen_belief = 0`, so the shipped test is
+  C's.
+- **F2 (documented, measured apart):** the belief's window is the decay, not
+  `unseen_max_age`. At the shipped 20%, a monster as fast as the Borg is
+  believed for two Borg turns, and a faster one never. The module doc and
+  `docs/CALIBRATION.md` give the table. By the owner's choice, borg-zoo#702 gets a
+  second `light+belief` arm with a lower `unseen_decay_percent`, at a pin that
+  contains this PR. The model is unchanged.
+- **F3 (documented):** what can be aimed at is a record on the panel and in
+  the view shape (`BORG_OKAY`, `BORG_VIEW`), and infravision raises the
+  two-grid floor for warm monsters.
+- **F4 (fixed):** `PROJECT_STOP` is cited at src/effect-handler-attack.c:130.
+- No unit test for F1: the adjacent test sits inside `borg_attack`'s live
+  loop. The guard is the same `believed_weight` call the knowledge gate
+  above it already uses.

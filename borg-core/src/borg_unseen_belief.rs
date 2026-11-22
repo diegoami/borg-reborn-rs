@@ -9,10 +9,21 @@
 //! the Borg would not expect to see it on (dark, out of its light:
 //! `borg_follow_kill_aux`), stays a target of the ranged attacks (bolts, balls,
 //! missiles, throws) at that grid. Each attack's value is weighted by the chance
-//! that the monster is still there. Melee never takes such a target.
+//! that the monster is still there. Melee never takes such a target, and it
+//! never counts as the monster next to the Borg (`borg_attack`'s
+//! adjacent-monster test, which turns a scary level's flight into a fight).
 //!
-//! The engine stops a bolt at the first monster on its path (src/project.c,
-//! `PROJECT_STOP`), so a monster that closed in along the line is still hit; the
+//! What can actually be aimed at is narrower (review of #890, F3):
+//! `borg_attack` keeps only a record whose grid is on the panel (`BORG_OKAY`)
+//! and inside the Borg's view shape (`BORG_VIEW`, the ray-cast shape, lit or
+//! not), so an unlit corridor in line works and a monster around a corner does
+//! not. The two-grid floor is the light's: `borg_follow_kill_aux` also expects
+//! a warm monster within `BI_INFRA` to be visible, so infravision (a race's or
+//! an item's) raises the floor, and a cold-blooded monster is exempt from it.
+//!
+//! The engine stops a bolt at the first monster on its path
+//! (src/effect-handler-attack.c:130, `PROJECT_STOP`), so a monster that closed
+//! in along the line is still hit; the
 //! Borg aims by location (`borg_target`: `*`, `p`, the cursor, `5`; a free-mode
 //! location target, src/ui-target.c:1479-1494, src/target.c:180-191).
 //!
@@ -22,6 +33,14 @@
 //! seen (Borg turns times its energy over the Borg's, `extract_energy`), never
 //! below 0. Erratic movers (`RAND_25`/`RAND_50`, src/mon-move.c:1087-1101) are
 //! not treated apart.
+//!
+//! The effective window (review of #890, F2) is the decay, not
+//! `unseen_max_age`: at the shipped 20% and a Borg at speed 110, a monster of
+//! the same speed is believed at ages 3 and 4 only (40%, 20%), a speed-100
+//! one up to age 9, a speed-90 one up to 10, and one faster than the Borg
+//! never. `unseen_max_age` bounds only sleepers, `NEVER_MOVE` and slow
+//! monsters. The energy ratio approximates the engine's action counts
+//! (src/game-world.c:136-139) and the integer division makes slow decay coarse.
 
 use crate::borg_flow_kill::borg_follow_kill_aux;
 use crate::borg_headers::borg_trait_h::BI_SPEED;

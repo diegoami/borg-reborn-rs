@@ -5269,8 +5269,12 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
         /* Check if there is a monster adjacent to me or he's close and
          * fast. */
-        if (i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_fast_monster_distance))
-            || engine::distance(st.borg.c, kill.pos) <= 1
+        // borg-reborn-rs (#879, review of #890 F1): a monster only believed
+        // at its last grid is not "next to me": it never turns a scary
+        // level's flight into a fight.
+        if crate::borg_unseen_belief::believed_weight(st, k as usize).is_none()
+            && ((i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_fast_monster_distance))
+                || engine::distance(st.borg.c, kill.pos) <= 1)
         {
             adjacent_monster = true;
         }
