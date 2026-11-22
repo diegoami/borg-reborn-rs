@@ -48,7 +48,7 @@ the depth; `state.log` is the source here.
 - `town_recall_urgent_depth` (`borg_town_utility.rs:255`) sets the trip
   depth from which `town_recall_urgent` makes the first Recall urgent. 0
   keeps the dive gate, as #859 does today; 1 means any dungeon trip.
-- `caution_recall_dl1_hold_up` (`borg_caution.rs:7429`): while a Recall
+- `caution_recall_dl1_hold_up` (`borg_caution.rs:7467`): while a Recall
   counts down on DL1, caution does not take the up staircase unless the
   danger is above the avoidance, the boundary of the stairs rule next to
   it. The danger escapes are not held. It is the up half of the town/DL1

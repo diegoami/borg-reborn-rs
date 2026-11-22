@@ -2845,9 +2845,14 @@ mod category_threat_tests {
 }
 
 /// #760/#759: before any dungeon flight, including the light/countdown
-/// and depth-return rungs which otherwise precede borg_caution.
+/// and depth-return rungs which otherwise precede borg_caution. In order:
+/// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
+/// the winning fight (#759).
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
-    crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
+    crate::borg_fight_attack::attack_on_sight(st)
+        // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
+        || crate::borg_lone_target::attack(st)
+        || winning_fight(st)
 }
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
@@ -7189,6 +7194,15 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
         st.borg.unseen_bumps.shot = Some(UnseenOilShot { grid: g, dead: false, resolved: false });
         return true;
     }
+    // borg-reborn-rs (#878): a Phase Door only for a fresh bump, and only
+    // with danger here (both off at 0).
+    let age = now - st.borg.unseen_bumps.grids[i].at;
+    if let Some(why) = unseen_phase_refusal(age, danger,
+        p(Param::caution_unseen_bump_phase_turns), p(Param::caution_unseen_bump_phase_min_danger))
+    {
+        borg_note(st, &format!("# Phase (unseen bump): no, {why} (#878)"));
+        return false;
+    }
     // The ordinary adjacent-monster rule cannot rate a monster with no
     // known race. This site's explicit, bounded bump evidence is its gate.
     if crate::borg_escape::unseen_bump_phase(st, danger) {
@@ -7199,9 +7213,33 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
     false
 }
 
+/// borg-reborn-rs (#878): why the unseen-bump Phase Door is refused, if it
+/// is: the bump `age` game turns old over `max_age`, or the danger here
+/// under `min_danger` (each off at 0).
+fn unseen_phase_refusal(age: i32, danger: i32, max_age: i32, min_danger: i32) -> Option<String> {
+    if max_age > 0 && age > max_age {
+        Some(format!("the bump is {age} game turns old (more than {max_age})"))
+    } else if min_danger > 0 && danger < min_danger {
+        Some(format!("danger {danger} under {min_danger}"))
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod unseen_bump_tests {
     use super::*;
+
+    /// #878: the Mage 461220874's second unseen-bump Phase Door came 132
+    /// game turns after the bump, at danger 0.
+    #[test]
+    fn the_unseen_bump_phase_needs_a_fresh_bump_and_danger() {
+        assert!(unseen_phase_refusal(132, 0, 0, 0).is_none(), "both off: today's play");
+        assert!(unseen_phase_refusal(132, 0, 20, 0).is_some(), "an old bump");
+        assert!(unseen_phase_refusal(20, 0, 20, 0).is_none(), "a fresh one");
+        assert!(unseen_phase_refusal(0, 1, 0, 5).is_some(), "danger 1 under 5");
+        assert!(unseen_phase_refusal(0, 5, 0, 5).is_none());
+    }
     fn pos(x: i32, y: i32) -> loc { loc { x, y } }
     #[test]
     fn only_unseen_player_melee_is_evidence() {

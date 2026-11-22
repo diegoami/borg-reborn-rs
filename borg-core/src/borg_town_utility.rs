@@ -395,8 +395,15 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // the disposition (the third value returned), so the plan's action moves the
         // surplus and not the whole stack (#859, review F1). The live
         // executor still moves one copy and solves again (#507).
-        let part = KitItem { qty: whole.qty - keep_min, ..*whole };
-        let partial = surplus(whole) && !whole.unknown_flavour;
+        let restore_keep = u.capability.as_ref().map_or(0, |model| model.restore_life_keep(whole));
+        if restore_keep > 0 && restore_keep >= whole.qty { continue; }
+        let floor = restore_keep.max(if surplus(whole) { keep_min } else { 0 });
+        let qty = whole.qty - floor;
+        let proceeds = if restore_keep > 0 {
+            whole.proceeds * i64::from(qty) / i64::from(whole.qty)
+        } else { whole.proceeds };
+        let part = KitItem { qty, proceeds, ..*whole };
+        let partial = floor > 0 && !whole.unknown_flavour;
         let it = if partial { &part } else { whole };
         if u.capability.as_ref().is_some_and(|model| model.protects_fuel(whole)) {
             continue;
