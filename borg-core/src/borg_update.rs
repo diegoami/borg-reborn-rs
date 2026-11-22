@@ -1761,16 +1761,22 @@ fn handle_messages(st: &mut BorgState) -> i32 {
 fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
     let g = st.borg.goal.g;
     let ag = *st.cave.grid(g.x, g.y);
-    if ag.kill == 0 || (g.x == st.borg.c.x && g.y == st.borg.c.y) {
-        return None;
-    }
-    let kill = &st.kills.kills[usize::from(ag.kill)];
-    seen_in_view_age(&ag, kill.r_idx, borg_timer(st, kill.when))
+    let kill = (ag.kill != 0).then(|| {
+        let kill = &st.kills.kills[usize::from(ag.kill)];
+        (kill.r_idx, borg_timer(st, kill.when))
+    });
+    in_view_target_age(g, st.borg.c, &ag, kill)
 }
 
-/// `missed_visible_target` on one grid: a monster (`r_idx`), in view, seen
-/// `age` thinks ago, at most one (the think that shot).
-fn seen_in_view_age(ag: &BorgGrid, r_idx: u16, age: BorgTime) -> Option<BorgTime> {
+/// `missed_visible_target` on the targeted grid `ag` at `goal`, the Borg at
+/// `c`, and the grid's monster as (`r_idx`, thinks since seen), `None` when
+/// the grid holds none: a monster in view, seen at most one think ago (the
+/// think that shot), not on the Borg's grid.
+fn in_view_target_age(goal: loc, c: loc, ag: &BorgGrid, kill: Option<(u16, BorgTime)>) -> Option<BorgTime> {
+    if goal == c {
+        return None;
+    }
+    let (r_idx, age) = kill?;
     (ag.info & BORG_VIEW != 0 && r_idx != 0 && (0..=1).contains(&age)).then_some(age)
 }
 
@@ -2638,12 +2644,19 @@ mod miss_wall_guess_tests {
     /// still takes C's guess.
     #[test]
     fn a_miss_at_a_monster_in_view_is_not_a_wall() {
+        let at = |y, x| loc { x, y };
+        let (borg, fang) = (at(50, 87), at(51, 88));
         let in_view = BorgGrid { info: BORG_VIEW, kill: 1, ..BorgGrid::default() };
         let out_of_view = BorgGrid { kill: 1, ..BorgGrid::default() };
-        assert_eq!(seen_in_view_age(&in_view, 54, 1), Some(1));
-        assert_eq!(seen_in_view_age(&in_view, 54, 0), Some(0));
-        assert_eq!(seen_in_view_age(&in_view, 54, 2), None);
-        assert_eq!(seen_in_view_age(&in_view, 0, 1), None);
-        assert_eq!(seen_in_view_age(&out_of_view, 54, 1), None);
+        // Seen at the think that shot (1), or this think (0).
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 1))), Some(1));
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 0))), Some(0));
+        // Seen long ago, no race, no monster on the grid, out of view,
+        // or the goal on the Borg's own grid: C's guess.
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 2))), None);
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((0, 1))), None);
+        assert_eq!(in_view_target_age(fang, borg, &in_view, None), None);
+        assert_eq!(in_view_target_age(fang, borg, &out_of_view, Some((54, 1))), None);
+        assert_eq!(in_view_target_age(borg, borg, &in_view, Some((54, 1))), None);
     }
 }

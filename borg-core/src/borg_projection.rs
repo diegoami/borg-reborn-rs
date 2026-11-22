@@ -840,27 +840,39 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32, skip_player:
         },
         |g| feat_is(st.cave.grid(g.x, g.y), FEAT_NONE),
     );
-    let g = match guess {
+    match guess {
         WallGuess::Ghost(g) => {
             borg_note(
                 st,
                 &format!("# Guessing wall ({},{}) under ghostly target ({},{})", g.y, g.x, g.y, g.x),
             );
-            g
         }
         /* not sure... should we return here? maybe should mark ALL
          * unknowns in path... */
         WallGuess::Unknown(g) | WallGuess::BeforeTarget(g) => {
             borg_note(st, &format!("# Guessing wall ({},{}) near target ({},{})", g.y, g.x, y, x));
-            g
         }
         WallGuess::NextToBorg => {
             borg_note(st, "# No wall to guess: the target is next to the Borg (#929)");
-            return false;
         }
-    };
-    st.cave.grid_mut(g.x, g.y).feat = FEAT_GRANITE as u8;
+    }
+    if let Some(g) = wall_guess_grid(&guess) {
+        st.cave.grid_mut(g.x, g.y).feat = FEAT_GRANITE as u8;
+    }
+    /* borg-reborn-rs (#929): `NextToBorg` returns true as well, so the
+     * caller allows the next shot (successful_target 2), as C does after
+     * every guess; false would leave -11 after a spell, a lockout until
+     * the Borg moves (missed_before clears only -12 or less). */
     true
+}
+
+/// The grid `borg_target_unknown_wall` writes granite on (#929): none for
+/// `NextToBorg`.
+pub(crate) fn wall_guess_grid(guess: &WallGuess) -> Option<loc> {
+    match *guess {
+        WallGuess::Ghost(g) | WallGuess::Unknown(g) | WallGuess::BeforeTarget(g) => Some(g),
+        WallGuess::NextToBorg => None,
+    }
 }
 
 /// What `borg_target_unknown_wall` guesses (#929).
@@ -872,8 +884,8 @@ pub(crate) enum WallGuess {
     Unknown(loc),
     /// No unknown grid: the step back from the target.
     BeforeTarget(loc),
-    /// `skip_player` only: no unknown grid, and the step back from the
-    /// target is the Borg's grid.
+    /// `skip_player` only: no unknown grid before the target, and the step
+    /// back from the target is the Borg's grid. Nothing is written.
     NextToBorg,
 }
 
@@ -882,7 +894,10 @@ pub(crate) enum WallGuess {
 /// Borg's map, `halls` is (x_hall, y_hall). C's walk starts at `c`, so an
 /// unknown grid under the Borg, or the step back from an adjacent target,
 /// is guessed there. borg-reborn-rs (#929): `skip_player` starts at the
-/// first step and never returns `c`.
+/// first step, never returns `c`, and never guesses the target's own grid
+/// as unknown (the monster stood there; for an adjacent target in the dark
+/// the first step is the target, and granite there would block the next
+/// shot at it, `borg_projectable`).
 pub(crate) fn wall_guess_walk(
     c: loc,
     t: loc,
@@ -902,12 +917,13 @@ pub(crate) fn wall_guess_walk(
             return WallGuess::Ghost(n);
         }
 
-        if unknown(n) && (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
+        let at_target = n_x == t.x && n_y == t.y;
+        if unknown(n) && !(skip_player && at_target) && (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
             return WallGuess::Unknown(n);
         }
 
         /* Pathway found the target. */
-        if n_x == t.x && n_y == t.y {
+        if at_target {
             /* end of the pathway */
             borg_inc_motion(&mut n_y, &mut n_x, t.y, t.x, c.y, c.x);
             if skip_player && n_x == c.x && n_y == c.y {
@@ -991,6 +1007,34 @@ mod tests {
         // A wall-passing monster on the target is guessed by both.
         let ghost = |g: loc| g == t;
         assert_eq!(wall_guess_walk(c, t, (false, false), true, ghost, never), WallGuess::Ghost(t));
+        // The written grid: never the Borg's with the guard (the caller
+        // writes `wall_guess_grid`).
+        assert_eq!(wall_guess_grid(&WallGuess::NextToBorg), None);
+        assert_eq!(wall_guess_grid(&WallGuess::Unknown(t)), Some(t));
+    }
+
+    /// Review of #1005, finding 1: in the dark (light 0) the Borg's grid
+    /// and the adjacent target's grid are both unknown. C guesses the
+    /// Borg's grid; the guard must not move the guess onto the monster's
+    /// grid. A far target whose own grid is unknown: C guesses the target,
+    /// the guard the step before it.
+    #[test]
+    fn wall_guess_never_lands_on_the_target_with_the_guard() {
+        let at = |y, x| loc { x, y };
+        let never = |_: loc| false;
+        let dark = |_: loc| true;
+        for (c, t) in [(at(50, 87), at(51, 88)), (at(39, 112), at(39, 111))] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark), WallGuess::Unknown(c));
+            let guess = wall_guess_walk(c, t, (false, false), true, never, dark);
+            assert_eq!(guess, WallGuess::NextToBorg);
+            assert_eq!(wall_guess_grid(&guess), None);
+        }
+        let (c, t) = (at(10, 10), at(10, 14));
+        let dark_target = move |g: loc| g == t;
+        assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark_target), WallGuess::Unknown(t));
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark_target), WallGuess::BeforeTarget(at(10, 13)));
+        // Every grid unknown: the guard guesses the first step, never c or t.
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark), WallGuess::Unknown(at(10, 11)));
     }
 
     /// Follow `borg_inc_motion` from (y1, x1) for `n` steps.

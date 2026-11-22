@@ -6068,10 +6068,16 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   monster on the targeted grid that is in view (`BORG_VIEW`) and was seen at
   the think that shot (`when` at most one think ago) is a miss: no grid is
   guessed and `successful_target` becomes 2, the value C's guess gives, so the
-  next shot is allowed as today; (b) a guess never writes the Borg's grid: the
-  walk starts at its first step, and an adjacent target with no unknown grid
-  guesses nothing (`successful_target` stays -12 or -11, so `missed_before`
-  skips the next ranged round, as C's comment intends). 0 = C's guess.
+  next shot is allowed as today; (b) a guess never writes the Borg's grid, nor
+  the target's own grid as an unknown one: the walk starts at its first step,
+  skips the unknown test on the target (in the dark the first step of an
+  adjacent target is the monster's grid, and granite there blocks the next
+  shot, `borg_projectable`), and an adjacent target with no unknown grid
+  between guesses nothing (`NextToBorg`). Every outcome sets
+  `successful_target` to 2, the next shot allowed, as C after every guess;
+  leaving -11 after a spell would lock ranged attacks out until the Borg
+  moves (`missed_before` clears only -12 or less; review of #1005). 0 = C's
+  guess.
 - Evidence (replays, not a measurement): both Fang games and the three smoke
   games play the same key stream with 0 and 1 (Paladin `7fb11d46a041a04a`,
   Druid `3687ca84c5cdeb34`). The Borg's grid was remembered in all seven

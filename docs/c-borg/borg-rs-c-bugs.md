@@ -835,6 +835,8 @@ Format: file, function, (seed, turn when observed), explanation.
 * Rust (`borg_projection.rs`, `borg_update.rs`): kept at the default.
   **Deviation behind `update_miss_wall_guess` = 1 (#929):** a miss at a
   monster in view seen at the shot is no wall guess, and no guess writes the
-  Borg's grid (`wall_guess_walk` starts at the first step and returns
-  `NextToBorg` instead of the Borg's grid). Shipped 0 until the zoo measures
+  Borg's grid nor takes the target's own grid for an unknown one
+  (`wall_guess_walk` starts at the first step and returns `NextToBorg`,
+  which writes nothing, instead of the Borg's grid); the next shot is allowed
+  after every outcome, as in C. Shipped 0 until the zoo measures
   it.
