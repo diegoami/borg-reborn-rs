@@ -32,13 +32,14 @@ use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FOOD, BI_FRACT, BI_ISAFRAID, BI_ISBLIND,
     BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR,
     BI_ISFIXWIS, BI_ISFORGET, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPARALYZED, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_MAXHP, BI_RBLIND, BI_RCONF,
+    BI_ISWEAK, BI_MAXHP, BI_RBLIND, BI_RCONF, BI_SPEED,
 };
 use crate::headers::list_effects_h::EF_NOURISH;
 use crate::headers::list_tvals_h::{
     TV_DRAG_ARMOR, TV_FOOD, TV_MUSHROOM, TV_POTION, TV_RING, TV_ROD, TV_SCROLL, TV_STAFF, TV_WAND,
 };
 use crate::headers::ui_event_h::keycode_t;
+use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// borg-item-use.c function statics.
@@ -220,6 +221,26 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     {
         return false;
     }
+    // borg-reborn-rs (#1030, Codex on #1026): `borg_danger`'s `c` widens the
+    // melee reach only; its ranged part counts a monster that can project to
+    // the Borg now or after one move. A caster two moves behind a corner
+    // counts 0, yet it can step out and cast during a Sleep. So no test while
+    // a known, awake monster with a ranged attack could reach a firing grid
+    // within the window: its moves in `turns` player turns plus the engine's
+    // `max_range` (a shot needs line of sight within it).
+    let player_energy = i32::from(engine::extract_energy(st.borg.tr(BI_SPEED).clamp(0, 199) as usize)).max(1);
+    let moves_of = |speed: u8| {
+        let e = i32::from(engine::extract_energy(usize::from(speed).min(199)));
+        (turns * e + player_energy - 1) / player_energy
+    };
+    let nxt = st.kills.nxt.max(0) as usize;
+    if let Some(i) = ranged_threat_in_window(&st.kills.kills[..nxt.min(st.kills.kills.len())],
+        loc { x, y }, i32::from(engine::z_info().max_range), moves_of)
+    {
+        let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))).into_owned();
+        crate::borg_io::borg_note(st, &format!("# Not testing an unknown potion: {name} could shoot or cast within {turns} turns (#1030)"));
+        return false;
+    }
     note_desc(st, b"# Testing unknown potion (#983) ", n as usize, b".");
     crate::borg_object_log::log_use(st, "quaff", &st.items.items[n as usize]);
     borg_keypress(st, key(b'q'));
@@ -227,6 +248,46 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     clear_shop_goals(st);
     st.borg.trying_unknown = true;
     true
+}
+
+/// borg-reborn-rs (#1030): the index of a known, awake monster with a
+/// ranged attack (`ranged_attack`, the test `borg_danger_spell` makes) that
+/// could reach a grid in range of `c` within the window: its distance is at
+/// most its moves in the window (`moves_of(speed)`) plus `max_range`, whether
+/// or not it can project to `c` now (it may be behind a corner). A record kept
+/// after the monster is lost counts too: the veto errs on the safe side.
+pub(crate) fn ranged_threat_in_window(kills: &[crate::borg_flow_kill::BorgKill], c: loc, max_range: i32,
+    moves_of: impl Fn(u8) -> i32) -> Option<usize> {
+    kills.iter().position(|kill| {
+        kill.r_idx != 0 && kill.awake && kill.ranged_attack != 0
+            && engine::distance(c, kill.pos) <= moves_of(kill.speed) + max_range
+    })
+}
+
+#[cfg(test)]
+mod ranged_threat_tests {
+    use super::ranged_threat_in_window as threat;
+    use crate::borg_flow_kill::BorgKill;
+    use crate::headers::z_type_h::loc;
+
+    fn caster(x: i32, y: i32) -> BorgKill {
+        BorgKill { r_idx: 40, awake: true, ranged_attack: 1, speed: 110, pos: loc { x, y }, ..BorgKill::BLANK }
+    }
+
+    #[test]
+    fn a_caster_behind_a_corner_vetoes_the_test() {
+        let borg = loc { x: 10, y: 10 };
+        // Codex's case: two moves away, out of sight; with 10 moves and range
+        // 20 it can step out and cast during a Sleep.
+        assert_eq!(threat(&[caster(12, 12)], borg, 20, |_| 10), Some(0));
+        assert_eq!(threat(&[caster(40, 10)], borg, 20, |_| 10), Some(0), "30 grids: 10 moves + range 20");
+        assert_eq!(threat(&[caster(41, 10)], borg, 20, |_| 10), None, "31 grids: out of reach");
+        assert_eq!(threat(&[BorgKill { awake: false, ..caster(12, 12) }], borg, 20, |_| 10), None, "asleep");
+        assert_eq!(threat(&[BorgKill { ranged_attack: 0, ..caster(12, 12) }], borg, 20, |_| 10), None, "melee only: borg_danger's c covers it");
+        assert_eq!(threat(&[BorgKill { r_idx: 0, ..caster(12, 12) }], borg, 20, |_| 10), None, "empty record");
+        assert_eq!(threat(&[caster(50, 10)], borg, 20, |s| if s > 110 { 30 } else { 10 }), None);
+        assert_eq!(threat(&[BorgKill { speed: 120, ..caster(50, 10) }], borg, 20, |s| if s > 110 { 30 } else { 10 }), Some(0), "a fast caster moves further");
+    }
 }
 
 #[cfg(test)]
