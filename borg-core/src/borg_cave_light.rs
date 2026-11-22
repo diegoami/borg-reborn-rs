@@ -226,54 +226,71 @@ pub fn borg_update_light(st: &mut BorgState) {
             borg_cave_light_hack(st, cy - 3, cx - 3);
         }
 
-        /* Maximal north */
-        let min_y = (cy - p).max(0);
+        /* Scan the maximal box (#958: outer_ring_grids) */
+        let lit = outer_ring_grids(cy, cx, p, engine_shape,
+            |y, x| st.cave.grid(x, y).info & BORG_VIEW != 0,
+            |y, x| borg_los_light(st, cy, cx, y, x));
+        for (y, x) in lit {
+            /* This grid is "torch lit" */
+            borg_cave_light_hack(st, y, x);
+        }
+    }
+}
 
-        /* Maximal south */
-        let max_y = (cy + p).min(AUTO_MAX_Y - 1);
+/// The outer ring (radius 3+) of the Borg's own light, `(y, x)` from
+/// `(cy, cx)` up to radius `p`: the grids to torch-light. `in_view` is
+/// `BORG_VIEW`, `los_light` the line of sight for light (#958, P7 review;
+/// asked only with the engine's shape). Pure, so a test runs the scan.
+fn outer_ring_grids(cy: i32, cx: i32, p: i32, engine_shape: bool,
+    in_view: impl Fn(i32, i32) -> bool, los_light: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    let mut lit = Vec::new();
+    /* Maximal north */
+    let min_y = (cy - p).max(0);
 
-        /* Maximal west */
-        let min_x = (cx - p).max(0);
+    /* Maximal south */
+    let max_y = (cy + p).min(AUTO_MAX_Y - 1);
 
-        /* Maximal east */
-        let max_x = (cx + p).min(AUTO_MAX_X - 1);
+    /* Maximal west */
+    let min_x = (cx - p).max(0);
 
-        /* Scan the maximal box */
-        for y in min_y..=max_y {
-            for x in min_x..=max_x {
-                let dy = (cy - y).abs();
-                let dx = (cx - x).abs();
+    /* Maximal east */
+    let max_x = (cx + p).min(AUTO_MAX_X - 1);
 
-                /* Approximate the distance "as the bird flies" (straight-line).
-                 * Ignores obstacles and does not follow walkable paths like
-                 * pathfinding code elsewhere.
-                 */
-                let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
+    /* Scan the maximal box */
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            let dy = (cy - y).abs();
+            let dx = (cx - x).abs();
 
-                /* Skip the "central" grids (above): C's 5x5 square, or
-                 * (#884, engine shape) distance <= 2, so (2,2) at distance
-                 * 3 is lit here */
-                if if engine_shape { d <= 2 } else { dy <= 2 && dx <= 2 } {
-                    continue;
-                }
+            /* Approximate the distance "as the bird flies" (straight-line).
+             * Ignores obstacles and does not follow walkable paths like
+             * pathfinding code elsewhere.
+             */
+            let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
 
-                /* Skip distant grids */
-                if d > p {
-                    continue;
-                }
+            /* Skip the "central" grids (above): C's 5x5 square, or
+             * (#884, engine shape) distance <= 2, so (2,2) at distance
+             * 3 is lit here */
+            if if engine_shape { d <= 2 } else { dy <= 2 && dx <= 2 } {
+                continue;
+            }
 
-                /* Viewable, nearby, grids get "torch lit" (#958, P7 review:
-                 * with the engine's shape, also in line of sight for light,
-                 * as radius 2: add_light tests los() per grid,
-                 * src/cave-view.c:625-640) */
-                if outer_ring_lit(st.cave.grid(x, y).info & BORG_VIEW != 0, engine_shape,
-                    || borg_los_light(st, cy, cx, y, x)) {
-                    /* This grid is "torch lit" */
-                    borg_cave_light_hack(st, y, x);
-                }
+            /* Skip distant grids */
+            if d > p {
+                continue;
+            }
+
+            /* Viewable, nearby, grids get "torch lit" (#958, P7 review:
+             * with the engine's shape, also in line of sight for light,
+             * as radius 2: add_light tests los() per grid,
+             * src/cave-view.c:625-640) */
+            if outer_ring_lit(in_view(y, x), engine_shape, || los_light(y, x)) {
+                /* This grid is "torch lit" */
+                lit.push((y, x));
             }
         }
     }
+    lit
 }
 
 /// #958 (P7 review): whether a viewable grid of the outer ring (radius 3+)
@@ -316,6 +333,21 @@ pub(crate) fn engine_distance(dy: i32, dx: i32) -> i32 {
 #[cfg(test)]
 mod tests_884 {
     use super::{engine_distance as distance, RADIUS_2};
+
+    #[test]
+    fn the_outer_ring_scan_skips_a_grid_the_light_cannot_reach() {
+        // The Borg at (10,10) with radius 3; everything in view, and rubble
+        // blocking the light to (10,13) only.
+        let los = |y: i32, x: i32| (y, x) != (10, 13);
+        let engine = super::outer_ring_grids(10, 10, 3, true, |_, _| true, los);
+        assert!(!engine.contains(&(10, 13)), "the engine's light stops at the rubble (#958)");
+        assert!(engine.contains(&(10, 7)), "the other side is lit");
+        // C's proxy lights it on the view alone.
+        let c = super::outer_ring_grids(10, 10, 3, false, |_, _| true, los);
+        assert!(c.contains(&(10, 13)));
+        // Nothing out of view is lit, whatever the light.
+        assert!(super::outer_ring_grids(10, 10, 3, true, |_, _| false, |_, _| true).is_empty());
+    }
 
     #[test]
     fn outer_ring_needs_light_line_of_sight_with_the_engine_shape() {
