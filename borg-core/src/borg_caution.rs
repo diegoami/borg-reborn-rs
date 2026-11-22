@@ -3218,7 +3218,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Take stairs up
-    if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) {
+    if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) && !recall_holds_up_stair(st, pos_danger) {
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_LESS || on_upstair {
             // Log it
@@ -7455,5 +7455,51 @@ mod confused_step_tests {
         assert!(!step_allowed(&mut mon, 1, (99, 99), true));
         assert!(step_left(&mon, 1, (3, 3), true), "a known attacker keeps its tries");
         assert!(step_left(&mon, 2, (99, 99), true), "a new level forgets them");
+    }
+}
+
+/// borg-reborn-rs (#984): with `caution_recall_dl1_hold_up`, a Word of
+/// Recall counting down on DL1 holds caution's "Take stairs up" (the `if`
+/// that calls this): the staircase leads to town, where the Recall fires and
+/// takes the Borg back to its maximum depth (`game-world.c:707-731`), 15 to
+/// 34 world ticks after the reading (`effect-handler-general.c:1145`).
+/// 312081895 read its last scroll on DL1, took the stairs, had 42 game turns
+/// in town and was pulled to DL2 with no Recall bought. Held, the Recall
+/// fires on DL1 and the Borg reaches town with nothing pending. A danger
+/// above the avoidance still takes the stairs (the boundary of the stairs
+/// rule above it, `pos_danger > avoidance`), and the danger escapes
+/// (`borg_escape_stair`) are not held. 0 = C (`borg-caution.c:1171`).
+/// This is the up half of the crossing between town and DL1: the down half
+/// is already held by `recall_restricts` (#603, #627), and
+/// `recall_pending_escape`'s note names this gap. An arena level
+/// (`game-world.c:709` suspends the countdown there) has no staircase
+/// (`arena_gen`, `gen-cave.c:4010`), so the hold never applies there.
+pub(crate) fn recall_holds_up_stair(st: &BorgState, pos_danger: i32) -> bool {
+    recall_holds_up_with(
+        p(Param::caution_recall_dl1_hold_up) != 0,
+        st.borg.goal.recalling,
+        st.borg.tr(BI_CDEPTH),
+        pos_danger,
+        i32::from(st.borg.avoidance),
+    )
+}
+
+fn recall_holds_up_with(on: bool, recalling: i32, depth: i32, danger: i32, avoidance: i32) -> bool {
+    on && recalling != 0 && depth == 1 && danger <= avoidance
+}
+
+#[cfg(test)]
+mod recall_dl1_hold_up_tests {
+    use super::recall_holds_up_with;
+
+    #[test]
+    fn a_pending_recall_holds_the_dl1_up_staircase_only_with_the_switch() {
+        // 312081895 at 10948: Recall pending on DL1, danger 0, avoidance 40.
+        assert!(!recall_holds_up_with(false, 140, 1, 0, 40), "C: the stairs are taken");
+        assert!(recall_holds_up_with(true, 140, 1, 0, 40), "the switch: held, the Recall fires on DL1");
+        assert!(recall_holds_up_with(true, 140, 1, 40, 40), "a danger at the avoidance: held, as the stairs rule (pos_danger > avoidance)");
+        assert!(!recall_holds_up_with(true, 140, 1, 41, 40), "a danger above the avoidance still takes them");
+        assert!(!recall_holds_up_with(true, 140, 2, 0, 40), "DL2: the staircase leads to DL1, not town");
+        assert!(!recall_holds_up_with(true, 0, 1, 0, 40), "no Recall pending");
     }
 }

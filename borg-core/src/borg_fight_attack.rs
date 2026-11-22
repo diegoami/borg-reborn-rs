@@ -3319,6 +3319,17 @@ fn borg_attack_aux_spell_bolt_reserve(
         return 0;
     }
 
+    // borg-reborn-rs (#980): this is the C Borg's deliberate cast beyond the
+    // current mana. The engine always faints the caster for it
+    // (player-spell.c:540-553: player_over_exert(PY_EXERT_FAINT, 100,
+    // 5 * oops + 1), paralysis that bypasses free action) and adds 5% fail
+    // per missing point (player-spell.c:404-406), which the faked mana below
+    // hides. With attack_reserve_spell_overexert = 0 the Borg never casts
+    // beyond its current SP.
+    if !reserve_cast_allowed(param(Param::attack_reserve_spell_overexert), sv_mana, borg_get_spell_power(st, spell).max(1)) {
+        return 0;
+    }
+
     /* Must be dangerous */
     // borg-reborn-rs (#878): with `attack_reserve_spell_damage_only`, the
     // danger without its fear prices.
@@ -3430,6 +3441,33 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Value */
     b_n
+}
+
+/// borg-reborn-rs (#980): whether the emergency attack spell may be cast
+/// with `cursp` mana for a spell of `cost` mana: always when `overexert` is
+/// on (the C Borg's play), else only within the current mana.
+fn reserve_cast_allowed(overexert: i32, cursp: i32, cost: i32) -> bool {
+    overexert != 0 || cursp >= cost
+}
+
+#[cfg(test)]
+mod reserve_tests {
+    use super::reserve_cast_allowed;
+
+    #[test]
+    fn emergency_spell_never_casts_beyond_current_mana_when_overexertion_is_off() {
+        // 592754909: Magic Missile (1 SP) with 0 SP faints and paralyses.
+        assert!(!reserve_cast_allowed(0, 0, 1));
+        assert!(!reserve_cast_allowed(0, 2, 3));
+        assert!(reserve_cast_allowed(0, 1, 1), "within the current mana it is an ordinary cast");
+        assert!(reserve_cast_allowed(1, 0, 1), "default: the C Borg's overexertion cast, today's play");
+    }
+
+    #[test]
+    fn overexertion_default_retains_todays_play() {
+        use crate::params::{Param, SPECS};
+        assert_eq!(SPECS[Param::attack_reserve_spell_overexert as usize].default, 1);
+    }
 }
 
 /// Simulate/Apply the optimal result of using a "dispel" attack spell
@@ -5786,9 +5824,10 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
                 let note = crate::borg_fast_fragile::describe(st, i, source, &facts);
                 borg_note(st, &note);
                 if crate::borg_fast_fragile::escape_instead(st, i, &facts) { return true; }
-                // The exception to the heal ban: cornered, a cure comes first.
-                if crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
-                    borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)");
+                // The exceptions to the heal ban: cornered (#842) or at the
+                // heal floor (#926), a cure comes first; the note names which.
+                if let Some(why) = crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
+                    borg_note(st, why);
                     continue;
                 }
                 borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",

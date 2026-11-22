@@ -122,7 +122,18 @@ const STAPLE_OIL: usize = 73;
 const STAPLE_FOOD: usize = 74;
 const STAPLE_LIGHT: usize = 75;
 const RESTORE_LIFE_RESERVE: usize = STAPLE_LIGHT + 1;
-const _: () = assert!(RESTORE_LIFE_RESERVE + 1 == NAMES.len());
+/// borg-reborn-rs (#987): the first `town_first_cure` healing potions as a
+/// requirement, each worth `town_first_cure_percent` of the trip's escape
+/// weight, nothing past them. With the Phase Door reserve at 150 percent of
+/// that weight a scroll, the first Cure Light Wounds (at most the healing
+/// curve's first HP plus a full heal on the healing reserve) is worth less
+/// than every reserved Phase Door, so a low-gold start bought no cure. Above
+/// the reserve's percent, the first cures come before it. The row only exists
+/// with `town_first_cure` above 0.
+const FIRST_CURE: usize = RESTORE_LIFE_RESERVE + 1;
+// The first-cure row must stay the last: the model without it stops before it
+// (`observe`), so a row appended after it would drop out of the off model.
+const _: () = assert!(FIRST_CURE + 1 == NAMES.len());
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
 /// A capability with a knee of its own -> its row.
@@ -177,7 +188,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 78] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -185,7 +196,7 @@ pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
-    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve"];
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -806,6 +817,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
             else if sval == st.item_val.sv_potion_cure_critical { Some(STAPLE_CCW) } else { None };
         if let Some(row) = row { out.push((row, UNIT)); }
     }
+    // borg-reborn-rs (#987): a healing potion is one copy on the first-cure row.
+    if first_cure_count() > 0 && tval == TV_POTION && out.iter().any(|&(id, _)| id == HEAL) {
+        out.push((FIRST_CURE, UNIT));
+    }
     let uses = if tval == TV_WAND || tval == TV_STAFF { i64::from(item.pval).max(0) * UNIT / qty }
         else if tval == TV_ROD {
             // MINIMISE/AVERAGE are pure; the rod's physical cooldown is not a level gate.
@@ -839,7 +854,9 @@ fn restore_life_supply(item: &borg_item, sval: i32, reserve: i64) -> Option<(usi
 fn initial_curves(
     previous_count: usize, ordinary: i64, demand: i64, drained: bool, reserve: i64, restore_weight: i64,
 ) -> Vec<[i64; 5]> {
-    let count = if reserve > 0 { COUNT } else { previous_count };
+    // #987: the Restore Life row, not COUNT: the first-cure row after it
+    // exists only with `town_first_cure` (`observe`).
+    let count = if reserve > 0 { RESTORE_LIFE_RESERVE + 1 } else { previous_count };
     let mut curves: Vec<_> = (0..count).map(|id| [id as i64, ordinary, demand, 0, 0]).collect();
     curves[EXPERIENCE] = [EXPERIENCE as i64, if drained { restore_weight } else { 0 }, -UNIT, 0, 0];
     if reserve > 0 {
@@ -878,6 +895,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let curves = initial_curves(previous_count, ordinary, support_demand,
         t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0, restore_life_reserve, cfg(BORG_TOWN_W_RESTORE) * UNIT);
+    // borg-reborn-rs (#987): with `town_first_cure` the model holds every row;
+    // the rows the model would not hold without it carry no weight, so on is
+    // off plus the first-cure row.
+    let first_cure = first_cure_count();
+    let mut curves = curves;
+    if first_cure > 0 { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
         packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
@@ -1031,6 +1054,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     } else if count > STAPLE_LIGHT {
         // Unset rows hold the default weight and demand: a knee must be off.
         for id in HEAL_KINDS.into_iter().chain(STAPLES.iter().map(|&(_, row)| row)) { curve(id, 0, UNIT); }
+    }
+    // borg-reborn-rs (#987): the first `town_first_cure` healing potions, each
+    // worth `town_first_cure_percent` of the trip's escape weight (the Phase
+    // Door reserve's unit), nothing past them.
+    if first_cure > 0 {
+        curve(FIRST_CURE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_first_cure_percent)) * first_cure,
+            -(first_cure * UNIT));
     }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
@@ -1448,6 +1478,43 @@ mod tests {
         assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
         assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
         assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
+    /// #987: the curves of seed 681096527's plan record at game turn 541
+    /// (Elf Ranger, 14 HP, 109 gold in the Alchemist, 4b2c2fcf at the shipped
+    /// settings). Each reserved Phase Door (180,000 on the reserve, 150 percent
+    /// of the 120,000 escape weight) outbids the first Cure Light Wounds
+    /// (70,588 on the healing curve and 100,000 on the healing reserve), the
+    /// sixth scroll as well as the first. With the first-cure row the first
+    /// cure outbids every reserved scroll; the second cure does not.
+    #[test]
+    fn the_first_cure_comes_before_the_phase_door_reserve() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[HEAL] = [HEAL as i64, 240_000, 33_600, 0, 0];
+        m.curves[HEAL_RESERVE] = [HEAL_RESERVE as i64, 200_000, -28_000, 0, 0];
+        m.curves[PHASE] = [PHASE as i64, 180_000, 3_600, 0, 0];
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, 1_800_000, -10 * UNIT, 0, 0];
+        let clw = |n: i64| vec![(HEAL, 14_000 * n), (HEAL_RESERVE, 14_000 * n), (FIRST_CURE, n * UNIT)];
+        let phase = |n: i64| vec![(PHASE, n * UNIT), (PHASE_RESERVE, n * UNIT)];
+        let first_clw = m.gain(&clw(1));
+        assert_eq!(first_clw, 70_588 + 100_000);
+        let sixth_phase = m.gain(&phase(6)) - m.gain(&phase(5));
+        assert!(sixth_phase > first_clw, "today: the sixth Phase Door ({sixth_phase}) outbids the first cure ({first_clw})");
+        assert!(m.gain(&phase(1)) > first_clw);
+        // town_first_cure = 1 at 200 percent of the escape weight.
+        m.curves[FIRST_CURE] = [FIRST_CURE as i64, 240_000, -UNIT, 0, 0];
+        let first_clw = m.gain(&clw(1));
+        assert_eq!(first_clw, 70_588 + 100_000 + 240_000);
+        assert!(first_clw > m.gain(&phase(1)), "the first cure outbids the first reserved Phase Door");
+        let second_clw = m.gain(&clw(2)) - first_clw;
+        assert!(second_clw < sixth_phase, "the second cure ({second_clw}) still waits for the reserve");
+        // town_first_cure = 2: each of the first two copies adds 240,000 on the
+        // row, a third nothing.
+        m.curves[FIRST_CURE] = [FIRST_CURE as i64, 480_000, -2 * UNIT, 0, 0];
+        let row = |m: &Model, n: i64| m.gain(&[(FIRST_CURE, n * UNIT)]);
+        assert_eq!(row(&m, 1), 240_000);
+        assert_eq!(row(&m, 2) - row(&m, 1), 240_000);
+        assert_eq!(row(&m, 3), row(&m, 2), "a third cure adds nothing on the row");
     }
 
     /// #859 (owner: "make it be 110 by default, so that they buy a few"):
@@ -2186,6 +2253,10 @@ fn prepared_row(trip_weight: i64, percent: i32, copies: i32) -> (i64, i64) {
     let copies = i64::from(copies.max(1));
     (scale_percent(trip_weight, percent) * copies, -copies * UNIT)
 }
+
+/// borg-reborn-rs (#987): the healing potions the first-cure row reserves
+/// (`town_first_cure`, 0 = off).
+fn first_cure_count() -> i64 { i64::from(param(Param::town_first_cure)).max(0) }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {
     value.saturating_mul(i64::from(percent.max(0))) / 100

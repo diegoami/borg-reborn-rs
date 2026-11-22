@@ -36,6 +36,10 @@ PINNED_TOWN_SETTINGS = [
     # #901: the confused attack by direction and the point-blank oil, shipped
     # after the incident.
     ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
+    # #983: testing unknown potions when safe, shipped after the incident.
+    ("item_test_unknown_potions", 0),
+    # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
+    ("kill_live_zero_hp", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
