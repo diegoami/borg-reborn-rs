@@ -1126,6 +1126,10 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
                 point_blank_divisor(tr(st, BI_CLASS)));
             dam = rated_throw_damage(dam, cur_dis, rf(r, RF_UNIQUE), divisor,
                 throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac));
+            // borg-reborn-rs (#912): a flask is saved where melee is enough.
+            if u32::from(ammo.tval) == TV_FLASK && flask_saving_reaches(st, i, cur_dis) && flask_saved_for_melee(st, i, dam) {
+                dam = 0;
+            }
         }
 
         BORG_ATTACK_ARROW => {
@@ -3027,6 +3031,69 @@ fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explo
         dam10 *= 3;
     }
     dam10 / 10
+}
+
+/// borg-reborn-rs (#912): which monsters `attack_flask_saving` covers: at 1
+/// an adjacent one; at 2 also one coming to melee anyway, awake, able to
+/// move (not `NEVER_MOVE`) and without a ranged attack (`ranged_attack`),
+/// so that waiting for it costs no danger the flask would have spared. In
+/// the named games most flasks went at range (the Warrior: 83 of 88).
+fn flask_saving_reaches(st: &BorgState, i: i32, distance: i32) -> bool {
+    let mode = param(Param::attack_flask_saving);
+    if mode <= 0 {
+        return false;
+    }
+    if distance <= 1 {
+        return true;
+    }
+    let kill = &st.kills.kills[i as usize];
+    mode >= 2 && kill.awake && kill.ranged_attack == 0 && !rf(kill.r_idx, RF_NEVER_MOVE)
+}
+
+/// borg-reborn-rs (#912, owner: "melee is infinite, flasks are not"): with
+/// `attack_flask_saving`, the ordinary attack chooser does not spend a flask
+/// of oil on monster `i` (`flask_saving_reaches`) while melee is enough. Melee is open
+/// (not afraid, not confused: a confused blow goes astray, #867), kills it
+/// within `attack_flask_melee_rounds` player turns at the real damage the
+/// focused planner rates (`town_melee_damage`: blows, hit chance, the HP cap),
+/// and the monster's danger over the turns melee needs beyond the flask's
+/// (`throw`, the throw's expected damage, one turn each) stays below
+/// `attack_flask_danger_percent` of the HP left: both take a turn each, so
+/// only melee's extra turns are extra risk. Attack on sight and the focused
+/// planner (#760, #842, #869) are not this chooser and keep the oil.
+fn flask_saved_for_melee(st: &mut BorgState, i: i32, throw: i32) -> bool {
+    let kill = st.kills.kills[i as usize];
+    let hp_milli = observed_kill_hp(&kill).unwrap_or(i32::from(kill.power).max(1)).saturating_mul(1000);
+    let melee = town_melee_damage(st, i as usize);
+    let danger = danger_one_here(st, 1, i, false);
+    if tr(st, BI_ISAFRAID) != 0 || tr(st, BI_CRSFEAR) != 0 || tr(st, BI_ISCONFUSED) != 0 {
+        return false;
+    }
+    melee_is_enough(
+        melee,
+        throw.saturating_mul(1000),
+        hp_milli,
+        danger,
+        tr(st, BI_CURHP),
+        param(Param::attack_flask_melee_rounds),
+        param(Param::attack_flask_danger_percent),
+    )
+}
+
+/// `flask_saved_for_melee` on its numbers: melee's and the flask's damage
+/// per player turn and the monster's HP (millihitpoints), its danger per
+/// turn, the HP left. Melee is enough when it kills within `rounds` turns
+/// and the danger over the turns it needs beyond the flask's is below
+/// `danger_percent` of the HP left.
+fn melee_is_enough(melee_milli: i32, flask_milli: i32, hp_milli: i32, danger: i32, hp: i32, rounds: i32, danger_percent: i32) -> bool {
+    if melee_milli <= 0 || flask_milli <= 0 || hp_milli <= 0 || rounds <= 0 {
+        return false;
+    }
+    let turns = |per: i32| (i64::from(hp_milli) + i64::from(per) - 1) / i64::from(per);
+    let (melee, flask) = (turns(melee_milli), turns(flask_milli));
+    let extra = (melee - flask).max(0);
+    melee <= i64::from(rounds)
+        && i64::from(danger.max(0)) * extra * 100 < i64::from(hp.max(0)) * i64::from(danger_percent)
 }
 
 /// #870: zero inherits the resolved arrow policy, including class overrides.
@@ -5896,6 +5963,43 @@ mod throw_tests {
         assert_eq!(throw_hit_percent(20, 0, false, 0, 30), 39, "not THROWING: 3/2 of the skill");
         assert_eq!(throw_hit_percent(30, 0, true, 3, 30), 33, "the distance lowers it");
         assert_eq!(throw_hit_percent(20, 2, true, 0, 30), 31, "bonus x BTH_PLUS_ADJ");
+    }
+}
+
+#[cfg(test)]
+mod flask_saving_tests {
+    use super::melee_is_enough;
+
+    /// #912, the smoke Warrior at turn 5,294 (seed 101): melee 14.5 HP a turn
+    /// against a 10-HP white worm mass, the flask about 22 x its hit chance;
+    /// both kill in one turn, so the Borg's danger of 30 against 41 HP adds
+    /// nothing and the flask is saved.
+    #[test]
+    fn both_kill_in_one_turn_keeps_the_flask() {
+        assert!(melee_is_enough(14_473, 15_000, 10_000, 30, 41, 3, 50));
+    }
+
+    /// A weaker round (3.7 HP a turn): three turns against the flask's one,
+    /// two extra turns of danger.
+    #[test]
+    fn melee_extra_turns_cost_danger() {
+        assert!(melee_is_enough(3_700, 15_000, 9_000, 5, 41, 3, 50), "10 against 20.5");
+        assert!(!melee_is_enough(3_700, 15_000, 9_000, 11, 41, 3, 50), "22 against 20.5");
+        assert!(!melee_is_enough(3_700, 15_000, 9_000, 0, 41, 2, 50), "three turns needed, two allowed");
+    }
+
+    #[test]
+    fn no_melee_or_no_flask_never_saves() {
+        assert!(!melee_is_enough(0, 15_000, 9_000, 0, 41, 3, 50), "no blow (afraid, kept at range)");
+        assert!(!melee_is_enough(3_700, 0, 9_000, 0, 41, 3, 50), "the throw does nothing anyway");
+        assert!(!melee_is_enough(3_700, 15_000, 9_000, 0, 41, 0, 50), "rounds 0");
+        assert!(!melee_is_enough(3_700, 15_000, 0, 0, 41, 3, 50), "no HP known");
+    }
+
+    #[test]
+    fn the_turns_round_up() {
+        assert!(melee_is_enough(3_000, 9_000, 9_000, 0, 10, 3, 50), "exactly three");
+        assert!(!melee_is_enough(2_999, 9_000, 9_000, 0, 10, 3, 50), "a fraction over three is four");
     }
 }
 

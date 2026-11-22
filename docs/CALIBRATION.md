@@ -10,6 +10,57 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Flask saving: melee is infinite, flasks are not (#912)
+
+The registry now holds **2379** parameters (2376 before; three added), all
+compiled and shipped **0** / their defaults, so play is unchanged. Owner,
+2026-11-22: "there should be in game the logic of saving flasks for when
+they are needed. Melee is infinite, flasks are not." This replaces, once
+measured, the melee classes' point-blank overrides of #901.
+
+- **`attack_flask_saving`** (mode 0-2). The ordinary attack chooser
+  (`borg_launch_damage_one`, the throw branch) rates a flask of oil at 0
+  against a monster while melee is enough. That means:
+  - Melee is open: not afraid, not confused.
+  - It kills the monster within `attack_flask_melee_rounds` player turns
+    at the real damage the focused planner rates (`town_melee_damage`:
+    blows, hit chance, the HP cap).
+  - The monster's danger (`borg_danger_one_kill`, one turn) over the turns
+    melee needs **beyond the flask's** stays below `attack_flask_danger_percent`
+    of the HP left. Both take a turn each, so only melee's extra turns are
+    extra risk. A first version counted every melee turn and never fired:
+    the Borg's danger for a white worm mass is 30 against a CL2 Warrior's 41
+    HP.
+  - 1 = an adjacent monster. 2 = also one coming to melee anyway: awake,
+    able to move (not `NEVER_MOVE`), and no ranged attack.
+  - Attack on sight and the focused planner (#760, #842, #869: the grey
+    mushroom patch) are not this chooser and keep the oil.
+- **`attack_flask_melee_rounds`** (3, player turns) and
+  **`attack_flask_danger_percent`** (50, percent of HP): hypotheses.
+
+Named games (100,000 turns, `menu`, Human; local, directional only; RULES 20:
+a comparison is borg-zoo's), flasks thrown at shipped / mode 1 / mode 2:
+
+| class (seed) | shipped | mode 1 | mode 2 |
+|---|---|---|---|
+| Warrior 224 | 88 (5 adjacent) | 88 | 57 |
+| Paladin 302 | 105 (7) | 105 | 43 |
+| Rogue 301 | 84 (15) | 61 | 49 |
+| Priest 103 | 35 (3) | 24 | 16 |
+| Necromancer 459443830 | 47 (7) | 59 | 38 |
+| Mage 204 | 40 (4) | 40 | 29 |
+
+All live to the cap in every arm. Most flasks go at range (the Warrior: 83
+of 88), so mode 1 changes little. With mode 2 the per-class overrides of
+#901 are redundant in five of the six games. The Rogue, whose arrow divisor
+is 3, plays differently without its override (64 flasks).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_flask_saving` | 0 | mode | 0–2 | `borg_fight_attack.rs:3042` |
+| `attack_flask_melee_rounds` | 3 | player turns | 1–50 | `borg_fight_attack.rs:3078` |
+| `attack_flask_danger_percent` | 50 | percent of HP | 0–1000 | `borg_fight_attack.rs:3079` |
+
 ## Confused attack on the grey mushroom patch, shipped (#901)
 
 No parameter added; shipped values changed. Owner, 2026-11-22, after #867
@@ -4996,7 +5047,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5723` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5790` |
 
 ## C Borg dive gates (#768)
 
