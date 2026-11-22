@@ -6282,7 +6282,7 @@ first book 6 of 6 times and the seven other classes 0 of 21.
   is not asked, since the SP grow with the level. A shop's book is valued as
   before. With 4 (the Rogue's gap), none of the 7 starts sells its first book.
   The sales left are duplicate copies and other classes' books. One start
-  each, not a measurement: the study is borg-cemetery#STUDY.
+  each, not a measurement: the study is borg-cemetery#132.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
