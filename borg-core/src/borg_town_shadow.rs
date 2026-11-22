@@ -266,6 +266,7 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
         let just_bought = (0..usize::try_from(bought.bought_item_num).unwrap_or(0).min(10))
             .any(|i| bought.bought_item_tval[i] == i32::from(it.tval) && bought.bought_item_sval[i] == i32::from(it.sval));
         KitItem {
+            home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
             joins_pack: if place == Place::Home {
                 engine::store_stock(&st.access, BORG_HOME).get(slot)
                     .is_some_and(|o| o.merge_capacity() >= i32::from(it.iqty))

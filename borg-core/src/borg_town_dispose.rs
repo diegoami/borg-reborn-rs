@@ -58,6 +58,8 @@ pub enum Disposition {
 /// The facts of one stack the dispositions read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KitItem {
+    /// A known repeatable consumable subject to the per-kind Home limit.
+    pub home_limited: bool,
     /// Schema 9: the whole withdrawal can join existing carried stock.
     pub joins_pack: bool,
     pub place: Place,
@@ -274,7 +276,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem {
+        KitItem { home_limited: false,
             joins_pack: false,
             place,
             slot,

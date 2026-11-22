@@ -40,7 +40,8 @@ use crate::state::BorgState;
 /// borg-reborn-rs (#957, P7 review): 13, the record carries the storing
 /// settings (`storing`: the departure room, `town_store_keep_min` and
 /// `town_store_only_overweight`), so a replay stores as the visit did.
-pub const PLAN_SCHEMA: i64 = 13;
+/// #1048: v14 records the Home stack limit and the eligible kit kinds.
+pub const PLAN_SCHEMA: i64 = 14;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -169,8 +170,8 @@ pub struct PlanRecord {
     /// 0 none, 1 the 2000-turn give-up, 2 the anti-bounce give-up, 3 the
     /// solver refused.
     pub guard: u8,
-    /// v13 (#957): the storing settings, `Storing::to_array`. None before.
-    pub storing: Option<[i64; 6]>,
+    /// v13 (#957) stores six values; v14 adds the per-kind Home limit.
+    pub storing: Option<[i64; 7]>,
 }
 
 // --- writing -------------------------------------------------------------
@@ -221,7 +222,7 @@ fn kit_row(k: &KitItem) -> [i64; 12] {
         k.power,
         k.proceeds,
         i64::from(k.sell_shop),
-        i64::from(k.unknown) | i64::from(k.unknown_flavour) << 1 | i64::from(k.just_bought) << 2 | i64::from(k.joins_pack) << 3,
+        i64::from(k.unknown) | i64::from(k.unknown_flavour) << 1 | i64::from(k.just_bought) << 2 | i64::from(k.joins_pack) << 3 | i64::from(k.home_limited) << 4,
         i64::from(k.serves),
     ]
 }
@@ -263,7 +264,7 @@ impl PlanRecord {
         ints(out, &self.params[..if self.schema == 4 { 12 } else { PARAMS }]);
         if let Some(storing) = self.storing.filter(|_| self.schema >= 13) {
             field(out, "storing");
-            ints(out, &storing);
+            ints(out, &storing[..if self.schema == 13 { 6 } else { 7 }]);
         }
         if self.black_market_reserve != 0 {
             field(out, "black_market_reserve");
@@ -502,7 +503,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
@@ -534,7 +535,14 @@ impl PlanRecord {
             power: small("power")?,
             spells: small("spells")? as u8,
             params,
-            storing: if schema >= 13 { Some(fixed(j.get("storing")?.ints()?, "storing")?) } else { None },
+            storing: match schema {
+                13 => {
+                    let [a, b, c, d, e, f] = fixed(j.get("storing")?.ints()?, "storing")?;
+                    Some([a, b, c, d, e, f, 0])
+                }
+                14.. => Some(fixed(j.get("storing")?.ints()?, "storing")?),
+                _ => None,
+            },
             black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
             black_market_percentage: j.get("black_market_percentage").map_or(Ok(-1), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
@@ -580,6 +588,7 @@ impl PlanRecord {
                     let serves = if schema == 4 { 0 } else { r[11] as u8 };
                     match r[..11] {
                     [place, slot, kind, qty, weight, need, reduction, power, proceeds, sell_shop, flags] => Ok(KitItem {
+                        home_limited: schema >= 14 && flags & 16 != 0,
                         joins_pack: schema >= 9 && flags & 8 != 0,
                         place: if place == 1 { Place::Home } else { Place::Pack },
                         slot: slot as u8,
@@ -820,11 +829,13 @@ pub fn step(input: &StepInput) -> StepOutput {
     let tryon: BTreeMap<(u8, u8), &TryOn> = input.tryon.iter().map(|t| ((t.shop, t.slot), t)).collect();
     let mut candidates = input.candidates.clone();
     if input.utility {
+        let saturated = crate::borg_town_utility::saturated_home_kinds(input, &utility, &dispositions, &copies);
         for c in &mut candidates {
-            if input.revision >= 9 && c.shop == 7 { c.qty = 0; }
+            if (input.revision >= 9 && c.shop == 7) || saturated.contains(&c.kind) { c.qty = 0; }
             if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).enumerate().any(|(i, (it, d))|
                 it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep
-                    && !(input.capability.is_some_and(|model| model.restore_life_keep(it) > 0)
+                    && !((input.capability.is_some_and(|model| model.restore_life_keep(it) > 0)
+                        || it.home_limited && input.storing.is_some_and(|storing| storing.home_stack_limit > 0))
                         && copies.get(i).is_some_and(|&qty| qty > 0 && qty < it.qty))) {
                 c.slots_cost = 1;
             }
@@ -1423,9 +1434,9 @@ mod tests {
     }
 
     #[test]
-    fn the_storing_settings_travel_with_a_v13_record() {
+    fn the_storing_settings_travel_with_a_v14_record() {
         use crate::borg_town_utility::{Room, Storing};
-        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200 };
+        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200, home_stack_limit: 2 };
         assert_eq!(Storing::from_array(storing.to_array()), storing);
         let stock = stock();
         let (_, mut rec) = produce(&stock, 300, &traits(), &[], &[]);
@@ -1436,7 +1447,7 @@ mod tests {
         rec.storing = Some(storing.to_array());
         let mut line = String::new();
         rec.push_fields(&mut line);
-        assert!(line.contains("\"storing\":[50,2,3,0,2,200]"), "{line}");
+        assert!(line.contains("\"storing\":[50,2,3,0,2,200,2]"), "{line}");
         let parts = ReplayParts { candidates: Vec::new(), urgent: Vec::new(), traits: Vec::new(), carried: Vec::new(),
             limits: Limits { gold: 0, pack_slots: 0, weight: 0 }, tryon: Vec::new(), power: 0 };
         assert_eq!(parts.input(&rec).storing, Some(storing));
@@ -1620,7 +1631,7 @@ mod tests {
         let stock = stock();
         let (line, _) = produce(&stock, 300, &traits(), &[], &[]);
         let (_, mut out) = replay(&line).unwrap();
-        let pack = KitItem { joins_pack: false, place: Place::Pack, slot: 0, kind: 1, qty: 1,
+        let pack = KitItem { home_limited: false, joins_pack: false, place: Place::Pack, slot: 0, kind: 1, qty: 1,
             weight: 1, need: -1, reduction: 0, power: 0, proceeds: 0,
             sell_shop: 4, unknown: false, unknown_flavour: false,
             just_bought: false, serves: 0 };
@@ -1812,7 +1823,7 @@ mod tests {
     #[test]
     fn the_step_disposes_then_buys() {
         let s = stock();
-        let junk = KitItem { joins_pack: false,
+        let junk = KitItem { home_limited: false, joins_pack: false,
             serves: 0,
             place: Place::Pack,
             slot: 4,
@@ -1909,7 +1920,7 @@ mod tests {
     fn full_pack_frees_room_before_urgent_buy_and_does_not_queue_an_impossible_buy() {
         let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
         let (_,mut out)=replay(&line).unwrap();
-        let pack=KitItem {joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:1,need:-1,reduction:0,power:0,
+        let pack=KitItem { home_limited: false,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:1,need:-1,reduction:0,power:0,
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Sell];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
@@ -1982,7 +1993,7 @@ mod tests {
     fn urgent_buy_over_the_weight_allowance_frees_weight_first() {
         let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
         let (_,mut out)=replay(&line).unwrap();
-        let pack=KitItem {joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
+        let pack=KitItem { home_limited: false,joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Store];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];

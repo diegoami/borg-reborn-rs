@@ -311,6 +311,19 @@ impl Model {
         ((-row[2] - row[3]) / UNIT + i64::from(item.qty)).clamp(0, i64::from(item.qty)) as i32
     }
 
+    /// Copies of one kind needed to meet the live kit's explicit reserve
+    /// rows, after crediting the other carried ways to meet each reserve.
+    pub(crate) fn home_stock_floor(&self, item: &KitItem, held: i32) -> i32 {
+        self.units(Self::scope(item), i64::from(item.slot), 1).into_iter()
+            .filter_map(|(id, per_copy)| {
+                let row = self.curves.get(id)?;
+                if row[1] == 0 || row[2] >= 0 { return None; }
+                let other = (row[3] - i64::from(held) * per_copy).max(0);
+                let missing = (-row[2] - other).max(0);
+                Some(((missing + per_copy - 1) / per_copy).min(i64::from(i32::MAX)) as i32)
+            }).max().unwrap_or(0)
+    }
+
     pub fn keep(&self, it: &KitItem) -> i64 {
         -self.gain(&self.units(Self::scope(it), i64::from(it.slot), -i64::from(it.qty)))
     }
@@ -1359,7 +1372,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
     }
     #[test]

@@ -85,6 +85,13 @@ pub fn acquisition_room(st: &BorgState, tval: u8, kind: u32) -> i32 {
         .map_or(i32::MAX, |limit| limit.saturating_sub(carried_kind(st, kind)) as i32)
 }
 
+fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+    let limit = crate::borg_town_utility::home_stack_limit();
+    limit > 0 && item.aware && crate::borg_town_utility::home_limited_kind(item.tval)
+        && st.store.shops[BORG_HOME].ware.iter()
+            .filter(|ware| ware.iqty > 0 && ware.kind == item.kind).count() >= limit
+}
+
 fn overflow_action(st: &BorgState) -> Option<TownAction> {
     let limit = configured_limit(st);
     if limit <= 0 { return None; }
@@ -97,6 +104,7 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     // may still take some or all of the excess.
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
+            if shop == BORG_HOME && home_at_limit(st, item) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
@@ -393,8 +401,8 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
     let drop_qty = if (1..qty).contains(&a.at[2])
-        && crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
-        && crate::borg_town_capability::restore_life_reserve(st) > 0
+        && ((crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+            && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item))
     {
         a.at[2]
     } else {
