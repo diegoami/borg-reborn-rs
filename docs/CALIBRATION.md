@@ -6350,7 +6350,12 @@ faster."). `guess_race_name` took every name without "The " for the player
 ghost, race `r_max - 1`, which in 4.2 is Morgoth (`mon-init.c:1792-1810`), so
 those messages were lost (seed 2008390085, borg-zoo#596). At 1 the count and
 the plural (monster.txt's `plural:`, or `plural_aux` undone, `mon-desc.c:27-36`)
-name the race, and "N monsters" is an unseen group. Compiled and shipped 0.
+name the race, and "N monsters" is an unseen group. Compiled 0; shipped 1
+in `harness/borg.txt` (P8): every non-unique race of `monster.txt` (523)
+reads back from its grouped subject, with a count of 2 or 15 and with
+" (offscreen)" (`grouped_subjects_of_every_engine_race`), and seed 2008390085
+plays the same keys, state and core trace (danger at every think) with the
+switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|

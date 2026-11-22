@@ -649,8 +649,10 @@ borg_param_kill_live_min_power = 1
 # moving faster.", mon-msg.c:333-345); the Borg's race guess takes any name
 # without "The " for the player ghost, in 4.2 the last race, Morgoth
 # (borg_flow_kill.rs guess_race_name). 1 reads the plural as the race.
-# Shipped 0 (today's play) until the zoo measures it.
-borg_param_kill_grouped_names = 0
+# Shipped 1 (P8, owner 2026-11-22: a P8 fix ships on once the evidence holds):
+# every non-unique race of monster.txt reads back from its grouped subject
+# (unit test), and seed 2008390085 plays the same keys and danger either way.
+borg_param_kill_grouped_names = 1
 
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
