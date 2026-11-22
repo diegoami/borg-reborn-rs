@@ -26,7 +26,7 @@ on track-p `4b2c2fcf` plays key for key the zoo's game (`6f2825472c67b78f`).
   shipped 0. #842's heal ban (#926) applies only in contact, so it did not
   apply here.
 
-**Fix, behind `recover_rest_cure_hp_percent` (default and shipped 0).**
+**Fix, behind `recover_rest_cure_hp_percent` (compiled default 0; shipped 50 by the owner, 2026-11-22, after the borg-zoo#671 pilot).**
 With N > 0, an HP rest is due below N% of the maximum HP, after the C
 Borg's dark-room light (the light comes first, as C does). If an awake
 monster that can move is known within `recover_rest_cure_distance` (20)
@@ -68,5 +68,5 @@ Revised after Mavis's review (#999):
   `borg_recover`'s costly heal drink CLW. These are other candidate rules
   for the zoo to compare.
 
-**For the owner.** Whether to ship it, and at what N, after the zoo
-measures it.
+**For the owner.** Shipped on at N = 50 (2026-11-22). The pilot (borg-zoo#671,
+classes-18) never saw it act; `smoke-borg-rs` is identical with it on.
