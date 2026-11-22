@@ -1586,19 +1586,19 @@ mod tests {
     fn restore_life_junking_counts_known_pack_stacks_and_the_copies_removed() {
         let mut known = blank_item();
         known.tval = TV_POTION as u8;
-        known.sval = 15;
+        known.sval = 16;
         known.aware = true;
         known.iqty = 3;
         let mut unknown = known;
         unknown.aware = false;
         let mut pack = [known, unknown];
-        assert!(!protects_restore_life(&pack, 0, 15, 1, false));
-        assert!(protects_restore_life(&pack, 0, 15, 1, true));
-        assert!(!protects_restore_life(&pack, 0, 15, 0, true));
+        assert!(!protects_restore_life(&pack, 0, 16, 1, false));
+        assert!(protects_restore_life(&pack, 0, 16, 1, true));
+        assert!(!protects_restore_life(&pack, 0, 16, 0, true));
         pack[0].iqty = 1;
-        assert!(protects_restore_life(&pack, 0, 15, 1, false));
+        assert!(protects_restore_life(&pack, 0, 16, 1, false));
         pack[1].aware = true;
-        assert!(!protects_restore_life(&pack, 0, 15, 1, true));
+        assert!(!protects_restore_life(&pack, 0, 16, 1, true));
     }
 
     #[test]

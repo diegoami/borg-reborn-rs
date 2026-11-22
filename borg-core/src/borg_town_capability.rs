@@ -1338,7 +1338,7 @@ mod tests {
         use crate::borg_town_solve::Limits;
         use crate::borg_town_stock::Candidate;
 
-        let potion = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 15,
+        let potion = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 16,
             price: 400, qty: 1, weight: 4, slots_cost: 1, stack_count: 0, class: 1 };
         let decide = |drained, reserve, stocked, gold, carried: i32| {
             let kit = if carried > 0 {
