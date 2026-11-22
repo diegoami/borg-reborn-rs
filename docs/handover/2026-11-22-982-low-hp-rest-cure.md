@@ -59,7 +59,9 @@ Revised after Mavis's review (#999):
   (distance, last-seen awake, `observed_fast`, a hasted Borg, the edge).
 
 **Not done.**
-- No borg-cemetery records, as in #981 (no write access from this session).
+- The Cemetery records (added after the owner granted access): the death
+  is dossier `D-a61ab469…` in diegoami/borg-cemetery#129 (the whole zoo run),
+  and the off/on replays are the study in diegoami/borg-cemetery#130.
 - No zoo measurement yet: diegoami/borg-zoo#671 (specimen updated after the
   reviews), which the owner starts.
 - Not done: a floor without the fast-monster condition, or one that lets
