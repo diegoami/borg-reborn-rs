@@ -19,7 +19,10 @@ use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
 use crate::borg_headers::borg_trait_h::{BI_CURHP, BI_MAXHP};
 use crate::headers::list_mon_race_flags_h::RF_PASS_WALL;
-use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_NONE, FEAT_PASS_RUBBLE};
+use crate::headers::list_terrain_h::{
+    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN,
+    FEAT_PASS_RUBBLE,
+};
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 use crate::engine;
@@ -47,6 +50,38 @@ pub fn borg_los(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
         || engine::square_in_bounds_fully(x1, y1),
         |y, x| borg_cave_floor_bold(st, y, x),
     )
+}
+
+/// borg-reborn-rs (#884, re-review of #894): `borg_los` for light. The
+/// engine's `add_light` propagates light along `los()`, which tests
+/// `square_isprojectable` (src/cave-view.c:109-162, :625-640). Passable
+/// rubble is walkable but has neither `LOS` nor `PROJECT`
+/// (lib/gamedata/terrain.txt), so `borg_cave_floor_bold`, the walk test,
+/// would let light through it. A grid passes light here only when it is known
+/// and projectable: floor (or a trap on it), an open or broken door, a
+/// staircase, a shop entrance, lava. Unknown terrain blocks it, the
+/// conservative side: a grid wrongly marked lit makes the Borg forget a
+/// monster it cannot see (#877).
+pub(crate) fn borg_los_light(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+    los_with(
+        y1,
+        x1,
+        y2,
+        x2,
+        || engine::square_in_bounds_fully(x1, y1),
+        |y, x| {
+            engine::square_in_bounds_fully(x, y) && {
+                let g = st.cave.grid(x, y);
+                light_passes(u32::from(g.feat), g.trap, engine::feat_is_shop(i32::from(g.feat)))
+            }
+        },
+    )
+}
+
+/// #884: whether a known grid of terrain `feat` lets the player's light
+/// through (`square_isprojectable`; see `borg_los_light`).
+fn light_passes(feat: u32, trap: bool, shop: bool) -> bool {
+    trap || shop || [FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN, FEAT_LESS, FEAT_MORE, FEAT_LAVA].contains(&feat)
 }
 
 /// `borg_los` with the origin check (`square_in_bounds_fully`) and the
@@ -843,6 +878,27 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
 
 #[cfg(test)]
 mod tests {
+    /// #884 (re-review of #894): from the player at (0,0) to (2,1), with
+    /// passable rubble at (1,0) and floor everywhere else. The walk test takes
+    /// the knight's shortcut through the rubble; light, as in the engine's
+    /// los(), does not pass it.
+    #[test]
+    fn light_does_not_pass_rubble_the_walk_test_crosses() {
+        use crate::headers::list_terrain_h::{FEAT_CLOSED, FEAT_PASS_RUBBLE, FEAT_RUBBLE};
+        let feat = |y: i32, x: i32| if (y, x) == (1, 0) { FEAT_PASS_RUBBLE } else { FEAT_FLOOR };
+        let walk = |y, x| feat(y, x) == FEAT_FLOOR || feat(y, x) == FEAT_PASS_RUBBLE;
+        let light = |y, x| light_passes(feat(y, x), false, false);
+        assert!(los_with(0, 0, 2, 1, || true, walk));
+        assert!(!los_with(0, 0, 2, 1, || true, light));
+        // Floor all the way: both see.
+        assert!(los_with(0, 0, 2, 1, || true, |_, _| light_passes(FEAT_FLOOR, false, false)));
+        assert!(!light_passes(FEAT_RUBBLE, false, false));
+        assert!(!light_passes(FEAT_CLOSED, false, false));
+        assert!(!light_passes(FEAT_NONE, false, false));
+        assert!(light_passes(FEAT_NONE, true, false));
+        assert!(light_passes(FEAT_OPEN, false, false) && light_passes(FEAT_LESS, false, false));
+    }
+
     use super::*;
 
     /// Follow `borg_inc_motion` from (y1, x1) for `n` steps.

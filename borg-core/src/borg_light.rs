@@ -16,7 +16,7 @@
 
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
-use crate::borg_cave_light::BORG_LIGHT;
+use crate::borg_cave_light::{engine_distance, engine_light_shape, own_light_radius, BORG_LIGHT};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
@@ -77,9 +77,7 @@ fn due(st: &BorgState, t: BorgTime, n: BorgTime) -> bool {
 }
 
 /// `INVEN_LIGHT`: the light source slot.
-fn inven_light() -> i32 {
-    inven_wield() + 5
-}
+pub(crate) fn inven_light() -> i32 { light_slot(inven_wield() as usize) as i32 }
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`).
@@ -191,7 +189,14 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     }
 
     let (cx, cy) = (st.borg.c.x, st.borg.c.y);
-    if st.borg.tr(BI_LIGHT) == 1 {
+    // borg-reborn-rs (#884): the radius branches read the Borg's own light
+    // radius (BI_LIGHT at cave_light_engine_radius 0, C's test; the
+    // engine's BI_LIGHT - 1 at 1, so a torch takes the radius-1 test).
+    // BI_LIGHT 1 (a Ring of Light without a light source) is radius 0 at
+    // switch 1 and keeps C's corner test; only no light at all (BI_LIGHT 0)
+    // takes neither test and calls light, as in C (review of #894).
+    let radius = own_light_radius(st);
+    if radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1) {
         let mut corners = 0;
 
         /* Scan diagonal neighbors.
@@ -232,7 +237,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         if corners > 2 {
             return false;
         }
-    } else if st.borg.tr(BI_LIGHT) > 1 {
+    } else if radius > 1 {
         let mut floors = 0;
 
         /* Scan the surrounding 5x5 area for unlit tiles.
@@ -300,7 +305,7 @@ enum FrontierGrid {
 }
 
 fn dark_frontier(
-    (y, x): (i32, i32), direction: (i32, i32), radius: i32,
+    (y, x): (i32, i32), direction: (i32, i32), radius: i32, engine_shape: bool,
     grid: impl Fn(i32, i32) -> FrontierGrid,
 ) -> bool {
     let (dy, dx) = direction;
@@ -308,9 +313,22 @@ fn dark_frontier(
         if (sy == 0 && sx == 0) || ((dy != 0 || dx != 0) && sy * dy + sx * dx <= 0) {
             return false;
         }
-        grid(y + sy * (radius + 1), x + sx * (radius + 1)) == FrontierGrid::Unknown
-            && (1..=radius).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
+        let lit = lit_steps((sy, sx), radius, engine_shape);
+        grid(y + sy * (lit + 1), x + sx * (lit + 1)) == FrontierGrid::Unknown
+            && (1..=lit).all(|step| grid(y + sy * step, x + sx * step) == FrontierGrid::Floor)
     }))
+}
+
+/// borg-reborn-rs (#884, review of #894): how many steps along the ray
+/// `(sy, sx)` are within the light. With the engine's shape, the steps at
+/// engine `distance()` <= radius (a diagonal step at radius 2: only the
+/// first, since (2,2) is at distance 3); otherwise the radius itself, the
+/// shape of C's light (which lights (2,2)).
+fn lit_steps((sy, sx): (i32, i32), radius: i32, engine_shape: bool) -> i32 {
+    if !engine_shape {
+        return radius;
+    }
+    (1..=radius).take_while(|&k| engine_distance(sy * k, sx * k) <= radius).count() as i32
 }
 
 fn entering_unexamined_dark(st: &BorgState) -> bool {
@@ -323,7 +341,9 @@ fn entering_unexamined_dark(st: &BorgState) -> bool {
     let Some(direction) = entry_direction(previous, (y, x)) else { return false };
     // The grid just beyond personal light must still be unknown, along a
     // continuous run of known floor. Do not inspect that grid in the engine.
-    dark_frontier((y, x), direction, st.borg.tr(BI_LIGHT).max(1), |y, x| {
+    // borg-reborn-rs (#884): the Borg's own light radius (BI_LIGHT - 1
+    // under cave_light_engine_radius 1, so a torch looks at distance 2).
+    dark_frontier((y, x), direction, own_light_radius(st).max(1), engine_light_shape(), |y, x| {
         if !engine::square_in_bounds_fully(x, y) {
             FrontierGrid::Blocked
         } else if u32::from(st.cave.grid(x, y).feat) == FEAT_NONE {
@@ -641,6 +661,11 @@ fn refuel_with(st: &mut BorgState, i: i32) {
     st.borg.goal.shop = st.borg.goal.ware;
 }
 
+/// Index of the light slot given the first equipment slot.
+pub(crate) fn light_slot(first: usize) -> usize {
+    first + 5
+}
+
 #[derive(Debug, PartialEq, Eq)]
 enum LightAction {
     Refuel(usize),
@@ -724,36 +749,55 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
         return None;
     }
 
-    // player-calcs.c:1598 (calc_light). Replace a dimmed light only if the new
-    // contribution makes the total positive.
-    let contribution = |item: &BorgItem| {
-        let innate = if has_flag(item, OF_LIGHT_2) {
-            2
-        } else if has_flag(item, OF_LIGHT_3) {
-            3
-        } else {
-            0
-        };
-        innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
-    };
-    let powered = |item: &BorgItem| item.timeout > 0 || has_flag(item, OF_NO_FUEL);
-    let current = if equipped.iqty != 0 && powered(equipped) {
-        contribution(equipped)
+    let current = if equipped.iqty != 0 && light_powered(equipped) {
+        light_contribution(equipped)
     } else {
         0
     };
+    best_light(pack, radius - current, |item| refillable(item) && fuel_slot.is_some())
+        .map(LightAction::Wear)
+}
 
+fn light_powered(item: &BorgItem) -> bool {
+    item.timeout > 0 || has_flag(item, OF_NO_FUEL)
+}
+
+// Innate radius plus the light modifier (player-calcs.c:calc_light).
+fn light_contribution(item: &BorgItem) -> i32 {
+    let innate = if has_flag(item, OF_LIGHT_2) {
+        2
+    } else if has_flag(item, OF_LIGHT_3) {
+        3
+    } else {
+        0
+    };
+    innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
+}
+
+fn best_light(
+    pack: &[BorgItem],
+    other_radius: i32,
+    can_refuel: impl Fn(&BorgItem) -> bool,
+) -> Option<usize> {
     pack.iter()
         .enumerate()
         .filter(|(_, item)| {
             item.iqty != 0
                 && u32::from(item.tval) == TV_LIGHT
                 && !item.cursed
-                && (powered(item) || (refillable(item) && fuel_slot.is_some()))
-                && radius - current + contribution(item) > 0
+                && (light_powered(item) || can_refuel(item))
+                && other_radius + light_contribution(item) > 0
         })
-        .max_by_key(|(slot, item)| (powered(item), contribution(item), std::cmp::Reverse(*slot)))
-        .map(|(slot, _)| LightAction::Wear(slot))
+        .max_by_key(|(slot, item)| (light_powered(item), light_contribution(item), std::cmp::Reverse(*slot)))
+        .map(|(slot, _)| slot)
+}
+
+/// Replace a harmful light in one wield command. The spare must already
+/// have power, and its contribution plus the rest of the worn gear must
+/// leave a positive radius (as in `light_action`).
+pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> Option<usize> {
+    let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
+    best_light(pack, radius - current, |_| false)
 }
 
 /// Restore carried light without relying on ordinary equipment power or wear cooldowns.
@@ -890,7 +934,9 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
         spell_ok = true;
     }
 
-    let light = st.borg.tr(BI_LIGHT);
+    /* borg-reborn-rs (#884): "my light" is the Borg's own light radius
+     * (BI_LIGHT, C's, at cave_light_engine_radius 0; BI_LIGHT - 1 at 1) */
+    let light = own_light_radius(st);
     let (cx, cy) = (st.borg.c.x, st.borg.c.y);
 
     /* The four directions in C's order: north, south, east, west. Each
@@ -976,12 +1022,37 @@ mod dark_entry_tests {
             (10, 12) => Unknown,
             _ => Blocked,
         };
-        assert!(dark_frontier((10, 10), (0, 1), 1, grid));
-        assert!(dark_frontier((10, 10), (0, 0), 1, grid));
-        assert!(!dark_frontier((10, 10), (0, -1), 1, grid));
-        assert!(!dark_frontier((10, 10), (0, 1), 2, grid));
-        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Unknown));
-        assert!(!dark_frontier((10, 10), (0, 1), 1, |_, _| Floor));
+        assert!(dark_frontier((10, 10), (0, 1), 1, false, grid));
+        assert!(dark_frontier((10, 10), (0, 0), 1, false, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, false, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 2, false, grid));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, false, |_, _| Unknown));
+        assert!(!dark_frontier((10, 10), (0, 1), 1, false, |_, _| Floor));
+        // The engine's shape gives the same rays at radius 1.
+        assert!(dark_frontier((10, 10), (0, 1), 1, true, grid));
+        assert!(!dark_frontier((10, 10), (0, -1), 1, true, grid));
+    }
+
+    /// #884 (review of #894): with the engine's shape a lantern (radius 2)
+    /// lights two orthogonal steps but one diagonal step, (2,2) being at
+    /// distance 3; C's shape counts two steps on every ray.
+    #[test]
+    fn lit_steps_follow_the_engine_distance() {
+        assert_eq!(lit_steps((0, 1), 2, true), 2);
+        assert_eq!(lit_steps((1, 1), 2, true), 1);
+        assert_eq!(lit_steps((1, 1), 1, true), 1);
+        assert_eq!(lit_steps((1, 1), 3, true), 2);
+        assert_eq!(lit_steps((1, 1), 2, false), 2);
+        use FrontierGrid::{Blocked, Floor, Unknown};
+        // Diagonal at radius 2: (1,1) floor and (2,2) unknown is the
+        // frontier with the engine's shape, not with C's.
+        let grid = |y, x| match (y, x) {
+            (11, 11) => Floor,
+            (12, 12) => Unknown,
+            _ => Blocked,
+        };
+        assert!(dark_frontier((10, 10), (1, 1), 2, true, grid));
+        assert!(!dark_frontier((10, 10), (1, 1), 2, false, grid));
     }
 
     #[test]
@@ -1038,6 +1109,20 @@ mod lightless_tests {
         );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
+    #[test]
+    fn cursed_light_swap_counts_light_from_other_gear() {
+        let mut cursed_torch = light(&[OF_LIGHT_2], 100);
+        cursed_torch.cursed = true;
+        let dim_spare = light(&[], 30);
+
+        // The spare cannot light the Borg on its own. Other gear can.
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[dim_spare], 2), None);
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[dim_spare], 3), Some(0));
+
+        let empty_spare = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 0);
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[empty_spare], 3), None);
+    }
+
     #[test]
     fn wears_the_brightest_powered_spare() {
         let empty = blank_item();

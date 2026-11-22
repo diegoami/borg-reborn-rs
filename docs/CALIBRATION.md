@@ -10,6 +10,37 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Confused attack on the grey mushroom patch, shipped (#901)
+
+No parameter added; shipped values changed. Owner, 2026-11-22, after #867
+and #869: "once you are close to him, you attack with your best attack";
+then, for the point-blank divisor, "override that setting for classes that
+are supposed to melee ... melee is infinite, flasks are not".
+
+- **`attack_confused_by_direction`** 0 → **1** (compiled 0). Confused, the
+  Borg also throws, shoots and uses wands, rods and staves at an adjacent
+  monster, by direction key, at the 11/32 confused aim; the cure waits next
+  to an immobile non-unique confuser while an attack is open. See "Confused
+  attacks by direction (#867)" below.
+- **`attack_throw_point_blank_divisor`** 0 → **1** in the common file, with
+  **0** for Warrior, Blackguard, Paladin and Rogue (their class files). 0
+  inherits `attack_arrow_point_blank_divisor` (5; Rogue 3).
+  - At 1 an adjacent non-unique throw rated with `attack_throw_as_melee` is
+    not divided in the ordinary attack chooser (#870), so a caster throws oil
+    at point blank. Attack on sight already bypassed it.
+  - The engine's flask: 1d4 x 3 (`THROWING`, 2 + weight/12) x 3 (`EXPLODE`,
+    `player-attack.c:1296`), about 22 a hit.
+  - At 1 for everyone, the smoke Warrior (CL2-3, the starting Dagger, 1d4)
+    threw oil at an adjacent white worm mass, rated 84 against a full round
+    of blows' 43. The melee classes keep the penalty: a workaround until
+    flasks are spent only when needed (#912).
+- Unchanged and kept 0: `caution_ranged_vs_immobile` (a confused step away
+  would pre-empt the attack, #896) and `caution_ranged_only`.
+
+Not measured: borg-zoo#636 (arms `confused` and `confused-pb`; the class
+split is not one of its arms). Shipped on the owner's decision before the
+measurement; a hypothesis until the zoo reports (RULES 14).
+
 ## Confused attacks by direction (#867)
 
 The registry now holds **2374** parameters (2373 before; one added). Owner,
@@ -5864,8 +5895,36 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
 - **`cave_light_engine_radius`** (compiled 0, shipped 0). 1 = the engine's
   radius, `cur_light - 1` (never below 0), and the radius-2 and radius-3+
   blocks of `borg_update_light` follow it. A necromancer at `cur_light <= 1`
-  sees by unlight (src/cave-view.c:777–779) and keeps C's radius. 0 = C's
+  sees by unlight (src/cave-view.c:777–779) and keeps C's radius. With 1, a
+  non-necromancer whose light slot is empty still lights the map from other
+  equipped gear (`BI_LIGHT > 0`, src/player-calcs.c:1624–1644; #888, kept by
+  the owner on 2026-11-22). 0 = C's
   radius, today's play. The zoo measures it (RULES 14, 20) before it ships.
+- With 1 the grids lit also take the engine's shape, `distance() <= radius`
+  (#884): radius 2 lights the grids at distance 2, (2,0) and (2,1), each in
+  line of sight for light on the Borg's map (`borg_los_light`, as `add_light`
+  tests `los()` per grid, src/cave-view.c:625-640, through projectable grids
+  only: not through passable rubble, a closed door or unknown terrain), where
+  C lights (2,2) north and south (distance 3) and
+  misses (2,1); C's floor-gated (3,3) corners (distance 4) go, and the
+  radius-3+ box skips grids by distance <= 2, so (2,2) is lit at radius 3.
+  The code that looks at the edge of the light reads the same radius
+  (`own_light_radius`): `borg_flow_dark_2` (just outside the light,
+  `borg_flow_dark.rs`), the dark frontier (#796; each ray's lit steps by
+  engine distance, so a lantern's diagonal ray has one lit step) and Light Beam
+  (`borg_light.rs`), and Call Light's radius-1 / radius-2+ branches
+  (`borg_check_light_only`), so a torch takes the radius-1 corner test and
+  a lantern the 5x5 lit-floor count. `BI_LIGHT` 1 (a Ring of Light,
+  `object.txt:2132`, without a light source) is radius 0 and keeps C's corner
+  test; only no light at all calls light without a test, as in C.
+- Evidence, one run (review of #894, not a measurement): CI's death case,
+  Mage seed 1016 to 100,000 turns (`.github/workflows/ci.yml`, the
+  `core-trace-death` run), dies at turn 23,211 to an apprentice at 0 and
+  survives to the cap (CL4, DL2) at 1. That run uses
+  `BORG_CORE_OVERRIDES=off`, so it reads `borg-core/borg.txt` and the compiled
+  default: shipping 1 in `harness/borg.txt` does not touch it, but changing the
+  compiled default to 1 makes its `assert cases` fail. That job then needs
+  another seed, or a check that tolerates a survivor.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
