@@ -778,7 +778,12 @@ fn is_floor(st: &BorgState, x: i32, y: i32) -> bool {
 /// the wall we ran into but also might be.
 ///
 /// Warning -- This will only work for locations on the current panel
-pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
+///
+/// borg-reborn-rs (#929): with `skip_player` (`update_miss_wall_guess` =
+/// 1) no grid is written under the Borg: the walk starts at its first step,
+/// and the step back from a reached target is not written when it is the
+/// Borg's grid (an adjacent target). C writes granite there.
+pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32, skip_player: bool) -> bool {
     let mut y_hall = false;
     let mut x_hall = false;
 
@@ -828,6 +833,10 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
         y_hall = true;
     }
 
+    if skip_player && (n_x != x || n_y != y) {
+        borg_inc_motion(&mut n_y, &mut n_x, cy, cx, y, x);
+    }
+
     loop {
         let kill_idx = st.cave.grid(n_x, n_y).kill;
         let kill = st.kills.kills[usize::from(kill_idx)];
@@ -862,6 +871,12 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32) -> bool {
             /* end of the pathway */
             let (cy, cx) = (st.borg.c.y, st.borg.c.x);
             borg_inc_motion(&mut n_y, &mut n_x, y, x, cy, cx);
+            if skip_player && n_x == cx && n_y == cy {
+                /* borg-reborn-rs (#929): nothing between the Borg and
+                 * the target to guess */
+                borg_note(st, "# No wall to guess: the target is next to the Borg (#929)");
+                return false;
+            }
             borg_note(
                 st,
                 &format!("# Guessing wall ({},{}) near target ({},{})", n_y, n_x, y, x),

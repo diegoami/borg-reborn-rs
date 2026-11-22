@@ -41,6 +41,7 @@ use crate::borg_flow_take::{
 use crate::borg_io::{borg_note, borg_note_bytes};
 use crate::borg_item_wear::borg_clear_best;
 use crate::borg_projection::{borg_los, borg_target_unknown_wall};
+use crate::params::{value as param, Param};
 use crate::engine;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::BORG_AUTOSAVE;
@@ -1733,12 +1734,39 @@ fn handle_messages(st: &mut BorgState) -> i32 {
     // prohibits a ranged attack.
     if st.fight_attack.successful_target < 0 && st.fight_attack.successful_target > -10 {
         st.fight_attack.successful_target -= 10;
-        if borg_target_unknown_wall(st, st.borg.goal.g.y, st.borg.goal.g.x) {
+        // borg-reborn-rs (#929): with update_miss_wall_guess = 1 a miss at
+        // a monster in view is not a wall, and no guess lands on the
+        // Borg's own grid.
+        let guard = param(Param::update_miss_wall_guess) != 0;
+        let missed = if guard { missed_visible_target(st) } else { None };
+        if let Some(age) = missed {
+            let g = st.borg.goal.g;
+            borg_note(st, &format!("# Missed a monster in view at ({},{}), seen {} ago: a miss, not a wall (#929)", g.y, g.x, age));
+            st.fight_attack.successful_target = 2;
+        } else if borg_target_unknown_wall(st, st.borg.goal.g.y, st.borg.goal.g.x, guard) {
             st.fight_attack.successful_target = 2;
         }
     }
 
     hit_dist
+}
+
+/// borg-reborn-rs (#929): the targeted grid holds a monster the Borg saw
+/// at the shot (`when` at most one think ago) and has in view. The engine
+/// stops a missile only before a grid that is neither passable nor
+/// projectable (player-attack.c:1101-1108), so the shot reached that grid;
+/// a thrown or fired miss (`make_ranged_throw`, player-attack.c:1278-1280:
+/// `test_hit` failed) prints no message. Returns how many thinks ago the
+/// monster was seen.
+fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
+    let g = st.borg.goal.g;
+    let ag = st.cave.grid(g.x, g.y);
+    if ag.kill == 0 || ag.info & BORG_VIEW == 0 || (g.x == st.borg.c.x && g.y == st.borg.c.y) {
+        return None;
+    }
+    let kill = &st.kills.kills[usize::from(ag.kill)];
+    let age = borg_timer(st, kill.when);
+    (kill.r_idx != 0 && (0..=1).contains(&age)).then_some(age)
 }
 
 /// One message of the "monsters at the goal" pass (use 2).
