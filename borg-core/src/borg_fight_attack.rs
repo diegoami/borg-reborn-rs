@@ -3233,7 +3233,7 @@ fn borg_attack_aux_spell_bolt_reserve(
     // per missing point (player-spell.c:404-406), which the faked mana below
     // hides. With attack_reserve_spell_overexert = 0 the Borg never casts
     // beyond its current SP.
-    if !reserve_cast_allowed(param(Param::attack_reserve_spell_overexert), sv_mana, borg_get_spell_power(st, spell)) {
+    if !reserve_cast_allowed(param(Param::attack_reserve_spell_overexert), sv_mana, borg_get_spell_power(st, spell).max(1)) {
         return 0;
     }
 
@@ -3354,6 +3354,12 @@ mod reserve_tests {
         assert!(!reserve_cast_allowed(0, 2, 3));
         assert!(reserve_cast_allowed(0, 1, 1), "within the current mana it is an ordinary cast");
         assert!(reserve_cast_allowed(1, 0, 1), "default: the C Borg's overexertion cast, today's play");
+    }
+
+    #[test]
+    fn overexertion_default_retains_todays_play() {
+        use crate::params::{Param, SPECS};
+        assert_eq!(SPECS[Param::attack_reserve_spell_overexert as usize].default, 1);
     }
 }
 

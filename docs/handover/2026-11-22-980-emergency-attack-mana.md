@@ -39,13 +39,32 @@ shipped `harness/borg.txt` plus the zoo report's overrides:
 - Smoke: 3/3 identical to `smoke-borg-rs`. fmt, clippy, the workspace tests
   and the borg-core release tests pass. `borg-core-vendor.py check` is ok.
 
+**Review (Mavis, MiniMax M3.1, on #991 at 5517892d), processed.**
+- I fixed the 32 citations that the inserted lines moved
+  (`check-param-citations.py --fix`; the CI blocker).
+- The cost at the gate is now normalised with `.max(1)`.
+- A test pins the default to 1.
+- CALIBRATION now names the `= 0` override, the registry count (2377) and the
+  CON damage. `PY_EXERT_CON` is CON damage, not confusion as the review says
+  (`player-util.c:825-832`).
+- The branch name stays `task/980-...`, the form the owner's brief for this
+  session gave.
+- The PR body's footer was added by the posting tool; I removed it.
+
+**How the `= 0` arm was played.** The shipped `harness/borg.txt`, plus the zoo
+report's overrides, plus the line
+`borg_param_attack_reserve_spell_overexert = 0` appended to the run's
+`user/borg.txt`. The key is not in the shipped file, so `BORG_TXT_SET` cannot
+reach it, and the added line changes `borg_txt_sha256`. After the review
+fixes, the hashes are the same: `b13a6f0fc76ff016` at default and
+`f115048321c12344` at `= 0`.
+
 **Left.**
 - #990: the crow death that remains on 592754909.
-- The zoo has to measure `= 0` (a borg-zoo request issue, not filed by this
-  session).
-- I did not change the last-ditch escapes in `borg_escape.rs:1778`. They fake
-  the mana the same way (Teleport, Portal, Phase Door), but they are
-  outside #980.
-- The replays are not yet in borg-cemetery.
+- #1013: the last-ditch escapes fake the mana the same way
+  (`borg_escape.rs:1778`).
+- #1014: the focused ranking ignores `uses = Some(0)`.
+- The zoo measurement: borg-zoo request issue, linked from PR #991.
+- The replays are not in borg-cemetery yet.
 
 **Owner decides.** Whether to ship `attack_reserve_spell_overexert = 0`, after the zoo.

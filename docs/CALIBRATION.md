@@ -4996,7 +4996,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5723` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5761` |
 
 ## C Borg dive gates (#768)
 
@@ -6183,7 +6183,9 @@ lacks the mana for it, with its mana faked to the maximum for the fail check.
 The engine always faints the caster of such a spell (`player-spell.c:540-553`:
 `player_over_exert(PY_EXERT_FAINT, 100, 5 * oops + 1)`, a paralysis that free
 action does not stop) and adds 5% fail per missing point (`player-spell.c:404-406`),
-which the faked mana hides. The kill test uses twice the missile's average
+which the faked mana hides; it also damages CON half the time
+(`player_over_exert(PY_EXERT_CON, 50, 0)`, permanent only at chance 50 or more
+with a second roll, `player-util.c:825-832`). The kill test uses twice the missile's average
 damage plus 4 (`(((CL-1)/5)+3)*(4+1)` against `power`), so a monster that
 survives the cast gets free turns. The #842 attack-on-sight path chose it for
 crows (592754909 on track-p, 1378676237 on main f57499d0).
@@ -6193,5 +6195,12 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 | `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3236` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
-Not shipped; the zoo measures it (a request issue). The two replays are in the
-#980 PR.
+Not shipped; the zoo measures it (a request issue). The four replays are
+listed in PR #991; the games are the zoo report's (borg-zoo#668), not yet in
+borg-cemetery. The `= 0` arm is the shipped `harness/borg.txt` plus the line
+`borg_param_attack_reserve_spell_overexert = 0` in the run's `user/borg.txt`
+(the key is not in the shipped file, so `BORG_TXT_SET` cannot reach it, and the
+added line changes the run's `borg_txt_sha256`).
+
+The registry now holds **2377** parameters (2376 on track-p `4b2c2fcf` before
+it; one added).
