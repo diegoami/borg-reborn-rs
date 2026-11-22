@@ -6115,3 +6115,20 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
 | `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+
+## No retreat from a faster monster in contact (#916)
+
+The strategic retreat steps toward a happier grid in view. From a monster
+faster than the Borg the step buys nothing: the monster reaches the new grid in
+the same turn. C's own test for a grid next to a faster monster has no effect
+(its `break` leaves only the inner scan), and it reads the base speed. Seed
+2008390085 (borg-zoo#596) retreated one grid from hasted cave spiders (+20
+against +0) at HP 23 and HP 7, before Phase Door and the outmatched cure.
+At 1 the retreat is refused then, and also toward a destination whose danger
+is still at or above the HP. Compiled and shipped 0; the margin 5 is a
+hypothesis.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `caution_retreat_from_faster` | 0 | flag | 0–1 | `borg_caution.rs:1158` |
+| `caution_retreat_faster_margin` | 5 | speed points | 0–40 | `borg_caution.rs:1160` |
