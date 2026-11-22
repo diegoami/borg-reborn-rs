@@ -36,8 +36,8 @@ tasks, what each verified, what was not checked and the open questions,
 and carries the review prompt, pinned to an exact commit, posted on the
 PR. The owner names the reviewer (RULES 6; a milestone review: the owner,
 or a model of another family from the one that wrote most of the
-milestone), the session may run that review and post it, and the findings
-are posted on the PR. The
+milestone), the session may launch that reviewer, and the reviewer posts
+its findings on the PR itself (RULES 6). The
 **owner merges** the review PR (or tells a session to), which advances
 `reviewed`, and an annotated tag `mN` is recorded on the merge. The findings
 become issues in the next milestone.
