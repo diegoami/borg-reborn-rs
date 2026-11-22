@@ -978,10 +978,12 @@ fn urgent_fits(c: &Candidate, pack_slots: Option<i32>, weight_room: Option<i64>)
 /// fits; the selector then skips an urgent copy that does not fit (#955) and
 /// makes room for it when it can. When that leaves the visit with nothing to
 /// do (`LEAVE`) because an urgent ware does not fit and no room can be made,
-/// the urgent needs are chosen again without the blocked wares
-/// (`rebudget(blocked)`), so an affordable cure that fits is bought rather
-/// than lost to a Recall the pack cannot take. When the room can be made, or
-/// the blocked ware fits, nothing changes.
+/// the urgent needs are chosen again without every ware that does not fit
+/// now (`rebudget(unfit)`, review of #973: not only the blocked ones, or the
+/// second pass can pick another ware that does not fit), so an affordable
+/// cure that fits is bought rather than lost to a Recall the pack cannot
+/// take. When the room can be made, or the blocked ware fits, nothing
+/// changes. One retry at most.
 #[allow(clippy::too_many_arguments)]
 pub fn live_selection(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput, facts: &[WareFact], kit: &[KitItem],
@@ -990,11 +992,11 @@ pub fn live_selection(
 ) -> (i64, [i64; 4], i64, bool) {
     let first = first_executable_action(candidates, urgent, out, facts, kit, home_slots, pack_slots, weight_room);
     if first.0 != action::LEAVE { return first; }
-    let blocked: Vec<usize> = urgent.iter()
-        .filter(|f| !urgent_fits(&candidates[f.candidate], Some(pack_slots), Some(weight_room)))
-        .map(|f| f.candidate).collect();
-    if blocked.is_empty() { return first; }
-    let others = rebudget(&blocked);
+    let fits = |c: &Candidate| urgent_fits(c, Some(pack_slots), Some(weight_room));
+    if urgent.iter().all(|f| fits(&candidates[f.candidate])) { return first; }
+    let unfit: Vec<usize> = candidates.iter().enumerate()
+        .filter(|(_, c)| c.qty > 0 && !fits(c)).map(|(i, _)| i).collect();
+    let others = rebudget(&unfit);
     if others.is_empty() { return first; }
     let second = first_executable_action(candidates, &others, out, facts, kit, home_slots, pack_slots, weight_room);
     if second.0 == action::LEAVE { first } else { second }
@@ -1928,7 +1930,7 @@ mod tests {
         let recall=0;let cure=cs.iter().position(|c| c.kind==CLW).unwrap();
         cs[recall].weight=5;cs[recall].slots_cost=1;cs[cure].weight=4;cs[cure].slots_cost=1;
         let urgent=[UrgentPurchase {candidate:recall,needs:vec![Need::Trip]}];
-        let cure_set=|blocked:&[usize]| { assert_eq!(blocked,[recall]); vec![UrgentPurchase {candidate:cure,needs:vec![Need::Poison]}] };
+        let cure_set=|unfit:&[usize]| { assert!(unfit.contains(&recall) && !unfit.contains(&cure)); vec![UrgentPurchase {candidate:cure,needs:vec![Need::Poison]}] };
         // Four tenths free: the Recall does not fit, the cure does.
         let (a,act,_,now)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,cure_set);
         assert_eq!((a,act[1],now),(action::BUY,i64::from(cs[cure].slot),true));
@@ -1937,6 +1939,38 @@ mod tests {
         assert_eq!((a,act[1]),(action::BUY,i64::from(cs[recall].slot)));
         // Nothing else urgent and affordable: the visit still leaves.
         let (a,..)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,|_:&[usize]| Vec::new());
+        assert_eq!(a,action::LEAVE);
+    }
+
+    /// Review of #973: the retry leaves out every ware that does not fit, not
+    /// only the blocked one, so it cannot pick a second ware that does not
+    /// fit either. The real urgent budgeter: 150 gold, the Recall (125 gold,
+    /// 5 tenths) first; a 75-gold cure at 4 tenths and a 140-gold cure at 1
+    /// tenth; one tenth free. Leaving out only the Recall, the budgeter picks
+    /// the cheaper, heavier cure and the visit leaves; the fix buys the light
+    /// one.
+    #[test]
+    fn the_urgent_retry_leaves_out_every_ware_that_does_not_fit() {
+        use crate::borg_town_budget::Facts;
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        out.dispositions.clear();out.solution.chosen.fill(0);out.ranged_purchase=None;
+        let ware=|slot:u8,kind:u32,price:i32,weight:i32| Candidate { shop:5,slot,kind,tval:0,sval:0,price,qty:1,
+            weight,slots_cost:1,stack_count:0,class:u16::from(slot) };
+        let (recall,light)=(0usize,2usize);
+        let mut shop=Stock::default();
+        shop.candidates=vec![ware(0,900,125,5),ware(1,901,75,4),ware(2,902,140,1)];
+        let serves=|c:&Candidate| if c.kind==900 { vec![Need::Trip] } else { vec![Need::Poison] };
+        let facts=Facts { gold:150, pack_capacity:23, home_capacity:24, carry:2000, weight:0 };
+        let needs=[Need::Poison,Need::Trip];
+        let first=Budget::build(&facts,&shop,&needs,serves);
+        assert_eq!(first.urgent.iter().map(|f| f.candidate).collect::<Vec<_>>(),[recall]);
+        let rebudget=|unfit:&[usize]| { let mut s=shop.clone(); for &i in unfit { s.candidates[i].qty=0; } Budget::build(&facts,&s,&needs,serves).urgent };
+        let (a,act,_,now)=live_selection(&shop.candidates,&first.urgent,&out,&[],&[],1,1,1,rebudget);
+        assert_eq!((a,act[1],now),(action::BUY,i64::from(shop.candidates[light].slot),true));
+        // The old retry (the blocked Recall only) picks the heavy cure: LEAVE.
+        let only_blocked=|_:&[usize]| { let mut s=shop.clone(); s.candidates[recall].qty=0; Budget::build(&facts,&s,&needs,serves).urgent };
+        let (a,..)=live_selection(&shop.candidates,&first.urgent,&out,&[],&[],1,1,1,only_blocked);
         assert_eq!(a,action::LEAVE);
     }
 
