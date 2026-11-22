@@ -1,7 +1,7 @@
 # 2026-11-22 — #916: no strategic retreat from a faster monster in contact
 
 **Issue:** diegoami/borg-reborn-rs#916. **Branch:** `task/T916-retreat-faster` (from `track-p`
-`86843a79`, `track-p` `b7acbdec` merged in). Track P, P8: this PR merges into `track-p` once the
+`86843a79`; `track-p` merged in at `b7acbdec` and `b784409e`). Track P, P8: this PR merges into `track-p` once the
 owner says its review is done.
 
 Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/claude/happy-brahmagupta-2jcsa3/studies/fastfrag-cave-spiders-2008390085/README.md)
@@ -20,8 +20,9 @@ includes the timed haste, `player-calcs.c:2176-2187`) against the monster's `msp
 its `MON_TMD_FAST` timer runs. It reads neither `BI_SPEED` nor `temp.fast`, so #941/PR #947 does
 not change what it reads; #947 changes only how often the Borg is hasted.
 
-`track-p` `b7acbdec` merged in: both sides kept in `borg_caution.rs` (#881's `RetreatExits`),
-`params.rs` and `CALIBRATION.md`, then `check-param-citations.py --fix` (0 errors).
+`track-p` merged in twice: at `b7acbdec` both sides kept in `borg_caution.rs` (#881's
+`RetreatExits`), `params.rs` and `CALIBRATION.md`; at `b784409e` (#915, #1030, #1046) only
+`CALIBRATION.md` conflicted (both sections kept). Then `check-param-citations.py --fix` (0 errors).
 
 ## Why it stays 0
 
@@ -34,8 +35,9 @@ not change what it reads; #947 changes only how often the Borg is hasted.
   where the Phase rule says the fight is not lost, so the Borg attacks instead of stepping; a +10
   monster acts twice per Borg action, so the step did cost it a move. The third dies 15,000 turns
   after its only changed decision (divergence). Details in `docs/CALIBRATION.md` and the PR.
-- On the merged head the switch changes no named case's outcome: 2008390085 (shipped and
-  stats-ban arm) and 224 play the same keys off and on. With #947 merged in (a local scratch
+- On the merged head the switch changes no named case's outcome. At `b7acbdec`: 2008390085
+  (shipped and stats-ban arm) and 224 play the same keys off and on. At `b784409e`: 2008390085
+  the same keys off and on (both arms); 224 plays differently and lives either way (CL11, max DL6). With #947 merged in (a local scratch
   merge, never pushed) 2008390085 plays differently but lives either way (CL6, max DL3 off, DL2
   on); 224 plays the same keys.
 
