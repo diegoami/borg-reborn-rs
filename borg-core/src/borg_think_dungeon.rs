@@ -580,6 +580,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    crate::borg_flow::observe_flight_retreats(st);
     let mut b_j = -1;
     let lightless = crate::borg_lightless::update(st);
 
@@ -1134,13 +1135,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             && borg_flow_stair_more(st, GOAL_FLEE, false, false)
         {
             return choice!("borg_flow_stair_more");
-        }
-        // No stair route around the danger we just retreated from.
-        if crate::borg_flow::flight_avoids_retreat(st, GOAL_FLEE)
-            && crate::borg_caution::try_flight_recall(st, here, true)
-        {
-            borg_note(st, "# Fleeing by Recall after avoiding a retreat grid");
-            return choice!("recall_around_retreat_grid");
         }
     }
 

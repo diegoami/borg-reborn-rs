@@ -977,6 +977,12 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bool {
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        desperate_flow_with_route_guard(st, up, max_moves, why)
+    })
+}
+
+fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -3508,7 +3514,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // scroll and carries on: the flee flow walks it to the stairs, and it
     // still fights and heals on the way. Recall costs the scroll and 15-35
     // turns of waiting, often next to the monster it flees.
-    if try_flight_recall(st, pos_danger, false) {
+    if st.borg.goal.fleeing
+        && !st.borg.goal.fleeing_to_town
+        && st.borg.tr(BI_CDEPTH) >= 1
+        && !stairs_before_recall(st)
+        && !ranged_before_recall(st)
+        && !breeder_recall_held(st)
+        && recall_escape_allowed(st, Some(pos_danger))
+        && crate::borg_escape::borg_recall_for_flight(st)
+    {
         // Note
         borg_note(st, "# Fleeing the level (recall)");
 
@@ -3558,8 +3572,10 @@ fn stairs_before_recall(st: &mut BorgState) -> bool {
 /// elsewhere. Nothing is committed: the cost map is rebuilt by the next
 /// flow, and the danger marks are the ones that flow would make.
 fn stair_reachable(st: &mut BorgState) -> bool {
-    (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
-        || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
+            || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    })
 }
 
 /// Would the flee flows take a down staircase (their gates, not the path)?
@@ -5721,19 +5737,6 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
 /// bored ascent while fleeing, so the up-stair flow can opt in there too.
 pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
-}
-
-/// Keep the flight Recall gates when an excluded retreat grid leaves no
-/// stair route. Only the preference for known stairs can be bypassed.
-pub(crate) fn try_flight_recall(st: &mut BorgState, danger: i32, stair_route_blocked: bool) -> bool {
-    st.borg.goal.fleeing
-        && !st.borg.goal.fleeing_to_town
-        && st.borg.tr(BI_CDEPTH) >= 1
-        && (stair_route_blocked || !stairs_before_recall(st))
-        && !ranged_before_recall(st)
-        && !breeder_recall_held(st)
-        && recall_escape_allowed(st, Some(danger))
-        && crate::borg_escape::borg_recall_for_flight(st)
 }
 
 /// #932: remember a tactical retreat for this many Borg thinks during a

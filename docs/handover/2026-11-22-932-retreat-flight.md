@@ -16,3 +16,7 @@ covered by the route tests. Smoke matches 3/3 at shipped settings.
 
 The 128-think window is a Zoo pilot hypothesis. Owner acceptance is needed
 to merge the reviewed version into `track-p` and start the Zoo pilot.
+
+The review follow-up confirms landings before any new tactical action.
+Stair reachability for the existing ranged and Recall choices and both
+unweighted desperate-walk checks use the same exclusions as the route.
