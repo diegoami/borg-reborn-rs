@@ -6186,11 +6186,13 @@ The ranged and melee overkill caps (`borg_fight_attack.rs:694`, `:1629`)
 then score every attack on it 0, and the Borg stops shooting: a 2-HP grey
 mold hit for 2 by an arrow (Hobbit Ranger 282602274, turn 5444) was not
 shot again, `borg_flow_old` stepped next to it and its spores killed the
-Ranger. With `kill_live_zero_hp = 1` the floor also covers hp 0. The
+Ranger. With `kill_live_zero_hp = 1` the floor also covers hp 0; the flag
+needs `kill_live_min_power` above 0 (it ships at 1), and with the floor at 0
+it changes nothing. The
 focused fight planner (#759) already counts hp + 1 (`observed_kill_hp`).
 Compiled 0 and not shipped: today's play is unchanged until borg-zoo
 measures it.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `kill_live_zero_hp` | 0 | flag | 0–1 | `borg_flow_kill.rs:386` |
+| `kill_live_zero_hp` | 0 | flag | 0–1 | `borg_flow_kill.rs:387` |
