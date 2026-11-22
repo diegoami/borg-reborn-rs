@@ -58,3 +58,17 @@ Branch `task/T879-unseen-belief`, track P (P7, owner 2026-11-22), stacked on
   checked out in this session.
 - The zoo request is on the PR. The owner decides the shipped values after the
   result. The useful arms are both switches together and #877 alone.
+
+### Codex review follow-up
+
+- Synced #888 and regenerated parameter citations. Each applied projection
+  charges every positively scored unseen record once, including arcs and
+  splash damage. Quiver selection applies only its winning aim. A capped
+  record contributes no score even with a longer bolt-target age.
+- Score damage, kill bonuses and danger conditional on the monster being
+  there, then weight the contribution by belief. Added a unit test for
+  multiple contributions, weighted utility and a scoring penalty.
+- Checked the parameter citations and patch whitespace. The pull request
+  tracks the Rust, vendor and harness check results. Switch-on smoke only
+  checks that play completes. borg-zoo#625 measured the earlier head
+  `a516df64` and needs a new request at the merged track-p head.

@@ -683,8 +683,8 @@ idea ... target the mobile one"; "I would put them already on".
 | `caution_stairs_clean_path` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:977` |
 | `caution_stairs_block_danger_percent` | 50 | percent | 0–10000 | `borg_caution.rs:978` |
 | `caution_immobile_step_to_exit` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:1929` |
-| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:4881` |
-| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:4882` |
+| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5075` |
+| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5076` |
 
 ## Ranger arrows: a soft cap, then a diminishing curve (#716)
 
@@ -4918,7 +4918,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5627` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5680` |
 
 ## C Borg dive gates (#768)
 
@@ -5831,9 +5831,11 @@ hypotheses.
   unseen_decay_percent` per monster turn since it was seen (Borg turns × its
   energy / the Borg's, `extract_energy`), never below 0. After one unseen shot
   a sleeper counts as awake.
-- **`unseen_max_shots`** (3): at most this many unseen shots per sighting. The
-  engine names no monster the player cannot see ("It dies."), so a record shot
-  dead stays until the cap (a floating eye took three shots in the case below).
+- **`unseen_max_shots`** (3): at most this many unseen shots per sighting.
+  The chosen attack counts one shot per unseen record that contributed
+  positive utility, including records hit by an arc or splash damage. The
+  engine names no monster the player cannot see ("It dies."). The cap stops
+  the Borg from crediting a record after repeated shots.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

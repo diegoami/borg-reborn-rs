@@ -1608,9 +1608,65 @@ fn blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]> {
     engine::race_blow_effect_name(r_idx, k)
 }
 
+/// One aim and the unseen records that contributed positive utility to it.
+#[derive(Default)]
+struct ProjectedAttack {
+    score: i32,
+    aim: Option<loc>,
+    unseen: Vec<(usize, i32)>,
+}
+
+impl ProjectedAttack {
+    fn target(self, st: &mut BorgState, require_monster: bool) {
+        let Some(aim) = self.aim else { return };
+        st.borg.goal.g = aim;
+        let _ = borg_target(st, aim, require_monster);
+
+        // Count each record once, even if a projection encountered it twice.
+        let mut unseen = self.unseen;
+        unseen.sort_unstable_by_key(|&(k, _)| k);
+        unseen.dedup_by_key(|(k, _)| *k);
+        for (k, weight) in unseen {
+            let kill = st.kills.kills[k];
+            crate::borg_unseen_belief::note_shot(st, k);
+            borg_note(
+                st,
+                &format!(
+                    "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
+                    engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
+                    kill.pos.y,
+                    kill.pos.x,
+                    borg_timer(st, kill.when),
+                    weight
+                ),
+            );
+        }
+    }
+}
+
+fn expected_score(score: i32, belief: Option<i32>) -> i32 {
+    match belief {
+        Some(weight) => (i64::from(score) * i64::from(weight) / 100) as i32,
+        None => score,
+    }
+}
+
+fn score_projection_target(
+    unseen: &mut Vec<(usize, i32)>, i: i32, score: i32, belief: Option<i32>,
+) -> i32 {
+    let expected = expected_score(score, belief);
+    if let Some(weight) = belief.filter(|_| expected > 0) {
+        unseen.push((i as usize, weight));
+    }
+    expected
+}
+
 /// Simulate / Invoke the launching of a bolt at a monster
 /// (`borg_launch_bolt_aux_hack`).
-fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32) -> i32 {
+fn borg_launch_bolt_aux_hack(
+    st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32,
+    unseen: &mut Vec<(usize, i32)>,
+) -> i32 {
     let mut walls = 0;
     let mut unknown = 0;
 
@@ -1631,7 +1687,11 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     /* Require current knowledge */
     // borg-reborn-rs (#879): or a monster believed at its last grid.
     let belief = crate::borg_unseen_belief::believed_weight(st, i as usize);
-    if borg_timer(st, kill.when) > param(Param::attack_bolt_max_target_age) && belief.is_none() {
+    let age = borg_timer(st, kill.when);
+    if belief.is_none()
+        && (age > param(Param::attack_bolt_max_target_age)
+            || (param(Param::unseen_belief) != 0 && !kill.seen && age > param(Param::attack_max_target_age)))
+    {
         return 0;
     }
 
@@ -1680,25 +1740,23 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     /* Calculate damage */
     let mut d = borg_launch_damage_one(st, i, dam, typ, ammo_location);
 
-    // borg-reborn-rs (#879): weighted by the chance it is still there.
-    if let Some(w) = belief {
-        d = d * w / 100;
-    }
-
-    /* Return Damage, on Teleport Other, true damage is
-     * calculated elsewhere */
-    if typ as u32 == BORG_ATTACK_AWAY_ALL || typ as u32 == BORG_ATTACK_AWAY_ALL_MORGOTH {
+    /* Teleport Other's danger reduction is calculated by the caller.
+     * A bolt stops at the first record on the path. */
+    if typ as u32 == BORG_ATTACK_AWAY_ALL {
+        if let Some(weight) = belief.filter(|_| d > 0) {
+            unseen.push((i as usize, weight));
+        }
         return d;
     }
 
-    /* Return Damage as pure danger of the monster */
-    if typ as u32 == BORG_ATTACK_AWAY_EVIL {
-        return d;
+    /* These attacks already score the monster's danger. */
+    if typ as u32 == BORG_ATTACK_AWAY_ALL_MORGOTH || typ as u32 == BORG_ATTACK_AWAY_EVIL {
+        return score_projection_target(unseen, i, d, belief);
     }
 
     /* Return 0 if the true damage (w/o the danger bonus) is 0 */
     if d <= 0 {
-        return d;
+        return expected_score(d, belief);
     }
 
     /* Calculate danger (at the monster's grid: `x`, `y` are still the
@@ -1708,7 +1766,7 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     /* Avoid waking most "hard" sleeping monsters */
     if !kill.awake && p2 > avoid(st) / param(Param::attack_bolt_sleep_danger_divisor) && d < i32::from(kill.power) {
-        return -999;
+        return expected_score(-999, belief);
     }
 
     /* Ignore sleeping town monsters */
@@ -1733,17 +1791,19 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     let p1 = town_danger_bonus(st, usize::from(r), p1);
 
     // borg-reborn-rs (#584): the true damage, at most the monster's HP.
-    st.fight_attack.dmg_acc += if st.fight_attack.focused_target.is_some() { d.max(0) }
+    let damage = if st.fight_attack.focused_target.is_some() { d.max(0) }
         else { d.clamp(0, i32::from(kill.power).max(0)) };
-    st.fight_attack.kill_acc += kill_fraction(d, i32::from(kill.power));
+    st.fight_attack.dmg_acc += expected_score(damage, belief);
+    st.fight_attack.kill_acc += kill_fraction(d, i32::from(kill.power))
+        * (f64::from(belief.unwrap_or(100)) / 100.0);
 
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
         d *= param(Param::attack_bolt_kill_multiplier);
     }
 
-    /* Add in dangers */
-    d + p1
+    /* Score damage and danger conditional on the monster being there. */
+    score_projection_target(unseen, i, d + p1, belief)
 }
 
 /// Determine the penalty for destroying stuff by launching a spell at it
@@ -1858,6 +1918,7 @@ fn borg_launch_bolt_at_location(
     typ: i32,
     max: i32,
     ammo_location: i32,
+    unseen: &mut Vec<(usize, i32)>,
 ) -> i32 {
     /* Extract panel */
     let q_x = st.core.w_x / borg_panel_wid();
@@ -1915,7 +1976,7 @@ fn borg_launch_bolt_at_location(
 
         /* Collect damage (bolts/beams) */
         if rad <= 0 {
-            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam, typ, ammo_location);
+            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam, typ, ammo_location, unseen);
         }
 
         /* Check for arrival at "final target" */
@@ -2047,7 +2108,7 @@ fn borg_launch_bolt_at_location(
             }
 
             /* Collect damage, lowered by distance */
-            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, ammo_location);
+            n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, ammo_location, unseen);
 
             /* probable damage int was just changed by b_l_b_a_h*/
 
@@ -2070,6 +2131,17 @@ fn borg_launch_bolt_at_location(
 /// and "balls" have a "rad" of "2" or "3", depending on "blast radius".
 ///  dispel spells have a rad  of 10
 pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> i32 {
+    let attack = choose_bolt(st, rad, dam, typ, max, ammo_location);
+    let score = attack.score;
+    if !simulating(st) {
+        attack.target(st, typ as u32 == BORG_ATTACK_CURSE);
+    }
+    score
+}
+
+fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> ProjectedAttack {
+    let mut unseen = Vec::new();
+    let mut best_unseen = Vec::new();
     let mut b_i: i32 = -1;
     let mut b_n: i32 = -1;
     let mut b_o_y = 0;
@@ -2104,6 +2176,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 /* Reset Teleport Other variables */
                 st.fight_attack.tp_other_n = 0;
                 let mut n = 0;
+                unseen.clear();
                 st.fight_attack.dmg_acc = 0;
                 st.fight_attack.kill_acc = 0.0;
 
@@ -2127,7 +2200,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 
                 /* Consider it if its a ball spell or right on top of it */
                 if (rad >= 2 && u32::from(grid(st, x, y).feat) != FEAT_NONE) || (y == ty && x == tx) {
-                    n = borg_launch_bolt_at_location(st, y, x, rad, dam, typ, max, ammo_location);
+                    n = borg_launch_bolt_at_location(st, y, x, rad, dam, typ, max, ammo_location, &mut unseen);
                 }
 
                 /* Teleport Other is now considered */
@@ -2141,7 +2214,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                     /* since this is the danger after monster removal */
                     /* and dam for tel away is the previous danger */
                     /* we want the biggest reduction in danger */
-                    n = dam - n;
+                    n = expected_score(dam - n, unseen.first().map(|&(_, weight)| weight));
                 }
 
                 /* Reset Teleport Other variables */
@@ -2173,6 +2246,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 b_o_y = o_y;
                 b_o_x = o_x;
                 b_d = d;
+                std::mem::swap(&mut best_unseen, &mut unseen);
                 st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
                 st.fight_attack.kill_best = st.fight_attack.kill_acc;
             }
@@ -2180,49 +2254,16 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
         i += 1;
     }
     if b_i == -1 {
-        return 0;
+        return ProjectedAttack::default();
     }
 
-    /* Reset Teleport Other variables */
     st.fight_attack.tp_other_n = 0;
-
-    /* Simulation */
-    if simulating(st) {
-        return b_n;
-    }
-
-    /* Save the location */
     let (ty, tx) = st.flow.temp_at(b_i as usize);
-    st.borg.goal.g.x = tx + b_o_x;
-    st.borg.goal.g.y = ty + b_o_y;
-
-    // borg-reborn-rs (#879): say when the target is only believed.
-    let bk = usize::from(grid(st, tx, ty).kill);
-    if let Some(w) = crate::borg_unseen_belief::believed_weight(st, bk) {
-        let kill = st.kills.kills[bk];
-        crate::borg_unseen_belief::note_shot(st, bk);
-        borg_note(
-            st,
-            &format!(
-                "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
-                engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
-                ty,
-                tx,
-                borg_timer(st, kill.when),
-                w
-            ),
-        );
+    ProjectedAttack {
+        score: b_n,
+        aim: Some(loc { x: tx + b_o_x, y: ty + b_o_y }),
+        unseen: best_unseen,
     }
-
-    /* will need to add SINGLE COMBAT and COMMAND if those end up coded */
-    let require_monster = typ as u32 == BORG_ATTACK_CURSE;
-
-    /* Target the location */
-    let g = st.borg.goal.g;
-    let _ = borg_target(st, g, require_monster);
-
-    /* Result */
-    b_n
 }
 
 /// Determine the "reward" of launching an arc/spray/cone at a location
@@ -2230,7 +2271,11 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 ///
 /// This code is copied from borg_launch_bolt_at_location
 /// both need to be optimized for shared code !FIX
-fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32) -> i32 {
+#[allow(clippy::too_many_arguments)]
+fn borg_launch_arc_at_location(
+    st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32,
+    unseen: &mut Vec<(usize, i32)>,
+) -> i32 {
     let mut path_grids = [loc { x: 0, y: 0 }; 256];
 
     /* Extract panel */
@@ -2383,7 +2428,7 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
 
             if ag.kill != 0 {
                 /* Collect damage, lowered by distance */
-                n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, 0);
+                n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, 0, unseen);
             }
 
             let ag = grid(st, rx, ry);
@@ -2403,9 +2448,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
     let mut b_i: i32 = -1;
     let mut b_n: i32 = -1;
 
-    /* (the offsets are never changed: arcs aim at the monster) */
-    let b_o_y = 0;
-    let b_o_x = 0;
+    let mut unseen = Vec::new();
+    let mut best_unseen = Vec::new();
     let mut b_d = max_range();
 
     if max > 20 {
@@ -2429,7 +2473,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         /* Consider it if its a ball spell or right on top of it */
         st.fight_attack.dmg_acc = 0;
         st.fight_attack.kill_acc = 0.0;
-        let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max);
+        unseen.clear();
+        let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max, &mut unseen);
 
         /* Skip useless attacks */
         if n <= 0 {
@@ -2450,6 +2495,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         b_i = i - 1;
         b_n = n;
         b_d = d;
+        std::mem::swap(&mut best_unseen, &mut unseen);
         st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
         st.fight_attack.kill_best = st.fight_attack.kill_acc;
     }
@@ -2462,14 +2508,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         return b_n;
     }
 
-    /* Save the location */
-    let (ty, tx) = st.flow.temp_at(b_i as usize);
-    st.borg.goal.g.x = tx + b_o_x;
-    st.borg.goal.g.y = ty + b_o_y;
-
-    /* Target the location */
-    let g = st.borg.goal.g;
-    let _ = borg_target(st, g, false);
+    let (y, x) = st.flow.temp_at(b_i as usize);
+    ProjectedAttack { score: b_n, aim: Some(loc { x, y }), unseen: best_unseen }.target(st, false);
 
     /* Result */
     b_n
@@ -2553,6 +2593,11 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
         return 0;
     }
 
+    // With belief enabled, only the winning quiver stack may aim and
+    // charge a shot. Preserve the original missile path at switch 0.
+    let choose_before_aiming = param(Param::unseen_belief) != 0 && !simulating(st);
+    let mut best_attack = None;
+
     /* Scan the quiver */
     for k in quiver_start()..quiver_end() {
         let item = st.items.items[k as usize];
@@ -2569,7 +2614,11 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
 
         /* Choose optimal target of bolt */
         let power = 6 + 2 * tr(st, BI_AMMO_POWER);
-        let n = borg_launch_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k);
+        let attack = choose_before_aiming.then(|| choose_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k));
+        let n = match &attack {
+            Some(attack) => attack.score,
+            None => borg_launch_bolt(st, 0, d, BORG_ATTACK_ARROW as i32, power, k),
+        };
 
         /* if two attacks are equal, pick the cheaper ammo */
         if n == b_n && v >= b_v {
@@ -2580,6 +2629,7 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
             b_n = n;
             b_v = v;
             b_k = k;
+            best_attack = attack;
         }
     }
 
@@ -2595,6 +2645,9 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     }
 
     /* Do it */
+    if let Some(attack) = best_attack {
+        attack.target(st, false);
+    }
     let mut m = b"# Firing missile '".to_vec();
     m.extend_from_slice(&desc(&st.items.items[b_k as usize]));
     m.push(b'\'');
@@ -5744,6 +5797,16 @@ mod point_blank_tests {
 #[cfg(test)]
 mod fallback_tests {
     use super::*;
+
+    #[test]
+    fn unseen_targets_contribute_weighted_utility_to_one_projection() {
+        let mut unseen = Vec::new();
+        assert_eq!(score_projection_target(&mut unseen, 1, 150, Some(20)), 30);
+        assert_eq!(score_projection_target(&mut unseen, 2, 90, Some(50)), 45);
+        assert_eq!(score_projection_target(&mut unseen, 3, 60, None), 60);
+        assert_eq!(score_projection_target(&mut unseen, 4, -999, Some(20)), -199);
+        assert_eq!(unseen, vec![(1, 20), (2, 50)]);
+    }
 
     /// Review of #657: the winner is never its own fallback.
     #[test]

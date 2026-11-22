@@ -89,8 +89,7 @@ fn shots_since_seen(st: &BorgState, k: usize) -> i32 {
     }
 }
 
-/// Count a shot at the believed record `k` (`borg_launch_bolt`, not
-/// simulating). The engine gives no name for a monster the player cannot
+/// Count a shot at the believed record `k` when the chosen projection is aimed. The engine gives no name for a monster the player cannot
 /// see ("It dies."), so a record shot dead stays until this cap: at most
 /// `unseen_max_shots` shots per sighting.
 pub(crate) fn note_shot(st: &mut BorgState, k: usize) {
