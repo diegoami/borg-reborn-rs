@@ -1057,9 +1057,11 @@ fn first_action_with_room(
         (Place::Home, Disposition::Take),
     ] };
     for (place, d) in order {
-        if let Some((i, k)) = kit.iter().enumerate().find(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
+        if let Some((i, k)) = kit.iter().enumerate().filter(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
             && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
-            && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !k.joins_pack)) {
+            && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !k.joins_pack))
+            .min_by_key(|(i, k)| (!(place == Place::Home && d == Disposition::Sell && k.home_unwanted), *i))
+        {
             let (code, at) = match (place, d) {
                 (Place::Pack, Disposition::Sell) => (action::SELL, i64::from(k.sell_shop)),
                 (Place::Pack, Disposition::Drop) => (action::DROP, -1),

@@ -9,6 +9,16 @@ identifies its pre-extraction source and retained mechanics/interface data.
 
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
+## Home stock the town planner deliberately declines (#1049)
+
+The live planner uses the same known-kind exclusions for purchase utility
+and Home storage. A deliberately unwanted kind such as Treasure
+Detection uses ordinary sale or drop paths. At Home these kinds go
+before stack surplus so a known useless stack can free a slot even when
+the character cannot earn gold by selling. The rule follows positive
+knowledge of the kind and leaves unknown flavours to the learning
+policy. Temporary prices and shortages do not make a kind unwanted.
+
 ## Home stock variety (#1048)
 
 `town_home_stack_limit` is a physical stack limit per known consumable
