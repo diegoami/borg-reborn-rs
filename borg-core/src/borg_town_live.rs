@@ -392,10 +392,11 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
-    let drop_qty = if crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+    let drop_qty = if (1..qty).contains(&a.at[2])
+        && crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
         && crate::borg_town_capability::restore_life_reserve(st) > 0
     {
-        a.at[2].clamp(1, qty)
+        a.at[2]
     } else {
         qty
     };

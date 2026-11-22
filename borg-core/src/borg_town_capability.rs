@@ -121,7 +121,8 @@ const STAPLE_PHASE: usize = 72;
 const STAPLE_OIL: usize = 73;
 const STAPLE_FOOD: usize = 74;
 const STAPLE_LIGHT: usize = 75;
-const RESTORE_LIFE_RESERVE: usize = 76;
+const RESTORE_LIFE_RESERVE: usize = STAPLE_LIGHT + 1;
+const _: () = assert!(RESTORE_LIFE_RESERVE + 1 == NAMES.len());
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
 /// A capability with a knee of its own -> its row.
@@ -822,9 +823,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if param(Param::town_recall_curve_scale_percent) > 0 {
         if let Some(&(_, units)) = out.iter().find(|&&(id, _)| id == RECALL) { out.push((RECALL_RESERVE, units)); }
     }
-    if ctx.restore_life_reserve > 0 && crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life) {
-        out.push((RESTORE_LIFE_RESERVE, UNIT));
-    }
+    out.extend(restore_life_supply(item, st.item_val.sv_potion_restore_life, ctx.restore_life_reserve));
     if matches!(tval, TV_WAND | TV_STAFF) && item.pval > 0 {
         let maximum = engine::kind_value_average(engine::kind(item.kind as usize).charge).max(1);
         if i64::from(item.pval) < i64::from(maximum) * qty { out.push((RECHARGE_TARGET, UNIT)); }
@@ -832,11 +831,23 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     out
 }
 
-fn restore_experience_curves(drained: bool, reserve: i64, weight: i64) -> [(usize, i64, i64); 2] {
-    [
-        (EXPERIENCE, if drained { weight } else { 0 }, -UNIT),
-        (RESTORE_LIFE_RESERVE, reserve * weight / 4, -reserve * UNIT),
-    ]
+fn restore_life_supply(item: &borg_item, sval: i32, reserve: i64) -> Option<(usize, i64)> {
+    (reserve > 0 && crate::borg_item_use::is_restore_life(item, sval))
+        .then_some((RESTORE_LIFE_RESERVE, UNIT))
+}
+
+fn initial_curves(
+    previous_count: usize, ordinary: i64, demand: i64, drained: bool, reserve: i64, restore_weight: i64,
+) -> Vec<[i64; 5]> {
+    let count = if reserve > 0 { COUNT } else { previous_count };
+    let mut curves: Vec<_> = (0..count).map(|id| [id as i64, ordinary, demand, 0, 0]).collect();
+    curves[EXPERIENCE] = [EXPERIENCE as i64, if drained { restore_weight } else { 0 }, -UNIT, 0, 0];
+    if reserve > 0 {
+        curves[RESTORE_LIFE_RESERVE] = [
+            RESTORE_LIFE_RESERVE as i64, reserve * restore_weight / 4, -reserve * UNIT, 0, 0,
+        ];
+    }
+    curves
 }
 
 /// Physical supply curves use the same forecast, gold opportunity cost and
@@ -862,8 +873,14 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
     let prepared = prepared_on(st);
     let staples = staple_on(st);
-    let count = if restore_life_reserve > 0 { COUNT } else if prepared || staples { RESTORE_LIFE_RESERVE } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
-    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
+    let previous_count = if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on {
+        RECALL_RESERVE + 1
+    } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let curves = initial_curves(previous_count, ordinary, support_demand,
+        t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0, restore_life_reserve, cfg(BORG_TOWN_W_RESTORE) * UNIT);
+    let count = curves.len();
+    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
+        packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
     // borg_town_w_light (100 = today).
@@ -1091,11 +1108,6 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // do not spend a third to half of the purse on a Shovel (0 = off).
     if i64::from(st.borg.tr(BI_GOLD)) < i64::from(param(Param::town_digger_min_gold)) {
         curve(DIG, 0, support_demand);
-    }
-    for (cap, weight, demand) in restore_experience_curves(
-        t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0, restore_life_reserve, cfg(BORG_TOWN_W_RESTORE) * UNIT,
-    ) {
-        if cap < count { curve(cap, weight, demand); }
     }
     curve(CURSE, if t(BI_FIRST_CURSED) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(ENCHANT, if t(BI_NEED_ENCHANT_TO_A) + t(BI_NEED_ENCHANT_TO_H) + t(BI_NEED_ENCHANT_TO_D) > 0 { cfg(BORG_TOWN_W_SUPPORT) * UNIT } else { 0 }, UNIT);
@@ -1326,23 +1338,41 @@ mod tests {
         use crate::borg_town_solve::Limits;
         use crate::borg_town_stock::Candidate;
 
-        let potion = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 1,
+        let potion = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 15,
             price: 400, qty: 1, weight: 4, slots_cost: 1, stack_count: 0, class: 1 };
         let decide = |drained, reserve, stocked, gold, carried: i32| {
             let kit = if carried > 0 {
                 vec![KitItem { sell_shop: 4, proceeds: 100, ..item(Place::Pack, 0, carried) }]
             } else { Vec::new() };
             let candidates = if stocked { vec![potion.clone()] } else { Vec::new() };
-            let mut m = model();
-            for (cap, weight, demand) in restore_experience_curves(drained, reserve, 100 * UNIT) {
-                m.curves[cap] = [cap as i64, weight, demand, i64::from(carried) * UNIT, 0];
-                if weight > 0 && stocked { m.supplies.push([4, 0, cap as i64, UNIT]); }
-                if weight > 0 && carried > 0 { m.supplies.push([PACK, 0, cap as i64, UNIT]); }
+            let mut potion_item = crate::borg_item::blank_item();
+            potion_item.tval = potion.tval;
+            potion_item.sval = potion.sval;
+            potion_item.aware = true;
+            potion_item.iqty = 1;
+            let mut m = Model {
+                available: candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
+                packing: None, curves: initial_curves(STAPLE_LIGHT + 1, 0, UNIT, drained, reserve, 100 * UNIT),
+                supplies: Vec::new(),
+            };
+            let effects = [(EF_RESTORE_EXP as u16, 0, 0)];
+            let supply = effect_supply_linear(&effects, 386, 100, false).into_iter()
+                .chain(restore_life_supply(&potion_item, i32::from(potion.sval), reserve));
+            for (cap, units) in supply {
+                m.curves[cap][3] = i64::from(carried) * units;
+                if stocked { m.supplies.push([4, 0, cap as i64, units]); }
+                if carried > 0 { m.supplies.push([PACK, 0, cap as i64, units]); }
             }
+            assert_eq!(m.curves.get(RESTORE_LIFE_RESERVE).map(|row| row[2]), (reserve > 0).then_some(-reserve * UNIT));
+            let mut settings = [0; PARAMS];
+            settings[(BORG_TOWN_W_SPACE - BORG_TOWN_PLAN) as usize] = 25;
+            settings[(BORG_TOWN_HOME_DISCOUNT - BORG_TOWN_PLAN) as usize] = 500;
+            let mut traits = [0; BI_MAX as usize];
+            traits[BI_CARRY as usize] = 100;
             let input = StepInput { revision: 12, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 4, weight: 100 },
-                urgent: vec![], params: [0; PARAMS], traits: &[], power: 0, carried: &[],
+                urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
                 cure_spell: false, kit: &kit, home_slots: 10 };
             let output = step(&input);
             first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit)
@@ -1351,7 +1381,8 @@ mod tests {
         for gold in [400, 787_811] {
             let (code, location, _, _) = decide(true, 0, true, gold, 0);
             assert_eq!((code, location), (action::BUY, [4, 0, 1, 400]));
-            assert_eq!(decide(false, 1, true, gold, 0).0, action::BUY);
+            let (code, location, _, _) = decide(false, 1, true, gold, 0);
+            assert_eq!((code, location), (action::BUY, [4, 0, 1, 400]));
         }
         assert_eq!(decide(true, 0, true, 399, 0).0, action::LEAVE);
         assert_eq!(decide(true, 0, false, 787_811, 0).0, action::LEAVE);
@@ -2210,6 +2241,6 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
     let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]
         .into_iter().any(|activation| activation > 0 && st.borg.activation[activation as usize] != 0)
         || [REVITALIZE, REMEMBRANCE].into_iter()
-            .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, 20));
+            .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, param(Param::town_restore_life_spell_fail)));
     if repeatable { 0 } else { copies }
 }

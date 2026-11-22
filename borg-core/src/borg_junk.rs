@@ -283,7 +283,7 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
     /* Special destruction */
     match u32::from(item.tval) {
         TV_POTION => {
-            // RESTORE_EXP only helps below max XP (effect-handler-general.c:893).
+            // RESTORE_EXP only helps below max XP (src/effect-handler-general.c:effect_handler_RESTORE_EXP:893-904).
             if sval == v.sv_potion_restore_life {
                 return st.borg.tr(BI_ISFIXEXP) != 0 && borg_quaff_potion(st, sval);
             }
@@ -527,14 +527,18 @@ fn keeps_restore_life(st: &BorgState, slot: usize, whole_stack: bool, desperate:
     if reserve == 0 {
         return false;
     }
-    let carried = st.items.items[..inven_wield() as usize].iter()
-        .filter(|item| is_restore_life(item, sval)).map(|item| i32::from(item.iqty)).sum();
-    let discarded = if whole_stack { i32::from(item.iqty) } else { 1 };
-    protects_restore_life(carried, discarded, reserve, desperate)
+    protects_restore_life(&st.items.items[..inven_wield() as usize], slot, sval, reserve, whole_stack)
 }
 
-fn protects_restore_life(carried: i32, discarded: i32, reserve: i32, desperate: bool) -> bool {
-    !desperate && reserve > 0 && carried - discarded < reserve
+fn protects_restore_life(pack: &[borg_item], slot: usize, sval: i32, reserve: i32, whole_stack: bool) -> bool {
+    let item = &pack[slot];
+    if reserve == 0 || !is_restore_life(item, sval) {
+        return false;
+    }
+    let carried: i32 = pack.iter().filter(|item| is_restore_life(item, sval))
+        .map(|item| i32::from(item.iqty)).sum();
+    let discarded = if whole_stack { i32::from(item.iqty) } else { 1 };
+    carried - discarded < reserve
 }
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
@@ -1579,12 +1583,22 @@ mod tests {
     use crate::borg_light::light_slot;
 
     #[test]
-    fn restore_life_junking_keeps_the_reserve_until_a_desperate_pack_clear() {
-        assert!(protects_restore_life(1, 1, 1, false));
-        assert!(!protects_restore_life(2, 1, 1, false));
-        assert!(protects_restore_life(2, 2, 1, false));
-        assert!(!protects_restore_life(2, 2, 1, true));
-        assert!(!protects_restore_life(1, 1, 0, false));
+    fn restore_life_junking_counts_known_pack_stacks_and_the_copies_removed() {
+        let mut known = blank_item();
+        known.tval = TV_POTION as u8;
+        known.sval = 15;
+        known.aware = true;
+        known.iqty = 3;
+        let mut unknown = known;
+        unknown.aware = false;
+        let mut pack = [known, unknown];
+        assert!(!protects_restore_life(&pack, 0, 15, 1, false));
+        assert!(protects_restore_life(&pack, 0, 15, 1, true));
+        assert!(!protects_restore_life(&pack, 0, 15, 0, true));
+        pack[0].iqty = 1;
+        assert!(protects_restore_life(&pack, 0, 15, 1, false));
+        pack[1].aware = true;
+        assert!(!protects_restore_life(&pack, 0, 15, 1, true));
     }
 
     #[test]
