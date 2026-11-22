@@ -37,7 +37,10 @@ use crate::state::BorgState;
 /// The plan record's schema version (v2: the decision record, v3: the
 /// handover's state record). borg-reborn-rs (#651): 12, what a visit
 /// bought is not stored in the Home (`borg_town_utility::dispositions`).
-pub const PLAN_SCHEMA: i64 = 12;
+/// borg-reborn-rs (#957, P7 review): 13, the record carries the storing
+/// settings (`storing`: the departure room, `town_store_keep_min` and
+/// `town_store_only_overweight`), so a replay stores as the visit did.
+pub const PLAN_SCHEMA: i64 = 13;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -166,6 +169,8 @@ pub struct PlanRecord {
     /// 0 none, 1 the 2000-turn give-up, 2 the anti-bounce give-up, 3 the
     /// solver refused.
     pub guard: u8,
+    /// v13 (#957): the storing settings, `Storing::to_array`. None before.
+    pub storing: Option<[i64; 4]>,
 }
 
 // --- writing -------------------------------------------------------------
@@ -256,6 +261,10 @@ impl PlanRecord {
         num(out, self.spells);
         field(out, "params");
         ints(out, &self.params[..if self.schema == 4 { 12 } else { PARAMS }]);
+        if let Some(storing) = self.storing.filter(|_| self.schema >= 13) {
+            field(out, "storing");
+            ints(out, &storing);
+        }
         if self.black_market_reserve != 0 {
             field(out, "black_market_reserve");
             num(out, self.black_market_reserve);
@@ -493,7 +502,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
@@ -525,6 +534,7 @@ impl PlanRecord {
             power: small("power")?,
             spells: small("spells")? as u8,
             params,
+            storing: if schema >= 13 { Some(fixed(j.get("storing")?.ints()?, "storing")?) } else { None },
             black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
             black_market_percentage: j.get("black_market_percentage").map_or(Ok(-1), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
@@ -630,6 +640,9 @@ pub struct StepInput<'a> {
     pub kit: &'a [KitItem],
     /// The Home's free slots.
     pub home_slots: i32,
+    /// #957: the storing settings a record carries (v13); None reads the
+    /// process's (a live solve, an older record).
+    pub storing: Option<crate::borg_town_utility::Storing>,
 }
 
 /// What a step produces.
@@ -794,7 +807,9 @@ pub fn step(input: &StepInput) -> StepOutput {
     }
     // Stage 2: the purchases, with what the dispositions freed. They leave
     // the departure room free (#859; zero when off).
-    let room = if input.utility { crate::borg_town_utility::departure_room() } else { Default::default() };
+    let room = if input.utility {
+        input.storing.map_or_else(crate::borg_town_utility::departure_room, |s| s.room)
+    } else { Default::default() };
     let limits = Limits {
         gold: input.limits.gold + freed.gold,
         pack_slots: input.limits.pack_slots + freed.pack_slots - room.slots,
@@ -1062,6 +1077,7 @@ impl ReplayParts {
             cure_spell: rec.spells & 1 != 0,
             kit: &rec.kit,
             home_slots: rec.limits[2] as i32,
+            storing: rec.storing.map(crate::borg_town_utility::Storing::from_array),
         }
     }
 }
@@ -1274,7 +1290,7 @@ mod tests {
             })
             .collect();
         let limits = Limits::of(&budget);
-        let out = step(&StepInput {
+        let out = step(&StepInput { storing: None,
             revision: 4,
             capability: None,
             utility: false,
@@ -1297,6 +1313,7 @@ mod tests {
             ns.iter().fold(0u8, |m, n| m | (1 << Need::ALL.iter().position(|x| x == n).unwrap()))
         };
         let rec = PlanRecord {
+            storing: None,
             capability: None,
             schema: 4,
             mode: 0,
@@ -1333,6 +1350,31 @@ mod tests {
         rec.push_fields(&mut line);
         line.push('}');
         (line, rec)
+    }
+
+    /// #957 (P7 review): a v13 record writes the storing settings and a
+    /// replay uses them, not the process's; an older record has none and
+    /// keeps reading the process's settings, as before.
+    #[test]
+    fn the_storing_settings_travel_with_a_v13_record() {
+        use crate::borg_town_utility::{Room, Storing};
+        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3 };
+        assert_eq!(Storing::from_array(storing.to_array()), storing);
+        let stock = stock();
+        let (_, mut rec) = produce(&stock, 300, &traits(), &[], &[]);
+        let mut line = String::new();
+        rec.push_fields(&mut line);
+        assert!(!line.contains("\"storing\""), "an older record carries none");
+        rec.schema = PLAN_SCHEMA;
+        rec.storing = Some(storing.to_array());
+        let mut line = String::new();
+        rec.push_fields(&mut line);
+        assert!(line.contains("\"storing\":[50,2,3,0]"), "{line}");
+        let parts = ReplayParts { candidates: Vec::new(), urgent: Vec::new(), traits: Vec::new(), carried: Vec::new(),
+            limits: Limits { gold: 0, pack_slots: 0, weight: 0 }, tryon: Vec::new(), power: 0 };
+        assert_eq!(parts.input(&rec).storing, Some(storing));
+        rec.storing = None;
+        assert_eq!(parts.input(&rec).storing, None);
     }
 
     /// The carried items as the step reads them: one torch (the light

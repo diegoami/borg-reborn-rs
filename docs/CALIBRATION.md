@@ -1200,7 +1200,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:353` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:306` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -5876,7 +5876,7 @@ Word of Recall, weight 5).
 |---|---|---|---|---|
 | `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
 | `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:355` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:308` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:812` |
 

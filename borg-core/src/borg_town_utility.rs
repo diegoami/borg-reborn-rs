@@ -287,15 +287,41 @@ pub(crate) fn departure_room() -> Room {
 }
 
 /// The storing settings `dispositions` reads, passed in so that tests can set
-/// them (the registry gives tests its compiled defaults).
-#[derive(Clone, Copy, Debug, Default)]
-struct Storing {
+/// them (the registry gives tests its compiled defaults). A plan record
+/// carries them from schema 13 (#957), so a replay stores as the visit did.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct Storing {
     /// #711: `town_store_only_overweight`.
-    only_overweight: bool,
+    pub(crate) only_overweight: bool,
     /// #859: the departure room.
-    room: Room,
+    pub(crate) room: Room,
     /// #859: `town_store_keep_min`.
-    keep_min: i32,
+    pub(crate) keep_min: i32,
+}
+
+impl Storing {
+    /// The process's settings: what a live solve uses.
+    pub(crate) fn settings() -> Self {
+        Storing {
+            only_overweight: param(Param::town_store_only_overweight) != 0,
+            room: departure_room(),
+            keep_min: param(Param::town_store_keep_min),
+        }
+    }
+
+    /// As a plan record writes them: `[free weight, free slots, keep_min,
+    /// only_overweight]`.
+    pub(crate) fn to_array(self) -> [i64; 4] {
+        [self.room.weight, i64::from(self.room.slots), i64::from(self.keep_min), i64::from(self.only_overweight)]
+    }
+
+    pub(crate) fn from_array(a: [i64; 4]) -> Self {
+        Storing {
+            only_overweight: a[3] != 0,
+            room: Room { weight: a[0], slots: a[1] as i32 },
+            keep_min: a[2] as i32,
+        }
+    }
 }
 
 /// What storing frees before the purchases: the departure room, plus the
@@ -349,11 +375,9 @@ fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
 pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed, Vec<i32>) {
-    dispositions_by(input, u, st, Storing {
-        only_overweight: param(Param::town_store_only_overweight) != 0,
-        room: departure_room(),
-        keep_min: param(Param::town_store_keep_min),
-    })
+    // #957: the record's settings when a replay has them; older records and
+    // live solves read the process's.
+    dispositions_by(input, u, st, input.storing.unwrap_or_else(Storing::settings))
 }
 
 /// `dispositions` with `town_store_only_overweight` given (#711).
@@ -559,7 +583,7 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
     let mut out = Vec::new();
     let input = StepInput {
         revision: input.revision, capability: input.capability, utility: input.utility, candidates: candidates.to_vec(), facts: input.facts, tryon: input.tryon, limits: input.limits,
-        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
+        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried, storing: input.storing,
         cure_spell: input.cure_spell, kit: input.kit, home_slots: input.home_slots };
     let input = &input;
     for group in groups {
@@ -709,7 +733,7 @@ mod tests {
     }
 
     fn input<'a>(kit: &'a [KitItem]) -> StepInput<'a> {
-        StepInput { revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
+        StepInput { storing: None, revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
             limits: Limits { gold: 300, pack_slots: 15, weight: 1000 }, urgent: Vec::new(),
             params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit, home_slots: 20 }
     }

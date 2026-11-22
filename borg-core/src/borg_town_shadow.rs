@@ -551,7 +551,9 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
-    let out = step(&StepInput {
+    // #957: the storing settings this solve uses, recorded with it (v13).
+    let storing = crate::borg_town_utility::Storing::settings();
+    let out = step(&StepInput { storing: Some(storing),
         revision: crate::borg_town_record::PLAN_SCHEMA,
         capability: Some(&capability),
         utility: true,
@@ -605,6 +607,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
     let rec = PlanRecord {
+        storing: Some(storing.to_array()),
         capability: Some(capability),
         schema: crate::borg_town_record::PLAN_SCHEMA,
         mode: u8::from(live),
@@ -760,7 +763,7 @@ mod knowledge_only_purchase_tests {
             serves: 1 << need_index(Need::Knowledge) }];
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
-        let out = step(&StepInput {
+        let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
