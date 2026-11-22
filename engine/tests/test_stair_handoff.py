@@ -20,6 +20,22 @@ def state_at(states, turn):
     return [state for state in states if int(state[0]) == turn]
 
 
+# The town settings the recorded incident predates (#859's five switches off,
+# then #863: the staples' decay, the prepared remedies, the variety depth gate,
+# and the Word of Recall and Phase Door purchases back to #864's values). The
+# incident classes are Warrior (0) and Mage (1), so only their class lines exist.
+PINNED_TOWN_SETTINGS = [
+    ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
+    ("town_store_keep_min", 0), ("town_recall_curve_scale_percent", 0),
+    ("town_recall_urgent", 0),
+    ("town_prepared_percent", 0), ("town_variety_min_depth", 0),
+    ("town_recall_reserve", 1), ("buy_recall_from_gold", 400),
+    ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),
+] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
+    (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
+]
+
+
 @unittest.skipUnless(GAME.is_file(), "harness/build.sh required")
 class StairHandoffTest(unittest.TestCase):
     def run_case(self, seed, player_class, stop_turn):
@@ -30,17 +46,13 @@ class StairHandoffTest(unittest.TestCase):
             if cemetery := os.environ.get("BORG_CEMETERY_DIR"):
                 env["BORG_CEMETERY_DIR"] = cemetery
             # The exact incident turns/grids below were captured before #859.
-            # Pin its five new town switches off and use the scary list at
+            # Pin its five new town switches off (and #863's, PINNED_TOWN_SETTINGS) and use the scary list at
             # f57499d0, before #869's grey-mushroom attack entry. These settings
             # preserve the recorded incident turns/grids asserted below.
             env.update(
                 BORG_CORE="borg-rs", BORG_CORE_TRACE="off",
                 BORG_SCARY_LIST=str(ROOT / "harness/fixtures/stair-handoff-scary-monsters.txt"),
-                BORG_TXT_SET=";".join(f"borg_param_{name}=0" for name in (
-                    "town_departure_free_weight", "town_departure_free_slots",
-                    "town_store_keep_min", "town_recall_curve_scale_percent",
-                    "town_recall_urgent",
-                )),
+                BORG_TXT_SET=";".join(f"borg_param_{name}={value}" for name, value in PINNED_TOWN_SETTINGS),
             )
             result = subprocess.run(
                 [str(ROOT / "harness/run.sh"), str(out), str(seed), "0", str(player_class), str(stop_turn), "menu"],
