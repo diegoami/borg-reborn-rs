@@ -2063,6 +2063,64 @@ fn may_move_away(
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
+/// borg-reborn-rs (#933): with `caution_retreat_immobile_kill_turns`, the
+/// strategic retreat is not taken (with a note) when the only known monster
+/// next to the Borg is an immobile attacker (it cannot follow) that the
+/// Borg's melee (`borg_thrust_damage_one` against its estimated HP) kills
+/// within that many turns while its danger here is below
+/// `caution_retreat_immobile_danger_percent` of the HP. Not while afraid. The
+/// attack decides (seed 829474344: a 25-HP white jelly never attacked in 165
+/// turns). Off at 0.
+fn immobile_neighbour_veto(st: &mut BorgState) -> bool {
+    let turns = p(Param::caution_retreat_immobile_kill_turns);
+    if turns <= 0 || st.borg.tr(BI_ISAFRAID) != 0 {
+        return false;
+    }
+    let mut adjacent = (1..i32::from(st.kills.nxt)).filter(|&i| {
+        let kill = &st.kills.kills[i as usize];
+        kill.r_idx != 0
+            && borg_timer(st, kill.when) <= p(Param::caution_one_blow_monster_age)
+            && engine::distance(st.borg.c, kill.pos) == 1
+    });
+    let (Some(k), None) = (adjacent.next(), adjacent.next()) else {
+        return false;
+    };
+    let kill = st.kills.kills[k as usize];
+    if !immobile_attacker(usize::from(kill.r_idx)) {
+        return false;
+    }
+    let damage = crate::borg_fight_attack::borg_thrust_damage_one(st, k);
+    let Some(need) = turns_to_kill(i32::from(kill.power), damage) else {
+        return false;
+    };
+    let hp = st.borg.tr(BI_CURHP).max(1);
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k, true, false);
+    if need <= turns && danger * 100 < hp * p(Param::caution_retreat_immobile_danger_percent) {
+        let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned();
+        borg_note(st, &format!("# No retreat: immobile {name} dies in {need} turns, danger {danger} (#933)"));
+        return true;
+    }
+    false
+}
+
+/// borg-reborn-rs (#933): melee turns to take `power` HP at `damage` a
+/// turn; `None` when the blows do nothing.
+fn turns_to_kill(power: i32, damage: i32) -> Option<i32> {
+    (damage > 0).then(|| (power.max(1) + damage - 1) / damage)
+}
+
+#[cfg(test)]
+mod immobile_neighbour_tests {
+    #[test]
+    fn turns_to_kill_rounds_up() {
+        assert_eq!(super::turns_to_kill(25, 9), Some(3), "the 25-HP white jelly of 829474344");
+        assert_eq!(super::turns_to_kill(25, 25), Some(1));
+        assert_eq!(super::turns_to_kill(0, 5), Some(1));
+        assert_eq!(super::turns_to_kill(25, 0), None, "no blow lands");
+    }
+}
+
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
 /// initiative back and lets a flee route walk straight back into reach.
@@ -3354,6 +3412,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && !immobile_neighbour_veto(st)
         && retreat(st, pos_danger, borg_surround)
     {
         return true;
