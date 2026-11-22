@@ -1409,9 +1409,38 @@ pub(crate) fn grouped_name(who: &[u8]) -> Option<&[u8]> {
     Some(&who[digits + 1..])
 }
 
+/// borg-reborn-rs (#915): how many monsters a message's subject names: N
+/// for a grouped subject "N <plural>" (mon-msg.c:339-344) with
+/// `kill_grouped_names` on, else 1. A death or a blink is then applied to
+/// up to N known monsters of the race (borg_update.rs).
+pub fn grouped_count(who: &[u8]) -> i32 {
+    if crate::params::value(crate::params::Param::kill_grouped_names) == 0 {
+        return 1;
+    }
+    group_size(who)
+}
+
+/// The N of "N <plural>" (1 for any other subject), capped at `i16::MAX`.
+fn group_size(who: &[u8]) -> i32 {
+    if grouped_name(who).is_none() {
+        return 1;
+    }
+    let digits = who.iter().take_while(|b| b.is_ascii_digit()).count();
+    std::str::from_utf8(&who[..digits])
+        .ok()
+        .and_then(|n| n.parse::<i32>().ok())
+        .map_or(i32::from(i16::MAX), |n| n.clamp(1, i32::from(i16::MAX)))
+}
+
 /// borg-reborn-rs (#915): the race of a grouped name: the name as it stands
 /// (a `plural:` of monster.txt is in the normal table), else the engine's
 /// `plural_aux` undone: "-ses" → "-s", then "-s" → "" (mon-desc.c:27-36).
+/// A plural ending in "ses" is ambiguous: `plural_aux` makes it from a name
+/// ending in 's' ("mass" → "masses", the "-es" rule) or in "se" ("horse" →
+/// "horses", the "-s" rule), so both stems are tried, in this order, and the
+/// first one in the table wins. The order matters only if one stem names
+/// one race and the other another; no two races of 574b618c's monster.txt
+/// do (`grouped_subjects_of_every_engine_race` checks every race).
 fn grouped_race(kills: &KillState, name: &[u8], score: &dyn Fn(u32) -> i32) -> Option<u32> {
     let mut forms: Vec<&[u8]> = vec![name];
     if name.ends_with(b"ses") {
@@ -3736,6 +3765,16 @@ mod tests {
         assert_eq!(grouped_name(b"3"), None);
         assert_eq!(grouped_name(b"3x spiders"), None);
         assert_eq!(grouped_name(b"cave spiders"), None);
+        // borg_locate_kill's invisible test compares "It" with its NUL
+        // (strnieq, 3 bytes): "It (offscreen)" goes to the offscreen branch,
+        // and so does "3 monsters (offscreen)" (#915 review, finding 1)
+        assert_eq!((group_size(b"3 cave spiders"), group_size(b"15 jackals")), (3, 15));
+        assert_eq!((group_size(b"The cave spider"), group_size(b"Grip"), group_size(b"2-headed hydra")), (1, 1, 1));
+        assert_eq!(group_size(b"99999999999 rats"), i32::from(i16::MAX));
+        assert_eq!(grouped_count(b"3 cave spiders"), 1, "compiled 0: one monster, as before");
+        assert!(strnieq(b"It", b"It", 3));
+        assert!(!strnieq(b"It (offscreen)", b"It", 3));
+        assert_ne!(grouped_name(b"3 monsters (offscreen)"), Some(&b"monsters"[..]));
     }
 
     /// #915: every non-unique race of the engine's monster.txt, as the engine
