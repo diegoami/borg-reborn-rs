@@ -6054,7 +6054,7 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
 After a ranged attack with no hit message the C Borg takes the first unknown
 grid of the path for a wall (`borg_target_unknown_wall`,
 borg-core/src/borg_projection.rs; C src/borg/borg-projection.c:739-830,
-called from `borg_update`, borg-core/src/borg_update.rs:1734). Its walk starts
+called from `borg_update`, borg-core/src/borg_update.rs:1735). Its walk starts
 at the Borg's own grid (C :753-754), and with no unknown grid it writes the
 step back from the target (C :821-826): for an adjacent target that step is
 the Borg's grid. A thrown or fired miss prints nothing (`make_ranged_throw`,
@@ -6080,7 +6080,7 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
   player does not remember its own grid (light 0, the Necromancer): then no
   flow reaches the Borg (`spread_blocked`, borg_flow.rs:428) and every
   projection to the Borg reads as blocked (`borg_projectable`,
-  borg_projection.rs:354), which hides ranged danger. Not replayed.
+  borg_projection.rs:349), which hides ranged danger. Not replayed.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
