@@ -194,8 +194,11 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#884): the radius branches read the Borg's own light
     // radius (BI_LIGHT at cave_light_engine_radius 0, C's test; the
     // engine's BI_LIGHT - 1 at 1, so a torch takes the radius-1 test).
+    // BI_LIGHT 1 (a Ring of Light without a light source) is radius 0 at
+    // switch 1 and keeps C's corner test; only no light at all (BI_LIGHT 0)
+    // takes neither test and calls light, as in C (review of #894).
     let radius = own_light_radius(st);
-    if radius == 1 {
+    if radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1) {
         let mut corners = 0;
 
         /* Scan diagonal neighbors.
