@@ -14,8 +14,9 @@ borg_param_town_phase_curve_scale_percent = 150
 # town_phase_reserve = 2" (the owner's correction of an earlier paladin
 # instruction). The first two Scrolls of Phase Door are a requirement of the
 # town trip, each worth town_phase_reserve_percent (100) of the escape
-# weight, on top of the Phase Door curve.
-borg_param_town_phase_reserve = 2
+# weight, on top of the Phase Door curve. #863 (owner, 2026-11-21: they run out of
+# them, especially rangers): 2 -> 8.
+borg_param_town_phase_reserve = 10
 borg_param_town_oil_curve_scale_percent = 50
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 6
@@ -34,3 +35,14 @@ borg_param_town_oil_apart = 0
 # (scale 50, as healing's) for the arrows past it.
 borg_param_town_ranger_arrows_max = 50
 borg_param_town_ranger_arrows_curve_scale_percent = 50
+# #863 (owner: staples start losing value after a few copies, by class; "current
+# characters do not buy enough world of recall ... and probably more phase doors
+# as well, they tend to run out of them, especially rangers"): free copies per
+# staple. Cure Light and Serious Wounds are 6 x what the class carries at a town
+# departure now / 19 (the baseline of 36 games, docs/CALIBRATION.md, #863);
+# Phase Door and oil are what the class uses, above what it carries now, so the
+# decay starts past a trip's real need.
+borg_param_town_staple_clw = 7
+borg_param_town_staple_csw = 4
+borg_param_town_staple_phase = 20
+borg_param_town_staple_oil = 6

@@ -82,13 +82,8 @@ fn inven_light() -> usize {
     usize::from(engine::z_info().pack_size) + 5
 }
 
-/// Update the set of grids "illuminated" by the player's lite
-/// (`borg_update_light`).
-///
-/// See "update_LIGHT" in "cave.c" for complete documentation
-///
-/// It is very important that the "player grid" be the first grid in the
-/// array of "BORG_LIGHT" grids, since this is assumed in several places.
+const CLASS_NECROMANCER: i32 = 4;
+
 /// #877: the radius the Borg marks as lit by its own light. The C Borg (and
 /// switch 0) uses `BI_LIGHT`, the engine's `cur_light`, as the radius; the
 /// engine lights `radius = ABS(light) - 1` (src/cave-view.c:658, add_light
@@ -97,13 +92,19 @@ fn inven_light() -> usize {
 /// necromancer at `cur_light <= 1`, who sees by unlight
 /// (src/cave-view.c:777-779) and keeps C's radius.
 pub(crate) fn light_radius(light: i32, class: i32, engine: i32) -> i32 {
-    const CLASS_NECROMANCER: i32 = 4;
     if engine == 0 || (class == CLASS_NECROMANCER && light <= 1) {
         return light;
     }
     (light - 1).max(0)
 }
 
+/// Whether equipment supplies light for the Borg's light map.
+fn has_light_for_map(light_slot_occupied: bool, light: i32, class: i32, engine: i32) -> bool {
+    light_slot_occupied || (engine != 0 && class != CLASS_NECROMANCER && light > 0)
+}
+
+/// Update the set of grids illuminated by the player's light.
+/// The player's grid must be the first entry whenever the set is nonempty.
 pub fn borg_update_light(st: &mut BorgState) {
     /*** Clear old grids ***/
 
@@ -119,8 +120,12 @@ pub fn borg_update_light(st: &mut BorgState) {
     /* None left */
     st.light.light_n = 0;
 
-    /* Player has no lite */
-    if st.items.items[inven_light()].iqty == 0 {
+    /* With the engine radius, other equipment can light the map even
+     * when the light slot is empty (player-calcs.c:1624–1644). */
+    let engine = value(Param::cave_light_engine_radius);
+    let light = st.borg.tr(BI_LIGHT);
+    let class = st.borg.tr(BI_CLASS);
+    if !has_light_for_map(st.items.items[inven_light()].iqty != 0, light, class, engine) {
         return;
     }
 
@@ -128,10 +133,10 @@ pub fn borg_update_light(st: &mut BorgState) {
 
     let cy = st.borg.c.y;
     let cx = st.borg.c.x;
-    let light = light_radius(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), value(Param::cave_light_engine_radius));
+    let light = light_radius(light, class, engine);
     /* #884: with the engine's radius, the grids lit are also the engine's
      * shape: distance() <= radius (see engine_shape) */
-    let engine_shape = value(Param::cave_light_engine_radius) != 0;
+    let engine_shape = engine != 0;
 
     /* Player grid */
     borg_cave_light_hack(st, cy, cx);
@@ -314,7 +319,17 @@ mod tests_884 {
 
 #[cfg(test)]
 mod tests_877 {
-    use super::light_radius;
+    use super::{has_light_for_map, light_radius, CLASS_NECROMANCER};
+
+    #[test]
+    fn equipment_outside_the_light_slot_counts_only_with_the_engine_radius() {
+        assert!(!has_light_for_map(false, 2, 0, 0));
+        assert!(has_light_for_map(false, 2, 0, 1));
+        assert!(!has_light_for_map(false, 0, 0, 1));
+        assert!(!has_light_for_map(false, 2, CLASS_NECROMANCER, 1));
+        assert!(has_light_for_map(true, 0, 0, 0));
+        assert!(has_light_for_map(true, 1, CLASS_NECROMANCER, 1));
+    }
 
     #[test]
     fn engine_radius_is_light_minus_one() {
