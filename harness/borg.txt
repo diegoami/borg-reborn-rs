@@ -368,6 +368,10 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
+# Restore Life Levels reserve for measurement (#978). Zero disables retention;
+# the healthy-character junk-quaff guard applies at every setting.
+borg_param_town_restore_life_reserve = 0
+
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
 # Impact: set to TRUE, 6 of 6 test games play differently.
