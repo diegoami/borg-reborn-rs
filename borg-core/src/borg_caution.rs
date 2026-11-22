@@ -3120,6 +3120,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
     }
 
+    // borg-reborn-rs (#913): Speed before any walk, retreat or escape when
+    // monsters faster than the Borg are on it (fleeing too: borg_defend's
+    // Speed is never asked while fleeing).
+    if emergency_speed(st) {
+        return true;
+    }
+
     // do some swapping before running away!
     if crate::borg_trait::borg_uses_swaps(st)
         && pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_swap_danger_divisor)
@@ -5223,6 +5230,75 @@ fn big_monster_adjacent(st: &BorgState) -> bool {
             && (engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE)
                 || i32::from(kill.level) > st.borg.tr(BI_CLEVEL) + margin)
     })
+}
+
+/// borg-reborn-rs (#913): the summed danger here of the awake known monsters
+/// within `radius` that are faster than the Borg by `margin` (an observed
+/// haste counted, `forecast_monster_speed`), and how many they are.
+fn faster_danger_near(st: &mut BorgState, radius: i32, margin: i32) -> (i32, i32) {
+    let own = engine::player_combat_speed();
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let (mut danger, mut count) = (0i32, 0i32);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > radius {
+            continue;
+        }
+        if forecast_monster_speed(&kill) - own < margin.max(1) {
+            continue;
+        }
+        danger = danger.saturating_add(
+            crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i as i32, true, false).max(0),
+        );
+        count += 1;
+    }
+    (danger, count)
+}
+
+/// borg-reborn-rs (#913): Speed is wanted when the danger of the faster
+/// monsters near reaches `percent` of the current HP (0 = off).
+fn emergency_speed_wanted(percent: i32, fast: bool, depth: i32, danger: i32, hp: i32) -> bool {
+    percent > 0 && !fast && depth > 0 && i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#913): drink a Potion of Speed (+10 speed, 20+2d10 turns,
+/// object.txt:3429-3439, player-calcs.c:2176-2177) or cast Haste Self when
+/// faster monsters near are a large share of the HP (seed 2008390085: three
+/// cave spiders, hasted to +20, killed a rogue carrying three potions).
+fn emergency_speed(st: &mut BorgState) -> bool {
+    let percent = p(Param::caution_emergency_speed_danger_percent);
+    if percent == 0 || st.borg.temp.fast || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let (danger, count) = faster_danger_near(
+        st,
+        p(Param::caution_emergency_speed_radius),
+        p(Param::caution_emergency_speed_margin),
+    );
+    let hp = st.borg.tr(BI_CURHP);
+    if count == 0 || !emergency_speed_wanted(percent, false, 1, danger, hp) {
+        return false;
+    }
+    let fail = p(Param::caution_cornered_spell_fail);
+    if borg_spell_fail(st, HASTE_SELF, fail) || borg_quaff_potion(st, st.item_val.sv_potion_speed) {
+        borg_note(st, &format!("# Emergency Speed: {count} faster monsters near, danger {danger} at HP {hp} (#913)"));
+        return true;
+    }
+    false
+}
+
+#[cfg(test)]
+mod emergency_speed_tests {
+    #[test]
+    fn speed_when_the_faster_monsters_reach_the_share_of_hp() {
+        let w = super::emergency_speed_wanted;
+        assert!(!w(0, false, 2, 1000, 10), "0 is off");
+        assert!(w(50, false, 2, 20, 39), "20 of 39 is over half");
+        assert!(!w(50, false, 2, 19, 39));
+        assert!(!w(50, true, 2, 1000, 10), "already fast");
+        assert!(!w(50, false, 0, 1000, 10), "town");
+        assert!(w(50, false, 2, 1, 0), "HP 0 counts as 1");
+    }
 }
 
 /// borg-reborn-rs (#504): a cornered boost.
