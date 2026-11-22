@@ -17,7 +17,7 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
-use crate::borg_projection::borg_los_light;
+use crate::borg_projection::borg_los_projectable;
 use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
 use crate::params::{value, Param};
 use crate::state::BorgState;
@@ -164,7 +164,7 @@ pub fn borg_update_light(st: &mut BorgState) {
          * projectable grids only, so not through passable rubble; C's proxy
          * gated (2,1) on (2,0) being floor) */
         for (dy, dx) in RADIUS_2 {
-            if borg_los_light(st, cy, cx, cy + dy, cx + dx) {
+            if borg_los_projectable(st, cy, cx, cy + dy, cx + dx) {
                 borg_cave_light_hack(st, cy + dy, cx + dx);
             }
         }
