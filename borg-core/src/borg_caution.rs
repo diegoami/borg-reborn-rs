@@ -2478,6 +2478,11 @@ pub(crate) struct IncomingDamage {
     pub recall_unknown_blow: bool,
     /// #880: a POISON blow, which also sets the poison timer.
     pub poisons: bool,
+    /// #1010: unknown damage once the blows that hurt without stopping the
+    /// fight are priced (`status_blow_priced`): a blow that can stop the
+    /// Borg acting (PARALYZE, CONFUSE, BLIND, TERRIFY, HALLU), SHATTER and
+    /// BLACK_BREATH, or a spell of unknown damage.
+    pub unpriced_damage: bool,
 }
 
 /// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
@@ -2500,6 +2505,28 @@ fn recall_spell_has_unknown_damage(spell: u32) -> bool {
 
 fn modelled_blow(effect: &[u8]) -> bool {
     matches!(effect, b"HURT" | b"ACID" | b"ELEC" | b"FIRE" | b"COLD" | b"NONE")
+}
+
+/// #1010: blows that deal their dice as HP (`monster_damage_target`,
+/// mon-blows.c:564-600, 695-720, 777-1080 at 574b618c) and add a side effect
+/// that does not stop the Borg fighting: poison (its timer: mon-blows.c:683-
+/// 684), a drained stat or experience, a theft, disenchantment, drained
+/// charges. Their dice are already in `hp_per_turn`.
+fn status_blow_priced(effect: &[u8]) -> bool {
+    matches!(effect, b"POISON" | b"LOSE_STR" | b"LOSE_INT" | b"LOSE_WIS" | b"LOSE_DEX" | b"LOSE_CON"
+        | b"LOSE_ALL" | b"EXP_10" | b"EXP_20" | b"EXP_40" | b"EXP_80" | b"EAT_GOLD" | b"EAT_ITEM"
+        | b"EAT_FOOD" | b"EAT_LIGHT" | b"DISENCHANT" | b"DRAIN_CHARGES")
+}
+
+/// #1010: poison costs 1 HP a world tick while its timer runs (game-world.c:
+/// 513-515; a tick is 10 game turns, game-world.c:1080-1081), and each hit
+/// adds 5 + randint1(rlev) ticks, more than a tick a hit: a poisoner in
+/// contact keeps the timer running. In Borg turns that is `10 / energy` HP a
+/// turn (1 at normal speed). Resisting poison blocks the timer
+/// (player_timed.txt POISONED `fail:2:POIS`). One poisoner's share: several
+/// still cost one HP a tick, so a sum over monsters over-counts.
+fn poison_hp_per_turn(poisons: bool, resists: bool, player_energy: f64) -> f64 {
+    if poisons && !resists { 10.0 / player_energy.max(1.0) } else { 0.0 }
 }
 
 /// #880: during the Recall delay the Borg only waits for the countdown,
@@ -2619,6 +2646,7 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         let effect = blow.effect_name.to_bytes();
         out.unknown_fight |= effect != b"HURT";
         out.unknown_damage |= !modelled_blow(effect);
+        out.unpriced_damage |= !modelled_blow(effect) && !status_blow_priced(effect);
         out.recall_unknown_blow |= recall_blow_unmodelled(effect);
         out.poisons |= effect == b"POISON";
         let vulnerable = match effect {
@@ -2639,6 +2667,7 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         }
     }
     out.unknown_damage |= out.ranged_risk;
+    out.unpriced_damage |= out.ranged_risk;
     out
 }
 
@@ -2830,11 +2859,39 @@ pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_
         // HP 0 is alive (the engine kills below zero).
         return hp >= 0 && other_danger <= limit;
     }
+    // borg-reborn-rs (#1010): with caution_attack_price_status_blows, a
+    // poison, drain or theft blow is priced (its dice, and poison's timer)
+    // instead of refusing the target; a blow that can stop the Borg acting
+    // still refuses it.
+    if p(Param::caution_attack_price_status_blows) != 0 {
+        let resists = st.borg.tr(BI_RPOIS) != 0 || st.borg.temp.res_pois;
+        let energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize));
+        let damage = target_damage.hp_per_turn + poison_hp_per_turn(target_damage.poisons, resists, energy);
+        return !target_damage.unpriced_damage && category_threat_safe(hp, damage, other_danger, limit);
+    }
     !target_damage.unknown_damage && category_threat_safe(hp, target_damage.hp_per_turn, other_danger, limit)
 }
 
 #[cfg(test)]
 mod category_threat_tests {
+    /// #1010: the white worm mass's poison is priced, a paralyzer is not.
+    #[test]
+    fn poison_and_drains_are_priced_paralysis_is_not() {
+        for e in [b"POISON".as_slice(), b"LOSE_DEX", b"LOSE_ALL", b"EXP_80", b"EAT_GOLD", b"DISENCHANT", b"DRAIN_CHARGES"] {
+            assert!(super::status_blow_priced(e), "{}", String::from_utf8_lossy(e));
+        }
+        for e in [b"PARALYZE".as_slice(), b"CONFUSE", b"BLIND", b"TERRIFY", b"HALLU", b"SHATTER", b"BLACK_BREATH", b"HURT"] {
+            assert!(!super::status_blow_priced(e), "{}", String::from_utf8_lossy(e));
+        }
+        assert_eq!(super::poison_hp_per_turn(true, false, 10.0), 1.0, "a tick a turn at normal speed");
+        assert_eq!(super::poison_hp_per_turn(true, false, 20.0), 0.5, "a fast Borg takes half a tick a turn");
+        assert_eq!(super::poison_hp_per_turn(true, true, 10.0), 0.0, "resisted");
+        assert_eq!(super::poison_hp_per_turn(false, false, 10.0), 0.0);
+        // The Mage 461220874's worm: 1d2 crawl about 0.9 a turn plus the
+        // timer against HP 20: attackable.
+        assert!(super::category_threat_safe(20, 0.9 + 1.0, 0, 40));
+    }
+
     #[test]
     fn first_sight_attack_yields_to_real_danger() {
         assert!(super::category_threat_safe(20, 6.5, 0, 40), "healthy Borg shoots lone cat");
