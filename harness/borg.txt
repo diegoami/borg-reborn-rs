@@ -270,11 +270,14 @@ borg_param_town_store_keep_min = 3
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
 # situations"; "if I have 20 CLW I would have say 4 detect invisible and 2
-# remove curse"). Above 0, each situation's remedy is worth a small
-# diminishing amount even while the condition is absent: this percent of the
-# trip weight, at half its value with the copies below. The planner buys them
-# after the urgent needs and the staples, by value per gold, so a richer Borg
-# buys more. 0 = off. Hypotheses, not yet measured in the zoo.
+# remove curse"). Above 0, each situation's remedy (Neutralize or Resist
+# Poison or Cure Critical Wounds, Remove Curse, Detect Invisible, Cure Serious
+# or Critical Wounds for confusion, Boldness or Heroism for fear) is worth this
+# percent of the trip weight a copy, even while the condition is absent, for
+# the first copies listed below and nothing past them (a target, not a curve).
+# The planner buys them after the urgent needs and the staples, by value per
+# gold, so a richer Borg buys more. 0 = off. Hypotheses, not yet measured in
+# the zoo.
 
 borg_param_town_prepared_percent = 8
 borg_param_town_prepared_poison = 3

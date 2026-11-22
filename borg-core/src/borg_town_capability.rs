@@ -127,11 +127,20 @@ const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
 const STAPLES: [(usize, usize); 4] = [(PHASE, STAPLE_PHASE), (THROWN_OIL, STAPLE_OIL),
     (FOOD, STAPLE_FOOD), (LIGHT, STAPLE_LIGHT)];
 const KNEE_UNIT: i64 = 128;
-fn knee_row(decay: i64, copy_units: i64) -> i64 { copy_units.max(1) * KNEE_UNIT + decay.clamp(0, 100) }
-fn knee_of(row: &[i64; 5]) -> Option<(i64, i64, i64)> {
-    // (free units, units of one copy, decay percent); None: off.
+fn knee_row(decay: i64, per_copy: i64) -> i64 { per_copy.max(1) * KNEE_UNIT + decay.clamp(0, 100) }
+
+/// A knee row, unpacked (#863; review F2). `per_copy` means two things, by
+/// which rows read it, and the rows are never read the other way: on a
+/// `STAPLES` row it is the units of one copy on the capability's own curve
+/// (`Model::value` steps by it); on a `HEAL_KINDS` row, which counts potions
+/// (`UNIT` each), it is the HEAL units one potion adds to the shared curve
+/// (`Model::heal_loss` scales by it and steps by whole potions).
+struct Knee { free: i64, per_copy: i64, decay: i64 }
+
+/// None: the row is off (a positive demand, which is what an unset row holds).
+fn knee_of(row: &[i64; 5]) -> Option<Knee> {
     if row[2] >= 0 { return None; }
-    Some((-row[2], row[1] / KNEE_UNIT, row[1] % KNEE_UNIT))
+    Some(Knee { free: -row[2], per_copy: row[1] / KNEE_UNIT, decay: row[1] % KNEE_UNIT })
 }
 /// The amount a curve sees for `amount` units: the first `free` as they are,
 /// each further copy of `copy` units worth `decay` percent of the copy before.
@@ -221,7 +230,7 @@ impl Model {
     fn value(&self, id: usize, r: &[i64; 5], amount: i64) -> i64 {
         let knee = STAPLES.iter().find(|&&(cap, _)| cap == id).and_then(|&(_, row)| self.curves.get(row)).and_then(knee_of);
         match knee {
-            Some((free, copy, decay)) => coverage(r, decayed(amount, free, copy, decay)),
+            Some(k) => coverage(r, decayed(amount, k.free, k.per_copy, k.decay)),
             None => coverage(r, amount),
         }
     }
@@ -232,9 +241,11 @@ impl Model {
     fn heal_loss(&self, change: Option<&BTreeMap<usize, i64>>) -> i64 {
         HEAL_KINDS.iter().filter_map(|&row| {
             let curve = self.curves.get(row)?;
-            let (free, heal, decay) = knee_of(curve)?;
+            let knee = knee_of(curve)?;
+            // The row counts potions: step by one potion (`UNIT`), then price the
+            // potions the decay takes off in the HEAL units one potion adds.
             let held = (curve[3] + change.and_then(|c| c.get(&row)).copied().unwrap_or(0)).max(0);
-            Some(heal * (held - decayed(held, free, UNIT, decay)) / UNIT)
+            Some(knee.per_copy * (held - decayed(held, knee.free, UNIT, knee.decay)) / UNIT)
         }).sum()
     }
     pub fn units(&self, scope: i64, slot: i64, count: i64) -> Vec<(usize, i64)> {
@@ -301,8 +312,14 @@ impl Model {
             self.curves[id][4] = (self.curves[id][4] + n).max(0);
         }
     }
-    pub fn mask(&self, shop: u8, slot: u8) -> u64 {
-        self.units(i64::from(shop), i64::from(slot), 1).iter().fold(0, |m, &(id, _)| m | (1 << id.min(63)))
+    /// The capabilities a ware supplies, one bit each, for grouping wares that
+    /// close the same need (`shared_groups`). 128 bits (#863 review F1): ids
+    /// reach 75 and a 64-bit mask folded every id from 63 up onto one bit, which
+    /// merged unrelated groups (a fear remedy and a poison remedy) and made the
+    /// solver choose one option for both. Bit 63 stays the packing-room sentinel,
+    /// as in #864 (the Recall reserve, id 63, shares it as it did).
+    pub fn mask(&self, shop: u8, slot: u8) -> u128 {
+        self.units(i64::from(shop), i64::from(slot), 1).iter().fold(0, |m, &(id, _)| m | (1u128 << id))
     }
     pub fn valid(&self) -> bool {
         self.available.iter().all(|r| (0..=7).contains(&r[0]) && (0..=255).contains(&r[1]) && (0..=255).contains(&r[2]))
@@ -1189,13 +1206,13 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
             }
         }
     }
-    let mut sets: Vec<(u64, Vec<Group>)> = Vec::new();
+    let mut sets: Vec<(u128, Vec<Group>)> = Vec::new();
     for group in groups {
         if input.revision < 9 && matches!(group.key, GroupKey::Slot(_)) { out.push(group); continue; }
         let mut mask = 0;
         for option in &group.options {
             for &(i, _) in &option.picks { let c = &candidates[i]; mask |= model.mask(c.shop, c.slot);
-                if model.packing.as_ref().is_some_and(|p| p.room(c.class).is_some()) { mask |= 1u64 << 63; } }
+                if model.packing.as_ref().is_some_and(|p| p.room(c.class).is_some()) { mask |= 1u128 << 63; } }
         }
         if mask == 0 { out.push(group); continue; }
         let mut joined = vec![group];
@@ -1469,14 +1486,65 @@ mod tests {
         assert_eq!(m.gain(&[(PREP_INVISIBLE, 5 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]), 0, "the 5th is worth nothing");
     }
 
-    /// #863: a capability id past 63 does not overflow the group mask.
+    /// #863 (review F2): a healing row's knee counts potions and prices them in
+    /// the HEAL units one potion adds: 40 Cure Light Wounds with 7 free are worth
+    /// about 11 potions; and `value`, which reads only `STAPLES` rows, never
+    /// touches a healing row.
     #[test]
-    fn the_prepared_rows_have_a_mask_bit() {
-        let m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(),
-            supplies: vec![[5, 1, PREP_FEAR as i64, UNIT], [5, 2, POISON as i64, UNIT]] };
-        assert_eq!(m.mask(5, 1), 1 << 63);
-        assert_eq!(m.mask(5, 2), 1 << POISON);
+    fn a_healing_knee_counts_potions() {
+        let clw = 6060;
+        let mut m = staple_model();
+        m.curves[STAPLE_CLW] = [STAPLE_CLW as i64, knee_row(80, clw), -7 * UNIT, 40 * UNIT, 0];
+        let lost = m.heal_loss(None);
+        let effective = (40 * clw - lost) as f64 / clw as f64;
+        assert!((effective - 11.0).abs() < 0.2, "40 potions are worth about 11, not {effective}");
+        m.curves[STAPLE_CLW][3] = 7 * UNIT;
+        assert_eq!(m.heal_loss(None), 0, "the free copies lose nothing");
+        let plain = coverage(&m.curves[HEAL], 40 * clw);
+        assert_eq!(m.value(HEAL, &m.curves[HEAL], 40 * clw), plain, "`value` leaves the healing curve to `gain`");
+    }
+
+    /// #863 (review F1): every capability id has a mask bit of its own, ids
+    /// past 63 included, except the Recall reserve (63), which shares the packing
+    /// room's bit as it did in #864.
+    #[test]
+    fn every_capability_has_its_own_mask_bit() {
+        let supplies = (0..COUNT).map(|i| [5, i as i64, i as i64, UNIT]).collect();
+        let m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies };
+        let masks: Vec<u128> = (0..COUNT).map(|i| m.mask(5, i as u8)).collect();
+        for (i, &mask) in masks.iter().enumerate() {
+            assert_eq!(mask, 1u128 << i, "capability {i}");
+        }
+        assert!(masks.iter().enumerate().all(|(i, a)| masks.iter().skip(i + 1).all(|b| a & b == 0)), "no two capabilities share a bit");
         assert!(m.valid());
+    }
+
+    fn two_remedy_groups(a: (usize, usize), b: (usize, usize)) -> usize {
+        use crate::borg_town_stock::Candidate;
+        use crate::borg_town_solve::{Choice, Group, GroupKey, Limits};
+        let cs: Vec<_> = (0..2).map(|i| Candidate { shop: 0, slot: i, kind: u32::from(i) + 1, tval: 0, sval: 0,
+            price: 15, qty: 1, weight: 0, slots_cost: 1, stack_count: 0, class: u16::from(i) }).collect();
+        let mut m = model();
+        for row in [PREP_FEAR, PREP_POISON, POISON, FEAR] { m.curves[row] = [row as i64, 8000, -2 * UNIT, 0, 0]; }
+        m.supplies = vec![[0, 0, a.0 as i64, UNIT], [0, 0, a.1 as i64, UNIT], [0, 1, b.0 as i64, UNIT], [0, 1, b.1 as i64, UNIT]];
+        let choice = |i: usize| Choice { picks: vec![(i, 1)], cost: 15, value: m.ware(0, i as u8, 1), slots: 1, weight: 0 };
+        let groups = vec![Group { key: GroupKey::Class(0), options: vec![Choice::default(), choice(0)] },
+            Group { key: GroupKey::Class(1), options: vec![Choice::default(), choice(1)] }];
+        let limits = Limits { gold: 100, pack_slots: 5, weight: 100 };
+        let input = crate::borg_town_record::StepInput { revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
+            black_market_percentage: -1, candidates: cs.clone(), facts: &[], tryon: &[], limits, urgent: vec![],
+            params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit: &[], home_slots: 10 };
+        shared_groups(groups, &input, &cs, &m, &limits, (0, 100, 0)).len()
+    }
+
+    /// #863 (review F1): a fear remedy and a poison remedy are different
+    /// needs: their groups stay two, so the solver chooses for each; two wares
+    /// of the same remedy still share one group (the shortage is the same).
+    #[test]
+    fn different_remedies_are_different_groups() {
+        assert_eq!(two_remedy_groups((FEAR, PREP_FEAR), (POISON, PREP_POISON)), 2, "a fear and a poison remedy stay apart");
+        assert_eq!(two_remedy_groups((PREP_FEAR, PREP_FEAR), (PREP_POISON, PREP_POISON)), 2, "so do their prepared rows");
+        assert_eq!(two_remedy_groups((FEAR, PREP_FEAR), (FEAR, PREP_FEAR)), 1, "two fear remedies share a group");
     }
 
     /// #859: the room the Recall reserve still needs: the copies short,
