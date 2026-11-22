@@ -240,7 +240,7 @@ fn apparently_saleable(it: &borg_item) -> bool {
 /// (the Borg's own estimate, `borg_price_item`, without the Black Market's
 /// halving). The shop that buys it is the first that `borg_store_buys`
 /// names.
-fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
+fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     use crate::headers::list_options_h::OPT_birth_no_selling;
     let no_selling = engine::player_opt(OPT_birth_no_selling);
     let pack_end = inven_wield() as usize;
@@ -265,14 +265,22 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
         let bought = &st.buy;
         let just_bought = (0..usize::try_from(bought.bought_item_num).unwrap_or(0).min(10))
             .any(|i| bought.bought_item_tval[i] == i32::from(it.tval) && bought.bought_item_sval[i] == i32::from(it.sval));
+        let home_room = if place == Place::Home {
+            engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
+                let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
+                    || crate::borg_town_live::home_moved(st, it.kind, true));
+                let carry = if blocked { 0 } else { offer.carry_capacity() };
+                let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
+                    else { i32::from(it.iqty) };
+                [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
+            })
+        } else { None };
         KitItem {
+            home_room,
             protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                 && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
-            joins_pack: if place == Place::Home {
-                engine::store_stock(&st.access, BORG_HOME).get(slot)
-                    .is_some_and(|o| o.merge_capacity() >= i32::from(it.iqty))
-            } else { false },
+            joins_pack: home_room.is_some_and(|[_, merge, _]| merge >= i32::from(it.iqty)),
             place,
             slot: slot as u8,
             kind: it.kind,
@@ -460,7 +468,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     // The wearables: their power gain, and their slot cost (the worn item
     // moves to the pack).
     let (tryon, wear_slots) = try_on(st, &stock);
-    let kit = kit_of(st);
+    let kit = kit_of(st, live);
     for &(i, cost) in &wear_slots {
         stock.candidates[i].slots_cost = cost;
     }
@@ -612,7 +620,10 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             action::SELL_HOME => st.store.shops[BORG_HOME].ware.get(slot),
             _ => None,
         };
-        if !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
+        let replenishing = paction == action::TAKE_HOME && !now
+            && kit.iter().enumerate().any(|(i, item)| item.place == Place::Home && usize::from(item.slot) == slot
+                && out.copies.get(i).is_some_and(|&qty| qty > 0));
+        if !replenishing && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
             act[2] = executed_copies(paction, act[2]);
         }
         if selling.is_some() && act[2] > 0 {

@@ -357,6 +357,9 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             else { acquisition_room(st, item.tval, item.kind) };
         let mut fits = room_under_cap > 0 && offer.is_some_and(|o| o.carry_capacity() > 0);
         let mut qty = 1;
+        if let Some(offer) = offer.filter(|_| fits && a.code == action::TAKE_HOME) {
+            qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap), 0, 0);
+        }
         if let Some(offer) = offer.filter(|_| fits && a.code == action::BUY) {
             qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap),
                 offer.purchase_quote(shop), purchase_gold);
