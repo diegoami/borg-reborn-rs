@@ -2840,6 +2840,27 @@ pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_
 
 #[cfg(test)]
 mod breeder_danger_tests {
+    /// #1009 (re-review of #1012): each flag is read at its own site, the
+    /// pause's in `note_breeders_stoppable` and the boost's in
+    /// `breeder_fight_hard`, and not at the other's. Both need the engine,
+    /// so this pins their sources (the `recall_restricts` pattern); swapping
+    /// the two reads fails it.
+    #[test]
+    fn each_breeder_flag_is_read_at_its_own_site() {
+        let src = include_str!("borg_caution.rs");
+        let body = |head: &str| {
+            let at = &src[src.find(head).unwrap_or_else(|| panic!("{head}"))..];
+            at[..at.find("\n}\n").unwrap()].to_string()
+        };
+        let pause = body(concat!("pub(crate) fn note_breeders_", "stoppable("));
+        let boost = body(concat!("fn breeder_fight_", "hard(st: &mut BorgState"));
+        let pause_flag = concat!("Param::caution_breeder_", "danger_damage_only");
+        let boost_flag = concat!("Param::caution_breeder_", "boost_damage_only");
+        assert!(pause.contains(pause_flag) && !pause.contains(boost_flag), "the pause reads its own flag only");
+        assert!(boost.contains(boost_flag) && !boost.contains(pause_flag), "the boost reads its own flag only");
+        assert!(pause.contains(concat!("pick_", "danger(")) && boost.contains(concat!("pick_", "danger(")));
+    }
+
     /// #1009 (review of #1012, F2/F3): each switch picks its danger, and the
     /// other one is never computed.
     #[test]
