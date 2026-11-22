@@ -81,7 +81,7 @@ core is 3/3 identical to `smoke-borg-rs`, so it was not re-recorded.
 
 **Left, and for the owner.**
 - The zoo measures the two switches, each alone and both, against the
-  shipped settings: the request is ZOO_ISSUE (RULES 20). The owner starts
+  shipped settings: the request is [borg-zoo#688](https://github.com/diegoami/borg-zoo/issues/688), on `434d5371` (RULES 20). The owner starts
   it.
 - The counterfactual replays belong in borg-cemetery, beside the dossier
   on branch `runs/2026-11-22-trackp-9085-full-deaths`; the arms and hashes
@@ -92,9 +92,9 @@ core is 3/3 identical to `smoke-borg-rs`, so it was not re-recorded.
 - Whether to ship either switch is the owner's decision.
 
 **Review (MiniMax-M3.1-Flash, PR #997 comment, on `1eecc73d`).** N1: the
-zoo request is filed. N2: the hold now names `recall_restricts` and
+zoo request is borg-zoo#688. N2: the hold now names `recall_restricts` and
 `recall_pending_escape`. N3: the hold releases above the avoidance (`>`),
 as the stairs rule beside it does; the four replays keep their hashes.
-N4: the branch was renamed `task/P8.984-recall-restock`. N5: #935 is named
+N4: not done; the proxy refuses the branch rename (owner to rename it or to say so). N5: #935 is named
 above. N6: an arena has no staircase, so this is a note. N7: the zoo
 request asks for deaths on DL1 with a Recall counting down.
