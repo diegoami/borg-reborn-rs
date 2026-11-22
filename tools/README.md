@@ -76,7 +76,8 @@ worktree's, then the primary checkout's). `scripts/setup.sh` keeps the primary
 checkout's `vendor/borg-cemetery` at `death-tools-pin.txt`, a full checkout of
 about 1.2 GB shared by every worktree, so a sibling that tracks the Cemetery's
 `main` past the pin no longer stops a run: the tools print one line naming the
-checkout they use and why. With none matching, the error names `setup.sh`.
+checkout they use and each refused one with its reason, once per process.
+With none matching, the error lists every refusal and names `setup.sh`.
 
 New normal exports go to the selected checkout's `deaths/`, and its own
 registration hook builds readable pages/catalogue without overwriting historical

@@ -47,10 +47,12 @@ def verify_native_pin(repo, cemetery):
         if actual_paths != set(expected):
             raise ValueError('native subtree contains files outside the pin')
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
-        raise RuntimeError(
+        refused = RuntimeError(
             'Cemetery native tools do not match death-tools-pin.txt; refusing to execute. '
             'Fetch/check out the pinned commit or use a checkout with identical native files. '
-            f'({error})') from error
+            f'({error})')
+        refused.reason = str(error)
+        raise refused from error
 
 
 API_MISSING = ('The death tools now live in borg-cemetery. Update/clone '
@@ -65,7 +67,9 @@ def check(repo, cemetery):
     """Raise RuntimeError unless cemetery has API 1 and exactly the pinned native tools."""
     api = cemetery / 'scripts/native/API_VERSION'
     if not api.is_file() or api.read_text().strip() != '1':
-        raise RuntimeError(API_MISSING)
+        refused = RuntimeError(API_MISSING)
+        refused.reason = 'scripts/native/API_VERSION is not 1'
+        raise refused
     verify_native_pin(repo, cemetery)
 
 
@@ -100,16 +104,16 @@ def locate(repo):
         except RuntimeError as error:
             refused.append((cemetery, error))
             continue
+        # One line per refused checkout, once per process.
         for path, error in refused:
             if (path, cemetery) not in _NOTED:
                 _NOTED.add((path, cemetery))
-                reason = str(error).rsplit('(', 1)[-1].rstrip(')')
-                print(f'cemetery_tools: using {cemetery}: {path} does not match '
-                      f'death-tools-pin.txt ({reason})', file=sys.stderr)
+                print(f'cemetery_tools: using {cemetery}; refused {path}: '
+                      f'{getattr(error, "reason", error)}', file=sys.stderr)
         return cemetery
     if refused:
-        path, error = refused[0]
-        raise RuntimeError(f'{error} [{path}] {SETUP_HINT}')
+        every = '; '.join(f'{path}: {getattr(error, "reason", error)}' for path, error in refused)
+        raise RuntimeError(f'{refused[0][1]} Refused: {every}. {SETUP_HINT}')
     raise RuntimeError(f'{API_MISSING} {SETUP_HINT}')
 
 

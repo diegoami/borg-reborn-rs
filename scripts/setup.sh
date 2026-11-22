@@ -16,9 +16,11 @@
 #
 # vendor/borg-cemetery is kept at death-tools-pin.txt, not pins.json: it is
 # the death tools' fallback checkout (tools/cemetery_tools.py, #902), so a
-# clean checkout always follows the pin, without --checkout. It is a full
-# checkout (about 2 GB: the exporter registers across all its trees), so it
-# lives once in the primary checkout's vendor/, shared by every worktree.
+# clean checkout follows the pin without --checkout, except under --strict,
+# which reports it at another revision and fails as for every pin. It is a
+# full checkout (about 1.2 GB: the exporter registers across all its
+# trees), so it lives once in the primary checkout's vendor/, shared by
+# every worktree.
 #
 # Adapted from borg-agent's scripts/setup.sh.
 set -u
@@ -42,11 +44,12 @@ done
 
 if command -v python3 >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
     mkdir -p vendor
-    SETUP_MOVE=$move python3 - <<'PY' || problems=1
+    SETUP_MOVE=$move SETUP_STRICT=$strict python3 - <<'PY' || problems=1
 import json, os, subprocess, sys
 from pathlib import Path
 
 move = os.environ.get('SETUP_MOVE') == '1'
+strict = os.environ.get('SETUP_STRICT') == '1'
 pins = json.loads(Path('pins.json').read_text())['pins']
 
 
@@ -103,14 +106,15 @@ for name, pin in sorted(pins.items()):
         extra.append(pin['baseline']['commit'])
     ok = sync(name, repo, dest, pin['commit'], extra, move) and ok
 
-# The death tools' pinned checkout (#902): always moved to the pin when clean,
-# in the primary checkout's vendor/ (a linked worktree shares it).
+# The death tools' pinned checkout (#902): moved to the pin when clean (under
+# --strict only with --checkout), in the primary checkout's vendor/ (a linked
+# worktree shares it).
 death_pin = Path('death-tools-pin.txt').read_text().strip()
 common = git('.', 'rev-parse', '--path-format=absolute', '--git-common-dir').stdout.strip()
 primary = Path(common).parent if common else Path('.')
 (primary / 'vendor').mkdir(exist_ok=True)
 ok = sync('borg-cemetery (death-tools-pin.txt)', 'diegoami/borg-cemetery',
-          primary / 'vendor/borg-cemetery', death_pin, [], True) and ok
+          primary / 'vendor/borg-cemetery', death_pin, [], move or not strict) and ok
 sys.exit(0 if ok else 1)
 PY
 fi
