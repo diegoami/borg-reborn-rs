@@ -19,6 +19,7 @@ use crate::borg_fight_attack::{focused_ranged_attack, observed_kill_hp, perform_
 use crate::borg_headers::borg_trait_h::*;
 use crate::borg_io::borg_note;
 use crate::engine;
+use crate::headers::list_mon_race_flags_h::RF_MULTIPLY;
 use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
@@ -47,6 +48,16 @@ pub(crate) fn verdict(f: &Facts, max_uses: i32, damage_percent: i32) -> Option<i
     let paid = f.uses.is_none_or(|u| u >= uses);
     let hurt = f.incoming.max(0.0) * f64::from(uses) * 100.0 < f64::from(damage_percent) * f64::from(f.cur_hp);
     (uses <= max_uses && paid && hurt).then_some(uses)
+}
+
+/// #1008 (`lone_slow_breeder_lost`): the lone rule leaves a breeder alone
+/// while the level is lost to breeders (`breeders_lost`, set by
+/// `note_breeders_stoppable` under `caution_breeder_policy`), the condition
+/// the scary list's breeder attack entries already respect
+/// (`attack_on_sight_reason`). Other monsters, and a level not lost, are
+/// unchanged.
+pub(crate) fn defers_to_lost_level(switch: bool, breeder: bool, lost: bool) -> bool {
+    switch && breeder && lost
 }
 
 fn fresh(st: &BorgState, i: usize) -> bool {
@@ -93,6 +104,21 @@ pub(crate) fn attack(st: &mut BorgState) -> bool {
     if speed > engine::player_combat_speed() {
         return false;
     }
+    // #1008: on a level lost to breeders the breeder policy leaves; the lone
+    // rule does not stop the Borg to shoot one of them.
+    if defers_to_lost_level(
+        param(Param::lone_slow_breeder_lost) != 0,
+        engine::race_flag_has(r, RF_MULTIPLY),
+        st.borg.breeders_lost,
+    ) {
+        thread_local! { static NOTED: std::cell::Cell<i32> = const { std::cell::Cell::new(i32::MIN) }; }
+        let now = st.borg.time.now;
+        if NOTED.with(|n| n.replace(now)) != now {
+            borg_note(st, &format!("# Lone and slow: {} is a breeder on a level lost to breeders: no attack, the breeder policy leaves (#1008)",
+                String::from_utf8_lossy(engine::race_name(r))));
+        }
+        return false;
+    }
     let Some(attack) = focused_ranged_attack(st, i) else { return false };
     let facts = Facts {
         need_hp: f64::from(observed_kill_hp(&kill).unwrap_or_else(|| engine::race(r).avg_hp.max(1))),
@@ -130,6 +156,15 @@ mod tests {
     #[test]
     fn two_magic_missiles_kill_the_worm() {
         assert_eq!(verdict(&worm(), 2, 25), Some(2));
+    }
+
+    /// #1008: only a breeder, only on a lost level, only with the switch.
+    #[test]
+    fn a_breeder_on_a_lost_level_is_left_to_the_breeder_policy() {
+        assert!(defers_to_lost_level(true, true, true));
+        assert!(!defers_to_lost_level(false, true, true), "switch off: #878 as shipped");
+        assert!(!defers_to_lost_level(true, false, true), "a kobold on a lost level is still shot");
+        assert!(!defers_to_lost_level(true, true, false), "a colony still fought: the worm is shot");
     }
 
     #[test]
