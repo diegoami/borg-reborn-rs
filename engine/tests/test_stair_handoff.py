@@ -40,6 +40,10 @@ PINNED_TOWN_SETTINGS = [
     ("item_test_unknown_potions", 0),
     # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
     ("kill_live_zero_hp", 0),
+    # #1046 shipped the lone-slow bundle (#878) after these incidents.
+    ("lone_slow_attack", 0), ("escape_phase_lost_damage_only", 0),
+    ("attack_reserve_spell_damage_only", 0), ("attack_reserve_faint_percent", 0),
+    ("caution_unseen_bump_phase_turns", 0), ("caution_unseen_bump_phase_min_danger", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
