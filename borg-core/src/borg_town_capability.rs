@@ -123,6 +123,21 @@ const STAPLE_FOOD: usize = 74;
 const STAPLE_LIGHT: usize = 75;
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
+/// borg-reborn-rs (#895, owner: "we are going to need space for other
+/// devices"): with `town_device_percent` on, one requirement row per situation a
+/// wand, staff or rod answers, counted in charges (`UNIT` each): a ranged attack,
+/// an escape (a Staff of Teleportation), detection (Detect Invisible, Detect
+/// Evil, Mapping) and monster control (Slow, Hold, Confuse Monster). The first N
+/// charges together are worth `town_device_percent` of the trip weight, so a
+/// learned, charged device is kept and bought as variety, not only as one more
+/// source on a shared curve (an attack wand competes with arrows and oil).
+const DEV_ATTACK: usize = 76;
+const DEV_ESCAPE: usize = 77;
+const DEV_DETECT: usize = 78;
+const DEV_CONTROL: usize = 79;
+/// Situation capabilities a device supplies -> its device row.
+const DEVICE_ROWS: [(usize, usize); 7] = [(ATTACK, DEV_ATTACK), (TELEPORT, DEV_ESCAPE),
+    (INVISIBLE, DEV_DETECT), (MONSTERS, DEV_DETECT), (MAP, DEV_DETECT), (CONTROL, DEV_CONTROL), (OTHER, DEV_CONTROL)];
 /// A capability with a knee of its own -> its row.
 const STAPLES: [(usize, usize); 4] = [(PHASE, STAPLE_PHASE), (THROWN_OIL, STAPLE_OIL),
     (FOOD, STAPLE_FOOD), (LIGHT, STAPLE_LIGHT)];
@@ -175,7 +190,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 76] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 80] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -183,7 +198,8 @@ pub const NAMES: [&str; 76] = ["light turns", "nutrition", "healing HP", "poison
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
-    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light"];
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light",
+    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -804,6 +820,15 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // of what it supplies (per class, by device skill; 100 = as computed).
     if matches!(tval, TV_WAND | TV_ROD | TV_STAFF) {
         for (_, units) in &mut out { *units = scale_percent(*units, param(Param::town_devices_percent)); }
+        // borg-reborn-rs (#895): a learned device's charges, once per situation
+        // it answers, on that situation's device row.
+        if device_on(st) {
+            let charges = scale_percent(uses, param(Param::town_devices_percent));
+            let mut rows: Vec<usize> = DEVICE_ROWS.iter().filter(|&&(cap, _)| out.iter().any(|&(id, units)| id == cap && units > 0))
+                .map(|&(_, row)| row).collect();
+            rows.sort_unstable(); rows.dedup();
+            for row in rows { out.push((row, charges)); }
+        }
     }
     out.retain(|&(_, units)| units > 0);
     // borg-reborn-rs (#859): a Recall supply also counts toward the reserve.
@@ -839,7 +864,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
     let prepared = prepared_on(st);
     let staples = staple_on(st);
-    let count = if prepared || staples { COUNT } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let devices = device_on(st);
+    let count = if prepared || staples || devices { COUNT } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
@@ -956,6 +982,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
             let (weight, demand) = prepared_row(trip_weight, percent, param(copies));
             curve(row, weight, demand);
         }
+    }
+    // borg-reborn-rs (#895, owner: "we are going to need space for other
+    // devices"): the device rows, in charges, as requirements on the trip weight.
+    let device_floor = i64::from(param(Param::town_device_escape_min_gold));
+    if devices {
+        let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
+        let percent = param(Param::town_device_percent);
+        for (row, charges) in [(DEV_ATTACK, Param::town_device_attack), (DEV_ESCAPE, Param::town_device_escape),
+            (DEV_DETECT, Param::town_device_detect), (DEV_CONTROL, Param::town_device_control)] {
+            let (weight, demand) = device_row(trip_weight, percent, param(charges));
+            curve(row, weight, demand);
+        }
+    } else if count > DEV_CONTROL {
+        for row in [DEV_ATTACK, DEV_ESCAPE, DEV_DETECT, DEV_CONTROL] { curve(row, 0, UNIT); }
     }
     // borg-reborn-rs (#863, owner: "make staple objects start losing value
     // from [a few] copies, compared to the objects that are not in the
@@ -1140,6 +1180,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // conflate different effects (treasure sensing is not mapping, Detect
     // Monsters misses invisible races). Scrolls, devices and potions keep
     // their supply value next to the spells.
+    // borg-reborn-rs (#895, owner: a Staff of Teleportation only with spare gold):
+    // below the floor the escape row has no value, unless one is already carried
+    // (a carried staff is never sold because the purse is small).
+    if devices && escape_gated(device_floor, gold_after_urgent, model.curves[DEV_ESCAPE][3]) {
+        model.curves[DEV_ESCAPE][1] = 0;
+    }
     debug_assert!(model.valid());
     model
 }
@@ -1502,6 +1548,42 @@ mod tests {
         assert_eq!(m.heal_loss(None), 0, "the free copies lose nothing");
         let plain = coverage(&m.curves[HEAL], 40 * clw);
         assert_eq!(m.value(HEAL, &m.curves[HEAL], 40 * clw), plain, "`value` leaves the healing curve to `gain`");
+    }
+
+    /// #895 (owner: "we are going to need space for other devices"): a learned,
+    /// charged device is worth keeping on its situation's row (each charge an Nth
+    /// of the target, nothing past it), where on the shared ATTACK curve, saturated
+    /// by arrows and oil, it is worth next to nothing; an empty one has no charges
+    /// and no value; the Staff of Teleportation is gated by the gold floor unless
+    /// one is carried.
+    #[test]
+    fn a_charged_device_is_kept_as_variety() {
+        let trip = 50 * 1000;
+        let (weight, demand) = device_row(trip, 24, 10);
+        assert_eq!((weight, demand), (12_000, -10 * UNIT), "the target together is the percent of the trip weight");
+        let mut m = staple_model();
+        // ATTACK saturated by 100 shots and flasks already carried.
+        m.curves[ATTACK] = [ATTACK as i64, 100 * UNIT, 100 * UNIT, 500 * UNIT, 0];
+        m.supplies = vec![[PACK, 0, ATTACK as i64, 10 * UNIT], [PACK, 0, DEV_ATTACK as i64, 10 * UNIT]];
+        let wand = item(Place::Pack, 0, 1);
+        let plain = m.keep(&wand);
+        m.curves[DEV_ATTACK] = [DEV_ATTACK as i64, weight, demand, 10 * UNIT, 0];
+        let kept = m.keep(&wand);
+        assert!(kept >= weight, "the wand's ten charges are worth the target: {kept} against {plain} on the shared curve");
+        assert!(kept > 5 * plain.max(1), "far more than on the saturated curve");
+        // Nothing past the target: an eleventh charge adds nothing.
+        assert_eq!(m.gain(&[(DEV_ATTACK, UNIT)]), 0);
+        // Each charge up to it is worth the same.
+        m.curves[DEV_ATTACK][3] = 0;
+        assert_eq!(m.gain(&[(DEV_ATTACK, UNIT)]), weight / 10);
+        assert_eq!(m.gain(&[(DEV_ATTACK, 4 * UNIT)]), 4 * (weight / 10));
+        // An empty device supplies no row at all (units > 0 only).
+        assert_eq!(m.gain(&[]), 0);
+        // The Staff of Teleportation: gated below the floor unless carried.
+        assert!(escape_gated(3000, 2999, 0));
+        assert!(!escape_gated(3000, 3000, 0), "at the floor");
+        assert!(!escape_gated(3000, 100, 5 * UNIT), "one carried is never sold for a small purse");
+        assert!(!escape_gated(0, 0, 0), "no floor");
     }
 
     /// #863 (review F1): every capability id has a mask bit of its own, ids
@@ -2068,6 +2150,20 @@ pub(crate) fn recall_room(m: &Model, reserve: i64, candidates: &[crate::borg_tow
 fn variety_started(st: &BorgState) -> bool {
     st.borg.tr(BI_MAXDEPTH) >= param(Param::town_variety_min_depth)
 }
+
+/// borg-reborn-rs (#895): the device rows exist with `town_device_percent`
+/// above 0 once the variety has started (the first level buys the staples alone).
+fn device_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_device_percent) > 0 }
+
+/// borg-reborn-rs (#895): a device row's weight and demand: a requirement of
+/// `charges` charges worth `percent` of the trip weight together, each an Nth.
+fn device_row(trip_weight: i64, percent: i32, charges: i32) -> (i64, i64) {
+    (scale_percent(trip_weight, percent), -i64::from(charges.max(1)) * UNIT)
+}
+
+/// borg-reborn-rs (#895): whether the escape device row is switched off for a
+/// small purse: below the `floor` and with none carried (`carried` charges).
+fn escape_gated(floor: i64, gold: i64, carried: i64) -> bool { floor > 0 && gold < floor && carried == 0 }
 
 /// borg-reborn-rs (#863): the staple rows exist when any staple has a knee.
 fn staple_on(st: &BorgState) -> bool {

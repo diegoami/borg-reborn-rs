@@ -31,6 +31,7 @@ PINNED_TOWN_SETTINGS = [
     ("town_prepared_percent", 0), ("town_variety_min_depth", 0),
     ("town_recall_reserve", 1), ("buy_recall_from_gold", 400),
     ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),
+    ("town_device_percent", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
