@@ -37,7 +37,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_SPEED,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_RPOIS, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -2256,6 +2256,12 @@ mod recall_quantity_tests {
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = p(Param::caution_recall_survival_delay);
+    // #880: 1 prices POISON as damage, status blows by their dice and
+    // never vetoes on a breeder; 0 is #758's rule (every blow other than
+    // HURT/ACID/ELEC/FIRE/COLD/NONE is an unmodelled risk).
+    let blow_model = p(Param::caution_recall_blow_model) != 0;
+    let mut poison_strike: Option<f64> = None;
+    let mut breeders_waived = 0;
     let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
     let mut exposure = 0.0;
     let mut unknown_risks = 0;
@@ -2288,12 +2294,27 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
             st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
         let Some(risk_steps) = recall_attack_steps(steps, forecast.ranged_risk, projectable) else { continue };
         reachable += 1;
-        if forecast.unknown_damage && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
-            unknown_risks += 1;
+        let unknown = if blow_model { forecast.ranged_risk || forecast.recall_unknown_blow } else { forecast.unknown_damage };
+        if unknown && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
+            // #880: a breeder is the reason to leave, not a reason to stay.
+            // Every breeder's spells at 574b618c are harmless during Recall
+            // (BLIND/CONF/SCARE, DRAIN_MANA); its dice still count as HP.
+            if blow_model && flag(RF_MULTIPLY) { breeders_waived += 1; } else { unknown_risks += 1; }
         }
         if let Some(contact_steps) = steps {
             exposure += recall_exposure(forecast.hp_per_turn, player_energy, monster_energy, ticks, contact_steps);
+            if blow_model && forecast.poisons {
+                let at = recall_travel_ticks(contact_steps, monster_energy);
+                poison_strike = Some(poison_strike.map_or(at, |t: f64| t.min(at)));
+            }
         }
+    }
+    let poison_hp = if blow_model {
+        recall_poison_hp(ticks, st.borg.tr(BI_ISPOISONED) != 0, poison_strike, st.borg.tr(BI_RPOIS) != 0)
+    } else { 0.0 };
+    exposure += poison_hp;
+    if poison_hp > 0.0 || breeders_waived > 0 {
+        borg_note(st, &format!("# Flight Recall forecast: {poison_hp:.0} poison HP included; {breeders_waived} breeders' unmodelled risk waived (#880)"));
     }
     let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
     if allowed && asleep > 0 {
@@ -2343,6 +2364,11 @@ pub(crate) struct IncomingDamage {
     pub unknown_damage: bool,
     pub unknown_fight: bool,
     pub ranged_risk: bool,
+    /// #880: a blow whose HP is not its dice even during Recall (SHATTER's
+    /// earthquake). Status blows are priced by their dice alone there.
+    pub recall_unknown_blow: bool,
+    /// #880: a POISON blow, which also sets the poison timer.
+    pub poisons: bool,
 }
 
 /// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
@@ -2365,6 +2391,42 @@ fn recall_spell_has_unknown_damage(spell: u32) -> bool {
 
 fn modelled_blow(effect: &[u8]) -> bool {
     matches!(effect, b"HURT" | b"ACID" | b"ELEC" | b"FIRE" | b"COLD" | b"NONE")
+}
+
+/// #880: during the Recall delay the Borg only waits for the countdown,
+/// which no status stops (word_recall ticks down in process_world,
+/// game-world.c:709-714, whatever the player's timed effects). A status
+/// blow (BLIND, CONFUSE, TERRIFY, PARALYZE, HALLU, LOSE_*, EXP_*,
+/// DISENCHANT, DRAIN_CHARGES, EAT_*, BLACK_BREATH) costs the HP of its
+/// dice, already counted for every blow at every monster turn; POISON
+/// adds the poison timer, priced by `recall_poison_hp`. Only SHATTER
+/// (mon-blows.c:1086-1110: an earthquake, which can hit the player) has HP beyond
+/// its dice. The fight certificate (`unknown_fight`) is unchanged.
+fn recall_blow_unmodelled(effect: &[u8]) -> bool {
+    effect == b"SHATTER"
+}
+
+/// #880: poison is one timer (player_inc_timed, mon-blows.c:683-684,
+/// 5 + randint1(rlev) turns, stacking) that costs 1 HP per world tick
+/// while it runs (game-world.c:513-515; process_world every ten game
+/// turns, game-world.c:1080-1081). Several poisoners still cost at most
+/// one HP per tick, so the Recall delay bounds it: from the earliest
+/// world tick at which a poisoner can strike to the end of the delay,
+/// or the whole delay when the Borg is already poisoned. Resist poison
+/// blocks the timer (player_timed.txt POISONED `fail:2:POIS`). Damage
+/// reduction is ignored conservatively.
+fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, resists: bool) -> f64 {
+    if resists || ticks <= 0 { return 0.0; }
+    let ticks = f64::from(ticks);
+    if already_poisoned { return ticks; }
+    earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(0.0)).max(0.0))
+}
+
+/// #880: world ticks a monster needs to walk `steps` grids: it gains
+/// extract_energy per game turn and moves per 100 energy, so a world tick
+/// of ten game turns gives it energy/10 moves.
+fn recall_travel_ticks(steps: i32, monster_energy: f64) -> f64 {
+    f64::from(steps.max(0)) * 10.0 / monster_energy.max(1.0)
 }
 
 fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: bool) -> f64 {
@@ -2398,6 +2460,8 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         let effect = blow.effect_name.to_bytes();
         out.unknown_fight |= effect != b"HURT";
         out.unknown_damage |= !modelled_blow(effect);
+        out.recall_unknown_blow |= recall_blow_unmodelled(effect);
+        out.poisons |= effect == b"POISON";
         let vulnerable = match effect {
             b"ACID" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VACID) != 0,
             b"ELEC" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VELEC) != 0,
@@ -2434,6 +2498,24 @@ mod incoming_units_tests {
         assert!(super::recall_spell_has_unknown_damage(RSF_DARKNESS), "has a DARK_WEAK projection too");
         assert!(super::modelled_blow(b"ACID"));
         assert!(!super::modelled_blow(b"POISON"));
+    }
+
+    #[test]
+    fn recall_prices_poison_and_status_blows_as_hp() {
+        assert!(!super::recall_blow_unmodelled(b"POISON"), "#880: the white worm mass's 1d2 bite is HP");
+        assert!(!super::recall_blow_unmodelled(b"PARALYZE"));
+        assert!(!super::recall_blow_unmodelled(b"EXP_10"));
+        assert!(super::recall_blow_unmodelled(b"SHATTER"), "an earthquake's HP is not its dice");
+        // One timer, 1 HP per world tick, bounded by the delay.
+        assert_eq!(super::recall_poison_hp(34, false, Some(4.0), false), 30.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), false), 34.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(40.0), false), 0.0, "arrives after Recall");
+        assert_eq!(super::recall_poison_hp(34, false, None, false), 0.0);
+        assert_eq!(super::recall_poison_hp(34, true, None, false), 34.0, "an existing timer still ticks");
+        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), true), 0.0, "resist poison blocks the timer");
+        // Normal speed (energy 10 per game turn): one grid per world tick.
+        assert_eq!(super::recall_travel_ticks(3, 10.0), 3.0);
+        assert_eq!(super::recall_travel_ticks(3, 20.0), 1.5);
     }
 }
 
