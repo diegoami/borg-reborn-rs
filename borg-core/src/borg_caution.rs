@@ -2839,6 +2839,25 @@ pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_
 }
 
 #[cfg(test)]
+mod breeder_danger_tests {
+    /// #1009 (review of #1012, F2/F3): each switch picks its danger, and the
+    /// other one is never computed.
+    #[test]
+    fn each_breeder_test_reads_one_danger_and_computes_only_it() {
+        let mut calls = (0, 0);
+        let full = |c: &mut (i32, i32)| { c.0 += 1; 32 };
+        let without = |c: &mut (i32, i32)| { c.1 += 1; 2 };
+        assert_eq!(super::pick_danger(&mut calls, false, full, without), 32, "off: the danger with fear");
+        assert_eq!(calls, (1, 0), "off: the damage-only danger is not computed");
+        assert_eq!(super::pick_danger(&mut calls, true, full, without), 2, "on: without fear");
+        assert_eq!(calls, (1, 1), "on: the full danger is not computed again");
+        // The boost at the shipped 5 tenths, HP 20: fires at 32, not at 2.
+        let fires = |danger: i32| i64::from(danger) * 10 >= 20 * 5;
+        assert!(fires(32) && !fires(2));
+    }
+}
+
+#[cfg(test)]
 mod category_threat_tests {
     #[test]
     fn first_sight_attack_yields_to_real_danger() {
@@ -4517,7 +4536,14 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
     // The danger where the Borg stands (one turn, averaged), against the HP:
     // too high stops the stand for this think only (`breeders_in_danger`);
     // only the breeding outpacing the kills loses the level.
-    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    // borg-reborn-rs (#1009): with caution_breeder_danger_damage_only, the
+    // danger without its fear prices (#878's `borg_danger_damage_only`).
+    let here = pick_danger(
+        st,
+        p(Param::caution_breeder_danger_damage_only) != 0,
+        |st| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false),
+        |st| crate::borg_danger::borg_danger_damage_only(st, st.borg.c.y, st.borg.c.x, 1, true, false),
+    );
     st.borg.breeders_in_danger = here >= st.borg.tr(BI_CURHP);
     let ok = stoppable(births, kills, p(Param::caution_breeder_stoppable_births_percent));
     // Lost only when the breeding outpaces the kills on
@@ -5160,8 +5186,32 @@ fn nearest_kill(st: &BorgState) -> i32 {
 /// `caution_breeder_boost_danger_tenths` / 10 of the current HP: the same
 /// boosts as cornered (Heroism, Berserk Strength, Blessing, Speed), which
 /// `borg_defend`'s danger windows otherwise never use there (0 = off).
-fn breeder_fight_hard(st: &BorgState, pos_danger: i32) -> bool {
-    breeder_fight_hard_with(st, pos_danger, p(Param::caution_breeder_boost_danger_tenths)) && breeder_stand(st)
+///
+/// borg-reborn-rs (#1009, review of #1012): with
+/// `caution_breeder_boost_damage_only`, the danger without its fear prices,
+/// at `pos_danger`'s horizon, computed only when the boost is otherwise due
+/// (on, standing). It can only fall: without the breeder bonus one white worm
+/// mass is danger 2, not 32, and the boost (danger ≥ HP x tenths / 10) stays
+/// off. Hence a switch of its own, apart from the stand pause's.
+fn breeder_fight_hard(st: &mut BorgState, pos_danger: i32) -> bool {
+    let tenths = p(Param::caution_breeder_boost_danger_tenths);
+    if tenths <= 0 || !breeder_stand(st) {
+        return false;
+    }
+    let danger = pick_danger(
+        st,
+        p(Param::caution_breeder_boost_damage_only) != 0,
+        |_| pos_danger,
+        |st| crate::borg_danger::borg_danger_damage_only(st, st.borg.c.y, st.borg.c.x, p(Param::caution_danger_horizon), true, false),
+    );
+    breeder_fight_hard_with(st, danger, tenths)
+}
+
+/// borg-reborn-rs (#1009): the danger a breeder test reads: `full` (with
+/// its fear prices) or, with `damage_only` on, `without` (#878's
+/// `borg_danger_damage_only`). Only the one read is computed.
+fn pick_danger<S>(st: &mut S, damage_only: bool, full: impl FnOnce(&mut S) -> i32, without: impl FnOnce(&mut S) -> i32) -> i32 {
+    if damage_only { without(st) } else { full(st) }
 }
 
 /// The danger half of `breeder_fight_hard`, with its parameter given.
