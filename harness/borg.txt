@@ -1048,6 +1048,23 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
+# #931-#934 (seed 829474344, a white jelly beside the stair flight): every
+# switch ships 0 (today's play); the values in brackets are the hypotheses
+# the zoo measures.
+# #931: the weighted stair flight keeps out of the squares next to a known
+# immobile attacker when another route exists [1].
+borg_param_caution_stairs_immobile_reach = 0
+# #932: no strategic retreat after this many in a row from the same place,
+# each within the thinks of the last (the next flow step undid each) [3].
+borg_param_caution_retreat_oscillation_limit = 0
+borg_param_caution_retreat_oscillation_thinks = 3
+# #933: no strategic retreat from a lone immobile neighbour that melee kills
+# in this many turns while its danger is below the percent of the HP [3].
+borg_param_caution_retreat_immobile_kill_turns = 0
+borg_param_caution_retreat_immobile_danger_percent = 50
+# #934: poisoned, no poison cure carried and below this percent of max HP:
+# no strategic retreat; the escapes decide [75].
+borg_param_caution_poisoned_no_cure_retreat_hp_percent = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50

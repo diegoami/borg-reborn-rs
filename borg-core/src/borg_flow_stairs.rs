@@ -274,7 +274,23 @@ fn weighted_route(
             }
         }
     }
-    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true) else {
+    // borg-reborn-rs (#931): with caution_stairs_immobile_reach, the route
+    // first keeps out of the reach of the known immobile attackers (the
+    // squares next to them), and takes the plain route only when none is
+    // left. The danger weight charged their reach too little (a white jelly
+    // beside the route cost 2.9 steps at full HP, seed 829474344).
+    let refused = if crate::borg_caution::stairs_immobile_reach_on() {
+        borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |st, grid| {
+            !crate::borg_caution::in_immobile_reach(st, grid.y, grid.x)
+        })
+    } else {
+        None
+    };
+    let keep_out = refused.is_some();
+    if keep_out {
+        crate::borg_caution::note_immobile_reach_kept(st);
+    }
+    let Some(path) = refused.or_else(|| borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true)) else {
         return Ok(None);
     };
     let Some(percent) = crate::borg_caution::weighted_stairs_blocker_percent(st) else {
@@ -298,6 +314,7 @@ fn weighted_route(
     let search = |check: &mut WeightedPathCheck, st: &mut BorgState, goals: &[loc], target| {
         borg_flow::weighted_stair_path(st, goals, depth, avoid, sneak, weight, |st, grid| {
             check.blocker_at(st, grid, target).is_none()
+                && !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
         })
     };
     let clean = if mode == 3 {
