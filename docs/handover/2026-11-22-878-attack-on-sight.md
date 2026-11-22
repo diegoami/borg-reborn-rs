@@ -99,3 +99,11 @@ issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
   pin moves to the new head: every arm, `ctl` included, now plays track-p
   `4c686250` (#863 and the rest), and `faint25` and `all` also change for
   characters faster than normal.
+- Second review round (checklist at `b1218cfe`): merged `track-p`
+  `e8895f5e` (#868, citation-only conflicts; #868's
+  `attack_confused_by_direction` arrives with it); "turns" became "world
+  ticks" in the `attack_reserve_faint_percent` description, CALIBRATION.md
+  and a test comment; the PR body brought up to date. Checked: 649 release
+  unit tests, `tools/tests` 96 with the Cemetery at `death-tools-pin.txt`,
+  smoke 3/3 identical. borg-zoo#626's pilot ran on `296adfbf`; its
+  `faint25` arm never fired there, so the fixes do not change its numbers.
