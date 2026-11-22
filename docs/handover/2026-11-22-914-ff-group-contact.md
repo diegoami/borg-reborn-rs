@@ -1,7 +1,7 @@
 # 2026-11-22 — #914: fast-fragile groups in contact go to caution
 
 **Issue:** diegoami/borg-reborn-rs#914. **Branch:** `task/T914-ff-group-contact` (from `track-p`
-`86843a79`, `track-p` merged in again, last at `b784409e`). Track P, P8: this PR merges into
+`86843a79`, `track-p` merged in again, last at `f8725bc0`). Track P, P8: this PR merges into
 `track-p` once the owner says its review is done (RULES 1a).
 
 Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/claude/happy-brahmagupta-2jcsa3/studies/fastfrag-cave-spiders-2008390085/README.md) (seed 2008390085, borg-zoo#596).
@@ -36,7 +36,8 @@ Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/c
 
   On the merged head 2008390085 never meets the cave spiders, and `by_stats = 1` changes no key
   there either. Every fast-fragile note in these games (8 crows, 4 wild cats) reads "0 others in view". The
-  same table held on the earlier merge (`e190e913`), with other keys.
+  same keys at `b784409e` and `f8725bc0`; on the first merge (`e190e913`) the same holds with
+  other keys.
 - `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace --all-targets -- -D warnings`,
   `cargo test --workspace --exclude borg-core`, `cargo test --release -p borg-core`,
   `scripts/tests`, `tools/tests`, `check-param-citations.py` (0 errors), `borg-core-vendor.py
