@@ -662,6 +662,15 @@ fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
     out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
+/// borg-reborn-rs (#1004): does a class spell make its book worth keeping?
+/// Castable now (its level reached, its mana within the max SP), as before;
+/// or, with `ahead` > 0, learnt within `ahead` levels, its mana not asked:
+/// the SP grow with the level. A Ranger's Lesser Charms (Remove Hunger at
+/// CL3) and a Rogue's First Spells (Detect Monsters at CL5) were sold at CL1.
+fn book_spell_counts(slevel: i32, smana: i32, level: i32, maxsp: i32, ahead: i32) -> bool {
+    (slevel <= level && smana <= maxsp) || (ahead > 0 && slevel <= level.saturating_add(ahead))
+}
+
 fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
@@ -724,8 +733,11 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         for b in 0..engine::class_num_books().min(9) {
             let book = engine::class_book(b);
             if book.tval != i32::from(item.tval) || book.sval != i32::from(item.sval) { continue; }
+            // borg-reborn-rs (#1004): an owned book (pack or home) also counts
+            // when a spell of it is learnt within town_book_lookahead_levels.
+            let ahead = if matches!(origin.0, PACK | HOME) { param(Param::town_book_lookahead_levels) } else { 0 };
             let usable = (0..book.num_spells).map(|s| engine::class_book_spell(b, s))
-                .filter(|s| s.slevel <= ctx.journey.level as i32 && s.smana <= st.borg.tr(BI_MAXSP)).count();
+                .filter(|s| book_spell_counts(s.slevel, s.smana, ctx.journey.level as i32, st.borg.tr(BI_MAXSP), ahead)).count();
             if usable > 0 { return vec![(BOOKS + b as usize, UNIT)]; }
         }
         return Vec::new();
@@ -1731,6 +1743,24 @@ mod tests {
         m.change(&item(Place::Pack, 0, 1), -1);
         assert_eq!(m.gain(&[(RECHARGE, UNIT)]), 0);
     }
+    /// #1004: the look-ahead keeps a first book whose spell comes in a few
+    /// levels; 0 is today's test (castable now).
+    #[test]
+    fn book_look_ahead_counts_spells_a_few_levels_away() {
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "town_book_lookahead_levels").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 50));
+        // today's test: castable now only
+        assert!(book_spell_counts(1, 1, 1, 1, 0));
+        assert!(!book_spell_counts(1, 2, 1, 1, 0), "mana above the max SP");
+        // Ranger, Remove Hunger L3, at CL1 with 0 SP
+        assert!(!book_spell_counts(3, 1, 1, 0, 0));
+        assert!(book_spell_counts(3, 1, 1, 0, 2));
+        assert!(!book_spell_counts(3, 1, 1, 0, 1));
+        // Rogue, Detect Monsters L5, at CL1
+        assert!(book_spell_counts(5, 1, 1, 0, 4));
+        assert!(!book_spell_counts(5, 1, 1, 0, 3));
+    }
+
     #[test]
     fn owning_a_usable_class_book_closes_access_without_a_duplicate_stock_target() {
         let mut m = model();

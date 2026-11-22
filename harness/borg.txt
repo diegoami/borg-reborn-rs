@@ -905,6 +905,13 @@ borg_param_town_ranged_reserve = 0
 # borg_town_w_light for one class (those two have no per-class spelling).
 # 100 = today for all three.
 borg_param_town_unseen_percent = 100
+
+# The town planner keeps a class book it owns while a spell of it is
+# castable now. Above 0, also when a spell is learnt within this many levels
+# (#1004): a Ranger's Lesser Charms (first spell at CL3) and a Rogue's First
+# Spells (CL5) were sold at CL1 and bought back later. Purchases are
+# unchanged. 0 = off, today's play. A hypothesis for the zoo.
+borg_param_town_book_lookahead_levels = 0
 borg_param_town_food_percent = 100
 borg_param_town_light_percent = 100
 # #810 pilot. Total usable fuel turns in equipment and pack, including oil

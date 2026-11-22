@@ -497,7 +497,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:651` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:831` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:860` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -635,7 +635,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:833` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:845` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -2666,8 +2666,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:547` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2099` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2028` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2130` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2059` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6261,4 +6261,29 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2100` |
+
+## #1004: keeping a first spellbook before its first spell
+
+The registry now holds **2386** parameters (2385 on track-p `6bc4de1d`; one
+added), 0 compiled and shipped: today's play.
+
+The town planner (`borg_town_capability.rs`) supplies a class book only
+while one of its spells is castable now: `slevel` at most the level and
+`smana` at most the max SP. A Ranger's first spell, Remove Hunger, is level 3
+(`class.txt`, `magic:3`); a Rogue's, Detect Monsters, is level 5 (`magic:5`).
+At CL1 both books are worth nothing, and the first visit sells them for no
+gold (`birth_no_selling`). Seed 1895660873 sold Lesser Charms at turn 221.
+In 3 short starts per class (seeds 11, 22, 33), Rogues and Rangers sold the
+first book 6 of 6 times and the seven other classes 0 of 21.
+
+- **`town_book_lookahead_levels`**: a book the Borg carries or keeps at home
+  also counts when a spell of it is learnt within this many levels. The mana
+  is not asked, since the SP grow with the level. A shop's book is valued as
+  before. With 4 (the Rogue's gap), none of the 7 starts sells its first book.
+  The sales left are duplicate copies and other classes' books. One start
+  each, not a measurement: the study is borg-cemetery#STUDY.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:738` |
