@@ -2,12 +2,14 @@
 
 **Done.** `attack_kill_on_sight_min_hp_percent` (compiled 0, shipped 50 in
 `harness/borg.txt`): below this percent of max HP a `kill-on-sight` entry
-(#869: the grey mushroom patch) is not attacked on sight when a Cure Light,
-Serious or Critical Wounds potion is in the pack or an escape is at hand
-(stairs underfoot, a readable Phase Door: `borg_fast_fragile::has_cure`
-and `escape_available`, now `pub(crate)`). The ordinary attack and caution
-decide then. With neither, or above the floor, the attack still comes first,
-confused or not (#869, owner). `harness/scary_monsters.txt`'s comment no
+(#869: the grey mushroom patch) is not attacked on sight when a known Cure
+Light, Serious or Critical Wounds potion is in the pack or an escape is at hand
+(stairs underfoot, up or down, or a readable Phase Door:
+`borg_fast_fragile::has_cure` and `escape_available`, now `pub(crate)`). The
+floor only stops the attack on sight: the ordinary attack and caution then
+decide as for any monster, and may still decline the cure (their own heal
+gates), so the Borg may neither attack nor drink. With neither at hand, or
+above the floor, the attack still comes first, confused or not (#869, owner). `harness/scary_monsters.txt`'s comment no
 longer says "speed +10" (110 is normal speed). Stacked on #970 (#971).
 
 **Found.**
@@ -40,7 +42,8 @@ caution may still decline the cure (the Ranger 1723941400 above); the
 parameter text, `harness/borg.txt` and the PR body now say so. P3: the escape
 includes a down staircase (wording now "up or down"; going down leaves a
 depth-1 patch behind, so the behaviour is kept). P3: prompt re-posted at the
-new head; RULES 4: body fixed, later commits carry no trailers.
+new head; RULES 4: later commits carry no trailers; the body's footer is re-added by
+the session's GitHub tooling on every write, so it is the owner's call.
 `docs/CALIBRATION.md` documents the parameter. Text only: play unchanged.
 
 **Where this meets other work** (other sessions; their branches untouched).
@@ -64,3 +67,6 @@ new head; RULES 4: body fixed, later commits carry no trailers.
 **Owner.** The shipped value 50 rests on 13 named replays (RULES 14: a
 direction, not an effect); borg-zoo#665 measures it. Whether to keep #869's
 kill-on-sight entry at all (removing it gave the same 1 of 13) is yours.
+
+**Re-review (MiniMax, at 439675c7): pass.** P3: the "Done" section above now
+carries the parameter's wording; the body footer: see above.
