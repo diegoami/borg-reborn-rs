@@ -1149,7 +1149,17 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         }
     }
     let hp = st.borg.tr(BI_CURHP);
-    let here = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
+    // borg-reborn-rs (#878): with `escape_phase_lost_damage_only` the fight
+    // is judged on the danger without fear (the site's own danger is not
+    // used: it carries the fear prices).
+    let here = if param(Param::escape_phase_lost_damage_only) != 0 {
+        let feared = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
+        let here = crate::borg_danger::borg_danger_damage_only(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        borg_note(st, &format!("# Phase rule: danger {here} without fear (with fear {feared}) (#878)"));
+        here
+    } else {
+        danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false))
+    };
     let adjacent = adjacent_awake(st);
     let lost = adjacent && fight_lost(st, here, hp);
     let verdict = if !adjacent {

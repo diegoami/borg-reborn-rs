@@ -19,7 +19,7 @@ The run mirrors the zoo's `borgrs.run_cell` (config overrides, argv, `-exact-tur
 
 - **Hit chance: no gap.** The fight race rates a throw with `focused_launch_damage`. That
   multiplies the damage, capped at the HP still needed, by `hit_permyriad`
-  (`borg-core/src/borg_fight_attack.rs:5318`), which is `hit_chance` in
+  (`borg-core/src/borg_fight_attack.rs:5463` at the merge with track-p `206cf4e7`; `:5318` at `4b2c2fcf`), which is `hit_chance` in
   `engine/angband/src/player-attack.c:196-219`. A gdb script breaks on
   `random_chance_check` (`z-rand.c:543-547`) inside `make_ranged_throw`. It reads
   `chance.numerator`, which is the hit chance `hit_chance` computed, not the random draw.
