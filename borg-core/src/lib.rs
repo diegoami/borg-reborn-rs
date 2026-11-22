@@ -125,4 +125,5 @@ pub fn do_cmd_borg() {
 pub mod errands_plan;
 pub mod scary_list;
 mod borg_fast_fragile;
+mod borg_breeder_hold; // borg-reborn-rs (#882)
 mod borg_town_hunt;

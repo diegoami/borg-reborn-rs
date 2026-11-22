@@ -1929,6 +1929,8 @@ fn new_level(st: &mut BorgState) {
     b.breeders_lost = false;
     b.breeders_lost_turn = 0;
     b.breeders_behind = 0;
+    b.breeder_hold_samples.clear(); // borg-reborn-rs (#882)
+    b.breeder_hold_idle = 0;
     b.flee_path_noted = false; // borg-reborn-rs (#743)
 
     // reset our need to see inviso clock

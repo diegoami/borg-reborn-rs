@@ -928,7 +928,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
 
 /// The distance of the nearest stair of `track` without a monster on it,
 /// or -1.
-fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
+pub(crate) fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let mut best = -1;
     for i in 0..track.num.max(0) as usize {
@@ -3033,6 +3033,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // emergency food keep priority; the unseen response precedes stair walking.
     if unseen_bump_response(st, pos_danger) { return true; }
 
+    // borg-reborn-rs (#882, owner: "fight your way out"): against a slow or
+    // erratic breeder colony, cut the known way out or hold; no flight,
+    // exit, retreat, escape or back-away below moves the Borg meanwhile.
+    if crate::borg_breeder_hold::breeder_hold(st) {
+        return true;
+    }
+
     /*** Flee on foot ***/
 
     // Desperation Head for stairs
@@ -4462,7 +4469,7 @@ fn breeder_exit_grid(passable: &dyn Fn(i32, i32) -> bool, at: loc, breeders: &[l
 /// groups that do not touch each other (8-connected), so the grid is a
 /// corridor or doorway between them. A room grid, a room edge or corner, a
 /// dead-end tip and an isolated grid have at most one group.
-fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
+pub(crate) fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
     let open: Vec<(i32, i32)> = NEIGHBOURS.iter().copied().filter(|&(dx, dy)| passable(at.x + dx, at.y + dy)).collect();
     let mut group = vec![usize::MAX; open.len()];
     let mut groups = 0;
