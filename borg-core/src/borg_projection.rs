@@ -52,17 +52,13 @@ pub fn borg_los(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     )
 }
 
-/// borg-reborn-rs (#884, re-review of #894): `borg_los` for light. The
-/// engine's `add_light` propagates light along `los()`, which tests
-/// `square_isprojectable` (src/cave-view.c:109-162, :625-640). Passable
-/// rubble is walkable but has neither `LOS` nor `PROJECT`
-/// (lib/gamedata/terrain.txt), so `borg_cave_floor_bold`, the walk test,
-/// would let light through it. A grid passes light here only when it is known
-/// and projectable: floor (or a trap on it), an open or broken door, a
-/// staircase, a shop entrance, lava. Unknown terrain blocks it, the
-/// conservative side: a grid wrongly marked lit makes the Borg forget a
-/// monster it cannot see (#877).
-pub(crate) fn borg_los_light(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+/// Engine-style LOS on the Borg's known map. Both light and arc footprints
+/// use `los()` (src/cave-view.c:los:93-241, src/project.c:project:856-863).
+/// The terrain test is src/cave-square.c:square_isprojectable:671-674.
+/// Passable rubble lacks
+/// the PROJECT flag (lib/gamedata/terrain.txt), so it blocks intermediate rays.
+/// Unknown terrain is treated conservatively.
+pub(crate) fn borg_los_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     los_with(
         y1,
         x1,
@@ -72,15 +68,14 @@ pub(crate) fn borg_los_light(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32)
         |y, x| {
             engine::square_in_bounds_fully(x, y) && {
                 let g = st.cave.grid(x, y);
-                light_passes(u32::from(g.feat), g.trap, engine::feat_is_shop(i32::from(g.feat)))
+                known_projectable(u32::from(g.feat), g.trap, engine::feat_is_shop(i32::from(g.feat)))
             }
         },
     )
 }
 
-/// #884: whether a known grid of terrain `feat` lets the player's light
-/// through (`square_isprojectable`; see `borg_los_light`).
-fn light_passes(feat: u32, trap: bool, shop: bool) -> bool {
+/// Whether a known grid allows a projection to pass through it.
+fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
     trap || shop || [FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN, FEAT_LESS, FEAT_MORE, FEAT_LAVA].contains(&feat)
 }
 
@@ -419,7 +414,9 @@ pub fn borg_offset_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i3
 /// Assume that monsters in the way will stop the projection
 /// We refuse to assume that unknown grids are floors
 /// In fact, we assume they are walls.
-/// Adapted from "projectable()" in "spells1.c".
+/// Adapted from "projectable()" in "spells1.c". This forecast uses the
+/// Borg's floor predicate, which allows known passable rubble. The engine
+/// projectile path checks PROJECT terrain instead.
 pub fn borg_projectable_pure(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     /* Start at the initial location */
     let mut y = y1;
@@ -887,16 +884,32 @@ mod tests {
         use crate::headers::list_terrain_h::{FEAT_CLOSED, FEAT_PASS_RUBBLE, FEAT_RUBBLE};
         let feat = |y: i32, x: i32| if (y, x) == (1, 0) { FEAT_PASS_RUBBLE } else { FEAT_FLOOR };
         let walk = |y, x| feat(y, x) == FEAT_FLOOR || feat(y, x) == FEAT_PASS_RUBBLE;
-        let light = |y, x| light_passes(feat(y, x), false, false);
+        let light = |y, x| known_projectable(feat(y, x), false, false);
         assert!(los_with(0, 0, 2, 1, || true, walk));
         assert!(!los_with(0, 0, 2, 1, || true, light));
         // Floor all the way: both see.
-        assert!(los_with(0, 0, 2, 1, || true, |_, _| light_passes(FEAT_FLOOR, false, false)));
-        assert!(!light_passes(FEAT_RUBBLE, false, false));
-        assert!(!light_passes(FEAT_CLOSED, false, false));
-        assert!(!light_passes(FEAT_NONE, false, false));
-        assert!(light_passes(FEAT_NONE, true, false));
-        assert!(light_passes(FEAT_OPEN, false, false) && light_passes(FEAT_LESS, false, false));
+        assert!(los_with(0, 0, 2, 1, || true, |_, _| known_projectable(FEAT_FLOOR, false, false)));
+        assert!(!known_projectable(FEAT_RUBBLE, false, false));
+        assert!(!known_projectable(FEAT_CLOSED, false, false));
+        assert!(!known_projectable(FEAT_NONE, false, false));
+        assert!(known_projectable(FEAT_NONE, true, false));
+        assert!(known_projectable(FEAT_OPEN, false, false) && known_projectable(FEAT_LESS, false, false));
+    }
+
+    #[test]
+    fn acid_spray_rubble_blocks_only_the_dog_behind_it() {
+        let player = (56, 133);
+        let blocked_dog = (56, 126);
+        let clear_dog = (54, 126);
+        // Both targets are within 30 degrees of due west.
+        let projectable = |y, x| {
+            let feat = if (y, x) == (56, 127) { FEAT_PASS_RUBBLE } else { FEAT_FLOOR };
+            known_projectable(feat, false, false)
+        };
+        let reachable = |(y, x)| los_with(player.0, player.1, y, x, || true, projectable);
+        assert_eq!([blocked_dog, clear_dog].into_iter().filter(|&dog| reachable(dog)).count(), 1);
+        assert!(reachable(clear_dog));
+        assert!(!reachable(blocked_dog));
     }
 
     use super::*;

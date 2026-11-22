@@ -59,6 +59,21 @@ reach it, and the added line changes `borg_txt_sha256`. After the review
 fixes, the hashes are the same: `b13a6f0fc76ff016` at default and
 `f115048321c12344` at `= 0`.
 
+**Re-review (Mavis, at 89888283), processed.**
+- I merged `track-p` `c15a4e73` (#891/#878, #988, #989, #994): `params.rs`
+  took track-p's side plus this row, and the citations were fixed again
+  (2389 parameters, 0 wrong).
+- On the synced tree, the hashes are unchanged: 592754909 gives
+  `b13a6f0fc76ff016` (default) and `f115048321c12344` (`= 0`); 1378676237 gives
+  `ae8060ddaad2f822` in every arm. Smoke is 3/3 identical.
+- R4, against #878 (`attack_reserve_faint_percent`): see CALIBRATION.
+  - The #980 gate comes first, so `= 0` makes both #878 settings inert.
+  - On 592754909, #878 at 50% or 100% refuses the same cast and plays the same
+    keys as `= 0`. At 100% the refusal is marginal: 3.0 expected damage against
+    3 HP.
+  - #878 assumes a successful cast kills the target, so it underestimates the
+    damage while the missile's kill test is doubled.
+
 **Left.**
 - #990: the crow death that remains on 592754909.
 - #1013: the last-ditch escapes fake the mana the same way
@@ -67,4 +82,7 @@ fixes, the hashes are the same: `b13a6f0fc76ff016` at default and
 - The zoo measurement: borg-zoo request issue, linked from PR #991.
 - The replays are not in borg-cemetery yet.
 
-**Owner decides.** Whether to ship `attack_reserve_spell_overexert = 0`, after the zoo.
+**Owner decides.** Between `attack_reserve_spell_overexert = 0` (no
+emergency cast) and #878's `attack_reserve_faint_percent` (a priced one),
+after the zoo. `= 0` makes #878's two reserve settings inert, so shipping it
+means retiring them or recording that they are superseded.
