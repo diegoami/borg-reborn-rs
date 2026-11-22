@@ -206,6 +206,33 @@ pub(crate) fn ticks_per_action(energy: i32) -> f64 {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DotCure { Light, Serious, Critical, Neutralize }
 
+impl DotCure {
+    /// The potion's name, as the rest of the trace names items (#1028 R4).
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            DotCure::Light => "Cure Light Wounds",
+            DotCure::Serious => "Cure Serious Wounds",
+            DotCure::Critical => "Cure Critical Wounds",
+            DotCure::Neutralize => "Neutralize Poison",
+        }
+    }
+}
+
+/// #1028 (R1): the probability that the Borg's own cut and poison take it
+/// below 0 HP (death is below 0, player-util.c:228) before its next action.
+/// `ticks` world ticks fall in that window on average (`ticks_per_action`):
+/// `floor(ticks)` of them, or one more with probability `frac(ticks)`, the
+/// same floor/ceil mixture `turn_pmf` takes for a monster's actions. At
+/// normal speed (one tick) it is 0 or 1; a hasted Borg at HP 2 with a Deep
+/// Gash (3 a tick, half a tick per action) dies with probability 1/2.
+pub(crate) fn dot_death_probability(per_tick: i32, ticks: f64, cur_hp: i32) -> f64 {
+    if per_tick <= 0 || ticks <= 0.0 { return 0.0; }
+    let low = ticks.floor();
+    let frac = ticks - low;
+    let kills = |n: f64| if n * f64::from(per_tick) > f64::from(cur_hp) { 1.0 } else { 0.0 };
+    (1.0 - frac) * kills(low) + frac * kills(low + 1.0)
+}
+
 pub(crate) fn dot_cure(poisoned: bool, cut: i32, rock: bool, carried: impl Fn(DotCure) -> bool) -> Option<DotCure> {
     let cut_ticks = cut > 0 && !rock;
     let options: &[DotCure] = match (poisoned, cut_ticks) {
@@ -385,12 +412,20 @@ fn monster_pmf(st: &BorgState, i: usize) -> Vec<f64> {
 /// #926: the Borg's own cut and poison expected before its next action, when
 /// `fast_fragile_count_dot` is on; 0 otherwise.
 fn own_dot() -> f64 {
-    if param(Param::fast_fragile_count_dot) == 0 { return 0.0; }
+    let (per_tick, ticks) = own_dot_parts();
+    f64::from(per_tick) * ticks
+}
+
+/// The HP a world tick of the Borg's own cut and poison takes, and the world
+/// ticks expected before its next action; (0, 0) with
+/// `fast_fragile_count_dot` off.
+fn own_dot_parts() -> (i32, f64) {
+    if param(Param::fast_fragile_count_dot) == 0 { return (0, 0.0); }
     // The timers as borg_trait reads them (BI_ISPOISONED, BI_ISCUT come from
     // the same player->timed, borg_trait.rs:2852-2858).
     let energy = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize));
-    f64::from(dot_per_tick(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
-        engine::player_has(PF_ROCK))) * ticks_per_action(energy)
+    (dot_per_tick(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
+        engine::player_has(PF_ROCK)), ticks_per_action(energy))
 }
 
 /// #926 (review of #1002): the carried potion that stops the Borg's own cut
@@ -433,8 +468,11 @@ fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
 /// and the stairs cannot save it, a cure can. Only with
 /// `fast_fragile_count_dot`.
 fn dot_kills(cur_hp: i32) -> bool {
-    let dot = own_dot();
-    dot > 0.0 && dot > f64::from(cur_hp)
+    // #1028 (R1): the probability of death, not the expected damage, which
+    // under-counts the risk of a Borg faster than normal.
+    let (per_tick, ticks) = own_dot_parts();
+    dot_death_probability(per_tick, ticks, cur_hp) * 100.0 >= f64::from(param(Param::fast_fragile_dot_death_percent))
+        && per_tick > 0
 }
 
 /// #926: the heal ban lifts at or below `fast_fragile_heal_floor` percent of
@@ -505,7 +543,7 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
     if dot_kills(f.cur_hp) {
         if let Some((cure, sval)) = own_dot_cure(st) {
             if crate::borg_item_use::borg_quaff_potion(st, sval) {
-                borg_note(st, &format!("# Fast-fragile: its own cut and poison ({:.1} HP) kill it at HP {} before its next action: {cure:?} instead of the attack or Phase Door (#926)", own_dot(), f.cur_hp));
+                borg_note(st, &format!("# Fast-fragile: its own cut and poison ({:.1} HP) kill it at HP {} before its next action: {} instead of the attack or Phase Door (#926)", own_dot(), f.cur_hp, cure.name()));
                 return true;
             }
         }
@@ -713,6 +751,27 @@ mod tests_926 {
         assert_eq!(dot_per_tick(false, 201, false), 3, "a Deep Gash");
         assert_eq!(dot_per_tick(true, 5000, false), 4, "a Mortal Wound and poison");
         assert_eq!(dot_per_tick(true, 50, true), 1, "rock skin keeps the cut, not the poison");
+    }
+
+    #[test]
+    fn own_bleeding_is_a_probability_of_death() {
+        // #1028 R1: normal speed, one tick a turn: 0 or 1.
+        assert_eq!(dot_death_probability(1, 1.0, 0), 1.0, "798380952: HP 0 and a graze");
+        assert_eq!(dot_death_probability(1, 1.0, 1), 0.0, "HP 1 survives one graze tick");
+        // +10 (half a tick an action), HP 2, Deep Gash (3 a tick): 1/2.
+        assert_eq!(dot_death_probability(3, 0.5, 2), 0.5);
+        // +40 (10/42 of a tick), HP 1, a Severe Cut (2): 10/42.
+        assert!((dot_death_probability(2, 10.0 / 42.0, 1) - 10.0 / 42.0).abs() < 1e-12);
+        // Slowed (two ticks), HP 1, a graze: the second tick kills.
+        assert_eq!(dot_death_probability(1, 2.0, 1), 1.0);
+        assert_eq!(dot_death_probability(0, 1.0, 0), 0.0, "nothing ticks");
+        assert_eq!(dot_death_probability(3, 0.0, 0), 0.0, "no tick before the action");
+    }
+
+    #[test]
+    fn the_cures_are_named_as_items() {
+        assert_eq!(DotCure::Serious.name(), "Cure Serious Wounds");
+        assert_eq!(DotCure::Neutralize.name(), "Neutralize Poison");
     }
 
     #[test]
