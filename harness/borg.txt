@@ -1089,6 +1089,16 @@ borg_param_caution_stairs_flight_ignore_danger = 1
 # #765: above 0, stair flights block awake monsters and pay this many extra
 # steps for danger equal to current HP. 0 keeps the existing flight routing.
 borg_param_caution_stairs_flight_threat_weight = 5
+# #881: how a weighted flight treats grids its map holds as unknown. 0 = one
+# step like floor (C); 1 = plus caution_stairs_flight_unknown_steps; 2 = refused.
+borg_param_caution_stairs_flight_unknown = 0
+borg_param_caution_stairs_flight_unknown_steps = 5
+# #881 part 2: with a known breeder near, retreat and back-up refuse a dead
+# end (1; a grid whose every known path out passes through the Borg's grid)
+# or also a grid farther from the way out than the Borg's (2). The way out:
+# known floor this many grids from every breeder, and the staircases. 0 = C.
+borg_param_caution_retreat_dead_end = 0
+borg_param_caution_retreat_dead_end_distance = 6
 
 # Clean path for every flight to the stairs (#743, the follow-up of #736):
 # 1 = a flight (a scary level, too much danger, "Looking for any stair")
