@@ -950,6 +950,28 @@ pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
     device_fail(skill, lev)
 }
 
+/// Whether the known stack is the single-purpose RESTORE_EXP potion.
+pub(crate) fn is_restore_life(item: &crate::borg_headers::borg_item_h::borg_item, sval: i32) -> bool {
+    item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION && i32::from(item.sval) == sval
+}
+
+/// #978: the opt-in reserve starts when experience-draining monsters enter
+/// the normal depth range (grape jelly, monster.txt:3306-3319). A repeatable
+/// equipped activation or a learned low-failure restoration spell replaces it.
+pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
+    use crate::borg_headers::borg_trait_h::BI_MAXDEPTH;
+
+    let copies = param(Param::town_restore_life_reserve);
+    if copies == 0 || st.borg.tr(BI_MAXDEPTH) < 12 {
+        return 0;
+    }
+    let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]
+        .into_iter().any(|activation| activation > 0 && st.borg.activation[activation as usize] != 0)
+        || [REVITALIZE, REMEMBRANCE].into_iter()
+            .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, 20));
+    if repeatable { 0 } else { copies }
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */

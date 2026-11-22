@@ -389,8 +389,9 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if a.code != action::DROP { return false; }
     let slot = a.at[1] as usize;
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
-    let qty = item.iqty;
+    let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
+    let drop_qty = a.at[2].clamp(1, qty);
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
@@ -400,7 +401,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     borg_keypress(st, u32::from(b'd'));
     borg_keypress(st, letter);
     if qty > 1 {
-        borg_keypresses(st, qty.to_string().as_bytes());
+        borg_keypresses(st, drop_qty.to_string().as_bytes());
         borg_keypress(st, KC_ENTER);
     }
     clear(st);
