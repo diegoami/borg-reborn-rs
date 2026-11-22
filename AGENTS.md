@@ -146,8 +146,8 @@ Close the task issue explicitly with its integration PR/commit. Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review
-PR. The owner chooses the reviewer (RULES 6); the session may run that
-review and post it on the PR. Fix findings through `track-p` task
+PR. The owner chooses the reviewer (RULES 6); the session may launch that
+reviewer, which posts its review on the PR. Fix findings through `track-p` task
 PRs. Keep promotion unmerged until the owner accepts the milestone review
 and CI passes. The owner merges the promotion or explicitly delegates that
 reviewed merge. Then the next milestone may start. Keep the reviewed head
@@ -231,31 +231,30 @@ owner's general rules. **The owner chooses the reviewer** (RULES 6): the
 session does not pick one, and it does not post a review before the owner
 has named the reviewer. The session writes the review prompt, pinned to an
 exact commit, and posts it on the PR it reviews; the owner names the
-reviewer; the session may then run that review and post it: it launches
-the reviewer the owner named, with the pinned prompt and nothing else from
-its own context, and posts the reviewer's findings unedited; it never
-reviews its own work in its own context. It may also hand the prompt to
-the owner to run, and posts the review on the PR if the owner has not.
-A review is posted as a **comment** — never a GitHub *approve* or *request
-changes*, which would read as the owner's verdict — headed with the
-reviewer the owner named and the pinned commit; posting it is not the
-owner's acceptance (RULES 1a). A milestone
-review is done by the owner or by a model of a **different
-family** from the one that wrote most of the milestone. Name both in the
-review PR.
+reviewer; the session may then launch the reviewer the owner named, with
+the pinned prompt and nothing else from its own context, or hand the
+prompt to the owner to run. It never reviews its own work in its own
+context. A milestone review is done by the owner or by a model of a
+**different family** from the one that wrote most of the milestone. Name
+both in the review PR.
 
 **If you are the reviewer, post your review on the PR yourself** (owner,
-2026-11-22). Whoever runs a review prompt (a model the owner launched, a
-session the owner asked, any tool) posts the finished review as a comment
-on the PR it reviews: write it to a file, then
-`gh pr comment <PR> --body-file <file>`. Head it with the reviewer (model
-and tool) and the pinned commit, and give the comment's URL as your final
-answer. Do not only return the findings in chat or to the session that
-launched you: a review that is not on the PR has not been delivered. If
-you cannot post (no `gh`, no credentials), say so as the first line of
-your answer, then give the review in full so it can be posted unedited.
-Every review prompt says this, with the PR number and the command
-(RULES 6).
+2026-11-22; RULES 6). However you were launched (a model the owner
+launched, a session the owner asked to review, a tool), post the finished
+review on the PR it reviews (on the issue, when there is no PR) through
+whatever write path you have: `gh pr comment <number> --repo
+diegoami/borg-reborn-rs --body-file <file>` (`gh issue comment` for an
+issue), a connected GitHub App or connector, or an MCP GitHub server.
+Post a conversation comment, never a GitHub review body, *approve* or
+*request changes*. Head it with the reviewer the owner named (model and
+tool), the pinned commit and the head at review time, and answer with the
+comment's URL. Findings returned only in chat are not a delivered review.
+Only if you have no write path at all, say so in the first line of your
+answer and give the full review; the session then posts it unedited, and
+never posts a second copy of a review already on the PR. Posting is not
+the owner's acceptance (RULES 1a). Every review prompt the session writes
+says this in its first lines, with the exact command for its PR and the
+other write paths, and repeats the command at its end.
 
 ## Where things are
 
