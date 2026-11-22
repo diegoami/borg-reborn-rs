@@ -624,7 +624,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         let replenishing = paction == action::TAKE_HOME && !now
             && kit.iter().enumerate().any(|(i, item)| item.place == Place::Home && usize::from(item.slot) == slot
                 && out.copies.get(i).is_some_and(|&qty| qty > 0));
-        if !replenishing && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
+        if paction != action::DROP_HOME && !replenishing && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
             act[2] = executed_copies(paction, act[2]);
         }
         if selling.is_some() && act[2] > 0 {

@@ -385,7 +385,7 @@ fn change_home_stock(u: &mut Utility, item: &KitItem, sign: i64) {
 }
 
 /// Clear deliberately unwanted stock ahead of small duplicate stacks.
-/// The usual Home sale path handles no-selling shops.
+/// After the withdrawal, the carried stack is sold or dropped.
 fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
     pack: &BTreeMap<u32, i32>, home: &mut BTreeMap<u32, usize>,
     out: &mut [Disposition], freed: &mut Freed,
@@ -398,11 +398,12 @@ fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
         let held = pack.get(&item.kind).copied().unwrap_or(0);
         let surplus = limit > 0 && count > limit && held >= usable_floor(u, item, held, minimum);
         if !(item.home_unwanted || surplus)
-            || item.unknown || item.unknown_flavour || item.just_bought || item.sell_shop < 0
+            || item.unknown || item.unknown_flavour || item.just_bought
+            || (item.sell_shop < 0 && !(input.revision >= 15 && item.home_unwanted))
             || (input.limits.pack_slots <= 0 && !item.joins_pack)
             || home_withdrawal_blocked(input, u, item)
         { continue; }
-        out[i] = Disposition::Sell;
+        out[i] = if item.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
         if let Some(count) = home.get_mut(&item.kind) { *count -= 1; }
         change_home_stock(u, item, -1);
         freed.home_slots += 1;
@@ -428,7 +429,7 @@ pub(crate) fn saturated_home_kinds(input: &StepInput, u: &Utility, dispositions:
                 *pack.entry(item.kind).or_default() += qty;
                 *home.entry(item.kind).or_default() -= usize::from(qty == item.qty);
             }
-            (Place::Home, Disposition::Sell) => *home.entry(item.kind).or_default() -= 1,
+            (Place::Home, Disposition::Sell | Disposition::Drop) => *home.entry(item.kind).or_default() -= 1,
             _ => {}
         }
         if action == Disposition::Store { *home.entry(item.kind).or_default() += 1; }
@@ -1499,6 +1500,36 @@ mod tests {
     }
 
     #[test]
+    fn unsellable_home_stock_is_withdrawn_and_then_dropped() {
+        use crate::borg_town_record::{action, first_executable_action, step};
+        let st = state(9, 26, 198);
+        let poison = KitItem { slot: 3, kind: 79, qty: 4, home_unwanted: true,
+            home_limited: true, home_room: Some([4, 0, 4]), sell_shop: -1, need: -1,
+            reduction: 0, ..recall(Place::Home) };
+        let select = |kit: &[KitItem], revision, slots| {
+            let mut inp = input(kit);
+            inp.revision = revision;
+            inp.limits.pack_slots = slots;
+            let storing = Storing::default();
+            let mut u = Utility::of(&st, kit, false);
+            let mut out = step(&inp);
+            (out.dispositions, out.freed, out.copies) = dispositions_by(&inp, &mut u, &st, storing);
+            let (code, at, _, _) = first_executable_action(&[], &[], &out, &[], kit, 0, slots, 20);
+            (code, at, out.freed)
+        };
+        let (code, at, freed) = select(&[poison], 15, 1);
+        assert_eq!((code, at), (action::DROP_HOME, [7, 3, 4, 0]));
+        assert_eq!(freed.home_slots, 1);
+        assert_eq!(freed.gold, 0);
+        assert_eq!(select(&[poison], 15, 0).0, action::LEAVE, "requires native pack room");
+        assert_eq!(select(&[poison], 14, 1).0, action::LEAVE, "preserve the old replay decision");
+        let carried = KitItem { slot: 1, place: Place::Pack, home_room: None, ..poison };
+        let (code, at, freed) = select(&[carried], 15, 0);
+        assert_eq!((code, at), (action::DROP, [-1, 1, 4, 0]));
+        assert_eq!(freed.pack_slots, 1);
+    }
+
+    #[test]
     fn two_home_stacks_protect_the_carried_floor_and_release_the_rest() {
         let mut st = state(9, 26, 198);
         st.borg.trait_[BI_APHASE as usize] = 20;
@@ -1557,7 +1588,7 @@ mod tests {
     fn home_disposal_uses_native_room_even_at_the_acquisition_cap() {
         use crate::borg_town_capability::Model;
         let st = state(9, 26, 198);
-        let pack = KitItem { home_limited: true, protect_disposal: true, kind: 51, qty: 35,
+        let pack = KitItem { home_unwanted: false, home_limited: true, protect_disposal: true, kind: 51, qty: 35,
             sell_shop: 4, proceeds: 0, ..recall(Place::Pack) };
         let home = KitItem { place: Place::Home, qty: 7, home_room: Some([7, 0, 0]), ..pack };
         let storing = Storing { home_stack_limit: 2, ..Storing::default() };

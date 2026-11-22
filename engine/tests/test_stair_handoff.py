@@ -40,6 +40,8 @@ PINNED_TOWN_SETTINGS = [
     ("item_test_unknown_potions", 0),
     # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
     ("kill_live_zero_hp", 0),
+    # The incidents also predate the Home stock and known-unwanted policies.
+    ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

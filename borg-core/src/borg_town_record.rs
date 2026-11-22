@@ -41,6 +41,7 @@ use crate::state::BorgState;
 /// settings (`storing`: the departure room, `town_store_keep_min` and
 /// `town_store_only_overweight`), so a replay stores as the visit did.
 /// #1048: v14 records the Home stack limit and the eligible kit kinds.
+/// v15 adds native Home withdrawal capacity and #1049 disposals without a buyer.
 pub const PLAN_SCHEMA: i64 = 15;
 
 /// The 24 town settings, `borg_town_plan` through
@@ -58,6 +59,7 @@ pub mod action {
     pub const STORE: i64 = 5;
     pub const DROP: i64 = 6;
     pub const LEAVE: i64 = 7;
+    pub const DROP_HOME: i64 = 8;
 }
 
 /// The `solve` flags, as bits.
@@ -685,9 +687,8 @@ pub struct StepOutput {
     /// What the dispositions freed for the purchases.
     #[cfg_attr(not(test), expect(dead_code))]
     pub freed: Freed,
-    /// Per kit row, the copies a split stack's disposition moves, the
-    /// surplus past `town_store_keep_min`; 0 or absent: the whole stack
-    /// (#859, review F1). Empty unless a stack was split.
+    /// Per kit row, explicit quantities for split and short-kit moves.
+    /// A zero or absent quantity denotes the whole stack.
     pub copies: Vec<i32>,
 }
 
@@ -1056,7 +1057,7 @@ fn first_action_with_room(
     }
     // The dispositions before the purchases, in the order that frees room
     // first: the pack's sales and drops, then its stores, then the Home's
-    // sales, then what comes back from the Home.
+    // disposals, then what comes back from the Home to keep.
     let order = if home_slots.is_some_and(|n| n <= 0) { [
         (Place::Pack, Disposition::Sell),
         (Place::Pack, Disposition::Drop),
@@ -1071,18 +1072,23 @@ fn first_action_with_room(
         (Place::Home, Disposition::Take),
     ] };
     for (place, d) in order {
-        if let Some((i, k)) = kit.iter().enumerate().filter(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
-            && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
-            && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0)
-                && !k.home_room.zip(out.copies.get(*i)).filter(|(_, qty)| **qty > 0)
-                    .map_or(k.joins_pack, |([_, merge, _], qty)| *qty <= merge)))
-            .min_by_key(|(i, k)| (!(place == Place::Home && d == Disposition::Sell && k.home_unwanted), *i))
-        {
-            let (code, at) = match (place, d) {
+        let home_disposal = place == Place::Home && d == Disposition::Sell;
+        let selected = kit.iter().enumerate().filter(|(i, k)| {
+            let disposition = out.dispositions.get(*i);
+            let copies = out.copies.get(*i).copied().filter(|&qty| qty > 0);
+            let joins = k.home_room.zip(copies).map_or(k.joins_pack, |([_, merge, _], qty)| qty <= merge);
+            k.place == place
+                && (disposition == Some(&d) || home_disposal && disposition == Some(&Disposition::Drop))
+                && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
+                && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !joins)
+        }).min_by_key(|(i, k)| (!(home_disposal && k.home_unwanted), *i));
+        if let Some((i, k)) = selected {
+            let (code, at) = match (place, out.dispositions[i]) {
                 (Place::Pack, Disposition::Sell) => (action::SELL, i64::from(k.sell_shop)),
                 (Place::Pack, Disposition::Drop) => (action::DROP, -1),
                 (Place::Pack, Disposition::Store) => (action::STORE, 7),
                 (Place::Home, Disposition::Sell) => (action::SELL_HOME, i64::from(k.sell_shop)),
+                (Place::Home, Disposition::Drop) => (action::DROP_HOME, 7),
                 _ => (action::TAKE_HOME, 7),
             };
             // Split storage, disposal and short-kit withdrawals use the

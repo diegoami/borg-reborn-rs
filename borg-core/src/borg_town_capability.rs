@@ -683,7 +683,8 @@ fn worthless(tval: u32, sval: i32) -> bool {
 /// items in the pack and Home as well. A temporary lack of demand for a
 /// useful effect does not make it an unwanted kind.
 pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
-    item.kind != 0 && item.aware && item.flavour_aware
+    param(Param::town_home_reject_unwanted) != 0
+        && item.kind != 0 && item.aware && item.flavour_aware
         && worthless(u32::from(item.tval), i32::from(item.sval))
 }
 
