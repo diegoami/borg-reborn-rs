@@ -967,6 +967,39 @@ pub fn first_executable_action(
     first_action_with_room(candidates, urgent, out, facts, kit, Some(home_slots), Some(pack_slots), Some(weight_room))
 }
 
+/// One copy of an urgent ware fits the pack's free slots and the weight
+/// still free (#955); `None` is not checked (historical selection).
+fn urgent_fits(c: &Candidate, pack_slots: Option<i32>, weight_room: Option<i64>) -> bool {
+    pack_slots.is_none_or(|n| n >= c.slots_cost) && weight_room.is_none_or(|w| w >= i64::from(c.weight))
+}
+
+/// The live selection (#939 re-review, P2). The urgent pass picks its set by
+/// gold, with the urgent Recall first (#956), before anything checks what
+/// fits; the selector then skips an urgent copy that does not fit (#955) and
+/// makes room for it when it can. When that leaves the visit with nothing to
+/// do (`LEAVE`) because an urgent ware does not fit and no room can be made,
+/// the urgent needs are chosen again without the blocked wares
+/// (`rebudget(blocked)`), so an affordable cure that fits is bought rather
+/// than lost to a Recall the pack cannot take. When the room can be made, or
+/// the blocked ware fits, nothing changes.
+#[allow(clippy::too_many_arguments)]
+pub fn live_selection(
+    candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput, facts: &[WareFact], kit: &[KitItem],
+    home_slots: i32, pack_slots: i32, weight_room: i64,
+    rebudget: impl FnOnce(&[usize]) -> Vec<UrgentPurchase>,
+) -> (i64, [i64; 4], i64, bool) {
+    let first = first_executable_action(candidates, urgent, out, facts, kit, home_slots, pack_slots, weight_room);
+    if first.0 != action::LEAVE { return first; }
+    let blocked: Vec<usize> = urgent.iter()
+        .filter(|f| !urgent_fits(&candidates[f.candidate], Some(pack_slots), Some(weight_room)))
+        .map(|f| f.candidate).collect();
+    if blocked.is_empty() { return first; }
+    let others = rebudget(&blocked);
+    if others.is_empty() { return first; }
+    let second = first_executable_action(candidates, &others, out, facts, kit, home_slots, pack_slots, weight_room);
+    if second.0 == action::LEAVE { first } else { second }
+}
+
 #[allow(clippy::too_many_arguments)]
 fn first_action_with_room(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
@@ -983,8 +1016,7 @@ fn first_action_with_room(
     // is the allowance less the urgent picks), so when one copy does not fit
     // yet, the room-making dispositions below run first and the purchase
     // follows on a later solve.
-    let feasible_urgent = urgent.iter().find(|f| pack_slots.is_none_or(|n| n >= candidates[f.candidate].slots_cost)
-        && weight_room.is_none_or(|w| w >= i64::from(candidates[f.candidate].weight)));
+    let feasible_urgent = urgent.iter().find(|f| urgent_fits(&candidates[f.candidate], pack_slots, weight_room));
     let blocked_urgent = !urgent.is_empty() && feasible_urgent.is_none();
     if let Some(f) = feasible_urgent {
         let c = &candidates[f.candidate];
@@ -1883,6 +1915,29 @@ mod tests {
         assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1, i64::MAX).0,action::BUY);
         let mut cs=stock.candidates.clone();cs[0].shop=7;cs[0].slots_cost=0;
         assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::TAKE_HOME);
+    }
+
+    /// #939 re-review (P2): an urgent Recall the pack cannot carry, with no
+    /// room to make, does not hide an affordable urgent cure that fits.
+    #[test]
+    fn a_blocked_urgent_recall_does_not_hide_a_cure_that_fits() {
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        out.dispositions.clear();out.solution.chosen.fill(0);out.ranged_purchase=None;
+        let mut cs=stock.candidates.clone();
+        let recall=0;let cure=cs.iter().position(|c| c.kind==CLW).unwrap();
+        cs[recall].weight=5;cs[recall].slots_cost=1;cs[cure].weight=4;cs[cure].slots_cost=1;
+        let urgent=[UrgentPurchase {candidate:recall,needs:vec![Need::Trip]}];
+        let cure_set=|blocked:&[usize]| { assert_eq!(blocked,[recall]); vec![UrgentPurchase {candidate:cure,needs:vec![Need::Poison]}] };
+        // Four tenths free: the Recall does not fit, the cure does.
+        let (a,act,_,now)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,cure_set);
+        assert_eq!((a,act[1],now),(action::BUY,i64::from(cs[cure].slot),true));
+        // Five tenths free: the Recall fits and keeps its priority.
+        let (a,act,_,_)=live_selection(&cs,&urgent,&out,&[],&[],1,1,5,|_:&[usize]| panic!("no fallback when it fits"));
+        assert_eq!((a,act[1]),(action::BUY,i64::from(cs[recall].slot)));
+        // Nothing else urgent and affordable: the visit still leaves.
+        let (a,..)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,|_:&[usize]| Vec::new());
+        assert_eq!(a,action::LEAVE);
     }
 
     /// #955 (P7 review): an urgent copy that does not fit the weight still
