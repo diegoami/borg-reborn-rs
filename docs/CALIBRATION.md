@@ -12,26 +12,31 @@ right after that change, so older sections show older counts.
 
 ## Confused attack on the grey mushroom patch, shipped (#901)
 
-No parameter added (the registry still holds **2374**); two shipped values
+No parameter added (the registry still holds **2374**); one shipped value
 changed. Owner, 2026-11-22, after #867 and #869: "once you are close to him,
-you attack with your best attack", with the settings that make it so.
+you attack with your best attack".
 
 - **`attack_confused_by_direction`** 0 → **1** (compiled 0). Confused, the
   Borg also throws, shoots and uses wands, rods and staves at an adjacent
   monster, by direction key, at the 11/32 confused aim; the cure waits next
   to an immobile non-unique confuser while an attack is open. See "Confused
   attacks by direction (#867)" below.
-- **`attack_throw_point_blank_divisor`** 0 → **1** (compiled 0 = inherit
-  `attack_arrow_point_blank_divisor`, 5 shipped; Rogue 3, Ranger 2). An
-  adjacent non-unique throw rated with `attack_throw_as_melee` is no longer
-  divided in the ordinary attack chooser; attack on sight already bypassed
-  it (#870).
+- **Not changed: `attack_throw_point_blank_divisor`** stays 0 (inherits
+  `attack_arrow_point_blank_divisor`, 5). The first commit of #904 also set it
+  to 1; the owner dropped it. The patch does not need it: #869's
+  kill-on-sight attacks through the focused planner, which ignores the
+  penalty. At 1 it reaches every adjacent monster and every class. In the
+  smoke Warrior at CL2-3 (the starting Dagger, 1d4), a flask rated 84 against
+  a round of blows' 43, and one flask killed a 9-HP white worm mass. A
+  thrown flask does 1d4 x 3 (`THROWING`, 2 + weight/12) x 3 (`EXPLODE`,
+  `player-attack.c:1296`), about 22 a hit, against a Dagger's 1d4 plus to-dam
+  per blow. It is left to borg-zoo#636's `confused-pb` arm.
 - Unchanged and kept 0: `caution_ranged_vs_immobile` (a confused step away
   would pre-empt the attack, #896) and `caution_ranged_only`.
 
-Not measured: borg-zoo#636 (pilot; the arm `confused-pb` is this pair,
-against `ctl` and `confused`). Shipped on the owner's decision before the
-measurement; a hypothesis until the zoo reports (RULES 14).
+Not measured: borg-zoo#636 (the arm `confused` is this value). Shipped on
+the owner's decision before the measurement; a hypothesis until the zoo
+reports (RULES 14).
 
 ## Confused attacks by direction (#867)
 
