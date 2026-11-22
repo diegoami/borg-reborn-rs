@@ -62,8 +62,9 @@ says nothing about distance. Revised after Mavis's review (#998):
   (`runs/2026-11-22-trackp-9085-full-deaths`) is not on its remote. The
   session kept the replay files, and the PR gives their hashes and the
   command.
-- The zoo has not measured it. That needs a borg-zoo request with
-  `recover_unseen_shot = 1` (the owner starts it, RULES 20).
+- The zoo has not measured it yet. The request is diegoami/borg-zoo#671
+  (arms ctl / shot / cure / both, specimen updated after the reviews), which
+  the owner starts (RULES 20).
 
 **For the owner.** Whether to ship `recover_unseen_shot = 1` after the zoo
 measures it. #982 (stacked on this PR) is a separate change in the same
