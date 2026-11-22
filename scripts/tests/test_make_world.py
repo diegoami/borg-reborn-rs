@@ -59,7 +59,10 @@ class MakeWorldTest(unittest.TestCase):
     def make(self, config):
         cfg = Path(self.tmp.name) / 'w.txt'
         cfg.write_text(config)
-        out = Path(self.tmp.name) / 'out'
+        # A fresh output directory per call: with one shared `out`, every
+        # call after a refusal failed on "out exists" instead of what it tests.
+        self.calls = getattr(self, 'calls', 0) + 1
+        out = Path(self.tmp.name) / ('out' if self.calls == 1 else f'out{self.calls}')
         so, se = io.StringIO(), io.StringIO()
         with redirect_stdout(so), redirect_stderr(se):
             mw.main(['--config', str(cfg), '--lib', str(self.lib), '--out', str(out)])
@@ -104,7 +107,9 @@ class MakeWorldTest(unittest.TestCase):
         for bad in ('favour = soldir\nfavour_weight = 4\n', 'favour_weight = 4\n',
                     'favour = soldier\nfavour_weight = 4\nbreeder_weight = 2\n',
                     'favour = soldier\nfavour_weight = 4\nbreeder_depth_shift = 1\n',
-                    'favour = soldier\nfavour_weight = 51\n'):
+                    'favour = soldier\nfavour_weight = 51\n',
+                    'favour = , ,\nbreeder_weight = 4\n',   # review of #971: an empty list is not "no favour"
+                    'favour =\nfavour_weight = 4\n'):
             with self.assertRaises(SystemExit, msg=bad):
                 self.make(bad)
 
