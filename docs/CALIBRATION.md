@@ -10,6 +10,27 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Kill-on-sight HP floor (#969)
+
+One parameter added. Track-p's baseline at 9085c266 (zoo run 45028029063)
+had 11 of 28 deaths by a grey mushroom patch: #869's `kill-on-sight` entry is
+attacked before the cures and Phase Door with no test of the Borg's own HP,
+and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
+
+- **`attack_kill_on_sight_min_hp_percent`** (compiled 0, **shipped 50**):
+  below this percent of max HP a `kill-on-sight` entry is not attacked on
+  sight when a known Cure Light, Serious or Critical Wounds is in the pack or
+  an escape is at hand (stairs underfoot, up or down, or a readable Phase
+  Door: `borg_fast_fragile::has_cure`, `escape_available`). The floor only
+  stops the attack on sight; the ordinary caution may still decline the cure
+  (its own heal gates), so the Borg may neither attack nor drink. With
+  neither at hand the attack goes on. 13 named replays: 13 deaths at 0, 1 at
+  50 (borg-zoo#665 measures it).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5651` |
+
 ## Confused attack on the grey mushroom patch, shipped (#901)
 
 No parameter added; shipped values changed. Owner, 2026-11-22, after #867
@@ -4996,7 +5017,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5723` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5749` |
 
 ## C Borg dive gates (#768)
 
@@ -5593,7 +5614,7 @@ them.
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:39` |
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:173` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:236` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:238` |
 | `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:239` |
 | `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:276` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:184` |
