@@ -393,8 +393,10 @@ fn weighted_flight(
 }
 
 pub(crate) fn weighted_down_flight(st: &mut BorgState, depth: i32, weight: i32) -> bool {
-    weighted_flight(st, GOAL_FLEE, Some(Which::More), WeightedFlightOptions {
-        depth, avoid: false, sneak: false, weight, ranged_reach: 0,
+    borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        weighted_flight(st, GOAL_FLEE, Some(Which::More), WeightedFlightOptions {
+            depth, avoid: false, sneak: false, weight, ranged_reach: 0,
+        })
     })
 }
 
@@ -1150,7 +1152,7 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
 fn fight_through(st: &mut BorgState, why: i32, flow: impl FnMut(&mut BorgState) -> bool) -> bool {
     let flight = crate::borg_caution::stairs_flight_ignores_danger(why, st.borg.goal.fleeing || st.borg.goal.leaving);
     let was = std::mem::replace(&mut st.flow.flight_no_danger, flight);
-    let ok = fight_through_plain(st, why, flow);
+    let ok = borg_flow::with_retreat_avoidance(st, why, |st| fight_through_plain(st, why, flow));
     st.flow.flight_no_danger = was;
     ok
 }

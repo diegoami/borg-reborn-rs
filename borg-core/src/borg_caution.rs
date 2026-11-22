@@ -1353,6 +1353,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Strategic retreat
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(b_d));
 
         // Reset my Movement and Flow Goals
@@ -1553,6 +1554,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Back away from danger
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(i32::from(engine::ddd(bi))));
 
         // Reset my Movement and Flow Goals
@@ -3346,8 +3348,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 2) we have boosted our avoidance because we are stuck
     // 3) we are in a Sea of Runes
     // 4) we are not in a vault
-    let danger_test =
-        pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    let danger_test = pos_danger > retreat_danger_threshold(st);
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
@@ -3507,15 +3508,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // scroll and carries on: the flee flow walks it to the stairs, and it
     // still fights and heals on the way. Recall costs the scroll and 15-35
     // turns of waiting, often next to the monster it flees.
-    if st.borg.goal.fleeing
-        && !st.borg.goal.fleeing_to_town
-        && st.borg.tr(BI_CDEPTH) >= 1
-        && !stairs_before_recall(st)
-        && !ranged_before_recall(st)
-        && !breeder_recall_held(st)
-        && recall_escape_allowed(st, Some(pos_danger))
-        && crate::borg_escape::borg_recall_for_flight(st)
-    {
+    if try_flight_recall(st, pos_danger, false) {
         // Note
         borg_note(st, "# Fleeing the level (recall)");
 
@@ -5343,7 +5336,7 @@ pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -
 }
 
 /// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
-fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
     why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
 }
 
@@ -5707,13 +5700,15 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     let ok = if weight > 0 {
         crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
     } else {
-        crate::borg_flow::borg_flow_clear(st);
-        crate::borg_flow_stairs::enqueue_down_stairs(st);
-        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
-        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
-        }
+        crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+            crate::borg_flow::borg_flow_clear(st);
+            crate::borg_flow_stairs::enqueue_down_stairs(st);
+            crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+            crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+                st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+                crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+            }
+        })
     };
     st.borg.status.desperate = false;
     if ok {
@@ -5726,6 +5721,31 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
 /// bored ascent while fleeing, so the up-stair flow can opt in there too.
 pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// Keep the flight Recall gates when an excluded retreat grid leaves no
+/// stair route. Only the preference for known stairs can be bypassed.
+pub(crate) fn try_flight_recall(st: &mut BorgState, danger: i32, stair_route_blocked: bool) -> bool {
+    st.borg.goal.fleeing
+        && !st.borg.goal.fleeing_to_town
+        && st.borg.tr(BI_CDEPTH) >= 1
+        && (stair_route_blocked || !stairs_before_recall(st))
+        && !ranged_before_recall(st)
+        && !breeder_recall_held(st)
+        && recall_escape_allowed(st, Some(danger))
+        && crate::borg_escape::borg_recall_for_flight(st)
+}
+
+/// #932: remember a tactical retreat for this many Borg thinks during a
+/// dungeon flight. Zero leaves the original routes intact.
+pub(crate) fn flight_retreat_ticks() -> i32 {
+    p(Param::caution_retreat_reentry_ticks)
+}
+
+/// Re-open the abandoned grid if the current danger has fallen below the
+/// strategic-retreat threshold.
+pub(crate) fn retreat_danger_threshold(st: &BorgState) -> i32 {
+    i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor)
 }
 
 /// The weighted route is checked after it is planned, including for a

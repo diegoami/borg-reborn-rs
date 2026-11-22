@@ -1135,6 +1135,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         {
             return choice!("borg_flow_stair_more");
         }
+        // No stair route around the danger we just retreated from.
+        if crate::borg_flow::active_retreat_grid(st, GOAL_FLEE).is_some()
+            && crate::borg_caution::try_flight_recall(st, here, true)
+        {
+            borg_note(st, "# Fleeing by Recall after avoiding a retreat grid");
+            return choice!("recall_around_retreat_grid");
+        }
     }
 
     /* Flee to a safe Morgoth grid if appropriate */
