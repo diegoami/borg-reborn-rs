@@ -34,6 +34,25 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertEqual(text.count('gh release create'), 1)
         self.assertIn('--draft', text[text.index('gh release create'):])
 
+    def test_build_only_runs_skip_the_release(self):
+        # #823/#824: release off checks the packages without a draft; a tag push always drafts.
+        text = WORKFLOW.read_text()
+        for name in ('since:', 'release:', 'type: boolean'):
+            self.assertIn(name, on_block(text))
+        job = text[text.index('\n  release:\n'):]
+        self.assertIn("if: needs.setup.outputs.release == 'true'", job)
+        self.assertIn("github.event_name == 'push' || github.event.inputs.release != 'false'", text)
+
+    def test_every_platform_is_packaged_and_played(self):
+        text = WORKFLOW.read_text()
+        for job, runner, platform in (('linux', 'ubuntu-24.04', 'linux'), ('macos', 'macos-latest', 'macos'),
+                                      ('windows', 'windows-latest', 'windows')):
+            body = text[text.index(f'\n  {job}:\n'):]
+            body = body[:body.index('\n\n  ', 1)]
+            self.assertIn(f'runs-on: {runner}', body)
+            self.assertIn(f'scripts/release/package.sh {platform} ', body)
+        self.assertIn('needs: [setup, source, linux, linux-clean, macos, windows]', text)
+
     def test_scripts_parse(self):
         for script in sorted((ROOT / 'scripts/release').glob('*.sh')):
             result = subprocess.run(['bash', '-n', str(script)], capture_output=True, text=True)
