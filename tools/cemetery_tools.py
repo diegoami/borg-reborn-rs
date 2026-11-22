@@ -66,9 +66,17 @@ _NOTED = set()  # fallbacks already reported by this process
 def check(repo, cemetery):
     """Raise RuntimeError unless cemetery has API 1 and exactly the pinned native tools."""
     api = cemetery / 'scripts/native/API_VERSION'
-    if not api.is_file() or api.read_text().strip() != '1':
+    try:
+        version = api.read_text().strip() if api.is_file() else None
+    except (OSError, UnicodeDecodeError) as error:
+        version, unreadable = None, error
+    else:
+        unreadable = None
+    if version != '1':
         refused = RuntimeError(API_MISSING)
-        refused.reason = 'scripts/native/API_VERSION is not 1'
+        refused.reason = (f'scripts/native/API_VERSION is unreadable ({unreadable})' if unreadable
+                          else 'scripts/native/API_VERSION is missing' if version is None
+                          else 'scripts/native/API_VERSION is not 1')
         raise refused
     verify_native_pin(repo, cemetery)
 
@@ -97,17 +105,19 @@ def locate(repo):
             candidates.append(path)
     refused = []
     for cemetery in candidates:
-        if not (cemetery / 'scripts/native/API_VERSION').is_file():
+        # A checkout with no native tools at all is not a candidate; one
+        # whose tools are there but unusable is a refusal (#906 review).
+        if not (cemetery / 'scripts/native').is_dir():
             continue
         try:
             check(repo, cemetery)
         except RuntimeError as error:
             refused.append((cemetery, error))
             continue
-        # One line per refused checkout, once per process.
+        # One line per refused checkout, once per process for that checkout.
         for path, error in refused:
-            if (path, cemetery) not in _NOTED:
-                _NOTED.add((path, cemetery))
+            if path not in _NOTED:
+                _NOTED.add(path)
                 print(f'cemetery_tools: using {cemetery}; refused {path}: '
                       f'{getattr(error, "reason", error)}', file=sys.stderr)
         return cemetery

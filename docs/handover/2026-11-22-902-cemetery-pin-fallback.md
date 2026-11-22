@@ -4,8 +4,9 @@
 borg-cemetery beside the primary checkout. Without `BORG_CEMETERY_DIR` it
 takes the first checkout whose native tools match `death-tools-pin.txt`:
 the sibling, then `vendor/borg-cemetery` (the worktree's, then the primary
-checkout's). When it skips one it prints one line, once per process for
-each refused checkout, naming the checkout it uses and why. With none
+checkout's). For each checkout it skips it prints one line, once per
+process for that checkout, naming the checkout it uses and why it refused
+the other (a missing, unreadable or wrong API marker is a refusal too). With none
 matching, the error lists every refusal and names
 `scripts/setup.sh`. An explicit `BORG_CEMETERY_DIR` that does not match is
 still an error, never a fallback, and the byte-for-byte pin check is

@@ -112,6 +112,27 @@ class CemeteryPointerTest(unittest.TestCase):
                 self.assertEqual(locate(repo), vendor)
             self.assertIn(f'refused {sibling}: scripts/native/API_VERSION is not 1\n', stderr.getvalue())
 
+    def test_a_malformed_or_missing_api_marker_is_a_refusal_not_a_crash(self):
+        for marker in (b'\xff\xfe', None):
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as tmp:
+                cemetery_tools._NOTED.clear()
+                repo, sibling, vendor = self.sibling_and_vendor(Path(tmp))
+                api = sibling / 'scripts/native/API_VERSION'
+                if marker is None:
+                    api.unlink()
+                else:
+                    api.write_bytes(marker)
+                stderr = io.StringIO()
+                with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                        'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'), \
+                        patch('sys.stderr', stderr):
+                    self.assertEqual(locate(repo), vendor)
+                self.assertIn(f'refused {sibling}: scripts/native/API_VERSION is', stderr.getvalue())
+                # An explicit checkout stays fail-closed.
+                with patch.dict(os.environ, BORG_CEMETERY_DIR=str(sibling)):
+                    with self.assertRaisesRegex(RuntimeError, 'API 1'):
+                        locate(repo)
+
     def test_a_sibling_at_the_pin_is_still_preferred(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
