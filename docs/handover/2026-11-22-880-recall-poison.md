@@ -1,6 +1,6 @@
 # 2026-11-22 — #880: poison, status blows and breeders no longer veto flight Recall
 
-**Issue:** diegoami/borg-reborn-rs#880. **Branch:** `claude/trusting-thompson-3ddhj3`
+**Issue:** diegoami/borg-reborn-rs#880. **Branch:** `task/880-recall-poison`
 (from `track-p` 7e21967b; owner, 2026-11-22). Track P.
 
 ## What was done
