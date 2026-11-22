@@ -804,7 +804,10 @@ fn note_unseen(st: &mut BorgState, ranged: bool) {
     // attack is news that the attacker moved; a projection hits from where it
     // stands, so a hit after the Borg walked away is not "followed".
     st.borg.unseen_followed = unseen_followed_next(st.borg.unseen_followed, recent, moved_far(far, ranged));
-    st.borg.unseen_shot_only = episode_shot_only(st.borg.unseen_shot_only, turns > 0 && !recent, ranged);
+    // A new episode: the window lapsed, or the mode had ended (its end also
+    // clears the clock, so `recent` is false then too; review of #998).
+    let new_episode = turns > 0 && (!recent || !st.borg.unseen_mode);
+    st.borg.unseen_shot_only = episode_shot_only(st.borg.unseen_shot_only, new_episode, ranged);
     st.borg.unseen_turn = now;
     st.borg.unseen_x = x;
     st.borg.unseen_y = y;

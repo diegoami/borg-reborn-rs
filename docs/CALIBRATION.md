@@ -3645,10 +3645,10 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1222` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1223` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1225` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1226` |
 | `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1225` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1232` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1235` |
 | `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1233` |
 | `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1234` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
