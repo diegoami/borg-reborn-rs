@@ -1085,7 +1085,7 @@ parameters! {
     attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4890", "Attack scary max town time: existing policy turns."),
     attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4915", "Attack scary depth multiplier: existing policy multiplier."),
     attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4915", "Attack scary min level: existing policy level."),
-    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:5522", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
+    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:5576", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
 
     // borg-reborn-rs (#241): defend source at 5d9abb8f.
     defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:293", "Defend bless fail: existing policy percent."),

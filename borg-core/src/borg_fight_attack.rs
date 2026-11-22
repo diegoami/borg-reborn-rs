@@ -5360,7 +5360,43 @@ mod focused_tests {
 /// Restore RNG, simulation flags, targets and goals after the dry run.
 /// Native eligibility and aim checks remain in force; no attack is issued.
 pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
-    focused_attack_ranked(st, target, |attack| Some(focused_score(attack)))
+    // borg-reborn-rs (#869): only the attack kinds the monster's attack entry
+    // allows (all without one); the best of them by the usual score.
+    let kinds = listed_attack_kinds(st, usize::from(st.kills.kills[target].r_idx));
+    focused_attack_ranked(st, target, |attack| kind_allowed(kinds, attack.kind).then(|| focused_score(attack)))
+}
+
+/// #869: the attack kinds race `r` may be attacked with, from the scary
+/// list's attack entry for the character (`scary_list::attack_kinds_for`);
+/// every kind without one.
+fn listed_attack_kinds(st: &BorgState, r: usize) -> u8 {
+    if r == 0 || r >= engine::r_max().saturating_sub(1) {
+        return crate::scary_list::ALL_ATTACK_KINDS;
+    }
+    crate::scary_list::selected().map_or(crate::scary_list::ALL_ATTACK_KINDS, |list| {
+        crate::scary_list::attack_kinds_for(list, r, engine::race_base_name(r), crate::scary_list::Situation {
+            clevel: tr(st, BI_CLEVEL), class: tr(st, BI_CLASS),
+            breeder_count: i32::from(st.borg.mon.breeders),
+            breeder_stand: !st.borg.breeders_lost && crate::borg_caution::breeder_stand(st),
+            levels_less: 0,
+        })
+    })
+}
+
+/// #869: whether attack `kind` is among `kinds` (`scary_list::ATTACK_KINDS`
+/// bits, by `attack_preference::Family`). A wait is never a focused attack.
+fn kind_allowed(kinds: u8, kind: i32) -> bool {
+    use crate::attack_preference::Family;
+    let bit = match crate::attack_preference::classify(kind).map(|k| k.family) {
+        Some(Family::Melee) => 0,
+        Some(Family::Projectile) => 1,
+        Some(Family::Thrown) => 2,
+        Some(Family::Spell) => 3,
+        Some(Family::Device) => 4,
+        Some(Family::Activation) => 5,
+        Some(Family::Wait) | None => return false,
+    };
+    kinds & (1 << bit) != 0
 }
 
 fn focused_attack_ranked(
@@ -5453,6 +5489,13 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
     result > 0
 }
 
+/// borg-reborn-rs (#869): the scary-list reason of an attack entry that is
+/// attacked on sight whatever its own damage (`attack_on_sight`): for pests
+/// like the grey mushroom patch, which confuse again before a cure is worth
+/// anything and die to one hit, so the attack comes before the cures and
+/// Phase Door, confused or not.
+pub(crate) const KILL_ON_SIGHT: &str = "kill-on-sight";
+
 /// #760: the category target comes before flight and remains the target on
 /// subsequent thinks. A breeder colony already lost is not an attack entry.
 pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
@@ -5482,7 +5525,17 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         }
         let Some(reason) = attack_on_sight_reason(st, usize::from(kill.r_idx)) else { continue };
         let Some(attack) = focused_attack(st, i) else { continue };
-        if !crate::borg_caution::category_attack_safe(st, i) { continue; }
+        // borg-reborn-rs (#869, owner: "Always attack, confused or not.
+        // Unless there is something more dangerous"): a `kill-on-sight`
+        // entry drops the target's own damage test, as #842 does for
+        // fast-fragile monsters; the other monsters' danger still decides.
+        // No heal ban and no fast-fragile escape: the target does not chase.
+        let safe = if reason == KILL_ON_SIGHT {
+            crate::borg_caution::category_attack_safe_with(st, i, false)
+        } else {
+            crate::borg_caution::category_attack_safe(st, i)
+        };
+        if !safe { continue; }
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
             String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
         if perform_focused_attack(st, i, attack) { return true; }
@@ -5549,6 +5602,30 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod attack_kind_tests {
+    use super::*;
+
+    /// #869: the scary list's attack kinds, by attack family.
+    #[test]
+    fn attack_kinds_follow_the_families() {
+        let only = |name: &str| 1u8 << crate::scary_list::ATTACK_KINDS.iter().position(|k| *k == name).unwrap();
+        let all = crate::scary_list::ALL_ATTACK_KINDS;
+        for kind in [BF_THRUST, BF_LAUNCH, BF_OBJECT, BF_SPELL_MAGIC_MISSILE, BF_WAND_HOLD_MONSTER, BF_ACT_ARROW] {
+            assert!(kind_allowed(all, kind as i32), "{kind}: all kinds");
+        }
+        assert!(kind_allowed(only("melee"), BF_THRUST as i32));
+        assert!(!kind_allowed(only("melee"), BF_OBJECT as i32));
+        assert!(kind_allowed(only("missiles"), BF_LAUNCH as i32));
+        assert!(kind_allowed(only("throws"), BF_OBJECT as i32));
+        assert!(kind_allowed(only("spells"), BF_SPELL_MAGIC_MISSILE as i32));
+        assert!(kind_allowed(only("devices"), BF_WAND_HOLD_MONSTER as i32));
+        assert!(!kind_allowed(only("devices"), BF_SPELL_MAGIC_MISSILE as i32));
+        assert!(kind_allowed(only("activations"), BF_ACT_ARROW as i32));
+        assert!(!kind_allowed(all, BF_REST as i32), "a wait is never a focused attack");
+    }
 }
 
 #[cfg(test)]
