@@ -41,4 +41,4 @@ latter is fear-driven today (#1009).
   `breeders_lost` is set only with it on.
 - The reviewer's observation (the winning fight still attacks an all-HURT
   breeder, a louse or a fly, on a lost level) is the winning-fight
-  certificate question, filed with #1015's follow-up.
+  certificate question, filed as #1039.
