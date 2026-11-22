@@ -1037,6 +1037,13 @@ borg_param_caution_stairs_block_danger_percent = 50
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
+# #916: no strategic retreat (the step to a happier grid) while an awake
+# monster in contact is faster than the Borg by the margin (an observed haste
+# counted), nor to a grid whose danger is still at or above the HP; the
+# escapes and the outmatched cure decide. Shipped 0 (today's play); the margin
+# 5 is a hypothesis.
+borg_param_caution_retreat_from_faster = 0
+borg_param_caution_retreat_faster_margin = 5
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
