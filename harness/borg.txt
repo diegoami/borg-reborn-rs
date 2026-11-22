@@ -640,6 +640,14 @@ borg_param_attack_arrow_point_blank_divisor = 5
 
 borg_param_kill_live_min_power = 1
 
+# #915: grouped monster messages. The engine writes the subject of a message
+# for several monsters of one race as "N <plural>" ("3 cave spiders start
+# moving faster.", mon-msg.c:333-345); the Borg's race guess takes any name
+# without "The " for the player ghost, in 4.2 the last race, Morgoth
+# (borg_flow_kill.rs guess_race_name). 1 reads the plural as the race.
+# Shipped 0 (today's play) until the zoo measures it.
+borg_param_kill_grouped_names = 0
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
