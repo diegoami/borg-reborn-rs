@@ -855,7 +855,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
     let light_goal = journey.fuel_goal(light_reserve);
-    let restore_life_reserve = i64::from(crate::borg_item_use::restore_life_reserve(st));
+    let restore_life_reserve = i64::from(restore_life_reserve(st));
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
@@ -1184,7 +1184,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, restore_life_reserve: i64::from(crate::borg_item_use::restore_life_reserve(st)), light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -2195,4 +2195,21 @@ mod recall_value_tests {
         assert_eq!(scale_percent(1000, 0), 0);
         assert_eq!(scale_percent(1000, -5), 0, "never negative");
     }
+}
+
+/// #978: the opt-in reserve starts when experience-draining monsters enter
+/// the normal depth range (grape jelly, monster.txt:3306-3319). A repeatable
+/// equipped activation or a learned low-failure restoration spell replaces it.
+pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
+    use crate::borg_headers::borg_magic_h::{REMEMBRANCE, REVITALIZE};
+
+    let copies = param(Param::town_restore_life_reserve);
+    if copies == 0 || st.borg.tr(BI_MAXDEPTH) < 12 {
+        return 0;
+    }
+    let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]
+        .into_iter().any(|activation| activation > 0 && st.borg.activation[activation as usize] != 0)
+        || [REVITALIZE, REMEMBRANCE].into_iter()
+            .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, 20));
+    if repeatable { 0 } else { copies }
 }

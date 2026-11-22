@@ -258,7 +258,7 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:1910` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1671` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2010` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_item_use.rs:964` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2206` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:848` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:848` |
 

@@ -29,8 +29,9 @@ use crate::borg_io::{borg_keypress, borg_keypresses, borg_note, borg_note_bytes,
 use crate::borg_item::{borg_item_weight, inven_feet, inven_wield, quiver_end, quiver_start};
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_item_id::borg_item_note_needs_id;
-use crate::borg_item_use::{borg_eat, borg_quaff_potion, borg_read_scroll, is_restore_life, restore_life_reserve};
+use crate::borg_item_use::{borg_eat, borg_quaff_potion, borg_read_scroll, is_restore_life};
 use crate::borg_power::borg_power;
+use crate::borg_town_capability::restore_life_reserve;
 use crate::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::borg_item;
