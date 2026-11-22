@@ -6496,8 +6496,16 @@ spiders in contact passed as fast-fragile. The fast-fragile attack, before
 `borg_caution`, then took the turn the control spent on its emergency Phase
 Door (seed 2008390085, turn 64,454, borg-zoo#596). Above 0, more than this
 many marked attackers awake next to the Borg skip the fast-fragile attack
-(caution decides) and lift `fast_fragile_no_heal`. Compiled and shipped 0;
-the suggested 1 is chosen from one case.
+(caution decides) and lift `fast_fragile_no_heal`. Compiled 0, shipped 1
+(P8). On the zoo's own game (`7f8c6b80` plus the fix, stats-ban settings)
+1 alone reads the control's Phase Door at 64,454 and lives to the cap (CL6,
+DL2). With the shipped `fast_fragile_by_stats = 0` only the named entries are
+marked: the crow and the wild cat (`harness/scary_monsters.txt:130-131`),
+neither with `friends` (`lib/gamedata/monster.txt:1133-1166`), so the switch
+acts only when two of them are awake next to the Borg at once. No named game
+replayed on the merged head met that (2008390085 shipped and stats-ban, seed
+224, smoke: keys unchanged), and borg-zoo#652's pilot played `stats-contact`
+identical to `stats` in 18 of 18. The 1 is chosen from one case (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
