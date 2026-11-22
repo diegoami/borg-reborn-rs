@@ -3055,6 +3055,75 @@ pub fn borg_attack_aux_spell_bolt(
     b_n
 }
 
+/// borg-reborn-rs (#878): the mean paralysis of a cast `oops` mana short:
+/// `randint1(5 * oops + 1)` turns (player-spell.c:541-553,
+/// player-util.c:835-842 at 574b618c), whose mean is `(5 * oops + 2) / 2`.
+pub(crate) fn reserve_faint_turns(oops: i32) -> f64 {
+    f64::from(5 * oops.max(0) + 2) / 2.0
+}
+
+/// borg-reborn-rs (#878): the expected damage taken while fainted for
+/// `turns` Borg turns, from monsters `(HP a Borg turn, distance, moves a Borg
+/// turn, weight)`: each from the turn it can reach the Borg (`distance - 1`
+/// steps at its speed), weighted (the target only by the chance the cast
+/// fails).
+pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64) -> f64 {
+    monsters.iter().map(|&(hp, d, moves, weight)| {
+        let reach = if d <= 1 { 0.0 } else if moves > 0.0 { f64::from(d - 1) / moves } else { f64::INFINITY };
+        hp.max(0.0) * weight * (turns - reach).max(0.0)
+    }).sum()
+}
+
+/// borg-reborn-rs (#878): `attack_reserve_faint_percent`. The reserve spell
+/// is refused when what the awake monsters deal during the mean faint
+/// (`reserve_faint_turns`) reaches that percent of the current HP. The target
+/// (the one monster within `attack_reserve_spell_near_distance`) counts only
+/// if the cast fails; its kill is what the cast gains. Expected blow damage
+/// (`fight_incoming`), not danger: no fear prices. Poison taken over time is
+/// not counted.
+fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32) -> bool {
+    let percent = param(Param::attack_reserve_faint_percent);
+    if percent <= 0 {
+        return false;
+    }
+    let oops = borg_get_spell_power(st, spell) - mana;
+    if oops <= 0 {
+        return false;
+    }
+    let turns = reserve_faint_turns(oops);
+    let fail = f64::from(crate::borg_magic::borg_spell_fail_rate(st, spell).clamp(0, 100)) / 100.0;
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let player = energy(engine::player_combat_speed());
+    let near = param(Param::attack_reserve_spell_near_distance);
+    let mut monsters = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake {
+            continue;
+        }
+        let d = dist_to(st, kill.pos.x, kill.pos.y);
+        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) {
+            continue;
+        }
+        let hp = crate::borg_caution::fight_incoming(st, i).hp_per_turn;
+        let moves = energy(crate::borg_caution::forecast_monster_speed(&kill)) / player;
+        let weight = if d < near { fail } else { 1.0 };
+        monsters.push((hp, d, moves, weight));
+    }
+    let damage = faint_contact_damage(&monsters, turns);
+    let hp = tr(st, BI_CURHP);
+    if damage * 100.0 < f64::from(percent) * f64::from(hp) {
+        return false;
+    }
+    // Once a think: the attack is simulated several times.
+    thread_local! { static NOTED: std::cell::Cell<i32> = const { std::cell::Cell::new(i32::MIN) }; }
+    let now = st.borg.time.now;
+    if NOTED.with(|n| n.replace(now)) != now {
+        borg_note(st, &format!("# No reserve spell: {damage:.1} damage expected over a {turns:.1}-turn faint, HP {hp} (#878)"));
+    }
+    true
+}
+
 /// The same as `borg_attack_aux_spell_bolt` only in an emergency case:
 /// the borg will enter negative mana casting this
 /// (`borg_attack_aux_spell_bolt_reserve`).
@@ -3092,7 +3161,15 @@ fn borg_attack_aux_spell_bolt_reserve(
     }
 
     /* Must be dangerous */
-    if danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true) < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
+    // borg-reborn-rs (#878): with `attack_reserve_spell_damage_only`, the
+    // danger without its fear prices.
+    let danger = if param(Param::attack_reserve_spell_damage_only) != 0 {
+        let (y, x) = (st.borg.c.y, st.borg.c.x);
+        crate::borg_danger::borg_danger_damage_only(st, y, x, param(Param::attack_reserve_spell_danger_horizon), true, false)
+    } else {
+        danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true)
+    };
+    if danger < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
         return 0;
     }
 
@@ -3140,6 +3217,11 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Should only be 1 near monster */
     if near_monsters > 1 {
+        return 0;
+    }
+
+    // borg-reborn-rs (#878): no fainting next to what bites.
+    if reserve_faint_refused(st, spell, sv_mana) {
         return 0;
     }
 
@@ -5366,6 +5448,16 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
     focused_attack_ranked(st, target, |attack| kind_allowed(kinds, attack.kind).then(|| focused_score(attack)))
 }
 
+/// borg-reborn-rs (#878): the best ranged attack at `target` (missiles,
+/// throws, spells, devices, activations: `focused_attack_is_ranged`), among
+/// the kinds its scary-list entry allows, by the usual score.
+pub(crate) fn focused_ranged_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
+    let kinds = listed_attack_kinds(st, usize::from(st.kills.kills[target].r_idx));
+    focused_attack_ranked(st, target, |attack| {
+        (kind_allowed(kinds, attack.kind) && focused_attack_is_ranged(attack)).then(|| focused_score(attack))
+    })
+}
+
 /// #869: the attack kinds race `r` may be attacked with, from the scary
 /// list's attack entry for the character (`scary_list::attack_kinds_for`);
 /// every kind without one.
@@ -5602,6 +5694,35 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod reserve_faint_tests {
+    use super::*;
+
+    /// #878: `randint1(5 * oops + 1)`: Magic Missile (1 mana) at 0 SP faints
+    /// 1 to 6 turns, 3.5 on average.
+    #[test]
+    fn the_faint_lasts_its_mean() {
+        assert_eq!(reserve_faint_turns(1), 3.5);
+        assert_eq!(reserve_faint_turns(2), 6.0);
+        assert_eq!(reserve_faint_turns(0), 1.0);
+    }
+
+    #[test]
+    fn walkers_join_the_faint_late_and_the_target_only_if_the_cast_fails() {
+        // Two worms (0.9 a turn, half speed): adjacent, and three grids away.
+        let adjacent = faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], 3.5);
+        assert!((adjacent - 3.15).abs() < 1e-9);
+        let far = faint_contact_damage(&[(0.9, 3, 0.5, 1.0)], 3.5);
+        assert_eq!(far, 0.0, "two steps at half speed take 4 turns");
+        let near = faint_contact_damage(&[(0.9, 2, 0.5, 1.0)], 3.5);
+        assert!((near - 0.9 * 1.5).abs() < 1e-9);
+        // The target at a 5% fail rate.
+        let target = faint_contact_damage(&[(0.9, 1, 0.5, 0.05)], 3.5);
+        assert!((target - 0.1575).abs() < 1e-9);
+        assert_eq!(faint_contact_damage(&[(5.0, 4, 0.0, 1.0)], 3.5), 0.0, "cannot move");
+    }
 }
 
 #[cfg(test)]
