@@ -13,3 +13,8 @@ The uninterrupted recording and the native reload are linked from
 [#1052](https://github.com/diegoami/borg-reborn-rs/issues/1052). The
 reload starts with fresh Borg memory. The regression exercises the
 movement sequence from the uninterrupted trace.
+
+All three shipped-core smoke runs matched the reference. The three
+existing native stair-handoff cases passed. The checksum-verified
+incident save also reached turn 365,200 alive with the shipped settings.
+The recording's configuration includes parameters from another build.
