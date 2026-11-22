@@ -73,6 +73,10 @@ pub struct FightAttackState {
     /// #760/#759: a focused damage planner; None retains the native planner.
     pub focused_target: Option<usize>,
     pub focused_kind: i32,
+    /// #879: shots at a believed (unseen) monster since it was last seen, by
+    /// kill index, with the record's `when` at the time (a new sighting or a
+    /// reused index starts again).
+    pub unseen_shots: std::collections::BTreeMap<usize, (BorgTime, i32)>,
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower
     /// is "do not shoot".
@@ -139,6 +143,7 @@ impl Default for FightAttackState {
         FightAttackState {
             focused_target: None,
             focused_kind: 0,
+            unseen_shots: std::collections::BTreeMap::new(),
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
@@ -476,6 +481,11 @@ fn thrust_damage_with(st: &BorgState, i: i32, spell_blows: i32, focused_kind: Op
 
     /* Monster record */
     let kill = &st.kills.kills[i as usize];
+
+    // borg-reborn-rs (#879): no blow at a monster the Borg only believes in.
+    if crate::borg_unseen_belief::believed_weight(st, i as usize).is_some() {
+        return 0;
+    }
 
     /* Monster race */
     let r = kill.r_idx;
@@ -1620,7 +1630,9 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     }
 
     /* Require current knowledge */
-    if borg_timer(st, kill.when) > param(Param::attack_bolt_max_target_age) {
+    // borg-reborn-rs (#879): or a monster believed at its last grid.
+    let belief = crate::borg_unseen_belief::believed_weight(st, i as usize);
+    if borg_timer(st, kill.when) > param(Param::attack_bolt_max_target_age) && belief.is_none() {
         return 0;
     }
 
@@ -1668,6 +1680,11 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     /* Calculate damage */
     let mut d = borg_launch_damage_one(st, i, dam, typ, ammo_location);
+
+    // borg-reborn-rs (#879): weighted by the chance it is still there.
+    if let Some(w) = belief {
+        d = d * w / 100;
+    }
 
     /* Return Damage, on Teleport Other, true damage is
      * calculated elsewhere */
@@ -2179,6 +2196,24 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
     let (ty, tx) = st.flow.temp_at(b_i as usize);
     st.borg.goal.g.x = tx + b_o_x;
     st.borg.goal.g.y = ty + b_o_y;
+
+    // borg-reborn-rs (#879): say when the target is only believed.
+    let bk = usize::from(grid(st, tx, ty).kill);
+    if let Some(w) = crate::borg_unseen_belief::believed_weight(st, bk) {
+        let kill = st.kills.kills[bk];
+        crate::borg_unseen_belief::note_shot(st, bk);
+        borg_note(
+            st,
+            &format!(
+                "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
+                engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
+                ty,
+                tx,
+                borg_timer(st, kill.when),
+                w
+            ),
+        );
+    }
 
     /* will need to add SINGLE COMBAT and COMMAND if those end up coded */
     let require_monster = typ as u32 == BORG_ATTACK_CURSE;
@@ -4870,7 +4905,10 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
+        // borg-reborn-rs (#879): or a monster believed at its last grid.
+        if borg_timer(st, kill.when) > param(Param::attack_max_target_age)
+            && crate::borg_unseen_belief::believed_weight(st, k as usize).is_none()
+        {
             continue;
         }
 
