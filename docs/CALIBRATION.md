@@ -415,8 +415,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2109` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2109` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2113` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2113` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:651` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:831` |
@@ -721,7 +721,7 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2116` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2120` |
 | `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2117` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2118` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2119` |

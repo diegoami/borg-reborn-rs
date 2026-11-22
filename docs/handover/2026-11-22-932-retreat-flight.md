@@ -20,3 +20,6 @@ to merge the reviewed version into `track-p` and start the Zoo pilot.
 The review follow-up confirms landings before any new tactical action.
 Stair reachability for the existing ranged and Recall choices and both
 unweighted desperate-walk checks use the same exclusions as the route.
+A guarded unweighted reachability probe also checks whether the spread's
+path passes the actual flight's clean-path gate. A reachable detour with
+an awake blocker now leaves Recall and ranged fallbacks available.

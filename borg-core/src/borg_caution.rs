@@ -3625,7 +3625,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         }
     }
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
-    i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
+    crate::borg_flow_stairs::unweighted_flight_reachable(st)
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best

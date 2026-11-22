@@ -296,6 +296,10 @@ impl FlowState {
         });
     }
 
+    pub(crate) fn has_retreat_exclusions(&self) -> bool {
+        self.retreat_avoid.as_ref().is_some_and(|grids| !grids.is_empty())
+    }
+
     fn retreat_blocks(&self, grid: loc) -> bool {
         self.retreat_avoid.as_ref().is_some_and(|grids| grids.contains(&grid))
     }

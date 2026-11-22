@@ -214,23 +214,39 @@ fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32
     }
 }
 
+/// #743: check the path in the spread being used to decide this flight.
+fn flight_path_blocker(st: &mut BorgState, why: i32) -> Option<usize> {
+    if !flee_check_applies(st, why) {
+        return None;
+    }
+    let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
+    path_blocker(st, percent)
+}
+
+/// #932: the guarded unweighted probe must not call a detour reachable
+/// when the flight would reject it. An unguarded probe keeps its old rule.
+pub(crate) fn unweighted_flight_reachable(st: &mut BorgState) -> bool {
+    let cost = st.flow.cost_at(st.borg.c.y, st.borg.c.x);
+    reachable_after_spread(cost, st.flow.has_retreat_exclusions(), || {
+        flight_path_blocker(st, GOAL_FLEE)
+    })
+}
+
+fn reachable_after_spread(cost: u8, guarded: bool, blocker: impl FnOnce() -> Option<usize>) -> bool {
+    cost < 250 && (!guarded || blocker().is_none())
+}
+
 /// Commit the flow and take one step (the common end of the three flows).
 fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
-    // borg-reborn-rs (#743, the follow-up of #736): a flight takes a
-    // staircase only by a clean path: the flow just spread is walked
-    // (`path_blocker`, no second spread) before it is committed.
-    if flee_check_applies(st, why) {
-        let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
-        if let Some(k) = path_blocker(st, percent) {
-            st.borg.flee_path_refused = true;
-            if !st.borg.flee_path_noted {
-                st.borg.flee_path_noted = true;
-                let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
-                let to = who.to_string_lossy();
-                borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
-            }
-            return false;
+    if let Some(k) = flight_path_blocker(st, why) {
+        st.borg.flee_path_refused = true;
+        if !st.borg.flee_path_noted {
+            st.borg.flee_path_noted = true;
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            let to = who.to_string_lossy();
+            borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
         }
+        return false;
     }
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, who, why) {
@@ -1192,6 +1208,26 @@ fn flee_check_applies_with(on: bool, why: i32, desperate: bool) -> bool {
 #[cfg(test)]
 mod flee_clean_tests {
     use super::{flee_check_applies_with, GOAL_FLEE};
+
+    #[test]
+    fn a_guarded_detour_with_a_blocker_does_not_suppress_fallbacks() {
+        use super::{blocker_reach, first_blocker, reachable_after_spread};
+
+        let origin = (4, 4);
+        let shortcut = [(4, 5), (4, 6), (4, 7), (4, 8)];
+        let detour = [(5, 4), (6, 5), (6, 6), (5, 7), (4, 8)];
+        // The hold at (4,5) rules out the clean shortcut. An awake monster
+        // on the longer path now blocks the only routed approach.
+        let blocker = |path: &[(i32, i32)], awake| {
+            first_blocker(&mut (6, 6), path, origin, 2, blocker_reach(2),
+                |monster, y, x| usize::from(*monster == (y, x)), |_, _| awake)
+        };
+        assert!(reachable_after_spread(4, true, || blocker(&shortcut, true)));
+        assert!(!reachable_after_spread(5, true, || blocker(&detour, true)));
+        assert!(reachable_after_spread(5, true, || blocker(&detour, false)));
+        assert!(reachable_after_spread(5, false, || panic!("unguarded probe")));
+        assert!(!reachable_after_spread(255, true, || panic!("no path")));
+    }
 
     /// #743: only a flight is checked, with the switch on, and not the
     /// desperate walk (which checks its own path, #736).
