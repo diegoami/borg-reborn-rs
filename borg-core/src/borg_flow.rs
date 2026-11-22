@@ -658,7 +658,7 @@ fn stair_moves_lower_bound(grid: loc, stairs: &[loc]) -> i32 {
 /// A* with both weighted cost and a move limit. A cheaper route to a
 /// grid may use more moves, so keep each arrival that trades cost for moves.
 /// Queue ties use fewer projected moves, then greater progress and insertion order.
-fn least_cost_stair_path(
+pub(crate) fn least_cost_stair_path(
     start: loc,
     stairs: &[loc],
     depth: i32,
@@ -1667,6 +1667,11 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         /* Attempt motion */
         if borg_play_step(st, y, x) {
             st.stairs.up_search_departure = departure;
+            if st.borg.tr(BI_CDEPTH) > 0 {
+                let emergency_down = why == GOAL_FLEE && st.borg.flight_to_stairs
+                    && st.borg.status.desperate && !known;
+                borg_flow_stairs::record_off_stair_step(st, loc { x, y }, why == GOAL_DARK, emergency_down);
+            }
             return true;
         }
     }

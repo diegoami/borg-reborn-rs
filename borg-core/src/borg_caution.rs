@@ -3276,8 +3276,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // Nothing
-    false
+    // Give the interrupted stair walk a turn before ordinary movement.
+    resume_emergency_down_flight(st, pos_danger)
 }
 
 /// borg-reborn-rs (#539, owner): "use recall only if a stair is not
@@ -7090,6 +7090,35 @@ pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
         || (st.borg.tr(BI_ISHUNGRY) != 0
             && crate::borg_item_use::borg_eat_when_hungry(st))
         || (st.borg.tr(BI_ISWEAK) != 0 && borg_eat_food_any(st))
+}
+
+/// #1052: caution has had its full turn to act on the current danger.
+/// Replan the remaining escape before the dungeon thinker resumes exploring.
+fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
+    let Some(handoff) = st.stairs.off_stair_handoff.down else { return false; };
+    if !handoff.can_resume(st.borg.c, st.borg.time.level, st.borg.time.now, danger, st.borg.tr(BI_CURHP))
+        || st.borg.tr(BI_ISCONFUSED) != 0
+        || rising_holds_descent(st, danger)
+    {
+        st.stairs.off_stair_handoff.down = None;
+        return false;
+    }
+
+    if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE {
+        st.stairs.off_stair_handoff.down = None;
+        if !rising_holds_flee_descent(st) && !crate::borg_flow_stairs::more_refused(st, false) {
+            borg_note(st, "# Taking down stairs after emergency flight (#1052)");
+            borg_keypress(st, key(b'>'));
+            return true;
+        }
+    } else if handoff.steps_left > 0
+        && desperate_flow(st, false, handoff.steps_left, "# Continuing emergency down-stair flight (#1052)")
+    {
+        return true;
+    }
+
+    st.stairs.off_stair_handoff.down = None;
+    false
 }
 
 #[cfg(test)]

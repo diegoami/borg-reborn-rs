@@ -81,6 +81,7 @@ pub struct StairsState {
     pub more: StairTrack,
     /// Down stair left while exploring for or following a route to an up stair.
     pub(crate) up_search_departure: Option<UpSearchDeparture>,
+    pub(crate) off_stair_handoff: OffStairHandoff,
 }
 
 /// Let the up-stair route take a second step before a fallback can undo
@@ -149,6 +150,82 @@ pub(crate) fn resume_known_up_stair_flight(st: &mut BorgState, danger: i32) -> b
     }
     st.stairs.up_search_departure = None;
     false
+}
+
+#[derive(Clone, Copy)]
+struct StairHandoffStep {
+    from: loc,
+    to: loc,
+    level_started: i32,
+    turn: i32,
+}
+
+impl StairHandoffStep {
+    fn arrived(self, here: loc, level_started: i32, turn: i32) -> bool {
+        self.to == here && self.level_started == level_started
+            && turn.wrapping_sub(self.turn) == 1
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct EmergencyDownHandoff {
+    step: StairHandoffStep,
+    pub(crate) steps_left: i32,
+    expected_danger: i32,
+    hp: i32,
+}
+
+impl EmergencyDownHandoff {
+    pub(crate) fn can_resume(self, here: loc, level_started: i32, turn: i32, danger: i32, hp: i32) -> bool {
+        self.step.arrived(here, level_started, turn) && danger <= self.expected_danger && hp >= self.hp
+    }
+}
+
+#[derive(Default)]
+pub(crate) struct OffStairHandoff {
+    last_dark_step: Option<StairHandoffStep>,
+    pub(crate) down: Option<EmergencyDownHandoff>,
+}
+
+impl OffStairHandoff {
+    fn record_dark_step(&mut self, step: Option<StairHandoffStep>) {
+        self.last_dark_step = step;
+        self.down = None;
+    }
+
+    fn record_down_step(&mut self, step: StairHandoffStep, steps: i32, hp: i32, danger: impl FnOnce() -> i32) {
+        let arrived = |previous: StairHandoffStep| previous.arrived(step.from, step.level_started, step.turn);
+        let reversed_dark = self.last_dark_step.take().is_some_and(|previous| arrived(previous) && previous.from == step.to);
+        let advanced = self.down.is_some_and(|previous| {
+            arrived(previous.step) && previous.step.from != step.to && steps <= previous.steps_left
+        });
+        self.down = (steps > 0 && (reversed_dark || advanced)).then(|| EmergencyDownHandoff {
+            step,
+            steps_left: steps - 1,
+            expected_danger: danger(),
+            hp,
+        });
+    }
+}
+
+/// #1052: if an emergency down-stair walk undoes a dark exploration step,
+/// give the escape a chance to finish before exploration starts again.
+pub(crate) fn record_off_stair_step(st: &mut BorgState, to: loc, exploring: bool, emergency_down: bool) {
+    let step = StairHandoffStep { from: st.borg.c, to, level_started: st.borg.time.level, turn: st.borg.time.now };
+    if emergency_down {
+        let steps = st.borg.flight_steps;
+        let hp = st.borg.tr(BI_CURHP);
+        let mut handoff = std::mem::take(&mut st.stairs.off_stair_handoff);
+        handoff.record_down_step(step, steps, hp, || {
+            let horizon = crate::params::value(crate::params::Param::caution_danger_horizon);
+            crate::borg_danger::borg_danger(st, to.y, to.x, horizon, true, false)
+        });
+        st.stairs.off_stair_handoff = handoff;
+    } else {
+        use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE};
+        let off_stair = exploring && !matches!(u32::from(st.cave.grid(step.from.x, step.from.y).feat), FEAT_LESS | FEAT_MORE);
+        st.stairs.off_stair_handoff.record_dark_step(off_stair.then_some(step));
+    }
 }
 
 /// Which stair list to enqueue.
@@ -1221,5 +1298,69 @@ mod up_search_handoff_tests {
         assert!(departure.permits_deferral(10, 40));
         assert!(departure.permits_deferral(12, 40));
         assert!(!departure.permits_deferral(21, 40));
+    }
+}
+
+#[cfg(test)]
+mod off_stair_handoff_tests {
+    use super::*;
+    use crate::borg_flow::least_cost_stair_path;
+
+    const LEVEL_STARTED: i32 = 10;
+    const HP: i32 = 89;
+    const FLOOR: loc = loc { x: 78, y: 40 };
+    const DANGEROUS_FLOOR: loc = loc { x: 77, y: 41 };
+
+    fn step(from: loc, to: loc, turn: i32) -> StairHandoffStep {
+        StairHandoffStep { from, to, level_started: LEVEL_STARTED, turn }
+    }
+
+    #[test]
+    fn dark_and_emergency_walk_leave_the_two_floor_squares() {
+        let approach = loc { x: 79, y: 41 };
+        let farther_stair = loc { x: 80, y: 41 };
+        for (stair, expected_moves) in [(approach, 3), (farther_stair, 4)] {
+            let mut handoff = OffStairHandoff::default();
+            let mut here = FLOOR;
+            let mut walked = vec![here];
+            for turn in 100..104 {
+                if here == stair { break; }
+                let continuing = handoff.down.filter(|flight| {
+                    flight.can_resume(here, LEVEL_STARTED, turn, 0, HP)
+                });
+                if here == DANGEROUS_FLOOR || continuing.is_some() {
+                    let budget = continuing.map_or(expected_moves - 1, |flight| flight.steps_left);
+                    let path = least_cost_stair_path(here, &[stair], budget, |grid| {
+                        [FLOOR, approach, stair].contains(&grid).then_some(100)
+                    }).expect("clear route to the down staircase");
+                    handoff.record_down_step(step(here, path.grids[1], turn), path.grids.len() as i32 - 1, HP, || 0);
+                    here = path.grids[1];
+                } else {
+                    // The open exploration route starts by returning to the dangerous floor.
+                    handoff.record_dark_step(Some(step(here, DANGEROUS_FLOOR, turn)));
+                    here = DANGEROUS_FLOOR;
+                }
+                walked.push(here);
+            }
+            assert_eq!(walked.len(), expected_moves as usize + 1);
+            assert_eq!(walked[..3], [FLOOR, DANGEROUS_FLOOR, FLOOR]);
+            assert_eq!(walked[3], approach);
+            assert_eq!(here, stair);
+            assert_eq!(handoff.down.expect("arrived with a live handoff").steps_left, 0);
+        }
+    }
+
+    #[test]
+    fn a_fresh_threat_or_failed_move_releases_the_handoff() {
+        let mut handoff = OffStairHandoff::default();
+        handoff.record_dark_step(Some(step(FLOOR, DANGEROUS_FLOOR, 100)));
+        handoff.record_down_step(step(DANGEROUS_FLOOR, FLOOR, 101), 2, HP, || 4);
+        let flight = handoff.down.expect("the emergency move reversed exploration");
+        assert!(flight.can_resume(FLOOR, LEVEL_STARTED, 102, 4, HP));
+        assert!(!flight.can_resume(FLOOR, LEVEL_STARTED, 102, 5, HP));
+        assert!(!flight.can_resume(FLOOR, LEVEL_STARTED, 102, 4, HP - 1));
+        assert!(!flight.can_resume(DANGEROUS_FLOOR, LEVEL_STARTED, 102, 4, HP));
+        assert!(!flight.can_resume(FLOOR, LEVEL_STARTED + 1, 102, 4, HP));
+        assert!(!flight.can_resume(FLOOR, LEVEL_STARTED, 103, 4, HP));
     }
 }
