@@ -170,7 +170,7 @@ pub struct PlanRecord {
     /// solver refused.
     pub guard: u8,
     /// v13 (#957): the storing settings, `Storing::to_array`. None before.
-    pub storing: Option<[i64; 4]>,
+    pub storing: Option<[i64; 6]>,
 }
 
 // --- writing -------------------------------------------------------------
@@ -740,7 +740,12 @@ pub fn step(input: &StepInput) -> StepOutput {
     // pack and the Home, and what they free.
     let mut utility = crate::borg_town_utility::Utility::of(&st, input.kit, input.cure_spell);
     utility.capability = input.capability.cloned();
-    utility.recall_reserve = crate::borg_town_capability::recall_reserve_for_budget(input.limits.gold);
+    // #957 (review of #962): a v13 record's reserve and floor, else the
+    // process's.
+    utility.recall_reserve = match input.storing {
+        Some(s) => crate::borg_town_capability::eligible_recall_reserve(input.limits.gold, s.recall_floor, s.recall_reserve),
+        None => crate::borg_town_capability::recall_reserve_for_budget(input.limits.gold),
+    };
     if input.utility && input.revision >= 9 {
         for purchase in &input.urgent {
             let c = &input.candidates[purchase.candidate];
@@ -1358,7 +1363,7 @@ mod tests {
     #[test]
     fn the_storing_settings_travel_with_a_v13_record() {
         use crate::borg_town_utility::{Room, Storing};
-        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3 };
+        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200 };
         assert_eq!(Storing::from_array(storing.to_array()), storing);
         let stock = stock();
         let (_, mut rec) = produce(&stock, 300, &traits(), &[], &[]);
@@ -1369,7 +1374,7 @@ mod tests {
         rec.storing = Some(storing.to_array());
         let mut line = String::new();
         rec.push_fields(&mut line);
-        assert!(line.contains("\"storing\":[50,2,3,0]"), "{line}");
+        assert!(line.contains("\"storing\":[50,2,3,0,2,200]"), "{line}");
         let parts = ReplayParts { candidates: Vec::new(), urgent: Vec::new(), traits: Vec::new(), carried: Vec::new(),
             limits: Limits { gold: 0, pack_slots: 0, weight: 0 }, tryon: Vec::new(), power: 0 };
         assert_eq!(parts.input(&rec).storing, Some(storing));

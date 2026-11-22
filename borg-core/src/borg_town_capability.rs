@@ -2099,7 +2099,7 @@ pub(crate) fn recall_reserve_for_budget(gold: i64) -> i64 {
     eligible_recall_reserve(gold, crate::borg_store_buy::recall_purchase_floor(), param(Param::town_recall_reserve))
 }
 
-fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> i64 {
+pub(crate) fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> i64 {
     if gold < i64::from(minimum) { 0 } else { i64::from(reserve) }
 }
 
