@@ -1,0 +1,85 @@
+{
+  "schema": "borg-reborn-rs/r4-code-metrics@1",
+  "accepted_integration": "dc1491b9d31972406c43e71e358842f9b411df97",
+  "modules": [
+    {
+      "module": "power",
+      "path": "borg-next/src/stateful/power.rs",
+      "sha256": "0f3f4cead2a65c3e59111aae971c0f77ae1b79e9761c3e025fe8cb0b3fe5e2de",
+      "physical_file_lines": 3540,
+      "production_region_lines": 3540,
+      "function_definitions": 11,
+      "function_definition_lines": 3451
+    },
+    {
+      "module": "item_use",
+      "path": "borg-next/src/stateful/item_use.rs",
+      "sha256": "3ba25ded8a37ed6efd29d954d8485f343e370138e5b487b44b9deb3aff53457e",
+      "physical_file_lines": 1416,
+      "production_region_lines": 1416,
+      "function_definitions": 37,
+      "function_definition_lines": 1286
+    },
+    {
+      "module": "equipment_wear",
+      "path": "borg-next/src/stateful/equipment_wear.rs",
+      "sha256": "a437ad8569029f371cb2a34c551b03114ce9890ee885362e95e4a28a061f9992",
+      "physical_file_lines": 1660,
+      "production_region_lines": 1660,
+      "function_definitions": 32,
+      "function_definition_lines": 1499
+    },
+    {
+      "module": "equipment_identify",
+      "path": "borg-next/src/stateful/equipment_identify.rs",
+      "sha256": "0447f95ffd9a7cb62312fcef00a1e2611a4e8905acedd7ef4d45e7f12324f804",
+      "physical_file_lines": 176,
+      "production_region_lines": 176,
+      "function_definitions": 5,
+      "function_definition_lines": 129
+    },
+    {
+      "module": "home_power",
+      "path": "borg-next/src/stateful/home_power.rs",
+      "sha256": "cc2d33bdaeeb28c28f71d2b628b664ddceb59bfe3612fb5e2b2f69fb8d53d22a",
+      "physical_file_lines": 874,
+      "production_region_lines": 874,
+      "function_definitions": 10,
+      "function_definition_lines": 809
+    },
+    {
+      "module": "store_buy",
+      "path": "borg-next/src/stateful/store_buy.rs",
+      "sha256": "cbccde1bf5a2ce4935515b61f98587f385cc934d2ce45f6948f1517aeeb4f523",
+      "physical_file_lines": 1558,
+      "production_region_lines": 1558,
+      "function_definitions": 38,
+      "function_definition_lines": 1385
+    },
+    {
+      "module": "store_sell",
+      "path": "borg-next/src/stateful/store_sell.rs",
+      "sha256": "4fc8d6d601a051677824ff0271977b7f3dbe942f6d1526f666233aa2723dbe4e",
+      "physical_file_lines": 1347,
+      "production_region_lines": 1347,
+      "function_definitions": 24,
+      "function_definition_lines": 1226
+    },
+    {
+      "module": "think_store",
+      "path": "borg-next/src/stateful/think_store.rs",
+      "sha256": "f64e429f50beb0ab647a085551816ef21c37b85ea5a0ab05284821ce1ddb5495",
+      "physical_file_lines": 538,
+      "production_region_lines": 538,
+      "function_definitions": 15,
+      "function_definition_lines": 428
+    }
+  ],
+  "totals": {
+    "physical_file_lines": 11109,
+    "production_region_lines": 11109,
+    "function_definitions": 172,
+    "function_definition_lines": 10213
+  },
+  "method": "Physical lines include imports/comments/formatting. Production region ends at first cfg(test); lexical function definitions include helpers. Function definition lines include signatures and braces. File hashes pin scope. This is not branch coverage, effort, speed or survival evidence."
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "borg-reborn-rs/r438-evidence-receipt@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "824feb0e66b5356b72396354adde40c9a290f47f",
+  "root": "runs/validation/track-r/r4-combined-dc1491b9",
+  "manifest_sha256": "71a0049f8f898596b69fdad9c639edabb5d1d8a82ffa251c9499d7428cc2ba7f",
+  "publication_pr": "https://github.com/diegoami/borg-cemetery/pull/114",
+  "payload_files": 2264,
+  "qualified_originals": 36,
+  "note": "Qualified registry packages are not independent games. Large raw streams are retained locally and hash-identified."
+}

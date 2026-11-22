@@ -9,8 +9,11 @@ ledger merge is 17992dfcfc74509b723c861b41056f45993dc37c. Reference refresh
 Current checkpoint: item use #435 is merged. P4 #477 is accepted/promoted;
 reviewed carry #528/#529 merged into feature/track-r at `99fa7cc5`.
 Power #434/#478 and wear/identification #436/#683 are accepted and merged.
-Store/home #437 is active from 64acb1f1; adjacent enchant/decurse remains shared
-pending parameter contract #680. See [current handover](R437-HANDOVER.md). Historical dependency audit below
+Store/home #437/#780 is accepted at dc1491b9; #438 prepares the combined
+review checkpoint. Adjacent enchant/decurse remains shared in this receiving
+baseline. P contract #680 is complete on track-p via #773; the accepted
+promotion/carry and independent R ownership are follow-up #1020.
+See [current handover](R438-HANDOVER.md). Historical dependency audit below
 records why the separate accepted contract carry was required.
 
 ## Counted scope and parameter gate
