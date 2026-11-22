@@ -163,7 +163,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5806` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5914` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -188,8 +188,8 @@ chose them (RULES 14).
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:104` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:104` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1155` |
-| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3323` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3243` |
+| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3322` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:7521` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:7521` |
 
@@ -329,7 +329,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:274` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:283` |
 
 ## Thrown objects at point blank (#870)
 
@@ -5249,7 +5249,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5904` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6013` |
 
 ## C Borg dive gates (#768)
 
@@ -6287,6 +6287,64 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
 |---|---|---|---|---|
 | `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1740` |
 
+## Shooting at a monster believed in the dark (#879)
+
+Owner, 2026-11-22: "we can teach the borg to shoot through a corridor, if they
+think a monster is there". The C Borg aims only at monsters seen within
+`attack_max_target_age` Borg turns (`borg_attack`, `borg_launch_bolt_aux_hack`).
+`borg-core/src/borg_unseen_belief.rs` (ours) keeps a recently seen monster as a
+ranged target at its last grid. The engine stops a bolt at the first monster on
+its path (`PROJECT_STOP`, src/effect-handler-attack.c:130), so a monster that
+closed in along the line is hit too. The Borg aims at the location (`borg_target`
+in free mode, src/ui-target.c:1479–1494, src/target.c:180–191). Four
+parameters, all compiled and shipped **0** / their defaults; the numbers are
+hypotheses.
+
+- **`unseen_belief`** (0): 1 = a monster seen within `unseen_max_age` Borg
+  turns but not now, at least two grids away, whose last grid the Borg would not
+  expect to see it on (`borg_follow_kill_aux`: dark, beyond its light), stays a
+  target of the ranged attacks (bolts, balls, missiles, throws), each attack's
+  value multiplied by the belief. Melee never takes it (`thrust_damage_with`).
+  Each such shot is noted: `# Unseen target (#879): <race> believed at (y,x),
+  seen N turns ago, belief W%`. It pairs with `cave_light_engine_radius = 1`
+  (#877): with C's radius, the dark grid two away is expected visible and the
+  record is deleted, so this switch alone changes nothing in the #877 case.
+- **Belief**: 100% for `NEVER_MOVE` or a sleeper; otherwise `100 -
+  unseen_decay_percent` per monster turn since it was seen (Borg turns × its
+  energy / the Borg's, `extract_energy`), never below 0. After one unseen shot
+  a sleeper counts as awake.
+- **The effective window is the decay** (review of #890, F2). The age and the
+  decay are one knob: at the shipped 20% and a Borg at speed 110 (energy 10,
+  src/game-world.c:68–90), the belief at ages 3/4/5/10 is 40/20/0/0% for a
+  speed-110 monster, 80/60/60/0% at speed 100, 100/80/80/40% at speed 90, and
+  0 for anything faster than the Borg. `unseen_max_age` (10) is the window only
+  for sleepers, `NEVER_MOVE` and slow monsters. A zoo arm with a lower decay
+  measures the knob apart (owner, 2026-11-22; borg-zoo#702). The energy ratio
+  over-counts the engine's actions a little at high speed
+  (src/game-world.c:136–139); the integer division makes slow decay coarse.
+- **What is aimed at** (review of #890, F3): `borg_attack` keeps only a record
+  whose grid is on the panel (`BORG_OKAY`) and in the Borg's view shape
+  (`BORG_VIEW`, lit or not), so an unlit corridor in line works and a monster
+  around a corner does not. Infravision (`BI_INFRA`) raises the two-grid floor
+  for warm monsters, since `borg_follow_kill_aux` expects them visible within
+  it. A believed record never counts as the monster next to the Borg
+  (`borg_attack`'s adjacent test, F1), so it cannot turn a scary level's
+  flight into a fight.
+- **`unseen_max_shots`** (3): at most this many unseen shots per sighting.
+  After a launch, count each believed record in the projection, including
+  arc and splash targets whose utility was negative. Update the sleeper's
+  inferred wake state at the same time. Failed commands leave both alone.
+  The cap stops the Borg from crediting a record after repeated shots.
+- **Curse** requires a real monster target. Believed records are excluded
+  from Curse scoring because they provide only a last-known location.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:185` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:193` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:216` |
+| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:205` |
+
 ## #863: variety in the backpack (town, prepared remedies)
 
 Owner, 2026-11-21: "Better 4 cure poison, 4 detect invisible and 3 remove
@@ -6571,7 +6629,7 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3329` |
+| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3408` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
 Not shipped; the zoo measures it (a request issue). The four replays are
