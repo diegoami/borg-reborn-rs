@@ -1321,7 +1321,8 @@ borg_param_caution_breeder_stuck_turns = 20
 # Slow breeders: hold, or cut the known way out (#882, owner: "fight your way
 # out"). When every awake monster within scan_radius is a breeder with no
 # ranged attack, none faster than the Borg (none as fast unless erratic), one
-# within caution_breeder_exit_distance, and at least count breeders are known,
+# within caution_breeder_exit_distance, and at least count breeders are known
+# (1, owner 2026-11-22: any; Human Priest 1512540769 died with 1-3 known),
 # or growth more within growth_turns game turns, or the level is lost or
 # scary: walk the cheapest known route (unknown grids are walls) to a known
 # staircase or a corridor or doorway caution_breeder_exit_distance from every
@@ -1338,7 +1339,7 @@ borg_param_caution_breeder_stuck_turns = 20
 
 borg_param_caution_breeder_hold = 0
 borg_param_caution_breeder_hold_scan_radius = 8
-borg_param_caution_breeder_hold_count = 5
+borg_param_caution_breeder_hold_count = 1
 borg_param_caution_breeder_hold_growth = 2
 borg_param_caution_breeder_hold_growth_turns = 100
 borg_param_caution_breeder_hold_worm_cost = 3
