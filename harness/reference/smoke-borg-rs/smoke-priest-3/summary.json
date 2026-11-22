@@ -15,7 +15,7 @@
   "depth": 0,
   "dead": false,
   "death_cause": "",
-  "keys": 2027,
+  "keys": 2011,
   "calendar": "fixed",
   "max_clevel": 2,
   "hp": 23,
@@ -23,9 +23,9 @@
   "borg_decisions": 0,
   "player_energy": 208390,
   "borg_rng": 0,
-  "game_rng": {"quick": false, "quick_rng": 1301451085, "rng_index": 29, "rng": "d463c4526ee80e3cf919e740cc8afb75b945b4c4d3bdb12a1c9e34f17dc12ea7d9bb706d51fec64627d568175363bfe1f95c2896c1f5e2a8e4272e7833898da711b5f5f44796b392a6302232f41db37c9d3630ba3e9baa2d9467c3ea48f1f2d4f0d880dc8087629838e8a3983f98c3692da95135e51fca4a9f0a3b8acdf25fbd"},
+  "game_rng": {"quick": false, "quick_rng": 1301451085, "rng_index": 17, "rng": "461011e39a3abe0b0420eb985297c875d9977acf3dcaefb55769dc82e2240707b2f6137b0be69de29ddad21682d08c1fe4a64274658feb253f53971e756fded84b4b932cfeaade14cb005f38a2e71872d143e3bdc3afdb95a99001ae6178e3923e78b78f769605d4aec26beb53f979dc1d29bdfa1da4d12c7660658609fcccbe"},
   "effective_settings": {},
   "game_options": {"rogue_like_commands": false,"autoexplore_commands": false,"use_sound": false,"show_damage": false,"use_old_target": false,"pickup_always": true,"pickup_inven": true,"show_flavors": false,"show_target": true,"highlight_player": false,"disturb_near": true,"solid_walls": false,"hybrid_walls": false,"view_yellow_light": false,"animate_flicker": false,"center_player": false,"purple_uniques": false,"auto_more": false,"hp_changes_color": true,"mouse_movement": true,"notify_recharge": false,"effective_speed": false,"cheat_hear": false,"score_hear": false,"cheat_room": false,"score_room": false,"cheat_xtra": false,"score_xtra": false,"cheat_live": false,"score_live": false,"birth_randarts": false,"birth_connect_stairs": true,"birth_force_descend": false,"birth_no_recall": false,"birth_no_artifacts": false,"birth_stacking": true,"birth_lose_arts": false,"birth_feelings": true,"birth_no_selling": true,"birth_start_kit": true,"birth_ai_learn": true,"birth_know_runes": false,"birth_know_flavors": false,"birth_levels_persist": false,"birth_percent_damage": false},
   "exact_turns": false,
-  "wall_seconds": 2.424
+  "wall_seconds": 2.504
 }

@@ -252,7 +252,7 @@ pub fn urgent_needs(st: &BorgState, trip: &crate::borg_town_usefulness::Trip) ->
 /// next trip reaches the dive gate (`prepared_recall_depth`) and none is
 /// carried: without it the Borg cannot dive, whatever else it buys.
 pub(crate) fn recall_urgent(st: &BorgState) -> bool {
-    let gate = param(Param::prepared_recall_depth);
+    let gate = urgent_recall_gate(param(Param::town_recall_urgent_depth), param(Param::prepared_recall_depth)); // borg-reborn-rs (#984)
     param(Param::town_recall_urgent) != 0
         && recall_gate_reached(Journey::of(st).depth, gate, st.borg.tr(BI_RECALL))
 }
@@ -1407,4 +1407,29 @@ mod tests {
         assert!(!recall_gate_reached(5, 0, 0), "no gate");
     }
 
+}
+
+/// borg-reborn-rs (#984): the trip depth from which `recall_urgent` makes the
+/// first Word of Recall urgent: `town_recall_urgent_depth`, or the dive gate
+/// (`prepared_recall_depth`, #859) when it is 0. The dive gate itself is not
+/// moved. 312081895 left town at 235 gold for a DL2 trip with none: above
+/// the dive gate, the floor (`buy_recall_from_gold`) left no copy to buy,
+/// and with the floor off the solve still spent the gold on other supplies.
+fn urgent_recall_gate(urgent_depth: i32, dive_gate: i32) -> i32 {
+    if urgent_depth > 0 { urgent_depth } else { dive_gate }
+}
+
+#[cfg(test)]
+mod urgent_recall_depth_tests {
+    use super::{recall_gate_reached, urgent_recall_gate};
+
+    #[test]
+    fn the_urgent_recall_depth_moves_only_the_urgent_gate() {
+        assert_eq!(urgent_recall_gate(0, 5), 5, "0: the dive gate, as #859");
+        assert_eq!(urgent_recall_gate(1, 5), 1);
+        assert!(!recall_gate_reached(2, urgent_recall_gate(0, 5), 0), "today: a DL2 trip stays above the gate");
+        assert!(recall_gate_reached(2, urgent_recall_gate(1, 5), 0), "from DL1: a DL2 trip with none carried (312081895)");
+        assert!(!recall_gate_reached(2, urgent_recall_gate(1, 5), 1), "one is carried");
+        assert!(!recall_gate_reached(0, urgent_recall_gate(1, 5), 0), "no trip into the dungeon");
+    }
 }
