@@ -1,7 +1,7 @@
 # 2026-11-22 — #915: grouped monster messages read as their race
 
 **Issue:** diegoami/borg-reborn-rs#915. **Branch:** `task/T915-grouped-messages` (from `track-p`
-`86843a79`, `track-p` merged in up to `e26cb7b0`, after #1026). Track P, **P8 "Stabilize P7"**
+`86843a79`, `track-p` merged in up to `72651d25`, after #1026 and #1036). Track P, **P8 "Stabilize P7"**
 (owner, 2026-11-22: #915 is a P8 bug; a P8 fix ships on once the evidence supports it). This PR
 merges into `track-p` once the owner says its review is done.
 
@@ -16,11 +16,31 @@ Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/c
   name is noted (`# Grouped monster not known (...)`) and still returns the ghost race, unused,
   as before. `best_normal` factors out the existing scan, unchanged.
 - `grouped_subjects_of_every_engine_race`: a unit test over the engine's own `monster.txt`.
+- **Review of `32e9b8f0`** (Mavis, MiniMax M3.1-Flash, posted on #943): fixed in `8622a276` and
+  after.
+  - Finding 2: a grouped death or blink ("3 cave spiders die.", "N <plural> disappear!") is now
+    applied to **up to N** known monsters of the race (`grouped_count`; the DIED and BLINK
+    handlers of the goal, old-location and late passes in `borg_update.rs`), as #915 asked. With
+    the switch at 0, or for any other subject, the count is 1 and the code is the old one.
+  - Finding 5: the comment on `grouped_race` now says the "-ses" stem is ambiguous ("masses" from
+    "mass", "horses" from "horse") and why the order is safe in 574b618c.
+  - Finding 1: no change. "It (offscreen)" goes to the offscreen branch, not the invisible one:
+    `strnieq(who, "It", 3)` compares the terminating NUL (`borg_flow_kill.rs:285-297`), so it is
+    an exact match. "N monsters (offscreen)" takes the same branch, so the two already agree. A
+    test now pins it.
+  - Finding 3: `track-p` merged again (`72651d25`); `CALIBRATION.md` and `borg.txt` keep both
+    sides; 2,398 parameters, 0 citation errors. #980's sentence "the registry now holds 2394"
+    is left as written: like #975's, it states the count of its own PR's base. The #915 section
+    states the count with this PR (2,398).
+  - Finding 4: the measurement is borg-zoo#652's `grouped` arm, not P8's exit run (borg-zoo#695,
+    pinned at `206cf4e7`, without #943).
+  - Finding 6: the footer dropped from the PR body. Finding 7: #1042 filed.
 - `track-p` merged twice (before and after #1026); the parameter tables kept both sides' rows,
   `check-param-citations.py --fix` re-pointed the citations (2,394 parameters, 0 errors).
-- `scripts/rerecord-smoke-borg-rs.sh` with the switch shipped on: smoke 3/3 identical to
-  `harness/reference/smoke-borg-rs`, so nothing was re-recorded (no smoke game has a grouped
-  monster message).
+- `scripts/rerecord-smoke-borg-rs.sh` with the switch shipped on, at `ba188fc2` and again at
+  `8622a276` (with up to N and `track-p` `72651d25`): smoke 3/3 identical to
+  `harness/reference/smoke-borg-rs` both times, so nothing was re-recorded (no smoke game has a
+  grouped monster message).
 
 ## The engine (574b618c)
 
@@ -51,7 +71,12 @@ Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/c
   stats-ban arm, switch off or on, all four live to the cap with the same keys (`d2ea6bb9…`),
   the same state.log and the **same core trace** (`trace-core.jsonl`, danger at every think). The
   grouped message there is "2 giant white mice look even faster!" (a `plural:` name, 37,788),
-  matched to a known giant white mouse with the switch on.
+  matched to a known giant white mouse with the switch on. Again at `8622a276` (`track-p`
+  `72651d25`, where `kill_live_zero_hp` ships 1): the four games have the same keys
+  (`a5ad4668…`), messages, state and core trace, and this game has no grouped message at all.
+  The zoo game with up to N: the same as before (keys `1ef12466…`, the same notes).
+- **Up to N is not exercised by any game played here**: none of them has a grouped death or
+  blink. Only the unit tests check the count (`group_size`).
 - **Why the danger does not move.** A matched pain/status message only marks the message used;
   the kill's speed, haste and sleep come from the engine monster each update
   (`borg_update_kill_new`, `set_timed_flags`), not from the message. With the switch off the
@@ -65,7 +90,7 @@ Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/c
   (`borg_messages.rs`); #915 acts later, when `borg_locate_kill` names the race of a "PAIN:"
   subject (`borg_flow_kill.rs`). Their messages are disjoint ("You feel ..." has no count). Only
   the parameter tables touch, as adjacent rows. Neither depends on the other.
-- **A neighbour of #941 that #947 does not cover:** "You are no longer confused."
+- **A neighbour of #941 that #947 does not cover** (filed as #1042): "You are no longer confused."
   (`player_timed.txt:227`) matches the pain suffix "[is|are] no longer confused."
   (`list-mon-message.h:39`) and is read as "PAIN:You" ("Assuming player ghost (You)", turn 7,083
   of the `track-p` game). Harmless today (the confusion flag is read from the engine), but the
@@ -73,7 +98,9 @@ Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/c
 
 ## What is left / owner
 
-- Population measurement of the shipped switch: borg-zoo (P8's exit run covers it).
-- Apply a grouped message to N monsters instead of one: not done; no game showed it matters.
-- "You are no longer confused." as monster pain: for #947 to widen its filter, or a new issue
-  (owner's choice).
+- Population measurement of the shipped switch: borg-zoo#652, arm `grouped`
+  (`borg_param_kill_grouped_names=1` against `ctl`). Its specimen `67a0c69d` has the one-monster
+  reading, not up to N, and the arm is not in #652's "if capacity is short" list. **Owner:**
+  include `grouped` when capacity is short? Re-specimen #652 to this PR's head? On a tree with
+  this PR, `ctl` must say `borg_param_kill_grouped_names=0` to stay "switch off".
+- "You are no longer confused." as monster pain: #1042 (owner: fold into #947, or its own task).
