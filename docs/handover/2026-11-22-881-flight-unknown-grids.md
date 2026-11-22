@@ -52,6 +52,16 @@ memory does not survive a save. A real counterfactual needs the study's
 in-process handover (`BORGH_HANDOVER` in the Cemetery study's
 `tools/diagnostic.patch`), and I did not run it.
 
+**The same case on track-p** (owner: "repeat on track-p"). The build is
+this branch's head `ea14528a` (track-p `4c686250` plus this change, clean);
+seed 399497898 from birth, 100,000 turns, arms ctl and clw_walk, each in
+modes 0, 1 and 2. All six games live. Every one plays differently from the
+zoo's death from key 29 on, in town, because of the settings shipped since
+da097a76. The worm room never comes. Mode 1 first plays differently from
+mode 0 at turn 11177 and mode 2 at turn 13120. So on track-p the case is
+gone at the shipped settings, and it cannot test the change either way. The
+zoo request (borg-zoo#642) is the test.
+
 **Left.**
 - A borg-zoo comparison of modes 1 and 2 against the shipped 0 (RULES 20).
   The endpoint is deaths by 100,000 turns (P7's tactical endpoint). Not yet
