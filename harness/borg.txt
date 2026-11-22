@@ -795,6 +795,22 @@ borg_param_defend_bless_fail = 25
 borg_param_caution_heal_when_outmatched = 1
 borg_param_caution_heal_outmatched_min_loss = 50
 
+# Below this percent of max HP, a poisoned or bleeding Borg's cures are not
+# skipped for "the middle of a fight" (#985). That gate refuses a cure when
+# the danger exceeds a fifth of the avoidance, which is the current HP, so
+# the lower the HP the less danger a cure tolerates (at 6 HP, danger 2).
+# A bravery boost never reaches it: its brave think skips borg_caution.
+# 0 = off, today's play. A hypothesis for the zoo.
+borg_param_caution_cure_hp_floor_percent = 0
+
+# Poor in town (below level 6, under 10 gold, fewer than 5 things to sell),
+# C leaves at once: "Nothing to sell in town". 1 = not while the pack holds
+# an unaware potion, scroll, mushroom or device, so the town planner sells
+# one of it (#470) and the kind is learnt (#985: a Ranger died poisoned
+# with 6 unknown Cure Light Wounds and 2 unknown Neutralize Poison). 0 = off,
+# today's play. A hypothesis for the zoo.
+borg_param_sell_poor_town_unknown_hold = 0
+
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
 # never sold below. Every class sets its own value in the class files (300
 # for Mages, 100 for Warriors), so this common line is not used now.

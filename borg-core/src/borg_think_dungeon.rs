@@ -1058,10 +1058,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* If in town and have no money, and nothing to sell,
      * then do not stay in town, its too dangerous.
      */
+    // borg-reborn-rs (#985): with sell_poor_town_unknown_hold, not while the
+    // pack holds an unaware kind: #470 never uses one, and selling one in a
+    // shop (for no gold under birth_no_selling) is how its kind is learnt.
     if st.borg.tr(BI_CDEPTH) == 0
         && st.borg.tr(BI_CLEVEL) < 6
         && st.borg.tr(BI_GOLD) < 10
         && borg_count_sell(st) < 5
+        && !crate::borg_store_sell::poor_town_unknown_hold(st)
     {
         borg_note(st, "# Nothing to sell in town (leaving).");
         st.borg.goal.leaving = true;

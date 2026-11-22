@@ -199,6 +199,15 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
     n
 }
 
+/// borg-reborn-rs (#985): below the HP floor (`floor_percent` of the max
+/// HP; 0 = off, C), a poisoned or bleeding Borg's cures in `borg_heal` are
+/// not skipped for "the middle of a fight". The fight gate there compares
+/// the danger with a fifth of the avoidance, which is the current HP, so
+/// near death it refused every cure (borg-reborn-rs#985).
+fn cure_below_hp_floor(floor_percent: i32, ailing: bool, curhp: i32, maxhp: i32) -> bool {
+    floor_percent > 0 && ailing && maxhp > 0 && curhp * 100 < maxhp * floor_percent
+}
+
 /// borg-reborn-rs (#457): the outmatched-healing test, apart from the
 /// engine so it can be unit tested. True when the flag is on, the Borg is
 /// hurt by at least `min_loss` percent of its maximum HP, and the danger
@@ -720,7 +729,18 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     /*** Cures ***/
 
     // Dont do these in the middle of a fight, teleport out then try it
-    if danger > avoidance(st) * p(Param::caution_cure_safe_danger_tenths) / 10 {
+    // borg-reborn-rs (#985): the gate scales with the avoidance, which is the
+    // current HP outside a bravery boost, so the lower the HP the less danger
+    // a cure tolerates. Below caution_cure_hp_floor_percent of the max HP a
+    // poisoned or bleeding Borg cures here whatever the danger.
+    if danger > avoidance(st) * p(Param::caution_cure_safe_danger_tenths) / 10
+        && !cure_below_hp_floor(
+            p(Param::caution_cure_hp_floor_percent),
+            st.borg.tr(BI_ISPOISONED) != 0 || st.borg.tr(BI_ISCUT) != 0,
+            st.borg.tr(BI_CURHP),
+            st.borg.tr(BI_MAXHP),
+        )
+    {
         return false;
     }
 
@@ -5823,6 +5843,27 @@ mod outmatched_tests {
         // unhurt (even with a zero threshold) and a degenerate maximum
         assert!(!outmatched_heal_applies(1, 29, 29, 40, 0));
         assert!(!outmatched_heal_applies(1, 0, 0, 40, 0));
+    }
+
+    /// #985: the cure floor, off by default; only below the floor, and only
+    /// when poisoned or bleeding.
+    #[test]
+    fn cure_floor_applies_below_the_floor_only() {
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "caution_cure_hp_floor_percent").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 100));
+        // off (the vendored behaviour): never, even at 1 HP
+        assert!(!cure_below_hp_floor(0, true, 1, 25));
+        // the seed 1895660873 thinks: HP 6, 5, 2, 1 of 25, poisoned
+        for hp in [6, 5, 2, 1] {
+            assert!(cure_below_hp_floor(30, true, hp, 25), "HP {hp}/25");
+        }
+        // at or above the floor the fight gate decides
+        assert!(!cure_below_hp_floor(30, true, 8, 25));
+        assert!(!cure_below_hp_floor(30, true, 25, 25));
+        // not poisoned or bleeding: nothing to cure here
+        assert!(!cure_below_hp_floor(30, false, 1, 25));
+        // a degenerate maximum
+        assert!(!cure_below_hp_floor(30, true, 0, 0));
     }
 
     #[test]

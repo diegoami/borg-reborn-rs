@@ -851,6 +851,24 @@ pub(crate) fn borg_store_buys(item: &borg_item, who: i32) -> bool {
     }
 }
 
+/// borg-reborn-rs (#985): an unaware kind #470 sells one of to learn it.
+fn unaware_learnable(item: &borg_item) -> bool {
+    item.iqty > 0
+        && !item.aware
+        && matches!(
+            u32::from(item.tval),
+            TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF
+        )
+}
+
+/// borg-reborn-rs (#985): with `sell_poor_town_unknown_hold`, C's "Nothing
+/// to sell in town (leaving)" waits while the pack holds an unaware kind to
+/// learn by selling one (`borg_good_sell`'s `unaware_kind`). 0 = C.
+pub fn poor_town_unknown_hold(st: &mut BorgState) -> bool {
+    param(Param::sell_poor_town_unknown_hold) != 0
+        && (0..pack_size()).any(|i| unaware_learnable(pack_item(st, i)))
+}
+
 /// Determine if an item should be sold (`borg_good_sell(&borg_items[i], who)`)
 fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     let item = st.items.items[i as usize];
@@ -1384,5 +1402,33 @@ mod tests {
         assert_eq!(s.sold_item_num, -1);
         assert_eq!(s.sold_item_nxt, 0);
         assert!(s.test_item.is_empty() && s.best_item.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod poor_town_unknown_tests {
+    use super::*;
+
+    fn item(tval: u32, aware: bool, iqty: u8) -> borg_item {
+        let mut it = crate::borg_item::blank_item();
+        it.tval = tval as u8;
+        it.aware = aware;
+        it.iqty = iqty;
+        it
+    }
+
+    /// #985: what the poor-town hold waits for: an unaware potion, scroll,
+    /// mushroom or device in the pack; never a known one or an empty slot.
+    #[test]
+    fn only_unaware_learnable_kinds_hold() {
+        for tval in [TV_POTION, TV_SCROLL, TV_MUSHROOM, TV_ROD, TV_WAND, TV_STAFF] {
+            assert!(unaware_learnable(&item(tval, false, 6)), "unaware tval {tval}");
+            assert!(!unaware_learnable(&item(tval, true, 6)), "aware tval {tval}");
+            assert!(!unaware_learnable(&item(tval, false, 0)), "empty tval {tval}");
+        }
+        assert!(!unaware_learnable(&item(TV_RING, false, 1)));
+        assert!(!unaware_learnable(&item(TV_FOOD, false, 1)));
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "sell_poor_town_unknown_hold").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 1));
     }
 }
