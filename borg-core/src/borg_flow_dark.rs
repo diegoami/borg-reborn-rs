@@ -584,7 +584,9 @@ fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
     }
 
     /* Maximal radius */
-    let r = st.borg.tr(BI_LIGHT) + 1;
+    /* borg-reborn-rs (#884): just outside the Borg's own light radius
+     * (BI_LIGHT, C's, at cave_light_engine_radius 0; BI_LIGHT - 1 at 1) */
+    let r = crate::borg_cave_light::own_light_radius(st) + 1;
 
     /* Reset */
     st.flow.temp_n = 0;

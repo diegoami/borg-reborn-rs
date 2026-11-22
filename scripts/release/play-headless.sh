@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# One headless Borg game: the release package's runner (#819, #824).
-#   ./play-headless.sh OUTDIR [SEED [RACE [CLASS [TURNS]]]]
+# One headless Borg game from an unpacked release package (#819, #824): CI's
+# check that a package plays the reference games. Not shipped (owner,
+# v0.1.0-alpha.1); the package folder is BORG_PACKAGE_DIR.
+#   BORG_PACKAGE_DIR=DIR scripts/release/play-headless.sh OUTDIR [SEED [RACE [CLASS [TURNS]]]]
 # Plays a new character with no window (the borgh frontend) until game turn
 # TURNS (default 50000; 0 = no limit) or its death, and writes
 # OUTDIR/keys.log, messages.log, state.log and summary.json. RACE and CLASS
@@ -10,7 +12,7 @@
 # seed 101 0 0 20000 plays the same keys as the source tree's smoke-warrior-1
 # reference (harness/reference/smoke-borg-rs).
 set -euo pipefail
-PKG="$(cd "$(dirname "$0")" && pwd)"
+PKG="$(cd "${BORG_PACKAGE_DIR:?set BORG_PACKAGE_DIR to the unpacked package}" && pwd)"
 [ $# -ge 1 ] && [ "$1" != -h ] && [ "$1" != --help ] || { sed -n '2,11p' "$0"; [ $# -ge 1 ]; exit; }
 SEED="${2:-101}"; RACE="${3:-0}"; CLASS="${4:-0}"; TURNS="${5:-50000}"
 for v in "$SEED" "$RACE" "$CLASS" "$TURNS"; do
