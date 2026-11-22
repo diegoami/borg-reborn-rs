@@ -5798,7 +5798,10 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
 - **`cave_light_engine_radius`** (compiled 0, shipped 0). 1 = the engine's
   radius, `cur_light - 1` (never below 0), and the radius-2 and radius-3+
   blocks of `borg_update_light` follow it. A necromancer at `cur_light <= 1`
-  sees by unlight (src/cave-view.c:777–779) and keeps C's radius. 0 = C's
+  sees by unlight (src/cave-view.c:777–779) and keeps C's radius. With 1, a
+  non-necromancer whose light slot is empty still lights the map from other
+  equipped gear (`BI_LIGHT > 0`, src/player-calcs.c:1624–1644; #888, kept by
+  the owner on 2026-11-22). 0 = C's
   radius, today's play. The zoo measures it (RULES 14, 20) before it ships.
 - With 1 the grids lit also take the engine's shape, `distance() <= radius`
   (#884): radius 2 lights the grids at distance 2, (2,0) and (2,1), each in
