@@ -6335,8 +6335,8 @@ Ranger. With `kill_live_zero_hp = 1` the floor also covers hp 0; the flag
 needs `kill_live_min_power` above 0 (it ships at 1), and with the floor at 0
 it changes nothing. The
 focused fight planner (#759) already counts hp + 1 (`observed_kill_hp`).
-Compiled 0 and not shipped: today's play is unchanged until borg-zoo
-measures it.
+Compiled 0; `harness/borg.txt` ships 1 since #1034 (owner, 2026-11-22: "the
+flag should be turned on"); borg-zoo#670 measures it.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
