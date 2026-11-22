@@ -702,6 +702,19 @@ borg_param_recover_unseen_act_age = 30
 
 borg_param_attack_throw_as_melee = 1
 
+# Confused attacks by direction (#867, owner 2026-11-21): 1 = a confused
+# Borg (not blind, not hallucinating) may also throw, shoot and use a wand,
+# rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
+# the engine's confused aim, 11/32, and sent by direction key, never at a
+# target; a staff keeps its full value. The usual chooser picks the best.
+# A blow's damage for fight-or-flee stays C's (full).
+# Next to an immobile confuser (a grey mushroom patch, not a unique) the
+# confusion cure waits and the attack goes first, while there is an attack
+# to make.
+# 0 = C (melee only while confused).
+
+borg_param_attack_confused_by_direction = 0
+
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
 # (breeders when a hunt for them applies, dangerous town monsters); 2 = no
@@ -1428,6 +1441,9 @@ borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34
+# #880: the forecast prices POISON (dice + timer) and status blows as HP and
+# never vetoes on a breeder; compiled 0, shipped 1 (owner, 2026-11-22).
+borg_param_caution_recall_blow_model = 1
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
