@@ -6650,8 +6650,9 @@ name the race, and "N monsters" is an unseen group. A grouped death or blink
 ("3 cave spiders die.") removes up to N known monsters of the race, not one
 (`grouped_count`, `borg_update.rs`; review of #943). With this section the
 registry holds **2398** parameters (`track-p` `72651d25` plus
-`kill_grouped_names`). Compiled 0; shipped 1
-in `harness/borg.txt` (P8): every non-unique race of `monster.txt` (523)
+`kill_grouped_names`). Compiled 0. Shipped 1 by #943 in P8, then moved to
+**P9** (owner, 2026-11-22) and shipped 0 in `harness/borg.txt` until P8 is
+promoted; P9 turns it on after borg-zoo#652 (arm `grouped`). Every non-unique race of `monster.txt` (523)
 reads back from its grouped subject, with a count of 2 or 15 and with
 " (offscreen)" (`grouped_subjects_of_every_engine_race`), and seed 2008390085
 plays the same keys, state and core trace (danger at every think) with the
