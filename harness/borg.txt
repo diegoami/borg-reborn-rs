@@ -1060,6 +1060,16 @@ borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
 borg_param_caution_unseen_bump_phase_min_danger = 5
 
+# #980: the emergency attack spell (Magic Missile, the reserve spell) only
+# within the current mana (#1056, owner 2026-11-22: "let us change value of
+# attack_reserve_spell_overexert to 0"). At 1 (C) it is cast beyond the
+# current SP and the engine always faints the Borg (player-spell.c:540-553):
+# Mages 592754909 and 1378676237 died paralysed. With 0 no reserve cast can
+# faint, so attack_reserve_faint_percent above no longer acts. Not measured
+# yet: borg-zoo#675.
+
+borg_param_attack_reserve_spell_overexert = 0
+
 # Teleport landing with either kind of teleport (#724, upstream Angband
 # 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
 # teleport scroll or spell or a teleport staff or activation; 0 = C (both
