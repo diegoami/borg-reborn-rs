@@ -92,6 +92,11 @@ fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_i
             .filter(|ware| ware.iqty > 0 && ware.kind == item.kind).count() >= limit
 }
 
+/// Known excess can be cleared in a single native transaction.
+pub(crate) fn batch_home_disposal(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+    home_at_limit(st, item)
+}
+
 fn overflow_action(st: &BorgState) -> Option<TownAction> {
     let limit = configured_limit(st);
     if limit <= 0 { return None; }
@@ -362,7 +367,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             }
         }
         if let Some(offer) = offer.filter(|_| a.code == action::SELL_HOME) {
-            if home_at_limit(st, &item) {
+            if batch_home_disposal(st, &item) {
                 qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity(), 0, 0);
             }
         }

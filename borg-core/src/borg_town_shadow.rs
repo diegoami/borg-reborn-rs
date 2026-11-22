@@ -603,21 +603,28 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
     if live && paction != crate::borg_town_record::action::LEAVE && paction != crate::borg_town_record::action::DROP {
-        if matches!(paction, crate::borg_town_record::action::SELL | crate::borg_town_record::action::SELL_HOME) && act[2] > 0 {
-            // Charged devices need native splitting even for the one-copy
-            // action; a whole-stack average can differ from the first sale.
-            act[3] = if paction == crate::borg_town_record::action::SELL {
-                engine::inven_object(&st.access, act[1] as usize)
-                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, 1)))
+        use crate::borg_town_record::action;
+        // Use batches only for intentional Home cleanup. The existing
+        // one-copy actions still settle and re-solve as before.
+        let slot = act[1] as usize;
+        let selling = match paction {
+            action::SELL => st.items.items.get(slot),
+            action::SELL_HOME => st.store.shops[BORG_HOME].ware.get(slot),
+            _ => None,
+        };
+        if !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
+            act[2] = executed_copies(paction, act[2]);
+        }
+        if selling.is_some() && act[2] > 0 {
+            let qty = act[2] as i32;
+            act[3] = if paction == action::SELL {
+                engine::inven_object(&st.access, slot)
+                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, qty)))
             } else {
-                engine::store_stock(&st.access, BORG_HOME).get(act[1] as usize)
-                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, 1)))
+                engine::store_stock(&st.access, BORG_HOME).get(slot)
+                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, qty)))
             };
         }
-        // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
-        // types them at the quantity prompt, capped by the native offer.
-        // Every other action moves one copy and re-solves.
-        act[2] = executed_copies(paction, act[2]);
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
