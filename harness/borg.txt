@@ -644,6 +644,14 @@ borg_param_attack_arrow_point_blank_divisor = 5
 
 borg_param_kill_live_min_power = 1
 
+# The floor above also covers a monster at exactly 0 HP (#975, owner
+# 2026-11-22: "the flag should be turned on"). The engine kills a monster only
+# below 0 (mon-util.c:1300), so a 2-HP grey mold hit for 2 lives; at 0 the
+# Borg rated it at 0 HP, scored every attack 0 and walked next to it (Hobbit
+# Ranger 282602274). Needs kill_live_min_power above 0. borg-zoo#670 measures it.
+
+borg_param_kill_live_zero_hp = 1
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
@@ -1399,6 +1407,17 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #983 (owner, 2026-11-22: "test when safe"): drink one unknown potion at a
+# safe moment in the dungeon (down to the depth below, danger 0 over the turns
+# below, at least the HP percent below, no harmful status, food in the pack),
+# so a found Cure Light Wounds is known before it is needed. A bad potion costs
+# turns (Sleep paralyses 5+1d5, Poison stops regeneration); none kills by
+# itself. #470 still forbids unknown scrolls, mushrooms, devices and any
+# unknown item in an emergency. 0 = #470 for potions too.
+borg_param_item_test_unknown_potions = 1
+borg_param_item_test_unknown_min_hp_percent = 50
+borg_param_item_test_unknown_danger_turns = 10
+borg_param_item_test_unknown_max_depth = 30
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs
@@ -1424,6 +1443,12 @@ borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
+# #926: the heal floor (percent of max HP), the quantile of "the next turn
+# kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
+# it. All 0 = today's play, until the zoo measures them.
+borg_param_fast_fragile_heal_floor = 0
+borg_param_fast_fragile_escape_quantile = 0
+borg_param_fast_fragile_count_dot = 0
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
 # grids with a torch, so unseen monsters two grids away are deleted). Ships 0
