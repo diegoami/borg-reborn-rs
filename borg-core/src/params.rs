@@ -54,6 +54,7 @@ parameters! {
     fast_fragile_kill_turns => (2, "turns", 1, 10, "borg_fast_fragile.rs:179", "#842: fragile = the monster's HP at most this many turns of the Borg's best attack (focused planner's HP/turn, hit chance and failure included). Hypothesis: no measurement chose 2."),
     fast_fragile_damage_percent => (25, "percent of HP", 1, 1000, "borg_fast_fragile.rs:180", "#842: dangerous enough to matter = the monster's expected damage per Borg turn is at least this percent of the current HP. Hypothesis: no measurement chose 25."),
     fast_fragile_group_max => (2, "monsters", 0, 100, "borg_fast_fragile.rs:181", "#842: a monster is not fast-fragile when more than this many others of its race are in view (a swarm: cave spiders, wood spiders, crabans). Hypothesis: no measurement chose 2."),
+    cave_light_engine_radius => (0, "flag", 0, 1, "borg_cave_light.rs:130", "#877: 1 = the grids the Borg marks lit by its own light reach the engine's radius, cur_light - 1 (src/cave-view.c:658: a torch lights distance 1, not 2), so a monster two grids away in the dark is no longer expected visible and deleted when unseen (Mage 461220874, 44 of 50 worm forgets). A necromancer by unlight (cur_light <= 1) keeps C's radius. 0 = C's radius (cur_light), today's play."),
     town_hunt => (0, "flag", 0, 1, "borg_town_hunt.rs:22", "#789: in town let the fight forecast govern attacks and approaches to the town-melee-only category, prioritize the highest danger, and avoid Farmer Maggot. 0 retains the existing town scare rules."),
     town_hunt_ranged_bonus_percent => (0, "percent", 0, 1000, "borg_town_hunt.rs:198", "#789: extra percent applied to the expected damage score of a ranged attack among winning town plans. Melee remains available."),
     kit_leash => (0, "flag", 0, 1, "borg_kit.rs:201", "#840 (owner, 2026-11-21: \"the smaller the kit the smaller the leash\"): 1 = the leash follows the kit score: kit_leash_min + (C's leash - kit_leash_min) x score^kit_leash_power, while the kit is short, at any depth and level up to kit_max_level (the hunts and item detours the leash refuses stay refused). 0 = C's leash, today's play."),
@@ -3091,6 +3092,7 @@ mod tests {
                 "town" => "town_budget",
                 "kill" => "flow_kill",
                 "fast" => "fast_fragile",
+                "cave" => "cave_light",
                 _ => prefix,
             };
             if prefix == "town" {
