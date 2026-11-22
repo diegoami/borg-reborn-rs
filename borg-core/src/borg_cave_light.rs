@@ -17,7 +17,9 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
-use crate::borg_headers::borg_trait_h::BI_LIGHT;
+use crate::borg_projection::borg_los_projectable;
+use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
+use crate::params::{value, Param};
 use crate::state::BorgState;
 use crate::engine;
 
@@ -80,13 +82,29 @@ fn inven_light() -> usize {
     usize::from(engine::z_info().pack_size) + 5
 }
 
-/// Update the set of grids "illuminated" by the player's lite
-/// (`borg_update_light`).
-///
-/// See "update_LIGHT" in "cave.c" for complete documentation
-///
-/// It is very important that the "player grid" be the first grid in the
-/// array of "BORG_LIGHT" grids, since this is assumed in several places.
+const CLASS_NECROMANCER: i32 = 4;
+
+/// #877: the radius the Borg marks as lit by its own light. The C Borg (and
+/// switch 0) uses `BI_LIGHT`, the engine's `cur_light`, as the radius; the
+/// engine lights `radius = ABS(light) - 1` (src/cave-view.c:658, add_light
+/// :616-646), so a Wooden Torch (`LIGHT_2`, lib/gamedata/object.txt:241)
+/// lights distance 1 only. Switch 1 takes the engine's radius, except for a
+/// necromancer at `cur_light <= 1`, who sees by unlight
+/// (src/cave-view.c:777-779) and keeps C's radius.
+pub(crate) fn light_radius(light: i32, class: i32, engine: i32) -> i32 {
+    if engine == 0 || (class == CLASS_NECROMANCER && light <= 1) {
+        return light;
+    }
+    (light - 1).max(0)
+}
+
+/// Whether equipment supplies light for the Borg's light map.
+fn has_light_for_map(light_slot_occupied: bool, light: i32, class: i32, engine: i32) -> bool {
+    light_slot_occupied || (engine != 0 && class != CLASS_NECROMANCER && light > 0)
+}
+
+/// Update the set of grids illuminated by the player's light.
+/// The player's grid must be the first entry whenever the set is nonempty.
 pub fn borg_update_light(st: &mut BorgState) {
     /*** Clear old grids ***/
 
@@ -102,8 +120,12 @@ pub fn borg_update_light(st: &mut BorgState) {
     /* None left */
     st.light.light_n = 0;
 
-    /* Player has no lite */
-    if st.items.items[inven_light()].iqty == 0 {
+    /* With the engine radius, other equipment can light the map even
+     * when the light slot is empty (player-calcs.c:1624–1644). */
+    let engine = value(Param::cave_light_engine_radius);
+    let light = st.borg.tr(BI_LIGHT);
+    let class = st.borg.tr(BI_CLASS);
+    if !has_light_for_map(st.items.items[inven_light()].iqty != 0, light, class, engine) {
         return;
     }
 
@@ -111,7 +133,10 @@ pub fn borg_update_light(st: &mut BorgState) {
 
     let cy = st.borg.c.y;
     let cx = st.borg.c.x;
-    let light = st.borg.tr(BI_LIGHT);
+    let light = light_radius(light, class, engine);
+    /* #884: with the engine's radius, the grids lit are also the engine's
+     * shape: distance() <= radius (see engine_shape) */
+    let engine_shape = engine != 0;
 
     /* Player grid */
     borg_cave_light_hack(st, cy, cx);
@@ -132,7 +157,18 @@ pub fn borg_update_light(st: &mut BorgState) {
     }
 
     /* Radius 2 -- lantern radius */
-    if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
+    if engine_shape && light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
+        /* #884: the grids at distance 2, (2,0) and (2,1), each in line of
+         * sight for light on the Borg's map (reviews of #894: the engine's
+         * add_light tests los() per grid, src/cave-view.c:625-640, through
+         * projectable grids only, so not through passable rubble; C's proxy
+         * gated (2,1) on (2,0) being floor) */
+        for (dy, dx) in RADIUS_2 {
+            if borg_los_projectable(st, cy, cx, cy + dy, cx + dx) {
+                borg_cave_light_hack(st, cy + dy, cx + dx);
+            }
+        }
+    } else if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
         /* South of the player */
         if borg_cave_floor_bold(st, cy + 2, cx) {
             borg_cave_light_hack(st, cy + 2, cx);
@@ -169,22 +205,24 @@ pub fn borg_update_light(st: &mut BorgState) {
         let p = light.min(5);
 
         /* South-East of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx + 3) {
+        /* #884: C's (3,3) corners are at distance 4; not with the engine's
+         * shape (the box below lights them at radius 4+ when viewable) */
+        if !engine_shape && borg_cave_floor_bold(st, cy + 3, cx + 3) {
             borg_cave_light_hack(st, cy + 3, cx + 3);
         }
 
         /* South-West of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx - 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy + 3, cx - 3) {
             borg_cave_light_hack(st, cy + 3, cx - 3);
         }
 
         /* North-East of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx + 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy - 3, cx + 3) {
             borg_cave_light_hack(st, cy - 3, cx + 3);
         }
 
         /* North-West of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx - 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy - 3, cx - 3) {
             borg_cave_light_hack(st, cy - 3, cx - 3);
         }
 
@@ -206,16 +244,18 @@ pub fn borg_update_light(st: &mut BorgState) {
                 let dy = (cy - y).abs();
                 let dx = (cx - x).abs();
 
-                /* Skip the "central" grids (above) */
-                if dy <= 2 && dx <= 2 {
-                    continue;
-                }
-
                 /* Approximate the distance "as the bird flies" (straight-line).
                  * Ignores obstacles and does not follow walkable paths like
                  * pathfinding code elsewhere.
                  */
                 let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
+
+                /* Skip the "central" grids (above): C's 5x5 square, or
+                 * (#884, engine shape) distance <= 2, so (2,2) at distance
+                 * 3 is lit here */
+                if if engine_shape { d <= 2 } else { dy <= 2 && dx <= 2 } {
+                    continue;
+                }
 
                 /* Skip distant grids */
                 if d > p {
@@ -229,5 +269,81 @@ pub fn borg_update_light(st: &mut BorgState) {
                 }
             }
         }
+    }
+}
+
+/// #884: the Borg's own light radius under `cave_light_engine_radius`, for
+/// the code that looks at or just beyond the edge of its light (the dark
+/// flow, the dark frontier, Light Beam). Switch 0: `BI_LIGHT`, C's.
+pub(crate) fn own_light_radius(st: &BorgState) -> i32 {
+    light_radius(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), value(Param::cave_light_engine_radius))
+}
+
+/// #884: whether the Borg's own light takes the engine's shape
+/// (`cave_light_engine_radius` 1), for the code outside this file that
+/// walks to the edge of the light (the dark frontier).
+pub(crate) fn engine_light_shape() -> bool {
+    value(Param::cave_light_engine_radius) != 0
+}
+
+/// #884: the grids of the engine's shape at `distance()` 2, `(dy, dx)` from
+/// the player: (2,0) and (2,1) in each direction. C lights (2,2) north and
+/// south, at distance 3, and misses (2,1).
+const RADIUS_2: [(i32, i32); 12] = [
+    (2, 0), (2, 1), (2, -1), (-2, 0), (-2, 1), (-2, -1),
+    (0, 2), (1, 2), (-1, 2), (0, -2), (1, -2), (-1, -2),
+];
+
+/// The game's `distance()` (engine src/cave-view.c:38): the longer leg plus
+/// half the shorter.
+pub(crate) fn engine_distance(dy: i32, dx: i32) -> i32 {
+    let (ay, ax) = (dy.abs(), dx.abs());
+    if ay > ax { ay + (ax >> 1) } else { ax + (ay >> 1) }
+}
+
+#[cfg(test)]
+mod tests_884 {
+    use super::{engine_distance as distance, RADIUS_2};
+
+    #[test]
+    fn radius_two_grids_are_the_distance_two_grids() {
+        let mut lit: Vec<(i32, i32)> = RADIUS_2.to_vec();
+        lit.sort_unstable();
+        let mut want: Vec<(i32, i32)> = (-2..=2)
+            .flat_map(|dy| (-2..=2).map(move |dx| (dy, dx)))
+            .filter(|&(dy, dx)| distance(dy, dx) == 2)
+            .collect();
+        want.sort_unstable();
+        assert_eq!(lit, want);
+    }
+}
+
+#[cfg(test)]
+mod tests_877 {
+    use super::{has_light_for_map, light_radius, CLASS_NECROMANCER};
+
+    #[test]
+    fn equipment_outside_the_light_slot_counts_only_with_the_engine_radius() {
+        assert!(!has_light_for_map(false, 2, 0, 0));
+        assert!(has_light_for_map(false, 2, 0, 1));
+        assert!(!has_light_for_map(false, 0, 0, 1));
+        assert!(!has_light_for_map(false, 2, CLASS_NECROMANCER, 1));
+        assert!(has_light_for_map(true, 0, 0, 0));
+        assert!(has_light_for_map(true, 1, CLASS_NECROMANCER, 1));
+    }
+
+    #[test]
+    fn engine_radius_is_light_minus_one() {
+        // switch 0: C's radius
+        assert_eq!(light_radius(2, 0, 0), 2);
+        assert_eq!(light_radius(3, 0, 0), 3);
+        // switch 1: torch (2) -> 1, lantern/LIGHT_3 (3) -> 2, +1 light -> 0
+        assert_eq!(light_radius(2, 0, 1), 1);
+        assert_eq!(light_radius(3, 0, 1), 2);
+        assert_eq!(light_radius(1, 0, 1), 0);
+        assert_eq!(light_radius(0, 0, 1), 0);
+        // necromancer by unlight keeps C's radius; with a real light it does not
+        assert_eq!(light_radius(1, 4, 1), 1);
+        assert_eq!(light_radius(3, 4, 1), 2);
     }
 }

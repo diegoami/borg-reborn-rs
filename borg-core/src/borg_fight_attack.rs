@@ -42,7 +42,7 @@ use crate::borg_magic::{
     borg_spell_okay, borg_spell_okay_fail, borg_spell_fail_rate,
 };
 use crate::borg_projection::{
-    borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
+    borg_distance, borg_inc_motion, borg_los, borg_los_projectable, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
 use crate::borg_update::Detect;
@@ -110,6 +110,14 @@ pub struct FightAttackState {
     /// melee's danger term (`borg_launch_damage_one`,
     /// `borg_launch_bolt_aux_hack`).
     pub throwing: bool,
+    /// borg-reborn-rs (#867): the attack being rated is aimed by a confused
+    /// Borg under `attack_confused_by_direction`: only an adjacent monster,
+    /// no offset aim, and its damage weighted by the aim chance
+    /// (`CONFUSED_AIM`). Cleared by `borg_calculate_attack_effectiveness`.
+    pub confused_aim: bool,
+    /// borg-reborn-rs (#867): the direction (1-9) a confused aimed attack is
+    /// sent with instead of the target key; 0 = none.
+    pub confused_dir: i32,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -152,6 +160,8 @@ impl Default for FightAttackState {
             est_kills: 0.0,
             town_wand: false,
             throwing: false,
+            confused_aim: false,
+            confused_dir: 0,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -251,6 +261,97 @@ fn desc(item: &borg_item) -> Vec<u8> {
 /// "No firing while blind, confused, or hallucinating"
 fn cant_aim(st: &BorgState) -> bool {
     tr(st, BI_ISBLIND) != 0 || tr(st, BI_ISCONFUSED) != 0 || tr(st, BI_ISIMAGE) != 0
+}
+
+/// borg-reborn-rs (#867, owner: "it should choose the best attack available,
+/// and in case of mage without spells, that would be the flask"): with
+/// `attack_confused_by_direction`, a Borg that is confused, but neither blind
+/// nor hallucinating, may still throw, shoot and use a wand, rod or staff at
+/// an adjacent monster. The engine allows them: it refuses only spells
+/// (`player_can_cast`, player-util.c:1102) and scrolls (:1182) to a confused
+/// player. 0 = C (no item attack while confused).
+fn confused_by_direction(st: &BorgState) -> bool {
+    by_direction(
+        param(Param::attack_confused_by_direction) != 0,
+        tr(st, BI_ISBLIND) != 0,
+        tr(st, BI_ISCONFUSED) != 0,
+        tr(st, BI_ISIMAGE) != 0,
+    )
+}
+
+/// `confused_by_direction` on the switch and the three states.
+fn by_direction(on: bool, blind: bool, confused: bool, image: bool) -> bool {
+    on && confused && !blind && !image
+}
+
+/// `cant_aim`, but for the item attacks (missiles, throws, wands, rods,
+/// staffs), which `attack_confused_by_direction` allows while confused.
+fn cant_use_item_attack(st: &BorgState) -> bool {
+    cant_aim(st) && !confused_by_direction(st)
+}
+
+/// borg-reborn-rs (#867): the chance a confused player's direction is kept,
+/// as a fraction: `player_confuse_dir` (player-util.c:1353-1377) keeps a
+/// direction key 25% of the time and otherwise draws one of the 8 directions
+/// (`ddd[randint0(8)]`), so 1/4 + 3/4 * 1/8 = 11/32. Melee (walking into the
+/// monster, cmd-cave.c:1301), missiles (player-attack.c:1350), throws (:1393)
+/// and aimed devices (cmd-obj.c:440) all pass through it. A target
+/// (direction 5) is always redrawn, so a confused aimed attack is sent by
+/// direction key. A game constant.
+const CONFUSED_AIM: (i32, i32) = (11, 32);
+
+/// borg-reborn-rs (#867): mark the attack being rated as aimed by a confused
+/// Borg, when `attack_confused_by_direction` applies (`confused_aim`).
+fn mark_confused_aim(st: &mut BorgState) {
+    if confused_by_direction(st) {
+        st.fight_attack.confused_aim = true;
+    }
+}
+
+/// borg-reborn-rs (#867, review of #868): once an attack is sent, its
+/// confused aim is over; nothing after it may read the flag.
+fn clear_confused_aim(st: &mut BorgState) {
+    st.fight_attack.confused_aim = false;
+    st.fight_attack.confused_dir = 0;
+}
+
+/// borg-reborn-rs (#867): a confused aimed attack's value weighted by
+/// `CONFUSED_AIM`, and its damage and kills too when `damage_too`; anything
+/// else unchanged. `borg_attack` weights a blow's value only (review of
+/// #868): its damage is what the fight-or-flee tests read
+/// (`borg_attack_estimate`), and C rated a confused blow at full damage, so
+/// a confused fight that melee wins is judged as in C. The focused ranking
+/// ranks on the damage, so it weights it for every aimed attack.
+fn confused_weight(st: &mut BorgState, raw: i32, damage_too: bool) -> i32 {
+    if !st.fight_attack.confused_aim {
+        return raw;
+    }
+    let (num, den) = CONFUSED_AIM;
+    if damage_too {
+        st.fight_attack.dmg_best = st.fight_attack.dmg_best * num / den;
+        st.fight_attack.kill_best *= f64::from(num) / f64::from(den);
+    }
+    raw * num / den
+}
+
+/// The key that answers an aimed command's direction prompt: the target
+/// (`5`), or, for a confused aimed attack (#867), the direction toward the
+/// adjacent monster, which the engine keeps more often (`CONFUSED_AIM`).
+/// Returns the `successful_target` to set: `shot` after a target, 0 after a
+/// direction (no target to track, as `throw_at_unseen_bump`).
+fn aim_key(st: &mut BorgState, shot: i32) -> i32 {
+    let dir = std::mem::take(&mut st.fight_attack.confused_dir);
+    if dir != 0 {
+        borg_note(st, &format!("# Confused: aiming by direction {dir}, not at a target (#867)"));
+    }
+    let (k, flag) = aim_answer(dir, shot);
+    borg_keypress(st, k);
+    flag
+}
+
+/// `aim_key`'s key and `successful_target` for a direction (0: none).
+fn aim_answer(dir: i32, shot: i32) -> (keycode_t, i32) {
+    if dir == 0 { (key(b'5'), shot) } else { (i2d(dir), 0) }
 }
 
 /// "Paranoia": `borg_simulate && randint0(100) < pct` (the RNG is drawn
@@ -744,6 +845,10 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
     if tr(st, BI_ISAFRAID) != 0 || tr(st, BI_CRSFEAR) != 0 {
         return 0;
     }
+
+    // borg-reborn-rs (#867): a confused blow goes astray as often as a
+    // confused throw; weighted alike, so the best attack wins on damage.
+    mark_confused_aim(st);
 
     /* Examine possible destinations */
     let mut i = 0;
@@ -2058,6 +2163,11 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
     let mut b_o_y = 0;
     let mut b_o_x = 0;
     let mut b_d = max_range();
+    // borg-reborn-rs (#867, review of #868): a confused aim applies only to
+    // the attack being rated, and only while the Borg is confused: a flag
+    // left by an earlier think never restricts another caller (Teleport
+    // Other, `borg_fight_defend.rs`).
+    let confused_aim = st.fight_attack.confused_aim && confused_by_direction(st);
 
     /* Examine possible destinations */
 
@@ -2083,6 +2193,12 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 /* Acquire location */
                 let x = tx + o_x;
                 let y = ty + o_y;
+
+                // borg-reborn-rs (#867): confused, only a direction: the
+                // adjacent monster itself, no offset aim.
+                if confused_aim && (o_x != 0 || o_y != 0 || dist_to(st, tx, ty) != 1) {
+                    continue;
+                }
 
                 /* Reset Teleport Other variables */
                 st.fight_attack.tp_other_n = 0;
@@ -2184,6 +2300,12 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
 
     /* Target the location */
     let g = st.borg.goal.g;
+    // borg-reborn-rs (#867): confused, the direction to the adjacent
+    // monster is the aim (`aim_key`); a target would always be redrawn.
+    if confused_aim {
+        st.fight_attack.confused_dir = borg_extract_dir(st.borg.c.y, st.borg.c.x, g.y, g.x);
+        return b_n;
+    }
     let _ = borg_target(st, g, require_monster);
 
     /* Result */
@@ -2323,8 +2445,9 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
                 continue;
             }
 
-            /* Never pass through walls*/
-            if !borg_los(st, y1, x1, ry, rx) {
+            /* project.c:856-863 uses LOS through PROJECT terrain for
+             * the arc footprint. Walkable rubble still blocks that ray. */
+            if !borg_los_projectable(st, y1, x1, ry, rx) {
                 continue;
             }
 
@@ -2514,9 +2637,11 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     }
 
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
+    mark_confused_aim(st);
 
     /* Scan the quiver */
     for k in quiver_start()..quiver_end() {
@@ -2572,10 +2697,8 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     borg_keypress(st, ((b_k - quiver_start()) + i32::from(b'0')) as keycode_t);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -2;
+    st.fight_attack.successful_target = aim_key(st, -2);
 
     /* Value */
     b_n
@@ -2662,8 +2785,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
                 break 'check false;
             }
 
-            /* Cant have an obstacle between us */
-            if !borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
+            /* Do not wait for an approach across an obstructed sight line.
+             * Passable rubble can leave the monster waiting on its side. */
+            if !borg_los_projectable(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
                 break 'check false;
             }
 
@@ -2721,9 +2845,11 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
     }
 
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
+    mark_confused_aim(st);
 
     borg_attack_aux_object_fire(st, b_k, b_d)
 }
@@ -2881,10 +3007,8 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -2;
+    st.fight_attack.successful_target = aim_key(st, -2);
 
     /* Value */
     b_n
@@ -3068,6 +3192,95 @@ pub fn borg_attack_aux_spell_bolt(
     b_n
 }
 
+/// borg-reborn-rs (#878): the mean paralysis of a cast `oops` mana short:
+/// `randint1(5 * oops + 1)` (player-spell.c:541-553, player-util.c:835-842 at
+/// 574b618c), whose mean is `(5 * oops + 2) / 2`. The counter falls in
+/// `decrease_timeouts`, from `process_world`, once every 10 game turns
+/// (game-world.c:651, :1080): world ticks, not the Borg's turns.
+pub(crate) fn reserve_faint_turns(oops: i32) -> f64 {
+    f64::from(5 * oops.max(0) + 2) / 2.0
+}
+
+/// borg-reborn-rs (#878, review of #891, F2): world ticks of paralysis as
+/// Borg turns. A tick is 10 game turns; the Borg gains `extract_energy` of
+/// its speed each game turn and needs 100 for a turn, so a tick is
+/// `energy / 10` of its turns (1 at normal speed, 2 at +10, game-world.c:68-90).
+/// The monsters' damage a Borg turn (`fight_incoming`) times this is their
+/// damage over the faint.
+pub(crate) fn faint_borg_turns(ticks: f64, player_energy: f64) -> f64 {
+    ticks * player_energy / 10.0
+}
+
+/// borg-reborn-rs (#878): the expected damage taken while fainted for
+/// `turns` Borg turns, from monsters `(HP a Borg turn, distance, moves a Borg
+/// turn, weight)`: each from the turn it can reach the Borg (`distance - 1`
+/// steps at its speed), weighted (the target only by the chance the cast
+/// fails).
+pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64) -> f64 {
+    monsters.iter().map(|&(hp, d, moves, weight)| {
+        let reach = if d <= 1 { 0.0 } else if moves > 0.0 { f64::from(d - 1) / moves } else { f64::INFINITY };
+        hp.max(0.0) * weight * (turns - reach).max(0.0)
+    }).sum()
+}
+
+/// borg-reborn-rs (#878, review of #891): whether a monster `d` grids away is
+/// not excluded outright from the faint's damage: adjacent, or able to move;
+/// whether a mobile one arrives in time is the caller's `reach`.
+pub(crate) fn faint_reaches(d: i32, never_move: bool) -> bool {
+    d <= 1 || !never_move
+}
+
+/// borg-reborn-rs (#878): `attack_reserve_faint_percent`. The reserve spell
+/// is refused when what the awake monsters deal during the mean faint
+/// (`reserve_faint_turns`, in Borg turns by `faint_borg_turns`) reaches that
+/// percent of the current HP. The target (`target`: the one monster the
+/// reserve spell's own loop found within `attack_reserve_spell_near_distance`)
+/// counts only if the cast fails; its kill is what the cast gains. Distances
+/// are the reserve loop's (the larger of the two axes: the steps a monster
+/// needs). Expected blow damage (`fight_incoming`), not danger: no fear
+/// prices. Poison taken over time is not counted.
+fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32, target: Option<usize>) -> bool {
+    let percent = param(Param::attack_reserve_faint_percent);
+    if percent <= 0 {
+        return false;
+    }
+    let oops = borg_get_spell_power(st, spell) - mana;
+    if oops <= 0 {
+        return false;
+    }
+    let fail = f64::from(crate::borg_magic::borg_spell_fail_rate(st, spell).clamp(0, 100)) / 100.0;
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let player = energy(engine::player_combat_speed());
+    let turns = faint_borg_turns(reserve_faint_turns(oops), player);
+    let mut monsters = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake {
+            continue;
+        }
+        let d = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        if !faint_reaches(d, engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)) {
+            continue;
+        }
+        let hp = crate::borg_caution::fight_incoming(st, i).hp_per_turn;
+        let moves = energy(crate::borg_caution::forecast_monster_speed(&kill)) / player;
+        let weight = if target == Some(i) { fail } else { 1.0 };
+        monsters.push((hp, d, moves, weight));
+    }
+    let damage = faint_contact_damage(&monsters, turns);
+    let hp = tr(st, BI_CURHP);
+    if damage * 100.0 < f64::from(percent) * f64::from(hp) {
+        return false;
+    }
+    // Once a think: the attack is simulated several times.
+    thread_local! { static NOTED: std::cell::Cell<i32> = const { std::cell::Cell::new(i32::MIN) }; }
+    let now = st.borg.time.now;
+    if NOTED.with(|n| n.replace(now)) != now {
+        borg_note(st, &format!("# No reserve spell: {damage:.1} damage expected over a {turns:.1}-turn faint, HP {hp} (#878)"));
+    }
+    true
+}
+
 /// The same as `borg_attack_aux_spell_bolt` only in an emergency case:
 /// the borg will enter negative mana casting this
 /// (`borg_attack_aux_spell_bolt_reserve`).
@@ -3080,6 +3293,8 @@ fn borg_attack_aux_spell_bolt_reserve(
     max_range: i32,
 ) -> i32 {
     let mut near_monsters = 0;
+    // borg-reborn-rs (#878): the one near monster, the cast's target.
+    let mut near_target = None;
 
     /* Fake our Mana */
     let sv_mana = tr(st, BI_CURSP);
@@ -3105,7 +3320,15 @@ fn borg_attack_aux_spell_bolt_reserve(
     }
 
     /* Must be dangerous */
-    if danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true) < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
+    // borg-reborn-rs (#878): with `attack_reserve_spell_damage_only`, the
+    // danger without its fear prices.
+    let danger = if param(Param::attack_reserve_spell_damage_only) != 0 {
+        let (y, x) = (st.borg.c.y, st.borg.c.x);
+        crate::borg_danger::borg_danger_damage_only(st, y, x, param(Param::attack_reserve_spell_danger_horizon), true, false)
+    } else {
+        danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true)
+    };
+    if danger < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
         return 0;
     }
 
@@ -3135,6 +3358,7 @@ fn borg_attack_aux_spell_bolt_reserve(
          */
         if d < param(Param::attack_reserve_spell_near_distance) {
             near_monsters += 1;
+            near_target = Some(i as usize);
 
             /* If it has too many hp to be taken out with this */
             /* spell, don't bother trying */
@@ -3153,6 +3377,11 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Should only be 1 near monster */
     if near_monsters > 1 {
+        return 0;
+    }
+
+    // borg-reborn-rs (#878): no fainting next to what bites.
+    if reserve_faint_refused(st, spell, sv_mana, near_target) {
         return 0;
     }
 
@@ -3273,7 +3502,9 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
 /// Genocide handled later.
 fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): a staff needs no aim (no `obj_needs_aim`, so no
+    // `player_confuse_dir`, cmd-obj.c:431-441): full value while confused.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3309,7 +3540,8 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
 /// (`borg_attack_aux_rod_bolt`).
 fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3332,6 +3564,7 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Choose optimal location */
+    mark_confused_aim(st);
     let b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
 
     /* Simulation */
@@ -3343,10 +3576,8 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     let _ = borg_zap_rod(st, sval);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -1;
+    st.fight_attack.successful_target = aim_key(st, -1);
 
     /* Value */
     b_n
@@ -3364,7 +3595,8 @@ fn select_effect(st: &mut BorgState, selection: i32) {
 /// (`borg_attack_aux_wand_bolt`).
 fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32, selection: i32) -> i32 {
     /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
+    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    if cant_use_item_attack(st) {
         return 0;
     }
 
@@ -3410,6 +3642,7 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
 
     /* Choose optimal location */
     st.fight_attack.town_wand = town;
+    mark_confused_aim(st);
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
     st.fight_attack.town_wand = false;
 
@@ -3446,10 +3679,8 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     let _ = borg_aim_wand(st, sval);
 
     /* Use target */
-    borg_keypress(st, key(b'5'));
-
     /* Set our shooting flag */
-    st.fight_attack.successful_target = -1;
+    st.fight_attack.successful_target = aim_key(st, -1);
 
     /*  select the correct effect */
     select_effect(st, selection);
@@ -4216,6 +4447,9 @@ fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, 
 /// Simulate/Apply the optimal result of using the given "type" of attack
 /// (`borg_calculate_attack_effectiveness`).
 pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
+    // borg-reborn-rs (#867): set by the attack rated now, if it is aimed by
+    // a confused Borg.
+    clear_confused_aim(st);
     let cl = tr(st, BI_CLEVEL);
     let mr = max_range();
     let iv = st.item_val;
@@ -5041,6 +5275,9 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         st.fight_attack.cost = None;
         st.fight_attack.kill_best = 0.0;
         let raw = borg_calculate_attack_effectiveness(st, g);
+        // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
+        // Not a blow's damage (`confused_weight`): fight-or-flee as in C.
+        let raw = confused_weight(st, raw, g != BF_THRUST as i32);
         // borg-reborn-rs (#625): the candidates that need no mana, for the
         // fight test's fallback once the chosen attack's uses run out.
         if raw > 0 && !st.fight_attack.cost.is_some_and(|c| c.spell) {
@@ -5119,6 +5356,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Instantiate */
     let _ = borg_calculate_attack_effectiveness(st, b_g);
+    clear_confused_aim(st);
 
     st.traits.attacking = false;
 
@@ -5379,6 +5617,16 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<Focuse
     focused_attack_ranked(st, target, |attack| kind_allowed(kinds, attack.kind).then(|| focused_score(attack)))
 }
 
+/// borg-reborn-rs (#878): the best ranged attack at `target` (missiles,
+/// throws, spells, devices, activations: `focused_attack_is_ranged`), among
+/// the kinds its scary-list entry allows, by the usual score.
+pub(crate) fn focused_ranged_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
+    let kinds = listed_attack_kinds(st, usize::from(st.kills.kills[target].r_idx));
+    focused_attack_ranked(st, target, |attack| {
+        (kind_allowed(kinds, attack.kind) && focused_attack_is_ranged(attack)).then(|| focused_score(attack))
+    })
+}
+
 /// #869: the attack kinds race `r` may be attacked with, from the scary
 /// list's attack entry for the character (`scary_list::attack_kinds_for`);
 /// every kind without one.
@@ -5443,6 +5691,8 @@ fn focused_attack_ranked(
         st.fight_attack.dmg_best = 0;
         st.fight_attack.cost = None;
         let utility = borg_calculate_attack_effectiveness(st, kind);
+        // borg-reborn-rs (#867): a confused aimed attack at its aim chance.
+        let utility = confused_weight(st, utility, true);
         let damage = st.fight_attack.dmg_best;
         let mut cost = st.fight_attack.cost;
         if kind == BF_OBJECT as i32 {
@@ -5496,6 +5746,7 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
     st.traits.simulate = false;
     st.traits.attacking = true;
     let result = borg_calculate_attack_effectiveness(st, attack.kind);
+    clear_confused_aim(st);
     st.cave.grid_mut(kill.pos.x, kill.pos.y).kill = prior_kill;
     st.fight_attack.focused_target = None;
     st.traits.attacking = false;
@@ -5615,6 +5866,51 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod reserve_faint_tests {
+    use super::*;
+
+    /// #878: `randint1(5 * oops + 1)`: Magic Missile (1 mana) at 0 SP faints
+    /// 1 to 6 world ticks, 3.5 on average.
+    #[test]
+    fn the_faint_lasts_its_mean() {
+        assert_eq!(reserve_faint_turns(1), 3.5);
+        assert_eq!(reserve_faint_turns(2), 6.0);
+        assert_eq!(reserve_faint_turns(0), 1.0);
+    }
+
+    /// #878 review F2: a tick of paralysis is more Borg turns for a fast
+    /// Borg (extract_energy 10 at normal speed, 20 at +10, 30 at +20).
+    #[test]
+    fn a_fast_borg_takes_more_blows_while_fainted() {
+        assert_eq!(faint_borg_turns(3.5, 10.0), 3.5);
+        assert_eq!(faint_borg_turns(3.5, 20.0), 7.0);
+        let adjacent = |e| faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], faint_borg_turns(3.5, e));
+        assert!((adjacent(30.0) - 3.0 * adjacent(10.0)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn walkers_join_the_faint_late_and_the_target_only_if_the_cast_fails() {
+        // Two worms (0.9 a turn, half speed): adjacent, and three grids away.
+        let adjacent = faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], 3.5);
+        assert!((adjacent - 3.15).abs() < 1e-9);
+        let far = faint_contact_damage(&[(0.9, 3, 0.5, 1.0)], 3.5);
+        assert_eq!(far, 0.0, "two steps at half speed take 4 turns");
+        let near = faint_contact_damage(&[(0.9, 2, 0.5, 1.0)], 3.5);
+        assert!((near - 0.9 * 1.5).abs() < 1e-9);
+        // The target at a 5% fail rate.
+        let target = faint_contact_damage(&[(0.9, 1, 0.5, 0.05)], 3.5);
+        assert!((target - 0.1575).abs() < 1e-9);
+        // Defensive only: `reserve_faint_refused` clamps the energy, so a
+        // monster's moves are never 0 there; it skips immobile ones instead.
+        assert_eq!(faint_contact_damage(&[(5.0, 4, 0.0, 1.0)], 3.5), 0.0, "no moves, never arrives");
+        // The skip that runs: a mold strikes only when adjacent.
+        assert!(faint_reaches(1, true), "an adjacent mold");
+        assert!(!faint_reaches(2, true), "a mold two grids away");
+        assert!(faint_reaches(4, false), "a worm walks in");
+    }
 }
 
 #[cfg(test)]
@@ -5762,5 +6058,98 @@ mod throw_tests {
         assert_eq!(throw_hit_percent(20, 0, false, 0, 30), 39, "not THROWING: 3/2 of the skill");
         assert_eq!(throw_hit_percent(30, 0, true, 3, 30), 33, "the distance lowers it");
         assert_eq!(throw_hit_percent(20, 2, true, 0, 30), 31, "bonus x BTH_PLUS_ADJ");
+    }
+}
+
+#[cfg(test)]
+mod confused_attack_tests {
+    use super::*;
+
+    /// #867: `player_confuse_dir` (player-util.c:1353-1377): a direction key
+    /// is redrawn when `randint0(100) < 75`, then `ddd[randint0(8)]`; counted
+    /// over every pair of draws, the key survives 11/32 of the time.
+    #[test]
+    fn the_aim_chance_is_player_confuse_dirs() {
+        let wanted = 3;
+        let mut kept = 0;
+        for roll in 0..100 {
+            for draw in 0..8 {
+                let dir = if roll < 75 { draw } else { wanted };
+                kept += i32::from(dir == wanted);
+            }
+        }
+        let (num, den) = CONFUSED_AIM;
+        assert_eq!(kept * den, num * 800, "kept {kept} of 800");
+    }
+
+    #[test]
+    fn only_a_confused_borg_that_sees_aims_by_direction() {
+        assert!(by_direction(true, false, true, false));
+        assert!(!by_direction(false, false, true, false), "switch 0: C");
+        assert!(!by_direction(true, false, false, false), "not confused: the usual aim");
+        assert!(!by_direction(true, true, true, false), "blind: nothing aimed");
+        assert!(!by_direction(true, false, true, true), "hallucinating: nothing aimed");
+    }
+
+    /// The shipped 0 keeps C: confused, no item attack at all.
+    #[test]
+    fn shipped_off_keeps_every_item_attack_out_while_confused() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_ISCONFUSED as usize] = 1;
+        assert!(!confused_by_direction(&st));
+        assert!(cant_use_item_attack(&st));
+        mark_confused_aim(&mut st);
+        assert!(!st.fight_attack.confused_aim);
+        st.borg.trait_[BI_ISCONFUSED as usize] = 0;
+        assert!(!cant_use_item_attack(&st));
+    }
+
+    /// A target is `5`, which confusion always redraws; a direction is its
+    /// digit, with no target to track afterwards.
+    #[test]
+    fn a_confused_aim_is_sent_as_a_direction_digit() {
+        assert_eq!(aim_answer(0, -2), (key(b'5'), -2));
+        assert_eq!(aim_answer(0, -1), (key(b'5'), -1));
+        for dir in [1, 2, 3, 4, 6, 7, 8, 9] {
+            assert_eq!(aim_answer(dir, -2), (i2d(dir), 0));
+            assert_ne!(aim_answer(dir, -2).0, key(b'5'));
+        }
+    }
+
+    /// Every aimed attack loses the same share, so the chooser still ranks
+    /// them on damage: a caster's weak blow loses to oil, a fighter's blow
+    /// beats it; a staff (not marked) keeps its full value.
+    #[test]
+    fn the_weight_keeps_the_ranking_on_damage() {
+        let mut st = BorgState::default();
+        let mut weigh = |raw: i32, dmg: i32, aimed: bool| {
+            st.fight_attack.confused_aim = aimed;
+            st.fight_attack.dmg_best = dmg;
+            st.fight_attack.kill_best = 1.0;
+            let v = confused_weight(&mut st, raw, true);
+            (v, st.fight_attack.dmg_best, st.fight_attack.kill_best)
+        };
+        assert_eq!(weigh(64, 64, true), (22, 22, 11.0 / 32.0));
+        assert_eq!(weigh(64, 64, false), (64, 64, 1.0), "not aimed: unchanged");
+        let (mage_blow, _, _) = weigh(3, 3, true);
+        let (oil, _, _) = weigh(22, 22, true);
+        let (warrior_blow, _, _) = weigh(40, 40, true);
+        assert!(oil > mage_blow);
+        assert!(warrior_blow > oil);
+        let (staff, _, _) = weigh(20, 20, false);
+        assert!(staff > oil, "a staff needs no aim");
+    }
+
+    /// Review of #868: `borg_attack` weights a blow's value, not the damage
+    /// the fight-or-flee tests read, which stays C's.
+    #[test]
+    fn a_blows_damage_stays_cs_for_fight_or_flee() {
+        let mut st = BorgState::default();
+        st.fight_attack.confused_aim = true;
+        st.fight_attack.dmg_best = 64;
+        st.fight_attack.kill_best = 1.0;
+        assert_eq!(confused_weight(&mut st, 64, false), 22, "the value is weighted");
+        assert_eq!((st.fight_attack.dmg_best, st.fight_attack.kill_best), (64, 1.0), "the damage is not");
     }
 }

@@ -1,6 +1,7 @@
-# One headless Borg game: the Windows release package's runner (#823).
-#   .\play-headless.ps1 OUTDIR [SEED [RACE [CLASS [TURNS]]]]
-# (or play-headless.cmd with the same arguments). Plays a new character with
+# One headless Borg game from an unpacked Windows release package (#823):
+# CI's check that the package plays the reference games. Not shipped (owner,
+# v0.1.0-alpha.1); the package folder is $env:BORG_PACKAGE_DIR.
+#   $env:BORG_PACKAGE_DIR = DIR; scripts\release\windows\play-headless.ps1 OUTDIR [SEED [RACE [CLASS [TURNS]]]] Plays a new character with
 # no window (the borgh frontend) until game turn TURNS (default 50000;
 # 0 = no limit) or its death, and writes OUTDIR\keys.log, messages.log,
 # state.log and summary.json. RACE and CLASS are indices into
@@ -13,7 +14,8 @@ param(
     [UInt32]$Seed = 101, [UInt32]$Race = 0, [UInt32]$Class = 0, [UInt32]$Turns = 50000
 )
 $ErrorActionPreference = 'Stop'
-$pkg = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $env:BORG_PACKAGE_DIR) { throw 'play-headless: set BORG_PACKAGE_DIR to the unpacked package' }
+$pkg = (Resolve-Path $env:BORG_PACKAGE_DIR).Path
 if (Test-Path $OutDir) { throw "play-headless: $OutDir exists; use a new directory" }
 $out = (New-Item -ItemType Directory -Path $OutDir).FullName
 foreach ($d in 'user', 'save', 'archive', 'panic', 'scores') { New-Item -ItemType Directory -Path (Join-Path $out $d) | Out-Null }
