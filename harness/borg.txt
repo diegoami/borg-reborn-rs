@@ -647,9 +647,11 @@ borg_param_kill_live_min_power = 1
 # #941: the speed flag follows the engine timer both ways, and "You feel
 # yourself slow down." is no longer taken for monster pain. At 0 (C) the first
 # Potion of Speed leaves the Borg believing it is hasted for the rest of the
-# game: no speed rule fires again and the danger counts it at +10. Shipped 0
-# (today's play) until the zoo measures it.
-borg_param_trait_timed_sync = 0
+# game: no speed rule fires again and the danger counts it at +10. Shipped 1
+# (P8, owner 2026-11-22: a fix that ships 0 leaves the stuck flag in shipped
+# play): with it the flag equals the engine's TMD_FAST/SPRINT/TERROR timers
+# (seed 2008390085 replayed; zoo pilot borg-zoo#652, run 45033305701).
+borg_param_trait_timed_sync = 1
 
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a

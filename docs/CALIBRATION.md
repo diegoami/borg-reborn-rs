@@ -6351,7 +6351,19 @@ only ever sets `temp.fast`. After its first Potion of Speed the Borg believed it
 was hasted for the rest of the game. Every speed rule skipped itself as "already
 fast", and the danger counted the Borg at +10 (seed 2008390085, borg-zoo#596: from
 56,229 to the death at 64,483). At 1 the flag follows `TMD_FAST`/`TMD_SPRINT`/`TMD_TERROR`
-both ways, and "You feel ..." messages skip the pain table. Compiled and shipped 0.
+both ways, and "You feel ..." messages skip the pain table. Compiled 0 (C).
+
+**Shipped 1** (P8, owner 2026-11-22: the stuck flag is a candidate ship-blocker,
+and a fix shipped 0 leaves it in shipped play). The case is correctness, not a
+measured improvement (RULES 14): on seed 2008390085, at 0 the flag stays set
+with the engine timer at 0 from the end of the first haste to the end of the
+game; at 1 it equals the timer at every Borg update, and later Potions of Speed
+are drunk again. The engine messages the pain skip changes are exactly two,
+"You feel yourself slow down." and "You feel yourself speed up."
+(`player_timed.txt:197`, `:203`); no other "You feel ..." message of
+`lib/gamedata` or `src` ends in a pain suffix. borg-zoo#652's pilot (run
+45033305701, classes-18) changed 8 of 18 games with no new death; its small and
+medium runs are the measurement.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
