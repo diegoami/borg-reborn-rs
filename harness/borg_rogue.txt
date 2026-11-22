@@ -34,3 +34,7 @@ borg_param_town_staple_clw = 6
 borg_param_town_staple_csw = 4
 borg_param_town_staple_phase = 16
 borg_param_town_staple_oil = 10
+# #901 (owner, 2026-11-22): a melee class keeps the point-blank penalty on
+# thrown oil (common 1): "melee is infinite, flasks are not". 0 = inherit the
+# arrow divisor. A workaround until flasks are saved for when needed (#912).
+borg_param_attack_throw_point_blank_divisor = 0
