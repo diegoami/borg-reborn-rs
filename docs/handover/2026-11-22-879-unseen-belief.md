@@ -87,3 +87,18 @@ Branch `task/T879-unseen-belief`, track P (P7, owner 2026-11-22), stacked on
   sleeper.
 - The PR comment records the check results. Local Linux harness startup was
   unavailable on the Windows host.
+
+### MiniMax-M3 re-review follow-up (P8)
+
+- Merged `origin/track-p` at `4b2c2fcf` separately, including #937, and
+  regenerated parameter citations.
+- The unseen-shot trace reports the target, age and belief at aim time.
+  The ledger still charges the launch against the sighting current at settlement.
+- Curse requires a real monster target. Scoring excludes believed records,
+  which provide only a last-known location.
+- Attack rejection recognizes the engine's concentration and device failure
+  messages. The parser still clears queued keys on a lock or disarm failure,
+  while the pending shot survives the message. An engine input flush still
+  cancels it. Stubbed I/O tests cover rejection, flushing, and multi-target
+  blast settlement.
+- F4 acknowledged. The `borg_target` guard currently always succeeds.

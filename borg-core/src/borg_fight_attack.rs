@@ -26,7 +26,7 @@ use crate::borg::BorgTime;
 use crate::borg_cave::{BorgGrid, DUNGEON_HGT, DUNGEON_WID};
 use crate::borg_cave_util::{borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_flow_kill::borg_race_name;
+use crate::borg_flow_kill::{borg_race_name, BorgKill};
 use crate::borg_flow_misc::borg_extract_dir;
 use crate::borg_inventory::{borg_slot, borg_wield_slot};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, borg_queue_direction};
@@ -45,6 +45,7 @@ use crate::borg_projection::{
     borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
+use crate::borg_unseen_belief::BelievedTarget;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::borg_headers::borg_danger_h::*;
@@ -1721,7 +1722,7 @@ struct ProjectedAttack {
     score: i32,
     aim: Option<loc>,
     confused_aim: bool,
-    unseen: Vec<(usize, i32)>,
+    unseen: Vec<BelievedTarget>,
 }
 
 impl ProjectedAttack {
@@ -1747,9 +1748,11 @@ fn expected_score(score: i32, belief: Option<i32>) -> i32 {
     }
 }
 
-fn collect_believed_target(unseen: &mut Vec<(usize, i32)>, i: i32, belief: Option<i32>) {
+fn collect_believed_target(
+    unseen: &mut Vec<BelievedTarget>, index: usize, kill: &BorgKill, belief: Option<i32>, age: BorgTime,
+) {
     if let Some(weight) = belief {
-        unseen.push((i as usize, weight));
+        unseen.push(BelievedTarget { index, race: kill.r_idx, pos: kill.pos, weight, age });
     }
 }
 
@@ -1757,7 +1760,7 @@ fn collect_believed_target(unseen: &mut Vec<(usize, i32)>, i: i32, belief: Optio
 /// (`borg_launch_bolt_aux_hack`).
 fn borg_launch_bolt_aux_hack(
     st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32,
-    unseen: &mut Vec<(usize, i32)>,
+    unseen: &mut Vec<BelievedTarget>,
 ) -> i32 {
     let mut walls = 0;
     let mut unknown = 0;
@@ -1833,7 +1836,7 @@ fn borg_launch_bolt_aux_hack(
         return 0;
     }
     // A projected hit can wake a sleeper even when it reduces the score.
-    collect_believed_target(unseen, i, belief);
+    collect_believed_target(unseen, i as usize, &kill, belief, age);
 
     /* Calculate damage */
     let mut d = borg_launch_damage_one(st, i, dam, typ, ammo_location);
@@ -2013,7 +2016,7 @@ fn borg_launch_bolt_at_location(
     typ: i32,
     max: i32,
     ammo_location: i32,
-    unseen: &mut Vec<(usize, i32)>,
+    unseen: &mut Vec<BelievedTarget>,
 ) -> i32 {
     /* Extract panel */
     let q_x = st.core.w_x / borg_panel_wid();
@@ -2320,7 +2323,7 @@ fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_
                     /* since this is the danger after monster removal */
                     /* and dam for tel away is the previous danger */
                     /* we want the biggest reduction in danger */
-                    n = expected_score(dam - n, unseen.first().map(|&(_, weight)| weight));
+                    n = expected_score(dam - n, unseen.first().map(|target| target.weight));
                 }
 
                 /* Reset Teleport Other variables */
@@ -2381,7 +2384,7 @@ fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_
 #[allow(clippy::too_many_arguments)]
 fn borg_launch_arc_at_location(
     st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32,
-    unseen: &mut Vec<(usize, i32)>,
+    unseen: &mut Vec<BelievedTarget>,
 ) -> i32 {
     let mut path_grids = [loc { x: 0, y: 0 }; 256];
 
@@ -5936,10 +5939,12 @@ mod fallback_tests {
         st.kills.kills = vec![crate::borg_flow_kill::BorgKill::BLANK; 3];
         st.kills.kills[1].r_idx = 1;
         st.kills.kills[2].r_idx = 2;
+        st.kills.kills[1].pos = loc { x: 4, y: 5 };
+        st.kills.kills[2].pos = loc { x: 6, y: 7 };
         let mut unseen = Vec::new();
-        collect_believed_target(&mut unseen, 1, Some(100));
-        collect_believed_target(&mut unseen, 2, Some(50));
-        collect_believed_target(&mut unseen, 1, Some(100));
+        collect_believed_target(&mut unseen, 1, &st.kills.kills[1], Some(100), 3);
+        collect_believed_target(&mut unseen, 2, &st.kills.kills[2], Some(50), 5);
+        collect_believed_target(&mut unseen, 1, &st.kills.kills[1], Some(100), 3);
         let score = expected_score(-999, Some(100)) + expected_score(2500, Some(50));
         assert_eq!(score, 251);
 
@@ -5947,12 +5952,19 @@ mod fallback_tests {
         // through queuing and the next normal command input.
         st.fight_attack.pending_unseen.stage(unseen);
         st.fight_attack.pending_unseen.command_queued(true);
+        st.borg.time.now = 10;
+        st.kills.kills[1].pos = loc { x: 8, y: 9 };
         let mut trace = Vec::new();
-        crate::borg_unseen_belief::finish_attack(&mut st, |_, k, _| trace.push(k));
-        crate::borg_unseen_belief::finish_attack(&mut st, |_, k, _| trace.push(k));
-        assert_eq!(trace, [1, 2]);
+        let mut log = |_: &mut BorgState, target: BelievedTarget| {
+            trace.push((target.index, target.race, target.pos.x, target.pos.y, target.weight, target.age));
+        };
+        crate::borg_unseen_belief::finish_attack(&mut st, &mut log);
+        crate::borg_unseen_belief::finish_attack(&mut st, log);
+        assert_eq!(trace, [(1, 1, 4, 5, 100, 3), (2, 2, 6, 7, 50, 5)]);
         assert_eq!(st.fight_attack.unseen_shots[&1], (0, 1));
+        assert_eq!(st.fight_attack.unseen_shots[&2], (0, 1));
         assert!(st.kills.kills[1].awake);
+        assert!(st.kills.kills[2].awake);
     }
 
     /// Review of #657: the winner is never its own fallback.

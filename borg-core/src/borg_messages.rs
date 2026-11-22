@@ -25,7 +25,7 @@
 //! buffer with `strnfmt` the same truncation is applied (`strnfmt_s`).
 
 use crate::borg::BorgTemp;
-use crate::borg_io::{borg_flush, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
+use crate::borg_io::{borg_flush, borg_flush_keys, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
 use crate::borg_messages_react::{borg_react, borg_react_prompted};
 use crate::borg_util::borg_trim;
 use crate::borg_headers::borg_h::BORG_VERBOSE;
@@ -683,8 +683,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // Set the failure flag
         st.update.failure = true;
 
-        // Flush our key-buffer
-        borg_flush(st);
+        // Flush our key-buffer. reject_attack above already handled any
+        // message that rejected the pending unseen shot.
+        borg_flush_keys(st);
 
         // If we were casting a targetted spell and failed
         // it does not mean we can't target that location

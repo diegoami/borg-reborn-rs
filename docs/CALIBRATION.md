@@ -86,7 +86,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:280` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:283` |
 
 ## Thrown objects at point blank (#870)
 
@@ -5961,11 +5961,13 @@ hypotheses.
   arc and splash targets whose utility was negative. Update the sleeper's
   inferred wake state at the same time. Failed commands leave both alone.
   The cap stops the Borg from crediting a record after repeated shots.
+- **Curse** requires a real monster target. Believed records are excluded
+  from Curse scoring because they provide only a last-known location.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:149` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:157` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:166` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:172` |
 | `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:180` |
 | `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:169` |
 

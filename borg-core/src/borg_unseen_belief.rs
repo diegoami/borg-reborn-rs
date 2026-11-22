@@ -26,19 +26,30 @@
 use crate::borg_flow_kill::borg_follow_kill_aux;
 use crate::borg_headers::borg_trait_h::BI_SPEED;
 use crate::engine;
+use crate::headers::z_type_h::loc;
 use crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE;
 use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
+/// A believed record and its trace details at aim time.
+#[derive(Clone)]
+pub(crate) struct BelievedTarget {
+    pub(crate) index: usize,
+    pub(crate) race: u16,
+    pub(crate) pos: loc,
+    pub(crate) weight: i32,
+    pub(crate) age: i32,
+}
+
 /// One projection, staged at aim time and armed only when its command is queued.
 #[derive(Clone, Default)]
 pub(crate) struct PendingAttack {
-    targets: Vec<(usize, i32)>,
+    targets: Vec<BelievedTarget>,
     queued: bool,
 }
 
 impl PendingAttack {
-    pub(crate) fn stage(&mut self, targets: Vec<(usize, i32)>) {
+    pub(crate) fn stage(&mut self, targets: Vec<BelievedTarget>) {
         self.targets = targets;
         self.queued = false;
     }
@@ -68,7 +79,14 @@ pub(crate) fn reject_attack(st: &mut BorgState, msg: &[u8]) {
         return;
     }
     let rejected = [
-        b"You failed ".as_slice(),
+        // engine/angband/src/player-spell.c:spell_cast:510.
+        b"You failed to concentrate hard enough!".as_slice(),
+        // engine/angband/src/cmd-obj.c:check_devices:66-93 formats
+        // "You failed to %s properly." with these four actions.
+        b"You failed to zap the rod properly.",
+        b"You failed to use the wand properly.",
+        b"You failed to use the staff properly.",
+        b"You failed to activate it properly.",
         b"You cannot pray or produce magics",
         b"You cannot see!",
         b"You are too confused!",
@@ -99,33 +117,32 @@ pub(crate) fn reject_attack(st: &mut BorgState, msg: &[u8]) {
 /// Called at the next normal command request, after parsing the completed
 /// command's messages. A miss still spends a shot. A failure or flush
 /// discards the pending projection before it gets here.
-pub(crate) fn finish_attack(st: &mut BorgState, mut log: impl FnMut(&mut BorgState, usize, i32)) {
+pub(crate) fn finish_attack(st: &mut BorgState, mut log: impl FnMut(&mut BorgState, BelievedTarget)) {
     let pending = std::mem::take(&mut st.fight_attack.pending_unseen);
     if !pending.queued {
         return;
     }
 
     let mut targets = pending.targets;
-    targets.sort_unstable_by_key(|&(k, _)| k);
-    targets.dedup_by_key(|(k, _)| *k);
-    for (k, weight) in targets {
-        note_shot(st, k);
-        log(st, k, weight);
+    targets.sort_unstable_by_key(|target| target.index);
+    targets.dedup_by_key(|target| target.index);
+    for target in targets {
+        note_shot(st, target.index);
+        log(st, target);
     }
 }
 
 pub(crate) fn confirm_attack(st: &mut BorgState) {
-    finish_attack(st, |st, k, weight| {
-        let kill = st.kills.kills[k];
+    finish_attack(st, |st, target| {
         crate::borg_io::borg_note(
             st,
             &format!(
                 "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
-                engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
-                kill.pos.y,
-                kill.pos.x,
-                st.borg.time.now.wrapping_sub(kill.when),
-                weight
+                engine::race_name(usize::from(target.race)).iter().map(|&c| c as char).collect::<String>(),
+                target.pos.y,
+                target.pos.x,
+                target.age,
+                target.weight
             ),
         );
     });
@@ -202,19 +219,85 @@ fn note_shot(st: &mut BorgState, k: usize) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn failed_cast_leaves_the_sleeper_and_ledger_unchanged() {
+    fn armed_attack() -> BorgState {
         let mut st = BorgState::default();
         st.kills.kills = vec![crate::borg_flow_kill::BorgKill::BLANK; 2];
         st.kills.kills[1].r_idx = 1;
-        st.fight_attack.pending_unseen.stage(vec![(1, 100)]);
+        st.fight_attack.pending_unseen.stage(vec![BelievedTarget { index: 1, race: 1, pos: loc { x: 4, y: 5 }, weight: 100, age: 3 }]);
         st.fight_attack.pending_unseen.command_queued(true);
+        st
+    }
 
-        // Stub the engine response and normal command input.
-        reject_attack(&mut st, b"You failed to concentrate hard enough!");
-        finish_attack(&mut st, |_, _, _| panic!("failure wrote an unseen-shot trace"));
-        assert_eq!(shots_since_seen(&st, 1), 0);
+    fn assert_discarded(st: &mut BorgState) {
+        finish_attack(st, |_, _| panic!("cancelled attack wrote an unseen-shot trace"));
+        assert!(st.fight_attack.unseen_shots.is_empty());
         assert!(!st.kills.kills[1].awake);
+    }
+
+    #[test]
+    fn every_engine_rejection_message_discards_the_pending_ledger() {
+        let messages: &[&[u8]] = &[
+            b"You failed to concentrate hard enough!",
+            b"You failed to zap the rod properly.",
+            b"You failed to use the wand properly.",
+            b"You failed to use the staff properly.",
+            b"You failed to activate it properly.",
+            b"You cannot pray or produce magics.",
+            b"You cannot see!",
+            b"You are too confused!",
+            b"There are no spells you can cast.",
+            b"That book has no spells that you can cast.",
+            b"The draining fails.",
+            b"The wand has no charges left.",
+            b"The staff has no charges left.",
+            b"You have no suitable ammunition to fire.",
+            b"You have nothing to fire with.",
+            b"You have nothing to throw.",
+            b"That item is not within your reach.",
+            b"That ammo cannot be fired by your current weapon.",
+            b"You have no staves to use.",
+            b"You have no wands to aim.",
+            b"You have no rods to zap.",
+            b"You have no items to activate.",
+            b"That staff has no charges.",
+            b"That wand has no charges.",
+            b"That rod is still charging.",
+            b"That item is still charging.",
+        ];
+        for &message in messages {
+            let mut st = armed_attack();
+            // Stub the engine response and normal command input.
+            reject_attack(&mut st, message);
+            assert!(!st.fight_attack.pending_unseen.has_targets(), "{}", String::from_utf8_lossy(message));
+            assert_discarded(&mut st);
+        }
+    }
+
+    #[test]
+    fn a_flush_discards_the_pending_ledger() {
+        let mut st = armed_attack();
+        crate::borg_io::borg_flush(&mut st);
+        assert!(!st.fight_attack.pending_unseen.has_targets());
+        assert_discarded(&mut st);
+    }
+
+    #[test]
+    fn lock_and_disarm_failures_leave_the_pending_ledger_armed() {
+        // engine/angband/src/cmd-cave.c:209,767,774,839 and obj-chest.c:615,716.
+        let messages: &[&[u8]] = &[
+            b"You failed to pick the lock.",
+            b"You failed to lock the door.",
+            b"You failed to disarm the pit.",
+            b"You failed to disarm the chest.",
+        ];
+        for &message in messages {
+            let mut st = armed_attack();
+            // Stub a failure message and the parser's key-buffer cleanup.
+            reject_attack(&mut st, message);
+            crate::borg_io::borg_flush_keys(&mut st);
+            finish_attack(&mut st, |_, _| ());
+            assert_eq!(shots_since_seen(&st, 1), 1, "{}", String::from_utf8_lossy(message));
+        }
     }
 
     #[test]
