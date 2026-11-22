@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## The lone-slow attack on a level lost to breeders (#1008)
 
-The registry now holds **2386** parameters (2385 before; one added). A
+The registry now holds **2398** parameters (2397 before; one added). A
 follow-up of #878, from checking its switches against the shipped breeder
 policy (`caution_breeder_policy = 3`). `lone_slow_attack` runs in
 `fight_before_flight`, after `borg_check_breeders` has set the leave and flee
@@ -26,7 +26,9 @@ the scary list's breeder attack entries read both (`attack_on_sight_reason`).
 - With `lone_slow_attack` on and this at 1, the lone rule does not attack a
   breeder (MULTIPLY) while the level is lost to breeders (`breeders_lost`:
   more known than `caution_breeder_hunt_max_count`, or the colony cannot be
-  stopped, `note_breeders_stoppable`); the breeder policy's leave decides
+  stopped, `note_breeders_stoppable`). Needs `caution_breeder_stoppable` = 1
+  (shipped through `caution_breeder_policy = 3`): `breeders_lost` is set only
+  there, so with it 0 the switch never fires. The breeder policy's leave decides
   (stairs, then Recall after `caution_breeder_lost_recall_turns`). Other
   monsters, and a level not lost, are unchanged. Compiled and shipped **0**.
   A hypothesis: no measurement chose it (RULES 14).

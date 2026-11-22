@@ -158,6 +158,25 @@ mod tests {
         assert_eq!(verdict(&worm(), 2, 25), Some(2));
     }
 
+    /// #1008 (review of #1011, F1): `attack` itself asks the deferral, with
+    /// the switch, the breeder flag and `breeders_lost`, before it chooses an
+    /// attack, and returns without one when it holds. `attack` needs the
+    /// engine, so this pins its source (as borg_caution.rs's
+    /// `recall_restricts` test does); the decision is tested below.
+    #[test]
+    fn attack_asks_the_lost_level_deferral_before_choosing_an_attack() {
+        let src = include_str!("borg_lone_target.rs");
+        let body = &src[src.find(concat!("pub(crate) fn ", "attack(")).unwrap()..];
+        let body = &body[..body.find("\n}\n").unwrap()];
+        let ask = body.find(concat!("if defers_", "to_lost_level(")).expect("attack asks the deferral");
+        let choose = body.find(concat!("focused_ranged_", "attack(st, i)")).expect("attack chooses an attack");
+        assert!(ask < choose, "the deferral comes before the attack is chosen");
+        let after = &body[ask..choose];
+        for part in [concat!("Param::lone_slow_", "breeder_lost"), concat!("RF_", "MULTIPLY"), concat!("st.borg.", "breeders_lost"), "return false;"] {
+            assert!(after.contains(part), "{part}");
+        }
+    }
+
     /// #1008: only a breeder, only on a lost level, only with the switch.
     #[test]
     fn a_breeder_on_a_lost_level_is_left_to_the_breeder_policy() {

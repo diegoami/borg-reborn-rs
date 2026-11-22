@@ -27,3 +27,18 @@ the shipped settings 3/3 identical to `smoke-borg-rs`.
 **For the owner.** Whether the deferral should cover a lost level only (as
 built) or also the stand's one-think pause (`breeder_stand_paused`); the
 latter is fear-driven today (#1009).
+
+### After the review (PR #1011, pinned `84249218`)
+
+- Synchronized with `track-p` `72651d25` (one CALIBRATION.md conflict, both
+  sections kept; registry 2397 to 2398).
+- F1: `attack_asks_the_lost_level_deferral_before_choosing_an_attack` pins the
+  wiring: `attack`'s source asks `defers_to_lost_level` with the switch, the
+  breeder flag and `breeders_lost` before `focused_ranged_attack`, and
+  returns. `attack` needs the engine, so this is a source test (the
+  `recall_restricts` pattern); removing the deferral fails it (checked).
+- F2: the parameter and the CALIBRATION row name `caution_breeder_stoppable`:
+  `breeders_lost` is set only with it on.
+- The reviewer's observation (the winning fight still attacks an all-HURT
+  breeder, a louse or a fly, on a lost level) is the winning-fight
+  certificate question, filed with #1015's follow-up.
