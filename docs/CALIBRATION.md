@@ -2400,11 +2400,9 @@ of #513). On 18 classes-18 starts on main `aa9ebf49`:
   current time, which `borg_defend_aux_inviso` reads as "hit by an unseen
   monster recently", so every rest armed the defence. With
   `recover_rest_arms_see_invis = 0` a rest leaves the clock alone; only an
-  unseen attack (`borg_locate_kill`) arms it. The same clock has two other readers,
-  which read it the other way round: the Light Beam defence
-  (`borg_defend_aux_lbeam`, skipped while the stamp is recent) and the
-  removal of regional fear when a monster appears (`borg_flow_kill`, kept
-  while recent). At 0, both can now act after a rest where C did not.
+  unseen attack (`borg_locate_kill`) arms it. Since #995 the Light Beam
+  defence (`borg_defend_aux_lbeam`) also requires a recent stamp. Regional
+  fear is kept while the stamp is recent (`borg_flow_kill`).
 
 Compiled defaults are C's (0 and 1); `harness/borg.txt` ships 2 and 0. On
 the same 18 starts: Detect Invisible read 95 times (0 in town) and bought
