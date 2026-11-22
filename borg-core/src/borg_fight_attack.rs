@@ -5473,6 +5473,19 @@ mod focused_tests {
         assert_eq!(hit_permyriad(100, 60), 6180);
     }
 
+    /// #986: the engine's own roll for oil thrown at Fang (AC 36), read
+    /// under gdb in `random_chance_check` on track-p 4b2c2fcf: 6770 for the
+    /// Elf Paladin 1194051723 (chance 73 at distance 1) and 5668 for the
+    /// Dunadan Druid 1024822556 (chance 52). The fight race rated the same
+    /// throws at 14.894 = 22 x 0.6770 and 12.469 = 22 x 0.5668 HP/turn.
+    #[test]
+    fn fang_oil_hit_chance_is_the_engines_roll() {
+        assert_eq!(hit_permyriad(73, 36), 6770);
+        assert_eq!(hit_permyriad(52, 36), 5668);
+        assert_eq!(22_000 * i64::from(hit_permyriad(73, 36)) / 10_000, 14_894);
+        assert_eq!(22_000 * i64::from(hit_permyriad(52, 36)) / 10_000, 12_469);
+    }
+
     #[test]
     fn town_ranged_bonus_can_break_a_close_comparison_but_melee_can_win() {
         let melee = FocusedAttack { kind: BF_THRUST as i32, hp_per_turn_milli: 9000,
