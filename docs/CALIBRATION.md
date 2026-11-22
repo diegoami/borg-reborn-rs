@@ -346,8 +346,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:1910` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1671` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2010` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2274` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2267` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2297` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2290` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -507,7 +507,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:663` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:871` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:908` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -2676,8 +2676,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:559` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2227` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2156` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2250` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2179` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6271,7 +6271,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2197` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2220` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -6306,16 +6306,30 @@ while one of its spells is castable now: `slevel` at most the level and
 (`class.txt`, `magic:3`); a Rogue's, Detect Monsters, is level 5 (`magic:5`).
 At CL1 both books are worth nothing, and the first visit sells them for no
 gold (`birth_no_selling`). Seed 1895660873 sold Lesser Charms at turn 221.
-In 3 short starts per class (seeds 11, 22, 33), Rogues and Rangers sold the
-first book 6 of 6 times and the seven other classes 0 of 21.
+
+Local direction numbers (RULES 20), from short starts recorded in
+borg-cemetery#132:
+- Rogues and Rangers sold the first book 6 of 6 times (seeds 11, 22, 33).
+- In that sample each class played one race only, and the other seven
+  classes sold it 0 of 21 times.
+- Max SP at CL1 for every class and race (seed 11):
+  - Mage, Druid, Priest and Necromancer: 2.
+  - Blackguard: 1–2, and its first spell costs 1.
+  - Rogue and Ranger: 0.
+  - Paladin: 1 as a Half-Elf, Elf or Half-Troll. Bless costs 2, so those
+    Paladins value the book at nothing too.
+- 4 Half-Troll Paladins headed for the Bookseller 1–4 times in 3,000 turns
+  at 0 and never with 4. A scary monster in town cut every trip short, so
+  the sale was not seen.
 
 - **`town_book_lookahead_levels`**: a book the Borg carries or keeps at home
-  also counts when a spell of it is learnt within this many levels. The mana
-  is not asked, since the SP grow with the level. A shop's book is valued as
-  before. With 4 (the Rogue's gap), none of the 7 starts sells its first book.
+  also counts when a spell of it is learnt within this many levels, on the
+  level alone. The mana is not compared, so a window wider than the class's
+  SP covers keeps books whose spells it cannot pay for when they are learnt.
+  A shop's book is valued as before (`book_lookahead`, unit-tested). With 4 (the Rogue's gap), none of the 7 starts sells its first book.
   The sales left are duplicate copies and other classes' books. One start
   each, not a measurement: the study is borg-cemetery#132.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:738` |
+| `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:759` |

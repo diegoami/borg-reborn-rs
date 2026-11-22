@@ -24,8 +24,25 @@
     books.
 - Study: borg-cemetery#132. Details: `docs/CALIBRATION.md` ("#1004").
 
+### Review
+MiniMax MCode reviewed `0de39a27`: pass with findings.
+- **Fixed:**
+  - F2: the citation is the exact read, line 759;
+  - F3: `book_lookahead` is unit-tested, shop scopes 0..=7 get no look-ahead;
+  - F4: Paladins of three races have 1 SP at CL1, below Bless's 2, and are
+    affected too;
+  - F5: the bound is stated;
+  - F6: the numbers are marked as local direction, and the SP table is in
+    borg-cemetery#132;
+  - F8: the zoo request is linked here.
+- **Handled:** F1, by re-pinning the zoo request to the new head with
+  Paladins added.
+- **The owner's call:** F7 (model trailers on the first two commits;
+  removing them means rewriting the branch) and F9 (the branch name).
+
 ### Left
-- The zoo request (a pilot on Rogues and Rangers).
+- The zoo pilot, borg-zoo#693 (Rogues, Rangers and Paladins), re-pinned to
+  the head.
 
 ### For the owner
 Should the switch ship as 4 after the zoo reads it? 4 is the largest gap between a class's first level
