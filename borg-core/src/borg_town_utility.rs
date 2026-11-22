@@ -330,6 +330,13 @@ fn store_order(input: &StepInput, u: &Utility, surplus: impl Fn(&KitItem) -> boo
     pack
 }
 
+/// borg-reborn-rs (#859): a pack stack of flasks of oil.
+fn is_flask(st: &BorgState, it: &KitItem) -> bool {
+    use crate::headers::list_tvals_h::TV_FLASK;
+    it.place == Place::Pack && st.items.items.get(usize::from(it.slot))
+        .is_some_and(|i| i.iqty > 0 && u32::from(i.tval) == TV_FLASK)
+}
+
 /// borg-reborn-rs (#831): a pack stack of Scrolls of Detect Invisible whose
 /// flavour is known (an unknown flavour is a scroll nobody has read yet).
 fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
@@ -371,6 +378,17 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     // first only when the pack is short of weight, not of slots.
     let surplus_first = keep_min > 0 && input.limits.pack_slots >= target.slots;
     let surplus = |k: &KitItem| surplus_first && k.qty > keep_min;
+    // borg-reborn-rs (#859, re-review of #864): the minimum is a floor, not
+    // only an order. While storing for weight, a stack that serves a need
+    // (potions, scrolls, torches, food: `need` or `serves`) or a stack of
+    // flasks of oil (owner: "check that flasks are taken"; oil serves no
+    // `need`, its value is the capability model's) is kept whole once it is
+    // down to `keep_min` copies: not stored, sold or dropped, so the live
+    // path (one copy per solve, #507) stops there. An item that serves no
+    // need (a lone armour piece) has no floor and can still go; short of
+    // slots, whole stacks go.
+    let floored = |k: &KitItem| surplus_first && k.qty <= keep_min && !k.unknown_flavour
+        && (k.need >= 0 || k.serves != 0 || is_flask(st, k));
     for i in store_order(input, u, surplus) {
         let whole = &input.kit[i];
         // The copies past the minimum, when they go first. They travel with
@@ -383,6 +401,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         if u.capability.as_ref().is_some_and(|model| model.protects_fuel(whole)) {
             continue;
         }
+        if floored(whole) { continue; }
         if it.unknown_flavour && !it.just_bought && (input.revision < 8 || it.sell_shop >= 0) {
             out[i] = if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
             u.change(it, -1);
@@ -1158,9 +1177,81 @@ mod tests {
         assert_eq!(d, [Disposition::Store, Disposition::Keep], "the surplus goes first");
         assert_eq!((freed.weight, freed.pack_slots), (36, 0));
         assert_eq!(copies, [9, 0], "the nine travel with the disposition");
-        // Kept copies past the stack: the whole stack is no surplus.
+        // A minimum at or past the stack: the stack is floored and stays.
         let mut u = Utility::of(&st, &kit, false);
-        assert_eq!(dispositions_by(&inp, &mut u, &st, storing(12)).1.pack_slots, 1, "a whole stack went");
+        let (d, freed, _) = dispositions_by(&inp, &mut u, &st, storing(12));
+        assert_eq!((d[0], freed.pack_slots), (Disposition::Keep, 0), "the floor keeps it whole");
+    }
+
+    /// #859 (re-review of #864): the live path stores one copy per solve
+    /// (#507). Solved again at every count, a stack of 12 with three kept
+    /// goes down to three and stops there, freeing no slot; the minimum is a
+    /// floor, not only an order.
+    #[test]
+    fn the_live_walk_stops_at_the_minimum() {
+        let mut st = state(0, 1, 20);
+        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3 };
+        let mut stored_at = Vec::new();
+        for qty in (1..=12).rev() {
+            st.borg.trait_[BI_ACLW as usize] = qty;
+            let potions = KitItem { slot: 0, kind: 50, qty, weight: 4, need: index(Need::Healing) as i8,
+                reduction: 20 * UNIT, ..recall(Place::Pack) };
+            let kit = [potions];
+            let mut inp = input(&kit);
+            inp.limits.weight = 0;
+            let mut u = Utility::of(&st, &kit, false);
+            let (d, freed, _) = dispositions_by(&inp, &mut u, &st, storing);
+            if d[0] == Disposition::Store {
+                stored_at.push(qty);
+                assert_eq!(freed.pack_slots, 0, "a stack that stays frees no slot ({qty} copies)");
+            }
+        }
+        assert_eq!(stored_at, (4..=12).rev().collect::<Vec<_>>(), "stored down to the minimum, never below it");
+    }
+
+    /// #859: the floor is for stacks that serve a need. A lone item that
+    /// serves none (an armour piece) still goes home while the pack is short
+    /// of weight.
+    #[test]
+    fn an_item_that_serves_no_need_has_no_floor() {
+        let st = state(0, 1, 20);
+        let armour = KitItem { slot: 0, kind: 70, qty: 1, weight: 200, need: -1, serves: 0, reduction: 0,
+            power: 0, ..recall(Place::Pack) };
+        let kit = [armour];
+        let mut inp = input(&kit);
+        inp.limits.weight = -100;
+        let storing = |keep_min| Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min };
+        let mut u = Utility::of(&st, &kit, false);
+        let off = dispositions_by(&inp, &mut u, &st, storing(0)).0[0];
+        let mut u = Utility::of(&st, &kit, false);
+        let on = dispositions_by(&inp, &mut u, &st, storing(3)).0[0];
+        assert_eq!(on, off, "the minimum changes nothing for an item that serves no need");
+    }
+
+    /// #859 (owner: "check that flasks are taken"): oil serves no `need`,
+    /// but a stack of flasks is floored too. Walked one solve per copy, 12
+    /// flasks go home down to three; at three or fewer they are kept, not
+    /// stored, sold or dropped (the re-review of `c2dc7793` found three
+    /// flasks sold).
+    #[test]
+    fn flasks_are_floored_too() {
+        let mut st = state(0, 1, 20);
+        st.items.items.push(crate::borg_item::blank_item());
+        st.items.items[0].tval = crate::headers::list_tvals_h::TV_FLASK as u8;
+        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3 };
+        let mut gone = Vec::new();
+        for qty in (1..=12).rev() {
+            st.items.items[0].iqty = qty as u8;
+            let oil = KitItem { slot: 0, kind: 80, qty, weight: 10, need: -1, serves: 0, reduction: 0,
+                sell_shop: 1, ..recall(Place::Pack) };
+            let kit = [oil];
+            let mut inp = input(&kit);
+            inp.limits.weight = 0;
+            let mut u = Utility::of(&st, &kit, false);
+            let d = dispositions_by(&inp, &mut u, &st, storing).0[0];
+            if d != Disposition::Keep { gone.push(qty); }
+        }
+        assert_eq!(gone, (4..=12).rev().collect::<Vec<_>>(), "flasks leave down to the minimum, never below it");
     }
 
     /// #859 (review F1): the plan's first action stores the surplus the
