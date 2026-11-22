@@ -1,7 +1,7 @@
 # 2026-11-22 — #913: emergency Speed against faster monsters near
 
 **Issue:** diegoami/borg-reborn-rs#913 (ship-blocker). **Branch:** `task/T913-emergency-speed`
-(from `track-p` `86843a79`; `track-p` merged in at `d8416afe` and `497cd344`, after #943). Track P, P8: this PR merges into
+(from `track-p` `86843a79`; `track-p` merged in at `d8416afe`, `497cd344` (#943) and `f77bbe1f` (#890)). Track P, P8: this PR merges into
 `track-p` once the owner says its review is done (RULES 1a).
 
 Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/claude/happy-brahmagupta-2jcsa3/studies/fastfrag-cave-spiders-2008390085/README.md) (seed 2008390085, borg-zoo#596).
@@ -32,20 +32,21 @@ on `track-p` alone. None of the named games below drinks that way.
 - Merges of `origin/track-p`. `d8416afe`: conflicts in `params.rs` and `docs/CALIBRATION.md`
   only (citation lines). Took `track-p`'s files, re-added this PR's three rows and its section,
   then `check-param-citations.py --fix` (65 CALIBRATION rows re-pointed; spot-checked). `497cd344`
-  (#943, `kill_grouped_names` shipped 1): one `CALIBRATION.md` conflict, both sections kept. The
-  check after each: 0 errors (2,409 parameters at the end).
-- CI's commands on `497cd344`: `cargo fmt --check -p borg-reborn-rs`, clippy `-D warnings`,
-  `cargo test --workspace --exclude borg-core`, `cargo test --release -p borg-core` (694 passed),
-  `scripts/tests` (61), `tools/tests` (96), `check-param-citations.py`,
+  (#943, `kill_grouped_names` shipped 1): one `CALIBRATION.md` conflict, both sections kept.
+  `f77bbe1f` (#890, #1030): citation-only conflicts, `track-p`'s side taken, then `--fix`. The
+  check after each: 0 errors (2,413 parameters at the end).
+- CI's commands on `f77bbe1f`: `cargo fmt --check -p borg-reborn-rs`, clippy `-D warnings`,
+  `cargo test --workspace --exclude borg-core`, `cargo test --release -p borg-core` (703 passed),
+  `scripts/tests` (61; run without `BORG_DEATH_RECORDS_DIR`, which `test_refresh_sources` would read), `tools/tests` (96), `check-param-citations.py`,
   `borg-core-vendor.py check` (ok against borg-rs `8c5d000a`), `engine/tests` (97 run: only the
   four environmental `test_shopping` errors; they clear `BORG_CEMETERY_DIR` and fall back to the
   sibling checkout, which is on another branch), `test_stair_handoff` OK with no new pin.
-- `scripts/rerecord-smoke-borg-rs.sh` at shipped 50, on `3d853a03` and again on `497cd344`: 3/3
-  identical to `smoke-borg-rs` both times, nothing re-recorded.
-- Named games, #913 off (0) against on (50). Local builds: the merged head `497cd344`; a
+- `scripts/rerecord-smoke-borg-rs.sh` at shipped 50, on `3d853a03`, `497cd344` and `f77bbe1f`:
+  3/3 identical to `smoke-borg-rs` each time, nothing re-recorded.
+- Named games, #913 off (0) against on (50). Local builds: the merged head `f77bbe1f`; a
   throwaway detached merge of it with `origin/task/T941-fast-expiry` (`920f36a3`, ships
-  `trait_timed_sync = 1`), never pushed (the same runs on the first merge `d8416afe` gave the same
-  verdicts: identical keys off and on); the zoo game on `7f8c6b80` + `b67a2db8` (#941) +
+  `trait_timed_sync = 1`), never pushed (the same runs on the earlier merges `d8416afe` and `497cd344`
+  gave the same verdicts: identical keys off and on); the zoo game on `7f8c6b80` + `b67a2db8` (#941) +
   `8c9f5b7a` (#913), the study's `runcell.sh` and `borg-stats-ban.txt` (`58b6d86c…`).
 
 | game | #913 off | #913 on (50) |
@@ -54,8 +55,8 @@ on `track-p` alone. None of the named games below drinks that way.
 | zoo game, #941 on | keys `37fba328d0e5`, alive at the cap, CL6, DL2 | keys `b571aea7bb47`, alive at the cap, CL6, DL2; fires once |
 | 2008390085, merged head + #947, shipped | keys `c6fdf3cfe07c`, alive, CL6, DL2 | same keys; never fires |
 | 2008390085, merged head + #947, stats-ban | keys `c6fdf3cfe07c` (the ban never acts) | same keys |
-| 224 Human Warrior, merged head + #947, 144,000 turns | keys `ccd91afd4a48`, alive, CL10, DL5 | same keys |
-| merged head alone: 2008390085 shipped / stats-ban, 224 | `8bd183c22e40` / `8bd183c22e40` (CL6, DL2), `7c431e5387af` (CL9, DL6), all alive | same keys |
+| 224 Human Warrior, merged head + #947, 144,000 turns | keys `67716d0d195d`, alive, CL11, DL5 | same keys |
+| merged head alone: 2008390085 shipped / stats-ban, 224 | `8bd183c22e40` / `8bd183c22e40` (CL6, DL2), `eef241f5aa0b` (CL11, DL6), all alive | same keys |
 
 ## What was found
 
