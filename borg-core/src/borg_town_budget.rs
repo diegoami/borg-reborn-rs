@@ -108,8 +108,15 @@ pub struct Budget {
 }
 
 /// The urgent pass: for the urgent needs `need`, the purchase set chosen
-/// by (most urgent needs met, least gold, fewest wares, earliest wares). Returns
-/// the chosen candidate indices and the bit mask of `need` they cover.
+/// by (the urgent Word of Recall met, most urgent needs met, least gold,
+/// fewest wares, earliest wares). Returns the chosen candidate indices and
+/// the bit mask of `need` they cover.
+///
+/// borg-reborn-rs (#956, P7 review): `Need::Trip` is urgent only with
+/// `town_recall_urgent` at the dive gate, where the Recall is "bought first,
+/// before anything is weighed" (harness/borg.txt). Counting needs alone, a
+/// purse of 140 with a 125-gold scroll and a 20-gold ration bought the
+/// ration and left the Recall 5 gold short.
 fn urgent_pass(
     cands: &[Candidate],
     need: &[Need],
@@ -122,6 +129,7 @@ fn urgent_pass(
     // `serves` is asked once per candidate: in production it reaches the
     // engine's effect tables, and the subset loop below must not.
     let full = (1u32 << need.len()) - 1;
+    let trip = need.iter().position(|n| *n == Need::Trip).map_or(0u32, |b| 1 << b);
     let mut best: Vec<Option<(usize, u32)>> = vec![None; (full + 1) as usize];
     for (i, c) in cands.iter().enumerate() {
         if c.qty < 1 {
@@ -157,8 +165,8 @@ fn urgent_pass(
         let better = match &choice {
             None => true,
             Some((cov, c, p)) => {
-                let key = (std::cmp::Reverse(covered.count_ones()), cost, picked.len());
-                let old = (std::cmp::Reverse(cov.count_ones()), *c, p.len());
+                let key = (std::cmp::Reverse(covered & trip != 0), std::cmp::Reverse(covered.count_ones()), cost, picked.len());
+                let old = (std::cmp::Reverse(cov & trip != 0), std::cmp::Reverse(cov.count_ones()), *c, p.len());
                 key < old || (key == old && picked < *p)
             }
         };
@@ -471,6 +479,28 @@ mod tests {
         assert_eq!(bought, [RECALL]);
         assert_eq!(b.urgent[0].needs, [Need::Trip]);
         assert!(b.unmet.is_empty());
+    }
+
+    /// #956 (P7 review): when the purse cannot pay for every urgent need,
+    /// the urgent Recall comes before a cheaper need. 140 gold, a 125-gold
+    /// Recall and a 20-gold ration: the Recall, not the ration.
+    #[test]
+    fn an_urgent_recall_is_not_starved_by_a_cheaper_urgent_need() {
+        const RECALL: u32 = 7;
+        let t = town([&[item(RATION, 20, 20)], &[], &[], &[], &[item(RECALL, 3, 125)], &[], &[], &[]]);
+        let s = build(&t, &[]);
+        let price = |k: u32| i64::from(s.candidates.iter().find(|c| c.kind == k).unwrap().price);
+        let purse = price(RECALL) + price(RATION) - 5;
+        assert!(purse >= price(RECALL));
+        let serves = |c: &Candidate| if c.kind == RECALL { vec![Need::Trip] } else { serves(c) };
+        let b = Budget::build(&facts(purse), &s, &[Need::Food, Need::Trip], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RECALL]);
+        assert_eq!(b.unmet, [Need::Food]);
+        // Without the Recall among the needs, the count still decides.
+        let b = Budget::build(&facts(purse), &s, &[Need::Food], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RATION]);
     }
 
     /// An urgent need no shop serves is unmet whatever the purse.
