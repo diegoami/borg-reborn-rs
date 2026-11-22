@@ -24,6 +24,14 @@ The config is `key = value` lines (`#` starts a comment):
   breeders_except = a, b    breeders whose name contains one of these are not
   repro_max = N             `constants.txt` `mon-gen:repro-max` (100), the
                             engine's cap on live breeders
+  favour = a, b             any races, breeders or not, named exactly (case
+                            does not matter) that favour_weight favours:
+                            every race not named gets its rarity times the
+                            weight, as breeder_weight does for breeders
+                            (a world for one pest, e.g. the grey mushroom
+                            patch); a name that matches no race is refused
+  favour_weight = N         the weight for `favour` (needs `favour`); not
+                            together with the breeder_* settings
 
 A rarity above 100 would never be generated (100 / rarity is 0), so a
 weight that pushes one past it is refused.
@@ -35,7 +43,8 @@ import shutil
 import sys
 from pathlib import Path
 
-KEYS = {'breeder_weight', 'breeder_depth_shift', 'breeders_only', 'breeders_except', 'repro_max'}
+KEYS = {'breeder_weight', 'breeder_depth_shift', 'breeders_only', 'breeders_except', 'repro_max',
+        'favour', 'favour_weight'}
 DIRS = ('gamedata', 'customize', 'help', 'screens')
 
 
@@ -91,6 +100,14 @@ def transform_monsters(text, cfg, max_depth):
     weight = number(cfg, 'breeder_weight', 1, 1)
     shift = number(cfg, 'breeder_depth_shift', 0, 0)
     only, never = names(cfg.get('breeders_only', '')), names(cfg.get('breeders_except', ''))
+    named = names(cfg.get('favour', ''))
+    if 'favour_weight' in cfg and not named:
+        raise SystemExit('make-world: favour_weight needs favour (the races it favours)')
+    if named:
+        both = sorted(k for k in cfg if k.startswith('breeder'))
+        if both:
+            raise SystemExit(f'make-world: favour and {", ".join(both)} together: choose one')
+        weight = number(cfg, 'favour_weight', 1, 1)
     favoured, others = [], 0
     out = []
     for rec in records(text):
@@ -102,6 +119,9 @@ def transform_monsters(text, cfg, max_depth):
         flags = ' '.join(l for l in rec if l.startswith('flags:'))
         breeder = 'MULTIPLY' in flags
         lname = name.lower()
+        if named:
+            # `favour`: the named races, breeders or not, are the favoured ones.
+            breeder = lname in named
         if breeder and only and not any(o in lname for o in only):
             breeder = False
         if breeder and any(x in lname for x in never):
@@ -122,6 +142,9 @@ def transform_monsters(text, cfg, max_depth):
             favoured.append(name)
         else:
             others += 1
+    missing = [n for n in named if n not in {f.lower() for f in favoured}]
+    if missing:
+        raise SystemExit(f'make-world: favour names no race: {", ".join(missing)}')
     return ''.join(out), favoured, others
 
 
@@ -176,7 +199,8 @@ def main(argv=None):
     monsters, favoured, others = transform_monsters((gd / 'monster.txt').read_text(), cfg, max_depth_of(constants))
     (gd / 'monster.txt').write_text(monsters)
     (gd / 'constants.txt').write_text(transform_constants(constants, cfg))
-    print(f'world: {len(favoured)} breeders favoured ({", ".join(favoured)}); {others} other races', file=sys.stderr)
+    kind = 'races' if 'favour' in cfg else 'breeders'
+    print(f'world: {len(favoured)} {kind} favoured ({", ".join(favoured)}); {others} other races', file=sys.stderr)
     print(gamedata_sha256(gd))
 
 

@@ -92,6 +92,22 @@ class MakeWorldTest(unittest.TestCase):
             mw.main(['--config', str(Path(self.tmp.name) / 'w.txt'), '--lib', str(self.lib), '--out', str(out2)])
         self.assertEqual(so.getvalue().strip(), sha, 'the data hash is deterministic')
 
+    def test_favour_names_any_race(self):
+        out, _ = self.make('favour = Soldier\nfavour_weight = 8\n')
+        m = (out / 'gamedata' / 'monster.txt').read_text()
+        self.assertEqual(field(m, 'soldier', 'rarity'), 1, 'the named race keeps its rarity')
+        self.assertEqual(field(m, 'white worm mass', 'rarity'), 8, 'a breeder not named: weighted like the rest')
+        self.assertEqual(field(m, 'yellow worm mass', 'rarity'), 16)
+        self.assertEqual(field(m, 'yellow worm mass', 'depth'), 3, 'depths unchanged')
+
+    def test_favour_refusals(self):
+        for bad in ('favour = soldir\nfavour_weight = 4\n', 'favour_weight = 4\n',
+                    'favour = soldier\nfavour_weight = 4\nbreeder_weight = 2\n',
+                    'favour = soldier\nfavour_weight = 4\nbreeder_depth_shift = 1\n',
+                    'favour = soldier\nfavour_weight = 51\n'):
+            with self.assertRaises(SystemExit, msg=bad):
+                self.make(bad)
+
     def test_refusals(self):
         with self.assertRaises(SystemExit):
             self.make('breeder_wieght = 4\n')
