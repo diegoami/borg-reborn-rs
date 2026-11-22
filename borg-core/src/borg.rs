@@ -70,6 +70,10 @@ pub struct Borg {
     pub times_twitch: i16,
     pub escapes: i16,
     pub trying_unknown: bool,
+    /// borg-reborn-rs (#1060): after an unknown potion test, the Borg time
+    /// until which it waits out a harmful status the potion caused, in the spot
+    /// it tested in (`borg_item_use::potion_test_hold`); 0 = no hold.
+    pub potion_test_hold_until: BorgTime,
     /// `borg.dont_react`: the reaction gate (set while knocked out or
     /// paralyzed, cleared on every message pump).
     pub dont_react: bool,

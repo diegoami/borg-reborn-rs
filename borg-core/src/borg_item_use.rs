@@ -189,9 +189,9 @@ fn last_unaware_potion(st: &BorgState) -> i32 {
 /// regeneration. Dragon Breath (DL40+) asks for an aim: `max_depth` keeps the
 /// test above it.
 pub(crate) fn unknown_potion_test_safe(depth: i32, max_depth: i32, cur_hp: i32, max_hp: i32,
-    min_hp_percent: i32, danger: i32, bad_status: bool, food: i32) -> bool {
+    min_hp_percent: i32, min_hp: i32, danger: i32, bad_status: bool, food: i32) -> bool {
     depth > 0 && depth <= max_depth && danger == 0 && !bad_status && food > 0
-        && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent
+        && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent && cur_hp >= min_hp
 }
 
 /// borg-reborn-rs (#983, owner: "test when safe"): with
@@ -217,7 +217,7 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
     if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), param(Param::item_test_unknown_max_depth),
         st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::item_test_unknown_min_hp_percent),
-        danger, bad_status, st.borg.tr(BI_FOOD))
+        param(Param::item_test_unknown_min_hp), danger, bad_status, st.borg.tr(BI_FOOD))
     {
         return false;
     }
@@ -250,6 +250,44 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     borg_keypress(st, letter(n));
     clear_shop_goals(st);
     st.borg.trying_unknown = true;
+    // borg-reborn-rs (#1060): a bad potion's status is waited out here.
+    st.borg.potion_test_hold_until = st.borg.time.now.wrapping_add(param(Param::item_test_unknown_hold_turns).max(0));
+    true
+}
+
+/// borg-reborn-rs (#1060): the statuses a bad unknown potion can leave
+/// (object.txt: Poison, Confusion, Blindness, Sleep, Salt Water's paralysis,
+/// Surprise's amnesia; fear and hallucination from others), waited out in place.
+const POTION_TEST_HOLD_STATUSES: [crate::borg_headers::borg_trait_h::C2RustUnnamedH_8; 7] =
+    [BI_ISPOISONED, BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISIMAGE, BI_ISPARALYZED, BI_ISFORGET];
+
+/// borg-reborn-rs (#1060): whether the hold after a potion test goes on: it
+/// started (`hold_until` set), its cap is not reached, a harmful status is
+/// active, the Borg is in the dungeon and nothing is dangerous here.
+pub(crate) fn potion_test_hold_continues(now: i32, hold_until: i32, depth: i32, bad_status: bool, danger: i32) -> bool {
+    hold_until != 0 && now.wrapping_sub(hold_until) <= 0 && depth > 0 && bad_status && danger == 0
+}
+
+/// borg-reborn-rs (#1060, owner: "a character drank a potion of poison and
+/// then goes happily exploring"): after a potion test, while the status it
+/// caused lasts and nothing is dangerous, stay still (`,`) in the spot the
+/// test was judged safe in, instead of exploring or walking to stairs (a
+/// Poison costs 1 HP a turn for 12-24 turns, game-world.c:514-516). Called
+/// after `borg_caution`, so the heals and escapes still come first. Any
+/// danger, the status's end or the cap ends the hold.
+pub fn potion_test_hold(st: &mut BorgState) -> bool {
+    if st.borg.potion_test_hold_until == 0 {
+        return false;
+    }
+    let bad_status = POTION_TEST_HOLD_STATUSES.into_iter().any(|f| st.borg.tr(f) != 0);
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    if !potion_test_hold_continues(st.borg.time.now, st.borg.potion_test_hold_until, st.borg.tr(BI_CDEPTH), bad_status, danger) {
+        st.borg.potion_test_hold_until = 0;
+        return false;
+    }
+    crate::borg_io::borg_note(st, "# Waiting out a bad potion where it was tested (#1060)");
+    borg_keypress(st, key(b','));
     true
 }
 
@@ -335,16 +373,30 @@ mod unknown_potion_tests {
 
     #[test]
     fn only_a_safe_moment_in_the_dungeon() {
-        assert!(safe(1, 30, 21, 28, 50, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28, danger 0");
-        assert!(!safe(0, 30, 28, 28, 50, 0, false, 3), "not in town");
-        assert!(!safe(31, 30, 28, 28, 50, 0, false, 3), "not below the depth cap (Dragon Breath)");
-        assert!(safe(30, 30, 28, 28, 50, 0, false, 3), "at the depth cap");
-        assert!(!safe(1, 30, 28, 28, 50, 5, false, 3), "a danger within the turns");
-        assert!(!safe(1, 30, 13, 28, 50, 0, false, 3), "below the HP floor");
-        assert!(safe(1, 30, 14, 28, 50, 0, false, 3), "at the floor");
-        assert!(!safe(1, 30, 28, 28, 50, 0, true, 3), "a harmful status (paralysis included)");
-        assert!(!safe(1, 30, 28, 28, 50, 0, false, 0), "no food after a Salt Water");
-        assert!(!safe(1, 30, 0, 0, 50, 0, false, 3), "no max HP");
+        assert!(!safe(1, 30, 21, 28, 50, 25, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28 is below 25 (#1060)");
+        assert!(safe(1, 30, 25, 40, 50, 25, 0, false, 3), "25 HP of 40");
+        assert!(!safe(0, 30, 28, 28, 50, 25, 0, false, 3), "not in town");
+        assert!(!safe(31, 30, 28, 28, 50, 25, 0, false, 3), "not below the depth cap (Dragon Breath)");
+        assert!(safe(30, 30, 28, 28, 50, 25, 0, false, 3), "at the depth cap");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 5, false, 3), "a danger within the turns");
+        assert!(!safe(1, 30, 26, 60, 50, 25, 0, false, 3), "below the percent floor");
+        assert!(safe(1, 30, 30, 60, 50, 25, 0, false, 3), "at the percent floor");
+        assert!(!safe(1, 30, 24, 28, 50, 25, 0, false, 3), "below 25 HP: a Poison costs up to 24 (#1060)");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 0, true, 3), "a harmful status (paralysis included)");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 0, false, 0), "no food after a Salt Water");
+        assert!(!safe(1, 30, 0, 0, 50, 25, 0, false, 3), "no max HP");
+    }
+
+    #[test]
+    fn a_bad_potion_is_waited_out_where_it_was_tested() {
+        use super::potion_test_hold_continues as holds;
+        assert!(holds(100, 130, 1, true, 0), "poisoned, safe, within the cap");
+        assert!(!holds(100, 0, 1, true, 0), "no test, no hold");
+        assert!(!holds(131, 130, 1, true, 0), "the cap ends it");
+        assert!(holds(130, 130, 1, true, 0), "the last turn of the cap");
+        assert!(!holds(100, 130, 1, false, 0), "the status ended (or the potion was harmless)");
+        assert!(!holds(100, 130, 1, true, 3), "a danger ends it: the ordinary caution decides");
+        assert!(!holds(100, 130, 0, true, 0), "not in town");
     }
 }
 

@@ -10,6 +10,27 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Waiting out a bad test potion (#1060)
+
+Two parameters added. Owner, 2026-11-22: "a character drank a potion of
+poison and then goes happily exploring" (seed 1928291203: a Poison test, then
+a 76-step walk to the stairs at 1 HP a turn, 26 -> 18).
+
+- **`item_test_unknown_min_hp`** (compiled 25, **shipped 25**): the unknown-potion
+  test (#983) also needs this many HP, besides its percent floor: a Potion of
+  Poison costs 1 HP a turn for 10+2d7 turns (object.txt, game-world.c:514-516),
+  up to 24.
+- **`item_test_unknown_hold_turns`** (compiled 30, **shipped 30**): after a test,
+  for at most this many Borg turns, while a harmful status it caused lasts and
+  the danger here is 0, the Borg stays still (`,`) where it tested
+  (`potion_test_hold`, right after `borg_caution`, so the heals and escapes
+  come first; any danger ends it). 0 = no hold.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_min_hp` | 25 | hp | 0–10000 | `borg_item_use.rs:220` |
+| `item_test_unknown_hold_turns` | 30 | turns | 0–1000 | `borg_item_use.rs:254` |
+
 ## The lone-slow attack on a level lost to breeders (#1008)
 
 The registry now holds **2411** parameters (2410 before; one added). A

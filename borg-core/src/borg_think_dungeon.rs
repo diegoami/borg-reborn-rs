@@ -817,6 +817,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_caution");
     }
 
+    // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
+    if crate::borg_item_use::potion_test_hold(st) {
+        return choice!("potion_test_hold");
+    }
+
     // #789: use the normal scary-town stair flow for a retreat without
     // restoring the named scare. The ordinary ladder remains the fallback.
     if town_retreat {
