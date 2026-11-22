@@ -193,21 +193,11 @@ fn cut_route(
     None
 }
 
-/// An exit of the cut-out: a known staircase, or a corridor or doorway (a
-/// chokepoint with an orthogonal passable neighbour: a checkerboard room's
-/// grids touch only diagonally and are not exits) at least `clear` from
-/// every known breeder.
+/// An exit of the cut-out: a known staircase, or a corridor or doorway
+/// (`room_exit_grid`: a checkerboard room's grids are not exits) at least
+/// `clear` from every known breeder.
 fn exit_grid(passable: &dyn Fn(i32, i32) -> bool, stair: bool, at: loc, breeders: &[loc], clear: i32) -> bool {
-    if !passable(at.x, at.y) {
-        return false;
-    }
-    if stair {
-        return true;
-    }
-    let orthogonal = [(0, -1), (1, 0), (0, 1), (-1, 0)].iter().any(|&(dx, dy)| passable(at.x + dx, at.y + dy));
-    orthogonal
-        && crate::borg_caution::chokepoint(passable, at)
-        && breeders.iter().all(|&b| engine::distance(b, at) >= clear)
+    passable(at.x, at.y) && (stair || crate::borg_caution::room_exit_grid(passable, at, breeders, clear))
 }
 
 /// `+` and a direction: attack the monster there.

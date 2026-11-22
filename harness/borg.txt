@@ -1280,8 +1280,9 @@ borg_param_caution_breeder_stuck_turns = 20
 # the exit walk the known route on to a known staircase and take it. No
 # flight, retreat, escape or back-away moves the Borg meanwhile. Yields to the
 # other rules with a free staircase within caution_breeder_easy_escape_steps,
-# or HP below floor_hp_percent with no cure potion. 0 = off; on at
-# caution_breeder_policy 6. Every number is a hypothesis (RULES 14).
+# or HP below floor_hp_percent with no cure potion. 0 = off. A switch of its
+# own, read at every caution_breeder_policy (owner, 2026-11-22: not a layer).
+# Every number is a hypothesis (RULES 14).
 
 borg_param_caution_breeder_hold = 0
 borg_param_caution_breeder_hold_scan_radius = 8
@@ -1305,9 +1306,9 @@ borg_param_caution_breeder_hold_idle_turns = 50
 # level the Borg leaves, searching for stairs, and reads Recall after
 # lost_recall_turns game turns (owner: "search for stairs first, but if paths
 # are blocked by breeders, recall at some point"). 4 = and paths avoid
-# colonies (#556). 5 = and walk out of a breeder room (#544). 6 = and against
-# a slow breeder colony cut the known way out or hold, never retreating into
-# it (#882).
+# colonies (#556). 5 = and walk out of a breeder room (#544; a checkerboard
+# room's grids are not exits, #882). The slow-breeder hold above is a switch
+# of its own, not a layer.
 # Impact: see CALIBRATION (#722).
 
 borg_param_caution_breeder_policy = 3
