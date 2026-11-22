@@ -77,9 +77,7 @@ fn due(st: &BorgState, t: BorgTime, n: BorgTime) -> bool {
 }
 
 /// `INVEN_LIGHT`: the light source slot.
-fn inven_light() -> i32 {
-    inven_wield() + 5
-}
+fn inven_light() -> i32 { inven_wield() + LIGHT_SLOT_OFFSET as i32 }
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`).
@@ -641,6 +639,9 @@ fn refuel_with(st: &mut BorgState, i: i32) {
     st.borg.goal.shop = st.borg.goal.ware;
 }
 
+/// Equipment layout: light is the sixth slot.
+pub(crate) const LIGHT_SLOT_OFFSET: usize = 5;
+
 #[derive(Debug, PartialEq, Eq)]
 enum LightAction {
     Refuel(usize),
@@ -724,36 +725,54 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
         return None;
     }
 
-    // player-calcs.c:1598 (calc_light). Replace a dimmed light only if the new
-    // contribution makes the total positive.
-    let contribution = |item: &BorgItem| {
-        let innate = if has_flag(item, OF_LIGHT_2) {
-            2
-        } else if has_flag(item, OF_LIGHT_3) {
-            3
-        } else {
-            0
-        };
-        innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
-    };
-    let powered = |item: &BorgItem| item.timeout > 0 || has_flag(item, OF_NO_FUEL);
-    let current = if equipped.iqty != 0 && powered(equipped) {
-        contribution(equipped)
+    let current = if equipped.iqty != 0 && light_powered(equipped) {
+        light_contribution(equipped)
     } else {
         0
     };
+    best_light(pack, radius - current, |item| refillable(item) && fuel_slot.is_some())
+        .map(LightAction::Wear)
+}
 
+fn light_powered(item: &BorgItem) -> bool {
+    item.timeout > 0 || has_flag(item, OF_NO_FUEL)
+}
+
+// Innate radius plus the light modifier (player-calcs.c:calc_light).
+fn light_contribution(item: &BorgItem) -> i32 {
+    let innate = if has_flag(item, OF_LIGHT_2) {
+        2
+    } else if has_flag(item, OF_LIGHT_3) {
+        3
+    } else {
+        0
+    };
+    innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
+}
+
+fn best_light(
+    pack: &[BorgItem],
+    other_radius: i32,
+    can_refuel: impl Fn(&BorgItem) -> bool,
+) -> Option<usize> {
     pack.iter()
         .enumerate()
         .filter(|(_, item)| {
             item.iqty != 0
                 && u32::from(item.tval) == TV_LIGHT
                 && !item.cursed
-                && (powered(item) || (refillable(item) && fuel_slot.is_some()))
-                && radius - current + contribution(item) > 0
+                && (light_powered(item) || can_refuel(item))
+                && other_radius + light_contribution(item) > 0
         })
-        .max_by_key(|(slot, item)| (powered(item), contribution(item), std::cmp::Reverse(*slot)))
-        .map(|(slot, _)| LightAction::Wear(slot))
+        .max_by_key(|(slot, item)| (light_powered(item), light_contribution(item), std::cmp::Reverse(*slot)))
+        .map(|(slot, _)| slot)
+}
+
+/// Replace a harmful light in one wield command. The replacement must
+/// already work, even if the Borg has fuel to fill it after the swap.
+pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> Option<usize> {
+    let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
+    best_light(pack, (radius - current).min(0), |_| false)
 }
 
 /// Restore carried light without relying on ordinary equipment power or wear cooldowns.

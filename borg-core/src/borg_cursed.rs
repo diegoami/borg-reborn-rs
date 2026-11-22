@@ -14,11 +14,12 @@ use crate::borg_headers::borg_item_h::{
     borg_item, BORG_CURSE_ANNOYANCE, BORG_CURSE_ANTI_TELEPORTATION, BORG_CURSE_COWARDICE,
     BORG_CURSE_IMPAIR_HITPOINT_RECOVERY, BORG_CURSE_PARALYSIS,
 };
-use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_FIRST_CURSED, BI_GOLD, BI_WHERE_CURSED, BORG_EQUIP};
+use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_FIRST_CURSED, BI_GOLD, BI_LIGHT, BI_WHERE_CURSED, BORG_EQUIP};
 use crate::borg_io::{borg_keypress, borg_note_bytes};
 use crate::borg_item::{inven_wield, quiver_start};
 use crate::borg_item_analyze::borg_object_value_known;
 use crate::borg_item_decurse::can_decurse;
+use crate::borg_light::{uncursed_light_replacement, LIGHT_SLOT_OFFSET};
 use crate::engine;
 use crate::headers::list_object_flags_h::OF_STICKY;
 use crate::headers::ui_event_h::keycode_t;
@@ -112,10 +113,36 @@ impl Removal {
     }
 }
 
-/// The slot to take off: the first equipment slot (indexes into `items`,
-/// `first..end`) that is a candidate and has not used up its tries.
-fn pick(items: &[borg_item], first: usize, end: usize, removal: &Removal) -> Option<usize> {
-    (first..end.min(items.len())).find(|&i| candidate(&items[i]) && removal.tried(i, first) < MAX_TRIES)
+#[derive(Debug, PartialEq, Eq)]
+enum Action {
+    TakeOff(usize),
+    ReplaceLight { worn: usize, spare: usize },
+}
+
+impl Removal {
+    /// Select and count one attempt. For a harmful light, wield a safe
+    /// replacement directly. Taking it off lets light maintenance put
+    /// the same torch back on, resetting the refused-take-off guard.
+    fn next(&mut self, depth: i32, items: &[borg_item], first: usize, end: usize, radius: i32) -> Option<Action> {
+        self.sync(depth, items, first, end);
+        let light = first + LIGHT_SLOT_OFFSET;
+        for slot in first..end.min(items.len()) {
+            if !candidate(&items[slot]) || self.tried(slot, first) >= MAX_TRIES {
+                continue;
+            }
+            let action = if slot == light {
+                let Some(spare) = uncursed_light_replacement(&items[slot], &items[..first], radius) else {
+                    continue;
+                };
+                Action::ReplaceLight { worn: slot, spare }
+            } else {
+                Action::TakeOff(slot)
+            };
+            self.tries[slot - first].0 += 1;
+            return Some(action);
+        }
+        None
+    }
 }
 
 /// The bytes of a C `desc` buffer, up to its NUL.
@@ -123,38 +150,30 @@ fn desc(item: &borg_item) -> Vec<u8> {
     item.desc.iter().take_while(|&&c| c != 0).map(|&c| c as u8).collect()
 }
 
-/// Take off a worn item with a harmful curse, leaving the slot empty
-/// (the engine puts it in the pack). It runs before the fight and caution
-/// branches: a curse that aggravates, slows or blocks teleportation is
-/// worth one turn at once. The item is then worthless to the Borg (every
-/// cursed item is, `borg_item_analyze.rs`), so no wear routine puts it
-/// back on.
+/// Deal with a harmful curse before the fight and caution branches. A
+/// cursed light without a safe replacement stays equipped for the
+/// ordinary decursing and shopping paths.
 pub(crate) fn borg_remove_cursed(st: &mut BorgState) -> bool {
-    let first = inven_wield();
-    let end = quiver_start();
-
+    let first = inven_wield() as usize;
+    let end = quiver_start() as usize;
     let depth = st.borg.tr(BI_CDEPTH);
-    let removal = &mut st.think_dungeon.cursed;
-    removal.sync(depth, &st.items.items, first as usize, end as usize);
-
-    /* a slot that stays occupied after repeated tries is left alone, and the
-     * others are still looked at */
-    let Some(i) = pick(&st.items.items, first as usize, end as usize, removal) else {
+    let radius = st.borg.tr(BI_LIGHT);
+    let Some(action) = st.think_dungeon.cursed.next(depth, &st.items.items, first, end, radius) else {
         return false;
     };
-    let slot = i as i32;
-    removal.tries[i - first as usize].0 += 1;
-
-    let item = st.items.items[i];
-    let why = harmful_curse(&item).unwrap_or("");
-    let mut note = b"# Removing cursed ".to_vec();
-    note.extend_from_slice(&desc(&item));
+    let (worn, command, letter, mut note) = match action {
+        Action::TakeOff(slot) => (slot, b't', slot - first, b"# Removing cursed ".to_vec()),
+        Action::ReplaceLight { worn, spare } => (worn, b'w', spare, b"# Replacing cursed ".to_vec()),
+    };
+    let item = &st.items.items[worn];
+    let why = harmful_curse(item).unwrap_or("");
+    note.extend_from_slice(&desc(item));
     note.extend_from_slice(format!(" ({why})").as_bytes());
     borg_note_bytes(st, &note);
 
-    /* `borg_remove_stuff`'s take-off: `t` and the equipment letter */
-    borg_keypress(st, keycode_t::from(b't'));
-    borg_keypress(st, engine::all_letters_nohjkl(slot - first) as i8 as keycode_t);
+    // cmd-obj.c:do_cmd_wield replaces a non-sticky light in the same command.
+    borg_keypress(st, keycode_t::from(command));
+    borg_keypress(st, engine::all_letters_nohjkl(letter as i32) as i8 as keycode_t);
     true
 }
 
@@ -246,6 +265,8 @@ mod tests {
     use crate::borg_headers::borg_item_h::BORG_CURSE_AIR_SWING;
     use crate::borg_headers::borg_trait_h::{BORG_INVEN, BORG_QUILL};
     use crate::borg_item::blank_item;
+    use crate::headers::list_object_flags_h::OF_LIGHT_2;
+    use crate::headers::list_tvals_h::TV_LIGHT;
 
     fn cursed(curse: u32) -> borg_item {
         let mut item = blank_item();
@@ -285,20 +306,64 @@ mod tests {
         items[1] = cursed(BORG_CURSE_AIR_SWING);
         items[3] = cursed(BORG_CURSE_ANTI_TELEPORTATION);
         items[5] = cursed(BORG_CURSE_ANNOYANCE);
-        let none = Removal::default();
-        assert_eq!(pick(&items, 2, 8, &none), Some(3));
-        assert_eq!(pick(&items, 4, 8, &none), Some(5));
+        assert_eq!(turn(&mut Removal::default(), 5, &items, 2, 8), Some(3));
+        assert_eq!(turn(&mut Removal::default(), 5, &items, 4, 8), Some(5));
         /* the pack (slots before `first`) is never taken off */
-        assert_eq!(pick(&items, 6, 8, &none), None);
+        assert_eq!(turn(&mut Removal::default(), 5, &items, 6, 8), None);
     }
 
     /// One turn of `borg_remove_cursed` on `items[first..end]`, take-off
     /// refused: the slot it would try, if any.
     fn turn(removal: &mut Removal, depth: i32, items: &[borg_item], first: usize, end: usize) -> Option<usize> {
-        removal.sync(depth, items, first, end);
-        let i = pick(items, first, end, removal)?;
-        removal.tries[i - first].0 += 1;
-        Some(i)
+        match removal.next(depth, items, first, end, 0)? {
+            Action::TakeOff(slot) => Some(slot),
+            Action::ReplaceLight { .. } => panic!("expected a take-off"),
+        }
+    }
+
+    #[test]
+    fn a_paralysis_cursed_torch_never_leaves_an_empty_light_slot() {
+        let first = 4;
+        let light = first + LIGHT_SLOT_OFFSET;
+        let end = light + 2;
+        let mut items = vec![blank_item(); end];
+        let mut torch = cursed(BORG_CURSE_PARALYSIS);
+        torch.tval = TV_LIGHT as u8;
+        torch.timeout = 4936;
+        let flag = (OF_LIGHT_2 as i32 - engine::FLAG_START) as usize;
+        torch.flags[flag / 8] |= 1 << (flag % 8);
+        items[light] = torch;
+        let mut removal = Removal::default();
+
+        // The take-off would succeed and light maintenance could undo it,
+        // so even the first take-off must be skipped, on every think.
+        for depth in [0, 0, 0, 1, 0] {
+            items[light].timeout -= 1;
+            assert_eq!(removal.next(depth, &items, first, end, 2), None);
+        }
+        items[0] = torch; // Another cursed torch.
+        items[1] = torch;
+        items[1].cursed = false;
+        items[1].curses = [false; 28];
+        items[1].timeout = 0; // An uncursed but exhausted torch.
+        items[light + 1] = cursed(BORG_CURSE_ANNOYANCE);
+        assert_eq!(
+            removal.next(0, &items, first, end, 2),
+            Some(Action::TakeOff(light + 1)),
+        );
+        items[light + 1] = blank_item();
+        assert_eq!(removal.next(0, &items, first, end, 2), None);
+
+        items[1].timeout = 5000;
+        for _ in 0..MAX_TRIES {
+            assert_eq!(
+                removal.next(0, &items, first, end, 2),
+                Some(Action::ReplaceLight { worn: light, spare: 1 }),
+            );
+        }
+        assert_eq!(removal.next(0, &items, first, end, 2), None);
+        items.swap(light, 1);
+        assert_eq!(removal.next(0, &items, first, end, 2), None);
     }
 
     #[test]
@@ -378,7 +443,7 @@ mod tests {
         let mut items = vec![blank_item(); 4];
         items[2] = cursed(BORG_CURSE_ANNOYANCE);
         items[2].one_ring = true;
-        assert_eq!(pick(&items, 0, 4, &Removal::default()), None);
+        assert_eq!(turn(&mut Removal::default(), 5, &items, 0, 4), None);
     }
 
     #[test]

@@ -1470,6 +1470,14 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // Harmful lights are handled by the direct swap or decursing path.
+        // Emptying the slot can make light maintenance re-wield the same item.
+        if i == inven_wield() + crate::borg_light::LIGHT_SLOT_OFFSET as i32
+            && crate::borg_cursed::harmful_curse(item).is_some()
+        {
+            continue;
+        }
+
         /* Take off the item */
         st.items.items[hole as usize] = st.items.items[i as usize];
 
