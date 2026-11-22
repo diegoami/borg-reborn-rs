@@ -644,6 +644,14 @@ borg_param_attack_arrow_point_blank_divisor = 5
 
 borg_param_kill_live_min_power = 1
 
+# The floor above also covers a monster at exactly 0 HP (#975, owner
+# 2026-11-22: "the flag should be turned on"). The engine kills a monster only
+# below 0 (mon-util.c:1300), so a 2-HP grey mold hit for 2 lives; at 0 the
+# Borg rated it at 0 HP, scored every attack 0 and walked next to it (Hobbit
+# Ranger 282602274). Needs kill_live_min_power above 0. borg-zoo#670 measures it.
+
+borg_param_kill_live_zero_hp = 1
+
 # #915: grouped monster messages. The engine writes the subject of a message
 # for several monsters of one race as "N <plural>" ("3 cave spiders start
 # moving faster.", mon-msg.c:333-345); the Borg's race guess takes any name
@@ -1445,6 +1453,12 @@ borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
+# #926: the heal floor (percent of max HP), the quantile of "the next turn
+# kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
+# it. All 0 = today's play, until the zoo measures them.
+borg_param_fast_fragile_heal_floor = 0
+borg_param_fast_fragile_escape_quantile = 0
+borg_param_fast_fragile_count_dot = 0
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
 # grids with a torch, so unseen monsters two grids away are deleted). Ships 0
