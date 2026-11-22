@@ -208,7 +208,7 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
         return false;
     }
     let bad_status = [BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISPOISONED, BI_ISCUT, BI_ISSTUN,
-        BI_ISHEAVYSTUN, BI_ISIMAGE, BI_ISHUNGRY, BI_ISWEAK, BI_ISFORGET]
+        BI_ISHEAVYSTUN, BI_ISIMAGE, BI_ISPARALYZED, BI_ISHUNGRY, BI_ISWEAK, BI_ISFORGET]
         .into_iter()
         .any(|f| st.borg.tr(f) != 0);
     let (y, x) = (st.borg.c.y, st.borg.c.x);
