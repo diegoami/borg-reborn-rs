@@ -6115,3 +6115,17 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
 | `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+
+## Fast-fragile groups in contact (#914)
+
+`fast_fragile_group_max` counts others of the race in view, so three cave
+spiders in contact passed as fast-fragile. The fast-fragile attack, before
+`borg_caution`, then took the turn the control spent on its emergency Phase
+Door (seed 2008390085, turn 64,454, borg-zoo#596). Above 0, more than this
+many marked attackers awake next to the Borg skip the fast-fragile attack
+(caution decides) and lift `fast_fragile_no_heal`. Compiled and shipped 0;
+the suggested 1 is chosen from one case.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `fast_fragile_contact_max` | 0 | monsters | 0–100 | `borg_fast_fragile.rs:350` |
