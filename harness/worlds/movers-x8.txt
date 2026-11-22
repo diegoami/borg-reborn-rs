@@ -1,0 +1,10 @@
+# A small-movers world (#1022, review of #1024): every other race's rarity is
+# multiplied by 8 (monster.txt), while the wild dog (about 3 HP, comes in a
+# pack) and the fruit bat (about 4 HP) keep depth 1 and rarity 1. Together they
+# go from 13.3 % of the DL1 allocation table (2 of 15 rarity-1 races, mon-make.c:113)
+# to 2*100 / (2*100 + 13*12) = 56.2 %. They move, so a 0-HP one reaches the
+# shoot-and-scoot gate (borg_flow_kill.rs:3176, kill.power >= CL), the reader
+# where kill_live_zero_hp (#975) works the other way: the grey mold of
+# molds-x4/x8 never moves (base mold, NEVER_MOVE) and cannot reach it.
+favour = wild dog, fruit bat
+favour_weight = 8
