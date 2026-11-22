@@ -5824,9 +5824,10 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
                 let note = crate::borg_fast_fragile::describe(st, i, source, &facts);
                 borg_note(st, &note);
                 if crate::borg_fast_fragile::escape_instead(st, i, &facts) { return true; }
-                // The exception to the heal ban: cornered, a cure comes first.
-                if crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
-                    borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)");
+                // The exceptions to the heal ban: cornered (#842) or at the
+                // heal floor (#926), a cure comes first; the note names which.
+                if let Some(why) = crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
+                    borg_note(st, why);
                     continue;
                 }
                 borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",
