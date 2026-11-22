@@ -10,6 +10,38 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Stair flights through unknown grids (#881)
+
+The registry now holds **2375** parameters (2373 before; two added). Owner,
+2026-11-22: track P, P7, part 1 of #881 first, shipped off.
+
+`weighted_stair_path` (the route of every weighted stair flight, shipped
+with `caution_stairs_flight_threat_weight = 5`) entered a grid the Borg's map
+holds as unknown (`FEAT_NONE`) for one step, like floor: `spread_blocked`
+refuses unknown grids only when `avoid` or desperate, and the down flights
+pass `avoid: false`. Unseen rock between the Borg and the target looked like
+a shortcut. Priest 399497898 (borg-zoo run 44924461733, [study](https://github.com/diegoami/borg-cemetery/blob/claude/modest-knuth-w7k1hg/studies/worm-pocket-399497898/README.md)):
+in a one-exit lattice room 58 of 68 committed flight paths crossed granite
+north of the room, so the priest reached the dead-end tip 25 times and died to
+white worm masses.
+
+- **`caution_stairs_flight_unknown`** (mode, 0). 0: one step (today's
+  play). 1: one step plus `caution_stairs_flight_unknown_steps`. 2: refused;
+  the flight walks known grids only. Both apply to the reachability test of
+  the flee rules (`stair_flow_reaches` → `weighted_stair_reachable`), which
+  asks the same search, so a staircase reachable only through unknown grids
+  is not reachable under 2.
+- **`caution_stairs_flight_unknown_steps`** (steps, 5; the issue's 3–10).
+
+Not changed: the unweighted stair flows (weight 0), exploration flows,
+retreat and back-up (#881 part 2), and the perception gap at 28,147 (part 3).
+Hypotheses: no measurement chose a mode or a step count (RULES 14).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_stairs_flight_unknown` | 0 | mode | 0–2 | `borg_caution.rs:5466` |
+| `caution_stairs_flight_unknown_steps` | 5 | steps | 0–100 | `borg_caution.rs:5466` |
+
 ## Thrown objects at point blank (#870)
 
 `attack_throw_point_blank_divisor` (0..1000, compiled **0**, no shipped
@@ -327,8 +359,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1966` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:651` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:831` |
@@ -633,16 +665,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1973` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1974` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1975` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1976` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1977` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1978` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1979` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1980` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1981` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1982` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2022` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2023` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2024` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2025` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2018` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2019` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2020` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2021` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2022` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2023` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -2546,7 +2578,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:5476` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:5483` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3716` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:3723` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:4505` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -5433,7 +5465,7 @@ confirmed directional oil kill. No race, HP, AC or monster index is invented.
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `caution_unseen_bump_turns` | 0 | 0–100000 | game turns | `borg_caution.rs:6780` | #781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off. |
+| `caution_unseen_bump_turns` | 0 | 0–100000 | game turns | `borg_caution.rs:6787` | #781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off. |
 | `caution_unseen_bump_response` | 0 | 0–1 | flag | `borg_caution.rs:6905` | #781: after ordinary healing, defence, Recall and food, before stair walking, try one carried Detect Invisible scroll under the existing detection danger/darkness gates, bounded directional oil throws with normal fuel reserves, then Phase Door under the emergency landing test. Requires caution_unseen_bump_turns. Counts successful phases toward level escape accounting. 0 = off. |
 | `caution_unseen_bump_heal_hp_percent` | 0 | 0–100 | percent | `borg_caution.rs:6897` | #781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW after ordinary healing/defence/Recall but before stair walking, even while fleeing. Intentionally ignores danger, including survivable-healing and no-rope-a-doping gates: regional fear does not quantify the unseen blow. Requires caution_unseen_bump_turns; independent of response. 0 = off. |
 | `caution_unseen_bump_throw_tries` | 3 | 0–100 | throws per grid | `borg_caution.rs:6899` | #781: maximum queued oil attempts at one remembered bump grid before trying Phase Door. Cancels also spend an attempt; only one command is queued per response. Expiry or a confirmed kill clears that grid and its budget. 0 = phase after detection; hypothesis, not calibrated. |
