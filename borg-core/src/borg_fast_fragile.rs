@@ -207,8 +207,8 @@ fn incoming_total(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
 
 /// Whether `escape_instead` could act now: a staircase underfoot, or a Phase
 /// Door scroll or spell that can be used (no reading in the dark, blind or
-/// confused; no teleport where it is not allowed).
-fn escape_available(st: &mut BorgState) -> bool {
+/// confused; no teleport where it is not allowed). Also #969.
+pub(crate) fn escape_available(st: &mut BorgState) -> bool {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     if (feat == FEAT_LESS && !engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend)) || feat == FEAT_MORE {
         return true;
@@ -223,7 +223,8 @@ fn escape_available(st: &mut BorgState) -> bool {
             st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
 }
 
-fn has_cure(st: &mut BorgState) -> bool {
+/// A Potion of Cure Light, Serious or Critical Wounds in the pack (also #969).
+pub(crate) fn has_cure(st: &mut BorgState) -> bool {
     let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
     svals.into_iter().any(|sval| crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0)
 }
