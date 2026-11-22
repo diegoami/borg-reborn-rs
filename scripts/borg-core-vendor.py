@@ -71,7 +71,9 @@ HOOKED = {
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
-    'src/borg_light.rs',  # #685: no detection spell by panel below a level
+    'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius
+    'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius
+    'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only
     'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI

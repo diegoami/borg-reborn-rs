@@ -702,6 +702,33 @@ borg_param_recover_unseen_act_age = 30
 
 borg_param_attack_throw_as_melee = 1
 
+# Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
+# throw rated with attack_throw_as_melee. 0 = inherit
+# attack_arrow_point_blank_divisor (5; Rogue 3, Ranger 2); 1 = no penalty, so
+# oil is rated at its damage (about 22 a hit: 1d4 x 3 THROWING x 3 EXPLODE,
+# player-attack.c:1296) against a blow. Shipped 1 (owner, 2026-11-22, #901):
+# casters throw oil at point blank. The melee classes (Warrior, Blackguard,
+# Paladin, Rogue) keep 0 in their class files: "melee is infinite, flasks are
+# not" (a workaround until the Borg saves flasks for when they are needed,
+# #912). Attack on sight already bypasses it. Not measured yet: borg-zoo#636.
+
+borg_param_attack_throw_point_blank_divisor = 1
+
+# Confused attacks by direction (#867, owner 2026-11-21): 1 = a confused
+# Borg (not blind, not hallucinating) may also throw, shoot and use a wand,
+# rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
+# the engine's confused aim, 11/32, and sent by direction key, never at a
+# target; a staff keeps its full value. The usual chooser picks the best.
+# A blow's damage for fight-or-flee stays C's (full).
+# Next to an immobile confuser (a grey mushroom patch, not a unique) the
+# confusion cure waits and the attack goes first, while there is an attack
+# to make.
+# 0 = C (melee only while confused). Shipped 1 (owner, 2026-11-22, #901:
+# "once you are close to him, you attack with your best attack"). Not
+# measured yet: borg-zoo#636; what is left before it is right in #896.
+
+borg_param_attack_confused_by_direction = 1
+
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
 # (breeders when a hunt for them applies, dangerous town monsters); 2 = no
@@ -1387,7 +1414,8 @@ borg_param_fast_fragile_group_max = 2
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
 # grids with a torch, so unseen monsters two grids away are deleted). Ships 0
-# until the zoo measures it.
+# until the zoo measures it. With 1 the lit shape is the engine's too, and the
+# dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
 borg_param_cave_light_engine_radius = 0
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
@@ -1436,6 +1464,9 @@ borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34
+# #880: the forecast prices POISON (dice + timer) and status blows as HP and
+# never vetoes on a breeder; compiled 0, shipped 1 (owner, 2026-11-22).
+borg_param_caution_recall_blow_model = 1
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
@@ -1626,6 +1657,7 @@ borg_param_town_staple_clw__warrior = 7
 borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
+borg_param_attack_throw_point_blank_divisor__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1731,6 +1763,7 @@ borg_param_town_staple_clw__paladin = 5
 borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
+borg_param_attack_throw_point_blank_divisor__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1753,6 +1786,7 @@ borg_param_town_staple_clw__rogue = 6
 borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
+borg_param_attack_throw_point_blank_divisor__rogue = 0
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1800,6 +1834,7 @@ borg_param_town_staple_csw__blackguard = 4
 borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
+borg_param_attack_throw_point_blank_divisor__blackguard = 0
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
