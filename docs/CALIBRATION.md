@@ -21,8 +21,9 @@ it to try. Owner, 2026-11-22: "test when safe".
   `borg_quaff_unknown_when_safe`, right after `borg_test_stuff` in
   `borg_think_dungeon`, drinks one unknown potion when in the dungeon down to
   `item_test_unknown_max_depth` (shipped 30: Dragon Breath, DL40+, asks for
-  an aim), with danger 0 over `item_test_unknown_danger_turns` (10: Sleep
-  paralyses for 5+1d5, object.txt), at least
+  an aim), with danger 0 from every monster that could reach it within
+  `item_test_unknown_danger_turns` (10, `borg_danger`'s `c`: Sleep paralyses
+  for 5+1d5, object.txt), at least
   `item_test_unknown_min_hp_percent` of max HP (50), no harmful status
   (paralysis included) and food in the pack (Salt Water). A bad potion costs
   turns or a stat; none kills by itself. #470 still forbids unknown scrolls,
