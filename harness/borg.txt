@@ -891,6 +891,17 @@ borg_param_town_invisible_spell_percent = 3
 borg_param_town_phase_reserve = 6
 borg_param_town_phase_reserve_percent = 150
 
+# First cures before the Phase Door reserve (#987): a 127-gold Ranger bought
+# 6 Phase Door and no Cure Light Wounds (each reserved scroll, 150 percent of
+# the escape weight, outbids the first cure, which is worth about 170 percent
+# of a full heal's weight at 14 HP), then died to a crow with nothing to
+# drink. With town_first_cure > 0 the first that many healing potions are a
+# requirement, each worth town_first_cure_percent of the trip's escape weight;
+# above town_phase_reserve_percent they are bought first. 0 = off (today).
+# Per class with __<class>. Shipped values wait for borg-zoo#669.
+borg_param_town_first_cure = 0
+borg_param_town_first_cure_percent = 200
+
 # #789: reserve of oil available to throw and missiles for the equipped
 # launcher, counted together. Use __<class> for a class override.
 borg_param_town_ranged_reserve = 0
