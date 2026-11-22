@@ -3221,6 +3221,13 @@ pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64
     }).sum()
 }
 
+/// borg-reborn-rs (#878, review of #891, F5): whether a monster `d` grids
+/// away (the larger axis) can strike during the faint: adjacent, or able to
+/// move (a monster that never moves strikes only from where it is).
+pub(crate) fn faint_reaches(d: i32, never_move: bool) -> bool {
+    d <= 1 || !never_move
+}
+
 /// borg-reborn-rs (#878): `attack_reserve_faint_percent`. The reserve spell
 /// is refused when what the awake monsters deal during the mean faint
 /// (`reserve_faint_turns`, in Borg turns by `faint_borg_turns`) reaches that
@@ -3250,7 +3257,7 @@ fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32, targ
             continue;
         }
         let d = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
-        if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) {
+        if !faint_reaches(d, engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)) {
             continue;
         }
         let hp = crate::borg_caution::fight_incoming(st, i).hp_per_turn;
@@ -5894,7 +5901,13 @@ mod reserve_faint_tests {
         // The target at a 5% fail rate.
         let target = faint_contact_damage(&[(0.9, 1, 0.5, 0.05)], 3.5);
         assert!((target - 0.1575).abs() < 1e-9);
-        assert_eq!(faint_contact_damage(&[(5.0, 4, 0.0, 1.0)], 3.5), 0.0, "cannot move");
+        // Defensive only: `reserve_faint_refused` clamps the energy, so a
+        // monster's moves are never 0 there; it skips immobile ones instead.
+        assert_eq!(faint_contact_damage(&[(5.0, 4, 0.0, 1.0)], 3.5), 0.0, "no moves, never arrives");
+        // The skip that runs: a mold strikes only when adjacent.
+        assert!(faint_reaches(1, true), "an adjacent mold");
+        assert!(!faint_reaches(2, true), "a mold two grids away");
+        assert!(faint_reaches(4, false), "a worm walks in");
     }
 }
 

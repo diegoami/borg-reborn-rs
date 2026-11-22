@@ -107,3 +107,16 @@ issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
   unit tests, `tools/tests` 96 with the Cemetery at `death-tools-pin.txt`,
   smoke 3/3 identical. borg-zoo#626's pilot ran on `296adfbf`; its
   `faint25` arm never fired there, so the fixes do not change its numbers.
+- Third review round (MiniMax-M3 at `be94bb1f`, no new defect): merged
+  `track-p` `4b2c2fcf` (#937 main, #901/#904: `attack_confused_by_direction`
+  now shipped 1, `attack_throw_point_blank_divisor` 1 with four class zeros);
+  smoke re-run on the merged tree: 3/3 identical to `smoke-borg-rs`, so the
+  shipped settings play as recorded. F3: every new parameter cites its read
+  line exactly. F4: the comments at `fight_before_flight` and its call name
+  the lone rule. F5: `faint_reaches` (a monster that never moves strikes only
+  when adjacent) is the tested skip; the 0-moves arm is labelled defensive.
+  F6: CALIBRATION point 3 names the CON risk of the same over-exertion
+  (player-util.c:824-831). Registry 2376 to 2385; 660 release unit tests.
+  The named-case trial and the zoo arms ran with confused attacks off: with
+  them on, a confused Borg's aimed item attack is rated at the engine's aim
+  chance (#867), so the lone rule fires less often while confused.

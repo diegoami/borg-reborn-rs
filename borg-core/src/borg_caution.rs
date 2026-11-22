@@ -2845,7 +2845,9 @@ mod category_threat_tests {
 }
 
 /// #760/#759: before any dungeon flight, including the light/countdown
-/// and depth-return rungs which otherwise precede borg_caution.
+/// and depth-return rungs which otherwise precede borg_caution. In order:
+/// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
+/// the winning fight (#759).
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
     crate::borg_fight_attack::attack_on_sight(st)
         // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
