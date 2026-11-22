@@ -122,3 +122,26 @@ here.
   itself notes nothing.
 - **Checked**: as for findings 1 and 2, the same commands; one new unit test
   (`a_blows_damage_stays_cs_for_fight_or_flee`).
+
+## Merged with track-p (2026-11-22)
+
+`origin/track-p` merged in (#864, #869, #870 and others; conflicts only in
+`params.rs` citations and the `CALIBRATION.md` sections; the registry now
+holds 2359). Smoke on the default core 3/3 identical to the current
+`smoke-borg-rs`. **On the merged tree the switch no longer changes the named
+cases:** #869's kill-on-sight entry for the grey mushroom patch attacks it
+in `fight_before_flight`, before it confuses, so Gnome Necromancer
+459443830 plays the same keys with the switch at 0 and 1, with and without
+the CLW cure, and lives (the CLW + switch-0 death of borg-zoo#581 is gone on
+track-p already). Elf Necromancer 412975293 lives too. The switch now
+matters only when the Borg is already confused next to the patch (it did
+not see it first: the owner's cramped case) and for other confusers; a
+constructed scenario or the zoo arm is needed to show it.
+
+The review's points still open are in the follow-up issue named in the PR:
+the step-away pre-empting the attack (finding 7, the owner's "don't step
+away"), the hold's gate against the chooser's weighted value (finding 11),
+the 11/32 truncation in the focused ranking's eligibility (finding D), the
+scope (grey mushroom patch only, or the magic mushroom patch and memory moss
+too), the launch loop's last-slot direction (C's quirk), and the danger term
+inside the weighted value.
