@@ -1404,6 +1404,12 @@ pub fn borg_dump_quiver(st: &mut BorgState) -> bool {
     false
 }
 
+// Leave a harmful light to direct replacement or decursing. Emptying
+// the slot can make light maintenance re-wield the same item.
+fn protects_cursed_light(slot: i32, light: i32, item: &borg_item) -> bool {
+    slot == light && crate::borg_cursed::harmful_curse(item).is_some()
+}
+
 /// Remove useless equipment (`borg_remove_stuff`).
 ///
 /// Look through the inventory for equipment that is reducing power.
@@ -1446,6 +1452,8 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
     /* Start with good power */
     let b_p = st.borg.power;
 
+    let light = crate::borg_light::inven_light();
+
     /* Scan equip */
     for i in inven_wield()..inven_total() {
         let item = &st.items.items[i as usize];
@@ -1470,11 +1478,7 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
             continue;
         }
 
-        // Harmful lights are handled by the direct swap or decursing path.
-        // Emptying the slot can make light maintenance re-wield the same item.
-        if i == inven_wield() + crate::borg_light::LIGHT_SLOT_OFFSET as i32
-            && crate::borg_cursed::harmful_curse(item).is_some()
-        {
+        if protects_cursed_light(i, light, item) {
             continue;
         }
 
@@ -1535,4 +1539,26 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_item_h::{BORG_CURSE_AIR_SWING, BORG_CURSE_PARALYSIS};
+    use crate::borg_item::blank_item;
+    use crate::borg_light::light_slot;
+
+    #[test]
+    fn ordinary_take_off_skips_only_a_harmful_curse_in_the_light_slot() {
+        let light = light_slot(23) as i32;
+        let mut item = blank_item();
+        item.iqty = 1;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.cursed = true;
+        item.curses[BORG_CURSE_AIR_SWING as usize] = true;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        assert!(protects_cursed_light(light, light, &item));
+        assert!(!protects_cursed_light(light + 1, light, &item));
+    }
 }

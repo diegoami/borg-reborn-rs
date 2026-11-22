@@ -77,7 +77,7 @@ fn due(st: &BorgState, t: BorgTime, n: BorgTime) -> bool {
 }
 
 /// `INVEN_LIGHT`: the light source slot.
-fn inven_light() -> i32 { inven_wield() + LIGHT_SLOT_OFFSET as i32 }
+pub(crate) fn inven_light() -> i32 { light_slot(inven_wield() as usize) as i32 }
 
 /// `all_letters_nohjkl[i]` as a key (a C `char`, sign-extended to
 /// `keycode_t`).
@@ -639,8 +639,10 @@ fn refuel_with(st: &mut BorgState, i: i32) {
     st.borg.goal.shop = st.borg.goal.ware;
 }
 
-/// Equipment layout: light is the sixth slot.
-pub(crate) const LIGHT_SLOT_OFFSET: usize = 5;
+/// Index of the light slot given the first equipment slot.
+pub(crate) fn light_slot(first: usize) -> usize {
+    first + 5
+}
 
 #[derive(Debug, PartialEq, Eq)]
 enum LightAction {
@@ -768,11 +770,12 @@ fn best_light(
         .map(|(slot, _)| slot)
 }
 
-/// Replace a harmful light in one wield command. The replacement must
-/// already work, even if the Borg has fuel to fill it after the swap.
+/// Replace a harmful light in one wield command. The spare must already
+/// have power, and its contribution plus the rest of the worn gear must
+/// leave a positive radius (as in `light_action`).
 pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> Option<usize> {
     let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
-    best_light(pack, (radius - current).min(0), |_| false)
+    best_light(pack, radius - current, |_| false)
 }
 
 /// Restore carried light without relying on ordinary equipment power or wear cooldowns.
@@ -1057,6 +1060,20 @@ mod lightless_tests {
         );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
+    #[test]
+    fn cursed_light_swap_counts_light_from_other_gear() {
+        let mut cursed_torch = light(&[OF_LIGHT_2], 100);
+        cursed_torch.cursed = true;
+        let dim_spare = light(&[], 30);
+
+        // The spare cannot light the Borg on its own. Other gear can.
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[dim_spare], 2), None);
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[dim_spare], 3), Some(0));
+
+        let empty_spare = light(&[OF_TAKES_FUEL, OF_LIGHT_2], 0);
+        assert_eq!(uncursed_light_replacement(&cursed_torch, &[empty_spare], 3), None);
+    }
+
     #[test]
     fn wears_the_brightest_powered_spare() {
         let empty = blank_item();

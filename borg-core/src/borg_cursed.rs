@@ -19,7 +19,7 @@ use crate::borg_io::{borg_keypress, borg_note_bytes};
 use crate::borg_item::{inven_wield, quiver_start};
 use crate::borg_item_analyze::borg_object_value_known;
 use crate::borg_item_decurse::can_decurse;
-use crate::borg_light::{uncursed_light_replacement, LIGHT_SLOT_OFFSET};
+use crate::borg_light::{light_slot, uncursed_light_replacement};
 use crate::engine;
 use crate::headers::list_object_flags_h::OF_STICKY;
 use crate::headers::ui_event_h::keycode_t;
@@ -125,7 +125,7 @@ impl Removal {
     /// the same torch back on, resetting the refused-take-off guard.
     fn next(&mut self, depth: i32, items: &[borg_item], first: usize, end: usize, radius: i32) -> Option<Action> {
         self.sync(depth, items, first, end);
-        let light = first + LIGHT_SLOT_OFFSET;
+        let light = light_slot(first);
         for slot in first..end.min(items.len()) {
             if !candidate(&items[slot]) || self.tried(slot, first) >= MAX_TRIES {
                 continue;
@@ -324,7 +324,7 @@ mod tests {
     #[test]
     fn a_paralysis_cursed_torch_never_leaves_an_empty_light_slot() {
         let first = 4;
-        let light = first + LIGHT_SLOT_OFFSET;
+        let light = light_slot(first);
         let end = light + 2;
         let mut items = vec![blank_item(); end];
         let mut torch = cursed(BORG_CURSE_PARALYSIS);
