@@ -6601,3 +6601,26 @@ lead only, RULES 14).
 |---|---|---|---|---|
 | `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2259` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
+
+## Grouped monster messages (#915)
+
+The engine writes the subject of a message about several monsters of one race
+as "N <plural>" (`mon-msg.c:333-345`: "3 cave spiders start moving
+faster."). `guess_race_name` took every name without "The " for the player
+ghost, race `r_max - 1`, which in 4.2 is Morgoth (`mon-init.c:1792-1810`), so
+those messages were lost (seed 2008390085, borg-zoo#596). At 1 the count and
+the plural (monster.txt's `plural:`, or `plural_aux` undone, `mon-desc.c:27-36`)
+name the race, and "N monsters" is an unseen group. A grouped death or blink
+("3 cave spiders die.") removes up to N known monsters of the race, not one
+(`grouped_count`, `borg_update.rs`; review of #943). With this section the
+registry holds **2398** parameters (`track-p` `72651d25` plus
+`kill_grouped_names`). Compiled 0; shipped 1
+in `harness/borg.txt` (P8): every non-unique race of `monster.txt` (523)
+reads back from its grouped subject, with a count of 2 or 15 and with
+" (offscreen)" (`grouped_subjects_of_every_engine_race`), and seed 2008390085
+plays the same keys, state and core trace (danger at every think) with the
+switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
