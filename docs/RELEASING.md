@@ -13,9 +13,9 @@ From the release page, download your platform's package and
 
 | platform | package | then |
 | --- | --- | --- |
-| Linux x86_64 | `borg-reborn-rs-VERSION-linux-x86_64.tar.gz` | `tar -xzf` it, `cd` into it, `./watch-borg.sh` |
+| Linux x86_64 | `borg-reborn-rs-VERSION-linux-x86_64.tar.gz` | `tar -xzf` it, `cd` into it, `./angband` |
 | macOS, Apple silicon | `borg-reborn-rs-VERSION-macos-arm64.tar.gz` | the same; the first start may need *Open Anyway* (the binaries are not signed) |
-| Windows x86_64 | `borg-reborn-rs-VERSION-windows-x86_64.zip` | *Extract all*, then `watch-borg.cmd` in the folder |
+| Windows x86_64 | `borg-reborn-rs-VERSION-windows-x86_64.zip` | *Extract all*, then double-click `angband.exe` in the folder |
 
 Check the download first:
 
@@ -26,21 +26,29 @@ sha256sum -c --ignore-missing SHA256SUMS.txt
 (macOS: `shasum -a 256 -c --ignore-missing SHA256SUMS.txt`; Windows:
 compare `Get-FileHash` in PowerShell with the file's line.)
 
-`PLAYING.txt` in the package says what each platform needs, how to watch
-the Borg (create a character, Ctrl-Z then z) and how to play a game without
-a window (`play-headless.sh` / `play-headless.cmd OUTDIR SEED RACE CLASS
-TURNS`). Linux watches in an X11 window, or in the terminal with
-`--terminal`; macOS and Windows watch in the terminal (the curses
-frontend). Nothing is installed: saves and settings go to `data/` next to
-the launchers.
+`PLAYING.txt` in the package says what each platform needs and how to start
+the game; its `README.md` is upstream Angband's, with a section on the Borg
+(`scripts/release/README-borg.md`): Ctrl-Z, then z. Nothing is installed:
+saves go to `lib/save`, the Borg's settings are `lib/user/borg.txt`.
+
+No `watch-borg` launcher and no `play-headless` runner are shipped (owner,
+`v0.1.0-alpha.1`): the game is started directly; CI plays the packages with
+`scripts/release/play-headless.sh` and `windows/play-headless.ps1`, given the
+package folder as `BORG_PACKAGE_DIR`, and its `lib/` holds empty `save/`, `scores/`, `panic/`
+and `user/archive/` folders and the shipped `lib/user/borg.txt`. Without
+those, a direct start could not save on Windows (the engine creates them only
+on Unix) and played the frozen reborn core. The macOS package is built and
+shipped only with the workflow's `macos` input on. It is off by default:
+macOS plays other games from the same seed, and nobody has watched it play
+yet.
 
 ## What a release contains
 
 | file | what |
 | --- | --- |
-| `borg-reborn-rs-V-linux-x86_64.tar.gz` | `angband` (X11, curses and headless frontends), `angband-headless` (headless only, no X11 library), upstream's `lib/`, the Borg's settings (`borg/borg.txt` as `harness/run.sh` prepares a run's, its scary list, the class files and the errands plans), the launchers, `PLAYING.txt`, `README.md`, the Angband manual as HTML, `LICENSES/`, each binary's `BUILD_ID` and `RELEASE.txt` (commit, upstream commit, borg-rs pin, settings hash), `SHA256SUMS` of every file |
-| `borg-reborn-rs-V-macos-arm64.tar.gz` | as Linux's, with one `angband` (curses and headless frontends; OpenSSL linked in, the system's curses) |
-| `borg-reborn-rs-V-windows-x86_64.zip` | as Linux's, with one static `angband.exe` (curses and headless frontends, OpenSSL and ncurses linked in), `watch-borg.cmd`, `play-headless.cmd` and `.ps1` |
+| `borg-reborn-rs-V-linux-x86_64.tar.gz` | `angband` (X11, curses and headless frontends), `angband-headless` (headless only, no X11 library), upstream's `lib/`, the Borg's settings (`lib/user/borg.txt`, read by the game, as `harness/run.sh` prepares a run's, with its scary list; `borg/` holds the same for reference, with the class files and the errands plans), `PLAYING.txt`, `README.md`, the Angband manual as HTML, `LICENSES/`, each binary's `BUILD_ID` and `RELEASE.txt` (commit, upstream commit, borg-rs pin, settings hash), `SHA256SUMS` of every file |
+| `borg-reborn-rs-V-macos-arm64.tar.gz` | only with the `macos` input: as Linux's, with one `angband` (curses and headless frontends; OpenSSL linked in, the system's curses) |
+| `borg-reborn-rs-V-windows-x86_64.zip` | as Linux's, with one static `angband.exe` (curses and headless frontends, OpenSSL and ncurses linked in) |
 | `borg-reborn-rs-V-src.tar.gz` | the committed tree at the release commit plus `cargo-vendor/` (the crates of `Cargo.lock`, each with its licence) and `.cargo/config.toml`, so it builds offline; `SOURCE.txt` says how |
 | `SHA256SUMS.txt` | every archive's checksum |
 
@@ -96,9 +104,9 @@ MSYS2's ncurses (MIT-style, as upstream's own Windows console build).
 | `docs` | the Angband manual to HTML (Sphinx, upstream's `docconvert`), versioned with the upstream commit |
 | `source` | `scripts/release/source-archive.sh` |
 | `linux` | `harness/build.sh` headless, then with `BORG_X11=ON BORG_GCU=ON`; each binary plays the smoke suite on the default core with the same keys, messages and states as `harness/reference/smoke-borg-rs`; `scripts/release/package.sh linux` |
-| `linux-clean` | in a bare `ubuntu:24.04` container with only the runtime libraries: the checksums, the licence files, `play-headless.sh` playing smoke-warrior-1's keys, messages and states byte for byte, and `watch-borg.sh` opening its window under Xvfb |
-| `macos` | `macos-latest` (Apple silicon; `MACOSX_DEPLOYMENT_TARGET` 14.0), with Homebrew's GNU tools for the harness: the build, smoke twice with the same keys (arm64 plays other games than `smoke-borg-rs`, see above; the job prints how they differ), no Homebrew library linked, `package.sh macos`; then the unpacked package with macOS's own tools only (bash 3.2): the checksums and the three smoke games through `play-headless.sh`, byte for byte the harness's (`scripts/release/compare-games.py`); `watch-borg.sh` in a pseudo-terminal (informative) |
-| `windows` | `windows-latest` with MSYS2's UCRT64 toolchain: the build (Ninja), no MSYS2 DLL linked, `package.sh windows`; then the unzipped package with PowerShell: the checksums and the three smoke games through `play-headless.cmd`, byte for byte |
+| `linux-clean` | in a bare `ubuntu:24.04` container with only the runtime libraries: the checksums, the licence files, CI's own `scripts/release/play-headless.sh` (not shipped; `BORG_PACKAGE_DIR` is the unpacked package) playing smoke-warrior-1's keys, messages and states byte for byte, and `./angband` started directly opening its window under Xvfb |
+| `macos` | only with the `macos` input: `macos-latest` (Apple silicon; `MACOSX_DEPLOYMENT_TARGET` 14.0), with Homebrew's GNU tools for the harness: the build, smoke twice with the same keys (arm64 plays other games than `smoke-borg-rs`, see above; the job prints how they differ), no Homebrew library linked, `package.sh macos`; then the unpacked package with macOS's own tools only (bash 3.2): the checksums and the three smoke games through CI's `play-headless.sh` (`BORG_PACKAGE_DIR`), byte for byte the harness's (`scripts/release/compare-games.py`); `./angband -mgcu` in a pseudo-terminal (informative) |
+| `windows` | `windows-latest` with MSYS2's UCRT64 toolchain: the build (Ninja), no MSYS2 DLL linked, `package.sh windows`; then the unzipped package with PowerShell: the checksums, the three smoke games through CI's `windows/play-headless.ps1` byte for byte, and `angband.exe` started directly saving to `lib\save` |
 | `release` | only when `release` is on (always for a tag push): the notes (`scripts/release/notes.py`), `SHA256SUMS.txt` and `gh release create --draft`; a version with a `-` is marked a prerelease |
 
 ## Cutting a release

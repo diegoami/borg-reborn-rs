@@ -10,6 +10,37 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Confused attack on the grey mushroom patch, shipped (#901)
+
+No parameter added; shipped values changed. Owner, 2026-11-22, after #867
+and #869: "once you are close to him, you attack with your best attack";
+then, for the point-blank divisor, "override that setting for classes that
+are supposed to melee ... melee is infinite, flasks are not".
+
+- **`attack_confused_by_direction`** 0 → **1** (compiled 0). Confused, the
+  Borg also throws, shoots and uses wands, rods and staves at an adjacent
+  monster, by direction key, at the 11/32 confused aim; the cure waits next
+  to an immobile non-unique confuser while an attack is open. See "Confused
+  attacks by direction (#867)" below.
+- **`attack_throw_point_blank_divisor`** 0 → **1** in the common file, with
+  **0** for Warrior, Blackguard, Paladin and Rogue (their class files). 0
+  inherits `attack_arrow_point_blank_divisor` (5; Rogue 3).
+  - At 1 an adjacent non-unique throw rated with `attack_throw_as_melee` is
+    not divided in the ordinary attack chooser (#870), so a caster throws oil
+    at point blank. Attack on sight already bypassed it.
+  - The engine's flask: 1d4 x 3 (`THROWING`, 2 + weight/12) x 3 (`EXPLODE`,
+    `player-attack.c:1296`), about 22 a hit.
+  - At 1 for everyone, the smoke Warrior (CL2-3, the starting Dagger, 1d4)
+    threw oil at an adjacent white worm mass, rated 84 against a full round
+    of blows' 43. The melee classes keep the penalty: a workaround until
+    flasks are spent only when needed (#912).
+- Unchanged and kept 0: `caution_ranged_vs_immobile` (a confused step away
+  would pre-empt the attack, #896) and `caution_ranged_only`.
+
+Not measured: borg-zoo#636 (arms `confused` and `confused-pb`; the class
+split is not one of its arms). Shipped on the owner's decision before the
+measurement; a hypothesis until the zoo reports (RULES 14).
+
 ## Confused attacks by direction (#867)
 
 The registry now holds **2374** parameters (2373 before; one added). Owner,

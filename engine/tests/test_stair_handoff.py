@@ -22,7 +22,8 @@ def state_at(states, turn):
 
 # The town settings the recorded incident predates (#859's five switches off,
 # then #863: the staples' decay, the prepared remedies, the variety depth gate,
-# and the Word of Recall and Phase Door purchases back to #864's values). The
+# and the Word of Recall and Phase Door purchases back to #864's values; #901's
+# two attack settings). The
 # incident classes are Warrior (0) and Mage (1), so only their class lines exist.
 PINNED_TOWN_SETTINGS = [
     ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
@@ -33,6 +34,9 @@ PINNED_TOWN_SETTINGS = [
     ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),
     ("town_device_percent", 0),
     ("caution_recall_blow_model", 0),
+    # #901: the confused attack by direction and the point-blank oil, shipped
+    # after the incident.
+    ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
