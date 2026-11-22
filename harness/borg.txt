@@ -702,6 +702,15 @@ borg_param_recover_unseen_act_age = 30
 
 borg_param_attack_throw_as_melee = 1
 
+# Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
+# throw rated with attack_throw_as_melee. 0 = inherit
+# attack_arrow_point_blank_divisor (5; Rogue 3, Ranger 2); 1 = no penalty, so
+# oil is rated at its damage against a blow. Shipped 1 (owner, 2026-11-22,
+# #901, with attack_confused_by_direction). Attack on sight already bypasses
+# it. Not measured yet: borg-zoo#636, arm confused-pb.
+
+borg_param_attack_throw_point_blank_divisor = 1
+
 # Confused attacks by direction (#867, owner 2026-11-21): 1 = a confused
 # Borg (not blind, not hallucinating) may also throw, shoot and use a wand,
 # rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
@@ -711,9 +720,11 @@ borg_param_attack_throw_as_melee = 1
 # Next to an immobile confuser (a grey mushroom patch, not a unique) the
 # confusion cure waits and the attack goes first, while there is an attack
 # to make.
-# 0 = C (melee only while confused).
+# 0 = C (melee only while confused). Shipped 1 (owner, 2026-11-22, #901:
+# "once you are close to him, you attack with your best attack"). Not
+# measured yet: borg-zoo#636; what is left before it is right in #896.
 
-borg_param_attack_confused_by_direction = 0
+borg_param_attack_confused_by_direction = 1
 
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts

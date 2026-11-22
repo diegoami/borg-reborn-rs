@@ -10,6 +10,29 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Confused attack on the grey mushroom patch, shipped (#901)
+
+No parameter added (the registry still holds **2374**); two shipped values
+changed. Owner, 2026-11-22, after #867 and #869: "once you are close to him,
+you attack with your best attack", with the settings that make it so.
+
+- **`attack_confused_by_direction`** 0 → **1** (compiled 0). Confused, the
+  Borg also throws, shoots and uses wands, rods and staves at an adjacent
+  monster, by direction key, at the 11/32 confused aim; the cure waits next
+  to an immobile non-unique confuser while an attack is open. See "Confused
+  attacks by direction (#867)" below.
+- **`attack_throw_point_blank_divisor`** 0 → **1** (compiled 0 = inherit
+  `attack_arrow_point_blank_divisor`, 5 shipped; Rogue 3, Ranger 2). An
+  adjacent non-unique throw rated with `attack_throw_as_melee` is no longer
+  divided in the ordinary attack chooser; attack on sight already bypassed
+  it (#870).
+- Unchanged and kept 0: `caution_ranged_vs_immobile` (a confused step away
+  would pre-empt the attack, #896) and `caution_ranged_only`.
+
+Not measured: borg-zoo#636 (pilot; the arm `confused-pb` is this pair,
+against `ctl` and `confused`). Shipped on the owner's decision before the
+measurement; a hypothesis until the zoo reports (RULES 14).
+
 ## Confused attacks by direction (#867)
 
 The registry now holds **2374** parameters (2373 before; one added). Owner,
