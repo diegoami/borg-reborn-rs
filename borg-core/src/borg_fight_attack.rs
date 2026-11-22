@@ -5473,17 +5473,32 @@ mod focused_tests {
         assert_eq!(hit_permyriad(100, 60), 6180);
     }
 
-    /// #986: the engine's own roll for oil thrown at Fang (AC 36), read
-    /// under gdb in `random_chance_check` on track-p 4b2c2fcf: 6770 for the
-    /// Elf Paladin 1194051723 (chance 73 at distance 1) and 5668 for the
-    /// Dunadan Druid 1024822556 (chance 52). The fight race rated the same
-    /// throws at 14.894 = 22 x 0.6770 and 12.469 = 22 x 0.5668 HP/turn.
+    /// #986: the engine's hit chance for oil thrown at Fang (AC 36) and at
+    /// a white icky thing (AC 8), as `hit_chance` computed it on track-p
+    /// 4b2c2fcf: gdb read `chance.numerator` in `random_chance_check`
+    /// (z-rand.c:543-547) after `hit_chance` (player-attack.c:196-219).
+    /// 6770 for the Elf Paladin 1194051723 (to-hit 73), 5668 and 8701 for
+    /// the Dunadan Druid 1024822556 (to-hit 52). The fight race's ratings
+    /// follow from the oil's damage, the cap at the HP still needed
+    /// (`focused_launch_damage`; it binds once that is below 22 HP) and
+    /// that chance; then `race_turns` and `wins_race` give the verdict.
+    /// This pins the arithmetic of that path, not `focused_launch_damage`
+    /// itself, which needs a full game state.
     #[test]
-    fn fang_oil_hit_chance_is_the_engines_roll() {
+    fn fang_oil_hit_chance_is_the_engines_chance() {
         assert_eq!(hit_permyriad(73, 36), 6770);
         assert_eq!(hit_permyriad(52, 36), 5668);
-        assert_eq!(22_000 * i64::from(hit_permyriad(73, 36)) / 10_000, 14_894);
-        assert_eq!(22_000 * i64::from(hit_permyriad(52, 36)) / 10_000, 12_469);
+        assert_eq!(hit_permyriad(52, 8), 8701);
+        let oil = i64::from(thrown_damage(1, 4, 0, 20, true, true)) * 1000;
+        assert_eq!(oil, 22_000, "a flask of oil, in milli-HP");
+        let rate = |needed_hp: i64, chance: i32| oil.min(needed_hp * 1000) * i64::from(chance) / 10_000;
+        assert_eq!(rate(26, hit_permyriad(73, 36)), 14_894, "Paladin at 1551: needs 26, cap does not bind");
+        assert_eq!(rate(17, hit_permyriad(73, 36)), 11_509, "Paladin at 1571: needs 17, cap binds");
+        assert_eq!(rate(26, hit_permyriad(52, 36)), 12_469, "Druid at 2342");
+        assert_eq!(rate(5, hit_permyriad(52, 8)), 4_350, "Druid at 2392, the icky thing");
+        assert_eq!(crate::borg_caution::race_turns(26, 14.894, None, 1.0, 0.0), Some((2.0, 0)));
+        assert!(crate::borg_caution::wins_race(2.0, 4.75, 10), "2 x 4.75 = 9.5 < 10: winning");
+        assert!(!crate::borg_caution::wins_race(2.0, 4.75, 9), "HP 9: not winning");
     }
 
     #[test]

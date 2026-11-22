@@ -20,13 +20,22 @@ The run mirrors the zoo's `borgrs.run_cell` (config overrides, argv, `-exact-tur
 - **Hit chance: no gap.** The fight race rates a throw with `focused_launch_damage`. That
   multiplies the damage, capped at the HP still needed, by `hit_permyriad`
   (`borg-core/src/borg_fight_attack.rs:5318`), which is `hit_chance` in
-  `engine/angband/src/player-attack.c:196-219`. A gdb script on `random_chance_check` reads the
-  engine's own roll:
+  `engine/angband/src/player-attack.c:196-219`. A gdb script breaks on
+  `random_chance_check` (`z-rand.c:543-547`) inside `make_ranged_throw`. It reads
+  `chance.numerator`, which is the hit chance `hit_chance` computed, not the random draw.
   - Paladin against Fang: 6770 for the engine; the Borg's 14.894 is 22 × 0.6770.
   - Druid against Fang: 5668; 12.469 is 22 × 0.5668.
-  - White icky thing: 8701; 4.350 is 5 × 0.87.
-  - The gap is 0 on all 7 rated throws. **So there is no fix behind a parameter:** nothing
-    differs.
+  - White icky thing: 8701; 4.350 is 5 × 0.87, with the damage capped at the 5 HP still
+    needed.
+  - The gap is 0 on every throw that has a fight-race rating just before it, 8 in all:
+    - the Paladin's 6 against Fang (game turns 1551, 1571, 1591, 1611, 1621, 1662, all at
+      6770);
+    - the Druid's throw at Fang (2342, rated "not winning"; the throw came from another
+      planner);
+    - the Druid's throw at the icky thing (2392).
+    The engine's chance for every throw of both games is in the cemetery study's
+    `engine-throws.txt`.
+  - **So there is no fix behind a parameter:** nothing differs.
 - **"2.000 turns to kill" is the expected damage, not an assumption of hits.** It is the HP
   still needed over (capped damage × hit chance), rounded up to whole commands
   (`borg_caution.rs:2163-2181`). `wins_race` compares means: 2 × 4.75 = 9.5 against HP 10–11.
@@ -43,9 +52,18 @@ The run mirrors the zoo's `borgrs.run_cell` (config overrides, argv, `-exact-tur
 
 ### Changed
 
-- One unit test, `fang_oil_hit_chance_is_the_engines_roll` in `borg_fight_attack.rs`. It pins
-  the two measured engine values and the race's ratings. **No play change**, so `smoke-borg-rs`
-  is not re-recorded.
+- One unit test, `fang_oil_hit_chance_is_the_engines_chance` in `borg_fight_attack.rs`. It
+  pins:
+  - the engine's hit chance at the three measured (to-hit, AC) pairs: (73, 36), (52, 36) and
+    (52, 8);
+  - the arithmetic of the race's path through its own helpers: `thrown_damage` (22 HP), the cap
+    at the HP still needed (both the uncapped and the capped case), `race_turns` and
+    `wins_race`.
+  - It does not run `focused_launch_damage` itself, which needs a full game state.
+- After review: `scripts/check-param-citations.py --fix` moved the citation of
+  `attack_speed_fight_danger_tenths` (`params.rs`, `docs/CALIBRATION.md`) to the line the new
+  test pushed it to.
+- **No play change**, so `smoke-borg-rs` is not re-recorded.
 
 ### Evidence
 
