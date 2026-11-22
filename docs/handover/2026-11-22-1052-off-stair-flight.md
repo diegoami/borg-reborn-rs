@@ -5,9 +5,13 @@ replan the short escape after assessing the next square. The handoff
 expires if the move fails, danger rises, HP falls or the level changes.
 Existing stair-route and descent checks still apply.
 
-The regression starts on floor and walks past the two alternating squares
-to a down staircase, with one and two moves remaining after the reversal.
-A second check exercises a fresh threat and a failed move.
+The native test runs production movement and caution on fabricated cave
+observations and feeds each queued move back into the Borg. It starts on
+floor and reaches a down staircase with one and two moves remaining after
+the reversal, then checks the descent key. Both weighted and unweighted
+routes are exercised. The unweighted continuation keeps the remaining
+move limit, so a blocked nearby stair cannot send it toward a farther one.
+A unit check exercises a fresh threat and a failed move.
 
 The uninterrupted recording and the native reload are linked from
 [#1052](https://github.com/diegoami/borg-reborn-rs/issues/1052). The

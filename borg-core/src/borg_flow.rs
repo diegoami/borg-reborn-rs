@@ -63,7 +63,7 @@ const BORG_DIG_MOD: i32 = 20;
 const BORG_DIG_HARD: i32 = 40;
 
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
-const GOAL_DARK: i32 = 4;
+pub(crate) const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
 const GOAL_FLEE: i32 = 7;
@@ -658,7 +658,7 @@ fn stair_moves_lower_bound(grid: loc, stairs: &[loc]) -> i32 {
 /// A* with both weighted cost and a move limit. A cheaper route to a
 /// grid may use more moves, so keep each arrival that trades cost for moves.
 /// Queue ties use fewer projected moves, then greater progress and insertion order.
-pub(crate) fn least_cost_stair_path(
+fn least_cost_stair_path(
     start: loc,
     stairs: &[loc],
     depth: i32,
