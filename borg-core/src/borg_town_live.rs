@@ -391,7 +391,14 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
     let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
-    let drop_qty = a.at[2].clamp(1, qty);
+    // A split Restore Life Levels stack leaves the protected copies carried.
+    let drop_qty = if crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+        && crate::borg_item_use::restore_life_reserve(st) > 0
+    {
+        a.at[2].clamp(1, qty)
+    } else {
+        qty
+    };
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
