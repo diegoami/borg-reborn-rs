@@ -22,7 +22,7 @@ with the zoo report's overrides (borg-zoo#668's reproduction section).
   never entered it: the replay has no `# Mode:` line. So the mode exists on
   this core, but nothing told it about a shooter.
 
-**Fix, behind `recover_unseen_shot` (default and shipped 0).** With 1, the
+**Fix, behind `recover_unseen_shot` (compiled default 0; shipped 1 by the owner, 2026-11-22, after the borg-zoo#671 pilot).** With 1, the
 engine's message is tagged `SHOT_BY:Something` and read in
 `handle_late_messages` (where the Borg's grid is current) as an unseen
 attack. The message covers every projection (arrows, bolts, breaths, spit;
@@ -66,6 +66,8 @@ says nothing about distance. Revised after Mavis's review (#998):
   (arms ctl / shot / cure / both, specimen updated after the reviews), which
   the owner starts (RULES 20).
 
-**For the owner.** Whether to ship `recover_unseen_shot = 1` after the zoo
-measures it. #982 (stacked on this PR) is a separate change in the same
+**For the owner.** Shipped on (2026-11-22). The pilot (borg-zoo#671, classes-18)
+saw the rule act in 2 of 18 games with no outcome changed; a world with more
+archers is requested from the zoo to measure it. `smoke-borg-rs` is identical
+with it on (no unseen hit in the three smoke games). #982 (stacked on this PR) is a separate change in the same
 function.
