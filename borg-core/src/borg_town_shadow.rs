@@ -586,7 +586,16 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         }
         {
             let facts = crate::borg_town_budget::Facts::of(st);
-            crate::borg_town_record::first_executable_action(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, budget.home_slots, facts.pack_capacity - stock.pack_slots_used(), facts.allowance())
+            // #939 re-review: an urgent ware that cannot be carried must not
+            // hide an affordable urgent ware that can.
+            crate::borg_town_record::live_selection(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit,
+                budget.home_slots, facts.pack_capacity - stock.pack_slots_used(), facts.allowance(), |blocked| {
+                    let mut others = stock.clone();
+                    for &i in blocked { others.candidates[i].qty = 0; }
+                    let mut b = Budget::of(st, &others, &trip);
+                    replenish_torch_reserve(st, &others, &mut b);
+                    b.urgent
+                })
         }
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
