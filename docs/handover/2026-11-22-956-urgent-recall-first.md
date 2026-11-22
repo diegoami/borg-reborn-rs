@@ -20,4 +20,14 @@ starve Recall at the DL5 gate").
 shipped setting working as written, not changed here; say if it should be
 lower.
 
+The review of #961 found the purchase order inside the chosen set still
+followed the candidate order; `Budget::build` now lists the urgent Recall
+first, so the live selector buys it first.
+
+The same review notes the trade-off this makes: with 140 gold, a 125-gold
+urgent Recall and a 20-gold urgent ration or light, the Recall is bought
+and the ration or light is left unmet, where the old order bought the
+cheaper item. That follows `town_recall_urgent`'s "bought first"; say if a
+basic supply should come first instead.
+
 **Left.** Nothing for this finding.
