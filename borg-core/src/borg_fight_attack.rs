@@ -42,7 +42,7 @@ use crate::borg_magic::{
     borg_spell_okay, borg_spell_okay_fail, borg_spell_fail_rate,
 };
 use crate::borg_projection::{
-    borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
+    borg_distance, borg_inc_motion, borg_los, borg_los_projectable, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
 use crate::borg_update::Detect;
@@ -2445,8 +2445,9 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
                 continue;
             }
 
-            /* Never pass through walls*/
-            if !borg_los(st, y1, x1, ry, rx) {
+            /* project.c:856-863 uses LOS through PROJECT terrain for
+             * the arc footprint. Walkable rubble still blocks that ray. */
+            if !borg_los_projectable(st, y1, x1, ry, rx) {
                 continue;
             }
 
@@ -2784,8 +2785,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
                 break 'check false;
             }
 
-            /* Cant have an obstacle between us */
-            if !borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
+            /* Do not wait for an approach across an obstructed sight line.
+             * Passable rubble can leave the monster waiting on its side. */
+            if !borg_los_projectable(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
                 break 'check false;
             }
 
@@ -5758,6 +5760,16 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
 /// Phase Door, confused or not.
 pub(crate) const KILL_ON_SIGHT: &str = "kill-on-sight";
 
+/// borg-reborn-rs (#969): whether the HP is below the floor under which a
+/// `kill-on-sight` entry is left to the ordinary attack and caution, with a
+/// cure potion in the pack or an escape at hand (`borg_fast_fragile`'s
+/// `has_cure` and `escape_available`).
+fn kill_on_sight_hp_low(st: &mut BorgState) -> bool {
+    let floor = param(Param::attack_kill_on_sight_min_hp_percent);
+    floor > 0 && tr(st, BI_CURHP) * 100 < tr(st, BI_MAXHP) * floor
+        && (crate::borg_fast_fragile::has_cure(st) || crate::borg_fast_fragile::escape_available(st))
+}
+
 /// #760: the category target comes before flight and remains the target on
 /// subsequent thinks. A breeder colony already lost is not an attack entry.
 pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
@@ -5798,6 +5810,22 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
             crate::borg_caution::category_attack_safe(st, i)
         };
         if !safe { continue; }
+        // borg-reborn-rs (#969): below `attack_kill_on_sight_min_hp_percent`
+        // of max HP a `kill-on-sight` entry is not attacked on sight: the
+        // ordinary attack and caution (the heals, Phase Door, flight)
+        // decide, as for any monster, when a cure potion is in the pack or
+        // an escape is at hand (stairs underfoot, a Phase Door that can be
+        // read). Confused next to a grey mushroom patch a swing reaches it
+        // 11/32 of the time (player_confuse_dir) and every spore costs 1d4,
+        // so the attack first had no end. With neither the attack goes on:
+        // confused, no scroll can be read and a step goes astray 75% of
+        // the time, so the swing is the best chance left.
+        if reason == KILL_ON_SIGHT && kill_on_sight_hp_low(st) {
+            borg_note(st, &format!("# Not attacking on sight: {} (kill-on-sight), HP {}/{} below {}%, a cure or an escape at hand (#969)",
+                String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))),
+                tr(st, BI_CURHP), tr(st, BI_MAXHP), param(Param::attack_kill_on_sight_min_hp_percent)));
+            continue;
+        }
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
             String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
         if perform_focused_attack(st, i, attack) { return true; }
