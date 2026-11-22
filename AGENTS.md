@@ -254,8 +254,8 @@ answer with the comment's URL. Findings returned only in chat are not a
 delivered review. Only if you have no write path at all, say so in the
 first line of your answer and give the full review; then, or when the
 owner ran the review and has not posted it, the session posts it
-unedited, and never posts a second copy of a review already on the PR. Posting is not
-the owner's acceptance (RULES 1a). Every review prompt the session writes
+unedited, and never posts a second copy of a review already on the PR.
+Posting is not the owner's acceptance (RULES 1a). Every review prompt the session writes
 says this in its first lines, with the exact command for its PR and the
 other write paths, and repeats the command at its end.
 
