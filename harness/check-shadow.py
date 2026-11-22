@@ -41,7 +41,7 @@ def checked_map(value, allowed, path):
     return value
 
 
-def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False, r4_store=False):
+def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False, r4_equipment=False, r4_store=False, constructed_roots=()):
     if expected_mode not in (None, 'check', 'switch'):
         raise ValueError('expected mode must be check or switch')
     if legacy_r2 and legacy_attack:
@@ -59,6 +59,10 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     files = sorted({p for root in roots for p in Path(root).rglob('shadow-stats.jsonl')})
     if not files:
         raise ValueError('no shadow statistics found')
+    declared_constructed = {p.resolve() for root in constructed_roots for p in Path(root).rglob('shadow-stats.jsonl')}
+    if constructed_roots and (not declared_constructed or not declared_constructed <= {p.resolve() for p in files}):
+        raise ValueError('constructed roots must contain statistics included in the checked roots')
+    run_coverage = {}
     schema = 'borg-reborn-rs/shadow-stats@' + ('8' if store_surface else '7' if equipment_surface else '6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
     allowed = R4_ENTRY_POINTS + ('power.borg_power', 'power.borg_power_equipment') if power_surface else R4_ENTRY_POINTS if item_surface else R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS if complete else ATTACK_SURFACE
     if equipment_surface:
@@ -154,6 +158,18 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
         for name, hits in pure.items():
             entries[name] += hits
             pure_totals[name] += hits
+        if constructed_roots:
+            label = 'constructed_runs' if path.resolve() in declared_constructed else 'natural_runs'
+            if label not in run_coverage:
+                run_coverage[label] = {'runs': 0, 'entry_points': dict.fromkeys(allowed, 0),
+                                       'readonly_points': dict.fromkeys(readonly_allowed, 0)}
+            group = run_coverage[label]
+            group['runs'] += 1
+            for mapping in (stateful, pure):
+                for name, hits in mapping.items():
+                    group['entry_points'][name] += hits
+            for name, hits in readonly.items():
+                group['readonly_points'][name] += hits
     if not all(totals[name] for name in fields):
         raise ValueError(f'insufficient comparison/boundary coverage: {totals}')
     if require_all_entries:
@@ -168,6 +184,16 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     totals['entry_points'] = entries
     totals['pure_points'] = pure_totals
     totals['readonly_points'] = readonly_totals
+    if constructed_roots:
+        for label in ('natural_runs', 'constructed_runs'):
+            run_coverage.setdefault(label, {'runs': 0, 'entry_points': dict.fromkeys(allowed, 0),
+                                            'readonly_points': dict.fromkeys(readonly_allowed, 0)})
+        natural, constructed = run_coverage['natural_runs'], run_coverage['constructed_runs']
+        run_coverage['only_in_constructed_runs'] = {
+            'entry_points': sorted(n for n in allowed if not natural['entry_points'][n] and constructed['entry_points'][n]),
+            'readonly_points': sorted(n for n in readonly_allowed if not natural['readonly_points'][n] and constructed['readonly_points'][n])}
+        run_coverage['limits'] = 'Run provenance is explicitly declared by --constructed-root. Fixture-enabled runs also contain live harness calls; these are not per-call synthetic labels or branch/consumption proof.'
+        totals['coverage_by_run_provenance'] = run_coverage
     return len(files), totals
 
 
@@ -187,9 +213,21 @@ def main():
     parser.add_argument('--r4-item-use', action='store_true', help='require complete @5 read-only/mutable item-use surface; historical readers cannot satisfy it')
     parser.add_argument('--expect-mode', choices=('check', 'switch'),
                         help='require this mode for every record in the supplied arm')
+    parser.add_argument('--constructed-root', action='append', type=Path, default=[],
+                        help='declare fixture-enabled run roots for a separate coverage partition; combined strict gates are unchanged')
+    parser.add_argument('--report', type=Path, help='write a new JSON gate report; refuses to overwrite an existing report')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment, args.r4_store)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power, args.r4_equipment, args.r4_store, args.constructed_root)
+        if args.report:
+            args.report.parent.mkdir(parents=True, exist_ok=True)
+            with args.report.open('x') as output:
+                json.dump({'schema': 'borg-reborn-rs/shadow-gate-report@1',
+                           'require_all_entries': args.require_all_entries, 'expected_mode': args.expect_mode,
+                           'surface': 'r4-store' if args.r4_store else 'other-explicit-reader',
+                           'constructed_root_count': len(args.constructed_root), 'runs': count,
+                           'counts': totals, 'mismatches': 0}, output, indent=2)
+                output.write('\n')
     except (ValueError, KeyError, OSError) as error:
         parser.exit(1, f'shadow check failed: {error}\n')
     print(f'{count} shadow runs (legacy_r2={args.legacy_r2}): {totals}; zero mismatches')

@@ -32,3 +32,25 @@ class PowerPortTest(unittest.TestCase):
                     path.write_text(original.replace(before, after, 1))
                     with self.assertRaisesRegex(ValueError, 'correspondence differs'):
                         audit.audit(root)
+
+    def test_separated_boolean_operator_is_not_short_circuit_and(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in ['borg-core/src/borg_power.rs', 'borg-next/src/stateful/power.rs', 'borg-next/src/lib.rs']:
+                target=root/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(audit.ROOT/name,target)
+            path=root/'borg-next/src/stateful/power.rs';original=path.read_text()
+            before='while *k < lim && *k < n';self.assertIn(before,original)
+            path.write_text(original.replace(before,'while *k < lim & &(*k < n)',1))
+            with self.assertRaisesRegex(ValueError,'correspondence differs'):audit.audit(root)
+            path.write_text(original.replace('lim && *k','lim & & *k',1))
+            with self.assertRaisesRegex(ValueError,'correspondence differs'):audit.audit(root)
+
+    def test_unchecked_static_impl_or_macro_definitions_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for name in ['borg-core/src/borg_power.rs','borg-next/src/stateful/power.rs','borg-next/src/lib.rs']:
+                p=root/name;p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(audit.ROOT/name,p)
+            p=root/'borg-next/src/stateful/power.rs';original=p.read_text()
+            for extra in ['static UNCHECKED: bool = false;', 'impl Unchecked {}', 'macro_rules! unchecked { () => { false } }']:
+                p.write_text(original+'\n'+extra+'\n')
+                with self.assertRaisesRegex(ValueError,'unsupported power module declaration'):audit.audit(root)

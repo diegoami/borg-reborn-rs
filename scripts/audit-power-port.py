@@ -12,6 +12,10 @@ def audit(root=ROOT):
     root = Path(root)
     native = (root / 'borg-core/src/borg_power.rs').read_text().split('#[cfg(test)]', 1)[0]
     port = (root / 'borg-next/src/stateful/power.rs').read_text()
+    # This audit supports functions/constants, not new static/impl/macro definitions.
+    for source in (native, port):
+        if re.search(r'(?m)^\s*(?:pub(?:\([^)]*\))?\s+)?(?:static\b|impl\b|macro_rules!)', mask_non_code(source)):
+            raise ValueError('unsupported power module declaration requires review')
     traits = {}
     for _, _, group, body in re.findall(r'trait_group!\((\w+),\s*(\w+),\s*(\w+)\s*\{(.*?)\}\);',
                                         (root / 'borg-next/src/lib.rs').read_text(), re.S):
@@ -23,7 +27,13 @@ def audit(root=ROOT):
     def normalize(text):
         text = remove_markers(text)
         text = re.sub(r'\bpub(?:\(crate\))?\s+', '', text)
-        text = re.sub(r'\s+', '', mask_non_code(text))
+        text = mask_non_code(text)
+        # Preserve separated punctuation which whitespace removal would fuse
+        # into a different Rust operator (notably && versus & &).
+        compound = {'&&','||','<<','>>','<=','>=','==','!=','+=','-=','*=','/=','%=','&=','|=','^=','->','=>','::','..'}
+        text = re.sub(r'([&|<>=!+*/%:^.\-])\s+(?=([&|<>=!+*/%:^.\-]))',
+                      lambda m: m[1] + ('__PUNCT_GAP__' if m[1]+m[2] in compound else ''), text)
+        text = re.sub(r'\s+', '', text)
         text = text.replace('lettr=|i:u32|st.borg.tr(i);','')
         text = text.replace('st.borg.tr(BI_MAXDEPTH)', 'tr(BI_MAXDEPTH)')
         text = text.replace('borg_rs::decision_api::','crate::decision_api::')
