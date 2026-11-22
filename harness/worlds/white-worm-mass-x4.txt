@@ -1,0 +1,7 @@
+# A white worm mass world (borg-reborn-rs #1008-#1010, after the Mage
+# 461220874 and Priest 399497898 deaths): only the white worm mass is
+# favoured (breeders_only), 4 times as likely against every other race and
+# 2 levels shallower (monster.txt: depth 3), so DL1-3 characters meet it.
+breeder_weight = 4
+breeder_depth_shift = 2
+breeders_only = white worm mass
