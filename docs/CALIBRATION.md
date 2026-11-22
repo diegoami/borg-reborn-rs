@@ -5751,7 +5751,7 @@ Wounds does not cure poison (HEAL_HP 20, CURE:BLIND, TIMED_DEC:CUT and
 CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 (`CURE:POISONED`). A pack of 40 Cure Light Wounds has no poison cure.
 
-- **`town_prepared_percent`** (compiled 0, **shipped 0**; per class with
+- **`town_prepared_percent`** (compiled 0, **shipped 8**; per class with
   `@<class>` or `__<class>`). Above 0, `observe` adds one row per
   situation's remedy (`PREP_POISON`, `PREP_CURSE`, `PREP_INVISIBLE`,
   `PREP_CONFUSION`, `PREP_FEAR`), fed one unit per copy by whatever supplies
