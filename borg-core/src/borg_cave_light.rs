@@ -82,7 +82,7 @@ fn inven_light() -> usize {
 
 /// borg-reborn-rs (#877): the player's light radius, `ABS(cur_light) - 1`
 /// (engine src/cave-view.c:658). -1 lights nothing, 0 the player grid.
-fn light_radius(light: i32) -> i32 {
+pub(crate) fn light_radius(light: i32) -> i32 {
     light.abs() - 1
 }
 

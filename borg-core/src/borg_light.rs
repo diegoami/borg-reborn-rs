@@ -16,7 +16,7 @@
 
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
-use crate::borg_cave_light::BORG_LIGHT;
+use crate::borg_cave_light::{light_radius, BORG_LIGHT};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
@@ -327,7 +327,9 @@ fn entering_unexamined_dark(st: &BorgState) -> bool {
     let Some(direction) = entry_direction(previous, (y, x)) else { return false };
     // The grid just beyond personal light must still be unknown, along a
     // continuous run of known floor. Do not inspect that grid in the engine.
-    dark_frontier((y, x), direction, st.borg.tr(BI_LIGHT).max(1), |y, x| {
+    // borg-reborn-rs (#884): the light radius is BI_LIGHT - 1 (#877), so a
+    // torch looks at distance 2, not 3.
+    dark_frontier((y, x), direction, light_radius(st.borg.tr(BI_LIGHT)).max(1), |y, x| {
         if !engine::square_in_bounds_fully(x, y) {
             FrontierGrid::Blocked
         } else if u32::from(st.cave.grid(x, y).feat) == FEAT_NONE {
@@ -894,7 +896,11 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
         spell_ok = true;
     }
 
-    let light = st.borg.tr(BI_LIGHT);
+    /* borg-reborn-rs (#884): "my light" is the light radius, BI_LIGHT - 1
+     * (#877; engine src/cave-view.c:658), not BI_LIGHT: the grids checked
+     * along the hallway are the lit ones, and the one just beyond is the
+     * first dark grid. No light (radius -1) checks from the player grid. */
+    let light = light_radius(st.borg.tr(BI_LIGHT)).max(0);
     let (cx, cy) = (st.borg.c.x, st.borg.c.y);
 
     /* The four directions in C's order: north, south, east, west. Each

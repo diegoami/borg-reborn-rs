@@ -584,7 +584,10 @@ fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
     }
 
     /* Maximal radius */
-    let r = st.borg.tr(BI_LIGHT) + 1;
+    /* borg-reborn-rs (#884): just outside the torch-lit grids is the light
+     * radius plus one, and the radius is BI_LIGHT - 1 (#877; engine
+     * src/cave-view.c:658). The C Borg's BI_LIGHT + 1 was two grids out. */
+    let r = crate::borg_cave_light::light_radius(st.borg.tr(BI_LIGHT)).max(0) + 1;
 
     /* Reset */
     st.flow.temp_n = 0;
