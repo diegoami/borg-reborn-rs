@@ -6,6 +6,16 @@ no part reads borg-rs. Everything runs the Rust Borg, the only
 implementation built here (SPEC §6). Heavy runs take
 `flock /tmp/angband-validation.lock` (RULES 17).*
 
+
+**The compiler decides the game** (#855). The engine draws random numbers
+inside function arguments (`loc(randint0(w), randint0(h))`), and C leaves
+the order of a call's arguments to the compiler. The references and the
+zoo's games are those of GCC on x86-64, which evaluates them right to left;
+clang (on any processor) and every arm64 compiler evaluate them left to
+right and play other games from the same seed. `build.sh` probes the
+compiler (`harness/arg-order.sh`), refuses a left-to-right one unless
+`BORG_ALLOW_OTHER_GAMES=1`, and records `arg_order=` in `BUILD_ID`.
+
 ## Synthetic generated-depth start (issue #371, synthetic P1)
 
 ```sh

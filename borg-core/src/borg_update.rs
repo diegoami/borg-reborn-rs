@@ -1432,7 +1432,7 @@ pub fn borg_update(st: &mut BorgState) {
     let x = |w: BorgWank| i32::from(w.x);
     // Pass 1 -- stationary monsters
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 0, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 0, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 2 -- stationary objects
     track_wanks(st, false, |st, w| {
@@ -1440,19 +1440,19 @@ pub fn borg_update(st: &mut BorgState) {
     });
     // Pass 3a -- moving monsters (distance 1)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 1, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 1, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3b -- moving monsters (distance 2)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 2, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 2, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3c -- moving monsters (distance 3)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 3, w.t_a, w.t_c, false)
+        observe_kill_move(st, y(w), x(w), 3, w.t_a, w.t_c as i32, false) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 3d -- moving monsters (distance 7, allow changes)
     track_wanks(st, true, |st, w| {
-        observe_kill_move(st, y(w), x(w), 7, w.t_a, w.t_c, true)
+        observe_kill_move(st, y(w), x(w), 7, w.t_a, w.t_c as i32, true) // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
     });
     // Pass 4 -- new objects
     track_wanks(st, false, |st, w| {
