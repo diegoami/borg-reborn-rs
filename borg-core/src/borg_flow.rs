@@ -42,7 +42,7 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_mon_race_flags_h::RF_UNIQUE;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
-    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
+    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE,
     FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::list_tvals_h::{TV_DIGGING, TV_SHOT, TV_STAFF};
@@ -127,6 +127,8 @@ pub struct FlowState {
     pub to_stairs: bool,
     /// A weighted stair route gives one step per observation.
     weighted_flight: WeightedFlight,
+    /// This committed flight explicitly chose an up staircase.
+    up_stair_flight: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -159,6 +161,7 @@ impl Default for FlowState {
             flight_no_danger: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
+            up_stair_flight: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -976,6 +979,7 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
     let f = &mut st.flow;
     copy_data(&mut f.data_flow, &f.data_cost);
     f.weighted_flight = WeightedFlight::None;
+    f.up_stair_flight = why == GOAL_FLEE && who == Some(b"up-stairs");
 
     /* Save the goal type */
     st.borg.goal.type_0 = why as i16;
@@ -1633,8 +1637,36 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     /* Try it */
     if let Some(loc { x, y }) = next {
+        let here = st.borg.c;
+        let known = why == GOAL_FLEE && st.flow.up_stair_flight;
+        let departure = if (why == GOAL_DARK || known) && st.borg.tr(BI_CDEPTH) > 0
+            && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
+        {
+            let stair = if u32::from(st.cave.grid(here.x, here.y).feat) == FEAT_MORE {
+                Some(here)
+            } else if known {
+                st.stairs.up_search_departure
+                    .filter(|search| search.can_renew(st, true) && search.stair != (loc { x, y }))
+                    .map(|search| search.stair)
+            } else if borg_flow_stairs::continuing_up_stair_search(st) {
+                st.stairs.up_search_departure.map(|search| search.stair)
+            } else {
+                None
+            };
+            stair.map(|stair| borg_flow_stairs::UpSearchDeparture {
+                stair,
+                next: loc { x, y },
+                level_started: st.borg.time.level,
+                turn: st.borg.time.now,
+                expected_danger: borg_danger(st, y, x, 1, true, false),
+                known,
+            })
+        } else {
+            None
+        };
         /* Attempt motion */
         if borg_play_step(st, y, x) {
+            st.stairs.up_search_departure = departure;
             return true;
         }
     }
@@ -1650,6 +1682,21 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     /* Nothing to do */
     false
+}
+
+/// A committed exploration flow has a next step that moves away from the
+/// down staircase it just left. The normal flow validates that move again.
+pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
+    if i32::from(st.borg.goal.type_0) != GOAL_DARK {
+        return false;
+    }
+    let step = select_step(st);
+    if step < 0 {
+        return false;
+    }
+    let x = st.borg.c.x + i32::from(engine::ddx_ddd(step as usize));
+    let y = st.borg.c.y + i32::from(engine::ddy_ddd(step as usize));
+    loc { x, y } != stair && !crate::borg_caution::unseen_bump_blocked(st, x, y)
 }
 
 /// The "Look around" part of `borg_flow_old()`: the direction index
