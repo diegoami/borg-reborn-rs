@@ -1521,6 +1521,12 @@ borg_param_fast_fragile_dot_death_percent = 50
 # until the zoo measures it. With 1 the lit shape is the engine's too, and the
 # dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
 borg_param_cave_light_engine_radius = 0
+# #929: a ranged attack with no hit message. 1 = a miss at a monster in view
+# is a miss, not a wall (a thrown or fired miss prints nothing,
+# player-attack.c:1278-1280), and no guessed wall lands on the Borg's own
+# grid. 0 = C's guess (granite under the Borg after every miss at an
+# adjacent target). Ships 0 until the zoo measures it.
+borg_param_update_miss_wall_guess = 0
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
 # is there (100 - decay per monster turn; 100 if immobile or asleep). Melee
