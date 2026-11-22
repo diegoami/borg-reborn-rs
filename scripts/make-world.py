@@ -29,10 +29,11 @@ The config is `key = value` lines (`#` starts a comment):
                             every race not named gets its rarity times the
                             weight, as breeder_weight does for breeders
                             (a world for one pest, e.g. the grey mushroom
-                            patch); a name that matches no race is refused
-  favour_weight = N         the weight for `favour`, at least 2; needed with
-                            `favour` and needs it; not together with the
-                            breeder_* settings
+                            patch); it needs favour_weight; a name that
+                            matches no race is refused
+  favour_weight = N         the weight for `favour`, at least 2; it needs
+                            `favour`; not together with the breeder_*
+                            settings
 
 A rarity above 100 would never be generated (100 / rarity is 0), so a
 weight that pushes one past it is refused.

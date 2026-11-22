@@ -1,7 +1,7 @@
 # A grey mushroom patch world: every other race's rarity is multiplied by 4
 # (monster.txt; the patch keeps depth 1, rarity 1), so the patch's allocation
 # weight against a rarity-r race is about 4x (the engine truncates 100 / rarity,
-# mon-make.c:112, so the realised odds and the patch's share of a level's pool
+# mon-make.c:113, so the realised odds and the patch's share of a level's pool
 # differ; borg-zoo#665 measures the encounters). The level's monster count is
 # unchanged. A stress test for the kill-on-sight policy (#869) and the
 # confused-attack settings (#867, #901).
