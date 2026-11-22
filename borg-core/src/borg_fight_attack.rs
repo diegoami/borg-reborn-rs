@@ -2785,8 +2785,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
                 break 'check false;
             }
 
-            /* Cant have an obstacle between us */
-            if !borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
+            /* Do not wait for an approach across an obstructed sight line.
+             * Passable rubble can leave the monster waiting on its side. */
+            if !borg_los_projectable(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
                 break 'check false;
             }
 
