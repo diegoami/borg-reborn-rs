@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 import subprocess
+import sys
 
 
 def verify_native_pin(repo, cemetery):
@@ -46,33 +47,84 @@ def verify_native_pin(repo, cemetery):
         if actual_paths != set(expected):
             raise ValueError('native subtree contains files outside the pin')
     except (OSError, ValueError, subprocess.CalledProcessError) as error:
-        raise RuntimeError(
+        refused = RuntimeError(
             'Cemetery native tools do not match death-tools-pin.txt; refusing to execute. '
             'Fetch/check out the pinned commit or use a checkout with identical native files. '
-            f'({error})') from error
+            f'({error})')
+        refused.reason = str(error)
+        raise refused from error
+
+
+API_MISSING = ('The death tools now live in borg-cemetery. Update/clone '
+               'https://github.com/diegoami/borg-cemetery beside this repository, '
+               'or set BORG_CEMETERY_DIR to its checkout (death-tool API 1 required).')
+SETUP_HINT = ('Run scripts/setup.sh: it keeps vendor/borg-cemetery at '
+              'death-tools-pin.txt (#902).')
+_NOTED = set()  # fallbacks already reported by this process
+
+
+def check(repo, cemetery):
+    """Raise RuntimeError unless cemetery has API 1 and exactly the pinned native tools."""
+    api = cemetery / 'scripts/native/API_VERSION'
+    try:
+        version = api.read_text().strip() if api.is_file() else None
+    except (OSError, UnicodeDecodeError) as error:
+        version, unreadable = None, error
+    else:
+        unreadable = None
+    if version != '1':
+        refused = RuntimeError(API_MISSING)
+        refused.reason = (f'scripts/native/API_VERSION is unreadable ({unreadable})' if unreadable
+                          else 'scripts/native/API_VERSION is missing' if version is None
+                          else 'scripts/native/API_VERSION is not 1')
+        raise refused
+    verify_native_pin(repo, cemetery)
 
 
 def locate(repo):
     explicit = os.environ.get('BORG_CEMETERY_DIR')
     if explicit:
+        # An explicit checkout is the caller's choice: a mismatch is an error,
+        # never a fallback.
         cemetery = Path(explicit).expanduser().resolve()
-    else:
+        check(repo, cemetery)
+        return cemetery
+    try:
+        common = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--path-format=absolute', '--git-common-dir'], text=True, stderr=subprocess.DEVNULL).strip()
+        primary = Path(common).parent
+    except (OSError, subprocess.CalledProcessError):
+        primary = repo
+    # The sibling of the primary checkout first, then the pinned checkout
+    # scripts/setup.sh keeps in vendor/ (CI's lies at the same path). A
+    # sibling that tracks the Cemetery's main moves past the pin whenever
+    # its native tools change; the vendor/ checkout follows the pin (#902).
+    candidates = []
+    for path in (primary.parent / 'borg-cemetery', repo / 'vendor/borg-cemetery',
+                 primary / 'vendor/borg-cemetery'):
+        if path not in candidates:
+            candidates.append(path)
+    refused = []
+    for cemetery in candidates:
+        # A checkout with no native tools at all is not a candidate; one
+        # whose tools are there but unusable is a refusal (#906 review).
+        if not (cemetery / 'scripts/native').is_dir():
+            continue
         try:
-            common = subprocess.check_output(['git', '-C', str(repo), 'rev-parse', '--path-format=absolute', '--git-common-dir'], text=True, stderr=subprocess.DEVNULL).strip()
-            primary = Path(common).parent
-        except (OSError, subprocess.CalledProcessError):
-            primary = repo
-        cemetery = primary.parent / 'borg-cemetery'
-        if not (cemetery / 'scripts/native/API_VERSION').is_file():
-            # CI tests deliberately clear policy BORG_* variables. Its pinned
-            # checkout is still discoverable without treating tooling as policy.
-            candidates = (repo / 'vendor/borg-cemetery', primary / 'vendor/borg-cemetery')
-            cemetery = next((p for p in candidates if (p / 'scripts/native/API_VERSION').is_file()), cemetery)
-    api = cemetery / 'scripts/native/API_VERSION'
-    if not api.is_file() or api.read_text().strip() != '1':
-        raise RuntimeError('The death tools now live in borg-cemetery. Update/clone https://github.com/diegoami/borg-cemetery beside this repository, or set BORG_CEMETERY_DIR to its checkout (death-tool API 1 required).')
-    verify_native_pin(repo, cemetery)
-    return cemetery
+            check(repo, cemetery)
+        except RuntimeError as error:
+            refused.append((cemetery, error))
+            continue
+        # One line per refused checkout, once per process for that checkout.
+        for path, error in refused:
+            if path not in _NOTED:
+                _NOTED.add(path)
+                print(f'cemetery_tools: using {cemetery}; refused {path}: '
+                      f'{getattr(error, "reason", error)}', file=sys.stderr)
+        return cemetery
+    if refused:
+        every = '; '.join(f'{path}: {getattr(error, "reason", error)}' for path, error in refused)
+        raise RuntimeError(f'{refused[0][1]} Refused: {every}. {SETUP_HINT}')
+    raise RuntimeError(f'{API_MISSING} {SETUP_HINT}')
 
 
 def forward(name, namespace):
