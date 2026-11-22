@@ -3738,6 +3738,71 @@ mod tests {
         assert_eq!(grouped_name(b"cave spiders"), None);
     }
 
+    /// #915: every non-unique race of the engine's monster.txt, as the engine
+    /// writes it for a group (get_subject, mon-msg.c:338-345: its `plural:`,
+    /// else plural_aux, mon-desc.c:27-36), is read back as a race of that
+    /// name; and the singular "The <name>" still is.
+    #[test]
+    fn grouped_subjects_of_every_engine_race() {
+        let txt = include_str!("../../engine/angband/lib/gamedata/monster.txt");
+        // (name, plural, unique) per race, the race index its position + 1
+        let mut races: Vec<(String, Option<String>, bool)> = Vec::new();
+        for line in txt.lines() {
+            if let Some(n) = line.strip_prefix("name:") {
+                races.push((n.to_string(), None, false));
+            } else if let Some(r) = races.last_mut() {
+                if let Some(p) = line.strip_prefix("plural:") {
+                    r.1 = Some(p.to_string());
+                } else if line.starts_with("flags:") && line.contains("UNIQUE") {
+                    r.2 = true;
+                }
+            }
+        }
+        let mut names: Vec<(Vec<u8>, u32)> = Vec::new();
+        let mut uniques: Vec<(Vec<u8>, u32)> = Vec::new();
+        for (i, (name, plural, unique)) in races.iter().enumerate() {
+            if *unique {
+                uniques.push((name.as_bytes().to_vec(), i as u32 + 1));
+            } else {
+                names.push((name.as_bytes().to_vec(), i as u32 + 1));
+                if let Some(p) = plural {
+                    names.push((p.as_bytes().to_vec(), i as u32 + 1));
+                }
+            }
+        }
+        names.sort();
+        uniques.sort();
+        let mut k = KillState::default();
+        k.unique_text = uniques.iter().map(|(n, _)| n.clone()).collect();
+        k.unique_what = uniques.iter().map(|&(_, w)| w).collect();
+        k.normal_text = names.iter().map(|(n, _)| n.clone()).collect();
+        k.normal_what = names.iter().map(|&(_, w)| w).collect();
+        let ghost = races.len() as u32;
+        let flat = |_: u32| 1000;
+        let name_of = |r: u32| races[r as usize - 1].0.as_str();
+        let mut checked = 0;
+        for (name, plural, unique) in &races {
+            if *unique {
+                continue;
+            }
+            for count in [2, 15] {
+                let who = match plural {
+                    Some(p) => format!("{count} {p}"),
+                    None if name.ends_with('s') => format!("{count} {name}es"),
+                    None => format!("{count} {name}s"),
+                };
+                let (r, notes) = guess_race_name(&k, who.as_bytes(), ghost, &flat, true);
+                assert_eq!((name_of(r), notes.len()), (name.as_str(), 0), "{who}");
+                let off = format!("{who} (offscreen)");
+                assert_eq!(name_of(guess_race_name(&k, off.as_bytes(), ghost, &flat, true).0), name, "{off}");
+            }
+            let the = format!("The {name}");
+            assert_eq!(name_of(guess_race_name(&k, the.as_bytes(), ghost, &flat, true).0), name, "{the}");
+            checked += 1;
+        }
+        assert!(checked > 500, "{checked} races");
+    }
+
     #[test]
     fn guess_race_name_matches_c_search() {
         let mut k = KillState::default();
