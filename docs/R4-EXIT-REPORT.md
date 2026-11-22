@@ -5,6 +5,10 @@ The accepted integration is `dc1491b9d31972406c43e71e358842f9b411df97`
 store campaign, which contains the prior power, item-use and wear slices.
 Reused runs and copied constructed states are not additional independent games.
 The source task and immutable milestone review are not yet accepted.
+The recorded local build commit is not served by the source remote; measured
+source equivalence rests on its tree hash
+`46a4cb56f2fd4f3bdf207e0c574468ce2706f57d`, equal to the accepted
+integration tree. Original build identities are retained without relabelling.
 
 All three smoke arms and all three full45 arms match the retained accepted
 wear baseline in keys, messages, state, core trace, endpoints and all 2,091
@@ -32,13 +36,18 @@ The typed boundary preserves mutable state, output scores, complete item
 arguments, native ordering and transaction timing. Source audits compare
 accepted/native/owned bodies and reject literal drift, including matching
 native/owned mutants with honestly declared seams. Runtime fault rejection
-and repaired controls supplement the lexical proof.
+and repaired controls supplement the lexical proof. The separate literal-mutant
+run exits zero in check mode while recording two mismatches; detection rests
+on those mismatch records, not a nonzero game exit. Its driver incorrectly
+expected a nonzero exit; that failed expectation is preserved in the artifact.
 
 Engine facts, stock observations, notices, reserve/identify family policy,
 M13 town_live/town_shadow/usefulness/utility/solver/packing/record/trip and
 configured dynamic power formulas remain shared. Replaying an opaque service
 is not independent ownership of its choices. Adjacent enchant/decurse remains
-under #680. #293's replacement shopping plan is not delivered or closed.
+shared in this receiving baseline. The P contract #680 is complete on
+track-p via #773; adoption of an owner-accepted promotion and independent R
+ownership remain separate work, tracked by #1020. #293's replacement shopping plan is not delivered or closed.
 
 Constructed purchase and withdrawal controls queue commands on copied memory;
 the engine does not consume them. Positive queued actions are not proof of

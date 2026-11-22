@@ -12,7 +12,8 @@ locally and checksum-identified; the package is not a standalone replay archive.
 The owner explicitly approved this exact runtime metadata publication. Cemetery
 PR #114 retains it; R438-EVIDENCE-RECEIPT.json pins the immutable containing
 commit and original manifest. The separate CI evidence job checks payload
-hashes, qualified original record bytes, canonical sidecars and aliases using
+an exact file allow-list, qualified original record bytes, canonical sidecars
+and the exact alias inventory under the evidence root using
 the exact pinned Cemetery identity implementation. Historical R364/R365/R435
 receipts and their reconciliation workflow remain unchanged.
 
@@ -20,3 +21,12 @@ The source PR must pass CI and wait for owner review completion before merge.
 Then freeze an immutable review/R4-SHA into review/track-r-baseline with a pinned
 review prompt and stop. No R5, main or global-reviewed promotion. #293 remains
 open and shared maintenance #680 is not silently counted as ported.
+
+Claude task review found no blockers. Its nonblocking verifier notes are
+addressed by rejecting undeclared files/aliases and dirty evidence checkouts,
+requiring a sealed originals index and contained package paths, and testing
+the real CLI with temporary Git repositories. The CLI tests use a minimal
+pinned identity-service fixture; canonical ID semantics remain checked using
+the actual pinned Cemetery implementation on the published evidence. #680
+is complete on track-p; carry and independent R ownership remain #1020.
+The corrected head requires fresh CI and review of this reporting delta.
