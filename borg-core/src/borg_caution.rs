@@ -2518,7 +2518,11 @@ fn status_blow_priced(effect: &[u8]) -> bool {
         | b"EAT_FOOD" | b"EAT_LIGHT" | b"DISENCHANT" | b"DRAIN_CHARGES")
 }
 
-/// #1010: poison costs 1 HP a world tick while its timer runs (game-world.c:
+/// #1010: the fight's rate of the poison timer; #880's `recall_poison_hp`
+/// is the Recall delay's bounded window (from the earliest strike, at most
+/// the timer the poisoners can add). Both rest on the same engine fact, 1 HP
+/// a world tick, which is the reference: change one, check the other.
+/// Poison costs 1 HP a world tick while its timer runs (game-world.c:
 /// 513-515; a tick is 10 game turns, game-world.c:1080-1081), and each hit
 /// adds 5 + randint1(rlev) ticks, more than a tick a hit: a poisoner in
 /// contact keeps the timer running. In Borg turns that is `10 / energy` HP a
@@ -2542,7 +2546,8 @@ fn recall_blow_unmodelled(effect: &[u8]) -> bool {
     effect == b"SHATTER"
 }
 
-/// #880: poison is one timer that costs 1 HP per world tick while it runs
+/// #880: (see also #1010's `poison_hp_per_turn`, the same 1 HP a world tick
+/// as a fight's rate per Borg turn.) Poison is one timer that costs 1 HP per world tick while it runs
 /// (game-world.c:513-515; process_world every ten game turns,
 /// game-world.c:1080-1081). Each POISON hit adds 5 + randint1(rlev) ticks
 /// (mon-blows.c:683-684, rlev the race level); POISONED is not
@@ -2879,6 +2884,24 @@ pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_
 
 #[cfg(test)]
 mod category_threat_tests {
+    /// #1010 (review of #1015, F3): `category_attack_safe_with` reads the
+    /// switch on the gated path and then judges `unpriced_damage` and the
+    /// poison rate, before the default `unknown_damage` test. It needs the
+    /// engine, so this pins its source (the `recall_restricts` pattern).
+    #[test]
+    fn the_target_test_reads_the_price_switch_before_its_default() {
+        let src = include_str!("borg_caution.rs");
+        let body = &src[src.find(concat!("pub(crate) fn category_attack_", "safe_with(")).unwrap()..];
+        let body = &body[..body.find("\n}\n").unwrap()];
+        let switch = body.find(concat!("Param::caution_attack_", "price_status_blows")).expect("reads the switch");
+        let default = body.find(concat!("!target_damage.", "unknown_damage &&")).expect("the default test");
+        assert!(switch < default, "the switch is read before the default test");
+        let priced = &body[switch..default];
+        for part in [concat!("target_damage.", "unpriced_damage"), concat!("poison_hp_", "per_turn("), "return "] {
+            assert!(priced.contains(part), "{part}");
+        }
+    }
+
     /// #1010: the white worm mass's poison is priced, a paralyzer is not.
     #[test]
     fn poison_and_drains_are_priced_paralysis_is_not() {

@@ -38,3 +38,20 @@ One case, not a result (RULES 14).
 - **Measurement:** a borg-zoo arm with this switch, and with it plus
   #1009's `caution_breeder_danger_damage_only`; deaths to worm masses and
   poison. Not filed (RULES 20).
+
+### After the review (PR #1015, pinned `f76d6ea6`)
+
+- F1: synchronized with `track-p` `72651d25` (citation conflicts resolved by
+  keeping this PR's side, then `check-param-citations.py --fix`; registry
+  2397 to 2398). The new parameter's citation is the read line again (2876;
+  the lenient checker had accepted the function's first line).
+- F2: the winning-fight half of #1010 is filed as #1039 (with #1011's
+  observation: an all-HURT breeder is still a winning fight on a lost
+  level). `Closes #1010` stays: #1010's attack-on-sight half is done here,
+  the rest has its own number.
+- F3: `the_target_test_reads_the_price_switch_before_its_default` pins the
+  wiring in `category_attack_safe_with` (a source test: the function needs
+  the engine); removing the switch's block fails it (checked).
+- F4: `poison_hp_per_turn` and #880's `recall_poison_hp` now name each other:
+  the same 1 HP a world tick, as a fight's rate and as the Recall window's
+  bounded total.
