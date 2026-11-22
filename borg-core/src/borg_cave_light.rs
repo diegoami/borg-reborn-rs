@@ -17,6 +17,7 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
+use crate::borg_projection::borg_los_projectable;
 use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
 use crate::params::{value, Param};
 use crate::state::BorgState;
@@ -133,6 +134,9 @@ pub fn borg_update_light(st: &mut BorgState) {
     let cy = st.borg.c.y;
     let cx = st.borg.c.x;
     let light = light_radius(light, class, engine);
+    /* #884: with the engine's radius, the grids lit are also the engine's
+     * shape: distance() <= radius (see engine_shape) */
+    let engine_shape = engine != 0;
 
     /* Player grid */
     borg_cave_light_hack(st, cy, cx);
@@ -153,7 +157,18 @@ pub fn borg_update_light(st: &mut BorgState) {
     }
 
     /* Radius 2 -- lantern radius */
-    if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
+    if engine_shape && light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
+        /* #884: the grids at distance 2, (2,0) and (2,1), each in line of
+         * sight for light on the Borg's map (reviews of #894: the engine's
+         * add_light tests los() per grid, src/cave-view.c:625-640, through
+         * projectable grids only, so not through passable rubble; C's proxy
+         * gated (2,1) on (2,0) being floor) */
+        for (dy, dx) in RADIUS_2 {
+            if borg_los_projectable(st, cy, cx, cy + dy, cx + dx) {
+                borg_cave_light_hack(st, cy + dy, cx + dx);
+            }
+        }
+    } else if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
         /* South of the player */
         if borg_cave_floor_bold(st, cy + 2, cx) {
             borg_cave_light_hack(st, cy + 2, cx);
@@ -190,66 +205,171 @@ pub fn borg_update_light(st: &mut BorgState) {
         let p = light.min(5);
 
         /* South-East of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx + 3) {
+        /* #884: C's (3,3) corners are at distance 4; not with the engine's
+         * shape (the box below lights them at radius 4+ when viewable) */
+        if !engine_shape && borg_cave_floor_bold(st, cy + 3, cx + 3) {
             borg_cave_light_hack(st, cy + 3, cx + 3);
         }
 
         /* South-West of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx - 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy + 3, cx - 3) {
             borg_cave_light_hack(st, cy + 3, cx - 3);
         }
 
         /* North-East of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx + 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy - 3, cx + 3) {
             borg_cave_light_hack(st, cy - 3, cx + 3);
         }
 
         /* North-West of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx - 3) {
+        if !engine_shape && borg_cave_floor_bold(st, cy - 3, cx - 3) {
             borg_cave_light_hack(st, cy - 3, cx - 3);
         }
 
-        /* Maximal north */
-        let min_y = (cy - p).max(0);
+        /* Scan the maximal box (#958: outer_ring_grids) */
+        let lit = outer_ring_grids(cy, cx, p, engine_shape,
+            |y, x| st.cave.grid(x, y).info & BORG_VIEW != 0,
+            |y, x| borg_los_projectable(st, cy, cx, y, x));
+        for (y, x) in lit {
+            /* This grid is "torch lit" */
+            borg_cave_light_hack(st, y, x);
+        }
+    }
+}
 
-        /* Maximal south */
-        let max_y = (cy + p).min(AUTO_MAX_Y - 1);
+/// The outer ring (radius 3+) of the Borg's own light, `(y, x)` from
+/// `(cy, cx)` up to radius `p`: the grids to torch-light. `in_view` is
+/// `BORG_VIEW`, `los_light` the line of sight for light (#958, P7 review;
+/// asked only with the engine's shape). Pure, so a test runs the scan.
+fn outer_ring_grids(cy: i32, cx: i32, p: i32, engine_shape: bool,
+    in_view: impl Fn(i32, i32) -> bool, los_light: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    let mut lit = Vec::new();
+    /* Maximal north */
+    let min_y = (cy - p).max(0);
 
-        /* Maximal west */
-        let min_x = (cx - p).max(0);
+    /* Maximal south */
+    let max_y = (cy + p).min(AUTO_MAX_Y - 1);
 
-        /* Maximal east */
-        let max_x = (cx + p).min(AUTO_MAX_X - 1);
+    /* Maximal west */
+    let min_x = (cx - p).max(0);
 
-        /* Scan the maximal box */
-        for y in min_y..=max_y {
-            for x in min_x..=max_x {
-                let dy = (cy - y).abs();
-                let dx = (cx - x).abs();
+    /* Maximal east */
+    let max_x = (cx + p).min(AUTO_MAX_X - 1);
 
-                /* Skip the "central" grids (above) */
-                if dy <= 2 && dx <= 2 {
-                    continue;
-                }
+    /* Scan the maximal box */
+    for y in min_y..=max_y {
+        for x in min_x..=max_x {
+            let dy = (cy - y).abs();
+            let dx = (cx - x).abs();
 
-                /* Approximate the distance "as the bird flies" (straight-line).
-                 * Ignores obstacles and does not follow walkable paths like
-                 * pathfinding code elsewhere.
-                 */
-                let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
+            /* Approximate the distance "as the bird flies" (straight-line).
+             * Ignores obstacles and does not follow walkable paths like
+             * pathfinding code elsewhere.
+             */
+            let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
 
-                /* Skip distant grids */
-                if d > p {
-                    continue;
-                }
+            /* Skip the "central" grids (above): C's 5x5 square, or
+             * (#884, engine shape) distance <= 2, so (2,2) at distance
+             * 3 is lit here */
+            if if engine_shape { d <= 2 } else { dy <= 2 && dx <= 2 } {
+                continue;
+            }
 
-                /* Viewable, nearby, grids get "torch lit" */
-                if st.cave.grid(x, y).info & BORG_VIEW != 0 {
-                    /* This grid is "torch lit" */
-                    borg_cave_light_hack(st, y, x);
-                }
+            /* Skip distant grids */
+            if d > p {
+                continue;
+            }
+
+            /* Viewable, nearby, grids get "torch lit" (#958, P7 review:
+             * with the engine's shape, also in line of sight for light,
+             * as radius 2: add_light tests los() per grid,
+             * src/cave-view.c:625-640) */
+            if outer_ring_lit(in_view(y, x), engine_shape, || los_light(y, x)) {
+                /* This grid is "torch lit" */
+                lit.push((y, x));
             }
         }
+    }
+    lit
+}
+
+/// #958 (P7 review): whether a viewable grid of the outer ring (radius 3+)
+/// is torch lit. C's proxy: in view. With the engine's shape (#884), as the
+/// radius-2 ring: also in line of sight for light, so passable rubble, which
+/// the view crosses, does not let light through (src/cave-view.c:625-640).
+fn outer_ring_lit(in_view: bool, engine_shape: bool, los_light: impl FnOnce() -> bool) -> bool {
+    in_view && (!engine_shape || los_light())
+}
+
+/// #884: the Borg's own light radius under `cave_light_engine_radius`, for
+/// the code that looks at or just beyond the edge of its light (the dark
+/// flow, the dark frontier, Light Beam). Switch 0: `BI_LIGHT`, C's.
+pub(crate) fn own_light_radius(st: &BorgState) -> i32 {
+    light_radius(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), value(Param::cave_light_engine_radius))
+}
+
+/// #884: whether the Borg's own light takes the engine's shape
+/// (`cave_light_engine_radius` 1), for the code outside this file that
+/// walks to the edge of the light (the dark frontier).
+pub(crate) fn engine_light_shape() -> bool {
+    value(Param::cave_light_engine_radius) != 0
+}
+
+/// #884: the grids of the engine's shape at `distance()` 2, `(dy, dx)` from
+/// the player: (2,0) and (2,1) in each direction. C lights (2,2) north and
+/// south, at distance 3, and misses (2,1).
+const RADIUS_2: [(i32, i32); 12] = [
+    (2, 0), (2, 1), (2, -1), (-2, 0), (-2, 1), (-2, -1),
+    (0, 2), (1, 2), (-1, 2), (0, -2), (1, -2), (-1, -2),
+];
+
+/// The game's `distance()` (engine src/cave-view.c:38): the longer leg plus
+/// half the shorter.
+pub(crate) fn engine_distance(dy: i32, dx: i32) -> i32 {
+    let (ay, ax) = (dy.abs(), dx.abs());
+    if ay > ax { ay + (ax >> 1) } else { ax + (ay >> 1) }
+}
+
+#[cfg(test)]
+mod tests_884 {
+    use super::{engine_distance as distance, RADIUS_2};
+
+    #[test]
+    fn the_outer_ring_scan_skips_a_grid_the_light_cannot_reach() {
+        // The Borg at (10,10) with radius 3; everything in view, and rubble
+        // blocking the light to (10,13) only.
+        let los = |y: i32, x: i32| (y, x) != (10, 13);
+        let engine = super::outer_ring_grids(10, 10, 3, true, |_, _| true, los);
+        assert!(!engine.contains(&(10, 13)), "the engine's light stops at the rubble (#958)");
+        assert!(engine.contains(&(10, 7)), "the other side is lit");
+        // C's proxy lights it on the view alone.
+        let c = super::outer_ring_grids(10, 10, 3, false, |_, _| true, los);
+        assert!(c.contains(&(10, 13)));
+        // Nothing out of view is lit, whatever the light.
+        assert!(super::outer_ring_grids(10, 10, 3, true, |_, _| false, |_, _| true).is_empty());
+    }
+
+    #[test]
+    fn outer_ring_needs_light_line_of_sight_with_the_engine_shape() {
+        // C's proxy: in view is enough, the light test is not asked.
+        assert!(super::outer_ring_lit(true, false, || panic!("not asked")));
+        assert!(!super::outer_ring_lit(false, false, || true));
+        // Engine shape: in view and in line of sight for light (#958).
+        assert!(super::outer_ring_lit(true, true, || true));
+        assert!(!super::outer_ring_lit(true, true, || false), "rubble the view crosses blocks the light");
+        assert!(!super::outer_ring_lit(false, true, || true));
+    }
+
+    #[test]
+    fn radius_two_grids_are_the_distance_two_grids() {
+        let mut lit: Vec<(i32, i32)> = RADIUS_2.to_vec();
+        lit.sort_unstable();
+        let mut want: Vec<(i32, i32)> = (-2..=2)
+            .flat_map(|dy| (-2..=2).map(move |dx| (dy, dx)))
+            .filter(|&(dy, dx)| distance(dy, dx) == 2)
+            .collect();
+        want.sort_unstable();
+        assert_eq!(lit, want);
     }
 }
 
