@@ -1389,9 +1389,14 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 /// the known staircases. Paths use known floor only (unknown grids are
 /// walls; monsters, which move, are ignored).
 /// - Mode 1 refuses a dead end: a grid whose every known path out passes
-///   through the Borg's own grid.
+///   through the Borg's own grid, which happens only where the Borg's grid
+///   is the only link (a corridor's end, a pocket behind one square). In a
+///   lattice room every square has two links: mode 1 refuses nothing there
+///   (review of #953, F1).
 /// - Mode 2 also refuses a grid farther from the way out (by known path)
-///   than the Borg's own grid.
+///   than the Borg's own grid: in a lattice room, the mode that acts.
+/// - Both refuse a grid the Borg sees but has not mapped (FEAT_NONE): it is
+///   not known floor, so it has no known path out (F3, #881 part 3).
 ///
 /// Nothing is refused when the Borg itself has no known path out (no
 /// information), or when it already stands on the way out.
@@ -1404,41 +1409,62 @@ pub(crate) struct RetreatExits {
 impl RetreatExits {
     fn for_think(st: &BorgState) -> Option<Self> {
         let mode = p(Param::caution_retreat_dead_end);
-        if mode == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        if mode == 0 {
             return None;
         }
-        let breeders = known_breeders(st);
-        let reach = p(Param::danger_monster_max_distance);
-        if !breeders.iter().any(|&b| engine::distance(b, st.borg.c) <= reach) {
-            return None;
-        }
-        let clear = p(Param::caution_retreat_dead_end_distance);
         let passable = |x: i32, y: i32| {
             (1..AUTO_MAX_X - 1).contains(&x) && (1..AUTO_MAX_Y - 1).contains(&y) && {
                 let ag = st.cave.grid(x, y);
                 borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
             }
         };
+        let stair = |x: i32, y: i32| {
+            let feat = u32::from(st.cave.grid(x, y).feat);
+            feat == FEAT_LESS || feat == FEAT_MORE
+        };
+        let gates = ExitGates {
+            mode,
+            depth: st.borg.tr(BI_CDEPTH),
+            reach: p(Param::danger_monster_max_distance),
+            clear: p(Param::caution_retreat_dead_end_distance),
+        };
+        Self::build(gates, st.borg.c, &known_breeders(st), &passable, &stair, AUTO_MAX_X, AUTO_MAX_Y)
+    }
+
+    /// The rule's gates and its map, from the Borg's knowledge given as
+    /// plain data (so the gates are testable without a game): None when the
+    /// mode is 0, in town, with no known breeder within `reach` of the Borg,
+    /// when the Borg has no known path out, or when it stands on the way out.
+    fn build(
+        gates: ExitGates,
+        borg: loc,
+        breeders: &[loc],
+        passable: &dyn Fn(i32, i32) -> bool,
+        stair: &dyn Fn(i32, i32) -> bool,
+        width: i32,
+        height: i32,
+    ) -> Option<Self> {
+        if gates.mode == 0 || gates.depth == 0 {
+            return None;
+        }
+        if !breeders.iter().any(|&b| engine::distance(b, borg) <= gates.reach) {
+            return None;
+        }
         let mut out = Vec::new();
-        for y in 1..AUTO_MAX_Y - 1 {
-            for x in 1..AUTO_MAX_X - 1 {
+        for y in 1..height - 1 {
+            for x in 1..width - 1 {
                 let at = loc { x, y };
-                if !passable(x, y) {
-                    continue;
-                }
-                let feat = u32::from(st.cave.grid(x, y).feat);
-                if feat == FEAT_LESS || feat == FEAT_MORE || breeders.iter().all(|&b| engine::distance(b, at) >= clear) {
+                if passable(x, y) && (stair(x, y) || breeders.iter().all(|&b| engine::distance(b, at) >= gates.clear)) {
                     out.push(at);
                 }
             }
         }
-        let map = exit_map(&passable, AUTO_MAX_X, AUTO_MAX_Y, &out, st.borg.c);
-        let borg = map.at(st.borg.c.x, st.borg.c.y);
+        let map = exit_map(passable, width, height, &out, borg);
         // No known way out, or on it already: nothing to keep to.
-        if borg.0.is_none() || borg.0 == Some(0) {
-            return None;
+        match map.at(borg.x, borg.y).0 {
+            None | Some(0) => None,
+            Some(_) => Some(RetreatExits { mode: gates.mode, borg: (borg.x, borg.y), map }),
         }
-        Some(RetreatExits { mode, borg: (st.borg.c.x, st.borg.c.y), map })
     }
 
     fn refuses(&self, x: i32, y: i32) -> bool {
@@ -1446,7 +1472,20 @@ impl RetreatExits {
     }
 }
 
-/// The known breeders' grids (the kills of an RF_MULTIPLY race).
+/// The settings `RetreatExits::build` reads: the mode, the depth, the reach
+/// of the breeder gate (`danger_monster_max_distance`) and the way out's
+/// distance from the breeders (`caution_retreat_dead_end_distance`).
+#[derive(Clone, Copy)]
+struct ExitGates {
+    mode: i32,
+    depth: i32,
+    reach: i32,
+    clear: i32,
+}
+
+/// The known breeders' grids (the kills of an RF_MULTIPLY race). The race
+/// bound is the one `breeder_exit` and `slow_crowd_exit` use (review of
+/// #953, F5: kept as theirs, not changed here).
 fn known_breeders(st: &BorgState) -> Vec<loc> {
     let mut breeders = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
@@ -1518,14 +1557,13 @@ fn exit_refuses(map: &ExitMap, mode: i32, borg: (i32, i32), at: (i32, i32)) -> b
     }
     let (here, _) = map.at(borg.0, borg.1);
     let (there, out_without_borg) = map.at(at.0, at.1);
+    // No known path out without the Borg's grid. This also covers a grid
+    // with no known path out at all (`there` None), such as one the Borg
+    // sees but has not mapped (FEAT_NONE): it is not known floor.
     if !out_without_borg {
         return true;
     }
-    mode >= 2 && match (here, there) {
-        (Some(h), Some(t)) => t > h,
-        (Some(_), None) => true,
-        _ => false,
-    }
+    mode >= 2 && matches!((here, there), (Some(h), Some(t)) if t > h)
 }
 
 /// Lava burns for 100+1d100 fire damage a turn: a Borg that is not immune to
@@ -6648,6 +6686,65 @@ mod breeder_tests {
         assert!(exit_refuses(&map, 1, (4, 4), (2, 6)));
         let map = exit_map(&passable, 9, 7, &out, loc { x: 5, y: 5 });
         assert!(!exit_refuses(&map, 1, (5, 5), (2, 6)));
+    }
+
+    /// A lattice room (squares linked only diagonally) under a corridor, as
+    /// the priest's room is: every square has two or more links.
+    const LATTICE: [&str; 9] = [
+        "###########",
+        "#.........#",
+        "#####.#####",
+        "####,#,####",
+        "###,#,#,###",
+        "####,#,####",
+        "###,#,#,###",
+        "####,#,####",
+        "###########",
+    ];
+
+    /// Review of #953, F1: in a lattice the corner square 3,6 keeps a second
+    /// link (4,7) beside the Borg's (4,5), so mode 1 refuses nothing; mode 2
+    /// refuses it, one step farther from the corridor than the Borg.
+    #[test]
+    fn in_a_lattice_room_mode_1_refuses_nothing_and_mode_2_the_corner() {
+        let passable = map_passable(&LATTICE);
+        let out: Vec<loc> = (1..10).map(|x| loc { x, y: 1 }).collect();
+        let borg = loc { x: 4, y: 5 };
+        let map = exit_map(&passable, 11, 9, &out, borg);
+        assert_eq!(map.at(4, 5).0, Some(4));
+        assert_eq!(map.at(3, 6).0, Some(5));
+        let b = (4, 5);
+        for at in [(3, 4), (5, 4), (3, 6), (5, 6)] {
+            assert!(!exit_refuses(&map, 1, b, at), "mode 1, {at:?}");
+        }
+        assert!(exit_refuses(&map, 2, b, (3, 6)), "the corner, farther out");
+        assert!(exit_refuses(&map, 2, b, (5, 6)), "deeper in");
+        assert!(!exit_refuses(&map, 2, b, (3, 4)), "toward the door");
+        assert!(!exit_refuses(&map, 2, b, (5, 4)), "toward the door");
+    }
+
+    /// Review of #953, F11: the gates of `RetreatExits::build`.
+    #[test]
+    fn the_dead_end_rule_is_inert_outside_its_gates() {
+        let passable = map_passable(&LATTICE);
+        let no_stair = |_: i32, _: i32| false;
+        let gates = ExitGates { mode: 2, depth: 1, reach: 20, clear: 6 };
+        let worm = [loc { x: 6, y: 7 }];
+        let borg = loc { x: 4, y: 5 };
+        let build = |gates, borg, breeders: &[loc]| RetreatExits::build(gates, borg, breeders, &passable, &no_stair, 11, 9);
+        let exits = build(gates, borg, &worm).expect("in the room, a worm near: the rule is on");
+        assert!(exits.refuses(5, 6) && !exits.refuses(5, 4));
+        assert!(build(ExitGates { mode: 0, ..gates }, borg, &worm).is_none(), "mode 0");
+        assert!(build(ExitGates { depth: 0, ..gates }, borg, &worm).is_none(), "in town");
+        assert!(build(gates, borg, &[]).is_none(), "no breeder known");
+        assert!(build(ExitGates { reach: 2, ..gates }, borg, &worm).is_none(), "the breeder out of reach");
+        assert!(build(gates, loc { x: 8, y: 1 }, &worm).is_none(), "on the way out");
+        assert!(build(ExitGates { clear: 30, ..gates }, borg, &worm).is_none(), "no way out known");
+        // A staircase is a way out even next to the breeder.
+        let stair = |x: i32, y: i32| (x, y) == (6, 5);
+        let exits = RetreatExits::build(ExitGates { clear: 30, ..gates }, borg, &worm, &passable, &stair, 11, 9)
+            .expect("the staircase is the way out");
+        assert!(exits.refuses(3, 4), "away from the staircase, mode 2");
     }
 
     #[test]
