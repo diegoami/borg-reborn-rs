@@ -5680,17 +5680,17 @@ them.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:47` |
-| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:283` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:433` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:435` |
-| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:488` |
-| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:289` |
-| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:290` |
-| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:291` |
+| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:313` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:475` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:477` |
+| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:534` |
+| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:319` |
+| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:320` |
+| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:321` |
 | `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:292` |
-| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:400` |
-| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:378` |
-| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:364` |
+| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:443` |
+| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:420` |
+| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:388` |
 
 #926 added the last three, each 0 (today's play), none shipped:
 
@@ -5705,8 +5705,11 @@ them.
   Necromancer 1398933929 at HP 8: mean 7.6, median 8, maximum 12; P(death)
   31.8%.
 - `fast_fragile_count_dot`: adds the Borg's own poison and cut ticks
-  (game-world.c:513-538) before its next action; when they alone take it
-  below 0 HP, Phase Door and the stairs give way and the heal ban lifts.
+  (game-world.c:513-538) expected before its next action (10 / its energy
+  world ticks). When they alone take it below 0 HP, it drinks the carried
+  potion that stops them (a cut up to 20: CLW; deeper: CSW or CCW; poison:
+  Neutralize Poison or CCW; both: CCW) before the attack, Phase Door and
+  the stairs, and the heal ban lifts.
 
 - `fast_fragile_policy=1`: a monster marked fast-fragile is attacked by the
   focused planner's best attack every turn, without attack-on-sight's

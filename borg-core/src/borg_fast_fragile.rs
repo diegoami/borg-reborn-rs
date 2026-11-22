@@ -99,8 +99,9 @@ pub(crate) fn escape_wanted(incoming: f64, cur_hp: i32, need_hp: f64, per_turn: 
 }
 
 /// #926: the distribution of one blow's damage, `pmf[d]` = P(d HP): a hit
-/// (`permyriad` in 10,000, `test_hit`, player-attack.c:174-215) rolls
-/// `base + dice d sides` (`randcalc`, mon-attack.c:609; `m_bonus` enters at
+/// (`permyriad` in 10,000: `check_hit`, mon-attack.c:527-533, against
+/// AC + to_a, through `hit_chance`, player-attack.c:196-215) rolls
+/// `base + dice d sides` (`randcalc`, mon-attack.c:619, z-rand.c:502; `m_bonus` enters at
 /// its mean, `bonus`), times 4/3 for a vulnerable element
 /// (project-player.c:72-73); a miss deals 0. Armour's cut of HURT damage
 /// (`adjust_dam_armor`, mon-attack.c:540-543) is ignored, as in the mean.
@@ -147,7 +148,7 @@ fn repeat(pmf: &[f64], n: u32) -> Vec<f64> {
 /// the Borg likewise (game-world.c:1092), so between two Borg actions it acts
 /// `ratio` = its energy over the Borg's times on average: `floor(ratio)` or
 /// `ceil(ratio)` times, the latter with probability `frac(ratio)`. Each
-/// action is every blow of `action` (make_attack_normal, mon-attack.c:561-).
+/// action is every blow of `action` (make_attack_normal, mon-attack.c:548-).
 pub(crate) fn turn_pmf(action: &[f64], ratio: f64) -> Vec<f64> {
     let ratio = ratio.max(0.0);
     let low = ratio.floor();
@@ -181,11 +182,40 @@ pub(crate) fn quantile(pmf: &[f64], percent: i32) -> f64 {
 /// (game-world.c:513-519) and a cut 1, 2 for a Severe Cut (timer 101-200),
 /// 3 for a Deep Gash or a Mortal Wound (above 200; player_timed.txt grades;
 /// game-world.c:522-538), nothing for a rock-skinned player (PF_ROCK).
-/// `ticks` is the number of world ticks before the next action (one at
-/// normal speed). Damage reduction (player-util.c:167-178) is ignored.
-pub(crate) fn dot_damage(poisoned: bool, cut: i32, rock: bool, ticks: i32) -> i32 {
+/// HP per world tick. Damage reduction (player-util.c:167-178) is ignored.
+pub(crate) fn dot_per_tick(poisoned: bool, cut: i32, rock: bool) -> i32 {
     let cut_hp = if rock || cut <= 0 { 0 } else if cut > 200 { 3 } else if cut > 100 { 2 } else { 1 };
-    (i32::from(poisoned) + cut_hp) * ticks.max(0)
+    i32::from(poisoned) + cut_hp
+}
+
+/// #926 (review of #1002): the expected world ticks before the Borg's next
+/// action. The world ticks every ten game turns (game-world.c:1080-1081) and
+/// the Borg acts every 100 / `energy` game turns (`turn_energy`,
+/// game-world.c:136-139, 1092; move_energy 100): 10 / `energy` ticks, one at
+/// normal speed, half at +10, about a quarter at +40.
+pub(crate) fn ticks_per_action(energy: i32) -> f64 {
+    10.0 / f64::from(energy.max(1))
+}
+
+/// #926 (review of #1002): the potion that stops the Borg's own damage over
+/// time (lib/gamedata/object.txt): Cure Light Wounds takes 20 off a cut
+/// (`TIMED_DEC:CUT` 20, :3168) and does not touch poison; Cure Serious
+/// Wounds ends a cut (`CURE:CUT`, :3175-3191); Cure Critical Wounds ends both
+/// (:3192-3211); Neutralize Poison ends poison (:3278-3288). The cheapest
+/// potion that stops every part that ticks; `None` when none carried does.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DotCure { Light, Serious, Critical, Neutralize }
+
+pub(crate) fn dot_cure(poisoned: bool, cut: i32, rock: bool, carried: impl Fn(DotCure) -> bool) -> Option<DotCure> {
+    let cut_ticks = cut > 0 && !rock;
+    let options: &[DotCure] = match (poisoned, cut_ticks) {
+        (false, false) => &[],
+        (true, false) => &[DotCure::Neutralize, DotCure::Critical],
+        (false, true) if cut <= 20 => &[DotCure::Light, DotCure::Serious, DotCure::Critical],
+        (false, true) => &[DotCure::Serious, DotCure::Critical],
+        (true, true) => &[DotCure::Critical],
+    };
+    options.iter().copied().find(|&c| carried(c))
 }
 
 /// #926: whether `cur_hp` is at or below `floor` percent of `max_hp` (0 =
@@ -352,21 +382,33 @@ fn monster_pmf(st: &BorgState, i: usize) -> Vec<f64> {
     turn_pmf(&action, ratio)
 }
 
-/// #926: world ticks before the Borg's next action: ten game turns over its
-/// energy per game turn (one at normal speed), rounded up.
-fn ticks_per_turn() -> i32 {
-    let energy = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1);
-    (10 + energy - 1) / energy
-}
-
-/// #926: the Borg's own cut and poison before its next action, when
+/// #926: the Borg's own cut and poison expected before its next action, when
 /// `fast_fragile_count_dot` is on; 0 otherwise.
-fn own_dot() -> i32 {
-    if param(Param::fast_fragile_count_dot) == 0 { return 0; }
+fn own_dot() -> f64 {
+    if param(Param::fast_fragile_count_dot) == 0 { return 0.0; }
     // The timers as borg_trait reads them (BI_ISPOISONED, BI_ISCUT come from
     // the same player->timed, borg_trait.rs:2852-2858).
-    dot_damage(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
-        engine::player_has(PF_ROCK), ticks_per_turn())
+    let energy = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize));
+    f64::from(dot_per_tick(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
+        engine::player_has(PF_ROCK))) * ticks_per_action(energy)
+}
+
+/// #926 (review of #1002): the carried potion that stops the Borg's own cut
+/// and poison, if any.
+fn own_dot_cure(st: &mut BorgState) -> Option<(DotCure, i32)> {
+    let sval = |st: &BorgState, c: DotCure| match c {
+        DotCure::Light => st.item_val.sv_potion_cure_light,
+        DotCure::Serious => st.item_val.sv_potion_cure_serious,
+        DotCure::Critical => st.item_val.sv_potion_cure_critical,
+        DotCure::Neutralize => st.item_val.sv_potion_cure_poison,
+    };
+    let carried: Vec<DotCure> = [DotCure::Light, DotCure::Serious, DotCure::Critical, DotCure::Neutralize]
+        .into_iter()
+        .filter(|&c| crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval(st, c)) >= 0)
+        .collect();
+    dot_cure(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
+        engine::player_has(PF_ROCK), |c| carried.contains(&c))
+        .map(|c| (c, sval(st, c)))
 }
 
 /// #926: the damage "the next turn kills" weighs: the mean of the
@@ -383,7 +425,7 @@ fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
     } else {
         incoming_total(st, target, f)
     };
-    blows + f64::from(own_dot())
+    blows + own_dot()
 }
 
 /// #926: the Borg's own cut and poison kill it before its next action
@@ -392,7 +434,7 @@ fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
 /// `fast_fragile_count_dot`.
 fn dot_kills(cur_hp: i32) -> bool {
     let dot = own_dot();
-    dot > 0 && dot > cur_hp
+    dot > 0.0 && dot > f64::from(cur_hp)
 }
 
 /// #926: the heal ban lifts at or below `fast_fragile_heal_floor` percent of
@@ -437,34 +479,38 @@ pub(crate) fn cornered(st: &mut BorgState, target: usize, f: &Facts) -> bool {
     }
 }
 
-/// Attack-on-sight steps aside for the heal when the Borg is `cornered`, or
-/// the heal ban has lifted (#926: the HP floor, or its own cut and poison
-/// kill it first), and it carries a cure (without one the attack is all it
-/// has).
-pub(crate) fn yield_to_cure(st: &mut BorgState, target: usize, f: &Facts) -> bool {
-    if (param(Param::fast_fragile_heal_floor) > 0 || param(Param::fast_fragile_count_dot) != 0)
-        && ban_lifted(st, f.cur_hp)
-    {
+/// Attack-on-sight steps aside for the heal when the Borg carries a cure and
+/// is `cornered` (#842) or at the heal floor (#926); without one the attack
+/// is all it has. `Some(note)` names the reason for the decision trace.
+pub(crate) fn yield_to_cure(st: &mut BorgState, target: usize, f: &Facts) -> Option<&'static str> {
+    if below_heal_floor(f.cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor)) {
         let cure = has_cure(st);
-        borg_note(st, &format!("# Fast-fragile: HP {}/{}, at the heal floor or bleeding out; a cure is {} (#926)",
-            f.cur_hp, st.borg.tr(BI_MAXHP), if cure { "carried, the cure decides" } else { "not carried, the attack goes on" }));
-        if cure { return true; }
+        borg_note(st, &format!("# Fast-fragile: HP {}/{}, at the heal floor; a cure is {} (#926)",
+            f.cur_hp, st.borg.tr(BI_MAXHP), if cure { "carried" } else { "not carried, the attack goes on" }));
+        if cure { return Some("# At the fast-fragile heal floor: the cure decides (#926)"); }
     }
-    cornered(st, target, f) && has_cure(st)
+    (cornered(st, target, f) && has_cure(st))
+        .then_some("# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)")
 }
 
 /// Alternative to the attack (owner, #842): when the next turn kills the Borg
 /// and the kill needs more than one more turn, only Phase Door or a
 /// staircase underfoot. `true` when the turn was spent on one of them.
 pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bool {
+    // #926: the Borg's own cut and poison kill it before its next action
+    // wherever it stands; the potion that stops them comes before the
+    // attack, Phase Door and the stairs (review of #1002: the one that stops
+    // this damage, not any cure).
+    if dot_kills(f.cur_hp) {
+        if let Some((cure, sval)) = own_dot_cure(st) {
+            if crate::borg_item_use::borg_quaff_potion(st, sval) {
+                borg_note(st, &format!("# Fast-fragile: its own cut and poison ({:.1} HP) kill it at HP {} before its next action: {cure:?} instead of the attack or Phase Door (#926)", own_dot(), f.cur_hp));
+                return true;
+            }
+        }
+    }
     let incoming = next_turn_damage(st, target, f);
     if !escape_wanted(incoming, f.cur_hp, f.need_hp, f.per_turn, param(Param::fast_fragile_escape_percent)) {
-        return false;
-    }
-    // #926: the Borg's own cut and poison kill it wherever it stands; the
-    // cure comes first (`yield_to_cure`).
-    if dot_kills(f.cur_hp) && has_cure(st) {
-        borg_note(st, &format!("# Fast-fragile: its own cut and poison ({} HP) kill it at HP {} before its next action: no Phase Door or stairs (#926)", own_dot(), f.cur_hp));
         return false;
     }
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
@@ -658,16 +704,43 @@ mod tests_926 {
 
     #[test]
     fn cut_and_poison_ticks_follow_process_world() {
-        assert_eq!(dot_damage(false, 0, false, 1), 0);
-        assert_eq!(dot_damage(true, 0, false, 1), 1, "poison: 1 a tick");
-        assert_eq!(dot_damage(false, 7, false, 1), 1, "the 798380952 graze");
-        assert_eq!(dot_damage(false, 100, false, 1), 1, "a Nasty Cut");
-        assert_eq!(dot_damage(false, 101, false, 1), 2, "a Severe Cut");
-        assert_eq!(dot_damage(false, 201, false, 1), 3, "a Deep Gash");
-        assert_eq!(dot_damage(true, 5000, false, 2), 8, "a Mortal Wound and poison, two ticks (slowed)");
-        assert_eq!(dot_damage(true, 50, true, 1), 1, "rock skin keeps the cut, not the poison");
-        // 798380952: HP 0 and a graze, the tick kills (0 - 1 < 0).
-        assert!(dot_damage(false, 7, false, 1) > 0);
+        assert_eq!(dot_per_tick(false, 0, false), 0);
+        assert_eq!(dot_per_tick(true, 0, false), 1, "poison: 1 a tick");
+        assert_eq!(dot_per_tick(false, 7, false), 1, "the 798380952 graze");
+        assert_eq!(dot_per_tick(false, 100, false), 1, "a Nasty Cut");
+        assert_eq!(dot_per_tick(false, 101, false), 2, "a Severe Cut");
+        assert_eq!(dot_per_tick(false, 201, false), 3, "a Deep Gash");
+        assert_eq!(dot_per_tick(true, 5000, false), 4, "a Mortal Wound and poison");
+        assert_eq!(dot_per_tick(true, 50, true), 1, "rock skin keeps the cut, not the poison");
+    }
+
+    #[test]
+    fn world_ticks_per_action_follow_the_energy() {
+        // Review of #1002: an expectation, not rounded up.
+        assert_eq!(ticks_per_action(10), 1.0, "normal speed: one tick an action");
+        assert_eq!(ticks_per_action(20), 0.5, "+10");
+        assert!((ticks_per_action(42) - 10.0 / 42.0).abs() < 1e-12, "+40");
+        assert_eq!(ticks_per_action(5), 2.0, "-10: two ticks");
+        assert_eq!(ticks_per_action(0), 10.0, "no division by zero");
+    }
+
+    #[test]
+    fn the_cure_is_the_one_that_stops_the_damage() {
+        use DotCure::*;
+        let all = |_: DotCure| true;
+        let only = |set: &'static [DotCure]| move |c: DotCure| set.contains(&c);
+        assert_eq!(dot_cure(false, 0, false, all), None, "nothing ticks");
+        assert_eq!(dot_cure(false, 7, false, all), Some(Light), "a graze: CLW takes 20 off");
+        assert_eq!(dot_cure(false, 20, false, all), Some(Light));
+        assert_eq!(dot_cure(false, 21, false, all), Some(Serious), "past a Light Cut CLW does not end it");
+        assert_eq!(dot_cure(false, 100, false, only(&[Light])), None, "a Nasty Cut: CLW is not a cure");
+        assert_eq!(dot_cure(false, 100, false, only(&[Light, Critical])), Some(Critical));
+        assert_eq!(dot_cure(true, 0, false, all), Some(Neutralize), "poison");
+        assert_eq!(dot_cure(true, 0, false, only(&[Light, Serious])), None, "neither CLW nor CSW cures poison");
+        assert_eq!(dot_cure(true, 0, false, only(&[Critical])), Some(Critical));
+        assert_eq!(dot_cure(true, 7, false, only(&[Light, Serious, Neutralize])), None, "both: only CCW stops both");
+        assert_eq!(dot_cure(true, 7, false, all), Some(Critical));
+        assert_eq!(dot_cure(true, 7, true, all), Some(Neutralize), "rock skin: only the poison ticks");
     }
 
     #[test]

@@ -18,10 +18,15 @@ smoke are unchanged. Declared in `params.rs`, listed in
   and speeds as `fight_incoming_with`. It is still compared with
   `fast_fragile_escape_percent` of HP.
 - `fast_fragile_count_dot` (flag): adds the Borg's own poison and cut ticks
-  before its next action. When those ticks alone take it below 0 HP, Phase
-  Door and the stairs give way and the heal ban lifts.
+  expected before its next action (10 / its energy world ticks). When those
+  alone take it below 0 HP, it drinks the potion that stops them (CLW for a
+  cut up to 20, CSW or CCW deeper, Neutralize Poison or CCW for poison, CCW
+  for both) before the attack, Phase Door and the stairs, and the heal ban
+  lifts.
 
-**The leads, checked at `4b2c2fcf`.**
+**The leads, checked at `4b2c2fcf`** (the base when the task started; the
+branch later merged `track-p` `6bc4de1d`, #891/#878, which changes none of
+these paths).
 - Confirmed: `escape_wanted` compares the mean (`incoming_total` →
   `fight_incoming_with`, `borg_caution.rs:2609-2640`) with HP. The policy
   gate is `hp >= 0` only (`borg_caution.rs:2829-2832`). `heal_banned`
@@ -72,6 +77,17 @@ but the new `yield_to_cure` branch decides there, before the attack. Before
 the death at 12396, the 1294425391 game also flees at 2/11 HP for 50 turns
 (12346-12386). That is the flight and rest order of #981/#982, not changed
 here.
+
+**Review** (MiniMax-M3.1, named by the owner, PR #1002: pass with
+findings). Fixed in the PR: (1) the Borg's own ticks are the expectation 10 /
+energy, not rounded up; (2) the cut/poison branch drinks the potion that stops
+that damage (`dot_cure`), not any cure; (3) the attack-on-sight note names the
+actual reason (heal floor or cornered); (4) three engine citations; (5) the
+pins: PR body, this note and borg-zoo#672 now name the head on `6bc4de1d`.
+After the fixes: 668 borg-core tests pass, smoke 3/3 identical, and every
+hash in the table above is unchanged. Left to the owner: (6) the attribution
+trailers on the first three commits (RULES 4; later commits have none); (7)
+the branch name.
 
 **Owner.** Choose whether to measure these (a borg-zoo request issue):
 `escape_quantile` 50 against `escape_percent` 75, which play the same game
