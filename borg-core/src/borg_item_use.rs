@@ -228,10 +228,13 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     // a known, awake monster with a ranged attack could reach a firing grid
     // within the window: its moves in `turns` player turns plus the engine's
     // `max_range` (a shot needs line of sight within it).
-    let player_energy = i32::from(engine::extract_energy(st.borg.tr(BI_SPEED).clamp(0, 199) as usize)).max(1);
-    let moves_of = |speed: u8| {
-        let e = i32::from(engine::extract_energy(usize::from(speed).min(199)));
-        (turns * e + player_energy - 1) / player_energy
+    // The monster's moves come from its forecast speed (+10 when seen hasted,
+    // `forecast_monster_speed`, review of #1035) and the engine's turn
+    // accounting (`moves_in_window`).
+    let energy_of = |speed: i32| i32::from(engine::extract_energy(speed.clamp(0, 199) as usize));
+    let player_energy = energy_of(st.borg.tr(BI_SPEED));
+    let moves_of = |kill: &crate::borg_flow_kill::BorgKill| {
+        moves_in_window(player_energy, energy_of(crate::borg_caution::forecast_monster_speed(kill)), turns)
     };
     let nxt = st.kills.nxt.max(0) as usize;
     if let Some(i) = ranged_threat_in_window(&st.kills.kills[..nxt.min(st.kills.kills.len())],
@@ -250,17 +253,29 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     true
 }
 
-/// borg-reborn-rs (#1030): the index of a known, awake monster with a
+/// borg-reborn-rs (#1030, review of #1035): an upper bound on a monster's
+/// actions while the player takes `turns` turns, by the engine's accounting:
+/// each actor gains `extract_energy[speed]` per game turn
+/// (`turn_energy`, game-world.c:136-139, `move-energy` 100) and acts at 100,
+/// so the player acts every ceil(100 / e_player) game turns and the monster
+/// every ceil(100 / e_monster). Rounded up, so never below the engine's count.
+pub(crate) fn moves_in_window(e_player: i32, e_monster: i32, turns: i32) -> i32 {
+    let per_action = |e: i32| (100 + e.max(1) - 1) / e.max(1);
+    let (t_player, t_monster) = (per_action(e_player), per_action(e_monster));
+    (turns.max(0) * t_player + t_monster - 1) / t_monster
+}
+
+/// borg-reborn-rs (#1030): the index of a seen, awake monster with a
 /// ranged attack (`ranged_attack`, the test `borg_danger_spell` makes) that
 /// could reach a grid in range of `c` within the window: its distance is at
-/// most its moves in the window (`moves_of(speed)`) plus `max_range`, whether
+/// most its moves in the window (`moves_of(kill)`) plus `max_range`, whether
 /// or not it can project to `c` now (it may be behind a corner). A record kept
 /// after the monster is lost counts too: the veto errs on the safe side.
 pub(crate) fn ranged_threat_in_window(kills: &[crate::borg_flow_kill::BorgKill], c: loc, max_range: i32,
-    moves_of: impl Fn(u8) -> i32) -> Option<usize> {
+    moves_of: impl Fn(&crate::borg_flow_kill::BorgKill) -> i32) -> Option<usize> {
     kills.iter().position(|kill| {
         kill.r_idx != 0 && kill.awake && kill.ranged_attack != 0
-            && engine::distance(c, kill.pos) <= moves_of(kill.speed) + max_range
+            && engine::distance(c, kill.pos) <= moves_of(kill) + max_range
     })
 }
 
@@ -285,8 +300,32 @@ mod ranged_threat_tests {
         assert_eq!(threat(&[BorgKill { awake: false, ..caster(12, 12) }], borg, 20, |_| 10), None, "asleep");
         assert_eq!(threat(&[BorgKill { ranged_attack: 0, ..caster(12, 12) }], borg, 20, |_| 10), None, "melee only: borg_danger's c covers it");
         assert_eq!(threat(&[BorgKill { r_idx: 0, ..caster(12, 12) }], borg, 20, |_| 10), None, "empty record");
-        assert_eq!(threat(&[caster(50, 10)], borg, 20, |s| if s > 110 { 30 } else { 10 }), None);
-        assert_eq!(threat(&[BorgKill { speed: 120, ..caster(50, 10) }], borg, 20, |s| if s > 110 { 30 } else { 10 }), Some(0), "a fast caster moves further");
+    }
+
+    // extract_energy (game-world.c:68-90): speed 0 -> 1, 110 -> 10, 120 -> 20,
+    // 130 -> 30, 140 -> 38, 160 -> 45, 199 -> 49.
+    #[test]
+    fn the_move_budget_follows_the_engine() {
+        use super::moves_in_window as moves;
+        assert_eq!(moves(10, 10, 10), 10, "player 110, monster 110");
+        assert_eq!(moves(10, 20, 10), 20, "player 110, a caster seen hasted to 120: 20 actions");
+        assert_eq!(moves(30, 20, 10), 8, "player 130, monster 120: the engine's 8 (the old ratio gave 7)");
+        assert_eq!(moves(45, 38, 10), 10, "player 160, monster 140");
+        assert_eq!(moves(10, 1, 10), 1, "a speed-0 monster acts once in 100 game turns");
+        assert_eq!(moves(10, 49, 10), 34, "speed 199: every 3 game turns, 100 / 3 rounded up");
+        assert_eq!(moves(0, 0, 10), 10, "energies clamp at 1");
+        assert_eq!(moves(10, 10, 0), 0);
+    }
+
+    #[test]
+    fn the_forecast_speed_widens_the_veto() {
+        use super::moves_in_window as moves;
+        let energy = |speed: i32| if speed >= 120 { 20 } else { 10 }; // the table at 110 and 120
+        let borg = loc { x: 10, y: 10 };
+        let hasted = BorgKill { observed_fast: true, ..caster(45, 10) }; // 35 grids
+        let budget = |k: &BorgKill| moves(10, energy(crate::borg_caution::forecast_monster_speed(k)), 10);
+        assert_eq!(threat(&[caster(45, 10)], borg, 20, budget), None, "35 grids at speed 110: 10 moves + 20");
+        assert_eq!(threat(&[hasted], borg, 20, budget), Some(0), "seen hasted: 20 moves + 20");
     }
 }
 
