@@ -50,7 +50,7 @@ and costs 15 (`object.txt:2576-2581`).
 
 - `town_first_cure` (count, 0 = off): the live town planner values the first
   this many healing potions as a requirement on a new capability row, "first
-  cure" (id 76, appended to `NAMES`). Each copy is worth
+  cure" (id 77, appended to `NAMES` after #978's Restore Life reserve, 76). Each copy is worth
   `town_first_cure_percent` of the trip's escape weight, the Phase Door
   reserve's unit. A copy past them adds nothing.
 - `town_first_cure_percent` (200): above `town_phase_reserve_percent` (150),
@@ -103,6 +103,18 @@ The fixes are in the second commit:
 3. A compile-time assertion keeps `FIRST_CURE` the last row.
 4. The parameter text says the order is decided on the whole wares in the
    purse. The percent is a margin, not a switch against the reserve's.
+
+### Merge of track-p `2415bedf` (#978, #979)
+
+#978 appended its own last row (Restore Life reserve, 76). The first-cure
+row is now 77. `initial_curves` sizes the model to the Restore Life row, not
+to `COUNT`, so neither row appears unless its own parameter is on. With
+`town_first_cure` the model is padded to every row with zero-weight rows.
+Re-checked on the default core (borg-rs) against a build of `2415bedf`:
+- Seed 681096527 plays the same game on both, `665b0b0cf9c3af43`, with
+  byte-identical plan records.
+- The counterfactuals keep `ae44baf763d8a7f9` and `d81348b6b29fef5b`.
+- Smoke is 3/3 identical to `smoke-borg-rs`.
 
 ### Left, and for the owner
 

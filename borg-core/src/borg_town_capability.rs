@@ -121,6 +121,7 @@ const STAPLE_PHASE: usize = 72;
 const STAPLE_OIL: usize = 73;
 const STAPLE_FOOD: usize = 74;
 const STAPLE_LIGHT: usize = 75;
+const RESTORE_LIFE_RESERVE: usize = STAPLE_LIGHT + 1;
 /// borg-reborn-rs (#987): the first `town_first_cure` healing potions as a
 /// requirement, each worth `town_first_cure_percent` of the trip's escape
 /// weight, nothing past them. With the Phase Door reserve at 150 percent of
@@ -129,10 +130,9 @@ const STAPLE_LIGHT: usize = 75;
 /// than every reserved Phase Door, so a low-gold start bought no cure. Above
 /// the reserve's percent, the first cures come before it. The row only exists
 /// with `town_first_cure` above 0.
-const FIRST_CURE: usize = 76;
-// The first-cure row must stay the last: the model's count without it stops
-// before it (`observe`), so a row appended after it would drop out of the off
-// model.
+const FIRST_CURE: usize = RESTORE_LIFE_RESERVE + 1;
+// The first-cure row must stay the last: the model without it stops before it
+// (`observe`), so a row appended after it would drop out of the off model.
 const _: () = assert!(FIRST_CURE + 1 == NAMES.len());
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
@@ -188,7 +188,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 78] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -196,7 +196,7 @@ pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
-    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "first cure"];
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -227,7 +227,7 @@ fn coverage(row: &[i64; 5], amount: i64) -> i64 {
         let reserved = row[1] * amount.min(target) / target;
         // Extra light has a smaller diminishing return above the reserve.
         // Other negative-demand rows are satisfied once, such as a cure.
-        if row[0] == LIGHT as i64 && amount > target {
+        if matches!(row[0] as usize, LIGHT | RESTORE_LIFE_RESERVE) && amount > target {
             let extra = amount - target;
             return reserved + (row[1] / 4).saturating_mul(extra) / (target + extra);
         }
@@ -301,6 +301,16 @@ impl Model {
         self.units(Self::scope(it), i64::from(it.slot), i64::from(it.qty)).iter()
             .any(|&(id, turns)| id == LIGHT && turns > 0 && row[3] - turns < -row[2])
     }
+    /// Copies this pack stack must retain after counting other carried stacks.
+    pub fn restore_life_keep(&self, item: &KitItem) -> i32 {
+        let Some(row) = self.curves.get(RESTORE_LIFE_RESERVE) else { return 0; };
+        if row[2] >= 0 || !self.units(Self::scope(item), i64::from(item.slot), 1)
+            .contains(&(RESTORE_LIFE_RESERVE, UNIT)) {
+            return 0;
+        }
+        ((-row[2] - row[3]) / UNIT + i64::from(item.qty)).clamp(0, i64::from(item.qty)) as i32
+    }
+
     pub fn keep(&self, it: &KitItem) -> i64 {
         -self.gain(&self.units(Self::scope(it), i64::from(it.slot), -i64::from(it.qty)))
     }
@@ -348,6 +358,7 @@ struct Context<'a> {
     lantern: bool,
     light_goal: i64,
     light_reserve: i64,
+    restore_life_reserve: i64,
     ranged_reserve: i64,
 }
 
@@ -672,7 +683,7 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
 /// `r[3] > 0`), and a kept one stopped the town replay of 425904011 with
 /// "invalid capability facts" (review of #778).
 fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
-    out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
+    out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE | RESTORE_LIFE_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
 fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
@@ -827,11 +838,33 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if param(Param::town_recall_curve_scale_percent) > 0 {
         if let Some(&(_, units)) = out.iter().find(|&&(id, _)| id == RECALL) { out.push((RECALL_RESERVE, units)); }
     }
+    out.extend(restore_life_supply(item, st.item_val.sv_potion_restore_life, ctx.restore_life_reserve));
     if matches!(tval, TV_WAND | TV_STAFF) && item.pval > 0 {
         let maximum = engine::kind_value_average(engine::kind(item.kind as usize).charge).max(1);
         if i64::from(item.pval) < i64::from(maximum) * qty { out.push((RECHARGE_TARGET, UNIT)); }
     }
     out
+}
+
+fn restore_life_supply(item: &borg_item, sval: i32, reserve: i64) -> Option<(usize, i64)> {
+    (reserve > 0 && crate::borg_item_use::is_restore_life(item, sval))
+        .then_some((RESTORE_LIFE_RESERVE, UNIT))
+}
+
+fn initial_curves(
+    previous_count: usize, ordinary: i64, demand: i64, drained: bool, reserve: i64, restore_weight: i64,
+) -> Vec<[i64; 5]> {
+    // #987: the Restore Life row, not COUNT: the first-cure row after it
+    // exists only with `town_first_cure` (`observe`).
+    let count = if reserve > 0 { RESTORE_LIFE_RESERVE + 1 } else { previous_count };
+    let mut curves: Vec<_> = (0..count).map(|id| [id as i64, ordinary, demand, 0, 0]).collect();
+    curves[EXPERIENCE] = [EXPERIENCE as i64, if drained { restore_weight } else { 0 }, -UNIT, 0, 0];
+    if reserve > 0 {
+        curves[RESTORE_LIFE_RESERVE] = [
+            RESTORE_LIFE_RESERVE as i64, reserve * restore_weight / 4, -reserve * UNIT, 0, 0,
+        ];
+    }
+    curves
 }
 
 /// Physical supply curves use the same forecast, gold opportunity cost and
@@ -850,18 +883,27 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
     let light_goal = journey.fuel_goal(light_reserve);
-    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve };
+    let restore_life_reserve = i64::from(restore_life_reserve(st));
+    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
     let prepared = prepared_on(st);
     let staples = staple_on(st);
-    // #987: the first-cure row is the last (`FIRST_CURE + 1 == COUNT`, checked
-    // below); off, the model keeps the shape it had before it.
+    let previous_count = if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on {
+        RECALL_RESERVE + 1
+    } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let curves = initial_curves(previous_count, ordinary, support_demand,
+        t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0, restore_life_reserve, cfg(BORG_TOWN_W_RESTORE) * UNIT);
+    // borg-reborn-rs (#987): with `town_first_cure` the model holds every row;
+    // the rows the model would not hold without it carry no weight, so on is
+    // off plus the first-cure row.
     let first_cure = first_cure_count();
-    let base_count = if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
-    let count = if first_cure > 0 { COUNT } else { base_count };
-    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
+    let mut curves = curves;
+    if first_cure > 0 { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
+    let count = curves.len();
+    let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
+        packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
     // borg_town_w_light (100 = today).
@@ -1015,11 +1057,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     // borg-reborn-rs (#987): the first `town_first_cure` healing potions, each
     // worth `town_first_cure_percent` of the trip's escape weight (the Phase
-    // Door reserve's unit), nothing past them. The rows the model holds only
-    // because of it (`base_count..FIRST_CURE`) carry no weight; the rows the
-    // model held without it keep their values, so on is off plus this row.
+    // Door reserve's unit), nothing past them.
     if first_cure > 0 {
-        for id in base_count..FIRST_CURE { curve(id, 0, UNIT); }
         curve(FIRST_CURE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_first_cure_percent)) * first_cure,
             -(first_cure * UNIT));
     }
@@ -1100,7 +1139,6 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     if i64::from(st.borg.tr(BI_GOLD)) < i64::from(param(Param::town_digger_min_gold)) {
         curve(DIG, 0, support_demand);
     }
-    curve(EXPERIENCE, if t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(CURSE, if t(BI_FIRST_CURSED) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(ENCHANT, if t(BI_NEED_ENCHANT_TO_A) + t(BI_NEED_ENCHANT_TO_H) + t(BI_NEED_ENCHANT_TO_D) > 0 { cfg(BORG_TOWN_W_SUPPORT) * UNIT } else { 0 }, UNIT);
     curve(RECHARGE, cfg(BORG_TOWN_W_SUPPORT) * UNIT, -UNIT);
@@ -1188,7 +1226,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1324,6 +1362,65 @@ mod tests {
         KitItem { joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
     }
+    #[test]
+    fn alchemist_restore_life_purchase_and_retention_follow_need_and_stock() {
+        use crate::borg_town_record::{action, first_action, step, StepInput, PARAMS};
+        use crate::borg_town_solve::Limits;
+        use crate::borg_town_stock::Candidate;
+
+        let potion = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 16,
+            price: 400, qty: 1, weight: 4, slots_cost: 1, stack_count: 0, class: 1 };
+        let decide = |drained, reserve, stocked, gold, carried: i32| {
+            let kit = if carried > 0 {
+                vec![KitItem { sell_shop: 4, proceeds: 100, ..item(Place::Pack, 0, carried) }]
+            } else { Vec::new() };
+            let candidates = if stocked { vec![potion.clone()] } else { Vec::new() };
+            let mut potion_item = crate::borg_item::blank_item();
+            potion_item.tval = potion.tval;
+            potion_item.sval = potion.sval;
+            potion_item.aware = true;
+            potion_item.iqty = 1;
+            let mut m = Model {
+                available: candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
+                packing: None, curves: initial_curves(STAPLE_LIGHT + 1, 0, UNIT, drained, reserve, 100 * UNIT),
+                supplies: Vec::new(),
+            };
+            let effects = [(EF_RESTORE_EXP as u16, 0, 0)];
+            let supply = effect_supply_linear(&effects, 386, 100, false).into_iter()
+                .chain(restore_life_supply(&potion_item, i32::from(potion.sval), reserve));
+            for (cap, units) in supply {
+                m.curves[cap][3] = i64::from(carried) * units;
+                if stocked { m.supplies.push([4, 0, cap as i64, units]); }
+                if carried > 0 { m.supplies.push([PACK, 0, cap as i64, units]); }
+            }
+            assert_eq!(m.curves.get(RESTORE_LIFE_RESERVE).map(|row| row[2]), (reserve > 0).then_some(-reserve * UNIT));
+            let mut settings = [0; PARAMS];
+            settings[(BORG_TOWN_W_SPACE - BORG_TOWN_PLAN) as usize] = 25;
+            settings[(BORG_TOWN_HOME_DISCOUNT - BORG_TOWN_PLAN) as usize] = 500;
+            let mut traits = [0; BI_MAX as usize];
+            traits[BI_CARRY as usize] = 100;
+            let input = StepInput { revision: 12, capability: Some(&m), utility: true,
+                black_market_reserve: 0, black_market_percentage: -1, candidates,
+                facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 4, weight: 100 },
+                urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
+                cure_spell: false, kit: &kit, home_slots: 10 };
+            let output = step(&input);
+            first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit)
+        };
+
+        for gold in [400, 787_811] {
+            let (code, location, _, _) = decide(true, 0, true, gold, 0);
+            assert_eq!((code, location), (action::BUY, [4, 0, 1, 400]));
+            let (code, location, _, _) = decide(false, 1, true, gold, 0);
+            assert_eq!((code, location), (action::BUY, [4, 0, 1, 400]));
+        }
+        assert_eq!(decide(true, 0, true, 399, 0).0, action::LEAVE);
+        assert_eq!(decide(true, 0, false, 787_811, 0).0, action::LEAVE);
+        assert_eq!(decide(false, 0, true, 787_811, 0).0, action::LEAVE);
+        assert_eq!(decide(false, 0, false, 787_811, 1).0, action::SELL);
+        assert_eq!(decide(false, 1, false, 787_811, 1).0, action::LEAVE);
+    }
+
     /// #516 (review of #563): the fear-cure cap's value curve. With the cap
     /// at 2 (demand -2 units) one potion is worth half the weight, two the
     /// whole weight, and a third adds nothing, where the diminishing curve
@@ -2200,4 +2297,21 @@ mod recall_value_tests {
         assert_eq!(scale_percent(1000, 0), 0);
         assert_eq!(scale_percent(1000, -5), 0, "never negative");
     }
+}
+
+/// #978: the opt-in reserve starts when experience-draining monsters enter
+/// the normal depth range (grape jelly, monster.txt:3306-3319). A repeatable
+/// equipped activation or a learned low-failure restoration spell replaces it.
+pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
+    use crate::borg_headers::borg_magic_h::{REMEMBRANCE, REVITALIZE};
+
+    let copies = param(Param::town_restore_life_reserve);
+    if copies == 0 || st.borg.tr(BI_MAXDEPTH) < 12 {
+        return 0;
+    }
+    let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]
+        .into_iter().any(|activation| activation > 0 && st.borg.activation[activation as usize] != 0)
+        || [REVITALIZE, REMEMBRANCE].into_iter()
+            .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, param(Param::town_restore_life_spell_fail)));
+    if repeatable { 0 } else { copies }
 }
