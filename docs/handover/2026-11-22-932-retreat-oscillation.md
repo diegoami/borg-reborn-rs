@@ -19,3 +19,11 @@ scary) and #935 (out of arrows, no Recall) are not part of this task.
 **Owner.** Merge into `track-p` (P8) after the review (RULES 1a). #932-#934 each
 add a line to the same retreat condition in `borg_caution`; the ones merged
 later need a one-line rebase there and in the `CALIBRATION.md` head.
+
+**Later commit (#1023).** The issue was split (owner, 2026-11-22): this PR now
+closes #1023, the general breaker; #932 keeps the stair-flight side (#964).
+Added `caution_retreat_oscillation_backaway` (shipped 0): with it, back-aways
+join the run and are vetoed too (seed 1512540769, white worm masses: back-aways
+undone by the stair flight). The zoo request #654 measures the retreat-only
+form (its specimen `172bd671` has no back-away flag); a back-away arm needs a
+new specimen.

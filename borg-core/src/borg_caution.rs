@@ -3459,11 +3459,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
+    // borg-reborn-rs (#1023): with caution_retreat_oscillation_backaway, a
+    // back-away joins the run of retreats (seed 1512540769: "Backing up to
+    // 88,45" from 45,89, undone by the stair flight, mixed with retreats from
+    // 43,96 until death).
+    let backaway_counted = p(Param::caution_retreat_oscillation_backaway) != 0;
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+        && !(backaway_counted && retreat_oscillation_veto(st))
         && back_away(st, pos_danger, borg_surround)
     {
+        if backaway_counted {
+            note_retreat_taken(st, from);
+        }
         return true;
     }
 
