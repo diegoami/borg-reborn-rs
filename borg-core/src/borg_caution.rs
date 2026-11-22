@@ -5738,6 +5738,13 @@ pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
 }
 
+/// borg-reborn-rs (#881): `caution_stairs_flight_unknown` (0 = an unknown
+/// grid is one step of a weighted flight, like floor; 1 = it costs
+/// `caution_stairs_flight_unknown_steps` more; 2 = refused) and the steps.
+pub(crate) fn stair_flight_unknown_rule() -> (i32, i32) {
+    (p(Param::caution_stairs_flight_unknown), p(Param::caution_stairs_flight_unknown_steps))
+}
+
 /// The weighted route is checked after it is planned, including for a
 /// desperate walk. A clean detour can satisfy the same check.
 pub(crate) fn weighted_stairs_blocker_percent(st: &BorgState) -> Option<i32> {
