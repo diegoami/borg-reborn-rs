@@ -204,6 +204,19 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
 
 /// Attempt to eat the given food or mushroom.
 pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32) -> bool {
+    eat_in_current_shape(st, tval, sval, engine::player_is_shapechanged())
+}
+
+#[inline]
+fn eat_in_current_shape(st: &mut BorgState, tval: i32, sval: i32, shapechanged: bool) -> bool {
+    // cmd-obj.c:do_cmd_eat_food has no change-back prompt, and
+    // cmd-core.c:cmd_get_item hides the pack while shapechanged. As in
+    // borg_deinscribe, stop before an item key can escape into the command
+    // prompt. The junk callers can then fall through to dropping the item.
+    if shapechanged {
+        return false;
+    }
+
     /* Look for that food */
     let i = borg_slot(st, tval, sval);
 
@@ -1160,7 +1173,35 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
 // borg-reborn-rs (#451)
 #[cfg(test)]
 mod tests {
-    use super::may_read_hunger_scroll_first;
+    use super::*;
+    use crate::borg_item::blank_item;
+
+    #[test]
+    fn eating_from_a_full_pack_in_fox_form_queues_nothing() {
+        let mut st = BorgState::default();
+        let mut item = blank_item();
+        item.iqty = 1;
+        st.items.items = vec![item; 23];
+
+        let food = &mut st.items.items[2];
+        food.iqty = 6;
+        food.tval = TV_FOOD as u8;
+        food.sval = 1;
+        food.aware = true;
+
+        let juice = &mut st.items.items[22];
+        juice.iqty = 4;
+        juice.tval = TV_POTION as u8;
+        juice.sval = 1;
+        juice.aware = true;
+
+        assert!(!eat_in_current_shape(&mut st, TV_FOOD as i32, 1, true));
+        assert!(st.io.queued_keys().is_empty());
+
+        st.items.items[2].tval = TV_MUSHROOM as u8;
+        assert!(!eat_in_current_shape(&mut st, TV_MUSHROOM as i32, 1, true));
+        assert!(st.io.queued_keys().is_empty());
+    }
 
     #[test]
     fn the_hunger_scroll_goes_before_food_only_under_the_plan_and_when_it_can_be_read() {
