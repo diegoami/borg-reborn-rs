@@ -262,14 +262,26 @@ pub fn borg_update_light(st: &mut BorgState) {
                     continue;
                 }
 
-                /* Viewable, nearby, grids get "torch lit" */
-                if st.cave.grid(x, y).info & BORG_VIEW != 0 {
+                /* Viewable, nearby, grids get "torch lit" (#958, P7 review:
+                 * with the engine's shape, also in line of sight for light,
+                 * as radius 2: add_light tests los() per grid,
+                 * src/cave-view.c:625-640) */
+                if outer_ring_lit(st.cave.grid(x, y).info & BORG_VIEW != 0, engine_shape,
+                    || borg_los_light(st, cy, cx, y, x)) {
                     /* This grid is "torch lit" */
                     borg_cave_light_hack(st, y, x);
                 }
             }
         }
     }
+}
+
+/// #958 (P7 review): whether a viewable grid of the outer ring (radius 3+)
+/// is torch lit. C's proxy: in view. With the engine's shape (#884), as the
+/// radius-2 ring: also in line of sight for light, so passable rubble, which
+/// the view crosses, does not let light through (src/cave-view.c:625-640).
+fn outer_ring_lit(in_view: bool, engine_shape: bool, los_light: impl FnOnce() -> bool) -> bool {
+    in_view && (!engine_shape || los_light())
 }
 
 /// #884: the Borg's own light radius under `cave_light_engine_radius`, for
@@ -304,6 +316,17 @@ pub(crate) fn engine_distance(dy: i32, dx: i32) -> i32 {
 #[cfg(test)]
 mod tests_884 {
     use super::{engine_distance as distance, RADIUS_2};
+
+    #[test]
+    fn outer_ring_needs_light_line_of_sight_with_the_engine_shape() {
+        // C's proxy: in view is enough, the light test is not asked.
+        assert!(super::outer_ring_lit(true, false, || panic!("not asked")));
+        assert!(!super::outer_ring_lit(false, false, || true));
+        // Engine shape: in view and in line of sight for light (#958).
+        assert!(super::outer_ring_lit(true, true, || true));
+        assert!(!super::outer_ring_lit(true, true, || false), "rubble the view crosses blocks the light");
+        assert!(!super::outer_ring_lit(false, true, || true));
+    }
 
     #[test]
     fn radius_two_grids_are_the_distance_two_grids() {
