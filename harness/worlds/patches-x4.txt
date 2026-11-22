@@ -1,0 +1,7 @@
+# A grey mushroom patch world: the patch 4 times as likely against every other
+# race (its depth unchanged: monster.txt, depth 1, rarity 1), so the Borg meets
+# the confusing immobile pest about 4 times as often on the early levels. The
+# level's monster count is unchanged. A stress test for the kill-on-sight
+# policy (#869) and the confused-attack settings (#867, #901).
+favour = grey mushroom patch
+favour_weight = 4
