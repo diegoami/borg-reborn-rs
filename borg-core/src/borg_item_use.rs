@@ -225,7 +225,7 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     // melee reach only; its ranged part counts a monster that can project to
     // the Borg now or after one move. A caster two moves behind a corner
     // counts 0, yet it can step out and cast during a Sleep. So no test while
-    // a known, awake monster with a ranged attack could reach a firing grid
+    // a seen, awake monster with a ranged attack could reach a firing grid
     // within the window: its moves in `turns` player turns plus the engine's
     // `max_range` (a shot needs line of sight within it).
     // The monster's moves come from its forecast speed (+10 when seen hasted,

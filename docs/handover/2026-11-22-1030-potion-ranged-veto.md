@@ -26,7 +26,7 @@ No new parameter; the potion test ships on (`harness/borg.txt`), so the veto
 is live in the harness and the zoo.
 
 **Checked.** fmt, clippy, the workspace and `borg-core` tests,
-`check-param-citations.py` (2,394, 0 wrong). Smoke: 3/3 identical (nothing
+`check-param-citations.py` (2,397 at the merged head, 0 wrong). Smoke: 3/3 identical (nothing
 re-recorded). The 14 named cases of #969/#983: the veto never fired (1-10
 potion tests a game), outcomes as before (12 at the cap; Grip #974 and a crow).
 
