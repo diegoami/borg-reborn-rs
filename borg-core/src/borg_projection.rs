@@ -53,7 +53,9 @@ pub fn borg_los(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
 }
 
 /// Engine-style LOS on the Borg's known map. Both light and arc footprints
-/// use `los()` (cave-view.c:93-241, project.c:856-863). Passable rubble lacks
+/// use `los()` (src/cave-view.c:los:93-241, src/project.c:project:856-863).
+/// The terrain test is src/cave-square.c:square_isprojectable:671-674.
+/// Passable rubble lacks
 /// the PROJECT flag (lib/gamedata/terrain.txt), so it blocks intermediate rays.
 /// Unknown terrain is treated conservatively.
 pub(crate) fn borg_los_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
@@ -412,7 +414,9 @@ pub fn borg_offset_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i3
 /// Assume that monsters in the way will stop the projection
 /// We refuse to assume that unknown grids are floors
 /// In fact, we assume they are walls.
-/// Adapted from "projectable()" in "spells1.c".
+/// Adapted from "projectable()" in "spells1.c". This forecast uses the
+/// Borg's floor predicate, which allows known passable rubble. The engine
+/// projectile path checks PROJECT terrain instead.
 pub fn borg_projectable_pure(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     /* Start at the initial location */
     let mut y = y1;
