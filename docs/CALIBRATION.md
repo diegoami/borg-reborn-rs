@@ -10,6 +10,29 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## The lone-slow attack on a level lost to breeders (#1008)
+
+The registry now holds **2411** parameters (2410 before; one added). A
+follow-up of #878, from checking its switches against the shipped breeder
+policy (`caution_breeder_policy = 3`). `lone_slow_attack` runs in
+`fight_before_flight`, after `borg_check_breeders` has set the leave and flee
+goals and before the flight, and read neither `breeders_lost` nor the stand;
+the scary list's breeder attack entries read both (`attack_on_sight_reason`).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `lone_slow_breeder_lost` | 0 | flag | 0–1 | `borg_lone_target.rs:110` |
+
+- With `lone_slow_attack` on and this at 1, the lone rule does not attack a
+  breeder (MULTIPLY) while the level is lost to breeders (`breeders_lost`:
+  more known than `caution_breeder_hunt_max_count`, or the colony cannot be
+  stopped, `note_breeders_stoppable`). Needs `caution_breeder_stoppable` = 1
+  (shipped through `caution_breeder_policy = 3`): `breeders_lost` is set only
+  there, so with it 0 the switch never fires. The breeder policy's leave decides
+  (stairs, then Recall after `caution_breeder_lost_recall_turns`). Other
+  monsters, and a level not lost, are unchanged. Compiled and shipped **0**.
+  A hypothesis: no measurement chose it (RULES 14).
+
 ## Retreat and back-up refuse a dead end (#881 part 2, #1045)
 
 The registry now holds **2405** parameters (2403 before; two added). Owner,
@@ -183,10 +206,10 @@ chose them (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `lone_slow_attack` | 0 | flag | 0–1 | `borg_lone_target.rs:83` |
-| `lone_slow_radius` | 3 | grids | 1–20 | `borg_lone_target.rs:60` |
-| `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:104` |
-| `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:104` |
+| `lone_slow_attack` | 0 | flag | 0–1 | `borg_lone_target.rs:94` |
+| `lone_slow_radius` | 3 | grids | 1–20 | `borg_lone_target.rs:71` |
+| `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
+| `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1155` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
 | `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3322` |
