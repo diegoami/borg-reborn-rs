@@ -33,7 +33,7 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
+    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -2063,6 +2063,39 @@ fn may_move_away(
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
+/// borg-reborn-rs (#934): with `caution_poisoned_no_cure_retreat_hp_percent`,
+/// poisoned, carrying no poison cure (`BI_ACUREPOIS`) and below that percent
+/// of the maximum HP, the strategic retreat is not taken (with a note): the
+/// escapes and the outmatched cure decide (seed 829474344: 12 CLW drunk
+/// against poison, two Phase Doors never read). The screen shows one grade,
+/// "Poisoned" (player_timed.txt:255), so the amount is not used. Off at 0.
+fn poisoned_retreat_veto(st: &mut BorgState, pos_danger: i32) -> bool {
+    let (hp, max) = (st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP));
+    let poisoned = st.borg.tr(BI_ISPOISONED) != 0 && st.borg.tr(BI_ACUREPOIS) == 0;
+    if poisoned_below(poisoned, hp, max, p(Param::caution_poisoned_no_cure_retreat_hp_percent)) {
+        borg_note(st, &format!("# No retreat: poisoned, no cure carried, HP {hp} of {max} (danger {pos_danger}) (#934)"));
+        return true;
+    }
+    false
+}
+
+/// borg-reborn-rs (#934): poisoned without a cure and below `percent` of the
+/// maximum HP (never at 0).
+fn poisoned_below(poisoned_no_cure: bool, hp: i32, max: i32, percent: i32) -> bool {
+    percent > 0 && poisoned_no_cure && hp * 100 < max * percent
+}
+
+#[cfg(test)]
+mod poisoned_retreat_tests {
+    #[test]
+    fn below_the_percent_only() {
+        assert!(super::poisoned_below(true, 69, 96, 75), "829474344 at 95,380");
+        assert!(!super::poisoned_below(true, 72, 96, 75), "exactly 75% is not below");
+        assert!(!super::poisoned_below(false, 10, 96, 75), "a cure carried, or not poisoned");
+        assert!(!super::poisoned_below(true, 10, 96, 0), "off");
+    }
+}
+
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
 /// initiative back and lets a flee route walk straight back into reach.
@@ -3354,6 +3387,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && !poisoned_retreat_veto(st, pos_danger)
         && retreat(st, pos_danger, borg_surround)
     {
         return true;
