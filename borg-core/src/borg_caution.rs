@@ -1152,6 +1152,8 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
 /// of `borg_caution`).
 fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
+    // borg-reborn-rs (#881): no retreat into a dead end near breeders.
+    let exits = RetreatExits::for_think(st);
     let mut b_r = -1;
     let mut b_p = -1;
     let mut p1 = -1;
@@ -1185,6 +1187,11 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
         // Require "happy" grids (most of the time)
         if !crate::borg_flow_misc::borg_happy_grid_bold(st, y2, x2) {
+            continue;
+        }
+
+        // borg-reborn-rs (#881): not into a dead end (`caution_retreat_dead_end`)
+        if exits.as_ref().is_some_and(|e| e.refuses(x2, y2)) {
             continue;
         }
 
@@ -1247,6 +1254,11 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
                 false,
             );
             if p1 >= pos_danger {
+                break;
+            }
+
+            // borg-reborn-rs (#881): nor a first step into one.
+            if r == 1 && exits.as_ref().is_some_and(|e| e.refuses(x1, y1)) {
                 break;
             }
 
@@ -1364,6 +1376,158 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
+/// borg-reborn-rs (#881): `caution_retreat_dead_end`. Retreat and back-up
+/// took the nearest viewable "happy" grid of lower danger, or the adjacent
+/// grid of least danger, with no notion of a way out: in a one-exit lattice
+/// room every square is happy, and Priest 399497898 went into the dead-end
+/// tip 25 times while white worm masses filled the room (47 retreats and
+/// 27 back-ups after turn 62900, none of them out).
+///
+/// With a known breeder within `danger_monster_max_distance` grids of the
+/// Borg, the way out is the set of known floor grids at least
+/// `caution_retreat_dead_end_distance` grids from every known breeder, and
+/// the known staircases. Paths use known floor only (unknown grids are
+/// walls; monsters, which move, are ignored).
+/// - Mode 1 refuses a dead end: a grid whose every known path out passes
+///   through the Borg's own grid.
+/// - Mode 2 also refuses a grid farther from the way out (by known path)
+///   than the Borg's own grid.
+///
+/// Nothing is refused when the Borg itself has no known path out (no
+/// information), or when it already stands on the way out.
+pub(crate) struct RetreatExits {
+    mode: i32,
+    borg: (i32, i32),
+    map: ExitMap,
+}
+
+impl RetreatExits {
+    fn for_think(st: &BorgState) -> Option<Self> {
+        let mode = p(Param::caution_retreat_dead_end);
+        if mode == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+            return None;
+        }
+        let breeders = known_breeders(st);
+        let reach = p(Param::danger_monster_max_distance);
+        if !breeders.iter().any(|&b| engine::distance(b, st.borg.c) <= reach) {
+            return None;
+        }
+        let clear = p(Param::caution_retreat_dead_end_distance);
+        let passable = |x: i32, y: i32| {
+            (1..AUTO_MAX_X - 1).contains(&x) && (1..AUTO_MAX_Y - 1).contains(&y) && {
+                let ag = st.cave.grid(x, y);
+                borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+            }
+        };
+        let mut out = Vec::new();
+        for y in 1..AUTO_MAX_Y - 1 {
+            for x in 1..AUTO_MAX_X - 1 {
+                let at = loc { x, y };
+                if !passable(x, y) {
+                    continue;
+                }
+                let feat = u32::from(st.cave.grid(x, y).feat);
+                if feat == FEAT_LESS || feat == FEAT_MORE || breeders.iter().all(|&b| engine::distance(b, at) >= clear) {
+                    out.push(at);
+                }
+            }
+        }
+        let map = exit_map(&passable, AUTO_MAX_X, AUTO_MAX_Y, &out, st.borg.c);
+        let borg = map.at(st.borg.c.x, st.borg.c.y);
+        // No known way out, or on it already: nothing to keep to.
+        if borg.0.is_none() || borg.0 == Some(0) {
+            return None;
+        }
+        Some(RetreatExits { mode, borg: (st.borg.c.x, st.borg.c.y), map })
+    }
+
+    fn refuses(&self, x: i32, y: i32) -> bool {
+        exit_refuses(&self.map, self.mode, self.borg, (x, y))
+    }
+}
+
+/// The known breeders' grids (the kills of an RF_MULTIPLY race).
+fn known_breeders(st: &BorgState) -> Vec<loc> {
+    let mut breeders = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            breeders.push(kill.pos);
+        }
+    }
+    breeders
+}
+
+/// Two breadth-first searches over `passable` grids (king moves) from the
+/// way out (`out`): the distance of every grid, and whether it is reached
+/// with the Borg's grid closed.
+struct ExitMap {
+    width: i32,
+    dist: Vec<i32>,
+    without_borg: Vec<bool>,
+}
+
+impl ExitMap {
+    /// (known-path distance to the way out, reached without the Borg's grid)
+    fn at(&self, x: i32, y: i32) -> (Option<i32>, bool) {
+        let i = (y * self.width + x) as usize;
+        let d = self.dist.get(i).copied().unwrap_or(-1);
+        ((d >= 0).then_some(d), self.without_borg.get(i).copied().unwrap_or(false))
+    }
+}
+
+fn exit_map(passable: &dyn Fn(i32, i32) -> bool, width: i32, height: i32, out: &[loc], borg: loc) -> ExitMap {
+    let n = (width * height) as usize;
+    let index = |x: i32, y: i32| (y * width + x) as usize;
+    let search = |closed: Option<loc>| {
+        let mut dist = vec![-1; n];
+        let mut queue = std::collections::VecDeque::new();
+        for &o in out {
+            if Some(o) != closed && passable(o.x, o.y) && dist[index(o.x, o.y)] < 0 {
+                dist[index(o.x, o.y)] = 0;
+                queue.push_back(o);
+            }
+        }
+        while let Some(at) = queue.pop_front() {
+            let d = dist[index(at.x, at.y)];
+            for (dx, dy) in NEIGHBOURS {
+                let (x, y) = (at.x + dx, at.y + dy);
+                if x < 0 || y < 0 || x >= width || y >= height || Some(loc { x, y }) == closed || !passable(x, y) {
+                    continue;
+                }
+                if dist[index(x, y)] < 0 {
+                    dist[index(x, y)] = d + 1;
+                    queue.push_back(loc { x, y });
+                }
+            }
+        }
+        dist
+    };
+    let dist = search(None);
+    let without_borg = search(Some(borg)).into_iter().map(|d| d >= 0).collect();
+    ExitMap { width, dist, without_borg }
+}
+
+/// `caution_retreat_dead_end`'s test of one grid (`at`), the Borg at `borg`.
+fn exit_refuses(map: &ExitMap, mode: i32, borg: (i32, i32), at: (i32, i32)) -> bool {
+    if at == borg {
+        return false;
+    }
+    let (here, _) = map.at(borg.0, borg.1);
+    let (there, out_without_borg) = map.at(at.0, at.1);
+    if !out_without_borg {
+        return true;
+    }
+    mode >= 2 && match (here, there) {
+        (Some(h), Some(t)) => t > h,
+        (Some(_), None) => true,
+        _ => false,
+    }
+}
+
 /// Lava burns for 100+1d100 fire damage a turn: a Borg that is not immune to
 /// fire must never choose it as a step (borg-reborn-rs#458).
 fn lava_forbids_step(st: &BorgState, ag: &BorgGrid) -> bool {
@@ -1388,6 +1552,9 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
     // Check the freedom
     let mut b_f = borg_freedom(st, st.borg.c.y, st.borg.c.x);
+
+    // borg-reborn-rs (#881): no back-up into a dead end near breeders.
+    let exits = RetreatExits::for_think(st);
 
     // Attempt to find a better grid
     for i in 0..8 {
@@ -1430,6 +1597,11 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
         // If i was here last round and 3 rounds ago, suggesting a "bounce"
         if bouncing(st, y, x) {
+            continue;
+        }
+
+        // borg-reborn-rs (#881): not into a dead end (`caution_retreat_dead_end`)
+        if exits.as_ref().is_some_and(|e| e.refuses(x, y)) {
             continue;
         }
 
@@ -6437,6 +6609,45 @@ mod breeder_tests {
                 && x >= 0
                 && map[y as usize].as_bytes().get(x as usize).is_some_and(|&c| !matches!(c, b'#' | b'%' | b' '))
         }
+    }
+
+    /// #881 part 2: a lattice pocket (squares linked only diagonally) under a
+    /// corridor, the Borg at 3,5. The tip 2,6 is reached only through the
+    /// Borg's grid: a dead end (mode 1). 6,6 is out of the way (farther than
+    /// the Borg from the corridor), refused only by mode 2.
+    #[test]
+    fn retreat_refuses_the_pocket_tip_and_mode_2_the_grids_deeper_in() {
+        const POCKET: [&str; 7] = [
+            "#########",
+            "#.......#",
+            "####.####",
+            "###,#,###",
+            "####,####",
+            "###,#,###",
+            "##,###,##",
+        ];
+        let passable = map_passable(&POCKET);
+        let out: Vec<loc> = (1..8).map(|x| loc { x, y: 1 }).collect();
+        let borg = loc { x: 3, y: 5 };
+        let map = exit_map(&passable, 9, 7, &out, borg);
+        assert_eq!(map.at(3, 5).0, Some(4), "the Borg, four steps from the corridor");
+        assert_eq!(map.at(4, 4).0, Some(3));
+        let b = (3, 5);
+        for mode in [1, 2] {
+            assert!(exit_refuses(&map, mode, b, (2, 6)), "the tip, mode {mode}");
+            assert!(!exit_refuses(&map, mode, b, (4, 4)), "toward the door, mode {mode}");
+            assert!(!exit_refuses(&map, mode, b, (5, 5)), "as far as the Borg, mode {mode}");
+            assert!(!exit_refuses(&map, mode, b, b), "its own grid, mode {mode}");
+        }
+        assert!(!exit_refuses(&map, 1, b, (6, 6)), "deeper, not a dead end");
+        assert!(exit_refuses(&map, 2, b, (6, 6)), "deeper: farther from the way out");
+        // With the Borg at 4,4 the whole branch behind it (3,5 and the tip)
+        // is a dead end; with the Borg at 5,5 the tip is not.
+        let map = exit_map(&passable, 9, 7, &out, loc { x: 4, y: 4 });
+        assert!(exit_refuses(&map, 1, (4, 4), (3, 5)));
+        assert!(exit_refuses(&map, 1, (4, 4), (2, 6)));
+        let map = exit_map(&passable, 9, 7, &out, loc { x: 5, y: 5 });
+        assert!(!exit_refuses(&map, 1, (5, 5), (2, 6)));
     }
 
     #[test]
