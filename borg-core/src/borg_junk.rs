@@ -267,13 +267,6 @@ pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
     true
 }
 
-/// Eating has no change-back prompt (cmd-obj.c:do_cmd_eat_food), and
-/// cmd-core.c:cmd_get_item hides the pack while shapechanged. The drop
-/// fallback can change back and proceed (cmd-obj.c:do_cmd_drop).
-fn can_consume_junk(item: &borg_item, shapechanged: bool) -> bool {
-    item.aware && !(shapechanged && matches!(u32::from(item.tval), TV_FOOD | TV_MUSHROOM))
-}
-
 /// Attempt to consume an item as a method of destroying it
 /// (`borg_consume`).
 fn borg_consume(st: &mut BorgState, i: i32) -> bool {
@@ -282,7 +275,7 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
     let class = st.borg.tr(BI_CLASS);
     let v = &st.item_val;
 
-    if !can_consume_junk(&item, engine::player_is_shapechanged()) {
+    if !item.aware {
         return false;
     }
 
@@ -1534,38 +1527,4 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::borg_item::blank_item;
-
-    #[test]
-    fn a_full_pack_with_slime_mold_juice_drops_food_in_fox_form() {
-        let mut junk = blank_item();
-        junk.iqty = 1;
-        let mut pack = [junk; 23];
-        // The last slot fills with juice. The selected junk is ordinary
-        // food in another slot. Even equal svals cannot make a potion food.
-        let slime_mold = 2;
-        pack[slime_mold].iqty = 6;
-        pack[slime_mold].tval = TV_FOOD as u8;
-        pack[slime_mold].sval = 1;
-        pack[slime_mold].aware = true;
-
-        let juice = 22;
-        pack[juice] = pack[slime_mold];
-        pack[juice].iqty = 4;
-        pack[juice].tval = TV_POTION as u8;
-
-        assert!(pack.iter().all(|item| item.iqty != 0));
-        assert!(!can_consume_junk(&pack[slime_mold], true));
-        assert!(can_consume_junk(&pack[slime_mold], false));
-        assert!(can_consume_junk(&pack[juice], true));
-        assert!(can_consume_junk(&pack[juice], false));
-
-        pack[slime_mold].tval = TV_MUSHROOM as u8;
-        assert!(!can_consume_junk(&pack[slime_mold], true));
-    }
 }
