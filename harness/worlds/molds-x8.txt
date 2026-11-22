@@ -2,10 +2,13 @@
 # by 8 (monster.txt; the mold keeps depth 1, rarity 1), so the mold's
 # allocation weight against a rarity-r race is about 8x (the engine truncates
 # 100 / rarity, mon-make.c:113, so the realised odds differ; the zoo measures
-# the encounters). The level's monster count is unchanged. The grey mold rolls
-# about 2 +- 1 HP (mon_hp, mon-make.c:956), so one arrow or dagger hit often
-# leaves it alive at exactly 0 HP (mon_take_hit kills only below 0,
-# mon-util.c:1300): the case kill_live_zero_hp (#975) is for. It never moves,
+# the encounters). The level's monster count is unchanged. At DL1 the mold's
+# share of the allocation table goes from 6.67 % (1 of 15 rarity-1 races) to 37.3 % (5.6x).
+# Its HP (mon_hp, mon-make.c:956; Rand_normal, z-rand.c:313; the MAX(..., 1)
+# clamp, mon-make.c:1151) is 1 (16 %), 2 (68 %), 3 (14 %) or 4+ (2 %), so a
+# 1d4 hit leaves it alive at exactly 0 HP about a quarter of the time
+# (mon_take_hit kills only below 0, mon-util.c:1300): the case
+# kill_live_zero_hp (#975) is for. It never moves,
 # spores for 1d4 twice a turn and does not confuse (unlike the grey mushroom
 # patch of #969).
 favour = grey mold
