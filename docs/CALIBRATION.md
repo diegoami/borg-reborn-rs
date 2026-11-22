@@ -5889,7 +5889,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   values change every town visit); 80,000-turn games run the town plan
   without a panic.
 
-- **Recall and Phase Door, bought more** (owner, 2026-11-21: "current
+- **Recall and Phase Door, bought more** (first measurement, on the earlier track-p and with the 64-bit mask of the first review finding; superseded by the re-measurement below) (owner, 2026-11-21: "current
   characters do not buy enough world of recall and should buy more, and
   probably more phase doors as well, they tend to run out of them, especially
   rangers"). Shipped: `town_recall_reserve` 1 -> 2, `buy_recall_from_gold`
@@ -5911,6 +5911,27 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   after (Rogue 3.5 -> 9.0, Blackguard 3.8 -> 14.5); times the stack hit zero
   at most 1.5 a game against up to 2.5. Mean CL 8.8 / 8.75, max depth 3.64 /
   3.50, 2 / 1 of 36 stopped early: no change beyond noise.
+- **Re-measured after the review of #873** (finding 1 fixed, `track-p` with
+  #864's review fixes and #831's Detect Invisible curve merged in; 36 games,
+  200,000 turns, 4 starts a class). The control is the same build with every
+  #863 value set back (the zoo's `ctl` lines: staples, remedies and the depth
+  gate off, Recall reserve 1 and floor 400, Phase Door reserve 0, Ranger 2), the
+  earlier numbers having used an older baseline that lacked #831 and #864's
+  fixes. Bought a game, control / shipped: Detect Invisible 6.2 / 8.4 (the
+  control already buys them since #831), Remove Curse 0.1 / 0.4, a poison cure
+  0.0 / 0.4, a fear remedy 0.3 / 1.7, Phase Door 7.8 / 10.9, Word of Recall 3.7 /
+  4.7, Cure Light Wounds 10.4 / 6.8. The share of departures carrying no Word of
+  Recall, control / shipped: Warrior 50 / 40 percent, Mage 84 / 74, Druid 66 / 60,
+  Priest 56 / 65, Necromancer 88 / 20, Paladin 51 / 39, Rogue 64 / 38, Ranger 79 /
+  59, Blackguard 66 / 59 (better in eight classes of nine). Departures with 5 or
+  fewer Phase Doors, control / shipped: Warrior 46 / 32, Mage 17 / 25, Druid 1 /
+  15, Priest 28 / 34, Necromancer 21 / 8, Paladin 57 / 39, Rogue 14 / 28, Ranger
+  20 / 25, Blackguard 50 / 3: better in four classes, worse in five, so the Phase
+  Door reserve did not fix running low in every class. Mean CL 9.11 / 9.11, mean
+  max depth 3.78 / 3.83; stopped early 0 / 3 of 36 (a Druid at CL2 on DL1, a Druid at
+  CL7, a Paladin at CL11; the first visit bought the same kit in both arms: eight
+  Cure Light Wounds, 27 flasks, the same Phase Doors): within what 36 games can
+  show, and what the zoo pilot is for.
 - **`town_variety_min_depth`** (compiled 0, **shipped 2**; owner: "it is
   important that in the first level we have the staples"): the staples'
   decay and the remedies only apply once the deepest level reached
