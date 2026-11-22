@@ -96,5 +96,6 @@ issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
   `caution_danger_horizon` 1.
 - Checked on the new head: CI's Rust commands (643 release unit tests),
   citations, smoke 3/3 identical. borg-zoo#626 was pinned to `296adfbf`; its
-  pin moves to the new head (the `faint25` and `all` arms change for fast
-  characters; the other arms play the same).
+  pin moves to the new head: every arm, `ctl` included, now plays track-p
+  `4c686250` (#863 and the rest), and `faint25` and `all` also change for
+  characters faster than normal.
