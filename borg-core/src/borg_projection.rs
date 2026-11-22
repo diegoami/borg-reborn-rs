@@ -791,8 +791,6 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32, skip_player:
 
     /* Determine "path" */
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let mut n_x = cx;
-    let mut n_y = cy;
 
     /* check for 'in a hall' x axis */
     /* This check is for this: */
@@ -833,61 +831,96 @@ pub fn borg_target_unknown_wall(st: &mut BorgState, y: i32, x: i32, skip_player:
         y_hall = true;
     }
 
-    if skip_player && (n_x != x || n_y != y) {
-        borg_inc_motion(&mut n_y, &mut n_x, cy, cx, y, x);
+    let (c, t) = (loc { x: cx, y: cy }, loc { x, y });
+    let guess = wall_guess_walk(
+        c,
+        t,
+        (x_hall, y_hall),
+        skip_player,
+        |g| {
+            let kill = st.kills.kills[usize::from(st.cave.grid(g.x, g.y).kill)];
+            engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL)
+        },
+        |g| feat_is(st.cave.grid(g.x, g.y), FEAT_NONE),
+    );
+    let g = match guess {
+        WallGuess::Ghost(g) => {
+            borg_note(
+                st,
+                &format!("# Guessing wall ({},{}) under ghostly target ({},{})", g.y, g.x, g.y, g.x),
+            );
+            g
+        }
+        /* not sure... should we return here? maybe should mark ALL
+         * unknowns in path... */
+        WallGuess::Unknown(g) | WallGuess::BeforeTarget(g) => {
+            borg_note(st, &format!("# Guessing wall ({},{}) near target ({},{})", g.y, g.x, y, x));
+            g
+        }
+        WallGuess::NextToBorg => {
+            borg_note(st, "# No wall to guess: the target is next to the Borg (#929)");
+            return false;
+        }
+    };
+    st.cave.grid_mut(g.x, g.y).feat = FEAT_GRANITE as u8;
+    true
+}
+
+/// What `borg_target_unknown_wall` guesses (#929).
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum WallGuess {
+    /// A wall-passing monster's grid ("under ghostly target").
+    Ghost(loc),
+    /// The first unknown grid of the path (off the hallway).
+    Unknown(loc),
+    /// No unknown grid: the step back from the target.
+    BeforeTarget(loc),
+    /// `skip_player` only: no unknown grid, and the step back from the
+    /// target is the Borg's grid.
+    NextToBorg,
+}
+
+/// The walk of `borg_target_unknown_wall` from the Borg's grid `c` to the
+/// target `t`, without the map writes: `ghost` and `unknown` read the
+/// Borg's map, `halls` is (x_hall, y_hall). C's walk starts at `c`, so an
+/// unknown grid under the Borg, or the step back from an adjacent target,
+/// is guessed there. borg-reborn-rs (#929): `skip_player` starts at the
+/// first step and never returns `c`.
+pub(crate) fn wall_guess_walk(
+    c: loc,
+    t: loc,
+    (x_hall, y_hall): (bool, bool),
+    skip_player: bool,
+    ghost: impl Fn(loc) -> bool,
+    unknown: impl Fn(loc) -> bool,
+) -> WallGuess {
+    let (mut n_y, mut n_x) = (c.y, c.x);
+    if skip_player && (n_x != t.x || n_y != t.y) {
+        borg_inc_motion(&mut n_y, &mut n_x, c.y, c.x, t.y, t.x);
     }
 
     loop {
-        let kill_idx = st.cave.grid(n_x, n_y).kill;
-        let kill = st.kills.kills[usize::from(kill_idx)];
-
-        if engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL) {
-            borg_note(
-                st,
-                &format!(
-                    "# Guessing wall ({},{}) under ghostly target ({},{})",
-                    n_y, n_x, n_y, n_x
-                ),
-            );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true; /* not sure... should we return here? */
+        let n = loc { x: n_x, y: n_y };
+        if ghost(n) {
+            return WallGuess::Ghost(n);
         }
 
-        if feat_is(st.cave.grid(n_x, n_y), FEAT_NONE)
-            && (n_y != st.borg.c.y || !y_hall)
-            && (n_x != st.borg.c.x || !x_hall)
-        {
-            borg_note(
-                st,
-                &format!("# Guessing wall ({},{}) near target ({},{})", n_y, n_x, y, x),
-            );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true; /* not sure... should we return here?
-                          maybe should mark ALL unknowns in path... */
+        if unknown(n) && (n_y != c.y || !y_hall) && (n_x != c.x || !x_hall) {
+            return WallGuess::Unknown(n);
         }
 
         /* Pathway found the target. */
-        if n_x == x && n_y == y {
+        if n_x == t.x && n_y == t.y {
             /* end of the pathway */
-            let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-            borg_inc_motion(&mut n_y, &mut n_x, y, x, cy, cx);
-            if skip_player && n_x == cx && n_y == cy {
-                /* borg-reborn-rs (#929): nothing between the Borg and
-                 * the target to guess */
-                borg_note(st, "# No wall to guess: the target is next to the Borg (#929)");
-                return false;
+            borg_inc_motion(&mut n_y, &mut n_x, t.y, t.x, c.y, c.x);
+            if skip_player && n_x == c.x && n_y == c.y {
+                return WallGuess::NextToBorg;
             }
-            borg_note(
-                st,
-                &format!("# Guessing wall ({},{}) near target ({},{})", n_y, n_x, y, x),
-            );
-            st.cave.grid_mut(n_x, n_y).feat = FEAT_GRANITE as u8;
-            return true;
+            return WallGuess::BeforeTarget(loc { x: n_x, y: n_y });
         }
 
         /* Calculate the new location */
-        let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-        borg_inc_motion(&mut n_y, &mut n_x, cy, cx, y, x);
+        borg_inc_motion(&mut n_y, &mut n_x, c.y, c.x, t.y, t.x);
     }
 }
 
@@ -915,6 +948,37 @@ mod tests {
     }
 
     use super::*;
+
+    /// #929: Fang next to the Borg, as in Paladin 1194051723 (Borg (50,87),
+    /// target (51,88)) and Druid 1024822556 (Borg (39,112), target
+    /// (39,111)). C guesses the Borg's own grid after a miss; with
+    /// `skip_player` nothing is guessed. An unknown grid under the Borg (the
+    /// Necromancer with light 0, 798380952) is skipped as well.
+    #[test]
+    fn wall_guess_never_lands_on_the_borg() {
+        let at = |y, x| loc { x, y };
+        let never = |_: loc| false;
+        for (c, t) in [(at(50, 87), at(51, 88)), (at(39, 112), at(39, 111)), (at(49, 88), at(50, 87))] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, never), WallGuess::BeforeTarget(c));
+            assert_eq!(wall_guess_walk(c, t, (false, false), true, never, never), WallGuess::NextToBorg);
+            // the Borg's grid unknown: C guesses it, the guard looks past it
+            let dark_borg = move |g: loc| g == c;
+            assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark_borg), WallGuess::Unknown(c));
+            assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark_borg), WallGuess::NextToBorg);
+        }
+        // A far target: both find the same first unknown grid on the path,
+        // and with none, the same grid before the target, never the Borg's.
+        let (c, t) = (at(10, 10), at(10, 14));
+        let dark = |g: loc| g == at(10, 12);
+        assert_eq!(wall_guess_walk(c, t, (false, false), false, never, dark), WallGuess::Unknown(at(10, 12)));
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, never, dark), WallGuess::Unknown(at(10, 12)));
+        for skip in [false, true] {
+            assert_eq!(wall_guess_walk(c, t, (false, false), skip, never, never), WallGuess::BeforeTarget(at(10, 13)));
+        }
+        // A wall-passing monster on the target is guessed by both.
+        let ghost = |g: loc| g == t;
+        assert_eq!(wall_guess_walk(c, t, (false, false), true, ghost, never), WallGuess::Ghost(t));
+    }
 
     /// Follow `borg_inc_motion` from (y1, x1) for `n` steps.
     fn path(y1: i32, x1: i32, y2: i32, x2: i32, n: usize) -> Vec<(i32, i32)> {

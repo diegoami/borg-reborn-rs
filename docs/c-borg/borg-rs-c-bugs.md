@@ -814,3 +814,27 @@ Format: file, function, (seed, turn when observed), explanation.
 * Rust (`borg_caution.rs`): all kept. `borg_heal()` divides by `BI_MAXHP`
   and the resistance note by `borg_game_ratio`; a 0 there panics where C
   traps.
+
+## 41. A miss is taken for a wall under the Borg (projection)
+
+* File: `angband/src/borg/borg-projection.c:739-830`,
+  `borg_target_unknown_wall()`, called from `borg_update()` when a shot had
+  no hit message.
+* Seen: Paladin 1194051723 (turns 1581-1672, five guesses) and Druid
+  1024822556 (2352, 2382) on track-p `4b2c2fcf`; Necromancer 798380952
+  (#929).
+* The walk starts at `borg.c` (:753-754), so an unknown grid under the Borg
+  is the first guess (:814). With no unknown grid the walk reaches the target
+  and steps back once (:823) and writes that grid (:826): for an adjacent
+  target, the Borg's own grid. The call also follows a plain miss: a thrown or
+  fired miss prints nothing (`make_ranged_throw`, src/player-attack.c:1278-1280)
+  while the missile reaches the monster (`ranged_helper`, :1101-1108). The
+  guess always returns true, so `successful_target` is always set to 2 and
+  `missed_before`'s "skip only one round" for a throw (-12) is never reached
+  from this path.
+* Rust (`borg_projection.rs`, `borg_update.rs`): kept at the default.
+  **Deviation behind `update_miss_wall_guess` = 1 (#929):** a miss at a
+  monster in view seen at the shot is no wall guess, and no guess writes the
+  Borg's grid (`wall_guess_walk` starts at the first step and returns
+  `NextToBorg` instead of the Borg's grid). Shipped 0 until the zoo measures
+  it.

@@ -64,7 +64,7 @@ HOOKED = {
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
     'src/borg_flow_misc.rs',  # #597: the twitch refuses lava
-    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
+    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters; #929: a miss in view is not a wall
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
     'src/borg.rs',  # #530: the scary goals and scary stand flags
@@ -73,7 +73,7 @@ HOOKED = {
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
     'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius
     'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius
-    'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only
+    'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only; #929: no wall guess on the Borg's grid
     'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI

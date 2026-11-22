@@ -1760,13 +1760,18 @@ fn handle_messages(st: &mut BorgState) -> i32 {
 /// monster was seen.
 fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
     let g = st.borg.goal.g;
-    let ag = st.cave.grid(g.x, g.y);
-    if ag.kill == 0 || ag.info & BORG_VIEW == 0 || (g.x == st.borg.c.x && g.y == st.borg.c.y) {
+    let ag = *st.cave.grid(g.x, g.y);
+    if ag.kill == 0 || (g.x == st.borg.c.x && g.y == st.borg.c.y) {
         return None;
     }
     let kill = &st.kills.kills[usize::from(ag.kill)];
-    let age = borg_timer(st, kill.when);
-    (kill.r_idx != 0 && (0..=1).contains(&age)).then_some(age)
+    seen_in_view_age(&ag, kill.r_idx, borg_timer(st, kill.when))
+}
+
+/// `missed_visible_target` on one grid: a monster (`r_idx`), in view, seen
+/// `age` thinks ago, at most one (the think that shot).
+fn seen_in_view_age(ag: &BorgGrid, r_idx: u16, age: BorgTime) -> Option<BorgTime> {
+    (ag.info & BORG_VIEW != 0 && r_idx != 0 && (0..=1).contains(&age)).then_some(age)
 }
 
 /// One message of the "monsters at the goal" pass (use 2).
@@ -2621,4 +2626,24 @@ pub fn borg_init_update(st: &mut BorgState) {
 /// Free the tracking list (`borg_free_update`).
 pub fn borg_free_update(st: &mut BorgState) {
     st.update.wanks = Vec::new();
+}
+
+#[cfg(test)]
+mod miss_wall_guess_tests {
+    use super::*;
+
+    /// #929: the Fang misses (Paladin 1194051723, Druid 1024822556) were
+    /// at a monster in view, seen at the think that threw: a miss, not a
+    /// wall. A monster out of view (detected, remembered) or seen long ago
+    /// still takes C's guess.
+    #[test]
+    fn a_miss_at_a_monster_in_view_is_not_a_wall() {
+        let in_view = BorgGrid { info: BORG_VIEW, kill: 1, ..BorgGrid::default() };
+        let out_of_view = BorgGrid { kill: 1, ..BorgGrid::default() };
+        assert_eq!(seen_in_view_age(&in_view, 54, 1), Some(1));
+        assert_eq!(seen_in_view_age(&in_view, 54, 0), Some(0));
+        assert_eq!(seen_in_view_age(&in_view, 54, 2), None);
+        assert_eq!(seen_in_view_age(&in_view, 0, 1), None);
+        assert_eq!(seen_in_view_age(&out_of_view, 54, 1), None);
+    }
 }
