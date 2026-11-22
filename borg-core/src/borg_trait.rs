@@ -2760,6 +2760,13 @@ pub fn borg_notice_player(st: &mut BorgState) {
     if !b.temp.fast && fast() {
         b.temp.fast = fast();
     }
+    // borg-reborn-rs (#941): the timer clears the flag too. The end of haste
+    // ("You feel yourself slow down.") was taken for monster pain and never
+    // reached the temporary-effect table, so one Potion of Speed left the
+    // Borg "fast" for the rest of the game.
+    if timed_sync(crate::params::value(crate::params::Param::trait_timed_sync)) {
+        b.temp.fast = fast();
+    }
     b.temp.res_acid = timed(TMD_OPP_ACID) != 0;
     b.temp.res_elec = timed(TMD_OPP_ELEC) != 0;
     b.temp.res_fire = timed(TMD_OPP_FIRE) != 0;
@@ -2950,4 +2957,10 @@ mod tests {
         assert_eq!(BORG_ADJ_STR_WGT[15], 20);
         assert_eq!(BORG_BLOWS_TABLE[11][11], 15);
     }
+}
+
+/// borg-reborn-rs (#941): `trait_timed_sync` keeps the Borg's speed flag equal
+/// to the engine timer, both ways.
+pub(crate) fn timed_sync(value: i32) -> bool {
+    value != 0
 }
