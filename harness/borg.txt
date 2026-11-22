@@ -724,10 +724,11 @@ borg_param_recover_unseen_shot = 1
 # monster that can move, faster than the Borg by at least speed_edge, is
 # known within distance grids (in view or not), drink one potion instead of
 # resting: the first of Cure Light, Cure Serious and Cure Critical Wounds. Out of view its danger is 0, so borg_heal does not drink, and the
-# recovery heal drinks no Cure Light Wounds. 0 = off (shipped: today's play)
-# until the zoo measures it (Half-Troll Necromancer 2125189042 rested at
-# 2/17 HP with 12 CLW; the crow came back during the rest).
-borg_param_recover_rest_cure_hp_percent = 0
+# recovery heal drinks no Cure Light Wounds. 0 = off. Shipped on at 50 by the
+# owner (2026-11-22), the value of the borg-zoo#671 pilot (classes-18: never
+# acted); Half-Troll Necromancer 2125189042 rested at 2/17 HP with 12 CLW and
+# the crow came back during the rest.
+borg_param_recover_rest_cure_hp_percent = 50
 borg_param_recover_rest_cure_speed_edge = 1
 borg_param_recover_rest_cure_distance = 20
 
