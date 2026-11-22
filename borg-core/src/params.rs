@@ -2525,7 +2525,9 @@ fn fear_term_name(name: &str) -> bool {
 
 fn is_fear_term(i: usize) -> bool {
     static TERMS: OnceLock<Vec<bool>> = OnceLock::new();
-    TERMS.get_or_init(|| SPECS.iter().map(|s| fear_term_name(s.name)).collect())[i]
+    // A switch is never a price (review of #891, F1:
+    // `danger_hunt_breeder_no_acid_fear` is a flag).
+    TERMS.get_or_init(|| SPECS.iter().map(|s| !matches!(s.unit, "flag" | "mode" | "choice") && fear_term_name(s.name)).collect())[i]
 }
 
 /// borg-reborn-rs (#878): whether a `damage_only` scope is open (the fear
@@ -3139,7 +3141,9 @@ mod tests {
         });
         assert_eq!(inside, (0, 0, value(Param::danger_monblow_poison_hit_power), poison), "value itself never changes");
         assert!(!damage_only_active(), "closed again");
-        assert_eq!(SPECS.iter().filter(|s| fear_term_name(s.name)).count(), 120, "115 fear terms and 5 bonuses");
+        assert!(fear_term_name("danger_hunt_breeder_no_acid_fear"), "the name alone would catch it");
+        assert!(!is_fear_term(Param::danger_hunt_breeder_no_acid_fear as usize), "but it is a flag, not a price");
+        assert_eq!((0..SPECS.len()).filter(|&i| is_fear_term(i)).count(), 119, "114 fear terms and 5 bonuses");
     }
 
     #[test]

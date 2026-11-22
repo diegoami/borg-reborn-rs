@@ -3069,10 +3069,22 @@ pub fn borg_attack_aux_spell_bolt(
 }
 
 /// borg-reborn-rs (#878): the mean paralysis of a cast `oops` mana short:
-/// `randint1(5 * oops + 1)` turns (player-spell.c:541-553,
-/// player-util.c:835-842 at 574b618c), whose mean is `(5 * oops + 2) / 2`.
+/// `randint1(5 * oops + 1)` (player-spell.c:541-553, player-util.c:835-842 at
+/// 574b618c), whose mean is `(5 * oops + 2) / 2`. The counter falls in
+/// `decrease_timeouts`, from `process_world`, once every 10 game turns
+/// (game-world.c:651, :1080): world ticks, not the Borg's turns.
 pub(crate) fn reserve_faint_turns(oops: i32) -> f64 {
     f64::from(5 * oops.max(0) + 2) / 2.0
+}
+
+/// borg-reborn-rs (#878, review of #891, F2): world ticks of paralysis as
+/// Borg turns. A tick is 10 game turns; the Borg gains `extract_energy` of
+/// its speed each game turn and needs 100 for a turn, so a tick is
+/// `energy / 10` of its turns (1 at normal speed, 2 at +10, game-world.c:68-90).
+/// The monsters' damage a Borg turn (`fight_incoming`) times this is their
+/// damage over the faint.
+pub(crate) fn faint_borg_turns(ticks: f64, player_energy: f64) -> f64 {
+    ticks * player_energy / 10.0
 }
 
 /// borg-reborn-rs (#878): the expected damage taken while fainted for
@@ -3089,12 +3101,14 @@ pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64
 
 /// borg-reborn-rs (#878): `attack_reserve_faint_percent`. The reserve spell
 /// is refused when what the awake monsters deal during the mean faint
-/// (`reserve_faint_turns`) reaches that percent of the current HP. The target
-/// (the one monster within `attack_reserve_spell_near_distance`) counts only
-/// if the cast fails; its kill is what the cast gains. Expected blow damage
-/// (`fight_incoming`), not danger: no fear prices. Poison taken over time is
-/// not counted.
-fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32) -> bool {
+/// (`reserve_faint_turns`, in Borg turns by `faint_borg_turns`) reaches that
+/// percent of the current HP. The target (`target`: the one monster the
+/// reserve spell's own loop found within `attack_reserve_spell_near_distance`)
+/// counts only if the cast fails; its kill is what the cast gains. Distances
+/// are the reserve loop's (the larger of the two axes: the steps a monster
+/// needs). Expected blow damage (`fight_incoming`), not danger: no fear
+/// prices. Poison taken over time is not counted.
+fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32, target: Option<usize>) -> bool {
     let percent = param(Param::attack_reserve_faint_percent);
     if percent <= 0 {
         return false;
@@ -3103,24 +3117,23 @@ fn reserve_faint_refused(st: &mut BorgState, spell: borg_spells, mana: i32) -> b
     if oops <= 0 {
         return false;
     }
-    let turns = reserve_faint_turns(oops);
     let fail = f64::from(crate::borg_magic::borg_spell_fail_rate(st, spell).clamp(0, 100)) / 100.0;
     let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
     let player = energy(engine::player_combat_speed());
-    let near = param(Param::attack_reserve_spell_near_distance);
+    let turns = faint_borg_turns(reserve_faint_turns(oops), player);
     let mut monsters = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
         if kill.r_idx == 0 || !kill.awake {
             continue;
         }
-        let d = dist_to(st, kill.pos.x, kill.pos.y);
+        let d = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) {
             continue;
         }
         let hp = crate::borg_caution::fight_incoming(st, i).hp_per_turn;
         let moves = energy(crate::borg_caution::forecast_monster_speed(&kill)) / player;
-        let weight = if d < near { fail } else { 1.0 };
+        let weight = if target == Some(i) { fail } else { 1.0 };
         monsters.push((hp, d, moves, weight));
     }
     let damage = faint_contact_damage(&monsters, turns);
@@ -3149,6 +3162,8 @@ fn borg_attack_aux_spell_bolt_reserve(
     max_range: i32,
 ) -> i32 {
     let mut near_monsters = 0;
+    // borg-reborn-rs (#878): the one near monster, the cast's target.
+    let mut near_target = None;
 
     /* Fake our Mana */
     let sv_mana = tr(st, BI_CURSP);
@@ -3212,6 +3227,7 @@ fn borg_attack_aux_spell_bolt_reserve(
          */
         if d < param(Param::attack_reserve_spell_near_distance) {
             near_monsters += 1;
+            near_target = Some(i as usize);
 
             /* If it has too many hp to be taken out with this */
             /* spell, don't bother trying */
@@ -3234,7 +3250,7 @@ fn borg_attack_aux_spell_bolt_reserve(
     }
 
     // borg-reborn-rs (#878): no fainting next to what bites.
-    if reserve_faint_refused(st, spell, sv_mana) {
+    if reserve_faint_refused(st, spell, sv_mana, near_target) {
         return 0;
     }
 
@@ -5720,6 +5736,16 @@ mod reserve_faint_tests {
         assert_eq!(reserve_faint_turns(1), 3.5);
         assert_eq!(reserve_faint_turns(2), 6.0);
         assert_eq!(reserve_faint_turns(0), 1.0);
+    }
+
+    /// #878 review F2: a tick of paralysis is more Borg turns for a fast
+    /// Borg (extract_energy 10 at normal speed, 20 at +10, 30 at +20).
+    #[test]
+    fn a_fast_borg_takes_more_blows_while_fainted() {
+        assert_eq!(faint_borg_turns(3.5, 10.0), 3.5);
+        assert_eq!(faint_borg_turns(3.5, 20.0), 7.0);
+        let adjacent = |e| faint_contact_damage(&[(0.9, 1, 0.5, 1.0)], faint_borg_turns(3.5, e));
+        assert!((adjacent(30.0) - 3.0 * adjacent(10.0)).abs() < 1e-9);
     }
 
     #[test]

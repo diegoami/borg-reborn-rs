@@ -57,7 +57,8 @@ chose them (RULES 14).
    not counted.
 2. **Danger without fear** (`params::damage_only`, `borg_danger_damage_only`).
    Inside the scope, `borg_danger.rs`'s parameter reads (`danger_value`) give 0
-   for every `danger_*_fear` and `danger_*_fear_<n>` term (115) and the five
+   for every `danger_*_fear` and `danger_*_fear_<n>` price (114; not the flag
+   `danger_hunt_breeder_no_acid_fear`: a switch is never zeroed) and the five
    breeder and friends bonuses (`danger_breeder_*_extra_tenths`,
    `danger_friends_*_extra_tenths`), and `borg_danger` skips the regional and
    monster fear maps. Everything else (dice x sides, monster moves, the
@@ -70,13 +71,16 @@ chose them (RULES 14).
    reserve spell's "must be dangerous" test.
 3. **No faint next to what bites** (`attack_reserve_faint_percent`). Casting
    `oops` mana short faints the caster `randint1(5 x oops + 1)` turns
-   (player-spell.c:541-553, player-util.c:835-842), mean `(5 x oops + 2) / 2`.
+   (player-spell.c:541-553, player-util.c:835-842), mean `(5 x oops + 2) / 2`
+   world ticks (the counter falls once every 10 game turns, game-world.c:651,
+   :1080), that is `energy / 10` Borg turns a tick for the Borg's speed.
    The reserve spell is refused when the expected blow damage of the awake
    monsters over that mean reaches the percent of the current HP: each from
-   the turn it can reach the Borg (distance − 1 steps at its speed; a
-   monster that never moves only when adjacent), the target (the one monster
-   within `attack_reserve_spell_near_distance`) only by the cast's fail rate,
-   since its kill is what the cast gains.
+   the turn it can reach the Borg (distance − 1 steps at its speed, the
+   distance the reserve spell's loop uses: the larger axis; a monster that
+   never moves only when adjacent), the target (the one monster that loop
+   found within `attack_reserve_spell_near_distance`) only by the cast's
+   fail rate, since its kill is what the cast gains.
 4. **`danger_breeder_melee_extra_tenths`** is already a setting (15: +150%;
    the comment "extra 50%" in `danger_one_kill` and in C's
    borg-danger.c:2422-2425 does not match). Arms 5 and 15 need no code.
