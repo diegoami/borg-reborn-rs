@@ -6435,3 +6435,40 @@ medium runs are the measurement.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `trait_timed_sync` | 0 | flag | 0–1 | `borg_trait.rs:2776` |
+
+## The player's own messages and the speed of timed effects (#1032, #1033)
+
+Two more places where the Borg's reading of its own state differed from the
+engine, found while checking #941 and fixed in the same PR (owner, 2026-11-22).
+
+**`messages_player_not_pain`** (#1032). Three of the player's end-of-effect
+messages, "You are no longer confused.", "You are no longer stunned." and "You
+can move again." (`player_timed.txt:227`, `:283`, `:219`), matched the pain
+suffixes "[is|are] no longer confused." (etc.) of `MON_MSG_REPOSITORY`. The Borg
+reacted to pain of a monster named "You": a player-ghost guess, a kill search
+and `target_worked` (`borg_update.rs`). At 1 a message whose subject is "You"
+skips the pain table, except the "You feel ..." messages, which stay
+`trait_timed_sync`'s so that the two switches remain separate. Every "You ..."
+message of `lib/gamedata` and `src` was checked against the pain list: only these
+three (and #941's two) match, and no monster message has "You" as its subject. The
+states themselves (confusion, stun, paralysis) were read from the timers either way.
+
+**`trait_speed_timed`** (#1033). `BI_SPEED` added +10 for FAST or SPRINT, else
++5 for TERROR, and ignored SLOW (`borg_trait.rs:858-872`, C's). The engine adds
++10 for FAST or SPRINT, -10 for SLOW and +10 for TERROR, independently
+(`player-calcs.c:2176-2187`). At 1 the Borg adds the same. A synthetic check
+(labelled as such: Human Warrior, seed 11, `start-depth=4`,
+`start-monsters=tamer:2`, the tamer casts SLOW) was slowed from turn 320 to 387:
+at 0 `BI_SPEED` stayed 110 while the engine's speed was 100; at 1 they were equal
+throughout. C's other double count, +10 in `borg_danger` while `temp.fast` is
+set on top of `BI_SPEED`'s own +10, is unchanged.
+
+Both are compiled 0 (C) and **shipped 1** (P8). No replayed game changes its keys
+with either (smoke, seed 2008390085, seed 224, the tamer check). Smoke's
+messages lose the false "PAIN:You" notes. Neither is a measured improvement
+(RULES 14).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1274` |
+| `trait_speed_timed` | 0 | flag | 0–1 | `borg_trait.rs:859` |
