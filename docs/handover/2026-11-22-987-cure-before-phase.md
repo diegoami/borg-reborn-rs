@@ -104,7 +104,7 @@ The fixes are in the second commit:
 4. The parameter text says the order is decided on the whole wares in the
    purse. The percent is a margin, not a switch against the reserve's.
 
-### Merge of track-p `2415bedf` (#978, #979)
+### Merges of track-p `2415bedf` (#978, #979) and `c15a4e73` (#975)
 
 #978 appended its own last row (Restore Life reserve, 76). The first-cure
 row is now 77. `initial_curves` sizes the model to the Restore Life row, not
@@ -115,6 +115,11 @@ Re-checked on the default core (borg-rs) against a build of `2415bedf`:
   byte-identical plan records.
 - The counterfactuals keep `ae44baf763d8a7f9` and `d81348b6b29fef5b`.
 - Smoke is 3/3 identical to `smoke-borg-rs`.
+
+`c15a4e73` (#975, `kill_live_zero_hp`, off by default) conflicted only in
+`docs/CALIBRATION.md`, where both sides appended a section. Re-checked against
+a build of `c15a4e73`, with the same results: the same hash and plan records,
+the same counterfactual hashes, and smoke 3/3.
 
 ### Left, and for the owner
 
