@@ -229,7 +229,7 @@ pub fn borg_update_light(st: &mut BorgState) {
         /* Scan the maximal box (#958: outer_ring_grids) */
         let lit = outer_ring_grids(cy, cx, p, engine_shape,
             |y, x| st.cave.grid(x, y).info & BORG_VIEW != 0,
-            |y, x| borg_los_light(st, cy, cx, y, x));
+            |y, x| borg_los_projectable(st, cy, cx, y, x));
         for (y, x) in lit {
             /* This grid is "torch lit" */
             borg_cave_light_hack(st, y, x);

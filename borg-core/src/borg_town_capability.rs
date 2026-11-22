@@ -1369,7 +1369,7 @@ mod tests {
             settings[(BORG_TOWN_HOME_DISCOUNT - BORG_TOWN_PLAN) as usize] = 500;
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            let input = StepInput { revision: 12, capability: Some(&m), utility: true,
+            let input = StepInput { storing: None, revision: 12, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 4, weight: 100 },
                 urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
