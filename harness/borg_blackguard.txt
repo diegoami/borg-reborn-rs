@@ -31,7 +31,7 @@ borg_param_prepared_deep_max_clevel = 38
 # decay starts past a trip's real need.
 borg_param_town_staple_clw = 7
 borg_param_town_staple_csw = 4
-borg_param_town_staple_phase = 12
+borg_param_town_staple_phase = 16
 borg_param_town_staple_oil = 14
 # #863 (owner: they run out of Phase Door): the first 8 are a requirement.
-borg_param_town_phase_reserve = 8
+borg_param_town_phase_reserve = 10

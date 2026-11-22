@@ -5895,7 +5895,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   rangers"). Shipped: `town_recall_reserve` 1 -> 2, `buy_recall_from_gold`
   400 -> 200 (a scroll is bought only when that much gold remains after it),
   `town_phase_reserve` 0 -> 4 for every class (Ranger 2 -> 8, Blackguard 8,
-  Priest 6, class files). Neither Word of Recall nor missiles are touched by
+  Priest 6, class files; raised again below). Neither Word of Recall nor missiles are touched by
   the staples' decay (Recall keeps its own curve, #864; missiles their own
   caps). Before (36 games, 200,000 turns, the share of town departures after
   the first that carry no Word of Recall): Warrior 39 percent, Mage 94,
@@ -5932,6 +5932,27 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   CL7, a Paladin at CL11; the first visit bought the same kit in both arms: eight
   Cure Light Wounds, 27 flasks, the same Phase Doors): within what 36 games can
   show, and what the zoo pilot is for.
+- **Phase Door, raised again** (owner, 2026-11-22: "Ranger seems to run out
+  more often of phase doors", "but the other ones too"). The first
+  measurement counted every "Town departure room" line as a visit, but the
+  Borg also bounces between DL1 and town at CL1 without shopping, so a Ranger
+  "left with 3" nineteen visits running without ever shopping; the measure
+  that follows counts only visits that bought three or more things, and the
+  times the Phase Door stack hit zero in the dungeon. 36 games, 200,000
+  turns, 4 starts a class, same build. Control (all #863 values back) /
+  Phase Door reserve 4 (Ranger, Blackguard 8, Priest 6; knees 10-15) /
+  **shipped now**: stack hit zero a game 0.58 / 0.28 / 0.14; after a shopping
+  visit 5 or fewer Phase Doors: Warrior 50 / 33 / 0 percent, Mage 39 / 36 / 7,
+  Druid 4 / 6 / 4, Priest 41 / 22 / 0, Necromancer 20 / 15 / 0, Paladin 50 / 37 /
+  0, Rogue 19 / 38 / 0, Ranger 39 / 13 / 4, Blackguard 66 / 0 / 0; 8 or fewer:
+  Ranger 78 / 50 / 8, Blackguard 91 / 50 / 4; median carried 5-9 / 6-12 / 6-16.
+  Mean CL 9.11 / 9.11 / 8.92, mean max depth 3.78 / 3.83 / 3.78, stopped early
+  0 / 3 / 2 of 36. Shipped: `town_phase_reserve` 6 (Ranger 10, Blackguard 10,
+  Priest 8), `town_phase_reserve_percent` 150 (each reserved scroll worth 150
+  percent of the trip's escape weight, to outbid arrows and flasks at a small
+  purse), and the Phase Door free copies Warrior 16, Mage 12, Druid 12, Priest
+  12, Necromancer 12, Paladin 14, Rogue 16, Ranger 20, Blackguard 16. A hypothesis
+  for the zoo's `kit` arm. The reserve's range stops at 10.
 - **`town_variety_min_depth`** (compiled 0, **shipped 2**; owner: "it is
   important that in the first level we have the staples"): the staples'
   decay and the remedies only apply once the deepest level reached
