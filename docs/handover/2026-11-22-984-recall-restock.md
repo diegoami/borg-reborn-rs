@@ -83,9 +83,12 @@ core is 3/3 identical to `smoke-borg-rs`, so it was not re-recorded.
 - The zoo measures the two switches, each alone and both, against the
   shipped settings: the request is [borg-zoo#688](https://github.com/diegoami/borg-zoo/issues/688), on `434d5371` (RULES 20). The owner starts
   it.
-- The counterfactual replays belong in borg-cemetery, beside the dossier
-  on branch `runs/2026-11-22-trackp-9085-full-deaths`; the arms and hashes
-  above are the recipe.
+- The counterfactual replays are the study
+  [borg-cemetery#133](https://github.com/diegoami/borg-cemetery/pull/133)
+  (`studies/recall-shallow-blackguard-312081895`): six arms with their keys,
+  plus the town plan records of the visit. The death's dossier is
+  `D-6fb7bf106e60…` on `runs/2026-11-22-trackp-9085c266-full-deaths`
+  (borg-cemetery#129).
 - The 29,000 turns on DL2 with "no up stairs found" are not covered here.
   They are the stair-finding pattern of #935 (this seed was added there).
   The jelly loop at the end is #932.
