@@ -37,7 +37,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_SPEED,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_RPOIS, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -2335,6 +2335,15 @@ mod recall_quantity_tests {
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = p(Param::caution_recall_survival_delay);
+    // #880: 1 prices POISON as damage, status blows by their dice and
+    // never vetoes on a breeder; 0 is #758's rule (every blow other than
+    // HURT/ACID/ELEC/FIRE/COLD/NONE is an unmodelled risk).
+    let blow_model = p(Param::caution_recall_blow_model) != 0;
+    let mut poison_strike: Option<f64> = None;
+    let mut poison_timer = 0.0;
+    let mut breeders_waived = 0;
+    let mut contact_rates: Vec<f64> = Vec::new();
+    let mut through_walls = false;
     let player_energy = f64::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1.0);
     let mut exposure = 0.0;
     let mut unknown_risks = 0;
@@ -2367,12 +2376,54 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
             st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
         let Some(risk_steps) = recall_attack_steps(steps, forecast.ranged_risk, projectable) else { continue };
         reachable += 1;
-        if forecast.unknown_damage && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
-            unknown_risks += 1;
+        let unknown = if blow_model { forecast.ranged_risk || forecast.recall_unknown_blow } else { forecast.unknown_damage };
+        if unknown && recall_exposure(1.0, player_energy, monster_energy, ticks, risk_steps) > 0.0 {
+            // #880: a breeder is the reason to leave, not a reason to stay.
+            // Every breeder's spells at 574b618c are harmless during Recall
+            // (BLIND/CONF/SCARE, DRAIN_MANA); its dice still count as HP.
+            if blow_model && flag(RF_MULTIPLY) { breeders_waived += 1; } else { unknown_risks += 1; }
         }
         if let Some(contact_steps) = steps {
-            exposure += recall_exposure(forecast.hp_per_turn, player_energy, monster_energy, ticks, contact_steps);
+            let rate = if blow_model {
+                forecast.hp_per_turn * recall_stagger_attack_share(
+                    flag(crate::headers::list_mon_race_flags_h::RF_RAND_25),
+                    flag(crate::headers::list_mon_race_flags_h::RF_RAND_50))
+            } else { forecast.hp_per_turn };
+            let hp = recall_exposure(rate, player_energy, monster_energy, ticks, contact_steps);
+            exposure += hp;
+            if hp > 0.0 {
+                contact_rates.push(rate);
+                through_walls |= pass_wall;
+            }
+            if blow_model && forecast.poisons {
+                let at = recall_travel_ticks(contact_steps, monster_energy);
+                if at < f64::from(ticks) {
+                    poison_strike = Some(poison_strike.map_or(at, |t: f64| t.min(at)));
+                    poison_timer += recall_poison_timer_ticks(f64::from(ticks) - at, monster_energy, i32::from(engine::race(r).level));
+                }
+            }
         }
+    }
+    let mut capped = None;
+    if blow_model {
+        // #880: only the grids next to the Borg can hold an attacker
+        // (make_attack_normal only from a step into the Borg's grid, mon-move.c:1620-1632), so the
+        // contact HP is at most the k fastest damage rates for the whole
+        // delay, k being the neighbours that are not known wall.
+        let open = if through_walls { 8 } else { recall_open_neighbours(|x, y| u32::from(st.cave.grid(x, y).feat), st.borg.c) };
+        let cap = recall_contact_cap(&contact_rates, open, player_energy, ticks);
+        if cap < exposure { capped = Some((exposure, open)); exposure = cap; }
+    }
+    let poison_hp = if blow_model {
+        recall_poison_hp(ticks, st.borg.tr(BI_ISPOISONED) != 0, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
+    } else { 0.0 };
+    exposure += poison_hp;
+    if poison_hp > 0.0 || breeders_waived > 0 || capped.is_some() {
+        let mut parts = Vec::new();
+        if let Some((sum, open)) = capped { parts.push(format!("contact HP {sum:.2} capped at {open} adjacent attackers")); }
+        if poison_hp > 0.0 { parts.push(format!("{poison_hp:.0} poison HP included")); }
+        if breeders_waived > 0 { parts.push(format!("{breeders_waived} breeders' unmodelled risk waived")); }
+        borg_note(st, &format!("# Flight Recall forecast: {} (#880)", parts.join("; ")));
     }
     let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
     if allowed && asleep > 0 {
@@ -2422,6 +2473,11 @@ pub(crate) struct IncomingDamage {
     pub unknown_damage: bool,
     pub unknown_fight: bool,
     pub ranged_risk: bool,
+    /// #880: a blow whose HP is not its dice even during Recall (SHATTER's
+    /// earthquake). Status blows are priced by their dice alone there.
+    pub recall_unknown_blow: bool,
+    /// #880: a POISON blow, which also sets the poison timer.
+    pub poisons: bool,
 }
 
 /// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
@@ -2444,6 +2500,92 @@ fn recall_spell_has_unknown_damage(spell: u32) -> bool {
 
 fn modelled_blow(effect: &[u8]) -> bool {
     matches!(effect, b"HURT" | b"ACID" | b"ELEC" | b"FIRE" | b"COLD" | b"NONE")
+}
+
+/// #880: during the Recall delay the Borg only waits for the countdown,
+/// which no status stops (word_recall ticks down in process_world,
+/// game-world.c:709-714, whatever the player's timed effects). A status
+/// blow (BLIND, CONFUSE, TERRIFY, PARALYZE, HALLU, LOSE_*, EXP_*,
+/// DISENCHANT, DRAIN_CHARGES, EAT_*, BLACK_BREATH) costs the HP of its
+/// dice, already counted for every blow at every monster turn; POISON
+/// adds the poison timer, priced by `recall_poison_hp`. Only SHATTER
+/// (mon-blows.c:1086-1110: an earthquake, which can hit the player) has HP beyond
+/// its dice. The fight certificate (`unknown_fight`) is unchanged.
+fn recall_blow_unmodelled(effect: &[u8]) -> bool {
+    effect == b"SHATTER"
+}
+
+/// #880: poison is one timer that costs 1 HP per world tick while it runs
+/// (game-world.c:513-515; process_world every ten game turns,
+/// game-world.c:1080-1081). Each POISON hit adds 5 + randint1(rlev) ticks
+/// (mon-blows.c:683-684, rlev the race level); POISONED is not
+/// NONSTACKING (player_timed.txt), so hits add up (player-timed.c:1059-
+/// 1070). Several poisoners still cost at most one HP per tick. The bound
+/// is the smaller of the window from the earliest possible strike to the
+/// end of the delay and the most timer the poisoners can add in it
+/// (`timer_ticks`, every action a hit at the largest roll). Already
+/// poisoned, the whole delay counts: the Borg sees the flag, not the
+/// remaining duration (BI_ISPOISONED). Resist poison blocks the timer
+/// (player_timed.txt POISONED `fail:2:POIS`). Damage reduction is ignored.
+fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, timer_ticks: f64, resists: bool) -> f64 {
+    if resists || ticks <= 0 { return 0.0; }
+    let ticks = f64::from(ticks);
+    if already_poisoned { return ticks; }
+    earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(0.0)).max(0.0).min(timer_ticks.max(0.0)))
+}
+
+/// #880: the most poison timer one monster can add in `window` world ticks:
+/// one blow per action, each at the largest roll, 5 + rlev ticks.
+fn recall_poison_timer_ticks(window: f64, monster_energy: f64, rlev: i32) -> f64 {
+    (window.max(0.0) * monster_energy / 10.0).ceil() * f64::from(5 + rlev.max(1))
+}
+
+/// #880: world ticks a monster needs to walk `steps` grids. Each game turn
+/// it gains extract_energy[speed] and each move costs 100 energy
+/// (constants.txt move_energy), so one world tick of ten game turns is
+/// energy/10 moves, and a grid costs 10/energy ticks.
+fn recall_travel_ticks(steps: i32, monster_energy: f64) -> f64 {
+    f64::from(steps.max(0)) * 10.0 / monster_energy.max(1.0)
+}
+
+/// #880: the share of an adjacent monster's turns that are attacks.
+/// RAND_25/RAND_50 add up to a stagger chance (mon-move.c:1087-1103); a
+/// staggering monster tries up to five random directions and attacks if
+/// one is the Borg's grid (mon-move.c:1571-1632), at most 1 - (7/8)^5 of
+/// the time. Confusion is ignored (it only lowers the share).
+fn recall_stagger_attack_share(rand_25: bool, rand_50: bool) -> f64 {
+    let stagger = if rand_25 { 0.25 } else { 0.0 } + if rand_50 { 0.5 } else { 0.0 };
+    let hit_when_staggering = 1.0 - (7.0_f64 / 8.0).powi(5);
+    1.0 - stagger + stagger * hit_when_staggering
+}
+
+/// #880: grids next to the Borg a monster could stand on. Known rubble,
+/// magma, quartz, granite and permanent rock are closed: none is PASSABLE
+/// (terrain.txt; feat_is_passable, cave-square.c:131; the same range as
+/// borg_think_dungeon_util.rs's wall test). Unknown grids, doors, passable
+/// rubble (PASS_RUBBLE is PASSABLE) and floors count as open. A monster
+/// that passes walls is handled by the caller (all eight).
+fn recall_open_neighbours(feat: impl Fn(i32, i32) -> u32, at: loc) -> usize {
+    use crate::headers::list_terrain_h::{FEAT_PERM, FEAT_RUBBLE};
+    let mut open = 0;
+    for dy in -1..=1 {
+        for dx in -1..=1 {
+            if dx == 0 && dy == 0 { continue; }
+            if !(FEAT_RUBBLE..=FEAT_PERM).contains(&feat(at.x + dx, at.y + dy)) { open += 1; }
+        }
+    }
+    open
+}
+
+/// #880: contact HP at most the `open` largest per-turn rates, each for
+/// the whole delay, however many monsters can reach the Borg.
+fn recall_contact_cap(rates: &[f64], open: usize, player_energy: f64, ticks: i32) -> f64 {
+    let mut sorted = rates.to_vec();
+    sorted.sort_by(|a, b| b.total_cmp(a));
+    // No approach discount: each of the fastest attackers is at the Borg for
+    // the whole delay (ticks * player_energy / 10 player turns).
+    let duration = f64::from(ticks) * player_energy / 10.0;
+    sorted.iter().take(open).map(|&r| r * duration).sum()
 }
 
 fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: bool) -> f64 {
@@ -2477,6 +2619,8 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         let effect = blow.effect_name.to_bytes();
         out.unknown_fight |= effect != b"HURT";
         out.unknown_damage |= !modelled_blow(effect);
+        out.recall_unknown_blow |= recall_blow_unmodelled(effect);
+        out.poisons |= effect == b"POISON";
         let vulnerable = match effect {
             b"ACID" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VACID) != 0,
             b"ELEC" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VELEC) != 0,
@@ -2513,6 +2657,49 @@ mod incoming_units_tests {
         assert!(super::recall_spell_has_unknown_damage(RSF_DARKNESS), "has a DARK_WEAK projection too");
         assert!(super::modelled_blow(b"ACID"));
         assert!(!super::modelled_blow(b"POISON"));
+    }
+
+    #[test]
+    fn recall_prices_poison_and_status_blows_as_hp() {
+        assert!(!super::recall_blow_unmodelled(b"POISON"), "#880: the white worm mass's 1d2 bite is HP");
+        assert!(!super::recall_blow_unmodelled(b"PARALYZE"));
+        assert!(!super::recall_blow_unmodelled(b"EXP_10"));
+        assert!(super::recall_blow_unmodelled(b"SHATTER"), "an earthquake's HP is not its dice");
+        // One timer, 1 HP per world tick, bounded by the delay and by the timer the hits can add.
+        assert_eq!(super::recall_poison_hp(34, false, Some(4.0), 99.0, false), 30.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, false), 34.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 6.0, false), 6.0, "one white worm hit: 5 + randint1(1)");
+        assert_eq!(super::recall_poison_hp(34, false, Some(40.0), 99.0, false), 0.0, "arrives after Recall");
+        assert_eq!(super::recall_poison_hp(34, false, None, 0.0, false), 0.0);
+        assert_eq!(super::recall_poison_hp(34, true, None, 0.0, false), 34.0, "an existing timer still ticks");
+        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 0.0, "resist poison blocks the timer");
+        // White worm mass: speed 100 = energy 5, DL1. One action per two
+        // ticks, each hit at most 6 ticks of timer: stacking keeps it going.
+        assert_eq!(super::recall_poison_timer_ticks(2.0, 5.0, 1), 6.0);
+        assert_eq!(super::recall_poison_timer_ticks(34.0, 5.0, 1), 102.0);
+        // Normal speed (energy 10 per game turn): one grid per world tick.
+        assert_eq!(super::recall_travel_ticks(3, 10.0), 3.0);
+        assert_eq!(super::recall_travel_ticks(3, 20.0), 1.5);
+        assert_eq!(super::recall_travel_ticks(3, 5.0), 6.0, "the white worm mass: two ticks a grid");
+    }
+
+    #[test]
+    fn recall_contact_is_capped_by_adjacent_grids_and_erratic_moves() {
+        assert_eq!(super::recall_stagger_attack_share(false, false), 1.0);
+        let worm = super::recall_stagger_attack_share(true, true);
+        assert!((worm - (0.25 + 0.75 * (1.0 - 0.875_f64.powi(5)))).abs() < 1e-12, "RAND_25|RAND_50: 75% stagger");
+        let corridor = |_x: i32, y: i32| if y == 5 { crate::headers::list_terrain_h::FEAT_FLOOR } else { crate::headers::list_terrain_h::FEAT_GRANITE };
+        assert_eq!(super::recall_open_neighbours(corridor, super::loc { x: 5, y: 5 }), 2);
+        assert_eq!(super::recall_open_neighbours(|_, _| 0, super::loc { x: 5, y: 5 }), 8, "unknown grids may hold an attacker");
+        use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_PASS_RUBBLE, FEAT_RUBBLE};
+        let rubble = |_x: i32, y: i32| if y == 5 { FEAT_FLOOR } else { FEAT_RUBBLE };
+        assert_eq!(super::recall_open_neighbours(rubble, super::loc { x: 5, y: 5 }), 2, "rubble is not PASSABLE");
+        let pass = |_x: i32, y: i32| if y == 5 { FEAT_FLOOR } else { FEAT_PASS_RUBBLE };
+        assert_eq!(super::recall_open_neighbours(pass, super::loc { x: 5, y: 5 }), 8, "passable rubble is");
+        // 50 worms at 1 HP/turn in a corridor: two can bite at a time.
+        let rates = vec![1.0; 50];
+        assert_eq!(super::recall_contact_cap(&rates, 2, 10.0, 34), 68.0);
+        assert_eq!(super::recall_contact_cap(&[3.0, 1.0, 2.0], 2, 10.0, 34), 170.0, "the fastest two");
     }
 }
 
