@@ -1,6 +1,6 @@
 ## 2026-11-22: A pending Recall on DL1 and a Recall valued too low on shallow trips (#984)
 
-Branch `task/984-recall-restock`, from `track-p` at `4b2c2fcf`. Every
+Branch `task/P8.984-recall-restock` (first `task/984-recall-restock`, PR #997, closed unmerged), from `track-p` at `4b2c2fcf`. Every
 check below ran on the **default core, borg-rs** (`borg-core/`), with
 `harness/borg.txt` and the zoo report's overrides.
 
@@ -70,6 +70,13 @@ shallow trips (#984)".
 | `town_recall_urgent_depth = 1` | `858a7f7de5dcaff7` | alive at the cap, max DL4, CL7. That visit heads to the Alchemist first but is still cut short; it is stranded on DL2 until 45792, then buys Recall first on every later visit |
 | `caution_recall_dl1_hold_up = 1` | `f0903d718796c565` | alive at the cap, max DL3, CL8. The Recall fires on DL1 ("yanked upwards") |
 | both | `f0463d22b1d8928a` | alive at the cap, max DL2, CL5. The Recall fires on DL1, and it buys a Word of Recall in town at 11291 |
+
+After the merge of track-p `72651d25` the shipped arm still plays
+`4aa99f20ea1ca7e6`. Later track-p changes alter the three switched games,
+and all three still reach the cap: urgent `ed20980857e60d64` (CL7, max
+DL5), hold `0e24c11b5f4c35ca` (CL7, max DL2), both `595edcfa3e822acb`
+(CL8, max DL4; it buys a Recall at 11291). The table above is the build of
+`e0b97ea6`, and borg-cemetery#133 holds those games.
 
 One seed: no claim either way (RULES 14).
 
