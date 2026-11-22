@@ -29,9 +29,10 @@ use crate::borg_headers::borg_magic_h::{
     HERBAL_CURING, RECHARGING, REMEMBRANCE, REMOVE_HUNGER, REVITALIZE, UNHOLY_REPRIEVE,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFIXCON,
-    BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISFORGET, BI_ISHUNGRY,
-    BI_MAXHP, BI_RBLIND, BI_RCONF,
+    BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FOOD, BI_FRACT, BI_ISAFRAID, BI_ISBLIND,
+    BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR,
+    BI_ISFIXWIS, BI_ISFORGET, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
+    BI_ISWEAK, BI_MAXHP, BI_RBLIND, BI_RCONF,
 };
 use crate::headers::list_effects_h::EF_NOURISH;
 use crate::headers::list_tvals_h::{
@@ -158,6 +159,83 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#983, owner 2026-11-22: "test when safe"): the last
+/// potion in the pack the Borg is not aware of (an unlearned flavour), or -1.
+fn last_unaware_potion(st: &BorgState) -> i32 {
+    let mut n = -1;
+    for i in 0..i32::from(engine::z_info().pack_size) {
+        let item = &st.items.items[i as usize];
+        if item.iqty != 0 && u32::from(item.tval) == TV_POTION && !item.aware {
+            n = i;
+        }
+    }
+    n
+}
+
+/// borg-reborn-rs (#983): whether a safe moment to learn a potion flavour
+/// by drinking it: in the dungeon, nothing dangerous here (`danger` of the
+/// next turn is 0), at least `min_hp_percent` of max HP, no harmful status
+/// (`bad_status`), food in the pack (Salt Water empties the stomach,
+/// object.txt). The unknown kinds at DL1-15 that harm are Sleep, Blindness,
+/// Confusion, Poison, Slowness, Surprise and Salt Water (object.txt); none
+/// kills by itself.
+pub(crate) fn unknown_potion_test_safe(depth: i32, cur_hp: i32, max_hp: i32, min_hp_percent: i32,
+    danger: i32, bad_status: bool, food: i32) -> bool {
+    depth > 0 && danger == 0 && !bad_status && food > 0
+        && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent
+}
+
+/// borg-reborn-rs (#983, owner: "test when safe"): with
+/// `item_test_unknown_potions`, drink one unknown potion at a safe moment,
+/// so a found Cure Light Wounds is known before it is needed (seed
+/// 17626119 died confused with 4 unlearned CLW). #470 still forbids every
+/// other unidentified use: scrolls (Deep Descent), mushrooms, devices, and
+/// any unknown item in an emergency.
+pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
+    if param(Param::item_test_unknown_potions) == 0 {
+        return false;
+    }
+    let n = last_unaware_potion(st);
+    if n < 0 {
+        return false;
+    }
+    let bad_status = [BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISPOISONED, BI_ISCUT, BI_ISSTUN,
+        BI_ISHEAVYSTUN, BI_ISIMAGE, BI_ISHUNGRY, BI_ISWEAK, BI_ISFORGET]
+        .into_iter()
+        .any(|f| st.borg.tr(f) != 0);
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP),
+        param(Param::item_test_unknown_min_hp_percent), danger, bad_status, st.borg.tr(BI_FOOD))
+    {
+        return false;
+    }
+    note_desc(st, b"# Testing unknown potion (#983) ", n as usize, b".");
+    crate::borg_object_log::log_use(st, "quaff", &st.items.items[n as usize]);
+    borg_keypress(st, key(b'q'));
+    borg_keypress(st, letter(n));
+    clear_shop_goals(st);
+    st.borg.trying_unknown = true;
+    true
+}
+
+#[cfg(test)]
+mod unknown_potion_tests {
+    use super::unknown_potion_test_safe as safe;
+
+    #[test]
+    fn only_a_safe_moment_in_the_dungeon() {
+        assert!(safe(1, 21, 28, 50, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28, danger 0");
+        assert!(!safe(0, 28, 28, 50, 0, false, 3), "not in town");
+        assert!(!safe(1, 28, 28, 50, 5, false, 3), "a danger next turn");
+        assert!(!safe(1, 13, 28, 50, 0, false, 3), "below the HP floor");
+        assert!(safe(1, 14, 28, 50, 0, false, 3), "at the floor");
+        assert!(!safe(1, 28, 28, 50, 0, true, 3), "a harmful status");
+        assert!(!safe(1, 28, 28, 50, 0, false, 0), "no food after a Salt Water");
+        assert!(!safe(1, 0, 0, 50, 0, false, 3), "no max HP");
+    }
 }
 
 /// Attempt to read the given scroll (by sval).

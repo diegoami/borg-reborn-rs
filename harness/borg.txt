@@ -1395,6 +1395,13 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #983 (owner, 2026-11-22: "test when safe"): drink one unknown potion at a
+# safe moment in the dungeon (danger 0, at least the HP percent below, no
+# harmful status, food in the pack), so a found Cure Light Wounds is known
+# before it is needed. #470 still forbids unknown scrolls, mushrooms, devices
+# and any unknown item in an emergency. 0 = #470 for potions too.
+borg_param_item_test_unknown_potions = 1
+borg_param_item_test_unknown_min_hp_percent = 50
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything

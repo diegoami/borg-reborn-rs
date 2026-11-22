@@ -1223,6 +1223,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_test_stuff");
     }
 
+    // borg-reborn-rs (#983, owner): learn an unknown potion flavour by
+    // drinking it at a safe moment (item_test_unknown_potions).
+    if crate::borg_item_use::borg_quaff_unknown_when_safe(st) {
+        return choice!("borg_quaff_unknown_when_safe");
+    }
+
     /* Enchant things */
     if borg_enchanting(st) {
         return choice!("borg_enchanting");
