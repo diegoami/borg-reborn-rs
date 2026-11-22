@@ -3221,9 +3221,9 @@ pub(crate) fn faint_contact_damage(monsters: &[(f64, i32, f64, f64)], turns: f64
     }).sum()
 }
 
-/// borg-reborn-rs (#878, review of #891, F5): whether a monster `d` grids
-/// away (the larger axis) can strike during the faint: adjacent, or able to
-/// move (a monster that never moves strikes only from where it is).
+/// borg-reborn-rs (#878, review of #891): whether a monster `d` grids away is
+/// not excluded outright from the faint's damage: adjacent, or able to move;
+/// whether a mobile one arrives in time is the caller's `reach`.
 pub(crate) fn faint_reaches(d: i32, never_move: bool) -> bool {
     d <= 1 || !never_move
 }

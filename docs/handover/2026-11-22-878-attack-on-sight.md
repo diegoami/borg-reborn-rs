@@ -108,7 +108,7 @@ issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
   smoke 3/3 identical. borg-zoo#626's pilot ran on `296adfbf`; its
   `faint25` arm never fired there, so the fixes do not change its numbers.
 - Third review round (MiniMax-M3 at `be94bb1f`, no new defect): merged
-  `track-p` `4b2c2fcf` (#937 main, #901/#904: `attack_confused_by_direction`
+  `track-p` `4b2c2fcf` (#940, with main through #937; #901/#904: `attack_confused_by_direction`
   now shipped 1, `attack_throw_point_blank_divisor` 1 with four class zeros);
   smoke re-run on the merged tree: 3/3 identical to `smoke-borg-rs`, so the
   shipped settings play as recorded. F3: every new parameter cites its read
@@ -120,3 +120,8 @@ issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
   The named-case trial and the zoo arms ran with confused attacks off: with
   them on, a confused Borg's aimed item attack is rated at the engine's aim
   chance (#867), so the lone rule fires less often while confused.
+- Fourth review round (at `91b5c42c`, no code defect): `faint_reaches`'s
+  doc says what it decides (not excluded outright; arrival is the caller's
+  reach); the merge reference is #940; the PR body says the zoo pin's rule
+  code differs from the head only by the `faint_reaches` extraction, which
+  skips the same monsters.
