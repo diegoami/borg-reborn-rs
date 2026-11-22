@@ -109,6 +109,10 @@ pub struct Borg {
     pub unseen_probe: Option<loc>,
     pub unseen_empty: Vec<loc>,
     pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981): the episode's last unseen attack was a bolt
+    /// ("You are hit by ...!", `SHOT_BY:`), not a blow: the attacker shoots
+    /// from a distance, so it is not looked for in the adjacent grids.
+    pub unseen_ranged: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of

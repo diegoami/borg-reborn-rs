@@ -2038,6 +2038,7 @@ fn new_level(st: &mut BorgState) {
     b.unseen_probe = None;
     b.unseen_empty.clear();
     b.unseen_found = None;
+    b.unseen_ranged = false; // borg-reborn-rs (#981)
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
@@ -2390,6 +2391,12 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
             } else if msg.starts_with(b"PAIN:") {
                 // Handle "xxx screams in pain."
                 locate(st, args(what), c, 20, i, 4);
+            } else if msg.starts_with(b"SHOT_BY:") {
+                // borg-reborn-rs (#981): an unseen monster's bolt hit the
+                // Borg (`recover_unseen_shot`); there is no monster to
+                // locate, only the unseen attack to remember.
+                crate::borg_recover::note_unseen_shot(st);
+                set_msg_use(st, i, 4);
             } else if msg.starts_with(b"HIT_BY:") || msg.starts_with(b"MISS_BY:") {
                 // borg-reborn-rs (#697): remember an attack by a monster the
                 // Borg cannot see; it reads no setting and draws nothing.
