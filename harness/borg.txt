@@ -1029,6 +1029,27 @@ borg_param_escape_phase_lost_danger_percent = 100
 
 borg_param_escape_phase_lost_mana = 1
 
+# The lone-slow bundle (#878, shipped by the owner 2026-11-22, #1046: "I would
+# turn on lone_wolf"). From the Mage 461220874 that retreated from one white
+# worm mass instead of killing it with Magic Missile. Six settings, shipped
+# together as measured: a caster kills a lone slow monster at range before
+# retreat and Phase Door (lone_slow_attack; radius 3, 2 casts, 25% of HP, the
+# compiled defaults); the Phase rule and the reserve spell judge danger
+# without fear (poison and breeder fear terms off); no reserve-spell cast when
+# the expected damage during the faint reaches 25% of HP; the unseen-bump
+# Phase Door only for a bump at most 20 game turns old and danger at least 5.
+# borg-zoo reborn-lone-slow (900 starts, lone-slow-296adfbf): 13 deaths
+# against 25, 20 rescued, 8 newly killed, p = 0.04. Its parts alone (lone,
+# phase-nofear) did nothing; borg-zoo#699 measures the rest at track-p
+# 206cf4e7.
+
+borg_param_lone_slow_attack = 1
+borg_param_escape_phase_lost_damage_only = 1
+borg_param_attack_reserve_spell_damage_only = 1
+borg_param_attack_reserve_faint_percent = 25
+borg_param_caution_unseen_bump_phase_turns = 20
+borg_param_caution_unseen_bump_phase_min_danger = 5
+
 # Teleport landing with either kind of teleport (#724, upstream Angband
 # 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
 # teleport scroll or spell or a teleport staff or activation; 0 = C (both
