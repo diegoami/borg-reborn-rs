@@ -6115,3 +6115,17 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
 | `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+
+## Grouped monster messages (#915)
+
+The engine writes the subject of a message about several monsters of one race
+as "N <plural>" (`mon-msg.c:333-345`: "3 cave spiders start moving
+faster."). `guess_race_name` took every name without "The " for the player
+ghost, race `r_max - 1`, which in 4.2 is Morgoth (`mon-init.c:1792-1810`), so
+those messages were lost (seed 2008390085, borg-zoo#596). At 1 the count and
+the plural (monster.txt's `plural:`, or `plural_aux` undone, `mon-desc.c:27-36`)
+name the race, and "N monsters" is an unseen group. Compiled and shipped 0.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1272` |
