@@ -3339,7 +3339,14 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if cornered && cornered_boost(st, "Cornered") {
         return true;
     }
-    if !cornered && breeder_fight_hard(st, pos_danger) && cornered_boost(st, "Hard breeder fight") {
+    // borg-reborn-rs (#1009): the boost's danger without fear, at the same
+    // horizon as `pos_danger`, with caution_breeder_danger_damage_only.
+    let boost_danger = if !cornered && p(Param::caution_breeder_danger_damage_only) != 0 {
+        crate::borg_danger::borg_danger_damage_only(st, st.borg.c.y, st.borg.c.x, p(Param::caution_danger_horizon), true, false)
+    } else {
+        pos_danger
+    };
+    if !cornered && breeder_fight_hard(st, boost_danger) && cornered_boost(st, "Hard breeder fight") {
         return true;
     }
     let all_out = cornered && melee_class(st);
@@ -4512,7 +4519,13 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
     // The danger where the Borg stands (one turn, averaged), against the HP:
     // too high stops the stand for this think only (`breeders_in_danger`);
     // only the breeding outpacing the kills loses the level.
-    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    // borg-reborn-rs (#1009): with caution_breeder_danger_damage_only, the
+    // danger without its fear prices (#878's `borg_danger_damage_only`).
+    let here = if p(Param::caution_breeder_danger_damage_only) != 0 {
+        crate::borg_danger::borg_danger_damage_only(st, st.borg.c.y, st.borg.c.x, 1, true, false)
+    } else {
+        borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false)
+    };
     st.borg.breeders_in_danger = here >= st.borg.tr(BI_CURHP);
     let ok = stoppable(births, kills, p(Param::caution_breeder_stoppable_births_percent));
     // Lost only when the breeding outpaces the kills on
