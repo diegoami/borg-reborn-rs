@@ -5034,7 +5034,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5723` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5729` |
 
 ## C Borg dive gates (#768)
 
@@ -6239,3 +6239,16 @@ are hypotheses.
 | `caution_emergency_speed_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:5220` |
 | `caution_emergency_speed_radius` | 2 | grids | 1–20 | `borg_caution.rs:5226` |
 | `caution_emergency_speed_margin` | 5 | speed points | 0–40 | `borg_caution.rs:5227` |
+## Fast-fragile groups in contact (#914)
+
+`fast_fragile_group_max` counts others of the race in view, so three cave
+spiders in contact passed as fast-fragile. The fast-fragile attack, before
+`borg_caution`, then took the turn the control spent on its emergency Phase
+Door (seed 2008390085, turn 64,454, borg-zoo#596). Above 0, more than this
+many marked attackers awake next to the Borg skip the fast-fragile attack
+(caution decides) and lift `fast_fragile_no_heal`. Compiled and shipped 0;
+the suggested 1 is chosen from one case.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `fast_fragile_contact_max` | 0 | monsters | 0–100 | `borg_fast_fragile.rs:350` |

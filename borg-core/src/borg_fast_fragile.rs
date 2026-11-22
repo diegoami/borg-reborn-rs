@@ -305,6 +305,11 @@ pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
     if param(Param::fast_fragile_no_heal) == 0 || param(Param::attack_on_sight) == 0 {
         return false;
     }
+    // #914: a group in contact is not a fragile monster to outrace.
+    if let Some(n) = crowded(st) {
+        borg_note(st, &format!("# Healing allowed: {n} fast-fragile attackers in contact (#914)"));
+        return false;
+    }
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
         if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > 1 {
@@ -323,8 +328,49 @@ pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
     false
 }
 
+/// #914: how many awake monsters next to the Borg are marked fast-fragile.
+fn marked_in_contact(st: &mut BorgState) -> i32 {
+    let mut n = 0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1 {
+            continue;
+        }
+        if classify(st, i).is_some() {
+            n += 1;
+        }
+    }
+    n
+}
+
+/// #914 (`fast_fragile_contact_max`, 0 = off): more than this many marked
+/// attackers in contact is a fight against a group, not a race against one
+/// fragile monster. Attack on sight steps aside for caution (its emergency
+/// Phase Door), and the heal ban lifts. `Some(count)` when crowded.
+pub(crate) fn crowded(st: &mut BorgState) -> Option<i32> {
+    let max = param(Param::fast_fragile_contact_max);
+    if max == 0 {
+        return None;
+    }
+    let n = marked_in_contact(st);
+    crowded_by(n, max).then_some(n)
+}
+
+fn crowded_by(in_contact: i32, max: i32) -> bool {
+    max > 0 && in_contact > max
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn a_group_in_contact_is_crowded_above_the_maximum() {
+        assert!(!super::crowded_by(3, 0), "0 is off");
+        assert!(!super::crowded_by(1, 1), "one crow is the race of #842");
+        assert!(super::crowded_by(2, 1), "two cave spiders in contact at 64,454 of 2008390085");
+        assert!(!super::crowded_by(2, 2));
+        assert!(super::crowded_by(3, 2));
+    }
+
     use super::*;
 
     /// The crow against a CL1 Necromancer: speed +10 vs +0, 9 HP, the best
