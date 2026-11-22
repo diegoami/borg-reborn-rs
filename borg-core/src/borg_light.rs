@@ -191,7 +191,11 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     }
 
     let (cx, cy) = (st.borg.c.x, st.borg.c.y);
-    if st.borg.tr(BI_LIGHT) == 1 {
+    // borg-reborn-rs (#877): the light radius is BI_LIGHT - 1 (engine
+    // src/cave-view.c:658; borg_update_light), so a torch (BI_LIGHT 2) is
+    // the radius-1 case and a lantern (BI_LIGHT 3) the radius-2 one; the
+    // C Borg tested BI_LIGHT itself (1, > 1), one radius too far.
+    if st.borg.tr(BI_LIGHT) <= 2 {
         let mut corners = 0;
 
         /* Scan diagonal neighbors.
@@ -232,7 +236,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         if corners > 2 {
             return false;
         }
-    } else if st.borg.tr(BI_LIGHT) > 1 {
+    } else {
         let mut floors = 0;
 
         /* Scan the surrounding 5x5 area for unlit tiles.

@@ -80,6 +80,23 @@ fn inven_light() -> usize {
     usize::from(engine::z_info().pack_size) + 5
 }
 
+/// borg-reborn-rs (#877): the player's light radius, `ABS(cur_light) - 1`
+/// (engine src/cave-view.c:658). -1 lights nothing, 0 the player grid.
+fn light_radius(light: i32) -> i32 {
+    light.abs() - 1
+}
+
+/// borg-reborn-rs (#877): the radius-2 grids, `(dy, dx)` from the player:
+/// each orthogonal grid at distance 2 (the gate, which must be open) with
+/// the two grids beside it, (2,1) at `distance()` 2. The C Borg lit (2,2)
+/// north and south, at distance 3.
+const RADIUS_2: [((i32, i32), [(i32, i32); 3]); 4] = [
+    ((2, 0), [(2, 0), (2, 1), (2, -1)]),
+    ((-2, 0), [(-2, 0), (-2, 1), (-2, -1)]),
+    ((0, 2), [(0, 2), (1, 2), (-1, 2)]),
+    ((0, -2), [(0, -2), (1, -2), (-1, -2)]),
+];
+
 /// Update the set of grids "illuminated" by the player's lite
 /// (`borg_update_light`).
 ///
@@ -113,11 +130,26 @@ pub fn borg_update_light(st: &mut BorgState) {
     let cx = st.borg.c.x;
     let light = st.borg.tr(BI_LIGHT);
 
+    /* borg-reborn-rs (#877): the game lights `radius = ABS(cur_light) - 1`
+     * around the player, the grids at `distance()` <= radius
+     * (engine src/cave-view.c:658, add_light :616-646): a Wooden Torch
+     * (LIGHT_2, lib/gamedata/object.txt:241) lights distance 1, a Lantern
+     * (LIGHT_3) distance 2. The C Borg used BI_LIGHT itself as the radius,
+     * one grid too far, and its radius-2 corners (2,2) and radius-3 corners
+     * (3,3) are at distance 3 and 4. borg_follow_kill then expected a
+     * monster in the dark beyond the light to be visible and forgot it. */
+    let radius = light_radius(light);
+
+    /* No light at all (BI_LIGHT 0: radius -1, add_light lights nothing) */
+    if radius < 0 {
+        return;
+    }
+
     /* Player grid */
     borg_cave_light_hack(st, cy, cx);
 
     /* Radius 1 -- torch radius */
-    if light >= 1 {
+    if radius >= 1 {
         /* Adjacent grid */
         borg_cave_light_hack(st, cy + 1, cx);
         borg_cave_light_hack(st, cy - 1, cx);
@@ -131,62 +163,25 @@ pub fn borg_update_light(st: &mut BorgState) {
         borg_cave_light_hack(st, cy - 1, cx - 1);
     }
 
-    /* Radius 2 -- lantern radius */
-    if light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
-        /* South of the player */
-        if borg_cave_floor_bold(st, cy + 2, cx) {
-            borg_cave_light_hack(st, cy + 2, cx);
-            borg_cave_light_hack(st, cy + 2, cx + 2);
-            borg_cave_light_hack(st, cy + 2, cx - 2);
-        }
-
-        /* North of the player */
-        if borg_cave_floor_bold(st, cy - 2, cx) {
-            borg_cave_light_hack(st, cy - 2, cx);
-            borg_cave_light_hack(st, cy - 2, cx + 2);
-            borg_cave_light_hack(st, cy - 2, cx - 2);
-        }
-
-        /* East of the player */
-        if borg_cave_floor_bold(st, cy, cx + 2) {
-            borg_cave_light_hack(st, cy, cx + 2);
-            borg_cave_light_hack(st, cy + 1, cx + 2);
-            borg_cave_light_hack(st, cy - 1, cx + 2);
-        }
-
-        /* West of the player */
-        if borg_cave_floor_bold(st, cy, cx - 2) {
-            borg_cave_light_hack(st, cy, cx - 2);
-            borg_cave_light_hack(st, cy + 1, cx - 2);
-            borg_cave_light_hack(st, cy - 1, cx - 2);
+    /* Radius 2 -- lantern radius: the grids at distance 2, (2,0) and (2,1),
+     * behind an open orthogonal grid (the C Borg's line-of-sight proxy) */
+    if radius >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
+        /* South, north, east and west of the player */
+        for ((gy, gx), grids) in RADIUS_2 {
+            if borg_cave_floor_bold(st, cy + gy, cx + gx) {
+                for (dy, dx) in grids {
+                    borg_cave_light_hack(st, cy + dy, cx + dx);
+                }
+            }
         }
     }
 
-    /* Radius 3+ -- artifact radius */
-    if light >= 3 && cy + 3 < AUTO_MAX_Y && cy - 3 > 0 && cx + 3 < AUTO_MAX_X && cx - 3 > 0 {
+    /* Radius 3+ -- artifact radius: viewable grids at distance 3..radius
+     * (the C Borg's (3,3) corners, at distance 4, are dropped) */
+    if radius >= 3 && cy + 3 < AUTO_MAX_Y && cy - 3 > 0 && cx + 3 < AUTO_MAX_X && cx - 3 > 0 {
         /* Maximal radius */
         /* Paranoia -- see "LITE_MAX" */
-        let p = light.min(5);
-
-        /* South-East of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx + 3) {
-            borg_cave_light_hack(st, cy + 3, cx + 3);
-        }
-
-        /* South-West of the player */
-        if borg_cave_floor_bold(st, cy + 3, cx - 3) {
-            borg_cave_light_hack(st, cy + 3, cx - 3);
-        }
-
-        /* North-East of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx + 3) {
-            borg_cave_light_hack(st, cy - 3, cx + 3);
-        }
-
-        /* North-West of the player */
-        if borg_cave_floor_bold(st, cy - 3, cx - 3) {
-            borg_cave_light_hack(st, cy - 3, cx - 3);
-        }
+        let p = radius.min(5);
 
         /* Maximal north */
         let min_y = (cy - p).max(0);
@@ -206,16 +201,16 @@ pub fn borg_update_light(st: &mut BorgState) {
                 let dy = (cy - y).abs();
                 let dx = (cx - x).abs();
 
-                /* Skip the "central" grids (above) */
-                if dy <= 2 && dx <= 2 {
-                    continue;
-                }
-
                 /* Approximate the distance "as the bird flies" (straight-line).
                  * Ignores obstacles and does not follow walkable paths like
                  * pathfinding code elsewhere.
                  */
                 let d = if dy > dx { dy + (dx >> 1) } else { dx + (dy >> 1) };
+
+                /* Skip the "central" grids, distance <= 2 (above) */
+                if d <= 2 {
+                    continue;
+                }
 
                 /* Skip distant grids */
                 if d > p {
@@ -228,6 +223,45 @@ pub fn borg_update_light(st: &mut BorgState) {
                     borg_cave_light_hack(st, y, x);
                 }
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The game's `distance()` (engine src/cave-view.c:38): the longer leg plus
+    /// half the shorter.
+    fn distance(dy: i32, dx: i32) -> i32 {
+        let (ay, ax) = (dy.abs(), dx.abs());
+        if ay > ax { ay + (ax >> 1) } else { ax + (ay >> 1) }
+    }
+
+    /// #877: a torch (LIGHT_2) lights radius 1, a lantern (LIGHT_3) 2.
+    #[test]
+    fn radius_is_one_less_than_the_light() {
+        assert_eq!(light_radius(0), -1);
+        assert_eq!(light_radius(1), 0);
+        assert_eq!(light_radius(2), 1);
+        assert_eq!(light_radius(3), 2);
+        assert_eq!(light_radius(-2), 1);
+    }
+
+    /// #877: the radius-2 grids are exactly the grids at distance 2.
+    #[test]
+    fn radius_two_grids_are_the_distance_two_grids() {
+        let mut lit: Vec<(i32, i32)> =
+            RADIUS_2.iter().flat_map(|(_, grids)| grids.iter().copied()).collect();
+        lit.sort_unstable();
+        let mut want: Vec<(i32, i32)> = (-2..=2)
+            .flat_map(|dy| (-2..=2).map(move |dx| (dy, dx)))
+            .filter(|&(dy, dx)| distance(dy, dx) == 2)
+            .collect();
+        want.sort_unstable();
+        assert_eq!(lit, want);
+        for (gate, grids) in RADIUS_2 {
+            assert!(grids.contains(&gate));
         }
     }
 }
