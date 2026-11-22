@@ -682,7 +682,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:992` |
-| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:995` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:696` |
@@ -6602,5 +6602,5 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2280` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2281` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
