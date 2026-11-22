@@ -707,15 +707,16 @@ borg_param_recover_unseen_act_age = 30
 borg_param_recover_unseen_shot = 0
 
 # Cure before a rest (#982): with cure_hp_percent = N > 0, when an HP rest is
-# due below N% of the maximum HP and an awake monster that can move, faster
-# than the Borg by at least speed_edge, is known on the level (in view or
-# not), drink Cure Light, Cure Serious, then Cure Critical Wounds instead of
-# resting. Out of view its danger is 0, so borg_heal does not drink, and the
+# due below N% of the maximum HP (after the dark-room light) and an awake
+# monster that can move, faster than the Borg by at least speed_edge, is
+# known within distance grids (in view or not), drink one potion instead of
+# resting: the first of Cure Light, Cure Serious and Cure Critical Wounds. Out of view its danger is 0, so borg_heal does not drink, and the
 # recovery heal drinks no Cure Light Wounds. 0 = off (shipped: today's play)
 # until the zoo measures it (Half-Troll Necromancer 2125189042 rested at
 # 2/17 HP with 12 CLW; the crow came back during the rest).
 borg_param_recover_rest_cure_hp_percent = 0
 borg_param_recover_rest_cure_speed_edge = 1
+borg_param_recover_rest_cure_distance = 20
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit

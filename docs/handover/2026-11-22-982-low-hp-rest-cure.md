@@ -27,26 +27,41 @@ on track-p `4b2c2fcf` plays key for key the zoo's game (`6f2825472c67b78f`).
   apply here.
 
 **Fix, behind `recover_rest_cure_hp_percent` (default and shipped 0).**
-With N > 0, an HP rest that is due below N% of the maximum HP, with an
-awake monster that can move known on the level and faster than the Borg by
-at least `recover_rest_cure_speed_edge` (1), is replaced by Cure Light,
-Cure Serious, then Cure Critical Wounds (the raw quaff, as #697's heal).
-With none in the pack, it rests as before.
+With N > 0, an HP rest is due below N% of the maximum HP, after the C
+Borg's dark-room light (the light comes first, as C does). If an awake
+monster that can move is known within `recover_rest_cure_distance` (20)
+grids and is faster than the Borg by at least `recover_rest_cure_speed_edge`
+(1), the Borg drinks one potion instead of resting: the first it has of
+Cure Light, Cure Serious and Cure Critical Wounds. The next decision looks
+again. With none in the pack, it rests as before.
+- "Awake" is the last state the Borg saw.
+- The speed compared is `forecast_monster_speed` (the race's speed, plus 10
+  if the monster was seen faster) against the Borg's current speed.
+
+Revised after Mavis's review (#999):
+- the distance bound was added;
+- the cure moved after the light;
+- the edge's range is now 0..50;
+- the test uses the production speed predicate;
+- the HP test is `hp_below_percent`.
 
 **Checked.**
 - Replay, switch off: `6f2825472c67b78f`, the same death.
-- Replay, `borg_param_recover_rest_cure_hp_percent = 50`: `aee7bb2ee27e5831`.
+- Replay, `borg_param_recover_rest_cure_hp_percent = 50` (the same after the
+  review fixes): `aee7bb2ee27e5831`.
   At 8342 it notes "HP 2/17, a fast awake crow (speed +10 over the Borg)
   known 9 grids away, out of view" and drinks. The crow comes back; the
   Borg fights it and reads Phase Door, and drinks again at 7/17. It reaches
   the 100,000-turn cap at CL6, DL2. One game; it is not a measurement. The
   value 50 is a hypothesis.
 - `smoke-borg-rs`: 3/3 identical. CI's cargo commands, the citations and
-  `borg-core-vendor.py check` pass. Unit test: `a_fast_awake_monster_on_the_level`.
+  `borg-core-vendor.py check` pass. Unit test: `a_fast_awake_monster_on_the_level`
+  (distance, last-seen awake, `observed_fast`, a hasted Borg, the edge).
 
 **Not done.**
 - No borg-cemetery records, as in #981 (no write access from this session).
-- No zoo measurement (a borg-zoo request, which the owner starts).
+- No zoo measurement yet: diegoami/borg-zoo#671 (specimen updated after the
+  reviews), which the owner starts.
 - Not done: a floor without the fast-monster condition, or one that lets
   `borg_recover`'s costly heal drink CLW. These are other candidate rules
   for the zoo to compare.

@@ -598,14 +598,15 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     if rest_hp && hunt_first && !noted {
         borg_note(st, "# Not resting: breeders to hunt.");
     }
-    // borg-reborn-rs (#982): badly hurt, with a fast monster awake on the
-    // level, drink a cure instead of the rest it would break.
-    if rest_hp && !hunt_first && cure_before_rest(st) {
-        return true;
-    }
     if rest_hp && !hunt_first {
         // check for then call lite in dark room before resting
         if !borg_check_light_only(st) {
+            // borg-reborn-rs (#982): badly hurt, with a fast monster awake
+            // near, drink a cure instead of the rest it would break (after
+            // the light, as C lights before it rests; review of #999).
+            if cure_before_rest(st) {
+                return true;
+            }
             borg_note(st, "# Resting to recover HP/SP...");
 
             // Rest until done
@@ -927,6 +928,11 @@ fn unseen_rest_held(st: &mut BorgState) -> bool {
 /// off). `max * percent` stays in `i32` (HP up to a few thousand, percent up
 /// to 100).
 fn unseen_heal_due(percent: i32, cur: i32, max: i32) -> bool {
+    hp_below_percent(percent, cur, max)
+}
+
+/// Strictly below `percent` of `max` (0 = never).
+fn hp_below_percent(percent: i32, cur: i32, max: i32) -> bool {
     percent > 0 && cur * 100 < max * percent
 }
 
@@ -952,26 +958,33 @@ fn unseen_heal(st: &mut BorgState) -> bool {
 /// borg-reborn-rs (#982, owner's example: "below N% HP with a fast awake
 /// monster known on the level, drink before resting"): an HP rest is due,
 /// the HP is below `recover_rest_cure_hp_percent` of the maximum, and an
-/// awake monster that can move is known on the level (in view or not: a
-/// record outlives its sight), faster than the Borg by at least
-/// `recover_rest_cure_speed_edge`. Its danger here is 0 once it is out of
+/// awake monster that can move is known within `recover_rest_cure_distance`
+/// grids (in view or not: a record outlives its sight, and its `awake` is
+/// the last state the Borg saw), faster than the Borg by at least
+/// `recover_rest_cure_speed_edge` (`forecast_monster_speed`, the race's speed
+/// plus 10 if it was seen faster, against the Borg's current speed). Its
+/// danger here is 0 once it is out of
 /// view, so neither `borg_heal` (no heal at danger 0) nor the costly heal
 /// above (no Cure Light Wounds) drinks; the rest is broken by its return
 /// (the Necromancer of #982 rested at 2/17 HP with 12 CLW, and the crow came
-/// back during the rest). Drink Cure Light, Cure Serious, then Cure Critical
-/// Wounds (the raw quaff, as `unseen_heal`); with none, rest as before.
+/// back during the rest). Drink one potion this decision, the first the
+/// Borg has of Cure Light, Cure Serious and Cure Critical Wounds (the raw
+/// quaff, as `unseen_heal`); the next decision looks again. With none, rest
+/// as before.
 fn cure_before_rest(st: &mut BorgState) -> bool {
     let percent = param(Param::recover_rest_cure_hp_percent);
-    if !unseen_heal_due(percent, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP)) {
+    if !hp_below_percent(percent, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP)) {
         return false;
     }
     let edge = param(Param::recover_rest_cure_speed_edge);
+    let range = param(Param::recover_rest_cure_distance);
     let me = engine::player_combat_speed();
     let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
     let Some(i) = fast_mover_known(
         kills,
         st.borg.c,
-        |kill| crate::borg_caution::forecast_monster_speed(kill) - me >= edge,
+        range,
+        |kill| fast_enough(kill, me, edge),
         |r| engine::race_flag_has(usize::from(r), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE),
     ) else {
         return false;
@@ -991,18 +1004,32 @@ fn cure_before_rest(st: &mut BorgState) -> bool {
     healed
 }
 
+/// #982: the monster is faster than the Borg (`me`, its current speed) by at
+/// least `edge`: its race's speed, plus 10 if it was seen faster.
+fn fast_enough(kill: &crate::borg_flow_kill::BorgKill, me: i32, edge: i32) -> bool {
+    crate::borg_caution::forecast_monster_speed(kill) - me >= edge
+}
+
 /// #982: the position in `kills` of the nearest awake monster that can move
-/// (`never_moves` is false) and is `fast` enough, anywhere on the level.
+/// (`never_moves` is false) and is `fast` enough, within `range` grids (the
+/// engine's distance).
 fn fast_mover_known(
     kills: &[crate::borg_flow_kill::BorgKill],
     c: loc,
+    range: i32,
     fast: impl Fn(&crate::borg_flow_kill::BorgKill) -> bool,
     never_moves: impl Fn(u16) -> bool,
 ) -> Option<usize> {
     kills
         .iter()
         .enumerate()
-        .filter(|(_, kill)| kill.r_idx != 0 && kill.awake && !never_moves(kill.r_idx) && fast(kill))
+        .filter(|(_, kill)| {
+            kill.r_idx != 0
+                && kill.awake
+                && engine::distance(c, kill.pos) <= range
+                && !never_moves(kill.r_idx)
+                && fast(kill)
+        })
         .min_by_key(|(_, kill)| engine::distance(c, kill.pos))
         .map(|(i, _)| i)
 }
@@ -1403,19 +1430,26 @@ mod tests {
             ..Default::default()
         };
         let me = loc { x: 10, y: 10 };
-        // The engine's speed, 110 = normal; the Borg at normal speed.
-        let fast = |k: &BorgKill| i32::from(k.speed) - 110 >= 1;
+        // The production predicate, the Borg at normal speed (110), edge 1.
+        let fast = |k: &BorgKill| fast_enough(k, 110, 1);
         let mold = |r: u16| r == 9;
-        let crow = kill(5, true, 40, 120);
-        assert_eq!(fast_mover_known(&[crow], me, fast, mold), Some(0), "a crow 30 grids away, out of view");
-        assert_eq!(fast_mover_known(&[kill(5, false, 12, 120)], me, fast, mold), None, "asleep");
-        assert_eq!(fast_mover_known(&[kill(6, true, 12, 110)], me, fast, mold), None, "as fast as the Borg");
-        assert_eq!(fast_mover_known(&[kill(9, true, 12, 120)], me, fast, mold), None, "never moves");
-        assert_eq!(fast_mover_known(&[kill(0, true, 12, 120)], me, fast, mold), None, "a dead record");
+        let crow = kill(5, true, 19, 120);
+        assert_eq!(fast_mover_known(&[crow], me, 20, fast, mold), Some(0), "the crow of #982, 9 grids away, out of view");
+        assert_eq!(fast_mover_known(&[kill(5, true, 40, 120)], me, 20, fast, mold), None, "30 grids away: beyond the range");
+        assert_eq!(fast_mover_known(&[kill(5, false, 12, 120)], me, 20, fast, mold), None, "asleep (last seen)");
+        assert_eq!(fast_mover_known(&[kill(6, true, 12, 110)], me, 20, fast, mold), None, "as fast as the Borg");
+        assert_eq!(fast_mover_known(&[kill(9, true, 12, 120)], me, 20, fast, mold), None, "never moves");
+        assert_eq!(fast_mover_known(&[kill(0, true, 12, 120)], me, 20, fast, mold), None, "a dead record");
         let near = kill(7, true, 15, 130);
-        assert_eq!(fast_mover_known(&[crow, near], me, fast, mold), Some(1), "the nearest");
-        assert!(!unseen_heal_due(0, 2, 17), "recover_rest_cure_hp_percent 0: off");
-        assert!(unseen_heal_due(25, 2, 17), "2/17 HP is below 25%");
+        assert_eq!(fast_mover_known(&[crow, near], me, 20, fast, mold), Some(1), "the nearest");
+        let mut hasted = kill(6, true, 12, 110);
+        hasted.observed_fast = true;
+        assert!(fast_enough(&hasted, 110, 1), "a normal-speed race seen faster counts +10");
+        assert!(!fast_enough(&crow, 120, 1), "a hasted Borg: the crow is no faster");
+        assert!(fast_enough(&crow, 110, 10) && !fast_enough(&crow, 110, 11), "edge in engine speed");
+        assert!(!hp_below_percent(0, 2, 17), "recover_rest_cure_hp_percent 0: off");
+        assert!(hp_below_percent(25, 2, 17), "2/17 HP is below 25%");
+        assert!(!hp_below_percent(50, 50, 100), "strictly below");
     }
 
     #[test]
