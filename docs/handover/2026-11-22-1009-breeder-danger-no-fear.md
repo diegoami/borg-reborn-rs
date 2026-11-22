@@ -31,3 +31,26 @@ is consulted; #878's `escape_phase_lost_damage_only` is the switch for that.
 - Interacts with PR #893 (#882, `caution_breeder_hold`, open) and PR #953
   (dead ends near breeders, open): both touch breeder retreats; not merged
   with this branch.
+
+### After the review (PR #1012, pinned `53a1d971`)
+
+- Synchronized with `track-p` `72651d25` (citation conflicts, both
+  CALIBRATION sections kept).
+- **F1 (P2), the boost:** the damage-only danger drops the breeder bonus too,
+  so it can only lower the boost's danger, and against one white worm mass
+  the boost stops firing (2 x 10 < 20 x 5). That ran against the switch's
+  "stand and fight", and I had not said so. Split: `caution_breeder_danger_damage_only`
+  now moves only the stand pause; the new `caution_breeder_boost_damage_only`
+  (shipped 0) moves the boost, so the zoo measures them apart. Registry
+  2397 to 2399. In the Mage arms above the boost never fired (0 "Hard breeder
+  fight" notes in both), so their result is the pause's alone.
+- F2: `pick_danger` (generic, engine-free) chooses each site's danger and is
+  tested, including that the unread one is never computed.
+- F3: the boost's damage-only danger is computed only when the boost is
+  otherwise due (on, standing): `breeder_fight_hard` checks the tenths and
+  the stand first (both pure, so the order changes nothing at the shipped
+  settings; smoke 3/3 identical).
+- The CALIBRATION paragraph now says which danger each switch reads; each
+  parameter cites its own read site.
+- borg-zoo#692 is pinned to the pre-split specimen: its `stand` arm moved
+  both sites. It needs a new pin and a `boost` arm (comment on #692).
