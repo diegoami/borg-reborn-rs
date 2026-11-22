@@ -604,7 +604,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // Detect Invisible is carried, or stored while overweight, never
         // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
         // still sends the copies past it away.
-        let protected = it.unknown || it.just_bought || urgent_loss || keeps_detect_invisible(st, it);
+        let potion_or_scroll_protected = if capped { it.protect_disposal } else { keeps_detect_invisible(st, it) };
+        let protected = it.unknown || it.just_bought || urgent_loss || potion_or_scroll_protected;
         // borg-reborn-rs (#651, plan schema 12): what this visit bought is
         // carried, not stored: a Cure Light Wounds bought to carry went to
         // the Home and was bought again (borg-cemetery#75).
@@ -880,7 +881,7 @@ mod tests {
     }
 
     fn recall(place: Place) -> KitItem {
-        KitItem { home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
+        KitItem { protect_disposal: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
             reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false }
     }
 
@@ -1445,7 +1446,7 @@ mod tests {
     fn two_home_stacks_protect_the_carried_floor_and_release_the_rest() {
         let mut st = state(9, 26, 198);
         st.borg.trait_[BI_APHASE as usize] = 20;
-        let pack = KitItem { home_limited: true, kind: 51, qty: 20, need: index(Need::Escape) as i8,
+        let pack = KitItem { protect_disposal: false, home_limited: true, kind: 51, qty: 20, need: index(Need::Escape) as i8,
             reduction: UNIT, sell_shop: 4, proceeds: 0, ..recall(Place::Pack) };
         let home = KitItem { place: Place::Home, qty: 40, joins_pack: true, ..pack };
         let kit = [pack, home, KitItem { slot: 1, ..home }, KitItem { slot: 2, qty: 19, ..home }];
@@ -1467,7 +1468,7 @@ mod tests {
     fn a_capped_home_can_replenish_a_short_kit_and_leave_other_kinds_available() {
         let mut st = state(9, 26, 198);
         st.borg.trait_[BI_APHASE as usize] = 2;
-        let phase = KitItem { home_limited: true, kind: 51, qty: 2,
+        let phase = KitItem { protect_disposal: false, home_limited: true, kind: 51, qty: 2,
             need: index(Need::Escape) as i8, reduction: UNIT, ..recall(Place::Pack) };
         let home = KitItem { place: Place::Home, qty: 6, ..phase };
         let food = KitItem { kind: 52, qty: 1, ..phase };

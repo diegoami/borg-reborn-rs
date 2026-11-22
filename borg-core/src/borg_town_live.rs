@@ -361,6 +361,11 @@ pub fn execute_store(st: &mut BorgState) -> bool {
                 qty = priced.unwrap_or(1);
             }
         }
+        if let Some(offer) = offer.filter(|_| a.code == action::SELL_HOME) {
+            if home_at_limit(st, &item) {
+                qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity(), 0, 0);
+            }
+        }
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
             context: CarryContext::of(st), item, keep: a.code != action::SELL_HOME, qty };
         if !fits {

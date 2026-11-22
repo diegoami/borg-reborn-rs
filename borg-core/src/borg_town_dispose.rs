@@ -58,6 +58,8 @@ pub enum Disposition {
 /// The facts of one stack the dispositions read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KitItem {
+    /// A known detection scroll with an explicit protection against disposal.
+    pub protect_disposal: bool,
     /// A known repeatable consumable subject to the per-kind Home limit.
     pub home_limited: bool,
     /// Schema 9: the whole withdrawal can join existing carried stock.
@@ -276,7 +278,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem { home_limited: false,
+        KitItem { protect_disposal: false, home_limited: false,
             joins_pack: false,
             place,
             slot,
