@@ -40,6 +40,11 @@ on:
         type: boolean
         required: false
         default: true
+      macos:
+        description: "Build, check and ship the macOS package (off for v0.1.0-alpha.1, owner: its games differ and cannot be watched yet)"
+        type: boolean
+        required: false
+        default: false
   push:
     tags: ["v*"]
 
@@ -60,6 +65,7 @@ jobs:
       zoo: ${{ steps.v.outputs.zoo }}
       since: ${{ steps.v.outputs.since }}
       release: ${{ steps.v.outputs.release }}
+      macos: ${{ steps.v.outputs.macos }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,6 +79,8 @@ jobs:
           IN_SINCE: ${{ github.event.inputs.since }}
           # A tag push has no inputs: it always makes the draft.
           IN_RELEASE: ${{ github.event_name == 'push' || github.event.inputs.release != 'false' }}
+          # macOS only when asked (a tag push ships none).
+          IN_MACOS: ${{ github.event.inputs.macos == 'true' }}
         run: |
           [[ "$IN_VERSION" =~ ^v[0-9][A-Za-z0-9._-]*$ ]] || { echo "version '$IN_VERSION' is not v<digit>..."; exit 1; }
           [[ -z "$IN_MILESTONE" || "$IN_MILESTONE" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "milestone '$IN_MILESTONE': a label is expected"; exit 1; }
@@ -94,6 +102,7 @@ jobs:
             echo "zoo=$IN_ZOO"
             echo "since=$IN_SINCE"
             echo "release=$IN_RELEASE"
+            echo "macos=$IN_MACOS"
           } >> "$GITHUB_OUTPUT"
           echo "release $IN_VERSION of $sha (draft release: $IN_RELEASE)"
 
@@ -211,25 +220,29 @@ jobs:
         with:
           ref: ${{ needs.setup.outputs.sha }}
           path: src
-          sparse-checkout: harness/reference/smoke-borg-rs
+          sparse-checkout: |
+            harness/reference/smoke-borg-rs
+            scripts/release
       - run: |
           mkdir /tmp/clean && cd /tmp/clean
           tar -xzf /tmp/release/*.tar.gz
           cd borg-reborn-rs-*
           sha256sum -c --quiet SHA256SUMS
           ls LICENSES/angband-copying.rst LICENSES/borg-reborn-rs-GPL-2.0.txt LICENSES/rust-crates.txt PLAYING.txt
-          ./play-headless.sh /tmp/game 101 0 0 20000
+          # CI's runner (not shipped), on the unpacked package.
+          BORG_PACKAGE_DIR="$PWD" "$GITHUB_WORKSPACE/src/scripts/release/play-headless.sh" /tmp/game 101 0 0 20000
           ref="$GITHUB_WORKSPACE/src/harness/reference/smoke-borg-rs/smoke-warrior-1"
           for f in keys messages state; do xz -dc "$ref/$f.log.xz" | cmp - "/tmp/game/$f.log"; done
           echo "the package plays smoke-warrior-1's keys, messages and states"
       - run: |
           cd /tmp/clean/borg-reborn-rs-*
           set +e
-          timeout 15 xvfb-run -a ./watch-borg.sh ReleaseCheck
+          # Started directly, as PLAYING.txt says (no launcher is shipped).
+          LANG=C.UTF-8 LC_ALL=C.UTF-8 timeout 15 xvfb-run -a ./angband -uReleaseCheck
           rc=$?
           set -e
           # 124: still running when the timeout stopped it, i.e. the window opened.
-          [ "$rc" = 124 ] || { echo "watch-borg.sh exited with $rc before the timeout"; exit 1; }
+          [ "$rc" = 124 ] || { echo "angband exited with $rc before the timeout"; exit 1; }
 
   macos:
     # #824: Apple silicon. The curses and headless frontends in one binary,
@@ -247,6 +260,7 @@ jobs:
     # upstream's, unchanged (RULES 9), so this job checks determinism on
     # macOS: smoke twice with the same keys, and the package replaying them.
     needs: [setup, docs]
+    if: needs.setup.outputs.macos == 'true'
     runs-on: macos-latest
     # The oldest macOS the package runs on (PLAYING.txt): the C compiler and
     # rustc both read it.
@@ -306,16 +320,16 @@ jobs:
           cd borg-reborn-rs-*
           shasum -a 256 -c --quiet SHA256SUMS
           ls LICENSES/angband-copying.rst LICENSES/openssl.txt PLAYING.txt
-          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g1" 101 0 0 20000 >/dev/null
-          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g2" 102 2 1 20000 >/dev/null
-          /bin/bash ./play-headless.sh "$RUNNER_TEMP/g3" 103 5 3 20000 >/dev/null
+          BORG_PACKAGE_DIR="$PWD" /bin/bash "$GITHUB_WORKSPACE/scripts/release/play-headless.sh" "$RUNNER_TEMP/g1" 101 0 0 20000 >/dev/null
+          BORG_PACKAGE_DIR="$PWD" /bin/bash "$GITHUB_WORKSPACE/scripts/release/play-headless.sh" "$RUNNER_TEMP/g2" 102 2 1 20000 >/dev/null
+          BORG_PACKAGE_DIR="$PWD" /bin/bash "$GITHUB_WORKSPACE/scripts/release/play-headless.sh" "$RUNNER_TEMP/g3" 103 5 3 20000 >/dev/null
           # The package replays the harness's macOS games (see above).
           python3 "$GITHUB_WORKSPACE/scripts/release/compare-games.py" "$GITHUB_WORKSPACE/harness/out/release-smoke-macos" \
             smoke-warrior-1="$RUNNER_TEMP/g1" smoke-mage-2="$RUNNER_TEMP/g2" smoke-priest-3="$RUNNER_TEMP/g3"
       # The terminal window: the curses frontend starts and keeps running
       # (stopped by the alarm) in a pseudo-terminal. Informative only: a
       # runner's terminal is not a player's.
-      - name: watch-borg.sh in a pseudo-terminal
+      - name: the game in a pseudo-terminal
         continue-on-error: true
         env:
           PATH: /usr/bin:/bin:/usr/sbin:/sbin
@@ -323,10 +337,10 @@ jobs:
         run: |
           cd "$RUNNER_TEMP"/clean/borg-reborn-rs-*
           set +e
-          perl -e 'alarm 15; exec @ARGV' script -q /dev/null /bin/bash -c 'stty cols 100 rows 30; ./watch-borg.sh MacCheck' </dev/null >/dev/null
+          perl -e 'alarm 15; exec @ARGV' script -q /dev/null /bin/bash -c 'stty cols 100 rows 30; LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 ./angband -mgcu -uMacCheck' </dev/null >/dev/null
           rc=$?
           set -e
-          [ "$rc" = 142 ] || { echo "watch-borg.sh ended with $rc before the alarm"; exit 1; }
+          [ "$rc" = 142 ] || { echo "angband ended with $rc before the alarm"; exit 1; }
       - run: |
           mkdir -p "$RUNNER_TEMP/identity"
           cp build/rust/BUILD_ID "$RUNNER_TEMP/identity/BUILD_ID.macos-angband"
@@ -378,6 +392,44 @@ jobs:
           rustc -vV
           CMAKE_GENERATOR=Ninja BORG_IMPL=rust BORG_GCU=ON harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband.exe | grep -qx rust
+      # #858: a build capture never overwrites an existing file on Windows
+      # (the C runtime ignores fopen's "x"). The reborn core, as
+      # engine/tests/test_character_build.py: the capture accepts its level-5
+      # warrior (smoke-warrior-1's seed).
+      - run: |
+          # POSIX paths for the MSYS tools, Windows ones for angband.exe.
+          d=$(cygpath -u '${{ runner.temp }}')/excl
+          m=$(cygpath -m "$d")
+          mkdir -p "$d"/{user,save,archive,panic,scores}
+          harness/prepare-borg-txt.sh "$d/user"
+          printf 'keep me\n' > "$d/existing.build"
+          cd build/rust/game
+          set +e
+          BORG_CORE=reborn ./angband.exe -mborgh -n -uBorg -duser="$m/user" -dsave="$m/save" -darchive="$m/archive" \
+            -dpanic="$m/panic" -dscores="$m/scores" -- -seed 101 -race 0 -class 0 -turns 20000 -menu-letters \
+            -capture-build "$m/existing.build" -capture-build-level 5 -summary "$m/summary.json" 2>"$d/stderr.log"
+          rc=$?
+          set -e
+          tail -3 "$d/stderr.log"
+          [ "$rc" != 0 ] && grep -q 'cannot create synthetic build capture' "$d/stderr.log" \
+            && [ "$(cat "$d/existing.build")" = 'keep me' ] || { echo "the capture did not refuse the existing file"; exit 1; }
+      # A game saves on Windows (the owner: "save failed" on Windows 11): the
+      # directories passed as backslash Windows paths, the save at
+      # the path the game builds from -u (save\NAME).
+      - run: |
+          d=$(cygpath -u '${{ runner.temp }}')/savecheck
+          w=$(cygpath -w "$d")
+          mkdir -p "$d"/{user,save,archive,panic,scores}
+          harness/prepare-borg-txt.sh "$d/user"
+          cd build/rust/game
+          set +e
+          ./angband.exe -mborgh -n -uBorg "-duser=$w\user" "-dsave=$w\save" "-darchive=$w\archive" \
+            "-dpanic=$w\panic" "-dscores=$w\scores" -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters \
+            -save-on-stop "$w\save\Borg" -summary "$w\summary.json" 2>"$d/stderr.log"
+          rc=$?
+          set -e
+          echo "rc=$rc"; ls -la "$d/save" "$d/user"; tail -5 "$d/stderr.log"
+          [ "$rc" = 0 ] && [ -s "$d/save/Borg" ] || { echo "the game did not save"; exit 1; }
       # One static executable: no MSYS2 DLL next to it.
       - run: |
           ldd build/rust/game/angband.exe
@@ -401,10 +453,20 @@ jobs:
             $hash, $file = $line -split '  ', 2
             if ((Get-FileHash -Algorithm SHA256 $file).Hash.ToLower() -ne $hash) { throw "checksum: $file" }
           }
-          foreach ($f in 'LICENSES\angband-copying.rst', 'LICENSES\openssl.txt', 'PLAYING.txt', 'watch-borg.cmd') { if (-not (Test-Path $f)) { throw "missing $f" } }
-          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g1" 101 0 0 20000; if ($LASTEXITCODE) { throw 'game 1' }
-          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g2" 102 2 1 20000; if ($LASTEXITCODE) { throw 'game 2' }
-          cmd /c play-headless.cmd "$env:RUNNER_TEMP\g3" 103 5 3 20000; if ($LASTEXITCODE) { throw 'game 3' }
+          foreach ($f in 'LICENSES\angband-copying.rst', 'LICENSES\openssl.txt', 'PLAYING.txt', 'lib\save', 'lib\user\borg.txt') { if (-not (Test-Path $f)) { throw "missing $f" } }
+          # CI's runner (not shipped), on the unzipped package.
+          $env:BORG_PACKAGE_DIR = (Get-Location).Path
+          $runner = "$env:GITHUB_WORKSPACE\scripts\release\windows\play-headless.ps1"
+          & $runner "$env:RUNNER_TEMP\g1" 101 0 0 20000
+          & $runner "$env:RUNNER_TEMP\g2" 102 2 1 20000
+          & $runner "$env:RUNNER_TEMP\g3" 103 5 3 20000
+          # Started directly (double-clicked: no -d options), the game saves in
+          # lib\save and reads the shipped settings from lib\user (the owner's
+          # "save failed" on v0.1.0-alpha.1).
+          $p = Start-Process -FilePath .\angband.exe -ArgumentList '-mborgh -n -uDirect -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters -save-on-stop lib/save/Direct' -NoNewWindow -Wait -PassThru -RedirectStandardError "$env:RUNNER_TEMP\direct.err"
+          Get-Content "$env:RUNNER_TEMP\direct.err" -Tail 5
+          if (-not (Test-Path lib\save\Direct) -or (Get-Item lib\save\Direct).Length -eq 0) { throw 'a game started directly did not save' }
+          if (-not (Select-String -Path lib\user\borg.txt -Pattern '^borg_reborn_core = borg-rs$' -Quiet)) { throw 'lib\user\borg.txt does not select the borg-rs core' }
       - run: |
           t=$(cygpath -u '${{ runner.temp }}')
           python3 scripts/release/compare-games.py harness/reference/smoke-borg-rs \
@@ -444,7 +506,12 @@ jobs:
 
   release:
     needs: [setup, source, linux, linux-clean, macos, windows]
-    if: needs.setup.outputs.release == 'true'
+    # macOS may be skipped (the macos input); everything else must pass.
+    if: >-
+      !cancelled() && needs.setup.outputs.release == 'true'
+      && needs.source.result == 'success' && needs.linux.result == 'success'
+      && needs.linux-clean.result == 'success' && needs.windows.result == 'success'
+      && (needs.macos.result == 'success' || (needs.macos.result == 'skipped' && needs.setup.outputs.macos != 'true'))
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -459,12 +526,14 @@ jobs:
       - id: files
         run: |
           d="$RUNNER_TEMP/upload"; mkdir -p "$d"
-          cp "$RUNNER_TEMP"/artifacts/release-linux/*.tar.gz "$RUNNER_TEMP"/artifacts/release-macos/*.tar.gz \
+          cp "$RUNNER_TEMP"/artifacts/release-linux/*.tar.gz \
             "$RUNNER_TEMP"/artifacts/release-windows/*.zip "$RUNNER_TEMP"/artifacts/release-source/*.tar.gz "$d/"
+          if [ "${{ needs.setup.outputs.macos }}" = true ]; then cp "$RUNNER_TEMP"/artifacts/release-macos/*.tar.gz "$d/"; fi
           (cd "$d" && sha256sum *.tar.gz *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt)
           python3 scripts/release/notes.py --version "${{ needs.setup.outputs.version }}" \
             --milestone "${{ needs.setup.outputs.milestone }}" --zoo "${{ needs.setup.outputs.zoo }}" \
             --since "${{ needs.setup.outputs.since }}" \
+            $([ "${{ needs.setup.outputs.macos }}" = true ] && echo --macos) \
             $(for f in "$RUNNER_TEMP"/artifacts/release-identity-*/BUILD_ID.*; do printf -- '--build-id %s ' "$f"; done) \
             > "$RUNNER_TEMP/notes.md"
       - env:
