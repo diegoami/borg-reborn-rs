@@ -2834,6 +2834,10 @@ pub(crate) fn detect_invisible_now(st: &mut BorgState) -> bool {
     use_detect_invisible(st, fail_allowed)
 }
 
+fn recent_light_beam_trigger(last: BorgTime, age: BorgTime, max_age: BorgTime) -> bool {
+    last != 0 && (0..=max_age).contains(&age)
+}
+
 /// Light Beam to spot lurkers (`borg_defend_aux_lbeam`). Used only if I am
 /// hit by an unseen guy. Lights up a hallway.
 fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
@@ -2848,7 +2852,8 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
 
     /* Light Beam section to spot non seen guys */
     /* not recent, don't bother */
-    if borg_timer(st, st.borg.need_see_invis) < param(Param::defend_light_beam_max_invis_age) {
+    let last = st.borg.need_see_invis;
+    if !recent_light_beam_trigger(last, borg_timer(st, last), param(Param::defend_light_beam_max_invis_age)) {
         return 0;
     }
 
@@ -3628,4 +3633,17 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
 /// confusion, amnesia and no-light refusals too.
 pub(crate) fn unseen_detection_safe(st: &BorgState, danger: i32) -> bool {
     danger <= avoid(st) * param(Param::defend_see_invis_max_danger_multiplier) && !dark_here(st)
+}
+
+#[cfg(test)]
+mod light_beam_tests {
+    use super::recent_light_beam_trigger;
+
+    #[test]
+    fn defense_requires_a_recent_unseen_attacker() {
+        assert!(!recent_light_beam_trigger(0, 1, 48));
+        assert!(!recent_light_beam_trigger(100, 49, 48));
+        assert!(recent_light_beam_trigger(100, 48, 48));
+        assert!(recent_light_beam_trigger(100, 0, 48));
+    }
 }
