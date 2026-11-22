@@ -1114,6 +1114,11 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             }
         }
 
+        // borg-reborn-rs (#908): a walk the faster neighbours make cost the HP.
+        if safe && desperate_walk_refused(st, b_j) {
+            safe = false;
+        }
+
         // Don't run from Grip or Fang
         if (st.borg.tr(BI_CDEPTH) <= p(Param::caution_desperate_unique_depth)
             && st.borg.tr(BI_CDEPTH) != 0
@@ -5384,6 +5389,68 @@ mod desperate_haste_tests {
         assert_eq!(super::desperate_speed_with(&kill, true), 119);
         kill.observed_fast = false;
         assert_eq!(super::desperate_speed_with(&kill, true), 109, "no haste observed: unchanged");
+    }
+}
+
+/// borg-reborn-rs (#908): the expected HP a walk of `steps` costs. Each awake
+/// mobile monster next to the Borg follows it. Per Borg step it gets
+/// `ratio` actions (its energy per game turn over the Borg's,
+/// game-world.c:136-139): one closes the gap again, the rest attack. So it
+/// costs `max(0, ratio - 1)` times its damage per action
+/// (`fight_incoming`: blows by dice and to-hit, haste included). A pursuer
+/// at the Borg's speed or slower costs nothing. With
+/// `caution_desperate_walk_cost_percent` above 0, "Desperate for Stairs
+/// (three)" is refused when `steps` x that sum reaches that percent of the
+/// HP; the escapes and the heals decide instead. It is asked again every
+/// think, so a walk that starts cheap stops when it no longer is.
+fn desperate_walk_refused(st: &mut BorgState, steps: i32) -> bool {
+    let percent = p(Param::caution_desperate_walk_cost_percent);
+    if percent <= 0 || steps <= 0 {
+        return false;
+    }
+    let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
+    let mine = energy(engine::player_combat_speed());
+    let mut per_step = 0.0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > 1
+            || engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+        {
+            continue;
+        }
+        let ratio = energy(forecast_monster_speed(&kill)) / mine;
+        let per_action = fight_incoming(st, i).hp_per_turn / ratio;
+        per_step += pursuit_step_damage(per_action, ratio);
+    }
+    let cost = per_step * f64::from(steps);
+    let hp = st.borg.tr(BI_CURHP);
+    if !walk_cost_reaches(cost, hp, percent) {
+        return false;
+    }
+    borg_note(st, &format!("# Desperate walk refused: {steps} steps x {per_step:.2} HP/step = {cost:.1} >= {percent}% of HP {hp} (#908)"));
+    true
+}
+
+fn pursuit_step_damage(per_action: f64, ratio: f64) -> f64 {
+    if !per_action.is_finite() || !ratio.is_finite() { return 0.0; }
+    per_action.max(0.0) * (ratio - 1.0).max(0.0)
+}
+
+fn walk_cost_reaches(cost: f64, hp: i32, percent: i32) -> bool {
+    cost * 100.0 >= f64::from(hp.max(1)) * f64::from(percent)
+}
+
+#[cfg(test)]
+mod desperate_walk_cost_tests {
+    #[test]
+    fn a_hasted_pursuer_makes_the_walk_cost_the_hp_and_an_even_one_does_not() {
+        // Rogue 381988580: 5.0 HP per soldier action, 1.9 actions per step, 13 steps, HP 23.
+        let step = super::pursuit_step_damage(5.0, 1.9);
+        assert!((step - 4.5).abs() < 1e-9);
+        assert!(super::walk_cost_reaches(step * 13.0, 23, 100));
+        assert_eq!(super::pursuit_step_damage(5.0, 0.9), 0.0, "an unhasted soldier only follows");
+        assert_eq!(super::pursuit_step_damage(5.0, 1.0), 0.0, "even speed: every action closes the gap");
+        assert!(!super::walk_cost_reaches(step * 2.0, 23, 100), "two steps left: 9 HP");
     }
 }
 

@@ -1055,6 +1055,10 @@ borg_param_caution_desperate_fast_danger_percent = 50
 # borg_danger counts it in the monster's moves (0 = C: base speed only).
 borg_param_caution_desperate_fast_haste = 0
 borg_param_danger_observed_haste = 0
+# #908: Desperate for Stairs (three) is refused when the steps to the stairs x
+# the expected HP per step from faster neighbours reach this percent of the HP
+# (0 = C: no cost test).
+borg_param_caution_desperate_walk_cost_percent = 0
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
