@@ -359,13 +359,13 @@ breeder exit from applying).
 
 ## Stair routes after a tactical retreat (#932)
 
-`caution_retreat_reentry_ticks` (compiled default 0, range 0–32 Borg
+`caution_retreat_reentry_ticks` (compiled default 0, range 0–128 Borg
 thinks) keeps recently abandoned grids out of candidate staircase routes
 after the Borg confirms each tactical retreat landed. The hold lasts only on the
 same level while the abandoned grid still exceeds
 the strategic retreat danger threshold. If the normal departure search
-finds no route, the ordinary flight Recall gates still apply. Thirty-two
-thinks is a pilot hypothesis.
+finds no route, the ordinary flight Recall gates still apply. A 128-think
+window is a pilot hypothesis.
 
 ## Threat-weighted stair flights (#765)
 
