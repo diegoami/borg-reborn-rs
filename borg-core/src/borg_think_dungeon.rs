@@ -749,8 +749,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let town_retreat = crate::borg_town_hunt::enabled(st)
         && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
 
-    // #760/#759: an attack-on-sight target or a winning fight owns the
-    // action before even an out-of-light wait or a depth-return flight.
+    // #760/#759/#878: an attack-on-sight target, a lone slow monster (with
+    // lone_slow_attack) or a winning fight owns the action before even an
+    // out-of-light wait or a depth-return flight.
     if town_hunt == crate::borg_town_hunt::Hunt::Acted
         || (!town_retreat && crate::borg_caution::fight_before_flight(st))
     {
