@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Confused attacks by direction (#867)
 
-The registry now holds **2359** parameters (2358 before; one added). Owner,
+The registry now holds **2374** parameters (2373 before; one added). Owner,
 2026-11-21, from the play pack of borg-zoo#581's Gnome Necromancer
 459443830: confused next to a grey mushroom patch, the owner threw flasks of
 oil by direction and the second one killed it, where the Borg only swung and
@@ -372,13 +372,13 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:700` |
-| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
+| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1966` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:546` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:724` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:714` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:651` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:831` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -516,7 +516,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:711` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:833` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -760,8 +760,8 @@ the less value they have".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:816` |
-| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:1014` |
+| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:998` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
 
@@ -781,7 +781,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:429` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:538` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:856` |
 
 
@@ -1370,8 +1370,8 @@ same way are healing objects"; no reserve, only the curve.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:711` |
-| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:570` |
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:885` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:681` |
 
 ## No rest while breeders are known (#644)
 
@@ -2295,7 +2295,7 @@ against 38 (18 games: direction only).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:820` |
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:1086` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
 
 
@@ -2414,9 +2414,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:493` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:346` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:484` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:598` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:438` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:589` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2542,13 +2542,13 @@ digger 500 gold.
 |---|---|---|---|---|
 | `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
-| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
-| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:442` |
-| `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
-| `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1720` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1680` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:496` |
+| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:547` |
+| `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
+| `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2099` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2028` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5607,7 +5607,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:704` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:834` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -5829,3 +5829,248 @@ Word of Recall, weight 5).
 | `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:355` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:812` |
+
+## #863: variety in the backpack (town, prepared remedies)
+
+Owner, 2026-11-21: "Better 4 cure poison, 4 detect invisible and 3 remove
+curse in the pack and 20 light wounds in the pack than 40 light wound
+potions"; "the point is being prepared to a variety of situations. You are
+never going to use 35 phase doors in a trip, but a remove curse or cure
+poison potion will help more." The valuation of every kind that is worth
+nothing unless its condition is present now (`observe`,
+`borg_town_capability.rs`) needed a redesign, not a per-curve patch (the
+owner, on #863). This is its first step, for potions and scrolls; devices
+(wands, staves, rods) and keeping a found device follow in a second PR.
+
+Checked in this engine version (`object.txt` at `574b618c`): Cure Light
+Wounds does not cure poison (HEAL_HP 20, CURE:BLIND, TIMED_DEC:CUT and
+CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
+(`CURE:POISONED`). A pack of 40 Cure Light Wounds has no poison cure.
+
+- **`town_prepared_percent`** (compiled 0, **shipped 8**; per class with
+  `@<class>` or `__<class>`). Above 0, `observe` adds one row per
+  situation's remedy (`PREP_POISON`, `PREP_CURSE`, `PREP_INVISIBLE`,
+  `PREP_CONFUSION`, `PREP_FEAR`), fed one unit per copy by whatever supplies
+  the situation's capability (`supplies_of_kind`; a device: one per charge),
+  so Neutralize Poison and Cure Critical Wounds fill the poison row,
+  Detect Invisible the invisible row, Remove Curse the curse row, and so on.
+  Each row is a requirement (`prepared_row`, as Phase Door's reserve): each
+  of the first N copies is worth this percent of the trip weight
+  (`borg_town_w_trip` x exposure, as Recall's), a copy past them nothing; N is the remedy's own copies (`town_prepared_poison` 3, `_invisible` 4, `_curse` 2, `_confusion` 2, `_fear` 2). The condition-present
+  curves (poisoned, cursed, afraid, ...) stay as they are, on top. 0 = the
+  model has the shape it had before (no rows).
+- **`town_prepared_poison`, `_invisible`, `_curse`, `_confusion`, `_fear`**
+  (compiled and shipped 3, 4, 2, 2, 2; owner: "if I have 20 CLW I would
+  have say 4 detect invisible and 2 remove curse"): the copies of each
+  remedy wanted (nothing past them; a diminishing curve first tried let an
+  8 gold Boldness pile up to 8 carried). Neutralize Poison, Resist Poison
+  (also `CURE:POISONED`, 30 gold) and Cure Critical Wounds fill the poison
+  row; Cure Serious and Critical Wounds the confusion row; Boldness, Heroism
+  and Berserk Strength the fear row (`object.txt`). Remove Curse (100 gold)
+  is always in the Alchemist's stock and Detect Invisible (15 gold) is a
+  normal item there (`store.txt`): the planner buys them by value per gold
+  after the urgent needs and the staples, so a richer Borg buys more of the
+  dearer ones.
+- Unit check (`the_first_remedies_are_worth_more_than_the_21st_cure_light_wounds`):
+  with the numbers `observe` makes at CL5, DL3, 100 HP and the shipped 125
+  percent healing scale, at 8 percent and 2 copies each target copy of each
+  remedy is worth the same and more than twice the 21st Cure Light Wounds, a
+  copy past the target nothing. Those numbers are an
+  estimate, not a live reading.
+- **Shipped 8** (`town_prepared_percent`: a copy is worth 8 percent of the trip weight, about what the first copy of the diminishing curve was at 25 percent), with the copies above: before it,
+  the Borg never bought Detect Invisible or Remove Curse (owner: "that is what we want to change"). A hypothesis for the zoo (RULES 14, 20); candidates 25 and 50.
+- The group mask (`Model::mask`, `shared_groups`) is 128 bits: capability ids
+  reach 75, and an earlier 64-bit mask that folded every id from 63 up onto one
+  bit merged unrelated groups (a fear remedy and a poison remedy, every
+  healing potion with a Word of Recall), so the solver chose one option for
+  all of them (review of #873, finding 1). Each id now has a bit of its own;
+  bit 63 stays the packing-room sentinel, shared with the Recall reserve (id
+  63) as in #864. Tests: `every_capability_has_its_own_mask_bit`,
+  `different_remedies_are_different_groups`.
+- **The staples' free copies** (`town_staple_clw`, `_csw`, `_ccw`, `_phase`,
+  `_oil`, `_food`, `_light`; compiled 0 = no decay, **shipped common 6, 4, 2,
+  6, 6, 4, 4**, the owner's: "Food and Light start decaying from 4, phase
+  door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
+  dependent") and **`town_staple_decay_percent`** (compiled and shipped 80).
+  Owner: "make staple objects start losing value ... compared to the objects
+  that are not supposed to be in the starter's shopping list"; "it must be a
+  decaying curve"; "extrapolate values from what classes buy now and try to
+  make it somewhat similar first, but then leaning on more variety". Past a
+  kind's free copies each copy counts for the decay percent of the copy
+  before it (7 free, 80: the 8th is worth 80 percent, the 9th 64, the 12th
+  33, the 21st 4) and the curve sees that decayed amount (`decayed`), so the
+  value keeps growing, ever more slowly, never flat. Carried copies count.
+  Phase Door, oil, food and torches have one knee row on their capability
+  (`STAPLE_PHASE`, `STAPLE_OIL`, `STAPLE_FOOD`, `STAPLE_LIGHT`); a copy of
+  food is a Ration (30 nutrition; a Remove Hunger scroll counts as the food
+  it adds), of light `borg_town_light_turns`; torches only without a lantern
+  (with one the light row is off). The three healing potions share the HEAL
+  curve, so each has a row of its own (`STAPLE_CLW`, `STAPLE_CSW`,
+  `STAPLE_CCW`) that counts its copies and whose knee takes
+  its healing units off the HEAL curve (`Model::heal_loss`: Cure Light
+  Wounds 20 HP, Serious 40, Critical 60, `object.txt`). Rows hold the knee as a
+  negative demand, the decay and one copy's units packed in the weight
+  (`knee_row`), and carry no value of their own; `Model::gain` and
+  `Model::reserve` skip the healing rows. The Home's stored healing is valued
+  without the decay (`reserve`). Ammunition keeps its own caps
+  (`town_ranger_arrows_max`).
+- **Per class** (`harness/borg_<class>.txt`, folded into `harness/borg.txt`
+  with `scripts/borg-class-files.py fold`; every parameter takes `@<class>`),
+  Cure Light Wounds, Cure Serious Wounds, Phase Door and oil; food, light and
+  Cure Critical Wounds are common. The values start from the owner's and move
+  with what each class carries at a town departure now (36 games of 200,000
+  game turns, shipped settings before this change, 4 seeds per class, Human,
+  borg-zoo not used; median of the stack kept at each departure after the
+  first, last count of "You have N ..." lines):
+
+  | class | Cure Light | Cure Serious | Phase Door | Oil | Food | Torches |
+  |---|---|---|---|---|---|---|
+  | Warrior | 23 | 3 | 7 | 15 | 10 | 3 |
+  | Mage | 18 | 2 | 13 | 10 | 8 | 0 |
+  | Druid | 15 | 0 | 12 | 9 | 5 | 0 |
+  | Priest | 18 | 0 | 3 | 8 | 10 | 2 |
+  | Necromancer | 17 | 0 | 10 | 14 | 6 | 0 |
+  | Paladin | 16 | 3 | 9 | 11 | 10 | 2 |
+  | Rogue | 19 | 2 | 11 | 10 | 9 | 5 |
+  | Ranger | 22 | 0 | 11 | 0 | 10 | 2 |
+  | Blackguard | 22 | 2 | 5 | 14 | 11 | 3 |
+
+  (A first count matched "Flasks of Oil" with a capital O; the game writes
+  "Flasks of oil", so it saw none and this section said nobody carried oil.
+  Corrected here: the table above has the real medians, and the first-visit
+  purchases are 20-55 flasks for every class but the Ranger, who buys 63-90
+  arrows.) Usage matters more than what is carried: per game (200,000
+  turns) the Borg reads about 6-29 Phase Doors and throws 60-160 flasks, and
+  the stack hit zero 0.2-2.5 times for Phase Door (Blackguard 2.5, Priest
+  1.5) and 3-13 times for oil, so the decay must not cut what a trip uses.
+  Cure Light and Serious Wounds are used 1-6 a game against 15-23 carried:
+  the staples' decay is aimed at them.
+  Cure Light Wounds = 6 x median / 19 (Warrior 7, Mage 6,
+  Druid 5, Priest 6, Necromancer 5, Paladin 5, Rogue 6, Ranger 7,
+  Blackguard 7); Cure Serious Wounds 4 for the classes that fight in
+  melee or shoot (Warrior, Paladin, Rogue, Ranger, Blackguard), 3 for the
+  casters; Cure Critical Wounds 2, food 4 and torches 4 (the owner's). **Phase
+  Door and oil start above the carried medians**, near what a class uses
+  (owner, 2026-11-21: "they tend to run out of them, especially rangers"):
+  Phase Door Warrior 12, Mage 10, Druid 10, Priest 10, Necromancer 10,
+  Paladin 12, Rogue 12, Ranger 15, Blackguard 12; oil = the class's median
+  carried (Warrior 15, Mage 10, Druid 9, Priest 8, Necromancer 14, Paladin 11,
+  Rogue 10, Ranger 6, Blackguard 14). All of it is a hypothesis for the zoo to
+  measure (RULES 14).
+- Same 36 games with the shipped values (staples only): the stacks at
+  departure stay close to the baseline (Cure Light medians 11-23 against
+  15-23, Phase Door 4-17 against 3-13); mean CL 8.6 against 8.8, mean max
+  depth 3.58 against 3.64, 2 of 36 stopped early in both. That is a sanity
+  check on 36 games, not a measurement.
+- Same 36 games with the remedies shipped on (`town_prepared_percent` 8,
+  copies 3, 4, 2, 2, 2) as well: bought per game, Detect Invisible 0 ->
+  9.6 (the core reads them fast against invisible attackers, #831), Remove
+  Curse 1.0 -> 1.0, Neutralize or Resist Poison 0 -> 0.4, a fear remedy 0.6
+  -> 2.4; Cure Light Wounds 7.5 -> 6.9. Carried at a departure, the median
+  is 2-4 Detect Invisible for seven classes (target 4), 0-3 poison cures,
+  0 Remove Curse: it costs 100 gold, so by value per gold it comes after the
+  staples and the cheaper remedies, and these games (mean CL 9) seldom have
+  the gold. Mean CL 9.2, mean max depth 4.0, 1 of 36 stopped early (the
+  baseline 8.6, 3.6, 2 of 36): within the noise of 36 games, no claim. A
+  first version (a diminishing curve, 25 percent) let an 8 gold Boldness
+  pile up (6.1 bought a game, 8 carried); the requirement shape caps it.
+- Unit checks (`staples_decay_after_their_free_copies`): for Phase Door, oil,
+  food and light the free copies are as before, the next keeps about 80
+  percent, every later copy is worth something and less than the one
+  before; each healing potion's first copy and last free copy are as before
+  and the one past its knee is worth less; with 20 Cure Light Wounds carried
+  the 21st is worth about a fifth of its plain value and the 3rd Remove
+  Curse is worth more.
+- Engine check: smoke at the shipped settings is re-recorded (the shipped
+  values change every town visit); 80,000-turn games run the town plan
+  without a panic.
+
+- **Recall and Phase Door, bought more** (first measurement, on the earlier track-p and with the 64-bit mask of the first review finding; superseded by the re-measurement below) (owner, 2026-11-21: "current
+  characters do not buy enough world of recall and should buy more, and
+  probably more phase doors as well, they tend to run out of them, especially
+  rangers"). Shipped: `town_recall_reserve` 1 -> 2, `buy_recall_from_gold`
+  400 -> 200 (a scroll is bought only when that much gold remains after it),
+  `town_phase_reserve` 0 -> 4 for every class (Ranger 2 -> 8, Blackguard 8,
+  Priest 6, class files; raised again below). Neither Word of Recall nor missiles are touched by
+  the staples' decay (Recall keeps its own curve, #864; missiles their own
+  caps). Before (36 games, 200,000 turns, the share of town departures after
+  the first that carry no Word of Recall): Warrior 39 percent, Mage 94,
+  Druid 80, Priest 62, Necromancer 100, Paladin 31, Rogue 57, Ranger 68,
+  Blackguard 75. After the reserve alone (2): 40, 78, 99, 61, 66, 55, 64, 57,
+  81, no better, since the 400 gold floor held it back. With the floor at
+  200: 57, 57, 62, 33, 40, 71, 29, 41, 85: better for the casters, Rogue and
+  Ranger, worse for Warrior, Paladin and Blackguard (4 starts a class, noise
+  or the floor; the zoo arm will say). Departures with 5 or fewer Phase
+  Doors before / after: Warrior 24 / 22 percent, Mage 2 / 3, Druid 15 / 0,
+  Priest 64 / 18, Necromancer 0 / 3, Paladin 15 / 10, Rogue 15 / 13, Ranger 5 /
+  3, Blackguard 50 / 0; Phase Doors bought per game 3.5-12 before, 7.8-14.5
+  after (Rogue 3.5 -> 9.0, Blackguard 3.8 -> 14.5); times the stack hit zero
+  at most 1.5 a game against up to 2.5. Mean CL 8.8 / 8.75, max depth 3.64 /
+  3.50, 2 / 1 of 36 stopped early: no change beyond noise.
+- **Re-measured after the review of #873** (finding 1 fixed, `track-p` with
+  #864's review fixes and #831's Detect Invisible curve merged in; 36 games,
+  200,000 turns, 4 starts a class). The control is the same build with every
+  #863 value set back (the zoo's `ctl` lines: staples, remedies and the depth
+  gate off, Recall reserve 1 and floor 400, Phase Door reserve 0, Ranger 2), the
+  earlier numbers having used an older baseline that lacked #831 and #864's
+  fixes. Bought a game, control / shipped: Detect Invisible 6.2 / 8.4 (the
+  control already buys them since #831), Remove Curse 0.1 / 0.4, a poison cure
+  0.0 / 0.4, a fear remedy 0.3 / 1.7, Phase Door 7.8 / 10.9, Word of Recall 3.7 /
+  4.7, Cure Light Wounds 10.4 / 6.8. The share of departures carrying no Word of
+  Recall, control / shipped: Warrior 50 / 40 percent, Mage 84 / 74, Druid 66 / 60,
+  Priest 56 / 65, Necromancer 88 / 20, Paladin 51 / 39, Rogue 64 / 38, Ranger 79 /
+  59, Blackguard 66 / 59 (better in eight classes of nine). Departures with 5 or
+  fewer Phase Doors, control / shipped: Warrior 46 / 32, Mage 17 / 25, Druid 1 /
+  15, Priest 28 / 34, Necromancer 21 / 8, Paladin 57 / 39, Rogue 14 / 28, Ranger
+  20 / 25, Blackguard 50 / 3: better in four classes, worse in five, so the Phase
+  Door reserve did not fix running low in every class. Mean CL 9.11 / 9.11, mean
+  max depth 3.78 / 3.83; stopped early 0 / 3 of 36 (a Druid at CL2 on DL1, a Druid at
+  CL7, a Paladin at CL11; the first visit bought the same kit in both arms: eight
+  Cure Light Wounds, 27 flasks, the same Phase Doors): within what 36 games can
+  show, and what the zoo pilot is for.
+- **Phase Door, raised again** (owner, 2026-11-22: "Ranger seems to run out
+  more often of phase doors", "but the other ones too"). The first
+  measurement counted every "Town departure room" line as a visit, but the
+  Borg also bounces between DL1 and town at CL1 without shopping, so a Ranger
+  "left with 3" nineteen visits running without ever shopping; the measure
+  that follows counts only visits that bought three or more things, and the
+  times the Phase Door stack hit zero in the dungeon. 36 games, 200,000
+  turns, 4 starts a class, same build. Control (all #863 values back) /
+  Phase Door reserve 4 (Ranger, Blackguard 8, Priest 6; knees 10-15) /
+  **shipped now**: stack hit zero a game 0.58 / 0.28 / 0.14; after a shopping
+  visit 5 or fewer Phase Doors: Warrior 50 / 33 / 0 percent, Mage 39 / 36 / 7,
+  Druid 4 / 6 / 4, Priest 41 / 22 / 0, Necromancer 20 / 15 / 0, Paladin 50 / 37 /
+  0, Rogue 19 / 38 / 0, Ranger 39 / 13 / 4, Blackguard 66 / 0 / 0; 8 or fewer:
+  Ranger 78 / 50 / 8, Blackguard 91 / 50 / 4; median carried 5-9 / 6-12 / 6-16.
+  Mean CL 9.11 / 9.11 / 8.92, mean max depth 3.78 / 3.83 / 3.78, stopped early
+  0 / 3 / 2 of 36. Shipped: `town_phase_reserve` 6 (Ranger 10, Blackguard 10,
+  Priest 8), `town_phase_reserve_percent` 150 (each reserved scroll worth 150
+  percent of the trip's escape weight, to outbid arrows and flasks at a small
+  purse), and the Phase Door free copies Warrior 16, Mage 12, Druid 12, Priest
+  12, Necromancer 12, Paladin 14, Rogue 16, Ranger 20, Blackguard 16. A hypothesis
+  for the zoo's `kit` arm. The reserve's range stops at 10.
+- **`town_variety_min_depth`** (compiled 0, **shipped 2**; owner: "it is
+  important that in the first level we have the staples"): the staples'
+  decay and the remedies only apply once the deepest level reached
+  (`BI_MAXDEPTH`) is this, so the first visits buy as before #863: a first
+  count showed one to five Detect Invisible bought on the first visit
+  (15 gold each, at starting gold) and the oil decay cutting first-visit
+  flasks by a quarter to a third.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:908` |
+| `town_prepared_poison` | 3 | copies | 1–20 | `borg_town_capability.rs:909` |
+| `town_prepared_invisible` | 4 | copies | 1–20 | `borg_town_capability.rs:910` |
+| `town_prepared_curse` | 2 | copies | 1–20 | `borg_town_capability.rs:909` |
+| `town_prepared_confusion` | 2 | copies | 1–20 | `borg_town_capability.rs:910` |
+| `town_prepared_fear` | 2 | copies | 1–20 | `borg_town_capability.rs:911` |
+| `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:919` |
+| `town_staple_clw` | 0 | copies | 0–99 | `borg_town_capability.rs:923` |
+| `town_staple_csw` | 0 | copies | 0–99 | `borg_town_capability.rs:924` |
+| `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:925` |
+| `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:931` |
+| `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
+| `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
+| `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |

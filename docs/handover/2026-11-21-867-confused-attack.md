@@ -127,7 +127,7 @@ here.
 
 `origin/track-p` merged in (#864, #869, #870 and others; conflicts only in
 `params.rs` citations and the `CALIBRATION.md` sections; the registry now
-holds 2359). Smoke on the default core 3/3 identical to the current
+holds 2374 after #873). Smoke on the default core 3/3 identical to the current
 `smoke-borg-rs`. **On the merged tree the switch no longer changes the named
 cases:** #869's kill-on-sight entry for the grey mushroom patch attacks it
 in `fight_before_flight`, before it confuses, so Gnome Necromancer
