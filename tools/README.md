@@ -68,11 +68,21 @@ reporting API 1 is insufficient: an old API-1 exporter can lack the synthetic
 guard. An explicit checkout mismatch is an error, never a fallback to executing
 unsafe code or silently exporting a synthetic death.
 
-Clone/update borg-cemetery beside the primary checkout, or set
-`BORG_CEMETERY_DIR=/path/to/borg-cemetery`. Linked worktrees discover the sibling
-of their primary checkout. New normal exports go to its `deaths/` and its own
+Which checkout runs (#902): `BORG_CEMETERY_DIR` when set; a mismatch there is
+an error, never a fallback. Without it, the first of these whose native tools
+match the pin: the borg-cemetery beside the primary checkout (linked worktrees
+find the sibling of their primary checkout), then `vendor/borg-cemetery` (the
+worktree's, then the primary checkout's). `scripts/setup.sh` keeps the primary
+checkout's `vendor/borg-cemetery` at `death-tools-pin.txt`, a full checkout of
+about 1.2 GB shared by every worktree, so a sibling that tracks the Cemetery's
+`main` past the pin no longer stops a run: the tools print one line naming the
+checkout they use and why. With none matching, the error names `setup.sh`.
+
+New normal exports go to the selected checkout's `deaths/`, and its own
 registration hook builds readable pages/catalogue without overwriting historical
-indexes. `BORG_DEATH_RECORDS_DIR` remains the explicit destination override.
+indexes. An export into `vendor/borg-cemetery` is a working copy: to keep a
+death, add it to a real Cemetery branch (or point `BORG_DEATH_RECORDS_DIR`, the
+explicit destination override, at one).
 
 This repository still owns the harness, build/source identity and observations.
 Its historical `docs/deaths/` is preserved for existing evidence and CI baseline
