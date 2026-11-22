@@ -389,6 +389,8 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         let answer = crate::borg_escape::change_back_answer(st);
         if answer == b'y' {
             borg_note(st, "# Fox Form: reverting for an item or a spell");
+        } else {
+            st.fight_attack.pending_unseen.clear();
         }
         key.code = u32::from(answer);
         return true;
@@ -398,6 +400,9 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
         if let Some(code) = borg_react_prompted(st, &text, cursor) {
+            if code == ESCAPE || code == u32::from(b'n') {
+                st.fight_attack.pending_unseen.clear();
+            }
             key.code = code;
             return true;
         }
@@ -622,6 +627,7 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    crate::borg_unseen_belief::reject_attack(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.

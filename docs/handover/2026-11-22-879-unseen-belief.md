@@ -72,3 +72,18 @@ Branch `task/T879-unseen-belief`, track P (P7, owner 2026-11-22), stacked on
   tracks the Rust, vendor and harness check results. Switch-on smoke only
   checks that play completes. borg-zoo#625 measured the earlier head
   `a516df64` and needs a new request at the merged track-p head.
+
+### Codex re-review follow-up
+
+- Merged `origin/track-p` at `9085c266` separately. Kept confused
+  direction aiming and regenerated the parameter citations.
+- The selected aim stages its affected records. Only a queued attack can
+  advance the ledger at the next normal command input after message parsing.
+  Rejected casts, cancelled prompts and flushed commands discard the pending
+  ledger. A launched miss still counts. There is one cap for real launches.
+- The projection collects sleepers before applying score penalties. A launch
+  counts each affected believed record once and marks it awake. Stubbed I/O
+  tests cover the concentration failure and a winning ball with a penalized
+  sleeper.
+- The PR comment records the check results. Local Linux harness startup was
+  unavailable on the Windows host.

@@ -30,6 +30,107 @@ use crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE;
 use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
+/// One projection, staged at aim time and armed only when its command is queued.
+#[derive(Clone, Default)]
+pub(crate) struct PendingAttack {
+    targets: Vec<(usize, i32)>,
+    queued: bool,
+}
+
+impl PendingAttack {
+    pub(crate) fn stage(&mut self, targets: Vec<(usize, i32)>) {
+        self.targets = targets;
+        self.queued = false;
+    }
+
+    pub(crate) fn command_queued(&mut self, queued: bool) {
+        if queued {
+            self.queued = self.has_targets();
+        } else {
+            self.clear();
+        }
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.stage(Vec::new());
+    }
+
+    pub(crate) fn has_targets(&self) -> bool {
+        !self.targets.is_empty()
+    }
+}
+
+/// Cancellation messages that can reach the next command without firing.
+/// See player-spell.c:504–516, cmd-obj.c (check_devices and item commands),
+/// and player-attack.c (do_cmd_fire/do_cmd_throw).
+pub(crate) fn reject_attack(st: &mut BorgState, msg: &[u8]) {
+    if !st.fight_attack.pending_unseen.has_targets() {
+        return;
+    }
+    let rejected = [
+        b"You failed ".as_slice(),
+        b"You cannot pray or produce magics",
+        b"You cannot see!",
+        b"You are too confused!",
+        b"There are no spells you can cast",
+        b"That book has no spells that you can cast",
+        b"The draining fails.",
+        b"The wand has no charges left",
+        b"The staff has no charges left",
+        b"You have no suitable ammunition to fire",
+        b"You have nothing to fire with",
+        b"You have nothing to throw",
+        b"That item is not within your reach",
+        b"That ammo cannot be fired",
+        b"You have no staves to use",
+        b"You have no wands to aim",
+        b"You have no rods to zap",
+        b"You have no items to activate",
+        b"That staff has no charges",
+        b"That wand has no charges",
+        b"That rod is still charging",
+        b"That item is still charging",
+    ];
+    if rejected.iter().any(|prefix| msg.starts_with(prefix)) {
+        st.fight_attack.pending_unseen.clear();
+    }
+}
+
+/// Called at the next normal command request, after parsing the completed
+/// command's messages. A miss still spends a shot. A failure or flush
+/// discards the pending projection before it gets here.
+pub(crate) fn finish_attack(st: &mut BorgState, mut log: impl FnMut(&mut BorgState, usize, i32)) {
+    let pending = std::mem::take(&mut st.fight_attack.pending_unseen);
+    if !pending.queued {
+        return;
+    }
+
+    let mut targets = pending.targets;
+    targets.sort_unstable_by_key(|&(k, _)| k);
+    targets.dedup_by_key(|(k, _)| *k);
+    for (k, weight) in targets {
+        note_shot(st, k);
+        log(st, k, weight);
+    }
+}
+
+pub(crate) fn confirm_attack(st: &mut BorgState) {
+    finish_attack(st, |st, k, weight| {
+        let kill = st.kills.kills[k];
+        crate::borg_io::borg_note(
+            st,
+            &format!(
+                "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
+                engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
+                kill.pos.y,
+                kill.pos.x,
+                st.borg.time.now.wrapping_sub(kill.when),
+                weight
+            ),
+        );
+    });
+}
+
 /// The chance (percent) that a monster unseen for `age` Borg turns is still
 /// at its last grid.
 pub(crate) fn belief_percent(age: i32, never_move: bool, awake: bool, monster_energy: i32, own_energy: i32, decay: i32) -> i32 {
@@ -89,18 +190,32 @@ fn shots_since_seen(st: &BorgState, k: usize) -> i32 {
     }
 }
 
-/// Count a shot at the believed record `k` when the chosen projection is aimed. The engine gives no name for a monster the player cannot
-/// see ("It dies."), so a record shot dead stays until this cap: at most
-/// `unseen_max_shots` shots per sighting.
-pub(crate) fn note_shot(st: &mut BorgState, k: usize) {
+/// Count a launched shot and treat the last-known sleeper as awake.
+fn note_shot(st: &mut BorgState, k: usize) {
     let when = st.kills.kills[k].when;
     let n = shots_since_seen(st, k) + 1;
     st.fight_attack.unseen_shots.insert(k, (when, n));
+    st.kills.kills[k].awake = true;
 }
 
 #[cfg(test)]
 mod tests {
-    use super::belief_percent;
+    use super::*;
+
+    #[test]
+    fn failed_cast_leaves_the_sleeper_and_ledger_unchanged() {
+        let mut st = BorgState::default();
+        st.kills.kills = vec![crate::borg_flow_kill::BorgKill::BLANK; 2];
+        st.kills.kills[1].r_idx = 1;
+        st.fight_attack.pending_unseen.stage(vec![(1, 100)]);
+        st.fight_attack.pending_unseen.command_queued(true);
+
+        // Stub the engine response and normal command input.
+        reject_attack(&mut st, b"You failed to concentrate hard enough!");
+        finish_attack(&mut st, |_, _, _| panic!("failure wrote an unseen-shot trace"));
+        assert_eq!(shots_since_seen(&st, 1), 0);
+        assert!(!st.kills.kills[1].awake);
+    }
 
     #[test]
     fn belief_decays_with_the_monsters_turns() {

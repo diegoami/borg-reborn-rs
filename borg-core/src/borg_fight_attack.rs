@@ -77,6 +77,7 @@ pub struct FightAttackState {
     /// kill index, with the record's `when` at the time (a new sighting or a
     /// reused index starts again).
     pub unseen_shots: std::collections::BTreeMap<usize, (BorgTime, i32)>,
+    pub(crate) pending_unseen: crate::borg_unseen_belief::PendingAttack,
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower
     /// is "do not shoot".
@@ -152,6 +153,7 @@ impl Default for FightAttackState {
             focused_target: None,
             focused_kind: 0,
             unseen_shots: std::collections::BTreeMap::new(),
+            pending_unseen: crate::borg_unseen_belief::PendingAttack::default(),
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
@@ -1713,7 +1715,7 @@ fn blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]> {
     engine::race_blow_effect_name(r_idx, k)
 }
 
-/// One aim and the unseen records that contributed positive utility to it.
+/// One aim and the believed records in its projected path or area.
 #[derive(Default)]
 struct ProjectedAttack {
     score: i32,
@@ -1724,6 +1726,7 @@ struct ProjectedAttack {
 
 impl ProjectedAttack {
     fn target(self, st: &mut BorgState, require_monster: bool) {
+        st.fight_attack.pending_unseen.clear();
         let Some(aim) = self.aim else { return };
         st.borg.goal.g = aim;
         // #867: a confused attack sends an adjacent direction.
@@ -1731,26 +1734,8 @@ impl ProjectedAttack {
             st.fight_attack.confused_dir = borg_extract_dir(st.borg.c.y, st.borg.c.x, aim.y, aim.x);
             return;
         }
-        let _ = borg_target(st, aim, require_monster);
-
-        // Count each record once, even if a projection encountered it twice.
-        let mut unseen = self.unseen;
-        unseen.sort_unstable_by_key(|&(k, _)| k);
-        unseen.dedup_by_key(|(k, _)| *k);
-        for (k, weight) in unseen {
-            let kill = st.kills.kills[k];
-            crate::borg_unseen_belief::note_shot(st, k);
-            borg_note(
-                st,
-                &format!(
-                    "# Unseen target (#879): {} believed at ({},{}), seen {} turns ago, belief {}%",
-                    engine::race_name(usize::from(kill.r_idx)).iter().map(|&c| c as char).collect::<String>(),
-                    kill.pos.y,
-                    kill.pos.x,
-                    borg_timer(st, kill.when),
-                    weight
-                ),
-            );
+        if borg_target(st, aim, require_monster) {
+            st.fight_attack.pending_unseen.stage(self.unseen);
         }
     }
 }
@@ -1762,14 +1747,10 @@ fn expected_score(score: i32, belief: Option<i32>) -> i32 {
     }
 }
 
-fn score_projection_target(
-    unseen: &mut Vec<(usize, i32)>, i: i32, score: i32, belief: Option<i32>,
-) -> i32 {
-    let expected = expected_score(score, belief);
-    if let Some(weight) = belief.filter(|_| expected > 0) {
+fn collect_believed_target(unseen: &mut Vec<(usize, i32)>, i: i32, belief: Option<i32>) {
+    if let Some(weight) = belief {
         unseen.push((i as usize, weight));
     }
-    expected
 }
 
 /// Simulate / Invoke the launching of a bolt at a monster
@@ -1848,21 +1829,24 @@ fn borg_launch_bolt_aux_hack(
         }
     }
 
+    if typ as u32 == BORG_ATTACK_CURSE && belief.is_some() {
+        return 0;
+    }
+    // A projected hit can wake a sleeper even when it reduces the score.
+    collect_believed_target(unseen, i, belief);
+
     /* Calculate damage */
     let mut d = borg_launch_damage_one(st, i, dam, typ, ammo_location);
 
     /* Teleport Other's danger reduction is calculated by the caller.
      * A bolt stops at the first record on the path. */
     if typ as u32 == BORG_ATTACK_AWAY_ALL {
-        if let Some(weight) = belief.filter(|_| d > 0) {
-            unseen.push((i as usize, weight));
-        }
         return d;
     }
 
     /* These attacks already score the monster's danger. */
     if typ as u32 == BORG_ATTACK_AWAY_ALL_MORGOTH || typ as u32 == BORG_ATTACK_AWAY_EVIL {
-        return score_projection_target(unseen, i, d, belief);
+        return expected_score(d, belief);
     }
 
     /* Return 0 if the true damage (w/o the danger bonus) is 0 */
@@ -1914,7 +1898,7 @@ fn borg_launch_bolt_aux_hack(
     }
 
     /* Score damage and danger conditional on the monster being there. */
-    score_projection_target(unseen, i, d + p1, belief)
+    expected_score(d + p1, belief)
 }
 
 /// Determine the penalty for destroying stuff by launching a spell at it
@@ -2787,6 +2771,7 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     /* Use target */
     /* Set our shooting flag */
     st.fight_attack.successful_target = aim_key(st, -2);
+    st.fight_attack.pending_unseen.command_queued(true);
 
     /* Value */
     b_n
@@ -3096,6 +3081,7 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Use target */
     /* Set our shooting flag */
     st.fight_attack.successful_target = aim_key(st, -2);
+    st.fight_attack.pending_unseen.command_queued(true);
 
     /* Value */
     b_n
@@ -3267,7 +3253,8 @@ pub fn borg_attack_aux_spell_bolt(
     }
 
     /* Cast the spell */
-    let _ = borg_spell(st, spell);
+    let queued = borg_spell(st, spell);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -3393,7 +3380,9 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Cast the spell with fake mana */
     st.borg.trait_[BI_CURSP as usize] = tr(st, BI_MAXSP);
-    if borg_spell_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
+    let queued = borg_spell_fail(st, spell, param(Param::attack_reserve_spell_fail));
+    st.fight_attack.pending_unseen.command_queued(queued);
+    if queued {
         /* Note the use of the emergency spell */
         borg_note(st, "# Emergency use of an Attack Spell.");
 
@@ -3463,6 +3452,7 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
 
     /* never tap if we previously missed a tap */
     if st.fight_attack.target_closest < 0 && BORG_ATTACK_TAP_UNLIFE as i32 == typ && b_n > 0 {
+        st.fight_attack.pending_unseen.clear();
         st.fight_attack.target_closest = 0;
         return 0;
     }
@@ -3473,7 +3463,8 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
     }
 
     /* Cast the prayer */
-    let _ = borg_spell(st, spell);
+    let queued = borg_spell(st, spell);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Value */
     b_n
@@ -3512,7 +3503,8 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
     }
 
     /* Cast the prayer */
-    let _ = borg_use_staff(st, sval);
+    let queued = borg_use_staff(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Value */
     b_n
@@ -3555,7 +3547,8 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Zap the rod */
-    let _ = borg_zap_rod(st, sval);
+    let queued = borg_zap_rod(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     /* Set our shooting flag */
@@ -3658,7 +3651,8 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Aim the wand */
-    let _ = borg_aim_wand(st, sval);
+    let queued = borg_aim_wand(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     /* Set our shooting flag */
@@ -3715,7 +3709,8 @@ fn borg_attack_aux_activation(
     }
 
     /* Activate the artifact */
-    let _ = borg_activate_item(st, activation);
+    let queued = borg_activate_item(st, activation);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     if aim {
@@ -3759,7 +3754,8 @@ fn borg_attack_aux_ring(st: &mut BorgState, ring_name: i32, rad: i32, dam: i32, 
     }
 
     /* Activate the artifact */
-    let _ = borg_activate_ring(st, ring_name);
+    let queued = borg_activate_ring(st, ring_name);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -3803,7 +3799,8 @@ fn borg_attack_aux_dragon(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ
     }
 
     /* Activate the scale mail */
-    let _ = borg_activate_dragon(st, sval);
+    let queued = borg_activate_dragon(st, sval);
+    st.fight_attack.pending_unseen.command_queued(queued);
 
     /* Use target */
     borg_keypress(st, key(b'5'));
@@ -5934,13 +5931,28 @@ mod fallback_tests {
     use super::*;
 
     #[test]
-    fn unseen_targets_contribute_weighted_utility_to_one_projection() {
+    fn a_launched_ball_counts_and_wakes_a_penalized_sleeper_once() {
+        let mut st = BorgState::default();
+        st.kills.kills = vec![crate::borg_flow_kill::BorgKill::BLANK; 3];
+        st.kills.kills[1].r_idx = 1;
+        st.kills.kills[2].r_idx = 2;
         let mut unseen = Vec::new();
-        assert_eq!(score_projection_target(&mut unseen, 1, 150, Some(20)), 30);
-        assert_eq!(score_projection_target(&mut unseen, 2, 90, Some(50)), 45);
-        assert_eq!(score_projection_target(&mut unseen, 3, 60, None), 60);
-        assert_eq!(score_projection_target(&mut unseen, 4, -999, Some(20)), -199);
-        assert_eq!(unseen, vec![(1, 20), (2, 50)]);
+        collect_believed_target(&mut unseen, 1, Some(100));
+        collect_believed_target(&mut unseen, 2, Some(50));
+        collect_believed_target(&mut unseen, 1, Some(100));
+        let score = expected_score(-999, Some(100)) + expected_score(2500, Some(50));
+        assert_eq!(score, 251);
+
+        // Stub out command I/O. Feed the same ledger the ball scorer builds
+        // through queuing and the next normal command input.
+        st.fight_attack.pending_unseen.stage(unseen);
+        st.fight_attack.pending_unseen.command_queued(true);
+        let mut trace = Vec::new();
+        crate::borg_unseen_belief::finish_attack(&mut st, |_, k, _| trace.push(k));
+        crate::borg_unseen_belief::finish_attack(&mut st, |_, k, _| trace.push(k));
+        assert_eq!(trace, [1, 2]);
+        assert_eq!(st.fight_attack.unseen_shots[&1], (0, 1));
+        assert!(st.kills.kills[1].awake);
     }
 
     /// Review of #657: the winner is never its own fallback.

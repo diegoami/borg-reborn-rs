@@ -5957,17 +5957,17 @@ hypotheses.
   energy / the Borg's, `extract_energy`), never below 0. After one unseen shot
   a sleeper counts as awake.
 - **`unseen_max_shots`** (3): at most this many unseen shots per sighting.
-  The chosen attack counts one shot per unseen record that contributed
-  positive utility, including records hit by an arc or splash damage. The
-  engine names no monster the player cannot see ("It dies."). The cap stops
-  the Borg from crediting a record after repeated shots.
+  After a launch, count each believed record in the projection, including
+  arc and splash targets whose utility was negative. Update the sleeper's
+  inferred wake state at the same time. Failed commands leave both alone.
+  The cap stops the Borg from crediting a record after repeated shots.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:48` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:56` |
-| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:79` |
-| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:68` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:149` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:157` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:180` |
+| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:169` |
 
 ## #863: variety in the backpack (town, prepared remedies)
 
