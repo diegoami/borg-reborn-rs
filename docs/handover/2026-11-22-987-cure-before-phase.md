@@ -1,8 +1,8 @@
 ## 2026-11-22: First cures before the Phase Door reserve, off by default (#987)
 
 Every check below ran on the **default core, borg-rs** (`borg-core/`), on
-the shipped `harness/borg.txt`, built from `origin/track-p` `4b2c2fcf`
-plus this branch. No check ran on the reborn core: this change does not
+the shipped `harness/borg.txt`, built from `origin/track-p` (first `4b2c2fcf`,
+now `cd1e81e0`, see the merge section) plus this branch. No check ran on the reborn core: this change does not
 touch it.
 
 ### Reproduced
@@ -53,8 +53,10 @@ and costs 15 (`object.txt:2576-2581`).
   cure" (id 77, appended to `NAMES` after #978's Restore Life reserve, 76). Each copy is worth
   `town_first_cure_percent` of the trip's escape weight, the Phase Door
   reserve's unit. A copy past them adds nothing.
-- `town_first_cure_percent` (200): above `town_phase_reserve_percent` (150),
-  the first cures come before the reserved scrolls.
+- `town_first_cure_percent` (200): a margin on the cure's whole value, not a
+  threshold against `town_phase_reserve_percent` (150). The purse decides on
+  whole wares; at the record, a first cure at 200 is worth 410,588 against a
+  reserved Phase Door's 219,130.
 - Off, the model keeps its previous shape (same row count). The plan records
   of the seed are byte-identical, and so are the keys.
 - Per class with `__<class>`. `harness/borg.txt` ships `0` and `200`, with a
@@ -69,9 +71,10 @@ reserved scroll, and the second CLW still < the sixth scroll.
 
 - `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace
   --all-targets -- -D warnings`, `cargo test --workspace --exclude borg-core`,
-  `cargo test --release -p borg-core` (654 passed), `scripts/tests`,
-  `tools/tests`, `check-param-citations.py`: pass. The citation fix also
-  moved 12 rows in `docs/CALIBRATION.md` whose cited lines had shifted.
+  `cargo test --release -p borg-core` (654 passed at `4b2c2fcf`, 665 after
+  the merges), `scripts/tests`, `tools/tests` and `check-param-citations.py`
+  pass. `--fix` re-pointed the citations whose cited lines had shifted, in
+  `params.rs` and `docs/CALIBRATION.md`.
 - Smoke: 3/3 runs identical to `harness/reference/smoke-borg-rs`, so it is not
   re-recorded. `harness/check-ranger-phase.py`: reserve 0 and 2 match.
 - Seed 681096527 at the shipped settings: same hash `665b0b0cf9c3af43`.
@@ -94,8 +97,10 @@ borg-cemetery: there is no push access. The case package is left (below).
 
 The fixes are in the second commit:
 
-1. On is now off plus the first-cure row. Only the rows the model holds
-   because of the parameter (`base_count..FIRST_CURE`) are zeroed. Before,
+1. On is now off plus the first-cure row. At the time, the fix zeroed only
+   the rows the model held because of the parameter; since the merge of
+   `2415bedf`, the model is padded to every row with zero-weight rows
+   instead. Before the fix,
    `RANGED_RESERVE` and the prepared rows were zeroed even where the off
    model held them at the default weight (inert: nothing supplies them).
 2. The test pins `town_first_cure = 2`: two copies at 240,000 each, and a
@@ -120,6 +125,24 @@ Re-checked on the default core (borg-rs) against a build of `2415bedf`:
 `docs/CALIBRATION.md`, where both sides appended a section. Re-checked against
 a build of `c15a4e73`, with the same results: the same hash and plan records,
 the same counterfactual hashes, and smoke 3/3.
+
+`cd1e81e0` (#1021, the P7 review fixes) conflicted only in `params.rs`:
+both sides added parameters. Re-checked against a build of `cd1e81e0`, with
+the same results as before: the same hash and plan records, the same
+counterfactual hashes, smoke 3/3, and `cargo test --release -p borg-core` at
+674 passed.
+
+### Re-review (MCode, on `c679cbcd`)
+
+The verdict: the code is right and all six findings are closed. The four
+documentation points it raised are fixed:
+- `town_first_cure_percent` now cites its read line
+  (`borg_town_capability.rs:1062`). `--fix` had left it pointing inside
+  `observe`.
+- The "above the reserve's percent" framing is gone from `harness/borg.txt`
+  and from this note.
+- The review section above says how the code works now.
+- The baselines and counts are the current ones.
 
 ### Left, and for the owner
 

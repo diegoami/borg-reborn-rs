@@ -900,8 +900,9 @@ borg_param_town_phase_reserve_percent = 150
 # the escape weight, outbids the first cure, which is worth about 170 percent
 # of a full heal's weight at 14 HP), then died to a crow with nothing to
 # drink. With town_first_cure > 0 the first that many healing potions are a
-# requirement, each worth town_first_cure_percent of the trip's escape weight;
-# above town_phase_reserve_percent they are bought first. 0 = off (today).
+# requirement, each worth town_first_cure_percent of the trip's escape weight.
+# The percent is a margin on the cure's whole value, not a threshold against
+# town_phase_reserve_percent (the purse decides on whole wares). 0 = off (today).
 # Per class with __<class>. Shipped values wait for borg-zoo#669.
 borg_param_town_first_cure = 0
 borg_param_town_first_cure_percent = 200
@@ -1410,6 +1411,15 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
+# patch, #869) is not attacked on sight when a known Cure Light, Serious or
+# Critical Wounds potion is in the pack or an escape is at hand (stairs
+# underfoot, up or down, or a Phase Door that can be read). The floor only
+# stops the attack on sight: the ordinary attack and caution then decide, and
+# may still decline the cure (their own heal gates). Otherwise the attack comes first, confused or
+# not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
+# confused at the patch until death, CLW in the pack).
+borg_param_attack_kill_on_sight_min_hp_percent = 50
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
