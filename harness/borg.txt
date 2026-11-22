@@ -1411,6 +1411,17 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #983 (owner, 2026-11-22: "test when safe"): drink one unknown potion at a
+# safe moment in the dungeon (down to the depth below, danger 0 over the turns
+# below, at least the HP percent below, no harmful status, food in the pack),
+# so a found Cure Light Wounds is known before it is needed. A bad potion costs
+# turns (Sleep paralyses 5+1d5, Poison stops regeneration); none kills by
+# itself. #470 still forbids unknown scrolls, mushrooms, devices and any
+# unknown item in an emergency. 0 = #470 for potions too.
+borg_param_item_test_unknown_potions = 1
+borg_param_item_test_unknown_min_hp_percent = 50
+borg_param_item_test_unknown_danger_turns = 10
+borg_param_item_test_unknown_max_depth = 30
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs

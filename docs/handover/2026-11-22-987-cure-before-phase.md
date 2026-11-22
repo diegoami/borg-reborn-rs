@@ -132,6 +132,23 @@ the same results as before: the same hash and plan records, the same
 counterfactual hashes, smoke 3/3, and `cargo test --release -p borg-core` at
 674 passed.
 
+`206cf4e7` (#980, the emergency attack beyond the current mana; #1026, the
+P8/P9 split) conflicted only in `docs/CALIBRATION.md`, where both sides
+added a section. **#980 changes this seed's game on `track-p` itself.** The
+keys split at byte 8437, after the town visit. On a build of `206cf4e7`:
+
+| arm | turn 541 | end | play hash |
+|---|---|---|---|
+| control (base and this branch, off) | 6 Phase Door | 100,000-turn cap, CL6, DL2 | `cfe52e69e9114774` |
+| `town_first_cure__ranger = 1` | 5 Phase Door + 1 CLW | killed by a metallic red centipede, turn 7583, CL2 | `a318e3097fe7d2e5` |
+| `town_first_cure__ranger = 2` | 2 CLW + 3 Phase Door | 100,000-turn cap, CL6, DL2 | `5b8d3f58c1a265ad` |
+
+The off state is still the base's: the same hash and byte-identical plan
+records. Smoke is 3/3, and `cargo test --release -p borg-core` passes with
+677 tests. The one-seed counterfactual has now gone both ways on two builds
+a few commits apart. It says nothing about the rule's effect; only the zoo
+request (#1006) can.
+
 ### Re-review (MCode, on `c679cbcd`)
 
 The verdict: the code is right and all six findings are closed. The four
