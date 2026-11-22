@@ -1048,6 +1048,10 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
+# #931 (seed 829474344, a white jelly beside the stair flight): the weighted
+# stair flight keeps out of the squares next to a known immobile attacker
+# when another route exists. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_caution_stairs_immobile_reach = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
