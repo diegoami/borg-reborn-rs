@@ -1,8 +1,8 @@
 # 2026-11-22 — #914: fast-fragile groups in contact go to caution
 
 **Issue:** diegoami/borg-reborn-rs#914. **Branch:** `task/T914-ff-group-contact` (from `track-p`
-`86843a79`; owner, 2026-11-22: track P, switches shipped 0). Track P. P7 is closed for review
-(#937): this PR targets `track-p` and merges after the promotion.
+`86843a79`; owner, 2026-11-22: track P, switches shipped 0). Track P, P8 (P7 is reviewed on `promote/P7`, #939; `track-p` is open for P8):
+this PR merges into `track-p` once the owner says its review is done.
 
 Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/claude/happy-brahmagupta-2jcsa3/studies/fastfrag-cave-spiders-2008390085/README.md) (seed 2008390085, borg-zoo#596).
 
