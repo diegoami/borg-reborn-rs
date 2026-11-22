@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
-The registry now holds **2366** parameters (2357 before; nine added). From
+The registry now holds **2367** parameters (2358 before; nine added). From
 the Human Mage 461220874's death (borg-zoo run 44936494812, csw arm,
 da097a76; [borg-cemetery case](https://github.com/diegoami/borg-cemetery/blob/claude/trusting-turing-puk2no/runs/2026-11-22-reborn-confusion-csw-mage-461220874/README.md)):
 one white worm mass (speed +0, 10 HP, `CRAWL:POISON:1d2`, MULTIPLY;
@@ -34,7 +34,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:104` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1155` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3166` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3085` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3098` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:6930` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:6930` |
 
@@ -87,6 +87,25 @@ chose them (RULES 14).
    0. With these, the Phase Door needs the bump at most that many game turns
    old, and the danger here at least that much; the detection and oil
    responses are unchanged.
+
+## Thrown objects at point blank (#870)
+
+`attack_throw_point_blank_divisor` (0..1000, compiled **0**, no shipped
+override) separates the native `attack_throw_as_melee` throw rating from
+`attack_arrow_point_blank_divisor`. Zero inherits the resolved arrow divisor,
+including class/profile overrides, so existing games retain their policy.
+One removes the throw penalty; 2..1000 divide the damage before hit chance.
+Only adjacent non-unique targets receive it. Arrows and legacy throws with
+`attack_throw_as_melee = 0` retain their arrow divisor.
+
+This is missile conservation policy, not an engine penalty: at `574b618c`,
+`player-attack.c:156-165` subtracts distance from missile hit chance and
+halves it against non-obvious targets; it has no adjacent damage divisor.
+See the Strategy Manual, chapter 4 §4.11. The focused attack-on-sight /
+fast-fragile planner already bypasses conservation policy, including this
+penalty. This parameter does not change that planner's ranking of oil
+against melee. A Zoo comparison is required before the owner chooses a
+shipped override; no survival improvement is claimed.
 
 ## Kill on sight, with the attack kinds named (#869)
 
@@ -386,8 +405,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:700` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1919` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1919` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1966` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:546` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:724` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:714` |
@@ -692,16 +711,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1926` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1927` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1923` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1924` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1925` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1926` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1927` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1928` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1929` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1930` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1973` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1974` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1975` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1976` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1977` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1978` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1979` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1980` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1981` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1982` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -4977,7 +4996,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5668` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5681` |
 
 ## C Borg dive gates (#768)
 

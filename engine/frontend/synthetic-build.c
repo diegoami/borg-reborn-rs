@@ -72,7 +72,7 @@ void synthetic_build_capture(const char *path)
         if (!plain(obj) || ++count > ITEMS_LIMIT || obj->number < 1 || obj->number > 40 ||
             abs(obj->to_h) > 20 || abs(obj->to_d) > 20 || abs(obj->to_a) > 20 || obj->pval < 0 || obj->timeout < 0 ||
             (!object_is_equipped(player->body, obj) && ++pack_count > z_info->pack_size)) fail();
-    fp = fopen(path, "wx");
+    fp = fopen(path, "wbx");
     if (!fp) quit("borgh: cannot create synthetic build capture (preserve existing file)");
     fprintf(fp, "schema:borg-reborn-rs/character-build@1\nengine:%s\n", ENGINE_PIN);
     fprintf(fp, "identity:%d:%d:%d\n", player->race->ridx, player->class->cidx, player->lev);

@@ -22,6 +22,8 @@
 #[allow(dead_code, unused_imports)]
 #[allow(non_camel_case_types, non_snake_case, non_upper_case_globals)]
 #[allow(clippy::all)]
+// #823: Windows has its own layouts (16-bit wchar_t), generated beside.
+#[cfg_attr(windows, path = "bindings_windows.rs")]
 pub(crate) mod bindings;
 
 pub mod borg;

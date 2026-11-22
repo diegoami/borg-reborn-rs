@@ -7,7 +7,7 @@ without fear, the reserve spell's faint (#878)") and `docs/PHASE-DOOR.md`.
 
 **Done.** The issue's five candidate rules, each behind a setting compiled
 and shipped **off**: shipped play is unchanged, so `smoke-borg-rs` is not
-re-recorded. Nine parameters (registry 2357 to 2366):
+re-recorded. Nine parameters (registry 2358 to 2367, after merging track-p's #875):
 
 | rule | settings | where |
 |---|---|---|

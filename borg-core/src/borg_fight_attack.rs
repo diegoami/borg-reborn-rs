@@ -1015,13 +1015,12 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if mult > 1 {
                 dam *= 1 + mult;
             }
-            /* don't point blank non-uniques */
-            if cur_dis == 1 && !rf(r, RF_UNIQUE) {
-                dam /= point_blank_divisor(tr(st, BI_CLASS));
-            }
             let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
             let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
-            dam = dam * throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac) / 100;
+            let divisor = throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
+                point_blank_divisor(tr(st, BI_CLASS)));
+            dam = rated_throw_damage(dam, cur_dis, rf(r, RF_UNIQUE), divisor,
+                throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac));
         }
 
         BORG_ATTACK_ARROW => {
@@ -1153,7 +1152,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if engine::distance(st.borg.c, kill.pos) == 1 {
                 dam /= param(Param::attack_nether_point_blank_divisor);
             }
-            if rf(r, RF_UNDEAD) || rf(r, RF_DEMON) || strchr_egv(r_ptr.d_char) {
+            if rf(r, RF_UNDEAD) || rf(r, RF_DEMON) || strchr_egv(r_ptr.d_char as i32) { // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
                 dam = 0;
             }
         }
@@ -2906,6 +2905,20 @@ fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explo
         dam10 *= 3;
     }
     dam10 / 10
+}
+
+/// #870: zero inherits the resolved arrow policy, including class overrides.
+fn throw_point_blank_divisor(configured: i32, arrow_divisor: i32) -> i32 {
+    if configured == 0 { arrow_divisor } else { configured }
+}
+
+/// #870: the native throw rating keeps integer division before hit chance.
+/// This is a conservation policy, not engine damage: player-attack.c:156-165
+/// at 574b618c applies distance to hit chance, without an adjacent divisor.
+/// The focused planner bypasses this policy and continues to rate real damage.
+fn rated_throw_damage(mut damage: i32, distance: i32, unique: bool, divisor: i32, hit_percent: i32) -> i32 {
+    if distance == 1 && !unique { damage /= divisor; }
+    damage * hit_percent / 100
 }
 
 /// borg-reborn-rs (#568): the engine's chance, in percent, that an object
@@ -5838,6 +5851,26 @@ mod throw_tests {
         assert_eq!(thrown_damage(1, 4, 0, 12, true, false), 7, "a Dagger: 2.5 x 3");
         assert_eq!(thrown_damage(1, 9, 0, 9, false, false), 5, "an Arrow, not THROWING: 5");
         assert_eq!(thrown_damage(1, 4, 2, 5, true, false), 9, "to-dam before the multiplier");
+    }
+
+    /// #870: oil (22 damage) against the adjacent crow (AC 14), using the
+    /// named Half-Troll Necromancer's throwing skill 10 and no hit bonus.
+    #[test]
+    fn adjacent_crow_oil_rating_has_its_own_divisor() {
+        use super::{rated_throw_damage, throw_point_blank_divisor};
+        let oil = thrown_damage(1, 4, 0, 20, true, true);
+        let chance = throw_hit_percent(10, 0, true, 1, 14);
+        assert_eq!(chance, 12);
+        assert_eq!(rated_throw_damage(oil, 1, false, 5, chance), 0);
+        assert_eq!(rated_throw_damage(oil, 1, false, 1, chance), 2);
+        for arrow in [1, 2, 3, 5, 1000] {
+            assert_eq!(throw_point_blank_divisor(0, arrow), arrow);
+            assert_eq!(throw_point_blank_divisor(1, arrow), 1);
+            assert_eq!(throw_point_blank_divisor(5, arrow), 5);
+            assert_eq!(rated_throw_damage(oil, 2, false, arrow, chance), 2, "not adjacent");
+            assert_eq!(rated_throw_damage(oil, 1, true, arrow, chance), 2, "unique");
+        }
+        assert_eq!(crate::params::value(crate::params::Param::attack_throw_point_blank_divisor), 0);
     }
 
     /// #568: `hit_chance` (`player-attack.c:196-219`): 12% always hits, 5%
