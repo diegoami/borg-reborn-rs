@@ -6115,3 +6115,23 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
 | `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+
+## Emergency Speed (#913)
+
+No speed rule could fire while the Borg fled. `borg_defend_aux_speed` is never
+asked when fleeing, #469's `borg_fight_speed` only inside `borg_attack`, and
+#504's cornered boost only without Phase Door. Seed 2008390085 (borg-zoo#596)
+died to three hasted cave spiders carrying three Potions of Speed. Replays of
+that game saved it with Speed drunk at any turn up to the fork with the
+control (borg-cemetery study `fastfrag-cave-spiders-2008390085`). Above 0,
+`borg_caution` drinks Speed (or casts Haste Self) after healing, before the
+walks, the retreat and the escapes. It does so when the danger of the awake
+monsters within the radius that are faster by the margin (an observed haste
+counted) reaches that percent of the HP. Compiled and shipped 0; 50, 2 and 5
+are hypotheses.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `caution_emergency_speed_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:5220` |
+| `caution_emergency_speed_radius` | 2 | grids | 1–20 | `borg_caution.rs:5226` |
+| `caution_emergency_speed_margin` | 5 | speed points | 0–40 | `borg_caution.rs:5227` |
