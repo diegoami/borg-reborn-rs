@@ -79,6 +79,76 @@ pub struct StairsState {
     pub less: StairTrack,
     /// `track_more`: the "down" stairs
     pub more: StairTrack,
+    /// Down stair left while exploring for or following a route to an up stair.
+    pub(crate) up_search_departure: Option<UpSearchDeparture>,
+}
+
+/// Let the up-stair route take a second step before a fallback can undo
+/// its first one. A short window also covers a door or another one-turn action.
+const UP_SEARCH_HANDOFF_TURNS: i32 = 3;
+
+#[derive(Clone, Copy)]
+pub(crate) struct UpSearchDeparture {
+    pub stair: loc,
+    pub next: loc,
+    pub level_started: i32,
+    pub turn: i32,
+    pub expected_danger: i32,
+    pub known: bool,
+}
+
+impl UpSearchDeparture {
+    fn still_at_handoff(self, here: loc, level_started: i32, turn: i32) -> bool {
+        here == self.next && level_started == self.level_started
+            && (1..=UP_SEARCH_HANDOFF_TURNS).contains(&turn.wrapping_sub(self.turn))
+    }
+
+    fn permits_deferral(self, danger: i32, hp: i32) -> bool {
+        danger <= self.expected_danger || danger.saturating_mul(2) < hp
+    }
+
+    pub(crate) fn can_renew(self, st: &BorgState, known: bool) -> bool {
+        self.known == known && self.still_at_handoff(st.borg.c, st.borg.time.level, st.borg.time.now)
+    }
+}
+
+/// A viable up-stair search outranks a down-stair fallback. Including an
+/// alternate down stair can send the search one step away before the next
+/// think chooses the original down stair again.
+pub(crate) fn continuing_up_stair_search(st: &mut BorgState) -> bool {
+    let Some(departure) = st.stairs.up_search_departure else { return false; };
+    if departure.known { return false; }
+    if !departure.can_renew(st, false)
+        || !st.borg.stair_less || !(st.borg.goal.leaving || st.borg.goal.fleeing)
+        || !borg_flow::up_stair_search_can_continue(st, departure.stair)
+    {
+        st.stairs.up_search_departure = None;
+        return false;
+    }
+    let loc { x, y } = st.borg.c;
+    // The danger calculation uses the Borg's mutable tactical scratch state.
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    if !departure.permits_deferral(danger, st.borg.tr(BI_CURHP)) {
+        st.stairs.up_search_departure = None;
+        return false;
+    }
+    true
+}
+
+/// Follow a known up stair before trying a nearby down stair again. Replan
+/// from the current square so a blocked route does not reserve the flight.
+pub(crate) fn resume_known_up_stair_flight(st: &mut BorgState, danger: i32) -> bool {
+    let Some(departure) = st.stairs.up_search_departure else { return false; };
+    if !departure.known { return false; }
+    if departure.can_renew(st, true)
+        && st.borg.stair_less && (st.borg.goal.leaving || st.borg.goal.fleeing)
+        && departure.permits_deferral(danger, st.borg.tr(BI_CURHP))
+        && borg_flow_stair_less(st, GOAL_FLEE, false)
+    {
+        return true;
+    }
+    st.stairs.up_search_departure = None;
+    false
 }
 
 /// Which stair list to enqueue.
@@ -106,12 +176,15 @@ fn enqueue_stairs(st: &mut BorgState, which: Which) {
 /// on them. Returns how many entered the flow (a grid the flow refuses, icky
 /// or too dangerous, does not count) and the parked ones.
 fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i32)>) {
+    if matches!(which, Which::More) && continuing_up_stair_search(st) {
+        // Even a monster-occupied down stair is unavailable during the search.
+        return (0, Vec::new());
+    }
     let mut parked = Vec::new();
     let mut enqueued = 0;
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
-
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
             parked.push((y, x));
@@ -186,8 +259,13 @@ fn weighted_route(
     sneak: bool,
     weight: i32,
 ) -> Result<Option<borg_flow::StairPath>, usize> {
+    let search = kinds.iter().any(|which| matches!(which, Which::More))
+        && continuing_up_stair_search(st);
     let mut stairs = Vec::new();
     for &which in kinds {
+        if search && matches!(which, Which::More) {
+            continue;
+        }
         let track = track(st, which);
         for i in 0..track.num.max(0) as usize {
             let (y, x) = track.at(i);
@@ -1121,5 +1199,27 @@ mod flee_clean_tests {
         assert!(!flee_check_applies_with(false, GOAL_FLEE, false), "off");
         assert!(!flee_check_applies_with(true, GOAL_FLEE, true), "the desperate walk");
         assert!(!flee_check_applies_with(true, GOAL_FLEE - 1, false), "not a flight");
+    }
+}
+
+#[cfg(test)]
+mod up_search_handoff_tests {
+    use super::*;
+
+    #[test]
+    fn an_unrenewed_step_expires_and_a_danger_increase_restores_fallback() {
+        let stair = loc { x: 59, y: 42 };
+        let next = loc { x: 58, y: 42 };
+        let departure = UpSearchDeparture {
+            stair, next, level_started: 10, turn: 100, expected_danger: 10, known: false,
+        };
+        assert!(departure.still_at_handoff(next, 10, 101));
+        assert!(!departure.still_at_handoff(stair, 10, 101), "allow use of the stair from its square");
+        assert!(!departure.still_at_handoff(loc { x: 57, y: 42 }, 10, 102));
+        assert!(!departure.still_at_handoff(next, 11, 101));
+        assert!(!departure.still_at_handoff(next, 10, 104));
+        assert!(departure.permits_deferral(10, 40));
+        assert!(departure.permits_deferral(12, 40));
+        assert!(!departure.permits_deferral(21, 40));
     }
 }

@@ -129,6 +129,17 @@ bloodshot eye | 50 | | ranged | blinding-gaze
 # Fast and fragile: monster.txt:1133-1163 (120 speed, 9 average HP, 2x1d3).
 wild cat | 50 | | attack | fast-fragile
 crow | 50 | | attack | fast-fragile
+# Kill on sight (#869, owner 2026-11-21: "Always attack, confused or not.
+# Unless there is something more dangerous"): attacked on sight before the
+# cures and Phase Door, without the test of its own damage; skipped while the
+# other monsters' danger is above HP x caution_flee_danger_hp_multiplier.
+# Grey mushroom patch, monster.txt:545: speed +10, 2 HP, SPORE:CONFUSE,
+# NEVER_MOVE; it confuses again before a cure is worth anything and one hit
+# kills it. The last field names the attacks allowed (scary_list.rs
+# ATTACK_KINDS: melee, missiles, throws, spells, devices, activations; none
+# named = all); the Borg picks the best of them. Owner: "melee, missiles,
+# wands"; throws for a flask of oil, the attack that killed it (#867).
+grey mushroom patch | 50 | | attack | kill-on-sight | melee, missiles, throws, devices
 # Breeders: existing stoppable-colony policy must still allow the stand.
 # monster.txt:627-642, 677-691, 1099-1113; insect base supplies MULTIPLY
 # for the louse and fly (monster_base.txt:211-216; monster.txt:1239,3101).

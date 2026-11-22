@@ -248,6 +248,26 @@ borg_town_food_trip = 10
 
 borg_param_town_store_only_overweight = 1
 
+# Room on every town departure (#859, owner: "every time they leave they
+# should leave with some space for a few objects of a different kind"). The
+# planner stores at the Home until this much weight (tenths of a pound) is
+# free under the carry allowance and these pack slots are free, plus the room
+# the Word of Recall reserve still needs; purchases and withdrawals leave the
+# room free. Before, storing stopped at the bare allowance, and a Borg with
+# 20,000 gold could not take a 0.5 lb Recall. 0 = off. Hypotheses, to be
+# measured in the zoo.
+
+borg_param_town_departure_free_weight = 50
+borg_param_town_departure_free_slots = 2
+
+# What goes home first (#859, owner: "prefer objects that they have an
+# abundance of, typically healing potions and phase doors, ideally we want
+# to have variety in the backpack"): short of weight, the copies of a stack
+# past this many go first, the least valuable copy per weight first; a stack
+# at or below it goes only after every surplus. 0 = whole stacks.
+
+borg_param_town_store_keep_min = 3
+
 # Gold kept back from shopping: the larger of a fixed amount and a percent of
 # the purse (#493). Higher leaves more gold unspent, so less gear and fewer
 # supplies. 0 and 0 = spend freely.
@@ -335,6 +355,21 @@ borg_self_scum = FALSE
 # Impact: set to 200, 0 of 6 test games play differently.
 
 borg_param_town_recall_value_percent = 100
+
+# The Word of Recall curve (#859, owner: "starting from 1 and make it be 110
+# by default, so that they buy a few"; "use the trip weight"): above 0 every
+# scroll is valued on a diminishing curve on the trip weight, each worth less
+# than the last and never nothing, with the reserve a requirement on top.
+# Higher values the spares more. 0 = before #859 (the reserve alone).
+
+borg_param_town_recall_curve_scale_percent = 110
+
+# The first Word of Recall is urgent (#859, owner: "Word of recall should have
+# a high value"): when the next trip reaches prepared_recall_depth and none
+# is carried, it is bought first, before anything is weighed, and the
+# buy_recall_from_gold floor does not hold it back. 0 = off.
+
+borg_param_town_recall_urgent = 1
 
 # Aim to keep one Word of Recall when the purse after urgent shopping
 # reaches 400 gold. Buying a scroll must leave at least 400 gold after

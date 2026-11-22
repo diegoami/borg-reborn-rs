@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Confused attacks by direction (#867)
 
-The registry now holds **2353** parameters (2352 before; one added). Owner,
+The registry now holds **2359** parameters (2358 before; one added). Owner,
 2026-11-21, from the play pack of borg-zoo#581's Gnome Necromancer
 459443830: confused next to a grey mushroom patch, the owner threw flasks of
 oil by direction and the second one killed it, where the Borg only swung and
@@ -33,9 +33,9 @@ would be the flask", and "if it has a wand/rod that must be an option too".
   - throws, missiles, wands and rods are rated against an **adjacent**
     monster only, aimed at it (no offset aim), and sent by **direction key**
     (`# Confused: aiming by direction N, not at a target`), not at a target;
-  - every aimed attack, melee included, is rated at the aim chance (value,
-    damage and kills times 11/32), so the usual chooser compares them on
-    damage: a weak-armed caster with no spell throws oil, a fighter swings;
+  - every aimed attack, melee included, is rated at the aim chance (its
+    value times 11/32; the item attacks' damage and kills too, see below),
+    so the usual chooser compares them on damage: a weak-armed caster with no spell throws oil, a fighter swings;
   - a staff needs no aim (`cmd-obj.c:431-441`) and keeps its full value;
   - next to an immobile monster whose blow confuses (`CONFUSE`, the grey
     mushroom patch's `SPORE:CONFUSE`), the confusion cure waits and the
@@ -56,6 +56,55 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:274` |
+
+## Thrown objects at point blank (#870)
+
+`attack_throw_point_blank_divisor` (0..1000, compiled **0**, no shipped
+override) separates the native `attack_throw_as_melee` throw rating from
+`attack_arrow_point_blank_divisor`. Zero inherits the resolved arrow divisor,
+including class/profile overrides, so existing games retain their policy.
+One removes the throw penalty; 2..1000 divide the damage before hit chance.
+Only adjacent non-unique targets receive it. Arrows and legacy throws with
+`attack_throw_as_melee = 0` retain their arrow divisor.
+
+This is missile conservation policy, not an engine penalty: at `574b618c`,
+`player-attack.c:156-165` subtracts distance from missile hit chance and
+halves it against non-obvious targets; it has no adjacent damage divisor.
+See the Strategy Manual, chapter 4 §4.11. The focused attack-on-sight /
+fast-fragile planner already bypasses conservation policy, including this
+penalty. This parameter does not change that planner's ranking of oil
+against melee. A Zoo comparison is required before the owner chooses a
+shipped override; no survival improvement is claimed.
+
+## Kill on sight, with the attack kinds named (#869)
+
+No parameter added (the registry still holds **2352**): a scary-list reason
+and a field. Owner, 2026-11-21, after playing borg-zoo#581's Gnome
+Necromancer 459443830 and Elf Necromancer 412975293 (both killed by a grey
+mushroom patch; a flask of oil thrown while confused killed it in both):
+"Always attack, confused or not. Unless there is something more dangerous",
+"maybe should put it on another list", "add what type of attack are allowed:
+melee, missiles, wands, picks the best one".
+
+- **`kill-on-sight`** (a reason of an `attack` entry,
+  `borg_fight_attack::KILL_ON_SIGHT`). `attack_on_sight` runs in
+  `fight_before_flight`, before `borg_caution`'s cures and Phase Door; for
+  this reason it drops the target's own damage test
+  (`category_attack_safe_with(.., false)`, as #842 does for fast-fragile
+  monsters), so it attacks confused or not; the other monsters' danger above
+  HP x `caution_flee_danger_hp_multiplier` still stops it. Unlike
+  fast-fragile, no heal ban and no fast-fragile escape.
+- **Attack kinds** (an optional sixth field of an attack entry,
+  `scary_list::ATTACK_KINDS`): `melee`, `missiles`, `throws`, `spells`,
+  `devices` (wands, rods, staffs), `activations`, by
+  `attack_preference::Family`; none named = all. `focused_attack` ranks only
+  those, best first; it serves attack on sight, fast-fragile and the winning
+  fight test (#759) for that monster.
+- **Shipped:** `grey mushroom patch | 50 | | attack | kill-on-sight | melee,
+  missiles, throws, devices` (monster.txt:545: speed +10, 2 HP,
+  `SPORE:CONFUSE`, NEVER_MOVE), beside its inert #838 `ranged` entry. Confused,
+  the attack is melee unless #867's `attack_confused_by_direction` allows the
+  throw by direction.
 
 ## Ranged-only monsters (#838)
 
@@ -325,9 +374,9 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:700` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:702` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1919` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1919` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:542` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1966` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:546` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:724` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:714` |
 
@@ -467,7 +516,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:694` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:711` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -631,16 +680,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1926` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1927` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1923` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1924` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1925` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1926` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1927` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1928` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1929` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1930` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:1973` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:1974` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:1975` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:1976` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:1977` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:1978` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:1979` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:1980` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:1981` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:1982` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -733,7 +782,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:429` |
-| `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
+| `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:856` |
 
 
 
@@ -1120,7 +1169,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:268` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:353` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -2365,9 +2414,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:489` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:493` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:346` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:480` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:484` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2495,11 +2544,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:794` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:438` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:442` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:780` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1631` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1621` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1720` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1680` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -4916,7 +4965,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5657` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5723` |
 
 ## C Borg dive gates (#768)
 
@@ -5700,3 +5749,83 @@ retained negative controls. This is local named-case coverage, not a cohort.
 Core568/4 ignored, engine93/4 skipped,2293 citations, scripts39/tools96 pass.
 The new broader comparison is Zoo571, pending; old Zoo520 full45 cannot be
 relabelled as new07aa4b1e proof. This status does not accept P6 or main promotion.
+
+
+## Departure room, the Recall curve and surplus-first storing (#859)
+
+The registry now holds **2357** parameters (2352 on track-p `29c44cbc` before it; five added).
+Owner, 2026-11-21: a Borg with 20,000 gold did not buy a Word of Recall, so
+the dive gate (`prepared_recall_depth`, DL5) held it shallow: "it seems that
+purchases are stopped because of carry weight". With #711's
+`town_store_only_overweight` the planner stored stacks only while the pack was
+over its allowance (`BI_CARRY / 2`) and stopped as soon as it was under, so
+a pack at the allowance had no room for a 0.5 lb scroll (`object.txt`,
+Word of Recall, weight 5).
+
+- **`town_departure_free_weight`** (compiled 0, **shipped 50**: 5 lb) and
+  **`town_departure_free_slots`** (compiled 0, **shipped 2**). The planner
+  (`dispositions`, `borg_town_utility.rs`) stores at the Home until this
+  room is free under the allowance, plus the room the Recall reserve still
+  needs (`recall_room`, `borg_town_capability.rs`: the copies short of
+  `town_recall_reserve`, the lightest offered copy, and a slot when none is
+  carried). The purchases (`step`, `borg_town_record.rs`) and the Home
+  withdrawals leave the departure room free, so the scroll fits on top of
+  it. Short of slots, whole stacks go, lowest keep value per weight first.
+  Each departure notes "# Town departure room: weight W free (keep 50),
+  slots S free (keep 2)" once a visit.
+- **`town_store_keep_min`** (compiled 0, **shipped 3**; owner: "prefer
+  objects that they have an abundance of, typically healing potions and
+  phase doors, ideally we want to have variety in the backpack"). Short of
+  weight, stacks with copies past the minimum come first, priced by one copy
+  on their curve, and only those copies count as freed. The live executor
+  moves one copy per store action and solves again (`borg_town_shadow.rs`,
+  `evaluate`: every live action but a purchase moves one copy, #507), so a
+  stack goes down copy by copy while it has a surplus. The minimum is a
+  floor for a stack that serves a need (potions, scrolls, torches, food,
+  through the kit's `need` or `serves`) and for flasks of oil (by tval:
+  oil serves no `need`; owner: "check that flasks are taken"): at the
+  minimum it is kept whole, not stored, sold or dropped, so the live walk
+  stops there and
+  the stack frees no slot (the re-review of #864 found it went on down to
+  none). An item that serves no need (a lone armour piece) has no floor,
+  and short of slots whole stacks go. A pack whose only storable weight is
+  floored stacks leaves with less room than the target. The
+  plan's own action (`first_action`) moves exactly the surplus
+  (review F1 of #864): twelve copies with three kept give a
+  store of nine, and the whole stack when `town_store_keep_min` is 0 or the
+  flavour is unknown. The live executor then cuts it to one copy
+  (`executed_copies`).
+- **`town_recall_curve_scale_percent`** (compiled 0, **shipped 110**;
+  owner: "a curve for word of recall starting from 1 and make it be 110 by
+  default, so that they buy a few"; "use the trip weight"). Above 0, every
+  scroll is valued on a diminishing curve on the trip weight
+  (`borg_town_w_trip`), weight and demand scaled by the percent as the
+  healing and Phase Door scales do: each scroll is worth less than the last
+  and never nothing, so a Borg with gold and room carries spares. The
+  `town_recall_reserve` requirement stays on top of it, in a row of its own
+  (`RECALL_RESERVE`, as `PHASE_RESERVE` is on top of `PHASE`;
+  `recall_curve`). With the curve on, `town_recall_value_percent` (the
+  walk a scroll saves) is not read: the trip weight replaces it. 0 = #557:
+  the reserve alone, nothing past it, and below the gold floor the walk a
+  scroll saves.
+- **`town_recall_urgent`** (compiled 0, **shipped 1**; owner: "Word of
+  recall should have a high value"). When the next trip reaches
+  `prepared_recall_depth` and no scroll is carried (`recall_urgent`,
+  `borg_town_utility.rs`), the first Word of Recall is an urgent need: the
+  urgent pass (`Budget::of`) buys it before the solver weighs anything, as
+  missing light or food, and `buy_recall_from_gold` does not hold that
+  first scroll back (`execute_store`). The floor still caps the spares
+  (the stock's quantity cap) and the `town_recall_reserve` requirement
+  (`recall_reserve_for_budget`) in the same visit, as before. With the curve on, the Recall trip weight is also
+  multiplied by the trip's exposure (never below the flat weight), as
+  healing's and the escapes' are, so a scroll is worth more deeper.
+- The shipped values are hypotheses. The zoo request on the PR measures
+  them (RULES 14, 20).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
+| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:355` |
+| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+| `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:812` |

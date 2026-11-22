@@ -1126,11 +1126,11 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         }
     }
 
-    // If you are next to steps of the down stairs go for it
+    // #871: keep a viable up-stair flight before trying an adjacent down stair.
     let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
     if b_m <= adjacent_down
         && b_m != -1
-        && desperate_flow(st, false, adjacent_down, "# Desperate for Stairs (four)")
+        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, adjacent_down, "# Desperate for Stairs (four)"))
     {
         return true;
     }
