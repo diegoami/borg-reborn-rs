@@ -127,21 +127,23 @@ not undo other-track work already authorized before the gate.
    with no write path at all says so in the first line of its answer and
    gives the full review, or the owner ran the review and has not posted
    it; only then does the session post it, unedited and headed the same
-   way. The session never posts a second copy of a review
-   already on the PR. Either way the review is on the PR (or issue) it
-   reviews, so the findings and the pin travel with the code. Posting it is
-   not the owner's acceptance (rule 1a).
+   way, saying that it relays the named reviewer's review: a relayed review
+   is the named reviewer's, and counts. The session never posts a second
+   copy of a review already on the PR. Either way the review is on the PR
+   (or issue) it reviews, so the findings and the pin travel with the code.
+   Posting it is not the owner's acceptance (rule 1a).
    **Every review prompt the session writes** says this in its first
    lines, with the exact command for its PR (number and `--repo` filled
    in) and the other write paths, and repeats the command at its end.
-   A review posted before the owner named the reviewer, or not by the
-   named reviewer, does not count: the session says so at once in a
-   comment beside it, posts the pinned prompt if it is missing, and tells
-   the owner; the owner-named review then runs as normal. A review the
-   session launches is still the owner's choice of reviewer: a milestone
-   review is done by the owner or by a model of a **different family**
-   from the one that wrote most of the milestone, and the review PR names
-   both. When the review arrives, the session processes its findings.
+   A review posted before the owner named the reviewer, or not written by
+   the named reviewer (a relay as above is), does not count: the session
+   says so at once in a comment beside it, posts the pinned prompt if it is
+   missing, and tells the owner; the owner-named review then runs as
+   normal. A review the session launches is still the owner's choice of
+   reviewer: a milestone review is done by the owner or by a model of a
+   **different family** from the one that wrote most of the milestone, and
+   the review PR names both. When the review arrives, the session processes
+   its findings.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session
