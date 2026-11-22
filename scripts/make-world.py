@@ -30,8 +30,9 @@ The config is `key = value` lines (`#` starts a comment):
                             weight, as breeder_weight does for breeders
                             (a world for one pest, e.g. the grey mushroom
                             patch); a name that matches no race is refused
-  favour_weight = N         the weight for `favour` (needs `favour`); not
-                            together with the breeder_* settings
+  favour_weight = N         the weight for `favour`, at least 2; needed with
+                            `favour` and needs it; not together with the
+                            breeder_* settings
 
 A rarity above 100 would never be generated (100 / rarity is 0), so a
 weight that pushes one past it is refused.
@@ -111,7 +112,12 @@ def transform_monsters(text, cfg, max_depth):
         both = sorted(k for k in cfg if k.startswith('breeder'))
         if both:
             raise SystemExit(f'make-world: favour and {", ".join(both)} together: choose one')
-        weight = number(cfg, 'favour_weight', 1, 1)
+        # A weight is required and above 1: `favour` alone (weight 1) would
+        # write the game's own data and report a favoured race (review of
+        # #971), so a run could not tell it from the normal world.
+        if 'favour_weight' not in cfg:
+            raise SystemExit('make-world: favour needs favour_weight (at least 2)')
+        weight = number(cfg, 'favour_weight', 2, 2)
     favoured, others = [], 0
     out = []
     for rec in records(text):
