@@ -368,6 +368,10 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
+# Restore Life Levels reserve for measurement (#978). Zero disables retention;
+# the healthy-character junk-quaff guard applies at every setting.
+borg_param_town_restore_life_reserve = 0
+
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
 # Impact: set to TRUE, 6 of 6 test games play differently.
@@ -710,6 +714,18 @@ borg_param_recover_unseen_act_age = 30
 
 borg_param_attack_throw_as_melee = 1
 
+# Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
+# throw rated with attack_throw_as_melee. 0 = inherit
+# attack_arrow_point_blank_divisor (5; Rogue 3, Ranger 2); 1 = no penalty, so
+# oil is rated at its damage (about 22 a hit: 1d4 x 3 THROWING x 3 EXPLODE,
+# player-attack.c:1296) against a blow. Shipped 1 (owner, 2026-11-22, #901):
+# casters throw oil at point blank. The melee classes (Warrior, Blackguard,
+# Paladin, Rogue) keep 0 in their class files: "melee is infinite, flasks are
+# not" (a workaround until the Borg saves flasks for when they are needed,
+# #912). Attack on sight already bypasses it. Not measured yet: borg-zoo#636.
+
+borg_param_attack_throw_point_blank_divisor = 1
+
 # Confused attacks by direction (#867, owner 2026-11-21): 1 = a confused
 # Borg (not blind, not hallucinating) may also throw, shoot and use a wand,
 # rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
@@ -719,9 +735,11 @@ borg_param_attack_throw_as_melee = 1
 # Next to an immobile confuser (a grey mushroom patch, not a unique) the
 # confusion cure waits and the attack goes first, while there is an attack
 # to make.
-# 0 = C (melee only while confused).
+# 0 = C (melee only while confused). Shipped 1 (owner, 2026-11-22, #901:
+# "once you are close to him, you attack with your best attack"). Not
+# measured yet: borg-zoo#636; what is left before it is right in #896.
 
-borg_param_attack_confused_by_direction = 0
+borg_param_attack_confused_by_direction = 1
 
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
@@ -1389,6 +1407,15 @@ borg_scary_list = scary_monsters.txt
 
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
+# #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
+# patch, #869) is not attacked on sight when a known Cure Light, Serious or
+# Critical Wounds potion is in the pack or an escape is at hand (stairs
+# underfoot, up or down, or a Phase Door that can be read). The floor only
+# stops the attack on sight: the ordinary attack and caution then decide, and
+# may still decline the cure (their own heal gates). Otherwise the attack comes first, confused or
+# not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
+# confused at the patch until death, CLW in the pack).
+borg_param_attack_kill_on_sight_min_hp_percent = 50
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
@@ -1408,7 +1435,8 @@ borg_param_fast_fragile_group_max = 2
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
 # grids with a torch, so unseen monsters two grids away are deleted). Ships 0
-# until the zoo measures it.
+# until the zoo measures it. With 1 the lit shape is the engine's too, and the
+# dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
 borg_param_cave_light_engine_radius = 0
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
@@ -1641,6 +1669,7 @@ borg_param_town_staple_clw__warrior = 7
 borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
+borg_param_attack_throw_point_blank_divisor__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1746,6 +1775,7 @@ borg_param_town_staple_clw__paladin = 5
 borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
+borg_param_attack_throw_point_blank_divisor__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1768,6 +1798,7 @@ borg_param_town_staple_clw__rogue = 6
 borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
+borg_param_attack_throw_point_blank_divisor__rogue = 0
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1815,6 +1846,7 @@ borg_param_town_staple_csw__blackguard = 4
 borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
+borg_param_attack_throw_point_blank_divisor__blackguard = 0
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
