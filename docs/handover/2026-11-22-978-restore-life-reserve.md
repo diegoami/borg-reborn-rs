@@ -15,3 +15,25 @@ stock is unverified.
 
 Owner acceptance remains the integration gate after green CI on track-p.
 The reserve size and weights are hypotheses for measurement.
+
+## Review follow-up
+
+The junk-quaff guard applies with the reserve off. It changes the shipped
+decision when healthy full-pack junking selects a known Restore Life Levels.
+A healthy Borg can still sell or discard every copy at reserve zero. The
+existing level-50 dungeon recovery exception still applies.
+
+Ordinary junking and town dispositions may remove surplus copies. A
+full-pack clear must free a slot, so it protects an entire stack when
+dropping it would breach the reserve. The desperate second pass can give
+up that stack to free a slot.
+
+The [Zoo measurement request](https://github.com/diegoami/borg-zoo/issues/687)
+separates the guard from the one-copy reserve. After measurement, the owner
+can decide whether to ship retention and calibrate the maximum-depth gate
+(currently 12), reserve size, restore weight and spell failure ceiling
+(currently 20%). The reserve remains off pending that decision.
+
+PR #996 also appends capability row 76. Whichever PR integrates second
+must sync track-p, give the incoming capability the next index, and
+rerun the replay, smoke and review checks.
