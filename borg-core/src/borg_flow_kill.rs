@@ -614,7 +614,7 @@ pub fn borg_sleep_kill(st: &mut BorgState, i: i32) {
 }
 
 /// Determine if a monster should be "viewable" (`borg_follow_kill_aux`)
-fn borg_follow_kill_aux(st: &BorgState, i: usize, y: i32, x: i32) -> bool {
+pub(crate) fn borg_follow_kill_aux(st: &BorgState, i: usize, y: i32, x: i32) -> bool {
     let r_idx = st.kills.kills[i].r_idx;
 
     // Distance to player
