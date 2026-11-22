@@ -173,6 +173,9 @@ pub struct Borg {
     /// borg-reborn-rs (#882): the slow-breeder hold's idle thinks in a row
     /// (staying still with no breeder adjacent); cleared on a new level.
     pub breeder_hold_idle: i32,
+    /// borg-reborn-rs (#882): out of a slow-breeder colony, the hold walks
+    /// the known route on to a staircase; cleared on a new level.
+    pub breeder_hold_stair: bool,
     /// borg-reborn-rs (#743): a flight to the stairs was refused for a
     /// blocked path on this level (the note is once per level); cleared on a
     /// new level.

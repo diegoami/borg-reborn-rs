@@ -2527,10 +2527,10 @@ death with the list, 4 without), 1.
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:4189` |
 | `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:3890` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
 | `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:3893` (#544 B: the exit's distance from every breeder) |
-| `caution_breeder_hold` | 0 | flag | 0–1 | `borg_breeder_hold.rs:215` (#882: 1 = against a slow or erratic breeder colony, cut the known way out or hold; layer 6 of `caution_breeder_policy`) |
-| `caution_breeder_hold_scan_radius` | 8 | grids | 1–100 | `borg_breeder_hold.rs:220` (#882) |
-| `caution_breeder_hold_count` | 5 | count | 0–1000 | `borg_breeder_hold.rs:112` (#882) |
-| `caution_breeder_hold_growth` | 2 | count | 1–1000 | `borg_breeder_hold.rs:112` (#882) |
+| `caution_breeder_hold` | 0 | flag | 0–1 | `borg_breeder_hold.rs:223` (#882: 1 = against a slow or erratic breeder colony, cut the known way out or hold; layer 6 of `caution_breeder_policy`) |
+| `caution_breeder_hold_scan_radius` | 8 | grids | 1–100 | `borg_breeder_hold.rs:228` (#882) |
+| `caution_breeder_hold_count` | 5 | count | 0–1000 | `borg_breeder_hold.rs:116` (#882) |
+| `caution_breeder_hold_growth` | 2 | count | 1–1000 | `borg_breeder_hold.rs:116` (#882) |
 | `caution_breeder_hold_growth_turns` | 100 | game turns | 1–100000 | `borg_breeder_hold.rs:254` (#882) |
 | `caution_breeder_hold_worm_cost` | 3 | steps | 0–100 | `borg_breeder_hold.rs:306` (#882) |
 | `caution_breeder_hold_max_on_route` | 8 | count | 0–1000 | `borg_breeder_hold.rs:316` (#882) |

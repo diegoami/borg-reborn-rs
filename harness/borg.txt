@@ -1276,7 +1276,8 @@ borg_param_caution_breeder_stuck_turns = 20
 # breeder, a breeder on it costing worm_cost steps more, attacking the breeder
 # on the route, while at most max_on_route are on it and HP is at least
 # go_hp_percent (cure_hp_percent with a cure potion); otherwise attack an
-# adjacent breeder or stay still (at most idle_turns thinks in a row). No
+# adjacent breeder or stay still (at most idle_turns thinks in a row). From
+# the exit walk the known route on to a known staircase and take it. No
 # flight, retreat, escape or back-away moves the Borg meanwhile. Yields to the
 # other rules with a free staircase within caution_breeder_easy_escape_steps,
 # or HP below floor_hp_percent with no cure potion. 0 = off; on at

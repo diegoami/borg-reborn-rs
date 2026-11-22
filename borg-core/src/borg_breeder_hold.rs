@@ -35,8 +35,11 @@
 //! It sits in `borg_caution` after the heals, defence and the critical needs,
 //! and before every movement rule (the flight to the stairs, the breeder and
 //! crowd exits, retreat, the escapes, back-away), so while it fires none of
-//! them moves the Borg. Once the Borg is clear of the breeders it stops
-//! firing and the ordinary flows take it on to the stairs. Engine basis
+//! them moves the Borg. On an exit it walks on, over known grids, to the
+//! nearest known staircase and takes it (`breeder_hold_stair`: the walk
+//! owns the movement until then, #556; left to the ordinary flight, the
+//! Borg stepped back toward the room every other think). With no staircase
+//! route it holds the corridor. Engine basis
 //! (574b618c): white worm mass speed 100, `RAND_25 | RAND_50`, `MULTIPLY`
 //! (lib/gamedata/monster.txt:677-692); 75% of its moves stagger
 //! (src/mon-move.c:1087-1102); no breeding with 4 or more neighbours
@@ -53,6 +56,7 @@ use crate::borg_headers::borg_trait_h::{BI_ACCW, BI_ACLW, BI_ACSW, BI_CDEPTH, BI
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_RAND_25, RF_RAND_50};
+use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
@@ -113,12 +117,16 @@ fn colony_big(count: i32, growth: i32, lost_or_scary: bool) -> bool {
 }
 
 /// Keep the known breeder count of the last `window` game turns (one sample
-/// per think) and return the rise over the fewest of them.
+/// per think while any is known) and return the rise over the fewest of the
+/// earlier samples. First sight is not growth: with no earlier sample in the
+/// window (none known before) the rise is 0.
 fn breeder_growth(samples: &mut Vec<(i32, i32)>, now: i32, count: i32, window: i32) -> i32 {
     samples.retain(|&(t, _)| now >= t && now - t <= window);
-    samples.push((now, count));
-    let low = samples.iter().map(|&(_, c)| c).min().unwrap_or(count);
-    count - low
+    let low = samples.iter().map(|&(_, c)| c).min();
+    if count > 0 {
+        samples.push((now, count));
+    }
+    low.map_or(0, |low| (count - low).max(0))
 }
 
 /// The HP margin of the cut-out: `hp` of `max` at least `go` percent, or at
@@ -254,8 +262,13 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
         p(Param::caution_breeder_hold_growth_turns),
     );
     let big = colony_big(count, growth, st.borg.breeders_lost || st.borg.mon.scary);
-    if colony(&known, own, clear, big) != Colony::Fires {
+    let state = colony(&known, own, clear, big);
+    // Out of the colony and on the way to a staircase (`breeder_hold_stair`),
+    // the walk goes on while only slow breeders are about, near or not.
+    let walking = st.borg.breeder_hold_stair && state != Colony::Other;
+    if state != Colony::Fires && !walking {
         st.borg.breeder_hold_idle = 0;
+        st.borg.breeder_hold_stair = false;
         return false;
     }
     let hp = st.borg.tr(BI_CURHP);
@@ -267,9 +280,24 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
         d != -1 && d <= steps
     });
     let floor = hp * 100 < max * p(Param::caution_breeder_hold_floor_hp_percent) && cures == 0;
-    if stair_near || floor {
+    if (stair_near && !walking) || floor {
         st.borg.breeder_hold_idle = 0;
+        st.borg.breeder_hold_stair = false;
         return false;
+    }
+
+    // On a staircase at the end of the walk: take it.
+    let here = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    if walking || state == Colony::Fires {
+        let down = here == FEAT_MORE && !crate::borg_caution::recall_restricts(st);
+        let up = here == FEAT_LESS && !engine::player_opt(OPT_birth_force_descend);
+        if down || up {
+            st.borg.breeder_hold_stair = false;
+            st.borg.breeder_hold_idle = 0;
+            borg_note(st, &format!("# Leaving the breeders by the stairs ({count} known)"));
+            borg_keypress(st, keycode_t::from(if down { b'>' } else { b'<' }));
+            return true;
+        }
     }
 
     // The known map, read once.
@@ -300,10 +328,27 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
     let at = |v: &[bool], x: i32, y: i32| inside(x, y) && v[(y * w + x) as usize];
     let passable = |x: i32, y: i32| at(&floor_at, x, y) && !at(&other_at, x, y);
     let breeder = |x: i32, y: i32| at(&breeder_at, x, y);
-    let target = |x: i32, y: i32| {
+    let exit = |x: i32, y: i32| {
         !at(&breeder_at, x, y) && exit_grid(&passable, at(&stair_at, x, y), loc { x, y }, &breeders, clear)
     };
-    let route = cut_route(w, h, st.borg.c, &passable, &breeder, &target, p(Param::caution_breeder_hold_worm_cost));
+    let stair = |x: i32, y: i32| !at(&breeder_at, x, y) && at(&stair_at, x, y) && passable(x, y);
+    let worm = p(Param::caution_breeder_hold_worm_cost);
+    // In the colony, the route is to the nearest exit. On an exit, or out
+    // and walking, it is on to the nearest known staircase, the exit owning
+    // the movement until the stairs are taken (#556): left to the ordinary
+    // flight, the Borg stepped back toward the room each other think.
+    let to_stair = walking || exit(st.borg.c.x, st.borg.c.y);
+    let route = if to_stair {
+        cut_route(w, h, st.borg.c, &passable, &breeder, &stair, worm)
+    } else {
+        cut_route(w, h, st.borg.c, &passable, &breeder, &exit, worm)
+    };
+    if to_stair && route.is_none() {
+        st.borg.breeder_hold_stair = false;
+        if state != Colony::Fires {
+            return false;
+        }
+    }
 
     if let Some((route, on)) = route {
         let go = may_cut_out(
@@ -315,16 +360,20 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
         );
         if on <= p(Param::caution_breeder_hold_max_on_route) && go {
             st.borg.breeder_hold_idle = 0;
+            // The step onto the exit starts the walk on: there the Borg is
+            // clear of the breeders, and the rule would no longer fire.
+            st.borg.breeder_hold_stair = to_stair || route.len() == 1;
             st.borg.goal.type_0 = 0;
             let next = route[0];
             let end = route[route.len() - 1];
+            let what = if to_stair { "the stairs at" } else { "the exit at" };
             if breeder(next.x, next.y) {
                 let kill = st.kills.kills[usize::from(st.cave.grid(next.x, next.y).kill)];
                 let name = borg_race_name(i32::from(kill.r_idx)).to_string_lossy().into_owned();
                 borg_note(
                     st,
                     &format!(
-                        "# Cutting out through the breeders: attacking {name} on the route to ({},{}) ({} steps, {on} breeders on it, {count} known)",
+                        "# Cutting out through the breeders: attacking {name} on the route to {what} ({},{}) ({} steps, {on} breeders on it, {count} known)",
                         end.y,
                         end.x,
                         route.len()
@@ -335,7 +384,7 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
                 borg_note(
                     st,
                     &format!(
-                        "# Cutting out through the breeders to ({},{}) ({} steps, {on} breeders on it, {count} known)",
+                        "# Cutting out through the breeders to {what} ({},{}) ({} steps, {on} breeders on it, {count} known)",
                         end.y,
                         end.x,
                         route.len()
@@ -345,6 +394,11 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
                 borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
             }
             return true;
+        }
+        if to_stair && state != Colony::Fires {
+            // Out of the colony, but the stairs' route is too costly now.
+            st.borg.breeder_hold_stair = false;
+            return false;
         }
     }
 
@@ -419,9 +473,12 @@ mod tests {
     #[test]
     fn growth_is_over_the_window() {
         let mut s = vec![];
-        assert_eq!(breeder_growth(&mut s, 1000, 3, 100), 0);
-        assert_eq!(breeder_growth(&mut s, 1050, 5, 100), 2);
-        // The sample of turn 1000 leaves the window.
+        // None known, then two seen at once: first sight, not growth.
+        assert_eq!(breeder_growth(&mut s, 990, 0, 100), 0);
+        assert_eq!(breeder_growth(&mut s, 1000, 2, 100), 0);
+        assert_eq!(breeder_growth(&mut s, 1010, 3, 100), 1);
+        assert_eq!(breeder_growth(&mut s, 1050, 5, 100), 3);
+        // The samples of turns 1000 and 1010 leave the window.
         assert_eq!(breeder_growth(&mut s, 1120, 6, 100), 1);
         // Fewer known (out of view) is no growth.
         assert_eq!(breeder_growth(&mut s, 1130, 2, 100), 0);
