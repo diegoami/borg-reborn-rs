@@ -652,6 +652,16 @@ borg_param_kill_live_min_power = 1
 
 borg_param_kill_live_zero_hp = 1
 
+# #915: grouped monster messages. The engine writes the subject of a message
+# for several monsters of one race as "N <plural>" ("3 cave spiders start
+# moving faster.", mon-msg.c:333-345); the Borg's race guess takes any name
+# without "The " for the player ghost, in 4.2 the last race, Morgoth
+# (borg_flow_kill.rs guess_race_name). 1 reads the plural as the race.
+# Shipped 1 (P8, owner 2026-11-22: a P8 fix ships on once the evidence holds):
+# every non-unique race of monster.txt reads back from its grouped subject
+# (unit test), and seed 2008390085 plays the same keys and danger either way.
+borg_param_kill_grouped_names = 1
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
@@ -1028,6 +1038,27 @@ borg_param_escape_phase_lost_danger_percent = 100
 # (never the chosen one itself), or melee. 0 = full damage every turn (#612).
 
 borg_param_escape_phase_lost_mana = 1
+
+# The lone-slow bundle (#878, shipped by the owner 2026-11-22, #1046: "I would
+# turn on lone_wolf"). From the Mage 461220874 that retreated from one white
+# worm mass instead of killing it with Magic Missile. Six settings, shipped
+# together as measured: a caster kills a lone slow monster at range before
+# retreat and Phase Door (lone_slow_attack; radius 3, 2 casts, 25% of HP, the
+# compiled defaults); the Phase rule and the reserve spell judge danger
+# without fear (poison and breeder fear terms off); no reserve-spell cast when
+# the expected damage during the faint reaches 25% of HP; the unseen-bump
+# Phase Door only for a bump at most 20 game turns old and danger at least 5.
+# borg-zoo reborn-lone-slow (900 starts, lone-slow-296adfbf): 13 deaths
+# against 25, 20 rescued, 8 newly killed, p = 0.04. Its parts alone (lone,
+# phase-nofear) did nothing; borg-zoo#699 measures the rest at track-p
+# 206cf4e7.
+
+borg_param_lone_slow_attack = 1
+borg_param_escape_phase_lost_damage_only = 1
+borg_param_attack_reserve_spell_damage_only = 1
+borg_param_attack_reserve_faint_percent = 25
+borg_param_caution_unseen_bump_phase_turns = 20
+borg_param_caution_unseen_bump_phase_min_danger = 5
 
 # Teleport landing with either kind of teleport (#724, upstream Angband
 # 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
