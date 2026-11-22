@@ -7,7 +7,7 @@ without fear, the reserve spell's faint (#878)") and `docs/PHASE-DOOR.md`.
 
 **Done.** The issue's five candidate rules, each behind a setting compiled
 and shipped **off**: shipped play is unchanged, so `smoke-borg-rs` is not
-re-recorded. Nine parameters (registry 2358 to 2367, after merging track-p's #875):
+re-recorded. Nine parameters (registry 2373 to 2382 on track-p `4c686250`):
 
 | rule | settings | where |
 |---|---|---|
@@ -74,3 +74,27 @@ The trial's runs are local (scratch), not published.
 **For the owner.** Whether to file the zoo request and publish the trial in
 the Cemetery case; which values the arms use (the defaults are within the
 issue's ranges: radius 3, two uses, 25%; the faint and bump settings have none).
+
+### After the review (PR #891, pinned `1f4c040d`, follow-up at `296adfbf`)
+
+- **F1 fixed:** `is_fear_term` skips `flag`, `mode` and `choice` units, so
+  `danger_hunt_breeder_no_acid_fear` is no longer zeroed inside
+  `damage_only`: 119 terms (114 prices, 5 bonuses). No danger value changed
+  (its acid fear is zeroed anyway).
+- **F2 fixed, with a correction:** the paralysis counter falls once every 10
+  game turns (`decrease_timeouts` from `process_world`, game-world.c:651,
+  :1080), not every game turn as the review said; the conclusion holds.
+  `faint_borg_turns` converts the ticks to Borg turns (`energy / 10`), so a
+  Borg at +10 speed counts twice the blows. Only speeds above normal change.
+- **F3 fixed:** the reserve spell's loop passes the near monster it found
+  (its Chebyshev distance) as the target; the faint's distances use the same
+  metric.
+- **F4:** `track-p` merged again (`4c686250`); citation-only conflicts.
+- **F5 fixed:** the counts in CALIBRATION.md.
+- **F6 not changed (note):** the Phase rule's damage-only danger uses `c = 1`
+  rather than the site's horizon; they agree at the shipped
+  `caution_danger_horizon` 1.
+- Checked on the new head: CI's Rust commands (643 release unit tests),
+  citations, smoke 3/3 identical. borg-zoo#626 was pinned to `296adfbf`; its
+  pin moves to the new head (the `faint25` and `all` arms change for fast
+  characters; the other arms play the same).
