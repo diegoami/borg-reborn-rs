@@ -368,6 +368,10 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
+# Restore Life Levels reserve for measurement (#978). Zero disables retention;
+# the healthy-character junk-quaff guard applies at every setting.
+borg_param_town_restore_life_reserve = 0
+
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
 # Impact: set to TRUE, 6 of 6 test games play differently.
@@ -795,18 +799,20 @@ borg_param_defend_bless_fail = 25
 borg_param_caution_heal_when_outmatched = 1
 borg_param_caution_heal_outmatched_min_loss = 50
 
-# Below this percent of max HP, a poisoned or bleeding Borg's cures are not
-# skipped for "the middle of a fight" (#985). That gate refuses a cure when
-# the danger exceeds a fifth of the avoidance, which is the current HP, so
-# the lower the HP the less danger a cure tolerates (at 6 HP, danger 2).
-# A bravery boost never reaches it: its brave think skips borg_caution.
+# Below this percent of max HP, a poisoned or bleeding Borg drinks a cure
+# potion before "the middle of a fight" gate (#985): Neutralize Poison or
+# CCW for poison, CSW, CCW or CLW for a cut; no spell, Restore Mana or
+# reserved Healing. That gate refuses a cure when the danger exceeds a fifth
+# of the avoidance, which is the current HP, so the lower the HP the less
+# danger a cure tolerates (at 6 HP, danger 2). A bravery boost never reaches
+# it: its brave think skips borg_caution.
 # 0 = off, today's play. A hypothesis for the zoo.
 borg_param_caution_cure_hp_floor_percent = 0
 
 # Poor in town (below level 6, under 10 gold, fewer than 5 things to sell),
 # C leaves at once: "Nothing to sell in town". 1 = not while the pack holds
 # an unaware potion, scroll, mushroom or device, so the town planner sells
-# one of it (#470) and the kind is learnt (#985: a Ranger died poisoned
+# one of each unaware kind (#470) and learns them (#985: a Ranger died poisoned
 # with 6 unknown Cure Light Wounds and 2 unknown Neutralize Poison). 0 = off,
 # today's play. A hypothesis for the zoo.
 borg_param_sell_poor_town_unknown_hold = 0

@@ -851,19 +851,26 @@ pub(crate) fn borg_store_buys(item: &borg_item, who: i32) -> bool {
     }
 }
 
-/// borg-reborn-rs (#985): an unaware kind #470 sells one of to learn it.
-fn unaware_learnable(item: &borg_item) -> bool {
-    item.iqty > 0
-        && !item.aware
+/// borg-reborn-rs (#470, #985): an unaware kind sold one at a time to learn
+/// it: `borg_good_sell`'s test and the poor-town hold's, in one place
+/// (review of #1003, finding 4).
+fn unaware_kind(item: &borg_item) -> bool {
+    !item.aware
         && matches!(
             u32::from(item.tval),
             TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF
         )
 }
 
+/// borg-reborn-rs (#985): a carried copy of an unaware kind.
+fn unaware_learnable(item: &borg_item) -> bool {
+    item.iqty > 0 && unaware_kind(item)
+}
+
 /// borg-reborn-rs (#985): with `sell_poor_town_unknown_hold`, C's "Nothing
-/// to sell in town (leaving)" waits while the pack holds an unaware kind to
-/// learn by selling one (`borg_good_sell`'s `unaware_kind`). 0 = C.
+/// to sell in town (leaving)" waits while the pack holds an unaware kind, so
+/// one of each unaware kind is sold (a sale makes one kind aware, the others
+/// hold the town visit on; review of #1003, finding 2). 0 = C.
 pub fn poor_town_unknown_hold(st: &mut BorgState) -> bool {
     param(Param::sell_poor_town_unknown_hold) != 0
         && (0..pack_size()).any(|i| unaware_learnable(pack_item(st, i)))
@@ -879,8 +886,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
 
     // borg-reborn-rs (#470): an unaware potion, scroll, mushroom or device
     // is never used, so selling one is how its kind is learnt.
-    let unaware_kind = !item.aware
-        && matches!(tval, TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF);
+    let unaware_kind = unaware_kind(&item);
 
     // Never attempt to sell worthless items, shops won't buy them
     if item.value <= 0 {

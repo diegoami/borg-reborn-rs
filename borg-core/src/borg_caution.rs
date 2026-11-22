@@ -200,10 +200,10 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
 }
 
 /// borg-reborn-rs (#985): below the HP floor (`floor_percent` of the max
-/// HP; 0 = off, C), a poisoned or bleeding Borg's cures in `borg_heal` are
-/// not skipped for "the middle of a fight". The fight gate there compares
-/// the danger with a fifth of the avoidance, which is the current HP, so
-/// near death it refused every cure (borg-reborn-rs#985).
+/// HP; 0 = off, C), a poisoned or bleeding Borg drinks a cure potion in
+/// `borg_heal` before the "middle of a fight" gate, which compares the
+/// danger with a fifth of the avoidance (the current HP), so near death it
+/// refused every cure.
 fn cure_below_hp_floor(floor_percent: i32, ailing: bool, curhp: i32, maxhp: i32) -> bool {
     floor_percent > 0 && ailing && maxhp > 0 && curhp * 100 < maxhp * floor_percent
 }
@@ -728,19 +728,32 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     /*** Cures ***/
 
-    // Dont do these in the middle of a fight, teleport out then try it
-    // borg-reborn-rs (#985): the gate scales with the avoidance, which is the
-    // current HP outside a bravery boost, so the lower the HP the less danger
-    // a cure tolerates. Below caution_cure_hp_floor_percent of the max HP a
-    // poisoned or bleeding Borg cures here whatever the danger.
-    if danger > avoidance(st) * p(Param::caution_cure_safe_danger_tenths) / 10
-        && !cure_below_hp_floor(
-            p(Param::caution_cure_hp_floor_percent),
-            st.borg.tr(BI_ISPOISONED) != 0 || st.borg.tr(BI_ISCUT) != 0,
-            st.borg.tr(BI_CURHP),
-            st.borg.tr(BI_MAXHP),
-        )
+    // borg-reborn-rs (#985): the fight gate below scales with the avoidance,
+    // which is the current HP outside a bravery boost, so the lower the HP the
+    // less danger a cure tolerates. Below caution_cure_hp_floor_percent of the
+    // max HP, a poisoned or bleeding Borg drinks a cure potion first, whatever
+    // the danger: Neutralize Poison or CCW for poison (object.txt:3278, 3192),
+    // CSW, CCW or CLW for a cut (:3175, 3192, 3156). Potions only: no spell,
+    // Restore Mana or reserved Healing potion (review of #1003, finding 1).
+    if cure_below_hp_floor(
+        p(Param::caution_cure_hp_floor_percent),
+        st.borg.tr(BI_ISPOISONED) != 0 || st.borg.tr(BI_ISCUT) != 0,
+        st.borg.tr(BI_CURHP),
+        st.borg.tr(BI_MAXHP),
+    ) && ((st.borg.tr(BI_ISPOISONED) != 0
+        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_poison)
+            || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)))
+        || (st.borg.tr(BI_ISCUT) != 0
+            && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+                || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+                || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))))
     {
+        borg_note(st, "# Curing below the HP floor (#985).");
+        return true;
+    }
+
+    // Dont do these in the middle of a fight, teleport out then try it
+    if danger > avoidance(st) * p(Param::caution_cure_safe_danger_tenths) / 10 {
         return false;
     }
 

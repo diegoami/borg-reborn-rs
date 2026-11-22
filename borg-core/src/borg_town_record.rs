@@ -807,8 +807,10 @@ pub fn step(input: &StepInput) -> StepOutput {
     if input.utility {
         for c in &mut candidates {
             if input.revision >= 9 && c.shop == 7 { c.qty = 0; }
-            if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).any(|(it, d)|
-                it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep) {
+            if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).enumerate().any(|(i, (it, d))|
+                it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep
+                    && !(input.capability.is_some_and(|model| model.restore_life_keep(it) > 0)
+                        && copies.get(i).is_some_and(|&qty| qty > 0 && qty < it.qty))) {
                 c.slots_cost = 1;
             }
         }
