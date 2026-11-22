@@ -6491,6 +6491,9 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 
 ## Fast-fragile groups in contact (#914)
 
+The registry now holds **2407** parameters (2406 on track-p `b784409e`
+before it; one added).
+
 `fast_fragile_group_max` counts others of the race in view, so three cave
 spiders in contact passed as fast-fragile. The fast-fragile attack, before
 `borg_caution`, then took the turn the control spent on its emergency Phase
