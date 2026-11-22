@@ -25,6 +25,7 @@ jobs:
       - run: python3 scripts/audit-power-port.py
       - run: python3 scripts/audit-equipment-port.py
       - run: python3 scripts/audit-store-port.py
+      - run: python3 scripts/r4-code-metrics.py
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core
@@ -309,3 +310,30 @@ jobs:
       - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build/recorder -j4
       - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
+
+  r4-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: receipt
+        shell: bash
+        run: |
+          python3 - <<'PYRECEIPT'
+          import json, os
+          from pathlib import Path
+          receipt=json.loads(Path('docs/R438-EVIDENCE-RECEIPT.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
+              output.write('commit='+receipt['commit']+'\n')
+          PYRECEIPT
+      - uses: actions/checkout@v4
+        with:
+          repository: diegoami/borg-cemetery
+          ref: ${{ steps.receipt.outputs.commit }}
+          path: vendor/r4-combined-evidence
+          persist-credentials: false
+          sparse-checkout: |
+            runs/validation/track-r/r4-combined-dc1491b9
+            scripts
+            deaths/ALIASES.json
+          sparse-checkout-cone-mode: false
+      - run: python3 tools/verify-r4-evidence.py --cemetery vendor/r4-combined-evidence --receipt docs/R438-EVIDENCE-RECEIPT.json

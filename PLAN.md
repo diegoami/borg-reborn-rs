@@ -6,7 +6,7 @@
 differ, the goals win. Say so in your PR and propose a fix to whichever
 is wrong.*
 
-Track R current state: [R4 handover](docs/R437-HANDOVER.md) and [work plan](docs/R4-PLAN.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
+Track R current state: [R4 handover](docs/R438-HANDOVER.md) and [work plan](docs/R4-PLAN.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
 [combined local validation report](docs/R3-EXIT-REPORT.md). New canonical
 validation evidence belongs in borg-cemetery; source receipts pin its bytes.
 
