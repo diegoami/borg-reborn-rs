@@ -2558,12 +2558,16 @@ fn recall_blow_unmodelled(effect: &[u8]) -> bool {
 /// end of the delay and the most timer the poisoners can add in it
 /// (`timer_ticks`, every action a hit at the largest roll). Already
 /// poisoned, the whole delay counts: the Borg sees the flag, not the
-/// remaining duration (BI_ISPOISONED). Resist poison blocks the timer
-/// (player_timed.txt POISONED `fail:2:POIS`). Damage reduction is ignored.
+/// remaining duration (BI_ISPOISONED), and resistance does not stop it:
+/// resist poison only blocks new poison (player_timed.txt POISONED
+/// `fail:2:POIS`, checked by player_inc_check when the timer would grow,
+/// player-timed.c:926-967), while a running timer keeps costing HP
+/// (game-world.c:513-515; #954, P7 review). Damage reduction is ignored.
 fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, timer_ticks: f64, resists: bool) -> f64 {
-    if resists || ticks <= 0 { return 0.0; }
+    if ticks <= 0 { return 0.0; }
     let ticks = f64::from(ticks);
     if already_poisoned { return ticks; }
+    if resists { return 0.0; }
     earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(0.0)).max(0.0).min(timer_ticks.max(0.0)))
 }
 
@@ -2705,7 +2709,8 @@ mod incoming_units_tests {
         assert_eq!(super::recall_poison_hp(34, false, Some(40.0), 99.0, false), 0.0, "arrives after Recall");
         assert_eq!(super::recall_poison_hp(34, false, None, 0.0, false), 0.0);
         assert_eq!(super::recall_poison_hp(34, true, None, 0.0, false), 34.0, "an existing timer still ticks");
-        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 0.0, "resist poison blocks the timer");
+        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 34.0, "a running timer ticks under resistance (#954)");
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, true), 0.0, "resist poison blocks new poison");
         // White worm mass: speed 100 = energy 5, DL1. One action per two
         // ticks, each hit at most 6 ticks of timer: stacking keeps it going.
         assert_eq!(super::recall_poison_timer_ticks(2.0, 5.0, 1), 6.0);
