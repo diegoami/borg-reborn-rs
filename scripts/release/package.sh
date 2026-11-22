@@ -11,8 +11,8 @@
 # (macOS: Homebrew's) and Python 3.
 # The package plays what a harness run plays: harness/borg.txt (class files
 # folded in) and its scary list, prepared as harness/run.sh prepares a run's
-# user/borg.txt; the launchers in scripts/release/ copy them into the
-# player's data directory.
+# user/borg.txt, written into the package's lib/user/, which a game started
+# directly reads (no launcher is shipped).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 [ $# -ge 5 ] || { sed -n '2,15p' "$0" >&2; exit 2; }
@@ -71,37 +71,47 @@ for b in "${BUILDS[@]}"; do
 done
 
 # The Borg's settings, as harness/run.sh writes a run's user/borg.txt
-# before it substitutes the run's race and class: the world key removed
-# (none: upstream's data), the scary list's selecting line moved to the end
-# under its SHA-256.
+# before it substitutes the run's race and class (harness/prepare-borg-txt.sh,
+# shared with watch-borg.sh and harness/play.sh).
 BT="$STAGE/borg/borg.txt"
-sed '/^[[:space:]]*borg_world[[:space:]]*=/d' "$ROOT/harness/borg.txt" > "$BT"
-SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$BT" | tail -1 | tr -d '[:space:]')"
-if [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
-    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] && [ -f "$ROOT/harness/$SCARY_NAME" ] || {
-        echo "package.sh: scary list '$SCARY_NAME' not in harness/" >&2; exit 1; }
-    cp "$ROOT/harness/$SCARY_NAME" "$STAGE/borg/$SCARY_NAME"
-    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$BT"
-    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
-        "$(sha "$ROOT/harness/$SCARY_NAME")" "$SCARY_NAME" >> "$BT"
-fi
+"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/borg"
 # The class files are already folded into borg.txt; shipped for reading.
 cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
 cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 
-# Launchers and the short guide.
+# A game started directly (no -d options: double-clicking angband.exe, or
+# ./angband) uses lib/user, lib/save, lib/scores, lib/panic and
+# lib/user/archive (DEFAULT_LIB_PATH ./lib/). The engine creates them only on
+# Unix (create_needed_dirs), so on Windows a save failed (the owner, on
+# v0.1.0-alpha.1): ship them, empty, on every platform; drop what games in the
+# build tree may have left there; and give lib/user the shipped settings, so
+# that game plays the borg-rs core as the launchers' do (#826).
+rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user"
+mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
+"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"
+
+# The short guide. The game is started directly (angband, angband.exe): the
+# owner, for v0.1.0-alpha.1, ships no launcher and no headless runner (lib/
+# above holds what the launcher used to set up; CI plays the package with
+# scripts/release/play-headless.sh and windows/play-headless.ps1, which take
+# the package folder as BORG_PACKAGE_DIR).
 if [ "$PLATFORM" = windows ]; then
-    # CRLF, as cmd.exe and Notepad expect.
-    for f in play-headless.ps1 play-headless.cmd watch-borg.cmd PLAYING.txt; do
-        src="$ROOT/scripts/release/windows/$f"; [ -f "$src" ] || src="$ROOT/scripts/release/$f"
-        python3 -c 'import sys; d=open(sys.argv[1],"rb").read().replace(b"\r\n",b"\n"); open(sys.argv[2],"wb").write(d.replace(b"\n",b"\r\n"))' "$src" "$STAGE/$f"
-    done
+    # CRLF, as Notepad expects.
+    python3 -c 'import sys; d=open(sys.argv[1],"rb").read().replace(b"\r\n",b"\n"); open(sys.argv[2],"wb").write(d.replace(b"\n",b"\r\n"))' \
+        "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 else
-    install -m 755 "$ROOT/scripts/release/watch-borg.sh" "$STAGE/watch-borg.sh"
-    install -m 755 "$ROOT/scripts/release/play-headless.sh" "$STAGE/play-headless.sh"
+    cp "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
 fi
-[ "$PLATFORM" = windows ] || cp "$ROOT/scripts/release/PLAYING.txt" "$STAGE/PLAYING.txt"
-cp "$ROOT/README.md" "$STAGE/README.md"
+# The README players get (owner): upstream Angband's own, without its
+# screenshots (not in the package), then what this package adds, the Borg.
+python3 - "$ROOT/engine/angband/README.md" "$ROOT/scripts/release/README-borg.md" "$STAGE/README.md" "$PLATFORM" <<'PYREADME'
+import re, sys
+upstream, borg, out, platform = sys.argv[1:]
+text = re.sub(r'\n<p align="center">.*?</p>\n', '', open(upstream).read(), flags=re.S).rstrip() + '\n'
+text += open(borg).read()
+nl = '\r\n' if platform == 'windows' else '\n'
+open(out, 'w', newline='').write(text.replace('\n', nl))
+PYREADME
 [ ! -f "$ROOT/docs/user/GUIDE.md" ] || cp "$ROOT/docs/user/GUIDE.md" "$STAGE/docs/GUIDE.md"
 if [ "$DOCS" != - ] && [ -d "$DOCS/html" ]; then
     cp -R "$DOCS/html" "$STAGE/docs/angband-manual"
@@ -152,11 +162,23 @@ with open(os.path.join(stage, 'SHA256SUMS'), 'w', newline='\n') as sums:
             h = hashlib.sha256(open(os.path.join(stage, f), 'rb').read()).hexdigest()
             sums.write(f'{h}  {f.replace(os.sep, "/")}\n')
 files = sorted(set(files) | {'SHA256SUMS'})
+# Every directory, so that empty ones (lib/save, ...) are in the archive too.
+dirs = set()
+for f in files:
+    d = os.path.dirname(f)
+    while d:
+        dirs.add(d); d = os.path.dirname(d)
+dirs |= {os.path.relpath(os.path.join(r, x), stage) for r, ds, _ in os.walk(stage) for x in ds}
+dirs = sorted(dirs)
 def mode(f):
     return 0o755 if os.stat(os.path.join(stage, f)).st_mode & stat.S_IXUSR else 0o644
 if platform == 'windows':
     path = os.path.join(out, name + '.zip')
     with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as z:
+        for d in [''] + dirs:
+            info = zipfile.ZipInfo(name + '/' + (d.replace(os.sep, '/') + '/' if d else ''), (1980, 1, 1, 0, 0, 0))
+            info.external_attr = (0o40755 << 16) | 0x10
+            z.writestr(info, b'')
         for f in files:
             info = zipfile.ZipInfo(name + '/' + f.replace(os.sep, '/'), (1980, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
@@ -165,12 +187,6 @@ if platform == 'windows':
 else:
     path = os.path.join(out, name + '.tar.gz')
     with tarfile.open(path, 'w:gz') as t:
-        dirs = set()
-        for f in files:
-            d = os.path.dirname(f)
-            while d:
-                dirs.add(d); d = os.path.dirname(d)
-        dirs = sorted(dirs)
         for d in [''] + dirs:
             info = tarfile.TarInfo(name + ('/' + d.replace(os.sep, '/') if d else ''))
             info.type, info.mode = tarfile.DIRTYPE, 0o755
