@@ -299,10 +299,13 @@ borg_param_town_variety_min_depth = 2
 # one row per situation it answers: the first charges listed below, together,
 # are worth this percent of the trip weight (nothing past them), so a charged
 # device is kept and bought as variety and not only as one more source on a
-# shared curve (an attack wand competes with arrows and oil). A Staff of
-# Teleportation (2000 gold) only has value while the purse after the urgent
-# needs reaches town_device_escape_min_gold, or one is carried. Starts with
-# town_variety_min_depth. 0 = off. Hypotheses, not yet measured in the zoo.
+# shared curve (an attack wand competes with arrows and oil). One device per
+# row: a second one answering the same situation adds nothing on it. A Staff of
+# Teleportation (about 2700 gold) on offer is worth nothing while the purse after
+# the urgent needs is below town_device_escape_min_gold; one carried is never
+# sold. Starts with town_variety_min_depth. 0 = off. Hypotheses, not yet
+# measured in the zoo. NOT town_devices_percent (#666, further down): that one
+# scales every device's charges by the class's device skill.
 
 borg_param_town_device_percent = 24
 borg_param_town_device_attack = 10

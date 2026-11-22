@@ -2578,8 +2578,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:567` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2227` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2132` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2248` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2140` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6173,7 +6173,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2173` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2181` |
 
 ## #895: devices as variety (town)
 
@@ -6209,16 +6209,33 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
   charged device is therefore kept and bought as variety; an empty one supplies
   no charges and no value, a recharge being the next slice. Like the remedies
   it starts with `town_variety_min_depth` (the first level buys the staples).
-- **`town_device_escape_min_gold`** (compiled 0, **shipped 3000**): the escape
-  row has value only while the purse after the urgent needs reaches this much,
-  or a Staff of Teleportation is already carried, so a poor Borg never spends
-  its purse on one and a carried staff is never sold because the purse fell
-  during a visit (`escape_gated`). The threshold is on the purse, not on the
-  price (a staff costs 2000): 3000 means "keeps 1000 after buying one", and a
-  Borg with 2999 buys none though it could afford it. By value per gold a staff
-  (12,000 over 2000 gold, about 6 a gold) comes far behind the cheapest device
-  that fills a row (a Wand of Magic Missile or of Stinking Cloud, or a Staff of
-  Detect Invisible, 200 gold: about 60 a gold), so it comes last in any case.
+- **`town_device_escape_min_gold`** (compiled 0, **shipped 3000**): below this
+  purse after the urgent needs, a **Staff of Teleportation on offer supplies
+  nothing**: neither its device row nor the shared `TELEPORT` escape curve (the
+  review of #898, F10, measured that closing the device row alone removed only
+  23 to 30 percent of a staff's value, and the staff was still bought if nothing
+  better fit). A staff already carried is never touched (its supplies come from
+  the kit), so it is never sold because the purse fell during a visit
+  (`escape_gated`, `without_escape`, `carried_escape_charges`). Other things that
+  fill the escape curve, a Scroll of Teleportation among them, are unchanged. The
+  threshold is on the purse, not on the price (a staff costs 2000 base): 3000
+  means "keeps about 300 after buying one", and a Borg with 2999 buys none though
+  it could afford it. What the Borg pays is the base cost plus `cost x charges /
+  20` (`obj-power.c`), so a Staff of Teleportation (5+d4 charges) is about 2700
+  gold and a Wand of Magic Missile (6+d10 charges) about 310. By value per gold
+  paid a staff (12,000 over 2700, about 4 a gold) comes far behind the cheapest
+  device that fills a row, a Wand of Magic Missile (about 39 a gold; a Wand of
+  Stinking Cloud is dearer, 400 base), so even above the floor it comes last.
+- **One device per row.** A row's demand caps its value, so a second device that
+  answers the same situation adds nothing on that row: a Staff of Detect Evil
+  already fills the five detection charges, and a Staff of Mapping then adds
+  next to nothing there. The variety is at most one device per situation, four
+  devices, not a long list.
+- **Two settings one character apart:** `town_device_percent` is the device
+  rows' weight (shipped 24, this section); `town_devices_percent` (#666) scales
+  every device's charges by the class's device skill (100, Warrior 75, Mage
+  150). Setting the second to 24 by mistake is accepted and means "every
+  device's charges count for a quarter", with the rows still off.
 - Unit check (`a_charged_device_is_kept_as_variety`): a ten-charge attack wand
   is worth the target (12,000) against next to nothing on an ATTACK curve
   saturated by shots and flasks; each charge up to ten is worth the same and an
@@ -6243,4 +6260,4 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
 | `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:992` |
 | `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
 | `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
-| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:988` |
+| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:993` |

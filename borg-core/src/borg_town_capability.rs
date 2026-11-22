@@ -1156,9 +1156,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     for cap in BOOKS..BOOKS + 9 { curve(cap, cfg(BORG_TOWN_W_MAGIC) * UNIT, -UNIT); }
     // Per-item physical supply facts are independent of the quantities held.
+    // borg-reborn-rs (#895, owner: a Staff of Teleportation only with spare gold;
+    // review of #898, F10): below the gold floor a Staff of Teleportation on offer
+    // supplies nothing, neither its device row nor the shared TELEPORT curve, so a
+    // poor Borg does not buy one at all; one already carried is never touched
+    // (its supplies come from the kit below), so it is never sold for a small purse.
+    let staff_gated = devices && escape_gated(device_floor, gold_after_urgent, carried_escape_charges(st));
     for c in &stock.candidates {
         let item = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
-        for (cap, n) in supplies(item, &ctx, (i64::from(c.shop), usize::from(c.slot))) {
+        let mut supply = supplies(item, &ctx, (i64::from(c.shop), usize::from(c.slot)));
+        if staff_gated && u32::from(item.tval) == TV_STAFF && i32::from(item.sval) == st.item_val.sv_staff_teleportation {
+            supply = without_escape(supply);
+        }
+        for (cap, n) in supply {
             model.supplies.push([i64::from(c.shop), i64::from(c.slot), cap as i64, n]);
         }
     }
@@ -1185,12 +1195,6 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // conflate different effects (treasure sensing is not mapping, Detect
     // Monsters misses invisible races). Scrolls, devices and potions keep
     // their supply value next to the spells.
-    // borg-reborn-rs (#895, owner: a Staff of Teleportation only with spare gold):
-    // below the floor the escape row has no value, unless one is already carried
-    // (a carried staff is never sold because the purse is small).
-    if devices && escape_gated(device_floor, gold_after_urgent, model.curves[DEV_ESCAPE][3]) {
-        model.curves[DEV_ESCAPE][1] = 0;
-    }
     debug_assert!(model.valid());
     model
 }
@@ -1606,6 +1610,10 @@ mod tests {
         assert!(!escape_gated(3000, 3000, 0), "at the floor");
         assert!(!escape_gated(3000, 100, 5 * UNIT), "one carried is never sold for a small purse");
         assert!(!escape_gated(0, 0, 0), "no floor");
+        // Gated, a staff on offer supplies neither the device row nor the shared escape curve (F10),
+        // and keeps what else it supplies.
+        let staff = vec![(TELEPORT, 5 * UNIT), (DEV_ESCAPE, 5 * UNIT), (RECHARGE_TARGET, UNIT)];
+        assert_eq!(without_escape(staff), vec![(RECHARGE_TARGET, UNIT)]);
     }
 
     /// #863 (review F1): every capability id has a mask bit of its own, ids
@@ -2193,8 +2201,21 @@ fn device_attack(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confu
     effect_supply_for_consumer(&kept, hp, service_turns, confusion).iter().any(|&(id, units)| id == ATTACK && units > 0)
 }
 
-/// borg-reborn-rs (#895): whether the escape device row is switched off for a
-/// small purse: below the `floor` and with none carried (`carried` charges).
+/// borg-reborn-rs (#895): a ware's supplies without what an escape staff gives:
+/// the shared TELEPORT capability and the device row.
+fn without_escape(supply: Vec<(usize, i64)>) -> Vec<(usize, i64)> {
+    supply.into_iter().filter(|&(id, _)| id != TELEPORT && id != DEV_ESCAPE).collect()
+}
+
+/// borg-reborn-rs (#895): the charges of Staffs of Teleportation in the pack, in `UNIT`s.
+fn carried_escape_charges(st: &BorgState) -> i64 {
+    st.items.items.iter()
+        .filter(|i| i.iqty > 0 && i.aware && u32::from(i.tval) == TV_STAFF && i32::from(i.sval) == st.item_val.sv_staff_teleportation)
+        .map(|i| i64::from(i.pval).max(0) * UNIT).sum()
+}
+
+/// borg-reborn-rs (#895): whether a Staff of Teleportation on offer is switched off for a
+/// small purse: below the `floor` (on the purse, not the price) and with none carried (`carried` charges).
 fn escape_gated(floor: i64, gold: i64, carried: i64) -> bool { floor > 0 && gold < floor && carried == 0 }
 
 /// borg-reborn-rs (#863): the staple rows exist when any staple has a knee.
