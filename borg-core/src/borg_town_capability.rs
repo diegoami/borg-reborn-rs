@@ -88,6 +88,10 @@ const EXTRA_SHOTS: usize = 60;
 /// escape weight; nothing past the reserve. Zero weight when the reserve is 0.
 const PHASE_RESERVE: usize = 61;
 const RANGED_RESERVE: usize = 62;
+/// borg-reborn-rs (#859, owner): with `town_recall_curve_scale_percent` on,
+/// the first `town_recall_reserve` Words of Recall as a requirement on top of
+/// the RECALL curve, as PHASE_RESERVE is on top of PHASE.
+const RECALL_RESERVE: usize = 63;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -103,14 +107,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 63] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 64] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -680,6 +684,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         for (_, units) in &mut out { *units = scale_percent(*units, param(Param::town_devices_percent)); }
     }
     out.retain(|&(_, units)| units > 0);
+    // borg-reborn-rs (#859): a Recall supply also counts toward the reserve.
+    if param(Param::town_recall_curve_scale_percent) > 0 {
+        if let Some(&(_, units)) = out.iter().find(|&&(id, _)| id == RECALL) { out.push((RECALL_RESERVE, units)); }
+    }
     if matches!(tval, TV_WAND | TV_STAFF) && item.pval > 0 {
         let maximum = engine::kind_value_average(engine::kind(item.kind as usize).charge).max(1);
         if i64::from(item.pval) < i64::from(maximum) * qty { out.push((RECHARGE_TARGET, UNIT)); }
@@ -705,7 +713,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let light_goal = journey.fuel_goal(light_reserve);
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve };
     // Keep the historical facts shape when the reserve is disabled.
-    let count = if ranged_reserve > 0 { COUNT } else { RANGED_RESERVE };
+    // #859: the Recall reserve's row only exists with the Recall curve on.
+    let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
+    let count = if recall_on { COUNT } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
@@ -792,11 +802,18 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // the walk a scroll saves is worth (100 = as computed).
     let walk_value = recall_value_scaled(cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1));
     let recall_reserve = recall_reserve_for_budget(gold_after_urgent);
-    if recall_reserve > 0 {
-        curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
-    } else {
-        curve(RECALL, walk_value, UNIT);
-    }
+    // borg-reborn-rs (#859, owner: "use the trip weight"):
+    // `town_recall_curve_scale_percent` on (> 0) values every scroll on a
+    // diminishing curve on the trip weight, never zero, with the reserve a
+    // requirement on top of it (RECALL_RESERVE, as Phase Door's). 0 = #557.
+    // With the curve on, the trip weight grows with the trip's exposure, as
+    // healing's and the escapes' do (#859): deeper and longer, a scroll is
+    // worth more, never less than before.
+    let recall_scale = param(Param::town_recall_curve_scale_percent);
+    let trip_weight = if recall_scale > 0 { cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT) } else { cfg(BORG_TOWN_W_TRIP) * UNIT };
+    let ((weight, demand), reserve_row) = recall_curve(trip_weight, walk_value, recall_reserve, recall_scale);
+    curve(RECALL, weight, demand);
+    if let Some((weight, demand)) = reserve_row { curve(RECALL_RESERVE, weight, demand); }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
@@ -1155,6 +1172,48 @@ mod tests {
         assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
         assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
         assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
+    /// #859 (owner: "make it be 110 by default, so that they buy a few"):
+    /// the scale stretches the Recall curve; 100 is the curve before it.
+    #[test]
+    fn the_recall_curve_values_every_scroll_less_than_the_last() {
+        let (trip, walk) = (500 * UNIT, 80 * UNIT);
+        assert_eq!(recall_curve(trip, walk, 1, 0), ((trip, -UNIT), None), "0: the #557 requirement");
+        assert_eq!(recall_curve(trip, walk, 0, 0), ((walk, UNIT), None), "0: the walk curve");
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        let scrolls = |m: &Model, n: i64| m.gain(&[(RECALL, n * UNIT), (RECALL_RESERVE, n * UNIT)]);
+        for scale in [100, 110, 200] {
+            let ((w, d), reserve) = recall_curve(trip, walk, 1, scale);
+            m.curves[RECALL] = [RECALL as i64, w, d, 0, 0];
+            let (rw, rd) = reserve.unwrap();
+            m.curves[RECALL_RESERVE] = [RECALL_RESERVE as i64, rw, rd, 0, 0];
+            let gains: Vec<i64> = (1..=5).map(|n| scrolls(&m, n) - scrolls(&m, n - 1)).collect();
+            assert!(gains[0] > trip, "{scale}: the first carries the reserve and the curve: {gains:?}");
+            assert!(gains.windows(2).all(|g| g[1] < g[0] && g[1] > 0), "{scale}: each less, never nothing: {gains:?}");
+        }
+        let ((w110, _), _) = recall_curve(trip, walk, 1, 110);
+        let ((w200, _), _) = recall_curve(trip, walk, 1, 200);
+        assert!(w200 > w110, "a higher scale values the spares more");
+        let (_, reserve) = recall_curve(trip, walk, 0, 110);
+        assert_eq!(reserve, Some((0, UNIT)), "no reserve: an empty row");
+    }
+
+    /// #859: the room the Recall reserve still needs: the copies short,
+    /// the lightest offered copy's weight, and a slot when none is carried.
+    #[test]
+    fn the_recall_room_counts_the_copies_short_of_the_reserve() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: vec![[5, 3, RECALL as i64, UNIT]] };
+        let scroll = crate::borg_town_stock::Candidate { shop: 5, slot: 3, kind: 1, tval: 0, sval: 0, price: 125,
+            qty: 4, weight: 5, slots_cost: 1, stack_count: 0, class: 0 };
+        let other = crate::borg_town_stock::Candidate { slot: 4, weight: 1, ..scroll };
+        let offers = [scroll, other];
+        assert_eq!(recall_room(&m, 1, &offers), (5, 1), "one scroll and its slot");
+        assert_eq!(recall_room(&m, 0, &offers), (0, 0), "no reserve");
+        m.curves[RECALL][3] = UNIT;
+        assert_eq!(recall_room(&m, 1, &offers), (0, 0), "carried");
+        assert_eq!(recall_room(&m, 2, &offers), (5, 0), "one more joins the carried stack");
+        assert_eq!(recall_room(&m, 2, &[other]), (0, 0), "none on offer");
     }
 
     #[test]
@@ -1619,6 +1678,36 @@ fn low_value(ordinary: i64) -> i64 {
 /// saves) times `town_recall_value_percent` / 100.
 pub(crate) fn recall_value_scaled(value: i64) -> i64 {
     scale_percent(value, param(Param::town_recall_value_percent))
+}
+
+/// borg-reborn-rs (#557, #859): the RECALL curve's weight and demand, and the
+/// RECALL_RESERVE row. `scale` 0 is #557: with a reserve, a requirement
+/// (negative demand) worth the full trip weight a scroll and nothing past
+/// it; without, the walk a scroll saves on a one-scroll diminishing curve.
+/// `scale` > 0 (#859, owner: "use the trip weight"): every scroll on a
+/// diminishing curve on the trip weight, weight and demand scaled together
+/// as the healing and Phase Door curves are (each scroll worth less than the
+/// last, never nothing), and the reserve a requirement on top of it.
+fn recall_curve(trip_weight: i64, walk_value: i64, reserve: i64, scale: i32) -> ((i64, i64), Option<(i64, i64)>) {
+    if scale > 0 {
+        let reserve_row = (reserve > 0).then(|| (trip_weight * reserve, -(reserve * UNIT)));
+        return ((scale_percent(trip_weight, scale), scale_percent(UNIT, scale)), reserve_row.or(Some((0, UNIT))));
+    }
+    if reserve > 0 { ((trip_weight * reserve, -(reserve * UNIT)), None) } else { ((walk_value, UNIT), None) }
+}
+
+/// borg-reborn-rs (#859): the room the Word of Recall reserve still needs in
+/// the pack: the copies short of `reserve` (whole scrolls, the carried ones
+/// counted on the RECALL curve), times the lightest copy on offer, and a slot
+/// when none is carried. Nothing when no offered ware supplies Recall.
+pub(crate) fn recall_room(m: &Model, reserve: i64, candidates: &[crate::borg_town_stock::Candidate]) -> (i64, i32) {
+    let Some(row) = m.curves.get(RECALL) else { return (0, 0) };
+    let short = reserve - row[3] / UNIT;
+    if reserve <= 0 || short <= 0 { return (0, 0); }
+    let lightest = candidates.iter()
+        .filter(|c| c.qty > 0 && m.units(i64::from(c.shop), i64::from(c.slot), 1).iter().any(|&(id, _)| id == RECALL))
+        .map(|c| i64::from(c.weight)).min();
+    lightest.map_or((0, 0), |w| (short * w, i32::from(row[3] == 0)))
 }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {
