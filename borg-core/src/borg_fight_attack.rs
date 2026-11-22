@@ -42,7 +42,7 @@ use crate::borg_magic::{
     borg_spell_okay, borg_spell_okay_fail, borg_spell_fail_rate,
 };
 use crate::borg_projection::{
-    borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
+    borg_distance, borg_inc_motion, borg_los, borg_los_projectable, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
 use crate::borg_update::Detect;
@@ -2445,8 +2445,9 @@ fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32,
                 continue;
             }
 
-            /* Never pass through walls*/
-            if !borg_los(st, y1, x1, ry, rx) {
+            /* project.c:856-863 uses LOS through PROJECT terrain for
+             * the arc footprint. Walkable rubble still blocks that ray. */
+            if !borg_los_projectable(st, y1, x1, ry, rx) {
                 continue;
             }
 
@@ -2784,8 +2785,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
                 break 'check false;
             }
 
-            /* Cant have an obstacle between us */
-            if !borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
+            /* Do not wait for an approach across an obstructed sight line.
+             * Passable rubble can leave the monster waiting on its side. */
+            if !borg_los_projectable(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x) {
                 break 'check false;
             }
 
