@@ -6591,8 +6591,20 @@ control (borg-cemetery study `fastfrag-cave-spiders-2008390085`). Above 0,
 `borg_caution` drinks Speed (or casts Haste Self) after healing, before the
 walks, the retreat and the escapes. It does so when the danger of the awake
 monsters within the radius that are faster by the margin (an observed haste
-counted) reaches that percent of the HP. Compiled and shipped 0; 50, 2 and 5
-are hypotheses.
+counted) reaches that percent of the HP.
+
+- **`caution_emergency_speed_danger_percent`** (compiled 0, **shipped 50**
+  (P8)): 50 is the share #747's stair test ships
+  (`caution_desperate_fast_danger_percent`); no measurement chose it. The rule
+  needs #941's `trait_timed_sync = 1`: with the old stuck speed flag the Borg
+  believes it is fast for the rest of the game after its first Potion of Speed,
+  and the rule's "already fast" test returns. On the zoo's game with #941 on it
+  fires once (76,970: a metallic green centipede, speed 120,
+  `monster.txt:827-830`, adjacent; danger 24 at HP 39) and drinks Speed before
+  the Phase Door the control reads there; both live to the cap. Potion of Speed:
+  `TIMED_INC:FAST`, 20+2d10 turns (`object.txt:3429-3439`), +10 speed
+  (`player-calcs.c:2176-2177`). The radius 2 and margin 5 stay as compiled. All
+  three are hypotheses until borg-zoo measures them (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
