@@ -31,7 +31,7 @@ use crate::borg_cave_view::{borg_forget_view, borg_update_view, BORG_VIEW};
 use crate::borg_danger::borg_danger;
 use crate::borg_flow::{borg_can_dig, borg_ddxy_ddd, copy_data, zero_data};
 use crate::borg_flow_kill::{
-    borg_count_death, borg_create_kill, borg_delete_kill, borg_follow_kill, borg_locate_kill,
+    borg_count_death, borg_create_kill, borg_delete_kill, borg_follow_kill, borg_locate_kill, grouped_count,
     borg_race_name, borg_sleep_kill, observe_kill_diff, observe_kill_move, BorgKill,
 };
 use crate::borg_flow_stairs::StairTrack;
@@ -1804,15 +1804,22 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         target_worked(st);
     } else if msg.starts_with(b"BLINK:") {
         // Handle "The xxx disappears!" via teleport other, and blinks away
-        let k = borg_locate_kill(st, args(what), g, 0);
-        if k > 0 {
+        // (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 0);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 2, false);
         }
         target_worked(st);
     } else if msg.starts_with(b"DIED:") {
-        // Handle "xxx dies."
-        let k = borg_locate_kill(st, args(what), g, 3);
-        if k > 0 {
+        // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 3);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 2, true);
         }
         target_worked(st);
@@ -1849,8 +1856,12 @@ fn old_location_message(st: &mut BorgState, i: i32, msg: &[u8], hit_dist: i32) -
         target_worked(st);
     } else if msg.starts_with(b"BLINK:") {
         // Handle "The xxx disappears!" via teleport other, and blinks away
-        let k = borg_locate_kill(st, args(what), g, 1);
-        if k > 0 {
+        // (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 1);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 3, false);
         }
         // Shooting through darkness worked
@@ -1858,9 +1869,12 @@ fn old_location_message(st: &mut BorgState, i: i32, msg: &[u8], hit_dist: i32) -
             st.fight_attack.successful_target = 2;
         }
     } else if msg.starts_with(b"DIED:") {
-        // Handle "xxx dies."
-        let k = borg_locate_kill(st, args(what), old_c, 20);
-        if k > 0 {
+        // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), old_c, 20);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 3, true);
         }
         target_worked(st);
@@ -2415,9 +2429,12 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
             let c = st.borg.c;
 
             if msg.starts_with(b"DIED:") {
-                // Handle "xxx dies."
-                let k = borg_locate_kill(st, args(what), c, 20);
-                if k > 0 {
+                // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+                for _ in 0..grouped_count(args(what)) {
+                    let k = borg_locate_kill(st, args(what), c, 20);
+                    if k <= 0 {
+                        break;
+                    }
                     // borg-reborn-rs (#590, review of #592): a death in this
                     // pass counts for the unlatch too.
                     let r_idx = st.kills.kills[k as usize].r_idx;
