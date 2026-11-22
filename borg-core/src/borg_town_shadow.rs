@@ -551,7 +551,9 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
-    let out = step(&StepInput {
+    // #957: the storing settings this solve uses, recorded with it (v13).
+    let storing = crate::borg_town_utility::Storing::settings();
+    let out = step(&StepInput { storing: Some(storing),
         revision: crate::borg_town_record::PLAN_SCHEMA,
         capability: Some(&capability),
         utility: true,
@@ -582,7 +584,19 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             };
             if reverses { *d = Disposition::Keep; }
         }
-        crate::borg_town_record::first_executable_action(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, budget.home_slots, crate::borg_town_budget::Facts::of(st).pack_capacity - stock.pack_slots_used())
+        {
+            let facts = crate::borg_town_budget::Facts::of(st);
+            // #939 re-review: an urgent ware that cannot be carried must not
+            // hide an affordable urgent ware that can.
+            crate::borg_town_record::live_selection(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit,
+                budget.home_slots, facts.pack_capacity - stock.pack_slots_used(), facts.allowance(), |blocked| {
+                    let mut others = stock.clone();
+                    for &i in blocked { others.candidates[i].qty = 0; }
+                    let mut b = Budget::of(st, &others, &trip);
+                    replenish_torch_reserve(st, &others, &mut b);
+                    b.urgent
+                })
+        }
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
     if live && paction != crate::borg_town_record::action::LEAVE && paction != crate::borg_town_record::action::DROP {
@@ -605,6 +619,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
     let rec = PlanRecord {
+        storing: Some(storing.to_array()),
         capability: Some(capability),
         schema: crate::borg_town_record::PLAN_SCHEMA,
         mode: u8::from(live),
@@ -760,7 +775,7 @@ mod knowledge_only_purchase_tests {
             serves: 1 << need_index(Need::Knowledge) }];
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
-        let out = step(&StepInput {
+        let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
