@@ -5181,6 +5181,15 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
     }
 }
 
+/// borg-reborn-rs (#879, reviews of #890 F1/R4): `borg_attack`'s
+/// adjacent-monster test, "next to me, or close and fast". A record only
+/// believed at its last grid never counts, so it cannot turn a scary level's
+/// flight into a fight. With `unseen_belief` = 0 nothing is believed and this
+/// is C's test.
+fn counts_as_adjacent(believed: bool, faster: bool, distance: i32, fast_distance: i32) -> bool {
+    !believed && ((faster && distance <= fast_distance) || distance <= 1)
+}
+
 /// Attack nearby monsters, in the best possible way, if any
 /// (`borg_attack`).
 ///
@@ -5272,10 +5281,12 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         // borg-reborn-rs (#879, review of #890 F1): a monster only believed
         // at its last grid is not "next to me": it never turns a scary
         // level's flight into a fight.
-        if crate::borg_unseen_belief::believed_weight(st, k as usize).is_none()
-            && ((i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_fast_monster_distance))
-                || engine::distance(st.borg.c, kill.pos) <= 1)
-        {
+        if counts_as_adjacent(
+            crate::borg_unseen_belief::believed_weight(st, k as usize).is_some(),
+            i32::from(kill.speed) > tr(st, BI_SPEED),
+            engine::distance(st.borg.c, kill.pos),
+            param(Param::attack_fast_monster_distance),
+        ) {
             adjacent_monster = true;
         }
 
@@ -6346,5 +6357,25 @@ mod confused_attack_tests {
         st.fight_attack.kill_best = 1.0;
         assert_eq!(confused_weight(&mut st, 64, false), 22, "the value is weighted");
         assert_eq!((st.fight_attack.dmg_best, st.fight_attack.kill_best), (64, 1.0), "the damage is not");
+    }
+}
+
+#[cfg(test)]
+mod tests_890_adjacent {
+    use super::counts_as_adjacent;
+
+    /// Review of #890, F1/R4: a believed record is never adjacent; a seen
+    /// one keeps C's test.
+    #[test]
+    fn a_believed_record_is_never_the_adjacent_monster() {
+        // Seen: next to me, or fast and within attack_fast_monster_distance (2).
+        assert!(counts_as_adjacent(false, false, 1, 2));
+        assert!(counts_as_adjacent(false, true, 2, 2));
+        assert!(!counts_as_adjacent(false, false, 2, 2));
+        assert!(!counts_as_adjacent(false, true, 3, 2));
+        // Believed: never, at any distance or speed.
+        assert!(!counts_as_adjacent(true, true, 2, 2));
+        assert!(!counts_as_adjacent(true, false, 1, 2));
+        assert!(!counts_as_adjacent(true, true, 1, 2));
     }
 }
