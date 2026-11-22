@@ -29,8 +29,10 @@ Native smoke is 3/3 byte-identical to current reference keys, messages and
 states. Named Half-Troll Necromancer 1705507033 (race7/class4,
 `menu,exact`, 100,000 turns) lives at CL6/max DL2 with both inheritance and
 divisor 1. Keys and game states match exactly; messages and full traces do
-not, because two later wild-dog oil ratings rise 12→18 and 10→16. Both
-already chose oil. At the original crow both choose melee at 4442, then
+not: eleven throw scores differ across eleven thinks, four throw eligibility
+gates change from nonpositive to positive, and two interim incumbent flags
+change. Final winners and every key remain unchanged. The wild-dog scores
+12→18 and 10→16 are two examples, not the full count. At the original crow both choose melee at 4442, then
 Phase Door at 4452. No re-recording, no natural deaths, and no independent
 population samples are claimed.
 
@@ -54,3 +56,18 @@ vendor caches (limited by available disk). It reports 7 borg-rs commits,
 201 better-borg-c commits (new death batches D0020–D0030), 21 tracker
 commits, no newer cached engine/runner commit, and cannot resolve Zoo's
 origin/HEAD. No pins or donor code are changed by this task.
+
+Review #875 at `239e9a7f` approved the code with F1/F2 requested before
+integration. F1 is independently verified from the retained full traces
+(11 changed BF_OBJECT candidates at turns 11915, 25815, 28035, 28045,
+31257, 33210, 42350, 48880, 48890, 68911, 84915; eligibility flips at
+48880, 48890, 68911, 84915). The earlier two-example wording understated
+the scoring surface; no final choice or key changed.
+
+F2: merge current `track-p` `7e21967b` (now including #864 and #874)
+into this published task branch without rewriting history. Keep both
+calibration sections and repair citations; preserve track-p's shipped
+settings/scary list and current reference files. Main's existing staircase
+and release changes remain in this branch. Fresh merged-runtime checks
+are recorded below when complete. Historical evidence above stays pinned
+to `e037588b`; it does not measure this newly synchronized runtime.

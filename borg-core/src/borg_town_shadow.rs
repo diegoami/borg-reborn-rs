@@ -423,6 +423,15 @@ fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
     unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_LIGHT && i32::from(sval) == torch
 }
 
+/// The copies the live executor moves for a planned action (#507): a
+/// purchase keeps the copies the plan picked, every other action moves one
+/// copy and the plan is solved again. A planned quantity larger than one
+/// (a whole stack, or the surplus past `town_store_keep_min`, #859) is
+/// therefore reached one copy at a time.
+fn executed_copies(code: i64, planned: i64) -> i64 {
+    if code != crate::borg_town_record::action::BUY { 1 } else { planned.max(1) }
+}
+
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let file = crate::borg_town_dump::plan_record_file();
 
@@ -591,7 +600,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
         // types them at the quantity prompt, capped by the native offer.
         // Every other action moves one copy and re-solves.
-        if paction != crate::borg_town_record::action::BUY { act[2] = 1; } else { act[2] = act[2].max(1); }
+        act[2] = executed_copies(paction, act[2]);
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
@@ -661,6 +670,18 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
 mod tests {
     use super::*;
     use crate::headers::list_tvals_h::*;
+
+    /// #859 (review F1): what reaches the executor. The live path moves one
+    /// copy of a store and solves again; a purchase keeps its planned copies.
+    #[test]
+    fn the_live_executor_moves_one_copy_of_a_store_and_the_planned_copies_of_a_purchase() {
+        use crate::borg_town_record::action;
+        for code in [action::STORE, action::SELL, action::SELL_HOME, action::TAKE_HOME] {
+            assert_eq!(executed_copies(code, 9), 1, "action {code}: one copy, then solve again");
+        }
+        assert_eq!(executed_copies(action::BUY, 3), 3);
+        assert_eq!(executed_copies(action::BUY, 0), 1);
+    }
 
     #[test]
     fn unaware_devices_are_protected_even_when_no_runes_are_missing() {

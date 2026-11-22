@@ -647,6 +647,10 @@ pub struct StepOutput {
     /// What the dispositions freed for the purchases.
     #[cfg_attr(not(test), expect(dead_code))]
     pub freed: Freed,
+    /// Per kit row, the copies a split stack's disposition moves, the
+    /// surplus past `town_store_keep_min`; 0 or absent: the whole stack
+    /// (#859, review F1). Empty unless a stack was split.
+    pub copies: Vec<i32>,
 }
 
 /// A state the usefulness function can read: the traits, the power, and
@@ -747,17 +751,20 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    let (dispositions, freed) = if input.utility {
+    let (dispositions, freed, copies) = if input.utility {
         crate::borg_town_utility::dispositions(input, &mut utility, &st)
-    } else { dispose(
-        input.kit,
-        &st,
-        &trip,
-        &weights,
-        input.limits.pack_slots,
-        input.home_slots,
-        input.limits.weight,
-    ) };
+    } else {
+        let (d, f) = dispose(
+            input.kit,
+            &st,
+            &trip,
+            &weights,
+            input.limits.pack_slots,
+            input.home_slots,
+            input.limits.weight,
+        );
+        (d, f, Vec::new())
+    };
     // What they change in the needs the purchases see: a stack that leaves
     // the pack takes its copies out of its need, one taken from the Home
     // brings them in.
@@ -785,11 +792,13 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    // Stage 2: the purchases, with what the dispositions freed.
+    // Stage 2: the purchases, with what the dispositions freed. They leave
+    // the departure room free (#859; zero when off).
+    let room = if input.utility { crate::borg_town_utility::departure_room() } else { Default::default() };
     let limits = Limits {
         gold: input.limits.gold + freed.gold,
-        pack_slots: input.limits.pack_slots + freed.pack_slots,
-        weight: input.limits.weight + freed.weight,
+        pack_slots: input.limits.pack_slots + freed.pack_slots - room.slots,
+        weight: input.limits.weight + freed.weight - room.weight,
     };
     let st = st;
     let facts: BTreeMap<(u8, u8), &WareFact> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
@@ -878,7 +887,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed, copies }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -974,7 +983,7 @@ fn first_action_with_room(
         (Place::Home, Disposition::Take),
     ] };
     for (place, d) in order {
-        if let Some((k, _)) = kit.iter().zip(&out.dispositions).find(|(k, &x)| k.place == place && x == d
+        if let Some((i, k)) = kit.iter().enumerate().find(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
             && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
             && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !k.joins_pack)) {
             let (code, at) = match (place, d) {
@@ -984,7 +993,11 @@ fn first_action_with_room(
                 (Place::Home, Disposition::Sell) => (action::SELL_HOME, i64::from(k.sell_shop)),
                 _ => (action::TAKE_HOME, 7),
             };
-            return (code, [at, i64::from(k.slot), i64::from(k.qty), k.proceeds], i64::from(k.need), false);
+            // borg-reborn-rs (#859, review F1): a stack split at
+            // `town_store_keep_min` moves the surplus the plan priced, not
+            // the whole stack. Only the pack's stacks are split.
+            let copies = out.copies.get(i).copied().filter(|&n| n > 0 && place == Place::Pack && n < k.qty);
+            return (code, [at, i64::from(k.slot), i64::from(copies.unwrap_or(k.qty)), k.proceeds], i64::from(k.need), false);
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
