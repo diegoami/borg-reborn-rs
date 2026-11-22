@@ -17,7 +17,8 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
-use crate::borg_headers::borg_trait_h::BI_LIGHT;
+use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
+use crate::params::{value, Param};
 use crate::state::BorgState;
 use crate::engine;
 
@@ -87,6 +88,21 @@ fn inven_light() -> usize {
 ///
 /// It is very important that the "player grid" be the first grid in the
 /// array of "BORG_LIGHT" grids, since this is assumed in several places.
+/// #877: the radius the Borg marks as lit by its own light. The C Borg (and
+/// switch 0) uses `BI_LIGHT`, the engine's `cur_light`, as the radius; the
+/// engine lights `radius = ABS(light) - 1` (src/cave-view.c:658, add_light
+/// :616-646), so a Wooden Torch (`LIGHT_2`, lib/gamedata/object.txt:241)
+/// lights distance 1 only. Switch 1 takes the engine's radius, except for a
+/// necromancer at `cur_light <= 1`, who sees by unlight
+/// (src/cave-view.c:777-779) and keeps C's radius.
+pub(crate) fn light_radius(light: i32, class: i32, engine: i32) -> i32 {
+    const CLASS_NECROMANCER: i32 = 4;
+    if engine == 0 || (class == CLASS_NECROMANCER && light <= 1) {
+        return light;
+    }
+    (light - 1).max(0)
+}
+
 pub fn borg_update_light(st: &mut BorgState) {
     /*** Clear old grids ***/
 
@@ -111,7 +127,7 @@ pub fn borg_update_light(st: &mut BorgState) {
 
     let cy = st.borg.c.y;
     let cx = st.borg.c.x;
-    let light = st.borg.tr(BI_LIGHT);
+    let light = light_radius(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), value(Param::cave_light_engine_radius));
 
     /* Player grid */
     borg_cave_light_hack(st, cy, cx);
@@ -229,5 +245,25 @@ pub fn borg_update_light(st: &mut BorgState) {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests_877 {
+    use super::light_radius;
+
+    #[test]
+    fn engine_radius_is_light_minus_one() {
+        // switch 0: C's radius
+        assert_eq!(light_radius(2, 0, 0), 2);
+        assert_eq!(light_radius(3, 0, 0), 3);
+        // switch 1: torch (2) -> 1, lantern/LIGHT_3 (3) -> 2, +1 light -> 0
+        assert_eq!(light_radius(2, 0, 1), 1);
+        assert_eq!(light_radius(3, 0, 1), 2);
+        assert_eq!(light_radius(1, 0, 1), 0);
+        assert_eq!(light_radius(0, 0, 1), 0);
+        // necromancer by unlight keeps C's radius; with a real light it does not
+        assert_eq!(light_radius(1, 4, 1), 1);
+        assert_eq!(light_radius(3, 4, 1), 2);
     }
 }

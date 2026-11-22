@@ -5763,3 +5763,25 @@ Word of Recall, weight 5).
 | `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:355` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:812` |
+
+## The Borg's own light radius (#877)
+
+The C Borg marks as lit by the Borg's own light every grid up to `BI_LIGHT`
+(`cur_light`) away (`borg_update_light`, borg-core/src/borg_cave_light.rs;
+C src/borg/borg-cave-light.c:111–112, "Radius 2 -- lantern radius"). The
+engine lights `radius = ABS(cur_light) - 1` (src/cave-view.c:658,
+`add_light` :616–646): a Wooden Torch (`LIGHT_2`, lib/gamedata/object.txt:241)
+lights distance 1 only. With C's radius a monster two grids away in the dark is
+"expected visible" (`borg_follow_kill_aux`), not seen, and deleted
+(`borg_follow_kill`, "C bug 24"); the Borg then walks back next to it (Human
+Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
+
+- **`cave_light_engine_radius`** (compiled 0, shipped 0). 1 = the engine's
+  radius, `cur_light - 1` (never below 0), and the radius-2 and radius-3+
+  blocks of `borg_update_light` follow it. A necromancer at `cur_light <= 1`
+  sees by unlight (src/cave-view.c:777–779) and keeps C's radius. 0 = C's
+  radius, today's play. The zoo measures it (RULES 14, 20) before it ships.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `cave_light_engine_radius` | 0 | flag | 0–1 | `borg_cave_light.rs:130` |
