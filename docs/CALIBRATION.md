@@ -70,7 +70,7 @@ chose them (RULES 14).
    verdict (tests 0, 1 and 2); `attack_reserve_spell_damage_only` for the
    reserve spell's "must be dangerous" test.
 3. **No faint next to what bites** (`attack_reserve_faint_percent`). Casting
-   `oops` mana short faints the caster `randint1(5 x oops + 1)` turns
+   `oops` mana short faints the caster `randint1(5 x oops + 1)` world ticks
    (player-spell.c:541-553, player-util.c:835-842), mean `(5 x oops + 2) / 2`
    world ticks (the counter falls once every 10 game turns, game-world.c:651,
    :1080), that is `energy / 10` Borg turns a tick for the Borg's speed.

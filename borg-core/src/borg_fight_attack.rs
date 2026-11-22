@@ -5864,7 +5864,7 @@ mod reserve_faint_tests {
     use super::*;
 
     /// #878: `randint1(5 * oops + 1)`: Magic Missile (1 mana) at 0 SP faints
-    /// 1 to 6 turns, 3.5 on average.
+    /// 1 to 6 world ticks, 3.5 on average.
     #[test]
     fn the_faint_lasts_its_mean() {
         assert_eq!(reserve_faint_turns(1), 3.5);
