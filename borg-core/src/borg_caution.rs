@@ -7415,9 +7415,15 @@ mod confused_step_tests {
 /// 34 world ticks after the reading (`effect-handler-general.c:1145`).
 /// 312081895 read its last scroll on DL1, took the stairs, had 42 game turns
 /// in town and was pulled to DL2 with no Recall bought. Held, the Recall
-/// fires on DL1 and the Borg reaches town with nothing pending. A danger at
-/// least the avoidance still takes the stairs, and the danger escapes
+/// fires on DL1 and the Borg reaches town with nothing pending. A danger
+/// above the avoidance still takes the stairs (the boundary of the stairs
+/// rule above it, `pos_danger > avoidance`), and the danger escapes
 /// (`borg_escape_stair`) are not held. 0 = C (`borg-caution.c:1171`).
+/// This is the up half of the crossing between town and DL1: the down half
+/// is already held by `recall_restricts` (#603, #627), and
+/// `recall_pending_escape`'s note names this gap. An arena level
+/// (`game-world.c:709` suspends the countdown there) has no staircase
+/// (`arena_gen`, `gen-cave.c:4010`), so the hold never applies there.
 pub(crate) fn recall_holds_up_stair(st: &BorgState, pos_danger: i32) -> bool {
     recall_holds_up_with(
         p(Param::caution_recall_dl1_hold_up) != 0,
@@ -7429,7 +7435,7 @@ pub(crate) fn recall_holds_up_stair(st: &BorgState, pos_danger: i32) -> bool {
 }
 
 fn recall_holds_up_with(on: bool, recalling: i32, depth: i32, danger: i32, avoidance: i32) -> bool {
-    on && recalling != 0 && depth == 1 && danger < avoidance
+    on && recalling != 0 && depth == 1 && danger <= avoidance
 }
 
 #[cfg(test)]
@@ -7441,7 +7447,8 @@ mod recall_dl1_hold_up_tests {
         // 312081895 at 10948: Recall pending on DL1, danger 0, avoidance 40.
         assert!(!recall_holds_up_with(false, 140, 1, 0, 40), "C: the stairs are taken");
         assert!(recall_holds_up_with(true, 140, 1, 0, 40), "the switch: held, the Recall fires on DL1");
-        assert!(!recall_holds_up_with(true, 140, 1, 40, 40), "a danger at the avoidance still takes them");
+        assert!(recall_holds_up_with(true, 140, 1, 40, 40), "a danger at the avoidance: held, as the stairs rule (pos_danger > avoidance)");
+        assert!(!recall_holds_up_with(true, 140, 1, 41, 40), "a danger above the avoidance still takes them");
         assert!(!recall_holds_up_with(true, 140, 2, 0, 40), "DL2: the staircase leads to DL1, not town");
         assert!(!recall_holds_up_with(true, 0, 1, 0, 40), "no Recall pending");
     }

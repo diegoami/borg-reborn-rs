@@ -48,9 +48,13 @@ the depth; `state.log` is the source here.
 - `town_recall_urgent_depth` (`borg_town_utility.rs:255`) sets the trip
   depth from which `town_recall_urgent` makes the first Recall urgent. 0
   keeps the dive gate, as #859 does today; 1 means any dungeon trip.
-- `caution_recall_dl1_hold_up` (`borg_caution.rs:7423`): while a Recall
+- `caution_recall_dl1_hold_up` (`borg_caution.rs:7429`): while a Recall
   counts down on DL1, caution does not take the up staircase unless the
-  danger reaches the avoidance. The danger escapes are not held.
+  danger is above the avoidance, the boundary of the stairs rule next to
+  it. The danger escapes are not held. It is the up half of the town/DL1
+  crossing; `recall_restricts` (#603, #627) already holds the down half.
+  An arena level has no staircase (`arena_gen`, `gen-cave.c:4010`), so the
+  hold never applies there.
 
 Unit tests: `urgent_recall_depth_tests`, `recall_dl1_hold_up_tests`.
 Both are new modules at the ends of their files, so that no other
@@ -76,16 +80,21 @@ pass. `scripts/borg-core-vendor.py check` passes. Smoke on the default
 core is 3/3 identical to `smoke-borg-rs`, so it was not re-recorded.
 
 **Left, and for the owner.**
-- The zoo should measure the two switches, each alone and both, against
-  the shipped settings on track-p at this PR's head. This session had no
-  access to diegoami/borg-zoo, so the request is in the PR body for the
-  owner to file or route (RULES 20). Possible endpoints are P7's descent
-  endpoint (alive at the cap, having reached DL5) and deaths with no
-  Recall carried.
+- The zoo measures the two switches, each alone and both, against the
+  shipped settings: the request is ZOO_ISSUE (RULES 20). The owner starts
+  it.
 - The counterfactual replays belong in borg-cemetery, beside the dossier
-  on branch `runs/2026-11-22-trackp-9085-full-deaths`. This session had
-  no write access there, so the arms and hashes above are the recipe.
+  on branch `runs/2026-11-22-trackp-9085-full-deaths`; the arms and hashes
+  above are the recipe.
 - The 29,000 turns on DL2 with "no up stairs found" are not covered here.
-  They are a separate stair-finding problem, and the jelly loop at the
-  end is #932.
+  They are the stair-finding pattern of #935 (this seed was added there).
+  The jelly loop at the end is #932.
 - Whether to ship either switch is the owner's decision.
+
+**Review (MiniMax-M3.1-Flash, PR #997 comment, on `1eecc73d`).** N1: the
+zoo request is filed. N2: the hold now names `recall_restricts` and
+`recall_pending_escape`. N3: the hold releases above the avoidance (`>`),
+as the stairs rule beside it does; the four replays keep their hashes.
+N4: the branch was renamed `task/P8.984-recall-restock`. N5: #935 is named
+above. N6: an arena has no staircase, so this is a note. N7: the zoo
+request asks for deaths on DL1 with a Recall counting down.

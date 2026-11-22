@@ -5901,16 +5901,23 @@ switches below are off by default, which reproduces today's play.
   any trip into the dungeon qualify. The dive gate does not move.
 - **`caution_recall_dl1_hold_up`** (compiled 0, shipped 0). While a Recall
   counts down on DL1, caution's "Take stairs up" is held unless the danger
-  reaches the avoidance (`recall_holds_up_stair`). The Recall then fires
+  is above the avoidance (`recall_holds_up_stair`), the boundary of the
+  stairs rule next to it (`pos_danger > avoidance`). The Recall then fires
   on DL1, and the Borg reaches town with nothing pending. The danger
-  escapes are not held. 0 = C (`borg-caution.c:1171`).
+  escapes (`borg_escape_stair`) are not held. 0 = C
+  (`borg-caution.c:1171`). This is the up half of the crossing between
+  town and DL1. The down half is already held by `recall_restricts` (#603,
+  #627), and `recall_pending_escape`'s note names the gap. With both
+  halves held, a Borg on DL1 waits out the countdown (15 to 34 ticks) or
+  fights. An arena level has no staircase (`arena_gen`), so the hold never
+  applies there.
 - On this seed, either switch or both reach the 100,000-turn cap alive
   (one seed, no claim; RULES 14). The zoo measures them.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
-| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7423` |
+| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7429` |
 
 ## The Borg's own light radius (#877)
 
