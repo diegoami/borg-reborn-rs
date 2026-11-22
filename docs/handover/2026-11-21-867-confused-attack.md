@@ -63,8 +63,9 @@ here.
   engine-backed state, which these tests do not have. The named cases cover
   the Necromancer and oil only.
 - `ranged_means` (the caution's "has a ranged attack") still says no while
-  confused; activations, rings and dragon armour were never blocked by C and
-  still aim at a target.
+  confused; activations, rings and dragon armour are still stopped while
+  confused (`cant_aim`, as C's `borg-fight-attack.c` gates; corrected after
+  the review of #868).
 - Targets on one of the 8 lines at range (a direction reaches them too).
 - **Measurement:** a borg-zoo arm, switch 1 against shipped (and with the
   CLW cure), per class: attacks chosen while confused, deaths by cause.

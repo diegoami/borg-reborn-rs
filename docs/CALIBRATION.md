@@ -50,8 +50,8 @@ would be the flask", and "if it has a wand/rod that must be an option too".
   tests' damage, for the item attacks only: a blow's damage there stays C's
   (full), so a confused fight that melee wins is judged as in C (review of
   #868); the blow's value is still weighted when the chooser compares it. Not changed: `ranged_means` (still no ranged means while
-  confused), activations, rings and dragon armour (C never stopped them while
-  confused; they still aim at a target).
+  confused), activations, rings and dragon armour (still stopped while
+  confused by `cant_aim`, as in C; review of #868).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
