@@ -913,6 +913,19 @@ borg_param_town_invisible_spell_percent = 3
 borg_param_town_phase_reserve = 6
 borg_param_town_phase_reserve_percent = 150
 
+# First cures before the Phase Door reserve (#987): a 127-gold Ranger bought
+# 6 Phase Door and no Cure Light Wounds (each reserved scroll, 150 percent of
+# the escape weight, outbids the first cure, which is worth about 170 percent
+# of a full heal's weight at 14 HP), then died to a crow with nothing to
+# drink. With town_first_cure > 0 the first that many healing potions are a
+# requirement, each worth town_first_cure_percent of the trip's escape weight.
+# The percent is a margin on the cure's whole value, not a threshold against
+# town_phase_reserve_percent (the purse decides on whole wares). 0 = off (today).
+# Per class with __<class>. The Ranger ships 2 (owner, 2026-11-22, borg_ranger.txt);
+# the other classes 0 until the zoo measures it (#1006).
+borg_param_town_first_cure = 0
+borg_param_town_first_cure_percent = 200
+
 # #789: reserve of oil available to throw and missiles for the equipped
 # launcher, counted together. Use __<class> for a class override.
 borg_param_town_ranged_reserve = 0
@@ -1084,6 +1097,16 @@ borg_param_caution_stairs_flight_ignore_danger = 1
 # #765: above 0, stair flights block awake monsters and pay this many extra
 # steps for danger equal to current HP. 0 keeps the existing flight routing.
 borg_param_caution_stairs_flight_threat_weight = 5
+# #881: how a weighted flight treats grids its map holds as unknown. 0 = one
+# step like floor (C); 1 = plus caution_stairs_flight_unknown_steps; 2 = refused.
+borg_param_caution_stairs_flight_unknown = 0
+borg_param_caution_stairs_flight_unknown_steps = 5
+# #881 part 2: with a known breeder near, retreat and back-up refuse a dead
+# end (1; a grid whose every known path out passes through the Borg's grid)
+# or also a grid farther from the way out than the Borg's (2). The way out:
+# known floor this many grids from every breeder, and the staircases. 0 = C.
+borg_param_caution_retreat_dead_end = 0
+borg_param_caution_retreat_dead_end_distance = 6
 
 # Clean path for every flight to the stairs (#743, the follow-up of #736):
 # 1 = a flight (a scary level, too much danger, "Looking for any stair")
@@ -1834,6 +1857,7 @@ borg_param_town_heal_reserve_hp_percent_ranger = 200
 borg_param_town_devices_percent__ranger = 115
 borg_param_town_phase_curve_scale_percent__ranger = 150
 borg_param_town_phase_reserve__ranger = 10
+borg_param_town_first_cure__ranger = 2
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
 borg_param_prepared_dl34_min_hp__ranger = 50
