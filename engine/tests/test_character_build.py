@@ -70,6 +70,16 @@ class CharacterBuildTest(unittest.TestCase):
             self.assertEqual((measured / name).read_bytes(), (control / name).read_bytes(), name)
         self.assertNotIn('synthetic', summary)
 
+    def test_capture_never_overwrites_an_existing_file(self):
+        # #858: the record is created new (fopen "x" on POSIX, _O_EXCL on
+        # Windows); an existing file is refused and left as it was.
+        record = self.base / 'existing.build'
+        record.write_bytes(b'keep me\n')
+        measured, result = self.launch('existing', 'menu', ('-capture-build', str(record), '-capture-build-level', '5'), turns=20000)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('cannot create synthetic build capture', (measured / 'stderr.log').read_text())
+        self.assertEqual(record.read_bytes(), b'keep me\n')
+
     def test_unreached_capture_is_explicit_without_changing_play(self):
         record = self.base / 'unreached.build'
         measured, result = self.launch('unreached', 'menu',
