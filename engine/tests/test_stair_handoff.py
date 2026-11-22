@@ -38,6 +38,8 @@ PINNED_TOWN_SETTINGS = [
     ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
     # #983: testing unknown potions when safe, shipped after the incident.
     ("item_test_unknown_potions", 0),
+    # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
+    ("kill_live_zero_hp", 0),
     # #941: the speed flag synced to the engine timer, shipped after the
     # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
     # end, which the recorded turns depend on).
