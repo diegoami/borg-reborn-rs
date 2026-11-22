@@ -383,7 +383,8 @@ fn set_health(kill: &mut BorgKill, m: &MonsterView) {
     };
 
     // Compute estimated HP based on number of * in monster health bar
-    kill.power = live_power(i32::from(m.maxhp) * pct / 100, m.hp, crate::params::value(crate::params::Param::kill_live_min_power)) as i16;
+    kill.power = live_power(i32::from(m.maxhp) * pct / 100, m.hp, crate::params::value(crate::params::Param::kill_live_min_power),
+        crate::params::value(crate::params::Param::kill_live_zero_hp) != 0) as i16;
     kill.injury = (100 - pct) as i16;
 }
 
@@ -391,8 +392,15 @@ fn set_health(kill: &mut BorgKill, m: &MonsterView) {
 /// with 1 HP of 9 (pct 11) is estimated at 0 and every attack on it scores
 /// 0 (the overkill caps). With `kill_live_min_power` a living monster's
 /// estimate is at least that much; 0 = off (C's estimate, unchanged).
-fn live_power(power: i32, hp: i16, floor: i32) -> i32 {
-    if hp > 0 && floor > 0 { power.max(floor) } else { power }
+///
+/// borg-reborn-rs (#975): the engine kills a monster only when its hp
+/// falls below 0 (`mon_take_hit`, mon-util.c:1300), so a monster at
+/// exactly 0 HP lives. With `zero_lives` (`kill_live_zero_hp`) the floor
+/// applies to it too: a 2-HP grey mold hit for 2 reads at least `floor`,
+/// not 0. Off, hp 0 keeps C's estimate of 0 (#546's test, `hp > 0`).
+fn live_power(power: i32, hp: i16, floor: i32, zero_lives: bool) -> i32 {
+    let living = hp > 0 || (zero_lives && hp == 0);
+    if living && floor > 0 { power.max(floor) } else { power }
 }
 
 /// Preload the spells from the race into this individual monster.
@@ -3565,20 +3573,43 @@ mod tests {
     #[test]
     fn a_living_monster_keeps_some_power() {
         // The floating eye of mage-2028599180: 1 HP of 9, pct 11.
-        assert_eq!(live_power(9 * 11 / 100, 1, 0), 0);
-        assert_eq!(live_power(9 * 11 / 100, 1, 1), 1);
-        assert_eq!(live_power(5, 5, 1), 5);
-        assert_eq!(live_power(0, 0, 1), 0);
+        assert_eq!(live_power(9 * 11 / 100, 1, 0, false), 0);
+        assert_eq!(live_power(9 * 11 / 100, 1, 1, false), 1);
+        assert_eq!(live_power(5, 5, 1, false), 5);
+        assert_eq!(live_power(0, 0, 1, false), 0);
         // Off is C's estimate for every input, a negative one included.
-        assert_eq!(live_power(-5, 1, 0), -5);
-        assert_eq!(live_power(-5, 1, 1), 1);
+        assert_eq!(live_power(-5, 1, 0, false), -5);
+        assert_eq!(live_power(-5, 1, 1, false), 1);
         // The class of the bug: 1 HP of maxhp truncates to 0 whenever
         // maxhp * (100 / maxhp) < 100.
         for maxhp in [3, 9, 12, 15, 22, 35, 45, 1000] {
             let pct = 100 / maxhp;
             assert_eq!(maxhp * pct / 100, 0, "{maxhp}");
-            assert_eq!(live_power(maxhp * pct / 100, 1, 1), 1, "{maxhp}");
+            assert_eq!(live_power(maxhp * pct / 100, 1, 1, false), 1, "{maxhp}");
         }
+    }
+
+    #[test]
+    fn a_monster_at_zero_hp_lives() {
+        // #975: mon_take_hit kills only at hp < 0 (mon-util.c:1300). The
+        // grey mold of 282602274 (2 HP, an arrow for 2: hp 0, pct 0) and
+        // the grey mushroom patch of 1723941400 (3 HP, a hit for 3).
+        for maxhp in [2, 3] {
+            let pct = 0;
+            // Off: today's play, 0 (with or without #546's floor).
+            assert_eq!(live_power(maxhp * pct / 100, 0, 1, false), 0, "{maxhp}");
+            assert_eq!(live_power(maxhp * pct / 100, 0, 0, false), 0, "{maxhp}");
+            // On: the floor reaches hp 0.
+            assert_eq!(live_power(maxhp * pct / 100, 0, 1, true), 1, "{maxhp}");
+            assert_eq!(live_power(maxhp * pct / 100, 0, 2, true), 2, "{maxhp}");
+        }
+        // On needs #546's floor: with the floor at 0 nothing changes.
+        assert_eq!(live_power(0, 0, 0, true), 0);
+        // A positive hp and a larger estimate are unchanged by the flag.
+        assert_eq!(live_power(5, 5, 1, true), 5);
+        assert_eq!(live_power(0, 1, 1, true), 1);
+        // A negative hp (a dead record, never in view) keeps the estimate.
+        assert_eq!(live_power(-1, -1, 1, true), -1);
     }
 
     #[test]

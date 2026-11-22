@@ -36,7 +36,7 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_unseen_belief.rs', 'src/borg_kit.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_kit.rs', 'src/borg_lone_target.rs', 'src/borg_unseen_belief.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {

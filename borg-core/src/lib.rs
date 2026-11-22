@@ -126,4 +126,5 @@ pub mod errands_plan;
 pub mod scary_list;
 mod borg_fast_fragile;
 mod borg_unseen_belief;
+mod borg_lone_target;
 mod borg_town_hunt;
