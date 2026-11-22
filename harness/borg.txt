@@ -694,13 +694,16 @@ borg_param_recover_unseen_probe_tries = 10
 borg_param_recover_unseen_probe_max_grids = 3
 borg_param_recover_unseen_act_age = 30
 
-# An unseen shooter (#981): with shot = 1, "You are hit by something sharp!"
-# (a bolt from a monster the Borg cannot see, an archer out of the light as
-# often as an invisible one) enters the mode above as a blow does, without
-# the blind attacks or Detect Invisible: no rest near where it struck, light
-# the room if possible, else walk away; drink below heal_hp_percent; struck
-# again far away, leave. 0 = off (shipped: today's play) until the zoo
-# measures it (Elf Warrior 1312323730 rested 18 times under a kobold archer).
+# An unseen shooter (#981): with shot = 1, "You are hit by ...!" (the
+# engine's message for any projection, an arrow, a bolt or a breath, from a
+# monster the Borg cannot see, or any projection while it is blind) enters
+# the mode above as a blow does: no rest near where it struck, Detect
+# Invisible, walk away, drink below heal_hp_percent. A hit is not taken to
+# mean the attacker is adjacent (no blind attacks in an episode of hits only,
+# unless blind or without light) or that it followed (no leave for it); the
+# episode ends when a known monster that casts or shoots dies. 0 = off
+# (shipped: today's play) until the zoo measures it (Elf Warrior 1312323730
+# rested 18 times under a kobold archer out of the light).
 borg_param_recover_unseen_shot = 0
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the

@@ -1153,6 +1153,9 @@ fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
         // borg-reborn-rs (#590): a scary monster's death, for the unlatch.
         let r_idx = st.kills.kills[k as usize].r_idx;
         crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
+        // borg-reborn-rs (#981): a caster's or shooter's death may end an
+        // episode of unseen hits.
+        crate::borg_recover::unseen_monster_died(st, k);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);
@@ -2038,7 +2041,7 @@ fn new_level(st: &mut BorgState) {
     b.unseen_probe = None;
     b.unseen_empty.clear();
     b.unseen_found = None;
-    b.unseen_ranged = false; // borg-reborn-rs (#981)
+    b.unseen_shot_only = false; // borg-reborn-rs (#981)
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
@@ -2384,6 +2387,7 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                     // pass counts for the unlatch too.
                     let r_idx = st.kills.kills[k as usize].r_idx;
                     crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
+                    crate::borg_recover::unseen_monster_died(st, k); // #981
                     borg_count_death(st, k);
                     borg_delete_kill(st, k);
                     set_msg_use(st, i, 4);
