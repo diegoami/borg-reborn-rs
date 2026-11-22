@@ -950,6 +950,11 @@ pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
     device_fail(skill, lev)
 }
 
+/// Whether the known stack is the single-purpose RESTORE_EXP potion.
+pub(crate) fn is_restore_life(item: &crate::borg_headers::borg_item_h::borg_item, sval: i32) -> bool {
+    item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION && i32::from(item.sval) == sval
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */

@@ -2525,12 +2525,16 @@ fn recall_blow_unmodelled(effect: &[u8]) -> bool {
 /// end of the delay and the most timer the poisoners can add in it
 /// (`timer_ticks`, every action a hit at the largest roll). Already
 /// poisoned, the whole delay counts: the Borg sees the flag, not the
-/// remaining duration (BI_ISPOISONED). Resist poison blocks the timer
-/// (player_timed.txt POISONED `fail:2:POIS`). Damage reduction is ignored.
+/// remaining duration (BI_ISPOISONED), and resistance does not stop it:
+/// resist poison only blocks new poison (player_timed.txt POISONED
+/// `fail:2:POIS`, checked by player_inc_check when the timer would grow,
+/// player-timed.c:926-967), while a running timer keeps costing HP
+/// (game-world.c:513-515; #954, P7 review). Damage reduction is ignored.
 fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, timer_ticks: f64, resists: bool) -> f64 {
-    if resists || ticks <= 0 { return 0.0; }
+    if ticks <= 0 { return 0.0; }
     let ticks = f64::from(ticks);
     if already_poisoned { return ticks; }
+    if resists { return 0.0; }
     earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(0.0)).max(0.0).min(timer_ticks.max(0.0)))
 }
 
@@ -2672,7 +2676,8 @@ mod incoming_units_tests {
         assert_eq!(super::recall_poison_hp(34, false, Some(40.0), 99.0, false), 0.0, "arrives after Recall");
         assert_eq!(super::recall_poison_hp(34, false, None, 0.0, false), 0.0);
         assert_eq!(super::recall_poison_hp(34, true, None, 0.0, false), 34.0, "an existing timer still ticks");
-        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 0.0, "resist poison blocks the timer");
+        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 34.0, "a running timer ticks under resistance (#954)");
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, true), 0.0, "resist poison blocks new poison");
         // White worm mass: speed 100 = energy 5, DL1. One action per two
         // ticks, each hit at most 6 ticks of timer: stacking keeps it going.
         assert_eq!(super::recall_poison_timer_ticks(2.0, 5.0, 1), 6.0);
@@ -2845,9 +2850,14 @@ mod category_threat_tests {
 }
 
 /// #760/#759: before any dungeon flight, including the light/countdown
-/// and depth-return rungs which otherwise precede borg_caution.
+/// and depth-return rungs which otherwise precede borg_caution. In order:
+/// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
+/// the winning fight (#759).
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
-    crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
+    crate::borg_fight_attack::attack_on_sight(st)
+        // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
+        || crate::borg_lone_target::attack(st)
+        || winning_fight(st)
 }
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
@@ -7196,6 +7206,15 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
         st.borg.unseen_bumps.shot = Some(UnseenOilShot { grid: g, dead: false, resolved: false });
         return true;
     }
+    // borg-reborn-rs (#878): a Phase Door only for a fresh bump, and only
+    // with danger here (both off at 0).
+    let age = now - st.borg.unseen_bumps.grids[i].at;
+    if let Some(why) = unseen_phase_refusal(age, danger,
+        p(Param::caution_unseen_bump_phase_turns), p(Param::caution_unseen_bump_phase_min_danger))
+    {
+        borg_note(st, &format!("# Phase (unseen bump): no, {why} (#878)"));
+        return false;
+    }
     // The ordinary adjacent-monster rule cannot rate a monster with no
     // known race. This site's explicit, bounded bump evidence is its gate.
     if crate::borg_escape::unseen_bump_phase(st, danger) {
@@ -7206,9 +7225,33 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
     false
 }
 
+/// borg-reborn-rs (#878): why the unseen-bump Phase Door is refused, if it
+/// is: the bump `age` game turns old over `max_age`, or the danger here
+/// under `min_danger` (each off at 0).
+fn unseen_phase_refusal(age: i32, danger: i32, max_age: i32, min_danger: i32) -> Option<String> {
+    if max_age > 0 && age > max_age {
+        Some(format!("the bump is {age} game turns old (more than {max_age})"))
+    } else if min_danger > 0 && danger < min_danger {
+        Some(format!("danger {danger} under {min_danger}"))
+    } else {
+        None
+    }
+}
+
 #[cfg(test)]
 mod unseen_bump_tests {
     use super::*;
+
+    /// #878: the Mage 461220874's second unseen-bump Phase Door came 132
+    /// game turns after the bump, at danger 0.
+    #[test]
+    fn the_unseen_bump_phase_needs_a_fresh_bump_and_danger() {
+        assert!(unseen_phase_refusal(132, 0, 0, 0).is_none(), "both off: today's play");
+        assert!(unseen_phase_refusal(132, 0, 20, 0).is_some(), "an old bump");
+        assert!(unseen_phase_refusal(20, 0, 20, 0).is_none(), "a fresh one");
+        assert!(unseen_phase_refusal(0, 1, 0, 5).is_some(), "danger 1 under 5");
+        assert!(unseen_phase_refusal(0, 5, 0, 5).is_none());
+    }
     fn pos(x: i32, y: i32) -> loc { loc { x, y } }
     #[test]
     fn only_unseen_player_melee_is_evidence() {
