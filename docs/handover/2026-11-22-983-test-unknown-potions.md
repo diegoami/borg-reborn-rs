@@ -26,6 +26,21 @@ others are unchanged). Smoke: 0/3 identical (the games now test potions),
 re-recorded, all three alive at their cap. One case, divergent from 2,053: a
 direction, not an effect (RULES 14).
 
+**Review (MiniMax M3.1 Flash, at 18dc12cc).** P1: CI's engine job failed
+(three stair-handoff incident tests assert exact turns); fixed in `ac056adc`
+by pinning `item_test_unknown_potions = 0` there, as that test pins #901's
+two settings. P2: the cover was the next turn only, but Sleep paralyses for
+5+1d5; now `item_test_unknown_danger_turns` (10) sums the danger over the
+worst case. P2: `BI_ISPARALYZED` was missing from the status list; added, so a
+Borg asleep from one test does not test the next. P3: the harmful-kinds list
+covered DL1-15 only; it now lists every harmful kind, and
+`item_test_unknown_max_depth` (30) keeps the test above Dragon Breath (DL40+,
+which asks for an aim). P3: `docs/CALIBRATION.md` has the four parameters.
+P3: RULES 4 (body fixed; later commits carry no trailers; the published ones
+are the owner's call). P3: the branch name is the first lead's: the owner's
+call. Replays after the change: as before (17626119 lives, test off
+identical, the 13 cases unchanged).
+
 **Where this meets other work.**
 - #969/#976 (kill-on-sight HP floor): its `has_cure` counts only known
   potions, so a learned CLW also lets the floor yield more often. Independent

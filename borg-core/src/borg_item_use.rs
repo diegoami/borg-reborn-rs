@@ -31,7 +31,7 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FOOD, BI_FRACT, BI_ISAFRAID, BI_ISBLIND,
     BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR,
-    BI_ISFIXWIS, BI_ISFORGET, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
+    BI_ISFIXWIS, BI_ISFORGET, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPARALYZED, BI_ISPOISONED, BI_ISSTUN,
     BI_ISWEAK, BI_MAXHP, BI_RBLIND, BI_RCONF,
 };
 use crate::headers::list_effects_h::EF_NOURISH;
@@ -175,15 +175,21 @@ fn last_unaware_potion(st: &BorgState) -> i32 {
 }
 
 /// borg-reborn-rs (#983): whether a safe moment to learn a potion flavour
-/// by drinking it: in the dungeon, nothing dangerous here (`danger` of the
-/// next turn is 0), at least `min_hp_percent` of max HP, no harmful status
-/// (`bad_status`), food in the pack (Salt Water empties the stomach,
-/// object.txt). The unknown kinds at DL1-15 that harm are Sleep, Blindness,
-/// Confusion, Poison, Slowness, Surprise and Salt Water (object.txt); none
-/// kills by itself.
-pub(crate) fn unknown_potion_test_safe(depth: i32, cur_hp: i32, max_hp: i32, min_hp_percent: i32,
-    danger: i32, bad_status: bool, food: i32) -> bool {
-    depth > 0 && danger == 0 && !bad_status && food > 0
+/// by drinking it: in the dungeon, no deeper than `max_depth`, no danger here
+/// over the turns a bad potion can cost (`danger` is summed over
+/// `item_test_unknown_danger_turns`: Sleep paralyses for 5+1d5 turns,
+/// object.txt), at least `min_hp_percent` of max HP, no harmful status
+/// (`bad_status`, paralysis included: a Borg asleep from the last test does
+/// not test the next), food in the pack (Salt Water empties the stomach).
+/// The harmful kinds a Borg can find: Sleep, Blindness, Confusion, Poison,
+/// Slowness (DL0-10), Salt Water (DL3-15), Surprise (DL10-15), the stat swaps
+/// Brawn to Toughness (DL20-40, one stat lost for another); none kills by
+/// itself, but a paralysis or Poison is several turns without action or
+/// regeneration. Dragon Breath (DL40+) asks for an aim: `max_depth` keeps the
+/// test above it.
+pub(crate) fn unknown_potion_test_safe(depth: i32, max_depth: i32, cur_hp: i32, max_hp: i32,
+    min_hp_percent: i32, danger: i32, bad_status: bool, food: i32) -> bool {
+    depth > 0 && depth <= max_depth && danger == 0 && !bad_status && food > 0
         && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent
 }
 
@@ -206,9 +212,11 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
         .into_iter()
         .any(|f| st.borg.tr(f) != 0);
     let (y, x) = (st.borg.c.y, st.borg.c.x);
-    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
-    if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP),
-        param(Param::item_test_unknown_min_hp_percent), danger, bad_status, st.borg.tr(BI_FOOD))
+    let turns = param(Param::item_test_unknown_danger_turns).max(1);
+    let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
+    if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), param(Param::item_test_unknown_max_depth),
+        st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::item_test_unknown_min_hp_percent),
+        danger, bad_status, st.borg.tr(BI_FOOD))
     {
         return false;
     }
@@ -227,14 +235,16 @@ mod unknown_potion_tests {
 
     #[test]
     fn only_a_safe_moment_in_the_dungeon() {
-        assert!(safe(1, 21, 28, 50, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28, danger 0");
-        assert!(!safe(0, 28, 28, 50, 0, false, 3), "not in town");
-        assert!(!safe(1, 28, 28, 50, 5, false, 3), "a danger next turn");
-        assert!(!safe(1, 13, 28, 50, 0, false, 3), "below the HP floor");
-        assert!(safe(1, 14, 28, 50, 0, false, 3), "at the floor");
-        assert!(!safe(1, 28, 28, 50, 0, true, 3), "a harmful status");
-        assert!(!safe(1, 28, 28, 50, 0, false, 0), "no food after a Salt Water");
-        assert!(!safe(1, 0, 0, 50, 0, false, 3), "no max HP");
+        assert!(safe(1, 30, 21, 28, 50, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28, danger 0");
+        assert!(!safe(0, 30, 28, 28, 50, 0, false, 3), "not in town");
+        assert!(!safe(31, 30, 28, 28, 50, 0, false, 3), "not below the depth cap (Dragon Breath)");
+        assert!(safe(30, 30, 28, 28, 50, 0, false, 3), "at the depth cap");
+        assert!(!safe(1, 30, 28, 28, 50, 5, false, 3), "a danger within the turns");
+        assert!(!safe(1, 30, 13, 28, 50, 0, false, 3), "below the HP floor");
+        assert!(safe(1, 30, 14, 28, 50, 0, false, 3), "at the floor");
+        assert!(!safe(1, 30, 28, 28, 50, 0, true, 3), "a harmful status (paralysis included)");
+        assert!(!safe(1, 30, 28, 28, 50, 0, false, 0), "no food after a Salt Water");
+        assert!(!safe(1, 30, 0, 0, 50, 0, false, 3), "no max HP");
     }
 }
 

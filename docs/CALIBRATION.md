@@ -10,6 +10,31 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Testing unknown potions when safe (#983)
+
+Four parameters added (the registry now holds **2380**). #983's Priest
+(seed 17626119, zoo run 45028029063) died confused with four Cure Light
+Wounds it had never learned: a flavour found on the floor, which #470 forbids
+it to try. Owner, 2026-11-22: "test when safe".
+
+- **`item_test_unknown_potions`** (compiled 0, **shipped 1**):
+  `borg_quaff_unknown_when_safe`, right after `borg_test_stuff` in
+  `borg_think_dungeon`, drinks one unknown potion when in the dungeon down to
+  `item_test_unknown_max_depth` (shipped 30: Dragon Breath, DL40+, asks for
+  an aim), with danger 0 over `item_test_unknown_danger_turns` (10: Sleep
+  paralyses for 5+1d5, object.txt), at least
+  `item_test_unknown_min_hp_percent` of max HP (50), no harmful status
+  (paralysis included) and food in the pack (Salt Water). A bad potion costs
+  turns or a stat; none kills by itself. #470 still forbids unknown scrolls,
+  mushrooms, devices and any unknown item in an emergency.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:203` |
+| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:211` |
+| `item_test_unknown_danger_turns` | 10 | turns | 1–50 | `borg_item_use.rs:215` |
+| `item_test_unknown_max_depth` | 30 | level | 0–128 | `borg_item_use.rs:217` |
+
 ## Confused attack on the grey mushroom patch, shipped (#901)
 
 No parameter added; shipped values changed. Owner, 2026-11-22, after #867
