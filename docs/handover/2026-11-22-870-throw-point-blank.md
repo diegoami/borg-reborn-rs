@@ -71,3 +71,42 @@ settings/scary list and current reference files. Main's existing staircase
 and release changes remain in this branch. Fresh merged-runtime checks
 are recorded below when complete. Historical evidence above stays pinned
 to `e037588b`; it does not measure this newly synchronized runtime.
+
+The combined runtime is `6f9284f8aa1e483cf271dbfaff648cbf0707e7b4`:
+source SHA256 `3264926c6d606fdc32bad860704c8c02ea2566d09ee6d84d9ef9821953a0db1f`,
+binary SHA256 `7d79e5e6676aa79a3ea1f8d70eeaf10a60e158d475a109d8ccefdd883048c34b`
+(clean GCC14.2/RTL build). Formatting/Clippy and workspace checks pass;
+core 631 pass / 4 ignored; citations 2358/2358; vendor contract passes;
+scripts 53 (1 skipped) and tools 96 tests pass.
+
+Its native smoke matches track-p's Mage and Priest streams. Warrior first
+differs at key 978 / turn 7412: the accepted staircase handoff carried from
+main permits Recall instead of restarting the down-stair flight. Refresh
+only the Warrior reference and suite provenance from the clean combined
+runtime; preserve Mage/Priest reference bytes. Two actual smoke attempts
+produce identical keys/messages/states for all three runs, and the completed
+suite matches the combined reference 3/3. The first suite's games all lived
+but its final timing aggregation failed because bc was absent from PATH;
+loading the task toolchain environment fixes that operational failure.
+
+The main staircase tests were written against their pre-#859/#869 birth
+settings. With the new town defaults and grey-mushroom attack entry their
+recorded incident turns are absent, so all three fail. Pin those tests to
+#859's five switches off and the exact scary-list bytes at `f57499d0`
+(`harness/fixtures/stair-handoff-scary-monsters.txt`), retaining all original
+trigger/turn/grid/no-bounce assertions. All three incident tests then pass;
+this changes no shipped settings or staircase/throw runtime code. A first
+engine-suite attempt also exhausted disk; only reproducible task-owned
+Cargo cache products were removed and the suite rerun. All failed attempts
+and diagnostics remain in the task's local validation logs.
+
+New raw validation is retained at `/workspace/work/t870-review-validation`
+and `/tmp/t870-review-*.log`; it has not been exported to Cemetery while
+that separate publication remains blocked. The original Cemetery packet
+and Zoo e037588b work retain their original runtime scope. Its historical
+README's two wild-dog examples are not the full count; the corrected eleven
+score/four gate/zero final-choice count above supersedes that narrowing.
+
+Final full engine rerun: 96 tests, 4 skipped, OK (including all three pinned
+staircase fixtures). Product runtime remains the clean `6f9284f8` build above;
+the following commit changes only test fixtures, reference data and this note.

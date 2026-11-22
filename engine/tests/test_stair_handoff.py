@@ -1,4 +1,4 @@
-"""Exercise the adjacent-stair handoff in the shipped borg-rs core.
+"""Exercise the adjacent-stair handoff in borg-rs with its incident settings.
 
 The former smoke reference returns to the same down stair repeatedly after
 turn 7,446. This test runs the engine and checks the outcome independently
@@ -29,7 +29,19 @@ class StairHandoffTest(unittest.TestCase):
                    if not key.startswith(("BORG_", "BORGH_", "ANGBAND_BIN"))}
             if cemetery := os.environ.get("BORG_CEMETERY_DIR"):
                 env["BORG_CEMETERY_DIR"] = cemetery
-            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off")
+            # The exact incident turns/grids below were captured before #859.
+            # Pin its five new town switches off and use the scary list at
+            # f57499d0, before #869's grey-mushroom attack entry. These settings
+            # preserve the recorded incident turns/grids asserted below.
+            env.update(
+                BORG_CORE="borg-rs", BORG_CORE_TRACE="off",
+                BORG_SCARY_LIST=str(ROOT / "harness/fixtures/stair-handoff-scary-monsters.txt"),
+                BORG_TXT_SET=";".join(f"borg_param_{name}=0" for name in (
+                    "town_departure_free_weight", "town_departure_free_slots",
+                    "town_store_keep_min", "town_recall_curve_scale_percent",
+                    "town_recall_urgent",
+                )),
+            )
             result = subprocess.run(
                 [str(ROOT / "harness/run.sh"), str(out), str(seed), "0", str(player_class), str(stop_turn), "menu"],
                 cwd=ROOT, env=env, capture_output=True, text=True, timeout=60,
