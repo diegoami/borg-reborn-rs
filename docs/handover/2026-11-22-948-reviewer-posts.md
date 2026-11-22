@@ -19,4 +19,8 @@ posted anyway; the rule would have told it to answer in chat. The review
 also found the older sentences that still gave the posting to the
 session. Both are fixed in #942.
 
-**Left.** `track-p` gets the rule with the next sync of `main`.
+**Left.** None as an issue. `track-p` gets the rule through a CI-checked
+sync PR from `main` after this merges (owner, 2026-11-22).
+
+**For the owner.** This is a rule for every track, so the PR targets
+`main`; `track-p` follows by that sync.

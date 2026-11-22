@@ -12,7 +12,8 @@ whatever the model.
    (rule 1a). CI success is not review approval. At each
    milestone, stop and open the review/promotion PR **`track-p` → `main`**,
    pinned to an exact commit. The owner chooses the reviewer; the session
-   may launch that reviewer, which posts its review on the PR (rule 6). Findings are fixed
+   may launch that reviewer, which posts its review on the PR (rule
+   6). Findings are fixed
    through PRs into `track-p`. Only after the milestone review is
    accepted and CI is green does the owner merge that promotion, or
    explicitly delegate that reviewed merge. A session never promotes P to
@@ -109,7 +110,8 @@ not undo other-track work already authorized before the gate.
    the owner to run.
    **The reviewer posts its own review** (owner, 2026-11-22: reviewers
    kept returning findings in chat). The reviewer the owner named, however
-   it was launched (a model, a session the owner asked to review, a tool),
+   it was launched (the owner, a model, a session the owner asked to review,
+   a tool),
    posts the finished review on the PR it reviews, or on the issue when
    what is reviewed has no PR, through whatever write path it has: `gh`
    (`gh pr comment <number> --repo <owner>/<repo> --body-file <file>`, or
@@ -123,8 +125,9 @@ not undo other-track work already authorized before the gate.
    cover, when they differ). The reviewer answers with the comment's URL.
    Findings returned only in chat are not a delivered review. A reviewer
    with no write path at all says so in the first line of its answer and
-   gives the full review; only then does the session post it, unedited and
-   headed the same way. The session never posts a second copy of a review
+   gives the full review, or the owner ran the review and has not posted
+   it; only then does the session post it, unedited and headed the same
+   way. The session never posts a second copy of a review
    already on the PR. Either way the review is on the PR (or issue) it
    reviews, so the findings and the pin travel with the code. Posting it is
    not the owner's acceptance (rule 1a).

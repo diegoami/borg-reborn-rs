@@ -239,18 +239,20 @@ context. A milestone review is done by the owner or by a model of a
 both in the review PR.
 
 **If you are the reviewer, post your review on the PR yourself** (owner,
-2026-11-22; RULES 6). However you were launched (a model the owner
-launched, a session the owner asked to review, a tool), post the finished
+2026-11-22; RULES 6). However you were launched (the owner, a model
+the owner launched, a session the owner asked to review, a tool), post the finished
 review on the PR it reviews (on the issue, when there is no PR) through
 whatever write path you have: `gh pr comment <number> --repo
 diegoami/borg-reborn-rs --body-file <file>` (`gh issue comment` for an
 issue), a connected GitHub App or connector, or an MCP GitHub server.
 Post a conversation comment, never a GitHub review body, *approve* or
 *request changes*. Head it with the reviewer the owner named (model and
-tool), the pinned commit and the head at review time, and answer with the
-comment's URL. Findings returned only in chat are not a delivered review.
+tool), where the owner named it, the pinned commit and the head at review
+time (and which of the two the findings cover, when they differ), and
+answer with the comment's URL. Findings returned only in chat are not a delivered review.
 Only if you have no write path at all, say so in the first line of your
-answer and give the full review; the session then posts it unedited, and
+answer and give the full review; then, or when the owner ran the review
+and has not posted it, the session posts it unedited, and
 never posts a second copy of a review already on the PR. Posting is not
 the owner's acceptance (RULES 1a). Every review prompt the session writes
 says this in its first lines, with the exact command for its PR and the
