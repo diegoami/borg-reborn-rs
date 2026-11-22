@@ -6592,6 +6592,23 @@ At 1 the retreat is refused then, and also toward a destination whose danger
 is still at or above the HP. Compiled and shipped 0; the margin 5 is a
 hypothesis.
 
+**Why shipped 0 (P8, 2026-11-22).** On the zoo game (`7f8c6b80` + the fix)
+the switch alone lives to the cap: at 64,444 the refused retreat leaves the
+turn to the emergency Phase Door. borg-zoo#652's small and medium runs on
+`67a0c69d` (360 paired starts, 100,000 turns) give the `retreat` arm 0 rescued
+and 3 newly killed (Hobbit Ranger 1248006956 by Fang at 5,395; Elf Paladin
+262549225 at 56,728; Half-Elf Priest 584077430 at 24,156), mean CL and depth
+level with the control. Replayed key for key, the first two follow refusals
+from Fang (+10) where the Phase rule says "the fight is not lost": the Borg
+attacks instead of stepping. A monster at +10 gains 20 energy a game turn
+against the Borg's 10 (`game-world.c:68-89`, `:136-139`) and acts at 100
+(`constants.txt:125`, `mon-move.c:1919`, `:1945`): it moves twice per Borg action, so the step
+does cost it one of its two moves (one bite, not two). The premise holds
+better for the hasted spiders (+20 to +22, three moves). The third death comes
+15,000 turns after its only changed decision. At margin 15 the three replay
+the control key for key, and the zoo game keeps its rescue (the same keys as
+at 5): a lead for a zoo arm, not a measurement (RULES 14).
+
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `caution_retreat_from_faster` | 0 | flag | 0–1 | `borg_caution.rs:1158` |

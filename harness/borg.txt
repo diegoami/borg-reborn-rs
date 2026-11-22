@@ -1079,8 +1079,11 @@ borg_param_caution_desperate_fast_danger_percent = 50
 # #916: no strategic retreat (the step to a happier grid) while an awake
 # monster in contact is faster than the Borg by the margin (an observed haste
 # counted), nor to a grid whose danger is still at or above the HP; the
-# escapes and the outmatched cure decide. Shipped 0 (today's play); the margin
-# 5 is a hypothesis.
+# escapes and the outmatched cure decide. Shipped 0 (today's play): in
+# borg-zoo#652's small and medium runs (360 starts) it rescued none and newly
+# killed 3; where no escape takes the turn the Borg fights instead, and a step
+# from a +10 monster does cost it one of its two moves. The margin 5 is a
+# hypothesis (at 15 the three new deaths replay the control).
 borg_param_caution_retreat_from_faster = 0
 borg_param_caution_retreat_faster_margin = 5
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
