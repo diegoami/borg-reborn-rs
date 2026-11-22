@@ -1449,6 +1449,9 @@ borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34
+# #880: the forecast prices POISON (dice + timer) and status blows as HP and
+# never vetoes on a breeder; compiled 0, shipped 1 (owner, 2026-11-22).
+borg_param_caution_recall_blow_model = 1
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
