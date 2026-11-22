@@ -219,8 +219,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:1910` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1671` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2010` |
-| `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:848` |
-| `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:848` |
+| `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1138` |
+| `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1141` |
 
 ## Dark-entry detection exception (#796)
 
@@ -376,8 +376,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:1966` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:1966` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:667` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:671` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:898` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:874` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
@@ -1371,7 +1371,7 @@ same way are healing objects"; no reserve, only the curve.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:885` |
-| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:681` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:718` |
 
 ## No rest while breeders are known (#644)
 
@@ -2414,9 +2414,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:614` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:618` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:471` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:605` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:609` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2544,11 +2544,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:496` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:563` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:567` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2195` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2110` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2227` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2132` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6142,7 +6142,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2151` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2173` |
 
 ## #895: devices as variety (town)
 
@@ -6163,8 +6163,14 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
   and **`_control`** 5 (charges). Above 0, `observe` adds one requirement row
   per situation a learned device answers, counted in charges (`DEV_ATTACK`:
   Magic Missile, Stinking Cloud, damage rods; `DEV_ESCAPE`: a Staff of
-  Teleportation; `DEV_DETECT`: Detect Invisible, Detect Evil, Mapping;
-  `DEV_CONTROL`: Slow, Hold, Confuse Monster and Teleport Other). The first N
+  Teleportation; `DEV_DETECT`: Detect Evil, Mapping;
+  `DEV_CONTROL`: Slow, Hold, Confuse Monster, and Teleport Other, which keeps a
+  monster away and is counted with them). A Staff of Detect Invisible feeds the
+  prepared Detect Invisible row (#863), one copy a charge up to
+  `town_prepared_invisible`, and no device row: a second row would count it
+  twice (review of #898, F2). A Wand of Light's damage is `LIGHT_WEAK`, which
+  hurts light-sensitive monsters only, so it does not fill the attack row (F6);
+  the shared ATTACK curve counts it as before. The first N
   charges together are worth `town_device_percent` of the trip weight (24
   percent of 50,000 is 12,000, each of ten attack charges 1,200), nothing past
   them. Charges are scaled by `town_devices_percent` (the device skill by class,
@@ -6176,8 +6182,12 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
   row has value only while the purse after the urgent needs reaches this much,
   or a Staff of Teleportation is already carried, so a poor Borg never spends
   its purse on one and a carried staff is never sold because the purse fell
-  during a visit (`escape_gated`). At 2000 gold a staff is about 6 value per gold
-  against 100 for a wand, so by value per gold it comes last in any case.
+  during a visit (`escape_gated`). The threshold is on the purse, not on the
+  price (a staff costs 2000): 3000 means "keeps 1000 after buying one", and a
+  Borg with 2999 buys none though it could afford it. By value per gold a staff
+  (12,000 over 2000 gold, about 6 a gold) comes far behind the cheapest device
+  that fills a row (a Wand of Magic Missile or of Stinking Cloud, or a Staff of
+  Detect Invisible, 200 gold: about 60 a gold), so it comes last in any case.
 - Unit check (`a_charged_device_is_kept_as_variety`): a ten-charge attack wand
   is worth the target (12,000) against next to nothing on an ATTACK curve
   saturated by shots and flasks; each charge up to ten is worth the same and an

@@ -135,9 +135,13 @@ const DEV_ATTACK: usize = 76;
 const DEV_ESCAPE: usize = 77;
 const DEV_DETECT: usize = 78;
 const DEV_CONTROL: usize = 79;
-/// Situation capabilities a device supplies -> its device row.
-const DEVICE_ROWS: [(usize, usize); 7] = [(ATTACK, DEV_ATTACK), (TELEPORT, DEV_ESCAPE),
-    (INVISIBLE, DEV_DETECT), (MONSTERS, DEV_DETECT), (MAP, DEV_DETECT), (CONTROL, DEV_CONTROL), (OTHER, DEV_CONTROL)];
+/// Situation capabilities a device supplies -> its device row. Invisible
+/// detection is not here: a Staff of Detect Invisible already fills the prepared
+/// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
+/// second row would count it twice (review of #898, F2). Teleport Other
+/// (`OTHER`) is grouped with the control devices: it keeps a monster away.
+const DEVICE_ROWS: [(usize, usize); 6] = [(ATTACK, DEV_ATTACK), (TELEPORT, DEV_ESCAPE),
+    (MONSTERS, DEV_DETECT), (MAP, DEV_DETECT), (CONTROL, DEV_CONTROL), (OTHER, DEV_CONTROL)];
 /// A capability with a knee of its own -> its row.
 const STAPLES: [(usize, usize); 4] = [(PHASE, STAPLE_PHASE), (THROWN_OIL, STAPLE_OIL),
     (FOOD, STAPLE_FOOD), (LIGHT, STAPLE_LIGHT)];
@@ -824,8 +828,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         // it answers, on that situation's device row.
         if device_on(st) {
             let charges = scale_percent(uses, param(Param::town_devices_percent));
-            let mut rows: Vec<usize> = DEVICE_ROWS.iter().filter(|&&(cap, _)| out.iter().any(|&(id, units)| id == cap && units > 0))
-                .map(|&(_, row)| row).collect();
+            let attack = device_attack(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
+            let mut rows: Vec<usize> = DEVICE_ROWS.iter().filter(|&&(cap, row)| out.iter().any(|&(id, units)| id == cap && units > 0)
+                && (row != DEV_ATTACK || attack)).map(|&(_, row)| row).collect();
             rows.sort_unstable(); rows.dedup();
             for row in rows { out.push((row, charges)); }
         }
@@ -1550,6 +1555,23 @@ mod tests {
         assert_eq!(m.value(HEAL, &m.curves[HEAL], 40 * clw), plain, "`value` leaves the healing curve to `gain`");
     }
 
+    /// #895 (review of #898, F2 and F6): a Staff of Detect Invisible feeds the
+    /// prepared Detect Invisible row and no device row; a Wand of Light's damage
+    /// is light only and does not fill the attack row, where a Wand of Magic
+    /// Missile's does.
+    #[test]
+    fn device_rows_do_not_double_count_or_count_light() {
+        use crate::headers::list_effects_h::{EF_BOLT_OR_BEAM, EF_LINE};
+        use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
+        assert!(DEVICE_ROWS.iter().all(|&(cap, _)| cap != INVISIBLE), "invisible detection is the prepared row's");
+        assert!(DEVICE_ROWS.iter().any(|&(cap, row)| cap == MONSTERS && row == DEV_DETECT));
+        let light = [(EF_LINE as u16, PROJ_LIGHT_WEAK as i32, 27)];
+        let missile = [(EF_BOLT_OR_BEAM as u16, 0, 18)]; // subtype 0 is PROJ_ARROW, native damage 0..=24
+        assert!(!device_attack(&light, 100, 1000, false), "a Wand of Light is not an attack device");
+        assert!(device_attack(&missile, 100, 1000, false), "a Wand of Magic Missile is");
+        assert!(device_attack(&[light[0], missile[0]], 100, 1000, false), "one real attack effect is enough");
+    }
+
     /// #895 (owner: "we are going to need space for other devices"): a learned,
     /// charged device is worth keeping on its situation's row (each charge an Nth
     /// of the target, nothing past it), where on the shared ATTACK curve, saturated
@@ -2159,6 +2181,16 @@ fn device_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_
 /// `charges` charges worth `percent` of the trip weight together, each an Nth.
 fn device_row(trip_weight: i64, percent: i32, charges: i32) -> (i64, i64) {
     (scale_percent(trip_weight, percent), -i64::from(charges.max(1)) * UNIT)
+}
+
+/// borg-reborn-rs (#895, review of #898 F6): whether a device does damage
+/// beyond light. A Wand of Light's `LINE:LIGHT_WEAK` hurts light-sensitive
+/// monsters only, so its charges do not fill the ranged attack row; the shared
+/// ATTACK curve still counts them as before.
+fn device_attack(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> bool {
+    use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
+    let kept: Vec<(u16, i32, i64)> = effects.iter().filter(|&&(_, subtype, _)| subtype as u32 != PROJ_LIGHT_WEAK).copied().collect();
+    effect_supply_for_consumer(&kept, hp, service_turns, confusion).iter().any(|&(id, units)| id == ATTACK && units > 0)
 }
 
 /// borg-reborn-rs (#895): whether the escape device row is switched off for a
