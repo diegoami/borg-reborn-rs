@@ -19,12 +19,13 @@ New parameter `caution_recall_blow_model` (compiled 0, shipped 1 in
 - waives a breeder's (RF_MULTIPLY) unmodelled risk (future-proofing: no breeder
   at 574b618c has a dangerous spell or SHATTER; POISON is what fixed the worm);
 - caps contact HP at the k fastest attackers for the whole delay, k = the
-  Borg's neighbours that are not known wall, and scales RAND_25/RAND_50
+  Borg's neighbours that are not known rubble or wall, and scales RAND_25/RAND_50
   monsters by their attack share (a worm mass: 0.61).
 
 Review (MiniMax-M3, on 8e804eb8) findings 1-6 were addressed in the next
 commit; 7 (ship 0 or 1), 8 (attribution: PR footer removed, published commit
-trailers stay) and 9 (branch name) are reported to the owner.
+trailers stay) and 9 (branch name) are reported to the owner. The re-review
+(on 5a8404d0) found rubble counted as open; fixed (rubble is not PASSABLE).
 
 The fight certificate (`winning_fight`, `unknown_fight`/`unknown_damage`)
 is unchanged. A note `# Flight Recall forecast: … (#880)` names the cap, the poison HP and

@@ -5308,7 +5308,7 @@ POISONED `fail:2:POIS`). Only SHATTER (an earthquake, `mon-blows.c:1086-1110`)
 and ranged spells stay unmodelled. A breeder's (`RF_MULTIPLY`) unmodelled risk
 is waived (future-proofing: no breeder at `574b618c` has a dangerous spell or
 SHATTER). Contact HP is capped at the k fastest attackers for the whole delay,
-k being the neighbours of the Borg that are not known wall (8 if a reachable
+k being the neighbours of the Borg that are not known rubble or wall (8 if a reachable
 attacker passes walls; `mon-move.c:1620-1632`), and a RAND_25/RAND_50 monster's
 rate is scaled by its attack share, 1 − s + s·(1 − (7/8)^5) for stagger chance
 s (`mon-move.c:1087-1103,1571-1632`). A hypothesis

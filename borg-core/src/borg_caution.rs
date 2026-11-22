@@ -2480,16 +2480,19 @@ fn recall_stagger_attack_share(rand_25: bool, rand_50: bool) -> f64 {
     1.0 - stagger + stagger * hit_when_staggering
 }
 
-/// #880: grids next to the Borg that are not known wall or permanent rock
-/// (magma, quartz, granite, permanent). Unknown grids, doors and rubble
-/// count as open.
+/// #880: grids next to the Borg a monster could stand on. Known rubble,
+/// magma, quartz, granite and permanent rock are closed: none is PASSABLE
+/// (terrain.txt; feat_is_passable, cave-square.c:131; the same range as
+/// borg_think_dungeon_util.rs's wall test). Unknown grids, doors, passable
+/// rubble (PASS_RUBBLE is PASSABLE) and floors count as open. A monster
+/// that passes walls is handled by the caller (all eight).
 fn recall_open_neighbours(feat: impl Fn(i32, i32) -> u32, at: loc) -> usize {
-    use crate::headers::list_terrain_h::{FEAT_MAGMA, FEAT_PERM};
+    use crate::headers::list_terrain_h::{FEAT_PERM, FEAT_RUBBLE};
     let mut open = 0;
     for dy in -1..=1 {
         for dx in -1..=1 {
             if dx == 0 && dy == 0 { continue; }
-            if !(FEAT_MAGMA..=FEAT_PERM).contains(&feat(at.x + dx, at.y + dy)) { open += 1; }
+            if !(FEAT_RUBBLE..=FEAT_PERM).contains(&feat(at.x + dx, at.y + dy)) { open += 1; }
         }
     }
     open
@@ -2500,7 +2503,10 @@ fn recall_open_neighbours(feat: impl Fn(i32, i32) -> u32, at: loc) -> usize {
 fn recall_contact_cap(rates: &[f64], open: usize, player_energy: f64, ticks: i32) -> f64 {
     let mut sorted = rates.to_vec();
     sorted.sort_by(|a, b| b.total_cmp(a));
-    sorted.iter().take(open).map(|&r| recall_exposure(r, player_energy, 1.0, ticks, 0)).sum()
+    // No approach discount: each of the fastest attackers is at the Borg for
+    // the whole delay (ticks * player_energy / 10 player turns).
+    let duration = f64::from(ticks) * player_energy / 10.0;
+    sorted.iter().take(open).map(|&r| r * duration).sum()
 }
 
 fn blow_hp_per_action(average: f64, chance: i32, energy_ratio: f64, vulnerable: bool) -> f64 {
@@ -2606,6 +2612,11 @@ mod incoming_units_tests {
         let corridor = |_x: i32, y: i32| if y == 5 { crate::headers::list_terrain_h::FEAT_FLOOR } else { crate::headers::list_terrain_h::FEAT_GRANITE };
         assert_eq!(super::recall_open_neighbours(corridor, super::loc { x: 5, y: 5 }), 2);
         assert_eq!(super::recall_open_neighbours(|_, _| 0, super::loc { x: 5, y: 5 }), 8, "unknown grids may hold an attacker");
+        use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_PASS_RUBBLE, FEAT_RUBBLE};
+        let rubble = |_x: i32, y: i32| if y == 5 { FEAT_FLOOR } else { FEAT_RUBBLE };
+        assert_eq!(super::recall_open_neighbours(rubble, super::loc { x: 5, y: 5 }), 2, "rubble is not PASSABLE");
+        let pass = |_x: i32, y: i32| if y == 5 { FEAT_FLOOR } else { FEAT_PASS_RUBBLE };
+        assert_eq!(super::recall_open_neighbours(pass, super::loc { x: 5, y: 5 }), 8, "passable rubble is");
         // 50 worms at 1 HP/turn in a corridor: two can bite at a time.
         let rates = vec![1.0; 50];
         assert_eq!(super::recall_contact_cap(&rates, 2, 10.0, 34), 68.0);
