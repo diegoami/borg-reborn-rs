@@ -6314,7 +6314,7 @@ is neither passable nor projectable (src/player-attack.c:1101-1108). So every
 miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
 5 of 5 guesses; Druid 1024822556: 2 of 2; Necromancer 798380952).
 
-- **`update_miss_wall_guess`** (compiled 0, shipped 0). 1 = (a) a miss at a
+- **`update_miss_wall_guess`** (compiled 0, **shipped 1**: owner, 2026-11-22, #1069, before a zoo measurement). 1 = (a) a miss at a
   monster on the targeted grid that is in view (`BORG_VIEW`) and was seen at
   the think that shot (`when` at most one think ago) is a miss: no grid is
   guessed and `successful_target` becomes 2, the value C's guess gives, so the
