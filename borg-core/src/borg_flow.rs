@@ -129,10 +129,10 @@ pub struct FlowState {
     weighted_flight: WeightedFlight,
     /// This committed flight explicitly chose an up staircase.
     up_stair_flight: bool,
-    /// Last tactical retreat made during a dungeon departure.
-    retreat: Option<FlightRetreat>,
-    /// The square excluded by the currently spreading stair route.
-    retreat_avoid: Option<loc>,
+    /// Recent tactical retreats made during a dungeon departure.
+    retreats: Vec<FlightRetreat>,
+    /// Squares excluded by the currently spreading stair route.
+    retreat_avoid: Vec<loc>,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -166,8 +166,8 @@ impl Default for FlowState {
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
             up_stair_flight: false,
-            retreat: None,
-            retreat_avoid: None,
+            retreats: Vec::new(),
+            retreat_avoid: Vec::new(),
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -189,60 +189,73 @@ struct FlightRetreat {
 }
 
 impl FlightRetreat {
-    fn still_local(self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) -> bool {
+    fn still_applies(self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) -> bool {
         self.depth == depth
             && self.level_started == level_started
             && (1..=window).contains(&now.wrapping_sub(self.turn))
             && here != self.from
             && (self.confirmed || here == self.landing)
-            && (here.x - self.from.x).abs().max((here.y - self.from.y).abs()) <= 2
     }
 }
 
 /// The retreat is provisional until the next observation sees its landing.
 pub(crate) fn remember_flight_retreat(st: &mut BorgState) {
     let depth = st.borg.tr(BI_CDEPTH);
-    if crate::borg_caution::flight_retreat_ticks() != 0
-        && depth > 0 && (st.borg.goal.fleeing || st.borg.goal.leaving)
-        && st.borg.c != st.borg.goal.g
+    let window = crate::borg_caution::flight_retreat_ticks();
+    if window == 0 || depth <= 0 || !(st.borg.goal.fleeing || st.borg.goal.leaving)
+        || st.borg.c == st.borg.goal.g
     {
-        st.flow.retreat = Some(FlightRetreat {
-            from: st.borg.c,
-            landing: st.borg.goal.g,
-            depth,
-            level_started: st.borg.time.level,
-            turn: st.borg.time.now,
-            confirmed: false,
-        });
+        return;
     }
+    let level_started = st.borg.time.level;
+    let turn = st.borg.time.now;
+    let from = st.borg.c;
+    st.flow.retreats.retain(|r| r.from != from && r.still_applies(from, depth, level_started, turn, window));
+    st.flow.retreats.push(FlightRetreat {
+        from,
+        landing: st.borg.goal.g,
+        depth,
+        level_started,
+        turn,
+        confirmed: false,
+    });
 }
 
-/// Exclude the same dangerous square from all candidate stair routes,
-/// including a longer detour. Never mark it in the shared icky-grid cache.
-pub(crate) fn active_retreat_grid(st: &mut BorgState, why: i32) -> Option<loc> {
-    let retreat = st.flow.retreat?;
+/// Exclude recent dangerous retreat squares from every candidate stair
+/// route. Keep them out of the shared icky-grid cache.
+fn active_retreat_grids(st: &mut BorgState, why: i32) -> Vec<loc> {
     let departing = st.borg.goal.fleeing || st.borg.goal.leaving;
-    if !departing || !crate::borg_caution::flight_goal(why, departing) {
-        return None;
+    if st.flow.retreats.is_empty() || !departing || !crate::borg_caution::flight_goal(why, departing) {
+        return Vec::new();
     }
-    if !retreat.still_local(st.borg.c, st.borg.tr(BI_CDEPTH), st.borg.time.level,
-        st.borg.time.now, crate::borg_caution::flight_retreat_ticks())
-        || borg_danger(st, retreat.from.y, retreat.from.x, 1, true, false)
-            <= crate::borg_caution::retreat_danger_threshold(st)
-    {
-        st.flow.retreat = None;
-        return None;
-    }
-    if !retreat.confirmed {
-        st.flow.retreat = Some(FlightRetreat { confirmed: true, ..retreat });
-        let note = format!("# Stair flight avoiding retreat grid ({},{})", retreat.from.x, retreat.from.y);
-        borg_note_bytes(st, note.as_bytes());
-    }
-    Some(retreat.from)
+    let depth = st.borg.tr(BI_CDEPTH);
+    let window = crate::borg_caution::flight_retreat_ticks();
+    let threshold = crate::borg_caution::retreat_danger_threshold(st);
+    let mut retreats = std::mem::take(&mut st.flow.retreats);
+    retreats.retain_mut(|retreat| {
+        if !retreat.still_applies(st.borg.c, depth, st.borg.time.level, st.borg.time.now, window)
+            || borg_danger(st, retreat.from.y, retreat.from.x, 1, true, false) <= threshold
+        {
+            return false;
+        }
+        if !retreat.confirmed {
+            retreat.confirmed = true;
+            let note = format!("# Stair flight avoiding retreat grid ({},{})", retreat.from.x, retreat.from.y);
+            borg_note_bytes(st, note.as_bytes());
+        }
+        true
+    });
+    let blocked = retreats.iter().map(|r| r.from).collect();
+    st.flow.retreats = retreats;
+    blocked
+}
+
+pub(crate) fn flight_avoids_retreat(st: &mut BorgState, why: i32) -> bool {
+    !active_retreat_grids(st, why).is_empty()
 }
 
 pub(crate) fn with_retreat_avoidance<R>(st: &mut BorgState, why: i32, plan: impl FnOnce(&mut BorgState) -> R) -> R {
-    let blocked = active_retreat_grid(st, why);
+    let blocked = active_retreat_grids(st, why);
     let previous = std::mem::replace(&mut st.flow.retreat_avoid, blocked);
     let result = plan(st);
     st.flow.retreat_avoid = previous;
@@ -251,7 +264,7 @@ pub(crate) fn with_retreat_avoidance<R>(st: &mut BorgState, why: i32, plan: impl
 
 impl FlowState {
     fn retreat_blocks(&self, grid: loc) -> bool {
-        self.retreat_avoid == Some(grid)
+        self.retreat_avoid.contains(&grid)
     }
 
     /// `borg_data_cost->data[y][x]`.
@@ -1707,8 +1720,8 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
 
     // A continued stair flow may have been spread before the retreat.
     if st.borg.flight_to_stairs && next.is_some_and(|grid| {
-        st.flow.retreat.is_some_and(|retreat| retreat.from == grid)
-            && active_retreat_grid(st, why) == Some(grid)
+        st.flow.retreats.iter().any(|retreat| retreat.from == grid)
+            && active_retreat_grids(st, why).contains(&grid)
     }) {
         st.borg.goal.type_0 = 0;
         return false;
@@ -2134,18 +2147,33 @@ mod retreat_flight_tests {
             turn: 105,
             confirmed: false,
         };
-        assert!(retreat.still_local(retreat.landing, 2, 100, 106, 8));
-        assert!(!retreat.still_local(retreat.from, 2, 100, 106, 8));
-        assert!(!retreat.still_local(grid(28, 21), 2, 100, 106, 8));
-        assert!(!retreat.still_local(retreat.landing, 1, 100, 106, 8));
-        assert!(!retreat.still_local(retreat.landing, 2, 106, 107, 8));
-        assert!(!retreat.still_local(retreat.landing, 2, 100, 114, 8));
-        assert!(!retreat.still_local(retreat.landing, 2, 100, 106, 0));
+        assert!(retreat.still_applies(retreat.landing, 2, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.from, 2, 100, 106, 8));
+        assert!(!retreat.still_applies(grid(28, 21), 2, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.landing, 1, 100, 106, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 106, 107, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 100, 114, 8));
+        assert!(!retreat.still_applies(retreat.landing, 2, 100, 106, 0));
 
         let confirmed = FlightRetreat { confirmed: true, ..retreat };
-        assert!(confirmed.still_local(grid(25, 22), 2, 100, 107, 8));
-        assert!(!confirmed.still_local(retreat.from, 2, 100, 107, 8));
-        assert!(!confirmed.still_local(grid(24, 22), 2, 100, 108, 8));
+        assert!(confirmed.still_applies(grid(25, 22), 2, 100, 107, 8));
+        assert!(!confirmed.still_applies(retreat.from, 2, 100, 107, 8));
+        assert!(confirmed.still_applies(grid(24, 22), 2, 100, 108, 8));
+    }
+
+    #[test]
+    fn a_second_retreat_does_not_open_the_first_square_again() {
+        let start = grid(94, 14);
+        let stair = grid(96, 12);
+        let previous = grid(95, 13);
+        let latest = grid(95, 14);
+        let alternatives = [grid(94, 13), grid(95, 12)];
+        let mut flow = FlowState::default();
+        flow.retreat_avoid.extend([previous, latest]);
+        let path = least_cost_stair_path(start, &[stair], 3, |at| {
+            (!flow.retreat_blocks(at) && (at == stair || alternatives.contains(&at))).then_some(100)
+        }).unwrap();
+        assert_eq!(path.grids, vec![start, alternatives[0], alternatives[1], stair]);
     }
 
     #[test]
@@ -2165,11 +2193,11 @@ mod retreat_flight_tests {
                 (!flow.retreat_blocks(at) && (corridor.contains(&at) || detours.contains(&at)))
                     .then_some(if at == middle { 101 } else { 100 })
             };
-            flow.retreat_avoid = None;
+            flow.retreat_avoid.clear();
             let original = least_cost_stair_path(landing, &[stair], 4, |at| enter(&flow, at)).unwrap();
             assert_eq!(original.grids[1], middle);
 
-            flow.retreat_avoid = Some(middle);
+            flow.retreat_avoid.push(middle);
             let detour = least_cost_stair_path(landing, &[stair], 4, |at| enter(&flow, at)).unwrap();
             assert_eq!(detour.grids.last(), Some(&stair));
             assert!(!detour.grids.contains(&middle));

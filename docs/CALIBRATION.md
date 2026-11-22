@@ -360,12 +360,12 @@ breeder exit from applying).
 ## Stair routes after a tactical retreat (#932)
 
 `caution_retreat_reentry_ticks` (compiled default 0, range 0–32 Borg
-thinks) keeps the abandoned grid out of candidate staircase routes after
-the Borg confirms its tactical retreat landed. The hold lasts only on the
-same level, while the Borg is nearby and the abandoned grid still exceeds
+thinks) keeps recently abandoned grids out of candidate staircase routes
+after the Borg confirms each tactical retreat landed. The hold lasts only on the
+same level while the abandoned grid still exceeds
 the strategic retreat danger threshold. If the normal departure search
-finds no route, the ordinary flight Recall gates still apply. Eight thinks
-is a pilot hypothesis.
+finds no route, the ordinary flight Recall gates still apply. Thirty-two
+thinks is a pilot hypothesis.
 
 ## Threat-weighted stair flights (#765)
 
@@ -415,8 +415,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2062` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2062` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2077` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2077` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:651` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:850` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:831` |
@@ -721,16 +721,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2069` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2070` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2072` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2067` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2068` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2069` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2070` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2071` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2072` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2073` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2084` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2085` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2086` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2087` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2088` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2089` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2090` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2091` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2092` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2093` |
 
 ## Immobile monsters and blocked stairs (#736)
 
