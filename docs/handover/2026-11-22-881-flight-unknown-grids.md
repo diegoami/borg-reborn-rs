@@ -62,15 +62,59 @@ mode 0 at turn 11177 and mode 2 at turn 13120. So on track-p the case is
 gone at the shipped settings, and it cannot test the change either way. The
 zoo request (borg-zoo#642) is the test.
 
-**Left.**
-- A borg-zoo comparison of modes 1 and 2 against the shipped 0 (RULES 20).
-  The endpoint is deaths by 100,000 turns (P7's tactical endpoint).
-  Requested as borg-zoo#642 (owner, 2026-11-22: in the breeders-x4 and
-  breeders-x8 worlds); the owner dispatches it.
-- #881 part 2 (retreat and back-up refuse a dead end) is started on its
-  own branch (owner, 2026-11-22). Part 3 (the
-  perception gap at 28,147, granite in `player->cave`, unknown to the Borg)
-  is not started. It can explain how much of the "unknown" in the
-  lattice should have been known.
-- Not done: the issue's option of allowing unknown grids only beyond the
-  first K steps.
+**Review (MCode, MiniMax-M3.1-Flash, on `24496992`): no code defect.**
+- **F1:** mode 2 also changes three flee decisions. `stair_reachable` asks
+  the same search, so with no staircase reachable through known grids,
+  `stairs_before_recall`, `scary_ranged_no_stairs` and
+  `ranged_before_recall` (switches shipped 1) let the Borg read Recall or
+  shoot. Mode 1 only re-ranks routes. Documented (option a) in
+  CALIBRATION, in the setting's text and on borg-zoo#642, which measured
+  mode 2 with this coupling.
+- **F2 / F5:** #881 is split, so `Closes #881` closes only part 1. The
+  leftovers are issues:
+  - #1045: part 2, the dead-end retreat (PR #953);
+  - #1043: part 3, the perception gap;
+  - #1044: the K-steps option.
+- **F3:** the branch's commits up to `f5659f22` carry a model trailer
+  (RULES 4). They are not rewritten, following the owner's ruling recorded
+  in #880's handover: earlier published commits keep theirs, later ones
+  carry none. RULES 5 forbids amending published commits, and borg-zoo#642
+  builds `ea14528a`. Commits from this one on carry none.
+- **F4:** the branch name `claude/focused-goldberg-2m52ql` is not RULES 5's
+  `task/...` form. The session environment allows pushing only to that
+  branch; part 2 got a `task/` branch with the owner's leave.
+- **F6, F7:** CALIBRATION now says where the rule acts (the down flight)
+  and that 5 steps equals the cost of a grid at full-HP danger while the
+  threat weight is 5.
+- **F8:** the two new `harness/borg.txt` keys change each smoke run's
+  borg.txt hash recorded in `harness/reference/smoke-borg-rs/REFERENCE`.
+  That hash is provenance and `harness/diff` does not compare it, so the
+  comparison passes with no re-record. A later re-record will show the new
+  hash; that is not a behaviour change.
+- **F9:** citations are now 2391/2391 after the merge with track-p
+  `cd1e81e0`.
+- **F10:** mode 0 adds exactly 0 to every grid's cost, so the shipped play
+  cannot change by construction; smoke only checks the wiring. No test pins
+  "a grid the Borg has seen is not unknown": that needs the engine.
+
+**Shipped off (owner, P9 rule).** Every new behaviour is behind
+`caution_stairs_flight_unknown` at 0 (`..._steps` 5 is a sub-setting).
+Smoke-borg-rs is 3/3 identical to track-p's reference, with no re-record.
+
+**Zoo result, borg-zoo#642** (pilot, small and medium, 360 starts per world,
+`ea14528a`). Deaths in 360:
+- breeders-x4: ctl 17, m1 16, m2 13 (13 rescued / 9 newly killed, p 0.52);
+- breeders-x8: ctl 31, m1 34, m2 31; m2 x8 has 5 unfinished games against
+  ctl's 2.
+
+No arm moves deaths. The zoo saw no case for a normal-world tier.
+
+**Left (issues).** #1043 (part 3), #1044 (K-steps option); part 2 is #1045
+and #953.
+
+**Owner decisions.**
+- Whether to try mode 2 narrowed to the route only (the reachability test
+  kept on today's search: review F1 option b). There is no evidence for
+  either mode yet.
+- The trailers (F3) and the branch name (F4), if the rulings above do not
+  stand.

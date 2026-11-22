@@ -13,7 +13,8 @@ right after that change, so older sections show older counts.
 ## Stair flights through unknown grids (#881)
 
 The registry now holds **2391** parameters (2389 before; two added). Owner,
-2026-11-22: track P, P7 (now P8), part 1 of #881 first, shipped off.
+2026-11-22: track P, part 1 of #881 first, shipped off (now P9: new
+capabilities merge into `track-p` only shipped off).
 
 `weighted_stair_path` (the route of every weighted stair flight, shipped
 with `caution_stairs_flight_threat_weight = 5`) entered a grid the Borg's map
@@ -26,15 +27,41 @@ north of the room, so the priest reached the dead-end tip 25 times and died to
 white worm masses.
 
 - **`caution_stairs_flight_unknown`** (mode, 0). 0: one step (today's
+  play; it adds exactly 0 to every grid's cost, so mode 0 cannot change
   play). 1: one step plus `caution_stairs_flight_unknown_steps`. 2: refused;
-  the flight walks known grids only. Both apply to the reachability test of
-  the flee rules (`stair_flow_reaches` → `weighted_stair_reachable`), which
-  asks the same search, so a staircase reachable only through unknown grids
-  is not reachable under 2.
+  the flight walks known grids only.
+  - **Where it acts.** The rule acts on the **down** flight
+    (`avoid: false`). The **up** flight below CL 36 in the light already
+    refuses unknown grids through `avoid`, and the **desperate** walk
+    refuses them through `spread_blocked` unless twitchy, so mode 2 does not
+    change those two (review of #897, F6).
+  - **Mode 1 only re-ranks routes.** The search has a move limit and no
+    cost ceiling, so pricing never removes a route. The reachability test
+    answers as under mode 0.
+  - **Mode 2 also changes three flee decisions** (review of #897, F1). The
+    flee rules' reachability test (`stair_reachable` → `stair_flow_reaches`
+    → `weighted_stair_reachable`) asks the same search. A staircase
+    reachable only through unknown grids is therefore "not reachable", and
+    when no staircase is reachable through known grids:
+    - `stairs_before_recall` (`caution_flee_stairs_before_recall`, shipped
+      1) no longer holds Word of Recall back, so a fleeing Borg reads Recall
+      instead of walking to the stairs;
+    - `scary_ranged_no_stairs` (`caution_scary_ranged_no_stairs`, shipped 1)
+      lets `borg_attack` shoot an awake monster in view on a scary level;
+    - `ranged_before_recall` (same switch) prefers shooting to Recall.
+
+    Mode 2 is therefore a route rule plus a change of when the Borg recalls
+    and shoots. borg-zoo#642 measured it with this coupling.
 - **`caution_stairs_flight_unknown_steps`** (steps, 5; the issue's 3–10).
+  With the shipped `caution_stairs_flight_threat_weight = 5`, a grid whose
+  danger equals the current HP costs 100 + 500 = 6 steps, and an unknown grid
+  under mode 1 costs the same: 5 makes an unknown grid as expensive as the
+  most dangerous grid the flight prices. The match holds only while the
+  weight stays 5 (review of #897, F7).
 
 Not changed: the unweighted stair flows (weight 0), exploration flows,
-retreat and back-up (#881 part 2), and the perception gap at 28,147 (part 3).
+retreat and back-up (#1045, #881 part 2), and the perception gap at 28,147
+(#1043).
 Hypotheses: no measurement chose a mode or a step count (RULES 14).
 
 | parameter | default | unit | range | source |
