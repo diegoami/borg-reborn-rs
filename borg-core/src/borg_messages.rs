@@ -1224,6 +1224,11 @@ fn player_feels(msg: &[u8]) -> bool {
     prefix(msg, b"You feel ")
 }
 
+/// borg-reborn-rs (#1032): a message whose subject is the player.
+fn player_subject(msg: &[u8]) -> bool {
+    prefix(msg, b"You ")
+}
+
 #[cfg(test)]
 mod player_feels_tests {
     #[test]
@@ -1232,6 +1237,17 @@ mod player_feels_tests {
         assert!(super::player_feels(b"You feel yourself speed up."));
         assert!(!super::player_feels(b"The cave spider slows down."));
         assert!(!super::player_feels(b"3 cave spiders start moving faster."));
+    }
+
+    #[test]
+    fn the_end_of_confusion_stun_and_paralysis_is_the_players_own() {
+        assert!(super::player_subject(b"You are no longer confused."));
+        assert!(super::player_subject(b"You are no longer stunned."));
+        assert!(super::player_subject(b"You can move again."));
+        assert!(super::player_subject(b"You feel yourself slow down."));
+        assert!(!super::player_subject(b"The kobold is no longer confused."));
+        assert!(!super::player_subject(b"Your mystic shield crumbles away."));
+        assert!(!super::player_subject(b"Young blue dragons are no longer stunned."));
     }
 }
 
@@ -1250,6 +1266,10 @@ fn parse_monster_message(st: &mut BorgState, msg: &[u8], len: i32) -> bool {
     // "... speed up." (player_timed.txt:197, 203) are not monster pain.
     let own = player_feels(msg)
         && crate::borg_trait::timed_sync(crate::params::value(crate::params::Param::trait_timed_sync));
+    // borg-reborn-rs (#1032): no monster message has "You" as its subject; the
+    // player's "You are no longer confused.", "... stunned." and "You can move
+    // again." (player_timed.txt:227, 283, 219) are not monster pain either.
+    let own = own || (player_subject(msg) && crate::params::value(crate::params::Param::trait_player_not_pain) != 0);
     let pain = st.messages.suffix_pain.as_ref().expect("pain messages not initialised");
     if let Some(p) = pain.iter().find(|p| !own && suffix(msg, p)) {
         let who = who_before(p.len());

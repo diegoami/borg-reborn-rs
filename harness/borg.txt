@@ -653,6 +653,16 @@ borg_param_kill_live_min_power = 1
 # (seed 2008390085 replayed; zoo pilot borg-zoo#652, run 45033305701).
 borg_param_trait_timed_sync = 1
 
+# #1032: the player's own messages ("You are no longer confused.", "You are no
+# longer stunned.", "You can move again.") are not monster pain; at 0 (C) each
+# is a pain reaction for a monster named "You".
+borg_param_trait_player_not_pain = 0
+
+# #1033: BI_SPEED counts SLOW (-10) and TERROR (+10, on top of haste) as the
+# engine does (player-calcs.c:2176-2187); at 0 (C) SLOW is ignored and TERROR
+# is +5, not stacked with haste.
+borg_param_trait_speed_timed = 0
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6

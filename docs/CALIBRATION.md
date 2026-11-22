@@ -6434,4 +6434,4 @@ medium runs are the measurement.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `trait_timed_sync` | 0 | flag | 0–1 | `borg_trait.rs:2768` |
+| `trait_timed_sync` | 0 | flag | 0–1 | `borg_trait.rs:2776` |

@@ -856,7 +856,16 @@ fn borg_notice_equipment(st: &mut BorgState) {
         }
 
         /* if hasting */
-        if engine::player_timed(TMD_FAST) != 0 || engine::player_timed(TMD_SPRINT) != 0 {
+        if crate::params::value(crate::params::Param::trait_speed_timed) != 0 {
+            // borg-reborn-rs (#1033): the engine's own timed speed
+            // (player-calcs.c:2176-2187): +10 for FAST or SPRINT, -10 for
+            // SLOW, and +10 for TERROR on top of either.
+            t[BI_SPEED] += timed_speed(
+                engine::player_timed(TMD_FAST) != 0 || engine::player_timed(TMD_SPRINT) != 0,
+                engine::player_timed(TMD_SLOW) != 0,
+                engine::player_timed(TMD_TERROR) != 0,
+            );
+        } else if engine::player_timed(TMD_FAST) != 0 || engine::player_timed(TMD_SPRINT) != 0 {
             t[BI_SPEED] += 10;
         } else if engine::player_timed(TMD_TERROR) != 0 {
             t[BI_SPEED] += 5;
@@ -2956,6 +2965,25 @@ mod tests {
         assert_eq!(BORG_ADJ_MAG_STAT[37], 57);
         assert_eq!(BORG_ADJ_STR_WGT[15], 20);
         assert_eq!(BORG_BLOWS_TABLE[11][11], 15);
+    }
+}
+
+/// borg-reborn-rs (#1033): the speed the engine adds for the timed effects
+/// (player-calcs.c:2176-2187).
+pub(crate) fn timed_speed(hasted: bool, slowed: bool, terrified: bool) -> i32 {
+    10 * i32::from(hasted) - 10 * i32::from(slowed) + 10 * i32::from(terrified)
+}
+
+#[cfg(test)]
+mod timed_speed_tests {
+    #[test]
+    fn as_the_engine_counts_it() {
+        assert_eq!(super::timed_speed(false, false, false), 0);
+        assert_eq!(super::timed_speed(true, false, false), 10);
+        assert_eq!(super::timed_speed(false, true, false), -10);
+        assert_eq!(super::timed_speed(true, true, false), 0);
+        assert_eq!(super::timed_speed(false, false, true), 10);
+        assert_eq!(super::timed_speed(true, false, true), 20);
     }
 }
 
