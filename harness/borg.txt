@@ -794,6 +794,10 @@ borg_param_defend_bless_fail = 25
 
 borg_param_caution_heal_when_outmatched = 1
 borg_param_caution_heal_outmatched_min_loss = 50
+# #909: borg_heal's lethal bonus also at a danger at or above the max HP; and
+# the outmatched heal tried before the flight on foot (0 = C).
+borg_param_caution_heal_lethal_over_max = 0
+borg_param_caution_heal_outmatched_before_walk = 0
 
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
 # never sold below. Every class sets its own value in the class files (300

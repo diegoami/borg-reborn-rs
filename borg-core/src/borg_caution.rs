@@ -204,6 +204,26 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
 /// hurt by at least `min_loss` percent of its maximum HP, and the danger
 /// estimate reaches its current HP (so the ordinary `borg_heal` tiers, which
 /// need `danger < curhp + heal`, cannot have fired).
+/// borg-reborn-rs (#909): `borg_heal`'s "if danger is close to the hp and
+/// healing will help, do it" bonus. C applies it only while the danger is
+/// below the max HP, so a non-priest in more danger gets the -25 penalty and
+/// band 3's skip (chance < 80) becomes certain (Rogue 381988580 at HP 23/35,
+/// danger 41). `over_max` drops the upper bound.
+fn lethal_heal_bonus_applies(danger: i32, curhp: i32, maxhp: i32, over_max: bool) -> bool {
+    danger >= curhp && (over_max || danger < maxhp)
+}
+
+#[cfg(test)]
+mod lethal_heal_bonus_tests {
+    #[test]
+    fn danger_above_the_max_hp_keeps_the_bonus_only_with_the_switch() {
+        assert!(!super::lethal_heal_bonus_applies(41, 23, 35, false), "C: 41 >= 35, no bonus");
+        assert!(super::lethal_heal_bonus_applies(41, 23, 35, true));
+        assert!(super::lethal_heal_bonus_applies(30, 23, 35, false));
+        assert!(!super::lethal_heal_bonus_applies(20, 23, 35, true), "danger below the HP");
+    }
+}
+
 fn outmatched_heal_applies(
     enabled: i32,
     curhp: i32,
@@ -525,7 +545,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // if danger is close to the hp and healing will help, do it
-    if danger >= st.borg.tr(BI_CURHP) && danger < st.borg.tr(BI_MAXHP) {
+    // borg-reborn-rs (#909): with caution_heal_lethal_over_max, a danger at or
+    // above the max HP is still "close to the hp" (0 = C: below the max HP only).
+    if lethal_heal_bonus_applies(danger, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_heal_lethal_over_max) != 0) {
         chance += p(Param::caution_heal_lethal_chance_bonus);
     } else if st.borg.tr(BI_CLASS) != CLASS_PRIEST && st.borg.tr(BI_CLASS) != CLASS_PALADIN {
         chance -= p(Param::caution_heal_nonpriest_chance_penalty);
@@ -3305,6 +3327,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if unseen_bump_response(st, pos_danger) { return true; }
 
     /*** Flee on foot ***/
+
+    // borg-reborn-rs (#909): #457's outmatched heal before the flight on foot,
+    // not only after it (0 = C order: at the end of borg_caution).
+    if p(Param::caution_heal_outmatched_before_walk) != 0
+        && (st.borg.goal.fleeing || st.borg.mon.scary)
+        && borg_heal_outmatched(st, pos_danger)
+    {
+        return true;
+    }
 
     // Desperation Head for stairs
     if (st.stairs.less.num != 0 || st.stairs.more.num != 0)
