@@ -130,6 +130,10 @@ const STAPLE_LIGHT: usize = 75;
 /// the reserve's percent, the first cures come before it. The row only exists
 /// with `town_first_cure` above 0.
 const FIRST_CURE: usize = 76;
+// The first-cure row must stay the last: the model's count without it stops
+// before it (`observe`), so a row appended after it would drop out of the off
+// model.
+const _: () = assert!(FIRST_CURE + 1 == NAMES.len());
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
 /// A capability with a knee of its own -> its row.
@@ -852,9 +856,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
     let prepared = prepared_on(st);
     let staples = staple_on(st);
-    // #987: the first-cure row is the last; off, the model keeps its shape.
+    // #987: the first-cure row is the last (`FIRST_CURE + 1 == COUNT`, checked
+    // below); off, the model keeps the shape it had before it.
     let first_cure = first_cure_count();
-    let count = if first_cure > 0 { COUNT } else if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let base_count = if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on { RECALL_RESERVE + 1 } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
+    let count = if first_cure > 0 { COUNT } else { base_count };
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop),i64::from(c.slot),i64::from(c.qty)]).collect(), packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves: (0..count).map(|i| [i as i64, ordinary, support_demand, 0, 0]).collect(), supplies: Vec::new() };
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     // borg-reborn-rs (#761, owner): a class's own light weight, in percent of
@@ -1009,11 +1015,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     // borg-reborn-rs (#987): the first `town_first_cure` healing potions, each
     // worth `town_first_cure_percent` of the trip's escape weight (the Phase
-    // Door reserve's unit), nothing past them. Rows the model would not hold
-    // without it carry no weight.
+    // Door reserve's unit), nothing past them. The rows the model holds only
+    // because of it (`base_count..FIRST_CURE`) carry no weight; the rows the
+    // model held without it keep their values, so on is off plus this row.
     if first_cure > 0 {
-        if !prepared { for id in [PREP_POISON, PREP_CURSE, PREP_INVISIBLE, PREP_CONFUSION, PREP_FEAR] { curve(id, 0, UNIT); } }
-        if ranged_reserve == 0 { curve(RANGED_RESERVE, 0, UNIT); }
+        for id in base_count..FIRST_CURE { curve(id, 0, UNIT); }
         curve(FIRST_CURE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_first_cure_percent)) * first_cure,
             -(first_cure * UNIT));
     }
@@ -1405,6 +1411,13 @@ mod tests {
         assert!(first_clw > m.gain(&phase(1)), "the first cure outbids the first reserved Phase Door");
         let second_clw = m.gain(&clw(2)) - first_clw;
         assert!(second_clw < sixth_phase, "the second cure ({second_clw}) still waits for the reserve");
+        // town_first_cure = 2: each of the first two copies adds 240,000 on the
+        // row, a third nothing.
+        m.curves[FIRST_CURE] = [FIRST_CURE as i64, 480_000, -2 * UNIT, 0, 0];
+        let row = |m: &Model, n: i64| m.gain(&[(FIRST_CURE, n * UNIT)]);
+        assert_eq!(row(&m, 1), 240_000);
+        assert_eq!(row(&m, 2) - row(&m, 1), 240_000);
+        assert_eq!(row(&m, 3), row(&m, 2), "a third cure adds nothing on the row");
     }
 
     /// #859 (owner: "make it be 110 by default, so that they buy a few"):

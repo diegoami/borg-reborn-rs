@@ -90,17 +90,32 @@ After the split every later event differs. One seed shows no cause and no
 rate (RULES 14). This session could not write the counterfactual to
 borg-cemetery: there is no push access. The case package is left (below).
 
+### Review (MCode, MiniMax-M3.1-Flash, on `ced0152d`: pass with findings)
+
+The fixes are in the second commit:
+
+1. On is now off plus the first-cure row. Only the rows the model holds
+   because of the parameter (`base_count..FIRST_CURE`) are zeroed. Before,
+   `RANGED_RESERVE` and the prepared rows were zeroed even where the off
+   model held them at the default weight (inert: nothing supplies them).
+2. The test pins `town_first_cure = 2`: two copies at 240,000 each, and a
+   third adds nothing.
+3. A compile-time assertion keeps `FIRST_CURE` the last row.
+4. The parameter text says the order is decided on the whole wares in the
+   purse. The percent is a margin, not a switch against the reserve's.
+
 ### Left, and for the owner
 
-- **Shipped values wait for borg-zoo#669** (the reserve set back: ctl /
-  phase0 / t863off). Then, if the owner wants it, a zoo request for
-  `town_first_cure` 1 and 2 (every class, or the Ranger first) against
-  `ctl`. This session dispatches no zoo run.
-- The other 8 seeds where track-p buys Phase Door instead of a cure (the zoo
-  page's table) are the natural pilot for that request.
-- The cemetery case for the counterfactual above (borg-cemetery, beside
-  `runs/2026-11-22-trackp-9085-full-deaths`) needs a session with push access.
-- To decide: whether the first cure should count only Cure Light, Serious
-  and Critical Wounds (today, any potion that heals counts), and whether
-  `town_first_cure_percent` should follow `town_phase_reserve_percent`
-  (for example "50 more") instead of being a number of its own.
+- **#1006**: the zoo request for `town_first_cure` 1 and 2 against `ctl`. It
+  waits for borg-zoo#669, and its pilot is the 9 seeds where track-p buys
+  Phase Door instead of a cure. It must go onto borg-zoo: this session has
+  no write access there and dispatches no zoo run.
+- **#1007**: the borg-cemetery case for the counterfactual above. This
+  session has no push access there.
+- **To decide** (the review's finding 6 confirms it): the row counts every
+  potion with `HEAL_HP`. In `object.txt` at `574b618c` that is CLW, CSW, CCW,
+  Healing, *Healing*, Life, and also Heroism (10 HP) and Berserk Strength
+  (30 HP), which are fear remedies. Should only Cure Light, Serious and
+  Critical Wounds count? This must be decided before a value ships.
+- To decide: whether `town_first_cure_percent` should be its own number or
+  follow `town_phase_reserve_percent`.
