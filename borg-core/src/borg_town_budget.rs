@@ -191,7 +191,7 @@ impl Budget {
         let cands = &stock.candidates;
         let (picked, covered) = urgent_pass(cands, urgent_needs, facts.gold.max(0), &serves);
 
-        let urgent: Vec<UrgentPurchase> = picked
+        let mut urgent: Vec<UrgentPurchase> = picked
             .iter()
             .map(|&i| {
                 let served = serves(&cands[i]);
@@ -205,6 +205,11 @@ impl Budget {
                 }
             })
             .collect();
+        // borg-reborn-rs (#956, review of #961): the live selector buys the
+        // urgent purchases in this order, so the urgent Recall goes first
+        // and a cheaper urgent ware cannot take the last slot or the weight
+        // it needs (stable: the rest keep the candidate order).
+        urgent.sort_by_key(|f| !f.needs.contains(&Need::Trip));
         let unmet = urgent_needs
             .iter()
             .enumerate()
@@ -501,6 +506,11 @@ mod tests {
         let b = Budget::build(&facts(purse), &s, &[Need::Food], serves);
         let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
         assert_eq!(bought, [RATION]);
+        // When both are paid for, the Recall is first in the purchase order
+        // even though the ration is the earlier candidate (review of #961).
+        let b = Budget::build(&facts(purse + 5), &s, &[Need::Food, Need::Trip], serves);
+        let bought: Vec<u32> = b.urgent.iter().map(|f| s.candidates[f.candidate].kind).collect();
+        assert_eq!(bought, [RECALL, RATION]);
     }
 
     /// An urgent need no shop serves is unmet whatever the purse.
