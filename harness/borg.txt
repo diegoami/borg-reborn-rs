@@ -1396,10 +1396,11 @@ borg_scary_list = scary_monsters.txt
 # #760: attack categories; compiled 0, shipped 1 by owner decision.
 borg_param_attack_on_sight = 1
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
-# patch, #869) is not attacked on sight when a Cure Light, Serious or Critical
-# Wounds potion is in the pack or an escape is at hand (stairs underfoot, a
-# Phase Door that can be read): the ordinary attack and caution (the heals,
-# Phase Door, flight) decide. Otherwise the attack comes first, confused or
+# patch, #869) is not attacked on sight when a known Cure Light, Serious or
+# Critical Wounds potion is in the pack or an escape is at hand (stairs
+# underfoot, up or down, or a Phase Door that can be read). The floor only
+# stops the attack on sight: the ordinary attack and caution then decide, and
+# may still decline the cure (their own heal gates). Otherwise the attack comes first, confused or
 # not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
 # confused at the patch until death, CLW in the pack).
 borg_param_attack_kill_on_sight_min_hp_percent = 50

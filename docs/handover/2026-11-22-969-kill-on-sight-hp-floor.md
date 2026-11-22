@@ -34,6 +34,15 @@ longer says "speed +10" (110 is normal speed). Stacked on #970 (#971).
   (#837); borg-zoo#665's `rangedclw` arm measures the CLW one.
 - borg-zoo#665: the patch-world pilots (x4, x8) and then the normal world.
 
+**Review (MiniMax M3.1 Flash, at 7abf857b).** P2: "a cure in the pack" is
+not "the Borg drinks it": the floor only stops the attack on sight, and the
+caution may still decline the cure (the Ranger 1723941400 above); the
+parameter text, `harness/borg.txt` and the PR body now say so. P3: the escape
+includes a down staircase (wording now "up or down"; going down leaves a
+depth-1 patch behind, so the behaviour is kept). P3: prompt re-posted at the
+new head; RULES 4: body fixed, later commits carry no trailers.
+`docs/CALIBRATION.md` documents the parameter. Text only: play unchanged.
+
 **Where this meets other work** (other sessions; their branches untouched).
 - #975 (the patch rated at 0 HP after one hit, seed 1723941400, replayed at
   `attack_kill_on_sight_min_hp_percent = 33`): the floor reads only the Borg's
