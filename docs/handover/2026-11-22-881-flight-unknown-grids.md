@@ -64,11 +64,13 @@ zoo request (borg-zoo#642) is the test.
 
 **Left.**
 - A borg-zoo comparison of modes 1 and 2 against the shipped 0 (RULES 20).
-  The endpoint is deaths by 100,000 turns (P7's tactical endpoint). Not yet
-  requested; the owner decides.
-- #881 part 2 (retreat and back-up refuse a dead end) and part 3 (the
+  The endpoint is deaths by 100,000 turns (P7's tactical endpoint).
+  Requested as borg-zoo#642 (owner, 2026-11-22: in the breeders-x4 and
+  breeders-x8 worlds); the owner dispatches it.
+- #881 part 2 (retreat and back-up refuse a dead end) is started on its
+  own branch (owner, 2026-11-22). Part 3 (the
   perception gap at 28,147, granite in `player->cave`, unknown to the Borg)
-  are not started. Part 3 can explain how much of the "unknown" in the
+  is not started. It can explain how much of the "unknown" in the
   lattice should have been known.
 - Not done: the issue's option of allowing unknown grids only beyond the
   first K steps.
