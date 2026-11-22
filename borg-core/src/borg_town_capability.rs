@@ -679,6 +679,14 @@ fn worthless(tval: u32, sval: i32) -> bool {
             && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
 }
 
+/// #1049: apply the purchase model's deliberate exclusions to known
+/// items in the pack and Home as well. A temporary lack of demand for a
+/// useful effect does not make it an unwanted kind.
+pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
+    item.kind != 0 && item.aware && item.flavour_aware
+        && worthless(u32::from(item.tval), i32::from(item.sval))
+}
+
 /// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
 /// shop wares (`{unseen}`: a Potion or Scroll whose flavour the player has not
 /// seen) scaled by `town_unseen_percent`. Phase Door has its own
@@ -1372,7 +1380,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { protect_disposal: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
     }
     #[test]

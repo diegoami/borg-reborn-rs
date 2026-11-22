@@ -268,6 +268,7 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
         KitItem {
             protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                 && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
+            home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
             home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
             joins_pack: if place == Place::Home {
                 engine::store_stock(&st.access, BORG_HOME).get(slot)

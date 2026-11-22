@@ -94,7 +94,7 @@ fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_i
 
 /// Known excess can be cleared in a single native transaction.
 pub(crate) fn batch_home_disposal(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
-    home_at_limit(st, item)
+    home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
 }
 
 fn overflow_action(st: &BorgState) -> Option<TownAction> {
@@ -109,7 +109,8 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     // may still take some or all of the excess.
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
-            if shop == BORG_HOME && home_at_limit(st, item) { continue; }
+            if shop == BORG_HOME && (home_at_limit(st, item)
+                || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
