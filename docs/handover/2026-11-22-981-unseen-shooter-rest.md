@@ -56,12 +56,12 @@ says nothing about distance. Revised after Mavis's review (#998):
   `unseen_shot_messages`, `a_shot_only_episode_and_its_end`,
   `a_hit_is_not_a_follow`.
 
-**Not done.**
-- The replay records are not in borg-cemetery. This session could not get
-  write access to borg-cemetery, and the branch the task named
-  (`runs/2026-11-22-trackp-9085-full-deaths`) is not on its remote. The
-  session kept the replay files, and the PR gives their hashes and the
-  command.
+**Not done, and where the rest is.**
+- The Cemetery records (added after the owner granted access):
+  - the death is dossier `D-6a839b1e…`, imported with the whole zoo run in
+    diegoami/borg-cemetery#129 (the branch the task named,
+    `runs/2026-11-22-trackp-9085-full-deaths`, did not exist);
+  - the off/on replays are the study in diegoami/borg-cemetery#130.
 - The zoo has not measured it yet. The request is diegoami/borg-zoo#671
   (arms ctl / shot / cure / both, specimen updated after the reviews), which
   the owner starts (RULES 20).
