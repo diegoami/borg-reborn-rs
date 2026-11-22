@@ -1033,6 +1033,7 @@ parameters! {
     attack_reserve_spell_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3230", "Attack reserve spell danger horizon: existing policy turns."),
     attack_reserve_spell_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3230", "Attack reserve spell danger multiplier: existing policy multiplier."),
     attack_reserve_spell_near_distance => (7, "grids", 1, 20, "borg_fight_attack.rs:3215", "Attack reserve spell near distance: existing policy grids."),
+    attack_reserve_spell_overexert => (1, "flag", 0, 1, "borg_fight_attack.rs:3236", "#980: 1 = the emergency attack spell (borg_attack_aux_spell_bolt_reserve, Magic Missile) is cast beyond the current mana, as in the C Borg; the engine then always faints the Borg (paralysis for 1d(5 x missing SP + 1) turns, past free action; player-spell.c:540-553) and adds 5% fail per missing SP. 0 = never cast it beyond the current SP. 1 retains today's play."),
     attack_reserve_spell_damage_margin => (4, "damage", 0, 5000, "borg_fight_attack.rs:3222", "Attack reserve spell damage margin: existing policy damage."),
     attack_dispel_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3342", "Attack dispel paranoia chance: existing policy percent."),
     attack_dispel_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3347", "Attack dispel fail: existing policy percent."),
