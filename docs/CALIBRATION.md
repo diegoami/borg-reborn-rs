@@ -6425,3 +6425,17 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
 | `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2069` |
+## The speed flag and the end of haste (#941)
+
+The engine's end of haste, "You feel yourself slow down." (`player_timed.txt:194-198`),
+matched the monster pain suffix "slow[s] down." in `parse_monster_message` before
+the temporary-effect table was tried, and the timer fallback in `borg_trait.rs`
+only ever sets `temp.fast`. After its first Potion of Speed the Borg believed it
+was hasted for the rest of the game. Every speed rule skipped itself as "already
+fast", and the danger counted the Borg at +10 (seed 2008390085, borg-zoo#596: from
+56,229 to the death at 64,483). At 1 the flag follows `TMD_FAST`/`TMD_SPRINT`/`TMD_TERROR`
+both ways, and "You feel ..." messages skip the pain table. Compiled and shipped 0.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `trait_timed_sync` | 0 | flag | 0–1 | `borg_trait.rs:2768` |
