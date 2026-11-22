@@ -34,6 +34,24 @@ longer says "speed +10" (110 is normal speed). Stacked on #970 (#971).
   (#837); borg-zoo#665's `rangedclw` arm measures the CLW one.
 - borg-zoo#665: the patch-world pilots (x4, x8) and then the normal world.
 
+**Where this meets other work** (other sessions; their branches untouched).
+- #975 (the patch rated at 0 HP after one hit, seed 1723941400, replayed at
+  `attack_kill_on_sight_min_hp_percent = 33`): the floor reads only the Borg's
+  own HP (`kill_on_sight_hp_low`), never the patch's estimate, so the two are
+  independent; a fix of the estimate changes which swing kills, not when the
+  floor yields. Its replays need a build with this parameter (#976 or later).
+- #974: seed 857532386 (Grip while confused by a patch, 15 CLW) is saved by
+  the floor (it fires at HP 18/46; floor 33 also saves it).
+  `category_attack_safe_with`'s `other_danger <= HP x 2` gate never trips there
+  (Grip rated 4-8, so it holds down to HP 3); details on #974. Seed 453254028
+  (CL1, no cure, Phase Door unreadable while confused) is not changed.
+- #983 (taken by this session, owner 2026-11-22, branch
+  `task/T983-confused-scary-flight`): not a CLW-setting case; the Borg's CLW
+  were an unidentified flavour it may not try under #470. Owner chose
+  test-quaffing unknown potions when safe; that change is separate from this PR.
+- #976 was retargeted to `promote/P7` by the owner. Merged locally into
+  `promote/P7` `0ed681aa`: smoke 3/3 identical, the 13 replays as above.
+
 **Owner.** The shipped value 50 rests on 13 named replays (RULES 14: a
 direction, not an effect); borg-zoo#665 measures it. Whether to keep #869's
 kill-on-sight entry at all (removing it gave the same 1 of 13) is yours.
