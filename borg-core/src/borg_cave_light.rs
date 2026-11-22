@@ -17,7 +17,7 @@
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_bold;
 use crate::borg_cave_view::BORG_VIEW;
-use crate::borg_projection::borg_los;
+use crate::borg_projection::borg_los_light;
 use crate::borg_headers::borg_trait_h::{BI_CLASS, BI_LIGHT};
 use crate::params::{value, Param};
 use crate::state::BorgState;
@@ -159,11 +159,12 @@ pub fn borg_update_light(st: &mut BorgState) {
     /* Radius 2 -- lantern radius */
     if engine_shape && light >= 2 && cy + 2 < AUTO_MAX_Y && cy - 2 > 0 && cx + 2 < AUTO_MAX_X && cx - 2 > 0 {
         /* #884: the grids at distance 2, (2,0) and (2,1), each in line of
-         * sight on the Borg's map (review of #894: the engine's add_light
-         * tests los() per grid, src/cave-view.c:625-640; C's proxy gated
-         * (2,1) on (2,0) being floor) */
+         * sight for light on the Borg's map (reviews of #894: the engine's
+         * add_light tests los() per grid, src/cave-view.c:625-640, through
+         * projectable grids only, so not through passable rubble; C's proxy
+         * gated (2,1) on (2,0) being floor) */
         for (dy, dx) in RADIUS_2 {
-            if borg_los(st, cy, cx, cy + dy, cx + dx) {
+            if borg_los_light(st, cy, cx, cy + dy, cx + dx) {
                 borg_cave_light_hack(st, cy + dy, cx + dx);
             }
         }
