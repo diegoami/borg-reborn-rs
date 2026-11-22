@@ -101,6 +101,10 @@ def transform_monsters(text, cfg, max_depth):
     shift = number(cfg, 'breeder_depth_shift', 0, 0)
     only, never = names(cfg.get('breeders_only', '')), names(cfg.get('breeders_except', ''))
     named = names(cfg.get('favour', ''))
+    # The key, not the parsed list, picks the mode: `favour = , ,` is a
+    # mistake, not "no favour" (review of #971).
+    if 'favour' in cfg and not named:
+        raise SystemExit('make-world: favour names no race')
     if 'favour_weight' in cfg and not named:
         raise SystemExit('make-world: favour_weight needs favour (the races it favours)')
     if named:
