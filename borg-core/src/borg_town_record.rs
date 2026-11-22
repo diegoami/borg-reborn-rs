@@ -958,28 +958,38 @@ pub fn first_action(
     facts: &[WareFact],
     kit: &[KitItem],
 ) -> (i64, [i64; 4], i64, bool) {
-    first_action_with_room(candidates, urgent, out, facts, kit, None, None)
+    first_action_with_room(candidates, urgent, out, facts, kit, None, None, None)
 }
 
 /// Respect a full Home's prerequisite: free a Home slot before depositing.
 /// Historical shadow records retain their original order through first_action.
+/// `weight_room`: the tenth-pounds still free before the encumbrance starts
+/// (`Facts::allowance`, `BI_CARRY / 2 - BI_WEIGHT`).
 pub fn first_executable_action(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
-    facts: &[WareFact], kit: &[KitItem], home_slots: i32, pack_slots: i32,
+    facts: &[WareFact], kit: &[KitItem], home_slots: i32, pack_slots: i32, weight_room: i64,
 ) -> (i64, [i64; 4], i64, bool) {
-    first_action_with_room(candidates, urgent, out, facts, kit, Some(home_slots), Some(pack_slots))
+    first_action_with_room(candidates, urgent, out, facts, kit, Some(home_slots), Some(pack_slots), Some(weight_room))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn first_action_with_room(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
     facts: &[WareFact], kit: &[KitItem], home_slots: Option<i32>, pack_slots: Option<i32>,
+    weight_room: Option<i64>,
 ) -> (i64, [i64; 4], i64, bool) {
     let need_of = |c: &Candidate| {
         facts.iter().find(|f| f.shop == c.shop && f.slot == c.slot).map_or(-1, |f| i64::from(f.need))
     };
     // A blocked new stack must not hide a later emergency that joins stock
     // already carried. Historical shadow selection has no pack-room filter.
-    let feasible_urgent = urgent.iter().find(|f| pack_slots.is_none_or(|n| n >= candidates[f.candidate].slots_cost));
+    // borg-reborn-rs (#955, P7 review): nor over the carry allowance. The
+    // solver already priced the room the urgent copy needs (Budget::weight
+    // is the allowance less the urgent picks), so when one copy does not fit
+    // yet, the room-making dispositions below run first and the purchase
+    // follows on a later solve.
+    let feasible_urgent = urgent.iter().find(|f| pack_slots.is_none_or(|n| n >= candidates[f.candidate].slots_cost)
+        && weight_room.is_none_or(|w| w >= i64::from(candidates[f.candidate].weight)));
     let blocked_urgent = !urgent.is_empty() && feasible_urgent.is_none();
     if let Some(f) = feasible_urgent {
         let c = &candidates[f.candidate];
@@ -1565,8 +1575,8 @@ mod tests {
         let home = KitItem { joins_pack: false, place: Place::Home, slot: 5, ..pack };
         let kit = [pack, home];
         out.dispositions = vec![Disposition::Store, Disposition::Sell];
-        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 0, 1).0, action::SELL_HOME);
-        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 1, 1).0, action::STORE);
+        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 0, 1, i64::MAX).0, action::SELL_HOME);
+        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 1, 1, i64::MAX).0, action::STORE);
         assert_eq!(first_action(&stock.candidates, &[], &out, &[], &kit).0, action::STORE,
             "historical shadow action order remains reproducible");
     }
@@ -1833,14 +1843,14 @@ mod tests {
         let mut cs=stock.candidates.clone();cs[0].slots_cost=1;cs[1].slots_cost=0;
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]},
             UrgentPurchase {candidate:1,needs:vec![Need::Poison]}];
-        let chosen=first_executable_action(&cs,&urgent,&out,&[],&[],1,0);
+        let chosen=first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX);
         assert_eq!(chosen,(action::BUY,[i64::from(cs[1].shop),i64::from(cs[1].slot),1,i64::from(cs[1].price)],3,true));
         // When room exists the original urgent order still wins.
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,1).1[1],i64::from(cs[0].slot));
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,1, i64::MAX).1[1],i64::from(cs[0].slot));
         cs[1].shop=7;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0).0,action::TAKE_HOME);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::TAKE_HOME);
         cs[1].slots_cost=1;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0).0,action::LEAVE);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::LEAVE);
     }
 
     #[test]
@@ -1851,12 +1861,30 @@ mod tests {
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Sell];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0).0,action::SELL);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::SELL);
         out.dispositions[0]=Disposition::Keep;out.solution.chosen.fill(0);
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0).0,action::LEAVE);
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1).0,action::BUY);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::LEAVE);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1, i64::MAX).0,action::BUY);
         let mut cs=stock.candidates.clone();cs[0].shop=7;cs[0].slots_cost=0;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&kit,1,0).0,action::TAKE_HOME);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::TAKE_HOME);
+    }
+
+    /// #955 (P7 review): an urgent copy that does not fit the weight still
+    /// free waits for the room-making dispositions; once it fits, it is bought.
+    #[test]
+    fn urgent_buy_over_the_weight_allowance_frees_weight_first() {
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        let pack=KitItem {joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
+            proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
+        let kit=[pack];out.dispositions=vec![Disposition::Store];
+        let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
+        let w=i64::from(stock.candidates[0].weight);
+        assert!(w > 0);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w-1).0,action::STORE, "room first");
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w).0,action::BUY, "fits: bought first");
+        out.dispositions[0]=Disposition::Keep;
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w-1).0,action::LEAVE, "no room to make: never overweight");
     }
 
 }

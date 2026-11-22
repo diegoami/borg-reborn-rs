@@ -584,7 +584,10 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             };
             if reverses { *d = Disposition::Keep; }
         }
-        crate::borg_town_record::first_executable_action(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, budget.home_slots, crate::borg_town_budget::Facts::of(st).pack_capacity - stock.pack_slots_used())
+        {
+            let facts = crate::borg_town_budget::Facts::of(st);
+            crate::borg_town_record::first_executable_action(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, budget.home_slots, facts.pack_capacity - stock.pack_slots_used(), facts.allowance())
+        }
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
     if live && paction != crate::borg_town_record::action::LEAVE && paction != crate::borg_town_record::action::DROP {
