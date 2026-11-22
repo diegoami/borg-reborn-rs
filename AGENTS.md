@@ -244,6 +244,19 @@ review is done by the owner or by a model of a **different
 family** from the one that wrote most of the milestone. Name both in the
 review PR.
 
+**If you are the reviewer, post your review on the PR yourself** (owner,
+2026-11-22). Whoever runs a review prompt (a model the owner launched, a
+session the owner asked, any tool) posts the finished review as a comment
+on the PR it reviews: write it to a file, then
+`gh pr comment <PR> --body-file <file>`. Head it with the reviewer (model
+and tool) and the pinned commit, and give the comment's URL as your final
+answer. Do not only return the findings in chat or to the session that
+launched you: a review that is not on the PR has not been delivered. If
+you cannot post (no `gh`, no credentials), say so as the first line of
+your answer, then give the review in full so it can be posted unedited.
+Every review prompt says this, with the PR number and the command
+(RULES 6).
+
 ## Where things are
 
 | Path | What |

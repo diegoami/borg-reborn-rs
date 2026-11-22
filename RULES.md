@@ -123,6 +123,16 @@ not undo other-track work already authorized before the gate.
    the owner or by a model of a **different family** from the one that
    wrote most of the milestone, and the review PR names both. When the
    review arrives, the session processes its findings.
+   **The reviewer posts its own review on the PR** (owner, 2026-11-22:
+   reviewers kept returning findings in chat). Whoever runs a review
+   prompt, a model, a session or a tool, posts the finished review as a
+   comment on the PR it reviews (`gh pr comment <PR> --body-file <file>`),
+   headed with the reviewer and the pinned commit, and answers with the
+   comment's URL. Findings returned only in chat are not a delivered
+   review. A reviewer that cannot post says so first, then gives the full
+   review for the session to post unedited. Every review prompt the session
+   writes says this in its first lines, with the PR number and the exact
+   command, and repeats the command at its end.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session
