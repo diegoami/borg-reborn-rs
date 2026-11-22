@@ -34,3 +34,5 @@ files) pass.
 **Not measured.** borg-zoo#636 measures the switch and the divisor at 1 for
 everyone, not the class split. Shipped before the measurement on the owner's
 call (RULES 14). Open: #896 (the confused attack), #912 (saving flasks).
+
+**CI fix.** `engine/tests/test_stair_handoff.py` replays recorded stair incidents (Warrior seed 224 to 144,000 turns, Mage seed 204 to 119,000) at pinned settings that predate them. #901's two values change those games, so the test now pins `attack_confused_by_direction` 0 and `attack_throw_point_blank_divisor` 0, as it pins #859/#863's town switches. Locally, each value alone breaks the test: the confused switch moves both games, and the divisor only the Mage's, since the Warrior's class value is 0. These are the first long games where the shipped switch changes play; smoke is too short to show it.
