@@ -224,6 +224,44 @@ mod lethal_heal_bonus_tests {
     }
 }
 
+/// borg-reborn-rs (#911): with `caution_scary_take_distance` above 0, on a
+/// level made scary while the danger here is 0, the Borg first takes an item
+/// it wants within that many flow steps (`borg_flow_take`, viewable). Asked
+/// every think, so a danger that rises ends it. Rogue 381988580 left a Potion
+/// of Speed two squares away for a sleeping small kobold four squares off.
+fn scary_take_first(st: &mut BorgState, pos_danger: i32) -> bool {
+    let reach = p(Param::caution_scary_take_distance);
+    if !scary_take_allowed(reach, st.borg.mon.scary, pos_danger, st.borg.tr(BI_CDEPTH)) {
+        return false;
+    }
+    // `take_select` refuses every item on a scary level ("If ScaryGuy, no
+    // chasing down items"): lifted for this one bounded call only.
+    let scary = st.borg.mon.scary;
+    st.borg.mon.scary = false;
+    let took = crate::borg_flow_take::borg_flow_take(st, true, reach);
+    st.borg.mon.scary = scary;
+    if took {
+        borg_note(st, &format!("# Taking an item before leaving a scary level (danger 0, within {reach}) (#911)"));
+    }
+    took
+}
+
+fn scary_take_allowed(reach: i32, scary: bool, pos_danger: i32, depth: i32) -> bool {
+    reach > 0 && scary && pos_danger == 0 && depth > 0
+}
+
+#[cfg(test)]
+mod scary_take_tests {
+    #[test]
+    fn only_a_scare_at_no_danger_in_the_dungeon_waits_for_an_item() {
+        assert!(super::scary_take_allowed(5, true, 0, 1), "36,256: danger 0 on DL1");
+        assert!(!super::scary_take_allowed(0, true, 0, 1), "0 = C");
+        assert!(!super::scary_take_allowed(5, true, 1, 1), "any danger: flee");
+        assert!(!super::scary_take_allowed(5, false, 0, 1));
+        assert!(!super::scary_take_allowed(5, true, 0, 0), "not in town");
+    }
+}
+
 fn outmatched_heal_applies(
     enabled: i32,
     curhp: i32,
@@ -3363,6 +3401,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if unseen_bump_response(st, pos_danger) { return true; }
 
     /*** Flee on foot ***/
+
+    // borg-reborn-rs (#911): a scare at danger 0 (a sleeping named monster in
+    // view) does not leave an item within caution_scary_take_distance flow
+    // steps behind (0 = C: the flight goes first).
+    if scary_take_first(st, pos_danger) {
+        return true;
+    }
 
     // borg-reborn-rs (#909): #457's outmatched heal before the flight on foot,
     // not only after it (0 = C order: at the end of borg_caution).
