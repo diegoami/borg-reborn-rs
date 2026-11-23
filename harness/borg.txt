@@ -654,6 +654,16 @@ borg_param_kill_live_min_power = 1
 
 borg_param_kill_live_zero_hp = 1
 
+# #915: grouped monster messages. The engine writes the subject of a message
+# for several monsters of one race as "N <plural>" ("3 cave spiders start
+# moving faster.", mon-msg.c:333-345); the Borg's race guess takes any name
+# without "The " for the player ghost, in 4.2 the last race, Morgoth
+# (borg_flow_kill.rs guess_race_name). 1 reads the plural as the race.
+# Shipped 1 (P8, owner 2026-11-22: a P8 fix ships on once the evidence holds):
+# every non-unique race of monster.txt reads back from its grouped subject
+# (unit test), and seed 2008390085 plays the same keys and danger either way.
+borg_param_kill_grouped_names = 1
+
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
@@ -707,6 +717,32 @@ borg_param_recover_unseen_detect_reads = 2
 borg_param_recover_unseen_probe_tries = 10
 borg_param_recover_unseen_probe_max_grids = 3
 borg_param_recover_unseen_act_age = 30
+
+# An unseen shooter (#981): with shot = 1, "You are hit by ...!" (the
+# engine's message for any projection, an arrow, a bolt or a breath, from a
+# monster the Borg cannot see, or any projection while it is blind) enters
+# the mode above as a blow does: no rest near where it struck, Detect
+# Invisible, walk away, drink below heal_hp_percent. A hit is not taken to
+# mean the attacker is adjacent (no blind attacks in an episode of hits only,
+# unless blind or without light) or that it followed (no leave for it); the
+# episode ends when a known monster that casts or shoots dies. 0 = off.
+# Shipped 1 by the owner (2026-11-22) after the borg-zoo#671 pilot
+# (classes-18: acts in 2 of 18 games, no outcome changed); Elf Warrior
+# 1312323730 rested 18 times under a kobold archer out of the light.
+borg_param_recover_unseen_shot = 1
+
+# Cure before a rest (#982): with cure_hp_percent = N > 0, when an HP rest is
+# due below N% of the maximum HP (after the dark-room light) and an awake
+# monster that can move, faster than the Borg by at least speed_edge, is
+# known within distance grids (in view or not), drink one potion instead of
+# resting: the first of Cure Light, Cure Serious and Cure Critical Wounds. Out of view its danger is 0, so borg_heal does not drink, and the
+# recovery heal drinks no Cure Light Wounds. 0 = off. Shipped on at 50 by the
+# owner (2026-11-22), the value of the borg-zoo#671 pilot (classes-18: never
+# acted); Half-Troll Necromancer 2125189042 rested at 2/17 HP with 12 CLW and
+# the crow came back during the rest.
+borg_param_recover_rest_cure_hp_percent = 50
+borg_param_recover_rest_cure_speed_edge = 1
+borg_param_recover_rest_cure_distance = 20
 
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
@@ -1030,6 +1066,37 @@ borg_param_escape_phase_lost_danger_percent = 100
 # (never the chosen one itself), or melee. 0 = full damage every turn (#612).
 
 borg_param_escape_phase_lost_mana = 1
+
+# The lone-slow bundle (#878, shipped by the owner 2026-11-22, #1046: "I would
+# turn on lone_wolf"). From the Mage 461220874 that retreated from one white
+# worm mass instead of killing it with Magic Missile. Six settings, shipped
+# together as measured: a caster kills a lone slow monster at range before
+# retreat and Phase Door (lone_slow_attack; radius 3, 2 casts, 25% of HP, the
+# compiled defaults); the Phase rule and the reserve spell judge danger
+# without fear (poison and breeder fear terms off); no reserve-spell cast when
+# the expected damage during the faint reaches 25% of HP; the unseen-bump
+# Phase Door only for a bump at most 20 game turns old and danger at least 5.
+# borg-zoo reborn-lone-slow (900 starts, lone-slow-296adfbf): 13 deaths
+# against 25, 20 rescued, 8 newly killed, p = 0.04. Its parts alone (lone,
+# phase-nofear) did nothing; borg-zoo#699 measures the rest at track-p
+# 206cf4e7.
+
+borg_param_lone_slow_attack = 1
+borg_param_escape_phase_lost_damage_only = 1
+borg_param_attack_reserve_spell_damage_only = 1
+borg_param_attack_reserve_faint_percent = 25
+borg_param_caution_unseen_bump_phase_turns = 20
+borg_param_caution_unseen_bump_phase_min_danger = 5
+
+# #980: the emergency attack spell (Magic Missile, the reserve spell) only
+# within the current mana (#1056, owner 2026-11-22: "let us change value of
+# attack_reserve_spell_overexert to 0"). At 1 (C) it is cast beyond the
+# current SP and the engine always faints the Borg (player-spell.c:540-553):
+# Mages 592754909 and 1378676237 died paralysed. With 0 no reserve cast can
+# faint, so attack_reserve_faint_percent above no longer acts. Not measured
+# yet: borg-zoo#675.
+
+borg_param_attack_reserve_spell_overexert = 0
 
 # Teleport landing with either kind of teleport (#724, upstream Angband
 # 95387b06): 1 = the landing check (borg_caution_teleport) runs with a
@@ -1470,16 +1537,40 @@ borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
 # #926: the heal floor (percent of max HP), the quantile of "the next turn
 # kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
-# it. All 0 = today's play, until the zoo measures them.
-borg_param_fast_fragile_heal_floor = 0
-borg_param_fast_fragile_escape_quantile = 0
-borg_param_fast_fragile_count_dot = 0
+# it. 0 = the play before #1072. Shipped together (#1072, owner 2026-11-23:
+# "can we turn on the fast-fragile bundle", "heal floor 50, 75th percentile,
+# count_dot 1"), from #926's cases: the quantile Dwarf Necromancer 1398933929
+# (HP 8 against a wild cat: median 8, 75th percentile above), the floor Elf
+# Priest 1294425391, the cut/poison count Half-Elf Necromancer 798380952.
+# Not measured yet: borg-zoo#711.
+borg_param_fast_fragile_heal_floor = 50
+borg_param_fast_fragile_escape_quantile = 75
+borg_param_fast_fragile_count_dot = 1
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
-# grids with a torch, so unseen monsters two grids away are deleted). Ships 0
-# until the zoo measures it. With 1 the lit shape is the engine's too, and the
-# dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
-borg_param_cave_light_engine_radius = 0
+# grids with a torch, so unseen monsters two grids away are deleted). With 1
+# the lit shape is the engine's too, and the dark flow, dark frontier, Light
+# Beam and Call Light read that radius (#884). Shipped 1 (#1078, owner
+# 2026-11-23: "let us set cave_light_engine_radius to 1"). Measured only on an
+# old build (borg-zoo#625, 360 starts: 9 deaths against 8); borg-zoo#702 and
+# the belief arms of PR #709 measure it on the current code.
+borg_param_cave_light_engine_radius = 1
+# #929: a ranged attack with no hit message. 1 = a miss at a monster in view
+# is a miss, not a wall (a thrown or fired miss prints nothing,
+# player-attack.c:1278-1280), and no guessed wall lands on the Borg's own
+# grid. 0 = C's guess (granite under the Borg after every miss at an
+# adjacent target). Shipped 1 (owner, 2026-11-22, #1069), before a zoo
+# measurement.
+borg_param_update_miss_wall_guess = 1
+# #879: ranged attacks at a monster the Borg saw recently and believes is
+# still at its last grid (dark, beyond its light), weighted by the chance it
+# is there (100 - decay per monster turn; 100 if immobile or asleep). Melee
+# never. Pairs with cave_light_engine_radius = 1. Ships 0 until the zoo
+# measures it; max_age and decay are hypotheses.
+borg_param_unseen_belief = 0
+borg_param_unseen_max_age = 10
+borg_param_unseen_decay_percent = 20
+borg_param_unseen_max_shots = 3
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
