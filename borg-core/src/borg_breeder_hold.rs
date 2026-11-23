@@ -55,7 +55,7 @@ use crate::borg_flow_misc::borg_extract_dir;
 use crate::borg_headers::borg_trait_h::{BI_ACCW, BI_ACLW, BI_ACSW, BI_CDEPTH, BI_CURHP, BI_MAXHP, BI_SPEED};
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
-use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_RAND_25, RF_RAND_50};
+use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_RAND_25, RF_RAND_50};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::ui_event_h::keycode_t;
@@ -76,6 +76,8 @@ struct Near {
     erratic: bool,
     /// `extract_energy` of its speed.
     energy: i32,
+    /// `NEVER_MOVE` (a mold): with no ranged attack it counts only adjacent.
+    immobile: bool,
 }
 
 /// Why the rule does not fire, or that it does.
@@ -97,7 +99,14 @@ enum Colony {
 /// energy; `clear` the exit distance; `big` the colony test.
 fn colony(known: &[(i32, Near)], own: i32, clear: i32, big: bool) -> Colony {
     let awake: Vec<&(i32, Near)> = known.iter().filter(|(_, m)| m.awake).collect();
-    if awake.iter().any(|(_, m)| !m.breeder || m.ranged || m.energy > own || (m.energy == own && !m.erratic)) {
+    // An immobile monster with no ranged attack (a grey mold by the route,
+    // Priest 1512540769 at track-p 21c0d9c1) threatens only the grids next
+    // to it, which the route does not cross (`passable`): it counts only
+    // when adjacent.
+    let harmless = |d: i32, m: &Near| m.immobile && !m.ranged && d > 1;
+    if awake.iter().any(|(d, m)| {
+        !harmless(*d, m) && (!m.breeder || m.ranged || m.energy > own || (m.energy == own && !m.erratic))
+    }) {
         return Colony::Other;
     }
     if !known.iter().any(|(d, m)| m.breeder && *d < clear) {
@@ -241,6 +250,7 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
                 ranged: kill.ranged_attack > 0,
                 erratic: engine::race_flag_has(r, RF_RAND_25) || engine::race_flag_has(r, RF_RAND_50),
                 energy: energy(i32::from(kill.speed)),
+                immobile: engine::race_flag_has(r, RF_NEVER_MOVE),
             },
         ));
     }
@@ -442,7 +452,7 @@ mod tests {
     use super::*;
 
     fn worm(d: i32) -> (i32, Near) {
-        (d, Near { awake: true, breeder: true, ranged: false, erratic: true, energy: 5 })
+        (d, Near { awake: true, breeder: true, ranged: false, erratic: true, energy: 5, immobile: false })
     }
 
     #[test]
@@ -458,6 +468,16 @@ mod tests {
         // A sleeping non-breeder does not count.
         orc.1.awake = false;
         assert_eq!(colony(&[worm(1), orc], 10, 6, true), Colony::Fires);
+        // An awake mold counts only adjacent; a ranged immobile one always.
+        let mut mold = worm(5);
+        mold.1.breeder = false;
+        mold.1.immobile = true;
+        assert_eq!(colony(&[worm(1), mold], 10, 6, true), Colony::Fires);
+        mold.0 = 1;
+        assert_eq!(colony(&[worm(1), mold], 10, 6, true), Colony::Other);
+        mold.0 = 5;
+        mold.1.ranged = true;
+        assert_eq!(colony(&[worm(1), mold], 10, 6, true), Colony::Other);
         // A ranged breeder, a faster one, an equally fast steady one.
         let mut b = worm(2);
         b.1.ranged = true;
