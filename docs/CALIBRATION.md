@@ -7238,7 +7238,7 @@ The race delta of #1061's threshold (`__<race>`) is not part of this change:
 the suffix is #1061's, and this threshold takes it when that lands.
 borg-zoo measures the shipped list against `explore_breadth_first = 0`, and
 the arms of #1085 (`explore_bfs_max_hp` 20, 25 and 30). With this
-section the registry holds **2443** parameters (`track-p` `87a57104` plus the four
+section the registry holds **2448** parameters (`track-p` `57d47863` plus the four
 below).
 
 | parameter | default | unit | range | source |
