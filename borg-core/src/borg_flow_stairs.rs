@@ -1530,6 +1530,51 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         assert_eq!(st.borg.c, expected);
     }
 
+    if case == "breeder-recovery" {
+        use crate::borg_flow_misc::{borg_continue_recovery, borg_flow_recover};
+        use crate::borg_headers::borg_trait_h::{BI_CURSP, BI_FOOD, BI_MAXSP};
+
+        let start = loc { x: 40, y: 20 };
+        let halfway = loc { x: 41, y: 20 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 19..=21 {
+            for x in 39..=48 {
+                st.cave.grid_mut(x, y).feat = if y == 20 && (40..=47).contains(&x) {
+                    FEAT_FLOOR as u8
+                } else { FEAT_GRANITE as u8 };
+            }
+        }
+        st.cave.grid_mut(47, 20).feat = FEAT_LESS as u8;
+        st.borg.c = start;
+        st.borg.avoidance = 47;
+        for (index, value) in [(BI_CLEVEL, 11), (BI_CURHP, 47), (BI_MAXHP, 47),
+            (BI_CURSP, 2), (BI_MAXSP, 20), (BI_LIGHT, 2), (BI_FOOD, 3)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.borg.mon.breeders = 0;
+
+        assert!(borg_flow_recover(st, 50), "a low-mana Mage can seek a safe rest with no breeders");
+        observe_move(st, b'6', halfway);
+        st.borg.mon.breeders = 1;
+        assert!(!borg_continue_recovery(st), "the veto cancels an existing recovery route");
+        assert_eq!(st.borg.goal.type_0, 0);
+        assert!(st.borg.goal.leaving);
+        assert!(st.io.queued_keys().is_empty());
+
+        st.borg.c = start;
+        assert!(!borg_flow_recover(st, 50), "the veto also prevents a new recovery route");
+        assert!(st.io.queued_keys().is_empty());
+        st.borg.mon.breeders = 0;
+        assert!(borg_flow_recover(st, 50), "the ordinary route remains usable when resting is permitted");
+        observe_move(st, b'6', halfway);
+
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
+    }
+
     if case == "interrupted-search" {
         use crate::borg_flow_misc::borg_flow_spastic;
 
