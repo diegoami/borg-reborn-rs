@@ -829,6 +829,10 @@ pub(crate) enum PhaseSite {
     /// #842: a fast-fragile monster next to the Borg, the next turn kills it
     /// and the kill needs more than one more turn (`borg_fast_fragile.rs`).
     FastFragile,
+    /// #1064 (review of #1082): #969's floor declined the attack on a
+    /// `kill-on-sight` entry and its cure does not outlive the next turn
+    /// (`borg_fight_attack.rs` `floor_escape`).
+    KillOnSightFloor,
 }
 
 impl PhaseSite {
@@ -853,6 +857,7 @@ impl PhaseSite {
             PhaseSite::TwitchyMove => "twitchy move",
             PhaseSite::TwitchyThink => "twitchy think",
             PhaseSite::FastFragile => "fast-fragile",
+            PhaseSite::KillOnSightFloor => "kill-on-sight floor",
         }
     }
 }

@@ -825,6 +825,16 @@ borg_param_flow_leash_stairs_max_level = 20
 borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
+# #1080, #1085: breadth-first exploration from the staircases below a
+# maximum HP (the ring nearest the stairs is explored first). Shipped 1
+# (owner, 2026-11-23: "ship it like that ... turn it on by default"), with
+# the per-class thresholds of the class files; 0 = C's depth-first order.
+borg_param_explore_breadth_first = 1
+borg_param_explore_bfs_max_hp = 25
+borg_param_explore_bfs_slack = 0
+# The threshold by level (per class with __<class>): max HP below
+# explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
+borg_param_explore_bfs_hp_per_level = 0
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
@@ -1581,6 +1591,15 @@ borg_param_item_test_unknown_hold_turns = 180
 # not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
 # confused at the patch until death, CLW in the pack).
 borg_param_attack_kill_on_sight_min_hp_percent = 50
+# #1064: when that floor declines the attack, the cure it counted is drunk in
+# the same think (confused: Cure Serious, then Critical, which cure the
+# confusion; then Cure Light, which shortens it by 20 turns) unless it does not
+# outlive the next turn and an escape is at hand (it then takes the stairs
+# underfoot or Phase Door in the same think, and drinks after all if the Phase
+# Door's own gates refuse it), and #867's "attacking first" hold of the
+# confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
+# neither attacking nor drinking with this 0. 0 = #969 alone.
+borg_param_attack_kill_on_sight_floor_cure = 1
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
@@ -1627,11 +1646,15 @@ borg_param_update_miss_wall_guess = 1
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
 # is there (100 - decay per monster turn; 100 if immobile or asleep). Melee
-# never. Pairs with cave_light_engine_radius = 1. Ships 0 until the zoo
-# measures it; max_age and decay are hypotheses.
-borg_param_unseen_belief = 0
+# never. Pairs with cave_light_engine_radius = 1. Shipped 1 with decay 5
+# (owner, 2026-11-23: "let us switch to light+belief, decay 5"), on borg-zoo#702's
+# belief full tier at track-p f8725bc0 (900 starts: light+belief-decay5 13
+# deaths, ctl 23, light 17, light+belief at decay 20 15; p 0.087 against ctl,
+# descriptive). The decay grid 10/5/0 on an independent block (starts 1-900)
+# is requested on borg-zoo#702; max_age and decay remain hypotheses.
+borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
-borg_param_unseen_decay_percent = 20
+borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
@@ -1865,6 +1888,8 @@ borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
+borg_param_explore_bfs_max_hp__warrior = 31
+borg_param_explore_bfs_hp_per_level__warrior = 2
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1886,6 +1911,8 @@ borg_param_town_staple_clw__mage = 6
 borg_param_town_staple_csw__mage = 3
 borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
+borg_param_explore_bfs_max_hp__mage = 35
+borg_param_explore_bfs_hp_per_level__mage = 1
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1906,6 +1933,8 @@ borg_param_town_staple_clw__druid = 5
 borg_param_town_staple_csw__druid = 3
 borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
+borg_param_explore_bfs_max_hp__druid = 36
+borg_param_explore_bfs_hp_per_level__druid = 2
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1927,6 +1956,8 @@ borg_param_town_staple_csw__priest = 3
 borg_param_town_staple_phase__priest = 12
 borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
+borg_param_explore_bfs_max_hp__priest = 31
+borg_param_explore_bfs_hp_per_level__priest = 2
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1948,6 +1979,8 @@ borg_param_town_staple_clw__necromancer = 5
 borg_param_town_staple_csw__necromancer = 3
 borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
+borg_param_explore_bfs_max_hp__necromancer = 31
+borg_param_explore_bfs_hp_per_level__necromancer = 2
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1971,6 +2004,8 @@ borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
+borg_param_explore_bfs_max_hp__paladin = 34
+borg_param_explore_bfs_hp_per_level__paladin = 2
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1994,6 +2029,8 @@ borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
+borg_param_explore_bfs_max_hp__rogue = 36
+borg_param_explore_bfs_hp_per_level__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2020,6 +2057,8 @@ borg_param_town_staple_clw__ranger = 7
 borg_param_town_staple_csw__ranger = 4
 borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
+borg_param_explore_bfs_max_hp__ranger = 44
+borg_param_explore_bfs_hp_per_level__ranger = 2
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2043,6 +2082,8 @@ borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
+borg_param_explore_bfs_max_hp__blackguard = 30
+borg_param_explore_bfs_hp_per_level__blackguard = 2
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
