@@ -933,7 +933,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
 
 /// The distance of the nearest stair of `track` without a monster on it,
 /// or -1.
-fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
+pub(crate) fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let mut best = -1;
     for i in 0..track.num.max(0) as usize {
@@ -3559,6 +3559,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // emergency food keep priority; the unseen response precedes stair walking.
     if unseen_bump_response(st, pos_danger) { return true; }
 
+    // borg-reborn-rs (#882, owner: "fight your way out"): against a slow or
+    // erratic breeder colony, cut the known way out or hold; no flight,
+    // exit, retreat, escape or back-away below moves the Borg meanwhile.
+    if crate::borg_breeder_hold::breeder_hold(st) {
+        return true;
+    }
+
     /*** Flee on foot ***/
 
     // Desperation Head for stairs
@@ -4442,7 +4449,8 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
     let mut exits = Vec::new();
     for y in 1..AUTO_MAX_Y - 1 {
         for x in 1..AUTO_MAX_X - 1 {
-            if st.cave.grid(x, y).kill == 0 && breeder_exit_grid(&passable, loc { x, y }, &breeders, distance) {
+            // #882: `room_exit_grid`, so no grid of a checkerboard room is an exit.
+            if st.cave.grid(x, y).kill == 0 && room_exit_grid(&passable, loc { x, y }, &breeders, distance) {
                 exits.push(loc { x, y });
             }
         }
@@ -4984,6 +4992,17 @@ pub(crate) fn near_known_breeder(st: &BorgState, x: i32, y: i32) -> bool {
 /// The 8 neighbours' offsets.
 const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
 
+/// borg-reborn-rs (#882): a room exit, for #544's breeder exit and the
+/// slow-breeder hold: a breeder exit (`breeder_exit_grid`) with an
+/// orthogonal passable neighbour. A checkerboard room's grids touch only
+/// diagonally, so each is a chokepoint, and the breeder exit could walk to
+/// one inside the room (Priest 399497898's worm pocket); a corridor or a
+/// doorway has a neighbour straight ahead.
+pub(crate) fn room_exit_grid(passable: &dyn Fn(i32, i32) -> bool, at: loc, breeders: &[loc], distance: i32) -> bool {
+    breeder_exit_grid(passable, at, breeders, distance)
+        && [(0, -1), (1, 0), (0, 1), (-1, 0)].iter().any(|&(dx, dy)| passable(at.x + dx, at.y + dy))
+}
+
 /// A breeder exit (#544): a passable grid at least `distance` grids from
 /// every known breeder that is a chokepoint (`chokepoint`). `passable` is
 /// known floor: an unknown grid counts as a wall, and the desperate flow does
@@ -4998,7 +5017,7 @@ fn breeder_exit_grid(passable: &dyn Fn(i32, i32) -> bool, at: loc, breeders: &[l
 /// groups that do not touch each other (8-connected), so the grid is a
 /// corridor or doorway between them. A room grid, a room edge or corner, a
 /// dead-end tip and an isolated grid have at most one group.
-fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
+pub(crate) fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
     let open: Vec<(i32, i32)> = NEIGHBOURS.iter().copied().filter(|&(dx, dy)| passable(at.x + dx, at.y + dy)).collect();
     let mut group = vec![usize::MAX; open.len()];
     let mut groups = 0;
@@ -6870,6 +6889,41 @@ mod breeder_tests {
         assert!(chokepoint(&passable, loc { x: 30, y: 16 }), "the corridor");
         assert!(breeder_exit_grid(&passable, loc { x: 30, y: 16 }, &worms, 6), "the corridor, 6 grids up");
         assert!(exits.contains(&loc { x: 30, y: 16 }), "found by the scan");
+    }
+
+    /// #882: in a checkerboard room every grid is a chokepoint (its floor
+    /// neighbours are diagonal and do not touch), so `breeder_exit_grid`
+    /// takes room grids; `room_exit_grid` takes only the doorway and the
+    /// corridor beyond it. The worm room's corridor exits stay exits.
+    #[test]
+    fn a_checkerboard_room_has_no_exit_inside() {
+        const LATTICE: [&str; 9] = [
+            "###########",
+            "###.#.#.#.#",
+            "####.#.#.##",
+            "###.#.#.#.#",
+            "####.#.#.##",
+            "###.#.#.#.#",
+            "####.#.#.##",
+            "....#.#.#.#",
+            "###########",
+        ];
+        let passable = map_passable(&LATTICE);
+        let inside = |at: loc| at.x >= 3;
+        assert!(chokepoint(&passable, loc { x: 5, y: 3 }), "a room grid is a chokepoint");
+        assert!(breeder_exit_grid(&passable, loc { x: 5, y: 3 }, &[], 6), "and a breeder exit");
+        for y in 0..LATTICE.len() as i32 {
+            for x in 0..11 {
+                let at = loc { x, y };
+                if room_exit_grid(&passable, at, &[], 1) {
+                    assert!(!inside(at) || (at.x, at.y) == (3, 7), "no room exit inside the room: {x},{y}");
+                }
+            }
+        }
+        assert!(room_exit_grid(&passable, loc { x: 3, y: 7 }, &[], 1), "the doorway");
+        assert!(room_exit_grid(&passable, loc { x: 1, y: 7 }, &[], 1), "the corridor");
+        let worm = map_passable(&WORM_ROOM);
+        assert!(room_exit_grid(&worm, loc { x: 30, y: 16 }, &[], 6), "the worm room's corridor");
     }
 
     /// #690: the crowd can be walked away from only when a monster is

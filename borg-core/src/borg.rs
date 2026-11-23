@@ -166,6 +166,16 @@ pub struct Borg {
     /// borg-reborn-rs (#556): the judged thinks in a row on which the breeding
     /// outpaced the kills (`caution_breeder_stoppable_confirm` lose the level).
     pub breeders_behind: i32,
+    /// borg-reborn-rs (#882): the known breeder count at each think of the
+    /// last `caution_breeder_hold_growth_turns` game turns (game turn, count);
+    /// cleared on a new level.
+    pub breeder_hold_samples: Vec<(i32, i32)>,
+    /// borg-reborn-rs (#882): the slow-breeder hold's idle thinks in a row
+    /// (staying still with no breeder adjacent); cleared on a new level.
+    pub breeder_hold_idle: i32,
+    /// borg-reborn-rs (#882): out of a slow-breeder colony, the hold walks
+    /// the known route on to a staircase; cleared on a new level.
+    pub breeder_hold_stair: bool,
     /// borg-reborn-rs (#743): a flight to the stairs was refused for a
     /// blocked path on this level (the note is once per level); cleared on a
     /// new level.
