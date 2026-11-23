@@ -6790,3 +6790,45 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
+
+## Breadth-first exploration from the staircases (#1080)
+
+The owner (2026-11-23): "it seems to me that the borg explores depth-first,
+but a safer way would be breadth-first." C's `borg_flow_dark` takes the first
+of five methods that finds a target, and every one measures from the Borg:
+in a corridor the nearest unknown grid is the next one ahead, so the Borg
+follows the corridor to its end. At `explore_breadth_first = 1`, while the
+Borg's maximum HP is below `explore_breadth_first_max_hp`, both exploration
+calls (near and far) use one method instead (`borg_flow_dark_breadth_first`):
+
+1. one spread from every known staircase, up and down, over known grids
+   gives each grid its **ring**, its flow steps from the nearest staircase;
+   a grid the spread does not enter (an unknown grid, rubble, a vein) is one
+   more than its nearest entered neighbour;
+2. the candidates are the interesting grids of the whole known map (methods
+   3–5's, reachable, and method 1's torch-lit ones) within the leash
+   (`borg_get_leash`, where C's distance test applies, measured from that
+   nearest staircase, not from the farthest up one);
+3. the nearest ring is explored first: all its candidates are goals of one
+   spread, so the flow leads to the one nearest the Borg (the tie-break). A
+   path may not cross a grid of a ring farther out than its target's, or
+   than the Borg's own when it stands farther out (its way back passes
+   there): no target is reached around behind the Borg's back. With no path,
+   the next ring (at most 16 per think).
+
+With no known staircase, or no candidate connected to one (a teleport into an
+unexplored region), C's methods run as before (#1062 handles that Borg). When
+no candidate is left within the leash, neither call explores, so the level is
+left (`borg_leave_level`) once the area within the leash is done. The note is
+`# Flowing toward dark-bfs (ring d) at cost n`.
+
+The race delta of #1061's threshold (`__<race>`) is not part of this change:
+the suffix is #1061's, and this threshold takes it when that lands. Both
+values ship off; borg-zoo measures them alone, with `stair_scum` and for all
+characters (the issue's endpoints). With this section the registry holds
+**2421** parameters (`track-p` `f67fad19` plus the two below).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:843` |
+| `explore_breadth_first_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:845` |

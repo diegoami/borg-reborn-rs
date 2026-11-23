@@ -29,13 +29,14 @@ use crate::borg_danger::borg_danger;
 use crate::{borg_flow_misc, engine};
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DISM, BI_DISP, BI_FOOD, BI_GOLD, BI_IFIRE, BI_ISCONFUSED,
-    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
+    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
 };
 use crate::headers::list_terrain_h::{
     FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_NONE, FEAT_PERM,
     FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::z_type_h::loc;
+use crate::params::{value, Param};
 use crate::state::BorgState;
 
 
@@ -834,6 +835,174 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
     commit_and_step(st, c"dark-5")
 }
 
+/// borg-reborn-rs (#1080, owner 2026-11-23: "a safer way would be
+/// breadth-first"): is exploration breadth-first from the staircases?
+/// `explore_breadth_first` on, in the dungeon, and the Borg's maximum HP
+/// below `explore_breadth_first_max_hp` (a value per class).
+fn breadth_first_active(st: &BorgState) -> bool {
+    value(Param::explore_breadth_first) != 0
+        && st.borg.tr(BI_CDEPTH) > 0
+        && st.borg.tr(BI_MAXHP) < value(Param::explore_breadth_first_max_hp)
+}
+
+/// No stair distance (`borg_data_hard`'s value, unreached by the spread).
+const NO_RING: u8 = 255;
+
+/// The eight neighbours (the pure helpers below do not call the engine).
+const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+
+/// #1080: the ring of a grid: its flow steps from the nearest known
+/// staircase over known grids (`rings`, the spread from every staircase),
+/// or, for a grid the spread does not enter (an unknown grid, rubble, a
+/// vein), one more than its nearest entered neighbour. `None`: no route.
+fn ring_of<R: AsRef<[u8]>>(rings: &[R], y: i32, x: i32) -> Option<i32> {
+    let at = |y: i32, x: i32| -> i32 {
+        rings.get(y as usize).and_then(|row| row.as_ref().get(x as usize)).map_or(i32::from(NO_RING), |&c| i32::from(c))
+    };
+    let mut best = at(y, x);
+    for (dy, dx) in NEIGHBOURS {
+        if y + dy >= 0 && x + dx >= 0 {
+            best = best.min(at(y + dy, x + dx) + 1);
+        }
+    }
+    (best < i32::from(NO_RING)).then_some(best)
+}
+
+/// #1080: the rings to try, nearest first, of the candidates within the
+/// leash (`None`: no leash applies), at most `max` of them.
+fn rings_in_order(cands: &[(i32, i32, i32)], leash: Option<i32>, max: usize) -> Vec<i32> {
+    let mut rings: Vec<i32> = cands.iter().map(|&(_, _, r)| r).filter(|&r| leash.is_none_or(|l| r <= l)).collect();
+    rings.sort_unstable();
+    rings.dedup();
+    rings.truncate(max);
+    rings
+}
+
+/// #1080: the farthest ring a path to ring `d` may cross: the target's own,
+/// or the Borg's when it stands farther out (its way back passes there). A
+/// grid beyond it is behind the Borg's back.
+fn path_limit(d: i32, borg_ring: Option<i32>) -> i32 {
+    borg_ring.map_or(i32::from(NO_RING), |b| d.max(b))
+}
+
+/// #1080: is a known grid of ring `ring` closed to a path whose limit is
+/// `limit`?
+fn beyond_limit(ring: u8, limit: i32) -> bool {
+    ring != NO_RING && i32::from(ring) > limit
+}
+
+/// At most this many rings are tried in one think (one spread each).
+const BREADTH_FIRST_MAX_RINGS: usize = 16;
+
+/// #1080: breadth-first exploration from the staircases.
+///
+/// 1. One spread from every known staircase, of either kind, over known
+///    grids gives each grid its ring (`ring_of`).
+/// 2. The candidates are the interesting grids of the whole known map
+///    (methods 3-5's, reachable, with method 1's torch-lit ones), within the
+///    leash measured from that nearest staircase (where C's distance test
+///    applies, `borg_flow_far_from_stairs_dist`).
+/// 3. The nearest ring is explored first: every candidate of the ring is a
+///    goal, so the flow leads to the one nearest the Borg (the tie-break).
+///    A path may not cross a grid of a farther ring than the target's (or
+///    the Borg's own, `path_limit`). When no path exists, the next ring.
+///
+/// `Some(stepped)`: this order decided (`false`: nothing to explore within
+/// the leash); `None`: no staircase known, or no candidate connected to one.
+fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
+    if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
+        return None;
+    }
+
+    /* Rings: one spread from every known staircase */
+    wipe_and_clear(st);
+    for i in 0..i32::from(st.stairs.less.num) {
+        let (y, x) = st.stairs.less.at(i as usize);
+        crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+    }
+    for i in 0..i32::from(st.stairs.more.num) {
+        let (y, x) = st.stairs.more.at(i as usize);
+        crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+    }
+    crate::borg_flow::borg_flow_spread_stairs(st, 250, false, true, false, -1, false);
+    let rings = st.flow.data_cost.clone();
+
+    /* The leash, where C's stair distance test applies */
+    let c = crate::borg_flow::c_leash();
+    let leash_on = (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin
+        && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
+        || crate::borg_kit::leash_active(st);
+    let leash = leash_on.then(|| borg_flow_misc::borg_get_leash(st, false));
+
+    /* Candidates: torch-lit interesting grids, then every reachable one */
+    let mut seen = vec![vec![false; AUTO_MAX_X as usize]; AUTO_MAX_Y as usize];
+    let mut cands: Vec<(i32, i32, i32)> = Vec::new();
+    let mut connected = false;
+    let lit: Vec<(i32, i32)> = (0..st.light.light_n.max(0) as usize)
+        .map(|i| (i32::from(st.light.light_y[i]), i32::from(st.light.light_x[i])))
+        .collect();
+    let mut consider = |st: &mut BorgState, y: i32, x: i32, lit: bool| {
+        if seen[y as usize][x as usize] {
+            return;
+        }
+        if !borg_flow_dark_interesting(st, y, x) || (!lit && !borg_flow_dark_reachable(st, y, x)) {
+            return;
+        }
+        seen[y as usize][x as usize] = true;
+        if let Some(r) = ring_of(&rings, y, x) {
+            connected = true;
+            cands.push((y, x, r));
+        }
+    };
+    for (y, x) in lit {
+        consider(st, y, x, true);
+    }
+    for y in 1..=AUTO_MAX_Y - 2 {
+        for x in 1..=AUTO_MAX_X - 2 {
+            consider(st, y, x, false);
+        }
+    }
+    if !connected {
+        return None;
+    }
+
+    let borg_ring = ring_of(&rings, st.borg.c.y, st.borg.c.x);
+    for d in rings_in_order(&cands, leash, BREADTH_FIRST_MAX_RINGS) {
+        let limit = path_limit(d, borg_ring);
+        crate::borg_flow::borg_flow_clear(st);
+
+        /* Close the grids behind the Borg's back (a zero cost is "reached") */
+        let mut closed = Vec::new();
+        for (y, row) in rings.iter().enumerate() {
+            for (x, &r) in row.iter().enumerate() {
+                if beyond_limit(r, limit) && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
+                    st.flow.data_cost[y][x] = 0;
+                    closed.push((y, x));
+                }
+            }
+        }
+
+        /* Every candidate of the ring is a goal */
+        for &(y, x, r) in &cands {
+            if r == d {
+                crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+            }
+        }
+        crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+
+        /* Reopen the closed grids (no goal of their own) */
+        for (y, x) in closed {
+            st.flow.data_cost[y][x] = st.flow.data_hard[y][x];
+        }
+
+        let who = std::ffi::CString::new(format!("dark-bfs (ring {d})")).expect("no NUL");
+        if commit_and_step(st, &who) {
+            return Some(true);
+        }
+    }
+    Some(false)
+}
+
 /// Prepare to "flow" towards "interesting" grids
 ///
 /// The "exploration" routines are broken into "near" and "far"
@@ -874,6 +1043,15 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         i += 1;
     }
 
+    // borg-reborn-rs (#1080): below explore_breadth_first_max_hp, both calls
+    // explore breadth-first from the staircases (`None`: no known staircase,
+    // or no candidate connected to one; C's methods then run as before).
+    if breadth_first_active(st) {
+        if let Some(stepped) = borg_flow_dark_breadth_first(st) {
+            return stepped;
+        }
+    }
+
     if neer {
         /* Near */
 
@@ -907,4 +1085,98 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
 
     /* Fail */
     false
+}
+
+#[cfg(test)]
+mod breadth_first_tests {
+    use super::*;
+
+    /// The rings of a map, as the spread from every staircase gives them:
+    /// '#' wall, '?' unknown (never entered), '<' or '>' a staircase, else
+    /// known floor. Breadth-first over the eight neighbours.
+    fn rings(map: &[&str]) -> Vec<Vec<u8>> {
+        let h = map.len();
+        let w = map[0].len();
+        let cell = |y: usize, x: usize| map[y].as_bytes()[x];
+        let mut r = vec![vec![NO_RING; w]; h];
+        let mut queue = std::collections::VecDeque::new();
+        for y in 0..h {
+            for x in 0..w {
+                if matches!(cell(y, x), b'<' | b'>') {
+                    r[y][x] = 0;
+                    queue.push_back((y, x));
+                }
+            }
+        }
+        while let Some((y, x)) = queue.pop_front() {
+            for (dy, dx) in NEIGHBOURS {
+                let (ny, nx) = (y as i32 + dy, x as i32 + dx);
+                if ny < 0 || nx < 0 || ny as usize >= h || nx as usize >= w {
+                    continue;
+                }
+                let (ny, nx) = (ny as usize, nx as usize);
+                if matches!(cell(ny, nx), b'#' | b'?') || r[ny][nx] != NO_RING {
+                    continue;
+                }
+                r[ny][nx] = r[y][x] + 1;
+                queue.push_back((ny, nx));
+            }
+        }
+        r
+    }
+
+    // A corridor east from the up staircase, a side branch north at x = 2.
+    // The Borg (at x = 8, ring 8) has an unknown grid 3 steps ahead (ring
+    // 11) and one at the end of the branch, 6 steps away (ring 5: the
+    // first step north is diagonal).
+    const MAP: [&str; 6] = [
+        "##?#########",
+        "##.#########",
+        "##.#########",
+        "##.#########",
+        "<..........?",
+        "############",
+    ];
+
+    #[test]
+    fn a_grid_the_spread_does_not_enter_is_one_more_than_its_nearest_neighbour() {
+        let r = rings(&MAP);
+        assert_eq!(ring_of(&r, 4, 0), Some(0), "the staircase");
+        assert_eq!(ring_of(&r, 4, 8), Some(8), "the Borg's grid");
+        assert_eq!(ring_of(&r, 4, 11), Some(11), "ahead: past ring 10");
+        assert_eq!(ring_of(&r, 0, 2), Some(5), "the branch's end: past ring 4");
+        assert_eq!(ring_of(&r, 0, 8), None, "walled off: no route to a staircase");
+    }
+
+    #[test]
+    fn the_nearest_ring_to_the_staircase_is_explored_first_not_the_grid_nearest_the_borg() {
+        let r = rings(&MAP);
+        let cands: Vec<(i32, i32, i32)> =
+            [(4, 11), (0, 2)].iter().map(|&(y, x)| (y, x, ring_of(&r, y, x).unwrap())).collect();
+        // C's order takes the grid ahead (3 steps from the Borg); this one
+        // the branch (ring 5), then the corridor's end.
+        assert_eq!(rings_in_order(&cands, Some(12), 16), vec![5, 11]);
+        assert_eq!(rings_in_order(&cands, None, 16), vec![5, 11], "no leash applies");
+        assert_eq!(rings_in_order(&cands, Some(10), 16), vec![5], "the leash, from the nearest staircase");
+        assert_eq!(rings_in_order(&cands, Some(4), 16), Vec::<i32>::new(), "nothing within the leash");
+        assert_eq!(rings_in_order(&cands, Some(12), 1), vec![5], "at most max rings");
+    }
+
+    #[test]
+    fn a_path_never_crosses_a_ring_beyond_its_target_or_the_borg() {
+        // Going back to ring 5 from ring 8, the corridor up to ring 8 stays
+        // open; ring 9 and farther (behind the Borg's back) are closed.
+        let limit = path_limit(5, Some(8));
+        assert_eq!(limit, 8);
+        assert!(!beyond_limit(8, limit));
+        assert!(beyond_limit(9, limit));
+        // Standing at ring 2, a ring-5 target may not be reached around
+        // through ring 6.
+        assert_eq!(path_limit(5, Some(2)), 5);
+        assert!(beyond_limit(6, path_limit(5, Some(2))));
+        // An unknown grid (no ring) is left to the spread's own rules; a
+        // Borg cut off from every staircase has no limit.
+        assert!(!beyond_limit(NO_RING, 0));
+        assert_eq!(path_limit(5, None), i32::from(NO_RING));
+    }
 }
