@@ -1535,10 +1535,15 @@ borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
 # #926: the heal floor (percent of max HP), the quantile of "the next turn
 # kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
-# it. All 0 = today's play, until the zoo measures them.
-borg_param_fast_fragile_heal_floor = 0
-borg_param_fast_fragile_escape_quantile = 0
-borg_param_fast_fragile_count_dot = 0
+# it. 0 = the play before #1072. Shipped together (#1072, owner 2026-11-23:
+# "can we turn on the fast-fragile bundle", "heal floor 50, 75th percentile,
+# count_dot 1"), from #926's cases: the quantile Dwarf Necromancer 1398933929
+# (HP 8 against a wild cat: median 8, 75th percentile above), the floor Elf
+# Priest 1294425391, the cut/poison count Half-Elf Necromancer 798380952.
+# Not measured yet: borg-zoo#711.
+borg_param_fast_fragile_heal_floor = 50
+borg_param_fast_fragile_escape_quantile = 75
+borg_param_fast_fragile_count_dot = 1
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
 # grids with a torch, so unseen monsters two grids away are deleted). With 1
