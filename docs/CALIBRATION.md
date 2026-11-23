@@ -20,7 +20,8 @@ resistance into account; path finding is part of another concern".
   touches the flows: `in_reach_of_kept` reads only mode 2's immobile
   attackers, so the flows may pass next to a listed monster. No melee blow
   (`borg_thrust_damage_one`), no hunt walk (`borg_flow_kill`) and no flow
-  step onto its grid (`borg_flow_spread`'s refusal of a kept monster's grid)
+  step onto its grid (`spread_blocked`'s refusal of a kept monster's grid,
+  `borg_play_step`'s refusal to walk into one)
   stay, as do missiles, spells and throws.
 - **Resistances.** A listed monster is kept at range only while one of its
   blows has an effect the character is not protected from (`listed_kept`),
