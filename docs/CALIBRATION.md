@@ -7408,8 +7408,30 @@ staircase (none known, a
 teleport into an unexplored region, a known trap across the only way back,
 #1067), C's methods run as before (review of #1088: the stair side's
 candidates no longer stop them). When no candidate is left within the
-leashes, neither call explores, so the level is left (`borg_leave_level`)
-once the area within them is done. The note is
+leashes, neither call explores, and the think is marked exhausted (#1098;
+owner, 2026-11-23: "once there is nothing to explore, take the stairs"):
+`borg_leave_level` takes the stairs then, as when the level timer is up,
+before the secret-door search, with the same exit as the mixed walk (below). Behind
+`explore_bfs_leave_when_done` (compiled 0, shipped 1); at 0 the Borg stays
+until the level timer or another reason to leave, as before.
+
+**C's own exploration** (#1098, owner 2026-11-23, option 2 of the
+secret-door searches). In the 20 replays of the PR, after the breadth-first
+exit, 578 of the 587 secret-door searches were C's: characters above the
+breadth-first threshold, whose far exploration had found nothing while no
+reason to leave applied yet. At `explore_c_leave_when_done = 1` (compiled 0,
+shipped 1: owner, 2026-11-23, "merge it but with all settings on"), when the far methods (4 and 5; method 5 scans the whole known
+map within the leash) find nothing, the think is marked exhausted.
+`borg_think_dungeon` then calls `borg_leave_level` right after the far
+exploration, before the door-finding spell and the secret-door search. The
+exit is the same as above: the other direction if a random one is out of
+reach. If no staircase can be taken, the level is released and the search
+runs as before (a secret door can be the only way to an up staircase). The
+mark waits while the Borg is impaired: confused, blind or hallucinating,
+under boosted bravery, or in an invisible-attacker episode. Then exploration
+and the stairs fail for its state, not the map. In the replays, a confusion
+trap and an invisible attacker each released a whole level that way, and C
+then stayed stuck for thousands of turns. The note is
 `# Flowing toward dark-bfs (ring d) at cost n`.
 
 **The threshold by level and class** (owner, 2026-11-23): breadth-first
@@ -7459,7 +7481,7 @@ below).
 |---|---:|---|---|---|
 | `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:878` |
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:881` |
-| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1156` |
+| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1228` |
 | `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:882` |
 
 ## More food and light while breadth-first exploration applies (#1110)
@@ -7712,3 +7734,126 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2230` |
 | `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2231` |
 | `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2232` |
+
+## Mixed exploration from the staircases (#1080, #1098)
+
+The owner (2026-11-23): "breadth-first, then mixed (fall back when they get
+too far and explore another branch), then when they are on a level for which
+they are fully prepared they can go depth-first"; "they do not get too far
+from the stairs until they have covered everything that branches from them."
+Breadth-first (#1085, above) is the first mode. At `explore_mixed = 1` the
+second one, `borg_flow_dark_mixed`, applies to a Borg that breadth-first no
+longer covers (its maximum HP at or above the class's threshold, or
+`explore_breadth_first = 0`) and that is not yet prepared for its depth.
+Both exploration calls (near and far) use it.
+
+**Not prepared, for now.** #1080's readiness model is not written. Until it
+is, the mixed walk applies where C's own exploring leash applies
+(`c_leash_on`: the depth at least the character level less
+`flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the kit
+short, #840). Elsewhere exploration stays C's depth-first order, as today.
+
+**A cap by class** (owner, 2026-11-23: "explore_mix_max_clevel by class").
+The walk applies only up to `explore_mix_max_clevel`; above it the class
+counts as prepared. The per-class values are a hypothesis from #1080's pooled
+table of DL1 deaths per 100 games that reached each CL: the level before the
+first CL whose rate, and every later one, is at most 0.25. Priest and
+Necromancer never get there within the table's CL1–7, so they take 7.
+Compiled 50: no cap, and the walk ends with C's leash at CL20.
+
+| class | DL1 deaths per 100 at CL3 / 4 / 5 / 6 / 7 | depth-first from | `explore_mix_max_clevel` |
+|---|---|---:|---:|
+| Warrior | 0.28 / 0.16 / 0.10 / 0.05 / 0.09 | CL4 | 3 |
+| Mage | 2.18 / 1.51 / 0.45 / 0.26 / 0.16 | CL7 | 6 |
+| Druid | 1.06 / 1.02 / 0.45 / 0.22 / 0.22 | CL6 | 5 |
+| Priest | 1.61 / 0.70 / 0.31 / 0.29 / 0.46 | after CL7 | 7 |
+| Necromancer | 2.17 / 0.45 / 0.95 / 0.37 / 0.59 | after CL7 | 7 |
+| Paladin | 0.83 / 0.80 / 0.39 / 0.26 / 0.07 | CL7 | 6 |
+| Rogue | 1.09 / 0.58 / 0.19 / 0.08 / 0.15 | CL5 | 4 |
+| Ranger | 1.31 / 1.02 / 0.35 / 0.14 / 0.07 | CL6 | 5 |
+| Blackguard | 0.67 / 0.63 / 0.11 / 0.14 / 0.23 | CL5 | 4 |
+
+The table pools every build, and recent runs are 5–10 times lower, so the cut
+at 0.25 is itself a hypothesis. borg-zoo#718's turns per (CL, DL) would turn
+these into rates per turn.
+
+**The walk.** It uses breadth-first's frame (`stair_frame`): each grid's ring
+(flow steps from the nearest known staircase of either kind), the
+interesting grids the Borg can reach, and the grids past the return leash.
+1. **The radius.** *R* starts at `explore_mix_radius` and grows by
+   `explore_mix_step`, up to a limit from the escape model of #1061:
+   ⌊*D* / (*r* − 1)⌋ + ⌊max HP / *c*⌋ (`mix_limit`).
+   - *D* = max(`explore_mix_sight`, the Borg's own light radius) is how far
+     a monster is first seen.
+   - *r* = `explore_mix_speed_ratio` is how many times as fast the depth's
+     fast monsters are. It is 2 at DL1–5: Grip, Fang and cave spiders have
+     `speed:120` (`monster.txt:1064,1083,1119`), 20 energy a game turn
+     against 10 at normal speed (`game-world.c:68`). Such a monster first
+     seen *D* grids away catches the Borg after it has walked
+     *D* / (*r* − 1) grids toward the stairs.
+   - *c* = `explore_mix_contact_damage` x the depth band (1 at DL1–5, 2 at
+     DL6–10, ...) is the damage of one player turn in contact. The shipped 5
+     is a 1d4 biter at speed 120, biting twice a turn (`monster.txt:1083,1119`).
+     ⌊max HP / *c*⌋ is the turns of contact the Borg survives on the rest of
+     the way.
+
+   The limit is never below the start, never above `explore_mix_max_radius`,
+   and never above C's leash (`borg_get_leash`) where that applies, so the
+   walk never goes farther than today's. The shipped numbers give 8 steps at
+   17 HP, 10 at 26 HP and 17 at 60 HP, against C's leash of 21 at CL4 and 27
+   at CL6.
+2. **Depth-first inside the radius** (`mixed_plan`). Every candidate within
+   *R* is a goal of one spread, so the flow leads to the one nearest the Borg
+   (C's choice). A path may not cross a ring beyond *R* or the Borg's own
+   (`path_limit`), nor pass the return leash. A corridor is followed to its
+   end while it stays inside *R*.
+3. **Fall back and take another branch.** A branch whose frontier lies
+   beyond *R* is parked: its grids are not goals, so the Borg walks back
+   toward the stairs, to the nearest frontier still inside *R*.
+4. **Grow only when the area is covered.** *R* is the smallest radius of the
+   sequence that holds a candidate. It is not stored: each think takes it
+   afresh, so a branch newly found near the stairs is covered before the
+   walk goes deeper again. Larger radii follow as further tries, for goals
+   the path limit cuts off (at most 16 tries a think; a radius whose goals
+   and path limit repeat the last try's is skipped, review of #1117).
+5. **When there is nothing more.** With no candidate within the limit, the
+   walk is exhausted (`MixOutcome::Exhausted`, review of #1117), and so it
+   is when there are tries but none gives a path (re-review). It marks the
+   think, and `borg_leave_level` takes that as a reason to leave, like the
+   level timer. The first leave call of the dungeon loop comes before the
+   secret-door search and the direct monster flow. When the policy picked
+   the direction at random (either allowed), a direction it cannot reach
+   tries the other (re-review of #1117). If no staircase can be taken in
+   any allowed direction (rising with no up staircase known, say), the walk
+   stands down for that level and C explores for one
+   (`release_after_failed_exit`).
+6. **Edges.** With no route from the Borg to a known staircase (none known,
+   a teleport, a known trap across the way back, #1067), or under boosted
+   bravery, C's methods run, with C's leash (#1062). A staircase newly seen
+   or a monster newly tracked drops a committed exploration flow, as with
+   breadth-first (note `# New monster: planning the mixed exploration again
+   (#1098)`).
+
+The note is `# Flowing toward dark-mix (radius R of L) at cost n`. Not in
+this change: #1098's point 6 (fight near the stairs or leave, and a Phase
+Door that would land outside *R* or in never-seen grids is not an escape). It
+is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
+
+The switch ships 1 (owner, 2026-11-23: "merge it but with all settings on"); its numbers are hypotheses (RULES 14). borg-zoo
+measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
+full ladder), and with two values of `explore_mix_contact_damage`. With this
+section the registry holds **2489** parameters (`track-p` `a5cac1cd` plus
+the ten below).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1238` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1479` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1291` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1414` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1422` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1417` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1413` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1421` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1423` |
+| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1295` |
