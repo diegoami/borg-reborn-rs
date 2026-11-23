@@ -5676,6 +5676,14 @@ pub(crate) fn town_melee_damage(st: &BorgState, target: usize) -> i32 {
     thrust_damage_with(st, target as i32, 1, Some(BF_THRUST as i32))
 }
 
+/// borg-reborn-rs (#933, review of #967): the expected melee damage a turn
+/// at `target`, in millihitpoints, without the targeting preferences of
+/// `borg_thrust_damage_one` (the unique bonus and the rest): the real hit
+/// chance and blows (`thrust_damage_with`'s focused branch).
+pub(crate) fn melee_milli_per_turn(st: &BorgState, target: usize) -> i32 {
+    thrust_damage_with(st, target as i32, 1, Some(BF_THRUST as i32))
+}
+
 pub(crate) fn focused_attack_is_ranged(attack: FocusedAttack) -> bool {
     focused_priority(attack.kind) > 1 && !matches!(attack.kind as u32,
         BF_SPELL_WHIRLWIND_ATTACK | BF_SPELL_LEAP_INTO_BATTLE | BF_SPELL_MAIM_FOE)
