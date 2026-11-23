@@ -6805,10 +6805,14 @@ can also throw a CL1 Borg far from every staircase it knows. Six parameters
 compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
 None acts in town, where C's leashes never act (town has no up staircase).
 
-With a switch on, distances are **walking steps over the known map with the
-danger ignored** (`steps_map`, one spread a think for each set of sources):
-the leash is about the way back, so a monster near a staircase or the
-arrival grid does not hide it (review of #1087).
+With a switch on, distances are **walking steps over known terrain**
+(`terrain_steps`, a breadth-first search over the Borg's map, once a think
+for each set of sources): no wall, rubble or unknown grid, and no monster,
+trap or danger, which are what the Borg meets on the way, not the way. An
+unknown target grid (the dark flow's) is one step past its nearest reached
+neighbour. So a monster near a staircase, at the arrival grid or in the
+corridor back does not hide it, and an unexplored gap is not a shortcut
+(review and re-review of #1087).
 
 - **`flow_leash_any_stair`**: the exploration leash (the far-from-stairs
   check of the dark, kill and take flows, take_select's own stair check and
@@ -6824,10 +6828,13 @@ arrival grid does not hide it (review of #1087).
   Borg arrived on the level. The return leash has no walk to that grid and is
   unchanged.
 - **`flow_leash_teleported_recall`**: up to `flow_leash_recall_max_level`, a
-  teleport, a jump of at least `flow_leash_recall_min_jump` grids (12: Phase
-  Door lands 9 to 11 away, `TELEPORT:10` randomised by a quarter in
-  `effect_handler_TELEPORT`; the trap and the scroll are `TELEPORT:M80` and
-  `:M60`), that leaves every known staircase more than
+  teleport, by its cause: a teleport trap (the message) or the Borg's own
+  Teleportation scroll, staff or activation, Teleport Self, Portal or Shadow
+  Shift, always; its own Phase Door or Dimension Door, never; a jump of
+  unknown cause (a monster's teleport-to) from `flow_leash_recall_min_jump`
+  grids (12: Phase Door asks for 9 to 11, `TELEPORT:10` randomised by a
+  quarter in `effect_handler_TELEPORT`; the trap and the scroll are
+  `TELEPORT:M80` and `:M60`), that leaves every known staircase more than
   `flow_leash_recall_steps` steps away (or none known) reads Word of Recall
   at the first dungeon think at danger 0, after the fights that own the
   action.

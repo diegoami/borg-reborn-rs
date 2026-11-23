@@ -720,6 +720,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Ignore teleport trap
     if prefix(msg, b"You hit a teleport") {
+        // borg-reborn-rs (#1062): the cause of the next jump
+        crate::borg_leash::teleport_trap(st);
         return;
     }
 

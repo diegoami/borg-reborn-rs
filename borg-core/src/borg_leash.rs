@@ -24,21 +24,24 @@
 //! The switches:
 //!
 //! - `flow_leash_any_stair`: both leashes measure the nearest known
-//!   staircase of either kind (holes 1 and 3), in walking steps over the
-//!   known map (`steps_map`). The return leash starts on those steps, ends
+//!   staircase of either kind (holes 1 and 3), in walking steps over known
+//!   terrain (`terrain_steps`). The return leash starts on those steps, ends
 //!   on them only for a return it started, and walks back to the nearest
 //!   staircase of either kind.
 //! - `flow_leash_unknown_stair_steps`: with no known staircase the leash
 //!   counts, or none reachable, the exploration leash is this many walking
 //!   steps from the grid where the Borg arrived on the level (hole 2).
 //! - `flow_leash_teleported_recall`: up to `flow_leash_recall_max_level`, a
-//!   jump of at least `flow_leash_recall_min_jump` grids (a teleport, not
-//!   Phase Door) that leaves every known staircase more than
+//!   teleport (`JumpCause`: a trap or the Borg's own teleport, not its Phase
+//!   Door; of unknown cause, from `flow_leash_recall_min_jump` grids) that
+//!   leaves every known staircase more than
 //!   `flow_leash_recall_steps` steps away reads Word of Recall at the first
 //!   think at danger 0.
 //!
 //! Each is a hypothesis until borg-zoo measures it (RULES 14).
 
+use crate::borg_cave::AUTO_MAX_X;
+use crate::borg_cave::AUTO_MAX_Y;
 use crate::borg_danger::borg_danger;
 use crate::borg_headers::borg_trait_h::*;
 use crate::borg_io::borg_note;
@@ -57,8 +60,11 @@ pub struct LeashState {
     /// Where it stood at the last update, (y, x).
     pub last: Option<(i32, i32)>,
     /// A jump of more than one grid seen by the update and not yet judged
-    /// by the think (its length in grids).
-    pub jumped: Option<i32>,
+    /// by the think: its length in grids and its cause.
+    pub jumped: Option<(i32, JumpCause)>,
+    /// The last thing the Borg did, or that happened to it, that moves it
+    /// (`time.now` and kind), for the next jump's cause (review of #1087).
+    pub cause: Option<(i32, JumpCause)>,
     /// A jump left the staircases far: read Recall at danger 0.
     pub recall_due: bool,
     /// The walk back of the return leash goes to the nearest staircase of
@@ -67,6 +73,92 @@ pub struct LeashState {
     /// The step maps of this think (`time.now`), by their sources: see
     /// `steps_map` (review of #1087: one spread a think, not one a grid).
     pub maps: Vec<(i32, Vec<(i32, i32)>, crate::borg_flow::BorgData)>,
+}
+
+/// What moved the Borg (review of #1087, finding 3 of the re-review: the
+/// cause, not only the length, tells a teleport from Phase Door).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum JumpCause {
+    /// Nothing the Borg knows of (a monster's teleport-to, ...): judged by
+    /// the length, `flow_leash_recall_min_jump`.
+    #[default]
+    Unknown,
+    /// Its own short jump: Phase Door (`TELEPORT:10`; scroll, spell,
+    /// activation) or the aimed Dimension Door (`TELEPORT_TO`).
+    OwnShort,
+    /// Its own long teleport: a Teleportation scroll (`TELEPORT:M60`), staff
+    /// or activation, Teleport Self (`TELEPORT:M$M`), Portal, Shadow Shift
+    /// (`TELEPORT:30`) (class.txt, object.txt).
+    OwnLong,
+    /// "You hit a teleport trap!" (`TELEPORT:M80`, trap.txt).
+    Trap,
+}
+
+/// Is a jump of `jump` grids with this cause a teleport for
+/// `flow_leash_teleported_recall`?
+fn is_teleport(cause: JumpCause, jump: i32, min_jump: i32) -> bool {
+    match cause {
+        JumpCause::OwnShort => false,
+        JumpCause::OwnLong | JumpCause::Trap => true,
+        JumpCause::Unknown => jump >= min_jump,
+    }
+}
+
+/// Record a cause for the next jump (with the switch on only).
+fn mark(st: &mut BorgState, cause: JumpCause) {
+    if leash_holes().teleported_recall {
+        st.leash.cause = Some((st.borg.time.now, cause));
+    }
+}
+
+/// `borg_read_scroll` read one (after its keys): Phase Door or a teleport.
+pub fn own_scroll(st: &mut BorgState, sval: i32) {
+    let v = &st.item_val;
+    if sval == v.sv_scroll_phase_door {
+        mark(st, JumpCause::OwnShort);
+    } else if sval == v.sv_scroll_teleport {
+        mark(st, JumpCause::OwnLong);
+    }
+}
+
+/// `borg_use_staff` used one: a staff of Teleportation.
+pub fn own_staff(st: &mut BorgState, sval: i32) {
+    if sval == st.item_val.sv_staff_teleportation {
+        mark(st, JumpCause::OwnLong);
+    }
+}
+
+/// `borg_activate_item` activated one: a phase or a long teleport.
+pub fn own_activation(st: &mut BorgState, activation: i32) {
+    if activation == st.act.tele_phase {
+        mark(st, JumpCause::OwnShort);
+    } else if activation == st.act.tele_long {
+        mark(st, JumpCause::OwnLong);
+    }
+}
+
+/// `borg_spell` cast one.
+pub fn own_spell(st: &mut BorgState, spell: crate::borg_headers::borg_magic_h::borg_spells) {
+    use crate::borg_headers::borg_magic_h::{DIMENSION_DOOR, PHASE_DOOR, PORTAL, SHADOW_SHIFT, TELEPORT_SELF};
+    if [PHASE_DOOR, DIMENSION_DOOR].contains(&spell) {
+        mark(st, JumpCause::OwnShort);
+    } else if [TELEPORT_SELF, PORTAL, SHADOW_SHIFT].contains(&spell) {
+        mark(st, JumpCause::OwnLong);
+    }
+}
+
+/// `borg_parse` read "You hit a teleport trap!".
+pub fn teleport_trap(st: &mut BorgState) {
+    mark(st, JumpCause::Trap);
+}
+
+/// The cause of a jump seen at `now`: a mark from the last few thinks
+/// (the action's think, or the trap's message this update), else unknown.
+fn cause_at(mark: Option<(i32, JumpCause)>, now: i32) -> JumpCause {
+    match mark {
+        Some((t, c)) if now >= t && now - t <= 3 => c,
+        _ => JumpCause::Unknown,
+    }
 }
 
 /// `flow_leash_any_stair`, in the dungeon only: town has no up staircase,
@@ -118,14 +210,78 @@ fn all_stairs(st: &BorgState) -> Vec<(i32, i32)> {
     all
 }
 
-/// The walking steps from the nearest of `sources` to every grid, over the
-/// known map (the flow's own terrain rules, `borg_flow_spread_stairs` to 250
-/// steps), **without the danger check** (review of #1087, findings 1 and 3):
-/// a monster near a staircase or the arrival grid must not hide it, since
-/// the leash is about the way back, not this turn's danger. The flow state
-/// the Borg follows is put back as it was. Spread once a think for a set of
-/// sources, then read from the cache; returns its index in
-/// `LeashState::maps`.
+/// Can the Borg walk onto a grid of this terrain? Known terrain only, as
+/// the flow's own wall rules (`spread_blocked` in borg_flow.rs: no wall or
+/// rubble but passable rubble, no permanent wall, lava only when immune to
+/// fire, no unknown grid), and nothing else: monsters, traps and danger are
+/// what the Borg meets on the way, not the way (review of #1087).
+fn walkable(feat: u32, fire_immune: bool) -> bool {
+    use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_NONE, FEAT_PASS_RUBBLE, FEAT_SECRET};
+    feat != FEAT_NONE && (feat < FEAT_SECRET || feat == FEAT_PASS_RUBBLE || (feat == FEAT_LAVA && fire_immune))
+}
+
+/// Breadth-first steps (8 directions, one a move) from the nearest of
+/// `sources`, (y, x), over the grids `walk` allows, inside the map's
+/// border; 255 = not reached, at most 250.
+fn terrain_steps(walk: impl Fn(i32, i32) -> bool, sources: &[(i32, i32)]) -> crate::borg_flow::BorgData {
+    let (h, w) = (AUTO_MAX_Y, AUTO_MAX_X);
+    let mut map: crate::borg_flow::BorgData = vec![[255u8; AUTO_MAX_X as usize]; h as usize];
+    let mut queue = std::collections::VecDeque::new();
+    for &(y, x) in sources {
+        if (0..h).contains(&y) && (0..w).contains(&x) && map[y as usize][x as usize] != 0 {
+            map[y as usize][x as usize] = 0;
+            queue.push_back((y, x));
+        }
+    }
+    while let Some((y, x)) = queue.pop_front() {
+        let n = map[y as usize][x as usize] + 1;
+        if n > 250 {
+            continue;
+        }
+        for dy in -1..=1 {
+            for dx in -1..=1 {
+                let (ny, nx) = (y + dy, x + dx);
+                if (dy, dx) == (0, 0) || ny < 1 || nx < 1 || ny >= h - 1 || nx >= w - 1 {
+                    continue;
+                }
+                if map[ny as usize][nx as usize] <= n || !walk(ny, nx) {
+                    continue;
+                }
+                map[ny as usize][nx as usize] = n;
+                queue.push_back((ny, nx));
+            }
+        }
+    }
+    map
+}
+
+/// The steps to (y, x) on a `terrain_steps` map: a reached grid's own; a
+/// grid the walk does not enter (an unknown grid the dark flow aims at, a
+/// wall) is one more than its nearest reached neighbour, the frontier
+/// (review of #1087); `None` otherwise.
+fn steps_at(map: &crate::borg_flow::BorgData, walk: impl Fn(i32, i32) -> bool, y: i32, x: i32) -> Option<i32> {
+    let at = |y: i32, x: i32| -> Option<i32> {
+        let row = map.get(usize::try_from(y).ok()?)?;
+        let v = *row.get(usize::try_from(x).ok()?)?;
+        (v != 255).then_some(i32::from(v))
+    };
+    if let Some(v) = at(y, x) {
+        return Some(v);
+    }
+    if walk(y, x) {
+        return None;
+    }
+    (-1..=1).flat_map(|dy| (-1..=1).map(move |dx| (dy, dx))).filter(|&d| d != (0, 0)).filter_map(|(dy, dx)| at(y + dy, x + dx)).min().map(|v| v + 1)
+}
+
+/// The Borg's `walkable` on its map now.
+fn walk_here(st: &BorgState) -> impl Fn(i32, i32) -> bool + '_ {
+    let fire = st.borg.tr(BI_IFIRE) != 0;
+    move |y, x| (0..AUTO_MAX_Y).contains(&y) && (0..AUTO_MAX_X).contains(&x) && walkable(u32::from(st.cave.grid(x, y).feat), fire)
+}
+
+/// The `terrain_steps` map of `sources` this think (`time.now`), spread
+/// once and cached in `LeashState::maps`; its index there.
 fn steps_map(st: &mut BorgState, sources: &[(i32, i32)]) -> Option<usize> {
     if sources.is_empty() {
         return None;
@@ -135,31 +291,16 @@ fn steps_map(st: &mut BorgState, sources: &[(i32, i32)]) -> Option<usize> {
     if let Some(i) = st.leash.maps.iter().position(|(_, s, _)| s == sources) {
         return Some(i);
     }
-    let map = with_flow_saved(st, |st| {
-        let was = std::mem::replace(&mut st.flow.flight_no_danger, true);
-        // Grids already found icky by an earlier flow stay out of every
-        // spread: clear them for this one (the saved copy is put back).
-        crate::borg_flow::borg_flow_clear(st);
-        for row in st.flow.data_icky.iter_mut() {
-            row.fill(0);
-        }
-        for &(sy, sx) in sources {
-            crate::borg_flow::borg_flow_enqueue_grid(st, sy, sx);
-        }
-        crate::borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, -1, false);
-        st.flow.flight_no_danger = was;
-        st.flow.data_cost.clone()
-    });
+    let map = terrain_steps(walk_here(st), sources);
     st.leash.maps.push((now, sources.to_vec(), map));
     Some(st.leash.maps.len() - 1)
 }
 
-/// The steps from the nearest of `sources` to (y, x) on `steps_map`;
-/// `None`: no source, or (y, x) unreachable.
+/// The walking steps from the nearest of `sources` to (y, x) over known
+/// terrain (`steps_map`, `steps_at`); `None`: no source, or not reached.
 fn steps_from(st: &mut BorgState, y: i32, x: i32, sources: &[(i32, i32)]) -> Option<i32> {
     let i = steps_map(st, sources)?;
-    let cost = i32::from(st.leash.maps[i].2[y as usize][x as usize]);
-    (cost != 255).then_some(cost)
+    steps_at(&st.leash.maps[i].2, walk_here(st), y, x)
 }
 
 /// Is the grid (y, x) beyond the leash `limit`, measured from the up
@@ -243,21 +384,26 @@ pub fn update(st: &mut BorgState) {
         return;
     }
     if let Some(d) = l.last.and_then(|last| jump(last, now)) {
-        l.jumped = Some(l.jumped.map_or(d, |j| j.max(d)));
+        let cause = cause_at(l.cause.take(), st.borg.time.now);
+        let l = &mut st.leash;
+        l.jumped = Some(match l.jumped {
+            Some((j, c)) if j >= d => (j, c),
+            _ => (d, cause),
+        });
     }
-    l.last = Some(now);
+    st.leash.last = Some(now);
 }
 
-/// The verdict of `flow_leash_teleported_recall` on a jump of `jump` grids:
-/// a teleport (at least `min_jump`, review of #1087 finding 4: Phase Door
-/// lands 9 to 11 grids away, `TELEPORT:10` in object.txt randomised by a
-/// quarter in `effect_handler_TELEPORT`, effect-handler-general.c; the
-/// teleport trap and the Teleportation scroll are `TELEPORT:M80` and `:M60`,
-/// percentages of the distance to the level's edge) that leaves the nearest
-/// known staircase (`stairs` steps; `None`: none known or reachable) more
-/// than `steps` away.
-fn jump_strands(jump: i32, min_jump: i32, stairs: Option<i32>, steps: i32) -> bool {
-    jump >= min_jump && stairs.is_none_or(|cost| cost > steps)
+/// The verdict of `flow_leash_teleported_recall` on a jump of `jump` grids
+/// with its cause: a teleport (`is_teleport`: the Borg's own Phase Door
+/// never, its own teleport or a teleport trap always, an unknown cause from
+/// `min_jump` grids: Phase Door asks for 9 to 11, `TELEPORT:10` randomised
+/// by a quarter in `effect_handler_TELEPORT`, effect-handler-general.c, and
+/// lands on the eligible grid nearest that) that leaves the nearest known
+/// staircase (`stairs` steps; `None`: none known or reachable) more than
+/// `steps` away.
+fn jump_strands(jump: i32, cause: JumpCause, min_jump: i32, stairs: Option<i32>, steps: i32) -> bool {
+    is_teleport(cause, jump, min_jump) && stairs.is_none_or(|cost| cost > steps)
 }
 
 /// `flow_leash_teleported_recall`, once per dungeon think (after the fights
@@ -274,16 +420,16 @@ pub fn teleported_recall(st: &mut BorgState) -> bool {
         st.leash.recall_due = false;
         return false;
     }
-    if let Some(d) = st.leash.jumped.take() {
+    if let Some((d, cause)) = st.leash.jumped.take() {
         let steps = h.recall_steps;
-        if d >= h.recall_min_jump {
+        if is_teleport(cause, d, h.recall_min_jump) {
             let all = all_stairs(st);
             let (y, x) = (st.borg.c.y, st.borg.c.x);
             let cost = steps_from(st, y, x, &all);
-            if jump_strands(d, h.recall_min_jump, cost, steps) {
+            if jump_strands(d, cause, h.recall_min_jump, cost, steps) {
                 st.leash.recall_due = true;
                 let far = cost.map_or("no staircase known or reachable".to_string(), |c| format!("{c} steps from the nearest staircase"));
-                borg_note(st, &format!("# Leash: a {d}-grid jump left the Borg {far} (more than {steps}): Recall at danger 0"));
+                borg_note(st, &format!("# Leash: a {d}-grid jump ({cause:?}) left the Borg {far} (more than {steps}): Recall at danger 0"));
             }
         }
     }
@@ -304,21 +450,6 @@ pub fn teleported_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
-}
-
-/// Run `f` and put back the flow state it may spread over (the queue, the
-/// costs, the danger caches, the wipe flag and the flow modes), so the flow
-/// the Borg follows (`borg_flow_old`) is untouched.
-fn with_flow_saved<R>(st: &mut BorgState, f: impl FnOnce(&mut BorgState) -> R) -> R {
-    let fl = &st.flow;
-    let saved = (fl.head, fl.tail, fl.flow_x.clone(), fl.flow_y.clone(), fl.data_cost.clone(),
-                 fl.data_know.clone(), fl.data_icky.clone(), fl.hunting, fl.to_stairs, fl.flight_no_danger);
-    let wipe = st.danger.wipe;
-    let r = f(st);
-    st.danger.wipe = wipe;
-    let fl = &mut st.flow;
-    (fl.head, fl.tail, fl.flow_x, fl.flow_y, fl.data_cost, fl.data_know, fl.data_icky, fl.hunting, fl.to_stairs, fl.flight_no_danger) = saved;
-    r
 }
 
 #[cfg(test)]
@@ -391,24 +522,102 @@ mod tests_1062 {
         assert_eq!(jump((30, 100), (30, 16)), Some(84));
     }
 
-    /// 1024822556: 79 flow steps from the up staircase after the trap.
-    /// Review of #1087, finding 4: a Phase Door (9 to 11 grids) is not a
-    /// teleport; 592754909's 9-grid Phase Door 47 steps from the stairs.
+    /// 1024822556: 79 steps from the up staircase after the trap.
     #[test]
     fn a_jump_strands_the_borg() {
-        assert!(jump_strands(84, 12, Some(79), 30));
-        assert!(!jump_strands(84, 12, Some(30), 30));
-        assert!(jump_strands(84, 12, None, 30), "no staircase known or reachable");
-        assert!(!jump_strands(9, 12, Some(47), 30), "a Phase Door");
-        assert!(!jump_strands(11, 12, None, 30), "a Phase Door at its longest");
-        assert!(jump_strands(12, 12, Some(31), 30));
+        use JumpCause::*;
+        assert!(jump_strands(84, Trap, 12, Some(79), 30));
+        assert!(!jump_strands(84, Trap, 12, Some(30), 30));
+        assert!(jump_strands(84, Unknown, 12, None, 30), "no staircase known or reachable");
+        // Review of #1087: 592754909's own 9-grid Phase Door, 47 steps out.
+        assert!(!jump_strands(9, OwnShort, 12, Some(47), 30));
+        // The re-review: a Phase Door whose nearest eligible landing is far.
+        assert!(!jump_strands(14, OwnShort, 12, Some(47), 30));
+        // The Borg's own teleport counts at any length.
+        assert!(jump_strands(8, OwnLong, 12, None, 30));
+        // An unknown cause falls back on the length.
+        assert!(!jump_strands(11, Unknown, 12, None, 30));
+        assert!(jump_strands(12, Unknown, 12, Some(31), 30));
+    }
+
+    /// The cause is the last mark of the last few thinks.
+    #[test]
+    fn the_cause_of_a_jump() {
+        use JumpCause::*;
+        assert_eq!(cause_at(Some((100, OwnShort)), 101), OwnShort);
+        assert_eq!(cause_at(Some((100, Trap)), 100), Trap);
+        assert_eq!(cause_at(Some((100, OwnLong)), 104), Unknown, "too old");
+        assert_eq!(cause_at(None, 100), Unknown);
+    }
+
+    /// A map of known terrain: `#` wall, `.` floor, ` ` unknown, `<` `>` stairs.
+    fn plan<'a>(rows: &'a [&'a str]) -> impl Fn(i32, i32) -> bool + 'a {
+        move |y, x| {
+            let c = usize::try_from(y).ok().and_then(|y| rows.get(y)).and_then(|r| r.as_bytes().get(usize::try_from(x).ok()?).copied());
+            matches!(c, Some(b'.' | b'<' | b'>'))
+        }
+    }
+
+    /// Review of #1087 (re-review 1): the route over known terrain. A
+    /// staircase across an unexplored gap is not near: the walk goes round.
+    #[test]
+    fn steps_over_known_terrain() {
+        let rows = [
+            "##########",
+            "#.>#  #..#",
+            "#..#  #..#",
+            "#.#######.",
+            "#........#",
+            "##########",
+        ];
+        let walk = plan(&rows);
+        let map = terrain_steps(&walk, &[(1, 2)]);
+        // The Borg at (1, 7), five grids from the staircase across the gap:
+        // over known floor it is 12 steps round through row 4.
+        assert_eq!(steps_at(&map, &walk, 1, 7), Some(12));
+        // An unknown grid in the gap is not reached; the frontier rule
+        // gives it no neighbour either (walls around), so no distance.
+        assert_eq!(steps_at(&map, &walk, 1, 4), None);
+        // A wall beside the staircase is one more than it.
+        assert_eq!(steps_at(&map, &walk, 2, 3), Some(1));
+    }
+
+    /// The dark flow aims at unknown grids beside known floor: they get one
+    /// more step than the floor beside them (the frontier).
+    #[test]
+    fn an_unknown_target_beside_known_floor() {
+        let rows = [
+            "#######",
+            "#>....  ",
+            "#######",
+        ];
+        let walk = plan(&rows);
+        let map = terrain_steps(&walk, &[(1, 1)]);
+        assert_eq!(steps_at(&map, &walk, 1, 5), Some(4));
+        assert_eq!(steps_at(&map, &walk, 1, 6), Some(5), "the frontier");
+        assert_eq!(steps_at(&map, &walk, 1, 7), None, "beyond the frontier");
+    }
+
+    /// Review of #1087 (re-review 2): the walk ignores monsters, traps and
+    /// danger, so a monster in the only corridor back does not lift the
+    /// arrival leash: the map is terrain only (`walkable`).
+    #[test]
+    fn terrain_only() {
+        use crate::headers::list_terrain_h::*;
+        assert!(walkable(FEAT_FLOOR, false));
+        assert!(walkable(FEAT_CLOSED, false));
+        assert!(walkable(FEAT_LESS, false) && walkable(FEAT_MORE, false));
+        assert!(walkable(FEAT_PASS_RUBBLE, false));
+        assert!(!walkable(FEAT_NONE, false), "unknown");
+        assert!(!walkable(FEAT_RUBBLE, false) && !walkable(FEAT_GRANITE, false) && !walkable(FEAT_PERM, false));
+        assert!(!walkable(FEAT_LAVA, false) && walkable(FEAT_LAVA, true));
     }
 
     /// The default state follows nothing.
     #[test]
     fn a_fresh_state_is_empty() {
         let l = LeashState::default();
-        assert!(l.level_time.is_none() && l.arrival.is_none() && l.jumped.is_none());
+        assert!(l.level_time.is_none() && l.arrival.is_none() && l.jumped.is_none() && l.cause.is_none());
         assert!(!l.recall_due && !l.return_any);
     }
 }

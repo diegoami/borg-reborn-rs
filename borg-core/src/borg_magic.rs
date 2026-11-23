@@ -709,6 +709,9 @@ pub fn borg_spell(st: &mut BorgState, spell: borg_spells) -> bool {
     // increment the spell counter
     st.magic.magics[spell_num].times += 1;
 
+    // borg-reborn-rs (#1062): the cause of the next jump
+    crate::borg_leash::own_spell(st, spell);
+
     // Success
     true
 }
