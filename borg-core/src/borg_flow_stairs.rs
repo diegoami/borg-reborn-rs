@@ -258,6 +258,76 @@ fn weighted_route(
     avoid: bool,
     sneak: bool,
     weight: i32,
+    note: bool,
+) -> Result<Option<borg_flow::StairPath>, usize> {
+    // borg-reborn-rs (#931, review of #965): with caution_stairs_immobile_reach,
+    // the whole route search (the clean-path check included) first keeps out
+    // of the reach of the known immobile attackers (the squares next to
+    // them); only when that finds no usable route does the ordinary search
+    // run. The danger weight charged their reach too little (a white jelly
+    // beside the route cost 2.9 steps at full HP, seed 829474344).
+    let on = crate::borg_caution::stairs_immobile_reach_on();
+    let route = prefer_reach_free(
+        on,
+        |st: &mut BorgState| weighted_route_with(st, kinds, depth, avoid, sneak, weight, true),
+        |st: &mut BorgState| weighted_route_with(st, kinds, depth, avoid, sneak, weight, false),
+        st,
+    );
+    if on && note {
+        if let Ok(Some(path)) = &route {
+            note_reach_avoided(st, path, kinds, depth, avoid, sneak, weight);
+        }
+    }
+    route
+}
+
+/// borg-reborn-rs (#931, review of #965): the reach-free route when one is
+/// usable (`Ok(Some)`), else the ordinary one. Off: the ordinary one only.
+fn prefer_reach_free<S, T>(
+    on: bool,
+    reach_free: impl FnOnce(&mut S) -> Result<Option<T>, usize>,
+    plain: impl FnOnce(&mut S) -> Result<Option<T>, usize>,
+    st: &mut S,
+) -> Result<Option<T>, usize> {
+    if on {
+        if let Ok(Some(route)) = reach_free(st) {
+            return Ok(Some(route));
+        }
+    }
+    plain(st)
+}
+
+/// borg-reborn-rs (#931, review of #965): note the chosen flight route only
+/// when it takes a step and the ordinary route would have entered the reach
+/// of an immobile attacker (so a reachability probe, a Borg already on its
+/// staircase or a route that never passed one write nothing).
+fn note_reach_avoided(st: &mut BorgState, path: &borg_flow::StairPath, kinds: &[Which], depth: i32, avoid: bool, sneak: bool, weight: i32) {
+    if path.grids.len() < 2 {
+        return;
+    }
+    let Ok(Some(plain)) = weighted_route_with(st, kinds, depth, avoid, sneak, weight, false) else {
+        return;
+    };
+    let entered = plain.grids.iter().skip(1).find_map(|grid| crate::borg_caution::immobile_reach_of(st, grid.y, grid.x));
+    if let Some(k) = entered {
+        if plain.grids != path.grids {
+            let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+            borg_io::borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
+        }
+    }
+}
+
+/// `weighted_route`'s search; with `keep_out`, every square next to a known
+/// immobile attacker is refused, in the first search and the clean one.
+#[allow(clippy::too_many_arguments)]
+fn weighted_route_with(
+    st: &mut BorgState,
+    kinds: &[Which],
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+    keep_out: bool,
 ) -> Result<Option<borg_flow::StairPath>, usize> {
     let search = kinds.iter().any(|which| matches!(which, Which::More))
         && continuing_up_stair_search(st);
@@ -274,23 +344,9 @@ fn weighted_route(
             }
         }
     }
-    // borg-reborn-rs (#931): with caution_stairs_immobile_reach, the route
-    // first keeps out of the reach of the known immobile attackers (the
-    // squares next to them), and takes the plain route only when none is
-    // left. The danger weight charged their reach too little (a white jelly
-    // beside the route cost 2.9 steps at full HP, seed 829474344).
-    let refused = if crate::borg_caution::stairs_immobile_reach_on() {
-        borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |st, grid| {
-            !crate::borg_caution::in_immobile_reach(st, grid.y, grid.x)
-        })
-    } else {
-        None
-    };
-    let keep_out = refused.is_some();
-    if keep_out {
-        crate::borg_caution::note_immobile_reach_kept(st);
-    }
-    let Some(path) = refused.or_else(|| borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true)) else {
+    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |st, grid| {
+        !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
+    }) else {
         return Ok(None);
     };
     let Some(percent) = crate::borg_caution::weighted_stairs_blocker_percent(st) else {
@@ -379,7 +435,7 @@ fn weighted_flight(
         Some(Which::More) => (c"down-stairs", &[Which::More]),
         None => (c"stairs", &[Which::Less, Which::More]),
     };
-    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight) {
+    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight, true) {
         Ok(Some(path)) => {
             if options.ranged_reach > 0 {
                 let path_grids: Vec<_> = path.grids.iter().skip(1).map(|grid| (grid.y, grid.x)).collect();
@@ -429,7 +485,7 @@ pub(crate) fn weighted_desperate_flight(st: &mut BorgState, up: bool, max_moves:
 
 pub(crate) fn weighted_stair_reachable(st: &mut BorgState, up: bool, avoid: bool, weight: i32) -> bool {
     let which = if up { Which::Less } else { Which::More };
-    matches!(weighted_route(st, &[which], 250, avoid, false, weight), Ok(Some(_)))
+    matches!(weighted_route(st, &[which], 250, avoid, false, weight, false), Ok(Some(_)))
 }
 
 /// Do a Stair-Flow. Look at how far away this grid is to my closest stair.
@@ -1238,5 +1294,35 @@ mod up_search_handoff_tests {
         assert!(departure.permits_deferral(10, 40));
         assert!(departure.permits_deferral(12, 40));
         assert!(!departure.permits_deferral(21, 40));
+    }
+}
+
+#[cfg(test)]
+mod reach_preference_tests {
+    use super::prefer_reach_free;
+
+    fn pick(on: bool, reach_free: Result<Option<&'static str>, usize>, plain: Result<Option<&'static str>, usize>) -> (Result<Option<&'static str>, usize>, u32) {
+        let mut calls = 0u32;
+        let r = prefer_reach_free(on, |c: &mut u32| { *c += 10; reach_free }, |c: &mut u32| { *c += 1; plain }, &mut calls);
+        (r, calls)
+    }
+
+    #[test]
+    fn a_usable_reach_free_route_wins() {
+        assert_eq!(pick(true, Ok(Some("detour")), Ok(Some("past the jelly"))), (Ok(Some("detour")), 10));
+    }
+
+    #[test]
+    fn a_blocked_reach_free_route_falls_back_to_the_clean_plain_one() {
+        // Review of #965: the only reach-free route is refused by the clean-path
+        // check (a dangerous mobile monster on it): the ordinary clean route is used.
+        assert_eq!(pick(true, Err(7), Ok(Some("past the jelly"))), (Ok(Some("past the jelly")), 11));
+        assert_eq!(pick(true, Ok(None), Ok(Some("past the jelly"))), (Ok(Some("past the jelly")), 11));
+        assert_eq!(pick(true, Err(7), Err(9)), (Err(9), 11), "the ordinary result, blocker and all");
+    }
+
+    #[test]
+    fn off_runs_only_the_ordinary_search() {
+        assert_eq!(pick(false, Ok(Some("detour")), Ok(Some("plain"))), (Ok(Some("plain")), 1));
     }
 }

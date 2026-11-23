@@ -716,6 +716,19 @@ borg_param_recover_unseen_probe_tries = 10
 borg_param_recover_unseen_probe_max_grids = 3
 borg_param_recover_unseen_act_age = 30
 
+# An unseen shooter (#981): with shot = 1, "You are hit by ...!" (the
+# engine's message for any projection, an arrow, a bolt or a breath, from a
+# monster the Borg cannot see, or any projection while it is blind) enters
+# the mode above as a blow does: no rest near where it struck, Detect
+# Invisible, walk away, drink below heal_hp_percent. A hit is not taken to
+# mean the attacker is adjacent (no blind attacks in an episode of hits only,
+# unless blind or without light) or that it followed (no leave for it); the
+# episode ends when a known monster that casts or shoots dies. 0 = off.
+# Shipped 1 by the owner (2026-11-22) after the borg-zoo#671 pilot
+# (classes-18: acts in 2 of 18 games, no outcome changed); Elf Warrior
+# 1312323730 rested 18 times under a kobold archer out of the light.
+borg_param_recover_unseen_shot = 1
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
@@ -815,9 +828,10 @@ borg_param_defend_bless_fail = 25
 # 0.
 
 borg_param_caution_heal_when_outmatched = 1
-# #934 (seed 829474344): poisoned, no poison cure carried and below this
-# percent of max HP: no strategic retreat; the escapes decide. Shipped 0
-# (today's play); 75 is the hypothesis.
+# #934 (seed 829474344): poisoned, no usable poison cure and below this
+# percent of max HP, with an escape at hand: the escapes before the strategic
+# retreat, the retreat when they decline. Shipped 0 (today's play); 75 is the
+# hypothesis.
 borg_param_caution_poisoned_no_cure_retreat_hp_percent = 0
 borg_param_caution_heal_outmatched_min_loss = 50
 
@@ -1101,10 +1115,12 @@ borg_param_escape_teleport_landing_either = 0
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
 # #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
-# that melee kills in this many turns while its danger is below the percent of
-# the HP. Shipped 0 (today's play); 3 turns is the hypothesis.
+# that melee kills in this many turns while the danger here from every
+# monster over the fight stays below the percent of the HP. The turns ship 0
+# (today's play; 3 is the hypothesis); the percent, read only when the turns
+# are on, is 100.
 borg_param_caution_retreat_immobile_kill_turns = 0
-borg_param_caution_retreat_immobile_danger_percent = 50
+borg_param_caution_retreat_immobile_danger_percent = 100
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
@@ -1543,8 +1559,9 @@ borg_param_cave_light_engine_radius = 0
 # is a miss, not a wall (a thrown or fired miss prints nothing,
 # player-attack.c:1278-1280), and no guessed wall lands on the Borg's own
 # grid. 0 = C's guess (granite under the Borg after every miss at an
-# adjacent target). Ships 0 until the zoo measures it.
-borg_param_update_miss_wall_guess = 0
+# adjacent target). Shipped 1 (owner, 2026-11-22, #1069), before a zoo
+# measurement.
+borg_param_update_miss_wall_guess = 1
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
 # is there (100 - decay per monster turn; 100 if immobile or asleep). Melee

@@ -19,3 +19,14 @@ scary) and #935 (out of arrows, no Recall) are not part of this task.
 **Owner.** Merge into `track-p` (P8) after the review (RULES 1a). #932-#934 each
 add a line to the same retreat condition in `borg_caution`; the ones merged
 later need a one-line rebase there and in the `CALIBRATION.md` head.
+
+**Review fixes (GPT-6 review of `9cb2e644`).** The reach-free preference now
+applies to whole routes that pass the clean-path check; when none is usable the
+ordinary search runs, so a clean route past the jelly is no longer lost to a
+blocked detour (finding 1). The policy on sleeping and stale records is stated
+in the parameter and here: both count, and the fallback covers an impossible
+detour (finding 2). The note fires only for a flight step that avoids a square
+the ordinary route would enter, never from the reachability probe or a zero-step
+path (finding 3). The choice is unit-tested (`prefer_reach_free`). Merged
+`track-p` (`7afbdd67`). The rebase note above understated the conflicts: they
+are in `params.rs` and `CALIBRATION.md`, chiefly citation lines.

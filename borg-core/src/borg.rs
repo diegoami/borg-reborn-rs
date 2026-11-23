@@ -109,6 +109,11 @@ pub struct Borg {
     pub unseen_probe: Option<loc>,
     pub unseen_empty: Vec<loc>,
     pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981, review of #998): every unseen attack of the
+    /// episode so far was a projection's hit ("You are hit by ...!",
+    /// `SHOT_BY:`), not a blow. Set when the episode starts, cleared by a blow
+    /// and when the episode ends.
+    pub unseen_shot_only: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
@@ -336,6 +341,12 @@ pub struct BorgMonInfo {
     pub retreat_last: BorgTime,
     pub retreat_level: BorgTime,
     pub retreat_from: loc,
+    /// borg-reborn-rs (#1023, review of #966): the grid that move stepped
+    /// to, whether a later think found the Borg on it (the landing
+    /// confirmed), and the think of the last veto note (one per think).
+    pub retreat_to: loc,
+    pub retreat_landed: bool,
+    pub retreat_noted: BorgTime,
     pub retreat_run: u16,
     pub morgoth_panel: loc,
     pub unique: u32,

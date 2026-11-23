@@ -188,13 +188,29 @@ pub(crate) fn dot_per_tick(poisoned: bool, cut: i32, rock: bool) -> i32 {
     i32::from(poisoned) + cut_hp
 }
 
-/// #926 (review of #1002): the expected world ticks before the Borg's next
-/// action. The world ticks every ten game turns (game-world.c:1080-1081) and
-/// the Borg acts every 100 / `energy` game turns (`turn_energy`,
-/// game-world.c:136-139, 1092; move_energy 100): 10 / `energy` ticks, one at
-/// normal speed, half at +10, about a quarter at +40.
-pub(crate) fn ticks_per_action(energy: i32) -> f64 {
-    10.0 / f64::from(energy.max(1))
+/// #1028 (review of #1068, F2): the world ticks between the Borg's action
+/// now (game turn `turn`, energy `energy` before the action) and its next
+/// one. Each game turn the player acts first when its energy reaches
+/// `move_energy` (process_player, game-world.c:1016-1046), then the world
+/// ticks if the turn is a multiple of ten (game-world.c:1080-1081), then the
+/// player gains `gain` energy and the turn advances (game-world.c:1091-1095).
+/// So the tick of the turn the Borg acts on falls inside the window, and the
+/// tick of the turn it acts on next does not. The count is exact, not an
+/// average: at +10 (gain 20) the Borg's windows hold one tick and none in
+/// turn. An action is taken to cost `move_energy` (most do).
+pub(crate) fn window_ticks(turn: i32, energy: i32, gain: i32, move_energy: i32) -> i32 {
+    let mut left = energy - move_energy;
+    if left >= move_energy { return 0; }
+    if gain <= 0 { return 10; }
+    let mut t = turn;
+    let mut ticks = 0;
+    for _ in 0..10_000 {
+        if t.rem_euclid(10) == 0 { ticks += 1; }
+        left += gain;
+        t += 1;
+        if left >= move_energy { break; }
+    }
+    ticks
 }
 
 /// #926 (review of #1002): the potion that stops the Borg's own damage over
@@ -205,6 +221,18 @@ pub(crate) fn ticks_per_action(energy: i32) -> f64 {
 /// potion that stops every part that ticks; `None` when none carried does.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum DotCure { Light, Serious, Critical, Neutralize }
+
+impl DotCure {
+    /// The potion's name, as the rest of the trace names items (#1028 R4).
+    pub(crate) fn name(self) -> &'static str {
+        match self {
+            DotCure::Light => "Cure Light Wounds",
+            DotCure::Serious => "Cure Serious Wounds",
+            DotCure::Critical => "Cure Critical Wounds",
+            DotCure::Neutralize => "Neutralize Poison",
+        }
+    }
+}
 
 pub(crate) fn dot_cure(poisoned: bool, cut: i32, rock: bool, carried: impl Fn(DotCure) -> bool) -> Option<DotCure> {
     let cut_ticks = cut > 0 && !rock;
@@ -385,12 +413,22 @@ fn monster_pmf(st: &BorgState, i: usize) -> Vec<f64> {
 /// #926: the Borg's own cut and poison expected before its next action, when
 /// `fast_fragile_count_dot` is on; 0 otherwise.
 fn own_dot() -> f64 {
-    if param(Param::fast_fragile_count_dot) == 0 { return 0.0; }
+    let (per_tick, ticks) = own_dot_parts();
+    f64::from(per_tick * ticks)
+}
+
+/// The HP a world tick of the Borg's own cut and poison takes, and the world
+/// ticks before its next action (`window_ticks`); (0, 0) with
+/// `fast_fragile_count_dot` off.
+fn own_dot_parts() -> (i32, i32) {
+    if param(Param::fast_fragile_count_dot) == 0 { return (0, 0); }
     // The timers as borg_trait reads them (BI_ISPOISONED, BI_ISCUT come from
     // the same player->timed, borg_trait.rs:2852-2858).
-    let energy = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize));
-    f64::from(dot_per_tick(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
-        engine::player_has(PF_ROCK))) * ticks_per_action(energy)
+    let move_energy = i32::from(engine::z_info().move_energy).max(1);
+    let gain = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize))
+        * move_energy / 100; // turn_energy, game-world.c:136-139
+    (dot_per_tick(engine::player_timed(TMD_POISONED) > 0, i32::from(engine::player_timed(TMD_CUT)),
+        engine::player_has(PF_ROCK)), window_ticks(engine::game_turn(), engine::player_energy(), gain, move_energy))
 }
 
 /// #926 (review of #1002): the carried potion that stops the Borg's own cut
@@ -433,8 +471,11 @@ fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
 /// and the stairs cannot save it, a cure can. Only with
 /// `fast_fragile_count_dot`.
 fn dot_kills(cur_hp: i32) -> bool {
-    let dot = own_dot();
-    dot > 0.0 && dot > f64::from(cur_hp)
+    // #1028: the ticks of this window, counted from the turn and the energy
+    // (review of #1068, F2), not the expectation, which under-counts a
+    // hasted Borg's risk on the windows that hold a tick.
+    let (per_tick, ticks) = own_dot_parts();
+    per_tick > 0 && per_tick * ticks > cur_hp
 }
 
 /// #926: the heal ban lifts at or below `fast_fragile_heal_floor` percent of
@@ -505,7 +546,8 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
     if dot_kills(f.cur_hp) {
         if let Some((cure, sval)) = own_dot_cure(st) {
             if crate::borg_item_use::borg_quaff_potion(st, sval) {
-                borg_note(st, &format!("# Fast-fragile: its own cut and poison ({:.1} HP) kill it at HP {} before its next action: {cure:?} instead of the attack or Phase Door (#926)", own_dot(), f.cur_hp));
+                let (per_tick, ticks) = own_dot_parts();
+                borg_note(st, &format!("# Fast-fragile: its own cut and poison ({ticks} world ticks of {per_tick} HP before its next action) take it below 0 from HP {}: {} instead of the attack or Phase Door (#1028)", f.cur_hp, cure.name()));
                 return true;
             }
         }
@@ -715,15 +757,8 @@ mod tests_926 {
         assert_eq!(dot_per_tick(true, 50, true), 1, "rock skin keeps the cut, not the poison");
     }
 
-    #[test]
-    fn world_ticks_per_action_follow_the_energy() {
-        // Review of #1002: an expectation, not rounded up.
-        assert_eq!(ticks_per_action(10), 1.0, "normal speed: one tick an action");
-        assert_eq!(ticks_per_action(20), 0.5, "+10");
-        assert!((ticks_per_action(42) - 10.0 / 42.0).abs() < 1e-12, "+40");
-        assert_eq!(ticks_per_action(5), 2.0, "-10: two ticks");
-        assert_eq!(ticks_per_action(0), 10.0, "no division by zero");
-    }
+
+
 
     #[test]
     fn the_cure_is_the_one_that_stops_the_damage() {
@@ -751,5 +786,34 @@ mod tests_926 {
         assert!(!below_heal_floor(3, 11, 20), "27%");
         assert!(below_heal_floor(0, 41, 1), "HP 0");
         assert!(below_heal_floor(5, 10, 50), "at the floor counts");
+    }
+}
+
+#[cfg(test)]
+mod tests_1028 {
+    use super::*;
+
+    #[test]
+    fn the_window_counts_the_world_ticks_of_the_engine_loop() {
+        // Normal speed (gain 10): one tick in every window, wherever it falls.
+        assert_eq!(window_ticks(100, 100, 10, 100), 1, "acting on a tick turn: that tick is after the action");
+        assert_eq!(window_ticks(105, 100, 10, 100), 1);
+        // +10 (gain 20): windows of five turns, one tick and none in turn.
+        assert_eq!(window_ticks(100, 100, 20, 100), 1, "the turn's own tick falls in the window");
+        assert_eq!(window_ticks(105, 100, 20, 100), 0, "next action at 110, before its tick");
+        // Energy left after the action: the next action comes sooner.
+        assert_eq!(window_ticks(100, 190, 20, 100), 1, "90 left: acts again at 101");
+        assert_eq!(window_ticks(101, 190, 20, 100), 0);
+        assert_eq!(window_ticks(100, 200, 20, 100), 0, "acts again this turn, before the tick");
+        // Slowed (gain 5): twenty turns, two ticks.
+        assert_eq!(window_ticks(100, 100, 5, 100), 2);
+        assert_eq!(window_ticks(103, 100, 5, 100), 2);
+        assert_eq!(window_ticks(100, 100, 0, 100), 10, "no energy at all: bounded");
+    }
+
+    #[test]
+    fn the_cures_are_named_as_items() {
+        assert_eq!(DotCure::Serious.name(), "Cure Serious Wounds");
+        assert_eq!(DotCure::Neutralize.name(), "Neutralize Poison");
     }
 }

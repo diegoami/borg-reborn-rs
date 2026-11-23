@@ -19,3 +19,11 @@ scary) and #935 (out of arrows, no Recall) are not part of this task.
 **Owner.** Merge into `track-p` (P8) after the review (RULES 1a). #932-#934 each
 add a line to the same retreat condition in `borg_caution`; the ones merged
 later need a one-line rebase there and in the `CALIBRATION.md` head.
+
+**Review fixes (GPT-6 review of `d4c41a11`).** "No cure" now means no usable
+poison cure of any kind: Neutralize Poison or curing food, Cure Critical Wounds
+(spell included), Healing, *Healing*, Life, or a castable Cure Poison or Herbal
+Curing (finding 1). The rule no longer vetoes the retreat: with an escape at
+hand it tries the escapes first, and when they decline the retreat goes on, so
+a safe step is never lost (findings 2 and 3). Unit test for the cure
+predicate. Merged `track-p` (`7afbdd67`).
