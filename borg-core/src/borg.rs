@@ -148,6 +148,12 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
+    /// the last Phase Door landing check under the policy, as (the think's
+    /// `time.now`, the Borg's grid, the count). The gate of the sites
+    /// without a landing check reuses it in the same think and grid instead
+    /// of drawing again.
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
