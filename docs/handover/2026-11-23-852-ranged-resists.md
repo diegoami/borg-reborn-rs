@@ -25,7 +25,11 @@ unchanged.
   (flag, 0), because mode 2 is borg-zoo#576's measured baseline. At 1, mode 2
   counts a blow as annoying only when the character is not protected from
   it; it acts on everything that reads `immobile_kept_at_range` (melee, hunt,
-  the flows out of its reach, the step away). Mode 3 is unchanged.
+  the flows out of its reach, the kept step away). Mode 3 is unchanged.
+  A protected attacker becomes mode 2's plain-damage case, so #646's step
+  away still applies to it while the Borg is confused or carries a ranged
+  attack: with ammunition, a Free Action Borg next to an eye steps out of
+  reach and shoots (review of #1126, P3: documented, not changed).
 - Docs: `params.rs` (both rows), `docs/CALIBRATION.md` (a section; 89 rows'
   citations moved with the inserted lines, `check-param-citations.py --fix`),
   `harness/borg.txt` (comments, and the new switch at 0),
@@ -72,6 +76,11 @@ switch is exercised by the unit test only.
   version read the trait only, so a Borg with only the temporary resistance
   still refused a spotted mushroom patch; `protected`, with the unit test
   `temporary_poison_resistance`). The other four have no temporary form there.
+
+- Whether `caution_immobile_resists` should also suppress #646's step away
+  for a fully protected attacker (today it permits melee and keeps the
+  step). Changing it needs a test of the retreat decision with an adjacent
+  eye and ammunition.
 
 **Left.**
 - Zoo measurement (RULES 20) of the new `caution_ranged_only` against

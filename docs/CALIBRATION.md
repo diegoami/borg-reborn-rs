@@ -40,7 +40,12 @@ resistance into account; path finding is part of another concern".
   same check is a switch of its own: at 1, mode 2 counts a blow as annoying
   only when the character is not protected from it. It acts on every reader
   of `immobile_kept_at_range` (melee, hunt, the flows out of its reach, the
-  step away). Mode 3 keeps every immobile attacker, as before.
+  kept step away). Mode 3 keeps every immobile attacker, as before.
+  A protected attacker is then mode 2's plain-damage case: #646's step away
+  (`immobile_step_away`) still applies while the Borg is confused or carries
+  a ranged attack (`BI_AMISSILES`), so a Free Action Borg with ammunition
+  next to a floating eye steps out of reach and shoots. The switch permits
+  melee; it does not suppress that step (review of #1126).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

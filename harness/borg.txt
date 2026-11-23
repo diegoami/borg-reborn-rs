@@ -987,7 +987,8 @@ borg_param_caution_immobile_step_mobile_first = 0
 borg_param_caution_immobile_no_return = 0
 # - caution_immobile_resists (#852): with caution_ranged_vs_immobile 2, a blow
 #   the character is protected from (as caution_ranged_only reads it) is not
-#   annoying: a Free Action Borg fights a floating eye. 0 = #713's mode 2.
+#   annoying: a Free Action Borg may fight a floating eye (with ammunition,
+#   #646's step away still comes first). 0 = #713's mode 2.
 borg_param_caution_immobile_resists = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
