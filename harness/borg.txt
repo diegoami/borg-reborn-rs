@@ -299,10 +299,12 @@ borg_param_town_prepared_fear = 2
 # (0 = town_prepared_percent; 40 = five times 8, the same value per gold as
 # Detect Invisible). town_prepared_ccw: Cure Critical Wounds copies on a row of
 # their own (0 = off), each worth town_prepared_ccw_percent (0 = the shared
-# percent; 112 = fourteen times 8). Hypotheses, not measured; 0 = today's play.
-borg_param_town_prepared_poison_percent = 0
-borg_param_town_prepared_ccw = 0
-borg_param_town_prepared_ccw_percent = 0
+# percent; 112 = fourteen times 8). Shipped on by the owner (2026-11-23,
+# merge of #1135) before a zoo measurement: replays of run 45121432449 changed
+# 12 of 18 survivors and killed none (borg-cemetery#146). 0 0 0 = the old play.
+borg_param_town_prepared_poison_percent = 40
+borg_param_town_prepared_ccw = 2
+borg_param_town_prepared_ccw_percent = 112
 
 # Variety starts below the first level (#863, owner: "it is important that in
 # the first level we have the staples"): the staples' decay and the remedies

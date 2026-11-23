@@ -68,3 +68,12 @@ the allocation weight at DL2 goes from 9.1 % to 28.6 % (x4) and 45.5 % (x8).
 `make-world.py` builds both (gamedata sha256 30355bf2... and 91494e15...).
 They sit on this PR's branch so that one zoo specimen carries both the worlds
 and the town rows of #1134 (shipped 0).
+
+**Shipped on, 2026-11-23** (owner: "merge with the settings to 1", confirmed as
+the values above). `harness/borg.txt` ships `town_prepared_poison_percent 40`,
+`town_prepared_ccw 2`, `town_prepared_ccw_percent 112`, and `smoke-borg-rs` is
+re-recorded for it in this PR. This is an owner decision ahead of the zoo
+(RULES 14): the values are still hypotheses until borg-zoo measures them, and
+the arm comparison against 0 0 0 (borg-zoo#739/#741) is still worth running.
+Earlier in the same PR, track-p was merged twice and 21 parameter citations
+moved by the new row were re-pointed (`scripts/check-param-citations.py --fix`).
