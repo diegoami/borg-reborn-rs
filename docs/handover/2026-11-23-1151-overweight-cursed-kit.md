@@ -96,3 +96,13 @@ it measured first.
   parameter citations in `params.rs` and `docs/CALIBRATION.md`, which were
   taken from `track-p` and regenerated with `check-param-citations.py --fix`.
 
+**Second re-review of #1155 (Codex, `b22e6e4b`).** The finding is fixed. The
+ordinary disposal path could plan dropping one Phase Door of seven (a
+reserve of six, no buyer, a full Home), and the executor drops that stack
+whole. When a reserve sets the floor, a drop of a stack the executor would
+drop whole (anything but fuel, Restore Life Levels or a kind at its Home
+limit) is now kept instead. A split set only by `town_store_keep_min` keeps
+its old behaviour, which the smoke game relies on (#989). Test:
+`selling_for_weight_keeps_every_reserve`, over and within the allowance. It
+fails without the guard.
+

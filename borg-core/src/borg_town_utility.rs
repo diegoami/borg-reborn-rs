@@ -707,6 +707,14 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             else if !protected && (worthless || excess) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
             } else { Disposition::Keep };
+        // Second re-review of #1155: a drop whose split keeps a reserve is
+        // planned only for a stack the live executor splits (a fuel stack,
+        // Restore Life Levels, a kind at its Home limit: `execute_outside`).
+        // It drops any other stack whole, so seven Phase Door with a reserve
+        // of six and no buyer would all go: kept instead.
+        let unsplittable = action == Disposition::Drop && partial && reserve > 0
+            && it.fuel <= 0 && restore_keep <= 0 && !capped;
+        let action = if unsplittable { Disposition::Keep } else { action };
         out[i] = action;
         // Review of #1155: what goes only because the pack is over its
         // allowance is the copies that cover the deficit, not all past the
@@ -2045,6 +2053,24 @@ mod tests {
         nine_model.curves[phase][3] = 9 * UNIT;
         let (d, _, copies) = solve(&nine, nine_model);
         assert_eq!((d[0], copies[0]), (Disposition::Sell, 3));
+        // Second re-review of #1155: seven Phase Door against a reserve of
+        // six, no buyer, a full Home, within the allowance: the executor
+        // would drop all seven, so the surplus copy is not planned as a drop.
+        let seven = [KitItem { qty: 7, sell_shop: -1, ..scrolls }];
+        let mut seven_model = model(6 * UNIT);
+        seven_model.curves[reserve][3] = 7 * UNIT;
+        seven_model.curves[phase][3] = 7 * UNIT;
+        seven_model.curves[phase][1] = 0; // a copy past the reserve worth less than its burden
+        for limit in [-943, 100] {
+            let mut inp = input(&seven);
+            inp.revision = 20;
+            inp.home_slots = 0;
+            inp.limits.weight = limit;
+            let mut u = Utility::of(&st, &seven, false);
+            u.capability = Some(seven_model.clone());
+            let (d, _, _) = dispositions_by(&inp, &mut u, &st, shipped);
+            assert_eq!(d[0], Disposition::Keep, "weight room {limit}");
+        }
     }
 
     /// #859: the first Recall is urgent once the next trip reaches the dive

@@ -7902,7 +7902,10 @@ replay as they were):
   without a buyer, the least valuable per weight first, until the pack is
   under its weight allowance. Only the copies that cover the deficit go
   this way (one 2.2 lb torch for a 1 lb deficit). A drop applies only to a
-  fuel stack, the one split the executor carries out. Short only of the
+  fuel stack, the one split the executor carries out. Whenever a reserve sets
+  the floor, a planned drop of any kind of stack the executor drops whole
+  (anything but fuel, Restore Life Levels or a kind at its Home limit) is
+  kept instead. Short only of the
   departure room, nothing is sold or dropped for weight.
 - *A known-cursed spare is not protected as unknown over the allowance.* A
   pack item with a known curse (`KitItem::cursed_spare`, kit flag 128) that
