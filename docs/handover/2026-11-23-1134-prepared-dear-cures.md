@@ -71,8 +71,11 @@ and the town rows of #1134 (shipped 0).
 
 **Shipped on, 2026-11-23** (owner: "merge with the settings to 1", confirmed as
 the values above). `harness/borg.txt` ships `town_prepared_poison_percent 40`,
-`town_prepared_ccw 2`, `town_prepared_ccw_percent 112`, and `smoke-borg-rs` is
-re-recorded for it in this PR. This is an owner decision ahead of the zoo
+`town_prepared_ccw 2`, `town_prepared_ccw_percent 112`. `scripts/rerecord-smoke-borg-rs.sh` on the
+shipping commit played the smoke suite 4/4 identical to `smoke-borg-rs`, so the
+reference is unchanged: the prepared rows exist only past DL2
+(`town_variety_min_depth = 2`) and the smoke games reach no town decision
+there with the gold for them. The resolved settings show the new values. This is an owner decision ahead of the zoo
 (RULES 14): the values are still hypotheses until borg-zoo measures them, and
 the arm comparison against 0 0 0 (borg-zoo#739/#741) is still worth running.
 Earlier in the same PR, track-p was merged twice and 21 parameter citations
