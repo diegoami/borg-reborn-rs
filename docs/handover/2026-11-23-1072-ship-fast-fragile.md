@@ -1,7 +1,8 @@
 # #1072: ship the #926 fast-fragile bundle
 
-**Done.** `harness/borg.txt` ships #672's combined arm (owner, 2026-11-23):
-`fast_fragile_escape_quantile = 50`, `fast_fragile_heal_floor = 25`,
+**Done.** `harness/borg.txt` ships the #926 bundle at the owner's values
+(2026-11-23: "heal floor 50, 75th percentile, count_dot 1"):
+`fast_fragile_escape_quantile = 75`, `fast_fragile_heal_floor = 50`,
 `fast_fragile_count_dot = 1`. `engine/tests/test_stair_handoff.py` pins the
 incident replays to 0.
 
@@ -12,5 +13,5 @@ re-recorded. No smoke game meets a fast-fragile monster at low HP.
 full at track-p 769f3fbd) decides whether it stays on. #1058's smoke game
 does not cover these settings.
 
-**For the owner.** The values are #672's proposal, not a measurement: q50
-(not esc75 or q100), floor 25.
+**For the owner.** The values are the owner's, not a measurement; #672
+proposed q50 and floor 25.
