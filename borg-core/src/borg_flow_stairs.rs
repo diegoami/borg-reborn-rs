@@ -1519,7 +1519,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;
-    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_MORE};
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1528,6 +1528,57 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.borg.c.y += i32::from(engine::ddy(dir));
         st.borg.time.now += 1;
         assert_eq!(st.borg.c, expected);
+    }
+
+    if case == "interrupted-search" {
+        use crate::borg_flow_misc::{borg_flow_spastic, notice_spastic_arrival};
+
+        let stair = loc { x: 51, y: 19 };
+        let floor = loc { x: 51, y: 20 };
+        let wall = loc { x: 51, y: 21 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 17..=22 {
+            for x in 49..=53 {
+                st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+            }
+        }
+        st.cave.grid_mut(stair.x, stair.y).feat = FEAT_LESS as u8;
+        st.cave.grid_mut(floor.x, floor.y).feat = FEAT_FLOOR as u8;
+        // Leave fewer search prospects at the floor square than at the stair.
+        st.cave.grid_mut(50, 21).feat = FEAT_NONE as u8;
+        st.cave.grid_mut(52, 21).feat = FEAT_NONE as u8;
+        st.borg.c = floor;
+        st.borg.avoidance = 332;
+        for (index, value) in [(BI_CLEVEL, 25), (BI_CURHP, 332), (BI_MAXHP, 332), (BI_LIGHT, 2)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.stairs.less.num = 0;
+
+        // A cost-one search returns to the stair, then dark exploration
+        // wins the next move. Recording search arrival before that move
+        // exhausts the search instead of scheduling this pair indefinitely.
+        for searches in 1..=5 {
+            assert!(borg_flow_spastic(st, true));
+            observe_move(st, b'8', stair);
+            assert!(notice_spastic_arrival(st));
+            assert!(!notice_spastic_arrival(st), "arrival is counted once");
+            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
+
+            borg_flow::borg_flow_clear(st);
+            borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
+            borg_flow::borg_flow_spread(st, 2, true, true, false, -1, false);
+            assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            observe_move(st, b'2', floor);
+            assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
+        }
+        assert!(!borg_flow_spastic(st, true), "the same staircase search is exhausted");
+        assert!(st.io.queued_keys().is_empty());
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
     }
 
     let start = loc { x: 40, y: 20 };

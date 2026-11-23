@@ -167,6 +167,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
 
+    def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
+        self.run_case("interrupted-search", 5)
+
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)
 
