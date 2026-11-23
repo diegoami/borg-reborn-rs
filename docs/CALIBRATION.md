@@ -1099,8 +1099,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2311` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2311` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2353` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2353` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:727` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1405,16 +1405,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2318` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2319` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2320` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2321` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2322` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2323` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2324` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2325` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2326` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2327` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2360` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2361` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2362` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2363` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2364` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2357` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2358` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2359` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2360` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2361` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -7728,12 +7728,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2347` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2348` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2349` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2350` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2351` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2352` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2389` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2390` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2391` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2392` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2393` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2386` |
 
 ## Mixed exploration from the staircases (#1080, #1098)
 
@@ -7893,5 +7893,5 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1803` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1829` |
 

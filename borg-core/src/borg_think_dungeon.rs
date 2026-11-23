@@ -299,12 +299,16 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
         // nearest staircase of either kind (`flow_leash_any_stair`).
         if st.leash.return_any && borg_flow_stair_both(st, GOAL_FLEE, false) {
             borg_note(st, "# Looking for stairs. Goal_less, any stair, brave.");
+            // borg-reborn-rs (#1130): the walk is committed.
+            crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Any);
             return true;
         }
 
         /* Try to find some stairs up */
         if borg_flow_stair_less(st, GOAL_FLEE, false) {
             borg_note(st, "# Looking for stairs. Goal_less, brave.");
+            // borg-reborn-rs (#1130): the walk is committed.
+            crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Up);
             return true;
         }
     }
@@ -341,11 +345,15 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
         /* Try to find some stairs up */
         if st.borg.stair_less && borg_flow_stair_less(st, GOAL_FLEE, false) {
             borg_note(st, "# Looking for stairs. Flee, brave.");
+            // borg-reborn-rs (#1130): the walk is committed.
+            crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Up);
             return true;
         }
 
         /* Try to find some stairs down */
         if st.borg.stair_more && borg_flow_stair_more(st, GOAL_FLEE, false, true) {
+            // borg-reborn-rs (#1130): the walk is committed.
+            crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Down);
             return true;
         }
     }
@@ -597,10 +605,6 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
     /* Try anything */
     let done = borg_think_dungeon_brave(st);
 
-    // borg-reborn-rs (#1130): a stair walk it started is committed.
-    if done {
-        crate::borg_flow::commit_brave_walk(st, to as i16);
-    }
 
     /* Reset "avoidance" */
     st.borg.avoidance = st.borg.tr(BI_CURHP) as i16;
