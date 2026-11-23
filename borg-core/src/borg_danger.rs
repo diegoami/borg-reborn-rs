@@ -2076,6 +2076,25 @@ pub fn borg_danger_one_kill(
     danger_one_kill(st, &kill, y, x, c, i, average, full_damage)
 }
 
+/// The spell danger reduced for the race's cast frequency (`chance`, the
+/// mean of its innate and spell frequencies, percent), unless `full_damage`
+/// asks for the full possible damage: below
+/// `danger_frequency_low_percent` (11) it keeps `danger_frequency_low_tenths`
+/// (4) tenths, and so on for the mid and high bands.
+pub(crate) fn spell_frequency_discount(v2: i32, chance: i32, full_damage: bool) -> i32 {
+    if full_damage {
+        v2
+    } else if chance < param(Param::danger_frequency_low_percent) {
+        (v2 * param(Param::danger_frequency_low_tenths)) / 10
+    } else if chance < param(Param::danger_frequency_mid_percent) {
+        (v2 * param(Param::danger_frequency_mid_tenths)) / 10
+    } else if chance < param(Param::danger_frequency_high_percent) {
+        (v2 * param(Param::danger_frequency_high_tenths)) / 10
+    } else {
+        v2
+    }
+}
+
 /// `borg_danger_one_kill()` on a copy of `borg_kills[i]`.
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn danger_one_kill(
@@ -2537,17 +2556,9 @@ pub(crate) fn danger_one_kill(
 
     // (C: `#if 0` -- scared monsters still cast spells, they are still
     // dangerous)
-    if !full_damage {
-        // reduce for frequency.
-        let chance = (r_ptr.freq_innate + r_ptr.freq_spell) / 2;
-        if chance < param(Param::danger_frequency_low_percent) {
-            v2 = (v2 * param(Param::danger_frequency_low_tenths)) / 10;
-        } else if chance < param(Param::danger_frequency_mid_percent) {
-            v2 = (v2 * param(Param::danger_frequency_mid_tenths)) / 10;
-        } else if chance < param(Param::danger_frequency_high_percent) {
-            v2 = (v2 * param(Param::danger_frequency_high_tenths)) / 10;
-        }
-    }
+    // borg-reborn-rs (#1066, re-review of #1075): the same arithmetic,
+    // lifted so the full-damage case can be tested without the engine.
+    v2 = spell_frequency_discount(v2, (r_ptr.freq_innate + r_ptr.freq_spell) / 2, full_damage);
 
     // Danger
     if v2 != 0 {

@@ -2959,9 +2959,41 @@ mod incoming_units_tests {
 fn winning_fight(st: &mut BorgState) -> bool {
     let mode = p(Param::caution_winning_fight);
     if mode == 0 { return false; }
+    let Some(race) = fight_race(st, false) else { return false };
+    let FightRace { won, turns, incoming, hp, ref plans } = race;
+    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
+    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
+        plans.len(), if won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
+    // Mode 2 is a diagnostic: retain the unchanged control's actions so
+    // estimates can be checked on its original losing AND winning fights.
+    if !won || mode == 2 { return false; }
+    let (i, _, attack) = plans[0];
+    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+/// #759's race, as computed (`None`: not certified, so never winning).
+pub(crate) struct FightRace {
+    pub won: bool,
+    /// The turns to kill every counted attacker, one after another.
+    pub turns: f64,
+    /// Their HP a turn against the Borg, for the whole fight.
+    pub incoming: f64,
+    pub hp: i32,
+    /// The counted attackers, fastest to kill first: (kill index, HP to
+    /// take, the attack).
+    pub plans: Vec<(usize, i32, crate::borg_fight_attack::FocusedAttack)>,
+}
+
+/// #759's race (`winning_fight`). borg-reborn-rs (#1066): with
+/// `adjacent_only`, only the awake monsters next to the Borg are fought and
+/// counted; every other check (the Borg's own status, a town-hunt target,
+/// an unseen attacker anywhere) still refuses the verdict.
+pub(crate) fn fight_race(st: &mut BorgState, adjacent_only: bool) -> Option<FightRace> {
     // The direct-damage race does not model random confused commands or
     // ongoing poison/bleeding damage. Let the ordinary cures act first.
-    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return None; }
     let mut plans = Vec::new();
     let mut incoming = 0.0;
     let mut in_contact = false;
@@ -2971,29 +3003,32 @@ fn winning_fight(st: &mut BorgState) -> bool {
             continue;
         }
         if crate::borg_town_hunt::viewed_target(st, &kill) {
-            return false;
+            return None;
         }
         let d = engine::distance(st.borg.c, kill.pos);
         if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
             if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
-                return false; // an attacker without a current observable target
+                return None; // an attacker without a current observable target
             }
+            continue;
+        }
+        if adjacent_only && d > 1 {
             continue;
         }
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
             continue;
         }
         let forecast = fight_incoming(st, i);
-        if forecast.unknown_fight || forecast.unknown_damage { return false; }
+        if forecast.unknown_fight || forecast.unknown_damage { return None; }
         let danger = forecast.hp_per_turn;
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
-        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
-        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return None };
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return None };
         plans.push((i, hp, attack));
     }
-    if plans.is_empty() || !in_contact { return false; }
+    if plans.is_empty() || !in_contact { return None; }
     // Remove the fastest-to-kill attacker first. Incoming remains the full
     // sum for the entire fight, a conservative bound as attackers die.
     plans.sort_by(|a, b| {
@@ -3020,7 +3055,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let regen = fight_regeneration(&kill);
         let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
-        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
+        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return None };
         turns += t;
         if let Some(c) = cost {
             if c.spell {
@@ -3031,16 +3066,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     }
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
-    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
-        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
-    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
-        plans.len(), if won { "winning" } else { "not winning" }));
-    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
-    // Mode 2 is a diagnostic: retain the unchanged control's actions so
-    // estimates can be checked on its original losing AND winning fights.
-    if !won || mode == 2 { return false; }
-    let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    Some(FightRace { won, turns, incoming, hp, plans })
 }
 
 pub(crate) fn fight_regeneration(kill: &crate::borg_flow_kill::BorgKill) -> f64 {
