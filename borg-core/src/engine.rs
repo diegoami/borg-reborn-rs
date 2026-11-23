@@ -1051,6 +1051,20 @@ pub fn randint0(m: u32) -> i32 {
     unsafe { crate::headers::z_rand_h::Rand_div(m) as i32 }
 }
 
+/// borg-reborn-rs (#1061): `player->race->ridx`, or `None` while `player`
+/// or `player->race` is not set (as `class_cidx_if_set`).
+pub fn race_ridx_if_set() -> Option<u32> {
+    // SAFETY: `player` and `player->race` are only read when non-null; the
+    // race list lives for the game.
+    unsafe {
+        let p = crate::headers::player_h::player;
+        if p.is_null() || (*p).race.is_null() {
+            return None;
+        }
+        Some((*(*p).race).ridx)
+    }
+}
+
 /// `player->race->ridx`
 pub fn race_ridx() -> u32 {
     // SAFETY: `player->race` points into the race list loaded at startup
