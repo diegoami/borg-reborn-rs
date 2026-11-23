@@ -835,6 +835,10 @@ borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
 # explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
 borg_param_explore_bfs_hp_per_level = 0
+# #1098 (owner, 2026-11-23: "once there is nothing to explore, take the
+# stairs"): breadth-first with nothing reachable left takes the stairs at once
+# (shipped 1); 0 = stay until the level timer or another reason.
+borg_param_explore_bfs_leave_when_done = 1
 # #1098 (second piece of #1080): mixed exploration above the breadth-first
 # threshold, until prepared for the depth (for now: where C's leash applies).
 # Depth-first inside a radius R from the nearest staircase; R starts at

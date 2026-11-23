@@ -7266,7 +7266,9 @@ candidates no longer stop them). When no candidate is left within the
 leashes, neither call explores, and the think is marked exhausted (#1098;
 owner, 2026-11-23: "once there is nothing to explore, take the stairs"):
 `borg_leave_level` takes the stairs then, as when the level timer is up,
-before the secret-door search, with the same exit as the mixed walk (below). The note is
+before the secret-door search, with the same exit as the mixed walk (below). Behind
+`explore_bfs_leave_when_done` (compiled 0, shipped 1); at 0 the Borg stays
+until the level timer or another reason to leave, as before. The note is
 `# Flowing toward dark-bfs (ring d) at cost n`.
 
 **The threshold by level and class** (owner, 2026-11-23): breadth-first
@@ -7401,13 +7403,14 @@ is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
 The switch ships 0 and its numbers are hypotheses (RULES 14). borg-zoo
 measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
 full ladder), and with two values of `explore_mix_contact_damage`. With this
-section the registry holds **2457** parameters (`track-p` `617a0b60` plus
-the seven below).
+section the registry holds **2458** parameters (`track-p` `617a0b60` plus
+the eight below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1209` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1318` |
+| `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1179` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1212` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1321` |
 | `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1332` |
 | `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1321` |
 | `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1323` |

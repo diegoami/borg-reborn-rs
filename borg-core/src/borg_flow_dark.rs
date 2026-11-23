@@ -1176,6 +1176,9 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
     // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
     // explore, take the stairs"): nothing reachable within the leashes is
     // not an ordinary miss either: `borg_leave_level` takes the stairs.
+    if value(Param::explore_bfs_leave_when_done) == 0 {
+        return Some(false);
+    }
     let left = frame.cands.len();
     mark_exhausted(st, &format!("Breadth-first exploration: nothing reachable left within the leashes ({left} frontier grids known)"));
     Some(false)
@@ -1805,6 +1808,7 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_max_hp), 25);
         assert_eq!(value(Param::explore_bfs_slack), 0, "strict rings");
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
+        assert_eq!(value(Param::explore_bfs_leave_when_done), 0, "compiled 0: an ordinary miss (borg.txt ships 1)");
     }
 
     /// Two corridors from a staircase, each 8 unknown grids long.
