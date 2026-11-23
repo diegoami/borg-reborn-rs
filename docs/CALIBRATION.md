@@ -7284,3 +7284,28 @@ below).
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:853` |
 | `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1030` |
 | `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:854` |
+
+## More food and light while breadth-first exploration applies (#1110)
+
+The owner (2026-11-23), after #1085 shipped breadth-first exploration on: "I
+guess we should plan a little more food and light if we do that". The order
+walks back toward the stairs between targets, so a trip of the same depth
+takes more game turns. The live town planner (`borg_town_capability::observe`)
+sizes food from the trip (`journey.turns / borg_town_food_turns` rations,
+never below the five-ration floor) and light from the larger of the trip and
+`town_light_reserve_turns` (20,000 shipped); both floors usually dominate, so
+lengthening the trip alone would buy nothing more.
+
+While breadth-first exploration would apply to the character
+(`breadth_first_applies`: `explore_breadth_first` on and max HP below
+`explore_bfs_max_hp` + `explore_bfs_hp_per_level` x CL, asked in town too),
+the food target, floor included (`food_curve`), and the light goal, reserve
+included, are `explore_bfs_food_percent` and `explore_bfs_light_percent` of
+today's. Compiled 100; shipped 150 (owner: "a little more"): 7.5 rations
+instead of 5, and 30,000 light turns instead of 20,000 (two more torches).
+Not measured (RULES 14). The smoke Priest buys 3 torches and 7 rations.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_bfs_food_percent` | 100 | percent | 0–10000 | `borg_flow_dark.rs:868` |
+| `explore_bfs_light_percent` | 100 | percent | 0–10000 | `borg_flow_dark.rs:868` |
