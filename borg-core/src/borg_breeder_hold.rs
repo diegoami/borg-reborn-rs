@@ -327,7 +327,8 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
     // and walking, it is on to the nearest known staircase, the exit owning
     // the movement until the stairs are taken (#556): left to the ordinary
     // flight, the Borg stepped back toward the room each other think.
-    let to_stair = walking || exit(st.borg.c.x, st.borg.c.y);
+    let released = st.borg.breeder_hold_released;
+    let to_stair = walking || released || exit(st.borg.c.x, st.borg.c.y);
     let route = if to_stair {
         cut_route(w, h, st.borg.c, &passable, &breeder, &stair, worm)
     } else {
@@ -335,10 +336,19 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
     };
     if to_stair && route.is_none() {
         st.borg.breeder_hold_stair = false;
+        // Out on the exit with no known staircase: let the colony go. Left
+        // to pull the Borg back to the exit, the rule undid every step of
+        // the ordinary search for stairs (Priest 399497898 at track-p
+        // 21c0d9c1: about 200 shuttles over 20,000 game turns).
+        if !released && exit(st.borg.c.x, st.borg.c.y) {
+            st.borg.breeder_hold_released = true;
+            borg_note(st, &format!("# Letting the breeders go: no known staircase from the exit ({count} known)"));
+        }
         if state != Colony::Fires {
             return false;
         }
     }
+    let released = st.borg.breeder_hold_released;
 
     if let Some((route, on)) = route {
         let go = may_cut_out(
@@ -415,7 +425,7 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
         attack(st, kill.pos);
         return true;
     }
-    if st.borg.breeder_hold_idle >= p(Param::caution_breeder_hold_idle_turns) {
+    if released || st.borg.breeder_hold_idle >= p(Param::caution_breeder_hold_idle_turns) {
         st.borg.breeder_hold_idle = 0;
         return false;
     }

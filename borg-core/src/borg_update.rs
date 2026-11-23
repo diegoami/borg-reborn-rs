@@ -1985,6 +1985,7 @@ fn new_level(st: &mut BorgState) {
     b.breeder_hold_samples.clear(); // borg-reborn-rs (#882)
     b.breeder_hold_idle = 0;
     b.breeder_hold_stair = false;
+    b.breeder_hold_released = false;
     b.flee_path_noted = false; // borg-reborn-rs (#743)
 
     // reset our need to see inviso clock

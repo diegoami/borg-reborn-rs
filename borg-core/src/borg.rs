@@ -176,6 +176,11 @@ pub struct Borg {
     /// borg-reborn-rs (#882): out of a slow-breeder colony, the hold walks
     /// the known route on to a staircase; cleared on a new level.
     pub breeder_hold_stair: bool,
+    /// borg-reborn-rs (#882): on an exit with no known route to a staircase,
+    /// the hold let the colony go: it no longer walks back to an exit or
+    /// stays still, only attacks an adjacent breeder or walks to a staircase
+    /// once one is known; cleared on a new level.
+    pub breeder_hold_released: bool,
     /// borg-reborn-rs (#743): a flight to the stairs was refused for a
     /// blocked path on this level (the note is once per level); cleared on a
     /// new level.
