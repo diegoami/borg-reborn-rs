@@ -7284,3 +7284,90 @@ below).
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:845` |
 | `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1167` |
 | `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:848` |
+
+## Mixed exploration from the staircases (#1080, #1098)
+
+The owner (2026-11-23): "breadth-first, then mixed (fall back when they get
+too far and explore another branch), then when they are on a level for which
+they are fully prepared they can go depth-first"; "they do not get too far
+from the stairs until they have covered everything that branches from them."
+Breadth-first (#1085, above) is the first mode. At `explore_mixed = 1` the
+second one, `borg_flow_dark_mixed`, applies to a Borg that breadth-first no
+longer covers (its maximum HP at or above the class's threshold, or
+`explore_breadth_first = 0`) and that is not yet prepared for its depth.
+Both exploration calls (near and far) use it.
+
+**Not prepared, for now.** #1080's readiness model is not written. Until it
+is, the mixed walk applies where C's own exploring leash applies
+(`c_leash_on`: the depth at least the character level less
+`flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the kit
+short, #840). Elsewhere exploration stays C's depth-first order, as today.
+
+**The walk.** It uses breadth-first's frame (`stair_frame`): each grid's ring
+(flow steps from the nearest known staircase of either kind), the
+interesting grids the Borg can reach, and the grids past the return leash.
+1. **The radius.** *R* starts at `explore_mix_radius` and grows by
+   `explore_mix_step`, up to a limit from the escape model of #1061:
+   ⌊*D* / (*r* − 1)⌋ + ⌊max HP / *c*⌋ (`mix_limit`).
+   - *D* = max(`explore_mix_sight`, the Borg's own light radius) is how far
+     a monster is first seen.
+   - *r* = `explore_mix_speed_ratio` is how many times as fast the depth's
+     fast monsters are. It is 2 at DL1–5: Grip, Fang and cave spiders have
+     `speed:120` (`monster.txt:1064,1083,1119`), 20 energy a game turn
+     against 10 at normal speed (`game-world.c:68`). Such a monster first
+     seen *D* grids away catches the Borg after it has walked
+     *D* / (*r* − 1) grids toward the stairs.
+   - *c* = `explore_mix_contact_damage` x the depth band (1 at DL1–5, 2 at
+     DL6–10, ...) is the damage of one player turn in contact. The shipped 5
+     is a 1d4 biter at speed 120, biting twice a turn (`monster.txt:1083,1119`).
+     ⌊max HP / *c*⌋ is the turns of contact the Borg survives on the rest of
+     the way.
+
+   The limit is never below the start, never above `explore_mix_max_radius`,
+   and never above C's leash (`borg_get_leash`) where that applies, so the
+   walk never goes farther than today's. The shipped numbers give 8 steps at
+   17 HP, 10 at 26 HP and 17 at 60 HP, against C's leash of 21 at CL4 and 27
+   at CL6.
+2. **Depth-first inside the radius** (`mixed_plan`). Every candidate within
+   *R* is a goal of one spread, so the flow leads to the one nearest the Borg
+   (C's choice). A path may not cross a ring beyond *R* or the Borg's own
+   (`path_limit`), nor pass the return leash. A corridor is followed to its
+   end while it stays inside *R*.
+3. **Fall back and take another branch.** A branch whose frontier lies
+   beyond *R* is parked: its grids are not goals, so the Borg walks back
+   toward the stairs, to the nearest frontier still inside *R*.
+4. **Grow only when the area is covered.** *R* is the smallest radius of the
+   sequence that holds a candidate. It is not stored: each think takes it
+   afresh, so a branch newly found near the stairs is covered before the
+   walk goes deeper again. Larger radii follow as further tries, for goals
+   the path limit cuts off (at most 16 tries a think).
+5. **When there is nothing more.** With no candidate within the limit,
+   neither call explores, so the level is left (`borg_leave_level`), as
+   with breadth-first.
+6. **Edges.** With no route from the Borg to a known staircase (none known,
+   a teleport, a known trap across the way back, #1067), or under boosted
+   bravery, C's methods run, with C's leash (#1062). A staircase newly seen
+   or a monster newly tracked drops a committed exploration flow, as with
+   breadth-first (note `# New monster: planning the mixed exploration again
+   (#1098)`).
+
+The note is `# Flowing toward dark-mix (radius R of L) at cost n`. Not in
+this change: #1098's point 6 (fight near the stairs or leave, and a Phase
+Door that would land outside *R* or in never-seen grids is not an escape). It
+is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
+
+The switch ships 0 and its numbers are hypotheses (RULES 14). borg-zoo
+measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
+full ladder), and with two values of `explore_mix_contact_damage`. With this
+section the registry holds **2456** parameters (`track-p` `8e1c8797` plus
+the seven below).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1182` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1270` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1277` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1273` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1268` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1270` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1272` |
