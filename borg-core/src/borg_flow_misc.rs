@@ -1242,6 +1242,8 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
     let x = st.borg.c.x + i32::from(engine::ddx(dir as usize));
     let y = st.borg.c.y + i32::from(engine::ddy(dir as usize));
     if crate::borg_caution::unseen_bump_blocked(st, x, y) { return false; }
+    // borg-reborn-rs (#1153, review of #1158): nor onto a grid the loop breaker closed.
+    if crate::borg_loop::step_banned(st, y, x) { return false; }
 
     /* if afraid, we need to try to dig. We have tried everything else */
     /* digging will at least take an action so maybe give time to not be */

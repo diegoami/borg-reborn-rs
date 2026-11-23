@@ -1103,8 +1103,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2362` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2362` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2412` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2412` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:772` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1046` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1005` |
@@ -1409,16 +1409,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2369` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2370` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2371` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2372` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2373` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2374` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2375` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2376` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2377` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2378` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2419` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2420` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2421` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2422` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2423` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2424` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2425` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2426` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2427` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2428` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -7838,12 +7838,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2398` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2399` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2400` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2401` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2402` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2403` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2448` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2449` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2450` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2451` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2452` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2445` |
 
 ## Deal with poison (#1140)
 
@@ -8193,7 +8193,57 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1838` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1858` |
+
+## A general movement-loop detector (#1153)
+
+The owner (2026-11-23): "yes file it", then "why would you ship it off by
+default, no loopbreaker". Every loop found so far got a guard for its own
+pair of decisions (#1108, #1133, #1152, #932). `loop_breaker` (compiled 0,
+**shipped 1**, `borg_loop.rs`) is the net under them.
+
+- **Detect** (`observe`, at the start of every dungeon think).
+  - The Borg's grid is recorded when it moved (a rest is no move), with the
+    grids of the map it knows, per level. The arrival on a level only seeds
+    the position.
+  - Any think on which the map learned something, or the danger here passes
+    a quarter of the HP, clears the window, moved or not.
+  - A loop is the last 16 moves (`LOOP_MOVES`) among at most 3 grids
+    (`LOOP_GRIDS`).
+- **Break** (`break_loop`, right after `borg_caution`, before any other
+  flow), the first that applies:
+  0. the staircase underfoot, if the Borg may take it;
+  1. a walk to a staircase it may take, at the normal avoidance: up first,
+     unless descent is forced; down only when fleeing or prepared for the
+     next depth, as `borg_caution` decides;
+  2. the same with the avoidance boosted to twice the HP;
+  3. the loop's grids, staircases and the Borg's own excepted, closed to
+     every spread (`spread_blocked`) and twitch for 20 thinks, so the flows
+     route around them. If that would box the Borg in, the twitchy think's
+     Phase Door instead (`twitch_phase`, at most 3 a level), else the stuck
+     think.
+
+  The walks of 1 and 2 are committed (`commit_loop_walk`). The breaker
+  continues them itself every think while they are live and own their flow,
+  and takes the staircase on arrival. A walk that is no longer live ends
+  there: no ordinary step falls through. Without the commitment, the walk
+  took one step and the loop came back. Without the continuation,
+  `borg_flow_kill_aim` took the think back each time.
+- **Note.** `# Loop detected: n moves among k grids since think t, the map
+  unchanged; choices a / b / a / b; breaking it by ...`. The choices are the
+  last decisions chosen (`core_trace::recent_choices`), so each new pair can
+  still get a fix of its own.
+
+Checked on #1130's loop (Blackguard 312081895, `433457a4`,
+`explore_c_leave_when_done = 1`) with `flow_brave_walk_commit = 0`, so that
+only the breaker acts (an earlier version of the breaker):
+- off: the loop, 76 levels, "Spent too long" 3,177, CL3;
+- on: 6 loops detected (choices `borg_flow_dark / boost_bravery_1`), 210
+  levels, "Spent too long" 873, CL4.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:108` |
 
 ## Emergency Speed (#913)
 
