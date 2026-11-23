@@ -75,9 +75,9 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1409` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1410` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1234` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1414` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1415` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1239` |
 | `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
 | `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
@@ -380,7 +380,10 @@ confused until it died, two steps from the stairs.
   the cheapest first), and #867's hold does not apply to a confuser the floor
   declines. The potion is not drunk when it does not outlive the next turn
   (the damage-only danger at the Borg's grid, #878, at or above its HP plus the heal, capped at
-  the HP missing) and an escape is at hand: the caution takes the escape
+  the HP missing) and an escape is at hand: the floor takes the escape in the
+  same think (the stairs underfoot, or Phase Door through `phase_door`'s own
+  gates, site `kill-on-sight floor`), and drinks after all when neither can
+  be used
   (review of #1082). With an escape only (no cure potion) the floor itself
   drinks nothing, and the caution re-evaluates its cures with the hold lifted:
   a cure the floor does not count, such as a Cure Mind mushroom, may be taken.
@@ -2515,8 +2518,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:902` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:994` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:995` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:999` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1000` |
 
 ## Town less scary (#622)
 
@@ -3991,11 +3994,11 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1750` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1759` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1755` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1764` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1850` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1861` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1855` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1866` |
 | `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
 | `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
@@ -5484,7 +5487,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6137` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6187` |
 
 ## C Borg dive gates (#768)
 
@@ -6063,7 +6066,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1642` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1647` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
@@ -6081,8 +6084,8 @@ them.
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:47` |
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:340` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:517` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:519` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:536` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:538` |
 | `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:573` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:353` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:348` |

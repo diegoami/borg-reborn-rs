@@ -5965,21 +5965,71 @@ fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
         crate::borg_fast_fragile::escape_available,
     );
     let (hp, max_hp) = (tr(st, BI_CURHP), tr(st, BI_MAXHP));
+    let confused = tr(st, BI_ISCONFUSED) != 0;
+    floor_cure_act(
+        st,
+        plan,
+        |st, plan| match plan {
+            FloorCure::Nothing => {}
+            FloorCure::Escape { danger, heal, .. } => borg_note(st, &format!(
+                "# Not drinking the floor's cure: damage {danger} against HP {hp} + {heal}, the escape first (#1064)")),
+            FloorCure::Drink { danger, .. } => borg_note(st, &format!(
+                "# Taking the cure the kill-on-sight floor counted: HP {hp}/{max_hp}{}, damage {danger} (#1064)",
+                if confused { ", confused" } else { "" })),
+        },
+        floor_escape,
+        |st, sval| if sval == st.item_val.sv_potion_cure_critical {
+            crate::borg_item_use::borg_quaff_crit(st, true)
+        } else {
+            crate::borg_item_use::borg_quaff_potion(st, sval)
+        },
+    )
+}
+
+/// Review of #1082 (re-review, P2): the escape `FloorCure::Escape` chose,
+/// taken in the same think, so no later rule (the caution's confusion cure)
+/// drinks the potion the floor rejected: the staircase underfoot, else Phase
+/// Door through the one Phase Door decision (`phase_door`, its own gates:
+/// the owner's adjacent-enemy rule, the anti-summon delay; no landing test,
+/// as the fast-fragile site ships). False when neither can be used now.
+fn floor_escape(st: &mut BorgState) -> bool {
+    if let Some(key) = crate::borg_fast_fragile::stair_key_here(st) {
+        borg_note(st, &format!("# Kill-on-sight floor: stairs underfoot ('{}') before the cure (#1064)", key as char));
+        borg_keypress(st, keycode_t::from(key));
+        return true;
+    }
+    if crate::borg_escape::phase_door(st, crate::borg_escape::PhaseSite::KillOnSightFloor, crate::borg_escape::PhaseCheck::None, None, |st| {
+        st.borg.time.now.wrapping_sub(st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
+            && crate::borg_escape::borg_allow_teleport(st)
+            && (crate::borg_item_use::borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || crate::borg_magic::borg_spell_fail(
+                    st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)))
+    }) {
+        crate::borg_escape::reset_antisummon(st);
+        borg_note(st, "# Kill-on-sight floor: Phase Door before the cure (#1064)");
+        return true;
+    }
+    false
+}
+
+/// What `kill_on_sight_floor_cure` does with its plan (review of #1082,
+/// re-review P2: the decision is carried to the action): `Escape` takes the
+/// escape, and when it cannot be used drinks after all (the potion is then
+/// the best move left); `Drink` quaffs. The think is spent when an action
+/// was made (true). `note` names the plan first. The decision tests call it
+/// with the engine's parts given.
+fn floor_cure_act(
+    st: &mut BorgState,
+    plan: FloorCure,
+    note: impl FnOnce(&mut BorgState, &FloorCure),
+    escape: impl FnOnce(&mut BorgState) -> bool,
+    quaff: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    note(st, &plan);
     match plan {
         FloorCure::Nothing => false,
-        FloorCure::Escape { danger, heal } => {
-            borg_note(st, &format!("# Not drinking the floor's cure: danger {danger} against HP {hp} + {heal}, an escape at hand (#1064)"));
-            false
-        }
-        FloorCure::Drink { sval, danger } => {
-            borg_note(st, &format!("# Taking the cure the kill-on-sight floor counted: HP {hp}/{max_hp}{}, danger {danger} (#1064)",
-                if tr(st, BI_ISCONFUSED) != 0 { ", confused" } else { "" }));
-            if sval == st.item_val.sv_potion_cure_critical {
-                crate::borg_item_use::borg_quaff_crit(st, true)
-            } else {
-                crate::borg_item_use::borg_quaff_potion(st, sval)
-            }
-        }
+        FloorCure::Escape { sval, .. } => escape(st) || quaff(st, sval),
+        FloorCure::Drink { sval, .. } => quaff(st, sval),
     }
 }
 
@@ -5994,7 +6044,7 @@ fn floor_cure_heal(sval: i32, [clw, csw, ccw]: [i32; 3], hp: i32, max_hp: i32) -
 /// Review of #1082 (P2): the potion is drunk when the Borg outlives the next
 /// turn with it (the damage-only danger at its grid below the HP it will have), or when
 /// no escape is at hand (the potion is then the best move left). Otherwise
-/// the escape outranks it: the caution takes the stairs underfoot or reads
+/// the escape outranks it: `floor_escape` takes the stairs underfoot or reads
 /// Phase Door, which a heal that the next turn undoes would only delay.
 fn floor_cure_wanted(danger: i32, hp: i32, heal: i32, escape: impl FnOnce() -> bool) -> bool {
     danger < hp + heal || !escape()
@@ -6007,8 +6057,8 @@ enum FloorCure {
     /// decides, its own cures included.
     Nothing,
     /// The potion does not outlive the next turn and an escape is at hand:
-    /// the caution takes it.
-    Escape { danger: i32, heal: i32 },
+    /// `floor_escape` takes it, else the potion `sval` is drunk after all.
+    Escape { sval: i32, danger: i32, heal: i32 },
     /// Quaff `sval`; the think is spent.
     Drink { sval: i32, danger: i32 },
 }
@@ -6034,7 +6084,7 @@ fn floor_cure_plan(
     if floor_cure_wanted(danger, tr(st, BI_CURHP), heal, || escape(st)) {
         FloorCure::Drink { sval, danger }
     } else {
-        FloorCure::Escape { danger, heal }
+        FloorCure::Escape { sval, danger, heal }
     }
 }
 
@@ -6264,7 +6314,7 @@ mod floor_cure_tests {
         assert!(decline.contains(concat!("if kill_on_sight_floor_", "cure(st) { return true; }")), "the decline drinks first");
     }
 
-    use super::{below_kill_on_sight_floor, floor_cure_heal, floor_cure_plan, floor_cure_wanted, FloorCure};
+    use super::{below_kill_on_sight_floor, floor_cure_act, floor_cure_heal, floor_cure_plan, floor_cure_wanted, FloorCure};
     use crate::borg_headers::borg_trait_h::{BI_CURHP, BI_ISCONFUSED, BI_MAX, BI_MAXHP};
     use crate::state::BorgState;
 
@@ -6301,7 +6351,7 @@ mod floor_cure_tests {
         let mut st = druid(false);
         st.borg.trait_[BI_CURHP as usize] = 30;
         st.borg.trait_[BI_MAXHP as usize] = 80;
-        assert_eq!(floor_cure_plan(&mut st, |_, s| s == CLW, |_| 55, |_| true), FloorCure::Escape { danger: 55, heal: 20 });
+        assert_eq!(floor_cure_plan(&mut st, |_, s| s == CLW, |_| 55, |_| true), FloorCure::Escape { sval: CLW, danger: 55, heal: 20 });
         assert_eq!(floor_cure_plan(&mut st, |_, s| s == CLW, |_| 55, |_| false), FloorCure::Drink { sval: CLW, danger: 55 });
         // A CSW (40) outlives it: drink, the escape not asked.
         let plan = floor_cure_plan(&mut st, |_, s| s == CSW, |_| 55, |_| panic!("no escape test"));
@@ -6314,6 +6364,54 @@ mod floor_cure_tests {
     fn no_potion_asks_nothing() {
         let mut st = druid(true);
         assert_eq!(floor_cure_plan(&mut st, |_, _| false, |_| panic!("no danger"), |_| panic!("no escape")), FloorCure::Nothing);
+    }
+
+    /// Re-review of #1082 (P2): the escape the plan chose is the think's
+    /// action: the stair key is queued and the rejected potion is not drunk.
+    #[test]
+    fn the_escape_is_taken_ahead_of_the_rejected_potion() {
+        // The reviewer's case: confused on an up staircase at 45/120, only a
+        // CSW (40), 88 damage incoming. (`borg_keypress` links the engine's
+        // message log, so the escape records its key here.)
+        let mut st = druid(true);
+        let mut keys = Vec::new();
+        let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
+        let spent = floor_cure_act(&mut st, plan, |_, _| {}, |_| { keys.push(b'<'); true }, |_, _| panic!("the rejected potion"));
+        assert!(spent, "the think is spent");
+        assert_eq!(keys, vec![b'<']);
+    }
+
+    /// No escape can be used after all (the Phase Door gates refuse it):
+    /// the potion is drunk, the best move left.
+    #[test]
+    fn an_escape_that_cannot_be_used_drinks_after_all() {
+        let mut st = druid(true);
+        let mut quaffed = None;
+        let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
+        assert!(floor_cure_act(&mut st, plan, |_, _| {}, |_| false, |_, s| { quaffed = Some(s); true }));
+        assert_eq!(quaffed, Some(CSW));
+    }
+
+    /// `Drink` quaffs and spends the think; `Nothing` asks nothing.
+    #[test]
+    fn drink_quaffs_and_nothing_acts_on_nothing() {
+        let mut st = druid(true);
+        let mut quaffed = None;
+        assert!(floor_cure_act(&mut st, FloorCure::Drink { sval: CLW, danger: 8 }, |_, _| {}, |_| panic!("no escape"), |_, s| { quaffed = Some(s); true }));
+        assert_eq!(quaffed, Some(CLW));
+        assert!(!floor_cure_act(&mut st, FloorCure::Nothing, |_, _| {}, |_| panic!("no escape"), |_, _| panic!("no quaff")));
+    }
+
+    /// The stair key `floor_escape` presses, as `escape_available` counts the
+    /// staircase underfoot.
+    #[test]
+    fn the_stair_key_follows_the_staircase() {
+        use crate::borg_fast_fragile::stair_key;
+        use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_LESS, FEAT_MORE};
+        assert_eq!(stair_key(FEAT_LESS, false), Some(b'<'));
+        assert_eq!(stair_key(FEAT_LESS, true), None, "birth_force_descend: no way up");
+        assert_eq!(stair_key(FEAT_MORE, true), Some(b'>'));
+        assert_eq!(stair_key(FEAT_FLOOR, false), None);
     }
 
     #[test]
