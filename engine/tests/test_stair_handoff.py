@@ -70,6 +70,8 @@ PINNED_TOWN_SETTINGS = [
     # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
     # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
     ("stair_scum", 0),
+    # #1062 shipped the stair-leash switches after these incidents.
+    ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

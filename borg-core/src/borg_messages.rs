@@ -690,6 +690,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // Store the keypress
         borg_note(st, "# Normal failure.");
 
+        // borg-reborn-rs (#1062): the failed action moved nothing
+        crate::borg_leash::action_failed(st);
+
         // Set the failure flag
         st.update.failure = true;
 
@@ -723,6 +726,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Ignore teleport trap
     if prefix(msg, b"You hit a teleport") {
+        // borg-reborn-rs (#1062): the cause of the next jump
+        crate::borg_leash::teleport_trap(st);
         return;
     }
 

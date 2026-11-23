@@ -30,7 +30,7 @@ use crate::borg_flow::{
     borg_can_dig, borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_old,
     borg_flow_spread, flow_commit,
 };
-use crate::borg_flow_stairs::{borg_flow_cost_stair, StairTrack};
+use crate::borg_flow_stairs::StairTrack;
 use crate::borg_io::{borg_keypress, borg_note, KC_ENTER};
 use crate::borg_item_use::{borg_activate_item, borg_read_scroll};
 use crate::borg_magic::{borg_primarily_caster, borg_spell_fail};
@@ -551,11 +551,11 @@ pub fn borg_flow_vein(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
         /* obtain the number of steps from this take to the stairs */
         if nearness > 5 && st.borg.tr(BI_CLEVEL) < 20 {
-            let cost = borg_flow_cost_stair(st, y, x, b_stair);
-
             /* Check the distance to stair for this proposed grid, unless i am
              * looking for very close items (leash) */
-            if cost > leash {
+            // borg-reborn-rs (#1062): C's `borg_flow_cost_stair(..) > leash`
+            // with its switches off.
+            if crate::borg_leash::beyond(st, y, x, b_stair, leash) {
                 continue;
             }
         }
@@ -1588,10 +1588,10 @@ pub fn borg_flow_far_from_stairs_dist(
         || crate::borg_kit::leash_active(st)
     {
         /* obtain the number of steps from this take to the stairs */
-        let cost = borg_flow_cost_stair(st, y, x, b_stair);
-
         /* Check the distance to stair for this proposed grid */
-        if cost > distance {
+        // borg-reborn-rs (#1062): `borg_leash::beyond` is C's
+        // `borg_flow_cost_stair(..) > distance` with its switches off.
+        if crate::borg_leash::beyond(st, y, x, b_stair, distance) {
             return true;
         }
     }

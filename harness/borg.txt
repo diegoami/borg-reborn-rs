@@ -842,6 +842,24 @@ borg_param_explore_bfs_hp_per_level = 0
 borg_param_explore_bfs_food_percent = 150
 borg_param_explore_bfs_light_percent = 150
 
+# The holes in C's leash (#1062). Compiled 0 = C; shipped on with the values
+# of the zoo arms (owner, 2026-11-23: "merge with the values to try"),
+# unmeasured until borg-zoo#719 reports (RULES 14). any_stair 1: both leashes measure the nearest known staircase of either
+# kind (a down staircase too), not only up ones, and not the farthest up one.
+# unknown_stair_steps N: with no staircase known or reachable, explore at most
+# N steps from the grid where the Borg arrived. teleported_recall 1: up to
+# recall_max_level, a teleport (a trap or the Borg's own teleport, never its
+# Phase Door; of unknown cause, a jump of at least recall_min_jump grids)
+# that leaves every known staircase more than recall_steps steps away reads
+# Word of Recall at danger 0. Steps are walking steps over known terrain
+# (monsters, traps and danger ignored).
+borg_param_flow_leash_any_stair = 1
+borg_param_flow_leash_unknown_stair_steps = 20
+borg_param_flow_leash_teleported_recall = 1
+borg_param_flow_leash_recall_max_level = 5
+borg_param_flow_leash_recall_steps = 30
+borg_param_flow_leash_recall_min_jump = 12
+
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
 # more steps from the stairs, taken by the leash check of take_select).
