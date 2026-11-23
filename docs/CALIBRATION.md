@@ -741,8 +741,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2012` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2012` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
@@ -1047,8 +1047,8 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2014` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2015` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2019` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2020` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2016` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2017` |
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2018` |
@@ -6279,7 +6279,7 @@ switches below are off by default, which reproduces today's play.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
-| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7938` |
+| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7980` |
 
 ## The Borg's own light radius (#877)
 
@@ -6834,8 +6834,8 @@ lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2042` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2043` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2044` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2045` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2046` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2047` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2048` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2049` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2050` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2051` |
