@@ -7101,7 +7101,7 @@ has no leash; with no staircase known or reachable there is no leash
 (`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
 measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
 can also throw a CL1 Borg far from every staircase it knows. Six parameters
-(the registry now holds **2442**, 2436 on track-p `0dbe9843`), read in
+(the registry now holds **2447**, 2441 on track-p `ae842b60`), read in
 `leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
 compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
 None acts in town, where C's leashes never act (town has no up staircase).
@@ -7144,7 +7144,8 @@ corridor back does not hide it, and an unexplored gap is not a shortcut
   at the first dungeon think at danger 0, after the fights that own the
   action.
 
-The four named seeds, replayed from birth on track-p `0dbe9843` with this
+The four named seeds, replayed from birth on track-p `0dbe9843` (the same
+keys on `ae842b60`) with this
 change (100,000 game turns, local, a lead only, RULES 14; keys.log sha256
 prefixes):
 
