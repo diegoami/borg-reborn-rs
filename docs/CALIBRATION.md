@@ -6167,6 +6167,13 @@ them.
     cornered exception (`fast_fragile_no_heal = 2`) allows any cure; then
     the ratio. When not even a full heal passes, the escape or the attack
     decides. Out of contact the floor applies at any ratio.
+  - **A declined cure costs no attack** (re-review of #1089). With the ratio
+    on, attack on sight tries the cure at once with the caution's healing
+    (`borg_caution::fast_fragile_cure`) and attacks if the caution declines
+    it.
+  - **The confusion and blindness fixes** of `borg_heal` come before the ban,
+    as before #842: they restore the Phase Door the ban relies on. Pinned by
+    a test.
   - **Why 30.** A ratio of 3, the issue's proposal, separates the level-1
     deaths of 206cf4e7 (ratios 1.5 to 2.2: a cure resets the race) from the
     Mage 645909552 (4.1). A hypothesis.
