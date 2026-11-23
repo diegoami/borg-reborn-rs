@@ -6990,8 +6990,9 @@ piece of #1080, split out as #1085):
 4. a staircase newly seen (`borg_update`), or a monster newly tracked, in
    view or not (`borg_flow_kill`), drops a committed exploration flow, so the
    next think plans again (reviews of #1088);
-5. only the candidates the Borg can reach (one spread from the Borg) enter
-   the plan, so another region's rings do not use up the 16 tries.
+5. only the candidates the Borg can reach (one spread from the Borg, through
+   no grid past the return leash, as the route) enter the plan, so rings it
+   cannot walk to do not use up the 16 tries.
 
 While the "wandered too far" return leash of `borg_think_dungeon` applies
 (`return_leash`: 3 x CL + 14 from the nearest up staircase, by `distance`),
