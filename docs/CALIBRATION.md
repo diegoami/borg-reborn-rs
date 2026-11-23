@@ -875,8 +875,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2158` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2570` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2563` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2587` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2580` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -7263,7 +7263,11 @@ Changed:
   does not buy a ware by itself: at level 30 with 3000 gold the cap is 1500 and
   a Brawn is 3000.
 - `town_restore_life_reserve` (compiled 0, **shipped 1**, from maximum depth
-  12 without a repeatable restoration, #978): a Restore Life Levels potion is
+  `town_restore_life_min_depth` without a repeatable restoration, #978; the
+  depth is compiled 12, **shipped 20**: owner, "restore life levels start being
+  useful much later in the game and usually do not need to stock up, but if you
+  do starting from 1000 or so", read as 1000 feet, level 20 - the units are my
+  reading): a Restore Life Levels potion is
   kept as a reserve of one. Without it `curves[EXPERIENCE]` has weight 0 unless
   the Borg is drained, so a potion carried undrained has no value on any row
   and the kit loop can sell it (an unmeasured code path; the existing

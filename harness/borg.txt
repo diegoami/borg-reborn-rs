@@ -416,7 +416,10 @@ borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
 # Restore Life Levels reserve (#978; shipped 1 by #1103, owner: "keep and buy
-# whenever it finds on the black market"): from maximum depth 12, without a
+# whenever it finds on the black market"; "restore life levels start being
+# useful much later in the game and usually do not need to stock up, but if you
+# do starting from 1000 or so", read as 1000 feet = level 20, town_restore_life_
+# min_depth): from that maximum depth, without a
 # repeatable restoration, the Borg keeps one potion, bought wherever the plan
 # finds it (the Alchemist about 400 gold; the Black Market 1200 when the
 # Alchemist is out, above town_black_market_min_gold). Without the reserve a
@@ -424,6 +427,7 @@ borg_param_town_confusion_cure_reserve_percent = 100
 # while drained), so the kit loop can sell it. Zero disables retention; the
 # healthy-character junk-quaff guard applies at every setting.
 borg_param_town_restore_life_reserve = 1
+borg_param_town_restore_life_min_depth = 20
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).

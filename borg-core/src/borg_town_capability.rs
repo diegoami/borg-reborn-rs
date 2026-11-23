@@ -2518,6 +2518,14 @@ mod recall_value_tests {
     }
 
     #[test]
+    fn the_restore_life_reserve_starts_at_its_depth() {
+        use super::restore_life_reserve_depth as on;
+        assert!(!on(1, 19, 20) && on(1, 20, 20) && on(1, 35, 20), "1000 feet is level 20");
+        assert!(!on(0, 40, 20), "no copies, no reserve");
+        assert!(on(1, 12, 12), "the compiled depth is #978's");
+    }
+
+    #[test]
     fn a_class_buys_only_the_second_stat_potions_it_drinks() {
         use super::drinks_second_stat_potion as d;
         let (warrior, mage, druid, priest, necromancer, rogue) = (0, 1, 2, 3, 4, 6);
@@ -2554,6 +2562,15 @@ mod recall_value_tests {
     }
 }
 
+/// #1103 (owner: "restore life levels start being useful much later in the game
+/// and usually do not need to stock up, but if you do starting from 1000 or so",
+/// read as 1000 feet, dungeon level 20): whether the reserve is on at this
+/// maximum depth (levels). `town_restore_life_min_depth` is 12 compiled (#978:
+/// where the grape jelly enters), 20 shipped.
+pub(crate) fn restore_life_reserve_depth(copies: i32, max_depth: i32, min_depth: i32) -> bool {
+    copies != 0 && max_depth >= min_depth
+}
+
 /// #978: the opt-in reserve starts when experience-draining monsters enter
 /// the normal depth range (grape jelly, monster.txt:3306-3319). A repeatable
 /// equipped activation or a learned low-failure restoration spell replaces it.
@@ -2561,7 +2578,7 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
     use crate::borg_headers::borg_magic_h::{REMEMBRANCE, REVITALIZE};
 
     let copies = param(Param::town_restore_life_reserve);
-    if copies == 0 || st.borg.tr(BI_MAXDEPTH) < 12 {
+    if !restore_life_reserve_depth(copies, st.borg.tr(BI_MAXDEPTH), param(Param::town_restore_life_min_depth)) {
         return 0;
     }
     let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]
