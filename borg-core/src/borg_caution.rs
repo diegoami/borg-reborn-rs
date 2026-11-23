@@ -1926,9 +1926,15 @@ fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
 
 /// The first known immobile attacker next to grid (`y`, `x`), by kill index.
 fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    attacker_next_to(st, y, x, immobile_attacker)
+}
+
+/// borg-reborn-rs (#1091): `immobile_attacker_next_to`'s scan of the kill
+/// list, with the race test passed in (the race flags need the engine).
+fn attacker_next_to(st: &BorgState, y: i32, x: i32, attacker: impl Fn(usize) -> bool) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
         let kill = &st.kills.kills[i];
-        immobile_attacker(usize::from(kill.r_idx))
+        attacker(usize::from(kill.r_idx))
             && (i32::from(kill.pos.y) - y).abs() <= 1
             && (i32::from(kill.pos.x) - x).abs() <= 1
     })
@@ -2293,10 +2299,8 @@ fn may_move_away(
 fn poisoned_escape_first(st: &mut BorgState, pos_danger: i32) -> bool {
     let (hp, max) = (st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP));
     let percent = p(Param::caution_poisoned_no_cure_retreat_hp_percent);
-    if percent <= 0 || st.borg.tr(BI_ISPOISONED) == 0 || has_poison_cure(st) {
-        return false;
-    }
-    if !poisoned_below(true, hp, max, percent) || !crate::borg_fast_fragile::escape_available(st) {
+    let poisoned = st.borg.tr(BI_ISPOISONED) != 0;
+    if !escape_first_applies(st, percent, poisoned, hp, max, |st| has_poison_cure(st), crate::borg_fast_fragile::escape_available) {
         return false;
     }
     borg_note(st, &format!("# Poisoned, no cure, HP {hp} of {max} (danger {pos_danger}): the escape before the retreat (#934)"));
@@ -2312,6 +2316,13 @@ fn poisoned_escape_first(st: &mut BorgState, pos_danger: i32) -> bool {
 /// Critical Wounds (`BI_ACCW`, which counts the spell too), Healing, *Healing*
 /// or Life (object.txt: each has `CURE:POISONED`), or a Cure Poison or Herbal
 /// Curing spell it can cast now.
+/// borg-reborn-rs (#934, #1091): `poisoned_escape_first`'s test: the switch
+/// on, poisoned, no usable cure, below the percent of max HP, and an escape at
+/// hand (asked in that order, only when the earlier parts hold).
+fn escape_first_applies<S>(st: &mut S, percent: i32, poisoned: bool, hp: i32, max: i32, cure: impl FnOnce(&S) -> bool, escape: impl FnOnce(&mut S) -> bool) -> bool {
+    percent > 0 && poisoned && !cure(st) && poisoned_below(true, hp, max, percent) && escape(st)
+}
+
 fn has_poison_cure(st: &BorgState) -> bool {
     let counts = [BI_ACUREPOIS, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE].map(|t| st.borg.tr(t));
     cure_at_hand(counts, || {
@@ -2370,30 +2381,50 @@ fn immobile_neighbour_veto(st: &mut BorgState) -> bool {
         return false;
     }
     let age = p(Param::caution_one_blow_monster_age).min(p(Param::attack_max_target_age));
-    let mut adjacent = (1..i32::from(st.kills.nxt)).filter(|&i| {
-        let kill = &st.kills.kills[i as usize];
-        kill.r_idx != 0 && borg_timer(st, kill.when) <= age && engine::distance(st.borg.c, kill.pos) == 1
-    });
-    let (Some(k), None) = (adjacent.next(), adjacent.next()) else {
+    let Some(k) = lone_neighbour(st, age, immobile_attacker) else {
         return false;
     };
-    let kill = st.kills.kills[k as usize];
-    if !immobile_attacker(usize::from(kill.r_idx)) {
-        return false;
-    }
-    let damage = crate::borg_fight_attack::melee_milli_per_turn(st, k as usize);
-    let Some(need) = turns_to_kill(i32::from(kill.power) * 1000, damage) else {
-        return false;
-    };
+    let kill = st.kills.kills[k];
+    let damage = crate::borg_fight_attack::melee_milli_per_turn(st, k);
     let hp = st.borg.tr(BI_CURHP).max(1);
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let danger = borg_danger(st, cy, cx, 1, true, false);
-    if fight_affordable(need, turns, danger, hp, p(Param::caution_retreat_immobile_danger_percent)) {
+    let percent = p(Param::caution_retreat_immobile_danger_percent);
+    let mut danger = 0;
+    let verdict = immobile_neighbour_need(turns, i32::from(kill.power), damage, hp, percent, || {
+        danger = borg_danger(st, cy, cx, 1, true, false);
+        danger
+    });
+    if let Some(need) = verdict {
         let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned();
         borg_note(st, &format!("# No retreat: immobile {name} dies in {need} turns, danger {danger} a turn here (#933)"));
         return true;
     }
     false
+}
+
+/// borg-reborn-rs (#933, #1091): the only known monster next to the Borg
+/// seen within `age` turns, when it passes the race test (`immobile`), by kill
+/// index.
+fn lone_neighbour(st: &BorgState, age: i32, immobile: impl Fn(usize) -> bool) -> Option<usize> {
+    let mut adjacent = (1..i32::from(st.kills.nxt)).filter(|&i| {
+        let kill = &st.kills.kills[i as usize];
+        kill.r_idx != 0 && borg_timer(st, kill.when) <= age && engine::distance(st.borg.c, kill.pos) == 1
+    });
+    let (Some(k), None) = (adjacent.next(), adjacent.next()) else {
+        return None;
+    };
+    let k = k as usize;
+    immobile(usize::from(st.kills.kills[k].r_idx)).then_some(k)
+}
+
+/// borg-reborn-rs (#933, #1091): the veto's decision for a lone immobile
+/// neighbour of `power` HP that the Borg's melee hits for `damage`
+/// thousandths a turn: the turns to kill it when the fight is short enough
+/// and affordable (the danger here, asked only then, each turn). `None`: the
+/// retreat is not vetoed.
+fn immobile_neighbour_need(turns: i32, power: i32, damage: i32, hp: i32, percent: i32, danger: impl FnOnce() -> i32) -> Option<i32> {
+    let need = turns_to_kill(power * 1000, damage)?;
+    fight_affordable(need, turns, danger(), hp, percent).then_some(need)
 }
 
 /// borg-reborn-rs (#933, review of #967): a kill in `need` turns, at most
@@ -2445,20 +2476,10 @@ fn retreat_oscillation_veto(st: &mut BorgState) -> bool {
     if limit <= 0 {
         return false;
     }
-    let m = &st.borg.mon;
-    let undone = run_follows(
-        m.retreat_level == st.borg.time.level,
-        st.borg.time.now - m.retreat_last,
-        p(Param::caution_retreat_oscillation_thinks),
-        m.retreat_landed,
-        st.borg.c,
-        m.retreat_from,
-        m.retreat_to,
-    );
-    let run = m.retreat_run;
-    if !(undone && i32::from(run) >= limit) {
+    let thinks = p(Param::caution_retreat_oscillation_thinks);
+    let Some(run) = undone_run(&st.borg.mon, st.borg.time.now, st.borg.time.level, st.borg.c, limit, thinks) else {
         return false;
-    }
+    };
     if st.borg.mon.retreat_noted != st.borg.time.now {
         st.borg.mon.retreat_noted = st.borg.time.now;
         borg_note(st, &format!("# No retreat: {run} moves away in a row from here were undone (#932)"));
@@ -2473,10 +2494,8 @@ fn observe_retreat_landing(st: &mut BorgState) {
     if p(Param::caution_retreat_oscillation_limit) <= 0 {
         return;
     }
-    let m = &mut st.borg.mon;
-    if m.retreat_level == st.borg.time.level && st.borg.c.x == m.retreat_to.x && st.borg.c.y == m.retreat_to.y {
-        m.retreat_landed = true;
-    }
+    let (level, at) = (st.borg.time.level, st.borg.c);
+    confirm_landing(&mut st.borg.mon, level, at);
 }
 
 /// borg-reborn-rs (#932, #1023): count the move away just taken from `from`
@@ -2488,7 +2507,27 @@ fn note_retreat_taken(st: &mut BorgState, from: loc) {
     let (now, level) = (st.borg.time.now, st.borg.time.level);
     let to = loc { x: st.borg.goal.g.x, y: st.borg.goal.g.y };
     let thinks = p(Param::caution_retreat_oscillation_thinks);
-    let m = &mut st.borg.mon;
+    record_move_away(&mut st.borg.mon, now, level, from, to, thinks);
+}
+
+/// borg-reborn-rs (#1091): the veto's test on the recorded run: the run,
+/// when the Borg standing at `at` has come back after at least `limit` moves
+/// away in a row were undone.
+fn undone_run(m: &crate::borg::BorgMonInfo, now: BorgTime, level: BorgTime, at: loc, limit: i32, thinks: i32) -> Option<u16> {
+    let undone = run_follows(m.retreat_level == level, now - m.retreat_last, thinks, m.retreat_landed, at, m.retreat_from, m.retreat_to);
+    (undone && i32::from(m.retreat_run) >= limit).then_some(m.retreat_run)
+}
+
+/// borg-reborn-rs (#1091): a think that finds the Borg at `at` on the grid
+/// its last move away stepped to confirms the landing.
+fn confirm_landing(m: &mut crate::borg::BorgMonInfo, level: BorgTime, at: loc) {
+    if m.retreat_level == level && at.x == m.retreat_to.x && at.y == m.retreat_to.y {
+        m.retreat_landed = true;
+    }
+}
+
+/// borg-reborn-rs (#1091): record a move away from `from` to `to`.
+fn record_move_away(m: &mut crate::borg::BorgMonInfo, now: BorgTime, level: BorgTime, from: loc, to: loc, thinks: i32) {
     let follows = run_follows(m.retreat_level == level, now - m.retreat_last, thinks, m.retreat_landed, from, m.retreat_from, m.retreat_to);
     m.retreat_run = next_retreat_run(follows, m.retreat_run);
     m.retreat_last = now;
@@ -8414,5 +8453,256 @@ mod recall_dl1_hold_up_tests {
         assert!(!recall_holds_up_with(true, 140, 1, 41, 40), "a danger above the avoidance still takes them");
         assert!(!recall_holds_up_with(true, 140, 2, 0, 40), "DL2: the staircase leads to DL1, not town");
         assert!(!recall_holds_up_with(true, 0, 1, 0, 40), "no Recall pending");
+    }
+}
+
+/// borg-reborn-rs (#1091, MiniMax review of #965-#968, finding 5): the
+/// immobile-toucher switches over the real functions. Their parameters are
+/// fixed at init, and the race flags, the melee and the danger need the
+/// engine, so each rule's decision is tested with its switch values passed in,
+/// and its wiring (the switch read, the decision called, the order in the
+/// retreat chain) is pinned in its source, as in #1011 and #1015.
+#[cfg(test)]
+mod switch_decision_tests {
+    use super::{attacker_next_to, confirm_landing, escape_first_applies, immobile_neighbour_need, lone_neighbour, record_move_away, undone_run};
+    use crate::borg::BorgMonInfo;
+    use crate::borg_flow_kill::BorgKill;
+    use crate::headers::z_type_h::loc;
+    use crate::state::BorgState;
+
+    const JELLY: u16 = 5;
+    const ORC: u16 = 9;
+
+    const fn g(y: i32, x: i32) -> loc {
+        loc { x, y }
+    }
+
+    fn kill(r_idx: u16, at: loc, when: i32) -> BorgKill {
+        BorgKill { r_idx, pos: at, when, ..BorgKill::default() }
+    }
+
+    /// A state with the Borg at `at`, think `now`, and these kill records
+    /// (index 0 is the unused first slot, as in the game).
+    fn state(at: loc, now: i32, kills: &[BorgKill]) -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.c = at;
+        st.borg.time.now = now;
+        st.kills.kills.push(BorgKill::default());
+        st.kills.kills.extend_from_slice(kills);
+        st.kills.nxt = st.kills.kills.len() as i16;
+        st
+    }
+
+    fn body<'a>(src: &'a str, start: &str) -> &'a str {
+        let b = &src[src.find(start).unwrap_or_else(|| panic!("{start}"))..];
+        &b[..b.find("\n}\n").unwrap()]
+    }
+
+    fn in_order(body: &str, parts: &[&str]) {
+        let mut at = 0;
+        for part in parts {
+            let i = body[at..].find(part).unwrap_or_else(|| panic!("{part} (after the previous part)"));
+            at += i + part.len();
+        }
+    }
+
+    // ---- #931 / #965: the reach of an immobile attacker
+
+    #[test]
+    fn only_the_squares_next_to_an_immobile_attacker_are_its_reach() {
+        // 829474344: the white jelly at 13,96; an orc wanders at 11,93.
+        let st = state(g(13, 94), 0, &[kill(JELLY, g(13, 96), 0), kill(ORC, g(11, 93), 0)]);
+        let immobile = |r: usize| r == usize::from(JELLY);
+        for (y, x) in [(13, 95), (12, 95), (14, 97), (12, 97)] {
+            assert_eq!(attacker_next_to(&st, y, x, immobile), Some(1), "{y},{x} is next to the jelly");
+        }
+        assert_eq!(attacker_next_to(&st, 13, 94, immobile), None, "two squares away");
+        assert_eq!(attacker_next_to(&st, 12, 94, immobile), None, "next to the orc, which is not immobile");
+        assert_eq!(attacker_next_to(&st, 13, 95, |_| false), None, "no immobile race known");
+    }
+
+    #[test]
+    fn the_stair_flight_refuses_the_reach_only_with_the_switch() {
+        let caution = include_str!("borg_caution.rs");
+        assert!(body(caution, concat!("pub(crate) fn in_immobile_", "reach(")).contains(concat!("immobile_attacker_", "next_to(st, y, x)")));
+        assert!(body(caution, concat!("fn immobile_attacker_", "next_to(")).contains(concat!("attacker_next_to(st, y, x, ", "immobile_attacker)")));
+        let stairs = include_str!("borg_flow_stairs.rs");
+        in_order(body(stairs, concat!("fn weighted_", "route(")), &[concat!("stairs_immobile_", "reach_on()"), "return plain;", concat!("stairs_immobile_reach_", "extra_steps()"), concat!("prefer_reach_", "free(")]);
+        let search = body(stairs, concat!("fn weighted_route_", "with("));
+        assert_eq!(search.matches(concat!("keep_out && crate::borg_caution::in_immobile_", "reach(st, grid.y, grid.x)")).count(), 2, "the first search and the clean one");
+    }
+
+    // ---- #1023 / #966: the run of moves away that the next step undid
+
+    const LIMIT: i32 = 3;
+    const THINKS: i32 = 3;
+
+    /// One retreat attempt at `at` on think `now`: the veto's run when it
+    /// holds, else the move to `to` is recorded.
+    fn attempt(m: &mut BorgMonInfo, now: i32, level: i32, at: loc, to: loc) -> Option<u16> {
+        let veto = undone_run(m, now, level, at, LIMIT, THINKS);
+        if veto.is_none() {
+            record_move_away(m, now, level, at, to, THINKS);
+        }
+        veto
+    }
+
+    #[test]
+    fn going_to_the_landing_and_back_is_vetoed_after_the_limit() {
+        // 829474344: retreat 13,95 -> 13,94; the next think lands; the stair
+        // flight walks back to 13,95; again. The fourth attempt is vetoed.
+        let (a, b) = (g(13, 95), g(13, 94));
+        let mut m = BorgMonInfo::default();
+        let mut vetoes = Vec::new();
+        for i in 0..5 {
+            let now = 100 + 2 * i;
+            vetoes.push(attempt(&mut m, now, 1, a, b));
+            confirm_landing(&mut m, 1, b);
+        }
+        // A veto records no move, so it holds for the window after the last
+        // move taken (at 104: thinks 105 to 107 at THINKS 3)...
+        assert_eq!(vetoes, vec![None, None, None, Some(3), None]);
+        let mut m = BorgMonInfo::default();
+        for i in 0..3 {
+            attempt(&mut m, 100 + 2 * i, 1, a, b);
+            confirm_landing(&mut m, 1, b);
+        }
+        assert_eq!(undone_run(&m, 107, 1, a, LIMIT, THINKS), Some(3), "within the window");
+        // ...and then a retreat is allowed again, starting a new run.
+        assert_eq!(undone_run(&m, 108, 1, a, LIMIT, THINKS), None, "past it");
+        assert_eq!(undone_run(&m, 107, 1, g(13, 93), LIMIT, THINKS), None, "not back next to the grid it left");
+    }
+
+    #[test]
+    fn progress_an_unconfirmed_landing_a_new_level_or_a_long_gap_is_never_vetoed() {
+        let (a, b) = (g(13, 95), g(13, 94));
+        // A -> B -> C -> D west: each move starts where the last landed.
+        let mut m = BorgMonInfo::default();
+        for i in 0..6 {
+            let from = g(5, 20 - i);
+            assert_eq!(attempt(&mut m, 100 + i, 1, from, g(5, 19 - i)), None, "progress {i}");
+            confirm_landing(&mut m, 1, g(5, 19 - i));
+        }
+        assert_eq!(m.retreat_run, 1);
+        // The key did not land (no think found the Borg on 13,94).
+        let mut m = BorgMonInfo::default();
+        for i in 0..6 {
+            assert_eq!(attempt(&mut m, 100 + 2 * i, 1, a, b), None, "unconfirmed {i}");
+        }
+        // Another level every time, or more than THINKS thinks apart.
+        for (step, level) in [(2, None), (4, Some(1))] {
+            let mut m = BorgMonInfo::default();
+            for i in 0..6 {
+                let lev = level.unwrap_or(1 + i);
+                assert_eq!(attempt(&mut m, 100 + step * i, lev, a, b), None, "step {step}, think {i}");
+                confirm_landing(&mut m, lev, b);
+            }
+        }
+    }
+
+    #[test]
+    fn a_landing_on_another_grid_is_not_confirmed() {
+        let mut m = BorgMonInfo::default();
+        record_move_away(&mut m, 100, 1, g(13, 95), g(13, 94), THINKS);
+        confirm_landing(&mut m, 1, g(12, 94));
+        assert!(!m.retreat_landed, "the Borg is not on the grid it stepped to");
+        confirm_landing(&mut m, 2, g(13, 94));
+        assert!(!m.retreat_landed, "another level");
+        confirm_landing(&mut m, 1, g(13, 94));
+        assert!(m.retreat_landed);
+    }
+
+    #[test]
+    fn the_breaker_is_read_and_wired_into_both_moves_away() {
+        let src = include_str!("borg_caution.rs");
+        in_order(body(src, concat!("fn retreat_oscillation_", "veto(")), &[concat!("Param::caution_retreat_", "oscillation_limit"), "return false;", concat!("undone_", "run(")]);
+        in_order(body(src, concat!("fn observe_retreat_", "landing(")), &[concat!("Param::caution_retreat_", "oscillation_limit"), "return;", concat!("confirm_", "landing(")]);
+        in_order(body(src, concat!("fn note_retreat_", "taken(")), &[concat!("Param::caution_retreat_", "oscillation_limit"), "return;", concat!("record_move_", "away(")]);
+        let caution = body(src, concat!("pub fn borg_", "caution("));
+        in_order(caution, &[
+            concat!("observe_retreat_", "landing(st)"),
+            concat!("poisoned_escape_", "first(st, pos_danger)"),
+            concat!("!retreat_oscillation_", "veto(st)"),
+            concat!("!immobile_neighbour_", "veto(st)"),
+            concat!("retreat(st, pos_danger, ", "borg_surround)"),
+            concat!("note_retreat_", "taken(st, from)"),
+        ]);
+        in_order(caution, &[concat!("Param::caution_retreat_", "oscillation_backaway"), concat!("backaway_counted && retreat_oscillation_", "veto(st)"), concat!("note_retreat_", "taken(st, from)")]);
+    }
+
+    // ---- #933 / #967: a lone immobile neighbour that melee kills quickly
+
+    #[test]
+    fn only_a_lone_recent_immobile_neighbour_is_chosen() {
+        let immobile = |r: usize| r == usize::from(JELLY);
+        let at = g(13, 95);
+        let jelly = kill(JELLY, g(13, 96), 100);
+        assert_eq!(lone_neighbour(&state(at, 100, &[jelly]), 2, immobile), Some(1));
+        let orc = kill(ORC, g(12, 94), 100);
+        assert_eq!(lone_neighbour(&state(at, 100, &[jelly, orc]), 2, immobile), None, "not alone");
+        assert_eq!(lone_neighbour(&state(at, 100, &[orc]), 2, immobile), None, "a mobile neighbour");
+        let stale_orc = kill(ORC, g(12, 94), 90);
+        assert_eq!(lone_neighbour(&state(at, 100, &[jelly, stale_orc]), 2, immobile), Some(1), "the orc's record is too old to count");
+        assert_eq!(lone_neighbour(&state(at, 103, &[jelly]), 2, immobile), None, "nor the jelly's");
+        let far = kill(JELLY, g(13, 97), 100);
+        assert_eq!(lone_neighbour(&state(at, 100, &[far]), 2, immobile), None, "two squares away");
+    }
+
+    #[test]
+    fn the_kill_is_vetoed_only_when_short_and_affordable() {
+        // 829474344: a 25-HP white jelly, 13 HP a turn of melee, danger 26
+        // a turn here, HP 69: two turns cost 52, under 100% of 69.
+        let ask = |d: i32| move || d;
+        assert_eq!(immobile_neighbour_need(3, 25, 13_000, 69, 100, ask(26)), Some(2));
+        assert_eq!(immobile_neighbour_need(3, 25, 13_000, 69, 100, ask(35)), None, "70 is not under 69");
+        assert_eq!(immobile_neighbour_need(1, 25, 13_000, 69, 100, ask(26)), None, "two turns, one allowed");
+        assert_eq!(immobile_neighbour_need(3, 25, 13_000, 69, 50, ask(26)), None, "52 is not under half of 69");
+        assert_eq!(immobile_neighbour_need(3, 25, 0, 69, 100, || panic!("no danger asked")), None, "the blows do nothing");
+    }
+
+    #[test]
+    fn the_neighbour_veto_reads_its_switch_and_fear_first() {
+        let src = include_str!("borg_caution.rs");
+        in_order(body(src, concat!("fn immobile_neighbour_", "veto(")), &[
+            concat!("Param::caution_retreat_", "immobile_kill_turns"),
+            concat!("BI_IS", "AFRAID"),
+            concat!("BI_CRS", "FEAR"),
+            "return false;",
+            concat!("lone_neighbour(st, age, ", "immobile_attacker)"),
+            concat!("immobile_neighbour_", "need(turns,"),
+            "return true;",
+        ]);
+    }
+
+    // ---- #934 / #968: poisoned without a cure, the escapes first
+
+    #[test]
+    fn the_escapes_come_first_only_poisoned_without_a_cure_and_hurt() {
+        let yes = |_: &()| true;
+        let no = |_: &()| false;
+        let go = |_: &mut ()| true;
+        let none = |_: &mut ()| false;
+        // 829474344 at 95,380: poisoned, HP 69 of 96, CLW only, a Phase Door.
+        assert!(escape_first_applies(&mut (), 75, true, 69, 96, no, go));
+        assert!(!escape_first_applies(&mut (), 75, true, 69, 96, yes, |_: &mut ()| panic!("no escape asked")), "a cure carried");
+        assert!(!escape_first_applies(&mut (), 0, true, 69, 96, |_: &()| panic!("off: nothing asked"), go), "off");
+        assert!(!escape_first_applies(&mut (), 75, false, 69, 96, |_: &()| panic!("not poisoned"), go), "not poisoned");
+        assert!(!escape_first_applies(&mut (), 75, true, 72, 96, no, |_: &mut ()| panic!("not hurt enough")), "exactly 75%");
+        assert!(!escape_first_applies(&mut (), 75, true, 69, 96, no, none), "no escape at hand");
+    }
+
+    #[test]
+    fn the_escape_first_rule_reads_its_switch_and_then_escapes() {
+        let src = include_str!("borg_caution.rs");
+        in_order(body(src, concat!("fn poisoned_escape_", "first(")), &[
+            concat!("Param::caution_poisoned_", "no_cure_retreat_hp_percent"),
+            concat!("BI_IS", "POISONED"),
+            concat!("escape_first_", "applies(st,"),
+            concat!("has_poison_", "cure(st)"),
+            concat!("escape_", "available"),
+            "return false;",
+            concat!("borg_escape(st, ", "pos_danger)"),
+            "return true;",
+        ]);
     }
 }
