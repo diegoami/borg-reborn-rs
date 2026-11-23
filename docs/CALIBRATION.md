@@ -8215,12 +8215,19 @@ are drunk again. The engine messages the pain skip changes are exactly two,
 "You feel yourself slow down." and "You feel yourself speed up."
 (`player_timed.txt:197`, `:203`); no other "You feel ..." message of
 `lib/gamedata` or `src` ends in a pain suffix. borg-zoo#652 (specimen
-`67a0c69d`, 378 starts: pilot 18, small 90, medium 270) measured it neutral:
-0 rescued, 1 newly killed (a Half-Orc Warrior, 1824713728, dying to a
-gallant 1,100 turns after a haste ends mid-fight; the sync's danger was
-correct), mean CL and max DL unchanged. It ships 1 because the Borg's state
-then matches the engine (owner, 2026-11-23: "all inactive but the stale-speed
-flag").
+`67a0c69d`, 378 starts: pilot 18, small 90, medium 270), the sync arm
+against the control: small and medium (360 starts) 8 deaths against 7, 0 rescued, 1
+newly killed (Half-Orc Warrior 1824713728, killed by a gallant at turn
+70,353, about 1,100 turns after the games split at the end of a haste);
+weighted means CL 6.206 against 6.219 and max DL 2.464 against 2.453. The
+pilot, a separate 18-start tier: the same one death in both arms, means CL/max
+DL 6.39/2.39 against 6.56/2.56. The replay of 1824713728 describes how the two
+games split; it does not establish that the sync plays as well, and these
+numbers are no verdict either way. It ships 1 for the source-level reason
+above: the Borg's flag is then synchronized with the engine timer (owner,
+2026-11-23: "all inactive but the stale-speed flag"). Seed 224's local death
+with the sync on (62,200) is not recorded in borg-cemetery, a RULES 12
+evidence gap (handover of #941).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
@@ -8252,6 +8259,19 @@ states themselves (confusion, stun, paralysis) were read from the timers either 
 at 0 `BI_SPEED` stayed 110 while the engine's speed was 100; at 1 they were equal
 throughout. C's other double count, +10 in `borg_danger` while `temp.fast` is
 set on top of `BI_SPEED`'s own +10, is unchanged.
+
+**Residual, before #1033 is turned on.** `borg_danger` adds +10 to the
+player's speed whenever `temp.fast` is set (`borg_danger.rs:2169-2171`), and
+`temp.fast` is also set by TERROR (`trait_timed_sync`'s OR of FAST, SPRINT and
+TERROR, `borg_trait.rs:2814`; C's fallback sets it for TERROR too). With TERROR
+alone and a base speed of 110, the engine's speed is 120
+(`player-calcs.c:2176-2187`), but the danger models 125 at
+`trait_speed_timed = 0` (115 + 10) and 130 at 1 (120 + 10). The +10 line is
+unchanged; turning #1033 on makes the TERROR overcount larger. A fix of that
+line must keep the defense probe's deliberate hypothetical haste
+(`borg_fight_defend.rs:437-439`: it sets `temp.fast` for one danger call, after
+rejecting a Borg already fast, to price a speed potion or spell), so it cannot
+simply drop the +10 for every `temp.fast`. Not done here.
 
 Both are compiled 0 (C) and **shipped 0** (owner, 2026-11-23: of this PR only
 the speed flag, `trait_timed_sync`, ships on). No replayed game changes its keys

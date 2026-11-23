@@ -720,6 +720,9 @@ borg_param_messages_player_not_pain = 0
 # engine does (player-calcs.c:2176-2187); at 0 (C) SLOW is ignored and TERROR
 # is +5, not stacked with haste. Shipped 0 (owner, 2026-11-23: only the speed
 # flag ships on); at 1 a slowed Borg's BI_SPEED equals the engine's speed.
+# Residual: borg_danger adds +10 more while temp.fast is set, and TERROR sets
+# it, so TERROR alone at base 110 is modelled 125 at 0 and 130 at 1 against
+# the engine's 120 (docs/CALIBRATION.md, #1033).
 borg_param_trait_speed_timed = 0
 
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
