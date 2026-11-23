@@ -1338,6 +1338,22 @@ borg_param_loop_breaker = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
+
+# #916: no strategic retreat (the step to a happier grid) while an awake
+# adjacent monster record (no freshness or mobility check) has a haste
+# forecast at least the margin above player->state.speed: observed mspeed,
+# +10 for observed FAST, the engine's SLOW adjustment (mon-move.c:1928-1938)
+# not subtracted, so not the engine's net speed. Also, the selected
+# destination's danger at or above HP vetoes the whole retreat (no other
+# candidate tried, first step unchecked). The escapes and the outmatched cure
+# decide. Shipped 0 (today's play): in borg-zoo#652's small and medium runs
+# (360 starts) it rescued none and newly killed 3 (one, the Ranger's Fang
+# death, follows the refusals directly; the Paladin and the Priest died
+# later). Where no escape takes the turn the Borg fights instead. Margin 5,
+# the HP cutoff and margin 15 (where the three new deaths replay the
+# control) are hypotheses.
+borg_param_caution_retreat_from_faster = 0
+borg_param_caution_retreat_faster_margin = 5
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
@@ -1751,6 +1767,19 @@ borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
+# #914: above 0, more than this many marked attackers in contact skip the
+# fast-fragile attack on every marked target (one out of contact too) and lift
+# the heal ban whether or not an escape is available (a group exception to
+# #842). No hand-off to caution is guaranteed: other attack-on-sight entries,
+# the lone-target attack and the winning fight can act first, and caution
+# heals before its Phase Door. At 0 nothing is counted: today's play.
+# Shipped 0 (owner, 2026-11-23: of the cave-spider switches only #941's speed
+# flag ships on); 1 is the value to try, a hypothesis (seed 2008390085, three
+# cave spiders: it changes that game, no survival effect is measured).
+# With fast_fragile_by_stats = 0 only crows and wild cats are marked, neither
+# declares friends, but independent spawns (a crow and a wild cat too) can
+# still be adjacent. The zoo has not measured it (borg-zoo#652).
+borg_param_fast_fragile_contact_max = 0
 # #926: the heal floor (percent of max HP), the quantile of "the next turn
 # kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
 # it. 0 = the play before #1072. Shipped together (#1072, owner 2026-11-23:
