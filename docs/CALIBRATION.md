@@ -741,8 +741,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2016` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2016` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2021` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2021` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
@@ -1047,16 +1047,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2023` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2024` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2025` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2026` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2027` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2028` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2020` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2021` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2022` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2023` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2028` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2029` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2030` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2031` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2032` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2033` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2034` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2035` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2036` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2037` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -1785,7 +1785,7 @@ Before the fix (main `3ba17e2c`, the hunt stopped by the rule's own leave):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:679` |
+| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:685` |
 
 ## Kill breeders first; flee only what cannot be stopped (#556)
 
@@ -3981,12 +3981,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1127` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1128` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1130` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1137` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1138` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1139` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1315` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1316` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1315` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1325` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1323` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1324` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
@@ -6279,7 +6279,7 @@ switches below are off by default, which reproduces today's play.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
-| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7943` |
+| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7985` |
 
 ## The Borg's own light radius (#877)
 
@@ -6798,7 +6798,7 @@ The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
 `studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
 character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
-**2423** parameters (8 added). `stair_scum` ships 0: play is byte-identical
+**2427** parameters (8 added to `track-p` `bf8d2604`). `stair_scum` ships 0: play is byte-identical
 to before until it is 1. Every number is a hypothesis (RULES 14): borg-zoo
 measures arms at a threshold of 20, 25 and 30, then per class. The design
 follows Codex's review on #1061 (the attacks on the way counted, the

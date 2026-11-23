@@ -63,7 +63,7 @@ const BORG_DIG_MOD: i32 = 20;
 const BORG_DIG_HARD: i32 = 40;
 
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
-const GOAL_DARK: i32 = 4;
+pub(crate) const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
 const GOAL_FLEE: i32 = 7;
@@ -1691,6 +1691,11 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         /* Attempt motion */
         if borg_play_step(st, y, x) {
             st.stairs.up_search_departure = departure;
+            if st.borg.tr(BI_CDEPTH) > 0 {
+                let emergency_down = why == GOAL_FLEE && st.borg.flight_to_stairs
+                    && st.borg.status.desperate && !known;
+                borg_flow_stairs::record_off_stair_step(st, loc { x, y }, why == GOAL_DARK, emergency_down);
+            }
             return true;
         }
     }
