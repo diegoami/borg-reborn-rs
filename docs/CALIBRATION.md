@@ -8208,9 +8208,12 @@ walks, the retreat and the escapes. It does so when the danger of the awake
 monsters within the radius that are faster by the margin (an observed haste
 counted) reaches that percent of the HP.
 
-- **`caution_emergency_speed_danger_percent`** (compiled 0, **shipped 50**
-  (P8)): 50 is the share #747's stair test ships
-  (`caution_desperate_fast_danger_percent`); no measurement chose it. The rule
+- **`caution_emergency_speed_danger_percent`** (compiled 0, **shipped 0**:
+  owner, 2026-11-23, of the cave-spider switches only #941's speed flag ships
+  on). 50, the share #747's stair test ships
+  (`caution_desperate_fast_danger_percent`), is the value to try; no
+  measurement chose it. In borg-zoo#652's small and medium runs (360 starts)
+  50 on top of #941 changed 22 games and no death. The rule
   needs #941's `trait_timed_sync = 1`: with the old stuck speed flag the Borg
   believes it is fast for the rest of the game after its first Potion of Speed,
   and the rule's "already fast" test returns. On the zoo's game with #941 on it

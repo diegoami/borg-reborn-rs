@@ -1524,12 +1524,14 @@ borg_param_caution_cornered_spell_fail = 25
 # #913: emergency Speed. Drink a Potion of Speed (or cast Haste Self) before
 # walking, retreating or escaping when the danger of the awake monsters within
 # the radius that are faster than the Borg by the margin reaches this percent
-# of the HP. Compiled 0 (off). Shipped 50 (P8): the share #747's stair test
-# ships (caution_desperate_fast_danger_percent). It acts only with #941's
+# of the HP. Compiled 0 (off) and shipped 0 (owner, 2026-11-23: of the
+# cave-spider switches only #941's speed flag ships on). 50, the share #747's
+# stair test ships (caution_desperate_fast_danger_percent), is the value to try.
+# It acts only with #941's
 # trait_timed_sync = 1: with the old stuck speed flag the Borg believes it is
 # already fast after its first Potion of Speed. 50, 2 and 5 are hypotheses
 # until borg-zoo measures them (RULES 14).
-borg_param_caution_emergency_speed_danger_percent = 50
+borg_param_caution_emergency_speed_danger_percent = 0
 borg_param_caution_emergency_speed_radius = 2
 borg_param_caution_emergency_speed_margin = 5
 # #719 (owner): cornered, throw or shoot first while no monster is adjacent
