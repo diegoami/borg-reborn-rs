@@ -7149,6 +7149,58 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
 | `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
 | `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:993` |
 
+## #1103: the Black Market opens above a purse (town)
+
+The owner (2026-11-23): "he should keep and buy whenever it finds on the black
+market up from a certain budget. All the things mentioned above are good to buy
+if found at the black market. And armor, rings and so on which have resistance
+of abilities not covered"; "flat 6000 starting with a level negative delta of
+100".
+
+What the code did before (read, not measured). The town planner lists every
+ware of every shop, the Black Market included, and prices a ware by what it
+supplies on the capability rows (potions, scrolls, devices) or by the change
+in `borg_power` when it is tried on (armour, rings, amulets:
+`borg_town_shadow.rs`, `tryon`). The legacy `borg_good_buy` gate (20000, 15000
+and 10000 gold by level, `buy_black_market_*`) is on the old buying path only.
+The planner's only brake was the spending share: 60 percent of the gold above
+500 (`borg_black_market_max_percentage`, `borg_sum_excluded_from_black_market`).
+So a poor Borg could spend most of its purse there at twice the price.
+
+Changed:
+
+- `town_black_market_min_gold` (compiled 0, **shipped 6000**) and
+  `town_black_market_level_delta` (compiled 0, **shipped 100**): below
+  `max(0, min_gold - delta x level)` gold the Black Market's share is 0, so
+  nothing is bought there (the urgent needs included: they could only reach
+  it through the same share); above it the share is the configured 60 percent.
+  3000 at level 30, 1000 at level 50. `black_market_percentage` is the one place
+  that reads it: the planner's budget (and so the plan record), the solver's
+  cap and the live purchase all see the same share, so a replay sees what the
+  game saw.
+- `town_restore_life_reserve` (compiled 0, **shipped 1**, from maximum depth
+  12 without a repeatable restoration, #978): the potion found at the Black
+  Market is kept. Before, a Restore Life Levels potion carried undrained was
+  worth nothing (`curves[EXPERIENCE]` has weight 0 unless drained) and was
+  sold, to be bought again at 800 after the next drain.
+- Kept as they were: the potions (Healing, Star Healing, Life, Speed,
+  Berserk, Heroism, Restore Mana for a caster, resistances), the staves, rods
+  and wands the core uses, and Vigor and the stat potions all have value on
+  their rows already (a stat potion, at 16000 gold, is out of the cap); only
+  the threshold gates them. Wearables that raise `borg_power` (a resistance or
+  an ability not worn yet) are priced by the try-on and gated the same way.
+
+Not measured. At the owner's values the Black Market opens at 5900 gold for a
+level 1 Borg and 3000 at level 30; whether the Borg ever has that much, and what
+it buys, is the zoo's to measure (issue #1103, item 4). Hypotheses until then.
+Switch off with `town_black_market_min_gold` 0 (the cap alone, as before) and
+`town_restore_life_reserve` 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:316` |
+| `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:316` |
+
 ## Breadth-first exploration from the staircases (#1080, #1085)
 
 The owner (2026-11-23): "it seems to me that the borg explores depth-first,
