@@ -2590,11 +2590,13 @@ mod recall_value_tests {
     }
 
     #[test]
-    fn the_restore_life_reserve_starts_at_its_depth() {
-        use super::restore_life_reserve_depth as on;
-        assert!(!on(1, 19, 20) && on(1, 20, 20) && on(1, 35, 20), "1000 feet is level 20");
-        assert!(!on(0, 40, 20), "no copies, no reserve");
-        assert!(on(1, 12, 12), "the compiled depth is #978's");
+    fn the_restore_life_reserve_starts_at_its_depth_and_purse() {
+        use super::restore_life_reserve_on as on;
+        assert!(!on(1, 11, 12, 5000, 1000, false) && on(1, 12, 12, 5000, 1000, false), "the first draining monsters are at level 12");
+        assert!(!on(1, 20, 12, 999, 1000, false) && on(1, 20, 12, 1000, 1000, false), "buying starts at 1000 gold");
+        assert!(on(1, 20, 12, 10, 1000, true), "a potion carried keeps the reserve whatever the purse");
+        assert!(!on(0, 40, 12, 5000, 1000, true), "no copies, no reserve");
+        assert!(on(1, 12, 12, 0, 0, false), "no gold floor compiled");
     }
 
     #[test]
@@ -2635,12 +2637,15 @@ mod recall_value_tests {
 }
 
 /// #1103 (owner: "restore life levels start being useful much later in the game
-/// and usually do not need to stock up, but if you do starting from 1000 or so",
-/// read as 1000 feet, dungeon level 20): whether the reserve is on at this
-/// maximum depth (levels). `town_restore_life_min_depth` is 12 compiled (#978:
-/// where the grape jelly enters), 20 shipped.
-pub(crate) fn restore_life_reserve_depth(copies: i32, max_depth: i32, min_depth: i32) -> bool {
-    copies != 0 && max_depth >= min_depth
+/// and usually do not need to stock up, but if you do starting from 1000 [money]
+/// ... but probably also starting from the level when those experience sucking
+/// monsters appear"): whether the reserve is on. From `town_restore_life_min_depth`
+/// (12: the grape jelly and the nether worm mass, the first monsters with an
+/// experience-draining blow, monster.txt), and to start buying one only with
+/// `town_restore_life_min_gold` in the purse; a potion already carried keeps the
+/// reserve whatever the purse, so spending it down does not sell the potion.
+pub(crate) fn restore_life_reserve_on(copies: i32, max_depth: i32, min_depth: i32, gold: i32, min_gold: i32, carrying: bool) -> bool {
+    copies != 0 && max_depth >= min_depth && (carrying || gold >= min_gold)
 }
 
 /// #978: the opt-in reserve starts when experience-draining monsters enter
@@ -2650,7 +2655,8 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
     use crate::borg_headers::borg_magic_h::{REMEMBRANCE, REVITALIZE};
 
     let copies = param(Param::town_restore_life_reserve);
-    if !restore_life_reserve_depth(copies, st.borg.tr(BI_MAXDEPTH), param(Param::town_restore_life_min_depth)) {
+    if !restore_life_reserve_on(copies, st.borg.tr(BI_MAXDEPTH), param(Param::town_restore_life_min_depth),
+        st.borg.tr(BI_GOLD), param(Param::town_restore_life_min_gold), st.borg.tr(BI_HASFIXEXP) != 0) {
         return 0;
     }
     let repeatable = [st.act.cure_nonorlybig, st.act.restore_exp, st.act.restore_st_lev, st.act.restore_life]

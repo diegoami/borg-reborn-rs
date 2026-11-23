@@ -875,8 +875,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2158` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2650` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2652` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2665` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2657` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -7262,17 +7262,20 @@ Changed:
   `town_device_escape_min_gold` after the urgent spending). Opening the market
   does not buy a ware by itself: at level 30 with 3000 gold the cap is 1500 and
   a Brawn is 3000.
-- `town_restore_life_reserve` (compiled 0, **shipped 1**, from maximum depth
-  `town_restore_life_min_depth` without a repeatable restoration, #978; the
-  depth is compiled 12, **shipped 20**: owner, "restore life levels start being
-  useful much later in the game and usually do not need to stock up, but if you
-  do starting from 1000 or so", read as 1000 feet, level 20 - the units are my
-  reading): a Restore Life Levels potion is
-  kept as a reserve of one. Without it `curves[EXPERIENCE]` has weight 0 unless
+- `town_restore_life_reserve` (compiled 0, **shipped 1**, without a repeatable
+  restoration, #978), from maximum depth `town_restore_life_min_depth` (12, the
+  grape jelly and the nether worm mass, the first monsters with an
+  experience-draining blow) and, to start buying one, from a purse of
+  `town_restore_life_min_gold` (compiled 0, **shipped 1000**; a potion already
+  carried keeps the reserve whatever the purse). Owner: "restore life levels
+  start being useful much later in the game and usually do not need to stock up,
+  but if you do starting from 1000 [money] ... but probably also starting from
+  the level when those experience sucking monsters appear". A Restore Life
+  Levels potion is kept as a reserve of one. Without it `curves[EXPERIENCE]` has weight 0 unless
   the Borg is drained, so a potion carried undrained has no value on any row
   and the kit loop can sell it (an unmeasured code path; the existing
   retention test covers the keep, not the sale). The reserve also buys one at
-  the Alchemist (about 400) from that depth, where it competes with the other
+  the Alchemist (about 400) from that depth and purse, where it competes with the other
   non-urgent buys for the purse (not measured against Cure Light Wounds or
   Phase Door).
 - `town_restore_stat_percent` (compiled 0, **shipped 50**, review of #1112,
@@ -7327,6 +7330,7 @@ Switch off with `town_black_market_min_gold` 0 (the cap alone, as before),
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
+| `town_restore_life_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:2659` |
 | `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:2490` |
 | `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1156` |
 

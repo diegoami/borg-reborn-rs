@@ -422,16 +422,21 @@ borg_param_town_confusion_cure_reserve_percent = 100
 # Restore Life Levels reserve (#978; shipped 1 by #1103, owner: "keep and buy
 # whenever it finds on the black market"; "restore life levels start being
 # useful much later in the game and usually do not need to stock up, but if you
-# do starting from 1000 or so", read as 1000 feet = level 20, town_restore_life_
-# min_depth): from that maximum depth, without a
-# repeatable restoration, the Borg keeps one potion, bought wherever the plan
-# finds it (the Alchemist about 400 gold; the Black Market 1200 when the
-# Alchemist is out, above town_black_market_min_gold). Without the reserve a
-# potion carried undrained is valued at 0 (the experience curve has weight only
-# while drained), so the kit loop can sell it. Zero disables retention; the
-# healthy-character junk-quaff guard applies at every setting.
+# do starting from 1000 [money] ... but probably also starting from the level
+# when those experience sucking monsters appear"): from maximum depth
+# town_restore_life_min_depth 12 (the grape jelly and the nether worm mass, the
+# first monsters with an experience-draining blow), without a repeatable
+# restoration, and from a purse of town_restore_life_min_gold 1000 for the Borg to
+# start buying one (a potion carried keeps the reserve whatever the purse), the
+# Borg keeps one potion, bought wherever the plan finds it (the Alchemist about
+# 400 gold; the Black Market 1200 when the Alchemist is out, above
+# town_black_market_min_gold). Without the reserve a potion carried undrained is
+# valued at 0 (the experience curve has weight only while drained), so the kit
+# loop can sell it. Zero disables retention; the healthy-character junk-quaff
+# guard applies at every setting.
 borg_param_town_restore_life_reserve = 1
-borg_param_town_restore_life_min_depth = 20
+borg_param_town_restore_life_min_depth = 12
+borg_param_town_restore_life_min_gold = 1000
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
