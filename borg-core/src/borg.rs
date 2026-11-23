@@ -328,6 +328,15 @@ pub struct BorgMonInfo {
     /// so a flow that passes them again does not loop.
     pub immobile_stepped: [[u8; 4]; 16],
     pub immobile_stepped_level: BorgTime,
+    /// borg-reborn-rs (#932): the last strategic retreat: the think it was
+    /// taken (`time.now`), the level's arrival time, the grid it left, and
+    /// how many retreats in a row left that place (each within
+    /// `caution_retreat_oscillation_thinks` of the last, from a grid next
+    /// to or on the last one left).
+    pub retreat_last: BorgTime,
+    pub retreat_level: BorgTime,
+    pub retreat_from: loc,
+    pub retreat_run: u16,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

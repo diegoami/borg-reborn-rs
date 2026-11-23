@@ -2312,6 +2312,69 @@ mod immobile_reach_tests {
         assert!(super::within_two(1, 2), "the jelly at (14,96) from (13,94)");
         assert!(super::within_two(-2, -2));
         assert!(!super::within_two(0, 3));
+/// borg-reborn-rs (#932): `caution_retreat_oscillation_limit` retreats in a
+/// row have left this place (the grid the last one left, or one next to it),
+/// the last within `caution_retreat_oscillation_thinks` thinks: the flow
+/// that follows each retreat walks back (seed 829474344: 74 retreats from a
+/// white jelly, each undone by the stair flight). The next retreat is not
+/// taken, with a note; the escapes, the outmatched cure and the attack
+/// decide. Off at 0.
+fn retreat_oscillation_veto(st: &mut BorgState) -> bool {
+    let limit = p(Param::caution_retreat_oscillation_limit);
+    if limit <= 0 {
+        return false;
+    }
+    let m = &st.borg.mon;
+    let recent = m.retreat_level == st.borg.time.level
+        && st.borg.time.now - m.retreat_last <= p(Param::caution_retreat_oscillation_thinks);
+    let run = m.retreat_run;
+    if recent && king_moves(m.retreat_from, st.borg.c) <= 1 && i32::from(run) >= limit {
+        borg_note(st, &format!("# No retreat: {run} retreats in a row from here were undone (#932)"));
+        return true;
+    }
+    false
+}
+
+/// borg-reborn-rs (#932): count the retreat just taken from `from`.
+fn note_retreat_taken(st: &mut BorgState, from: loc) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let (now, level) = (st.borg.time.now, st.borg.time.level);
+    let thinks = p(Param::caution_retreat_oscillation_thinks);
+    let m = &mut st.borg.mon;
+    let follows = m.retreat_level == level && now - m.retreat_last <= thinks && king_moves(m.retreat_from, from) <= 1;
+    m.retreat_run = next_retreat_run(follows, m.retreat_run);
+    m.retreat_last = now;
+    m.retreat_level = level;
+    m.retreat_from = from;
+}
+
+/// borg-reborn-rs (#932): the run of retreats after one more.
+fn next_retreat_run(follows: bool, run: u16) -> u16 {
+    if follows { run.saturating_add(1) } else { 1 }
+}
+
+/// borg-reborn-rs (#932): king-move distance between two grids.
+fn king_moves(a: loc, b: loc) -> i32 {
+    (a.x - b.x).abs().max((a.y - b.y).abs())
+}
+
+#[cfg(test)]
+mod retreat_oscillation_tests {
+    use crate::headers::z_type_h::loc;
+
+    #[test]
+    fn a_run_grows_only_when_it_follows() {
+        assert_eq!(super::next_retreat_run(true, 2), 3);
+        assert_eq!(super::next_retreat_run(false, 7), 1, "a fresh start");
+        assert_eq!(super::next_retreat_run(true, u16::MAX), u16::MAX);
+    }
+
+    #[test]
+    fn the_two_grids_of_829474344_are_one_place() {
+        assert_eq!(super::king_moves(loc { x: 95, y: 13 }, loc { x: 95, y: 14 }), 1);
+        assert_eq!(super::king_moves(loc { x: 94, y: 13 }, loc { x: 96, y: 14 }), 2);
     }
 }
 
@@ -3733,11 +3796,14 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && !retreat_oscillation_veto(st)
         && retreat(st, pos_danger, borg_surround)
     {
+        note_retreat_taken(st, from);
         return true;
     }
 
@@ -3772,11 +3838,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
+    // borg-reborn-rs (#1023): with caution_retreat_oscillation_backaway, a
+    // back-away joins the run of retreats (seed 1512540769: "Backing up to
+    // 88,45" from 45,89, undone by the stair flight, mixed with retreats from
+    // 43,96 until death).
+    let backaway_counted = p(Param::caution_retreat_oscillation_backaway) != 0;
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+        && !(backaway_counted && retreat_oscillation_veto(st))
         && back_away(st, pos_danger, borg_surround)
     {
+        if backaway_counted {
+            note_retreat_taken(st, from);
+        }
         return true;
     }
 
