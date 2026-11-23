@@ -6615,7 +6615,9 @@ fit and credits a Home slot when the final copies leave. Schema 15
 records the native room, and schema 16 enables partial surplus disposal.
 Schema 17 lets the Borg finish clearing the surplus after withdrawing its
 carried reserve from Home. Schema 18 defers cleanup if a recent shop
-purchase would prevent selling the withdrawn surplus.
+purchase would prevent selling the withdrawn surplus. Schema 19 leaves
+protected Detect Invisible stock at Home unless every copy would exceed
+the carried copy cap and can be sold through overflow.
 
 ## #863: variety in the backpack (town, prepared remedies)
 

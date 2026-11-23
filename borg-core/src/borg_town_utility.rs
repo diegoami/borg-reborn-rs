@@ -372,6 +372,13 @@ fn home_disposal_copies(input: &StepInput, u: &Utility, item: &KitItem) -> i32 {
     }) {
         return 0;
     }
+    // Detect Invisible has independent pack protection. Only withdraw
+    // surplus for disposal if every copy can go through native overflow.
+    if input.revision >= 19 && item.protect_disposal && !item.home_unwanted
+        && !item.home_room.is_some_and(|[_, _, acquire]| acquire == 0)
+    {
+        return 0;
+    }
     let full_pack = input.limits.pack_slots <= 0;
     if let Some([carry, merge, _]) = item.home_room {
         let copies = item.qty.min(if full_pack { carry.min(merge) } else { carry });
@@ -619,6 +626,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             && !(input.revision >= 9 && input.urgent.iter().any(|f| {
                 let c = &input.candidates[f.candidate]; c.shop == 7 && c.slot == k.slot
             })) && !k.unknown && !k.just_bought && k.sell_shop >= 0
+            && (input.revision < 19 || !k.protect_disposal)
             && u.power(k.power) == 0 && (if let Some(m) = &u.capability {
                 m.take(k) == 0 && m.reserve(k, -1, u.home_discount) == 0
             } else { k.unknown_flavour ||
@@ -761,7 +769,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             freed.pack_slots -= opening;
             freed.home_slots += i32::from(whole);
             freed.weight -= weight;
-        } else if whole && value == 0 && future_loss == 0 && !it.unknown && (input.revision < 6 || !it.just_bought) && it.proceeds > 0 && it.sell_shop >= 0 {
+        } else if whole && value == 0 && future_loss == 0 && !it.unknown && (input.revision < 6 || !it.just_bought)
+            && (input.revision < 19 || !it.protect_disposal) && it.proceeds > 0 && it.sell_shop >= 0 {
             out[i] = Disposition::Sell;
             if input.revision >= 9 {
                 if let Some(m) = &mut u.capability { m.change_home(it, -1); }
@@ -1702,6 +1711,30 @@ mod tests {
     }
 
     #[test]
+    fn protected_detection_surplus_waits_until_all_withdrawn_copies_can_overflow() {
+        let st = state(9, 26, 198);
+        let pack = KitItem { home_limited: true, protect_disposal: true, kind: 51,
+            qty: 10, need: index(Need::Escape) as i8, ..recall(Place::Pack) };
+        let home = KitItem { place: Place::Home, qty: 7, joins_pack: true, ..pack };
+        let storing = Storing { home_stack_limit: 2, ..Storing::default() };
+        for (held, acquire, expected) in [(10, 7, Disposition::Keep), (34, 1, Disposition::Keep),
+            (35, 0, Disposition::Sell)] {
+            let kit = [KitItem { qty: held, ..pack }, KitItem { home_room: Some([7, 7, acquire]), ..home },
+                KitItem { slot: 1, qty: 40, ..home }, KitItem { slot: 2, qty: 40, ..home }];
+            let mut inp = input(&kit);
+            inp.revision = 19;
+            inp.storing = Some(storing);
+            let mut u = Utility::of(&st, &kit, false);
+            let (actions, freed, _) = dispositions_by(&inp, &mut u, &st, storing);
+            assert_eq!(actions, [Disposition::Keep, expected, Disposition::Keep, Disposition::Keep]);
+            assert_eq!(freed.home_slots, i32::from(expected == Disposition::Sell));
+            inp.revision = 18;
+            let mut u = Utility::of(&st, &kit, false);
+            assert_eq!(dispositions_by(&inp, &mut u, &st, storing).0[1], Disposition::Sell);
+        }
+    }
+
+    #[test]
     fn surplus_disposal_with_a_full_pack_preserves_the_home_slot_until_empty() {
         use crate::borg_town_capability::Model;
         use crate::borg_town_record::{action, first_executable_action, step};
@@ -1714,7 +1747,7 @@ mod tests {
             let kit = [pack, home, KitItem { slot: 1, ..home },
                 KitItem { slot: 2, qty, joins_pack: qty <= 5, ..home }];
             let mut inp = input(&kit);
-            inp.revision = 16;
+            inp.revision = 19;
             inp.storing = Some(storing);
             inp.limits.pack_slots = 0;
             inp.home_slots = 0;

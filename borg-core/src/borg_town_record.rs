@@ -45,7 +45,9 @@ use crate::state::BorgState;
 /// V16 permits partial surplus disposal. V17 separates Home cleanup from
 /// purchase history while the carried reserve is covered. V18 defers a
 /// surplus withdrawal if a shop purchase would block the pack sale.
-pub const PLAN_SCHEMA: i64 = 18;
+/// V19 defers protected Detect Invisible stock unless overflow can sell
+/// every copy withdrawn.
+pub const PLAN_SCHEMA: i64 = 19;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -519,7 +521,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != 16 && schema != 17 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != 16 && schema != 17 && schema != 18 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
