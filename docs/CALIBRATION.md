@@ -3437,7 +3437,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_back_freedom_depth` | 85 | depth | 0–127 | `borg_caution.rs:1738` |
 | `caution_move_antisummon_delay` | 50 | turns | 0–100000 | `borg_caution.rs:2269` |
 | `caution_move_max_hp` | 500 | hp | 0–10000 | `borg_caution.rs:2272` |
-| `caution_one_blow_monster_age` | 2 | turns | 0–100000 | `borg_caution.rs:2304` |
+| `caution_one_blow_monster_age` | 2 | turns | 0–100000 | `borg_caution.rs:2380` |
 | `caution_nasty_light_timeout` | 250 | turns | 0–100000 | `borg_caution.rs:3277` |
 | `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:3291` |
 | `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:3325` |

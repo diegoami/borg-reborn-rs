@@ -302,7 +302,7 @@ parameters! {
     caution_back_freedom_depth => (85, "depth", 0, 127, "borg_caution.rs:1738", "Controls back freedom depth."),
     caution_move_antisummon_delay => (50, "turns", 0, 100000, "borg_caution.rs:2269", "Controls move antisummon delay."),
     caution_move_max_hp => (500, "hp", 0, 10000, "borg_caution.rs:2272", "Controls move max hp."),
-    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:2304", "Controls one blow monster age."),
+    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:2380", "Controls one blow monster age."),
     caution_nasty_light_timeout => (250, "turns", 0, 100000, "borg_caution.rs:3277", "Controls nasty light timeout."),
     caution_questor_arrival_turns => (10, "turns", 0, 100000, "borg_caution.rs:3291", "Controls questor arrival turns."),
     caution_escape_limit => (3, "count", 0, 1000, "borg_caution.rs:3325", "Controls escape limit."),

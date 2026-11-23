@@ -27,3 +27,9 @@ attack's own `attack_max_target_age` (finding 2). The whole fight must be
 affordable: the danger here from every monster times the turns of the kill below
 the percent of the HP, now 100 (finding 3). This note's defaults corrected
 (finding 4). Merged `track-p` (`7afbdd67`).
+
+**Second review (MiniMax, `acf21c80`).** Its findings 1, 2 and 4 were already
+fixed at `c3153ab6`. Finding 3 is fixed now: the `caution_one_blow_monster_age`
+row cites its original read (`borg_caution.rs:2380`) instead of a line inside
+the new veto. The checker accepts any line inside a function that reads the
+parameter, so it had not flagged this.
