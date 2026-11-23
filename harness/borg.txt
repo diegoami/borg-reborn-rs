@@ -1553,10 +1553,13 @@ borg_param_fast_fragile_escape_quantile = 75
 borg_param_fast_fragile_count_dot = 1
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
-# grids with a torch, so unseen monsters two grids away are deleted). Ships 0
-# until the zoo measures it. With 1 the lit shape is the engine's too, and the
-# dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
-borg_param_cave_light_engine_radius = 0
+# grids with a torch, so unseen monsters two grids away are deleted). With 1
+# the lit shape is the engine's too, and the dark flow, dark frontier, Light
+# Beam and Call Light read that radius (#884). Shipped 1 (#1078, owner
+# 2026-11-23: "let us set cave_light_engine_radius to 1"). Measured only on an
+# old build (borg-zoo#625, 360 starts: 9 deaths against 8); borg-zoo#702 and
+# the belief arms of PR #709 measure it on the current code.
+borg_param_cave_light_engine_radius = 1
 # #929: a ranged attack with no hit message. 1 = a miss at a monster in view
 # is a miss, not a wall (a thrown or fired miss prints nothing,
 # player-attack.c:1278-1280), and no guessed wall lands on the Borg's own
