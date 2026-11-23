@@ -7309,15 +7309,15 @@ engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:147` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:154` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:154` |
-| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:455` |
-| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:457` |
-| `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:459` |
-| `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:460` |
-| `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:462` |
-| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:762` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:149` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:156` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:156` |
+| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:537` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:539` |
+| `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
+| `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:542` |
+| `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:544` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:905` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
 plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
@@ -7334,7 +7334,8 @@ the nearest known staircase the Borg will take (up unless descent is forced;
 down when prepared for the next depth and not rising: one rule for the area,
 the walk back, the level change and the departure on a threat) over known
 floor, no closed door (an open costs a turn and may fail) and no known trap
-(below 60 HP the flows treat a known trap as a wall), 8-connected;
+(below 60 HP the flows treat a known trap as a wall), 8-connected; a staircase
+a monster stands on does not count;
 an unknown grid or rubble counts one step past its nearest walkable
 neighbour. *g* is safe when a monster first seen *D(g)* grids off survives
 being outrun: `attacks_on_retreat` lets it act `stair_scum_speed_ratio` times
@@ -7369,6 +7370,14 @@ at CL5). The three add up: steps + max HP × tenths / 10 + (CL − 1) × percent
 50 as default"): with `stair_scum` 0 it does nothing, so play is unchanged;
 with the mode on, the strict count of the review holds at CL1 and loosens by
 a step every two levels.
+
+**The stair side** (re-review of #1090): a grid is also unsafe when a monster
+from the frontier nearest its staircase (an unknown grid or a closed door next
+to the walk), acting `ratio - 1` times before the Borg and `ratio` times after
+each of its steps but the last, reaches the staircase before the Borg does
+(`cut_off`). The walk back steps over the same grids (`step_home`), never
+through a closed door, and a committed departure walk resumes before the
+return.
 
 **The safe area** is every safe walkable grid joined to a staircase through
 safe grids. The dark flows (`borg_flow_dark_1..5`) keep only the candidates in

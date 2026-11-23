@@ -472,7 +472,9 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
     } else if g.f_idx == FEAT_CLOSED {
         // Doors, only while low level (do not overflow)
-        if st.borg.tr(BI_CLEVEL) <= 5
+        // borg-reborn-rs (#1061, re-review of #1090): and while stair_scum
+        // applies, which may outlast CL5, so a quiet door opening is seen.
+        if (st.borg.tr(BI_CLEVEL) <= 5 || crate::borg_stair_scum::active(st))
             && track_add(&mut st.flow.track_closed, x, y)
             && st.flow.track_closed.num > 254
         {

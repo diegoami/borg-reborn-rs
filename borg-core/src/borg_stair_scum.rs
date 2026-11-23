@@ -13,8 +13,10 @@
 //! monsters the way its exploration does (review of #1090, P1): a Rod of
 //! Detection carried or the Detection spell (zapped and cast by the panel
 //! checks of `borg_light.rs` with no level gate), or Detect Monsters from
-//! `light_detect_evil_spell_min_level` on (or with `light_detect_dark_entry`).
-//! Reveal Monsters, Detect Invisible and Detect Life do not count.
+//! `light_detect_evil_spell_min_level` on, each at a fail rate of 40% or
+//! less (the panel checks' `borg_spell_fail(.., 40)`). The dark-entry cast
+//! (#796, one attempt per panel), Reveal Monsters, Detect Invisible and
+//! Detect Life do not count.
 //!
 //! 1. **Safe grids** (`Map`). *s(g)* is the walk from *g* to the nearest
 //!    known staircase the Borg will take (up unless descent is forced; down
@@ -23,7 +25,10 @@
 //!    review of #1090, P1) over known, trap-free floor, no closed door (the
 //!    walk a retreat can take: below 60 HP the flows treat a known trap as a
 //!    wall, `borg_flow.rs`, and a closed door costs the open and may stay
-//!    shut; review of #1090, P1). *g* is safe when a monster first seen
+//!    shut; review of #1090, P1). A staircase a monster stands on is no
+//!    escape, and a grid is also unsafe when a monster from the frontier (an
+//!    unknown grid or a closed door next to the walk) nearest its staircase
+//!    gets there before the Borg (`cut_off`; re-review of #1090, P1). *g* is safe when a monster first seen
 //!    *D(g)* grids off, acting `stair_scum_speed_ratio` times per player
 //!    action, lands fewer than HP / `stair_scum_contact_damage` attacks on
 //!    the walk of *s(g)* steps and the stair command (`attacks_on_retreat`;
@@ -167,19 +172,23 @@ fn below_threshold(max_hp: i32, threshold: i32) -> bool {
 /// `light_detect_dark_entry`. Reveal Monsters is cast only against an
 /// invisible attacker (`borg_fight_defend.rs`), so it does not count.
 fn detects_monsters(st: &BorgState) -> bool {
+    // Re-review of #1090 (P2): the panel checks cast with `borg_spell_fail(..,
+    // 40)`, so a spell counts only when it is legal at a fail rate of 40% or
+    // less (`borg_spell_legal_fail`). The dark-entry cast (#796) is a single
+    // attempt per panel behind a mana reserve, not a standing detection: it
+    // does not end the mode.
     detection_used(
-        crate::borg_magic::borg_spell_legal(st, DETECT_MONSTERS),
+        crate::borg_magic::borg_spell_legal_fail(st, DETECT_MONSTERS, 40),
         st.borg.tr(BI_CLEVEL),
         value(Param::light_detect_evil_spell_min_level),
-        value(Param::light_detect_dark_entry) != 0,
-        crate::borg_magic::borg_spell_legal(st, DETECTION),
+        crate::borg_magic::borg_spell_legal_fail(st, DETECTION, 40),
         carries(st, TV_ROD as i32, st.item_val.sv_rod_detection),
     )
 }
 
 /// The detection exploration will use (pure).
-fn detection_used(detect_monsters: bool, clevel: i32, spell_min_level: i32, dark_entry: bool, detection: bool, rod: bool) -> bool {
-    (detect_monsters && (clevel >= spell_min_level || dark_entry)) || detection || rod
+fn detection_used(detect_monsters: bool, clevel: i32, spell_min_level: i32, detection: bool, rod: bool) -> bool {
+    (detect_monsters && clevel >= spell_min_level) || detection || rod
 }
 
 /// An aware item of this kind in the pack (`borg_slot` >= 0, read only).
@@ -315,6 +324,34 @@ fn distances(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) -> Vec
     dist
 }
 
+/// `distances`, with the index in `sources` each grid's walk leads to
+/// (`FAR` where none).
+fn distances_from(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) -> (Vec<u16>, Vec<u16>) {
+    let mut dist = vec![FAR; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+    let mut from = vec![FAR; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+    let mut queue = std::collections::VecDeque::new();
+    for (k, &(y, x)) in sources.iter().enumerate() {
+        if inside(y, x) && dist[index(y, x)] == FAR {
+            dist[index(y, x)] = 0;
+            from[index(y, x)] = k as u16;
+            queue.push_back((y, x));
+        }
+    }
+    while let Some((y, x)) = queue.pop_front() {
+        let next = dist[index(y, x)] + 1;
+        for (dy, dx) in DIRS {
+            let (ny, nx) = (y + dy, x + dx);
+            if !inside(ny, nx) || dist[index(ny, nx)] != FAR || !passable(ny, nx) {
+                continue;
+            }
+            dist[index(ny, nx)] = next;
+            from[index(ny, nx)] = from[index(y, x)];
+            queue.push_back((ny, nx));
+        }
+    }
+    (dist, from)
+}
+
 /// The grids where a monster can come at a lit floor unseen (pure): not lit
 /// floor, not a known wall, next to lit floor.
 fn entries(lit_floor: impl Fn(i32, i32) -> bool, wall: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
@@ -397,7 +434,9 @@ fn usable_kinds(st: &mut BorgState) -> (bool, bool) {
     (up, down)
 }
 
-/// Every known staircase of the kinds the Borg will take, `(y, x)`.
+/// Every known staircase of the kinds the Borg will take, `(y, x)`, but not
+/// one a monster stands on (re-review of #1090, P1: the Borg cannot step
+/// onto it, so it is no escape).
 fn stair_grids(st: &BorgState, up: bool, down: bool) -> Vec<(i32, i32)> {
     let mut stairs = Vec::new();
     for (track, take) in [(&st.stairs.less, up), (&st.stairs.more, down)] {
@@ -408,13 +447,44 @@ fn stair_grids(st: &BorgState, up: bool, down: bool) -> Vec<(i32, i32)> {
             stairs.push(track.at(i));
         }
     }
-    stairs
+    free_stairs(stairs, |y, x| st.cave.grid(x, y).kill != 0)
+}
+
+/// The staircases no monster stands on (pure).
+fn free_stairs(stairs: Vec<(i32, i32)>, occupied: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    stairs.into_iter().filter(|&(y, x)| !occupied(y, x)).collect()
+}
+
+/// The grids a monster can walk in from unseen at the edge of the known map
+/// (pure): unknown grids and closed doors next to a walkable grid.
+fn frontier(walkable: impl Fn(i32, i32) -> bool, opening: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    let mut out = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            if opening(y, x) && DIRS.iter().any(|&(dy, dx)| walkable(y + dy, x + dx)) {
+                out.push((y, x));
+            }
+        }
+    }
+    out
+}
+
+/// A monster from the frontier, `front` steps from the staircase, gets
+/// there first (pure; re-review of #1090, P1: a threat from the stair side).
+/// It may act `ratio - 1` times before the Borg's first action and `ratio`
+/// times after each of its steps but the last; the Borg on the staircase
+/// (`steps` 0) takes it at once.
+fn cut_off(steps: i32, front: i32, ratio: i32) -> bool {
+    steps > 0 && (ratio.max(1) - 1) + ratio.max(1) * (steps - 1) >= front
 }
 
 /// What the mode measures on the current map.
 pub(crate) struct Map {
     /// *s*: steps to the nearest known staircase over walkable grids.
     dist: Vec<u16>,
+    /// For each grid, the steps from the frontier to the staircase its
+    /// walk leads to (`FAR`: none can come that way).
+    stair_front: Vec<u16>,
     /// Chebyshev distance to the nearest unseen entry of a lit floor.
     entry: Vec<u16>,
     /// The safe area.
@@ -448,12 +518,20 @@ impl Map {
 
     fn measure(st: &BorgState, up: bool, down: bool) -> Map {
         let stairs = stair_grids(st, up, down);
-        let dist = distances(&stairs, |y, x| walkable(st, y, x));
+        let (dist, source) = distances_from(&stairs, |y, x| walkable(st, y, x));
+        let edge = frontier(|y, x| walkable(st, y, x), |y, x| {
+            let feat = u32::from(st.cave.grid(x, y).feat);
+            feat == FEAT_NONE || feat == FEAT_CLOSED
+        });
+        let from_edge = distances(&edge, |y, x| walkable(st, y, x));
+        let front_of: Vec<u16> = stairs.iter().map(|&(y, x)| from_edge[index(y, x)]).collect();
+        let stair_front = source.iter().map(|&k| if k == FAR { FAR } else { front_of[usize::from(k)] }).collect();
         let lit_sources = entries(|y, x| lit_floor(st, y, x), |y, x| known_wall(st, y, x));
         let entry = distances(&lit_sources, |_, _| true);
         let stair_cheb = distances(&stairs, |_, _| true);
         let mut map = Map {
             dist,
+            stair_front,
             entry,
             area: Vec::new(),
             routed: false,
@@ -519,7 +597,18 @@ impl Map {
         }
         // A closed door: the open is one action more before the retreat.
         let extra = i32::from(u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED);
-        survives(slackened(s + extra, self.slack), self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
+        let walk = slackened(s + extra, self.slack);
+        // The staircase its walk leads to (an off-walk grid: its best neighbour's).
+        let front = if walkable(st, y, x) {
+            self.at(&self.stair_front, y, x)
+        } else {
+            DIRS.iter()
+                .filter(|&&(dy, dx)| self.at(&self.dist, y + dy, x + dx) != FAR)
+                .min_by_key(|&&(dy, dx)| self.at(&self.dist, y + dy, x + dx))
+                .map_or(FAR, |&(dy, dx)| self.at(&self.stair_front, y + dy, x + dx))
+        };
+        survives(walk, self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
+            && !cut_off(walk, i32::from(front), self.ratio)
     }
 
     fn in_area(&self, y: i32, x: i32) -> bool {
@@ -537,6 +626,27 @@ impl Map {
             return self.in_area(y, x);
         }
         DIRS.iter().any(|&(dy, dx)| self.in_area(y + dy, x + dx)) && self.grid_safe(st, y, x)
+    }
+
+    /// `(y, x)` is a step nearer the staircase on the retreat walk itself
+    /// (re-review of #1090, P1: a closed door is not, whatever `steps` says).
+    fn nearer(&self, st: &BorgState, y: i32, x: i32) -> bool {
+        walkable(st, y, x)
+            && self.at(&self.dist, y, x) != FAR
+            && self.at(&self.dist, y, x) < self.at(&self.dist, st.borg.c.y, st.borg.c.x)
+    }
+
+    /// The Borg's next step home on the retreat walk (re-review of #1090,
+    /// P1: the return follows the safety map's terrain, not a flow that may
+    /// open a closed door): the walkable neighbour nearest the staircase
+    /// with no monster on it.
+    fn step_home(&self, st: &BorgState) -> Option<(i32, i32)> {
+        let (y, x) = (st.borg.c.y, st.borg.c.x);
+        next_home(self.at(&self.dist, y, x), DIRS.iter().map(|&(dy, dx)| {
+            let (ny, nx) = (y + dy, x + dx);
+            let open = inside(ny, nx) && walkable(st, ny, nx) && st.cave.grid(nx, ny).kill == 0;
+            ((ny, nx), if open { self.at(&self.dist, ny, nx) } else { FAR })
+        }))
     }
 
     /// A breadth-first exploration target (`borg_flow_dark_breadth_first`):
@@ -660,7 +770,7 @@ pub(crate) fn step_allowed(st: &mut BorgState, why: i32, y: i32, x: i32) -> bool
     if !map.routed {
         return true;
     }
-    map.steps(st, y, x) < map.steps(st, st.borg.c.y, st.borg.c.x) || map.target_safe(st, y, x)
+    map.nearer(st, y, x) || map.target_safe(st, y, x)
 }
 
 /// `borg_flow_step`'s door: the Borg sends the open command toward `dir`.
@@ -742,13 +852,25 @@ fn hold(st: &mut BorgState, why: &str) -> bool {
     true
 }
 
-/// One step of the walk back onto the nearest known staircase.
-fn step_to_stairs(st: &mut BorgState, map: &Map, why: &str) -> bool {
-    crate::borg_flow::borg_flow_clear(st);
-    for (y, x) in stair_grids(st, map.up, map.down) {
-        crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+/// The neighbour to step to (pure): the one with the smallest walk, if
+/// smaller than `here`'s; the first in `DIRS` order on a tie.
+fn next_home(here: u16, neighbours: impl Iterator<Item = ((i32, i32), u16)>) -> Option<(i32, i32)> {
+    let mut best: Option<((i32, i32), u16)> = None;
+    for (grid, d) in neighbours {
+        if d != FAR && d < here && best.is_none_or(|(_, b)| d < b) {
+            best = Some((grid, d));
+        }
     }
-    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+    best.map(|(grid, _)| grid)
+}
+
+/// One step of the walk back onto the nearest usable staircase, over the
+/// retreat walk's own grids (`Map::step_home`): a one-grid flow to it.
+fn step_to_stairs(st: &mut BorgState, map: &Map, why: &str) -> bool {
+    let Some((y, x)) = map.step_home(st) else { return false };
+    crate::borg_flow::borg_flow_clear(st);
+    crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+    crate::borg_flow::borg_flow_spread(st, 1, false, true, false, -1, false);
     let who = std::ffi::CString::new(format!("stairs ({why})")).unwrap_or_default();
     if !crate::borg_flow::borg_flow_commit(st, &who, GOAL_MISC) {
         return false;
@@ -819,6 +941,16 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
                 st.stair_scum.peek = None;
                 st.stair_scum.peeked.push(peek.door);
             }
+        }
+    }
+
+    // 4. A committed departure (`leave`'s walk to the staircase it leaves by)
+    // goes on before the return rule (re-review of #1090, P2): on DL1 the
+    // preferred down staircase may lie past an unsafe grid, and the return
+    // would walk the Borg back to the nearer up staircase every turn.
+    if st.stair_scum.departing && i32::from(st.borg.goal.type_0) == GOAL_BORE {
+        if crate::borg_flow::borg_flow_old(st, GOAL_BORE) {
+            return true;
         }
     }
 
@@ -1050,12 +1182,11 @@ mod tests {
     /// gate at CL10, stays in it.
     #[test]
     fn only_used_detection_lifts_the_mode() {
-        assert!(!detection_used(true, 3, 10, false, false, false), "Mage CL3, gate 10");
-        assert!(detection_used(true, 10, 10, false, false, false), "at the gate");
-        assert!(detection_used(true, 3, 10, true, false, false), "dark-entry detection on");
-        assert!(detection_used(false, 1, 10, false, true, false), "the Detection spell, no gate");
-        assert!(detection_used(false, 1, 10, false, false, true), "a Rod of Detection");
-        assert!(!detection_used(false, 30, 0, false, false, false));
+        assert!(!detection_used(true, 3, 10, false, false), "Mage CL3, gate 10");
+        assert!(detection_used(true, 10, 10, false, false), "at the gate");
+        assert!(detection_used(false, 1, 10, true, false), "the Detection spell, no gate");
+        assert!(detection_used(false, 1, 10, false, true), "a Rod of Detection");
+        assert!(!detection_used(false, 30, 0, false, false));
     }
 
     /// Review of #1090, P1: the staircases the safe area is measured from
@@ -1089,6 +1220,44 @@ mod tests {
         assert!(!return_first(here, b_near), "B's grid 1 out: straight there (past the stairs)");
         assert!(!return_first(here, here), "the same ring: no return");
         assert!(!return_first(0, a_next), "on the staircase: go");
+    }
+
+    /// Re-review of #1090, P1: a monster on the only staircase leaves no
+    /// escape, and one from the frontier near the staircase can get there
+    /// first.
+    #[test]
+    fn the_retreat_can_be_cut_off() {
+        let stairs = vec![(5, 5), (9, 9)];
+        assert_eq!(free_stairs(stairs.clone(), |y, _| y == 5), vec![(9, 9)], "the occupied one is dropped");
+        assert!(free_stairs(vec![(5, 5)], |_, _| true).is_empty(), "the only one occupied: no route");
+        // A +10 monster from a frontier grid 3 steps from the staircase.
+        assert!(!cut_off(0, 3, 2), "on the staircase: it takes it");
+        assert!(!cut_off(1, 3, 2), "one step: the monster needs 3 moves, has 1");
+        assert!(cut_off(2, 3, 2), "two steps: 1 + 2 moves reach the staircase");
+        assert!(!cut_off(2, 4, 2));
+        assert!(cut_off(1, 1, 2), "the frontier next to the staircase");
+        // The frontier: unknown grids and closed doors next to the walk.
+        let walk = |y: i32, x: i32| y == 5 && (5..=8).contains(&x);
+        let edge = frontier(walk, |y, x| y == 5 && x == 9 || y == 4 && x == 5);
+        assert_eq!(edge, vec![(4, 5), (5, 9)]);
+        let d = distances(&edge, walk);
+        assert_eq!(d[index(5, 5)], 1, "the staircase at (5,5) is 1 from the unknown grid above it");
+        let (dist, from) = distances_from(&[(5, 5), (5, 8)], walk);
+        assert_eq!((dist[index(5, 6)], from[index(5, 6)]), (1, 0));
+        assert_eq!((dist[index(5, 7)], from[index(5, 7)]), (1, 1));
+    }
+
+    /// Re-review of #1090, P1: the return steps over the walk's own grids:
+    /// a closed door next to the staircase is not a shortcut.
+    #[test]
+    fn the_return_walks_the_retreat_grids() {
+        // The Borg 3 from the staircase; neighbour A 2 (walkable), B FAR (a
+        // closed door that `steps` would score 2), C 4.
+        let n = [((5, 6), 2u16), ((4, 7), FAR), ((5, 8), 4)];
+        assert_eq!(next_home(3, n.into_iter()), Some((5, 6)));
+        assert_eq!(next_home(3, [((4, 7), FAR)].into_iter()), None, "only the door: no step");
+        assert_eq!(next_home(1, [((5, 5), 0), ((4, 5), 0)].into_iter()), Some((5, 5)), "a tie: the first");
+        assert_eq!(next_home(2, [((5, 6), 2)].into_iter()), None, "not nearer");
     }
 
     /// Review, P2: a door sound is placed by a changed door seen at or after
