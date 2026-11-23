@@ -1261,6 +1261,15 @@ borg_param_caution_stairs_immobile_reach_extra_steps = 20
 borg_param_escape_paralyser_fight_lost = 0
 borg_param_caution_paralyser_step_away = 0
 borg_param_caution_paralyser_no_reach = 0
+# #1147 (owner: "a list of 'walk_away immobile monster' ... with the eye, the
+# patch and the jelly"; borg-zoo#740: 18 patch deaths confused beside the
+# patch, attacking it). 1 = the scary list's `ranged` entries that never move
+# (and #1125's paralysers without Free Action) are never meleed or walked to,
+# no flow enters their reach (stair flights included), and next to one the
+# first action is to leave: up the staircase underfoot, else a step to the
+# best square (a clean way to the stairs, then away from movers, then toward a
+# room exit, then free space). Cornered, a blow is the last resort. Shipped 0.
+borg_param_caution_walk_away_immobile = 0
 borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).

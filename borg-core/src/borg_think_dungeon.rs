@@ -791,6 +791,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("paralyser_step_away");
     }
 
+    // borg-reborn-rs (#1147, `caution_walk_away_immobile`): out of a
+    // walk-away monster's reach (the eye, the patches, the jellies) first,
+    // to the square the owner's order ranks best, or up the staircase it
+    // stands on.
+    if crate::borg_caution::walk_away_step(st) {
+        return choice!("walk_away_step");
+    }
+
     // borg-reborn-rs (#830): a harmful curse comes off at once, before any
     // fight or flight (the curse itself keeps monsters awake and in view).
     if !lightless && crate::borg_cursed::borg_remove_cursed(st) {
