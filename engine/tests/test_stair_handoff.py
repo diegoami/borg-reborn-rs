@@ -7,6 +7,8 @@ of the reference files.
 
 import os
 from pathlib import Path
+import re
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -14,6 +16,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust/game/angband"
+TEST_GAME = ROOT / "build/rust-test/game/angband"
 
 
 def state_at(states, turn):
@@ -36,6 +39,21 @@ PINNED_TOWN_SETTINGS = [
     # #901: the confused attack by direction and the point-blank oil, shipped
     # after the incident.
     ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
+    # #983: testing unknown potions when safe, shipped after the incident.
+    ("item_test_unknown_potions", 0),
+    # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
+    ("kill_live_zero_hp", 0),
+    # #1046 shipped the lone-slow bundle (#878) after these incidents.
+    ("lone_slow_attack", 0), ("escape_phase_lost_damage_only", 0),
+    ("attack_reserve_spell_damage_only", 0), ("attack_reserve_faint_percent", 0),
+    ("caution_unseen_bump_phase_turns", 0), ("caution_unseen_bump_phase_min_danger", 0),
+    # #1056 shipped attack_reserve_spell_overexert = 0 after these incidents.
+    ("attack_reserve_spell_overexert", 1),
+    # #1072 shipped the #926 fast-fragile bundle after these incidents.
+    ("fast_fragile_heal_floor", 0), ("fast_fragile_escape_quantile", 0), ("fast_fragile_count_dot", 0),
+    # #1078 shipped the engine's light radius after these incidents. Without
+    # this pin the games take another route and never reach the incident grids.
+    ("cave_light_engine_radius", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -111,6 +129,41 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(later)
         self.assertNotIn("162,35", [state[1] for state in later])
         self.assertTrue(any(int(state[0]) > 143041 and state[2].startswith("d0/") for state in states))
+
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class EmergencyStairHandoffTest(unittest.TestCase):
+    def run_case(self, case, weight):
+        with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            config = (ROOT / "harness/borg.txt").read_text()
+            for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
+                key = f"borg_param_caution_{name}"
+                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{key} = {value}\n"
+            (paths["user"] / "borg.txt").write_text(config)
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case)
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", "3", "-class", "6", "-menu-letters", "-start-depth", "5", "-keys", "250"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn(f"emergency stair handoff passed: {case}", result.stdout)
+
+    def test_flight_moves_past_the_two_floor_squares_and_descends(self):
+        for weight in (0, 5):
+            for case in ("one-step", "two-steps"):
+                with self.subTest(weight=weight, case=case):
+                    self.run_case(case, weight)
+
+    def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
+        self.run_case("blocked", 0)
 
 
 if __name__ == "__main__":
