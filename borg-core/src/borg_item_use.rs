@@ -540,6 +540,9 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     borg_keypress(st, key(b'r'));
     borg_keypress(st, letter(i));
 
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_scroll(st, sval);
+
     /* Clear "shop" goals */
     clear_shop_goals(st);
 
@@ -819,6 +822,9 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
 
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_staff(st, sval);
+
     /* Success */
     true
 }
@@ -877,6 +883,9 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     /* Perform the action */
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
+
+    /* borg-reborn-rs (#1062): the cause of the next jump */
+    crate::borg_leash::own_staff(st, sval);
 
     /* Success */
     true
@@ -1213,6 +1222,9 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
         /* Perform the action */
         borg_keypress(st, key(b'A'));
         borg_keypress(st, letter(i - inven_wield()));
+
+        /* borg-reborn-rs (#1062): the cause of the next jump */
+        crate::borg_leash::own_activation(st, activation);
 
         /* Success */
         return true;

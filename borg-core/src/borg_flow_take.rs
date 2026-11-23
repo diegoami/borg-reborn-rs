@@ -584,7 +584,13 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         let is_phase = phase_short && take_is_phase(st, take.kidx);
 
         /* Skip ones that make me wander too far */
-        if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, leash) {
+            if !is_phase && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) && skip {
+                continue;
+            }
+        } else if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -641,7 +647,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         if !is_phase
             && nearness > c.take_nearness
             && (st.borg.tr(BI_CLEVEL) < c.take_max_level || kit_leash)
-            && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
+            // borg-reborn-rs (#1062): C's `borg_flow_cost_stair(..) > leash` with its switches off.
+            && crate::borg_leash::beyond(st, y, x, b_stair, leash)
         {
             continue;
         }
