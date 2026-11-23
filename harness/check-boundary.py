@@ -56,8 +56,12 @@ def main(argv):
     if not names:
         print(f'FAIL: no runs with a summary in {exact}')
         return 1
-    if names != runs(normal):
-        print(f'FAIL: run sets differ: {names} vs {runs(normal)}')
+    # The normal suite may hold more runs than the exact one: a built start
+    # (start-depth, start-monsters) is in smoke but not in smoke-exact (#1056).
+    # Every exact run needs its normal run.
+    missing = sorted(set(names) - set(runs(normal)))
+    if missing:
+        print(f'FAIL: exact runs with no normal run: {missing} ({names} vs {runs(normal)})')
         return 1
     for d in (exact, normal):
         try:
@@ -65,8 +69,9 @@ def main(argv):
         except ValueError as x:
             print(f'FAIL: {x}')
             return 1
-        if want is not None and want != names:
-            print(f'FAIL: {d}: runs without a summary: {sorted(set(want) - set(names))}')
+        have = runs(d)
+        if want is not None and want != have:
+            print(f'FAIL: {d}: runs without a summary: {sorted(set(want) - set(have))}')
             return 1
     bad = 0
     for n in names:
