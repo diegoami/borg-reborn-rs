@@ -627,6 +627,7 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    st.light.room_lighting.confirm_message(msg);
     crate::borg_unseen_belief::reject_attack(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
