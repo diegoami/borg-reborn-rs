@@ -33,7 +33,7 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
+    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -977,6 +977,12 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        desperate_flow_with_route_guard(st, up, range, why)
+    })
+}
+
+fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1365,6 +1371,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Strategic retreat
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(b_d));
 
         // Reset my Movement and Flow Goals
@@ -1763,6 +1770,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Back away from danger
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(i32::from(engine::ddd(bi))));
 
         // Reset my Movement and Flow Goals
@@ -2272,6 +2280,332 @@ fn may_move_away(
         && st.borg.tr(BI_CURHP) < p(Param::caution_move_max_hp)
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
+
+/// borg-reborn-rs (#934, review of #968): with
+/// `caution_poisoned_no_cure_retreat_hp_percent`, poisoned, with no usable
+/// poison cure (`has_poison_cure`) and below that percent of the maximum HP,
+/// and an escape actually at hand (a staircase underfoot, or a Phase Door the
+/// Borg can read or cast: `borg_fast_fragile::escape_available`), the escapes
+/// are tried before the strategic retreat. When they decline, the retreat goes
+/// on as usual, so a safe step is never thrown away (seed 829474344: 12 CLW
+/// drunk against poison, two Phase Doors never read). The screen shows one
+/// grade, "Poisoned" (player_timed.txt:255), so the amount is not used. Off at 0.
+fn poisoned_escape_first(st: &mut BorgState, pos_danger: i32) -> bool {
+    let (hp, max) = (st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP));
+    let percent = p(Param::caution_poisoned_no_cure_retreat_hp_percent);
+    if percent <= 0 || st.borg.tr(BI_ISPOISONED) == 0 || has_poison_cure(st) {
+        return false;
+    }
+    if !poisoned_below(true, hp, max, percent) || !crate::borg_fast_fragile::escape_available(st) {
+        return false;
+    }
+    borg_note(st, &format!("# Poisoned, no cure, HP {hp} of {max} (danger {pos_danger}): the escape before the retreat (#934)"));
+    if borg_escape(st, pos_danger) {
+        return true;
+    }
+    borg_note(st, "# Poisoned, no cure: the escape declined, the retreat decides (#934)");
+    false
+}
+
+/// borg-reborn-rs (#934, review of #968): a poison cure the Borg can use: a
+/// Potion of Neutralize Poison or poison-curing food (`BI_ACUREPOIS`), Cure
+/// Critical Wounds (`BI_ACCW`, which counts the spell too), Healing, *Healing*
+/// or Life (object.txt: each has `CURE:POISONED`), or a Cure Poison or Herbal
+/// Curing spell it can cast now.
+fn has_poison_cure(st: &BorgState) -> bool {
+    let counts = [BI_ACUREPOIS, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE].map(|t| st.borg.tr(t));
+    cure_at_hand(counts, || {
+        crate::borg_magic::borg_spell_okay(st, CURE_POISON) || crate::borg_magic::borg_spell_okay(st, HERBAL_CURING)
+    })
+}
+
+/// borg-reborn-rs (#934): any of the carried poison cures (Neutralize Poison
+/// or food, CCW, Healing, *Healing*, Life), else a castable cure spell. Cure
+/// Light and Serious Wounds are not cures (object.txt:3156-3190).
+fn cure_at_hand(counts: [i32; 5], spell: impl FnOnce() -> bool) -> bool {
+    counts.iter().any(|&n| n > 0) || spell()
+}
+
+/// borg-reborn-rs (#934): poisoned without a cure and below `percent` of the
+/// maximum HP (never at 0).
+fn poisoned_below(poisoned_no_cure: bool, hp: i32, max: i32, percent: i32) -> bool {
+    percent > 0 && poisoned_no_cure && hp * 100 < max * percent
+}
+
+#[cfg(test)]
+mod poisoned_retreat_tests {
+    #[test]
+    fn below_the_percent_only() {
+        assert!(super::poisoned_below(true, 69, 96, 75), "829474344 at 95,380");
+        assert!(!super::poisoned_below(true, 72, 96, 75), "exactly 75% is not below");
+        assert!(!super::poisoned_below(false, 10, 96, 75), "a cure carried, or not poisoned");
+        assert!(!super::poisoned_below(true, 10, 96, 0), "off");
+    }
+
+    #[test]
+    fn every_poison_cure_counts() {
+        use super::cure_at_hand;
+        // [Neutralize Poison or food, CCW, Healing, *Healing*, Life]
+        assert!(cure_at_hand([0, 1, 0, 0, 0], || false), "CCW only (review of #968)");
+        assert!(cure_at_hand([2, 0, 0, 0, 0], || false), "Neutralize Poison");
+        assert!(cure_at_hand([0, 0, 0, 0, 0], || true), "a castable Herbal Curing");
+        assert!(cure_at_hand([0, 0, 0, 1, 0], || false), "*Healing*");
+        assert!(!cure_at_hand([0, 0, 0, 0, 0], || false), "Cure Light Wounds only: no cure");
+    }
+}
+
+/// borg-reborn-rs (#933, review of #967): with `caution_retreat_immobile_kill_turns`,
+/// the strategic retreat is not taken (with a note) when the only known
+/// monster next to the Borg is an immobile attacker (it cannot follow), the
+/// Borg can melee it (not afraid, cursed with fear neither; the record young
+/// enough for both this test and the attack's own, `attack_max_target_age`),
+/// its melee (the expected damage without targeting bonuses) kills it within
+/// that many turns, and the danger here from every monster over those turns
+/// stays below `caution_retreat_immobile_danger_percent` of the HP. The attack
+/// decides (seed 829474344: a 25-HP white jelly never attacked in 165 turns).
+/// Off at 0.
+fn immobile_neighbour_veto(st: &mut BorgState) -> bool {
+    let turns = p(Param::caution_retreat_immobile_kill_turns);
+    if turns <= 0 || st.borg.tr(BI_ISAFRAID) != 0 || st.borg.tr(BI_CRSFEAR) != 0 {
+        return false;
+    }
+    let age = p(Param::caution_one_blow_monster_age).min(p(Param::attack_max_target_age));
+    let mut adjacent = (1..i32::from(st.kills.nxt)).filter(|&i| {
+        let kill = &st.kills.kills[i as usize];
+        kill.r_idx != 0 && borg_timer(st, kill.when) <= age && engine::distance(st.borg.c, kill.pos) == 1
+    });
+    let (Some(k), None) = (adjacent.next(), adjacent.next()) else {
+        return false;
+    };
+    let kill = st.kills.kills[k as usize];
+    if !immobile_attacker(usize::from(kill.r_idx)) {
+        return false;
+    }
+    let damage = crate::borg_fight_attack::melee_milli_per_turn(st, k as usize);
+    let Some(need) = turns_to_kill(i32::from(kill.power) * 1000, damage) else {
+        return false;
+    };
+    let hp = st.borg.tr(BI_CURHP).max(1);
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let danger = borg_danger(st, cy, cx, 1, true, false);
+    if fight_affordable(need, turns, danger, hp, p(Param::caution_retreat_immobile_danger_percent)) {
+        let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned();
+        borg_note(st, &format!("# No retreat: immobile {name} dies in {need} turns, danger {danger} a turn here (#933)"));
+        return true;
+    }
+    false
+}
+
+/// borg-reborn-rs (#933, review of #967): a kill in `need` turns, at most
+/// `turns`, with `danger` a turn from every monster here over the whole
+/// fight below `percent` of `hp`.
+fn fight_affordable(need: i32, turns: i32, danger: i32, hp: i32, percent: i32) -> bool {
+    need <= turns && i64::from(danger) * i64::from(need) * 100 < i64::from(hp) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#933): melee turns to take `power` HP at `damage` a
+/// turn; `None` when the blows do nothing.
+fn turns_to_kill(power: i32, damage: i32) -> Option<i32> {
+    (damage > 0).then(|| (power.max(1) + damage - 1) / damage)
+}
+
+#[cfg(test)]
+mod immobile_neighbour_tests {
+    #[test]
+    fn turns_to_kill_rounds_up() {
+        assert_eq!(super::turns_to_kill(25, 9), Some(3), "the 25-HP white jelly of 829474344");
+        assert_eq!(super::turns_to_kill(25, 25), Some(1));
+        assert_eq!(super::turns_to_kill(0, 5), Some(1));
+        assert_eq!(super::turns_to_kill(25, 0), None, "no blow lands");
+    }
+
+    #[test]
+    fn the_whole_fight_must_be_affordable() {
+        // 829474344 at 95,190: two turns, danger 36, HP 95, cap 100%.
+        assert!(super::fight_affordable(2, 3, 36, 95, 100));
+        // Review of #967: three turns at 40% of the HP a turn exhaust it.
+        assert!(!super::fight_affordable(3, 3, 40, 100, 100));
+        assert!(!super::fight_affordable(4, 3, 1, 100, 100), "too slow a kill");
+        assert!(!super::fight_affordable(1, 3, 60, 100, 50), "the cap");
+    }
+}
+
+
+/// borg-reborn-rs (#932, #1023): `caution_retreat_oscillation_limit` moves
+/// away in a row were each undone: the Borg landed on the grid it stepped
+/// to and then came back to (or next to) the grid it had left, each within
+/// `caution_retreat_oscillation_thinks` thinks of the last, on one level
+/// (seed 829474344: 74 retreats from a white jelly, each undone by the stair
+/// flight; 312081895: by the exploration flow). Steps that keep going away
+/// (A to B, B to C) never count (review of #966). The next move away is not
+/// taken, with one note per think; the escapes, the outmatched cure and the
+/// attack decide. Off at 0.
+fn retreat_oscillation_veto(st: &mut BorgState) -> bool {
+    let limit = p(Param::caution_retreat_oscillation_limit);
+    if limit <= 0 {
+        return false;
+    }
+    let m = &st.borg.mon;
+    let undone = run_follows(
+        m.retreat_level == st.borg.time.level,
+        st.borg.time.now - m.retreat_last,
+        p(Param::caution_retreat_oscillation_thinks),
+        m.retreat_landed,
+        st.borg.c,
+        m.retreat_from,
+        m.retreat_to,
+    );
+    let run = m.retreat_run;
+    if !(undone && i32::from(run) >= limit) {
+        return false;
+    }
+    if st.borg.mon.retreat_noted != st.borg.time.now {
+        st.borg.mon.retreat_noted = st.borg.time.now;
+        borg_note(st, &format!("# No retreat: {run} moves away in a row from here were undone (#932)"));
+    }
+    true
+}
+
+/// borg-reborn-rs (#1023, review of #966): with the breaker on, a think that
+/// finds the Borg on the grid its last move away stepped to confirms the
+/// landing. Called at the start of `borg_caution`, before any move.
+fn observe_retreat_landing(st: &mut BorgState) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let m = &mut st.borg.mon;
+    if m.retreat_level == st.borg.time.level && st.borg.c.x == m.retreat_to.x && st.borg.c.y == m.retreat_to.y {
+        m.retreat_landed = true;
+    }
+}
+
+/// borg-reborn-rs (#932, #1023): count the move away just taken from `from`
+/// to the grid it steps to (`goal.g`, set by `retreat` and `back_away`).
+fn note_retreat_taken(st: &mut BorgState, from: loc) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let (now, level) = (st.borg.time.now, st.borg.time.level);
+    let to = loc { x: st.borg.goal.g.x, y: st.borg.goal.g.y };
+    let thinks = p(Param::caution_retreat_oscillation_thinks);
+    let m = &mut st.borg.mon;
+    let follows = run_follows(m.retreat_level == level, now - m.retreat_last, thinks, m.retreat_landed, from, m.retreat_from, m.retreat_to);
+    m.retreat_run = next_retreat_run(follows, m.retreat_run);
+    m.retreat_last = now;
+    m.retreat_level = level;
+    m.retreat_from = from;
+    m.retreat_to = to;
+    m.retreat_landed = false;
+}
+
+/// borg-reborn-rs (#1023, review of #966): a move away from `start`
+/// continues the run when the last one was on this level within `thinks`
+/// thinks, its landing was confirmed, and `start` is back at (or next to)
+/// the grid it left but not on the grid it stepped to: the Borg returned,
+/// it did not go on.
+fn run_follows(same_level: bool, gap: BorgTime, thinks: i32, landed: bool, start: loc, prev_from: loc, prev_to: loc) -> bool {
+    same_level
+        && gap <= thinks
+        && landed
+        && !(start.x == prev_to.x && start.y == prev_to.y)
+        && king_moves(start, prev_from) <= 1
+}
+
+/// borg-reborn-rs (#932): the run of moves away after one more.
+fn next_retreat_run(follows: bool, run: u16) -> u16 {
+    if follows { run.saturating_add(1) } else { 1 }
+}
+
+/// borg-reborn-rs (#932): king-move distance between two grids.
+fn king_moves(a: loc, b: loc) -> i32 {
+    (a.x - b.x).abs().max((a.y - b.y).abs())
+}
+
+#[cfg(test)]
+mod retreat_oscillation_tests {
+    use super::{next_retreat_run, run_follows};
+    use crate::headers::z_type_h::loc;
+
+    const fn g(y: i32, x: i32) -> loc {
+        loc { x, y }
+    }
+
+    /// Plays a sequence of moves away (from, to) with the landing confirmed
+    /// or not, each `gap` thinks after the last; returns the run lengths.
+    fn runs(moves: &[(loc, loc, bool)], gap: i32, thinks: i32, same_level: bool) -> Vec<u16> {
+        let (mut run, mut prev_from, mut prev_to, mut landed, mut first) = (0u16, g(0, 0), g(0, 0), false, true);
+        let mut out = Vec::new();
+        for &(from, to, lands) in moves {
+            let follows = !first && run_follows(same_level, gap, thinks, landed, from, prev_from, prev_to);
+            run = next_retreat_run(follows, run);
+            out.push(run);
+            (prev_from, prev_to, landed, first) = (from, to, lands, false);
+        }
+        out
+    }
+
+    #[test]
+    fn going_and_coming_back_counts() {
+        // 829474344: 13,95 -> 13,94, the flow walks back to 13,95, again.
+        let a = (g(13, 95), g(13, 94), true);
+        assert_eq!(runs(&[a, a, a, a], 2, 3, true), vec![1, 2, 3, 4]);
+        // The two grids next to the jelly alternate (13,95 and 14,95).
+        let b = (g(14, 95), g(14, 94), true);
+        assert_eq!(runs(&[a, b, a, b], 2, 3, true), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn going_on_never_counts() {
+        // A -> B -> C -> D west along a corridor: real progress.
+        let m = [(g(5, 10), g(5, 9), true), (g(5, 9), g(5, 8), true), (g(5, 8), g(5, 7), true), (g(5, 7), g(5, 6), true)];
+        assert_eq!(runs(&m, 1, 3, true), vec![1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn no_landing_no_level_no_window_breaks_the_run() {
+        let a = (g(13, 95), g(13, 94), true);
+        let not_landed = (g(13, 95), g(13, 94), false);
+        assert_eq!(runs(&[not_landed, a, a], 2, 3, true), vec![1, 1, 2], "a key that did not land");
+        assert_eq!(runs(&[a, a, a], 2, 3, false), vec![1, 1, 1], "another level");
+        assert_eq!(runs(&[a, a, a], 4, 3, true), vec![1, 1, 1], "past the window");
+        assert_eq!(runs(&[a, a, a], 3, 3, true), vec![1, 2, 3], "the window is inclusive (312081895)");
+    }
+
+    #[test]
+    fn the_run_saturates() {
+        assert_eq!(next_retreat_run(true, u16::MAX), u16::MAX);
+    }
+}
+
+/// borg-reborn-rs (#931): `caution_stairs_immobile_reach` (the weighted stair
+/// flight keeps out of the reach of immobile attackers).
+pub(crate) fn stairs_immobile_reach_on() -> bool {
+    p(Param::caution_stairs_immobile_reach) != 0
+}
+
+/// borg-reborn-rs (#931, second review of #965): the most extra steps the
+/// reach-free route may cost over the ordinary one (0: no limit).
+pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
+    p(Param::caution_stairs_immobile_reach_extra_steps)
+}
+
+/// borg-reborn-rs (#931): grid (`y`, `x`) is next to a known immobile
+/// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
+/// 1621-1644).
+pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
+    immobile_attacker_next_to(st, y, x).is_some()
+}
+
+/// borg-reborn-rs (#931, review of #965): the known immobile attacker whose
+/// reach (the squares next to it) grid (`y`, `x`) is in, by kill index.
+/// Sleeping ones count (they wake as the Borg comes near: the white jelly of
+/// 829474344 woke at the first step beside it), and a record counts until the
+/// usual bookkeeping drops it; a route the refusal makes impossible falls back
+/// to the ordinary search.
+pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    immobile_attacker_next_to(st, y, x)
+}
+
 
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
@@ -2959,9 +3293,41 @@ mod incoming_units_tests {
 fn winning_fight(st: &mut BorgState) -> bool {
     let mode = p(Param::caution_winning_fight);
     if mode == 0 { return false; }
+    let Some(race) = fight_race(st, false) else { return false };
+    let FightRace { won, turns, incoming, hp, ref plans } = race;
+    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
+    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
+        plans.len(), if won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
+    // Mode 2 is a diagnostic: retain the unchanged control's actions so
+    // estimates can be checked on its original losing AND winning fights.
+    if !won || mode == 2 { return false; }
+    let (i, _, attack) = plans[0];
+    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+/// #759's race, as computed (`None`: not certified, so never winning).
+pub(crate) struct FightRace {
+    pub won: bool,
+    /// The turns to kill every counted attacker, one after another.
+    pub turns: f64,
+    /// Their HP a turn against the Borg, for the whole fight.
+    pub incoming: f64,
+    pub hp: i32,
+    /// The counted attackers, fastest to kill first: (kill index, HP to
+    /// take, the attack).
+    pub plans: Vec<(usize, i32, crate::borg_fight_attack::FocusedAttack)>,
+}
+
+/// #759's race (`winning_fight`). borg-reborn-rs (#1066): with
+/// `adjacent_only`, only the awake monsters next to the Borg are fought and
+/// counted; every other check (the Borg's own status, a town-hunt target,
+/// an unseen attacker anywhere) still refuses the verdict.
+pub(crate) fn fight_race(st: &mut BorgState, adjacent_only: bool) -> Option<FightRace> {
     // The direct-damage race does not model random confused commands or
     // ongoing poison/bleeding damage. Let the ordinary cures act first.
-    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return None; }
     let mut plans = Vec::new();
     let mut incoming = 0.0;
     let mut in_contact = false;
@@ -2971,29 +3337,32 @@ fn winning_fight(st: &mut BorgState) -> bool {
             continue;
         }
         if crate::borg_town_hunt::viewed_target(st, &kill) {
-            return false;
+            return None;
         }
         let d = engine::distance(st.borg.c, kill.pos);
         if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
             if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
-                return false; // an attacker without a current observable target
+                return None; // an attacker without a current observable target
             }
+            continue;
+        }
+        if adjacent_only && d > 1 {
             continue;
         }
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
             continue;
         }
         let forecast = fight_incoming(st, i);
-        if forecast.unknown_fight || forecast.unknown_damage { return false; }
+        if forecast.unknown_fight || forecast.unknown_damage { return None; }
         let danger = forecast.hp_per_turn;
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
-        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
-        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return None };
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return None };
         plans.push((i, hp, attack));
     }
-    if plans.is_empty() || !in_contact { return false; }
+    if plans.is_empty() || !in_contact { return None; }
     // Remove the fastest-to-kill attacker first. Incoming remains the full
     // sum for the entire fight, a conservative bound as attackers die.
     plans.sort_by(|a, b| {
@@ -3020,7 +3389,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let regen = fight_regeneration(&kill);
         let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
-        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
+        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return None };
         turns += t;
         if let Some(c) = cost {
             if c.spell {
@@ -3031,16 +3400,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     }
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
-    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
-        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
-    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
-        plans.len(), if won { "winning" } else { "not winning" }));
-    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
-    // Mode 2 is a diagnostic: retain the unchanged control's actions so
-    // estimates can be checked on its original losing AND winning fights.
-    if !won || mode == 2 { return false; }
-    let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    Some(FightRace { won, turns, incoming, hp, plans })
 }
 
 pub(crate) fn fight_regeneration(kill: &crate::borg_flow_kill::BorgKill) -> f64 {
@@ -3192,6 +3552,7 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
+    observe_retreat_landing(st);
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
@@ -3686,16 +4047,30 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 2) we have boosted our avoidance because we are stuck
     // 3) we are in a Sea of Runes
     // 4) we are not in a vault
-    let danger_test =
-        pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    let danger_test = pos_danger > retreat_danger_threshold(st);
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
+    // borg-reborn-rs (#934, review of #968): poisoned without a cure, the
+    // escapes first when one is at hand; when they decline, the retreat.
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && poisoned_escape_first(st, pos_danger)
+    {
+        st.borg.escapes = st.borg.escapes.wrapping_add(1);
+        st.borg.goal.type_0 = 0;
+        return true;
+    }
+    let from = st.borg.c;
+    if !all_out
+        && !through
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && !retreat_oscillation_veto(st)
+        && !immobile_neighbour_veto(st)
         && retreat(st, pos_danger, borg_surround)
     {
+        note_retreat_taken(st, from);
         return true;
     }
 
@@ -3730,11 +4105,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
+    // borg-reborn-rs (#1023): with caution_retreat_oscillation_backaway, a
+    // back-away joins the run of retreats (seed 1512540769: "Backing up to
+    // 88,45" from 45,89, undone by the stair flight, mixed with retreats from
+    // 43,96 until death).
+    let backaway_counted = p(Param::caution_retreat_oscillation_backaway) != 0;
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+        && !(backaway_counted && retreat_oscillation_veto(st))
         && back_away(st, pos_danger, borg_surround)
     {
+        if backaway_counted {
+            note_retreat_taken(st, from);
+        }
         return true;
     }
 
@@ -3905,8 +4290,10 @@ fn stairs_before_recall(st: &mut BorgState) -> bool {
 /// elsewhere. Nothing is committed: the cost map is rebuilt by the next
 /// flow, and the danger marks are the ones that flow would make.
 fn stair_reachable(st: &mut BorgState) -> bool {
-    (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
-        || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
+            || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    })
 }
 
 /// Would the flee flows take a down staircase (their gates, not the path)?
@@ -3945,6 +4332,10 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
     }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if st.flow.has_retreat_exclusions() {
+        // #932 (review of #964): with a hold active, spread as the walk does.
+        return track.num > 0 && crate::borg_flow_stairs::guarded_unweighted_stair_reachable(st, up);
+    }
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
         return false;
@@ -3956,7 +4347,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         }
     }
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
-    i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
+    crate::borg_flow_stairs::unweighted_flight_reachable(st)
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
@@ -5714,7 +6105,7 @@ pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -
 }
 
 /// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
-fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
     why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
 }
 
@@ -6078,13 +6469,15 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     let ok = if weight > 0 {
         crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
     } else {
-        crate::borg_flow::borg_flow_clear(st);
-        crate::borg_flow_stairs::enqueue_down_stairs(st);
-        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
-        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
-        }
+        crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+            crate::borg_flow::borg_flow_clear(st);
+            crate::borg_flow_stairs::enqueue_down_stairs(st);
+            crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+            crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+                st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+                crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+            }
+        })
     };
     st.borg.status.desperate = false;
     if ok {
@@ -6097,6 +6490,25 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
 /// bored ascent while fleeing, so the up-stair flow can opt in there too.
 pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// #932: remember a tactical retreat for this many Borg thinks during a
+/// dungeon flight. Zero leaves the original routes intact.
+pub(crate) fn flight_retreat_ticks() -> i32 {
+    p(Param::caution_retreat_reentry_ticks)
+}
+
+/// Re-open the abandoned grid if the current danger has fallen below the
+/// strategic-retreat threshold.
+pub(crate) fn retreat_danger_threshold(st: &BorgState) -> i32 {
+    i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor)
+}
+
+/// #932 (review of #964): the danger of a held grid, over the horizon the
+/// strategic retreat reads (`caution_danger_horizon`), so the hold lasts as
+/// long as the same retreat would still fire there.
+pub(crate) fn retreat_hold_danger(st: &mut BorgState, y: i32, x: i32) -> i32 {
+    borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false)
 }
 
 /// borg-reborn-rs (#881): `caution_stairs_flight_unknown` (0 = an unknown

@@ -267,6 +267,10 @@ borg_param_town_departure_free_slots = 2
 # at or below it goes only after every surplus. 0 = whole stacks.
 
 borg_param_town_store_keep_min = 3
+# #1048: keep Home space for different consumables once the carried reserve is covered.
+borg_param_town_home_stack_limit = 2
+# #1049: clear known kinds the town planner deliberately excludes from purchases.
+borg_param_town_home_reject_unwanted = 1
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
 # situations"; "if I have 20 CLW I would have say 4 detect invisible and 2
@@ -293,6 +297,26 @@ borg_param_town_prepared_fear = 2
 # 0 = always. Hypothesis.
 
 borg_param_town_variety_min_depth = 2
+
+# Devices as variety (#895, owner: "we are going to need space for other
+# devices"). Above 0, the charges of a learned wand, staff or rod are valued on
+# one row per situation it answers: the first charges listed below, together,
+# are worth this percent of the trip weight (nothing past them), so a charged
+# device is kept and bought as variety and not only as one more source on a
+# shared curve (an attack wand competes with arrows and oil). One device per
+# row: a second one answering the same situation adds nothing on it. A Staff of
+# Teleportation (about 2700 gold) on offer is worth nothing while the purse after
+# the urgent needs is below town_device_escape_min_gold; one carried is never
+# sold. Starts with town_variety_min_depth. 0 = off. Hypotheses, not yet
+# measured in the zoo. NOT town_devices_percent (#666, further down): that one
+# scales every device's charges by the class's device skill.
+
+borg_param_town_device_percent = 24
+borg_param_town_device_attack = 10
+borg_param_town_device_escape = 5
+borg_param_town_device_detect = 5
+borg_param_town_device_control = 5
+borg_param_town_device_escape_min_gold = 3000
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
@@ -841,6 +865,11 @@ borg_param_defend_bless_fail = 25
 # 0.
 
 borg_param_caution_heal_when_outmatched = 1
+# #934 (seed 829474344): poisoned, no usable poison cure and below this
+# percent of max HP, with an escape at hand: the escapes before the strategic
+# retreat, the retreat when they decline. Shipped 0 (today's play); 75 is the
+# hypothesis.
+borg_param_caution_poisoned_no_cure_retreat_hp_percent = 0
 borg_param_caution_heal_outmatched_min_loss = 50
 
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
@@ -1122,6 +1151,13 @@ borg_param_escape_teleport_landing_either = 0
 # and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
+# #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
+# that melee kills in this many turns while the danger here from every
+# monster over the fight stays below the percent of the HP. The turns ship 0
+# (today's play; 3 is the hypothesis); the percent, read only when the turns
+# are on, is 100.
+borg_param_caution_retreat_immobile_kill_turns = 0
+borg_param_caution_retreat_immobile_danger_percent = 100
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
@@ -1140,9 +1176,23 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
+# #931 (seed 829474344, a white jelly beside the stair flight): the weighted
+# stair flight keeps out of the squares next to a known immobile attacker
+# when another route exists. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_caution_stairs_immobile_reach = 0
+# #931: the reach-free route at most this many steps costlier than the
+# ordinary one (0 = any); read only with the switch on. 20 is a hypothesis.
+borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
+# #932 (seed 829474344): no strategic retreat after this many in a row from
+# the same place, each within the thinks of the last (the next flow step undid
+# each). Shipped 0 (today's play); 3 is the hypothesis.
+borg_param_caution_retreat_oscillation_limit = 0
+borg_param_caution_retreat_oscillation_thinks = 3
+# #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
+borg_param_caution_retreat_oscillation_backaway = 0
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
@@ -1501,20 +1551,26 @@ borg_param_attack_on_sight = 1
 # safe moment in the dungeon (down to the depth below, danger 0 over the turns
 # below, at least the HP percent below, no harmful status, food in the pack),
 # so a found Cure Light Wounds is known before it is needed. A bad potion costs
-# turns (Sleep paralyses 5+1d5, Poison stops regeneration); none kills by
-# itself. #470 still forbids unknown scrolls, mushrooms, devices and any
-# unknown item in an emergency. 0 = #470 for potions too.
+# turns (Sleep paralyses 5+1d5, Poison stops regeneration); only Poison can
+# kill by itself, at low HP (1 HP a turn for 10+2d7 turns: #1063). #470 still
+# forbids unknown scrolls, mushrooms, devices and any unknown item in an
+# emergency. 0 = #470 for potions too.
 borg_param_item_test_unknown_potions = 1
 borg_param_item_test_unknown_min_hp_percent = 50
 borg_param_item_test_unknown_danger_turns = 10
 borg_param_item_test_unknown_max_depth = 30
+# #1063 (owner, 2026-11-23: "put minimum hp at 60"; Ranger 142490685 tested at
+# 18/18 HP with no cure and died of the Poison, which costs up to 24): test
+# only with at least 60 HP, unless a known potion of Cure Critical Wounds or
+# Neutralize Poison is in the pack, which waives it; the percent floor above
+# stays.
+borg_param_item_test_unknown_min_hp = 60
+borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # #1060 (owner: "a character drank a potion of poison and then goes happily
-# exploring"): test only with at least 25 HP (a Poison costs up to 24), and
-# after a test wait out its harmful status (or a Slowness) on the test grid,
-# for at most 180 world ticks (Blindness, the longest, lasts up to 175), while
-# nothing is dangerous: in-place recovery
-# first, else stand still; danger, a move or a new level ends it.
-borg_param_item_test_unknown_min_hp = 25
+# exploring"): after a test, wait out its harmful status (a Slowness or a scramble too) on
+# the test grid, for at most 180 world ticks (Blindness, the longest, lasts up
+# to 175), while nothing is dangerous: in-place recovery first, else stand
+# still; danger, a move or a new level ends it.
 borg_param_item_test_unknown_hold_turns = 180
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or

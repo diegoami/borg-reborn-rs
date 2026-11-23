@@ -61,6 +61,16 @@ starts. (2) `fight_before_flight` could act and return before
 hold resume once the danger was back to 0. Validation now runs before the
 early fight.
 
+**Third re-review (Codex GPT-6, at c963bfee).** P1: the branch conflicted
+with `track-p`, where #1097 (#1063) had shipped the test's HP floor at 60
+with a known Neutralize Poison or Cure Critical Wounds waiving it, on this
+PR's own `item_test_unknown_min_hp`. The merge keeps #1097's gate, floor,
+exemption and settings, and adds only the hold (`item_test_unknown_hold_turns`
+180). P3: a Potion of Surprise's stat scramble (`TIMED_INC:SCRAMBLE`
+20+1d20, object.txt) has no trait, so the hold let a scrambled Borg explore:
+it is now read from its timer with Slowness (`untraited_bad_timer`), in the
+hold and in the test gate.
+
 **Where this meets other work.** #934 (another session: how poison is
 weighed in general, CLW drunk against poison) is untouched; this only changes
 what follows the Borg's own test. `engine/tests/test_stair_handoff.py` pins
