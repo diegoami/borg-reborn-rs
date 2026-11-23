@@ -1532,6 +1532,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
 
     if case == "interrupted-search" {
         use crate::borg_flow_misc::borg_flow_spastic;
+        use crate::borg_update::record_step;
 
         let stair = loc { x: 51, y: 19 };
         let floor = loc { x: 51, y: 20 };
@@ -1556,7 +1557,12 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.kills.nxt = 1;
         st.danger = Default::default();
         st.stairs.less.num = 0;
-        st.flow.track_step.num = 3;
+        st.flow.track_step.num = 0;
+        // The first search arrival is observation 75, at the history limit.
+        for _ in 0..37 {
+            record_step(&mut st.flow.track_step, stair);
+            record_step(&mut st.flow.track_step, floor);
+        }
 
         // A cost-one search returns to the stair, then dark exploration
         // wins the next move. The observed stair-floor-stair trail lets
@@ -1564,10 +1570,11 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         for searches in 1..=5 {
             assert!(borg_flow_spastic(st, true));
             observe_move(st, b'8', stair);
-            for (i, grid) in [stair, floor, stair].into_iter().enumerate() {
-                st.flow.track_step.x[i] = grid.x;
-                st.flow.track_step.y[i] = grid.y;
-            }
+            record_step(&mut st.flow.track_step, st.borg.c);
+            let trail = &st.flow.track_step;
+            assert_eq!(trail.num, 75);
+            assert_eq!([trail.at(72), trail.at(73), trail.at(74)],
+                [(stair.y, stair.x), (floor.y, floor.x), (stair.y, stair.x)]);
             assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * (searches - 1));
 
             borg_flow::borg_flow_clear(st);
@@ -1577,6 +1584,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
             assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
             assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
             observe_move(st, b'2', floor);
+            record_step(&mut st.flow.track_step, st.borg.c);
             assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
         }
         assert!(!borg_flow_spastic(st, true), "the same staircase search is exhausted");

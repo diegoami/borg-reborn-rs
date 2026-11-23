@@ -1828,9 +1828,9 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         };
         /* Attempt motion */
         if borg_play_step(st, y, x) {
-            // #1106: exploration can take the turn that would count this search.
+            // #1106: a successful dark action can take the search's turn without moving.
             if why == GOAL_DARK {
-                borg_flow_misc::notice_reversed_stair_search(st, loc { x, y });
+                borg_flow_misc::notice_stair_search_before_dark_action(st, loc { x, y });
             }
             st.stairs.up_search_departure = departure;
             if st.borg.tr(BI_CDEPTH) > 0 {

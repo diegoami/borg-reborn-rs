@@ -240,6 +240,20 @@ fn atoi(s: &[u8]) -> i32 {
     crate::borg_formulas::c_strtol(s).0 as i32
 }
 
+/// Record the latest observation while keeping at most 75 positions.
+pub(crate) fn record_step(track: &mut StairTrack, grid: loc) {
+    const LIMIT: usize = 75;
+    let mut index = track.num as usize;
+    if index == LIMIT {
+        track.x.copy_within(1..LIMIT, 0);
+        track.y.copy_within(1..LIMIT, 0);
+        index -= 1;
+    }
+    track.x[index] = grid.x;
+    track.y[index] = grid.y;
+    track.num = index as i16 + 1;
+}
+
 /// Add (x, y) to a track list unless it is there already or the list is
 /// full (the copied C loop). Returns whether it was added.
 fn track_add(t: &mut StairTrack, x: i32, y: i32) -> bool {
@@ -1287,22 +1301,8 @@ pub fn borg_update(st: &mut BorgState) {
     // Update the map
     borg_update_map(st);
 
-    // Mark this grid as having been stepped on
-    let step = &mut st.flow.track_step;
-    step.x[idx(i32::from(step.num))] = st.borg.c.x;
-    step.y[idx(i32::from(step.num))] = st.borg.c.y;
-    step.num += 1;
-
-    // Clean the steps every so often
-    if step.num >= 75 {
-        for i in 0..=75 {
-            // Move each step down one position
-            step.x[i] = step.x[i + 1];
-            step.y[i] = step.y[i + 1];
-        }
-        // reset the count
-        step.num = 75;
-    }
+    // Keep the observed grid in the step history.
+    record_step(&mut st.flow.track_step, st.borg.c);
 
     // Reset
     if reset {

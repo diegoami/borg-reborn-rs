@@ -641,8 +641,8 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
     Some(v)
 }
 
-/// Count the staircase search when exploration immediately reverses it.
-pub(crate) fn notice_reversed_stair_search(st: &mut BorgState, next: loc) {
+/// Count a pending up-stair search when a dark action would retrace the last move.
+pub(crate) fn notice_stair_search_before_dark_action(st: &mut BorgState, next: loc) {
     let trail = &st.flow.track_step;
     let n = trail.num as usize;
     let here = (st.borg.c.y, st.borg.c.x);
