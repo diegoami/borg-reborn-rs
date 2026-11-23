@@ -1371,11 +1371,19 @@ fn mix_result(stepped: bool) -> MixOutcome {
     }
 }
 
-/// #1098 (review of #1117): did the stair-anchored exploration (breadth-first
-/// or mixed) find its area covered this think? Read by `borg_leave_level` as
+/// #1098 (review of #1117): did the exploration (breadth-first, mixed, or
+/// C's with `explore_c_leave_when_done`) find its area covered this think? Read by `borg_leave_level` as
 /// a reason to leave, like the level timer.
 pub(crate) fn exhausted_this_think(st: &BorgState) -> bool {
-    st.borg.stair_explore_exhausted == Some(st.borg.time.now) && (breadth_first_active(st) || mixed_active(st))
+    st.borg.stair_explore_exhausted == Some(st.borg.time.now)
+        && (breadth_first_active(st) || mixed_active(st) || c_leave_when_done(st))
+}
+
+/// #1098 (owner, 2026-11-23): C's exploration takes the stairs once it finds
+/// nothing (`explore_c_leave_when_done`), in the dungeon, on a level its
+/// exit has not failed on.
+fn c_leave_when_done(st: &BorgState) -> bool {
+    value(Param::explore_c_leave_when_done) != 0 && st.borg.tr(BI_CDEPTH) > 0 && !released(st)
 }
 
 /// Prepare to "flow" towards "interesting" grids
@@ -1463,6 +1471,16 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         /* Method 5 */
         if borg_flow_dark_5(st, b_stair) {
             return true;
+        }
+
+        // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
+        // explore, take the stairs"): C's far exploration (method 5 scans the
+        // whole known map within the leash) found nothing either. With
+        // explore_c_leave_when_done the level is done: `borg_think_dungeon`
+        // takes the stairs before the secret-door search. Not on a level
+        // where that exit failed (`released`): the search may find the way.
+        if value(Param::explore_c_leave_when_done) != 0 && st.borg.tr(BI_CDEPTH) > 0 && !released(st) {
+            mark_exhausted(st, "C exploration: nothing reachable left within the leash");
         }
     }
 
@@ -1809,6 +1827,7 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_slack), 0, "strict rings");
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
         assert_eq!(value(Param::explore_bfs_leave_when_done), 0, "compiled 0: an ordinary miss (borg.txt ships 1)");
+        assert_eq!(value(Param::explore_c_leave_when_done), 0, "compiled 0: C stays until a reason to leave");
     }
 
     /// Two corridors from a staircase, each 8 unknown grids long.

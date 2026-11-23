@@ -433,6 +433,12 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1098): as in the ordinary think, nothing left to
+    // explore leaves before the secret-door search.
+    if crate::borg_flow_dark::exhausted_this_think(st) && borg_leave_level(st, false) {
+        return true;
+    }
+
     /* Search for secret door via spell before spastic */
     if check_light_for_doors(st) {
         return true;
@@ -1463,6 +1469,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Explore interesting grids */
     if borg_flow_dark(st, false) {
         return choice!("borg_flow_dark");
+    }
+
+    // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
+    // explore, take the stairs"): C's far exploration just found nothing
+    // (`explore_c_leave_when_done`): leave before the door-finding spell and
+    // the secret-door search below.
+    if crate::borg_flow_dark::exhausted_this_think(st) && borg_leave_level(st, false) {
+        return choice!("borg_leave_level");
     }
 
     /*** Deal with shops ***/

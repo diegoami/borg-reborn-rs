@@ -839,6 +839,10 @@ borg_param_explore_bfs_hp_per_level = 0
 # stairs"): breadth-first with nothing reachable left takes the stairs at once
 # (shipped 1); 0 = stay until the level timer or another reason.
 borg_param_explore_bfs_leave_when_done = 1
+# #1098 (owner, 2026-11-23, option 2): C's own exploration takes the stairs
+# too once it finds nothing it may reach, before the secret-door search.
+# Shipped 0 until the zoo measures it.
+borg_param_explore_c_leave_when_done = 0
 # #1098 (second piece of #1080): mixed exploration above the breadth-first
 # threshold, until prepared for the depth (for now: where C's leash applies).
 # Depth-first inside a radius R from the nearest staircase; R starts at
