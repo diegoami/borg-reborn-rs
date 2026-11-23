@@ -2147,6 +2147,7 @@ fn new_level(st: &mut BorgState) {
     st.flow.track_door.num = 0;
     st.flow.track_closed.num = 0;
     st.flow_misc.track_vein.num = 0;
+    st.flow_misc.spastic_local = false;
     st.flow_misc.spastic_approach = None;
 
     // No artifacts swapping in and out

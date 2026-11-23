@@ -83,7 +83,9 @@ pub struct FlowMiscState {
     pub spastic_x: u8,
     /// `spastic_y`
     pub spastic_y: u8,
-    /// The square a search flow last tried to enter its target from.
+    /// Whether the search started within two flow steps of its target.
+    pub spastic_local: bool,
+    /// The square a local search flow tried to enter its target from.
     pub spastic_approach: Option<loc>,
 }
 
@@ -694,7 +696,7 @@ fn is_spastic_target(st: &BorgState, grid: loc) -> bool {
 
 /// Remember the last step into a secret-door search target.
 pub(crate) fn record_spastic_approach(st: &mut BorgState, next: loc) {
-    if is_spastic_target(st, next) {
+    if st.flow_misc.spastic_local && is_spastic_target(st, next) {
         st.flow_misc.spastic_approach = Some(st.borg.c);
     }
 }
@@ -903,6 +905,9 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Spread the flow */
     borg_flow_spread(st, 250, true, false, false, -1, false);
 
+    // #1131 repeated a search across three squares. Keep the reversal
+    // accounting local so a long search route can still be revisited.
+    st.flow_misc.spastic_local = st.flow.cost_at(st.borg.c.y, st.borg.c.x) <= 2;
     commit_and_step(st, c"spastic", GOAL_XTRA)
 }
 
