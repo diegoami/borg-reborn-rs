@@ -27,6 +27,7 @@ use crate::borg_item_use::{
 };
 use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
+use crate::borg_projection::known_projectable;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::params::{value as param, Param};
@@ -1001,6 +1002,49 @@ pub fn borg_maintain_light(st: &mut BorgState) -> BorgNeed {
     }
 }
 
+/// borg-reborn-rs (#995): remember the observed terrain for each aimed
+/// direction at the last beam origin. Spell, rod and wand share the history.
+#[derive(Clone, Default)]
+pub struct HallwayBeams {
+    origin: Option<(i32, i32)>,
+    terrain: [Option<Vec<u8>>; 4],
+}
+
+impl HallwayBeams {
+    fn tried(&self, origin: (i32, i32), direction: usize, terrain: &[u8]) -> bool {
+        self.origin == Some(origin) && self.terrain[direction].as_deref() == Some(terrain)
+    }
+
+    fn record(&mut self, origin: (i32, i32), direction: usize, terrain: Vec<u8>) {
+        if self.origin != Some(origin) {
+            self.terrain = Default::default();
+            self.origin = Some(origin);
+        }
+        self.terrain[direction] = Some(terrain);
+    }
+}
+
+/// LINE uses the projection range and stops at a blocking grid
+/// (src/effect-handler-attack.c:effect_handler_LINE:173-180,
+/// src/project.c:project_path:293-335). Unknown terrain may be open.
+fn hallway_beam_terrain(st: &BorgState, dx: i32, dy: i32) -> Vec<u8> {
+    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    let mut terrain = Vec::new();
+    for step in 1..=i32::from(engine::z_info().max_range) {
+        let (x, y) = (cx + dx * step, cy + dy * step);
+        if !(0..AUTO_MAX_X).contains(&x) || !(0..AUTO_MAX_Y).contains(&y) {
+            break;
+        }
+        let grid = st.cave.grid(x, y);
+        terrain.push(grid.feat);
+        let feat = u32::from(grid.feat);
+        if feat != FEAT_NONE && !known_projectable(feat, grid.trap, engine::feat_is_shop(i32::from(grid.feat))) {
+            break;
+        }
+    }
+    terrain
+}
+
 /// One direction test of `borg_light_beam`: are the grids `0..=light`
 /// steps (`first..=light`) from the Borg along `(dx, dy)` all floor or
 /// unknown, with the grid `light + 1` steps away (`beyond`) unknown?
@@ -1030,6 +1074,11 @@ fn beam_blocked(st: &BorgState, dx: i32, dy: i32, first: i32, light: i32) -> Opt
     Some(false)
 }
 
+/// The shipped hallway fix is disabled only for legacy profiles and replays.
+pub(crate) fn hallway_beam_guard_enabled() -> bool {
+    param(Param::light_hallway_repeat_guard) != 0
+}
+
 /// Look down a hallway and possibly light it up using the Light Beam
 /// spell, a rod or a wand (`borg_light_beam`). With `simulation`, only
 /// tell whether it would.
@@ -1040,9 +1089,7 @@ fn beam_blocked(st: &BorgState, dx: i32, dy: i32, first: i32, light: i32) -> Opt
 /// Borg has a problem when not on map centering mode and casting the beam
 /// repeatedly, down or up when at the edge of a panel.
 pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
-    let mut dir = 5;
     let mut spell_ok = false;
-    let mut blocked = false;
 
     /* Weak/dark is very unhappy */
     if st.borg.tr(BI_ISWEAK) != 0 {
@@ -1061,70 +1108,79 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
         spell_ok = true;
     }
 
-    /* borg-reborn-rs (#884): "my light" is the Borg's own light radius
-     * (BI_LIGHT, C's, at cave_light_engine_radius 0; BI_LIGHT - 1 at 1) */
-    let light = own_light_radius(st);
-    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    if !spell_ok {
+        return false;
+    }
 
-    /* The four directions in C's order: north, south, east, west. Each
-     * later test runs only while no direction was found (`dir == 5`) and
-     * resets `blocked`; a test that applies sets `dir` (or 5 and
-     * `blocked` when the way is blocked). */
+    let near_panel_edge = st.borg.c.y - engine::term_geometry().offset_y > borg_panel_hgt() - 2;
+    let light = own_light_radius(st);
+    let guard = hallway_beam_guard_enabled();
+    try_hallway_beam(
+        st, simulation, light, near_panel_edge, guard,
+        |st, dx, dy, first| {
+            if beam_blocked(st, dx, dy, first, light) != Some(false) {
+                return None;
+            }
+            Some(if guard { hallway_beam_terrain(st, dx, dy) } else { Vec::new() })
+        },
+        |st, dir| {
+            if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
+                || borg_zap_rod(st, st.item_val.sv_rod_light)
+                || borg_aim_wand(st, st.item_val.sv_wand_light)
+            {
+                borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
+                borg_note(st, "# Illuminating this hallway");
+                return true;
+            }
+            false
+        },
+    )
+}
+
+fn try_hallway_beam(
+    st: &mut BorgState, simulation: bool, light: i32, near_panel_edge: bool, guard: bool,
+    open_ray: impl Fn(&BorgState, i32, i32, i32) -> Option<Vec<u8>>,
+    queue_beam: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    /* Preserve C's first viable direction when deciding whether to yield. */
     let tests = [
         (cy - light - 1 > 0, 0, -1, 0, 8),
         (cy + light + 1 < AUTO_MAX_Y, 0, 1, 0, 2),
         (cx + light + 1 < AUTO_MAX_X, 1, 0, 0, 6),
         (cx - light - 1 > 0, -1, 0, 1, 4),
     ];
-    for (k, &(in_map, dx, dy, first, d)) in tests.iter().enumerate() {
-        /* Quick Boundary check */
-        if !in_map || (k > 0 && dir != 5) {
-            continue;
-        }
-        if k > 0 {
-            blocked = false;
-        }
-        match beam_blocked(st, dx, dy, first, light) {
-            None => {}
-            Some(true) => {
-                dir = 5;
-                blocked = true;
+    let Some((direction, dir, terrain)) = tests.into_iter().enumerate().find_map(
+        |(direction, (in_map, dx, dy, first, dir))| {
+            if !in_map || light < first {
+                return None;
             }
-            /* a loop that ran at least once notes the direction */
-            Some(false) if light >= first => dir = d,
-            Some(false) => {}
-        }
-    }
-
-    /* Don't do it if on the edge of shifting the panel. */
-    if dir == 5
-        || !spell_ok
-        || blocked
-        || (dir == 2 && cy - engine::term_geometry().offset_y > borg_panel_hgt() - 2)
-        || (dir == 8 && cy - engine::term_geometry().offset_y > borg_panel_hgt() - 2)
-    {
+            open_ray(st, dx, dy, first).map(|terrain| (direction, dir, terrain))
+        },
+    ) else {
+        return false;
+    };
+    if (dir == 2 || dir == 8) && near_panel_edge {
         return false;
     }
 
-    /* simulation */
+    if guard && st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
+        return false;
+    }
     if simulation {
         return true;
     }
-
-    /* cast the light beam */
-    if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
-        || borg_zap_rod(st, st.item_val.sv_rod_light)
-        || borg_aim_wand(st, st.item_val.sv_wand_light)
-    {
-        /* apply the direction */
-        borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
-        borg_note(st, "# Illuminating this hallway");
-        return true;
+    if !queue_beam(st, dir) {
+        return false;
     }
 
-    /* cant do it */
-    false
+    // Mana, rod recharge and rests leave a queued direction tried.
+    if guard {
+        st.borg.hallway_beams.record((cx, cy), direction, terrain);
+    }
+    true
 }
+
 
 
 #[cfg(test)]
@@ -1336,4 +1392,37 @@ mod lightless_tests {
         );
     }
 
+}
+
+#[cfg(test)]
+mod hallway_beam_tests {
+    use super::*;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    #[test]
+    fn unchanged_hallway_yields_and_a_changed_ray_can_be_lit() {
+        let mut st = BorgState::default();
+        (st.borg.c.x, st.borg.c.y) = (117, 22);
+        let north = std::cell::Cell::new(FEAT_NONE as u8);
+        let try_beam = |st: &mut BorgState, simulation, queue: fn(&mut BorgState, i32) -> bool| {
+            try_hallway_beam(st, simulation, 1, false, true, |_, _, dy, _| {
+                Some(vec![if dy == -1 { north.get() } else { FEAT_NONE as u8 }])
+            }, queue)
+        };
+        let queue_north = |_: &mut BorgState, dir| {
+            assert_eq!(dir, 8);
+            true
+        };
+        let unexpected = |_: &mut BorgState, _| panic!("queued an unexpected beam");
+
+        assert!(try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, |_, _| false));
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, unexpected));
+
+        north.set(FEAT_FLOOR as u8);
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, false, unexpected));
+    }
 }
