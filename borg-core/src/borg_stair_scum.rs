@@ -235,11 +235,16 @@ fn slackened(steps: i32, slack: i32) -> i32 {
 }
 
 /// The slack in steps (pure; owner, 2026-11-23: "a rate to make the scum
-/// dependent on hp/class"): the fixed steps plus `per_hp_tenths` tenths of
-/// a step per point of max HP, so the mode loosens as the character grows.
-/// Both are per class (`__<class>`) and per race (`__<race>`).
-fn slack_steps(steps: i32, per_hp_tenths: i32, max_hp: i32) -> i32 {
-    steps.max(0) + (i64::from(max_hp.max(0)) * i64::from(per_hp_tenths.max(0)) / 10).min(i64::from(MAX_STEPS)) as i32
+/// dependent on hp/class", then "slack grows by decile by level, say 50
+/// means that druids at level 3 get to slack 2"): the fixed steps, plus
+/// `per_hp_tenths` tenths of a step per point of max HP, plus
+/// `per_level_percent` percent of a step per character level above 1, each
+/// rounded down, so the mode loosens as the character grows. All are per
+/// class (`__<class>`) and per race (`__<race>`).
+fn slack_steps(steps: i32, per_hp_tenths: i32, max_hp: i32, per_level_percent: i32, clevel: i32) -> i32 {
+    let by_hp = i64::from(max_hp.max(0)) * i64::from(per_hp_tenths.max(0)) / 10;
+    let by_level = i64::from((clevel - 1).max(0)) * i64::from(per_level_percent.max(0)) / 100;
+    (i64::from(steps.max(0)) + by_hp + by_level).min(i64::from(MAX_STEPS)) as i32
 }
 
 /// The longest walk that survives (pure; for the notes and the tests).
@@ -416,6 +421,8 @@ impl Map {
                 value(Param::stair_scum_slack_steps),
                 value(Param::stair_scum_slack_per_hp_tenths),
                 st.borg.tr(BI_MAXHP),
+                value(Param::stair_scum_slack_per_level_percent),
+                st.borg.tr(BI_CLEVEL),
             ),
         };
         let area = safe_area(&map.dist, |y, x| walkable(st, y, x), |y, x| map.grid_safe(st, y, x));
@@ -866,10 +873,16 @@ mod tests {
         assert_eq!(slackened(1, 5), 0, "never below the stairs themselves");
         assert_eq!(slackened(4, -1), 4, "a negative slack is none");
         // The rate: a tenth of a step per max HP point, on top of the steps.
-        assert_eq!(slack_steps(0, 1, 12), 1, "12 HP: one step");
-        assert_eq!(slack_steps(0, 1, 24), 2, "24 HP: two");
-        assert_eq!(slack_steps(1, 1, 9), 1, "9 HP: the fixed step only");
-        assert_eq!(slack_steps(0, 0, 24), 0, "no rate: strict");
+        assert_eq!(slack_steps(0, 1, 12, 0, 1), 1, "12 HP: one step");
+        assert_eq!(slack_steps(0, 1, 24, 0, 1), 2, "24 HP: two");
+        assert_eq!(slack_steps(1, 1, 9, 0, 1), 1, "9 HP: the fixed step only");
+        assert_eq!(slack_steps(0, 0, 24, 0, 1), 0, "no rate: strict");
+        // By level (owner: "50 means that druids at level 3 get to slack 2").
+        assert_eq!(slack_steps(1, 0, 0, 50, 1), 1, "a Druid at CL1: its base");
+        assert_eq!(slack_steps(1, 0, 0, 50, 2), 1, "CL2: half a step, rounded down");
+        assert_eq!(slack_steps(1, 0, 0, 50, 3), 2, "CL3: slack 2");
+        assert_eq!(slack_steps(1, 0, 0, 50, 5), 3, "CL5: slack 3");
+        assert_eq!(slack_steps(2, 1, 12, 50, 3), 4, "steps, HP and level add up");
     }
 
     #[test]
