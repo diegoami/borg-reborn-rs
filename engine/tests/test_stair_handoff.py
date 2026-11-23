@@ -63,6 +63,8 @@ PINNED_TOWN_SETTINGS = [
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
+    # #1123 enabled the retreat guards after these incidents.
+    ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
     # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
     # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
     ("stair_scum", 0),
