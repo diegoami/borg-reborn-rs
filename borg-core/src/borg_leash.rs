@@ -55,8 +55,11 @@ use crate::state::BorgState;
 pub struct LeashState {
     /// `time.level` of the level the grids below belong to (`None`: none yet).
     pub level_time: Option<i32>,
-    /// Where the Borg stood at its first update on this level, (y, x).
-    pub arrival: Option<(i32, i32)>,
+    /// The grids the arrival leash measures from, (y, x): where the Borg
+    /// stood at its first update on this level, then the landing of every
+    /// jump with no known route back to these (review of #1087: a
+    /// disconnected landing area is bounded too). At most `MAX_ANCHORS`.
+    pub anchors: Vec<(i32, i32)>,
     /// Where it stood at the last update, (y, x).
     pub last: Option<(i32, i32)>,
     /// A jump of more than one grid seen by the update and not yet judged
@@ -187,8 +190,8 @@ fn leash_sources(any: bool, b_stair: i32, less: &[(i32, i32)], more: &[(i32, i32
 
 /// The verdict of the exploration leash: `stairs` is the steps from the
 /// staircases to the grid (`None`: none known, or none reachable);
-/// `arrival` gives the steps from the arrival grid (`None`: unknown or
-/// unreachable), asked only when needed. C: a grid with no staircase to
+/// `arrival` gives the steps from the nearest anchor (`LeashState::anchors`;
+/// `None`: none, or none reaches it), asked only when needed. C: a grid with no staircase to
 /// measure from is never too far. A grid the arrival grid does not reach
 /// either is not judged far (the walk back could not use it).
 fn beyond_verdict(stairs: Option<i32>, limit: i32, unknown_steps: i32, arrival: impl FnOnce() -> Option<i32>) -> bool {
@@ -319,8 +322,8 @@ pub fn beyond(st: &mut BorgState, y: i32, x: i32, b_stair: i32, limit: i32) -> b
     crate::borg_flow::borg_flow_clear(st);
     let sources = leash_sources(any, b_stair, &track_list(&st.stairs.less), &track_list(&st.stairs.more));
     let stairs = steps_from(st, y, x, &sources);
-    let arrival = st.leash.arrival;
-    beyond_verdict(stairs, limit, unknown_steps, || arrival.and_then(|a| steps_from(st, y, x, &[a])))
+    let anchors = st.leash.anchors.clone();
+    beyond_verdict(stairs, limit, unknown_steps, || steps_from(st, y, x, &anchors))
 }
 
 /// `engine::distance` from `c` to the nearest of the staircases, (y, x);
@@ -377,21 +380,63 @@ pub fn update(st: &mut BorgState) {
     let level = st.borg.time.level;
     let l = &mut st.leash;
     if l.level_time != Some(level) {
-        *l = LeashState { level_time: Some(level), arrival: Some(now), last: Some(now), ..LeashState::default() };
+        *l = LeashState { level_time: Some(level), anchors: vec![now], last: Some(now), ..LeashState::default() };
         return;
     }
     if !tracking() {
         return;
     }
+    // Review of #1087: a mark belongs to the first update after the action
+    // (or the trap's message in this one), jump or not.
+    let mark = l.cause.take();
     if let Some(d) = l.last.and_then(|last| jump(last, now)) {
-        let cause = cause_at(l.cause.take(), st.borg.time.now);
+        let cause = cause_at(mark, st.borg.time.now);
         let l = &mut st.leash;
         l.jumped = Some(match l.jumped {
             Some((j, c)) if j >= d => (j, c),
             _ => (d, cause),
         });
+        if leash_holes().unknown_stair_steps > 0 {
+            let anchors = st.leash.anchors.clone();
+            let back = steps_at(&terrain_steps(walk_here(st), &anchors), walk_here(st), now.0, now.1);
+            add_anchor(&mut st.leash.anchors, now, back.is_some());
+        }
     }
     st.leash.last = Some(now);
+}
+
+/// The most anchors the arrival leash keeps (the arrival grid and the
+/// landings with no known route back).
+const MAX_ANCHORS: usize = 16;
+
+/// A jump landed on `landing`: it becomes an anchor unless the known
+/// terrain leads back to one (`reached`), up to `MAX_ANCHORS`.
+fn add_anchor(anchors: &mut Vec<(i32, i32)>, landing: (i32, i32), reached: bool) {
+    if !reached && anchors.len() < MAX_ANCHORS && !anchors.contains(&landing) {
+        anchors.push(landing);
+    }
+}
+
+/// A "You failed ..." message: the action that marked a cause did not
+/// happen (review of #1087).
+pub fn action_failed(st: &mut BorgState) {
+    st.leash.cause = None;
+}
+
+/// The early "far while near" filters of `take_select` and the kill flow
+/// with `flow_leash_any_stair` (review of #1087): the distance
+/// (`engine::distance`, as C's) from the Borg, and from the target (y, x),
+/// to the nearest known staircase of either kind. `None`: the switch is
+/// off, or no staircase is known (C's up-staircase filter decides).
+pub fn near_far(st: &BorgState, y: i32, x: i32) -> Option<(i32, i32)> {
+    if !any_stair(st) {
+        return None;
+    }
+    let all = all_stairs(st);
+    if all.is_empty() {
+        return None;
+    }
+    Some((nearest_distance((st.borg.c.y, st.borg.c.x), &all), nearest_distance((y, x), &all)))
 }
 
 /// The verdict of `flow_leash_teleported_recall` on a jump of `jump` grids
@@ -613,11 +658,31 @@ mod tests_1062 {
         assert!(!walkable(FEAT_LAVA, false) && walkable(FEAT_LAVA, true));
     }
 
+    /// Review of #1087: a landing with no known route back is an anchor;
+    /// one the terrain leads back from is not; at most `MAX_ANCHORS`.
+    #[test]
+    fn a_disconnected_landing_is_an_anchor() {
+        let mut a = vec![(10, 10)];
+        add_anchor(&mut a, (40, 90), false);
+        assert_eq!(a, vec![(10, 10), (40, 90)]);
+        add_anchor(&mut a, (12, 20), true);
+        assert_eq!(a.len(), 2, "reached: no anchor");
+        add_anchor(&mut a, (40, 90), false);
+        assert_eq!(a.len(), 2, "no duplicate");
+        for i in 0..40 {
+            add_anchor(&mut a, (1, i), false);
+        }
+        assert_eq!(a.len(), MAX_ANCHORS);
+        // The verdict measures from the nearest anchor: 25 steps from the
+        // landing is beyond 20 even with the arrival unreachable.
+        assert!(beyond_verdict(None, 12, 20, || Some(25)));
+    }
+
     /// The default state follows nothing.
     #[test]
     fn a_fresh_state_is_empty() {
         let l = LeashState::default();
-        assert!(l.level_time.is_none() && l.arrival.is_none() && l.jumped.is_none() && l.cause.is_none());
+        assert!(l.level_time.is_none() && l.anchors.is_empty() && l.jumped.is_none() && l.cause.is_none());
         assert!(!l.recall_due && !l.return_any);
     }
 }
