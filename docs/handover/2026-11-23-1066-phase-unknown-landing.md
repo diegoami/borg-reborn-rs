@@ -7,9 +7,10 @@ assigned branch, not a `task/` name).
 
 ### What was done
 
-Two switches, each with an HP floor, all four compiled **0 / 50**, so today's
-play is kept. `harness/borg.txt` does not set them. The registry now holds
-2423 parameters (2419 before, at track-p `db23e6dc`).
+Two switches, each with an HP floor, compiled **0 / 50**, so today's play is
+kept. The review of #1075 added two more values (below). `harness/borg.txt`
+sets none of the six. The registry now holds 2425 parameters (2419 before,
+at track-p `db23e6dc`).
 
 - `escape_phase_unknown_scary` and `escape_phase_unknown_hp_percent` (50).
   In `caution_phase`, the landing check every Phase Door site asks, a
@@ -93,11 +94,69 @@ not committed (RULES 18). The canonical case for these counterfactuals
 belongs in borg-cemetery, next to the study `lvl1-deaths-trackp-206cf4e7`
 (borg-cemetery#138, open).
 
+### Review of #1075 (Codex, GitHub connector, on `e588e6ea`)
+
+The review's findings are in [#1075](https://github.com/diegoami/borg-reborn-rs/pull/1075#issuecomment-7088999549). Both are fixed in the commit after `2ef8ddf9`.
+
+1. **[P2] A ranged enemy can hit before the Borg acts again.** The wait
+   now also needs a survivable next turn (`newcomer_turn_safe`). The race's
+   HP a turn from the adjacent monsters plus the danger of the monsters at
+   range must stay below `escape_phase_newcomer_turn_percent` (100) of HP.
+   That danger is read without fear when `escape_phase_lost_damage_only` is
+   on (shipped 1), as the rule reads it.
+2. **[P2] Phase Door paths that bypass the unknown policy.** These sites
+   sample no landing: the critical phase (escape 1.2, which the emergency
+   refusal falls through to), last ditch (1.3), the twitchy ones, and
+   fast-fragile with `fast_fragile_phase_landing` 0. They now ask a
+   never-seen gate in `phase_door`, after the site's own check. It draws
+   100 landings as the landing check does (`never_seen_landings`) and
+   refuses above `escape_phase_unknown_tolerance` (75). Shoot N Scoot's
+   sampler counts never-seen grids as scary. All three read one policy
+   (`phase_unknown_policy`).
+
+   The gate decision is the pure function `unknown_gate`. Its test,
+   `the_critical_phase_after_a_refused_emergency_asks_the_gate`, plays the
+   fall-through:
+   - the Blackguard at 43/60 with 88 never-seen landings: refused;
+   - at 15/60: read, and the sampler is not run;
+   - a `Landing` or `ShootScoot` site is not gated twice.
+
+   A source pin checks the order in `phase_door` (the site's check, then the
+   gate, then the cast) and Shoot N Scoot's use of the policy. The sampler
+   itself needs the engine's RNG and bounds, so no unit test runs it; the
+   replays below do.
+
+Re-checked on the merged head: `cargo test --release -p borg-core` 721
+passed, plus fmt, clippy, the workspace tests, the citations and smoke
+(below). The replays on `206cf4e7` plus the updated patch:
+
+| arm | Priest 694417276 | Blackguard 2025089708 |
+|---|---|---|
+| control | same keys as the zoo | same keys as the zoo |
+| `newcomer_wait = 1` | the same game as before the fix (`9783cb54a70f3570`), alive | the same game (`d9921fd672ef8ed4`), alive |
+| `unknown_scary = 1` | alive to the cap, CL8 (`3fe0dd66ef85f6e6`); splits at t881 | alive to the cap, CL8 DL5 (`e29f0e8eced5f742`); splits at t7,923 |
+
+- **The wait passes the new test at both fatal moments.** The Priest's
+  apprentice is danger 8 at range (13.5 + 8 < 41). The Blackguard's two
+  monsters at range are 11 (5.5 + 11 < 42). The Priest's real loss after
+  waiting (41 to 19) came from the apprentice's blinding flash and the
+  soldier's blows while blind. The danger without fear does not price that
+  blindness, so this test cannot catch it. Reading that danger with fear
+  would refuse the wait in the Priest's case, and that is the owner's call.
+- **The gate refuses the critical Phase Door.** The Priest's game has 7
+  gate refusals (90 to 97 never seen of 100), the Blackguard's 3. The
+  Blackguard's first one is at t7,923, the same think where the emergency
+  site refused. The over-refusal is now stronger: across both sites, the
+  Priest's game refused 67 of 70 landing checks.
+
 ### Left, and for the owner
 
 - **To decide:** the unknown count's strictness. It is literal now (every
   unknown sample is scary). A softer variant would count an unknown grid as
   scary only when it borders a known floor grid, or give it a weight.
+- **To decide** (review finding 1): whether the next-turn test should read
+  the danger with fear, which prices status attacks such as the apprentice's
+  blindness. That would refuse the Priest's wait.
 - **To decide:** whether the newcomer wait should need the newcomer to be
   outside melee reach for more than one turn. Today it needs only a distance
   above 1. With the wait, the Priest's apprentice blinded it a turn later
