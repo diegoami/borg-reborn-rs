@@ -121,6 +121,9 @@ pub struct FlowState {
     /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
     /// danger (as the desperate walk); a monster on the path is the test.
     pub flight_no_danger: bool,
+    /// borg-reborn-rs (#1067): the spread running is `borg_trap_way`'s,
+    /// which crosses known traps (to reopen a way back they cut).
+    pub through_traps: bool,
     /// borg-reborn-rs (#713): the spread running is a stair flow's
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
@@ -163,6 +166,7 @@ impl Default for FlowState {
             data_icky: Vec::new(),
             hunting: false,
             flight_no_danger: false,
+            through_traps: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
             up_stair_flight: false,
@@ -626,7 +630,8 @@ fn spread_blocked(
     }
 
     /* Avoid Traps if low level-- unless brave */
-    if ag.trap && !ag.glyph && !twitchy {
+    // borg-reborn-rs (#1067): not for `trap_way_back`'s own spread.
+    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps && !crate::borg_trap_way::trap_underfoot_open(st, x, y) {
         /* Do not disarm when you could end up dead */
         if b.tr(BI_CURHP) < 60 {
             return true;
@@ -1621,6 +1626,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* Disarm */
         borg_note(st, "# Disarming a trap");
+        crate::borg_trap_way::note_disarm(st, x, y); // borg-reborn-rs (#1067)
         borg_keypress(st, keycode_t::from(b'D'));
         borg_queue_direction(st, i2d(dir));
 
@@ -2186,6 +2192,31 @@ pub(crate) fn c_leash() -> CLeash {
         take_near_max_level: value(Param::flow_leash_take_near_max_level),
         take_nearness: value(Param::flow_leash_take_nearness),
         take_max_level: value(Param::flow_leash_take_max_level),
+    }
+}
+
+/// borg-reborn-rs (#1062): the switches for the holes of C's leash
+/// (`borg_leash.rs`), read here as the registry's `flow_` file wants.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LeashHoles {
+    pub any_stair: bool,
+    pub unknown_stair_steps: i32,
+    pub teleported_recall: bool,
+    pub recall_max_level: i32,
+    pub recall_steps: i32,
+    pub recall_min_jump: i32,
+}
+
+/// The `LeashHoles` parameters, on each use (not cached).
+pub(crate) fn leash_holes() -> LeashHoles {
+    use crate::params::{value, Param};
+    LeashHoles {
+        any_stair: value(Param::flow_leash_any_stair) != 0,
+        unknown_stair_steps: value(Param::flow_leash_unknown_stair_steps),
+        teleported_recall: value(Param::flow_leash_teleported_recall) != 0,
+        recall_max_level: value(Param::flow_leash_recall_max_level),
+        recall_steps: value(Param::flow_leash_recall_steps),
+        recall_min_jump: value(Param::flow_leash_recall_min_jump),
     }
 }
 

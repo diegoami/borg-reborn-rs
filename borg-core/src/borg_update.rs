@@ -1352,6 +1352,9 @@ pub fn borg_update(st: &mut BorgState) {
         step.num = 75;
     }
 
+    // borg-reborn-rs (#1062): the leash's arrival grid and jumps.
+    crate::borg_leash::update(st);
+
     // Reset
     if reset {
         // Fake old panel

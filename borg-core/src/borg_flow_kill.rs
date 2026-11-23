@@ -2196,7 +2196,14 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         }
 
         // Skip ones that make me wander too far
-        if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        let kill_leash = st.borg.tr(BI_CLEVEL) * 5 + 9;
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, kill_leash) {
+            if st.borg.tr(BI_CLEVEL) < 10 && skip {
+                continue;
+            }
+        } else if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
             // Check the distance of this monster to the stair
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);

@@ -1042,8 +1042,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2172` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2172` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2178` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2178` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:720` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1348,9 +1348,9 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2179` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2180` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2181` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2185` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2186` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2187` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2182` |
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2183` |
 | `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2184` |
@@ -7214,6 +7214,94 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
 
+## Traps that cut the way back (#1067)
+
+The Half-Elf Warrior 1868115537 (borg-zoo run 45070528012, track-p
+`206cf4e7`, the same keys on `7a466d73`; diegoami/borg-cemetery#138, study
+`lvl1-deaths-trackp-206cf4e7`): four steps from its up staircase, at 31/31 HP,
+it set off a poison pit that filled the only corridor back. Below 60 HP every
+known trap is a wall to the flows (`spread_blocked`: C's "Avoid Traps if low
+level -- unless brave"), so the staircase became unreachable ("Bored but
+unable to flow to up stairs.", 24 times), `borg_flow_cost_stair` went "off
+leash" (#1062), and it explored on into a blinding gas trap and died 5 steps
+from the stairs. New module `borg_trap_way.rs`, run in the dungeon think
+after the attack and wear checks, before the item flows. All switches are
+compiled 0. **Shipped** by the owner on 2026-11-23 before a zoo
+measurement ("merge but set the values to try"): `trap_recover = 1`,
+`trap_way_back = 1`, `trap_leave_level_count = 2` in `harness/borg.txt`
+(`trap_leave_near_count` stays 0). Smoke plays the same keys and state as
+before (one trap note added in smoke-mage-2). The values are hypotheses
+until borg-zoo measures them (RULES 14).
+
+A trap is **set off** when the engine prints one of trap.txt's activation
+messages (`msg`, `msg-good`, `msg-bad`, `msg-xtra`; `hit_trap`, trap.c) or
+"You set off the %s!" (`do_cmd_disarm_aux`, cmd-cave.c:842-845); a unit test
+checks every trap.txt message is read. Messages another source also prints
+(the fire blow's "You are enveloped in flames!", "The ground shakes.") count
+only when the Borg then stands on a known trap. The kind it names (a pit, a
+spiked or poison pit, a blinding or confusion gas trap) is remembered by grid
+for the level.
+
+1. **Recover at the stairs** (`trap_recover`). Below `trap_recover_max_hp`
+   max HP, a trap that hurts (at the next think: HP below the maximum,
+   poisoned, cut, blind, confused or stunned) stops exploration: the Borg
+   flows to the nearest staircase it may take (up unless descent is forced;
+   down only when not rising and not refused, `more_refused`; refusing traps
+   as today), cures or rests there (`borg_recover` first, else `R&`), takes
+   it at the first threat (danger above 0 on it), and explores again whole.
+   No such staircase in reach: it rests where it stands (danger 0, not
+   hungry), curing first. The hook runs after the attack and the wear
+   checks, before the item flows, so an item cannot pull a hurt Borg away
+   (review of #1086).
+2. **Reopen the way back** (`trap_way_back`). When a spread from every known
+   staircase that refuses traps does not reach the Borg and one through them
+   does, the first trap of that route is cleared before anything else: from
+   the adjacent grid `D` (disarm) when the engine's chance (the skill less
+   depth/5, at least 2; physical for pits and gas, the lower skill for an
+   unknown kind) is at least `trap_disarm_min_percent`; else, only while rule
+   1 or 3 wants the stairs now (a walk leaves the trap where it is, and the
+   Borg would cross it back and forth to explore), `W` (walk onto it,
+   `CMD_JUMP`) when its kind is known and its worst cost (a pit 12 HP, a
+   spiked pit 48, a poison pit 84 counting cut and poison turns, gas 0) is
+   below the current HP; else, hurt, it rests first and disarms whole. Not
+   adjacent, it follows the flow through the traps (`GOAL_MISC`). Blind,
+   confused or hallucinating it rests first; without light it leaves the
+   light check to act. After `trap_disarm_max_tries` attempts on one trap
+   the rule gives up (play is then as today). With the switch on, a flow may
+   leave a trap the Borg stands on (after a `W` onto a trap that stays) but
+   enters no other (`trap_underfoot_open` in `spread_blocked`). The probe
+   counts only the staircases rule 1 may take.
+3. **Leave a trap-dense level** (`trap_leave_level_count`,
+   `trap_leave_near_count`). Below `trap_recover_max_hp`, the level's n-th
+   distinct trap set off, or the m-th within `trap_leave_radius` of the
+   Borg's first grid on the level (a separate threshold: every trap near the
+   arrival is also one of the level), makes it leave by the nearest staircase
+   it may take once it reaches one, whole first when rule 1 is on (the owner:
+   "the form of a cursed level"). A trap is placed at its own grid: a `D` or
+   `W` at its target (this module's or `borg_play_step`'s disarm); a walk
+   where the Borg then stands (a confused step may be turned,
+   cmd-cave.c:1299-1312); a teleport rune at the step's grid (`goal.g`, one
+   grid from the Borg when the message came) unless it was confused, so a
+   rune set off twice is one trap. A trap it cannot place (a disarm message
+   with no target, a confused teleport) is not counted. The cut-off probe and
+   the walk back seed the free staircases first, an occupied one only as the
+   stair flows' #597 fallback.
+
+`trap_recover_max_hp` is 60, the core's own line for a known trap and above
+every CL1-6 character; #1061's stair_scum threshold (25) would not cover this
+Warrior (31, then 57 HP). Per class with `trap_recover_max_hp__<class>`.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:341` |
+| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:389` |
+| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:285` |
+| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:625` |
+| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:610` |
+| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:343` |
+| `trap_leave_near_count` | 0 | traps | 0–100 | `borg_trap_way.rs:344` |
+| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:466` |
+
 ## #895: devices as variety (town)
 
 Owner, 2026-11-21 (#863, #895): "we are going to need space for other devices
@@ -7335,7 +7423,7 @@ piece of #1080, split out as #1085):
    cannot walk to do not use up the 16 tries.
 
 While the "wandered too far" return leash of `borg_think_dungeon` applies
-(`return_leash`: 3 x CL + 14 from the nearest up staircase, by `distance`),
+(`return_leash_with`: 3 x CL + 14 from the nearest up staircase, by `distance`; with `flow_leash_any_stair`, #1062, the walking steps to the nearest staircase of either kind),
 no target and no path grid lies past it. Without that, a target near a down
 staircase but past the return leash sent the Borg out and back: 622 returns
 in 20 games against 65 for the control, and one Necromancer at CL3 on DL1
@@ -7567,3 +7655,87 @@ two thresholds are separate (`explore_bfs_max_hp` and `stair_scum_max_hp`).
 
 **Not done here:** the fight race on the damage quantile (#1077; the existing
 race, on the mean, decides).
+
+| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:896` |
+| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:896` |
+
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:882` |
+
+## The holes in C's stair leash (#1062)
+
+From the level-1 death review of track-p `206cf4e7` (borg-zoo run
+45070528012; borg-cemetery#138). C's two stair leashes have three holes:
+they count only up staircases, so a Borg that arrives on a down staircase
+has no leash; with no staircase known or reachable there is no leash
+(`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
+measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
+can also throw a CL1 Borg far from every staircase it knows. Six parameters
+(the registry now holds **2475**, 2469 on track-p `91dd0d0a`), read in
+`leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
+compiled 0, which is C's play. **Shipped on** in `harness/borg.txt` with the
+values of the zoo arms (owner, 2026-11-23: "merge with the values to try"):
+`flow_leash_any_stair = 1`, `flow_leash_unknown_stair_steps = 20`,
+`flow_leash_teleported_recall = 1` (5, 30, 12). That is borg-zoo#719's
+`leash3` arm, unmeasured (RULES 14), and smoke-borg-rs is re-recorded.
+None acts in town, where C's leashes never act (town has no up staircase).
+
+With a switch on, distances are **walking steps over known terrain**
+(`terrain_steps`, a breadth-first search over the Borg's map, once a think
+for each set of sources): no wall, rubble or unknown grid, and no monster,
+trap or danger, which are what the Borg meets on the way, not the way. An
+unknown target grid (the dark flow's) is one step past its nearest reached
+neighbour. So a monster near a staircase, at the arrival grid or in the
+corridor back does not hide it, and an unexplored gap is not a shortcut
+(review and re-review of #1087).
+
+- **`flow_leash_any_stair`**: the exploration leash (the far-from-stairs
+  check of the dark, kill and take flows, take_select's own stair check and
+  the vein flow's) takes the steps from the nearest known staircase of
+  either kind, as do the early "far while near" filters of take_select and
+  the kill flow. The return leash ("Return to Stair", 3 x CL + 14) starts on
+  the steps to the nearest of them (a staircase across a wall is not near),
+  ends ("Close enough", under 3) on them only for a return it started (the
+  depth correction's climb ends on C's distance to an up staircase), starts
+  only on a walk the stair flows can plan (at most 249 steps; one that
+  becomes unwalkable is dropped), bounds breadth-first exploration (#1085)
+  the same way, and its
+  walk back flows to the nearest staircase of either kind
+  (`borg_flow_stair_both`) before the up staircases.
+- **`flow_leash_unknown_stair_steps`** = N: with no staircase the exploration
+  leash counts, or none reachable, it is N steps from an anchor: the grid
+  where the Borg arrived on the level while its area is connected to it, else
+  the landing of a jump with no known route back that the area is connected
+  to (at most 16, the newest always kept). The early "far while near"
+  filters measure walking steps too. The return leash has no walk to that grid and is
+  unchanged.
+- **`flow_leash_teleported_recall`**: up to `flow_leash_recall_max_level`, a
+  teleport, by its cause: a teleport trap (the message) or the Borg's own
+  Teleportation scroll, staff or activation, Teleport Self, Portal or Shadow
+  Shift, always; its own Phase Door or Dimension Door, never; a jump of
+  unknown cause (a monster's teleport-to) from `flow_leash_recall_min_jump`
+  grids (12: Phase Door asks for 9 to 11, `TELEPORT:10` randomised by a
+  quarter in `effect_handler_TELEPORT`; the trap and the scroll are
+  `TELEPORT:M80` and `:M60`), that leaves every known staircase more than
+  `flow_leash_recall_steps` steps away (or none known) reads Word of Recall
+  at the first dungeon think at danger 0, after the fights that own the
+  action.
+
+The four named seeds, replayed from birth on track-p `bc215cf8` (which ships
+`explore_breadth_first = 1`, #1088) with this change (100,000 game turns,
+local, a lead only, RULES 14; keys.log sha256 prefixes):
+
+| seed | character | shipped | `any_stair` 1 | `unknown_stair_steps` 20 | `teleported_recall` 1 | all three |
+|---|---|---|---|---|---|---|
+| 592754909 | Kobold Mage | alive CL5 `5d2d6844` | alive CL5 `fbeaff39` | = shipped | = shipped | alive CL5 `fbeaff39` |
+| 645909552 | Dwarf Mage | alive CL5 `0bc0bf21` | alive CL4 `e634cb27` | alive CL4 `6e3f27ac` | alive CL4 `ff452067` | alive CL5 `4acd96d2` |
+| 526144893 | Human Ranger | alive CL4 `c1d0ce93` | alive CL5 `4ec45594` | alive CL5 `e3622e2f` | = shipped | alive CL5 `4ec45594` |
+| 1024822556 | Dunadan Druid | alive CL6 `f3d29211` | alive CL6 `90c0127a` | alive CL6 `224787c1` | alive CL4 `c5311c09` | alive CL4 `16838cba` |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2214` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2215` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2216` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2211` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2212` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2213` |
