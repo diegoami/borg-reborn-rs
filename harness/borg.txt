@@ -318,6 +318,19 @@ borg_param_town_device_detect = 5
 borg_param_town_device_control = 5
 borg_param_town_device_escape_min_gold = 3000
 
+# The Black Market opens above a purse (#1103, owner: "keep and buy whenever
+# it finds on the black market up from a certain budget"; "flat 6000 starting
+# with a level negative delta of 100"): below max(0, town_black_market_min_gold
+# - town_black_market_level_delta x character level) gold the Borg buys
+# nothing there; above it the spending cap (borg_black_market_max_percentage
+# of the gold above borg_sum_excluded_from_black_market) applies as before.
+# Every ware the planner values at the Black Market is then bought at its 2x
+# price: the potions, staves, rods and wands the core uses, and armour, rings
+# and amulets that raise borg_power (a resistance or an ability not worn yet).
+# 0 = no threshold. Hypotheses, not yet measured in the zoo.
+borg_param_town_black_market_min_gold = 6000
+borg_param_town_black_market_level_delta = 100
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
@@ -392,9 +405,15 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
-# Restore Life Levels reserve for measurement (#978). Zero disables retention;
-# the healthy-character junk-quaff guard applies at every setting.
-borg_param_town_restore_life_reserve = 0
+# Restore Life Levels reserve (#978; shipped 1 by #1103, owner: "keep and buy
+# whenever it finds on the black market"): from maximum depth 12, without a
+# repeatable restoration, the Borg keeps one potion, bought wherever it is
+# cheapest (the Alchemist 400 gold, the Black Market 800 when the Alchemist is
+# out, above town_black_market_min_gold). Without it a potion carried undrained
+# is worth nothing and is sold, to be bought again after the next drain. Zero
+# disables retention; the healthy-character junk-quaff guard applies at every
+# setting.
+borg_param_town_restore_life_reserve = 1
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).

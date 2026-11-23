@@ -59,6 +59,9 @@ PINNED_TOWN_SETTINGS = [
     ("cave_light_engine_radius", 0),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
+    # #1103 shipped the Black Market threshold and the Restore Life Levels
+    # reserve after these incidents.
+    ("town_black_market_min_gold", 0), ("town_restore_life_reserve", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

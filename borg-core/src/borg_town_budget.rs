@@ -269,7 +269,7 @@ impl Budget {
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
         );
         let black_market_reserve = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET)).max(0);
-        let percentage = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
+        let percentage = black_market_percentage(st, facts.gold);
         let market_gold = black_market_budget(facts.gold, black_market_reserve, percentage, 0);
         let recall_urgent = crate::borg_town_utility::recall_urgent(st);
         let mut budget = Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
@@ -291,6 +291,33 @@ impl Budget {
 pub(crate) fn is_recall_scroll(st: &BorgState, tval: u8, sval: u8) -> bool {
     u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
         && i32::from(sval) == st.item_val.sv_scroll_word_of_recall
+}
+
+/// borg-reborn-rs (#1103, owner: "keep and buy whenever it finds on the black
+/// market up from a certain budget"; "flat 6000 starting with a level negative
+/// delta of 100"): the purse the Black Market opens at for a character level,
+/// `max(0, town_black_market_min_gold - town_black_market_level_delta x level)`.
+/// 0 when `town_black_market_min_gold` is 0 (no threshold).
+pub(crate) fn black_market_threshold(min_gold: i64, delta: i64, level: i64) -> i64 {
+    if min_gold <= 0 { return 0; }
+    (min_gold - delta.max(0) * level.max(0)).max(0)
+}
+
+/// The Black Market's spending share (`borg_black_market_max_percentage`) at
+/// this purse: 0 below the threshold (nothing is bought there, the urgent
+/// needs included, as for any purse the cap leaves nothing of), the configured
+/// share above it. The planner, its record and the live purchase all read it
+/// here, so a replay sees what the game saw.
+pub(crate) fn black_market_percentage(st: &BorgState, gold: i64) -> i64 {
+    use crate::params::{value, Param};
+    black_market_share(
+        i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE)), gold,
+        i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLEVEL)),
+        i64::from(value(Param::town_black_market_min_gold)), i64::from(value(Param::town_black_market_level_delta)))
+}
+
+pub(crate) fn black_market_share(percentage: i64, gold: i64, level: i64, min_gold: i64, delta: i64) -> i64 {
+    if gold < black_market_threshold(min_gold, delta, level) { 0 } else { percentage }
 }
 
 pub(crate) fn black_market_budget(gold: i64, reserve: i64, percentage: i64, legacy_share: i64) -> i64 {
@@ -521,6 +548,27 @@ mod tests {
         let b = Budget::build(&facts(10_000), &s, &[Need::Light, Need::Healing], serves);
         assert_eq!(b.urgent.len(), 1);
         assert_eq!(b.unmet, [Need::Healing]);
+    }
+
+    /// #1103 (owner: flat 6000, a level negative delta of 100): the purse the
+    /// Black Market opens at.
+    #[test]
+    fn the_black_market_opens_at_a_threshold_that_falls_with_level() {
+        assert_eq!(black_market_threshold(6000, 100, 1), 5900);
+        assert_eq!(black_market_threshold(6000, 100, 30), 3000);
+        assert_eq!(black_market_threshold(6000, 100, 50), 1000);
+        assert_eq!(black_market_threshold(6000, 100, 80), 0, "never below zero");
+        assert_eq!(black_market_threshold(6000, 0, 50), 6000, "delta 0: flat");
+        assert_eq!(black_market_threshold(0, 100, 10), 0, "min_gold 0: no threshold");
+        assert_eq!(black_market_threshold(6000, -5, 10), 6000, "a negative delta is none");
+        // The share: nothing below the purse, the configured one from it.
+        assert_eq!(black_market_share(60, 5999, 1, 6000, 0), 0);
+        assert_eq!(black_market_share(60, 6000, 1, 6000, 0), 60);
+        assert_eq!(black_market_share(60, 2999, 30, 6000, 100), 0, "level 30 opens at 3000");
+        assert_eq!(black_market_share(60, 3000, 30, 6000, 100), 60);
+        assert_eq!(black_market_share(-1, 100, 30, 0, 100), -1, "no threshold: the legacy share, unconfigured");
+        assert_eq!(black_market_share(-1, 100, 30, 6000, 100), 0, "below it even an unconfigured share is closed");
+        assert_eq!(black_market_share(-1, 9000, 30, 6000, 100), -1);
     }
 
     /// The urgent needs take the cheapest source, Black Market included - they
