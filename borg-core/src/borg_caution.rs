@@ -2279,6 +2279,12 @@ pub(crate) fn stairs_immobile_reach_on() -> bool {
     p(Param::caution_stairs_immobile_reach) != 0
 }
 
+/// borg-reborn-rs (#931, second review of #965): the most extra steps the
+/// reach-free route may cost over the ordinary one (0: no limit).
+pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
+    p(Param::caution_stairs_immobile_reach_extra_steps)
+}
+
 /// borg-reborn-rs (#931): grid (`y`, `x`) is next to a known immobile
 /// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
 /// 1621-1644).

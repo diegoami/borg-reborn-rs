@@ -267,54 +267,53 @@ fn weighted_route(
     // run. The danger weight charged their reach too little (a white jelly
     // beside the route cost 2.9 steps at full HP, seed 829474344).
     let on = crate::borg_caution::stairs_immobile_reach_on();
-    let route = prefer_reach_free(
-        on,
-        |st: &mut BorgState| weighted_route_with(st, kinds, depth, avoid, sneak, weight, true),
-        |st: &mut BorgState| weighted_route_with(st, kinds, depth, avoid, sneak, weight, false),
-        st,
-    );
-    if on && note {
-        if let Ok(Some(path)) = &route {
-            note_reach_avoided(st, path, kinds, depth, avoid, sneak, weight);
+    let plain = weighted_route_with(st, kinds, depth, avoid, sneak, weight, false);
+    if !on {
+        return plain;
+    }
+    let reach_free = weighted_route_with(st, kinds, depth, avoid, sneak, weight, true);
+    let budget = crate::borg_caution::stairs_immobile_reach_extra_steps();
+    let plain_grids = match (&plain, note) {
+        (Ok(Some(path)), true) => path.grids.clone(),
+        _ => Vec::new(),
+    };
+    let (route, avoided) = prefer_reach_free(reach_free, plain, budget, |r: &borg_flow::StairPath| r.cost, |a, b| a.grids == b.grids);
+    if note && avoided {
+        // Only a flight step that keeps out of a reach the ordinary route
+        // enters is noted (a probe passes note = false).
+        let taken = matches!(&route, Ok(Some(path)) if path.grids.len() >= 2);
+        let entered = plain_grids.iter().skip(1).find_map(|grid| crate::borg_caution::immobile_reach_of(st, grid.y, grid.x));
+        if let (true, Some(k)) = (taken, entered) {
+            let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+            borg_io::borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
         }
     }
     route
 }
 
-/// borg-reborn-rs (#931, review of #965): the reach-free route when one is
-/// usable (`Ok(Some)`), else the ordinary one. Off: the ordinary one only.
-fn prefer_reach_free<S, T>(
-    on: bool,
-    reach_free: impl FnOnce(&mut S) -> Result<Option<T>, usize>,
-    plain: impl FnOnce(&mut S) -> Result<Option<T>, usize>,
-    st: &mut S,
-) -> Result<Option<T>, usize> {
-    if on {
-        if let Ok(Some(route)) = reach_free(st) {
-            return Ok(Some(route));
-        }
-    }
-    plain(st)
-}
-
-/// borg-reborn-rs (#931, review of #965): note the chosen flight route only
-/// when it takes a step and the ordinary route would have entered the reach
-/// of an immobile attacker (so a reachability probe, a Borg already on its
-/// staircase or a route that never passed one write nothing).
-fn note_reach_avoided(st: &mut BorgState, path: &borg_flow::StairPath, kinds: &[Which], depth: i32, avoid: bool, sneak: bool, weight: i32) {
-    if path.grids.len() < 2 {
-        return;
-    }
-    let Ok(Some(plain)) = weighted_route_with(st, kinds, depth, avoid, sneak, weight, false) else {
-        return;
+/// borg-reborn-rs (#931, reviews of #965): the reach-free route when it is
+/// usable (`Ok(Some)`) and costs at most `budget_steps` more than the
+/// ordinary route (0: any cost; a cost is in hundredths of a step); else the
+/// ordinary route. The flag says the reach-free route was taken and differs
+/// from the ordinary one.
+fn prefer_reach_free<T>(
+    reach_free: Result<Option<T>, usize>,
+    plain: Result<Option<T>, usize>,
+    budget_steps: i32,
+    cost: impl Fn(&T) -> u64,
+    same: impl Fn(&T, &T) -> bool,
+) -> (Result<Option<T>, usize>, bool) {
+    let Ok(Some(free)) = reach_free else {
+        return (plain, false);
     };
-    let entered = plain.grids.iter().skip(1).find_map(|grid| crate::borg_caution::immobile_reach_of(st, grid.y, grid.x));
-    if let Some(k) = entered {
-        if plain.grids != path.grids {
-            let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
-            borg_io::borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
-        }
+    let Ok(Some(ordinary)) = &plain else {
+        return (Ok(Some(free)), false);
+    };
+    if budget_steps > 0 && cost(&free) > cost(ordinary).saturating_add(100 * budget_steps as u64) {
+        return (plain, false);
     }
+    let differs = !same(&free, ordinary);
+    (Ok(Some(free)), differs)
 }
 
 /// `weighted_route`'s search; with `keep_out`, every square next to a known
@@ -1301,28 +1300,32 @@ mod up_search_handoff_tests {
 mod reach_preference_tests {
     use super::prefer_reach_free;
 
-    fn pick(on: bool, reach_free: Result<Option<&'static str>, usize>, plain: Result<Option<&'static str>, usize>) -> (Result<Option<&'static str>, usize>, u32) {
-        let mut calls = 0u32;
-        let r = prefer_reach_free(on, |c: &mut u32| { *c += 10; reach_free }, |c: &mut u32| { *c += 1; plain }, &mut calls);
-        (r, calls)
+    fn pick(free: Result<Option<u64>, usize>, plain: Result<Option<u64>, usize>, budget: i32) -> (Result<Option<u64>, usize>, bool) {
+        // A route is its cost here, in hundredths of a step.
+        prefer_reach_free(free, plain, budget, |c: &u64| *c, |a, b| a == b)
     }
 
     #[test]
     fn a_usable_reach_free_route_wins() {
-        assert_eq!(pick(true, Ok(Some("detour")), Ok(Some("past the jelly"))), (Ok(Some("detour")), 10));
+        assert_eq!(pick(Ok(Some(4000)), Ok(Some(3600)), 0), (Ok(Some(4000)), true));
+        assert_eq!(pick(Ok(Some(3600)), Ok(Some(3600)), 0), (Ok(Some(3600)), false), "the same route: nothing avoided");
     }
 
     #[test]
     fn a_blocked_reach_free_route_falls_back_to_the_clean_plain_one() {
-        // Review of #965: the only reach-free route is refused by the clean-path
-        // check (a dangerous mobile monster on it): the ordinary clean route is used.
-        assert_eq!(pick(true, Err(7), Ok(Some("past the jelly"))), (Ok(Some("past the jelly")), 11));
-        assert_eq!(pick(true, Ok(None), Ok(Some("past the jelly"))), (Ok(Some("past the jelly")), 11));
-        assert_eq!(pick(true, Err(7), Err(9)), (Err(9), 11), "the ordinary result, blocker and all");
+        // First review of #965: the only reach-free route is refused by the
+        // clean-path check; the ordinary clean route is used.
+        assert_eq!(pick(Err(7), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Ok(None), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Err(7), Err(9), 0), (Err(9), false), "the ordinary result, blocker and all");
     }
 
     #[test]
-    fn off_runs_only_the_ordinary_search() {
-        assert_eq!(pick(false, Ok(Some("detour")), Ok(Some("plain"))), (Ok(Some("plain")), 1));
+    fn a_detour_past_the_budget_is_not_taken() {
+        // Second review of #965: a 180-step detour against a 2-step route.
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 20), (Ok(Some(200)), false));
+        assert_eq!(pick(Ok(Some(2_200)), Ok(Some(200)), 20), (Ok(Some(2_200)), true), "exactly 20 extra steps");
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 0), (Ok(Some(18_000)), true), "0: no budget");
+        assert_eq!(pick(Ok(Some(18_000)), Err(3), 20), (Ok(Some(18_000)), false), "no ordinary route to compare");
     }
 }

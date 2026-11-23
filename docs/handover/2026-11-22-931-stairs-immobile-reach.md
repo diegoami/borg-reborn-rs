@@ -30,3 +30,12 @@ the ordinary route would enter, never from the reachability probe or a zero-step
 path (finding 3). The choice is unit-tested (`prefer_reach_free`). Merged
 `track-p` (`7afbdd67`). The rebase note above understated the conflicts: they
 are in `params.rs` and `CALIBRATION.md`, chiefly citation lines.
+
+**Second review fixes (MiniMax review of `521fe89e`).** A detour limit:
+`caution_stairs_immobile_reach_extra_steps` (shipped 20, read only with the
+switch on) takes the reach-free route only when it costs at most that many steps
+more than the ordinary route, so a long detour no longer replaces a short route
+past the jelly (finding 2). Both searches now run when the switch is on (the
+ordinary one is needed for the comparison), and the note reuses that ordinary
+route instead of searching a third time. Unit tests cover the limit, its edge
+and 0 = no limit. 20 is a hypothesis; the zoo has not measured it.
