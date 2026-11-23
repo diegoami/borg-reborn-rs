@@ -990,6 +990,7 @@ borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
 
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
+borg_param_light_hallway_repeat_guard = 1
 borg_param_light_detect_dark_entry = 0
 borg_param_light_detect_dark_entry_reserve_sp = 2
 
@@ -1299,6 +1300,21 @@ borg_param_caution_stairs_immobile_reach_extra_steps = 20
 borg_param_escape_paralyser_fight_lost = 0
 borg_param_caution_paralyser_step_away = 0
 borg_param_caution_paralyser_no_reach = 0
+# #1147 (owner: "a list of 'walk_away immobile monster' ... with the eye, the
+# patch and the jelly"; borg-zoo#740: 18 patch deaths confused beside the
+# patch, attacking it). 1 = the scary list's `ranged` entries that never move
+# (and #1125's paralysers without Free Action) are never meleed or walked to,
+# no flow enters their reach (stair flights included), and next to one the
+# first action is to leave: up the staircase underfoot, else a step to the
+# best square (a clean way to the stairs, then away from movers, then toward a
+# room exit, then free space). Cornered, a blow is the last resort. Shipped
+# on by the owner (2026-11-23, merge of #1148) before a zoo measurement: in
+# 60 patches-x8 replays 55 games changed, 1 death against 0, 6 reached DL3
+# against 10. 0 = the play before #1147.
+borg_param_caution_walk_away_immobile = 1
+# #1147 (review of #1148): cornered next to a walk-away monster and not
+# confused, Phase Door by spell up to this failure rate before a blow.
+borg_param_caution_walk_away_phase_fail = 30
 borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
