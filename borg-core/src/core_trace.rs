@@ -257,7 +257,25 @@ pub(crate) fn begin() -> bool {
     true
 }
 
+thread_local! {
+    /// borg-reborn-rs (#1153): the last checks chosen, newest last, kept
+    /// whether or not the trace is written (the loop detector's note).
+    static RECENT: RefCell<std::collections::VecDeque<&'static str>> = const { RefCell::new(std::collections::VecDeque::new()) };
+}
+
+/// #1153: the last (up to 4) checks chosen, oldest first.
+pub(crate) fn recent_choices() -> Vec<&'static str> {
+    RECENT.with(|r| r.borrow().iter().copied().collect())
+}
+
 pub(crate) fn selected(name: &'static str, source: &'static str) {
+    RECENT.with(|r| {
+        let mut r = r.borrow_mut();
+        r.push_back(name);
+        while r.len() > 4 {
+            r.pop_front();
+        }
+    });
     FRAMES.with(|frames| {
         if let Some(frame) = frames.borrow_mut().last_mut() {
             frame.name = Some(name);
