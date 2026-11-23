@@ -7005,7 +7005,10 @@ frail races (Hobbit, Kobold) than for the sturdy ones (Half-Troll). A delta
 of half the gain makes the threshold grow almost as fast as the HP of a small
 hit die: a Hobbit Mage would stay breadth-first to CL12.
 
-**A first list** (hypotheses for the zoo, not shipped). For each class, the
+**The shipped list** (owner, 2026-11-23: "ship it like that ... turn it on by
+default": `explore_breadth_first = 1` in `harness/borg.txt`, these values in
+the class files; compiled 0, so a profile without them plays C's order). It is
+not measured yet (RULES 14): borg-zoo compares it with the control. For each class, the
 target is the last CL with at least one DL1 death per 100 games that reached
 it, in #1080's pooled table. That table pools every build, and recent runs are
 5–10 times lower, so the cut at 1 per 100 is itself a hypothesis. The delta is
@@ -7025,9 +7028,9 @@ between the mean max HP at the target and the next CL (CON ignored):
 | blackguard | 18 | 1 | 20 | 2 | CL1 | CL1–2 |
 
 The race delta of #1061's threshold (`__<race>`) is not part of this change:
-the suffix is #1061's, and this threshold takes it when that lands. All
-values ship off; borg-zoo measures them alone, with `stair_scum` and for all
-characters (#1085's arms: `explore_bfs_max_hp` 20, 25 and 30). With this
+the suffix is #1061's, and this threshold takes it when that lands.
+borg-zoo measures the shipped list against `explore_breadth_first = 0`, and
+the arms of #1085 (`explore_bfs_max_hp` 20, 25 and 30). With this
 section the registry holds **2435** parameters (`track-p` `09580159` plus the four
 below).
 
