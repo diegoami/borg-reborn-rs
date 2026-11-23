@@ -44,9 +44,9 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL, RF_MULTIPLY, RF_NEVER_MOVE, RF_PASS_WALL};
 use crate::headers::list_player_flags_h::PF_COMBAT_REGEN;
 use crate::headers::list_terrain_h::{
-    FEAT_BROKEN, FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K,
-    FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K,
-    FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_BROKEN, FEAT_CLOSED, FEAT_FLOOR, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA,
+    FEAT_MAGMA_K, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM, FEAT_QUARTZ,
+    FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
@@ -56,7 +56,7 @@ use crate::engine;
 /// Goals (borg-flow.h).
 const GOAL_TAKE: i32 = 2;
 const GOAL_MISC: i32 = 3;
-const GOAL_XTRA: i32 = 5;
+pub(crate) const GOAL_XTRA: i32 = 5;
 const GOAL_VAULT: i32 = 8;
 const GOAL_RECOVER: i32 = 9;
 
@@ -68,6 +68,9 @@ const TRACK_SHOP_SIZE: usize = 9;
 
 /// `track_vein` allocation size (`borg_init_flow_misc()`).
 const TRACK_VEIN_SIZE: i16 = 100;
+
+/// The recorded floor-search loop spanned three squares (#1131).
+const FLOOR_SEARCH_REVERSAL_MAX_STEPS: u8 = 2;
 
 /// borg-flow-misc.c globals and file statics.
 #[derive(Default)]
@@ -83,6 +86,10 @@ pub struct FlowMiscState {
     pub spastic_x: u8,
     /// `spastic_y`
     pub spastic_y: u8,
+    /// Whether the search started within two flow steps of its target.
+    pub spastic_local: bool,
+    /// The square a local search flow tried to enter its target from.
+    pub spastic_approach: Option<loc>,
 }
 
 /// `borg_timer(t)`: game turns since `t`.
@@ -662,31 +669,51 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
     Some(v)
 }
 
-/// Count the staircase search when exploration immediately reverses it.
-pub(crate) fn notice_reversed_stair_search(st: &mut BorgState, next: loc) {
+/// Count a reached floor search when exploration doubles back (#1131).
+/// At an up staircase, keep the immediate reversal check from #1106.
+pub(crate) fn notice_interrupted_spastic_search(st: &mut BorgState, next: loc) {
+    let here = (st.borg.c.y, st.borg.c.x);
+    let feat = u32::from(st.cave.grid(here.1, here.0).feat);
+    if feat == FEAT_FLOOR {
+        if st.flow_misc.spastic_approach == Some(next) {
+            notice_spastic_arrival(st);
+        }
+        return;
+    }
+
     let trail = &st.flow.track_step;
     let n = trail.num as usize;
-    let here = (st.borg.c.y, st.borg.c.x);
-    if n >= 3 && trail.at(n - 1) == here && trail.at(n - 3) == here
+    if feat == FEAT_LESS && n >= 3
+        && trail.at(n - 1) == here && trail.at(n - 3) == here
         && trail.at(n - 2) == (next.y, next.x)
-        && u32::from(st.cave.grid(here.1, here.0).feat) == FEAT_LESS
     {
         notice_spastic_arrival(st);
     }
 }
 
+fn is_spastic_target(st: &BorgState, grid: loc) -> bool {
+    st.flow_misc.spastic_x != 0
+        && i32::from(st.flow_misc.spastic_x) == grid.x
+        && i32::from(st.flow_misc.spastic_y) == grid.y
+}
+
+/// Remember the last step into a secret-door search target.
+pub(crate) fn record_spastic_approach(st: &mut BorgState, next: loc) {
+    if st.flow_misc.spastic_local && is_spastic_target(st, next) {
+        st.flow_misc.spastic_approach = Some(st.borg.c);
+    }
+}
+
 /// Record arrival at the secret-door search destination.
 fn notice_spastic_arrival(st: &mut BorgState) -> bool {
-    let (x, y) = (st.borg.c.x, st.borg.c.y);
-    if st.flow_misc.spastic_x == 0
-        || i32::from(st.flow_misc.spastic_x) != x
-        || i32::from(st.flow_misc.spastic_y) != y
-    {
+    if !is_spastic_target(st, st.borg.c) {
         return false;
     }
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
 
     st.flow_misc.spastic_x = 0;
     st.flow_misc.spastic_y = 0;
+    st.flow_misc.spastic_approach = None;
     let xtra = st.cave.grid(x, y).xtra;
     borg_note(st, &format!("# Spastic Searching at ({x},{y})...value:{xtra}"));
 
@@ -873,6 +900,7 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Memorize */
     st.flow_misc.spastic_x = b_x as u8;
     st.flow_misc.spastic_y = b_y as u8;
+    st.flow_misc.spastic_approach = None;
 
     /* Enqueue the grid */
     borg_flow_enqueue_grid(st, b_y, b_x);
@@ -880,6 +908,10 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Spread the flow */
     borg_flow_spread(st, 250, true, false, false, -1, false);
 
+    // Counting every departure changed ordinary search routing. Count the
+    // short return over the approach step that closes the recorded loop.
+    st.flow_misc.spastic_local =
+        st.flow.cost_at(st.borg.c.y, st.borg.c.x) <= FLOOR_SEARCH_REVERSAL_MAX_STEPS;
     commit_and_step(st, c"spastic", GOAL_XTRA)
 }
 

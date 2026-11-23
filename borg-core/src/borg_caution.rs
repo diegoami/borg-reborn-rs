@@ -2245,6 +2245,17 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
 /// `caution_immobile_step_to_exit` (#736) and `caution_immobile_step_mobile_first`
 /// (#837); records nothing (`cure_held_for_step` asks it too).
 fn best_step_away(st: &mut BorgState) -> Option<usize> {
+    best_step_away_from(st, false)
+}
+
+/// `best_step_away`; borg-reborn-rs (#1125): with `paralyser`, the step out
+/// of a never-moving paralyser's reach: a grid as dangerous as this one
+/// qualifies too (a sleeping paralyser adds no danger here, yet its reach is
+/// still to be left), and the bounce test does not apply (one step out of a
+/// monster that never moves cannot bounce; the 400-turn flow loop of seed
+/// 453254028 had already raised the anti-bounce count past its limit, which
+/// refused every grid).
+fn best_step_away_from(st: &mut BorgState, paralyser: bool) -> Option<usize> {
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     // Review of #659: only a grid less dangerous than this one, and not the
     // grid of a bounce (as the back-away).
@@ -2261,14 +2272,14 @@ fn best_step_away(st: &mut BorgState) -> Option<usize> {
         let x = cx + i32::from(engine::ddx_ddd(i));
         let y = cy + i32::from(engine::ddy_ddd(i));
         let ag = *st.cave.grid(x, y);
-        if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) || bouncing(st, y, x) {
+        if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) || (!paralyser && bouncing(st, y, x)) {
             continue;
         }
         if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() {
             continue;
         }
         let k = borg_danger(st, y, x, 1, true, false);
-        if k >= here {
+        if !step_danger_ok(k, here, paralyser) {
             continue;
         }
         // #837: with `caution_immobile_step_mobile_first`, the danger from the
@@ -2280,6 +2291,13 @@ fn best_step_away(st: &mut BorgState) -> Option<usize> {
         }
     }
     best.map(|(i, _)| i)
+}
+
+/// A step away goes only to a grid less dangerous than this one (review of
+/// #659); borg-reborn-rs (#1125): out of a paralyser's reach (`paralyser`),
+/// as dangerous qualifies too.
+fn step_danger_ok(there: i32, here: i32, paralyser: bool) -> bool {
+    there < here || (paralyser && there == here)
 }
 
 /// The common start of the retreat and back-away tests: some danger and
@@ -2634,6 +2652,150 @@ pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
 /// to the ordinary search.
 pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     immobile_attacker_next_to(st, y, x)
+}
+
+/// borg-reborn-rs (#1125): race `r_idx` has a `PARALYZE` blow (27 races in
+/// `monster.txt` at 574b618c, from the floating eye at DL1,
+/// `monster.txt:694-708`). Not the placeholder race past the last one (#726).
+pub(crate) fn race_paralyses(r_idx: usize) -> bool {
+    r_idx != 0
+        && engine::r_max() != 0
+        && r_idx < usize::from(engine::r_max()) - 1
+        && !engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW)
+        && (0..usize::from(engine::z_info().mon_blows_max))
+            .any(|k| engine::race_blow_effect_name(r_idx, k) == Some(b"PARALYZE".as_slice()))
+}
+
+/// borg-reborn-rs (#1125): a paralyser is a lock for this Borg: no Free
+/// Action (`BI_FRACT`). `mon-blows.c:1017-1025` (574b618c): a PARALYZE blow
+/// sets `TMD_PARALYZED` for 3 + 1d(rlev) turns, failed by `OF_FREE_ACT` or a
+/// saving throw ("You resist the effects!"), and does at least 1 damage on a
+/// paralysed player; `player_timed.txt:216-222`: `NONSTACKING`, so a
+/// paralyser as fast as the Borg strikes again as each paralysis ends.
+fn paralysis_locks(st: &BorgState) -> bool {
+    st.borg.tr(crate::borg_headers::borg_trait_h::BI_FRACT) == 0
+}
+
+/// borg-reborn-rs (#1125, owner: "from paralyzing monsters it is necessary
+/// to walk away"): the first known monster with a PARALYZE blow on grid
+/// (`y`, `x`) or next to it, by kill index, when the Borg has no Free Action.
+/// `awake_only` keeps the sleeping ones out; `never_move_only` keeps only
+/// those that never move (`NEVER_MOVE`, for which one step out of reach is a
+/// full escape).
+fn paralyser_next_to(st: &BorgState, y: i32, x: i32, awake_only: bool, never_move_only: bool) -> Option<usize> {
+    let kills = &st.kills.kills[..usize::try_from(st.kills.nxt).unwrap_or(0).min(st.kills.kills.len())];
+    paralyser_among(
+        kills,
+        (y, x),
+        !paralysis_locks(st),
+        (awake_only, never_move_only),
+        |r| race_paralyses(r),
+        |r| engine::race_flag_has(r, RF_NEVER_MOVE),
+    )
+}
+
+/// `paralyser_next_to` with the race facts given (#1125's decision tests):
+/// the first record, by index from 1, of a live monster on grid `at`
+/// (`y`, `x`) or next to it that `paralyses` (and, with `never_move_only`,
+/// `never_moves`; with `awake_only`, is awake). None with Free Action.
+fn paralyser_among(
+    kills: &[crate::borg_flow_kill::BorgKill],
+    at: (i32, i32),
+    free_action: bool,
+    (awake_only, never_move_only): (bool, bool),
+    paralyses: impl Fn(usize) -> bool,
+    never_moves: impl Fn(usize) -> bool,
+) -> Option<usize> {
+    if free_action {
+        return None;
+    }
+    let (y, x) = at;
+    (1..kills.len()).find(|&i| {
+        let kill = &kills[i];
+        let r_idx = usize::from(kill.r_idx);
+        r_idx != 0
+            && (kill.awake || !awake_only)
+            && (i32::from(kill.pos.y) - y).abs() <= 1
+            && (i32::from(kill.pos.x) - x).abs() <= 1
+            && (!never_move_only || never_moves(r_idx))
+            && paralyses(r_idx)
+    })
+}
+
+/// borg-reborn-rs (#1125, point 1, read by `escape_paralyser_fight_lost`):
+/// an awake known paralyser is next to the Borg, in the dungeon, and the Borg
+/// has no Free Action: the fight is lost whatever the danger says (the
+/// floating eye's gaze has no dice, so the danger without fear is 0,
+/// `borg_danger.rs:479`). Returns the paralyser's kill index.
+pub(crate) fn awake_paralyser_adjacent(st: &BorgState) -> Option<usize> {
+    if st.borg.tr(BI_CDEPTH) == 0 {
+        return None;
+    }
+    paralyser_next_to(st, st.borg.c.y, st.borg.c.x, true, false)
+}
+
+/// borg-reborn-rs (#1125, point 3): `caution_paralyser_no_reach`. Grid (`x`,
+/// `y`) is the grid of a known paralyser, or next to it, and the Borg has no
+/// Free Action: no flow enters it (`spread_blocked`), stair flights included.
+/// Sleeping and moving ones count. Off: no scan.
+pub(crate) fn in_paralyser_reach(st: &BorgState, x: i32, y: i32) -> bool {
+    if p(Param::caution_paralyser_no_reach) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    paralyser_next_to(st, y, x, false, false).is_some()
+}
+
+/// borg-reborn-rs (#1125, point 4): `caution_remember_never_move`. A
+/// never-moving monster's record is kept on its level through the
+/// anti-bounce reset (`borg_check_bounciness`) and the expiry of old records
+/// (`expire_kills`), until it is seen dead or gone. Race `r_idx` qualifies.
+pub(crate) fn remember_never_move(r_idx: usize) -> bool {
+    p(Param::caution_remember_never_move) != 0
+        && r_idx != 0
+        && engine::r_max() != 0
+        && r_idx < usize::from(engine::r_max()) - 1
+        && engine::race_flag_has(r_idx, RF_NEVER_MOVE)
+}
+
+/// borg-reborn-rs (#1125): the next free index (`kills.nxt`) once the
+/// records past the last live one are gone: 1 when none is left.
+pub(crate) fn kills_tail(kills: &[crate::borg_flow_kill::BorgKill], nxt: i16) -> i16 {
+    let mut n = nxt.clamp(1, i16::try_from(kills.len()).unwrap_or(i16::MAX));
+    while n > 1 && kills[(n - 1) as usize].r_idx == 0 {
+        n -= 1;
+    }
+    n
+}
+
+/// borg-reborn-rs (#1125, point 2): `caution_paralyser_step_away`. Next to a
+/// known paralyser that never moves, without Free Action, the first action
+/// is a step to a grid out of its reach (out of every immobile attacker's
+/// reach, not more dangerous than this one, whatever the anti-bounce count;
+/// toward the nearest staircase with `caution_immobile_step_to_exit`):
+/// before an attack, a rest, a cure
+/// or a Phase Door (`borg_think_dungeon` asks it before the early fight).
+/// One step out of a `NEVER_MOVE` monster's reach ends its threat
+/// (`mon-move.c:1586`, `1621-1644`: it hits only its eight neighbours).
+/// Sleeping ones count (a floating eye has `sleepiness:10`). No step count:
+/// the flows can lead back unless `caution_paralyser_no_reach` closes the
+/// reach. Returns whether the Borg acted.
+pub(crate) fn paralyser_step_away(st: &mut BorgState) -> bool {
+    if p(Param::caution_paralyser_step_away) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let Some(who) = paralyser_next_to(st, cy, cx, false, true) else {
+        return false;
+    };
+    let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[who].r_idx))).into_owned();
+    let Some(i) = best_step_away_from(st, true) else {
+        borg_note(st, &format!("# Next to the paralysing {name} without Free Action: no grid out of its reach (#1125)"));
+        return false;
+    };
+    borg_note(st, &format!("# Stepping out of the reach of the paralysing {name}, no Free Action (#1125)"));
+    borg_keypress(st, i2d(i32::from(engine::ddd(i))));
+    st.borg.goal.type_0 = 0;
+    true
 }
 
 
@@ -3574,6 +3736,13 @@ mod category_threat_tests {
 /// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
 /// the winning fight (#759).
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1125, review of #1129, finding 2): with
+    // `escape_paralyser_fight_lost`, next to an awake paralyser the early
+    // fight waits: caution and its escapes decide first (an equal-speed
+    // homunculus drew `lone_slow_attack` ahead of the Phase rule).
+    if crate::borg_escape::paralyser_defers_early_fight(st) {
+        return false;
+    }
     crate::borg_fight_attack::attack_on_sight(st)
         // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
         || crate::borg_lone_target::attack(st)
@@ -8483,5 +8652,93 @@ mod attack_hold_tests {
         assert!(!attack_hold(&mut st, true, |_| None, |_, _| panic!("no confuser"), |_| panic!("no confuser")));
         assert!(!attack_hold(&mut st, true, |_| Some(1), |_, _| true, |_| panic!("the floor declined")));
         assert!(!attack_hold(&mut st, false, |_| panic!("not armed"), |_, _| panic!(), |_| panic!()));
+    }
+}
+
+#[cfg(test)]
+mod paralyser_tests {
+    //! #1125's decisions with the race facts given (unit tests have no
+    //! engine tables): race 7 paralyses and never moves (a floating eye),
+    //! race 8 paralyses and moves (a ghoul), race 9 neither.
+    use super::{kills_tail, paralyser_among, step_danger_ok};
+    use crate::borg_flow_kill::BorgKill;
+    use crate::headers::z_type_h::loc;
+
+    fn kill(r_idx: u16, y: i32, x: i32, awake: bool) -> BorgKill {
+        BorgKill { r_idx: r_idx as _, pos: loc { x, y }, awake, ..BorgKill::BLANK }
+    }
+    fn paralyses(r: usize) -> bool {
+        r == 7 || r == 8
+    }
+    fn never_moves(r: usize) -> bool {
+        r == 7 || r == 9
+    }
+    fn find(kills: &[BorgKill], at: (i32, i32), fa: bool, awake: bool, immobile: bool) -> Option<usize> {
+        paralyser_among(kills, at, fa, (awake, immobile), paralyses, never_moves)
+    }
+
+    /// The floating eye of 453254028 at (43,88), the Borg next to it.
+    #[test]
+    fn next_to_a_never_moving_paralyser_without_free_action() {
+        let kills = [BorgKill::BLANK, kill(9, 42, 87, true), kill(7, 43, 88, true)];
+        assert_eq!(find(&kills, (42, 89), false, true, false), Some(2), "the fight is lost (point 1)");
+        assert_eq!(find(&kills, (42, 89), false, false, true), Some(2), "a step out of reach first (point 2)");
+        assert_eq!(find(&kills, (42, 89), true, true, false), None, "with Free Action: today's play");
+        assert_eq!(find(&kills, (42, 89), true, false, true), None);
+    }
+
+    #[test]
+    fn its_reach_is_closed_and_two_grids_away_is_not() {
+        let kills = [BorgKill::BLANK, kill(7, 43, 88, false)];
+        for (y, x) in [(43, 88), (42, 87), (44, 89), (43, 89)] {
+            assert_eq!(find(&kills, (y, x), false, false, false), Some(1), "({y},{x}) is in its reach (point 3)");
+        }
+        assert_eq!(find(&kills, (41, 88), false, false, false), None, "two grids away is open");
+        assert_eq!(find(&kills, (45, 90), false, false, false), None);
+        assert_eq!(find(&kills, (43, 88), true, false, false), None, "Free Action opens it");
+    }
+
+    #[test]
+    fn sleeping_and_moving_paralysers() {
+        let asleep = [BorgKill::BLANK, kill(7, 10, 10, false)];
+        assert_eq!(find(&asleep, (10, 11), false, true, false), None, "point 1 reads only awake ones");
+        assert_eq!(find(&asleep, (10, 11), false, false, true), Some(1), "point 2 steps from a sleeping eye");
+        let ghoul = [BorgKill::BLANK, kill(8, 10, 10, true)];
+        assert_eq!(find(&ghoul, (10, 11), false, true, false), Some(1), "a mobile paralyser: the fight is lost");
+        assert_eq!(find(&ghoul, (10, 11), false, false, true), None, "no step from one that follows");
+        assert_eq!(find(&ghoul, (10, 11), false, false, false), Some(1), "its reach is closed too");
+        let neither = [BorgKill::BLANK, kill(9, 10, 10, true)];
+        assert_eq!(find(&neither, (10, 11), false, false, false), None);
+    }
+
+    #[test]
+    fn the_step_may_keep_the_danger_out_of_a_paralysers_reach() {
+        assert!(step_danger_ok(0, 200, false));
+        assert!(!step_danger_ok(0, 0, false), "#646: only a less dangerous grid");
+        assert!(step_danger_ok(0, 0, true), "#1125: a sleeping eye adds no danger here");
+        assert!(!step_danger_ok(5, 0, true), "never a more dangerous one");
+    }
+
+    /// The bounce reset keeps the forgotten eye's record (point 4): the
+    /// next free index stays past it.
+    #[test]
+    fn the_kept_records_keep_their_indices() {
+        let mut kills = vec![BorgKill::BLANK; 30];
+        assert_eq!(kills_tail(&kills, 28), 1, "none kept");
+        kills[27] = kill(7, 43, 88, true);
+        assert_eq!(kills_tail(&kills, 28), 28, "the eye was index 27 in 453254028");
+        kills[3] = kill(7, 1, 1, true);
+        kills[27] = BorgKill::BLANK;
+        assert_eq!(kills_tail(&kills, 28), 4);
+    }
+
+    /// #1125's four switches are compiled 0 (today's play).
+    #[test]
+    fn the_switches_are_off_by_default() {
+        let st = crate::state::BorgState::default();
+        assert_eq!(crate::params::value(crate::params::Param::escape_paralyser_fight_lost), 0);
+        assert_eq!(crate::params::value(crate::params::Param::caution_paralyser_step_away), 0);
+        assert!(!super::in_paralyser_reach(&st, 88, 43));
+        assert!(!super::remember_never_move(7));
     }
 }
