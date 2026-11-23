@@ -163,23 +163,7 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root],r4_equipment=True,require_all_entries=True)
 
     def test_store_surface_requires_v8_entries_and_immutable_root(self):
-        row=valid_row()
-        equipment=('borg_test_stuff','borg_swap_rings','borg_wear_rings','borg_backup_swap',
-                   'borg_wear_stuff','borg_best_stuff','borg_clear_best','borg_wear_recharge','borg_object_fully_id')
-        row.update(schema='borg-reborn-rs/shadow-stats@8',surface='r4-store',
-                   ported_points=module.R2_PORTED+['attack','defence','item_use','power','equipment','store'])
-        c=row['counts']
-        extra=(*module.ITEM_USE_ENTRY_POINTS,'power.borg_power','power.borg_power_equipment',
-               *('equipment.'+name for name in equipment),*module.STORE_ENTRY_POINTS)
-        c['stateful_points'].update(dict.fromkeys(extra,1))
-        c['policy_markers']+=len(extra);c['tape_events']+=len(extra)
-        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
-                 equipment_calls=len(equipment),store_calls=len(module.STORE_ENTRY_POINTS),
-                 readonly_comparisons=5,readonly_points={'item_use.borg_equips_item':1,
-                 'power.borg_power_equipment':1,'store.town_strategy_disabled':1,
-                 'store.borg_power_home':1,'store.borg_min_item_quantity':1},
-                 stateful_comparisons=4,comparisons=14)
-        c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1,'store.borg_think_shop_buy_useful':1})
+        row=valid_store_row()
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);self.write(root,row)
             module.check([root],r4_store=True,require_all_entries=True,expected_mode='check')
@@ -197,6 +181,40 @@ class ShadowCheckTest(unittest.TestCase):
             self.write(root,missing);module.check([root],r4_store=True)
             with self.assertRaisesRegex(ValueError,'missing individual entry coverage'):
                 module.check([root],r4_store=True,require_all_entries=True)
+
+    def test_declared_run_partition_keeps_combined_strict_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);natural=root/'natural';constructed=root/'constructed'
+            natural.mkdir();constructed.mkdir()
+            row=valid_store_row();missing=copy.deepcopy(row)
+            del missing['counts']['readonly_points']['store.town_strategy_disabled']
+            missing['counts']['readonly_comparisons']-=1;missing['counts']['comparisons']-=1
+            del missing['counts']['stateful_points']['store.sell_one_selected']
+            for name in ['store_calls','policy_markers','tape_events']:missing['counts'][name]-=1
+            self.write(natural,missing);self.write(constructed,row)
+            before=(natural/'shadow-stats.jsonl').read_bytes()
+            _,totals=module.check([root],r4_store=True,require_all_entries=True,constructed_roots=[constructed])
+            split=totals['coverage_by_run_provenance']
+            self.assertEqual(split['natural_runs']['runs'],1);self.assertEqual(split['constructed_runs']['runs'],1)
+            self.assertEqual(split['only_in_constructed_runs']['readonly_points'],['store.town_strategy_disabled'])
+            self.assertEqual(split['only_in_constructed_runs']['entry_points'],['store.sell_one_selected'])
+            self.assertEqual(totals['comparisons'],row['counts']['comparisons']+missing['counts']['comparisons'])
+            with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                module.check([natural],r4_store=True,require_all_entries=True)
+            self.assertEqual(before,(natural/'shadow-stats.jsonl').read_bytes())
+            with self.assertRaisesRegex(ValueError,'included in the checked roots'):
+                module.check([natural],r4_store=True,constructed_roots=[constructed])
+
+    def test_cli_report_records_gate_options_and_never_overwrites(self):
+        import subprocess,sys
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.write(root,valid_store_row());report=root/'gate.json'
+            cmd=[sys.executable,str(module.__file__),'--r4-store','--require-all-entries','--expect-mode','check',str(root),'--constructed-root',str(root),'--report',str(report)]
+            result=subprocess.run(cmd,capture_output=True,text=True);self.assertEqual(result.returncode,0,result.stderr)
+            value=json.loads(report.read_text());self.assertTrue(value['require_all_entries']);self.assertEqual(value['expected_mode'],'check')
+            self.assertEqual(value['counts']['coverage_by_run_provenance']['natural_runs']['runs'],0)
+            self.assertEqual(value['counts']['coverage_by_run_provenance']['constructed_runs']['runs'],1)
+            saved=report.read_bytes();self.assertNotEqual(subprocess.run(cmd,capture_output=True).returncode,0);self.assertEqual(report.read_bytes(),saved)
 
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
@@ -324,3 +342,24 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root], True)
             self.assertEqual(module.check([root], True, legacy_attack=True)[1]['policy_markers'], 18)
             self.assertEqual(before, (root / 'shadow-stats.jsonl').read_bytes())
+
+
+def valid_store_row():
+    row=valid_row()
+    equipment=('borg_test_stuff','borg_swap_rings','borg_wear_rings','borg_backup_swap',
+               'borg_wear_stuff','borg_best_stuff','borg_clear_best','borg_wear_recharge','borg_object_fully_id')
+    row.update(schema='borg-reborn-rs/shadow-stats@8',surface='r4-store',
+               ported_points=module.R2_PORTED+['attack','defence','item_use','power','equipment','store'])
+    c=row['counts']
+    extra=(*module.ITEM_USE_ENTRY_POINTS,'power.borg_power','power.borg_power_equipment',
+           *('equipment.'+name for name in equipment),*module.STORE_ENTRY_POINTS)
+    c['stateful_points'].update(dict.fromkeys(extra,1))
+    c['policy_markers']+=len(extra);c['tape_events']+=len(extra)
+    c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
+             equipment_calls=len(equipment),store_calls=len(module.STORE_ENTRY_POINTS),
+             readonly_comparisons=5,readonly_points={'item_use.borg_equips_item':1,
+             'power.borg_power_equipment':1,'store.town_strategy_disabled':1,
+             'store.borg_power_home':1,'store.borg_min_item_quantity':1},
+             stateful_comparisons=4,comparisons=14)
+    c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1,'store.borg_think_shop_buy_useful':1})
+    return row

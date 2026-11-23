@@ -23,6 +23,7 @@ jobs:
       - name: Verify exact recorded vendor bytes and hooks
         run: python3 scripts/borg-core-vendor.py check-recorded
       - run: python3 scripts/audit-power-port.py
+      - run: python3 scripts/audit-item-use-port.py
       - run: python3 scripts/audit-equipment-port.py
       - run: python3 scripts/audit-store-port.py
       - run: python3 scripts/r4-code-metrics.py
@@ -211,10 +212,17 @@ jobs:
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --r4-store --require-all-entries --expect-mode check harness/out/stateful-entries-check harness/out/item-use-fixture-check
-          harness/check-shadow.py --r4-store --require-all-entries --expect-mode switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch
+          harness/check-shadow.py --r4-store --require-all-entries --expect-mode check harness/out/stateful-entries-check harness/out/item-use-fixture-check --constructed-root harness/out/item-use-fixture-check --report harness/out/shadow-coverage-check.json
+          harness/check-shadow.py --r4-store --require-all-entries --expect-mode switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch --constructed-root harness/out/item-use-fixture-switch --report harness/out/shadow-coverage-switch.json
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
+      - name: Retain declared natural and constructed run coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-shadow-coverage
+          path: harness/out/shadow-coverage-*.json
+          if-no-files-found: ignore
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
           zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")

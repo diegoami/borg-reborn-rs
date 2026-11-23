@@ -8,7 +8,7 @@ the owner selects/runs the reviewer and accepts the milestone.
 1. Check out SOURCE_SHA; read AGENTS.md, RULES.md, R4-PLAN.md,
    R4-EXIT-REPORT.md, R438-HANDOVER.md and every slice's ownership manifest.
 2. Run formatting, workspace clippy/tests, core release tests, scripts/tests,
-   tools/tests, source/vendor/P4 guards and each power/equipment/store audit.
+   tools/tests, source/vendor/P4 guards and each item-use/power/equipment/store audit.
    Run `python3 scripts/r4-code-metrics.py` and reproduce every published count.
 3. Verify the canonical receipt and manifest byte inventory, original build
    lineage and qualified registries. Distinguish existing games, reused runs,
