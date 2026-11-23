@@ -1107,7 +1107,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
             // only a faster monster that is also dangerous (a fruit bat
             // next to the Borg is not a reason to stay).
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+            if desperate_neighbour_speed(&st.kills.kills[usize::from(kill)]) > st.borg.tr(BI_SPEED)
                 && fast_neighbour_counts(st, usize::from(kill))
             {
                 safe = false;
@@ -5731,6 +5731,33 @@ pub(crate) fn stairs_clean_path_mode() -> i32 {
 /// `caution_desperate_fast_danger_percent` above 0, a faster adjacent
 /// monster stops the desperate walk only when its danger is at least that
 /// percent of the HP; 0 = C (any faster monster).
+/// borg-reborn-rs (#907): the speed "Desperate for Stairs (three)" compares
+/// with the Borg's. `kill.speed` is the monster's base `mspeed`; a timed
+/// haste adds ten (mon-move.c:1929-1931, 574b618c). With
+/// `caution_desperate_fast_haste`, the observed haste counts
+/// (`forecast_monster_speed`); 0 = C (base speed only).
+fn desperate_neighbour_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    desperate_speed_with(kill, p(Param::caution_desperate_fast_haste) != 0)
+}
+
+fn desperate_speed_with(kill: &crate::borg_flow_kill::BorgKill, haste: bool) -> i32 {
+    if haste { forecast_monster_speed(kill) } else { i32::from(kill.speed) }
+}
+
+#[cfg(test)]
+mod desperate_haste_tests {
+    #[test]
+    fn a_hasted_soldier_is_faster_than_a_normal_rogue_only_with_the_switch() {
+        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        kill.speed = 109;
+        kill.observed_fast = true;
+        assert_eq!(super::desperate_speed_with(&kill, false), 109, "0 = C: base speed, the 381988580 walk");
+        assert_eq!(super::desperate_speed_with(&kill, true), 119);
+        kill.observed_fast = false;
+        assert_eq!(super::desperate_speed_with(&kill, true), 109, "no haste observed: unchanged");
+    }
+}
+
 fn fast_neighbour_counts(st: &mut BorgState, kill: usize) -> bool {
     let percent = p(Param::caution_desperate_fast_danger_percent);
     if percent <= 0 {

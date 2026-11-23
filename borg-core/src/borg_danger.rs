@@ -2097,6 +2097,11 @@ pub(crate) fn danger_one_kill(
 
     let mut fake_speed: i32 = st.borg.tr(BI_SPEED);
     let mut monster_speed: i32 = i32::from(kill.speed);
+    // borg-reborn-rs (#907): `kill.speed` is the base `mspeed`; a timed haste
+    // adds ten (mon-move.c:1929-1931, 574b618c). 0 = C (base speed).
+    if param(Param::danger_observed_haste) != 0 && kill.observed_fast {
+        monster_speed += 10;
+    }
 
     // Paranoia
     if kill.r_idx == 0 {
