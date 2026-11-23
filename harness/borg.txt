@@ -2278,7 +2278,8 @@ borg_param_trap_leave_near_count = 0
 # fits); leave for town when the poison outlasts HP + healing; the Alchemist
 # first in town (Neutralize Poison or CCW if affordable, else enough CLW), no
 # sale paying nothing; a fight the pending poison would finish is lost.
-# Off: today's play.
-borg_param_deal_with_poison = 0
+# Shipped on by the owner, 2026-11-23 ("merge with deal_with_poison 1"), before
+# a zoo measurement (borg-zoo#745); the values are hypotheses (RULES 14).
+borg_param_deal_with_poison = 1
 borg_param_poison_late_drink_margin = 2
 borg_param_poison_cure_pending_percent = 50

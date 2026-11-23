@@ -7751,9 +7751,11 @@ carries (zoo run 45121432449, track-p `1c071812`, borg-cemetery#146: the
 Rogue 626789725, the Ranger 956247604, the Druid 799968561; #1134: the
 Paladin 1200156945 died holding 2 Neutralize Poison). New module
 `borg_poison.rs`, behind **one switch**, `deal_with_poison` (owner,
-2026-11-23: "just one switch"), compiled and shipped 0: play is unchanged
-(smoke 4/4 identical to `smoke-borg-rs`). Two values tune it. All of it is a
-hypothesis until borg-zoo measures it (RULES 14).
+2026-11-23: "just one switch"), compiled 0. **Shipped on** by the owner on
+2026-11-23 ("merge with deal_with_poison 1") in `harness/borg.txt`, before a
+zoo measurement (borg-zoo#745); `smoke-borg-rs` re-recorded. At 0 play is
+unchanged (smoke 4/4 identical to the old reference). Two values tune it.
+All of it is a hypothesis until borg-zoo measures it (RULES 14).
 
 **The C Borg** (574b618c, `src/borg/`) cures poison in `borg_heal` only at
 HP below half and danger at most a fifth of the avoidance
