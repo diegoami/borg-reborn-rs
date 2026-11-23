@@ -415,10 +415,11 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
 /// the light emergency, then replan with the torch actually carried.
 fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
     let reserve = param(Param::town_light_reserve_turns);
+    // borg-reborn-rs (#1110): to the planner's goal, scaled while
+    // breadth-first exploration applies (review of #1113).
+    let goal = crate::borg_light::fuel_goal(st, crate::borg_town_utility::Journey::of(st));
     if reserve == 0 || !budget.urgent.is_empty()
-        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| {
-            i64::from(turns) >= crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve))
-        })
+        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| i64::from(turns) >= goal)
     {
         return;
     }
