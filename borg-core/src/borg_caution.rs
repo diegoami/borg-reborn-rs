@@ -1599,18 +1599,26 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     // borg-reborn-rs (#726): the blows are read only for an immobile
     // attacker (it has a blow array); a race without one, such as the
     // placeholder one past the last race, aborted in race_blow_effect_name.
-    if mode < 2 || st.borg.tr(BI_CDEPTH) <= 0 || !immobile_attacker(r_idx) {
+    if mode < 2 || st.borg.tr(BI_CDEPTH) <= 0 || !immobile_handled(st, r_idx) {
         return false;
     }
-    // borg-reborn-rs (#852): with `caution_immobile_resists`, a blow the
-    // character is protected from is not annoying (mode 2 only).
-    let effects = race_blow_effects(r_idx);
-    let annoying = if p(Param::caution_immobile_resists) != 0 {
-        unprotected_annoying(&effects, |bi| protected(st, bi))
-    } else {
-        effects.iter().any(|e| annoying_effect(e))
-    };
+    // borg-reborn-rs (#852, owner): a blow the character is protected from is
+    // not annoying.
+    let annoying = unprotected_annoying(&race_blow_effects(r_idx), |bi| protected(st, bi));
     immobile_annoying(mode, true, annoying)
+}
+
+/// borg-reborn-rs (#852, owner: "if it is protected this mode needs not to
+/// apply"): race `r_idx` is an immobile attacker (`immobile_attacker`) that
+/// `caution_ranged_vs_immobile` (1-3) handles. Not one whose blows include
+/// an annoying effect and whose annoying effects the character is all
+/// protected from (`protected`): a floating eye for a Free Action Borg, a
+/// grey mushroom patch for one resisting confusion. It is neither kept at
+/// range nor stepped away from, the confusion cure is not held next to it,
+/// and the step does not avoid it. A plain-damage one (a grey mold) is
+/// handled as before.
+fn immobile_handled(st: &BorgState, r_idx: usize) -> bool {
+    immobile_attacker(r_idx) && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
 }
 
 /// borg-reborn-rs (#852): the trait that protects the character from a blow
@@ -1635,11 +1643,12 @@ fn unprotected_annoying(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
     effects.iter().any(|e| annoying_effect(e) && !effect_protection(e).is_some_and(|bi| has(bi)))
 }
 
-/// borg-reborn-rs (#852): a `ranged` entry of the scary list is kept at range
-/// while one of its blows has an effect the character is not protected from.
-/// Plain damage (`HURT`, `NONE`) does not keep it when it has another blow;
-/// an entry with only plain-damage blows (or none) stays kept, as listed.
-fn listed_kept(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+/// borg-reborn-rs (#852): a monster with `effects` still concerns the
+/// caution rules (a `ranged` entry of the scary list, an immobile attacker for
+/// `caution_ranged_vs_immobile`): one of its blows has an effect the character
+/// is not protected from. Plain damage (`HURT`, `NONE`) does not count when it
+/// has another blow; one with only plain-damage blows (or none) still does.
+fn not_protected_from_all(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
     !effects.iter().any(|e| annoying_effect(e)) || unprotected_annoying(effects, has)
 }
 
@@ -1661,7 +1670,7 @@ fn race_blow_effects(r_idx: usize) -> Vec<&'static [u8]> {
 /// borg-reborn-rs (#838, owner: "a list of monsters to never melee ... and
 /// only attack from afar"): race `r_idx` is on the scary list's `ranged`
 /// entries for this character (`caution_ranged_only`), and the character is
-/// not protected from all its blows (#852, `listed_kept`). Off: no lookup.
+/// not protected from all its blows (#852, `not_protected_from_all`). Off: no lookup.
 pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
     if p(Param::caution_ranged_only) == 0 || r_idx == 0 || r_idx >= engine::r_max().saturating_sub(1) || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -1675,7 +1684,7 @@ pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
         levels_less: 0,
     };
     crate::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
-        && listed_kept(&race_blow_effects(r_idx), |bi| protected(st, bi))
+        && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
 }
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
@@ -1731,7 +1740,7 @@ pub(crate) fn in_reach_of_stepped_from(st: &BorgState, x: i32, y: i32) -> bool {
             && engine::square_in_bounds_fully(ex, ey)
             && {
                 let k = st.cave.grid(ex, ey).kill;
-                k != 0 && immobile_attacker(usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_handled(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
     })
 }
@@ -1754,11 +1763,12 @@ fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     })
 }
 
-/// The first known immobile attacker next to grid (`y`, `x`), by kill index.
+/// The first known immobile attacker next to grid (`y`, `x`) that the mode
+/// handles (`immobile_handled`, #852), by kill index.
 fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
         let kill = &st.kills.kills[i];
-        immobile_attacker(usize::from(kill.r_idx))
+        immobile_handled(st, usize::from(kill.r_idx))
             && (i32::from(kill.pos.y) - y).abs() <= 1
             && (i32::from(kill.pos.x) - x).abs() <= 1
     })
@@ -6778,7 +6788,7 @@ mod immobile_range_tests {
     /// (monster.txt's blows for the shipped entries).
     #[test]
     fn listed_with_resists() {
-        use super::{listed_kept, unprotected_annoying};
+        use super::{not_protected_from_all, unprotected_annoying};
         use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
         let none = |_: u32| false;
         let with = |t: u32| move |bi: u32| bi == t;
@@ -6791,25 +6801,25 @@ mod immobile_range_tests {
             ("rot jelly", &[b"EAT_FOOD", b"LOSE_WIS"], None),
         ];
         for (name, blows, prot) in cases {
-            assert!(listed_kept(blows, none), "{name}: kept without protection");
+            assert!(not_protected_from_all(blows, none), "{name}: kept without protection");
             match prot {
                 Some(t) => {
-                    assert!(!listed_kept(blows, with(t)), "{name}: protected, fought");
+                    assert!(!not_protected_from_all(blows, with(t)), "{name}: protected, fought");
                     for other in [BI_FRACT, BI_RCONF, BI_RPOIS, BI_RBLIND, BI_RFEAR].into_iter().filter(|&o| o != t) {
-                        assert!(listed_kept(blows, with(other)), "{name}: another protection does not help");
+                        assert!(not_protected_from_all(blows, with(other)), "{name}: another protection does not help");
                     }
                 }
-                None => assert!(listed_kept(blows, |_| true), "{name}: no protection exists"),
+                None => assert!(not_protected_from_all(blows, |_| true), "{name}: no protection exists"),
             }
         }
         // A blow protected and one not: still kept.
-        assert!(listed_kept(&[b"POISON", b"CONFUSE"], with(BI_RPOIS)));
-        assert!(!listed_kept(&[b"POISON", b"CONFUSE"], |bi| bi == BI_RPOIS || bi == BI_RCONF));
+        assert!(not_protected_from_all(&[b"POISON", b"CONFUSE"], with(BI_RPOIS)));
+        assert!(!not_protected_from_all(&[b"POISON", b"CONFUSE"], |bi| bi == BI_RPOIS || bi == BI_RCONF));
         // Plain damage beside a protected blow does not keep it; alone it does.
-        assert!(!listed_kept(&[b"HURT", b"PARALYZE"], with(BI_FRACT)));
-        assert!(listed_kept(&[b"HURT"], |_| true), "only plain damage: kept, as listed");
-        assert!(listed_kept(&[], |_| true), "no blows: kept, as listed");
-        // Mode 2's check (caution_immobile_resists): plain damage is never annoying.
+        assert!(!not_protected_from_all(&[b"HURT", b"PARALYZE"], with(BI_FRACT)));
+        assert!(not_protected_from_all(&[b"HURT"], |_| true), "only plain damage: kept, as listed");
+        assert!(not_protected_from_all(&[], |_| true), "no blows: kept, as listed");
+        // Mode 2's check: plain damage is never annoying.
         assert!(!unprotected_annoying(&[b"HURT"], none));
         assert!(unprotected_annoying(&[b"CONFUSE"], none));
         assert!(!unprotected_annoying(&[b"CONFUSE"], with(BI_RCONF)));
@@ -6820,22 +6830,22 @@ mod immobile_range_tests {
     /// `borg_danger_one_kill`; it protects from nothing else.
     #[test]
     fn temporary_poison_resistance() {
-        use super::{listed_kept, protected, unprotected_annoying};
+        use super::{not_protected_from_all, protected, unprotected_annoying};
         use crate::borg_headers::borg_trait_h::{BI_MAX, BI_RCONF, BI_RPOIS};
         let mut st = crate::state::BorgState::default();
         st.borg.trait_ = vec![0; BI_MAX as usize];
         let spotted: &[&[u8]] = &[b"POISON"];
         assert!(!protected(&st, BI_RPOIS));
-        assert!(listed_kept(spotted, |bi| protected(&st, bi)), "no resistance: kept");
+        assert!(not_protected_from_all(spotted, |bi| protected(&st, bi)), "no resistance: kept");
         st.borg.temp.res_pois = true;
         assert!(protected(&st, BI_RPOIS), "temporary only");
         assert!(!protected(&st, BI_RCONF), "poison only");
-        assert!(!listed_kept(spotted, |bi| protected(&st, bi)), "the spotted mushroom patch is fought");
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the spotted mushroom patch is fought");
         assert!(!unprotected_annoying(spotted, |bi| protected(&st, bi)), "mode 2's check too");
-        assert!(listed_kept(&[b"CONFUSE"], |bi| protected(&st, bi)), "a grey mushroom patch still kept");
+        assert!(not_protected_from_all(&[b"CONFUSE"], |bi| protected(&st, bi)), "a grey mushroom patch still kept");
         st.borg.temp.res_pois = false;
         st.borg.trait_[BI_RPOIS as usize] = 1;
-        assert!(!listed_kept(spotted, |bi| protected(&st, bi)), "the permanent one");
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the permanent one");
     }
 }
 

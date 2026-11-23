@@ -15,24 +15,26 @@ unchanged.
   `spread_blocked`'s refusal of a kept monster's grid, and `borg_play_step`'s
   refusal to walk into one), and missiles, spells and throws.
 - **Resistances** (item 2). A `ranged` entry is kept only while one of its
-  blows has an effect the character is not protected from (`listed_kept`).
+  blows has an effect the character is not protected from (`not_protected_from_all`).
   `effect_protection` is `borg_danger_one_kill`'s mapping: `PARALYZE`
   `BI_FRACT`, `CONFUSE` `BI_RCONF`, `POISON` `BI_RPOIS`, `BLIND` `BI_RBLIND`,
   `TERRIFY` `BI_RFEAR`; every other effect has none. The blows are read for
   any race but 0 and the placeholder past the last (every race has its blow
   array, `mon-init.c:1826`).
-- **Mode 2** (item 3): a separate switch, **`caution_immobile_resists`**
-  (flag, 0), because mode 2 is borg-zoo#576's measured baseline. At 1, mode 2
-  counts a blow as annoying only when the character is not protected from
-  it; it acts on everything that reads `immobile_kept_at_range` (melee, hunt,
-  the flows out of its reach, the kept step away). Mode 3 is unchanged.
-  A protected attacker becomes mode 2's plain-damage case, so #646's step
-  away still applies to it while the Borg is confused or carries a ranged
-  attack: with ammunition, a Free Action Borg next to an eye steps out of
-  reach and shoots (review of #1126, P3: documented, not changed).
-- Docs: `params.rs` (both rows), `docs/CALIBRATION.md` (a section; 89 rows'
-  citations moved with the inserted lines, `check-param-citations.py --fix`),
-  `harness/borg.txt` (comments, and the new switch at 0),
+- **`caution_ranged_vs_immobile`** (item 3; owner, 2026-11-23: "if it is
+  protected this mode needs not to apply"). No switch: in modes 1 to 3 an
+  immobile attacker with a blow that does more than plain damage, whose
+  such blows the character is all protected from, is not handled at all
+  (`immobile_handled`): not kept at range, no step away (#646's ranged-first
+  step included), no confusion cure held next to it, not avoided by the
+  step, not in the no-return rule. A Free Action Borg fights a floating eye,
+  with ammunition or without. Plain-damage attackers (a grey mold) are
+  handled as before. A first version had a separate switch,
+  `caution_immobile_resists`, which left #646's step away in place (review
+  of #1126, P3); it is gone.
+- Docs: `params.rs` (both rows' text), `docs/CALIBRATION.md` (a section;
+  rows' citations moved with the inserted lines, `check-param-citations.py
+  --fix`), `harness/borg.txt` (comments),
   `harness/scary_monsters.txt` (comment).
 
 **Checked.** CI's four commands; `scripts/check-param-citations.py` (0
@@ -52,17 +54,19 @@ identical to `smoke-borg-rs`. Replays from borg-cemetery on this branch
 | Mage 1770630957, patch, mode 2 | the zoo's game | the zoo's game (as in #838: the held cure and the confused walk, #837's switches off in the case) |
 | Ranger 116037261, patch, mode 2 | the zoo's game | the zoo's game, same |
 
-`caution_immobile_resists` 1 on the three mode-2 cases: identical to control
-(Human and Dunadan at CL1 have none of the five protections), as it should be.
+The switch of the first version (`caution_immobile_resists` 1) on the three
+mode-2 cases: identical to control (Human and Dunadan at CL1 have none of
+the five protections), as it should be; the rule that replaced it reads the
+same protections, so these games are unaffected.
 
 **A character with Free Action**: the three floating-eye starts as a Gnome
 (`race_idx=4`, `p_race.txt` `FREE_ACT`). All three alive at 100,000 turns
 with or without the list, and the list on plays key for key as off: the eye
 is not kept. Druid 625213959 as a Gnome with the list on: "Walking into a
 'floating eye'", "You have slain the floating eye" (game turn 18,053). The
-Gnome Ranger with mode 2 and `caution_immobile_resists` 1 plays as with 0:
-it shot every eye with arrows and never stood next to one, so mode 2's new
-switch is exercised by the unit test only.
+Gnome Ranger with mode 2 and the first version's switch played as without:
+it shot every eye with arrows and never stood next to one. The final rule
+(no step away either) was not replayed; see **Checked** below.
 
 **Decided here, for the owner to confirm.**
 - Plain damage (`HURT`, `NONE`) does not keep a listed monster that has
@@ -77,15 +81,10 @@ switch is exercised by the unit test only.
   still refused a spotted mushroom patch; `protected`, with the unit test
   `temporary_poison_resistance`). The other four have no temporary form there.
 
-- Whether `caution_immobile_resists` should also suppress #646's step away
-  for a fully protected attacker (today it permits melee and keeps the
-  step). Changing it needs a test of the retreat decision with an adjacent
-  eye and ammunition.
-
 **Left.**
 - Zoo measurement (RULES 20) of the new `caution_ranged_only` against
   shipped and against borg-zoo#593's `ranged` arm (the old four-part
-  behaviour), and of `caution_immobile_resists` with mode 2. Not filed: the
+  behaviour), and of mode 2 with the protections. Not filed: the
   owner keeps the setting at 0; filed on request.
 - The flows around a kept monster (a listed monster in a corridor, a Borg
   hunted next to one): the path-finding issue #852 points to.

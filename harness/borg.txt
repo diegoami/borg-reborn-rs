@@ -913,6 +913,9 @@ borg_param_escape_teleport_landing_either = 0
 # may pass, never onto its grid), always step away from it (while fleeing
 # too, up to three times); throws and shots kill it from afar.
 # 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
+# #852 (owner): in 1-3, an immobile attacker whose special blows the character
+# is all protected from (Free Action, resist confusion, poison, blindness,
+# fear) is not handled at all: a Free Action Borg fights a floating eye.
 # Change together: works with what the Borg carries to throw (#649, #652).
 # Off (owner, 2026-11-20): "stepaway flag is not a solution, I do not like
 # it". In borg-zoo#461 modes 2 and 3 lost games (22 -> 24 / 27 deaths; Druids
@@ -985,11 +988,6 @@ borg_param_caution_immobile_step_mobile_first = 0
 #   attacker the flows do not enter its reach again while it is known there.
 #   1: only while below full HP; 2: for the level.
 borg_param_caution_immobile_no_return = 0
-# - caution_immobile_resists (#852): with caution_ranged_vs_immobile 2, a blow
-#   the character is protected from (as caution_ranged_only reads it) is not
-#   annoying: a Free Action Borg may fight a floating eye (with ammunition,
-#   #646's step away still comes first). 0 = #713's mode 2.
-borg_param_caution_immobile_resists = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
 
