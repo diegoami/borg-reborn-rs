@@ -63,6 +63,8 @@ PINNED_TOWN_SETTINGS = [
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
+    # #1123 enabled the retreat guards after these incidents.
+    ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
