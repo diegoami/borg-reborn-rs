@@ -7023,19 +7023,22 @@ target is the last CL with at least one DL1 death per 100 games that reached
 it, in #1080's pooled table. That table pools every build, and recent runs are
 5–10 times lower, so the cut at 1 per 100 is itself a hypothesis. The delta is
 a quarter of the Human mean gain, and the base puts the threshold halfway
-between the mean max HP at the target and the next CL (CON ignored):
+between the mean max HP at the target and the next CL (CON ignored). The owner
+then raised every `explore_bfs_max_hp` by 10 (2026-11-23: "increase those
+explore_bfs_max_hp by 10"); the table gives the shipped values and the levels
+they reach:
 
 | class | hit die (Human) | target CL | `explore_bfs_max_hp` | `explore_bfs_hp_per_level` | Human through | all races through |
 |---|---:|---:|---:|---:|---:|---:|
-| warrior | 19 | 1 | 21 | 2 | CL1 | CL1–2 |
-| mage | 10 | 4 | 25 | 1 | CL4 | CL3–7 |
-| druid | 12 | 4 | 26 | 2 | CL4 | CL3–7 |
-| priest | 12 | 3 | 21 | 2 | CL3 | CL2–5 |
-| necromancer | 12 | 3 | 21 | 2 | CL3 | CL2–5 |
-| paladin | 16 | 2 | 24 | 2 | CL2 | CL2–3 |
-| rogue | 14 | 3 | 26 | 2 | CL3 | CL2–5 |
-| ranger | 15 | 4 | 34 | 2 | CL4 | CL3–6 |
-| blackguard | 18 | 1 | 20 | 2 | CL1 | CL1–2 |
+| warrior | 19 | 1 | 31 | 2 | CL2 | CL2–3 |
+| mage | 10 | 4 | 35 | 1 | CL6 | CL5–10 |
+| druid | 12 | 4 | 36 | 2 | CL6 | CL5–10 |
+| priest | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
+| necromancer | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
+| paladin | 16 | 2 | 34 | 2 | CL4 | CL3–5 |
+| rogue | 14 | 3 | 36 | 2 | CL5 | CL4–7 |
+| ranger | 15 | 4 | 44 | 2 | CL6 | CL5–8 |
+| blackguard | 18 | 1 | 30 | 2 | CL2 | CL2–3 |
 
 The race delta of #1061's threshold (`__<race>`) is not part of this change:
 the suffix is #1061's, and this threshold takes it when that lands.
