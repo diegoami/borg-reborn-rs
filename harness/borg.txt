@@ -291,9 +291,13 @@ borg_param_town_fear_cure_count = 0
 # Ranged-only monsters (#838, owner 2026-11-21: "a list of monsters to never
 # melee ... and only attack from afar"): the scary list's `ranged` entries
 # (floating eye, grey mushroom patch, the jellies and eyes; harness/
-# scary_monsters.txt) are never melee targets, never hunted, and flows keep out
-# of their reach. 0 = the entries are not read. borg-zoo measures it against
-# shipped and against caution_ranged_vs_immobile 2.
+# scary_monsters.txt) are never melee targets, never hunted, and no flow steps
+# onto their grid. #852 (owner): the flows around them are not changed (path
+# finding is another concern), and an entry is kept at range only while one of
+# its blows is something the character is not protected from (Free Action for
+# paralysis; resist confusion, poison, blindness, fear; drains, theft and
+# disenchantment have none). 0 = the entries are not read. borg-zoo measures it
+# against shipped and against caution_ranged_vs_immobile 2.
 borg_param_caution_ranged_only = 0
 
 # Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
@@ -981,6 +985,10 @@ borg_param_caution_immobile_step_mobile_first = 0
 #   attacker the flows do not enter its reach again while it is known there.
 #   1: only while below full HP; 2: for the level.
 borg_param_caution_immobile_no_return = 0
+# - caution_immobile_resists (#852): with caution_ranged_vs_immobile 2, a blow
+#   the character is protected from (as caution_ranged_only reads it) is not
+#   annoying: a Free Action Borg fights a floating eye. 0 = #713's mode 2.
+borg_param_caution_immobile_resists = 0
 borg_param_attack_mobile_threat_first = 1
 borg_param_attack_mobile_threat_percent = 50
 

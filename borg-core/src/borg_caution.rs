@@ -34,10 +34,11 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
-    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
+    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_FRACT, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_SPEED,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RBLIND, BI_RCONF, BI_RECALL, BI_RFEAR,
+    BI_RPOIS, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -1598,19 +1599,61 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     // borg-reborn-rs (#726): the blows are read only for an immobile
     // attacker (it has a blow array); a race without one, such as the
     // placeholder one past the last race, aborted in race_blow_effect_name.
-    mode >= 2
-        && st.borg.tr(BI_CDEPTH) > 0
-        && immobile_attacker(r_idx)
-        && immobile_annoying(
-            mode,
-            true,
-            (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
-        )
+    if mode < 2 || st.borg.tr(BI_CDEPTH) <= 0 || !immobile_attacker(r_idx) {
+        return false;
+    }
+    // borg-reborn-rs (#852): with `caution_immobile_resists`, a blow the
+    // character is protected from is not annoying (mode 2 only).
+    let effects = race_blow_effects(r_idx);
+    let annoying = if p(Param::caution_immobile_resists) != 0 {
+        unprotected_annoying(&effects, |bi| st.borg.tr(bi) != 0)
+    } else {
+        effects.iter().any(|e| annoying_effect(e))
+    };
+    immobile_annoying(mode, true, annoying)
+}
+
+/// borg-reborn-rs (#852): the trait that protects the character from a blow
+/// effect, as `borg_danger_one_kill` reads it (`borg_danger.rs`, the
+/// `MONBLOW_POISON`, `BLIND`, `CONFUSE`, `TERRIFY` and `PARALYZE` branches;
+/// `blow_effects.txt`, `mon-blow-effects.c`). Any other effect (drains, theft,
+/// disenchantment, elements, ...) has none here.
+fn effect_protection(name: &[u8]) -> Option<u32> {
+    match name {
+        b"PARALYZE" => Some(BI_FRACT),
+        b"CONFUSE" => Some(BI_RCONF),
+        b"POISON" => Some(BI_RPOIS),
+        b"BLIND" => Some(BI_RBLIND),
+        b"TERRIFY" => Some(BI_RFEAR),
+        _ => None,
+    }
+}
+
+/// borg-reborn-rs (#852): one of `effects` is annoying (`annoying_effect`)
+/// and the character (`has`: the trait is set) is not protected from it.
+fn unprotected_annoying(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    effects.iter().any(|e| annoying_effect(e) && !effect_protection(e).is_some_and(|bi| has(bi)))
+}
+
+/// borg-reborn-rs (#852): a `ranged` entry of the scary list is kept at range
+/// while one of its blows has an effect the character is not protected from.
+/// Plain damage (`HURT`, `NONE`) does not keep it when it has another blow;
+/// an entry with only plain-damage blows (or none) stays kept, as listed.
+fn listed_kept(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    !effects.iter().any(|e| annoying_effect(e)) || unprotected_annoying(effects, has)
+}
+
+/// The effect names of race `r_idx`'s blows. Every race has its blow array
+/// (`mon-init.c:1826`, `finish_parse_monster`); the caller skips race 0 and
+/// the placeholder race past the last one (#726).
+fn race_blow_effects(r_idx: usize) -> Vec<&'static [u8]> {
+    (0..usize::from(engine::z_info().mon_blows_max)).filter_map(|k| engine::race_blow_effect_name(r_idx, k)).collect()
 }
 
 /// borg-reborn-rs (#838, owner: "a list of monsters to never melee ... and
 /// only attack from afar"): race `r_idx` is on the scary list's `ranged`
-/// entries for this character (`caution_ranged_only`). Off: no lookup.
+/// entries for this character (`caution_ranged_only`), and the character is
+/// not protected from all its blows (#852, `listed_kept`). Off: no lookup.
 pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
     if p(Param::caution_ranged_only) == 0 || r_idx == 0 || r_idx >= engine::r_max().saturating_sub(1) || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -1624,20 +1667,24 @@ pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
         levels_less: 0,
     };
     crate::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
+        && listed_kept(&race_blow_effects(r_idx), |bi| st.borg.tr(bi) != 0)
 }
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
 /// attacker (`caution_ranged_vs_immobile` 2, 3) or a `ranged` entry of the
-/// scary list (`caution_ranged_only`): never a melee target, no walk to it,
-/// flows keep out of its reach.
+/// scary list (`caution_ranged_only`): never a melee target, no walk to it
+/// or onto its grid. Only the immobile ones keep the flows out of their reach
+/// (`in_reach_of_kept`; #852: the list leaves path finding alone).
 pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     immobile_kept_at_range(st, r_idx) || listed_ranged(st, r_idx)
 }
 
-/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of a
-/// creature kept at range (its reach). Off: no scan.
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
+/// immobile creature kept at range (its reach; `caution_ranged_vs_immobile`
+/// 2, 3). Off: no scan. #852 (owner): not the scary list's `ranged` entries,
+/// whose flows are a path-finding concern of their own.
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0) || st.flow.to_stairs {
+    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -1645,7 +1692,7 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
             let (gx, gy) = (x + dx, y + dy);
             engine::square_in_bounds_fully(gx, gy) && {
                 let k = st.cave.grid(gx, gy).kill;
-                k != 0 && kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
         })
     })
@@ -6702,6 +6749,63 @@ mod immobile_range_tests {
         assert!(!immobile_annoying(3, false, true), "a monster that moves");
         assert!(!immobile_annoying(1, true, true), "1 is #646: none kept at range");
         assert!(!immobile_annoying(0, true, true), "0 is C");
+    }
+
+    /// #852: the protection for each blow effect, as `borg_danger_one_kill`.
+    #[test]
+    fn effect_protections() {
+        use super::effect_protection;
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        assert_eq!(effect_protection(b"PARALYZE"), Some(BI_FRACT));
+        assert_eq!(effect_protection(b"CONFUSE"), Some(BI_RCONF));
+        assert_eq!(effect_protection(b"POISON"), Some(BI_RPOIS));
+        assert_eq!(effect_protection(b"BLIND"), Some(BI_RBLIND));
+        assert_eq!(effect_protection(b"TERRIFY"), Some(BI_RFEAR));
+        for e in [&b"LOSE_STR"[..], b"LOSE_CON", b"LOSE_WIS", b"EAT_LIGHT", b"EAT_FOOD", b"EXP_10", b"DISENCHANT", b"ACID", b"HALLU", b"HURT"] {
+            assert_eq!(effect_protection(e), None, "{}", String::from_utf8_lossy(e));
+        }
+    }
+
+    /// #852: the scary list's ranged entries, with and without each protection
+    /// (monster.txt's blows for the shipped entries).
+    #[test]
+    fn listed_with_resists() {
+        use super::{listed_kept, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        let none = |_: u32| false;
+        let with = |t: u32| move |bi: u32| bi == t;
+        let cases: [(&str, &[&[u8]], Option<u32>); 6] = [
+            ("floating eye", &[b"PARALYZE"], Some(BI_FRACT)),
+            ("grey mushroom patch", &[b"CONFUSE"], Some(BI_RCONF)),
+            ("yellow mushroom patch", &[b"TERRIFY"], Some(BI_RFEAR)),
+            ("spotted mushroom patch", &[b"POISON"], Some(BI_RPOIS)),
+            ("bloodshot eye", &[b"BLIND"], Some(BI_RBLIND)),
+            ("rot jelly", &[b"EAT_FOOD", b"LOSE_WIS"], None),
+        ];
+        for (name, blows, prot) in cases {
+            assert!(listed_kept(blows, none), "{name}: kept without protection");
+            match prot {
+                Some(t) => {
+                    assert!(!listed_kept(blows, with(t)), "{name}: protected, fought");
+                    for other in [BI_FRACT, BI_RCONF, BI_RPOIS, BI_RBLIND, BI_RFEAR].into_iter().filter(|&o| o != t) {
+                        assert!(listed_kept(blows, with(other)), "{name}: another protection does not help");
+                    }
+                }
+                None => assert!(listed_kept(blows, |_| true), "{name}: no protection exists"),
+            }
+        }
+        // A blow protected and one not: still kept.
+        assert!(listed_kept(&[b"POISON", b"CONFUSE"], with(BI_RPOIS)));
+        assert!(!listed_kept(&[b"POISON", b"CONFUSE"], |bi| bi == BI_RPOIS || bi == BI_RCONF));
+        // Plain damage beside a protected blow does not keep it; alone it does.
+        assert!(!listed_kept(&[b"HURT", b"PARALYZE"], with(BI_FRACT)));
+        assert!(listed_kept(&[b"HURT"], |_| true), "only plain damage: kept, as listed");
+        assert!(listed_kept(&[], |_| true), "no blows: kept, as listed");
+        // Mode 2's check (caution_immobile_resists): plain damage is never annoying.
+        assert!(!unprotected_annoying(&[b"HURT"], none));
+        assert!(unprotected_annoying(&[b"CONFUSE"], none));
+        assert!(!unprotected_annoying(&[b"CONFUSE"], with(BI_RCONF)));
+        assert!(unprotected_annoying(&[b"LOSE_STR"], |_| true));
     }
 }
 
