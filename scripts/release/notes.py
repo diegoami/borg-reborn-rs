@@ -80,6 +80,7 @@ def main() -> int:
     ap.add_argument("--since", default="")
     ap.add_argument("--zoo", default="")
     ap.add_argument("--build-id", action="append", default=[])
+    ap.add_argument("--macos", action="store_true", help="the release ships the macOS package")
     a = ap.parse_args()
 
     commit = git("rev-parse", "HEAD")
@@ -98,8 +99,11 @@ def main() -> int:
         "settings of `harness/borg.txt`.",
         "",
         f"- commit: [`{commit[:12]}`](https://github.com/diegoami/borg-reborn-rs/commit/{commit})",
-        "- platforms: Linux x86_64 only (Windows and macOS are not built yet)",
-        "- install: unpack the Linux package and read `PLAYING.txt`; `SHA256SUMS.txt` on this page checks the downloads",
+        "- platforms: " + ("Linux x86_64, Windows x86_64 and macOS arm64 (Apple silicon; it plays "
+                           "other games than Linux and Windows from the same seed, docs/RELEASING.md)"
+                           if a.macos else "Linux x86_64 and Windows x86_64 (no macOS package in this release)"),
+        "- start the game from its unpacked folder: `./angband` on Linux, `angband.exe` on Windows; then Ctrl-Z, z",
+        "- install: unpack your platform's package and read `PLAYING.txt`; `SHA256SUMS.txt` on this page checks the downloads",
         "",
     ]
     if a.milestone:

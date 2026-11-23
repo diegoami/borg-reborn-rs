@@ -26,8 +26,9 @@ the central place for our Borg documentation, including our
 [Angband Strategy Manual](docs/strategy/README.md); what is ours and what is
 other authors' is in [docs/DOCUMENTATION-MAP.md](docs/DOCUMENTATION-MAP.md).
 
-**Without building:** a release's Linux package plays as it is: unpack it,
-then `./watch-borg.sh` (see its `PLAYING.txt`).
+**Without building:** a release's Linux or Windows package plays as it is:
+unpack it and start the game from its folder (`./angband`, or `angband.exe`),
+then Ctrl-Z, z; see its `PLAYING.txt`.
 [docs/RELEASING.md](docs/RELEASING.md) says how to install one and how
 releases are made.
 
@@ -62,22 +63,18 @@ repositories into `vendor/` at their pins (the original Angband, the C Borg,
 borg-rs, borg-zoo, ...). Playing does not need them; developing does. It is
 safe to rerun.
 
-**For headless runs**, also clone
-[borg-cemetery](https://github.com/diegoami/borg-cemetery) next to this
-repository, at the commit named in `death-tools-pin.txt`: every run ends by
-handing a death (if any) to its tools, and `harness/run.sh` fails without
-them.
+**For headless runs**, run `scripts/setup.sh` once: it keeps
+[borg-cemetery](https://github.com/diegoami/borg-cemetery) in `vendor/` at the
+commit named in `death-tools-pin.txt` (about 1.2 GB). Every run ends by handing
+a death (if any) to its tools, and `harness/run.sh` fails without them.
 
 ```bash
-git clone https://github.com/diegoami/borg-cemetery.git ../borg-cemetery
+bash scripts/setup.sh
 ```
 
-```bash
-git -C ../borg-cemetery checkout "$(cat death-tools-pin.txt)"
-```
-
-(Or set `BORG_CEMETERY_DIR` to a checkout elsewhere; see
-[tools/README.md](tools/README.md#cemetery-owned-death-tools).)
+A borg-cemetery checkout next to this repository is used instead when its
+tools match the pin, and `BORG_CEMETERY_DIR` names a checkout explicitly; see
+[tools/README.md](tools/README.md#cemetery-owned-death-tools).
 
 ## 3. Watch the Borg play
 
@@ -86,17 +83,16 @@ git -C ../borg-cemetery checkout "$(cat death-tools-pin.txt)"
 ```
 
 builds the game with the X11 window into `build/watch/` (about a minute).
-Before the first game, give the Borg its settings: the game's user directory
-for watched games is `.angband-reborn/user/`.
+The game's user directory for watched games is `.angband-reborn/user/`. On
+its first start `watch-borg.sh` writes the shipped settings there
+(`harness/borg.txt` and its scary list, prepared as a headless run's, #826),
+so the borg-rs core plays them. Later starts keep that `borg.txt`, yours to
+edit, and say when it differs from the shipped one. After updating the
+repository, take the new shipped settings with:
 
 ```bash
-mkdir -p .angband-reborn/user && cp harness/borg.txt harness/scary_monsters.txt .angband-reborn/user/
+./watch-borg.sh --reset-settings --name MyBorg
 ```
-
-**Do not skip this.** Without a `borg.txt` there, the Borg writes one with
-the C Borg's defaults, which names no core, and the frozen reborn core plays
-instead of the borg-rs core. Copy the files again whenever you update the
-repository and want the new shipped settings.
 
 ```bash
 LANG=C.UTF-8 ./watch-borg.sh --name MyBorg

@@ -109,6 +109,11 @@ pub struct Borg {
     pub unseen_probe: Option<loc>,
     pub unseen_empty: Vec<loc>,
     pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981, review of #998): every unseen attack of the
+    /// episode so far was a projection's hit ("You are hit by ...!",
+    /// `SHOT_BY:`), not a blow. Set when the episode starts, cleared by a blow
+    /// and when the episode ends.
+    pub unseen_shot_only: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
@@ -143,6 +148,12 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
+    /// the last Phase Door landing check under the policy, as (the think's
+    /// `time.now`, the Borg's grid, the count). The gate of the sites
+    /// without a landing check reuses it in the same think and grid instead
+    /// of drawing again.
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
@@ -630,6 +641,10 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     if borg_ch != 0 {
         key.code = borg_ch;
         return key;
+    }
+
+    if st.fight_attack.pending_unseen.has_targets() && engine::inkey_flag() {
+        crate::borg_unseen_belief::confirm_attack(st);
     }
 
     if user_abort(st) {

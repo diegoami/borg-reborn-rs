@@ -26,3 +26,18 @@ borg_param_prepared_mid_clevel_offset = 0
 borg_param_prepared_deep_clevel_offset = 7
 borg_param_prepared_deep_min_clevel = 0
 borg_param_prepared_deep_max_clevel = 40
+# #863 (owner: staples start losing value after a few copies, by class; "current
+# characters do not buy enough world of recall ... and probably more phase doors
+# as well, they tend to run out of them, especially rangers"): free copies per
+# staple. Cure Light and Serious Wounds are 6 x what the class carries at a town
+# departure now / 19 (the baseline of 36 games, docs/CALIBRATION.md, #863);
+# Phase Door and oil are what the class uses, above what it carries now, so the
+# decay starts past a trip's real need.
+borg_param_town_staple_clw = 5
+borg_param_town_staple_csw = 4
+borg_param_town_staple_phase = 14
+borg_param_town_staple_oil = 11
+# #901 (owner, 2026-11-22): a melee class keeps the point-blank penalty on
+# thrown oil (common 1): "melee is infinite, flasks are not". 0 = inherit the
+# arrow divisor. A workaround until flasks are saved for when needed (#912).
+borg_param_attack_throw_point_blank_divisor = 0

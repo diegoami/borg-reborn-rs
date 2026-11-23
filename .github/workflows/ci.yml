@@ -38,10 +38,11 @@ jobs:
       # Branch-local numeric IDs are provisional; new historical evidence is qualified.
       - run: python3 tools/import-deaths.py --check
       # The generated bindings match upstream's headers (TE.3): bindgen and
-      # libclang, so the D3 audit's regeneration check runs too.
+      # libclang, so the D3 audit's regeneration check runs too; the MinGW-w64
+      # headers for the Windows layouts (bindings_windows.rs, #823).
       - uses: ./.github/actions/apt-install
         with:
-          packages: libclang-dev
+          packages: libclang-dev mingw-w64-x86-64-dev
       # #588: the bindgen binary is cached, keyed by its version and the runner
       # image; cargo builds it (about 33 s) only on a cache miss.
       - id: bindgen-cache
@@ -267,7 +268,8 @@ jobs:
       # the game's RNG, nor change what is observed; each think asserts it
       # (feature test-hallucinate). Perception against the engine (T2.5): each
       # think writes its comparison to truth.jsonl (feature test-perception).
-      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception harness/build.sh
+      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
+      - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # Full too: smoke has too few monsters to meet every case (T2.5 found

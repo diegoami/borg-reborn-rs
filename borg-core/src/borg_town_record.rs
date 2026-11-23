@@ -37,7 +37,10 @@ use crate::state::BorgState;
 /// The plan record's schema version (v2: the decision record, v3: the
 /// handover's state record). borg-reborn-rs (#651): 12, what a visit
 /// bought is not stored in the Home (`borg_town_utility::dispositions`).
-pub const PLAN_SCHEMA: i64 = 12;
+/// borg-reborn-rs (#957, P7 review): 13, the record carries the storing
+/// settings (`storing`: the departure room, `town_store_keep_min` and
+/// `town_store_only_overweight`), so a replay stores as the visit did.
+pub const PLAN_SCHEMA: i64 = 13;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -166,6 +169,8 @@ pub struct PlanRecord {
     /// 0 none, 1 the 2000-turn give-up, 2 the anti-bounce give-up, 3 the
     /// solver refused.
     pub guard: u8,
+    /// v13 (#957): the storing settings, `Storing::to_array`. None before.
+    pub storing: Option<[i64; 6]>,
 }
 
 // --- writing -------------------------------------------------------------
@@ -256,6 +261,10 @@ impl PlanRecord {
         num(out, self.spells);
         field(out, "params");
         ints(out, &self.params[..if self.schema == 4 { 12 } else { PARAMS }]);
+        if let Some(storing) = self.storing.filter(|_| self.schema >= 13) {
+            field(out, "storing");
+            ints(out, &storing);
+        }
         if self.black_market_reserve != 0 {
             field(out, "black_market_reserve");
             num(out, self.black_market_reserve);
@@ -493,7 +502,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
@@ -525,6 +534,7 @@ impl PlanRecord {
             power: small("power")?,
             spells: small("spells")? as u8,
             params,
+            storing: if schema >= 13 { Some(fixed(j.get("storing")?.ints()?, "storing")?) } else { None },
             black_market_reserve: j.get("black_market_reserve").map_or(Ok(0), Json::int)?,
             black_market_percentage: j.get("black_market_percentage").map_or(Ok(-1), Json::int)?,
             limits: fixed(j.get("limits")?.ints()?, "limits")?,
@@ -630,6 +640,9 @@ pub struct StepInput<'a> {
     pub kit: &'a [KitItem],
     /// The Home's free slots.
     pub home_slots: i32,
+    /// #957: the storing settings a record carries (v13); None reads the
+    /// process's (a live solve, an older record).
+    pub storing: Option<crate::borg_town_utility::Storing>,
 }
 
 /// What a step produces.
@@ -647,6 +660,10 @@ pub struct StepOutput {
     /// What the dispositions freed for the purchases.
     #[cfg_attr(not(test), expect(dead_code))]
     pub freed: Freed,
+    /// Per kit row, the copies a split stack's disposition moves, the
+    /// surplus past `town_store_keep_min`; 0 or absent: the whole stack
+    /// (#859, review F1). Empty unless a stack was split.
+    pub copies: Vec<i32>,
 }
 
 /// A state the usefulness function can read: the traits, the power, and
@@ -723,7 +740,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     // pack and the Home, and what they free.
     let mut utility = crate::borg_town_utility::Utility::of(&st, input.kit, input.cure_spell);
     utility.capability = input.capability.cloned();
-    utility.recall_reserve = crate::borg_town_capability::recall_reserve_for_budget(input.limits.gold);
+    utility.recall_reserve = step_recall_reserve(input.storing, input.limits.gold);
     if input.utility && input.revision >= 9 {
         for purchase in &input.urgent {
             let c = &input.candidates[purchase.candidate];
@@ -747,17 +764,20 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    let (dispositions, freed) = if input.utility {
+    let (dispositions, freed, copies) = if input.utility {
         crate::borg_town_utility::dispositions(input, &mut utility, &st)
-    } else { dispose(
-        input.kit,
-        &st,
-        &trip,
-        &weights,
-        input.limits.pack_slots,
-        input.home_slots,
-        input.limits.weight,
-    ) };
+    } else {
+        let (d, f) = dispose(
+            input.kit,
+            &st,
+            &trip,
+            &weights,
+            input.limits.pack_slots,
+            input.home_slots,
+            input.limits.weight,
+        );
+        (d, f, Vec::new())
+    };
     // What they change in the needs the purchases see: a stack that leaves
     // the pack takes its copies out of its need, one taken from the Home
     // brings them in.
@@ -785,11 +805,15 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    // Stage 2: the purchases, with what the dispositions freed.
+    // Stage 2: the purchases, with what the dispositions freed. They leave
+    // the departure room free (#859; zero when off).
+    let room = if input.utility {
+        input.storing.map_or_else(crate::borg_town_utility::departure_room, |s| s.room)
+    } else { Default::default() };
     let limits = Limits {
         gold: input.limits.gold + freed.gold,
-        pack_slots: input.limits.pack_slots + freed.pack_slots,
-        weight: input.limits.weight + freed.weight,
+        pack_slots: input.limits.pack_slots + freed.pack_slots - room.slots,
+        weight: input.limits.weight + freed.weight - room.weight,
     };
     let st = st;
     let facts: BTreeMap<(u8, u8), &WareFact> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
@@ -798,8 +822,10 @@ pub fn step(input: &StepInput) -> StepOutput {
     if input.utility {
         for c in &mut candidates {
             if input.revision >= 9 && c.shop == 7 { c.qty = 0; }
-            if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).any(|(it, d)|
-                it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep) {
+            if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).enumerate().any(|(i, (it, d))|
+                it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep
+                    && !(input.capability.is_some_and(|model| model.restore_life_keep(it) > 0)
+                        && copies.get(i).is_some_and(|&qty| qty > 0 && qty < it.qty))) {
                 c.slots_cost = 1;
             }
         }
@@ -878,7 +904,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed }
+    StepOutput { ranged_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed, copies }
 }
 
 /// Add (`sign` 1) or remove (`sign` -1) `qty` copies' worth of a need in a
@@ -929,28 +955,72 @@ pub fn first_action(
     facts: &[WareFact],
     kit: &[KitItem],
 ) -> (i64, [i64; 4], i64, bool) {
-    first_action_with_room(candidates, urgent, out, facts, kit, None, None)
+    first_action_with_room(candidates, urgent, out, facts, kit, None, None, None)
 }
 
 /// Respect a full Home's prerequisite: free a Home slot before depositing.
 /// Historical shadow records retain their original order through first_action.
+/// `weight_room`: the tenth-pounds still free before the encumbrance starts
+/// (`Facts::allowance`, `BI_CARRY / 2 - BI_WEIGHT`).
 pub fn first_executable_action(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
-    facts: &[WareFact], kit: &[KitItem], home_slots: i32, pack_slots: i32,
+    facts: &[WareFact], kit: &[KitItem], home_slots: i32, pack_slots: i32, weight_room: i64,
 ) -> (i64, [i64; 4], i64, bool) {
-    first_action_with_room(candidates, urgent, out, facts, kit, Some(home_slots), Some(pack_slots))
+    first_action_with_room(candidates, urgent, out, facts, kit, Some(home_slots), Some(pack_slots), Some(weight_room))
 }
 
+/// One copy of an urgent ware fits the pack's free slots and the weight
+/// still free (#955); `None` is not checked (historical selection).
+fn urgent_fits(c: &Candidate, pack_slots: Option<i32>, weight_room: Option<i64>) -> bool {
+    pack_slots.is_none_or(|n| n >= c.slots_cost) && weight_room.is_none_or(|w| w >= i64::from(c.weight))
+}
+
+/// The live selection (#939 re-review, P2). The urgent pass picks its set by
+/// gold, with the urgent Recall first (#956), before anything checks what
+/// fits; the selector then skips an urgent copy that does not fit (#955) and
+/// makes room for it when it can. When that leaves the visit with nothing to
+/// do (`LEAVE`) because an urgent ware does not fit and no room can be made,
+/// the urgent needs are chosen again without every ware that does not fit
+/// now (`rebudget(unfit)`, review of #973: not only the blocked ones, or the
+/// second pass can pick another ware that does not fit), so an affordable
+/// cure that fits is bought rather than lost to a Recall the pack cannot
+/// take. When the room can be made, or the blocked ware fits, nothing
+/// changes. One retry at most.
+#[allow(clippy::too_many_arguments)]
+pub fn live_selection(
+    candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput, facts: &[WareFact], kit: &[KitItem],
+    home_slots: i32, pack_slots: i32, weight_room: i64,
+    rebudget: impl FnOnce(&[usize]) -> Vec<UrgentPurchase>,
+) -> (i64, [i64; 4], i64, bool) {
+    let first = first_executable_action(candidates, urgent, out, facts, kit, home_slots, pack_slots, weight_room);
+    if first.0 != action::LEAVE { return first; }
+    let fits = |c: &Candidate| urgent_fits(c, Some(pack_slots), Some(weight_room));
+    if urgent.iter().all(|f| fits(&candidates[f.candidate])) { return first; }
+    let unfit: Vec<usize> = candidates.iter().enumerate()
+        .filter(|(_, c)| c.qty > 0 && !fits(c)).map(|(i, _)| i).collect();
+    let others = rebudget(&unfit);
+    if others.is_empty() { return first; }
+    let second = first_executable_action(candidates, &others, out, facts, kit, home_slots, pack_slots, weight_room);
+    if second.0 == action::LEAVE { first } else { second }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn first_action_with_room(
     candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
     facts: &[WareFact], kit: &[KitItem], home_slots: Option<i32>, pack_slots: Option<i32>,
+    weight_room: Option<i64>,
 ) -> (i64, [i64; 4], i64, bool) {
     let need_of = |c: &Candidate| {
         facts.iter().find(|f| f.shop == c.shop && f.slot == c.slot).map_or(-1, |f| i64::from(f.need))
     };
     // A blocked new stack must not hide a later emergency that joins stock
     // already carried. Historical shadow selection has no pack-room filter.
-    let feasible_urgent = urgent.iter().find(|f| pack_slots.is_none_or(|n| n >= candidates[f.candidate].slots_cost));
+    // borg-reborn-rs (#955, P7 review): nor over the carry allowance. The
+    // solver already priced the room the urgent copy needs (Budget::weight
+    // is the allowance less the urgent picks), so when one copy does not fit
+    // yet, the room-making dispositions below run first and the purchase
+    // follows on a later solve.
+    let feasible_urgent = urgent.iter().find(|f| urgent_fits(&candidates[f.candidate], pack_slots, weight_room));
     let blocked_urgent = !urgent.is_empty() && feasible_urgent.is_none();
     if let Some(f) = feasible_urgent {
         let c = &candidates[f.candidate];
@@ -974,7 +1044,7 @@ fn first_action_with_room(
         (Place::Home, Disposition::Take),
     ] };
     for (place, d) in order {
-        if let Some((k, _)) = kit.iter().zip(&out.dispositions).find(|(k, &x)| k.place == place && x == d
+        if let Some((i, k)) = kit.iter().enumerate().find(|(i, k)| k.place == place && out.dispositions.get(*i) == Some(&d)
             && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
             && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !k.joins_pack)) {
             let (code, at) = match (place, d) {
@@ -984,7 +1054,11 @@ fn first_action_with_room(
                 (Place::Home, Disposition::Sell) => (action::SELL_HOME, i64::from(k.sell_shop)),
                 _ => (action::TAKE_HOME, 7),
             };
-            return (code, [at, i64::from(k.slot), i64::from(k.qty), k.proceeds], i64::from(k.need), false);
+            // borg-reborn-rs (#859, review F1): a stack split at
+            // `town_store_keep_min` moves the surplus the plan priced, not
+            // the whole stack. Only the pack's stacks are split.
+            let copies = out.copies.get(i).copied().filter(|&n| n > 0 && place == Place::Pack && n < k.qty);
+            return (code, [at, i64::from(k.slot), i64::from(copies.unwrap_or(k.qty)), k.proceeds], i64::from(k.need), false);
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
@@ -1014,6 +1088,16 @@ pub fn replay(line: &str) -> Result<(PlanRecord, StepOutput), String> {
     let (rec, parts) = replay_parts(line)?;
     let out = step(&parts.input(&rec));
     Ok((rec, out))
+}
+
+/// #957 (reviews of #962): the Word of Recall reserve a step values, with
+/// the purse after the urgent purchases: a v13 record's reserve and gold
+/// floor, else the process's settings (a live solve, an older record).
+fn step_recall_reserve(storing: Option<crate::borg_town_utility::Storing>, gold: i64) -> i64 {
+    match storing {
+        Some(s) => crate::borg_town_capability::eligible_recall_reserve(gold, s.recall_floor, s.recall_reserve),
+        None => crate::borg_town_capability::recall_reserve_for_budget(gold),
+    }
 }
 
 /// A step's inputs as a replay rebuilds them from a v4 line (the
@@ -1049,6 +1133,7 @@ impl ReplayParts {
             cure_spell: rec.spells & 1 != 0,
             kit: &rec.kit,
             home_slots: rec.limits[2] as i32,
+            storing: rec.storing.map(crate::borg_town_utility::Storing::from_array),
         }
     }
 }
@@ -1261,7 +1346,7 @@ mod tests {
             })
             .collect();
         let limits = Limits::of(&budget);
-        let out = step(&StepInput {
+        let out = step(&StepInput { storing: None,
             revision: 4,
             capability: None,
             utility: false,
@@ -1284,6 +1369,7 @@ mod tests {
             ns.iter().fold(0u8, |m, n| m | (1 << Need::ALL.iter().position(|x| x == n).unwrap()))
         };
         let rec = PlanRecord {
+            storing: None,
             capability: None,
             schema: 4,
             mode: 0,
@@ -1320,6 +1406,42 @@ mod tests {
         rec.push_fields(&mut line);
         line.push('}');
         (line, rec)
+    }
+
+    /// #957 (P7 review): a v13 record writes the storing settings and a
+    /// replay uses them, not the process's; an older record has none and
+    /// keeps reading the process's settings, as before.
+    #[test]
+    fn a_recorded_reserve_and_floor_decide_the_step_s_recall_reserve() {
+        use crate::borg_town_utility::Storing;
+        let recorded = |floor| Some(Storing { recall_reserve: 2, recall_floor: floor, ..Storing::default() });
+        assert_eq!(super::step_recall_reserve(recorded(200), 250), 2, "the purse reaches the recorded floor");
+        assert_eq!(super::step_recall_reserve(recorded(400), 250), 0, "it does not: no reserve");
+        // Without recorded settings, the process's (the registry's defaults
+        // in a test): the same as before #957.
+        assert_eq!(super::step_recall_reserve(None, 250), crate::borg_town_capability::recall_reserve_for_budget(250));
+    }
+
+    #[test]
+    fn the_storing_settings_travel_with_a_v13_record() {
+        use crate::borg_town_utility::{Room, Storing};
+        let storing = Storing { only_overweight: false, room: Room { weight: 50, slots: 2 }, keep_min: 3, recall_reserve: 2, recall_floor: 200 };
+        assert_eq!(Storing::from_array(storing.to_array()), storing);
+        let stock = stock();
+        let (_, mut rec) = produce(&stock, 300, &traits(), &[], &[]);
+        let mut line = String::new();
+        rec.push_fields(&mut line);
+        assert!(!line.contains("\"storing\""), "an older record carries none");
+        rec.schema = PLAN_SCHEMA;
+        rec.storing = Some(storing.to_array());
+        let mut line = String::new();
+        rec.push_fields(&mut line);
+        assert!(line.contains("\"storing\":[50,2,3,0,2,200]"), "{line}");
+        let parts = ReplayParts { candidates: Vec::new(), urgent: Vec::new(), traits: Vec::new(), carried: Vec::new(),
+            limits: Limits { gold: 0, pack_slots: 0, weight: 0 }, tryon: Vec::new(), power: 0 };
+        assert_eq!(parts.input(&rec).storing, Some(storing));
+        rec.storing = None;
+        assert_eq!(parts.input(&rec).storing, None);
     }
 
     /// The carried items as the step reads them: one torch (the light
@@ -1505,8 +1627,8 @@ mod tests {
         let home = KitItem { joins_pack: false, place: Place::Home, slot: 5, ..pack };
         let kit = [pack, home];
         out.dispositions = vec![Disposition::Store, Disposition::Sell];
-        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 0, 1).0, action::SELL_HOME);
-        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 1, 1).0, action::STORE);
+        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 0, 1, i64::MAX).0, action::SELL_HOME);
+        assert_eq!(first_executable_action(&stock.candidates, &[], &out, &[], &kit, 1, 1, i64::MAX).0, action::STORE);
         assert_eq!(first_action(&stock.candidates, &[], &out, &[], &kit).0, action::STORE,
             "historical shadow action order remains reproducible");
     }
@@ -1773,14 +1895,14 @@ mod tests {
         let mut cs=stock.candidates.clone();cs[0].slots_cost=1;cs[1].slots_cost=0;
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]},
             UrgentPurchase {candidate:1,needs:vec![Need::Poison]}];
-        let chosen=first_executable_action(&cs,&urgent,&out,&[],&[],1,0);
+        let chosen=first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX);
         assert_eq!(chosen,(action::BUY,[i64::from(cs[1].shop),i64::from(cs[1].slot),1,i64::from(cs[1].price)],3,true));
         // When room exists the original urgent order still wins.
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,1).1[1],i64::from(cs[0].slot));
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,1, i64::MAX).1[1],i64::from(cs[0].slot));
         cs[1].shop=7;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0).0,action::TAKE_HOME);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::TAKE_HOME);
         cs[1].slots_cost=1;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0).0,action::LEAVE);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::LEAVE);
     }
 
     #[test]
@@ -1791,12 +1913,85 @@ mod tests {
             proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
         let kit=[pack];out.dispositions=vec![Disposition::Sell];
         let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0).0,action::SELL);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::SELL);
         out.dispositions[0]=Disposition::Keep;out.solution.chosen.fill(0);
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0).0,action::LEAVE);
-        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1).0,action::BUY);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::LEAVE);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1, i64::MAX).0,action::BUY);
         let mut cs=stock.candidates.clone();cs[0].shop=7;cs[0].slots_cost=0;
-        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&kit,1,0).0,action::TAKE_HOME);
+        assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&kit,1,0, i64::MAX).0,action::TAKE_HOME);
+    }
+
+    /// #939 re-review (P2): an urgent Recall the pack cannot carry, with no
+    /// room to make, does not hide an affordable urgent cure that fits.
+    #[test]
+    fn a_blocked_urgent_recall_does_not_hide_a_cure_that_fits() {
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        out.dispositions.clear();out.solution.chosen.fill(0);out.ranged_purchase=None;
+        let mut cs=stock.candidates.clone();
+        let recall=0;let cure=cs.iter().position(|c| c.kind==CLW).unwrap();
+        cs[recall].weight=5;cs[recall].slots_cost=1;cs[cure].weight=4;cs[cure].slots_cost=1;
+        let urgent=[UrgentPurchase {candidate:recall,needs:vec![Need::Trip]}];
+        let cure_set=|unfit:&[usize]| { assert!(unfit.contains(&recall) && !unfit.contains(&cure)); vec![UrgentPurchase {candidate:cure,needs:vec![Need::Poison]}] };
+        // Four tenths free: the Recall does not fit, the cure does.
+        let (a,act,_,now)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,cure_set);
+        assert_eq!((a,act[1],now),(action::BUY,i64::from(cs[cure].slot),true));
+        // Five tenths free: the Recall fits and keeps its priority.
+        let (a,act,_,_)=live_selection(&cs,&urgent,&out,&[],&[],1,1,5,|_:&[usize]| panic!("no fallback when it fits"));
+        assert_eq!((a,act[1]),(action::BUY,i64::from(cs[recall].slot)));
+        // Nothing else urgent and affordable: the visit still leaves.
+        let (a,..)=live_selection(&cs,&urgent,&out,&[],&[],1,1,4,|_:&[usize]| Vec::new());
+        assert_eq!(a,action::LEAVE);
+    }
+
+    /// Review of #973: the retry leaves out every ware that does not fit, not
+    /// only the blocked one, so it cannot pick a second ware that does not
+    /// fit either. The real urgent budgeter: 150 gold, the Recall (125 gold,
+    /// 5 tenths) first; a 75-gold cure at 4 tenths and a 140-gold cure at 1
+    /// tenth; one tenth free. Leaving out only the Recall, the budgeter picks
+    /// the cheaper, heavier cure and the visit leaves; the fix buys the light
+    /// one.
+    #[test]
+    fn the_urgent_retry_leaves_out_every_ware_that_does_not_fit() {
+        use crate::borg_town_budget::Facts;
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        out.dispositions.clear();out.solution.chosen.fill(0);out.ranged_purchase=None;
+        let ware=|slot:u8,kind:u32,price:i32,weight:i32| Candidate { shop:5,slot,kind,tval:0,sval:0,price,qty:1,
+            weight,slots_cost:1,stack_count:0,class:u16::from(slot) };
+        let (recall,light)=(0usize,2usize);
+        let mut shop=Stock::default();
+        shop.candidates=vec![ware(0,900,125,5),ware(1,901,75,4),ware(2,902,140,1)];
+        let serves=|c:&Candidate| if c.kind==900 { vec![Need::Trip] } else { vec![Need::Poison] };
+        let facts=Facts { gold:150, pack_capacity:23, home_capacity:24, carry:2000, weight:0 };
+        let needs=[Need::Poison,Need::Trip];
+        let first=Budget::build(&facts,&shop,&needs,serves);
+        assert_eq!(first.urgent.iter().map(|f| f.candidate).collect::<Vec<_>>(),[recall]);
+        let rebudget=|unfit:&[usize]| { let mut s=shop.clone(); for &i in unfit { s.candidates[i].qty=0; } Budget::build(&facts,&s,&needs,serves).urgent };
+        let (a,act,_,now)=live_selection(&shop.candidates,&first.urgent,&out,&[],&[],1,1,1,rebudget);
+        assert_eq!((a,act[1],now),(action::BUY,i64::from(shop.candidates[light].slot),true));
+        // The old retry (the blocked Recall only) picks the heavy cure: LEAVE.
+        let only_blocked=|_:&[usize]| { let mut s=shop.clone(); s.candidates[recall].qty=0; Budget::build(&facts,&s,&needs,serves).urgent };
+        let (a,..)=live_selection(&shop.candidates,&first.urgent,&out,&[],&[],1,1,1,only_blocked);
+        assert_eq!(a,action::LEAVE);
+    }
+
+    /// #955 (P7 review): an urgent copy that does not fit the weight still
+    /// free waits for the room-making dispositions; once it fits, it is bought.
+    #[test]
+    fn urgent_buy_over_the_weight_allowance_frees_weight_first() {
+        let stock=stock();let (line,_)=produce(&stock,300,&traits(),&[],&[]);
+        let (_,mut out)=replay(&line).unwrap();
+        let pack=KitItem {joins_pack:false,place:Place::Pack,slot:0,kind:1,qty:1,weight:50,need:-1,reduction:0,power:0,
+            proceeds:0,sell_shop:4,unknown:false,unknown_flavour:false,just_bought:false,serves:0};
+        let kit=[pack];out.dispositions=vec![Disposition::Store];
+        let urgent=[UrgentPurchase {candidate:0,needs:vec![Need::Food]}];
+        let w=i64::from(stock.candidates[0].weight);
+        assert!(w > 0);
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w-1).0,action::STORE, "room first");
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w).0,action::BUY, "fits: bought first");
+        out.dispositions[0]=Disposition::Keep;
+        assert_eq!(first_executable_action(&stock.candidates,&urgent,&out,&[],&kit,1,1,w-1).0,action::LEAVE, "no room to make: never overweight");
     }
 
 }

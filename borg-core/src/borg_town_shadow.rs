@@ -423,6 +423,15 @@ fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
     unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_LIGHT && i32::from(sval) == torch
 }
 
+/// The copies the live executor moves for a planned action (#507): a
+/// purchase keeps the copies the plan picked, every other action moves one
+/// copy and the plan is solved again. A planned quantity larger than one
+/// (a whole stack, or the surplus past `town_store_keep_min`, #859) is
+/// therefore reached one copy at a time.
+fn executed_copies(code: i64, planned: i64) -> i64 {
+    if code != crate::borg_town_record::action::BUY { 1 } else { planned.max(1) }
+}
+
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let file = crate::borg_town_dump::plan_record_file();
 
@@ -542,7 +551,9 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
-    let out = step(&StepInput {
+    // #957: the storing settings this solve uses, recorded with it (v13).
+    let storing = crate::borg_town_utility::Storing::settings();
+    let out = step(&StepInput { storing: Some(storing),
         revision: crate::borg_town_record::PLAN_SCHEMA,
         capability: Some(&capability),
         utility: true,
@@ -573,7 +584,19 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             };
             if reverses { *d = Disposition::Keep; }
         }
-        crate::borg_town_record::first_executable_action(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, budget.home_slots, crate::borg_town_budget::Facts::of(st).pack_capacity - stock.pack_slots_used())
+        {
+            let facts = crate::borg_town_budget::Facts::of(st);
+            // #939 re-review: an urgent ware that cannot be carried must not
+            // hide an affordable urgent ware that can.
+            crate::borg_town_record::live_selection(&stock.candidates, &budget.urgent, &chosen_from, &wares, &kit,
+                budget.home_slots, facts.pack_capacity - stock.pack_slots_used(), facts.allowance(), |blocked| {
+                    let mut others = stock.clone();
+                    for &i in blocked { others.candidates[i].qty = 0; }
+                    let mut b = Budget::of(st, &others, &trip);
+                    replenish_torch_reserve(st, &others, &mut b);
+                    b.urgent
+                })
+        }
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
     if live && paction != crate::borg_town_record::action::LEAVE && paction != crate::borg_town_record::action::DROP {
@@ -591,11 +614,12 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
         // types them at the quantity prompt, capped by the native offer.
         // Every other action moves one copy and re-solves.
-        if paction != crate::borg_town_record::action::BUY { act[2] = 1; } else { act[2] = act[2].max(1); }
+        act[2] = executed_copies(paction, act[2]);
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
     let rec = PlanRecord {
+        storing: Some(storing.to_array()),
         capability: Some(capability),
         schema: crate::borg_town_record::PLAN_SCHEMA,
         mode: u8::from(live),
@@ -661,6 +685,18 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
 mod tests {
     use super::*;
     use crate::headers::list_tvals_h::*;
+
+    /// #859 (review F1): what reaches the executor. The live path moves one
+    /// copy of a store and solves again; a purchase keeps its planned copies.
+    #[test]
+    fn the_live_executor_moves_one_copy_of_a_store_and_the_planned_copies_of_a_purchase() {
+        use crate::borg_town_record::action;
+        for code in [action::STORE, action::SELL, action::SELL_HOME, action::TAKE_HOME] {
+            assert_eq!(executed_copies(code, 9), 1, "action {code}: one copy, then solve again");
+        }
+        assert_eq!(executed_copies(action::BUY, 3), 3);
+        assert_eq!(executed_copies(action::BUY, 0), 1);
+    }
 
     #[test]
     fn unaware_devices_are_protected_even_when_no_runes_are_missing() {
@@ -739,7 +775,7 @@ mod knowledge_only_purchase_tests {
             serves: 1 << need_index(Need::Knowledge) }];
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
-        let out = step(&StepInput {
+        let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });

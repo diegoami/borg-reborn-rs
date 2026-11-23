@@ -25,7 +25,7 @@
 //! buffer with `strnfmt` the same truncation is applied (`strnfmt_s`).
 
 use crate::borg::BorgTemp;
-use crate::borg_io::{borg_flush, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
+use crate::borg_io::{borg_flush, borg_flush_keys, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
 use crate::borg_messages_react::{borg_react, borg_react_prompted};
 use crate::borg_util::borg_trim;
 use crate::borg_headers::borg_h::BORG_VERBOSE;
@@ -389,6 +389,8 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         let answer = crate::borg_escape::change_back_answer(st);
         if answer == b'y' {
             borg_note(st, "# Fox Form: reverting for an item or a spell");
+        } else {
+            st.fight_attack.pending_unseen.clear();
         }
         key.code = u32::from(answer);
         return true;
@@ -398,6 +400,9 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
         if let Some(code) = borg_react_prompted(st, &text, cursor) {
+            if code == ESCAPE || code == u32::from(b'n') {
+                st.fight_attack.pending_unseen.clear();
+            }
             key.code = code;
             return true;
         }
@@ -622,6 +627,7 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    crate::borg_unseen_belief::reject_attack(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
@@ -629,6 +635,13 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
+    }
+    // borg-reborn-rs (#981): "You are hit by something sharp!" is the
+    // engine's message for a bolt from a monster the Borg cannot see
+    // (`project-player.c:840-842, 887`); with `recover_unseen_shot` it is an
+    // unseen attack, read in `borg_update` where the Borg's grid is known.
+    if crate::borg_recover::unseen_shot_message(msg) {
+        borg_react(st, msg, b"SHOT_BY:Something");
     }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
@@ -677,8 +690,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // Set the failure flag
         st.update.failure = true;
 
-        // Flush our key-buffer
-        borg_flush(st);
+        // Flush our key-buffer. reject_attack above already handled any
+        // message that rejected the pending unseen shot.
+        borg_flush_keys(st);
 
         // If we were casting a targetted spell and failed
         // it does not mean we can't target that location

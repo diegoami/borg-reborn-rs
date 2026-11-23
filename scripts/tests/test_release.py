@@ -34,6 +34,53 @@ class ReleaseWorkflowTest(unittest.TestCase):
         self.assertEqual(text.count('gh release create'), 1)
         self.assertIn('--draft', text[text.index('gh release create'):])
 
+    def test_build_only_runs_skip_the_release(self):
+        # #823/#824: release off checks the packages without a draft; a tag push always drafts.
+        text = WORKFLOW.read_text()
+        for name in ('since:', 'release:', 'type: boolean'):
+            self.assertIn(name, on_block(text))
+        job = text[text.index('\n  release:\n'):]
+        self.assertIn("needs.setup.outputs.release == 'true'", job.split('runs-on')[0])
+        self.assertIn("github.event_name == 'push' || github.event.inputs.release != 'false'", text)
+
+    def test_every_platform_is_packaged_and_played(self):
+        text = WORKFLOW.read_text()
+        for job, runner, platform in (('linux', 'ubuntu-24.04', 'linux'), ('macos', 'macos-latest', 'macos'),
+                                      ('windows', 'windows-latest', 'windows')):
+            body = text[text.index(f'\n  {job}:\n'):]
+            body = body[:body.index('\n\n  ', 1)]
+            self.assertIn(f'runs-on: {runner}', body)
+            self.assertIn(f'scripts/release/package.sh {platform} ', body)
+        self.assertIn('needs: [setup, source, linux, linux-clean, macos, windows]', text)
+
+    def test_a_direct_start_has_its_folders_and_settings(self):
+        # Owner, v0.1.0-alpha.1: "save failed" when angband.exe was started
+        # directly; the engine creates lib/save etc. only on Unix.
+        text = (ROOT / 'scripts/release/package.sh').read_text()
+        self.assertIn('mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"', text)
+        self.assertIn('"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"', text)
+        self.assertIn("info.external_attr = (0o40755 << 16) | 0x10", text)
+
+    def test_macos_only_when_asked_and_no_launcher(self):
+        # Owner, v0.1.0-alpha.1: no watch-borg launcher, no macOS package by default.
+        text = WORKFLOW.read_text()
+        block = on_block(text)
+        macos = block[block.index('      macos:'):]
+        self.assertIn('default: false', macos.split('\n      ', 1)[1].split('\n  ', 1)[0] + macos)
+        self.assertIn("if: needs.setup.outputs.macos == 'true'", text)
+        self.assertFalse((ROOT / 'scripts/release/watch-borg.sh').exists())
+        self.assertFalse((ROOT / 'scripts/release/windows/watch-borg.cmd').exists())
+        shipped = (ROOT / 'scripts/release/package.sh').read_text().split('# The short guide.')[1].split('cp "$ROOT/README.md"')[0]
+        for launcher in ('watch-borg', 'play-headless.sh"', 'play-headless.ps1 ', 'install -m'):
+            self.assertNotIn(launcher, shipped.split('\nif [')[1], launcher)
+
+    def test_the_shipped_readme_is_angbands_with_the_borg(self):
+        # Owner: players get upstream Angband's README with the Borg added,
+        # not the repository's.
+        text = (ROOT / 'scripts/release/package.sh').read_text()
+        self.assertIn('"$ROOT/engine/angband/README.md" "$ROOT/scripts/release/README-borg.md" "$STAGE/README.md"', text)
+        self.assertNotIn('cp "$ROOT/README.md"', text)
+
     def test_scripts_parse(self):
         for script in sorted((ROOT / 'scripts/release').glob('*.sh')):
             result = subprocess.run(['bash', '-n', str(script)], capture_output=True, text=True)
