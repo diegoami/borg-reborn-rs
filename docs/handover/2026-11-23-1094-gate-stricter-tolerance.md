@@ -107,6 +107,13 @@ had nothing to phase with anyway. Its keys (221) and its death (a cave
 spider at game turn 2,596) are the same, so only `messages.log` changed.
 No zoo run has measured the shipped pair (#1073).
 
+CI's engine tests then failed in `engine/tests/test_stair_handoff.py`. Its
+three incident games pin every setting shipped after they were recorded,
+as #1072 and #1078 did. The shipped pair moved those games off their
+recorded turns, so the test now pins both switches at 0 too. All of
+`engine/tests` passes locally (99 tests, 6 skipped here for want of CI's
+fixture zips).
+
 ### Left, and for the owner
 
 - #1073: the zoo comparison of #1066's switches and the Cemetery
