@@ -1208,6 +1208,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
             st.borg.mon.scary = true;
             st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
+        // borg-reborn-rs (#1061): stair_scum goes back onto the stairs.
+        crate::borg_stair_scum::heard_door(st);
     }
 
     // Some spells move the borg from his grid

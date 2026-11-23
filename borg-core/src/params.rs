@@ -95,6 +95,16 @@ parameters! {
     kit_leash => (0, "flag", 0, 1, "borg_kit.rs:201", "#840 (owner, 2026-11-21: \"the smaller the kit the smaller the leash\"): 1 = the leash follows the kit score: kit_leash_min + (C's leash - kit_leash_min) x score^kit_leash_power, while the kit is short, at any depth and level up to kit_max_level (the hunts and item detours the leash refuses stay refused). 0 = C's leash, today's play."),
     kit_leash_min => (1, "steps", 0, 20, "borg_kit.rs:314", "#840: the leash of a Borg with no basic kit at all (0-2 in the issue): it stays on or next to the stairs. Used with kit_leash."),
     kit_leash_power => (1, "power", 1, 4, "borg_kit.rs:314", "#840: the exponent of the score in the kit leash (1 = linear, 2 = squared: a half kit gets a quarter of the room). Integer, so a game replays from its keys. Used with kit_leash."),
+    // borg-reborn-rs (#1061, owner proposal from the level-1 death review of 206cf4e7): the stair_scum exploration mode.
+    stair_scum => (0, "flag", 0, 1, "borg_stair_scum.rs:152", "#1061 (owner: \"explore the level in a way that they can go back to the stairs faster than any character can come at them\"): 1 = while max HP < stair_scum_max_hp (per class) + stair_scum_max_hp_race_delta (per race) and the Borg cannot detect monsters (a Detect Monsters, Reveal Monsters or Detection spell, a Rod of Detection), in the dungeon: a grid is safe when a monster first seen there (the engine's light radius, a lit room's nearest unseen entry, 1 behind a door) and acting stair_scum_speed_ratio times per player action lands fewer than HP / stair_scum_contact_damage attacks on the walk to the nearest known staircase of either kind (known, trap-free grids) and the stair command; the dark flows, item and monster targets and every voluntary flow step stay in the safe area joined to a staircase, nearest the staircase first; outside it the Borg walks back onto the staircase; a door it opens is peeked through (step back, wait a turn); a door seen opened near the area, or a door sound no changed door explains, holds it on the staircase for stair_scum_alarm_turns; nothing left in the area: it takes a staircase (DL1-2 preferred, within the depth plan); on a staircase, a threat the fight race does not take is left by the stairs, and it rests there; with no known route to a staircase it explores toward one and chases nothing. 0 = today's play. Hypothesis: no measurement chose it."),
+    stair_scum_max_hp => (25, "HP", 1, 1000, "borg_stair_scum.rs:159", "#1061: with stair_scum, the mode applies while the max HP is below this plus stair_scum_max_hp_race_delta. Per class with @<class> or __<class> (the owner: 25, 30 for a warrior, ...). Hypothesis: arms at 20, 25 and 30."),
+    stair_scum_max_hp_race_delta => (0, "HP", -100, 100, "borg_stair_scum.rs:159", "#1061 (owner, 2026-11-22: \"race would be a delta\"): added to stair_scum_max_hp. Per race with @<race> or __<race> (p_race.txt names in lower case, - as _: human, half_elf, elf, hobbit, gnome, dwarf, half_orc, half_troll, dunadan, high_elf, kobold), e.g. __hobbit = 3, __half_troll = -5."),
+    stair_scum_speed_ratio => (2, "actions per player action", 1, 10, "borg_stair_scum.rs:559", "#1061: with stair_scum, the monster actions per player action of the fastest monster that matters at the depth (2: the +10 monsters of DL1-2, Grip, Fang, crows, wild cats at speed:120); it may also act ratio - 1 times before the Borg's first action (game-world.c:1033-1067)."),
+    stair_scum_contact_damage => (4, "HP per attack", 1, 1000, "borg_stair_scum.rs:539", "#1061 (review of #1061, P1): with stair_scum, the damage of one monster attack action (a round of blows): the retreat is safe while the attacks on the way times this stay below the HP (4: a wild cat's or a crow's two 1d3, Grip's 1d4 at its maximum)."),
+    stair_scum_slack_steps => (0, "steps", 0, 50, "borg_stair_scum.rs:541", "#1061 (owner, 2026-11-23: \"a tunable parameter to make it less strict\"): with stair_scum, the steps a grid may lie beyond the strict safe walk (the survival test counts the walk this many steps shorter). 0 = the strict count of the review of #1061 (a torch at 12 HP: 1 step); 2 = the owner's \"two or three steps\". Hypothesis: zoo arms at 0, 1, 2 and 3."),
+    stair_scum_slack_per_hp_tenths => (0, "tenths of a step per max HP", 0, 100, "borg_stair_scum.rs:542", "#1061 (owner, 2026-11-23: \"a rate to make the scum dependent on hp/class\"): with stair_scum, slack in tenths of a step per point of max HP, added to stair_scum_slack_steps: the mode loosens as the character grows. 1 = a step per 10 max HP (12 HP: 1, 24 HP: 2). Per class with __<class>, per race with __<race>. 0 = none. Hypothesis: zoo arms at 0, 1 and 2."),
+    stair_scum_slack_per_level_percent => (50, "percent of a step per level", 0, 1000, "borg_stair_scum.rs:544", "#1061 (owner, 2026-11-23: \"slack grows by decile by level, say 50 means that druids at level 3 get to slack 2\"): with stair_scum, percent of a step of slack per character level above 1, rounded down, added to stair_scum_slack_steps and the HP rate. 50: half a step per level (a Druid at slack 1: 1 at CL1, 2 at CL3, 3 at CL5). Per class with __<class>, per race with __<race>. 0 = none; 50 by default (the owner, 2026-11-23: \"stair_scum_slack_per_level_percent: 50 as default\"), which acts only with stair_scum on. Hypothesis."),
+    stair_scum_alarm_turns => (100, "game turns", 0, 10000, "borg_stair_scum.rs:905", "#1061: with stair_scum, after a known closed door seen open next to the safe area, or \"You hear a door burst open!\" with no changed door to place it, the Borg stands on the staircase this many game turns (100: ten turns at normal speed); 0 = no alarm."),
     kit_max_level => (15, "level", 1, 51, "borg_kit.rs:279", "#840: the kit mode (every kit_ setting but the start reserve) applies up to this character level (the issue's band tops out at 15)."),
     kit_band_split_level => (5, "level", 1, 51, "borg_kit.rs:178", "#840: character levels up to this use kit_cure_target and kit_phase_target, higher levels the _high ones (the issue's CL1-5 and CL6-15)."),
     kit_cure_target => (3, "count", 0, 20, "borg_kit.rs:180", "#840: cure potions (CLW + CSW + CCW; a cure spell counts as plenty) that make the cure share 1 at CL up to kit_band_split_level. A hypothesis, from the issue's example."),
@@ -252,30 +262,30 @@ parameters! {
     caution_flee_recall_gate_below_depth => (0, "dungeon level", 0, 127, "borg_caution.rs:4426", "#557 (owner): a ceiling. With caution_flee_recall 1, a flight at a depth shallower than this (2 = DL1 only) reads Word of Recall only with the breeder or chaser exception of caution_flee_recall 0, and Recall there is no easy escape in the stand tests; the stairs are a short walk. 0 = off (C at every depth); 1 is off too (the town never asks)."),
     caution_flee_recall_danger_percent => (0, "percent of HP", 0, 10000, "borg_caution.rs:4435", "#587 (owner): where the depth gate or caution_flee_recall 0 holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it (with the breeder and chaser exceptions); only the flight's read, not the stand tests. 0 = off; at the shipped gate (1, off) and caution_flee_recall 1 nothing is held back, so it acts only with the gate on or caution_flee_recall 0."),
     caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:4388", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
-    flow_leash_per_level => (3, "steps per level", 0, 100, "borg_flow.rs:2170", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x this + flow_leash_base steps from the stairs (C: 3)."),
-    flow_leash_base => (9, "steps", 0, 250, "borg_flow.rs:2167", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x flow_leash_per_level + this (C: 9)."),
-    flow_leash_unbounded => (250, "steps", 0, 250, "borg_flow.rs:2168", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash when none applies (C: 250, the flow's whole reach)."),
-    flow_leash_pickup_max_level => (20, "level", 0, 51, "borg_flow.rs:2169", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash for picking up items applies below this character level (C: 20)."),
-    flow_leash_depth_margin => (5, "levels", 0, 127, "borg_flow.rs:2170", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the exploring leash, and the distance-to-stairs check, apply while the depth is at least the character level less this (C: 5); a larger margin keeps the leash deeper."),
-    flow_leash_twitch_after => (21, "twitches", 0, 1000, "borg_flow.rs:2171", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: once the Borg has twitched (run out of things to do) more than this many times, the leash grows by the twitch count (C: 21)."),
-    flow_leash_stairs_max_level => (20, "level", 0, 51, "borg_flow.rs:2172", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_flow_far_from_stairs_dist checks the distance to the stairs below this character level (C: 20)."),
-    flow_leash_take_near_max_level => (10, "level", 0, 51, "borg_flow.rs:2173", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select skips an item far from the stairs while the Borg is near them, below this character level (C: 10)."),
-    flow_leash_take_nearness => (5, "steps", 0, 250, "borg_flow.rs:2174", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs against the leash when the item search reaches beyond this nearness (C: 5)."),
-    flow_leash_take_max_level => (20, "level", 0, 51, "borg_flow.rs:2175", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs below this character level (C: 20)."),
-    explore_breadth_first => (0, "flag", 0, 1, "borg_flow_dark.rs:850", "#1080, #1085 (owner, 2026-11-23: \"it seems to me that the borg explores depth-first, but a safer way would be breadth-first\"): 1 = below explore_bfs_max_hp, the exploration target is the interesting grid nearest the nearest known staircase of either kind (flow steps over known grids), not the one nearest the Borg: the ring at d steps (to d + explore_bfs_slack) is finished before any grid farther out, ties go to the grid nearest the Borg, and a path may not cross a ring farther out than its goals' or the Borg's own, nor pass the return leash. Both exploration calls use it; when the Borg has no route to a known staircase, C's methods run, and a staircase newly seen re-plans. 0 = C's depth-first order, today's play."),
-    explore_bfs_max_hp => (25, "hp", 0, 10000, "borg_flow_dark.rs:853", "#1085: explore_breadth_first applies while the Borg's maximum HP is below this (#1061's stair_scum threshold, a hypothesis: arms at 20, 25 and 30). A value per class (`__<class>`). Used with explore_breadth_first."),
-    explore_bfs_slack => (0, "steps", 0, 250, "borg_flow_dark.rs:1030", "#1085: with explore_breadth_first, the goals of one try are the candidates from the nearest ring d to d + this, and their paths may cross rings up to d + this (0 = strict rings; 1-2 avoid zig-zagging between equal rings). Used with explore_breadth_first."),
-    flow_leash_any_stair => (0, "flag", 0, 1, "borg_flow.rs:2199", "#1062: 1 = the stair leashes measure the nearest known staircase of either kind, a down staircase included (it leaves the level just as well at CL1-5), not only the up ones: the exploration leash (borg_flow_far_from_stairs_dist, and take_select's and the vein flow's stair checks) takes the walking steps from the nearest of them over known terrain (monsters, traps and danger ignored; an unknown target grid is one step past its nearest reached neighbour; one search a think), so C bug 31 (borg_flow_dark keeps the farthest up staircase) goes too, and an unreachable staircase no longer stands for all; the return leash (borg_think_dungeon's 'Return to Stair', 3 x CL + 14) starts on the walking steps to the nearest of them, not grids (a staircase across a wall is not near), ends ('Close enough', under 3) on them only for a return it started (another goal.less, the depth correction's climb, ends on C's distance to an up staircase), and its walk back flows to the nearest staircase of either kind (borg_flow_stair_both, before the up staircases). In the dungeon only: town has no up staircase, so C never leashes there, and the town's down staircase does not start a leash. Kobold Mage 592754909 and Dwarf Mage 645909552 went up and arrived on a down staircase with no up one known: no leash, killed 26 and 30 grids away. 0 = C (up staircases only). Hypothesis until the zoo measures it."),
-    flow_leash_unknown_stair_steps => (0, "steps", 0, 250, "borg_flow.rs:2196", "#1062: with no known staircase the exploration leash counts (with flow_leash_any_stair, none of either kind), or none reachable, the leash is this many walking steps from an anchor: the grid where the Borg arrived on the level (its first update there) while the Borg's area is connected to it, else the oldest landing of a jump with no known route back that the area is connected to (at most 16, the newest always kept), over known terrain (monsters, traps and danger ignored, so a monster at the arrival grid or in the corridor back does not lift it); a grid the arrival grid does not reach is not judged far, not unbounded: C's borg_flow_cost_stair returns 0 for no staircase and for an unreachable one ('go off leash'). In the dungeon only (town is C's). Applies where the exploration leash applies (below flow_leash_stairs_max_level, at depth at least CL - flow_leash_depth_margin, or a short kit). 0 = C. Hypothesis: no measurement chose a value."),
-    flow_leash_teleported_recall => (0, "flag", 0, 1, "borg_flow.rs:2197", "#1062: 1 = up to character level flow_leash_recall_max_level, in the dungeon, a teleport between two updates, by its cause: a teleport trap ('You hit a teleport trap!') or the Borg's own Teleportation scroll, staff or activation, Teleport Self, Portal or Shadow Shift always; its own Phase Door (scroll, spell, activation) or Dimension Door never; a jump of unknown cause from flow_leash_recall_min_jump grids that leaves every known staircase, of either kind, more than flow_leash_recall_steps walking steps away over known terrain (or none known or reachable) reads Word of Recall at the first dungeon think at danger 0 after it, once the fights that own the action are done (on DL1-4 a trip to town, not a dive). Judged once, at the first think after the jump; forgotten on a new level, when Recall is already active or none is carried. The Dunadan Druid 1024822556 was thrown 84 squares by a teleport trap, 79 flow steps from the up staircase, walked back and met Fang 38 steps short. 0 = C (no such read)."),
-    flow_leash_recall_max_level => (5, "level", 0, 51, "borg_flow.rs:2198", "#1062: flow_leash_teleported_recall applies up to this character level (the issue's CL1-5). Hypothesis."),
-    flow_leash_recall_steps => (30, "steps", 0, 250, "borg_flow.rs:2199", "#1062: flow_leash_teleported_recall reads Recall when the jump leaves the nearest known staircase more than this many flow steps away (C's return leash at CL5 is 29 grids: 3 x CL + 14). Hypothesis: no measurement chose 30."),
-    flow_leash_recall_min_jump => (12, "grids", 2, 250, "borg_flow.rs:2200", "#1062 (review of #1087, finding 4): flow_leash_teleported_recall counts a jump whose cause the Borg does not know (not its own action, not a teleport trap: a monster's teleport-to, ...) as a teleport from this many grids (engine::distance). Phase Door asks for 9 to 11 grids and lands on the eligible grid nearest that (TELEPORT:10, object.txt, randomised by a quarter in effect_handler_TELEPORT, effect-handler-general.c); the teleport trap and the Teleportation scroll are TELEPORT:M80 and :M60, percentages of the distance to the level's edge, so 12 counts them and not Phase Door, as the issue asks (a trap or a Teleport scroll). 2 = any jump of more than one grid."),
-    explore_bfs_hp_per_level => (0, "hp per level", -100, 100, "borg_flow_dark.rs:854", "#1085 (owner, 2026-11-23: the threshold by level and class): explore_breadth_first applies while max HP < explore_bfs_max_hp + this x character level. A value per class (`__<class>`); 0 = explore_bfs_max_hp alone. A level gains randint1(hitdie) HP (player-birth.c:295), half of it on average plus one half, so a delta near a quarter of that keeps the switch on a level or so longer for the frailer races. Used with explore_breadth_first."),
-    explore_bfs_food_percent => (100, "percent", 100, 10_000, "borg_flow_dark.rs:868", "#1110 (owner, 2026-11-23: \"plan a little more food and light if we do that\"): while breadth-first exploration would apply to the character (explore_breadth_first on, max HP below its explore_bfs_max_hp + explore_bfs_hp_per_level x CL; asked in town too), the live town planner's food target, the five-ration floor included, is this percent of today's (100 = today; at least 100, so the five rations borg_prepared asks for stay planned: review of #1113). A value per class."),
-    explore_bfs_light_percent => (100, "percent", 100, 10_000, "borg_flow_dark.rs:868", "#1110: as explore_bfs_food_percent, for the planner's light goal (the trip's turns or town_light_reserve_turns, whichever is larger): this percent of today's while breadth-first exploration would apply (100 = today; at least 100). The torch replenishment, the oil-throw guard and the fuel-junking guard keep the same goal (borg_light::fuel_goal). A value per class."),
-    flow_take_phase_short_below => (0, "count", 0, 20, "borg_flow.rs:2163", "#761 (owner: \"make sure it picks it up\"): while the Borg holds fewer Scrolls of Phase Door than this, take_select does not skip a Phase Door on the floor for being far from the stairs (the two leash checks, flow_leash_take_*); the count is the pack's aware scrolls (carried_phase_scrolls): a Phase Door spell or an equipped activation does not count (review of #778); 0 = off, as before (case 425904011 left a Phase Door 12 or more steps from the stairs at CL1). Per class with @<class> or __<class>."),
-    flow_take_phase_first => (0, "flag", 0, 1, "borg_flow.rs:2163", "#761: with flow_take_phase_short_below, while short of Phase Doors the object flow goes only to Phase Doors when one is among the objects it may take (an armour piece nearer no longer wins); when that Phase-only flow reaches nothing (past the flow's depth or behind danger), the dropped candidates return and the flow is tried once more (review of #778); 0 = off, as before."),
+    flow_leash_per_level => (3, "steps per level", 0, 100, "borg_flow.rs:2179", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x this + flow_leash_base steps from the stairs (C: 3)."),
+    flow_leash_base => (9, "steps", 0, 250, "borg_flow.rs:2180", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x flow_leash_per_level + this (C: 9)."),
+    flow_leash_unbounded => (250, "steps", 0, 250, "borg_flow.rs:2181", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash when none applies (C: 250, the flow's whole reach)."),
+    flow_leash_pickup_max_level => (20, "level", 0, 51, "borg_flow.rs:2182", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash for picking up items applies below this character level (C: 20)."),
+    flow_leash_depth_margin => (5, "levels", 0, 127, "borg_flow.rs:2183", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the exploring leash, and the distance-to-stairs check, apply while the depth is at least the character level less this (C: 5); a larger margin keeps the leash deeper."),
+    flow_leash_twitch_after => (21, "twitches", 0, 1000, "borg_flow.rs:2184", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: once the Borg has twitched (run out of things to do) more than this many times, the leash grows by the twitch count (C: 21)."),
+    flow_leash_stairs_max_level => (20, "level", 0, 51, "borg_flow.rs:2185", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_flow_far_from_stairs_dist checks the distance to the stairs below this character level (C: 20)."),
+    flow_leash_take_near_max_level => (10, "level", 0, 51, "borg_flow.rs:2186", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select skips an item far from the stairs while the Borg is near them, below this character level (C: 10)."),
+    flow_leash_take_nearness => (5, "steps", 0, 250, "borg_flow.rs:2187", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs against the leash when the item search reaches beyond this nearness (C: 5)."),
+    flow_leash_take_max_level => (20, "level", 0, 51, "borg_flow.rs:2188", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs below this character level (C: 20)."),
+    explore_breadth_first => (0, "flag", 0, 1, "borg_flow_dark.rs:878", "#1080, #1085 (owner, 2026-11-23: \"it seems to me that the borg explores depth-first, but a safer way would be breadth-first\"): 1 = below explore_bfs_max_hp, the exploration target is the interesting grid nearest the nearest known staircase of either kind (flow steps over known grids), not the one nearest the Borg: the ring at d steps (to d + explore_bfs_slack) is finished before any grid farther out, ties go to the grid nearest the Borg, and a path may not cross a ring farther out than its goals' or the Borg's own, nor pass the return leash. Both exploration calls use it; when the Borg has no route to a known staircase, C's methods run, and a staircase newly seen re-plans. 0 = C's depth-first order, today's play."),
+    explore_bfs_max_hp => (25, "hp", 0, 10000, "borg_flow_dark.rs:881", "#1085: explore_breadth_first applies while the Borg's maximum HP is below this (#1061's stair_scum threshold, a hypothesis: arms at 20, 25 and 30). A value per class (`__<class>`). Used with explore_breadth_first."),
+    explore_bfs_slack => (0, "steps", 0, 250, "borg_flow_dark.rs:1156", "#1085: with explore_breadth_first, the goals of one try are the candidates from the nearest ring d to d + this, and their paths may cross rings up to d + this (0 = strict rings; 1-2 avoid zig-zagging between equal rings). Used with explore_breadth_first."),
+    explore_bfs_hp_per_level => (0, "hp per level", -100, 100, "borg_flow_dark.rs:882", "#1085 (owner, 2026-11-23: the threshold by level and class): explore_breadth_first applies while max HP < explore_bfs_max_hp + this x character level. A value per class (`__<class>`); 0 = explore_bfs_max_hp alone. A level gains randint1(hitdie) HP (player-birth.c:295), half of it on average plus one half, so a delta near a quarter of that keeps the switch on a level or so longer for the frailer races. Used with explore_breadth_first."),
+    explore_bfs_food_percent => (100, "percent", 100, 10_000, "borg_flow_dark.rs:896", "#1110 (owner, 2026-11-23: \"plan a little more food and light if we do that\"): while breadth-first exploration would apply to the character (explore_breadth_first on, max HP below its explore_bfs_max_hp + explore_bfs_hp_per_level x CL; asked in town too), the live town planner's food target, the five-ration floor included, is this percent of today's (100 = today; at least 100, so the five rations borg_prepared asks for stay planned: review of #1113). A value per class."),
+    explore_bfs_light_percent => (100, "percent", 100, 10_000, "borg_flow_dark.rs:896", "#1110: as explore_bfs_food_percent, for the planner's light goal (the trip's turns or town_light_reserve_turns, whichever is larger): this percent of today's while breadth-first exploration would apply (100 = today; at least 100). The torch replenishment, the oil-throw guard and the fuel-junking guard keep the same goal (borg_light::fuel_goal). A value per class."),
+    flow_take_phase_short_below => (0, "count", 0, 20, "borg_flow.rs:2172", "#761 (owner: \"make sure it picks it up\"): while the Borg holds fewer Scrolls of Phase Door than this, take_select does not skip a Phase Door on the floor for being far from the stairs (the two leash checks, flow_leash_take_*); the count is the pack's aware scrolls (carried_phase_scrolls): a Phase Door spell or an equipped activation does not count (review of #778); 0 = off, as before (case 425904011 left a Phase Door 12 or more steps from the stairs at CL1). Per class with @<class> or __<class>."),
+    flow_take_phase_first => (0, "flag", 0, 1, "borg_flow.rs:2172", "#761: with flow_take_phase_short_below, while short of Phase Doors the object flow goes only to Phase Doors when one is among the objects it may take (an armour piece nearer no longer wins); when that Phase-only flow reaches nothing (past the flow's depth or behind danger), the dropped candidates return and the flow is tried once more (review of #778); 0 = off, as before."),
+    flow_leash_any_stair => (0, "flag", 0, 1, "borg_flow.rs:2208", "#1062: 1 = the stair leashes measure the nearest known staircase of either kind, a down staircase included (it leaves the level just as well at CL1-5), not only the up ones: the exploration leash (borg_flow_far_from_stairs_dist, and take_select's and the vein flow's stair checks) takes the walking steps from the nearest of them over known terrain (monsters, traps and danger ignored; an unknown target grid is one step past its nearest reached neighbour; one search a think), so C bug 31 (borg_flow_dark keeps the farthest up staircase) goes too, and an unreachable staircase no longer stands for all; the return leash (borg_think_dungeon's 'Return to Stair', 3 x CL + 14) starts on the walking steps to the nearest of them, not grids (a staircase across a wall is not near), ends ('Close enough', under 3) on them only for a return it started (another goal.less, the depth correction's climb, ends on C's distance to an up staircase), and its walk back flows to the nearest staircase of either kind (borg_flow_stair_both, before the up staircases). In the dungeon only: town has no up staircase, so C never leashes there, and the town's down staircase does not start a leash. Kobold Mage 592754909 and Dwarf Mage 645909552 went up and arrived on a down staircase with no up one known: no leash, killed 26 and 30 grids away. 0 = C (up staircases only). Hypothesis until the zoo measures it."),
+    flow_leash_unknown_stair_steps => (0, "steps", 0, 250, "borg_flow.rs:2209", "#1062: with no known staircase the exploration leash counts (with flow_leash_any_stair, none of either kind), or none reachable, the leash is this many walking steps from an anchor: the grid where the Borg arrived on the level (its first update there) while the Borg's area is connected to it, else the oldest landing of a jump with no known route back that the area is connected to (at most 16, the newest always kept), over known terrain (monsters, traps and danger ignored, so a monster at the arrival grid or in the corridor back does not lift it); a grid the arrival grid does not reach is not judged far, not unbounded: C's borg_flow_cost_stair returns 0 for no staircase and for an unreachable one ('go off leash'). In the dungeon only (town is C's). Applies where the exploration leash applies (below flow_leash_stairs_max_level, at depth at least CL - flow_leash_depth_margin, or a short kit). 0 = C. Hypothesis: no measurement chose a value."),
+    flow_leash_teleported_recall => (0, "flag", 0, 1, "borg_flow.rs:2210", "#1062: 1 = up to character level flow_leash_recall_max_level, in the dungeon, a teleport between two updates, by its cause: a teleport trap ('You hit a teleport trap!') or the Borg's own Teleportation scroll, staff or activation, Teleport Self, Portal or Shadow Shift always; its own Phase Door (scroll, spell, activation) or Dimension Door never; a jump of unknown cause from flow_leash_recall_min_jump grids that leaves every known staircase, of either kind, more than flow_leash_recall_steps walking steps away over known terrain (or none known or reachable) reads Word of Recall at the first dungeon think at danger 0 after it, once the fights that own the action are done (on DL1-4 a trip to town, not a dive). Judged once, at the first think after the jump; forgotten on a new level, when Recall is already active or none is carried. The Dunadan Druid 1024822556 was thrown 84 squares by a teleport trap, 79 flow steps from the up staircase, walked back and met Fang 38 steps short. 0 = C (no such read)."),
+    flow_leash_recall_max_level => (5, "level", 0, 51, "borg_flow.rs:2211", "#1062: flow_leash_teleported_recall applies up to this character level (the issue's CL1-5). Hypothesis."),
+    flow_leash_recall_steps => (30, "steps", 0, 250, "borg_flow.rs:2212", "#1062: flow_leash_teleported_recall reads Recall when the jump leaves the nearest known staircase more than this many flow steps away (C's return leash at CL5 is 29 grids: 3 x CL + 14). Hypothesis: no measurement chose 30."),
+    flow_leash_recall_min_jump => (12, "grids", 2, 250, "borg_flow.rs:2213", "#1062 (review of #1087, finding 4): flow_leash_teleported_recall counts a jump whose cause the Borg does not know (not its own action, not a teleport trap: a monster's teleport-to, ...) as a teleport from this many grids (engine::distance). Phase Door asks for 9 to 11 grids and lands on the eligible grid nearest that (TELEPORT:10, object.txt, randomised by a quarter in effect_handler_TELEPORT, effect-handler-general.c); the teleport trap and the Teleportation scroll are TELEPORT:M80 and :M60, percentages of the distance to the level's edge, so 12 counts them and not Phase Door, as the issue asks (a trap or a Teleport scroll). 2 = any jump of more than one grid."),
     kill_live_min_power => (0, "hp", 0, 10, "borg_flow_kill.rs:375", "#546 (owner): a living monster (hp above 0) is estimated at least this many hit points; the estimate truncates twice and puts a monster left with 1 HP of 9 at 0, which every attack's overkill cap then scores 0; 0 = off (C's estimate)."),
     kill_live_zero_hp => (0, "flag", 0, 1, "borg_flow_kill.rs:387", "#975: kill_live_min_power's floor also applies to a monster at exactly 0 HP, which the engine leaves alive (mon_take_hit kills only at hp < 0, mon-util.c:1300); a 2-HP grey mold hit for 2 read 0 HP, so every ranged attack on it scored 0 (the overkill cap) and the Borg walked next to it; needs kill_live_min_power above 0; 0 = off, as before (hp 0 is estimated at 0)."),
     kill_grouped_names => (0, "flag", 0, 1, "borg_flow_kill.rs:1283", "#915: 1 = read the engine's grouped monster subjects, \"N <plural>\" (mon-msg.c:333-345: \"3 cave spiders start moving faster.\"), as that race (its monster.txt plural, or plural_aux undone, mon-desc.c:27-36) instead of guessing the player ghost (in 4.2 the last race, Morgoth); \"N monsters\" is an unseen group; a grouped death or blink (\"3 cave spiders die.\") removes up to N known monsters of the race (borg_update.rs, review of #943). A grouped name of no known race is noted and still left unused. 0 retains today's play."),
@@ -287,12 +297,12 @@ parameters! {
     caution_desperate_ranged_first_reach => (0, "grids", 0, 10, "borg_caution.rs:1004", "#751 (owner on 247597266: the Mage walked toward a cutpurse and an apprentice between it and the stairs, with 22 Flasks of oil and Magic Missile): above 0, while the Borg has a ranged attack (a bow with ammunition or something to throw; spells are not counted) and no awake monster is adjacent, the desperate walk to the stairs does not start toward an awake monster within this many grids of its path and nearer the stairs than the Borg, whose danger is at least caution_stairs_block_danger_percent of the HP; the attack at range decides. 0 = C."),
     caution_desperate_fast_danger_percent => (0, "percent of HP", 0, 10_000, "borg_caution.rs:6156", "#747: 'Desperate for Stairs (three)' does not walk when an adjacent monster is faster than the Borg; above 0, only when that monster's danger is also at least this percent of the current HP (a harmless fruit bat no longer cancels the walk). 0 = C (any faster monster)."),
     caution_stairs_flight_ignore_danger => (0, "flag", 0, 1, "borg_caution.rs:6134", "#750: 1 = a flight's stair flow (GOAL_FLEE, or any GOAL_BORE stair flow while fleeing or leaving: the bored walk up, the bored walks down and the powerdive) refuses no grid for its danger, as the desperate walk; a monster near a clear corridor no longer closes it (807683971: a black naga two grids beside the corridor). Whether a monster stands on the path is caution_stairs_clean_path's test. 0 = C (grids above the flow's fear are refused)."),
-    caution_retreat_reentry_ticks => (0, "Borg thinks", 0, 128, "borg_caution.rs:6528", "#932: during a dungeon departure, exclude recent tactical retreat grids from stair routes for up to this many thinks while it remains dangerous. Zero leaves flight unchanged. Try 128 as a pilot hypothesis."),
-    caution_stairs_flight_threat_weight => (0, "extra steps at current HP", 0, 100, "borg_caution.rs:6522", "#765: stair flights (GOAL_FLEE, including desperate walks, or a bored ascent while fleeing or leaving) price each entered grid at one step plus this weight times danger divided by current HP. Awake monster grids are blocked. A clean-path veto can trigger a search for a clean detour. 0 = existing stair flows."),
+    caution_retreat_reentry_ticks => (0, "Borg thinks", 0, 128, "borg_caution.rs:6533", "#932: during a dungeon departure, exclude recent tactical retreat grids from stair routes for up to this many thinks while it remains dangerous. Zero leaves flight unchanged. Try 128 as a pilot hypothesis."),
+    caution_stairs_flight_threat_weight => (0, "extra steps at current HP", 0, 100, "borg_caution.rs:6527", "#765: stair flights (GOAL_FLEE, including desperate walks, or a bored ascent while fleeing or leaving) price each entered grid at one step plus this weight times danger divided by current HP. Awake monster grids are blocked. A clean-path veto can trigger a search for a clean detour. 0 = existing stair flows."),
     caution_immobile_step_to_exit => (0, "flag", 0, 1, "borg_caution.rs:2256", "#736 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) takes, among the grids it may step to, the one with the fewest steps to a staircase, then the least danger. 0 = the least danger only."),
     caution_confused_clw_cure => (0, "flag", 0, 1, "borg_caution.rs:2021", "#837 (owner): 1 = a Potion of Cure Light Wounds is a confusion cure for the Borg: it takes 20 turns off confusion (object.txt TIMED_DEC:CONFUSED, dice 20), enough for a grey mushroom patch's 3 + 1d(level) turns. Added after Clear Mind, Cure Serious and Critical Wounds to the confusion chains of borg_heal ('Fixing Confusion', levels 2 and 5) and of the cures at the end of borg_caution, before a Healing potion. 0 = C (CLW cures blindness only)."),
-    caution_stairs_flight_unknown => (0, "mode", 0, 2, "borg_caution.rs:6548", "#881 (Priest 399497898: in a one-exit lattice room 58 of 68 flight paths crossed unseen rock north of it, so the Borg walked into the dead end 25 times): how a weighted stair flight (caution_stairs_flight_threat_weight above 0) treats a grid its map holds as unknown (FEAT_NONE). 0 = one step, like floor (today's play); 1 = one step plus caution_stairs_flight_unknown_steps; 2 = refused: the flight walks known grids only, and a staircase reachable only through unknown grids is not reachable for the flight, nor for the flee tests that ask whether a stair flow reaches the Borg; with no staircase reachable through known grids that turns on Recall in flight (caution_flee_stairs_before_recall) and ranged attacks on a scary level (caution_scary_ranged_no_stairs), review of #897. Acts on the down flight; the up flight below CL 36 in the light and the desperate walk already refuse unknown grids. Hypothesis: no measurement chose a mode."),
-    caution_stairs_flight_unknown_steps => (5, "steps", 0, 100, "borg_caution.rs:6548", "#881: with caution_stairs_flight_unknown 1, the extra steps an unknown grid costs a weighted stair flight. The issue's range is 3-10. Hypothesis: no measurement chose 5."),
+    caution_stairs_flight_unknown => (0, "mode", 0, 2, "borg_caution.rs:6553", "#881 (Priest 399497898: in a one-exit lattice room 58 of 68 flight paths crossed unseen rock north of it, so the Borg walked into the dead end 25 times): how a weighted stair flight (caution_stairs_flight_threat_weight above 0) treats a grid its map holds as unknown (FEAT_NONE). 0 = one step, like floor (today's play); 1 = one step plus caution_stairs_flight_unknown_steps; 2 = refused: the flight walks known grids only, and a staircase reachable only through unknown grids is not reachable for the flight, nor for the flee tests that ask whether a stair flow reaches the Borg; with no staircase reachable through known grids that turns on Recall in flight (caution_flee_stairs_before_recall) and ranged attacks on a scary level (caution_scary_ranged_no_stairs), review of #897. Acts on the down flight; the up flight below CL 36 in the light and the desperate walk already refuse unknown grids. Hypothesis: no measurement chose a mode."),
+    caution_stairs_flight_unknown_steps => (5, "steps", 0, 100, "borg_caution.rs:6553", "#881: with caution_stairs_flight_unknown 1, the extra steps an unknown grid costs a weighted stair flight. The issue's range is 3-10. Hypothesis: no measurement chose 5."),
     caution_confused_cure_before_walk => (0, "mode", 0, 2, "borg_caution.rs:1046", "#837 (owner): 1 = a confused Borg with a confusion cure in the pack does not start a 'Desperate for Stairs' walk (75% of its steps go astray, player_confuse_dir); the cures at the end of borg_caution come first. Not while the cure is held next to an immobile attacker (#646). 2 = no 'Desperate for Stairs' walk at all while confused, cure or not. 0 = C."),
     caution_confusion_cure_when_stuck => (0, "flag", 0, 1, "borg_caution.rs:2158", "#837 (owner): 1 = next to an immobile confuser, the confusion cure is held only while a step out of its reach can still be taken (a qualifying grid, tries left); with none, cure anyway (#646's hold left the Borg neither stepping nor curing, and it went on to melee confused). Needs caution_ranged_vs_immobile >= 1. 0 = #646's hold whether or not a step is possible."),
     caution_immobile_step_mobile_first => (0, "flag", 0, 1, "borg_caution.rs:2258", "#837 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) ranks the grids out of its reach by the danger from the monsters that move within two grids of the grid first (lowest wins), then the fewest steps to a staircase (caution_immobile_step_to_exit), then the least danger; the stairs decide only between equally safe grids. The first key is the full damage of the movers (borg_danger_one_kill, full), the last the average danger of the grid (borg_danger), so they are on different scales. Acts only with caution_ranged_vs_immobile >= 1 (shipped 0). 0 = the stairs first."),
@@ -470,7 +480,7 @@ parameters! {
     caution_flee_known_down_stairs => (0, "flag", 0, 1, "borg_caution.rs:1043", "#544 (A), narrowed in #548: 1 = fleeing (or the level scary) with no free up staircase known, the Borg walks to a known down staircase with the desperate flow (danger ignored, monster grids routed around), only when cornered (caution_flee_known_down_cornered) and within caution_flee_known_down_max_cost grids of flow; 0 = off (C's behaviour). Keeping the stairs through the stuck jumpstart is caution_jumpstart_keep_stairs."),
     caution_flee_known_down_cornered => (1, "flag", 0, 1, "borg_caution.rs:1048", "#548: with caution_flee_known_down_stairs, 1 = only when cornered: a known monster that can move is adjacent (distance 1, diagonals included; #504 uses caution_cornered_radius), no Phase Door, teleport, Teleport Level or escape in the pack (items; spells are not counted), and the danger here at or above the HP or the Borg surrounded; 0 = any flight (#545 as merged: it fired on 13 of 18 classes-18 games, up to 721 times)."),
     caution_flee_known_down_max_cost => (40, "steps of flow", 0, 250, "borg_caution.rs:1049", "#548: with caution_flee_known_down_stairs, the known down staircase is taken only within this many steps of flow (the flow's depth from the staircases: the walk around walls, not the straight-line distance); 0 = any distance (#545 as merged)."),
-    caution_jumpstart_keep_stairs => (0, "flag", 0, 1, "borg_caution.rs:6565", "#548 (K of #544, split from caution_flee_known_down_stairs): 1 = the stuck jumpstart (bravery boost 3) keeps the known up and down staircases instead of forgetting them; 0 = C (forgets them). Usually wanted with caution_flee_known_down_stairs: in the worm room (priest-1055640847) the narrowed flight escapes only with it. Alone it did not save that game (still dead at turn 91,153)."),
+    caution_jumpstart_keep_stairs => (0, "flag", 0, 1, "borg_caution.rs:6570", "#548 (K of #544, split from caution_flee_known_down_stairs): 1 = the stuck jumpstart (bravery boost 3) keeps the known up and down staircases instead of forgetting them; 0 = C (forgets them). Usually wanted with caution_flee_known_down_stairs: in the worm room (priest-1055640847) the narrowed flight escapes only with it. Alone it did not save that game (still dead at turn 91,153)."),
     caution_twitch_avoid_lava => (0, "flag", 0, 1, "borg_caution.rs:4746", "#597: 1 = the twitch's random step (borg_twitchy, borg_flow_misc.rs) never chooses lava without fire immunity (100 + 1d100 fire damage per step); if every direction is wall or lava the Borg rests. 0 = C (only walls are refused)."),
     caution_stair_parked_fallback => (0, "flag", 0, 1, "borg_caution.rs:4753", "#597: 1 = a stair flow that finds a monster marked on every known staircase of its kind (enqueue_stairs, borg_flow_stairs.rs) flows to them anyway, so the only known staircase is never refused for a monster on it, harmless or long gone. 0 = C (a parked staircase is skipped)."),
     caution_breeder_exit => (0, "flag", 0, 1, "borg_caution.rs:4913", "#544 (B): 1 = only breeders near, one adjacent, and danger here at or above the HP or surrounded: the Borg walks with the desperate flow to the nearest known chokepoint (a grid whose passable known neighbours form at least two separate groups: a corridor or doorway; unknown grids count as walls) at least caution_breeder_exit_distance grids from every known breeder; 0 = off."),
@@ -511,7 +521,7 @@ parameters! {
     recover_rest_cure_distance => (20, "grids", 1, 100, "borg_recover.rs:980", "#982: with recover_rest_cure_hp_percent, how near the awake fast monster must be known (the engine's distance), as recover_rest_monster_distance does for #615 (the crow of #982 was 9 grids away)."),
     recover_rest_breeders => (0, "flag", 0, 1, "borg_recover.rs:685", "#644 (owner): 1 = in the dungeon, while any breeder is known on the level, no rod, HP/SP or mana rest: the Borg hunts the breeders when #558's hunt applies, otherwise leaves the level; kept when confused, blind, hallucinating or stunned. 0 = rest as C."),
     caution_desperate_max_level => (35, "level", 1, 51, "borg_caution.rs:4010", "Controls desperate max level."),
-    caution_retreat_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:6534", "Controls retreat danger divisor."),
+    caution_retreat_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:6539", "Controls retreat danger divisor."),
     caution_back_danger_tenths => (4, "tenths", 0, 100, "borg_caution.rs:3732", "Controls back danger tenths."),
     caution_confused_emergency_loss => (300, "hp", 0, 10000, "borg_caution.rs:3786", "Controls confused emergency loss."),
     caution_fear_cure_chance => (70, "percent", 0, 100, "borg_caution.rs:4077", "Controls fear cure chance."),
@@ -538,7 +548,7 @@ parameters! {
     caution_recall_pending_escape => (0, "flag", 0, 1, "borg_caution.rs:4595", "#754 (owner): 1 = a Word of Recall already counting down is an escape that is running: on a scary level the Borg keeps its flight instead of #530's 'no escape: standing and fighting' (#530 counts only a Recall still in the pack); #603's gates still hold the flee flows and down stairs, but an up staircase reached on foot is taken (on DL1: town, where the Recall fires and returns the Borg to its maximum depth). 0 = #530."),
     caution_recall_wait_no_explore => (0, "flag", 0, 1, "borg_caution.rs:4806", "#754 (owner): 1 = while Word of Recall counts down in the dungeon the Borg does not explore or chase far monsters and objects (the 'Explore the dungeon' block of borg_think_dungeon): the think ends there; it rests for Recall where it stands (caution_recall_rest_turns) when borg_check_rest allows it and nothing threatens it there, else stays still one turn. 0 = C (explore while waiting; the wait comes after exploration)."),
     caution_stair_danger_max_level => (49, "level", 1, 51, "borg_caution.rs:6232", "Controls stair danger max level."),
-    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:6227", "Controls stair min food."),
+    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:6262", "Controls stair min food."),
     caution_sell_max_level => (25, "level", 1, 51, "borg_caution.rs:6235", "Controls sell max level."),
     caution_sell_max_gold => (25000, "gold", 0, 1000000, "borg_caution.rs:6236", "Controls sell max gold."),
     caution_sell_min_count => (13, "count", 0, 1000, "borg_caution.rs:6237", "Controls sell min count."),
@@ -555,13 +565,13 @@ parameters! {
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1683", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:3661", "Number of Borg turns of danger evaluated at the current grid."),
     caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:3723", "Number of rest turns queued while waiting safely for recall."),
-    caution_recall_rest_monster_turns => (0, "game turns", 0, 100000, "borg_caution.rs:6299", "#567: while Word of Recall is active, no long rest (Resting for Recall, Waiting for Recall, or the wait with no light) if an awake monster was known within caution_recall_rest_monster_distance in the last this many game turns; the Borg stays still one turn at a time instead (','), so each think sees a returning monster. 0 = off (C)."),
-    caution_recall_rest_monster_distance => (20, "grids", 1, 100, "borg_caution.rs:6302", "#567: with caution_recall_rest_monster_turns, how near an awake monster must be (the engine's distance) to hold the Recall rest."),
-    caution_unseen_bump_turns => (0, "game turns", 0, 100000, "borg_caution.rs:7967", "#781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off."),
+    caution_recall_rest_monster_turns => (0, "game turns", 0, 100000, "borg_caution.rs:6304", "#567: while Word of Recall is active, no long rest (Resting for Recall, Waiting for Recall, or the wait with no light) if an awake monster was known within caution_recall_rest_monster_distance in the last this many game turns; the Borg stays still one turn at a time instead (','), so each think sees a returning monster. 0 = off (C)."),
+    caution_recall_rest_monster_distance => (20, "grids", 1, 100, "borg_caution.rs:6307", "#567: with caution_recall_rest_monster_turns, how near an awake monster must be (the engine's distance) to hold the Recall rest."),
+    caution_unseen_bump_turns => (0, "game turns", 0, 100000, "borg_caution.rs:7972", "#781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off."),
     caution_unseen_bump_response => (0, "flag", 0, 1, "borg_caution.rs:8092", "#781: after ordinary healing, defence, Recall and food, before stair walking, try one carried Detect Invisible scroll under the existing detection danger/darkness gates, bounded directional oil throws with normal fuel reserves, then Phase Door under the emergency landing test. Requires caution_unseen_bump_turns. Counts successful phases toward level escape accounting. 0 = off."),
     caution_unseen_bump_heal_hp_percent => (0, "percent", 0, 100, "borg_caution.rs:8084", "#781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW after ordinary healing/defence/Recall but before stair walking, even while fleeing. Intentionally ignores danger, including survivable-healing and no-rope-a-doping gates: regional fear does not quantify the unseen blow. Requires caution_unseen_bump_turns; independent of response. 0 = off."),
     caution_unseen_bump_throw_tries => (3, "throws per grid", 0, 100, "borg_caution.rs:8103", "#781: maximum queued oil attempts at one remembered bump grid before trying Phase Door. Cancels also spend an attempt; only one command is queued per response. Expiry or a confirmed kill clears that grid and its budget. 0 = phase after detection; hypothesis, not calibrated."),
-    caution_recall_dl1_hold_up => (0, "flag", 0, 1, "borg_caution.rs:8422", "#984: 1 = while a Word of Recall counts down on DL1, borg_caution does not take the up staircase (its 'Take stairs up'), unless the danger is above the avoidance (the stairs rule's own boundary, pos_danger > avoidance): the staircase leads to town, where the pending Recall fires after a few world ticks and takes the Borg back to its maximum depth before it can shop (312081895: 42 game turns in town, then DL2 with no Recall). Held, the Recall fires on DL1 and the Borg reaches town with nothing pending. The danger escapes (borg_escape_stair) are not held. The up half of the town/DL1 crossing: recall_restricts (#603, #627) already holds the down half. Arena levels have no staircase (arena_gen), so the hold never applies there. 0 = C (borg-caution.c:1171)."),
+    caution_recall_dl1_hold_up => (0, "flag", 0, 1, "borg_caution.rs:8427", "#984: 1 = while a Word of Recall counts down on DL1, borg_caution does not take the up staircase (its 'Take stairs up'), unless the danger is above the avoidance (the stairs rule's own boundary, pos_danger > avoidance): the staircase leads to town, where the pending Recall fires after a few world ticks and takes the Borg back to its maximum depth before it can shop (312081895: 42 game turns in town, then DL2 with no Recall). Held, the Recall fires on DL1 and the Borg reaches town with nothing pending. The danger escapes (borg_escape_stair) are not held. The up half of the town/DL1 crossing: recall_restricts (#603, #627) already holds the down half. Arena levels have no staircase (arena_gen), so the hold never applies there. 0 = C (borg-caution.c:1171)."),
     // #457: outmatched healing, a study flag. 0 = the vendored behaviour exactly.
     caution_heal_when_outmatched => (0, "flag", 0, 1, "borg_caution.rs:229", "1 = after every escape declined, a hurt Borg whose danger reaches its HP drinks CLW/CSW/CCW instead of attacking; 0 = off."),
     caution_heal_outmatched_min_loss => (50, "percent", 0, 100, "borg_caution.rs:233", "Minimum percent of maximum HP lost before outmatched healing applies (only when caution_heal_when_outmatched is 1)."),
@@ -2522,6 +2532,25 @@ parameters! {
 pub(crate) const CLASSES: [&str; 9] =
     ["warrior", "mage", "druid", "priest", "necromancer", "paladin", "rogue", "ranger", "blackguard"];
 
+/// borg-reborn-rs (#1061, owner 2026-11-22: "race would be a delta"): the
+/// race names, `p_race.txt` order (`ridx`: init.c:2869-2877 numbers the list
+/// in file order), in lower case with `-` as `_`. A setting's race is its
+/// `__<race>` (or `@<race>`) suffix, as a class's is.
+pub(crate) const RACES: [&str; 11] = [
+    "human", "half_elf", "elf", "hobbit", "gnome", "dwarf", "half_orc", "half_troll", "dunadan",
+    "high_elf", "kobold",
+];
+
+/// A setting's scope in the parse keys: `Some(c)` for class `c`,
+/// `Some(RACE_SCOPE + r)` for race `r` (#1061), `None` for the common value.
+const RACE_SCOPE: usize = CLASSES.len();
+
+/// The scope of a class or race suffix (`None`: neither).
+fn suffix_scope(suffix: &str) -> Option<usize> {
+    CLASSES.iter().position(|k| *k == suffix)
+        .or_else(|| RACES.iter().position(|k| *k == suffix).map(|r| RACE_SCOPE + r))
+}
+
 /// A class's own value of a parameter (`<name>@<class>`, a class file, or a
 /// legacy `<name>_<class>` alias).
 #[derive(Serialize)]
@@ -2539,13 +2568,20 @@ struct Setting<'a> {
     /// borg-reborn-rs (#520): per-class values, by class name.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     class_values: BTreeMap<&'static str, ClassValue>,
+    /// borg-reborn-rs (#1061): per-race values, by race name.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    race_values: BTreeMap<&'static str, ClassValue>,
 }
 
+/// A parameter's values: the common one, then the class's, then the race's
+/// (#1061). `pick` reads the class's value first, then the race's, then the
+/// common one.
 #[derive(Clone, Copy)]
 struct Resolved {
     value: i32,
     origin: &'static str,
     class: [Option<(i32, &'static str)>; 9],
+    race: [Option<(i32, &'static str)>; 11],
 }
 
 static VALUES: OnceLock<Vec<Resolved>> = OnceLock::new();
@@ -2565,8 +2601,29 @@ fn current_class() -> Option<usize> {
     (class < CLASSES.len()).then_some(class)
 }
 
+/// borg-reborn-rs (#1061): the character's race (`ridx`), -1 while none is
+/// known; set beside the class.
+static RACE: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// borg-reborn-rs (#1061): the race whose values `value` returns.
+pub(crate) fn set_race(race: i32) {
+    RACE.store(race, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn current_race() -> Option<usize> {
+    let race = usize::try_from(RACE.load(std::sync::atomic::Ordering::Relaxed)).ok()?;
+    (race < RACES.len()).then_some(race)
+}
+
 fn pick(r: &Resolved, class: Option<usize>) -> (i32, &'static str) {
-    class.and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
+    pick_for(r, class, current_race())
+}
+
+/// The class's value, else the race's (#1061), else the common one.
+fn pick_for(r: &Resolved, class: Option<usize>, race: Option<usize>) -> (i32, &'static str) {
+    class.and_then(|c| r.class[c])
+        .or_else(|| race.and_then(|k| r.race[k]))
+        .unwrap_or((r.value, r.origin))
 }
 
 fn compiled_default(spec: &Spec, class: Option<usize>) -> i32 {
@@ -2707,17 +2764,18 @@ fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
 fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
     // #696: `<name>__<class>` is `<name>@<class>` in the characters a zoo
     // profile can write (`[A-Za-z0-9_.-]`); no parameter name has `__`.
+    // #1061: `<name>__<race>` / `<name>@<race>` the same way (RACES).
     let at;
     let name = match name.rsplit_once("__") {
-        Some((base, class)) if !name.contains('@') && CLASSES.contains(&class) => {
-            at = format!("{base}@{class}");
+        Some((base, suffix)) if !name.contains('@') && suffix_scope(suffix).is_some() => {
+            at = format!("{base}@{suffix}");
             at.as_str()
         }
         _ => name,
     };
     if let Some((base, class)) = name.split_once('@') {
         let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
-        let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
+        let c = suffix_scope(class).ok_or(format!("{name}: unknown class or race {class}"))?;
         return Ok((spec, Some(c), None));
     }
     if let Some(spec) = SPECS.iter().find(|s| s.name == name) {
@@ -2736,7 +2794,7 @@ fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i3
     }
     let lower = name.to_ascii_lowercase();
     if let Some((base, class)) = lower.rsplit_once("__") {
-        if CLASSES.contains(&class) {
+        if suffix_scope(class).is_some() {
             return split_name(&format!("{base}@{class}"));
         }
     }
@@ -2746,7 +2804,7 @@ fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i3
 /// #768: allow an existing profile to load after the errands cap was removed.
 fn retired_depth_cap(name: &str) -> bool {
     let base = match name.rsplit_once("__").or_else(|| name.rsplit_once('@')) {
-        Some((base, class)) if CLASSES.contains(&class) => base,
+        Some((base, class)) if suffix_scope(class).is_some() => base,
         _ => name,
     };
     matches!(base, "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
@@ -2826,7 +2884,17 @@ fn parse<'a>(
                 class_values.insert(*class, ClassValue { value: defaults[c], origin: "default" });
             }
         }
-        settings.push(Setting { spec, value, origin, class_values });
+        // #1061: the race values (no legacy aliases, no compiled defaults).
+        let mut race_values = BTreeMap::new();
+        for (r, race) in RACES.iter().enumerate() {
+            let key = (spec.name, Some(RACE_SCOPE + r));
+            let found = envs.get(&key).map(|v| (v, "environment"))
+                .or_else(|| file.get(&key).map(|v| (v, "borg.txt")));
+            if let Some(((raw, _), race_origin)) = found {
+                race_values.insert(*race, ClassValue { value: check(spec, raw.trim())?, origin: race_origin });
+            }
+        }
+        settings.push(Setting { spec, value, origin, class_values, race_values });
     }
     let value = |name: &str| settings.iter().find(|s| s.spec.name == name).map(|s| s.value);
     for (low, high) in [
@@ -2852,7 +2920,11 @@ fn resolve(settings: &[Setting<'_>]) -> Vec<Resolved> {
             for (c, name) in CLASSES.iter().enumerate() {
                 class[c] = s.class_values.get(name).map(|v| (v.value, v.origin));
             }
-            Resolved { value: s.value, origin: s.origin, class }
+            let mut race = [None; 11];
+            for (r, name) in RACES.iter().enumerate() {
+                race[r] = s.race_values.get(name).map(|v| (v.value, v.origin));
+            }
+            Resolved { value: s.value, origin: s.origin, class, race }
         })
         .collect()
 }
@@ -2889,6 +2961,9 @@ pub(crate) fn initialize() {
     });
     if let Some(class) = crate::engine::class_cidx_if_set() {
         set_class(class as i32);
+    }
+    if let Some(race) = crate::engine::race_ridx_if_set() {
+        set_race(race as i32);
     }
 }
 
@@ -3127,12 +3202,52 @@ mod tests {
         assert!(parse("borg_param_attack_arrow_point_blank_divisor_ranger = 2", &BTreeMap::new(), SPECS).is_ok());
     }
 
+    /// #1061: a race suffix (`__<race>`, `@<race>`, `BORG_PARAM_..__<RACE>`)
+    /// sets a race value; a race name is never a class name, so neither
+    /// suffix can be read as the other.
+    #[test]
+    fn race_values_set_a_race_delta() {
+        for race in RACES {
+            assert!(!CLASSES.contains(&race), "{race} is also a class");
+            assert!(!race.contains("__") && !race.contains('@'), "{race}");
+        }
+        let p = Param::stair_scum_max_hp_race_delta;
+        let race_value = |settings: &[Setting<'_>], race: &str| {
+            settings[p as usize].race_values.get(race).map(|v| (v.value, v.origin))
+        };
+        let text = "borg_param_stair_scum_max_hp_race_delta__hobbit = 3\nborg_param_stair_scum_max_hp_race_delta@kobold = 2";
+        let env = BTreeMap::from([("STAIR_SCUM_MAX_HP_RACE_DELTA__HALF_TROLL".into(), "-5".into())]);
+        let values = parse(text, &env, SPECS).unwrap();
+        assert_eq!(values[p as usize].value, 0);
+        assert_eq!(race_value(&values, "hobbit"), Some((3, "borg.txt")));
+        assert_eq!(race_value(&values, "kobold"), Some((2, "borg.txt")));
+        assert_eq!(race_value(&values, "half_troll"), Some((-5, "environment")));
+        assert_eq!(race_value(&values, "human"), None);
+        assert!(values[p as usize].class_values.is_empty(), "a race is not a class");
+        // A race value is range-checked, and an unknown race is an unknown name.
+        assert!(parse("borg_param_stair_scum_max_hp_race_delta__elf = 101", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_stair_scum_max_hp_race_delta__orc = 1", &BTreeMap::new(), SPECS).is_err());
+        // The JSON carries race_values only where some are set.
+        let json = serde_json::to_value(&values).unwrap();
+        assert_eq!(json[p as usize]["race_values"]["hobbit"]["value"], 3);
+        assert!(json[Param::stair_scum as usize].get("race_values").is_none());
+        // The class's value comes first, then the race's, then the common one.
+        let resolved = resolve(&values);
+        let r = resolved[p as usize];
+        assert_eq!(pick_for(&r, Some(1), Some(3)), (3, "borg.txt"), "a hobbit mage: the race");
+        assert_eq!(pick_for(&r, Some(1), Some(0)), (0, "default"), "a human mage: the common value");
+        let mut class = [None; 9];
+        class[1] = Some((7, "borg.txt"));
+        let r = Resolved { class, ..r };
+        assert_eq!(pick_for(&r, Some(1), Some(3)), (7, "borg.txt"), "a class value wins");
+    }
+
     /// #520: `pick` returns the current class's value, else the common one.
     #[test]
     fn lookup_follows_the_class() {
         let mut class = [None; 9];
         class[1] = Some((300, "borg.txt"));
-        let r = Resolved { value: 100, origin: "borg.txt", class };
+        let r = Resolved { value: 100, origin: "borg.txt", class, race: [None; 11] };
         assert_eq!(pick(&r, None), (100, "borg.txt"));
         assert_eq!(pick(&r, Some(1)), (300, "borg.txt"));
         assert_eq!(pick(&r, Some(0)), (100, "borg.txt"));
@@ -3267,6 +3382,7 @@ mod tests {
                 "cave" => "cave_light",
                 "unseen" => "unseen_belief",
                 "explore" => "flow_dark",
+                "stair" => "stair_scum",
                 _ => prefix,
             };
             if prefix == "town" {
