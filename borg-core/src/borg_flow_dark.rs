@@ -934,6 +934,19 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
         || crate::borg_kit::leash_active(st);
     let leash = leash_on.then(|| borg_flow_misc::borg_get_leash(st, false));
 
+    /* The return leash ("wandered too far", from the nearest up staircase):
+     * no target or path past it, or the Borg would walk out and back */
+    let ret = crate::borg_think_dungeon::return_leash(st);
+    let mut past_return = vec![vec![false; AUTO_MAX_X as usize]; AUTO_MAX_Y as usize];
+    if let Some(r) = ret {
+        for (y, row) in past_return.iter_mut().enumerate() {
+            for (x, past) in row.iter_mut().enumerate() {
+                let at = loc { x: x as i32, y: y as i32 };
+                *past = crate::borg_think_dungeon::up_stair_distance(st, at).is_some_and(|d| d > r);
+            }
+        }
+    }
+
     /* Candidates: torch-lit interesting grids, then every reachable one */
     let mut seen = vec![vec![false; AUTO_MAX_X as usize]; AUTO_MAX_Y as usize];
     let mut cands: Vec<(i32, i32, i32)> = Vec::new();
@@ -951,7 +964,9 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
         seen[y as usize][x as usize] = true;
         if let Some(r) = ring_of(&rings, y, x) {
             connected = true;
-            cands.push((y, x, r));
+            if !past_return[y as usize][x as usize] {
+                cands.push((y, x, r));
+            }
         }
     };
     for (y, x) in lit {
@@ -975,7 +990,7 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
         let mut closed = Vec::new();
         for (y, row) in rings.iter().enumerate() {
             for (x, &r) in row.iter().enumerate() {
-                if beyond_limit(r, limit) && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
+                if (beyond_limit(r, limit) || past_return[y][x]) && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
                     st.flow.data_cost[y][x] = 0;
                     closed.push((y, x));
                 }

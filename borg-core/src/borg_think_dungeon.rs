@@ -185,6 +185,35 @@ fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
     b_j
 }
 
+/// The return leash of `borg_think_dungeon` ("Return to Stair (wandered
+/// too far)"): the distance from the nearest known up staircase beyond which
+/// the Borg walks back to it, or `None` where it does not apply. Shared with
+/// the breadth-first exploration (#1080), which never targets past it.
+pub(crate) fn return_leash(st: &BorgState) -> Option<i32> {
+    if !(st.stairs.less.num != 0
+        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
+        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5)
+    {
+        return None;
+    }
+    // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+    // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
+    let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+    // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
+    // enough" below clears the return, so a smaller one would flap).
+    if crate::borg_kit::leash_active(st) {
+        leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
+    }
+    Some(leash)
+}
+
+/// #1080: the distance (`distance`, as the return leash measures it) from
+/// `at` to the nearest known up staircase, or `None` with none known.
+pub(crate) fn up_stair_distance(st: &BorgState, at: loc) -> Option<i32> {
+    let t = &st.stairs.less;
+    (0..usize::try_from(t.num).unwrap_or(0)).map(|i| engine::distance(at, loc { x: t.x[i], y: t.y[i] })).min()
+}
+
 /// "Start leaving" and "Start fleeing", each with its note.
 fn start_leaving_fleeing(st: &mut BorgState, why: &str) {
     /* Start leaving */
@@ -690,21 +719,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Keep borg on a short leash */
-    if st.stairs.less.num != 0
-        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
-        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5
-    {
+    if let Some(leash) = return_leash(st) {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
-
-        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
-        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
-        let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
-        // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
-        // enough" below clears the return, so a smaller one would flap).
-        if crate::borg_kit::leash_active(st) {
-            leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
-        }
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
