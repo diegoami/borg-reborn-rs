@@ -65,8 +65,17 @@ four P2 findings with the switches on, all fixed, all still shipped 0.
 - F3: Light Room could repeat at an invisible monster on a lit grid. It is
   now cast only at an unlit grid, once per sighting (`unseen_reveals`).
 - F4: a record only a blast could reach never reached the aim list.
-  `believed_for_aim` (slack up to 10, a dispel's radius) admits it there and
-  in the next-to-me test; with `unseen_spread` 0 it is `believed_weight`.
+  `believed_for_aim` admits it there and in the next-to-me test; with
+  `unseen_spread` 0 it is `believed_weight`.
+
+**Re-review of #1128** (relayed, posted on the PR, at `3b61283c`): two P2
+findings, both under `unseen_spread` only, both fixed.
+- F1: dispels (radius 10, the engine's line of sight) got ball slack. Only a
+  ball (radius 1 to 4) gives slack now (`blast_slack`), so
+  `MAX_BLAST_SLACK` is 4.
+- F2: a blast-only record could be the mobile threat that drops the
+  immobile targets (`attack_mobile_threat_first`) when the Borg has no ball.
+  `blast_only` records are skipped there.
 
 **Decided (owner, 2026-11-23: "your call").** #885 and #917 are P8: they are
 perception bugs the shipped light and belief exposed, and they are measured

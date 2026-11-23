@@ -565,7 +565,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5942` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5951` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -594,7 +594,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5959` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5968` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -620,7 +620,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3342` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3345` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8276` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8276` |
 
@@ -5690,7 +5690,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6226` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6235` |
 
 ## C Borg dive gates (#768)
 
@@ -6793,8 +6793,8 @@ on borg-zoo#702.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:385` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:393` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:415` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:423` |
 | `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:424` |
 | `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:221` |
 
@@ -6856,13 +6856,17 @@ to be visible both deletes an unseen record and refuses it a belief
 - **`unseen_spread`** (#889, item 4). The belief spreads around the last grid
   (`belief_percent_spread`): an erratic mover's random steps do not count as
   leaving (RAND_25 25%, RAND_50 50%, both 75%: src/mon-move.c:1087-1101), and a
-  ball or dispel still hits a monster that moved fewer grids than the blast
-  reaches beyond its last grid (`unseen_blast_slack`: the radius less that
-  grid's distance from the centre). Bolts, beams, arcs and throws take no
-  slack. So that such a blast is scored at all, `borg_attack`'s aim list and
-  its next-to-me test admit a record a blast could still reach
-  (`believed_for_aim`, slack up to a dispel's radius, 10; review of #1128,
-  F4).
+  ball still hits a monster that moved fewer grids than the ball reaches
+  beyond its last grid (`unseen_blast_slack`, `blast_slack`: the radius less
+  that grid's distance from the centre, radius 1 to 4). Bolts, beams, arcs,
+  throws, Starlight's lines (radius 7) and the line-of-sight effects
+  (dispels, mass sleep, slow, confuse: radius 10, which reach what the player
+  sees, not a radius around the aim) take no slack (re-review of #1128, F1).
+  So that such a ball is scored at all, `borg_attack`'s aim list and its
+  next-to-me test admit a record a ball could still reach
+  (`believed_for_aim`, slack up to 4; review of #1128, F4). Such a record
+  (`blast_only`) never makes `attack_mobile_threat_first` drop the immobile
+  targets: the Borg may have no ball (re-review F2).
 - **Beams and arcs** (#889, item 5) were already covered: every projection
   path (`borg_launch_bolt_at_location` for bolts, beams and balls,
   `borg_launch_arc_at_location` for arcs) scores a record through
@@ -6880,7 +6884,7 @@ to be visible both deletes an unseen record and refuses it a belief
 | `view_rubble_blocks_sight` | 0 | flag | 0–1 | `borg_cave_view.rs:258` |
 | `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
 | `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
-| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:412` |
+| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:442` |
 
 ## Home stock the town planner deliberately declines (#1049)
 

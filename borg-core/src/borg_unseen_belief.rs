@@ -364,17 +364,47 @@ pub(crate) fn believed_weight(st: &BorgState, k: usize) -> Option<i32> {
     believed_weight_with(st, k, 0)
 }
 
+/// The largest ball radius the attack scoring uses: Storm of Darkness, 4
+/// (`BF_SPELL_STORM_OF_DARKNESS`, borg_fight_attack.rs). Radius 10 is the
+/// line-of-sight effects (dispels, mass sleep, slow and confuse: the engine
+/// projects them over what the player sees, not around an aim) and 7 is
+/// Starlight's lines: neither is a ball (re-review of #1128, F1).
+pub(crate) const MAX_BALL_RADIUS: i32 = 4;
+
 /// The most a blast's reach can exceed a record's distance from its centre:
-/// a dispel's radius, 10 (`borg_attack_aux_spell_dispel`), the largest any
-/// attack scores.
-pub(crate) const MAX_BLAST_SLACK: i32 = 10;
+/// the largest ball radius.
+pub(crate) const MAX_BLAST_SLACK: i32 = MAX_BALL_RADIUS;
+
+/// #889: the slack a blast of radius `rad` gives a grid at distance `r` from
+/// its centre: `rad - r` for a ball (radius 1 to `MAX_BALL_RADIUS`), 0 for a
+/// bolt, a beam, a line-of-sight effect or Starlight.
+pub(crate) fn blast_slack(rad: i32, r: i32) -> i32 {
+    if (1..=MAX_BALL_RADIUS).contains(&rad) {
+        (rad - r).max(0)
+    } else {
+        0
+    }
+}
+
+/// #889 (re-review of #1128, F2): a record on `borg_attack`'s aim list only
+/// because a ball could still reach it (`believed_for_aim`), neither seen
+/// recently nor believed at its grid. It is a ball's target, never a reason
+/// to drop other targets (`attack_mobile_threat_first`).
+pub(crate) fn blast_only(st: &BorgState, k: usize) -> bool {
+    let kill = &st.kills.kills[k];
+    kill.r_idx != 0
+        && st.borg.time.now.wrapping_sub(kill.when) > param(Param::attack_max_target_age)
+        && believed_weight(st, k).is_none()
+        && believed_for_aim(st, k).is_some()
+}
 
 /// #889 (review of #1128 F4): the belief with which `borg_attack` admits a
 /// record to its aim list (and its "next to me" test): with `unseen_spread`
 /// a record a blast could still reach counts, though its belief at slack 0 is
-/// gone, so a ball or dispel centred near it is scored. A bolt at it scores
+/// gone, so a ball centred near it is scored. A bolt at it scores
 /// nothing (`borg_launch_bolt_aux_hack` asks the slack of its own shot). With
-/// `unseen_spread` 0 the slack is ignored: `believed_weight`.
+/// `unseen_spread` 0 the slack is ignored: `believed_weight`, and no record is
+/// `blast_only`.
 pub(crate) fn believed_for_aim(st: &BorgState, k: usize) -> Option<i32> {
     believed_weight_with(st, k, MAX_BLAST_SLACK)
 }
@@ -611,12 +641,26 @@ mod tests {
         assert_eq!(belief_percent_spread(9, false, false, 10, 10, 20, 0, 0), 100);
     }
 
+    /// Re-review of #1128, F1: only a ball gives slack; a dispel's or
+    /// other line-of-sight effect's 10 and Starlight's 7 do not.
+    #[test]
+    fn only_a_ball_gives_slack() {
+        assert_eq!(blast_slack(2, 0), 2);
+        assert_eq!(blast_slack(2, 1), 1);
+        assert_eq!(blast_slack(4, 1), 3);
+        assert_eq!(blast_slack(2, 3), 0, "never negative");
+        for rad in [-1, 0, 7, 10] {
+            assert_eq!(blast_slack(rad, 0), 0, "rad {rad}");
+        }
+    }
+
     /// Review of #1128, F4: a record whose belief is gone at slack 0 can
     /// still be a blast's target, so the aim list asks the largest slack.
     #[test]
     fn the_aim_list_admits_a_record_only_a_blast_reaches() {
         assert_eq!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 0), 0, "no belief at its grid");
-        assert!(belief_percent_spread(9, false, true, 10, 10, 20, 0, MAX_BLAST_SLACK) > 0, "a dispel still reaches it");
+        assert!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 9) > 0, "enough slack revives it");
+        assert_eq!(MAX_BLAST_SLACK, 4, "the largest ball, not a dispel's 10");
         assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 0), 0);
         assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 2), 20, "a radius-2 ball at its grid");
     }

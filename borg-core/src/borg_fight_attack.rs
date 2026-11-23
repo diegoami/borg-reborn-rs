@@ -2212,8 +2212,11 @@ fn borg_launch_bolt_at_location(
             }
 
             // borg-reborn-rs (#889): the blast reaches rad - r grids beyond
-            // this one (read by the belief only under unseen_spread).
-            let slack = rad - r;
+            // this one (read by the belief only under unseen_spread). Only a
+            // ball's: a dispel or other line-of-sight effect (rad 10) and
+            // Starlight's lines (rad 7) reach what the player sees, not a
+            // radius around the aim (re-review of #1128, F1).
+            let slack = crate::borg_unseen_belief::blast_slack(rad, r);
 
             /*  dispel spells should hurt the same no matter the rad: make r= y
              * and x */
@@ -5394,6 +5397,12 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let immobile = |st: &BorgState, k: usize| k != 0 && rf(st.kills.kills[k].r_idx, RF_NEVER_MOVE);
         let mut threat = false;
         for &(_, _, k) in &targets {
+            // borg-reborn-rs (#889, re-review of #1128 F2): a record only a
+            // ball could still reach (unseen_spread) is no threat that drops
+            // the immobile targets: the Borg may have no ball to throw.
+            if k != 0 && crate::borg_unseen_belief::blast_only(st, k) {
+                continue;
+            }
             if k != 0 && !immobile(st, k) && crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false) * 100 >= hp * percent {
                 threat = true;
                 break;
