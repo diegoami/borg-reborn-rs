@@ -480,10 +480,15 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
     } else if g.f_idx == FEAT_LESS {
         // Up stairs
-        track_add(&mut st.stairs.less, x, y);
+        // borg-reborn-rs (#1085): a new one re-plans breadth-first exploration.
+        if track_add(&mut st.stairs.less, x, y) {
+            crate::borg_flow_dark::replan_on_new_stair(st);
+        }
     } else if g.f_idx == FEAT_MORE {
         // Down stairs
-        track_add(&mut st.stairs.more, x, y);
+        if track_add(&mut st.stairs.more, x, y) {
+            crate::borg_flow_dark::replan_on_new_stair(st);
+        }
     }
 
     let web = u32::from(st.cave.grid(x, y).feat) == FEAT_FLOOR && engine::square_iswebbed(x, y);
