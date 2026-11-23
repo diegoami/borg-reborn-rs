@@ -803,13 +803,29 @@ pub(crate) fn ban_of(contacts: &[Contact]) -> HealBan {
     ratio.unwrap_or(HealBan::Free)
 }
 
-/// #1065 (re-review of #1089, P2): with `fast_fragile_heal_min_ratio` on,
-/// attack on sight tries the cure it yields to at once
-/// (`borg_caution::fast_fragile_cure`) and attacks when the caution declines
-/// it, so carrying a cure the caution will not drink never costs the
-/// priority attack. 0: the yield is a plain yield, as before.
+/// #1065 (re-reviews of #1089, P2): with `fast_fragile_heal_min_ratio` on,
+/// attack on sight defers its priority attack when it yields to a cure
+/// (`FightAttackState::ff_deferred`), and makes it after the caution if the
+/// caution took no action (`borg_fight_attack::fast_fragile_deferred_attack`).
+/// So carrying a cure the caution will not drink never costs the attack, and
+/// the caution's order (cures, retreat, escapes, the outmatched heal) is
+/// kept. 0: a plain yield, as before.
 pub(crate) fn cure_now() -> bool {
     param(Param::fast_fragile_heal_min_ratio) > 0
+}
+
+/// #1065 (re-review of #1089 at c7e55e1d, P2): the contact ratio for the
+/// healing fallbacks outside `borg_heal` (the unseen-bump heal before the
+/// stairs, the Recall wait), as a per-action check: with the ratio on and a
+/// fast-fragile attacker in contact at the heal floor (`heal_ban` is
+/// `Ratio`), each action by its own heal (`heal_of`); otherwise everything
+/// passes, as before (these fallbacks were never under #842's ban, and the
+/// ban is not extended to them here).
+pub(crate) fn ratio_gate(st: &mut BorgState) -> impl Fn(HealAction) -> bool {
+    let ban = if cure_now() { heal_ban(st) } else { HealBan::Free };
+    let ban = if matches!(ban, HealBan::Ratio { .. }) { ban } else { HealBan::Free };
+    let (clevel, missing) = (st.borg.tr(BI_CLEVEL), st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP));
+    move |a| ban.allows(heal_of(a, clevel, missing))
 }
 
 /// Attack on sight steps aside for a cure (`yield_to_cure`) only when the
@@ -1143,6 +1159,34 @@ mod tests_1065 {
                 assert!(before.contains("ok(H::"), "{call} at +{k} after the ban without ok(...)");
             }
         }
+    }
+
+    /// Re-review of #1089 at c7e55e1d, P2: the unseen-bump heal and the
+    /// Recall wait ask the contact ratio for every cure they use; attack on
+    /// sight no longer heals before the caution (it defers its attack), and
+    /// the deferred attack runs right after the caution in the dungeon think.
+    #[test]
+    fn the_fallbacks_ask_the_ratio_and_the_attack_waits_for_the_caution() {
+        let caution = include_str!("borg_caution.rs");
+        let body = |name: &str| {
+            let at = caution.find(name).unwrap_or_else(|| panic!("{name}"));
+            &caution[at..at + caution[at..].find("\n}\n").expect("end")]
+        };
+        for f in ["fn unseen_bump_response(", "fn buy_time_for_recall("] {
+            let b = body(f);
+            let gate = b.find("ratio_gate(st)").unwrap_or_else(|| panic!("{f} reads the ratio"));
+            for call in ["borg_quaff_potion(st, st.item_val.sv_potion_cure", "borg_quaff_crit(", "borg_zap_rod(st, st.item_val.sv_rod_healing", "sv_potion_healing", "sv_potion_life"] {
+                for (k, _) in b[gate..].match_indices(call) {
+                    let before = &b[gate..][k.saturating_sub(60)..k];
+                    assert!(before.contains("gate(H::"), "{f}: {call} without gate(...)");
+                }
+            }
+        }
+        assert!(!caution.contains("fn fast_fragile_cure("), "no cure before the caution's order");
+        let think = include_str!("borg_think_dungeon.rs");
+        let c = think.find("if borg_caution(st) {").expect("caution in the think");
+        let d = think.find("fast_fragile_deferred_attack(st)").expect("the deferred attack in the think");
+        assert!(c < d && d - c < 400, "the deferred attack comes right after the caution");
     }
 
     /// Review of #1089, P2: the heal of every action is the engine's.

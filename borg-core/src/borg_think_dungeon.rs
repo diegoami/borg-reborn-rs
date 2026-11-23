@@ -835,6 +835,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_caution");
     }
 
+    // borg-reborn-rs (#1065): the caution took no action; the fast-fragile
+    // priority attack deferred for a cure goes on (only with the ratio on).
+    if crate::borg_fight_attack::fast_fragile_deferred_attack(st) {
+        return choice!("fast_fragile_deferred_attack");
+    }
+
     // #789: use the normal scary-town stair flow for a retreat without
     // restoring the named scare. The ordinary ladder remains the fallback.
     if town_retreat {

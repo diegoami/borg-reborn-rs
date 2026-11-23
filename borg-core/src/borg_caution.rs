@@ -3558,17 +3558,6 @@ mod category_threat_tests {
     }
 }
 
-/// borg-reborn-rs (#1065, re-review of #1089, P2): the cure attack on sight
-/// steps aside for, tried at once with the caution's own healing at the
-/// danger the caution reads (borg_heal, then the outmatched heal, with their
-/// own loss, level, danger and chance gates and the heal ban). `true` when a
-/// cure took the turn; `false` when the caution declines it, and the
-/// priority attack then goes on instead of the turn being lost.
-pub(crate) fn fast_fragile_cure(st: &mut BorgState) -> bool {
-    let danger = borg_danger(st, st.borg.c.y, st.borg.c.x, p(Param::caution_danger_horizon), true, false);
-    borg_heal(st, danger) || borg_heal_outmatched(st, danger)
-}
-
 /// #760/#759: before any dungeon flight, including the light/countdown
 /// and depth-return rungs which otherwise precede borg_caution. In order:
 /// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
@@ -6429,24 +6418,29 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
     // a low-level character; with caution_recall_cure_min_loss_percent, a cure
     // needs at least that share of the max HP lost.
     let lost = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
+    // borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): the contact
+    // ratio, each potion or rod by its own heal (free without a fast-fragile
+    // contact at the heal floor).
+    use crate::borg_fast_fragile::HealAction as H;
+    let gate = crate::borg_fast_fragile::ratio_gate(st);
     if lost < p(Param::caution_recall_cure_loss)
         && recall_cure_hurt_enough(lost, st.borg.tr(BI_MAXHP), p(Param::caution_recall_cure_min_loss_percent))
-        && (borg_quaff_crit(st, true)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        && ((gate(H::PotionCcw) && borg_quaff_crit(st, true))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light)))
     {
         borg_note(st, "# Buying time waiting for Recall.(3)");
         return true;
     }
 
     if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) > p(Param::caution_recall_heal_loss)
-        && (borg_zap_rod(st, st.item_val.sv_rod_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_life)
-            || borg_quaff_crit(st, true)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        && ((gate(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing))
+            || (gate(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            || (gate(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+            || (gate(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life))
+            || (gate(H::PotionCcw) && borg_quaff_crit(st, true))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light)))
     {
         borg_note(st, "# Buying time waiting for Recall.(4)");
         return true;
@@ -8081,10 +8075,15 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
         bump_recent(now, b.at, turns) && engine::distance(st.borg.c, b.grid) == 1
             && st.cave.grid(b.grid.x, b.grid.y).kill == 0
     }) else { return false };
+    // borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): with a
+    // fast-fragile attacker also in contact at the heal floor, each potion
+    // by its own heal against the contact ratio; unseen only, as before.
+    use crate::borg_fast_fragile::HealAction as H;
+    let gate = crate::borg_fast_fragile::ratio_gate(st);
     if bump_heal_due(st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_unseen_bump_heal_hp_percent))
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
+        && ((gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionCcw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)))
     {
         borg_note(st, "# Healing before stairs: an unseen monster blocks the step");
         return true;
