@@ -34,7 +34,7 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
-    BI_CLASS, BI_CLEVEL, BI_CON_INDEX, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
+    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
     BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_RPOIS, BI_SPEED,
@@ -54,6 +54,7 @@ use crate::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID, TMD_POISONED};
+use crate::headers::list_stats_h::STAT_CON;
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
@@ -3154,11 +3155,16 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
     // #1136: with caution_recall_poison_remaining, the HP the running poison
     // timer still takes (owner, 2026-11-23: read the engine's counter, as the
     // town planner does), instead of the whole delay.
-    let remaining = (blow_model && poisoned && p(Param::caution_recall_poison_remaining) != 0).then(|| {
-        recall_poison_remaining_hp(i32::from(engine::player_timed(TMD_POISONED)), st.borg.tr(BI_CON_INDEX))
-    });
+    let (remaining, resists) = recall_poison_inputs(
+        blow_model && poisoned && p(Param::caution_recall_poison_remaining) != 0,
+        st.borg.tr(BI_RPOIS) != 0,
+        || EnginePoison {
+            timer: i32::from(engine::player_timed(TMD_POISONED)),
+            con_index: engine::player_stat_ind(STAT_CON),
+            blocks_new: engine::player_blocks_new_poison(),
+        });
     let poison_hp = if blow_model {
-        recall_poison_hp(ticks, poisoned, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0, remaining)
+        recall_poison_hp(ticks, poisoned, poison_strike, poison_timer, resists, remaining)
     } else { 0.0 };
     exposure += poison_hp;
     if poison_hp > 0.0 || breeders_waived > 0 || capped.is_some() || remaining.is_some() {
@@ -3325,8 +3331,33 @@ fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Op
     remaining.map_or(ticks, |r| (r.max(0.0) + new).min(ticks))
 }
 
+/// #1136: what the engine holds for the poison: the timer, the CON index it
+/// decays by (`state.stat_ind[STAT_CON]`) and whether it blocks a new
+/// poisoning (`player_blocks_new_poison`).
+struct EnginePoison {
+    timer: i32,
+    con_index: i32,
+    blocks_new: bool,
+}
+
+/// #1136: the forecast's poison inputs, the HP the running timer still takes
+/// and whether new poison is blocked. With `caution_recall_poison_remaining`
+/// (`read`) both come from the engine (owner, 2026-11-23: read the counter;
+/// owner review of #1143 at dad5b699):
+/// - the CON index is the engine's, not `BI_CON_INDEX`, which rebuilds it
+///   from the base stat and the equipment and so misses sickliness's -5 CON
+///   (curse.txt), recorded only in `BI_CCON`;
+/// - resistance is what `player_inc_check` reads, not `BI_RPOIS`, which can
+///   be 1 while the engine keeps poisoning the Borg (#1145).
+/// Off, nothing is read and #880's inputs stand (`BI_RPOIS`).
+fn recall_poison_inputs(read: bool, borg_rpois: bool, engine: impl FnOnce() -> EnginePoison) -> (Option<f64>, bool) {
+    if !read { return (None, borg_rpois); }
+    let e = engine();
+    (Some(recall_poison_remaining_hp(e.timer, e.con_index)), e.blocks_new)
+}
+
 /// #1136: `adj_con_fix[]` at 574b618c (`player-calcs.c:686-725`), by the CON
-/// index (`stat_ind[STAT_CON]`, BI_CON_INDEX): the extra amount the poison,
+/// index (the engine's `state.stat_ind[STAT_CON]`): the extra amount the poison,
 /// cut and stun timers fall each world tick. Pinned to the engine source by
 /// `tests_1136`.
 const RECALL_ADJ_CON_FIX: [i32; 38] = [
@@ -3347,7 +3378,42 @@ fn recall_poison_remaining_hp(counter: i32, con_index: i32) -> f64 {
 
 #[cfg(test)]
 mod tests_1136 {
-    use super::{recall_poison_hp, recall_poison_remaining_hp, RECALL_ADJ_CON_FIX};
+    use super::{recall_poison_hp, recall_poison_inputs, recall_poison_remaining_hp, EnginePoison, RECALL_ADJ_CON_FIX};
+
+    #[test]
+    fn the_engines_con_index_prices_a_sickly_borg() {
+        // Owner review of #1143 (dad5b699): CON 14 before sickliness's -5 is
+        // index 11 to BI_CON_INDEX, 6 (CON 9) to the engine. Timer 15, HP 10,
+        // nothing in reach: the engine takes 15 HP (dead on tick 11, before
+        // the earliest Recall at tick 15).
+        let engine = || EnginePoison { timer: 15, con_index: 6, blocks_new: false };
+        let (remaining, _) = recall_poison_inputs(true, false, engine);
+        assert_eq!(remaining, Some(15.0));
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, false, remaining), 0, 10));
+        // BI_CON_INDEX's 11 would have charged 8 and allowed it.
+        assert!(super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, false, Some(recall_poison_remaining_hp(15, 11))), 0, 10));
+    }
+
+    #[test]
+    fn a_false_resistance_flag_does_not_hide_new_poison() {
+        // #1145: BI_RPOIS 1 while the engine keeps poisoning (a white jelly in
+        // contact, 1d2 POISON). The engine's check decides.
+        let engine = || EnginePoison { timer: 8, con_index: 0, blocks_new: false };
+        let (remaining, resists) = recall_poison_inputs(true, true, engine);
+        assert!(!resists);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, resists, remaining), 34.0, "the jelly keeps the timer running");
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, Some(0.0), 99.0, resists, remaining), 0, 20));
+        // A real resistance still blocks it.
+        let resisting = || EnginePoison { timer: 8, con_index: 0, blocks_new: true };
+        let (remaining, resists) = recall_poison_inputs(true, false, resisting);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, resists, remaining), 8.0);
+    }
+
+    #[test]
+    fn switch_off_reads_nothing_from_the_engine() {
+        let (remaining, resists) = recall_poison_inputs(false, true, || panic!("read with the switch off"));
+        assert_eq!((remaining, resists), (None, true), "#880's BI_RPOIS stands");
+    }
 
     #[test]
     fn adj_con_fix_copy_is_the_engines_table() {
