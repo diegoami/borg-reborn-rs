@@ -150,10 +150,16 @@ pub struct Borg {
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
     /// the last Phase Door landing check under the policy, as (the think's
-    /// `time.now`, the Borg's grid, the count). The gate of the sites
-    /// without a landing check reuses it in the same think and grid instead
-    /// of drawing again.
-    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
+    /// `time.now`, the Borg's grid, the count, that site's tolerance). The
+    /// gate of the sites without a landing check reuses it in the same think
+    /// and grid instead of drawing again, judged by the stricter of the two
+    /// tolerances (#1094).
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32, i32)>,
+    /// borg-reborn-rs (#1094, review of #1096): the think's `time.now` when
+    /// the last `phase_door` call was refused by the never-seen gate (`None`
+    /// when it was not). The twitchy think then still tries its longer-range
+    /// teleports, which the gate does not judge.
+    pub phase_gate_refused: Option<BorgTime>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
@@ -339,6 +345,21 @@ pub struct BorgMonInfo {
     /// so a flow that passes them again does not loop.
     pub immobile_stepped: [[u8; 4]; 16],
     pub immobile_stepped_level: BorgTime,
+    /// borg-reborn-rs (#932): the last strategic retreat: the think it was
+    /// taken (`time.now`), the level's arrival time, the grid it left, and
+    /// how many retreats in a row left that place (each within
+    /// `caution_retreat_oscillation_thinks` of the last, from a grid next
+    /// to or on the last one left).
+    pub retreat_last: BorgTime,
+    pub retreat_level: BorgTime,
+    pub retreat_from: loc,
+    /// borg-reborn-rs (#1023, review of #966): the grid that move stepped
+    /// to, whether a later think found the Borg on it (the landing
+    /// confirmed), and the think of the last veto note (one per think).
+    pub retreat_to: loc,
+    pub retreat_landed: bool,
+    pub retreat_noted: BorgTime,
+    pub retreat_run: u16,
     pub morgoth_panel: loc,
     pub unique: u32,
 }
