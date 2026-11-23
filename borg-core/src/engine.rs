@@ -1467,6 +1467,13 @@ pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
 }
 
+/// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
+/// `move_energy` an action and refilled by `turn_energy` each game turn
+/// (game-world.c:1092).
+pub fn player_energy() -> i32 {
+    i32::from(player_ref().energy)
+}
+
 /// Read the player's summary fields.
 pub fn player_summary() -> PlayerSummary {
     let p = player_ref();

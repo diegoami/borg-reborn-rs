@@ -109,6 +109,11 @@ pub struct Borg {
     pub unseen_probe: Option<loc>,
     pub unseen_empty: Vec<loc>,
     pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981, review of #998): every unseen attack of the
+    /// episode so far was a projection's hit ("You are hit by ...!",
+    /// `SHOT_BY:`), not a blow. Set when the episode starts, cleared by a blow
+    /// and when the episode ends.
+    pub unseen_shot_only: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
@@ -630,6 +635,10 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     if borg_ch != 0 {
         key.code = borg_ch;
         return key;
+    }
+
+    if st.fight_attack.pending_unseen.has_targets() && engine::inkey_flag() {
+        crate::borg_unseen_belief::confirm_attack(st);
     }
 
     if user_abort(st) {
