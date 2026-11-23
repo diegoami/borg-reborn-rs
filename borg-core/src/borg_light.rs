@@ -788,6 +788,41 @@ pub(crate) fn torch_fuel_turns(st: &BorgState) -> Option<i32> {
         .iter().map(light_stack_turns).sum::<i32>())
 }
 
+/// borg-reborn-rs (#1110): the light goal of a trip: the trip's turns or
+/// `town_light_reserve_turns`, whichever is larger, scaled while
+/// breadth-first exploration applies (`explore_bfs_light_percent`). The
+/// town planner, the torch replenishment, the oil-throw guard and the
+/// fuel-junking guard all read this one goal (review of #1113).
+pub(crate) fn fuel_goal(st: &BorgState, journey: crate::borg_town_utility::Journey) -> i64 {
+    scaled_goal(journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns))),
+        crate::borg_flow_dark::bfs_supply_percent(st, true))
+}
+
+/// `goal` x `percent` / 100 (100 = the goal itself).
+pub(crate) fn scaled_goal(goal: i64, percent: i32) -> i64 {
+    goal.saturating_mul(i64::from(percent.max(0))) / 100
+}
+
+#[cfg(test)]
+mod bfs_fuel_goal_tests {
+    use super::scaled_goal;
+
+    #[test]
+    fn twenty_thousand_turns_on_hand_fall_short_while_breadth_first_applies() {
+        // Review of #1113: a short trip (3,000 turns) under the 20,000-turn
+        // reserve. Off, 20,000 turns on hand meet the goal; at the shipped
+        // 150 the goal is 30,000, so the replenishment buys torches and the
+        // throw and junking guards keep the fuel (all read `fuel_goal`).
+        let goal = 3_000_i64.max(20_000);
+        let on_hand = 20_000;
+        assert!(on_hand >= scaled_goal(goal, 100), "off: no replenishment");
+        assert_eq!(scaled_goal(goal, 150), 30_000);
+        assert!(on_hand < scaled_goal(goal, 150), "on: two more torches wanted");
+        // A long trip past the reserve scales the same way.
+        assert_eq!(scaled_goal(40_000_i64.max(20_000), 150), 60_000);
+    }
+}
+
 /// Keep a usable fuel stack when discarding it would break the configured
 /// reserve. Torch-only characters cannot count oil as light.
 pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
@@ -813,7 +848,7 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
     if fuel(&pack[slot]) == 0 { return false; }
     let remaining = fuel(equipped) + pack.iter().enumerate()
         .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>();
-    let goal = crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve));
+    let goal = fuel_goal(st, crate::borg_town_utility::Journey::of(st));
     i64::from(remaining) < goal
 }
 
