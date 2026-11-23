@@ -5928,17 +5928,17 @@ them.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:47` |
-| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:313` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:475` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:477` |
-| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:534` |
-| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:319` |
-| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:320` |
-| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:321` |
-| `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:292` |
-| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:443` |
-| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:420` |
-| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:388` |
+| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:340` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:517` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:519` |
+| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:573` |
+| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:353` |
+| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:348` |
+| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:349` |
+| `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:349` |
+| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:484` |
+| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:464` |
+| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:430` |
 
 #926 added the last three, each 0 (today's play), none shipped:
 
@@ -5958,6 +5958,10 @@ them.
   potion that stops them (a cut up to 20: CLW; deeper: CSW or CCW; poison:
   Neutralize Poison or CCW; both: CCW) before the attack, Phase Door and
   the stairs, and the heal ban lifts.
+- #1028: "they alone take it below 0 HP" counts the world ticks of the
+  coming window from the game turn and the Borg's energy (the player acts
+  before the turn's tick, game-world.c:1016-1095), so it is exact, not an
+  average: a hasted Borg's windows hold one tick and none in turn.
 
 - `fast_fragile_policy=1`: a monster marked fast-fragile is attacked by the
   focused planner's best attack every turn, without attack-on-sight's
