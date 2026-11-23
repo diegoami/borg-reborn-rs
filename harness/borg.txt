@@ -868,6 +868,24 @@ borg_param_explore_mix_max_radius = 30
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50
 
+# The holes in C's leash (#1062). Compiled 0 = C; shipped on with the values
+# of the zoo arms (owner, 2026-11-23: "merge with the values to try"),
+# unmeasured until borg-zoo#719 reports (RULES 14). any_stair 1: both leashes measure the nearest known staircase of either
+# kind (a down staircase too), not only up ones, and not the farthest up one.
+# unknown_stair_steps N: with no staircase known or reachable, explore at most
+# N steps from the grid where the Borg arrived. teleported_recall 1: up to
+# recall_max_level, a teleport (a trap or the Borg's own teleport, never its
+# Phase Door; of unknown cause, a jump of at least recall_min_jump grids)
+# that leaves every known staircase more than recall_steps steps away reads
+# Word of Recall at danger 0. Steps are walking steps over known terrain
+# (monsters, traps and danger ignored).
+borg_param_flow_leash_any_stair = 1
+borg_param_flow_leash_unknown_stair_steps = 20
+borg_param_flow_leash_teleported_recall = 1
+borg_param_flow_leash_recall_max_level = 5
+borg_param_flow_leash_recall_steps = 30
+borg_param_flow_leash_recall_min_jump = 12
+
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
 # more steps from the stairs, taken by the leash check of take_select).
@@ -1243,6 +1261,17 @@ borg_param_caution_stairs_immobile_reach = 0
 # #931: the reach-free route at most this many steps costlier than the
 # ordinary one (0 = any); read only with the switch on. 20 is a hypothesis.
 borg_param_caution_stairs_immobile_reach_extra_steps = 20
+# #1125 (owner: "from paralyzing monsters it is necessary to walk away"; a
+# floating eye's paralysis lock killed Necromancer 453254028 at DL1). Without
+# Free Action: next to an awake paralyser the Phase rule's fight is lost; the
+# first action next to a never-moving one is a step out of its reach; no flow
+# enters a known paralyser's reach (stair flights included); and a
+# never-moving monster's record survives the anti-bounce reset and the
+# 2000-turn expiry. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_escape_paralyser_fight_lost = 0
+borg_param_caution_paralyser_step_away = 0
+borg_param_caution_paralyser_no_reach = 0
+borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
@@ -2206,3 +2235,18 @@ borg_param_caution_unseen_bump_throw_tries = 3
 
 # #829: a teleport curse stops every teleport (the engine's "Teleportation forbidden!").
 borg_param_escape_teleport_block = 1
+
+# #1067: a trap next to the arrival stairs cuts a weak Borg off (Warrior
+# 1868115537: a poison pit four steps from its up staircase; below 60 HP every
+# known trap is a wall to the flows, so it explored on and died 5 steps from
+# the stairs). Shipped on by the owner, 2026-11-23 ("merge but set the values
+# to try"), before a zoo measurement (borg-zoo request linked in the
+# handover): recover at the stairs after a trap that hurts (trap_recover,
+# below trap_recover_max_hp = 60 max HP), reopen a way back a trap cuts
+# (trap_way_back: disarm, or walk onto a trap that cannot kill when the stairs
+# are wanted), leave the level at its second distinct trap
+# (trap_leave_level_count = 2). The near-arrival count stays off.
+borg_param_trap_recover = 1
+borg_param_trap_way_back = 1
+borg_param_trap_leave_level_count = 2
+borg_param_trap_leave_near_count = 0

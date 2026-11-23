@@ -1203,7 +1203,19 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false))
     };
     let adjacent = adjacent_awake(st);
-    let lost = adjacent && fight_lost(st, here, hp) && !newcomer_wait(st, hp);
+    // borg-reborn-rs (#1125, `escape_paralyser_fight_lost`): next to an
+    // awake paralyser without Free Action the fight is lost, whatever the
+    // danger number says (a floating eye's gaze has no dice: danger 0).
+    let paralyser = if adjacent && param(Param::escape_paralyser_fight_lost) != 0 {
+        crate::borg_caution::awake_paralyser_adjacent(st)
+    } else {
+        None
+    };
+    if let Some(k) = paralyser {
+        let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+        borg_note(st, &format!("# Phase rule: next to the paralysing {name} without Free Action: the fight is lost (#1125)"));
+    }
+    let lost = phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_wait(st, hp));
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {
@@ -1220,6 +1232,31 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
     borg_note(st, &format!("# Phase rule (from {label}): {why}"));
     st.borg.phase_rule = Some((now, verdict, false));
     verdict
+}
+
+/// borg-reborn-rs (#1125, review of #1129, finding 2): with
+/// `escape_paralyser_fight_lost`, an awake known paralyser next to the Borg
+/// (no Free Action) defers the early fight (`fight_before_flight`: attack on
+/// sight, the lone slow monster, the winning fight), so `borg_caution` and
+/// the Phase rule, which judges that fight lost, come first.
+pub(crate) fn paralyser_defers_early_fight(st: &mut BorgState) -> bool {
+    if param(Param::escape_paralyser_fight_lost) == 0 {
+        return false;
+    }
+    let Some(k) = crate::borg_caution::awake_paralyser_adjacent(st) else {
+        return false;
+    };
+    let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+    borg_note(st, &format!("# Next to the paralysing {name} without Free Action: no early fight, caution first (#1125)"));
+    true
+}
+
+/// The Phase rule's "lost": an awake enemy adjacent, and the fight lost
+/// (`fight`, asked only when needed); borg-reborn-rs (#1125): next to an
+/// awake paralyser without Free Action (`paralyser`) it is lost without the
+/// fight's test.
+fn phase_lost(adjacent: bool, paralyser: bool, fight: impl FnOnce() -> bool) -> bool {
+    adjacent && (paralyser || fight())
 }
 
 /// borg-reborn-rs (#1066): with `escape_phase_newcomer_wait`, an adjacent
@@ -2822,7 +2859,10 @@ mod unknown_landing_tests {
     #[test]
     fn the_newcomer_wait_follows_a_lost_verdict() {
         let src = include_str!("borg_escape.rs");
-        assert!(src.contains(concat!("adjacent && fight_lost(st, here, hp) && !newcomer_", "wait(st, hp)")));
+        // #1125: the fight's test sits in `phase_lost`, asked only with an
+        // awake enemy adjacent (and no paralyser, which loses it anyway).
+        assert!(src.contains(concat!("phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_", "wait(st, hp))")));
+        assert!(src.contains(concat!("adjacent && (paralyser || ", "fight())")));
         let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
         let wait = &at[..at.find("\n}\n").unwrap()];
         assert!(wait.contains(concat!("fight_race(st, ", "true)")));
@@ -2884,5 +2924,44 @@ mod teleport_block_tests {
         let any = TeleportBlock { item: None, watched: vec![(24, 1, 0, 50), cloak] };
         assert!(any.holds(|s| if s == 24 { Some((24, 1, 0, 50)) } else { Some(cloak) }));
         assert!(!any.holds(|s| if s == 24 { Some((24, 2, 0, 50)) } else { Some(cloak) }), "the weapon changed");
+    }
+}
+
+#[cfg(test)]
+mod paralyser_phase_tests {
+    use super::phase_lost;
+
+    /// #1125, point 1: the floating eye of 453254028 (danger 0 without
+    /// fear, HP 7): the fight test says "not lost", the paralyser says lost.
+    #[test]
+    fn next_to_a_paralyser_the_fight_is_lost() {
+        assert!(phase_lost(true, true, || false));
+        assert!(!phase_lost(true, false, || false), "today's verdict");
+        assert!(phase_lost(true, false, || true));
+        assert!(!phase_lost(false, true, || true), "no awake enemy adjacent: no Phase Door");
+        let mut asked = false;
+        assert!(phase_lost(true, true, || {
+            asked = true;
+            false
+        }));
+        assert!(!asked, "the fight's test (and its notes) is skipped");
+    }
+
+    /// Review of #1129: the paralyser's deferral comes before every early
+    /// fight, and every flow destination is checked for a paralyser's reach.
+    #[test]
+    fn the_early_fight_and_the_flow_goals_respect_the_paralyser() {
+        let caution = include_str!("borg_caution.rs");
+        let at = &caution[caution.find(concat!("pub(crate) fn fight_before_", "flight(")).unwrap()..];
+        let body = &at[..at.find("\n}\n").unwrap()];
+        let defer = body.find(concat!("paralyser_defers_", "early_fight(st)")).expect("the deferral");
+        for early in [concat!("attack_on_", "sight(st)"), concat!("borg_lone_target::", "attack(st)"), concat!("winning_", "fight(st)")] {
+            assert!(defer < body.find(early).expect(early), "{early} comes after the deferral");
+        }
+        let flow = include_str!("borg_flow.rs");
+        let at = &flow[flow.find(concat!("pub fn borg_flow_enqueue_", "grid(")).unwrap()..];
+        let body = &at[..at.find("\n}\n").unwrap()];
+        let reach = body.find(concat!("in_paralyser_", "reach(st, x, y)")).expect("the seed check");
+        assert!(reach < body.find(concat!("data_cost[y as usize][x as usize] = ", "0")).unwrap(), "checked before the seed");
     }
 }

@@ -1081,9 +1081,15 @@ fn stair_frame(st: &mut BorgState, scum: Option<&Scum>) -> Option<StairFrame> {
 
     /* The return leash ("wandered too far", from the nearest up staircase):
      * no target or path past it, or the Borg would walk out and back */
-    let ret = crate::borg_think_dungeon::return_leash(st);
+    // borg-reborn-rs (#1062, review of #1087): with `flow_leash_any_stair`
+    // the boundary is the return leash's own, the walking steps to the
+    // nearest staircase of either kind (`borg_leash::past_return`).
+    let any_stair = crate::borg_leash::any_stair(st);
+    let ret = crate::borg_think_dungeon::return_leash_with(st, any_stair);
     let mut past_return = vec![vec![false; AUTO_MAX_X as usize]; AUTO_MAX_Y as usize];
-    if let Some(r) = ret {
+    if let Some(map) = ret.and_then(|r| crate::borg_leash::past_return(st, r)) {
+        past_return = map;
+    } else if let Some(r) = ret {
         for (y, row) in past_return.iter_mut().enumerate() {
             for (x, past) in row.iter_mut().enumerate() {
                 let at = loc { x: x as i32, y: y as i32 };
