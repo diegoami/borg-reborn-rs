@@ -977,6 +977,12 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        desperate_flow_with_route_guard(st, up, range, why)
+    })
+}
+
+fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1365,6 +1371,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Strategic retreat
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(b_d));
 
         // Reset my Movement and Flow Goals
@@ -1763,6 +1770,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Back away from danger
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(i32::from(engine::ddd(bi))));
 
         // Reset my Movement and Flow Goals
@@ -3712,8 +3720,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 2) we have boosted our avoidance because we are stuck
     // 3) we are in a Sea of Runes
     // 4) we are not in a vault
-    let danger_test =
-        pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    let danger_test = pos_danger > retreat_danger_threshold(st);
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
@@ -3931,8 +3938,10 @@ fn stairs_before_recall(st: &mut BorgState) -> bool {
 /// elsewhere. Nothing is committed: the cost map is rebuilt by the next
 /// flow, and the danger marks are the ones that flow would make.
 fn stair_reachable(st: &mut BorgState) -> bool {
-    (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
-        || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
+            || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    })
 }
 
 /// Would the flee flows take a down staircase (their gates, not the path)?
@@ -3971,6 +3980,10 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
     }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if st.flow.has_retreat_exclusions() {
+        // #932 (review of #964): with a hold active, spread as the walk does.
+        return track.num > 0 && crate::borg_flow_stairs::guarded_unweighted_stair_reachable(st, up);
+    }
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
         return false;
@@ -3982,7 +3995,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         }
     }
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
-    i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
+    crate::borg_flow_stairs::unweighted_flight_reachable(st)
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
@@ -5740,7 +5753,7 @@ pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -
 }
 
 /// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
-fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
     why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
 }
 
@@ -6104,13 +6117,15 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     let ok = if weight > 0 {
         crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
     } else {
-        crate::borg_flow::borg_flow_clear(st);
-        crate::borg_flow_stairs::enqueue_down_stairs(st);
-        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
-        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
-        }
+        crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+            crate::borg_flow::borg_flow_clear(st);
+            crate::borg_flow_stairs::enqueue_down_stairs(st);
+            crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+            crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+                st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+                crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+            }
+        })
     };
     st.borg.status.desperate = false;
     if ok {
@@ -6123,6 +6138,25 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
 /// bored ascent while fleeing, so the up-stair flow can opt in there too.
 pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// #932: remember a tactical retreat for this many Borg thinks during a
+/// dungeon flight. Zero leaves the original routes intact.
+pub(crate) fn flight_retreat_ticks() -> i32 {
+    p(Param::caution_retreat_reentry_ticks)
+}
+
+/// Re-open the abandoned grid if the current danger has fallen below the
+/// strategic-retreat threshold.
+pub(crate) fn retreat_danger_threshold(st: &BorgState) -> i32 {
+    i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor)
+}
+
+/// #932 (review of #964): the danger of a held grid, over the horizon the
+/// strategic retreat reads (`caution_danger_horizon`), so the hold lasts as
+/// long as the same retreat would still fire there.
+pub(crate) fn retreat_hold_danger(st: &mut BorgState, y: i32, x: i32) -> i32 {
+    borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false)
 }
 
 /// borg-reborn-rs (#881): `caution_stairs_flight_unknown` (0 = an unknown
