@@ -1,13 +1,18 @@
 ## 2026-11-22 — Repeated hallway light (#995)
 
-The defensive beam now requires a recent unseen-attacker trigger. Both
-exploration and defense consult the same attempt history before selecting
-a direction. Queuing a spell, rod, or wand records that direction and the
-observed ray terrain at the beam's origin. A rest or device recharge
-leaves the record intact. Changes in the ray, another origin, or a new
-level allow another beam.
+The defensive beam requires a set clock stamp at least 48 turns old,
+as in the original delay. Exploration and defense share one history.
+When the first eligible direction has the same observed terrain as the
+last queued attempt from this square, the Borg yields. A simulation or
+a command that fails to queue leaves the beam eligible. Rest and rod
+recharge leave the record intact, and a level change clears it.
 
-The regression tests cover the unseen-attacker age gate, independent
-directions, and retry after a change in observed terrain. The reported
-Priest's stationary sequences are retained in
-[borg-cemetery #126](https://github.com/diegoami/borg-cemetery/pull/126).
+The ray runs through observed terrain to the beam's projection range
+or the first known blocking grid. A newly revealed grid on that ray
+can make another beam useful, including when the previous beam revealed
+it. A beam that reveals nothing leaves the same record.
+
+The decision regression exercises the shared simulation and queue path.
+It covers a failed queue, an unchanged hallway, and a new observation
+that permits another attempt. The original Priest's stationary sequences
+are retained in [borg-cemetery #126](https://github.com/diegoami/borg-cemetery/pull/126).

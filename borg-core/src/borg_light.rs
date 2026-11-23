@@ -27,6 +27,7 @@ use crate::borg_item_use::{
 };
 use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
+use crate::borg_projection::known_projectable;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::params::{value as param, Param};
@@ -1023,15 +1024,25 @@ impl HallwayBeams {
     }
 }
 
-/// A LINE projects along the aim direction (effect-handler-attack.c:173–180).
-/// Use the Borg's observed terrain along the ray, including unknown grids.
+/// LINE uses the projection range and stops at a blocking grid
+/// (src/effect-handler-attack.c:effect_handler_LINE:173-180,
+/// src/project.c:project_path:293-335). Unknown terrain may be open.
 fn hallway_beam_terrain(st: &BorgState, dx: i32, dy: i32) -> Vec<u8> {
     let (cx, cy) = (st.borg.c.x, st.borg.c.y);
-    (1..=i32::from(engine::z_info().max_range))
-        .map(|step| (cx + dx * step, cy + dy * step))
-        .take_while(|&(x, y)| (0..AUTO_MAX_X).contains(&x) && (0..AUTO_MAX_Y).contains(&y))
-        .map(|(x, y)| st.cave.grid(x, y).feat)
-        .collect()
+    let mut terrain = Vec::new();
+    for step in 1..=i32::from(engine::z_info().max_range) {
+        let (x, y) = (cx + dx * step, cy + dy * step);
+        if !(0..AUTO_MAX_X).contains(&x) || !(0..AUTO_MAX_Y).contains(&y) {
+            break;
+        }
+        let grid = st.cave.grid(x, y);
+        terrain.push(grid.feat);
+        let feat = u32::from(grid.feat);
+        if feat != FEAT_NONE && !known_projectable(feat, grid.trap, engine::feat_is_shop(i32::from(grid.feat))) {
+            break;
+        }
+    }
+    terrain
 }
 
 /// One direction test of `borg_light_beam`: are the grids `0..=light`
@@ -1092,16 +1103,41 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
         spell_ok = true;
     }
 
-    /* borg-reborn-rs (#884): "my light" is the Borg's own light radius
-     * (BI_LIGHT, C's, at cave_light_engine_radius 0; BI_LIGHT - 1 at 1) */
-    let light = own_light_radius(st);
-    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
-
     if !spell_ok {
         return false;
     }
 
-    /* The four directions in C's order: north, south, east, west. */
+    let near_panel_edge = st.borg.c.y - engine::term_geometry().offset_y > borg_panel_hgt() - 2;
+    let light = own_light_radius(st);
+    try_hallway_beam(
+        st, simulation, light, near_panel_edge,
+        |st, dx, dy, first| {
+            if beam_blocked(st, dx, dy, first, light) != Some(false) {
+                return None;
+            }
+            Some(hallway_beam_terrain(st, dx, dy))
+        },
+        |st, dir| {
+            if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
+                || borg_zap_rod(st, st.item_val.sv_rod_light)
+                || borg_aim_wand(st, st.item_val.sv_wand_light)
+            {
+                borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
+                borg_note(st, "# Illuminating this hallway");
+                return true;
+            }
+            false
+        },
+    )
+}
+
+fn try_hallway_beam(
+    st: &mut BorgState, simulation: bool, light: i32, near_panel_edge: bool,
+    open_ray: impl Fn(&BorgState, i32, i32, i32) -> Option<Vec<u8>>,
+    queue_beam: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    /* Preserve C's first viable direction when deciding whether to yield. */
     let tests = [
         (cy - light - 1 > 0, 0, -1, 0, 8),
         (cy + light + 1 < AUTO_MAX_Y, 0, 1, 0, 2),
@@ -1110,45 +1146,33 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
     ];
     let Some((direction, dir, terrain)) = tests.into_iter().enumerate().find_map(
         |(direction, (in_map, dx, dy, first, dir))| {
-            if !in_map || light < first || beam_blocked(st, dx, dy, first, light) != Some(false) {
+            if !in_map || light < first {
                 return None;
             }
-            let terrain = hallway_beam_terrain(st, dx, dy);
-            if st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
-                return None;
-            }
-            Some((direction, dir, terrain))
+            open_ray(st, dx, dy, first).map(|terrain| (direction, dir, terrain))
         },
     ) else {
         return false;
     };
-
-    /* Don't do it if on the edge of shifting the panel. */
-    if (dir == 2 || dir == 8) && cy - engine::term_geometry().offset_y > borg_panel_hgt() - 2 {
+    if (dir == 2 || dir == 8) && near_panel_edge {
         return false;
     }
 
-    /* simulation */
+    if st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
+        return false;
+    }
     if simulation {
         return true;
     }
-
-    /* cast the light beam */
-    if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
-        || borg_zap_rod(st, st.item_val.sv_rod_light)
-        || borg_aim_wand(st, st.item_val.sv_wand_light)
-    {
-        // Record only a queued attempt. Mana, rod recharge and rests leave it tried.
-        st.borg.hallway_beams.record((cx, cy), direction, terrain);
-        /* apply the direction */
-        borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
-        borg_note(st, "# Illuminating this hallway");
-        return true;
+    if !queue_beam(st, dir) {
+        return false;
     }
 
-    /* cant do it */
-    false
+    // Mana, rod recharge and rests leave a queued direction tried.
+    st.borg.hallway_beams.record((cx, cy), direction, terrain);
+    true
 }
+
 
 
 #[cfg(test)]
@@ -1365,32 +1389,32 @@ mod lightless_tests {
 #[cfg(test)]
 mod hallway_beam_tests {
     use super::*;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
 
     #[test]
-    fn unchanged_hallway_stays_tried_and_new_frontiers_are_eligible() {
-        let mut beams = HallwayBeams::default();
-        let origin = (117, 22);
-        let north = 0;
-        let south = 1;
-        let floor = crate::headers::list_terrain_h::FEAT_FLOOR as u8;
-        let unknown = FEAT_NONE as u8;
-        let terrain = [floor, unknown, unknown];
+    fn unchanged_hallway_yields_and_a_changed_ray_can_be_lit() {
+        let mut st = BorgState::default();
+        (st.borg.c.x, st.borg.c.y) = (117, 22);
+        let north = std::cell::Cell::new(FEAT_NONE as u8);
+        let try_beam = |st: &mut BorgState, simulation, queue: fn(&mut BorgState, i32) -> bool| {
+            try_hallway_beam(st, simulation, 1, false, |_, _, dy, _| {
+                Some(vec![if dy == -1 { north.get() } else { FEAT_NONE as u8 }])
+            }, queue)
+        };
+        let queue_north = |_: &mut BorgState, dir| {
+            assert_eq!(dir, 8);
+            true
+        };
+        let unexpected = |_: &mut BorgState, _| panic!("queued an unexpected beam");
 
-        assert!(!beams.tried(origin, north, &terrain));
-        assert!(!beams.tried(origin, north, &terrain)); // Simulation spends no attempt.
-        beams.record(origin, north, terrain.to_vec());
+        assert!(try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, |_, _| false));
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, unexpected));
 
-        // Each caller sees the same history after a cast, a rod recharge or a rest.
-        assert!(beams.tried(origin, north, &terrain));
-        assert!(!beams.tried(origin, south, &terrain));
-        beams.record(origin, south, terrain.to_vec());
-        assert!(beams.tried(origin, north, &terrain));
-
-        let revealed = [floor, floor, unknown];
-        assert!(!beams.tried(origin, north, &revealed));
-        beams.record(origin, north, revealed.to_vec());
-        assert!(beams.tried(origin, north, &revealed));
-        assert!(!beams.tried((117, 21), north, &revealed));
-        assert!(!HallwayBeams::default().tried(origin, north, &revealed));
+        north.set(FEAT_FLOOR as u8);
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, false, unexpected));
     }
 }
