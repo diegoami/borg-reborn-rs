@@ -6541,8 +6541,16 @@ ranged target at its last grid. The engine stops a bolt at the first monster on
 its path (`PROJECT_STOP`, src/effect-handler-attack.c:130), so a monster that
 closed in along the line is hit too. The Borg aims at the location (`borg_target`
 in free mode, src/ui-target.c:1479–1494, src/target.c:180–191). Four
-parameters, all compiled and shipped **0** / their defaults; the numbers are
-hypotheses.
+parameters, compiled at **0** / their defaults. `harness/borg.txt` ships
+`unseen_belief = 1` with `unseen_decay_percent = 5` (owner, 2026-11-23,
+together with `cave_light_engine_radius = 1`, #1078). That is the arm
+`light+belief-decay5` of borg-zoo#702's belief full tier at track-p `f8725bc0`
+(900 starts, 100,000 turns): 13 deaths against 23 for ctl (19 rescued, 9 newly
+killed, p 0.087), 17 for `light`, and 15 for `light+belief` at decay 20.
+Against `light` the step is 13 vs 17 (p 0.45), and DL3 is reached less often
+in every light arm (365 → 326). The numbers remain hypotheses (RULES 14).
+The decay grid 10 / 5 / 0 on an independent block (starts 1–900) is requested
+on borg-zoo#702.
 
 - **`unseen_belief`** (0): 1 = a monster seen within `unseen_max_age` Borg
   turns but not now, at least two grids away, whose last grid the Borg would not
