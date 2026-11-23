@@ -1074,6 +1074,11 @@ fn beam_blocked(st: &BorgState, dx: i32, dy: i32, first: i32, light: i32) -> Opt
     Some(false)
 }
 
+/// The shipped hallway fix is disabled only for legacy profiles and replays.
+pub(crate) fn hallway_beam_guard_enabled() -> bool {
+    param(Param::light_hallway_repeat_guard) != 0
+}
+
 /// Look down a hallway and possibly light it up using the Light Beam
 /// spell, a rod or a wand (`borg_light_beam`). With `simulation`, only
 /// tell whether it would.
@@ -1109,13 +1114,14 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
 
     let near_panel_edge = st.borg.c.y - engine::term_geometry().offset_y > borg_panel_hgt() - 2;
     let light = own_light_radius(st);
+    let guard = hallway_beam_guard_enabled();
     try_hallway_beam(
-        st, simulation, light, near_panel_edge,
+        st, simulation, light, near_panel_edge, guard,
         |st, dx, dy, first| {
             if beam_blocked(st, dx, dy, first, light) != Some(false) {
                 return None;
             }
-            Some(hallway_beam_terrain(st, dx, dy))
+            Some(if guard { hallway_beam_terrain(st, dx, dy) } else { Vec::new() })
         },
         |st, dir| {
             if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
@@ -1132,7 +1138,7 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
 }
 
 fn try_hallway_beam(
-    st: &mut BorgState, simulation: bool, light: i32, near_panel_edge: bool,
+    st: &mut BorgState, simulation: bool, light: i32, near_panel_edge: bool, guard: bool,
     open_ray: impl Fn(&BorgState, i32, i32, i32) -> Option<Vec<u8>>,
     queue_beam: impl FnOnce(&mut BorgState, i32) -> bool,
 ) -> bool {
@@ -1158,7 +1164,7 @@ fn try_hallway_beam(
         return false;
     }
 
-    if st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
+    if guard && st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
         return false;
     }
     if simulation {
@@ -1169,7 +1175,9 @@ fn try_hallway_beam(
     }
 
     // Mana, rod recharge and rests leave a queued direction tried.
-    st.borg.hallway_beams.record((cx, cy), direction, terrain);
+    if guard {
+        st.borg.hallway_beams.record((cx, cy), direction, terrain);
+    }
     true
 }
 
@@ -1397,7 +1405,7 @@ mod hallway_beam_tests {
         (st.borg.c.x, st.borg.c.y) = (117, 22);
         let north = std::cell::Cell::new(FEAT_NONE as u8);
         let try_beam = |st: &mut BorgState, simulation, queue: fn(&mut BorgState, i32) -> bool| {
-            try_hallway_beam(st, simulation, 1, false, |_, _, dy, _| {
+            try_hallway_beam(st, simulation, 1, false, true, |_, _, dy, _| {
                 Some(vec![if dy == -1 { north.get() } else { FEAT_NONE as u8 }])
             }, queue)
         };

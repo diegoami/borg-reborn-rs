@@ -2835,8 +2835,8 @@ pub(crate) fn detect_invisible_now(st: &mut BorgState) -> bool {
     use_detect_invisible(st, fail_allowed)
 }
 
-fn light_beam_trigger_ready(last: BorgTime, age: BorgTime, min_age: BorgTime) -> bool {
-    last != 0 && age >= min_age
+fn light_beam_trigger_ready(last: BorgTime, age: BorgTime, min_age: BorgTime, guard: bool) -> bool {
+    age >= min_age && (last != 0 || !guard)
 }
 
 /// Light Beam to spot lurkers (`borg_defend_aux_lbeam`). Used only if I am
@@ -2853,7 +2853,10 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
 
     // Keep the delay used by C once the clock has been set.
     let last = st.borg.need_see_invis;
-    if !light_beam_trigger_ready(last, borg_timer(st, last), param(Param::defend_light_beam_max_invis_age)) {
+    if !light_beam_trigger_ready(
+        last, borg_timer(st, last), param(Param::defend_light_beam_max_invis_age),
+        crate::borg_light::hallway_beam_guard_enabled(),
+    ) {
         return 0;
     }
 
@@ -3642,9 +3645,10 @@ mod light_beam_tests {
 
     #[test]
     fn defense_requires_a_set_stamp_at_or_past_the_delay() {
-        assert!(!light_beam_trigger_ready(0, 100, 48));
-        assert!(light_beam_trigger_ready(100, 49, 48));
-        assert!(light_beam_trigger_ready(100, 48, 48));
-        assert!(!light_beam_trigger_ready(100, 47, 48));
+        assert!(!light_beam_trigger_ready(0, 100, 48, true));
+        assert!(light_beam_trigger_ready(0, 100, 48, false));
+        assert!(light_beam_trigger_ready(100, 49, 48, true));
+        assert!(light_beam_trigger_ready(100, 48, 48, true));
+        assert!(!light_beam_trigger_ready(100, 47, 48, true));
     }
 }

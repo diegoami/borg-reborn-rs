@@ -16,3 +16,7 @@ The decision regression exercises the shared simulation and queue path.
 It covers a failed queue, an unchanged hallway, and a new observation
 that permits another attempt. The original Priest's stationary sequences
 are retained in [borg-cemetery #126](https://github.com/diegoami/borg-cemetery/pull/126).
+
+The shipped profile enables the guard. The stair-handoff fixtures use
+the original lighting policy so they can still reach the recorded
+turns and grids with the original assertions.

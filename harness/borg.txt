@@ -918,6 +918,7 @@ borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
 
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
+borg_param_light_hallway_repeat_guard = 1
 borg_param_light_detect_dark_entry = 0
 borg_param_light_detect_dark_entry_reserve_sp = 2
 
