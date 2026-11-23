@@ -76,7 +76,7 @@ pub struct LeashState {
     pub return_any: bool,
     /// The step maps of this think (`time.now`), by their sources: see
     /// `steps_map` (review of #1087: one spread a think, not one a grid).
-    pub maps: Vec<(i32, Vec<(i32, i32)>, crate::borg_flow::BorgData)>,
+    pub maps: Vec<(i32, Vec<(i32, i32)>, StepsMap)>,
 }
 
 /// What moved the Borg (review of #1087, finding 3 of the re-review: the
@@ -224,12 +224,21 @@ fn walkable(feat: u32, fire_immune: bool) -> bool {
     feat != FEAT_NONE && (feat < FEAT_SECRET || feat == FEAT_PASS_RUBBLE || (feat == FEAT_LAVA && fire_immune))
 }
 
+/// A `terrain_steps` map: the steps to each grid, `UNREACHED` for none.
+/// Wider than the flow's `u8` (capped at 250): a long known route is still
+/// a route, not a disconnection (review of #1087; a level has at most
+/// AUTO_MAX_Y x AUTO_MAX_X grids, so no walk reaches `u16::MAX`).
+pub type StepsMap = Vec<[u16; AUTO_MAX_X as usize]>;
+
+/// Not reached on a `StepsMap`.
+const UNREACHED: u16 = u16::MAX;
+
 /// Breadth-first steps (8 directions, one a move) from the nearest of
 /// `sources`, (y, x), over the grids `walk` allows, inside the map's
-/// border; 255 = not reached, at most 250.
-fn terrain_steps(walk: impl Fn(i32, i32) -> bool, sources: &[(i32, i32)]) -> crate::borg_flow::BorgData {
+/// border; `UNREACHED` = not reached; no cap.
+fn terrain_steps(walk: impl Fn(i32, i32) -> bool, sources: &[(i32, i32)]) -> StepsMap {
     let (h, w) = (AUTO_MAX_Y, AUTO_MAX_X);
-    let mut map: crate::borg_flow::BorgData = vec![[255u8; AUTO_MAX_X as usize]; h as usize];
+    let mut map: StepsMap = vec![[UNREACHED; AUTO_MAX_X as usize]; h as usize];
     let mut queue = std::collections::VecDeque::new();
     for &(y, x) in sources {
         if (0..h).contains(&y) && (0..w).contains(&x) && map[y as usize][x as usize] != 0 {
@@ -239,9 +248,6 @@ fn terrain_steps(walk: impl Fn(i32, i32) -> bool, sources: &[(i32, i32)]) -> cra
     }
     while let Some((y, x)) = queue.pop_front() {
         let n = map[y as usize][x as usize] + 1;
-        if n > 250 {
-            continue;
-        }
         for dy in -1..=1 {
             for dx in -1..=1 {
                 let (ny, nx) = (y + dy, x + dx);
@@ -263,11 +269,11 @@ fn terrain_steps(walk: impl Fn(i32, i32) -> bool, sources: &[(i32, i32)]) -> cra
 /// grid the walk does not enter (an unknown grid the dark flow aims at, a
 /// wall) is one more than its nearest reached neighbour, the frontier
 /// (review of #1087); `None` otherwise.
-fn steps_at(map: &crate::borg_flow::BorgData, walk: impl Fn(i32, i32) -> bool, y: i32, x: i32) -> Option<i32> {
+fn steps_at(map: &StepsMap, walk: impl Fn(i32, i32) -> bool, y: i32, x: i32) -> Option<i32> {
     let at = |y: i32, x: i32| -> Option<i32> {
         let row = map.get(usize::try_from(y).ok()?)?;
         let v = *row.get(usize::try_from(x).ok()?)?;
-        (v != 255).then_some(i32::from(v))
+        (v != UNREACHED).then_some(i32::from(v))
     };
     if let Some(v) = at(y, x) {
         return Some(v);
@@ -731,6 +737,33 @@ mod tests_1062 {
         assert!(far_while_near_verdict(Some(10), Some(13), 12));
         assert!(!far_while_near_verdict(None, Some(13), 12));
         assert!(!far_while_near_verdict(Some(10), None, 12));
+    }
+
+    /// Review of #1087: a known route longer than the flow's 250 steps is a
+    /// route. A serpentine corridor over the whole dungeon, from the
+    /// arrival grid: its far end is reached, so a landing there makes no
+    /// new anchor and a target 282 steps out is beyond 20.
+    #[test]
+    fn a_long_known_route_is_connected() {
+        let (h, w) = (AUTO_MAX_Y, AUTO_MAX_X);
+        // Rows 1, 3, 5, ... are floor; a gap joins them at alternate ends.
+        let walk = move |y: i32, x: i32| {
+            if y < 1 || y >= h - 1 || x < 1 || x >= w - 1 {
+                return false;
+            }
+            if y % 2 == 1 {
+                return true;
+            }
+            let row = y / 2;
+            if row % 2 == 1 { x == w - 2 } else { x == 1 }
+        };
+        let map = terrain_steps(walk, &[(1, 1)]);
+        let far = steps_at(&map, walk, 5, 1).unwrap();
+        assert!(far > 250, "{far}");
+        let mut anchors = vec![(1, 1)];
+        add_anchor(&mut anchors, (5, 1), far >= 0);
+        assert_eq!(anchors, vec![(1, 1)], "reached: no fresh anchor");
+        assert!(beyond_verdict(None, 12, 20, || Some(282)));
     }
 
     /// The default state follows nothing.
