@@ -13,8 +13,11 @@
     "level": "reproduced-in-port",
     "description": "In borg-reborn-rs's Rust port (borg-core, the same code) a monster two grids away in the dark with a torch is 'expected visible' (borg_follow_kill_aux), not seen, and deleted: borg_follow_kill deletes on every path that passes its checks (borg-rs's C bug 24, docs/c-borg/borg-rs-c-bugs.md group 24). Human Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets (borg-reborn-rs#877). Not reproduced on a native C game."
   },
-  "notes": "Found by borg-reborn-rs (#877, #884; this record #886), not by borg-rs's discovery list (docs/c-borg/borg-rs-c-bugs.md, group 4 keeps the radius-2 shape 'as is') nor among better-borg-c's verified fixes (docs/c-borg/fixes/). Related, distinct defects in the same function: CBUG-0003 (west radius-2 shoulders omitted) and CBUG-0024 (duplicate light-list entries). Also: borg_check_light_only (src/borg/borg-light.c:109-237) tests BI_LIGHT == 1 / > 1 (:140, :181) as if they were radius 1 and 2, and borg_light_beam (:706-739) steps BI_LIGHT + 1 grids. The canonical tracker issue (diegoami/neo-angband-tracker, as every other finding) is not yet opened: this session cannot write there. Fixed in borg-reborn-rs behind cave_light_engine_radius (PRs #888, #894; shipped 1 on track-p, #1078/#1079).",
-  "tracker": null,
+  "notes": "Found by borg-reborn-rs (#877, #884; this record #886), not by borg-rs's discovery list (docs/c-borg/borg-rs-c-bugs.md, group 4 keeps the radius-2 shape 'as is') nor among better-borg-c's verified fixes (docs/c-borg/fixes/). Related, distinct defects in the same function: CBUG-0003 (west radius-2 shoulders omitted) and CBUG-0024 (duplicate light-list entries). Also: borg_check_light_only (src/borg/borg-light.c:109-237) tests BI_LIGHT == 1 / > 1 (:140, :181) as if they were radius 1 and 2, and borg_light_beam (:706-739) steps BI_LIGHT + 1 grids. Fixed in borg-reborn-rs behind cave_light_engine_radius (PRs #888, #894; shipped 1 on track-p, #1078/#1079).",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 644
+  },
   "references": [
     {
       "role": "c",
@@ -89,6 +92,6 @@
   "evidence_at_import": "port-reproduction",
   "status_at_import": "fixed-in-port-behind-switch",
   "proposals_at_import": [],
-  "next_at_import": "Open the canonical neo-angband-tracker issue, then a native C reproduction (a torch, a monster two grids away in the dark, borg_follow_kill deletes it) and a local proposal: radius = BI_LIGHT - 1 (necromancer unlight keeps C's radius), the engine's shape (distance() <= radius), and the same radius in borg_check_light_only and borg_light_beam.",
+  "next_at_import": "A native C reproduction (on neo-angband-tracker#644) (a torch, a monster two grids away in the dark, borg_follow_kill deletes it) and a local proposal: radius = BI_LIGHT - 1 (necromancer unlight keeps C's radius), the engine's shape (distance() <= radius), and the same radius in borg_check_light_only and borg_light_beam.",
   "record_kind": "local-finding"
 }
