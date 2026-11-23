@@ -37,8 +37,8 @@ The zoo measures the switch (borg-zoo#654); its values are hypotheses.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_retreat_oscillation_limit` | 0 | retreats | 0–1000 | `borg_caution.rs:2286` |
-| `caution_retreat_oscillation_thinks` | 3 | thinks | 1–100 | `borg_caution.rs:2290` |
-| `caution_retreat_oscillation_backaway` | 0 | flag | 0–1 | `borg_caution.rs:3466` |
+| `caution_retreat_oscillation_thinks` | 3 | thinks | 1–100 | `borg_caution.rs:2294` |
+| `caution_retreat_oscillation_backaway` | 0 | flag | 0–1 | `borg_caution.rs:3887` |
 
 ## Attack on sight prices poison and drain blows (#1010)
 

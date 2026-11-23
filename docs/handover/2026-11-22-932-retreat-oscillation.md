@@ -36,3 +36,9 @@ C) no longer count (review finding 1, P1). One veto note per think (finding 2).
 This note's defaults corrected (finding 3). Decision-sequence tests:
 go-and-return counts; going on, an unconfirmed landing, another level and an
 expired window do not. Merged `track-p` (`7afbdd67`).
+
+**Second review fixes (MiniMax review of `71d2e9c1`).** The citations of
+`caution_retreat_oscillation_thinks` and `_backaway` pointed at a line near
+the read, not at it (the checker accepts any read in the file); they now cite
+the reads (`borg_caution.rs:2294`, `3887`), in `params.rs` and
+`CALIBRATION.md`. No code change.
