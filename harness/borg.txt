@@ -1180,6 +1180,13 @@ borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
+# #932 (seed 829474344): no strategic retreat after this many in a row from
+# the same place, each within the thinks of the last (the next flow step undid
+# each). Shipped 0 (today's play); 3 is the hypothesis.
+borg_param_caution_retreat_oscillation_limit = 0
+borg_param_caution_retreat_oscillation_thinks = 3
+# #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
+borg_param_caution_retreat_oscillation_backaway = 0
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
