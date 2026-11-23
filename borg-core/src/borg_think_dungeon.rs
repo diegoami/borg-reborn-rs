@@ -860,6 +860,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("potion_test_hold");
     }
 
+    // borg-reborn-rs (#1061): stair_scum's door alarm, door peek and walk
+    // back inside its radius come before anything but caution (and the
+    // potion-test wait above).
+    if crate::borg_stair_scum::think(st) {
+        return choice!("stair_scum");
+    }
+
     // #789: use the normal scary-town stair flow for a retreat without
     // restoring the named scare. The ordinary ladder remains the fallback.
     if town_retreat {
@@ -999,8 +1006,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Continue flowing to a safe grid on which I may recover */
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
+    // borg-reborn-rs (#1061): nor while stair_scum rests on its staircase.
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
+        && !crate::borg_stair_scum::holds_on_stairs(st)
         && borg_continue_recovery(st) {
         return choice!("borg_flow_old");
     }
@@ -1014,6 +1023,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * should work closely with borg_recover. */
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
+        && !crate::borg_stair_scum::holds_on_stairs(st)
         && borg_flow_recover(st, 50) {
         return choice!("borg_flow_recover");
     }
@@ -1481,6 +1491,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Explore interesting grids */
     if borg_flow_dark(st, false) {
         return choice!("borg_flow_dark");
+    }
+
+    // borg-reborn-rs (#1061): stair_scum has used up the grids inside its
+    // radius: a new level.
+    if crate::borg_stair_scum::leave(st) {
+        return choice!("stair_scum_leave");
     }
 
     /*** Deal with shops ***/

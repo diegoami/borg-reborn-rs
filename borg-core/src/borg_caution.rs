@@ -6364,17 +6364,22 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     // the first danger of `kit_leave_danger_percent` of its HP.
     let kit = crate::borg_kit::leave_danger_percent(st)
         .is_some_and(|pct| up && pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1));
-    if !(kit || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
+    // borg-reborn-rs (#1061): stair_scum leaves by the staircase it stands
+    // on at the first threat the fight race (fight_before_flight, before
+    // caution) did not take, recovering or not.
+    let scum = if kit { None } else { crate::borg_stair_scum::leave_on_threat(st, pos_danger, threshold) };
+    if !(kit || scum.is_some() || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
         return false;
     }
     // The staircase under the Borg decides the way: choose_stairs alone may
     // not set it for a Borg that is recovering, not fleeing.
+    let up = scum.unwrap_or(up);
     if up {
         st.borg.stair_less = true;
     } else {
         st.borg.stair_more = true;
     }
-    let why = if kit { "short of kit" } else { "while recovering" };
+    let why = if kit { "short of kit" } else if scum.is_some() { "in stair scum" } else { "while recovering" };
     borg_note(st, &format!("# Leaving by the stairs: a monster {why} (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
     true
 }

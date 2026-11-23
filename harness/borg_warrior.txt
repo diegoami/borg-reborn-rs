@@ -45,3 +45,5 @@ borg_param_attack_throw_point_blank_divisor = 0
 # explore_bfs_max_hp by 10", then "reduce those numbers ... by 3").
 borg_param_explore_bfs_max_hp = 28
 borg_param_explore_bfs_hp_per_level = 2
+# #1061 (owner, 2026-11-23: "none for warrior"): no stair_scum mode for the warrior.
+borg_param_stair_scum = 0
