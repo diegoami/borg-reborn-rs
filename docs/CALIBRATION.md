@@ -565,7 +565,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5923` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5992` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -594,7 +594,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5940` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:6009` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -619,8 +619,8 @@ chose them (RULES 14).
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1203` |
-| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3324` |
+| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3467` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3374` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8600` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8600` |
 
@@ -760,7 +760,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:283` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:304` |
 
 ## Thrown objects at point blank (#870)
 
@@ -1459,8 +1459,8 @@ idea ... target the mobile one"; "I would put them already on".
 | `caution_stairs_clean_path` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:990` |
 | `caution_stairs_block_danger_percent` | 50 | percent | 0–10000 | `borg_caution.rs:985` |
 | `caution_immobile_step_to_exit` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2277` |
-| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5216` |
-| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5217` |
+| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5433` |
+| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5434` |
 
 ## Ranger arrows: a soft cap, then a diminishing curve (#716)
 
@@ -5693,7 +5693,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6207` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6276` |
 
 ## C Borg dive gates (#768)
 
@@ -6796,10 +6796,117 @@ on borg-zoo#702.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:185` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:193` |
-| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:216` |
-| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:205` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:448` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:456` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:471` |
+| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:221` |
+
+## Perception and belief follow-ups (#885, #917, #889)
+
+Five switches, compiled **0**. `update_dark_clears_light` and
+`view_rubble_blocks_sight` are **shipped 1** in `harness/borg.txt` (owner,
+2026-11-23: "merge with both"), on borg-zoo#736's full tier at `7bfbe121`
+(classes-1800 starts 901-1800, 900 per arm, paired against ctl):
+
+| arm | deaths | rescued / newly killed | p | DL3 / DL5 reached | CL |
+|---|---:|---|---:|---|---:|
+| ctl | 9 | | | 221 / 19 | 5.48 |
+| dark | 9 | 2 / 2 | 1.0 | 222 / 21 | 5.51 |
+| rubble | 5 | 8 / 4 | 0.39 | 223 / 26 | 5.49 |
+| both (shipped) | 5 | 8 / 4 | 0.39 | 216 / 33 | 5.48 |
+
+A lead, not a result (RULES 14): 8 against 4 is not significant, and `dark`
+alone changes nothing in deaths. No single forget or mis-aim has been traced
+to a recorded game yet. The three #889 switches ship **0** (P9).
+Two are perception fixes, where the Borg's map disagrees with the engine, and
+both feed the position belief of #879: a grid `borg_follow_kill_aux` expects
+to be visible both deletes an unseen record and refuses it a belief
+(`believed_weight`).
+
+- **`update_dark_clears_light`** (#885). A floor grid the engine shows neither
+  glowing nor lit loses `BORG_LIGHT` when the map is read (`dark_floor_info`,
+  `borg_update.rs`). C keeps the mark, and `borg_update_light` clears only the
+  grids of the Borg's own light list, so a grid lit once another way (a
+  monster's light) stays `BORG_LIGHT` after it goes dark. A cleared mark asks
+  for `borg_update_light` in the same think, so the Borg's own light set is
+  marked again (at `cave_light_engine_radius` 0 that list holds grids the
+  engine leaves dark).
+- **`view_rubble_blocks_sight`** (#917). Passable rubble stops the Borg's view
+  (`borg_update_view`, through `sight_grid`) and the line of sight the view
+  falls back on (`borg_los_sight`). The engine's passable rubble has neither
+  `LOS` nor `PROJECT` (`lib/gamedata/terrain.txt:346-354`), so
+  `update_view_one` (src/cave-view.c:765-830, `square_allowslos`) and `los()`
+  (:85-248, `square_isprojectable`) stop at it. C's view asks the walk test
+  (`borg_cave_floor_grid`, `borg_cave_floor_bold`), which counts it as floor,
+  so grids behind it got `BORG_VIEW`. The rubble itself is still seen, as a
+  wall is, and unknown grids stay see-through, as in C. A grid in view whose
+  sight changes when the map is read (an unknown grid found to be passable
+  rubble, which the walk test misses) redoes the view (`view_needs_update`;
+  review of #1128, F2). The light map already
+  had its own projectable test (#894, `borg_los_projectable`); attack
+  forecasts through rubble are #1017 (P9).
+- **`unseen_death_stops_shots`** (#889, item 2). "It dies." or "It is destroyed."
+  among the messages of a ranged attack whose only believed target was one
+  record spends that record's remaining unseen shots for this sighting
+  (`believed_dead`, `spend_shots`). The record is kept (review of #1128, F1):
+  the engine names a monster the player cannot see "It" (`get_subject`,
+  src/mon-msg.c:320-330; a missile's note, src/player-attack.c:1122-1123), so
+  the message cannot say which monster died, and a bolt can kill an untracked
+  monster that stepped into its path, a ball another unseen one. With several
+  believed targets, or "2 monsters die.", nothing changes. Without it the
+  Borg shoots up to `unseen_max_shots` times.
+- **`unseen_light_reveal`** (#889, item 3; mode 0–2). Before the attack choice
+  (`borg_think_dungeon`), cast Light Room (fail 40% or less) at a believed
+  monster inside its sphere: `SPHERE:LIGHT_WEAK:2` (lib/gamedata/class.txt:221-224),
+  at most two grids and in line of sight for a projection, on a grid the Borg
+  does not already count as lit, and once per sighting of the record (review
+  of #1128, F3: lighting an invisible monster's grid again reveals nothing to
+  a Borg without see-invisible). The sphere hurts
+  `HURT_LIGHT` monsters and lights the grids it reaches, so the monster is seen
+  or its record forgotten. 1 = only at a `HURT_LIGHT` monster, 2 = at any
+  believed monster. Call Light's sphere is radius 1 (:727-730) and never reaches
+  a believed target (at least two grids away). A separate step rather than an
+  attack type: a new `BF_*` kind would renumber the attack kinds before
+  `BF_ACT_STARLIGHT`.
+- **`unseen_spread`** (#889, item 4). The belief spreads around the last grid
+  (`belief_percent_spread`): an erratic mover's random steps do not count as
+  leaving (RAND_25 25%, RAND_50 50%, both 75%: src/mon-move.c:1087-1101), and a
+  ball still hits a monster that took no more steps than the ball covers in
+  every direction from its last grid (`unseen_blast_slack`, `blast_slack`:
+  the most steps `n` such that every grid `n` king's moves away is within the
+  ball by the engine's `distance()`, radius 1 to 4). It is not the radius less
+  the distance: one diagonal step can add 2 (from (1,1), distance 1, to
+  (2,2), distance 3), so a radius-2 ball gives a monster last seen at (1,1)
+  no slack (re-review of #1128 at `e0278dcf`). Bolts, beams, arcs,
+  throws, Starlight's lines (radius 7) and the line-of-sight effects
+  (dispels, mass sleep, slow, confuse: radius 10, which reach what the player
+  sees, not a radius around the aim) take no slack (re-review of #1128, F1).
+  The dragon breaths (`BF_DRAGON_*`, `BF_ACT_DRAGON_*`) are cones, not
+  balls, and take none either (`ball_shaped`; Codex re-review of #1128, F2).
+  So that such a ball is scored at all, `borg_attack` admits a record a ball
+  could still reach (`believed_for_aim`, slack up to 3; review of #1128, F4),
+  but only to the ball's own list (`blast_aims`), read by ball-shaped scoring
+  alone. No other attack aims at it (Vampire Strike, melee, bolts), and it
+  never makes `attack_mobile_threat_first` drop the immobile targets
+  (`blast_only`; re-review F2, Codex re-review F1).
+- **Beams and arcs** (#889, item 5) were already covered: every projection
+  path (`borg_launch_bolt_at_location` for bolts, beams and balls,
+  `borg_launch_arc_at_location` for arcs) scores a record through
+  `borg_launch_bolt_aux_hack`, which asks `believed_weight`, and stages it with
+  `ProjectedAttack::target`. Checked in the code, not on a recorded case.
+- **Not done** (#889, item 1; now #1127): beliefs from unseen contact ("It bites you",
+  `Unseen bump: occupied`) and from noises. A record needs a race, and an
+  unseen attacker's is unknown; the unseen-bump response (#781,
+  `caution_unseen_bump_*`) and the unseen mode of `borg_recover` (#831) already
+  answer such contact apart from the belief.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:439` |
+| `view_rubble_blocks_sight` | 0 (shipped 1) | flag | 0–1 | `borg_cave_view.rs:258` |
+| `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
+| `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
+| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:475` |
 
 ## Home stock the town planner deliberately declines (#1049)
 
@@ -7115,7 +7222,7 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3408` |
+| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3456` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
 Not shipped; the zoo measures it (a request issue). The four replays are
