@@ -6799,42 +6799,49 @@ they count only up staircases, so a Borg that arrives on a down staircase
 has no leash; with no staircase known or reachable there is no leash
 (`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
 measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
-can also throw a CL1 Borg far from every staircase it knows. Five parameters
-(the registry now holds **2424**, 2419 on track-p `f67fad19`), read in
+can also throw a CL1 Borg far from every staircase it knows. Six parameters
+(the registry now holds **2425**, 2419 on track-p `bf8d2604`), read in
 `leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
 compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
 None acts in town, where C's leashes never act (town has no up staircase).
 
+With a switch on, distances are **walking steps over the known map with the
+danger ignored** (`steps_map`, one spread a think for each set of sources):
+the leash is about the way back, so a monster near a staircase or the
+arrival grid does not hide it (review of #1087).
+
 - **`flow_leash_any_stair`**: the exploration leash (the far-from-stairs
   check of the dark, kill and take flows, take_select's own stair check and
-  the vein flow's) takes the flow steps from the nearest known staircase of
-  either kind, by one flow spread from all of them; the return leash
-  ("Return to Stair", 3 x CL + 14) takes the distance to the nearest of them,
-  and its walk back flows to the nearest staircase of either kind
+  the vein flow's) takes the steps from the nearest known staircase of
+  either kind. The return leash ("Return to Stair", 3 x CL + 14) starts on
+  the steps to the nearest of them (a staircase across a wall is not near),
+  ends ("Close enough", under 3) on them only for a return it started (the
+  depth correction's climb ends on C's distance to an up staircase), and its
+  walk back flows to the nearest staircase of either kind
   (`borg_flow_stair_both`) before the up staircases.
 - **`flow_leash_unknown_stair_steps`** = N: with no staircase the exploration
-  leash counts, or none reachable, it is N flow steps from the grid where the
+  leash counts, or none reachable, it is N steps from the grid where the
   Borg arrived on the level. The return leash has no walk to that grid and is
   unchanged.
 - **`flow_leash_teleported_recall`**: up to `flow_leash_recall_max_level`, a
-  jump of more than one grid between two updates that leaves every known
-  staircase more than `flow_leash_recall_steps` flow steps away (or none
-  known) reads Word of Recall at the first dungeon think at danger 0, after
-  the fights that own the action. A Phase Door counts too.
+  teleport, a jump of at least `flow_leash_recall_min_jump` grids (12: Phase
+  Door lands 9 to 11 away, `TELEPORT:10` randomised by a quarter in
+  `effect_handler_TELEPORT`; the trap and the scroll are `TELEPORT:M80` and
+  `:M60`), that leaves every known staircase more than
+  `flow_leash_recall_steps` steps away (or none known) reads Word of Recall
+  at the first dungeon think at danger 0, after the fights that own the
+  action.
 
-The four named seeds, replayed from birth here (100,000 game turns, local, a
-lead only, RULES 14; keys.log sha256 prefixes):
+The four named seeds, replayed from birth on track-p `bf8d2604` with this
+change (100,000 game turns, local, a lead only, RULES 14; keys.log sha256
+prefixes):
 
 | seed | character | shipped | `any_stair` 1 | `unknown_stair_steps` 20 | `teleported_recall` 1 | all three |
 |---|---|---|---|---|---|---|
-| 592754909 | Kobold Mage | crow, t3569 `f1150483` | alive CL5 `445e7d20` | alive CL6 `4e1dfe0f` | alive CL6 `9de73335` | = any_stair |
-| 645909552 | Dwarf Mage | alive CL5 DL2 `ed01edd7` | alive CL5 DL1 `c0977f42` | = shipped | = shipped | = any_stair |
-| 526144893 | Human Ranger | alive CL6 DL2 `c24cf291` | alive CL7 DL4 `e362880f` | alive CL6 `e4db15f1` | alive CL6 `abe52f3f` | alive CL7 DL2 `15746742` |
-| 1024822556 | Dunadan Druid | Fang, t3086 `3687ca84` | alive CL8 DL3 `d8ef456f` | = shipped | alive CL7 `450d1575` | alive CL8 DL3 `3206117e` |
-
-These are on track-p `f67fad19`. On `bf8d2604`, which ships the #926 bundle
-(#1074), only 592754909 changes: shipped alive CL6 `6e04db66`, `recall`
-`fede61f2`.
+| 592754909 | Kobold Mage | alive CL6 `6e04db66` | alive CL5 `84fae89c` | alive CL6 `4e1dfe0f` | alive CL7 `ff3782af` | alive CL5 `39b0f31e` |
+| 645909552 | Dwarf Mage | alive CL5 `ed01edd7` | alive CL5 `d46845d6` | alive CL5 `2c76a346` | = shipped | alive CL5 `53d4b37a` |
+| 526144893 | Human Ranger | alive CL6 `c24cf291` | alive CL7 `78a90976` | alive CL6 `06770adb` | alive CL6 `abe52f3f` | alive CL7 `34f0826a` |
+| 1024822556 | Dunadan Druid | Fang, t3086 `3687ca84` | alive CL7 `481218d0` | = shipped | alive CL7 `450d1575` | alive CL8 `e2ab527c` |
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -6843,3 +6850,4 @@ These are on track-p `f67fad19`. On `bf8d2604`, which ships the #926 bundle
 | `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2049` |
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2050` |
 | `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2051` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2052` |

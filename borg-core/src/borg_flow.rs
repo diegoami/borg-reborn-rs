@@ -2038,6 +2038,7 @@ pub(crate) struct LeashHoles {
     pub teleported_recall: bool,
     pub recall_max_level: i32,
     pub recall_steps: i32,
+    pub recall_min_jump: i32,
 }
 
 /// The `LeashHoles` parameters, on each use (not cached).
@@ -2049,6 +2050,7 @@ pub(crate) fn leash_holes() -> LeashHoles {
         teleported_recall: value(Param::flow_leash_teleported_recall) != 0,
         recall_max_level: value(Param::flow_leash_recall_max_level),
         recall_steps: value(Param::flow_leash_recall_steps),
+        recall_min_jump: value(Param::flow_leash_recall_min_jump),
     }
 }
 

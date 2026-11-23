@@ -708,7 +708,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5
     {
         /* Check for an existing "up stairs" */
-        b_j = if any_stair { crate::borg_leash::return_distance(st) } else { nearest_up_stair(st, b_j) };
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, a return starts
+        // on the walking steps to the nearest staircase of either kind; it
+        // ends on them only if this leash started it (`return_leash`).
+        let (b_go, b_near) = crate::borg_leash::return_leash(st, nearest_up_stair(st, b_j));
+        b_j = b_go;
 
         // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
         // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
@@ -732,7 +736,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             }
         }
         /* Clear the flag to Return to the upstair-- we are close enough now */
-        else if st.borg.goal.less && b_j < 3 {
+        else if st.borg.goal.less && b_near != -1 && b_near < 3 {
             /* Note */
             borg_note(st, "# Close enough to Stair.");
 

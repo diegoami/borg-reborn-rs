@@ -24,17 +24,18 @@
 //! The switches:
 //!
 //! - `flow_leash_any_stair`: both leashes measure the nearest known
-//!   staircase of either kind (holes 1 and 3). The exploration leash takes
-//!   the flow steps from the nearest of them (one flow from every known
-//!   staircase), the return leash the grids to the nearest of them, and the
-//!   walk back goes to the nearest staircase of either kind.
+//!   staircase of either kind (holes 1 and 3), in walking steps over the
+//!   known map (`steps_map`). The return leash starts on those steps, ends
+//!   on them only for a return it started, and walks back to the nearest
+//!   staircase of either kind.
 //! - `flow_leash_unknown_stair_steps`: with no known staircase the leash
-//!   counts, or none reachable, the exploration leash is this many flow
+//!   counts, or none reachable, the exploration leash is this many walking
 //!   steps from the grid where the Borg arrived on the level (hole 2).
 //! - `flow_leash_teleported_recall`: up to `flow_leash_recall_max_level`, a
-//!   jump of more than one grid (a teleport of any kind) that leaves every
-//!   known staircase more than `flow_leash_recall_steps` flow steps away
-//!   reads Word of Recall at the first think at danger 0.
+//!   jump of at least `flow_leash_recall_min_jump` grids (a teleport, not
+//!   Phase Door) that leaves every known staircase more than
+//!   `flow_leash_recall_steps` steps away reads Word of Recall at the first
+//!   think at danger 0.
 //!
 //! Each is a hypothesis until borg-zoo measures it (RULES 14).
 
@@ -63,6 +64,9 @@ pub struct LeashState {
     /// The walk back of the return leash goes to the nearest staircase of
     /// either kind (set when `flow_leash_any_stair` sets `goal.less`).
     pub return_any: bool,
+    /// The step maps of this think (`time.now`), by their sources: see
+    /// `steps_map` (review of #1087: one spread a think, not one a grid).
+    pub maps: Vec<(i32, Vec<(i32, i32)>, crate::borg_flow::BorgData)>,
 }
 
 /// `flow_leash_any_stair`, in the dungeon only: town has no up staircase,
@@ -89,11 +93,12 @@ fn leash_sources(any: bool, b_stair: i32, less: &[(i32, i32)], more: &[(i32, i32
     }
 }
 
-/// The verdict of the exploration leash: `stairs` is the flow steps from
-/// the staircases to the grid (`None`: none known, or none reachable);
+/// The verdict of the exploration leash: `stairs` is the steps from the
+/// staircases to the grid (`None`: none known, or none reachable);
 /// `arrival` gives the steps from the arrival grid (`None`: unknown or
 /// unreachable), asked only when needed. C: a grid with no staircase to
-/// measure from is never too far.
+/// measure from is never too far. A grid the arrival grid does not reach
+/// either is not judged far (the walk back could not use it).
 fn beyond_verdict(stairs: Option<i32>, limit: i32, unknown_steps: i32, arrival: impl FnOnce() -> Option<i32>) -> bool {
     match stairs {
         Some(cost) => cost > limit,
@@ -106,36 +111,75 @@ fn track_list(t: &crate::borg_flow_stairs::StairTrack) -> Vec<(i32, i32)> {
     (0..usize::try_from(t.num).unwrap_or(0)).map(|i| t.at(i)).collect()
 }
 
-/// The flow steps from the nearest of `sources` to (y, x), as
-/// `borg_flow_cost_stair` spreads it (the flow codes are cleared first, as
-/// there). `None`: no source, or (y, x) unreachable.
-fn cost_from(st: &mut BorgState, y: i32, x: i32, sources: &[(i32, i32)]) -> Option<i32> {
-    crate::borg_flow::borg_flow_clear(st);
+/// Every known staircase of either kind, (y, x).
+fn all_stairs(st: &BorgState) -> Vec<(i32, i32)> {
+    let mut all = track_list(&st.stairs.less);
+    all.extend(track_list(&st.stairs.more));
+    all
+}
+
+/// The walking steps from the nearest of `sources` to every grid, over the
+/// known map (the flow's own terrain rules, `borg_flow_spread_stairs` to 250
+/// steps), **without the danger check** (review of #1087, findings 1 and 3):
+/// a monster near a staircase or the arrival grid must not hide it, since
+/// the leash is about the way back, not this turn's danger. The flow state
+/// the Borg follows is put back as it was. Spread once a think for a set of
+/// sources, then read from the cache; returns its index in
+/// `LeashState::maps`.
+fn steps_map(st: &mut BorgState, sources: &[(i32, i32)]) -> Option<usize> {
     if sources.is_empty() {
         return None;
     }
-    for &(sy, sx) in sources {
-        crate::borg_flow::borg_flow_enqueue_grid(st, sy, sx);
+    let now = st.borg.time.now;
+    st.leash.maps.retain(|(t, _, _)| *t == now);
+    if let Some(i) = st.leash.maps.iter().position(|(_, s, _)| s == sources) {
+        return Some(i);
     }
-    crate::borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, -1, false);
-    let cost = i32::from(st.flow.cost_at(y, x));
+    let map = with_flow_saved(st, |st| {
+        let was = std::mem::replace(&mut st.flow.flight_no_danger, true);
+        // Grids already found icky by an earlier flow stay out of every
+        // spread: clear them for this one (the saved copy is put back).
+        crate::borg_flow::borg_flow_clear(st);
+        for row in st.flow.data_icky.iter_mut() {
+            row.fill(0);
+        }
+        for &(sy, sx) in sources {
+            crate::borg_flow::borg_flow_enqueue_grid(st, sy, sx);
+        }
+        crate::borg_flow::borg_flow_spread_stairs(st, 250, false, false, false, -1, false);
+        st.flow.flight_no_danger = was;
+        st.flow.data_cost.clone()
+    });
+    st.leash.maps.push((now, sources.to_vec(), map));
+    Some(st.leash.maps.len() - 1)
+}
+
+/// The steps from the nearest of `sources` to (y, x) on `steps_map`;
+/// `None`: no source, or (y, x) unreachable.
+fn steps_from(st: &mut BorgState, y: i32, x: i32, sources: &[(i32, i32)]) -> Option<i32> {
+    let i = steps_map(st, sources)?;
+    let cost = i32::from(st.leash.maps[i].2[y as usize][x as usize]);
     (cost != 255).then_some(cost)
 }
 
 /// Is the grid (y, x) beyond the leash `limit`, measured from the up
 /// staircase `b_stair`? With both switches off this is C's
-/// `borg_flow_cost_stair(y, x, b_stair) > limit` (the flow codes are
-/// cleared and spread as there). Town is always C's.
+/// `borg_flow_cost_stair(y, x, b_stair) > limit`. Town is always C's. With
+/// a switch on the flow codes are cleared as C's call clears them, and the
+/// steps come from `steps_map` (every known staircase with
+/// `flow_leash_any_stair`, else C's up staircase `b_stair`; the arrival
+/// grid for `flow_leash_unknown_stair_steps`).
 pub fn beyond(st: &mut BorgState, y: i32, x: i32, b_stair: i32, limit: i32) -> bool {
     let h = leash_holes();
     let (any, unknown_steps) = (h.any_stair, h.unknown_stair_steps);
     if (!any && unknown_steps == 0) || st.borg.tr(BI_CDEPTH) == 0 {
         return crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > limit;
     }
+    crate::borg_flow::borg_flow_clear(st);
     let sources = leash_sources(any, b_stair, &track_list(&st.stairs.less), &track_list(&st.stairs.more));
-    let stairs = cost_from(st, y, x, &sources);
+    let stairs = steps_from(st, y, x, &sources);
     let arrival = st.leash.arrival;
-    beyond_verdict(stairs, limit, unknown_steps, || arrival.and_then(|a| cost_from(st, y, x, &[a])))
+    beyond_verdict(stairs, limit, unknown_steps, || arrival.and_then(|a| steps_from(st, y, x, &[a])))
 }
 
 /// `engine::distance` from `c` to the nearest of the staircases, (y, x);
@@ -146,17 +190,38 @@ fn nearest_distance(c: (i32, i32), stairs: &[(i32, i32)]) -> i32 {
     stairs.iter().map(|&s| engine::distance(at(c), at(s))).min().unwrap_or(-1)
 }
 
-/// The return leash with `flow_leash_any_stair`: the distance to the
-/// nearest known staircase of either kind (-1 for none), as
-/// `borg_think_dungeon` measures it.
-pub fn return_distance(st: &BorgState) -> i32 {
-    let mut all = track_list(&st.stairs.less);
-    all.extend(track_list(&st.stairs.more));
-    nearest_distance((st.borg.c.y, st.borg.c.x), &all)
+/// The return leash's two distances, -1 for none: the one that starts a
+/// return, and the one that ends it ("Close enough"). C (`up` only): the
+/// distance to the nearest up staircase for both. With
+/// `flow_leash_any_stair` a return starts on `steps`, the walking steps to
+/// the nearest staircase of either kind (review of #1087, finding 1: a
+/// staircase across a wall is not near); only a return this leash started
+/// (`return_any`) ends on them, and any other `goal.less` (the depth
+/// correction's climb) ends on C's distance to an up staircase (finding 2).
+fn return_distances(any: bool, return_any: bool, up: i32, steps: Option<i32>) -> (i32, i32) {
+    if !any {
+        return (up, up);
+    }
+    let steps = steps.unwrap_or(-1);
+    (steps, if return_any { steps } else { up })
 }
 
-/// Is a jump from `last` to `now` (y, x) more than a step (a teleport)?
-/// Returns its length in grids.
+/// The return leash's distances (`return_distances`) for the Borg now; `up`
+/// is C's distance to the nearest up staircase (-1 for none).
+pub fn return_leash(st: &mut BorgState, up: i32) -> (i32, i32) {
+    let any = any_stair(st);
+    let steps = if any {
+        let (y, x) = (st.borg.c.y, st.borg.c.x);
+        let all = all_stairs(st);
+        steps_from(st, y, x, &all)
+    } else {
+        None
+    };
+    return_distances(any, st.leash.return_any, up, steps)
+}
+
+/// Is a jump from `last` to `now` (y, x) more than a step? Returns its
+/// length in grids (`engine::distance`, as the engine's teleport measures).
 fn jump(last: (i32, i32), now: (i32, i32)) -> Option<i32> {
     let d = nearest_distance(last, &[now]);
     (d > 1).then_some(d)
@@ -178,16 +243,21 @@ pub fn update(st: &mut BorgState) {
         return;
     }
     if let Some(d) = l.last.and_then(|last| jump(last, now)) {
-        l.jumped = Some(d);
+        l.jumped = Some(l.jumped.map_or(d, |j| j.max(d)));
     }
     l.last = Some(now);
 }
 
-/// The verdict of `flow_leash_teleported_recall` on a jump: the flow steps
-/// from the nearest known staircase (`None`: none known or reachable)
-/// against `steps`.
-fn jump_strands(stairs: Option<i32>, steps: i32) -> bool {
-    stairs.is_none_or(|cost| cost > steps)
+/// The verdict of `flow_leash_teleported_recall` on a jump of `jump` grids:
+/// a teleport (at least `min_jump`, review of #1087 finding 4: Phase Door
+/// lands 9 to 11 grids away, `TELEPORT:10` in object.txt randomised by a
+/// quarter in `effect_handler_TELEPORT`, effect-handler-general.c; the
+/// teleport trap and the Teleportation scroll are `TELEPORT:M80` and `:M60`,
+/// percentages of the distance to the level's edge) that leaves the nearest
+/// known staircase (`stairs` steps; `None`: none known or reachable) more
+/// than `steps` away.
+fn jump_strands(jump: i32, min_jump: i32, stairs: Option<i32>, steps: i32) -> bool {
+    jump >= min_jump && stairs.is_none_or(|cost| cost > steps)
 }
 
 /// `flow_leash_teleported_recall`, once per dungeon think (after the fights
@@ -206,15 +276,15 @@ pub fn teleported_recall(st: &mut BorgState) -> bool {
     }
     if let Some(d) = st.leash.jumped.take() {
         let steps = h.recall_steps;
-        let mut all = track_list(&st.stairs.less);
-        all.extend(track_list(&st.stairs.more));
-        let (y, x) = (st.borg.c.y, st.borg.c.x);
-        // An observation: the flow the Borg follows is put back as it was.
-        let cost = with_flow_saved(st, |st| cost_from(st, y, x, &all));
-        if jump_strands(cost, steps) {
-            st.leash.recall_due = true;
-            let far = cost.map_or("no staircase known or reachable".to_string(), |c| format!("{c} steps from the nearest staircase"));
-            borg_note(st, &format!("# Leash: a {d}-grid jump left the Borg {far} (more than {steps}): Recall at danger 0"));
+        if d >= h.recall_min_jump {
+            let all = all_stairs(st);
+            let (y, x) = (st.borg.c.y, st.borg.c.x);
+            let cost = steps_from(st, y, x, &all);
+            if jump_strands(d, h.recall_min_jump, cost, steps) {
+                st.leash.recall_due = true;
+                let far = cost.map_or("no staircase known or reachable".to_string(), |c| format!("{c} steps from the nearest staircase"));
+                borg_note(st, &format!("# Leash: a {d}-grid jump left the Borg {far} (more than {steps}): Recall at danger 0"));
+            }
         }
     }
     if !st.leash.recall_due {
@@ -237,17 +307,17 @@ pub fn teleported_recall(st: &mut BorgState) -> bool {
 }
 
 /// Run `f` and put back the flow state it may spread over (the queue, the
-/// costs, the danger caches and the wipe flag), so the flow the Borg follows
-/// (`borg_flow_old`) is untouched.
+/// costs, the danger caches, the wipe flag and the flow modes), so the flow
+/// the Borg follows (`borg_flow_old`) is untouched.
 fn with_flow_saved<R>(st: &mut BorgState, f: impl FnOnce(&mut BorgState) -> R) -> R {
     let fl = &st.flow;
     let saved = (fl.head, fl.tail, fl.flow_x.clone(), fl.flow_y.clone(), fl.data_cost.clone(),
-                 fl.data_know.clone(), fl.data_icky.clone(), fl.hunting, fl.to_stairs);
+                 fl.data_know.clone(), fl.data_icky.clone(), fl.hunting, fl.to_stairs, fl.flight_no_danger);
     let wipe = st.danger.wipe;
     let r = f(st);
     st.danger.wipe = wipe;
     let fl = &mut st.flow;
-    (fl.head, fl.tail, fl.flow_x, fl.flow_y, fl.data_cost, fl.data_know, fl.data_icky, fl.hunting, fl.to_stairs) = saved;
+    (fl.head, fl.tail, fl.flow_x, fl.flow_y, fl.data_cost, fl.data_know, fl.data_icky, fl.hunting, fl.to_stairs, fl.flight_no_danger) = saved;
     r
 }
 
@@ -282,7 +352,7 @@ mod tests_1062 {
         assert!(!beyond_verdict(None, 12, 20, || None), "arrival unreachable too: off leash");
     }
 
-    /// The return leash: the nearest of both kinds, in `engine::distance`.
+    /// `engine::distance` to the nearest of the staircases given.
     #[test]
     fn the_nearest_staircase_of_either_kind() {
         assert_eq!(nearest_distance((0, 0), &[(3, 4)]), 5);
@@ -293,6 +363,22 @@ mod tests_1062 {
         assert_eq!(nearest_distance(c, &LESS), 11, "C: the up staircase at (10, 10)");
         assert_eq!(nearest_distance(c, &all), 6, "the down staircase at (12, 14)");
         assert_eq!(nearest_distance(c, &[]), -1);
+    }
+
+    /// Review of #1087, findings 1 and 2: the return leash starts on the
+    /// walking steps; only its own return ends on them.
+    #[test]
+    fn the_return_leash_distances() {
+        // C: the up staircase's distance for both.
+        assert_eq!(return_distances(false, false, 11, Some(2)), (11, 11));
+        // A staircase two grids away across a wall, 30 steps around: the
+        // return starts (30 > 17 at CL1) and does not end at 2 grids.
+        assert_eq!(return_distances(true, true, 2, Some(30)), (30, 30));
+        // The depth correction's climb to an up staircase 20 grids away is
+        // not ended by a down staircase 2 steps away.
+        assert_eq!(return_distances(true, false, 20, Some(2)), (2, 20));
+        // Nothing reachable: no return starts.
+        assert_eq!(return_distances(true, false, -1, None), (-1, -1));
     }
 
     /// A step is not a jump; a Phase Door or a teleport is.
@@ -306,11 +392,16 @@ mod tests_1062 {
     }
 
     /// 1024822556: 79 flow steps from the up staircase after the trap.
+    /// Review of #1087, finding 4: a Phase Door (9 to 11 grids) is not a
+    /// teleport; 592754909's 9-grid Phase Door 47 steps from the stairs.
     #[test]
     fn a_jump_strands_the_borg() {
-        assert!(jump_strands(Some(79), 30));
-        assert!(!jump_strands(Some(30), 30));
-        assert!(jump_strands(None, 30), "no staircase known or reachable");
+        assert!(jump_strands(84, 12, Some(79), 30));
+        assert!(!jump_strands(84, 12, Some(30), 30));
+        assert!(jump_strands(84, 12, None, 30), "no staircase known or reachable");
+        assert!(!jump_strands(9, 12, Some(47), 30), "a Phase Door");
+        assert!(!jump_strands(11, 12, None, 30), "a Phase Door at its longest");
+        assert!(jump_strands(12, 12, Some(31), 30));
     }
 
     /// The default state follows nothing.
