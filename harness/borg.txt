@@ -1593,6 +1593,12 @@ borg_param_stair_scum_max_hp = 25
 borg_param_stair_scum_max_hp_race_delta = 0
 borg_param_stair_scum_speed_ratio = 2
 borg_param_stair_scum_contact_damage = 4
+# The dial to loosen it (owner, 2026-11-23): steps beyond the strict safe
+# walk (0 = strict: a torch at 12 HP, 1 step; 2 = "two or three steps").
+borg_param_stair_scum_slack_steps = 0
+# ... and a rate (owner, 2026-11-23): tenths of a step of slack per max HP
+# point, per class (__<class>) and race (__<race>); 1 = a step per 10 HP.
+borg_param_stair_scum_slack_per_hp_tenths = 0
 borg_param_stair_scum_alarm_turns = 100
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1

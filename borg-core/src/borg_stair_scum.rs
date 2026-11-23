@@ -227,6 +227,21 @@ fn survives(steps: i32, seen_at: i32, ratio: i32, hp: i32, per_attack: i32) -> b
     i64::from(attacks_on_retreat(steps, seen_at, ratio)) * i64::from(per_attack.max(1)) < i64::from(hp)
 }
 
+/// The walk the survival test counts, `slack` steps shorter than it is
+/// (pure): with slack, a grid that many steps beyond the strict radius is
+/// still safe.
+fn slackened(steps: i32, slack: i32) -> i32 {
+    (steps - slack.max(0)).max(0)
+}
+
+/// The slack in steps (pure; owner, 2026-11-23: "a rate to make the scum
+/// dependent on hp/class"): the fixed steps plus `per_hp_tenths` tenths of
+/// a step per point of max HP, so the mode loosens as the character grows.
+/// Both are per class (`__<class>`) and per race (`__<race>`).
+fn slack_steps(steps: i32, per_hp_tenths: i32, max_hp: i32) -> i32 {
+    steps.max(0) + (i64::from(max_hp.max(0)) * i64::from(per_hp_tenths.max(0)) / 10).min(i64::from(MAX_STEPS)) as i32
+}
+
 /// The longest walk that survives (pure; for the notes and the tests).
 fn radius(seen_at: i32, ratio: i32, hp: i32, per_attack: i32) -> i32 {
     let mut r = 0;
@@ -366,6 +381,10 @@ pub(crate) struct Map {
     ratio: i32,
     hp: i32,
     per_attack: i32,
+    /// `stair_scum_slack_steps`: steps the walk may take beyond the strict
+    /// count (owner, 2026-11-23: "a tunable parameter to make it less
+    /// strict").
+    slack: i32,
 }
 
 impl Map {
@@ -393,6 +412,11 @@ impl Map {
             ratio: value(Param::stair_scum_speed_ratio),
             hp: st.borg.tr(BI_CURHP),
             per_attack: value(Param::stair_scum_contact_damage),
+            slack: slack_steps(
+                value(Param::stair_scum_slack_steps),
+                value(Param::stair_scum_slack_per_hp_tenths),
+                st.borg.tr(BI_MAXHP),
+            ),
         };
         let area = safe_area(&map.dist, |y, x| walkable(st, y, x), |y, x| map.grid_safe(st, y, x));
         map.area = area;
@@ -441,7 +465,7 @@ impl Map {
         }
         // A closed door: the open is one action more before the retreat.
         let extra = i32::from(u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED);
-        survives(s + extra, self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
+        survives(slackened(s + extra, self.slack), self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
     }
 
     fn in_area(&self, y: i32, x: i32) -> bool {
@@ -463,7 +487,7 @@ impl Map {
 
     /// The radius at the Borg's grid, for the notes.
     fn radius_here(&self, st: &BorgState) -> i32 {
-        radius(self.sight(st, st.borg.c.y, st.borg.c.x), self.ratio, self.hp, self.per_attack)
+        radius(self.sight(st, st.borg.c.y, st.borg.c.x), self.ratio, self.hp, self.per_attack) + self.slack
     }
 }
 
@@ -829,6 +853,23 @@ mod tests {
         // A Necromancer's unlight at CL1 with no light: 1 + 0 - 0.
         assert_eq!(engine_sight(0, CLASS_NECROMANCER, 1), 1);
         assert_eq!(engine_sight(0, CLASS_NECROMANCER, 12), 3);
+    }
+
+    /// Owner, 2026-11-23: the slack loosens the radius by its steps; 0 is
+    /// the strict count. A torch, 12 HP, 4 per attack: 1, 2 and 3 steps.
+    #[test]
+    fn the_slack_widens_the_radius_by_its_steps() {
+        let walk = |slack: i32| (0..MAX_STEPS).take_while(|&s| survives(slackened(s, slack), 1, 2, 12, 4)).last().unwrap();
+        assert_eq!(walk(0), 1);
+        assert_eq!(walk(1), 2);
+        assert_eq!(walk(2), 3, "the owner's \"two or three steps\"");
+        assert_eq!(slackened(1, 5), 0, "never below the stairs themselves");
+        assert_eq!(slackened(4, -1), 4, "a negative slack is none");
+        // The rate: a tenth of a step per max HP point, on top of the steps.
+        assert_eq!(slack_steps(0, 1, 12), 1, "12 HP: one step");
+        assert_eq!(slack_steps(0, 1, 24), 2, "24 HP: two");
+        assert_eq!(slack_steps(1, 1, 9), 1, "9 HP: the fixed step only");
+        assert_eq!(slack_steps(0, 0, 24), 0, "no rate: strict");
     }
 
     #[test]

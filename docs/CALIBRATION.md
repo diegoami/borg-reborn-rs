@@ -6798,7 +6798,7 @@ The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
 `studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
 character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
-**2421** parameters (6 added). `stair_scum` ships 0: play is byte-identical
+**2423** parameters (8 added). `stair_scum` ships 0: play is byte-identical
 to before until it is 1. Every number is a hypothesis (RULES 14): borg-zoo
 measures arms at a threshold of 20, 25 and 30, then per class. The design
 follows Codex's review on #1061 (the attacks on the way counted, the
@@ -6809,9 +6809,11 @@ engine's light, every step checked, the unplaced door sound).
 | `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:140` |
 | `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:147` |
 | `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:147` |
-| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:390` |
-| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:392` |
-| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:651` |
+| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:404` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:414` |
+| `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:407` |
+| `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:417` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:684` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
 plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
@@ -6840,6 +6842,16 @@ from unseen (unknown, dark or a door, next to the lit floor), when longer;
 behind a closed door 1, and the open costs one action more. A Wooden Torch
 (`LIGHT_2`) in a dark corridor at 12 HP against a +10 monster at 4 per attack:
 1 step; a lit room grid 8 from its nearest dark entry: 7.
+
+**The dial** (owner, 2026-11-23: "a tunable parameter to make it less
+strict"): `stair_scum_slack_steps` lets a grid lie that many steps beyond the
+strict safe walk (the survival test counts the walk that many steps shorter).
+At 0 the count above; the torch at 12 HP: 1 step at 0, 2 at 1, 3 at 2 (the
+owner's "two or three steps"). The zoo picks it (arms at 0 to 3). A rate
+makes it grow with the character (owner, 2026-11-23: "a rate to make the scum
+dependent on hp/class"): `stair_scum_slack_per_hp_tenths` adds a tenth of a
+step per point of max HP (1: 12 HP one step, 24 HP two), per class and per
+race like every parameter.
 
 **The safe area** is every safe walkable grid joined to a staircase through
 safe grids. The dark flows (`borg_flow_dark_1..5`) keep only the candidates in
