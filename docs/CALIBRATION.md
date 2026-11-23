@@ -190,12 +190,12 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1414` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1415` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1239` |
-| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1418` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1419` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1243` |
+| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1247` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
-| `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
+| `escape_phase_newcomer_turn_percent` | 100 | percent of current HP | 0–1000 | `borg_escape.rs:1260` |
 
 - `escape_phase_unknown_scary` = 1: in the Phase Door landing check (every
   site that asks `caution_phase`), a sampled grid never seen (`FEAT_NONE`)
@@ -215,7 +215,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   A landing check under the policy records its never-seen count
   (`phase_unknown_seen`); the gate reuses it in the same think at the same
   grid (`gate_count`), so a refused emergency cannot be undone by a lower
-  redraw in the critical fall-through (re-review of #1075).
+  redraw in the critical fall-through (re-review of #1075). The record also
+  carries that site's tolerance, and a reuse judges by the stricter of the
+  two (#1094). An emergency at 50 that refused 60 never-seen landings is
+  not undone by a gate at 75.
   Shoot N Scoot's own sampler (`borg_shoot_scoot_safe`) counts a
   never-seen grid as scary.
 - `escape_phase_newcomer_wait` = 1: with `escape_phase_adjacent_rule`, when
@@ -237,9 +240,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   the full possible one-turn damage (`full_damage`): no spell-frequency
   discount (`spell_frequency_discount`, lifted from `borg_danger` with the
   same arithmetic) and whole monster turns (re-review of #1075).
-- Both switches compiled and shipped **0**; `harness/borg.txt` sets none of
-  the six.
-  Hypotheses: no measurement chose them (RULES 14).
+- Both switches compiled **0**. **Shipped 1** in `harness/borg.txt` since
+  #1094 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+  merge"); the four tuning values ship at their compiled defaults.
+  Hypotheses: no zoo measurement chose them (RULES 14; #1073).
 
 ## Attack on sight prices poison and drain blows (#1010)
 
@@ -1011,8 +1015,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2159` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2159` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2163` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2163` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:720` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1317,7 +1321,7 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2166` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2170` |
 | `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2167` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2168` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2169` |
@@ -1873,7 +1877,7 @@ the mana, and that its spells are likely enough to work.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:1000` |
+| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:1009` |
 
 
 ## Throws on melee's footing (#568)
@@ -2633,8 +2637,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:902` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:999` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1000` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:1003` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1004` |
 
 ## Town less scary (#622)
 
@@ -4109,13 +4113,13 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1755` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1764` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1763` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1772` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1855` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1866` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1863` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1874` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1877` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1878` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1891` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1909` |
@@ -6181,7 +6185,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1647` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1655` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
@@ -7294,7 +7298,7 @@ has no leash; with no staircase known or reachable there is no leash
 (`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
 measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
 can also throw a CL1 Borg far from every staircase it knows. Six parameters
-(the registry now holds **2455**, 2449 on track-p `8e1c8797`), read in
+(the registry now holds **2455**, 2449 on track-p `5f720dce`), read in
 `leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
 compiled 0, which is C's play. **Shipped on** in `harness/borg.txt` with the
 values of the zoo arms (owner, 2026-11-23: "merge with the values to try"):
@@ -7357,7 +7361,7 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2195` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2199` |
 | `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2196` |
 | `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2197` |
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2198` |
