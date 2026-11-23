@@ -825,6 +825,16 @@ borg_param_flow_leash_stairs_max_level = 20
 borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
+# #1080, #1085: breadth-first exploration from the staircases below a
+# maximum HP (the ring nearest the stairs is explored first). Shipped 1
+# (owner, 2026-11-23: "ship it like that ... turn it on by default"), with
+# the per-class thresholds of the class files; 0 = C's depth-first order.
+borg_param_explore_breadth_first = 1
+borg_param_explore_bfs_max_hp = 25
+borg_param_explore_bfs_slack = 0
+# The threshold by level (per class with __<class>): max HP below
+# explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
+borg_param_explore_bfs_hp_per_level = 0
 
 # The holes in C's leash (#1062), each shipped 0 = C until the zoo measures
 # it. any_stair 1: both leashes measure the nearest known staircase of either
@@ -1876,6 +1886,8 @@ borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
+borg_param_explore_bfs_max_hp__warrior = 31
+borg_param_explore_bfs_hp_per_level__warrior = 2
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1897,6 +1909,8 @@ borg_param_town_staple_clw__mage = 6
 borg_param_town_staple_csw__mage = 3
 borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
+borg_param_explore_bfs_max_hp__mage = 35
+borg_param_explore_bfs_hp_per_level__mage = 1
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1917,6 +1931,8 @@ borg_param_town_staple_clw__druid = 5
 borg_param_town_staple_csw__druid = 3
 borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
+borg_param_explore_bfs_max_hp__druid = 36
+borg_param_explore_bfs_hp_per_level__druid = 2
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1938,6 +1954,8 @@ borg_param_town_staple_csw__priest = 3
 borg_param_town_staple_phase__priest = 12
 borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
+borg_param_explore_bfs_max_hp__priest = 31
+borg_param_explore_bfs_hp_per_level__priest = 2
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1959,6 +1977,8 @@ borg_param_town_staple_clw__necromancer = 5
 borg_param_town_staple_csw__necromancer = 3
 borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
+borg_param_explore_bfs_max_hp__necromancer = 31
+borg_param_explore_bfs_hp_per_level__necromancer = 2
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1982,6 +2002,8 @@ borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
+borg_param_explore_bfs_max_hp__paladin = 34
+borg_param_explore_bfs_hp_per_level__paladin = 2
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -2005,6 +2027,8 @@ borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
+borg_param_explore_bfs_max_hp__rogue = 36
+borg_param_explore_bfs_hp_per_level__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2031,6 +2055,8 @@ borg_param_town_staple_clw__ranger = 7
 borg_param_town_staple_csw__ranger = 4
 borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
+borg_param_explore_bfs_max_hp__ranger = 44
+borg_param_explore_bfs_hp_per_level__ranger = 2
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2054,6 +2080,8 @@ borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
+borg_param_explore_bfs_max_hp__blackguard = 30
+borg_param_explore_bfs_hp_per_level__blackguard = 2
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
