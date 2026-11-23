@@ -38,6 +38,8 @@ pub const fn ktrl(c: u8) -> u32 {
 pub struct Borg {
     /// borg-reborn-rs (#781): observed bumps, never hidden engine monsters.
     pub unseen_bumps: crate::borg_caution::UnseenBumps,
+    /// borg-reborn-rs (#829): a teleport curse the engine's messages showed.
+    pub teleport_block: Option<crate::borg_escape::TeleportBlock>,
     /// Indexed by `BI_*` (`borg.trait`, allocated by borg-trait.c).
     pub trait_: Vec<i32>,
     /// Indexed by object kind (`borg.has`).
@@ -93,6 +95,25 @@ pub struct Borg {
     pub unseen_followed: bool,
     /// #697: the think that last noted a rest held for an unseen attacker.
     pub unseen_rest_noted: Option<BorgTime>,
+    /// borg-reborn-rs (#831): the "invisible attacker near" mode's state, for
+    /// the episode that began with the first unseen blow after the window
+    /// had lapsed: the mode was noted (`unseen_mode`), the detections read
+    /// (`unseen_detects`) and the blind attacks made (`unseen_probes`) in it,
+    /// the grid a blind attack was just sent at (`unseen_probe`, until its
+    /// message), the grids those found empty since the last blow
+    /// (`unseen_empty`) and the grid where one struck something
+    /// (`unseen_found`).
+    pub unseen_mode: bool,
+    pub unseen_detects: i32,
+    pub unseen_probes: i32,
+    pub unseen_probe: Option<loc>,
+    pub unseen_empty: Vec<loc>,
+    pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981, review of #998): every unseen attack of the
+    /// episode so far was a projection's hit ("You are hit by ...!",
+    /// `SHOT_BY:`), not a blow. Set when the episode starts, cleared by a blow
+    /// and when the episode ends.
+    pub unseen_shot_only: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
@@ -127,6 +148,12 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
+    /// the last Phase Door landing check under the policy, as (the think's
+    /// `time.now`, the Borg's grid, the count). The gate of the sites
+    /// without a landing check reuses it in the same think and grid instead
+    /// of drawing again.
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
@@ -614,6 +641,10 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     if borg_ch != 0 {
         key.code = borg_ch;
         return key;
+    }
+
+    if st.fight_attack.pending_unseen.has_targets() && engine::inkey_flag() {
+        crate::borg_unseen_belief::confirm_attack(st);
     }
 
     if user_abort(st) {

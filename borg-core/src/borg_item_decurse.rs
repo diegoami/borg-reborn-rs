@@ -54,7 +54,7 @@ fn key(c: u8) -> keycode_t {
 
 /// The "Ability for curses" test: false when the Borg has no scroll,
 /// staff, spell or activation that removes a curse.
-fn can_decurse(st: &mut BorgState) -> bool {
+pub(crate) fn can_decurse(st: &mut BorgState) -> bool {
     let sv_scroll = st.item_val.sv_scroll_remove_curse;
     let sv_staff = st.item_val.sv_staff_remove_curse;
     let sv_star = st.item_val.sv_scroll_star_remove_curse;
@@ -91,10 +91,15 @@ fn decurse_swap(st: &mut BorgState, swap: fn(&BorgState) -> i32) -> bool {
         return false;
     }
 
+    /* borg-reborn-rs (#830): not for an item the scroll costs more than */
+    let i = swap(st) - 1;
+    if i >= 0 && !crate::borg_cursed::worth_a_scroll(st, i) {
+        return false;
+    }
+
     /* remove the curse */
     if start_decurse(st) {
         /* pick the item */
-        let i = swap(st) - 1;
         borg_keypress(st, letter(i));
         /* pick first curse */
         borg_keypress(st, KC_ENTER);

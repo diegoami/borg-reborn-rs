@@ -36,12 +36,13 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs', 'src/scary_list.rs', 'src/borg_lightless.rs', 'src/borg_town_hunt.rs', 'src/borg_cursed.rs', 'src/borg_fast_fragile.rs', 'src/borg_kit.rs', 'src/borg_lone_target.rs', 'src/borg_unseen_belief.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
     'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
     'src/borg_trip.rs',  # #795: trace the live trip preparedness check
@@ -53,6 +54,7 @@ HOOKED = {
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
     'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
+    'src/state.rs',  # #840: the basic kit's state
     'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
     'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
@@ -62,14 +64,16 @@ HOOKED = {
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
     'src/borg_flow_misc.rs',  # #597: the twitch refuses lava
-    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
+    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters; #929: a miss in view is not a wall
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
     'src/borg.rs',  # #530: the scary goals and scary stand flags
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
-    'src/borg_light.rs',  # #685: no detection spell by panel below a level
+    'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius
+    'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius
+    'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only; #929: no wall guess on the Borg's grid
     'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI

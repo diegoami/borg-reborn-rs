@@ -132,6 +132,11 @@ pub struct LiveState {
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
     home_moves: Vec<(u32, bool)>,
+    /// #859: the level clock (`time.level`, when the current level was
+    /// entered) at the last departure-room note. A town visit starts on
+    /// arriving in town, so this notes once a visit; two departures with no
+    /// level change between them share one note.
+    room_noted_level: Option<i32>,
 }
 
 /// Consume one queued Home attempt after refreshing inventory. Count the kind
@@ -291,7 +296,24 @@ pub fn choose(st: &mut BorgState) -> bool {
         return true;
     }
     let a = crate::borg_town_shadow::live_action(st);
+    if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
+}
+
+/// borg-reborn-rs (#859): what a departure leaves free, against the room
+/// `town_departure_free_weight` and `town_departure_free_slots` ask for, in
+/// the messages a zoo run counts. Nothing when both are off.
+fn note_departure_room(st: &mut BorgState) {
+    let room = crate::borg_town_utility::departure_room();
+    if room == crate::borg_town_utility::Room::default() { return; }
+    let level = st.borg.time.level;
+    if st.think.town_live.room_noted_level.replace(level) == Some(level) { return; }
+    let facts = crate::borg_town_budget::Facts::of(st);
+    let pack = &st.items.items[..crate::borg_item::inven_wield() as usize];
+    let slots = facts.pack_capacity - crate::borg_town_stock::pack_slots_used_of(pack);
+    let note = format!("# Town departure room: weight {} free (keep {}), slots {} free (keep {})",
+        facts.allowance(), room.weight, slots, room.slots);
+    borg_note(st, &note);
 }
 
 pub fn execute_store(st: &mut BorgState) -> bool {
@@ -311,8 +333,10 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32
         } else { gold };
         let recall_floor = crate::borg_store_buy::recall_purchase_floor();
+        // #859: an urgent Recall (the dive gate's) is not held back by the floor.
         let protects_recall = a.code == action::BUY && recall_floor > 0
-            && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval);
+            && crate::borg_town_budget::is_recall_scroll(st, item.tval, item.sval)
+            && !crate::borg_town_utility::recall_urgent(st);
         if protects_recall {
             purchase_gold = purchase_gold.min(crate::borg_store_buy::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
         }
@@ -365,8 +389,17 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if a.code != action::DROP { return false; }
     let slot = a.at[1] as usize;
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
-    let qty = item.iqty;
+    let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
+    // A split Restore Life Levels stack leaves the protected copies carried.
+    let drop_qty = if (1..qty).contains(&a.at[2])
+        && crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+        && crate::borg_town_capability::restore_life_reserve(st) > 0
+    {
+        a.at[2]
+    } else {
+        qty
+    };
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
@@ -376,7 +409,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     borg_keypress(st, u32::from(b'd'));
     borg_keypress(st, letter);
     if qty > 1 {
-        borg_keypresses(st, qty.to_string().as_bytes());
+        borg_keypresses(st, drop_qty.to_string().as_bytes());
         borg_keypress(st, KC_ENTER);
     }
     clear(st);

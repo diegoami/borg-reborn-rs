@@ -20,6 +20,8 @@ borgh = []
 test-force-nested = []
 # Test-only FFI for the native PR83 regression fixture; absent in normal builds.
 test-town-review = []
+# Native fixture for the emergency stair handoff. Inactive in regular builds.
+test-stair-handoff = []
 
 [dependencies]
 libc = "0.2"

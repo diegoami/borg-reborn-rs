@@ -32,7 +32,7 @@ keep original absolute paths in the original evidence rather than rewriting it.
 
 [p341-full.json](../harness/recipes/p341-full.json) is a **verified historical
 reconstruction**, not recovered shell history. It complements the immutable
-[P341 receipt](P341-FRESH-DONOR-VALIDATION.json) at reviewed source
+[P341 receipt](validation/P341-FRESH-DONOR-VALIDATION.json) at reviewed source
 `cf687bb24de8e0715854ca1b7a0f827b7e71be82`. That receipt already contains all
 45 pairs of key/message/state hashes; no missing-hash repair is needed.
 
@@ -126,7 +126,7 @@ The receiving selectors reproduce the retained config fields and select
 The pinned donor runner does not export deaths automatically. Any reproduction
 must also follow the Cemetery-owned export/retention process for donor deaths;
 that postprocessing is outside this full-suite command reconstruction. The
-historical [dossier map](P341-DOSSIER-MAP.json) preserves its actual 25 qualified
+historical [dossier map](validation/P341-DOSSIER-MAP.json) preserves its actual 25 qualified
 packages, exporter pin and original record hashes. No new death or reconciliation
 is claimed by checking this recipe.
 

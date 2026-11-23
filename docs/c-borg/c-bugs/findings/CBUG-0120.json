@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0120",
+  "source_groups": [
+    37
+  ],
+  "title": "Drop-hole high-level device and consumable protection uses always-true subtype conditions",
+  "site": "src/borg/borg-junk.c:borg_drop_hole",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 136
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-junk.c",
+      "start": 516,
+      "end": 951,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 693,
+      "end": 699,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        37
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 37,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 693,
+        "end": 699,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_drop_hole()`: the \"BIG HACK! don't crush cool stuff\" tests for\n  rods, wands, scrolls and potions (Borg above clevel 35) chain `!=` with\n  `||`, so they hold for every sval (the svals compared are distinct).\n  Every aware rod, wand and potion is valued at `iqty * 300000`, every\n  aware scroll at `iqty * 30000`, and the `value / 2` / `value / 10` else\n  branches are dead. The staff test is false only for Dispel Evil when\n  `BI_GOOD_S_CHG >= 2` and `BI_ASTFDEST >= 2`."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

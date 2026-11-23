@@ -16,12 +16,34 @@
 #include "synthetic-build.h"
 #include <errno.h>
 #include <openssl/sha.h>
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#include <sys/stat.h>
+#endif
 
 #define BUILD_LIMIT 16384
 #define ITEMS_LIMIT 48
 #define ENGINE_PIN SYNTHETIC_ENGINE_PIN
 
 static void fail(void) { quit("borgh: invalid or unsupported synthetic character build"); }
+
+/* A new file, never an existing one (it is left as it was). #858: the
+ * Windows C runtime ignores fopen's "x" and truncates an existing file;
+ * _O_EXCL is honoured there. */
+static FILE *create_new(const char *path)
+{
+#ifdef _WIN32
+    int fd = _open(path, _O_CREAT | _O_EXCL | _O_WRONLY | _O_BINARY, _S_IREAD | _S_IWRITE);
+    FILE *fp;
+    if (fd < 0) return NULL;
+    fp = _fdopen(fd, "wb");
+    if (!fp) _close(fd);
+    return fp;
+#else
+    return fopen(path, "wbx");
+#endif
+}
 
 void synthetic_build_digest(const char *path, char digest[65])
 {
@@ -72,7 +94,7 @@ void synthetic_build_capture(const char *path)
         if (!plain(obj) || ++count > ITEMS_LIMIT || obj->number < 1 || obj->number > 40 ||
             abs(obj->to_h) > 20 || abs(obj->to_d) > 20 || abs(obj->to_a) > 20 || obj->pval < 0 || obj->timeout < 0 ||
             (!object_is_equipped(player->body, obj) && ++pack_count > z_info->pack_size)) fail();
-    fp = fopen(path, "wx");
+    fp = create_new(path);
     if (!fp) quit("borgh: cannot create synthetic build capture (preserve existing file)");
     fprintf(fp, "schema:borg-reborn-rs/character-build@1\nengine:%s\n", ENGINE_PIN);
     fprintf(fp, "identity:%d:%d:%d\n", player->race->ridx, player->class->cidx, player->lev);

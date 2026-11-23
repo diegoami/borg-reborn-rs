@@ -17,6 +17,12 @@ gave is covered by determinism and the Borg's own logs.*
 | `check-perception.py` | T2.5: over runs of a `test-perception` build, fails on any think whose observation or world disagrees with the engine (map memory, visible monsters, gear list, pack count) or whose status is in no `state.log` line of its turn; counts what the Borg does not see by design (off the map panel). Every run of a suite directory needs a truth log with one line per Borg decision (M2 review, finding 4) |
 | `depth-stream.py` | Run by `harness/run.sh`: `depths.json`, the first turn at each depth |
 | `import-deaths.py` | Qualifies immutable native evidence packages for historical/CI integration; preserves original records and all payload bytes; `--check` verifies the retained archive (docs/DOSSIER-IMPORT.md) |
+| `cemetery_tools.py` | The shared forwarder of the four death-tool pointers above: checks `death-tools-pin.txt` and runs borg-cemetery's implementation (below) |
+| `check-no-time.py` | Fails a run's decision trace on loops hidden at one game turn (level changes or actions past the profile's budget; the reborn core's `trace.jsonl`) |
+| `calibrate.py` | T4.7 (#124): the reborn core's predicted damage against damage taken, per think window (docs/M4-CALIBRATION.md) |
+| `progress.py` | How much a suite's runs played, not only whether they lived: frozen windows and progress per run (#201) |
+| `shopping-audit.py` | Read only: what a run's Borg bought, used, stored, sold and left unspent, from its `messages.log` and `state.log` |
+| `try-errands-plan.py` | Runs an errands plan outside the measured harness, for bounded diagnostics (docs/GAME-PLAN-LANGUAGE.md) |
 | `tests/` | Unit tests of the above (`python3 -m unittest discover -s tools/tests`) |
 
 To watch the Borg play: `./watch-borg.sh` at the repository's root.
@@ -62,11 +68,23 @@ reporting API 1 is insufficient: an old API-1 exporter can lack the synthetic
 guard. An explicit checkout mismatch is an error, never a fallback to executing
 unsafe code or silently exporting a synthetic death.
 
-Clone/update borg-cemetery beside the primary checkout, or set
-`BORG_CEMETERY_DIR=/path/to/borg-cemetery`. Linked worktrees discover the sibling
-of their primary checkout. New normal exports go to its `deaths/` and its own
+Which checkout runs (#902): `BORG_CEMETERY_DIR` when set; a mismatch there is
+an error, never a fallback. Without it, the first of these whose native tools
+match the pin: the borg-cemetery beside the primary checkout (linked worktrees
+find the sibling of their primary checkout), then `vendor/borg-cemetery` (the
+worktree's, then the primary checkout's). `scripts/setup.sh` keeps the primary
+checkout's `vendor/borg-cemetery` at `death-tools-pin.txt`, a full checkout of
+about 1.2 GB shared by every worktree, so a sibling that tracks the Cemetery's
+`main` past the pin no longer stops a run: the tools print one line naming the
+checkout they use and, on a line of its own, each refused one with its
+reason, once per process for each refused checkout.
+With none matching, the error lists every refusal and names `setup.sh`.
+
+New normal exports go to the selected checkout's `deaths/`, and its own
 registration hook builds readable pages/catalogue without overwriting historical
-indexes. `BORG_DEATH_RECORDS_DIR` remains the explicit destination override.
+indexes. An export into `vendor/borg-cemetery` is a working copy: to keep a
+death, add it to a real Cemetery branch (or point `BORG_DEATH_RECORDS_DIR`, the
+explicit destination override, at one).
 
 This repository still owns the harness, build/source identity and observations.
 Its historical `docs/deaths/` is preserved for existing evidence and CI baseline

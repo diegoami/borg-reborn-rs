@@ -23,7 +23,9 @@
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
-#   (docs/SPEC.md §6), and it does not read borg.txt.
+#   (docs/SPEC.md §6). Its default core (borg-rs's, #606) reads the run's
+#   user/borg.txt (borg_* settings, borg_param_*, borg_reborn_*); the reborn
+#   core (BORG_CORE=reborn) reads BORG_PROFILE instead.
 #   Env: BORG_IMPL=rust (the default; build/rust), ANGBAND_BIN (override binary)
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
@@ -238,9 +240,9 @@ if [ "${BORG_CORE_OVERRIDES:-on}" = off ] && [ -z "${BORG_CORE+set}" ]; then
     export BORG_CORE=borg-rs
 fi
 [ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
-# The run's user/borg.txt, as before: the Rust Borg does not read it, but
-# the zoo's adapter copies harness/borg.txt (docs/ZOO-INTERFACE.md) and its
-# hash is part of a death's encounter family.
+# The run's user/borg.txt: the default borg-rs core reads it (the reborn
+# core does not), the zoo's adapter copies harness/borg.txt
+# (docs/ZOO-INTERFACE.md) and its hash is part of a death's encounter family.
 sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \

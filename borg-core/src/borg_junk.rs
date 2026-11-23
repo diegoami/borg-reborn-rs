@@ -29,15 +29,16 @@ use crate::borg_io::{borg_keypress, borg_keypresses, borg_note, borg_note_bytes,
 use crate::borg_item::{borg_item_weight, inven_feet, inven_wield, quiver_end, quiver_start};
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_item_id::borg_item_note_needs_id;
-use crate::borg_item_use::{borg_eat, borg_quaff_potion, borg_read_scroll};
+use crate::borg_item_use::{borg_eat, borg_quaff_potion, borg_read_scroll, is_restore_life};
 use crate::borg_power::borg_power;
+use crate::borg_town_capability::restore_life_reserve;
 use crate::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CCON, BI_CDEPTH,
     BI_CDEX, BI_CINT, BI_CLASS, BI_CLEVEL, BI_CSTR, BI_CURHP, BI_CWIS, BI_FOOD, BI_GOLD,
-    BI_GOOD_S_CHG, BI_ISFULL, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH,
+    BI_GOOD_S_CHG, BI_ISFIXEXP, BI_ISFULL, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH,
     BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED,
 };
 use crate::headers::list_options_h::OPT_birth_randarts;
@@ -282,6 +283,11 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
     /* Special destruction */
     match u32::from(item.tval) {
         TV_POTION => {
+            // RESTORE_EXP only helps below max XP (src/effect-handler-general.c:effect_handler_RESTORE_EXP:893-904).
+            if sval == v.sv_potion_restore_life {
+                return st.borg.tr(BI_ISFIXEXP) != 0 && borg_quaff_potion(st, sval);
+            }
+
             /* Check the potion */
             if [
                 v.sv_potion_slime_mold,
@@ -291,7 +297,6 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
                 v.sv_potion_healing,
                 v.sv_potion_star_healing,
                 v.sv_potion_life,
-                v.sv_potion_restore_life,
                 v.sv_potion_restore_mana,
                 v.sv_potion_heroism,
                 v.sv_potion_berserk,
@@ -504,7 +509,36 @@ fn junk_keep_some(st: &BorgState, item: &borg_item) -> bool {
             || (item.ego_idx != 0 && borg_ego_has_random_power(usize::from(item.ego_idx)))
             || (is(item, TV_SCROLL, v.sv_scroll_teleport_level)
                 && st.borg.tr(BI_ATELEPORTLVL) < 1000)
-            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil))
+            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil)
+            // borg-reborn-rs (#831, owner): Detect Invisible is not worthless; at 15
+            // gold the value tiers would junk it from depth 5 (`value > 15` fails).
+            || is(item, TV_SCROLL, v.sv_scroll_detect_invis))
+}
+
+/// Keep enough copies after the planned discard. Full-pack clearing drops
+/// a whole stack, whereas ordinary and overweight junking drop one item.
+fn keeps_restore_life(st: &BorgState, slot: usize, whole_stack: bool, desperate: bool) -> bool {
+    let sval = st.item_val.sv_potion_restore_life;
+    let item = &st.items.items[slot];
+    if desperate || !is_restore_life(item, sval) {
+        return false;
+    }
+    let reserve = restore_life_reserve(st);
+    if reserve == 0 {
+        return false;
+    }
+    protects_restore_life(&st.items.items[..inven_wield() as usize], slot, sval, reserve, whole_stack)
+}
+
+fn protects_restore_life(pack: &[borg_item], slot: usize, sval: i32, reserve: i32, whole_stack: bool) -> bool {
+    let item = &pack[slot];
+    if reserve == 0 || !is_restore_life(item, sval) {
+        return false;
+    }
+    let carried: i32 = pack.iter().filter(|item| is_restore_life(item, sval))
+        .map(|item| i32::from(item.iqty)).sum();
+    let discarded = if whole_stack { i32::from(item.iqty) } else { 1 };
+    carried - discarded < reserve
 }
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
@@ -537,7 +571,8 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         let tval = u32::from(item.tval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
+            || keeps_restore_life(st, i as usize, false, false) {
             continue;
         }
 
@@ -872,8 +907,9 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
 
         let mut value_boost: i32 = 0;
 
-        /* Skip empty items */
-        if item.iqty == 0 {
+        /* Skip empty items. A desperate pack clear can spend the reserve. */
+        if item.iqty == 0 || !desperate && crate::borg_light::keep_fuel_stack(st, i as usize)
+            || keeps_restore_life(st, i as usize, true, desperate) {
             continue;
         }
 
@@ -1163,7 +1199,8 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
         let sval = i32::from(item.sval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
+            || keeps_restore_life(st, i as usize, false, false) {
             continue;
         }
 
@@ -1401,6 +1438,12 @@ pub fn borg_dump_quiver(st: &mut BorgState) -> bool {
     false
 }
 
+// Leave a harmful light to direct replacement or decursing. Emptying
+// the slot can make light maintenance re-wield the same item.
+fn protects_cursed_light(slot: i32, light: i32, item: &borg_item) -> bool {
+    slot == light && crate::borg_cursed::harmful_curse(item).is_some()
+}
+
 /// Remove useless equipment (`borg_remove_stuff`).
 ///
 /// Look through the inventory for equipment that is reducing power.
@@ -1443,6 +1486,8 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
     /* Start with good power */
     let b_p = st.borg.power;
 
+    let light = crate::borg_light::inven_light();
+
     /* Scan equip */
     for i in inven_wield()..inven_total() {
         let item = &st.items.items[i as usize];
@@ -1464,6 +1509,10 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
         /* skip it if it has not been decursed */
         if item.one_ring {
+            continue;
+        }
+
+        if protects_cursed_light(i, light, item) {
             continue;
         }
 
@@ -1524,4 +1573,45 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_item_h::{BORG_CURSE_AIR_SWING, BORG_CURSE_PARALYSIS};
+    use crate::borg_item::blank_item;
+    use crate::borg_light::light_slot;
+
+    #[test]
+    fn restore_life_junking_counts_known_pack_stacks_and_the_copies_removed() {
+        let mut known = blank_item();
+        known.tval = TV_POTION as u8;
+        known.sval = 16;
+        known.aware = true;
+        known.iqty = 3;
+        let mut unknown = known;
+        unknown.aware = false;
+        let mut pack = [known, unknown];
+        assert!(!protects_restore_life(&pack, 0, 16, 1, false));
+        assert!(protects_restore_life(&pack, 0, 16, 1, true));
+        assert!(!protects_restore_life(&pack, 0, 16, 0, true));
+        pack[0].iqty = 1;
+        assert!(protects_restore_life(&pack, 0, 16, 1, false));
+        pack[1].aware = true;
+        assert!(!protects_restore_life(&pack, 0, 16, 1, true));
+    }
+
+    #[test]
+    fn ordinary_take_off_skips_only_a_harmful_curse_in_the_light_slot() {
+        let light = light_slot(23) as i32;
+        let mut item = blank_item();
+        item.iqty = 1;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.cursed = true;
+        item.curses[BORG_CURSE_AIR_SWING as usize] = true;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        assert!(protects_cursed_light(light, light, &item));
+        assert!(!protects_cursed_light(light + 1, light, &item));
+    }
 }

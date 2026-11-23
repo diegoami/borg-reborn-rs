@@ -657,6 +657,12 @@ pub fn kind(kind: usize) -> ObjectKind {
     unsafe { *p }
 }
 
+/// `k_info[kidx].cost`: the base price of an object kind
+/// (borg-reborn-rs #830: the price of a Remove Curse scroll).
+pub fn kind_cost_of(kidx: usize) -> i32 {
+    self::kind(kidx).cost
+}
+
 /// `k_info[kind].base->max_stack`: how many objects of this kind fit in
 /// one stack (panics past `k_max` or for a kind without a base, where C
 /// would read out of bounds or through NULL).
@@ -1319,13 +1325,23 @@ impl ReadFile {
 }
 
 /// `time(NULL)`.
+#[cfg(not(windows))]
 pub fn time_now() -> i64 {
     // SAFETY: time() accepts a NULL out-pointer.
     unsafe { crate::headers::time_h::time(core::ptr::null_mut()) }
 }
 
+/// borg-reborn-rs (#823): Windows' C runtime has no `time` symbol (its
+/// header inlines `_time64`); the libc crate links that.
+#[cfg(windows)]
+pub fn time_now() -> i64 {
+    // SAFETY: time() accepts a NULL out-pointer.
+    unsafe { libc::time(core::ptr::null_mut()) }
+}
+
 /// `strftime(buf, max, fmt, localtime(&t))`: the bytes written (empty
 /// where strftime returns 0).
+#[cfg(not(windows))]
 pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
     let mut buf = vec![0u8; max];
     // SAFETY: localtime reads t and returns its static struct (or NULL,
@@ -1334,6 +1350,27 @@ pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
         let tm = crate::headers::time_h::localtime(&t);
         assert!(!tm.is_null(), "localtime failed");
         crate::headers::time_h::strftime(buf.as_mut_ptr() as *mut c_char, max, fmt.as_ptr(), tm)
+    };
+    buf.truncate(n);
+    buf
+}
+
+/// borg-reborn-rs (#823): as above with Windows' `localtime_s` and its own
+/// `struct tm` (no `tm_gmtoff`), through the libc crate.
+#[cfg(windows)]
+pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
+    // Windows' struct tm, not the Linux one headers/time_h.rs declares.
+    #[allow(clashing_extern_declarations)]
+    extern "C" {
+        fn strftime(s: *mut c_char, max: usize, fmt: *const c_char, tm: *const libc::tm) -> usize;
+    }
+    let mut buf = vec![0u8; max];
+    // SAFETY: localtime_s fills tm from t (checked); strftime writes at
+    // most max bytes into buf.
+    let n = unsafe {
+        let mut tm: libc::tm = core::mem::zeroed();
+        assert!(libc::localtime_s(&mut tm, &t) == 0, "localtime failed");
+        strftime(buf.as_mut_ptr() as *mut c_char, max, fmt.as_ptr(), &tm)
     };
     buf.truncate(n);
     buf
@@ -1419,6 +1456,13 @@ pub fn player_blessed_weapon_bonus() -> i32 {
 /// #759/#758: own displayed speed, including current haste/slow effects.
 pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
+}
+
+/// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
+/// `move_energy` an action and refilled by `turn_energy` each game turn
+/// (game-world.c:1092).
+pub fn player_energy() -> i32 {
+    i32::from(player_ref().energy)
 }
 
 /// Read the player's summary fields.

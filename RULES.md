@@ -12,7 +12,8 @@ whatever the model.
    (rule 1a). CI success is not review approval. At each
    milestone, stop and open the review/promotion PR **`track-p` → `main`**,
    pinned to an exact commit. The owner chooses the reviewer; the session
-   may run that review and post it on the PR (rule 6). Findings are fixed
+   may launch that reviewer, which posts its review on the PR (rule
+   6). Findings are fixed
    through PRs into `track-p`. Only after the milestone review is
    accepted and CI is green does the owner merge that promotion, or
    explicitly delegate that reviewed merge. A session never promotes P to
@@ -99,30 +100,50 @@ not undo other-track work already authorized before the gate.
    commit, and posts it on the PR it reviews — on its issue, when what is
    reviewed has no PR. **The owner then names the reviewer**: a session
    does not pick one, and it does not post a review before the owner has
-   named the reviewer. The session may then **run that review and post it
-   on the PR**: it launches the reviewer the owner named, with the prompt
-   as posted on the PR and nothing else from its own context, and posts
-   the reviewer's findings unedited; a session never reviews its own work
-   in its own context. If the prompt changes after the owner has named
-   the reviewer, it is posted again before the review runs. If the named
-   reviewer cannot run, the session says so and asks the owner; it does
-   not substitute another. It may also give the prompt to the owner to
-   run, and the session posts the review on the PR if the owner has not,
-   unedited in that case too. Either way the review is posted on the PR
-   it reviews, so the findings and the pin travel with the code. The
-   session posts a review as a **comment** (or a GitHub review of type
-   *comment* — never *approve* or *request changes*, which would read as
-   the owner's verdict and cannot be deleted), headed with the reviewer
-   the owner named, where the owner named it and the pinned commit;
-   posting it is not the owner's acceptance (rule 1a). A review posted
-   before the owner named the reviewer, or not by the named reviewer,
-   does not count: the session says so at once in a comment beside it,
-   posts the pinned prompt if it is missing, and tells the owner; the
-   owner-named review then runs as normal. A review the session runs is
-   still the owner's choice of reviewer: a milestone review is done by
-   the owner or by a model of a **different family** from the one that
-   wrote most of the milestone, and the review PR names both. When the
-   review arrives, the session processes its findings.
+   named the reviewer. The session may then **launch that review**: it
+   launches the reviewer the owner named, with the prompt as posted on the
+   PR and nothing else from its own context; a session never reviews its
+   own work in its own context. If the prompt changes after the owner has
+   named the reviewer, it is posted again before the review runs. If the
+   named reviewer cannot run, the session says so and asks the owner; it
+   does not substitute another. The session may also give the prompt to
+   the owner to run.
+   **The reviewer posts its own review** (owner, 2026-11-22: reviewers
+   kept returning findings in chat). The reviewer the owner named, however
+   it was launched (the owner, a model, a session the owner asked to review,
+   a tool),
+   posts the finished review on the PR it reviews, or on the issue when
+   what is reviewed has no PR, through whatever write path it has: `gh`
+   (`gh pr comment <number> --repo <owner>/<repo> --body-file <file>`, or
+   `gh issue comment` for an issue), a connected GitHub App or connector,
+   or an MCP GitHub server. It posts a **conversation comment**, never a
+   GitHub review body (it does not show in the PR's comment list) and
+   never *approve* or *request changes* (they would read as the owner's
+   verdict and cannot be deleted). The comment is headed with the reviewer
+   the owner named (model and tool), where the owner named it, the pinned
+   commit and the head at review time (and which of the two the findings
+   cover, when they differ). The reviewer answers with the comment's URL.
+   Findings returned only in chat are not a delivered review. A reviewer
+   with no write path at all says so in the first line of its answer and
+   gives the full review, or the owner ran the review and has not posted
+   it; only then does the session post it, unedited and headed the same
+   way, saying that it relays the named reviewer's review: a relayed review
+   is the named reviewer's, and counts. The session never posts a second
+   copy of a review already on the PR. Either way the review is on the PR
+   (or issue) it reviews, so the findings and the pin travel with the code.
+   Posting it is not the owner's acceptance (rule 1a).
+   **Every review prompt the session writes** says this in its first
+   lines, with the exact command for its PR (number and `--repo` filled
+   in) and the other write paths, and repeats the command at its end.
+   A review posted before the owner named the reviewer, or not written by
+   the named reviewer (a relay as above is), does not count: the session
+   says so at once in a comment beside it, posts the pinned prompt if it is
+   missing, and tells the owner; the owner-named review then runs as
+   normal. A review the session launches is still the owner's choice of
+   reviewer: a milestone review is done by the owner or by a model of a
+   **different family** from the one that wrote most of the milestone, and
+   the review PR names both. When the review arrives, the session processes
+   its findings.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session
@@ -189,7 +210,7 @@ not undo other-track work already authorized before the gate.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
     `file:function:lines` at `574b618c`. The **Angband Strategy Manual**
-    (S14) and the **official user manual** under `reference/c-manual/` are
+    (S14) and the **official user manual** under `docs/strategy/` are
     the first reference for how the game behaves: read the relevant chapter
     before designing a rule, then check every number it gives in
     `engine/angband/` (`src/` or `lib/gamedata/`) and cite the engine there.
@@ -228,7 +249,15 @@ not undo other-track work already authorized before the gate.
     what it reports, new deaths first. Each milestone starts with a
     `--update` PR that moves the pins and refreshes `reference/` and the
     death index; a task may also do one when it needs a newer source. Pin
-    moves are their own PRs, never mixed with other work.
+    moves are their own PRs, never mixed with other work. Since 2026-11-21
+    (owner, #816) this repository is the central place for our Borg
+    documentation. Our documents, including those moved from our other
+    repositories (the strategy manual, the C Borg documents and fixes, the
+    core's design), live in `docs/` and are ours to change; only copies of
+    what a live tool still produces or reads stay in `reference/`, never
+    edited (`scripts/check-reference.py`). Other authors' documents (the
+    game's manual, the original C Borg's) stay untouched where they are
+    (docs/DOCUMENTATION-MAP.md).
 22. **Baselines are exact.** A comparison names exact zoo specimens and
     builds, never "latest"; comparisons are borg-zoo's (docs/SPEC.md §6). A
     change to the engine's patch series, the frontend or the build is a
@@ -303,3 +332,14 @@ No strategy, default frontend flags or measured baseline changes are implied.
     Watched sessions retain rule 12's distinction from measured runs;
     publishing recordings is a
     separate owner request.
+
+## Inventory and shopping
+
+27. **Use reserves for minimum readiness and curves for additional supplies.**
+    A reserve can protect enough stock for a trip. Keep valuing useful
+    copies above it at diminishing rates. The Borg may buy and carry
+    more when the extra supply is worth the gold, pack space, and weight
+    and fits the applicable limits. Apply this to torches, healing, Phase
+    Door, food, and other replenishable supplies. When investigating an
+    inventory problem, check offers, purchases, and departure stock at
+    both low and ample budgets before proposing a new reserve.

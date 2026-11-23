@@ -29,9 +29,30 @@ The notes in `messages.log`:
 | note | meaning |
 |---|---|
 | `# Phase (<site>): no, no monster next to me` | #539's test refused it |
+| `# Phase (<site>): no, teleport is blocked` | a teleport curse (known from the item, or learned from "Teleportation forbidden!", #829) refused it before the site's own check |
 | `# Phase (<site>): no, N scary landing grids of 100 (at most T)` | the landing test refused it |
 | `# Phase (<site>): landing ok, N scary landing grids of 100 (at most T)` | the landing test passed |
 | `# Phase (<site>): done, HP h/H, danger d, nearest awake monster n` | the Borg phased (or used the site's teleport) |
+
+**A teleport curse stops it first (#829).** `phase_door` asks
+`teleport_stopped` (which asks `teleport_curse` what the curse is) before
+anything else, so no site can skip it. The whole check is behind
+`escape_teleport_block` (compiled 0 = as before, shipped 1;
+docs/CALIBRATION.md): with it at 0 neither the learning from messages nor
+this asking happens, and only the old `BI_CRSNOTEL` check at the sites that
+ask `borg_allow_teleport` remains. The curse is
+known from `BI_CRSNOTEL` (an item whose anti-teleportation curse the Borg
+reads), or learned from the engine's messages: "Your X prevents you
+teleporting." and "Teleportation forbidden!" (`effect_handler_TELEPORT`,
+`_TELEPORT_TO` and `_TELEPORT_LEVEL`, `OF_NO_TELEPORT`). It lasts until the
+item it was learned on is no longer worn, or "The anti-teleportation curse is
+removed!". A no-teleport *grid* is not asked here: Phase Door (distance 10)
+is not stopped by one (`dis > 10` in `effect_handler_TELEPORT`). The same
+test sits in `borg_read_scroll` (Phase Door, Teleportation, Teleport Level),
+`borg_use_staff*` (Teleportation), `borg_activate_item` (the teleport
+activations) and `borg_spell` (Phase Door, Teleport Self, Teleport Level,
+Portal, Shadow Shift, Dimension Door), so a site that does not go through
+`phase_door` cannot teleport either.
 
 The old notes (`# Safe to Phase. scary squares`, `# No Phase …`) are gone;
 the `# Danger Level N` notes after an escape are unchanged.
@@ -84,7 +105,8 @@ unchanged except `escape_phase_adjacent_only = 1`.
 | **recall wait** (`borg_caution`) | Word of Recall is counting down and the Borg buys time | landing, 50 | `caution_recall_phase_tolerance` 50, `_horizon` 1, `_phase_fail`, `_portal_fail` |
 | **twitchy move** (`borg_flow_misc::borg_twitchy`) | stuck, before moving at random | landing, 15 (fixed) | none |
 | **twitchy think** (`borg_think_dungeon`) | stuck, up to 3 times a level, before boosting bravery | **none** (as in C) | none |
-| **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns`, `_response`, `_throw_tries`, `escape_emergency_phase_tolerance`, `_horizon` |
+| **fast-fragile** (`borg_fast_fragile.rs`, #842) | `fast_fragile_policy = 1`: a marked monster, the expected damage of the marked monsters within two grids reaches `fast_fragile_escape_percent` of the HP and the kill needs more than one more turn of the best attack, no staircase underfoot; the owner's rule above also applies (an awake enemy adjacent, the fight lost) | landing at most 75 of 100 only with `fast_fragile_phase_landing = 1` (shipped 0: none; it refuses every Phase Door at HP 3–6 against a crow), anti-summon | `fast_fragile_phase_landing`, `escape_emergency_phase_tolerance` 75, `_horizon` 2, `escape_phase_antisummon_delay`, `escape_last_ditch_phase_fail` (the spell), `fast_fragile_escape_percent` |
+| **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns`, `_response`, `_throw_tries`, `_phase_turns` and `_phase_min_danger` (#878), `escape_emergency_phase_tolerance`, `_horizon` |
 
 Spell fail rates: `escape_normal_fail` 25%, `escape_healthy_fail` 10% when HP
 is above `escape_healthy_hp_percent` (70%); the emergency levels have their
@@ -134,6 +156,13 @@ comparisons behind a setting):
 | 0 (shipped, #661) | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
 | **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
+
+**Danger without fear** (`escape_phase_lost_damage_only`, compiled and
+shipped 0; #878). With 1, every test above reads the danger here without its
+fear prices (`borg_danger_damage_only`: the `danger_*_fear` terms, the
+breeder and friends bonuses and the fear maps at 0), and the site's own
+danger is not used. One white worm mass next to the CL3 Mage 461220874 was
+danger 32 with fear and 2 without.
 
 **Mana and fail rates** (`escape_phase_lost_mana`, compiled 1; #625, owner).
 With tests 1 and 2, the chosen attack counts at its true damage times its
