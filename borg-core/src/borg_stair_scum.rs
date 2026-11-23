@@ -539,6 +539,12 @@ impl Map {
         DIRS.iter().any(|&(dy, dx)| self.in_area(y + dy, x + dx)) && self.grid_safe(st, y, x)
     }
 
+    /// A breadth-first exploration target (`borg_flow_dark_breadth_first`):
+    /// in the safe area, or anything while there is no route.
+    pub(crate) fn admits_target(&self, st: &BorgState, y: i32, x: i32) -> bool {
+        !self.routed || self.target_safe(st, y, x)
+    }
+
     /// The radius at the Borg's grid, for the notes.
     fn radius_here(&self, st: &BorgState) -> i32 {
         radius(self.sight(st, st.borg.c.y, st.borg.c.x), self.ratio, self.hp, self.per_attack) + self.slack
@@ -591,23 +597,34 @@ pub(crate) fn filter_dark(st: &mut BorgState, map: &Map) {
         // nearest new target lies farther from the staircase than the Borg,
         // it walks onto the staircase first and takes the next ring from
         // there (`think`, `leave`).
-        let here = map.steps(st, st.borg.c.y, st.borg.c.x);
-        let nearest = (0..usize::try_from(st.flow.temp_n).unwrap_or(0))
-            .map(|k| st.flow.temp_at(k))
-            .map(|(y, x)| map.steps(st, y, x))
-            .min();
-        if nearest.is_some_and(|n| return_first(here, n)) {
-            sync_level(st);
-            if !st.stair_scum.returning {
-                borg_note(st, &format!("# Stair scum: the next target is {} steps out, the Borg {here}: back to the stairs first.", nearest.unwrap_or(0)));
-            }
-            st.stair_scum.returning = true;
+        let goals: Vec<(i32, i32)> = (0..usize::try_from(st.flow.temp_n).unwrap_or(0)).map(|k| st.flow.temp_at(k)).collect();
+        if return_before(st, map, &goals) {
             st.flow.temp_n = 0;
         }
     } else {
         note_no_route(st);
         keep_lowest(st, |_, y, x| Some(i32::from(map.at(&map.stair_cheb, y, x))));
     }
+}
+
+/// The exploration targets `goals` (in the safe area): when the nearest lies
+/// farther from the staircase than the Borg, the Borg goes back onto the
+/// staircase first (`returning`; `think` and `leave` walk it). True then.
+pub(crate) fn return_before(st: &mut BorgState, map: &Map, goals: &[(i32, i32)]) -> bool {
+    if !map.routed {
+        return false;
+    }
+    let here = map.steps(st, st.borg.c.y, st.borg.c.x);
+    let nearest = goals.iter().map(|&(y, x)| map.steps(st, y, x)).min();
+    if !nearest.is_some_and(|n| return_first(here, n)) {
+        return false;
+    }
+    sync_level(st);
+    if !st.stair_scum.returning {
+        borg_note(st, &format!("# Stair scum: the next target is {} steps out, the Borg {here}: back to the stairs first.", nearest.unwrap_or(0)));
+    }
+    st.stair_scum.returning = true;
+    true
 }
 
 /// Back to the staircase before the next target (pure): the Borg is off

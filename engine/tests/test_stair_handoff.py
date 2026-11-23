@@ -44,6 +44,8 @@ PINNED_TOWN_SETTINGS = [
     ("item_test_unknown_potions", 0),
     # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
     ("kill_live_zero_hp", 0),
+    # The incidents also predate the Home stock and known-unwanted policies.
+    ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0),
     # #1046 shipped the lone-slow bundle (#878) after these incidents.
     ("lone_slow_attack", 0), ("escape_phase_lost_damage_only", 0),
     ("attack_reserve_spell_damage_only", 0), ("attack_reserve_faint_percent", 0),
@@ -55,6 +57,12 @@ PINNED_TOWN_SETTINGS = [
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
+    # #1094 shipped #1066's two Phase Door switches after these incidents.
+    ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
+    # #1100 shipped the position belief (#879) at decay 5 after these incidents.
+    ("unseen_belief", 0), ("unseen_decay_percent", 20),
+    # #1085 shipped breadth-first exploration after these incidents.
+    ("explore_breadth_first", 0),
     # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
     # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
     ("stair_scum", 0),
@@ -170,6 +178,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for case in ("one-step", "two-steps"):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
+
+    def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
+        self.run_case("interrupted-search", 5)
 
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)

@@ -997,6 +997,8 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
     {
         st.borg.goal.type_0 = 0;
     }
+    // borg-reborn-rs (#1085): breadth-first exploration re-plans for any.
+    crate::borg_flow_dark::replan_on_new_monster(st);
 
     // Count up out list of Nasties
     let d_char = engine::race(usize::from(kill.r_idx)).d_char as i32; // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
