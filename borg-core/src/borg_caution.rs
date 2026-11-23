@@ -516,6 +516,12 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // borg-reborn-rs (#1140, `poison_late_drink`): poisoned and safe, the
+    // held Cure Light Wounds is drunk at the line.
+    if crate::borg_poison::late_drink(st, danger) {
+        return true;
+    }
+
     // Heal when wounded a percent of the time
     let mut chance = engine::randint0(100);
 
@@ -565,6 +571,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
         && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
+        // borg-reborn-rs (#1140, `poison_late_drink`): poisoned and safe, late.
+        && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CLW_HEAL)
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
             || borg_activate_item(st, st.act.cure_light))
@@ -577,6 +585,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
+        // borg-reborn-rs (#1140, `poison_late_drink`): poisoned and safe, late.
+        && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CSW_HEAL)
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_activate_item(st, st.act.cure_serious))
     {
@@ -3752,6 +3762,8 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
     observe_retreat_landing(st);
+    // borg-reborn-rs (#1140): the poison still to come, noted (A).
+    crate::borg_poison::observe(st);
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
@@ -3917,6 +3929,23 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
 
+
+    // borg-reborn-rs (#1140, `poison_fight_pending`): a fight the pending
+    // poison and the poison it adds would finish is lost: leave, and step out
+    // of reach of a poisoner that never moves, before any cure is drunk to
+    // stay in it.
+    if let Some((true, immobile)) = crate::borg_poison::fight_race(st) {
+        start_leaving(st, "# Leaving (a poison fight lost, #1140)");
+        start_fleeing(st, "# Fleeing (a poison fight lost, #1140)");
+        if immobile {
+            if let Some(i) = best_step_away_from(st, true) {
+                borg_note(st, "# Stepping out of reach of a poisoner that never moves (#1140)");
+                borg_keypress(st, i2d(i32::from(engine::ddd(i))));
+                st.borg.goal.type_0 = 0;
+                return true;
+            }
+        }
+    }
 
     // borg-reborn-rs (#713): a creature kept at range is stepped away from
     // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
@@ -4390,6 +4419,17 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     {
         start_leaving(st, "# Leaving (low hit-points)");
         start_fleeing(st, "# Fleeing (low hit-points)");
+    }
+
+    // borg-reborn-rs (#1140, `poison_leave_unfixable`): the poison will take
+    // more than the HP and the healing carried: leave for town now, by
+    // Recall or climbing, without waiting for half HP and a roll.
+    if let Some(t) = crate::borg_poison::unfixable_here(st) {
+        start_leaving(st, "# Leaving (the poison outlasts HP and healing, #1140)");
+        start_fleeing(st, "# Fleeing (the poison outlasts HP and healing, #1140)");
+        if crate::borg_poison::leave_recall(st, &t) {
+            return true;
+        }
     }
 
     // Flee from bleeding wounds or poison and no heals

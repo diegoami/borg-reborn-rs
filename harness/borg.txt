@@ -2215,3 +2215,18 @@ borg_param_trap_recover = 1
 borg_param_trap_way_back = 1
 borg_param_trap_leave_level_count = 2
 borg_param_trap_leave_near_count = 0
+
+# #1140: poison triage (zoo run 45121432449, borg-cemetery#146). The HP the
+# poison still takes, ceil(counter / (adj_con_fix[CON] + 1)), against the HP
+# and the Cure Light/Serious Wounds carried. All off: today's play.
+# A: note it; B: drink CLW/CSW late while poisoned and safe (at HP <= the next
+# turn's poison + margin, or when the heal fits); C: leave for town when the
+# poison outlasts HP + healing; D: the Alchemist first in town (Neutralize
+# Poison or CCW if affordable, else enough CLW), no sale paying nothing; E: a
+# fight the pending poison would finish is lost.
+borg_param_poison_pending_note = 0
+borg_param_poison_late_drink = 0
+borg_param_poison_late_drink_margin = 2
+borg_param_poison_leave_unfixable = 0
+borg_param_poison_town_triage = 0
+borg_param_poison_fight_pending = 0

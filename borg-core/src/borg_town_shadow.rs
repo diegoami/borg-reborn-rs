@@ -255,6 +255,9 @@ pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, ho
 fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     use crate::headers::list_options_h::OPT_birth_no_selling;
     let no_selling = engine::player_opt(OPT_birth_no_selling);
+    // borg-reborn-rs (#1140, `poison_town_triage`): no sale (it pays nothing)
+    // while the poison triage holds.
+    let triage_no_sale = crate::borg_poison::no_sale_now(st);
     let pack_end = inven_wield() as usize;
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
@@ -263,7 +266,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         // is sold, like an unknown potion, scroll or mushroom, to learn it.
         let unknown_flavour = !it.aware && (consumable || unaware_device(it));
         if unknown_flavour { need = -1; reduction = 0; }
-        let sell_shop = (0..7i8).find(|&who| apparently_saleable(it)
+        let sell_shop = (0..7i8).find(|&who| !triage_no_sale && apparently_saleable(it)
             && !crate::borg_town_live::sale_rejected(st, i16::from(who), it)
             && crate::borg_store_sell::borg_store_buys(it, i32::from(who))).unwrap_or(-1);
         let proceeds = if no_selling || sell_shop < 0 { 0 } else {
