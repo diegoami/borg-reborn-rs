@@ -120,6 +120,12 @@ pub(crate) fn recall_survivable(budget: i32, stairs_known: bool) -> bool {
     budget > RECALL_MAX_TICKS || (!stairs_known && budget > RECALL_MIN_TICKS)
 }
 
+/// The delay C's exposure test charges: the longest when the budget outlasts
+/// it, else the shortest (the no-stairs chance `recall_survivable` allows).
+pub(crate) fn recall_delay_charged(budget: i32) -> i32 {
+    if budget > RECALL_MAX_TICKS { RECALL_MAX_TICKS } else { RECALL_MIN_TICKS }
+}
+
 /// What the poison and the Borg's healing are, read once.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct Triage {
@@ -439,14 +445,16 @@ pub(crate) fn unfixable_here(st: &mut BorgState) -> Option<Triage> {
 pub(crate) fn leave_recall(st: &mut BorgState, t: &Triage) -> bool {
     st.borg.goal.rising = true;
     let stairs_known = st.stairs.less.num != 0;
-    // Re-review of #1146: through the flight Recall's own test
-    // (`borg_recall_for_flight`: the monsters' exposure during the delay,
-    // #758/#880), not the plain read, so a nearby monster that makes waiting
-    // lethal still refuses it.
+    // Reviews of #1146: the flight Recall's monster exposure over the same
+    // delay and against the same budget (`poison_recall_survivable`), so a
+    // nearby monster that makes waiting lethal still refuses it, and the
+    // running poison is not charged the whole delay against the HP alone.
+    let budget = t.hp + t.healing;
     let recall = st.borg.goal.recalling == 0
         && (st.borg.tr(BI_CDEPTH) >= 2 || !stairs_known)
-        && recall_survivable(t.hp + t.healing, stairs_known)
-        && crate::borg_escape::borg_recall_for_flight(st);
+        && recall_survivable(budget, stairs_known)
+        && crate::borg_caution::poison_recall_survivable(st, budget, recall_delay_charged(budget), t.pending)
+        && crate::borg_escape::borg_recall(st);
     if recall {
         borg_note(st, &format!("# Recalling: the poison takes about {} HP, more than HP {} + healing {} (#1140)",
             t.pending, t.hp, t.healing));
@@ -758,6 +766,8 @@ mod tests {
         assert!(!recall_survivable(20, true), "stairs known: walk");
         assert!(recall_survivable(35, true), "the longest delay is outlived");
         assert!(!recall_survivable(34, true));
+        assert_eq!(recall_delay_charged(45), 34);
+        assert_eq!(recall_delay_charged(20), 15, "the no-stairs chance: the shortest delay");
     }
 
     #[test]

@@ -3079,8 +3079,40 @@ mod recall_quantity_tests {
 /// no approach discount. The maximum delay is conservative, not knowledge
 /// of the engine's next random roll (effect-handler-general.c:1145).
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
+    recall_survivable_with(st, None)
+}
+
+/// borg-reborn-rs (#1140, `deal_with_poison`; third review of #1146): the
+/// poison triage's Recall gate. The same monster exposure as the flight
+/// Recall's, over the triage's own delay (`ticks`: 34, or 15 with no up
+/// staircase known), and against its own budget (the HP plus the CLW/CSW it
+/// carries, drunk late) instead of the HP alone. The running poison is
+/// charged as what it takes during that delay (`pending`, at most `ticks`),
+/// plus what new poison the monsters add, never more than a HP a tick; the
+/// flight Recall charges the whole delay against the HP (#880), which
+/// refused a Borg at 25/25 HP with a CLW and no monster near.
+pub(crate) fn poison_recall_survivable(st: &mut BorgState, budget: i32, ticks: i32, pending: i32) -> bool {
+    recall_survivable_with(st, Some(PoisonRecall { budget, ticks, pending }))
+}
+
+/// The poison triage's Recall terms (`poison_recall_survivable`).
+#[derive(Clone, Copy)]
+struct PoisonRecall {
+    budget: i32,
+    ticks: i32,
+    pending: i32,
+}
+
+/// The poison the triage's Recall gate charges: the running counter's HP
+/// within the delay plus the new poison, at most one HP a world tick.
+fn poison_recall_charge(ticks: i32, pending: i32, new: f64) -> f64 {
+    let ticks = f64::from(ticks.max(0));
+    (f64::from(pending.max(0)).min(ticks) + new.max(0.0)).min(ticks)
+}
+
+fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
-    let ticks = p(Param::caution_recall_survival_delay);
+    let ticks = poison.map_or_else(|| p(Param::caution_recall_survival_delay), |b| b.ticks);
     // #880: 1 prices POISON as damage, status blows by their dice and
     // never vetoes on a breeder; 0 is #758's rule (every blow other than
     // HURT/ACID/ELEC/FIRE/COLD/NONE is an unmodelled risk).
@@ -3160,7 +3192,12 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         let cap = recall_contact_cap(&contact_rates, open, player_energy, ticks);
         if cap < exposure { capped = Some((exposure, open)); exposure = cap; }
     }
-    let poison_hp = if blow_model {
+    let poison_hp = if let Some(b) = poison {
+        let new = if blow_model {
+            recall_poison_hp(ticks, false, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
+        } else { 0.0 };
+        poison_recall_charge(ticks, b.pending, new)
+    } else if blow_model {
         recall_poison_hp(ticks, st.borg.tr(BI_ISPOISONED) != 0, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
     } else { 0.0 };
     exposure += poison_hp;
@@ -3171,14 +3208,17 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         if breeders_waived > 0 { parts.push(format!("{breeders_waived} breeders' unmodelled risk waived")); }
         borg_note(st, &format!("# Flight Recall forecast: {} (#880)", parts.join("; ")));
     }
-    let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
+    // #1140: the poison triage's budget is the HP plus the healing carried.
+    let budget = poison.map_or_else(|| st.borg.tr(BI_CURHP), |b| b.budget);
+    let what = if poison.is_some() { "HP + healing" } else { "HP" };
+    let allowed = recall_forecast_allows(exposure, unknown_risks, budget);
     if allowed && asleep > 0 {
-        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, {what} {budget}: allowed (#758)"));
     }
     if unknown_risks > 0 {
-        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, {what} {budget} (#758)"));
     } else if !allowed {
-        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, {what} {budget} (#758)"));
     }
     allowed
 }
@@ -3186,6 +3226,26 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod recall_survival_tests {
     use super::*;
+
+    #[test]
+    fn poison_recall_charges_the_delay_against_hp_and_healing() {
+        // Third review of #1146: 20 HP, no up staircase known, no monster:
+        // the 15-tick delay costs 15 poison HP, below 20.
+        let short = poison_recall_charge(15, 30, 0.0);
+        assert_eq!(short, 15.0);
+        assert!(recall_forecast_allows(short, 0, 20));
+        // 25/25 HP with one CLW (a budget of 45): 34 ticks cost 34, below 45;
+        // the flight Recall charged the 34 against 25 alone and refused.
+        let long = poison_recall_charge(34, 50, 0.0);
+        assert_eq!(long, 34.0);
+        assert!(recall_forecast_allows(long, 0, 45));
+        assert!(!recall_forecast_allows(long, 0, 25));
+        // A short running poison and a poisoner's new poison: one HP a tick.
+        assert_eq!(poison_recall_charge(34, 5, 6.0), 11.0);
+        assert_eq!(poison_recall_charge(34, 30, 10.0), 34.0, "never more than a HP a tick");
+        // Monster contact still counts on top.
+        assert!(!recall_forecast_allows(long + 12.0, 0, 45));
+    }
 
     #[test]
     fn recall_delay_uses_world_time_at_every_player_speed() {
