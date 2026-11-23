@@ -72,6 +72,9 @@ PINNED_TOWN_SETTINGS = [
     ("stair_scum", 0),
     # #1062 shipped the stair-leash switches after these incidents.
     ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
+    # #1098 shipped the mixed walk and the C exploration's stair exit after
+    # these incidents (owner, 2026-11-23: "merge it but with all settings on").
+    ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -159,9 +162,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             config = (ROOT / "harness/borg.txt").read_text()
             # #1061: the stair_scum mode (shipped after these cases) is not
             # what they test; pin it off.
-            config, changed = re.subn(r"^borg_param_stair_scum = .*$", "borg_param_stair_scum = 0", config, flags=re.M)
-            if changed == 0:
-                config += "\nborg_param_stair_scum = 0\n"
+            # #1098: nor the mixed walk and the C exploration's stair exit.
+            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done"):
+                config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{key} = 0\n"
             for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
                 key = f"borg_param_caution_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
