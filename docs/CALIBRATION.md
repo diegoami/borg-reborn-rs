@@ -8253,20 +8253,44 @@ asked when fleeing, #469's `borg_fight_speed` only inside `borg_attack`, and
 died to three hasted cave spiders carrying three Potions of Speed. Replays of
 that game saved it with Speed drunk at any turn up to the fork with the
 control (borg-cemetery study `fastfrag-cave-spiders-2008390085`). Above 0,
-`borg_caution` drinks Speed (or casts Haste Self) after healing, before the
-walks, the retreat and the escapes. It does so when the danger of the awake
-monsters within the radius that are faster by the margin (an observed haste
-counted) reaches that percent of the HP.
+`borg_caution` drinks Speed (or casts Haste Self, at most
+`caution_cornered_spell_fail` failure) underground and unhasted when the summed
+one-action danger at the Borg's tile of the awake known monsters within the
+radius that are faster by the margin reaches that percent of the HP
+(`100 * danger >= max(HP, 1) * percent`).
+
+- **Where in `borg_caution`.** The hook comes before the equipment swap, the
+  strategic stair walks, the retreat and the escapes. It is not first: both
+  healing paths (fleeing or not) can act before it, and earlier in the same
+  function the #1140 poison-race branch can step away (and #1140's carried
+  poison cure be used), and `immobile_step_away` (#646, #713) can take the
+  turn; when not fleeing,
+  `borg_defend` also stays earlier where enabled.
+- **The speed test is a haste forecast.** A monster counts as faster when its
+  `mspeed` plus 10 for an observed FAST (`forecast_monster_speed`) less the
+  Borg's speed reaches the margin (at least 1). The engine's net speed also
+  subtracts `2 * slow_level` for a slowed monster (`mon-move.c:1928-1938`); the
+  rule does not, so a slowed monster can count as faster than it is.
+- **Repeats.** A successful drink or cast sets the FAST timer and the Borg's
+  fast flag, which suppresses the next attempt while it lasts. A failed Haste
+  Self cast sets nothing and leaves the Borg eligible again on the next turn.
+- **What depends on #941.** The rule reads the Borg's fast flag
+  (`st.borg.temp.fast`), never `trait_timed_sync`. With #941 off it can fire
+  before the game's first Potion of Speed; after that Speed (from any rule) the
+  stale flag stays set and the rule returns at its guard. So only a drink
+  after a game's first Speed needs #941's `trait_timed_sync = 1`.
 
 - **`caution_emergency_speed_danger_percent`** (compiled 0, **shipped 0**:
   owner, 2026-11-23, of the cave-spider switches only #941's speed flag ships
   on). 50, the share #747's stair test ships
-  (`caution_desperate_fast_danger_percent`), is the value to try; no
-  measurement chose it. In borg-zoo#652's small and medium runs (360 starts)
-  50 on top of #941 changed 22 games and no death. The rule
-  needs #941's `trait_timed_sync = 1`: with the old stuck speed flag the Borg
-  believes it is fast for the rest of the game after its first Potion of Speed,
-  and the rule's "already fast" test returns. On the zoo's game with #941 on it
+  (`caution_desperate_fast_danger_percent`), with radius 2 and margin 5, are
+  the candidate settings to try; no measurement chose them. borg-zoo#652's
+  `sync-speed` (#941 + 50/2/5) against `sync` (#941 alone): 0 of 18 games
+  changed in the pilot, 1 of 90 in small, 21 of 270 in medium. All 22 changed
+  games reach the cap in both arms and the death sets match. Max depth can move
+  by more than one level (Elf Blackguard 2101309053: max DL2 to DL4). The zoo
+  ran 50/2/5 together only: no other threshold was compared and no mortality
+  change was measured. On the zoo's game with #941 on it
   fires once (76,970: a metallic green centipede, speed 120,
   `monster.txt:827-830`, adjacent; danger 24 at HP 39) and drinks Speed before
   the Phase Door the control reads there; both live to the cap. Potion of Speed:

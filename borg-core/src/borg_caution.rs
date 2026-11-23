@@ -4403,9 +4403,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
     }
 
-    // borg-reborn-rs (#913): Speed before any walk, retreat or escape when
-    // monsters faster than the Borg are on it (fleeing too: borg_defend's
-    // Speed is never asked while fleeing).
+    // borg-reborn-rs (#913): Speed after healing (and #1140, #646/#713, defend) and before the swap, the
+    // stair walks, the retreat and the escapes below, when faster monsters are on the Borg
+    // (fleeing too: borg_defend's Speed is never asked while fleeing).
     if emergency_speed(st) {
         return true;
     }
@@ -6588,8 +6588,8 @@ fn big_monster_adjacent(st: &BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#913): the summed danger here of the awake known monsters
-/// within `radius` that are faster than the Borg by `margin` (an observed
-/// haste counted, `forecast_monster_speed`), and how many they are.
+/// within `radius` that are faster than the Borg by `margin` (a haste forecast, observed FAST
+/// counted, `forecast_monster_speed`; no SLOW term, mon-move.c:1928-1938), and how many.
 fn faster_danger_near(st: &mut BorgState, radius: i32, margin: i32) -> (i32, i32) {
     let own = engine::player_combat_speed();
     let (y, x) = (st.borg.c.y, st.borg.c.x);
