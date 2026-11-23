@@ -7073,9 +7073,13 @@ level -- unless brave"), so the staircase became unreachable ("Bored but
 unable to flow to up stairs.", 24 times), `borg_flow_cost_stair` went "off
 leash" (#1062), and it explored on into a blinding gas trap and died 5 steps
 from the stairs. New module `borg_trap_way.rs`, run in the dungeon think
-after the flight, the caution and the light, before the recovery flows. All
-three switches are compiled and shipped 0, so shipped play is unchanged; the
-values are hypotheses (RULES 14).
+after the attack and wear checks, before the item flows. All switches are
+compiled 0. **Shipped** by the owner on 2026-11-23 before a zoo
+measurement ("merge but set the values to try"): `trap_recover = 1`,
+`trap_way_back = 1`, `trap_leave_level_count = 2` in `harness/borg.txt`
+(`trap_leave_near_count` stays 0). Smoke plays the same keys and state as
+before (one trap note added in smoke-mage-2). The values are hypotheses
+until borg-zoo measures them (RULES 14).
 
 A trap is **set off** when the engine prints one of trap.txt's activation
 messages (`msg`, `msg-good`, `msg-bad`, `msg-xtra`; `hit_trap`, trap.c) or
