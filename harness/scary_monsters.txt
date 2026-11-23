@@ -133,9 +133,12 @@ crow | 50 | | attack | fast-fragile
 # Unless there is something more dangerous"): attacked on sight before the
 # cures and Phase Door, without the test of its own damage; skipped while the
 # other monsters' danger is above HP x caution_flee_danger_hp_multiplier.
-# Grey mushroom patch, monster.txt:545: speed +10, 2 HP, SPORE:CONFUSE,
-# NEVER_MOVE; it confuses again before a cure is worth anything and one hit
-# kills it. The last field names the attacks allowed (scary_list.rs
+# Grey mushroom patch, monster.txt:545: speed 110 (normal, +0), 2 HP,
+# SPORE:CONFUSE 1d4, NEVER_MOVE; it confuses again before a cure is worth
+# anything and one hit that reaches it usually kills it (confused, a swing
+# reaches it 11/32 of the time). Below attack_kill_on_sight_min_hp_percent,
+# with a cure or an escape at hand, the ordinary caution decides instead
+# (#969). The last field names the attacks allowed (scary_list.rs
 # ATTACK_KINDS: melee, missiles, throws, spells, devices, activations; none
 # named = all); the Borg picks the best of them. Owner: "melee, missiles,
 # wands"; throws for a flask of oil, the attack that killed it (#867).

@@ -298,6 +298,12 @@ pub fn borg_inkey(st: &mut BorgState, take: bool) -> keycode_t {
 
 /// Forget all queued keys (`borg_flush`).
 pub fn borg_flush(st: &mut BorgState) {
+    st.fight_attack.pending_unseen.clear();
+    borg_flush_keys(st);
+}
+
+/// Clear queued input after the message parser classifies the failure.
+pub(crate) fn borg_flush_keys(st: &mut BorgState) {
     crate::borg_caution::unseen_bump_cancel_shot(st); // #781 review: command cancelled
     st.io.key_tail = st.io.key_head;
     st.io.queued_direction = 0;
