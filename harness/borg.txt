@@ -294,6 +294,26 @@ borg_param_town_prepared_fear = 2
 
 borg_param_town_variety_min_depth = 2
 
+# Devices as variety (#895, owner: "we are going to need space for other
+# devices"). Above 0, the charges of a learned wand, staff or rod are valued on
+# one row per situation it answers: the first charges listed below, together,
+# are worth this percent of the trip weight (nothing past them), so a charged
+# device is kept and bought as variety and not only as one more source on a
+# shared curve (an attack wand competes with arrows and oil). One device per
+# row: a second one answering the same situation adds nothing on it. A Staff of
+# Teleportation (about 2700 gold) on offer is worth nothing while the purse after
+# the urgent needs is below town_device_escape_min_gold; one carried is never
+# sold. Starts with town_variety_min_depth. 0 = off. Hypotheses, not yet
+# measured in the zoo. NOT town_devices_percent (#666, further down): that one
+# scales every device's charges by the class's device skill.
+
+borg_param_town_device_percent = 24
+borg_param_town_device_attack = 10
+borg_param_town_device_escape = 5
+borg_param_town_device_detect = 5
+borg_param_town_device_control = 5
+borg_param_town_device_escape_min_gold = 3000
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
@@ -1140,6 +1160,13 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
+# #931 (seed 829474344, a white jelly beside the stair flight): the weighted
+# stair flight keeps out of the squares next to a known immobile attacker
+# when another route exists. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_caution_stairs_immobile_reach = 0
+# #931: the reach-free route at most this many steps costlier than the
+# ordinary one (0 = any); read only with the switch on. 20 is a hypothesis.
+borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
@@ -1508,13 +1535,21 @@ borg_param_attack_on_sight = 1
 # safe moment in the dungeon (down to the depth below, danger 0 over the turns
 # below, at least the HP percent below, no harmful status, food in the pack),
 # so a found Cure Light Wounds is known before it is needed. A bad potion costs
-# turns (Sleep paralyses 5+1d5, Poison stops regeneration); none kills by
-# itself. #470 still forbids unknown scrolls, mushrooms, devices and any
-# unknown item in an emergency. 0 = #470 for potions too.
+# turns (Sleep paralyses 5+1d5, Poison stops regeneration); only Poison can
+# kill by itself, at low HP (1 HP a turn for 10+2d7 turns: #1063). #470 still
+# forbids unknown scrolls, mushrooms, devices and any unknown item in an
+# emergency. 0 = #470 for potions too.
 borg_param_item_test_unknown_potions = 1
 borg_param_item_test_unknown_min_hp_percent = 50
 borg_param_item_test_unknown_danger_turns = 10
 borg_param_item_test_unknown_max_depth = 30
+# #1063 (owner, 2026-11-23: "put minimum hp at 60"; Ranger 142490685 tested at
+# 18/18 HP with no cure and died of the Poison, which costs up to 24): test
+# only with at least 60 HP, unless a known potion of Cure Critical Wounds or
+# Neutralize Poison is in the pack, which waives it; the percent floor above
+# stays.
+borg_param_item_test_unknown_min_hp = 60
+borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs
@@ -1553,10 +1588,13 @@ borg_param_fast_fragile_escape_quantile = 75
 borg_param_fast_fragile_count_dot = 1
 # #877: the Borg's own light radius. 1 = the engine's, cur_light - 1
 # (cave-view.c:658; a torch lights distance 1), 0 = C's (cur_light: two
-# grids with a torch, so unseen monsters two grids away are deleted). Ships 0
-# until the zoo measures it. With 1 the lit shape is the engine's too, and the
-# dark flow, dark frontier, Light Beam and Call Light read that radius (#884).
-borg_param_cave_light_engine_radius = 0
+# grids with a torch, so unseen monsters two grids away are deleted). With 1
+# the lit shape is the engine's too, and the dark flow, dark frontier, Light
+# Beam and Call Light read that radius (#884). Shipped 1 (#1078, owner
+# 2026-11-23: "let us set cave_light_engine_radius to 1"). Measured only on an
+# old build (borg-zoo#625, 360 starts: 9 deaths against 8); borg-zoo#702 and
+# the belief arms of PR #709 measure it on the current code.
+borg_param_cave_light_engine_radius = 1
 # #929: a ranged attack with no hit message. 1 = a miss at a monster in view
 # is a miss, not a wall (a thrown or fired miss prints nothing,
 # player-attack.c:1278-1280), and no guessed wall lands on the Borg's own
