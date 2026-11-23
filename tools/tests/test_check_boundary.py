@@ -83,6 +83,29 @@ class CheckBoundaryTest(unittest.TestCase):
             n = output(t, 'n', summary(stop='death', turn=500, dead=True, exact=False))
             self.assertEqual(check(e, n)[0], 0)
 
+    def test_extra_normal_run_passes(self):
+        # #1056: smoke holds a built start that smoke-exact does not.
+        with tempfile.TemporaryDirectory() as t:
+            e = output(t, 'e', summary())
+            n = output(t, 'n', summary(turn=CAP + 3, exact=False), keys=b'a\nb\nc\n')
+            suite = Path(t) / 'suite-n'
+            suite.write_text(f'one 1 0 0 {CAP}\ntwo 2 0 1 {CAP} menu,start-depth=2\n')
+            (n / 'two').mkdir()
+            (n / 'two' / 'summary.json').write_text(json.dumps(summary(turn=CAP, exact=False)))
+            sha = hashlib.sha256(suite.read_bytes()).hexdigest()
+            (n / 'manifest').write_text(f'suite=suite-n\nsuite_file={suite}\nsuite_sha256={sha}\n')
+            self.assertEqual(check(e, n)[0], 0)
+
+    def test_exact_run_missing_from_normal_fails(self):
+        with tempfile.TemporaryDirectory() as t:
+            e = output(t, 'e', summary())
+            n = Path(t) / 'n'
+            (n / 'other').mkdir(parents=True)
+            (n / 'other' / 'summary.json').write_text(json.dumps(summary(exact=False)))
+            code, out = check(e, n)
+            self.assertEqual(code, 1)
+            self.assertIn('exact runs with no normal run', out)
+
 
 if __name__ == '__main__':
     unittest.main()
