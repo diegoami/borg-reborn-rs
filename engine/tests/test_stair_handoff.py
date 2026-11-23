@@ -35,6 +35,7 @@ PINNED_TOWN_SETTINGS = [
     ("town_prepared_percent", 0), ("town_variety_min_depth", 0),
     ("town_recall_reserve", 1), ("buy_recall_from_gold", 400),
     ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),
+    ("town_device_percent", 0),
     ("caution_recall_blow_model", 0),
     # #901: the confused attack by direction and the point-blank oil, shipped
     # after the incident.
