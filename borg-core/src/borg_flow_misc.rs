@@ -69,6 +69,9 @@ const TRACK_SHOP_SIZE: usize = 9;
 /// `track_vein` allocation size (`borg_init_flow_misc()`).
 const TRACK_VEIN_SIZE: i16 = 100;
 
+/// The recorded floor-search loop spanned three squares (#1131).
+const FLOOR_SEARCH_REVERSAL_MAX_STEPS: u8 = 2;
+
 /// borg-flow-misc.c globals and file statics.
 #[derive(Default)]
 pub struct FlowMiscState {
@@ -905,9 +908,10 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Spread the flow */
     borg_flow_spread(st, 250, true, false, false, -1, false);
 
-    // #1131 repeated a search across three squares. Keep the reversal
-    // accounting local so a long search route can still be revisited.
-    st.flow_misc.spastic_local = st.flow.cost_at(st.borg.c.y, st.borg.c.x) <= 2;
+    // Counting every departure changed ordinary search routing. Count the
+    // short return over the approach step that closes the recorded loop.
+    st.flow_misc.spastic_local =
+        st.flow.cost_at(st.borg.c.y, st.borg.c.x) <= FLOOR_SEARCH_REVERSAL_MAX_STEPS;
     commit_and_step(st, c"spastic", GOAL_XTRA)
 }
 
