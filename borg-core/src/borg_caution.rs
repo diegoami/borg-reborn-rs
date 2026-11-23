@@ -3753,6 +3753,12 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
     if crate::borg_escape::paralyser_defers_early_fight(st) {
         return false;
     }
+    // borg-reborn-rs (#1140, `deal_with_poison`; review of #1146, finding 3):
+    // poisoned next to an awake poisoner, with a cure due, or past the HP and
+    // the healing, `borg_caution` (the race, the cure, the leave) goes first.
+    if crate::borg_poison::defers_early_fight(st) {
+        return false;
+    }
     crate::borg_fight_attack::attack_on_sight(st)
         // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
         || crate::borg_lone_target::attack(st)
