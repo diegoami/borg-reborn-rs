@@ -9,7 +9,7 @@ assigned branch, not a `task/` name).
 
 Two switches, each with an HP floor, all four compiled **0 / 50**, so today's
 play is kept. `harness/borg.txt` does not set them. The registry now holds
-2419 parameters (2415 before, at track-p `769f3fbd`).
+2423 parameters (2419 before, at track-p `db23e6dc`).
 
 - `escape_phase_unknown_scary` and `escape_phase_unknown_hp_percent` (50).
   In `caution_phase`, the landing check every Phase Door site asks, a
