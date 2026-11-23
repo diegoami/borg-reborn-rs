@@ -1765,9 +1765,13 @@ borg_param_unseen_light_reveal = 0
 borg_param_unseen_spread = 0
 # #885: 1 = a floor the engine shows dark loses a stale BORG_LIGHT (lit once
 # by a monster's light). #917: 1 = passable rubble stops the Borg's view, as
-# the engine's (terrain.txt: no LOS). Both shipped 0; no recorded case yet.
-borg_param_update_dark_clears_light = 0
-borg_param_view_rubble_blocks_sight = 0
+# the engine's (terrain.txt: no LOS). Both shipped 1 (owner, 2026-11-23:
+# "merge with both"), the `both` arm of borg-zoo#736's full tier at
+# 7bfbe121 (classes-1800 starts 901-1800, 900 per arm): 5 deaths against 9
+# for ctl (8 rescued, 4 newly killed, p 0.39), DL5 reached 33 against 19.
+# A lead, not a result (RULES 14); `dark` alone was 9 against 9.
+borg_param_update_dark_clears_light = 1
+borg_param_view_rubble_blocks_sight = 1
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0

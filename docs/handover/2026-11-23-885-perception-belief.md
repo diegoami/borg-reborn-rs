@@ -95,6 +95,13 @@ step to (2,2) leaves it. `blast_slack` now counts the steps after which every
 reachable grid is still inside the ball (open terrain; walls only shorten a
 monster's reach). `MAX_BLAST_SLACK` is 3, at the centre of a radius-4 ball.
 
+**Shipped (owner, 2026-11-23: "merge with both").** `update_dark_clears_light`
+and `view_rubble_blocks_sight` ship 1, the `both` arm of borg-zoo#736's full
+tier at `7bfbe121`: 5 deaths against 9 for ctl (8 rescued, 4 newly killed,
+p 0.39), DL5 reached 33 against 19. A lead, not a result; `dark` alone was 9
+against 9. `smoke-borg-rs` is re-recorded in this PR. The three #889 switches
+stay 0.
+
 **Decided (owner, 2026-11-23: "your call").** #885 and #917 are P8: they are
 perception bugs the shipped light and belief exposed, and they are measured
 now. The three #889 switches are P9: new capability, kept off until P8 is

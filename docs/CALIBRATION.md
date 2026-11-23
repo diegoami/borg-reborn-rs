@@ -6800,9 +6800,21 @@ on borg-zoo#702.
 
 ## Perception and belief follow-ups (#885, #917, #889)
 
-Five switches, compiled **0** and shipped **0** in `harness/borg.txt`, so play
-is unchanged until the zoo measures them (RULES 14, 20). None is shown on a
-recorded game yet: each issue asks for a case (a forget or a mis-aim) first.
+Five switches, compiled **0**. `update_dark_clears_light` and
+`view_rubble_blocks_sight` are **shipped 1** in `harness/borg.txt` (owner,
+2026-11-23: "merge with both"), on borg-zoo#736's full tier at `7bfbe121`
+(classes-1800 starts 901-1800, 900 per arm, paired against ctl):
+
+| arm | deaths | rescued / newly killed | p | DL3 / DL5 reached | CL |
+|---|---:|---|---:|---|---:|
+| ctl | 9 | | | 221 / 19 | 5.48 |
+| dark | 9 | 2 / 2 | 1.0 | 222 / 21 | 5.51 |
+| rubble | 5 | 8 / 4 | 0.39 | 223 / 26 | 5.49 |
+| both (shipped) | 5 | 8 / 4 | 0.39 | 216 / 33 | 5.48 |
+
+A lead, not a result (RULES 14): 8 against 4 is not significant, and `dark`
+alone changes nothing in deaths. No single forget or mis-aim has been traced
+to a recorded game yet. The three #889 switches ship **0** (P9).
 Two are perception fixes, where the Borg's map disagrees with the engine, and
 both feed the position belief of #879: a grid `borg_follow_kill_aux` expects
 to be visible both deletes an unseen record and refuses it a belief
@@ -6887,8 +6899,8 @@ to be visible both deletes an unseen record and refuses it a belief
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_dark_clears_light` | 0 | flag | 0–1 | `borg_update.rs:439` |
-| `view_rubble_blocks_sight` | 0 | flag | 0–1 | `borg_cave_view.rs:258` |
+| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:439` |
+| `view_rubble_blocks_sight` | 0 (shipped 1) | flag | 0–1 | `borg_cave_view.rs:258` |
 | `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
 | `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
 | `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:475` |
