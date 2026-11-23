@@ -124,6 +124,12 @@ pub struct FightAttackState {
     /// borg-reborn-rs (#867): the direction (1-9) a confused aimed attack is
     /// sent with instead of the target key; 0 = none.
     pub confused_dir: i32,
+    /// borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): the
+    /// fast-fragile target attack on sight stepped aside for a cure, and the
+    /// think it did. If the whole caution then takes no action (no cure, no
+    /// retreat, no escape), `fast_fragile_deferred_attack` makes the
+    /// priority attack after all. Only with `fast_fragile_heal_min_ratio` on.
+    pub(crate) ff_deferred: Option<(usize, BorgTime)>,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -170,6 +176,7 @@ impl Default for FightAttackState {
             throwing: false,
             confused_aim: false,
             confused_dir: 0,
+            ff_deferred: None,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -5924,6 +5931,22 @@ fn kill_on_sight_hp_low(st: &mut BorgState) -> bool {
         && (crate::borg_fast_fragile::has_cure(st) || crate::borg_fast_fragile::escape_available(st))
 }
 
+/// borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): after the
+/// whole caution took no action this think, the priority attack attack on
+/// sight deferred for a cure (`ff_deferred`): the same target, if it is still
+/// fast-fragile and safe to attack. So carrying a cure the caution will not
+/// drink never costs the attack, and no cure or escape is taken before the
+/// caution's own order.
+pub(crate) fn fast_fragile_deferred_attack(st: &mut BorgState) -> bool {
+    let Some((i, at)) = st.fight_attack.ff_deferred.take() else { return false };
+    if at != st.borg.time.now || st.kills.kills[i].r_idx == 0 { return false; }
+    let Some((_, _, attack)) = crate::borg_fast_fragile::classify(st, i) else { return false };
+    if !crate::borg_caution::category_attack_safe_with(st, i, false) { return false; }
+    borg_note(st, &format!("# Fast-fragile: the caution took no action for the cure; the priority attack on {} goes on (#1065)",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx)))));
+    perform_focused_attack(st, i, attack)
+}
+
 /// The HP half of `kill_on_sight_hp_low`: below `floor` percent of the
 /// maximum (0 is no floor).
 fn below_kill_on_sight_floor(floor: i32, hp: i32, max_hp: i32) -> bool {
@@ -5993,10 +6016,19 @@ fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
             "# Kill-on-sight floor: no escape usable, taking the cure after all: HP {hp}/{max_hp}{} (#1064)",
             if confused { ", confused" } else { "" })),
         floor_escape,
-        |st, sval| if sval == st.item_val.sv_potion_cure_critical {
-            crate::borg_item_use::borg_quaff_crit(st, true)
-        } else {
-            crate::borg_item_use::borg_quaff_potion(st, sval)
+        |st, sval| {
+            // #1065: with a fast-fragile attacker also in contact at the heal
+            // floor, the potion by its own heal against the contact ratio
+            // (`ratio_gate`); otherwise it passes, as #1064 has it.
+            use crate::borg_fast_fragile::HealAction as H;
+            let a = if sval == st.item_val.sv_potion_cure_light { H::PotionClw }
+                else if sval == st.item_val.sv_potion_cure_serious { H::PotionCsw } else { H::PotionCcw };
+            let gate = crate::borg_fast_fragile::ratio_gate(st);
+            gate(a) && if sval == st.item_val.sv_potion_cure_critical {
+                crate::borg_item_use::borg_quaff_crit(st, true)
+            } else {
+                crate::borg_item_use::borg_quaff_potion(st, sval)
+            }
         },
     )
 }
@@ -6111,6 +6143,8 @@ fn floor_cure_plan(
 /// #760: the category target comes before flight and remains the target on
 /// subsequent thinks. A breeder colony already lost is not an attack entry.
 pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
+    // #1065: a deferral is for the think that made it.
+    st.fight_attack.ff_deferred = None;
     if param(Param::attack_on_sight) == 0 { return false; }
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
@@ -6128,6 +6162,15 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
                 // heal floor (#926), a cure comes first; the note names which.
                 if let Some(why) = crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
                     borg_note(st, why);
+                    // #1065 (re-reviews of #1089, P2): with the ratio on, the
+                    // attack is deferred, not dropped: the caution runs in
+                    // its usual order (cures, retreat, escapes, the
+                    // outmatched heal), and if it takes no action the
+                    // priority attack goes on (fast_fragile_deferred_attack).
+                    // 0: a plain yield, as before.
+                    if crate::borg_fast_fragile::cure_now() && st.fight_attack.ff_deferred.is_none() {
+                        st.fight_attack.ff_deferred = Some((i, st.borg.time.now));
+                    }
                     continue;
                 }
                 borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",

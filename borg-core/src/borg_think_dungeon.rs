@@ -883,6 +883,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_caution");
     }
 
+    // borg-reborn-rs (#1065): the caution took no action; the fast-fragile
+    // priority attack deferred for a cure goes on (only with the ratio on).
+    if crate::borg_fight_attack::fast_fragile_deferred_attack(st) {
+        return choice!("fast_fragile_deferred_attack");
+    }
+
     // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
     if crate::borg_item_use::potion_test_hold(st) {
         return choice!("potion_test_hold");

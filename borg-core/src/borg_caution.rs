@@ -235,13 +235,18 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
     ) {
         return false;
     }
-    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
-    if crate::borg_fast_fragile::heal_banned(st) {
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster;
+    // #1065: at the heal floor, each cure by its own heal.
+    let ban = crate::borg_fast_fragile::heal_ban(st);
+    if ban.blocks_all() {
         return false;
     }
-    if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+    use crate::borg_fast_fragile::{heal_of, HealAction as H};
+    let (missing, clevel) = (st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP), st.borg.tr(BI_CLEVEL));
+    let ok = |a: H| ban.allows(heal_of(a, clevel, missing));
+    if (ok(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        || (ok(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+        || (ok(H::PotionCcw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
     {
         borg_note(st, "# Healing (outmatched).");
         return true;
@@ -384,6 +389,11 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         }
     }
     // Heal when blind. This is deadly.
+    // borg-reborn-rs (#1065, re-review of #1089, P2): the confusion fixes
+    // above and the blindness fixes here come before the fast-fragile heal
+    // ban is read, as they did before #842's ban: they cure what keeps the
+    // Borg from reading Phase Door, so neither the ban nor its ratio holds
+    // them back (`the_status_cures_come_before_the_heal_ban`).
     if st.borg.tr(BI_ISBLIND) != 0 && engine::randint0(100) < p(Param::caution_blind_cure_chance) {
         // if in extreme danger, use teleport then fix the
         // blindness later.
@@ -511,10 +521,19 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
-    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
-    if crate::borg_fast_fragile::heal_banned(st) {
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster;
+    // #1065 (reviews of #1076 and #1089, P2): at the heal floor, every
+    // action below asks the ban with its own heal (`ok`).
+    let ban = crate::borg_fast_fragile::heal_ban(st);
+    if ban.blocks_all() {
         return false;
     }
+    // #1065 (review of #1089, P2): every action below asks the ban with its
+    // own engine heal (heal_of); with the ban free, `ok` is always true and
+    // the actions are tried as before.
+    use crate::borg_fast_fragile::HealAction as H;
+    let clevel = st.borg.tr(BI_CLEVEL);
+    let ok = |a: H| ban.allows(crate::borg_fast_fragile::heal_of(a, clevel, hp_down));
 
     // Heal when wounded a percent of the time
     let mut chance = engine::randint0(100);
@@ -565,9 +584,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
         && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
-        && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_activate_item(st, st.act.cure_light))
+        && ((ok(H::SpellMinorHealing) && borg_spell_fail(st, MINOR_HEALING, allow_fail))
+            || (ok(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (ok(H::ActCureLight) && borg_activate_item(st, st.act.cure_light)))
     {
         borg_note(st, "# Healing Level 1.");
         return true;
@@ -577,8 +596,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_activate_item(st, st.act.cure_serious))
+        && ((ok(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (ok(H::ActCureSerious) && borg_activate_item(st, st.act.cure_serious)))
     {
         borg_note(st, "# Healing Level 2.");
         return true;
@@ -588,7 +607,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
-        && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
+        && ((ok(H::ActCureCritical) && borg_activate_item(st, st.act.cure_critical)) || (ok(H::PotionCcw) && borg_quaff_crit(st, false)))
     {
         borg_note(st, "# Healing Level 3.");
         return true;
@@ -599,7 +618,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && danger < st.borg.tr(BI_MAXHP)
         && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
-        && borg_quaff_crit(st, true)
+        && (ok(H::PotionCcw) && borg_quaff_crit(st, true))
     {
         borg_note(st, "# Healing Level 5.");
         return true;
@@ -610,7 +629,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
         && danger < p(Param::caution_deep_ccw_danger)
         && pct_down >= p(Param::caution_deep_ccw_loss)
-        && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+        && (ok(H::PotionCcw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
     {
         borg_note(st, "# Healing Level 5B.");
         return true;
@@ -619,15 +638,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // Heal step one (200hp)
     if pct_down >= p(Param::caution_heal_device_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
-        && ((rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
-            || borg_activate_item(st, st.act.cure_full)
-            || borg_activate_item(st, st.act.cure_full2)
-            || borg_activate_item(st, st.act.cure_nonorlybig)
-            || borg_activate_item(st, st.act.heal1)
-            || borg_activate_item(st, st.act.heal2)
-            || borg_activate_item(st, st.act.heal3)
-            || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
-            || borg_spell_fail(st, HEALING, allow_fail))
+        && ((rod_ok(st, rod_good) && (ok(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing)))
+            || (ok(H::ActCureFull) && borg_activate_item(st, st.act.cure_full))
+            || (ok(H::ActCureFull2) && borg_activate_item(st, st.act.cure_full2))
+            || (ok(H::ActCureNonorlybig) && borg_activate_item(st, st.act.cure_nonorlybig))
+            || (ok(H::ActHeal1) && borg_activate_item(st, st.act.heal1))
+            || (ok(H::ActHeal2) && borg_activate_item(st, st.act.heal2))
+            || (ok(H::ActHeal3) && borg_activate_item(st, st.act.heal3))
+            || (ok(H::StaffHealing) && borg_use_staff_fail(st, st.item_val.sv_staff_healing))
+            || (ok(H::SpellHealing) && borg_spell_fail(st, HEALING, allow_fail)))
     {
         borg_note(st, "# Healing Level 6.");
         return true;
@@ -649,12 +668,12 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // Heal step two (300hp)
     if pct_down > p(Param::caution_heal_potion_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
-        && (borg_use_staff_fail(st, st.item_val.sv_staff_healing)
-            || (st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
-            || borg_spell_fail(st, HEALING, allow_fail)
-            || (rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
-            || borg_zap_rod(st, st.item_val.sv_rod_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_healing))
+        && ((ok(H::StaffHealing) && borg_use_staff_fail(st, st.item_val.sv_staff_healing))
+            || (st.borg.near.evil_unique && (ok(H::SpellHolyWord) && borg_spell_fail(st, HOLY_WORD, allow_fail)))
+            || (ok(H::SpellHealing) && borg_spell_fail(st, HEALING, allow_fail))
+            || (rod_ok(st, rod_good) && (ok(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing)))
+            || (ok(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing))
+            || (ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing)))
     {
         borg_note(st, "# Healing Level 7.");
         return true;
@@ -663,17 +682,17 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // Healing step three (300hp).
     if pct_down > p(Param::caution_heal_all_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
-        && ((st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
-            || (rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
-            || borg_spell_fail(st, HEALING, allow_fail)
-            || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_healing)
-            || borg_activate_item(st, st.act.cure_full)
-            || borg_activate_item(st, st.act.cure_full2)
-            || borg_activate_item(st, st.act.cure_nonorlybig)
-            || borg_activate_item(st, st.act.heal1)
-            || borg_activate_item(st, st.act.heal2)
-            || borg_activate_item(st, st.act.heal3))
+        && ((st.borg.near.evil_unique && (ok(H::SpellHolyWord) && borg_spell_fail(st, HOLY_WORD, allow_fail)))
+            || (rod_ok(st, rod_good) && (ok(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing)))
+            || (ok(H::SpellHealing) && borg_spell_fail(st, HEALING, allow_fail))
+            || (ok(H::StaffHealing) && borg_use_staff_fail(st, st.item_val.sv_staff_healing))
+            || (ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            || (ok(H::ActCureFull) && borg_activate_item(st, st.act.cure_full))
+            || (ok(H::ActCureFull2) && borg_activate_item(st, st.act.cure_full2))
+            || (ok(H::ActCureNonorlybig) && borg_activate_item(st, st.act.cure_nonorlybig))
+            || (ok(H::ActHeal1) && borg_activate_item(st, st.act.heal1))
+            || (ok(H::ActHeal2) && borg_activate_item(st, st.act.heal2))
+            || (ok(H::ActHeal3) && borg_activate_item(st, st.act.heal3)))
     {
         borg_note(st, "# Healing Level 8.");
         return true;
@@ -682,21 +701,21 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // Healing.  First use of EZ_Heals
     if pct_down > p(Param::caution_heal_unique_reserve_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
-        && ((st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
-            || borg_spell_fail(st, HEALING, allow_fail)
-            || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
-            || (rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
-            || borg_quaff_potion(st, st.item_val.sv_potion_healing)
-            || borg_activate_item(st, st.act.cure_full)
-            || borg_activate_item(st, st.act.cure_full2)
-            || borg_activate_item(st, st.act.cure_nonorlybig)
-            || borg_activate_item(st, st.act.heal1)
-            || borg_activate_item(st, st.act.heal2)
-            || borg_activate_item(st, st.act.heal3)
+        && ((st.borg.near.evil_unique && (ok(H::SpellHolyWord) && borg_spell_fail(st, HOLY_WORD, allow_fail)))
+            || (ok(H::SpellHealing) && borg_spell_fail(st, HEALING, allow_fail))
+            || (ok(H::StaffHealing) && borg_use_staff_fail(st, st.item_val.sv_staff_healing))
+            || (rod_ok(st, rod_good) && (ok(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing)))
+            || (ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            || (ok(H::ActCureFull) && borg_activate_item(st, st.act.cure_full))
+            || (ok(H::ActCureFull2) && borg_activate_item(st, st.act.cure_full2))
+            || (ok(H::ActCureNonorlybig) && borg_activate_item(st, st.act.cure_nonorlybig))
+            || (ok(H::ActHeal1) && borg_activate_item(st, st.act.heal1))
+            || (ok(H::ActHeal2) && borg_activate_item(st, st.act.heal2))
+            || (ok(H::ActHeal3) && borg_activate_item(st, st.act.heal3))
             || (st.borg.near.unique != 0
-                && (borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-                    || borg_quaff_potion(st, st.item_val.sv_potion_healing)
-                    || borg_quaff_potion(st, st.item_val.sv_potion_life))))
+                && ((ok(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+                    || (ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+                    || (ok(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life)))))
     {
         borg_note(st, "# Healing Level 9.");
         return true;
@@ -709,9 +728,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if pct_down > p(Param::caution_heal_last_resort_loss)
         && danger > st.borg.tr(BI_CURHP)
         && st.borg.tr(BI_ATELEPORT) + st.borg.tr(BI_AESCAPE) <= 0
-        && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_life))
+        && ((ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            || (ok(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+            || (ok(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life)))
     {
         borg_note(st, "# Healing Level 10.");
         return true;
@@ -729,25 +748,25 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if st.borg.tr(BI_ISPOISONED) != 0
         && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_poison_cure_hp_divisor)
     {
-        if borg_spell_fail(st, CURE_POISON, p(Param::caution_poison_cure_fail))
-            || borg_spell_fail(st, HERBAL_CURING, p(Param::caution_poison_herbal_fail))
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_poison)
-            || borg_activate_item(st, st.act.cure_body)
-            || borg_activate_item(st, st.act.cure_critical)
-            || borg_activate_item(st, st.act.cure_temp)
-            || borg_activate_item(st, st.act.rem_fear_pois)
-            || borg_activate_item(st, st.act.cure_full)
-            || borg_activate_item(st, st.act.cure_full2)
-            || borg_activate_item(st, st.act.cure_nonorlybig)
-            || borg_use_staff(st, st.item_val.sv_staff_curing)
-            || borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
-            || borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_purging)
-            || borg_activate_item(st, st.act.shroom_purging)
+        if (ok(H::NoHeal) && borg_spell_fail(st, CURE_POISON, p(Param::caution_poison_cure_fail)))
+            || (ok(H::NoHeal) && borg_spell_fail(st, HERBAL_CURING, p(Param::caution_poison_herbal_fail)))
+            || (ok(H::NoHeal) && borg_quaff_potion(st, st.item_val.sv_potion_cure_poison))
+            || (ok(H::ActCureBody) && borg_activate_item(st, st.act.cure_body))
+            || (ok(H::ActCureCritical) && borg_activate_item(st, st.act.cure_critical))
+            || (ok(H::NoHeal) && borg_activate_item(st, st.act.cure_temp))
+            || (ok(H::NoHeal) && borg_activate_item(st, st.act.rem_fear_pois))
+            || (ok(H::ActCureFull) && borg_activate_item(st, st.act.cure_full))
+            || (ok(H::ActCureFull2) && borg_activate_item(st, st.act.cure_full2))
+            || (ok(H::ActCureNonorlybig) && borg_activate_item(st, st.act.cure_nonorlybig))
+            || (ok(H::NoHeal) && borg_use_staff(st, st.item_val.sv_staff_curing))
+            || (ok(H::MushFastRecovery) && borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery))
+            || (ok(H::NoHeal) && borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_purging))
+            || (ok(H::NoHeal) && borg_activate_item(st, st.act.shroom_purging))
             // buy time
-            || borg_quaff_crit(st, true)
-            || borg_spell_fail(st, HEALING, p(Param::caution_poison_healing_fail))
-            || borg_spell_fail(st, HOLY_WORD, p(Param::caution_poison_holy_fail))
-            || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
+            || (ok(H::PotionCcw) && borg_quaff_crit(st, true))
+            || (ok(H::SpellHealing) && borg_spell_fail(st, HEALING, p(Param::caution_poison_healing_fail)))
+            || (ok(H::SpellHolyWord) && borg_spell_fail(st, HOLY_WORD, p(Param::caution_poison_holy_fail)))
+            || (ok(H::StaffHealing) && borg_use_staff_fail(st, st.item_val.sv_staff_healing))
         {
             borg_note(st, "# Curing.");
             return true;
@@ -755,8 +774,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
         // attempt to fix mana then poison on next round
         if (borg_spell_legal(st, CURE_POISON) || borg_spell_legal(st, HERBAL_CURING))
-            && (borg_quaff_potion(st, st.item_val.sv_potion_restore_mana)
-                || borg_activate_item(st, st.act.restore_mana))
+            && ((ok(H::NoHeal) && borg_quaff_potion(st, st.item_val.sv_potion_restore_mana))
+                || (ok(H::NoHeal) && borg_activate_item(st, st.act.restore_mana)))
         {
             borg_note(st, "# Curing next round.");
             return true;
@@ -773,10 +792,10 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
         set_cursp(st, st.borg.tr(BI_MAXSP));
 
-        if borg_spell(st, CURE_POISON)
-            || borg_spell(st, HERBAL_CURING)
-            || borg_spell(st, HOLY_WORD)
-            || borg_spell(st, HEALING)
+        if (ok(H::NoHeal) && borg_spell(st, CURE_POISON))
+            || (ok(H::NoHeal) && borg_spell(st, HERBAL_CURING))
+            || (ok(H::SpellHolyWord) && borg_spell(st, HOLY_WORD))
+            || (ok(H::SpellHealing) && borg_spell(st, HEALING))
         {
             // verify use of spell
             // borg_keypress('y');
@@ -789,15 +808,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         set_cursp(st, sv_mana);
 
         // Quaff healing pots to buy some time- in this emergency.
-        if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        if (ok(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (ok(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
         {
             return true;
         }
 
         // Try to Restore Mana
-        if borg_quaff_potion(st, st.item_val.sv_potion_restore_mana)
-            || borg_activate_item(st, st.act.restore_mana)
+        if (ok(H::NoHeal) && borg_quaff_potion(st, st.item_val.sv_potion_restore_mana))
+            || (ok(H::NoHeal) && borg_activate_item(st, st.act.restore_mana))
         {
             return true;
         }
@@ -806,9 +825,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // but we did not use our ez_heal potions.  All other attempts to
         // save ourself have failed.  Use the ez_heal if I have it.
         if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_poison_reserve_hp_divisor)
-            && (borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-                || borg_quaff_potion(st, st.item_val.sv_potion_life)
-                || borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            && ((ok(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+                || (ok(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life))
+                || (ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing)))
         {
             borg_note(st, "# Healing. Curing section.");
             return true;
@@ -822,14 +841,14 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if st.borg.tr(BI_ISCUT) != 0
         && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_cut_cure_hp_divisor)
             || engine::randint0(100) < p(Param::caution_cut_cure_chance))
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_crit(
+        && ((ok(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (ok(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (ok(H::PotionCcw) && borg_quaff_crit(
                 st,
                 st.borg.tr(BI_CURHP) < p(Param::caution_cut_critical_ccw_hp),
-            )
-            || borg_spell(st, MINOR_HEALING)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
+            ))
+            || (ok(H::SpellMinorHealing) && borg_spell(st, MINOR_HEALING))
+            || (ok(H::PotionCcw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)))
     {
         return true;
     }
@@ -844,15 +863,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         set_cursp(st, st.borg.tr(BI_MAXSP));
 
         // Quaff healing pots to buy some time- in this emergency.
-        if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        if (ok(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (ok(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
         {
             return true;
         }
 
         // Try to Restore Mana
-        if borg_quaff_potion(st, st.item_val.sv_potion_restore_mana)
-            || borg_activate_item(st, st.act.restore_mana)
+        if (ok(H::NoHeal) && borg_quaff_potion(st, st.item_val.sv_potion_restore_mana))
+            || (ok(H::NoHeal) && borg_activate_item(st, st.act.restore_mana))
         {
             return true;
         }
@@ -861,16 +880,16 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // but we did not use our ez_heal potions.  All other attempts to
         // save ourselves have failed.  Use the ez_heal if I have it.
         if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_cut_reserve_hp_divisor)
-            && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
-                || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-                || borg_quaff_potion(st, st.item_val.sv_potion_life))
+            && ((ok(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+                || (ok(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+                || (ok(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life)))
         {
             borg_note(st, "# Healing.  Bleeding.");
             return true;
         }
 
         // Cast a spell, go into negative mana
-        if borg_spell(st, MINOR_HEALING) {
+        if ok(H::SpellMinorHealing) && borg_spell(st, MINOR_HEALING) {
             // verify use of spell
             // borg_keypress('y');
 
@@ -6603,24 +6622,29 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
     // a low-level character; with caution_recall_cure_min_loss_percent, a cure
     // needs at least that share of the max HP lost.
     let lost = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
+    // borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): the contact
+    // ratio, each potion or rod by its own heal (free without a fast-fragile
+    // contact at the heal floor).
+    use crate::borg_fast_fragile::HealAction as H;
+    let gate = crate::borg_fast_fragile::ratio_gate(st);
     if lost < p(Param::caution_recall_cure_loss)
         && recall_cure_hurt_enough(lost, st.borg.tr(BI_MAXHP), p(Param::caution_recall_cure_min_loss_percent))
-        && (borg_quaff_crit(st, true)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        && ((gate(H::PotionCcw) && borg_quaff_crit(st, true))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light)))
     {
         borg_note(st, "# Buying time waiting for Recall.(3)");
         return true;
     }
 
     if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) > p(Param::caution_recall_heal_loss)
-        && (borg_zap_rod(st, st.item_val.sv_rod_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
-            || borg_quaff_potion(st, st.item_val.sv_potion_life)
-            || borg_quaff_crit(st, true)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        && ((gate(H::RodHealing) && borg_zap_rod(st, st.item_val.sv_rod_healing))
+            || (gate(H::PotionHealing) && borg_quaff_potion(st, st.item_val.sv_potion_healing))
+            || (gate(H::PotionStarHealing) && borg_quaff_potion(st, st.item_val.sv_potion_star_healing))
+            || (gate(H::PotionLife) && borg_quaff_potion(st, st.item_val.sv_potion_life))
+            || (gate(H::PotionCcw) && borg_quaff_crit(st, true))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light)))
     {
         borg_note(st, "# Buying time waiting for Recall.(4)");
         return true;
@@ -8255,10 +8279,15 @@ fn unseen_bump_response(st: &mut BorgState, danger: i32) -> bool {
         bump_recent(now, b.at, turns) && engine::distance(st.borg.c, b.grid) == 1
             && st.cave.grid(b.grid.x, b.grid.y).kill == 0
     }) else { return false };
+    // borg-reborn-rs (#1065, re-review of #1089 at c7e55e1d, P2): with a
+    // fast-fragile attacker also in contact at the heal floor, each potion
+    // by its own heal against the contact ratio; unseen only, as before.
+    use crate::borg_fast_fragile::HealAction as H;
+    let gate = crate::borg_fast_fragile::ratio_gate(st);
     if bump_heal_due(st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_unseen_bump_heal_hp_percent))
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
+        && ((gate(H::PotionClw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+            || (gate(H::PotionCsw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+            || (gate(H::PotionCcw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)))
     {
         borg_note(st, "# Healing before stairs: an unseen monster blocks the step");
         return true;

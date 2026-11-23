@@ -19,6 +19,12 @@
 //! kills" reads an upper quantile of the damage distribution instead of the
 //! mean (`fast_fragile_escape_quantile`); and it counts the Borg's own cut
 //! and poison ticks (`fast_fragile_count_dot`).
+//!
+//! #1065 adds `fast_fragile_heal_min_ratio` (0 by default, today's play): in
+//! contact, the heal floor lifts the ban only when the cure buys turns, the
+//! HP after it at least that many times the damage of the next turn. Against
+//! a crow at 11 max HP a cure resets a race the Borg loses anyway; at 26 it
+//! buys about three casts.
 
 use crate::borg_caution::{fight_incoming_with, forecast_monster_speed};
 use crate::borg_cave_view::BORG_VIEW;
@@ -246,6 +252,123 @@ pub(crate) fn dot_cure(poisoned: bool, cut: i32, rock: bool, carried: impl Fn(Do
     options.iter().copied().find(|&c| carried(c))
 }
 
+/// #1065: HP a Potion of Cure Light, Serious or Critical Wounds heals:
+/// `HEAL_HP` with dice 20, 40 and 60 and no percentage (lib/gamedata/
+/// object.txt:3165-3166, :3184-3185, :3201-3202), so exactly that, capped at
+/// the maximum (effect_handler_HEAL_HP, effect-handler-attack.c:201-232).
+pub(crate) const CURE_HEAL: [i32; 3] = [20, 40, 60];
+
+/// #1065 (review of #1076, P2): what Minor Healing heals: `HEAL_HP` with
+/// base the level + 10 and `m_bonus` level / 4 percent of the missing HP,
+/// the larger of the two (class.txt:742-746; effect-handler-attack.c:212-218).
+pub(crate) fn minor_healing_heal(clevel: i32, missing: i32) -> i32 {
+    (clevel + 10).max(missing.max(0) * (clevel / 4) / 100)
+}
+
+/// #1065 (review of #1089, P2): every action `borg_heal` and
+/// `borg_heal_outmatched` may take once the heal ban is read, so each asks
+/// the ban with its own heal (`heal_of`). `NoHeal` heals nothing (a cure of
+/// poison, a cut or the like, Restore Mana).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum HealAction {
+    PotionClw, PotionCsw, PotionCcw, PotionHealing, PotionStarHealing, PotionLife,
+    StaffHealing, RodHealing, MushFastRecovery,
+    ActCureLight, ActCureSerious, ActCureCritical, ActCureBody, ActCureFull,
+    ActCureFull2, ActCureNonorlybig, ActHeal1, ActHeal2, ActHeal3,
+    SpellMinorHealing, SpellHealing, SpellHolyWord,
+    NoHeal,
+}
+
+/// The engine heal of `a` (`HEAL_HP`: the larger of its base and `m_bonus`
+/// percent of the missing HP, effect_handler_HEAL_HP,
+/// effect-handler-attack.c:201-232; the cap at max HP is `heal_buys_turns`'s).
+/// lib/gamedata/object.txt: potions of Cure Light/Serious/Critical Wounds
+/// 20/40/60 (:3165, :3184, :3201), Healing 300+m35 (:3221), *Healing* 1200
+/// (:3242), Life 5000 (:3275); Staff of Healing 300+m35 (:4374); Rod of
+/// Healing 500 (:4797); Mushroom of Fast Recovery 30 (:526-527).
+/// activation.txt: CURE_BODY 30 (:63), CURE_LIGHT 20 (:75), CURE_SERIOUS 40
+/// (:89), CURE_CRITICAL 60 (:100), CURE_FULL 300+m35 (:114), CURE_FULL2 1200
+/// (:128), CURE_NONORLYBIG 5000 (:156), HEAL1 500 (:176), HEAL2 1000 (:186),
+/// HEAL3 500 (:195). class.txt: Minor Healing (:742-746, `minor_healing_heal`),
+/// Healing 2000 (:851), Holy Word 1000 (:929). Purging, Neutralize Poison,
+/// the Staff of Curing, CURE_TEMP, Cure Poison and Herbal Curing heal
+/// nothing.
+pub(crate) fn heal_of(a: HealAction, clevel: i32, missing: i32) -> i32 {
+    use HealAction::*;
+    let (base, pct) = match a {
+        PotionClw | ActCureLight => (20, 0),
+        PotionCsw | ActCureSerious => (40, 0),
+        PotionCcw | ActCureCritical => (60, 0),
+        PotionHealing | StaffHealing | ActCureFull => (300, 35),
+        PotionStarHealing | ActCureFull2 => (1200, 0),
+        PotionLife | ActCureNonorlybig => (5000, 0),
+        RodHealing | ActHeal1 | ActHeal3 => (500, 0),
+        ActHeal2 | SpellHolyWord => (1000, 0),
+        SpellHealing => (2000, 0),
+        MushFastRecovery | ActCureBody => (30, 0),
+        SpellMinorHealing => return minor_healing_heal(clevel, missing),
+        NoHeal => (0, 0),
+    };
+    base.max(missing.max(0) * pct / 100)
+}
+
+/// #1065 (review of #1076, P2): the heal ban as the healing paths read it,
+/// per heal: each cure asks with its own amount, so a small cure that does
+/// not buy turns does not block a larger one that does.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum HealBan {
+    /// No ban: every heal may be used.
+    Free,
+    /// Banned, whatever the heal: #842's ban in contact (above the heal floor).
+    Banned,
+    /// In contact at the heal floor (`fast_fragile_heal_min_ratio`): a heal
+    /// is allowed when it buys turns (`heal_buys_turns`).
+    Ratio { cur_hp: i32, max_hp: i32, damage: f64, min_ratio_tenths: i32 },
+    /// In contact at the heal floor with the ratio on, and not even a full
+    /// heal buys the turns (re-review of #1089 at 47b46056, P2): banned like
+    /// `Banned`, and, unlike #842's plain ban, also for the healing fallbacks
+    /// outside `borg_heal` (`ratio_gate` keeps it).
+    RatioClosed,
+}
+
+impl HealBan {
+    /// Whether a heal of `heal` HP may be used.
+    pub(crate) fn allows(self, heal: i32) -> bool {
+        match self {
+            HealBan::Free => true,
+            HealBan::Banned | HealBan::RatioClosed => false,
+            HealBan::Ratio { cur_hp, max_hp, damage, min_ratio_tenths } =>
+                heal_buys_turns(cur_hp, max_hp, heal, damage, min_ratio_tenths),
+        }
+    }
+
+    /// No heal at all: `borg_heal` and `borg_heal_outmatched` stop here.
+    pub(crate) fn blocks_all(self) -> bool {
+        matches!(self, HealBan::Banned | HealBan::RatioClosed)
+    }
+}
+
+/// #1065 (re-review of #1089 at 47b46056, P2): the ban as the healing
+/// fallbacks outside `borg_heal` read it (`ratio_gate`): only the ratio's
+/// verdicts, `Ratio` and `RatioClosed`; #842's plain ban and no ban pass, as
+/// before #1065.
+pub(crate) fn fallback_ban(ban: HealBan) -> HealBan {
+    match ban {
+        HealBan::Ratio { .. } | HealBan::RatioClosed => ban,
+        HealBan::Free | HealBan::Banned => HealBan::Free,
+    }
+}
+
+/// #1065: whether a cure buys turns in contact: the HP after it,
+/// `min(max_hp, cur_hp + heal)`, is at least `min_ratio_tenths` / 10 times
+/// the `damage` of the next turn. 0 = always (today: the heal floor alone
+/// decides). With no damage at all the cure is never a reset.
+pub(crate) fn heal_buys_turns(cur_hp: i32, max_hp: i32, heal: i32, damage: f64, min_ratio_tenths: i32) -> bool {
+    if min_ratio_tenths <= 0 || damage <= 0.0 { return true; }
+    let after = cur_hp.saturating_add(heal.max(0)).min(max_hp.max(cur_hp));
+    f64::from(after) * 10.0 >= f64::from(min_ratio_tenths) * damage
+}
+
 /// #926: whether `cur_hp` is at or below `floor` percent of `max_hp` (0 =
 /// never): where the heal ban lifts.
 pub(crate) fn below_heal_floor(cur_hp: i32, max_hp: i32, floor: i32) -> bool {
@@ -455,15 +578,21 @@ fn own_dot_cure(st: &mut BorgState) -> Option<(DotCure, i32)> {
 /// distribution; plus the Borg's own cut and poison with
 /// `fast_fragile_count_dot`.
 fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
+    monsters_damage(st, target, f) + own_dot()
+}
+
+/// The monsters' part of `next_turn_damage`: the mean, or the quantile of
+/// `fast_fragile_escape_quantile`. Also #1065's ratio, which leaves out the
+/// Borg's own cut and poison: the cure that heals stops or shortens them.
+fn monsters_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
     let q = param(Param::fast_fragile_escape_quantile);
-    let blows = if q > 0 {
+    if q > 0 {
         let monsters = in_reach(st, target);
         let pmf = monsters.iter().fold(vec![1.0], |acc, &j| convolve(&acc, &monster_pmf(st, j)));
         quantile(&pmf, q)
     } else {
         incoming_total(st, target, f)
-    };
-    blows + own_dot()
+    }
 }
 
 /// #926: the Borg's own cut and poison kill it before its next action
@@ -478,10 +607,43 @@ fn dot_kills(cur_hp: i32) -> bool {
     per_tick > 0 && per_tick * ticks > cur_hp
 }
 
-/// #926: the heal ban lifts at or below `fast_fragile_heal_floor` percent of
-/// the maximum HP, or when the Borg's own cut and poison kill it first.
-fn ban_lifted(st: &BorgState, cur_hp: i32) -> bool {
-    below_heal_floor(cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor)) || dot_kills(cur_hp)
+/// #926: at or below `fast_fragile_heal_floor` percent of the maximum HP.
+fn at_heal_floor(st: &BorgState, cur_hp: i32) -> bool {
+    below_heal_floor(cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor))
+}
+
+/// #1065 (review of #1076, P2): the largest heal of the cures carried
+/// (Cure Light, Serious or Critical Wounds), 0 with none: what attack on
+/// sight steps aside for; the caution then picks the cure by its own gates
+/// and asks the ban with that cure's heal.
+fn best_cure_heal(st: &mut BorgState) -> i32 {
+    let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
+    svals.into_iter().zip(CURE_HEAL)
+        .filter(|&(sval, _)| crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0)
+        .map(|(_, heal)| heal)
+        .max()
+        .unwrap_or(0)
+}
+
+/// #1065: in contact with the fast-fragile monster `target` at the heal
+/// floor, the ratio's ban (`fast_fragile_heal_min_ratio`, against
+/// `monsters_damage`), or `None` when not even a full heal buys the turns:
+/// then the trace says so, and the escape or the attack decides.
+fn ratio_ban(st: &mut BorgState, target: usize, f: &Facts) -> Option<HealBan> {
+    let min_ratio_tenths = param(Param::fast_fragile_heal_min_ratio);
+    let max_hp = st.borg.tr(BI_MAXHP);
+    let damage = monsters_damage(st, target, f);
+    let ban = HealBan::Ratio { cur_hp: f.cur_hp, max_hp, damage, min_ratio_tenths };
+    let need = f64::from(min_ratio_tenths) / 10.0 * damage;
+    if ban.allows(i32::MAX / 2) {
+        borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: at the heal floor, a cure is allowed if it leaves {need:.1} HP ({:.1} x {damage:.1} damage/turn) (#1065)",
+            f.cur_hp, max_hp, f64::from(min_ratio_tenths) / 10.0));
+        Some(ban)
+    } else {
+        borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: even a full heal leaves {:.1} turns against {damage:.1} damage/turn, under {:.1}; no cure at the heal floor (#1065)",
+            f.cur_hp, max_hp, f64::from(max_hp.max(f.cur_hp)) / damage.max(0.001), f64::from(min_ratio_tenths) / 10.0));
+        None
+    }
 }
 
 /// Whether `escape_instead` could act now: a staircase underfoot, or a Phase
@@ -543,15 +705,31 @@ pub(crate) fn cornered(st: &mut BorgState, target: usize, f: &Facts) -> bool {
 /// Attack-on-sight steps aside for the heal when the Borg carries a cure and
 /// is `cornered` (#842) or at the heal floor (#926); without one the attack
 /// is all it has. `Some(note)` names the reason for the decision trace.
+///
+/// #1065: with `fast_fragile_heal_min_ratio` on, either reason yields only
+/// when the largest cure carried passes the ban the caution reads
+/// (`heal_ban`, `yield_allowed`), so the two never disagree (review of #1089,
+/// P2): in contact the cornered exception allows any cure there too, and the
+/// floor a cure that buys turns; out of contact the ban is free.
 pub(crate) fn yield_to_cure(st: &mut BorgState, target: usize, f: &Facts) -> Option<&'static str> {
-    if below_heal_floor(f.cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor)) {
+    let mut why = None;
+    if at_heal_floor(st, f.cur_hp) {
         let cure = has_cure(st);
         borg_note(st, &format!("# Fast-fragile: HP {}/{}, at the heal floor; a cure is {} (#926)",
             f.cur_hp, st.borg.tr(BI_MAXHP), if cure { "carried" } else { "not carried, the attack goes on" }));
-        if cure { return Some("# At the fast-fragile heal floor: the cure decides (#926)"); }
+        if cure { why = Some("# At the fast-fragile heal floor: the cure decides (#926)"); }
     }
-    (cornered(st, target, f) && has_cure(st))
-        .then_some("# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)")
+    if why.is_none() && cornered(st, target, f) && has_cure(st) {
+        why = Some("# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)");
+    }
+    let ratio = param(Param::fast_fragile_heal_min_ratio);
+    // 0: the ban is not read here, as before #1065.
+    if why.is_some() && ratio > 0 {
+        let best = best_cure_heal(st);
+        let ban = heal_ban(st);
+        if !yield_allowed(ratio, ban, best) { return None; }
+    }
+    why
 }
 
 /// Alternative to the attack (owner, #842): when the next turn kills the Borg
@@ -615,36 +793,137 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
     false
 }
 
+/// #1065 (review of #1089, P2): one contact's verdict on the heal ban.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum Contact {
+    /// Bleeding out (`dot_kills`), or at the heal floor with no ratio: any
+    /// cure (#926).
+    Lifted,
+    /// `fast_fragile_no_heal = 2`'s exception: any cure (#842).
+    Cornered,
+    /// At the floor with the ratio on: a cure that buys turns.
+    Ratio(HealBan),
+    /// At the floor with the ratio on, and not even a full heal buys the
+    /// turns: no cure (`HealBan::RatioClosed`).
+    RatioClosed,
+    /// The ban holds (#842).
+    Banned,
+}
+
+/// The order of one contact's exceptions, in one place for caution and
+/// attack on sight: bleeding out or the floor without a ratio; then the
+/// cornered exception (before the ratio: a cornered Borg has no move but a
+/// cure, so any cure is allowed); then the ratio, at the floor, when a full
+/// heal passes it. `cornered` and `ratio` run only when reached (they note
+/// the trace).
+pub(crate) fn contact_ban<S>(s: &mut S, dot: bool, floor: bool, min_ratio_tenths: i32,
+    cornered: impl FnOnce(&mut S) -> bool, ratio: impl FnOnce(&mut S) -> Option<HealBan>) -> Contact {
+    if dot || (floor && min_ratio_tenths <= 0) { return Contact::Lifted; }
+    if cornered(s) { return Contact::Cornered; }
+    if floor {
+        // The floor with the ratio off lifted above, so the ratio is on here.
+        return match ratio(s) { Some(b) => Contact::Ratio(b), None => Contact::RatioClosed };
+    }
+    Contact::Banned
+}
+
+/// The ban of all the contacts together: any `Banned` bans; otherwise any
+/// `RatioClosed` closes the ratio; otherwise the ratio of the heaviest
+/// damage; otherwise free.
+pub(crate) fn ban_of(contacts: &[Contact]) -> HealBan {
+    let mut ratio: Option<HealBan> = None;
+    let mut closed = false;
+    for c in contacts {
+        match *c {
+            Contact::Banned => return HealBan::Banned,
+            Contact::RatioClosed => closed = true,
+            Contact::Ratio(b) => {
+                let heavier = match (ratio, b) {
+                    (Some(HealBan::Ratio { damage: old, .. }), HealBan::Ratio { damage: new, .. }) => new > old,
+                    _ => true,
+                };
+                if heavier { ratio = Some(b); }
+            }
+            Contact::Lifted | Contact::Cornered => {}
+        }
+    }
+    if closed { return HealBan::RatioClosed; }
+    ratio.unwrap_or(HealBan::Free)
+}
+
+/// #1065 (re-reviews of #1089, P2): with `fast_fragile_heal_min_ratio` on,
+/// attack on sight defers its priority attack when it yields to a cure
+/// (`FightAttackState::ff_deferred`), and makes it after the caution if the
+/// caution took no action (`borg_fight_attack::fast_fragile_deferred_attack`).
+/// So carrying a cure the caution will not drink never costs the attack, and
+/// the caution's order (cures, retreat, escapes, the outmatched heal) is
+/// kept. 0: a plain yield, as before.
+pub(crate) fn cure_now() -> bool {
+    param(Param::fast_fragile_heal_min_ratio) > 0
+}
+
+/// #1065 (re-review of #1089 at c7e55e1d, P2): the contact ratio for the
+/// healing fallbacks outside `borg_heal` (the unseen-bump heal before the
+/// stairs, the Recall wait), as a per-action check: with the ratio on and a
+/// fast-fragile attacker in contact at the heal floor (`heal_ban` is
+/// `Ratio`), each action by its own heal (`heal_of`); otherwise everything
+/// passes, as before (these fallbacks were never under #842's ban, and the
+/// ban is not extended to them here).
+pub(crate) fn ratio_gate(st: &mut BorgState) -> impl Fn(HealAction) -> bool {
+    let ban = fallback_ban(if cure_now() { heal_ban(st) } else { HealBan::Free });
+    let (clevel, missing) = (st.borg.tr(BI_CLEVEL), st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP));
+    move |a| ban.allows(heal_of(a, clevel, missing))
+}
+
+/// Attack on sight steps aside for a cure (`yield_to_cure`) only when the
+/// largest cure carried passes the ban the caution reads, so the two agree.
+pub(crate) fn yield_allowed(min_ratio_tenths: i32, ban: HealBan, best_heal: i32) -> bool {
+    min_ratio_tenths <= 0 || ban.allows(best_heal)
+}
+
 /// No healing potion while a fast-fragile attacker is in contact (owner,
 /// #842: "drink healing potion that against such creatures is a death
 /// sentence"): a cure buys a turn or two and loses the race. The exception
 /// the issue raises (the attack cannot kill this turn and no escape is
 /// available) is not made: the Borg attacks, as before the potion would
 /// have been quaffed.
-pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
+///
+/// #1065 (review of #1076, P2): `HealBan::Ratio` when, in contact at the heal
+/// floor, only a heal that buys turns is allowed; each healing action asks
+/// `allows` with its own heal. With `fast_fragile_heal_min_ratio` = 0 it is
+/// `Free` or `Banned`, as before.
+pub(crate) fn heal_ban(st: &mut BorgState) -> HealBan {
     if param(Param::fast_fragile_no_heal) == 0 || param(Param::attack_on_sight) == 0 {
-        return false;
+        return HealBan::Free;
     }
+    let mut contacts = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];
         if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > 1 {
             continue;
         }
         if let Some((source, f, _)) = classify(st, i) {
-            if ban_lifted(st, f.cur_hp) {
-                borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: at the heal floor or bleeding out, a cure is allowed (#926)", f.cur_hp, st.borg.tr(BI_MAXHP)));
-                continue;
+            // #926: the ban lifts when the Borg's own cut and poison kill it
+            // first, or at the heal floor; #842: when cornered; #1065: at the
+            // floor with the ratio on, for a cure that buys turns against the
+            // monsters in reach. One order for every caller (contact_ban).
+            let floor = at_heal_floor(st, f.cur_hp);
+            let verdict = contact_ban(st, dot_kills(f.cur_hp), floor, param(Param::fast_fragile_heal_min_ratio),
+                |st| cornered(st, i, &f), |st| ratio_ban(st, i, &f));
+            match verdict {
+                Contact::Lifted => borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: at the heal floor or bleeding out, a cure is allowed (#926)", f.cur_hp, st.borg.tr(BI_MAXHP))),
+                Contact::Cornered => borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; a cure is allowed (#842)"),
+                Contact::Ratio(_) => {}
+                Contact::Banned | Contact::RatioClosed => {
+                    let note = describe(st, i, source, &f);
+                    borg_note(st, &format!("# No healing potion in contact with a fast-fragile attacker (#842); {}", note.trim_start_matches("# ")));
+                    return ban_of(&[verdict]);
+                }
             }
-            if cornered(st, i, &f) {
-                borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; a cure is allowed (#842)");
-                continue;
-            }
-            let note = describe(st, i, source, &f);
-            borg_note(st, &format!("# No healing potion in contact with a fast-fragile attacker (#842); {}", note.trim_start_matches("# ")));
-            return true;
+            contacts.push(verdict);
         }
     }
-    false
+    ban_of(&contacts)
 }
 
 #[cfg(test)]
@@ -834,5 +1113,211 @@ mod tests_1028 {
     fn the_cures_are_named_as_items() {
         assert_eq!(DotCure::Serious.name(), "Cure Serious Wounds");
         assert_eq!(DotCure::Neutralize.name(), "Neutralize Poison");
+    }
+}
+
+#[cfg(test)]
+mod tests_1065 {
+    use super::*;
+
+    /// The fatal points of the level-1 review of 206cf4e7 (#1065): max HP,
+    /// HP, the Borg's own damage-per-turn estimate, the first cure's heal.
+    #[test]
+    fn a_cure_in_contact_buys_turns_only_well_above_the_damage() {
+        let three = 30;
+        // Priest 848342657, CL1: 10 max HP against a crow's 7.2.
+        assert!(!heal_buys_turns(3, 10, 20, 7.2, three), "a heal resets the losing turn");
+        // Mage 592754909, CL2: 11 against 7.2 (ratio 1.5).
+        assert!(!heal_buys_turns(3, 11, 20, 7.2, three));
+        // Necromancers 1398933929, 2136378178, 2125189042: 13, 14, 17.
+        assert!(!heal_buys_turns(8, 13, 20, 7.6, three));
+        assert!(!heal_buys_turns(5, 14, 20, 8.0, three));
+        assert!(!heal_buys_turns(2, 17, 20, 7.6, three));
+        // Mage 645909552, CL4: 26 against 6.4 (ratio 4.1): a cure buys about
+        // three casts.
+        assert!(heal_buys_turns(13, 26, 20, 6.4, three));
+        assert!(heal_buys_turns(2, 26, 20, 6.4, three), "even from 2 HP: 22 >= 19.2");
+        assert!(!heal_buys_turns(0, 26, 20, 6.7, three), "20 HP after the cure, under 3 x 6.7");
+        assert!(heal_buys_turns(0, 26, 40, 6.7, three), "Cure Serious Wounds heals to 26");
+        // Blackguard 2025089708, CL6: 60 against about 10 to 14.
+        assert!(heal_buys_turns(15, 60, 20, 10.0, three), "35 HP after a CLW, 3.5 turns");
+        assert!(!heal_buys_turns(15, 60, 20, 12.0, three), "35 against 12: 2.9 turns");
+        assert!(heal_buys_turns(15, 60, 40, 12.0, three), "a CSW: 55, 4.6 turns");
+    }
+
+    #[test]
+    fn the_ratio_is_in_tenths_and_capped_at_the_maximum() {
+        assert!(heal_buys_turns(1, 10, 20, 7.2, 0), "0 = today: the floor alone decides");
+        assert!(heal_buys_turns(1, 10, 0, 0.0, 30), "no damage, no race to lose");
+        assert!(heal_buys_turns(5, 18, 20, 7.2, 25), "18 = 2.5 x 7.2: at the ratio counts");
+        assert!(!heal_buys_turns(5, 17, 20, 7.2, 25));
+        assert!(!heal_buys_turns(5, 100, 0, 7.2, 30), "no cure carried: HP 5 only");
+        assert!(heal_buys_turns(30, 20, 0, 6.0, 30), "HP above the maximum (a potion of Berserk): the HP stands");
+    }
+
+    #[test]
+    fn the_cures_heal_what_object_txt_says() {
+        assert_eq!(CURE_HEAL, [20, 40, 60]);
+    }
+
+    #[test]
+    fn minor_healing_heals_by_level_and_missing_hp() {
+        assert_eq!(minor_healing_heal(1, 9), 11, "CL1: 11, m_bonus 0");
+        assert_eq!(minor_healing_heal(12, 45), 22, "CL12: 22 > 45 x 3%");
+        assert_eq!(minor_healing_heal(40, 1000), 100, "CL40: 10% of 1000 missing");
+    }
+
+    /// Review of #1076, P2: a CL10-19 Borg at 15/60 against 12 a turn skips
+    /// CLW by the caution's loss and level gates and qualifies for CSW. The
+    /// ban asks each cure with its own heal, so carrying a CLW does not block
+    /// the CSW.
+    #[test]
+    fn each_cure_asks_the_ban_with_its_own_heal() {
+        let ban = HealBan::Ratio { cur_hp: 15, max_hp: 60, damage: 12.0, min_ratio_tenths: 30 };
+        assert!(!ban.allows(CURE_HEAL[0]), "CLW: 35 HP, 2.9 turns");
+        assert!(ban.allows(CURE_HEAL[1]), "CSW: 55 HP, 4.6 turns");
+        assert!(ban.allows(CURE_HEAL[2]));
+        assert!(HealBan::Free.allows(0));
+        assert!(!HealBan::Banned.allows(i32::MAX / 2));
+        let crow = HealBan::Ratio { cur_hp: 3, max_hp: 11, damage: 7.2, min_ratio_tenths: 30 };
+        assert!(!crow.allows(i32::MAX / 2), "11 max HP against a crow: no heal buys three turns");
+    }
+
+    /// Re-review of #1089, P2: the confusion and blindness fixes of
+    /// `borg_heal` come before the heal ban is read (they cure what keeps
+    /// the Borg from reading Phase Door; #842's ban never held them), and
+    /// every healing action after it asks the ban. The order is the
+    /// documented exception, so it is pinned here.
+    #[test]
+    fn the_status_cures_come_before_the_heal_ban() {
+        let src = include_str!("borg_caution.rs");
+        let heal = src.find("fn borg_heal(st: &mut BorgState, danger: i32)").expect("borg_heal");
+        let body = &src[heal..heal + src[heal..].find("\n}\n").expect("end of borg_heal")];
+        let at = |needle: &str| body.find(needle).unwrap_or_else(|| panic!("{needle} in borg_heal"));
+        let ban = at("let ban = crate::borg_fast_fragile::heal_ban(st);");
+        assert!(at("# Fixing Confusion. Level 1") < ban);
+        assert!(at("# Fixing Blindness.") < ban);
+        assert!(ban < at("// Cure light Wounds (20)"));
+        // After the ban every potion, staff, rod, spell and activation asks it.
+        let after = &body[ban..];
+        for call in ["borg_quaff_potion(", "borg_quaff_crit(", "borg_use_staff_fail(", "borg_zap_rod(", "borg_activate_item(", "borg_spell_fail("] {
+            for (k, _) in after.match_indices(call) {
+                let before = &after[k.saturating_sub(40)..k];
+                assert!(before.contains("ok(H::"), "{call} at +{k} after the ban without ok(...)");
+            }
+        }
+    }
+
+    /// Re-review of #1089 at c7e55e1d, P2: the unseen-bump heal and the
+    /// Recall wait ask the contact ratio for every cure they use; attack on
+    /// sight no longer heals before the caution (it defers its attack), and
+    /// the deferred attack runs right after the caution in the dungeon think.
+    #[test]
+    fn the_fallbacks_ask_the_ratio_and_the_attack_waits_for_the_caution() {
+        let caution = include_str!("borg_caution.rs");
+        let body = |name: &str| {
+            let at = caution.find(name).unwrap_or_else(|| panic!("{name}"));
+            &caution[at..at + caution[at..].find("\n}\n").expect("end")]
+        };
+        for f in ["fn unseen_bump_response(", "fn buy_time_for_recall("] {
+            let b = body(f);
+            let gate = b.find("ratio_gate(st)").unwrap_or_else(|| panic!("{f} reads the ratio"));
+            for call in ["borg_quaff_potion(st, st.item_val.sv_potion_cure", "borg_quaff_crit(", "borg_zap_rod(st, st.item_val.sv_rod_healing", "sv_potion_healing", "sv_potion_life"] {
+                for (k, _) in b[gate..].match_indices(call) {
+                    let before = &b[gate..][k.saturating_sub(60)..k];
+                    assert!(before.contains("gate(H::"), "{f}: {call} without gate(...)");
+                }
+            }
+        }
+        assert!(!caution.contains("fn fast_fragile_cure("), "no cure before the caution's order");
+        // #1064's kill-on-sight floor cure asks the same gate.
+        let attack = include_str!("borg_fight_attack.rs");
+        let at = attack.find("fn kill_on_sight_floor_cure(").expect("#1064's floor cure");
+        let floor = &attack[at..at + attack[at..].find("\n}\n").expect("end")];
+        assert!(floor.contains("ratio_gate(st)") && floor.contains("gate(a) &&"), "the floor cure asks the contact ratio");
+        let think = include_str!("borg_think_dungeon.rs");
+        let c = think.find("if borg_caution(st) {").expect("caution in the think");
+        let d = think.find("fast_fragile_deferred_attack(st)").expect("the deferred attack in the think");
+        assert!(c < d && d - c < 400, "the deferred attack comes right after the caution");
+    }
+
+    /// Review of #1089, P2: the heal of every action is the engine's.
+    #[test]
+    fn every_healing_action_heals_what_the_game_data_says() {
+        use HealAction::*;
+        assert_eq!(heal_of(PotionClw, 10, 45), 20);
+        assert_eq!(heal_of(ActCureSerious, 10, 45), 40);
+        assert_eq!(heal_of(PotionCcw, 10, 45), 60);
+        assert_eq!(heal_of(StaffHealing, 30, 550), 300, "300 > 35% of 550");
+        assert_eq!(heal_of(StaffHealing, 30, 1000), 350, "35% of 1000 missing");
+        assert_eq!(heal_of(RodHealing, 30, 1000), 500);
+        assert_eq!(heal_of(SpellHealing, 30, 1000), 2000);
+        assert_eq!(heal_of(SpellMinorHealing, 12, 45), 22);
+        assert_eq!(heal_of(MushFastRecovery, 1, 5), 30);
+        assert_eq!(heal_of(NoHeal, 30, 1000), 0, "a cure that heals nothing");
+        // The review's case: 250/800 HP and a 570 HP threshold. A full heal
+        // passes, the staff (300, 250 + 300 = 550) does not.
+        let ban = HealBan::Ratio { cur_hp: 250, max_hp: 800, damage: 190.0, min_ratio_tenths: 30 };
+        assert!(ban.allows(i32::MAX / 2));
+        assert!(!ban.allows(heal_of(StaffHealing, 30, 550)));
+        assert!(ban.allows(heal_of(RodHealing, 30, 550)), "750 HP");
+        assert!(!ban.allows(heal_of(NoHeal, 30, 550)), "a cure of the cut alone leaves 250");
+    }
+
+    /// Review of #1089, P2: cornered (`fast_fragile_no_heal = 2`) at 15/60
+    /// against 16 a turn, only a CLW, ratio 30 (48 HP needed). A full heal
+    /// passes the ratio, but the cornered exception comes first, so the
+    /// caution (heal_ban) and attack on sight (yield_to_cure) agree: the CLW
+    /// is allowed in both. Not cornered, both refuse it.
+    #[test]
+    fn caution_and_attack_on_sight_agree_on_the_cornered_exception() {
+        let ratio = |_: &mut ()| Some(HealBan::Ratio { cur_hp: 15, max_hp: 60, damage: 16.0, min_ratio_tenths: 30 });
+        let clw = CURE_HEAL[0];
+        let cornered = contact_ban(&mut (), false, true, 30, |_| true, ratio);
+        assert_eq!(cornered, Contact::Cornered);
+        let ban = ban_of(&[cornered]);
+        assert!(ban.allows(clw), "caution drinks the CLW");
+        assert!(yield_allowed(30, ban, clw), "attack on sight steps aside for it");
+        let open = contact_ban(&mut (), false, true, 30, |_| false, ratio);
+        assert!(matches!(open, Contact::Ratio(_)));
+        let ban = ban_of(&[open]);
+        assert!(!ban.allows(clw), "35 HP after the CLW, under 48");
+        assert!(!yield_allowed(30, ban, clw), "and the attack goes on");
+        // The order: bleeding out and the floor without a ratio lift first;
+        // the cornered test does not run then; no exception bans.
+        assert_eq!(contact_ban(&mut (), true, false, 30, |_| unreachable!(), |_| unreachable!()), Contact::Lifted);
+        assert_eq!(contact_ban(&mut (), false, true, 0, |_| unreachable!(), |_| unreachable!()), Contact::Lifted);
+        assert_eq!(contact_ban(&mut (), false, false, 30, |_| false, |_| unreachable!()), Contact::Banned);
+        assert_eq!(contact_ban(&mut (), false, true, 30, |_| false, |_| Option::None), Contact::RatioClosed, "not even a full heal");
+        assert_eq!(ban_of(&[Contact::Lifted, Contact::Banned]), HealBan::Banned);
+        assert_eq!(ban_of(&[]), HealBan::Free);
+    }
+
+    /// Re-review of #1089 at 47b46056, P2: 5/11 HP against 8 a turn at ratio
+    /// 30 needs 24 HP after the cure, which not even a full heal (11) gives.
+    /// The contact is `RatioClosed`: `borg_heal` stops, and so do the
+    /// fallbacks (the unseen-bump heal, the Recall wait, #1064's floor cure),
+    /// which read the ratio's verdicts but not #842's plain ban.
+    #[test]
+    fn a_ratio_the_maximum_cannot_meet_closes_the_fallbacks_too() {
+        let ratio = HealBan::Ratio { cur_hp: 5, max_hp: 11, damage: 8.0, min_ratio_tenths: 30 };
+        assert!(!ratio.allows(i32::MAX / 2), "11 HP at most, 24 needed");
+        let closed = contact_ban(&mut (), false, true, 30, |_| false, |_| Option::None);
+        assert_eq!(closed, Contact::RatioClosed);
+        let ban = ban_of(&[closed]);
+        assert_eq!(ban, HealBan::RatioClosed);
+        assert!(ban.blocks_all(), "borg_heal stops");
+        let fallback = fallback_ban(ban);
+        for heal in CURE_HEAL { assert!(!fallback.allows(heal), "no fallback cure of {heal}"); }
+        // #842's plain ban still leaves the fallbacks as they were; the
+        // ratio's verdicts pass through.
+        assert_eq!(fallback_ban(HealBan::Banned), HealBan::Free);
+        assert_eq!(fallback_ban(HealBan::Free), HealBan::Free);
+        assert_eq!(fallback_ban(ratio), ratio);
+        assert!(HealBan::Banned.blocks_all() && !ratio.blocks_all() && !HealBan::Free.blocks_all());
+        // One closed contact closes the lot, a #842 ban still bans.
+        let open = Contact::Ratio(HealBan::Ratio { cur_hp: 5, max_hp: 60, damage: 8.0, min_ratio_tenths: 30 });
+        assert_eq!(ban_of(&[open, Contact::RatioClosed]), HealBan::RatioClosed);
+        assert_eq!(ban_of(&[Contact::RatioClosed, Contact::Banned]), HealBan::Banned);
     }
 }

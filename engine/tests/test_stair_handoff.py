@@ -54,6 +54,8 @@ PINNED_TOWN_SETTINGS = [
     ("attack_reserve_spell_overexert", 1),
     # #1072 shipped the #926 fast-fragile bundle after these incidents.
     ("fast_fragile_heal_floor", 0), ("fast_fragile_escape_quantile", 0), ("fast_fragile_count_dot", 0),
+    # #1065 shipped the fast-fragile heal ratio (30) after these incidents.
+    ("fast_fragile_heal_min_ratio", 0),
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
