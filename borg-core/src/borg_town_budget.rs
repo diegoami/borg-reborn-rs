@@ -316,11 +316,12 @@ pub(crate) fn black_market_threshold(min_gold: i64, delta: i64, level: i64) -> i
     (min_gold - delta.max(0) * level.max(0)).max(0)
 }
 
-/// The Black Market's spending share (`borg_black_market_max_percentage`) at
-/// this purse: 0 below the threshold (nothing is bought there, the urgent
-/// needs included, as for any purse the cap leaves nothing of), the configured
-/// share above it. The planner, its record and the live purchase all read it
-/// here, so a replay sees what the game saw.
+/// The Black Market's spending share (`borg_black_market_max_percentage`) for
+/// ordinary purchases at this purse: 0 below the threshold, the configured share
+/// above it. The budget (so the plan record) and through it the solver read it
+/// here, so a replay sees what the game saw. The urgent needs do not: they keep
+/// the configured cap (`urgent_market_allows`), and the live checkout reads the
+/// configured share too, the plan it executes having been made at this purse.
 pub(crate) fn black_market_percentage(st: &BorgState, gold: i64) -> i64 {
     use crate::params::{value, Param};
     black_market_percentage_with(st, gold, i64::from(value(Param::town_black_market_min_gold)),

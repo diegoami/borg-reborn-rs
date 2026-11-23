@@ -875,8 +875,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2158` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2587` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2580` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2624` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2617` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -1044,7 +1044,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2163` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2163` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:748` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:754` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1040` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1003` |
 
@@ -1449,7 +1449,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:621` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:632` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -3082,9 +3082,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:686` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:692` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:538` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:677` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:683` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -3212,11 +3212,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:573` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:635` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:641` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2501` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2389` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2538` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2424` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -7014,7 +7014,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1154` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1155` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1156` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2430` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2465` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7104,7 +7104,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2492` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2529` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7275,15 +7275,19 @@ Changed:
   the Alchemist (about 400) from that depth, where it competes with the other
   non-urgent buys for the purse (not measured against Cure Light Wounds or
   Phase Door).
-- `town_restore_stat_percent` (compiled 0, **shipped 20**, review of #1112,
-  F2): a Mushroom of Vigor (all five stats) or Purging (strength and
-  constitution), which the Borg eats when a stat is drained (`borg_use_things`;
-  `borg_caution` while fighting a unique), is worth 20 percent of its drained
-  value on each stat below 18/100 while nothing is drained, so one is bought,
-  kept and stored at the Home as a reserve of one. Before, the supply filter
-  kept a restoration only for a drained stat, so an undrained Vigor was worth 0
-  and could be sold. At full stats (18/100 or better in all five) it is still
-  worth 0.
+- `town_restore_stat_percent` (compiled 0, **shipped 50**, review of #1112,
+  F2 and the re-review's F1): a Mushroom of Vigor (all five stats) or Purging
+  (strength and constitution), which the Borg eats when a stat is drained
+  (`borg_use_things`; `borg_caution` while fighting a unique), is one copy on a
+  row of its own (`RESTORE_STAT_RESERVE`), worth 50 percent of one stat's
+  restoration weight while nothing is drained, if it would restore a stat below
+  18/100: a reserve of one, bought, kept and stored at the Home. A second copy
+  adds nothing, and the stat rows are not touched (a first version counted 20
+  percent on each stat row, which valued five copies and could crowd out a
+  permanent stat potion). Before, the supply filter kept a restoration only for
+  a drained stat, so an undrained Vigor was worth 0 as a stat restoration and
+  could be sold. With all five stats at 18/100 or better its **stat** value is
+  still 0; Purging keeps its poison value (cure and prepared row).
 - **Buy only what the Borg drinks.** Brawn, Intellect, Contemplation,
   Nimbleness and Toughness (base 1000; each gains one stat and loses another at
   random) were priced for every class, but `borg_junk` drinks them only for some
@@ -7319,7 +7323,7 @@ Switch off with `town_black_market_min_gold` 0 (the cap alone, as before),
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:872` |
+| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:884` |
 
 ## Breadth-first exploration from the staircases (#1080, #1085)
 
