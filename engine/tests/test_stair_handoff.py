@@ -59,6 +59,10 @@ PINNED_TOWN_SETTINGS = [
     ("cave_light_engine_radius", 0),
     # #1094 shipped #1066's two Phase Door switches after these incidents.
     ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
+    # #1100 shipped the position belief (#879) at decay 5 after these incidents.
+    ("unseen_belief", 0), ("unseen_decay_percent", 20),
+    # #1085 shipped breadth-first exploration after these incidents.
+    ("explore_breadth_first", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
