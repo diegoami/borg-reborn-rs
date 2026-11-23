@@ -400,6 +400,75 @@ fn weighted_route(
     avoid: bool,
     sneak: bool,
     weight: i32,
+    note: bool,
+) -> Result<Option<borg_flow::StairPath>, usize> {
+    // borg-reborn-rs (#931, review of #965): with caution_stairs_immobile_reach,
+    // the whole route search (the clean-path check included) first keeps out
+    // of the reach of the known immobile attackers (the squares next to
+    // them); only when that finds no usable route does the ordinary search
+    // run. The danger weight charged their reach too little (a white jelly
+    // beside the route cost 2.9 steps at full HP, seed 829474344).
+    let on = crate::borg_caution::stairs_immobile_reach_on();
+    let plain = weighted_route_with(st, kinds, depth, avoid, sneak, weight, false);
+    if !on {
+        return plain;
+    }
+    let reach_free = weighted_route_with(st, kinds, depth, avoid, sneak, weight, true);
+    let budget = crate::borg_caution::stairs_immobile_reach_extra_steps();
+    let plain_grids = match (&plain, note) {
+        (Ok(Some(path)), true) => path.grids.clone(),
+        _ => Vec::new(),
+    };
+    let (route, avoided) = prefer_reach_free(reach_free, plain, budget, |r: &borg_flow::StairPath| r.cost, |a, b| a.grids == b.grids);
+    if note && avoided {
+        // Only a flight step that keeps out of a reach the ordinary route
+        // enters is noted (a probe passes note = false).
+        let taken = matches!(&route, Ok(Some(path)) if path.grids.len() >= 2);
+        let entered = plain_grids.iter().skip(1).find_map(|grid| crate::borg_caution::immobile_reach_of(st, grid.y, grid.x));
+        if let (true, Some(k)) = (taken, entered) {
+            let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+            borg_io::borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
+        }
+    }
+    route
+}
+
+/// borg-reborn-rs (#931, reviews of #965): the reach-free route when it is
+/// usable (`Ok(Some)`) and costs at most `budget_steps` more than the
+/// ordinary route (0: any cost; a cost is in hundredths of a step); else the
+/// ordinary route. The flag says the reach-free route was taken and differs
+/// from the ordinary one.
+fn prefer_reach_free<T>(
+    reach_free: Result<Option<T>, usize>,
+    plain: Result<Option<T>, usize>,
+    budget_steps: i32,
+    cost: impl Fn(&T) -> u64,
+    same: impl Fn(&T, &T) -> bool,
+) -> (Result<Option<T>, usize>, bool) {
+    let Ok(Some(free)) = reach_free else {
+        return (plain, false);
+    };
+    let Ok(Some(ordinary)) = &plain else {
+        return (Ok(Some(free)), false);
+    };
+    if budget_steps > 0 && cost(&free) > cost(ordinary).saturating_add(100 * budget_steps as u64) {
+        return (plain, false);
+    }
+    let differs = !same(&free, ordinary);
+    (Ok(Some(free)), differs)
+}
+
+/// `weighted_route`'s search; with `keep_out`, every square next to a known
+/// immobile attacker is refused, in the first search and the clean one.
+#[allow(clippy::too_many_arguments)]
+fn weighted_route_with(
+    st: &mut BorgState,
+    kinds: &[Which],
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+    keep_out: bool,
 ) -> Result<Option<borg_flow::StairPath>, usize> {
     let search = kinds.iter().any(|which| matches!(which, Which::More))
         && continuing_up_stair_search(st);
@@ -416,7 +485,9 @@ fn weighted_route(
             }
         }
     }
-    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true) else {
+    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |st, grid| {
+        !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
+    }) else {
         return Ok(None);
     };
     let Some(percent) = crate::borg_caution::weighted_stairs_blocker_percent(st) else {
@@ -440,6 +511,7 @@ fn weighted_route(
     let search = |check: &mut WeightedPathCheck, st: &mut BorgState, goals: &[loc], target| {
         borg_flow::weighted_stair_path(st, goals, depth, avoid, sneak, weight, |st, grid| {
             check.blocker_at(st, grid, target).is_none()
+                && !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
         })
     };
     let clean = if mode == 3 {
@@ -504,7 +576,7 @@ fn weighted_flight(
         Some(Which::More) => (c"down-stairs", &[Which::More]),
         None => (c"stairs", &[Which::Less, Which::More]),
     };
-    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight) {
+    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight, true) {
         Ok(Some(path)) => {
             if options.ranged_reach > 0 {
                 let path_grids: Vec<_> = path.grids.iter().skip(1).map(|grid| (grid.y, grid.x)).collect();
@@ -556,7 +628,7 @@ pub(crate) fn bounded_desperate_flight(st: &mut BorgState, up: bool, max_moves: 
 
 pub(crate) fn weighted_stair_reachable(st: &mut BorgState, up: bool, avoid: bool, weight: i32) -> bool {
     let which = if up { Which::Less } else { Which::More };
-    matches!(weighted_route(st, &[which], 250, avoid, false, weight), Ok(Some(_)))
+    matches!(weighted_route(st, &[which], 250, avoid, false, weight, false), Ok(Some(_)))
 }
 
 /// Do a Stair-Flow. Look at how far away this grid is to my closest stair.
@@ -1380,6 +1452,40 @@ mod up_search_handoff_tests {
 }
 
 #[cfg(test)]
+mod reach_preference_tests {
+    use super::prefer_reach_free;
+
+    fn pick(free: Result<Option<u64>, usize>, plain: Result<Option<u64>, usize>, budget: i32) -> (Result<Option<u64>, usize>, bool) {
+        // A route is its cost here, in hundredths of a step.
+        prefer_reach_free(free, plain, budget, |c: &u64| *c, |a, b| a == b)
+    }
+
+    #[test]
+    fn a_usable_reach_free_route_wins() {
+        assert_eq!(pick(Ok(Some(4000)), Ok(Some(3600)), 0), (Ok(Some(4000)), true));
+        assert_eq!(pick(Ok(Some(3600)), Ok(Some(3600)), 0), (Ok(Some(3600)), false), "the same route: nothing avoided");
+    }
+
+    #[test]
+    fn a_blocked_reach_free_route_falls_back_to_the_clean_plain_one() {
+        // First review of #965: the only reach-free route is refused by the
+        // clean-path check; the ordinary clean route is used.
+        assert_eq!(pick(Err(7), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Ok(None), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Err(7), Err(9), 0), (Err(9), false), "the ordinary result, blocker and all");
+    }
+
+    #[test]
+    fn a_detour_past_the_budget_is_not_taken() {
+        // Second review of #965: a 180-step detour against a 2-step route.
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 20), (Ok(Some(200)), false));
+        assert_eq!(pick(Ok(Some(2_200)), Ok(Some(200)), 20), (Ok(Some(2_200)), true), "exactly 20 extra steps");
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 0), (Ok(Some(18_000)), true), "0: no budget");
+        assert_eq!(pick(Ok(Some(18_000)), Err(3), 20), (Ok(Some(18_000)), false), "no ordinary route to compare");
+    }
+}
+
+#[cfg(test)]
 mod off_stair_handoff_tests {
     use super::*;
     const LEVEL_STARTED: i32 = 10;
@@ -1413,7 +1519,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;
-    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_MORE};
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
@@ -1422,6 +1528,61 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.borg.c.y += i32::from(engine::ddy(dir));
         st.borg.time.now += 1;
         assert_eq!(st.borg.c, expected);
+    }
+
+    if case == "interrupted-search" {
+        use crate::borg_flow_misc::borg_flow_spastic;
+
+        let stair = loc { x: 51, y: 19 };
+        let floor = loc { x: 51, y: 20 };
+        let wall = loc { x: 51, y: 21 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 17..=22 {
+            for x in 49..=53 {
+                st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+            }
+        }
+        st.cave.grid_mut(stair.x, stair.y).feat = FEAT_LESS as u8;
+        st.cave.grid_mut(floor.x, floor.y).feat = FEAT_FLOOR as u8;
+        // Leave fewer search prospects at the floor square than at the stair.
+        st.cave.grid_mut(50, 21).feat = FEAT_NONE as u8;
+        st.cave.grid_mut(52, 21).feat = FEAT_NONE as u8;
+        st.borg.c = floor;
+        st.borg.avoidance = 332;
+        for (index, value) in [(BI_CLEVEL, 25), (BI_CURHP, 332), (BI_MAXHP, 332), (BI_LIGHT, 2)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.stairs.less.num = 0;
+        st.flow.track_step.num = 3;
+
+        // A cost-one search returns to the stair, then dark exploration
+        // wins the next move. The observed stair-floor-stair trail lets
+        // the reversing dark step count the search before leaving again.
+        for searches in 1..=5 {
+            assert!(borg_flow_spastic(st, true));
+            observe_move(st, b'8', stair);
+            for (i, grid) in [stair, floor, stair].into_iter().enumerate() {
+                st.flow.track_step.x[i] = grid.x;
+                st.flow.track_step.y[i] = grid.y;
+            }
+            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * (searches - 1));
+
+            borg_flow::borg_flow_clear(st);
+            borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
+            borg_flow::borg_flow_spread(st, 2, true, true, false, -1, false);
+            assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
+            observe_move(st, b'2', floor);
+            assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
+        }
+        assert!(!borg_flow_spastic(st, true), "the same staircase search is exhausted");
+        assert!(st.io.queued_keys().is_empty());
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
     }
 
     let start = loc { x: 40, y: 20 };

@@ -185,6 +185,35 @@ fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
     b_j
 }
 
+/// The return leash of `borg_think_dungeon` ("Return to Stair (wandered
+/// too far)"): the distance from the nearest known up staircase beyond which
+/// the Borg walks back to it, or `None` where it does not apply. Shared with
+/// the breadth-first exploration (#1080), which never targets past it.
+pub(crate) fn return_leash(st: &BorgState) -> Option<i32> {
+    if !(st.stairs.less.num != 0
+        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
+        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5)
+    {
+        return None;
+    }
+    // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+    // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
+    let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+    // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
+    // enough" below clears the return, so a smaller one would flap).
+    if crate::borg_kit::leash_active(st) {
+        leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
+    }
+    Some(leash)
+}
+
+/// #1080: the distance (`distance`, as the return leash measures it) from
+/// `at` to the nearest known up staircase, or `None` with none known.
+pub(crate) fn up_stair_distance(st: &BorgState, at: loc) -> Option<i32> {
+    let t = &st.stairs.less;
+    (0..usize::try_from(t.num).unwrap_or(0)).map(|i| engine::distance(at, loc { x: t.x[i], y: t.y[i] })).min()
+}
+
 /// "Start leaving" and "Start fleeing", each with its note.
 fn start_leaving_fleeing(st: &mut BorgState, why: &str) {
     /* Start leaving */
@@ -691,21 +720,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Keep borg on a short leash */
-    if st.stairs.less.num != 0
-        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
-        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5
-    {
+    if let Some(leash) = return_leash(st) {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
-
-        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
-        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
-        let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
-        // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
-        // enough" below clears the return, so a smaller one would flap).
-        if crate::borg_kit::leash_active(st) {
-            leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
-        }
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
@@ -1571,8 +1588,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Phase */
         /* borg-reborn-rs (#584): through the one Phase Door decision; no
          * check, as before. */
+        /* borg-reborn-rs (#1094, review of #1096): the longer-range
+         * teleports are not a Phase Door landing; when #1066's never-seen
+         * gate refused the decision, they are still tried, in the same
+         * order. Any other refusal stops them, as before. */
+        let longer = |st: &mut BorgState| {
+            borg_dimension_door(st, 90)
+                || borg_spell(st, TELEPORT_SELF)
+                || borg_spell(st, PORTAL)
+                || borg_shadow_shift(st, 90)
+        };
         if borg_allow_teleport(st)
-            && crate::borg_escape::phase_door(
+            && (crate::borg_escape::phase_door(
                 st,
                 crate::borg_escape::PhaseSite::TwitchyThink,
                 crate::borg_escape::PhaseCheck::None,
@@ -1587,12 +1614,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
                             let sv = st.item_val.sv_scroll_phase_door;
                             borg_read_scroll(st, sv)
                         }
-                        || borg_dimension_door(st, 90)
-                        || borg_spell(st, TELEPORT_SELF)
-                        || borg_spell(st, PORTAL)
-                        || borg_shadow_shift(st, 90)
+                        || longer(st)
                 },
-            )
+            ) || (st.borg.phase_gate_refused == Some(st.borg.time.now) && longer(st)))
         {
             /* Success */
             return choice!("twitch_phase");

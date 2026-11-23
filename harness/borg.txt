@@ -269,6 +269,10 @@ borg_param_town_departure_free_slots = 2
 # at or below it goes only after every surplus. 0 = whole stacks.
 
 borg_param_town_store_keep_min = 3
+# #1048: keep Home space for different consumables once the carried reserve is covered.
+borg_param_town_home_stack_limit = 2
+# #1049: clear known kinds the town planner deliberately excludes from purchases.
+borg_param_town_home_reject_unwanted = 1
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
 # situations"; "if I have 20 CLW I would have say 4 detect invisible and 2
@@ -823,6 +827,16 @@ borg_param_flow_leash_stairs_max_level = 20
 borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
+# #1080, #1085: breadth-first exploration from the staircases below a
+# maximum HP (the ring nearest the stairs is explored first). Shipped 1
+# (owner, 2026-11-23: "ship it like that ... turn it on by default"), with
+# the per-class thresholds of the class files; 0 = C's depth-first order.
+borg_param_explore_breadth_first = 1
+borg_param_explore_bfs_max_hp = 25
+borg_param_explore_bfs_slack = 0
+# The threshold by level (per class with __<class>): max HP below
+# explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
+borg_param_explore_bfs_hp_per_level = 0
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
@@ -863,6 +877,11 @@ borg_param_defend_bless_fail = 25
 # 0.
 
 borg_param_caution_heal_when_outmatched = 1
+# #934 (seed 829474344): poisoned, no usable poison cure and below this
+# percent of max HP, with an escape at hand: the escapes before the strategic
+# retreat, the retreat when they decline. Shipped 0 (today's play); 75 is the
+# hypothesis.
+borg_param_caution_poisoned_no_cure_retreat_hp_percent = 0
 borg_param_caution_heal_outmatched_min_loss = 50
 
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
@@ -1108,6 +1127,24 @@ borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
 borg_param_caution_unseen_bump_phase_min_danger = 5
 
+# #1066 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+# merge"). From the level-1 deaths of track-p 206cf4e7: the Priest 694417276
+# read Phase Door at 41/55 HP into an unexplored room ("0 scary landing grids
+# of 100"), and the Blackguard 2025089708 phased away from its staircase.
+# - escape_phase_unknown_scary: a Phase Door landing grid never seen counts
+#   as scary (escape_phase_unknown_hp_percent 50: only at half HP or more;
+#   escape_phase_unknown_tolerance 75 for the sites with no landing check).
+# - escape_phase_newcomer_wait: a fight lost only because a monster appeared
+#   at range is fought on while the race against the adjacent monsters wins,
+#   HP is at least escape_phase_newcomer_hp_percent (50) of max, and the next
+#   turn cannot cost escape_phase_newcomer_turn_percent (100) of current HP.
+# The replays of the two deaths (on the specimen, one seed each) lived to the
+# cap; no zoo measurement yet (#1073). The unknown switch refuses most Phase
+# Doors in unexplored areas above half HP (71 of 83 in the Priest's replay).
+
+borg_param_escape_phase_unknown_scary = 1
+borg_param_escape_phase_newcomer_wait = 1
+
 # #980: the emergency attack spell (Magic Missile, the reserve spell) only
 # within the current mana (#1056, owner 2026-11-22: "let us change value of
 # attack_reserve_spell_overexert to 0"). At 1 (C) it is cast beyond the
@@ -1144,6 +1181,13 @@ borg_param_escape_teleport_landing_either = 0
 # and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
+# #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
+# that melee kills in this many turns while the danger here from every
+# monster over the fight stays below the percent of the HP. The turns ship 0
+# (today's play; 3 is the hypothesis); the percent, read only when the turns
+# are on, is 100.
+borg_param_caution_retreat_immobile_kill_turns = 0
+borg_param_caution_retreat_immobile_danger_percent = 100
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
@@ -1162,9 +1206,23 @@ borg_param_caution_ranged_vs_immobile = 0
 #   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
 borg_param_caution_stairs_clean_path = 3
 borg_param_caution_stairs_block_danger_percent = 50
+# #931 (seed 829474344, a white jelly beside the stair flight): the weighted
+# stair flight keeps out of the squares next to a known immobile attacker
+# when another route exists. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_caution_stairs_immobile_reach = 0
+# #931: the reach-free route at most this many steps costlier than the
+# ordinary one (0 = any); read only with the switch on. 20 is a hypothesis.
+borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
+# #932 (seed 829474344): no strategic retreat after this many in a row from
+# the same place, each within the thinks of the last (the next flow step undid
+# each). Shipped 0 (today's play); 3 is the hypothesis.
+borg_param_caution_retreat_oscillation_limit = 0
+borg_param_caution_retreat_oscillation_thinks = 3
+# #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
+borg_param_caution_retreat_oscillation_backaway = 0
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
@@ -1523,13 +1581,21 @@ borg_param_attack_on_sight = 1
 # safe moment in the dungeon (down to the depth below, danger 0 over the turns
 # below, at least the HP percent below, no harmful status, food in the pack),
 # so a found Cure Light Wounds is known before it is needed. A bad potion costs
-# turns (Sleep paralyses 5+1d5, Poison stops regeneration); none kills by
-# itself. #470 still forbids unknown scrolls, mushrooms, devices and any
-# unknown item in an emergency. 0 = #470 for potions too.
+# turns (Sleep paralyses 5+1d5, Poison stops regeneration); only Poison can
+# kill by itself, at low HP (1 HP a turn for 10+2d7 turns: #1063). #470 still
+# forbids unknown scrolls, mushrooms, devices and any unknown item in an
+# emergency. 0 = #470 for potions too.
 borg_param_item_test_unknown_potions = 1
 borg_param_item_test_unknown_min_hp_percent = 50
 borg_param_item_test_unknown_danger_turns = 10
 borg_param_item_test_unknown_max_depth = 30
+# #1063 (owner, 2026-11-23: "put minimum hp at 60"; Ranger 142490685 tested at
+# 18/18 HP with no cure and died of the Poison, which costs up to 24): test
+# only with at least 60 HP, unless a known potion of Cure Critical Wounds or
+# Neutralize Poison is in the pack, which waives it; the percent floor above
+# stays.
+borg_param_item_test_unknown_min_hp = 60
+borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs
@@ -1539,6 +1605,15 @@ borg_param_item_test_unknown_max_depth = 30
 # not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
 # confused at the patch until death, CLW in the pack).
 borg_param_attack_kill_on_sight_min_hp_percent = 50
+# #1064: when that floor declines the attack, the cure it counted is drunk in
+# the same think (confused: Cure Serious, then Critical, which cure the
+# confusion; then Cure Light, which shortens it by 20 turns) unless it does not
+# outlive the next turn and an escape is at hand (it then takes the stairs
+# underfoot or Phase Door in the same think, and drinks after all if the Phase
+# Door's own gates refuse it), and #867's "attacking first" hold of the
+# confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
+# neither attacking nor drinking with this 0. 0 = #969 alone.
+borg_param_attack_kill_on_sight_floor_cure = 1
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
@@ -1585,11 +1660,15 @@ borg_param_update_miss_wall_guess = 1
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
 # is there (100 - decay per monster turn; 100 if immobile or asleep). Melee
-# never. Pairs with cave_light_engine_radius = 1. Ships 0 until the zoo
-# measures it; max_age and decay are hypotheses.
-borg_param_unseen_belief = 0
+# never. Pairs with cave_light_engine_radius = 1. Shipped 1 with decay 5
+# (owner, 2026-11-23: "let us switch to light+belief, decay 5"), on borg-zoo#702's
+# belief full tier at track-p f8725bc0 (900 starts: light+belief-decay5 13
+# deaths, ctl 23, light 17, light+belief at decay 20 15; p 0.087 against ctl,
+# descriptive). The decay grid 10/5/0 on an independent block (starts 1-900)
+# is requested on borg-zoo#702; max_age and decay remain hypotheses.
+borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
-borg_param_unseen_decay_percent = 20
+borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
@@ -1823,6 +1902,8 @@ borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
+borg_param_explore_bfs_max_hp__warrior = 31
+borg_param_explore_bfs_hp_per_level__warrior = 2
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1844,6 +1925,8 @@ borg_param_town_staple_clw__mage = 6
 borg_param_town_staple_csw__mage = 3
 borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
+borg_param_explore_bfs_max_hp__mage = 35
+borg_param_explore_bfs_hp_per_level__mage = 1
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1864,6 +1947,8 @@ borg_param_town_staple_clw__druid = 5
 borg_param_town_staple_csw__druid = 3
 borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
+borg_param_explore_bfs_max_hp__druid = 36
+borg_param_explore_bfs_hp_per_level__druid = 2
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1885,6 +1970,8 @@ borg_param_town_staple_csw__priest = 3
 borg_param_town_staple_phase__priest = 12
 borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
+borg_param_explore_bfs_max_hp__priest = 31
+borg_param_explore_bfs_hp_per_level__priest = 2
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1906,6 +1993,8 @@ borg_param_town_staple_clw__necromancer = 5
 borg_param_town_staple_csw__necromancer = 3
 borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
+borg_param_explore_bfs_max_hp__necromancer = 31
+borg_param_explore_bfs_hp_per_level__necromancer = 2
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1929,6 +2018,8 @@ borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
+borg_param_explore_bfs_max_hp__paladin = 34
+borg_param_explore_bfs_hp_per_level__paladin = 2
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1952,6 +2043,8 @@ borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
+borg_param_explore_bfs_max_hp__rogue = 36
+borg_param_explore_bfs_hp_per_level__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -1978,6 +2071,8 @@ borg_param_town_staple_clw__ranger = 7
 borg_param_town_staple_csw__ranger = 4
 borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
+borg_param_explore_bfs_max_hp__ranger = 44
+borg_param_explore_bfs_hp_per_level__ranger = 2
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2001,6 +2096,8 @@ borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
+borg_param_explore_bfs_max_hp__blackguard = 30
+borg_param_explore_bfs_hp_per_level__blackguard = 2
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
