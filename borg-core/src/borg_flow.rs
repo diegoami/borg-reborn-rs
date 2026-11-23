@@ -598,6 +598,12 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_stepped_from(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#1125, `caution_paralyser_no_reach`): without Free
+    // Action, never onto a known paralyser's grid or next to it, stair
+    // flights included. Not the Borg's own grid, so a flow can lead out.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return true;
+    }
     if ag.kill != 0 && crate::borg_caution::kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }
@@ -1063,6 +1069,13 @@ fn borg_flow_ignores_danger(st: &BorgState) -> bool {
 /// Enqueue a fresh (legal) starting grid, if it is safe.
 pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
     if st.flow.retreat_blocks(loc { x, y }) {
+        return;
+    }
+    // borg-reborn-rs (#1125, review of #1129, finding 1): a destination in a
+    // known paralyser's reach is not seeded either (`spread_blocked` only
+    // sees the grids the flow spreads to; a staircase next to a floating eye
+    // was still a goal). Not the Borg's own grid.
+    if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
         return;
     }
     // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
