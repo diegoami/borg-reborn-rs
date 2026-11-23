@@ -801,11 +801,13 @@ borg_param_flow_leash_stairs_max_level = 20
 borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
-# #1080: breadth-first exploration from the staircases below a maximum HP
-# (the ring nearest the stairs is explored first). 0 = C's depth-first
-# order, today's play, until the zoo measures it alone and with stair_scum.
+# #1080, #1085: breadth-first exploration from the staircases below a
+# maximum HP (the ring nearest the stairs is explored first). 0 = C's
+# depth-first order, today's play, until the zoo measures it alone and with
+# stair_scum (arms at explore_bfs_max_hp 20, 25 and 30).
 borg_param_explore_breadth_first = 0
-borg_param_explore_breadth_first_max_hp = 25
+borg_param_explore_bfs_max_hp = 25
+borg_param_explore_bfs_slack = 0
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
