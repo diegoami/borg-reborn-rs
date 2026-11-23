@@ -59,6 +59,38 @@ unchanged.
 
   These are leads, not measurements.
 
+### Review of #1096 (Codex, GPT-6, on `fcafaaaa`)
+
+The findings are in https://github.com/diegoami/borg-reborn-rs/pull/1096#issuecomment-7090495604.
+It confirms the #1094 fix: with 60 unknown landings, the fallback keeps the
+emergency's 50. It adds one P3, fixed in the commit after `fcafaaaa`.
+
+**[P3] A gate refusal must leave the twitchy think's longer-range
+teleports.** The twitchy Phase Door's cast also tries Dimension Door,
+Teleport Self, Portal and Shadow Shift. A never-seen refusal returned before
+the whole cast, and this PR's stricter tolerance makes that refusal more
+likely. The gap was already in #1066 at any tolerance.
+
+- `phase_door` clears `st.borg.phase_gate_refused` on entry. It sets it to
+  the think only when the gate refuses.
+- The twitchy think then tries those four, in their original order
+  (`longer`), outside the decision. `borg_allow_teleport` still holds, and
+  a gate refusal implies no teleport curse.
+- Any other refusal (the curse, or the #584 rule) still stops them, as
+  before. So this changes nothing with the policy off. Moving them out
+  unconditionally would have let the rule's refusals reach them at the
+  shipped settings.
+- Test: `a_gate_refusal_leaves_the_twitchy_teleports` pins the sources (it
+  needs the engine to play). The flag is cleared before any refusal and set
+  only by the gate. The twitchy think uses it, keeps the order, and keeps
+  the four inside the cast after the Phase Door ways.
+- The other gated sites cast only Phase Door, except last ditch, whose
+  `PORTAL` (as in C) stays inside the decision. The review did not raise
+  it.
+
+Not replayed: the change acts only with the policy on, after a gate refusal
+in the twitchy think. 726 tests pass.
+
 ### Left, and for the owner
 
 - #1073: the zoo comparison of #1066's switches and the Cemetery

@@ -1570,8 +1570,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Phase */
         /* borg-reborn-rs (#584): through the one Phase Door decision; no
          * check, as before. */
+        /* borg-reborn-rs (#1094, review of #1096): the longer-range
+         * teleports are not a Phase Door landing; when #1066's never-seen
+         * gate refused the decision, they are still tried, in the same
+         * order. Any other refusal stops them, as before. */
+        let longer = |st: &mut BorgState| {
+            borg_dimension_door(st, 90)
+                || borg_spell(st, TELEPORT_SELF)
+                || borg_spell(st, PORTAL)
+                || borg_shadow_shift(st, 90)
+        };
         if borg_allow_teleport(st)
-            && crate::borg_escape::phase_door(
+            && (crate::borg_escape::phase_door(
                 st,
                 crate::borg_escape::PhaseSite::TwitchyThink,
                 crate::borg_escape::PhaseCheck::None,
@@ -1586,12 +1596,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
                             let sv = st.item_val.sv_scroll_phase_door;
                             borg_read_scroll(st, sv)
                         }
-                        || borg_dimension_door(st, 90)
-                        || borg_spell(st, TELEPORT_SELF)
-                        || borg_spell(st, PORTAL)
-                        || borg_shadow_shift(st, 90)
+                        || longer(st)
                 },
-            )
+            ) || (st.borg.phase_gate_refused == Some(st.borg.time.now) && longer(st)))
         {
             /* Success */
             return choice!("twitch_phase");

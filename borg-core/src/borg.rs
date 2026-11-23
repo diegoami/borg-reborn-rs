@@ -155,6 +155,11 @@ pub struct Borg {
     /// and grid instead of drawing again, judged by the stricter of the two
     /// tolerances (#1094).
     pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32, i32)>,
+    /// borg-reborn-rs (#1094, review of #1096): the think's `time.now` when
+    /// the last `phase_door` call was refused by the never-seen gate (`None`
+    /// when it was not). The twitchy think then still tries its longer-range
+    /// teleports, which the gate does not judge.
+    pub phase_gate_refused: Option<BorgTime>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,

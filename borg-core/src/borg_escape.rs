@@ -888,6 +888,8 @@ pub(crate) fn phase_door(
     // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
     // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
     // grid does not (`dis` 10 is not above 10), so the grid is not asked.
+    // borg-reborn-rs (#1094): set again below only if the gate refuses.
+    st.borg.phase_gate_refused = None;
     if teleport_stopped(st) {
         borg_note(st, &format!("# Phase ({}): no, teleport is blocked", site.label()));
         return false;
@@ -934,6 +936,7 @@ pub(crate) fn phase_door(
     let (record, now, at) = (st.borg.phase_unknown_seen, st.borg.time.now, st.borg.c);
     if let Some((n, at_most)) = unknown_gate(check, policy, || gate_count(record, now, at, tolerance, || never_seen_landings(st))) {
         borg_note(st, &format!("# Phase ({}): no, {n} never-seen landing grids of 100 (at most {at_most}) (#1066)", site.label()));
+        st.borg.phase_gate_refused = Some(st.borg.time.now);
         return false;
     }
     if rule && site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
@@ -2723,6 +2726,35 @@ mod unknown_landing_tests {
         let at = &src[src.find(concat!("fn caution_", "phase(st: &mut BorgState")).unwrap()..];
         let phase = &at[..at.find("\n}\n").unwrap()];
         assert!(phase.contains(concat!("st.borg.phase_unknown_seen = ", "Some((st.borg.time.now, st.borg.c, unknown, emergency))")));
+    }
+
+    /// #1094 (review of #1096): a never-seen refusal stops only the Phase
+    /// Door. `phase_door` clears the flag on entry and sets it only when the
+    /// gate refuses; the twitchy think then tries its longer-range teleports
+    /// (Dimension Door, Teleport Self, Portal, Shadow Shift, in the order
+    /// they had inside the cast) and no others. Any other refusal (the
+    /// teleport curse, the #584 rule) still stops them. Needs the engine to
+    /// play, so this pins the sources.
+    #[test]
+    fn a_gate_refusal_leaves_the_twitchy_teleports() {
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("pub(crate) fn phase_", "door(")).unwrap()..];
+        let door = &at[..at.find("\n}\n").unwrap()];
+        let clear = door.find(concat!("st.borg.phase_gate_refused = ", "None;")).unwrap();
+        let set = door.find(concat!("st.borg.phase_gate_refused = ", "Some(st.borg.time.now);")).unwrap();
+        assert!(clear < door.find(concat!("if teleport_", "stopped(st)")).unwrap(), "cleared before any refusal");
+        assert!(door.find(concat!("unknown_gate(check, ", "policy,")).unwrap() < set, "set only by the gate");
+        assert_eq!(door.matches(concat!("phase_gate_refused = ", "Some(")).count(), 1);
+        let think = include_str!("borg_think_dungeon.rs");
+        let at = &think[think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()..];
+        let twitch = &at[..at.find(concat!("return choice!(\"twitch_", "phase\")")).unwrap()];
+        assert!(twitch.contains(concat!("|| longer", "(st)\n")), "inside the cast, after the Phase Door ways");
+        assert!(twitch.contains(concat!("st.borg.phase_gate_refused == Some(st.borg.time.now) && ", "longer(st)")));
+        let before = &think[..think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()];
+        let longer = &before[before.rfind(concat!("let longer = ", "|st")).unwrap()..];
+        let order = ["borg_dimension_door(st, 90)", "borg_spell(st, TELEPORT_SELF)", "borg_spell(st, PORTAL)", "borg_shadow_shift(st, 90)"];
+        let at: Vec<usize> = order.iter().map(|o| longer.find(o).unwrap()).collect();
+        assert!(at.windows(2).all(|w| w[0] < w[1]), "the original order");
     }
 
     /// #1094 (re-review of #1075, P3): the emergency tolerance 50, the gate's
