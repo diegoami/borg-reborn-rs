@@ -2942,11 +2942,11 @@ death with the list, 4 without), 1.
 | `caution_breeder_hold_growth` | 2 | count | 1–1000 | `borg_breeder_hold.rs:116` (#882) |
 | `caution_breeder_hold_growth_turns` | 100 | game turns | 1–100000 | `borg_breeder_hold.rs:252` (#882) |
 | `caution_breeder_hold_worm_cost` | 3 | steps | 0–100 | `borg_breeder_hold.rs:325` (#882) |
-| `caution_breeder_hold_max_on_route` | 8 | count | 0–1000 | `borg_breeder_hold.rs:361` (#882) |
-| `caution_breeder_hold_go_hp_percent` | 40 | percent | 0–100 | `borg_breeder_hold.rs:358` (#882) |
-| `caution_breeder_hold_cure_hp_percent` | 25 | percent | 0–100 | `borg_breeder_hold.rs:359` (#882) |
+| `caution_breeder_hold_max_on_route` | 8 | count | 0–1000 | `borg_breeder_hold.rs:363` (#882) |
+| `caution_breeder_hold_go_hp_percent` | 40 | percent | 0–100 | `borg_breeder_hold.rs:360` (#882) |
+| `caution_breeder_hold_cure_hp_percent` | 25 | percent | 0–100 | `borg_breeder_hold.rs:361` (#882) |
 | `caution_breeder_hold_floor_hp_percent` | 25 | percent | 0–100 | `borg_breeder_hold.rs:272` (#882) |
-| `caution_breeder_hold_idle_turns` | 50 | thinks | 0–100000 | `borg_breeder_hold.rs:428` (#882) |
+| `caution_breeder_hold_idle_turns` | 50 | thinks | 0–100000 | `borg_breeder_hold.rs:430` (#882) |
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |

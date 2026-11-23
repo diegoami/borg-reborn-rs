@@ -336,13 +336,15 @@ pub(crate) fn breeder_hold(st: &mut BorgState) -> bool {
     };
     if to_stair && route.is_none() {
         st.borg.breeder_hold_stair = false;
-        // Out on the exit with no known staircase: let the colony go. Left
-        // to pull the Borg back to the exit, the rule undid every step of
-        // the ordinary search for stairs (Priest 399497898 at track-p
-        // 21c0d9c1: about 200 shuttles over 20,000 game turns).
-        if !released && exit(st.borg.c.x, st.borg.c.y) {
+        // Out on the exit, or on the walk, with no known route to a
+        // staircase: let the colony go. Left to pull the Borg back to the
+        // exit, the rule undid the ordinary search for stairs (Priest
+        // 399497898 at track-p 21c0d9c1: about 200 shuttles), or the walk
+        // restarted each time the kill flow took the Borg back to the colony
+        // (Priest 1512540769: 57 walks, each lost at the same grid).
+        if !released && (walking || exit(st.borg.c.x, st.borg.c.y)) {
             st.borg.breeder_hold_released = true;
-            borg_note(st, &format!("# Letting the breeders go: no known staircase from the exit ({count} known)"));
+            borg_note(st, &format!("# Letting the breeders go: no known route to a staircase ({count} known)"));
         }
         if state != Colony::Fires {
             return false;
