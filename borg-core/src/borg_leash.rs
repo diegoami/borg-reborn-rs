@@ -355,8 +355,20 @@ fn return_distances(any: bool, return_any: bool, up: i32, steps: Option<i32>) ->
     if !any {
         return (up, up);
     }
-    let steps = steps.unwrap_or(-1);
+    let steps = walkable_return(steps).unwrap_or(-1);
     (steps, if return_any { steps } else { up })
+}
+
+/// The longest walk back the stair flows can plan and commit: they spread
+/// to 250 steps (`stair_kinds`, `borg_flow_spread_stairs(st, 250, ..)`) and
+/// `flow_commit` refuses a cost of 250 or more (borg_flow.rs).
+const RETURN_PLAN_LIMIT: i32 = 249;
+
+/// The steps of a walk back the planner can make (review of #1087: the
+/// uncapped map must not start a return no flow can follow); `None` past
+/// `RETURN_PLAN_LIMIT`. Exploration and the anchors keep the full distance.
+fn walkable_return(steps: Option<i32>) -> Option<i32> {
+    steps.filter(|&s| s <= RETURN_PLAN_LIMIT)
 }
 
 /// The return leash's distances (`return_distances`) for the Borg now; `up`
@@ -370,6 +382,15 @@ pub fn return_leash(st: &mut BorgState, up: i32) -> (i32, i32) {
     } else {
         None
     };
+    // A return this leash started that no flow can walk any longer ends
+    // here, so `goal.less` does not stay set with nothing to follow (and
+    // hold back the depth correction).
+    if any && st.leash.return_any && st.borg.goal.less && walkable_return(steps).is_none() {
+        borg_note(st, "# Leash: no walkable route back to a staircase; return dropped");
+        st.borg.goal.less = false;
+        st.borg.goal.type_0 = 0;
+        st.leash.return_any = false;
+    }
     return_distances(any, st.leash.return_any, up, steps)
 }
 
@@ -597,6 +618,11 @@ mod tests_1062 {
         assert_eq!(return_distances(true, false, 20, Some(2)), (2, 20));
         // Nothing reachable: no return starts.
         assert_eq!(return_distances(true, false, -1, None), (-1, -1));
+        // Review of #1087: 287 steps is beyond what the stair flows can
+        // walk: no return starts; 249 can.
+        assert_eq!(return_distances(true, false, -1, Some(287)), (-1, -1));
+        assert_eq!(return_distances(true, true, -1, Some(249)), (249, 249));
+        assert_eq!(walkable_return(Some(250)), None);
     }
 
     /// A step is not a jump; a Phase Door or a teleport is.
