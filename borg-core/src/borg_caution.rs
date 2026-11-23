@@ -2311,6 +2311,36 @@ fn may_move_away(
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
+/// borg-reborn-rs (#931): `caution_stairs_immobile_reach` (the weighted stair
+/// flight keeps out of the reach of immobile attackers).
+pub(crate) fn stairs_immobile_reach_on() -> bool {
+    p(Param::caution_stairs_immobile_reach) != 0
+}
+
+/// borg-reborn-rs (#931, second review of #965): the most extra steps the
+/// reach-free route may cost over the ordinary one (0: no limit).
+pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
+    p(Param::caution_stairs_immobile_reach_extra_steps)
+}
+
+/// borg-reborn-rs (#931): grid (`y`, `x`) is next to a known immobile
+/// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
+/// 1621-1644).
+pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
+    immobile_attacker_next_to(st, y, x).is_some()
+}
+
+/// borg-reborn-rs (#931, review of #965): the known immobile attacker whose
+/// reach (the squares next to it) grid (`y`, `x`) is in, by kill index.
+/// Sleeping ones count (they wake as the Borg comes near: the white jelly of
+/// 829474344 woke at the first step beside it), and a record counts until the
+/// usual bookkeeping drops it; a route the refusal makes impossible falls back
+/// to the ordinary search.
+pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    immobile_attacker_next_to(st, y, x)
+}
+
+
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
 /// initiative back and lets a flee route walk straight back into reach.
