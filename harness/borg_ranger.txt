@@ -63,8 +63,9 @@ borg_param_explore_bfs_hp_per_level = 2
 # #1061 (owner, 2026-11-23): stair_scum slack by class ("1 for druid and necromancers. 2 for mage and priest,
 # 3 for ranger, 4 for paladin and blackguard"; rogue 3, the owner's choice).
 borg_param_stair_scum_slack_steps = 3
-# #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): with
+# #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"; #1160: "increase
+# the explore_mix_max_clevel by one"): with
 # explore_mixed, the mixed walk applies up to this CL; above it C's order. The
 # level before the first CL whose DL1 death rate, and every later one, is at
 # most 0.25 per 100 games in #1080's pooled table (a hypothesis).
-borg_param_explore_mix_max_clevel = 5
+borg_param_explore_mix_max_clevel = 6
