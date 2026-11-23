@@ -7282,5 +7282,5 @@ below).
 |---|---:|---|---|---|
 | `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:843` |
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:845` |
-| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1030` |
+| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1167` |
 | `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:848` |

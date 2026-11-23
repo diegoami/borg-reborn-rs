@@ -835,6 +835,21 @@ borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
 # explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
 borg_param_explore_bfs_hp_per_level = 0
+# #1098 (second piece of #1080): mixed exploration above the breadth-first
+# threshold, until prepared for the depth (for now: where C's leash applies).
+# Depth-first inside a radius R from the nearest staircase; R starts at
+# explore_mix_radius and grows by explore_mix_step only when nothing the Borg
+# can reach is left inside it, up to floor(D / (r - 1)) + floor(max HP / c)
+# (D = explore_mix_sight or the light radius, r = explore_mix_speed_ratio,
+# c = explore_mix_contact_damage x the depth band), at most
+# explore_mix_max_radius and C's leash. Shipped 0: C's depth-first order.
+borg_param_explore_mixed = 0
+borg_param_explore_mix_radius = 5
+borg_param_explore_mix_step = 2
+borg_param_explore_mix_sight = 5
+borg_param_explore_mix_speed_ratio = 2
+borg_param_explore_mix_contact_damage = 5
+borg_param_explore_mix_max_radius = 30
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
