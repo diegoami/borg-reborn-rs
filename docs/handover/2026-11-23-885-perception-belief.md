@@ -77,6 +77,16 @@ findings, both under `unseen_spread` only, both fixed.
   immobile targets (`attack_mobile_threat_first`) when the Borg has no ball.
   `blast_only` records are skipped there.
 
+**Codex re-review of #1128** (posted on the PR, at `e0278dcf`): two P2
+findings, both under `unseen_spread` only, both fixed.
+- F1: blast-only records still reached Vampire Strike through the shared aim
+  list. They now go to a list of their own (`blast_aims`), which only
+  ball-shaped scoring reads (`choose_bolt`, not in a focused attack); the
+  threat filter's skip is no longer needed.
+- F2: the dragon breaths (radius 2 or 20, cones in the engine) got ball
+  slack. `ball_shaped` excludes them, so they get no slack and no
+  blast-only aims.
+
 **Decided (owner, 2026-11-23: "your call").** #885 and #917 are P8: they are
 perception bugs the shipped light and belief exposed, and they are measured
 now. The three #889 switches are P9: new capability, kept off until P8 is

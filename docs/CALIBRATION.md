@@ -565,7 +565,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5951` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5988` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -594,7 +594,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5968` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:6005` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -620,7 +620,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3345` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3370` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8276` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8276` |
 
@@ -760,7 +760,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:294` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:304` |
 
 ## Thrown objects at point blank (#870)
 
@@ -5690,7 +5690,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6235` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6272` |
 
 ## C Borg dive gates (#768)
 
@@ -6793,9 +6793,9 @@ on borg-zoo#702.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:415` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:423` |
-| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:424` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:432` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:440` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:471` |
 | `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:221` |
 
 ## Perception and belief follow-ups (#885, #917, #889)
@@ -6862,11 +6862,14 @@ to be visible both deletes an unseen record and refuses it a belief
   throws, Starlight's lines (radius 7) and the line-of-sight effects
   (dispels, mass sleep, slow, confuse: radius 10, which reach what the player
   sees, not a radius around the aim) take no slack (re-review of #1128, F1).
-  So that such a ball is scored at all, `borg_attack`'s aim list and its
-  next-to-me test admit a record a ball could still reach
-  (`believed_for_aim`, slack up to 4; review of #1128, F4). Such a record
-  (`blast_only`) never makes `attack_mobile_threat_first` drop the immobile
-  targets: the Borg may have no ball (re-review F2).
+  The dragon breaths (`BF_DRAGON_*`, `BF_ACT_DRAGON_*`) are cones, not
+  balls, and take none either (`ball_shaped`; Codex re-review of #1128, F2).
+  So that such a ball is scored at all, `borg_attack` admits a record a ball
+  could still reach (`believed_for_aim`, slack up to 4; review of #1128, F4),
+  but only to the ball's own list (`blast_aims`), read by ball-shaped scoring
+  alone. No other attack aims at it (Vampire Strike, melee, bolts), and it
+  never makes `attack_mobile_threat_first` drop the immobile targets
+  (`blast_only`; re-review F2, Codex re-review F1).
 - **Beams and arcs** (#889, item 5) were already covered: every projection
   path (`borg_launch_bolt_at_location` for bolts, beams and balls,
   `borg_launch_arc_at_location` for arcs) scores a record through
@@ -7200,7 +7203,7 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3408` |
+| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3456` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
 Not shipped; the zoo measures it (a request issue). The four replays are

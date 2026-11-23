@@ -375,6 +375,22 @@ pub(crate) const MAX_BALL_RADIUS: i32 = 4;
 /// the largest ball radius.
 pub(crate) const MAX_BLAST_SLACK: i32 = MAX_BALL_RADIUS;
 
+/// The dragon breaths (dragon armour, `BF_DRAGON_*`, and the random-artifact
+/// dragon activations, `BF_ACT_DRAGON_*`): the engine breathes a cone
+/// (`effect_handler_BREATH`, src/effect-handler-attack.c:675-698), which the
+/// Borg scores with a radius, but a monster that stepped aside can be outside
+/// it (Codex re-review of #1128, F2).
+const BREATHS: [std::ops::RangeInclusive<u32>; 2] = [
+    crate::borg_headers::borg_fight_attack_h::BF_DRAGON_BLUE..=crate::borg_headers::borg_fight_attack_h::BF_DRAGON_POWER,
+    crate::borg_headers::borg_fight_attack_h::BF_ACT_DRAGON_BLUE..=crate::borg_headers::borg_fight_attack_h::BF_ACT_DRAGON_POWER,
+];
+
+/// #889: whether attack kind `kind` projects a ball when it has a radius:
+/// every kind but the dragon breaths (`BREATHS`).
+pub(crate) fn ball_shaped(kind: i32) -> bool {
+    u32::try_from(kind).map_or(true, |k| !BREATHS.iter().any(|r| r.contains(&k)))
+}
+
 /// #889: the slack a blast of radius `rad` gives a grid at distance `r` from
 /// its centre: `rad - r` for a ball (radius 1 to `MAX_BALL_RADIUS`), 0 for a
 /// bolt, a beam, a line-of-sight effect or Starlight.
@@ -386,10 +402,11 @@ pub(crate) fn blast_slack(rad: i32, r: i32) -> i32 {
     }
 }
 
-/// #889 (re-review of #1128, F2): a record on `borg_attack`'s aim list only
-/// because a ball could still reach it (`believed_for_aim`), neither seen
-/// recently nor believed at its grid. It is a ball's target, never a reason
-/// to drop other targets (`attack_mobile_threat_first`).
+/// #889 (re-reviews of #1128): a record `borg_attack` admits only because a
+/// ball could still reach it (`believed_for_aim`), neither seen recently nor
+/// believed at its grid. It goes to the ball's own list
+/// (`FightAttackState::blast_aims`), never to the aim list other attacks walk
+/// (Vampire Strike, melee, bolts, the `attack_mobile_threat_first` filter).
 pub(crate) fn blast_only(st: &BorgState, k: usize) -> bool {
     let kill = &st.kills.kills[k];
     kill.r_idx != 0
@@ -639,6 +656,18 @@ mod tests {
         assert_eq!(belief_percent_spread(1, false, true, 10, 10, 20, 0, 5), 100);
         assert_eq!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 1), 0);
         assert_eq!(belief_percent_spread(9, false, false, 10, 10, 20, 0, 0), 100);
+    }
+
+    /// Codex re-review of #1128, F2: the dragon breaths are cones, not balls.
+    #[test]
+    fn dragon_breaths_are_not_balls() {
+        use crate::borg_headers::borg_fight_attack_h::*;
+        for kind in [BF_DRAGON_BLUE, BF_DRAGON_RED, BF_DRAGON_POWER, BF_ACT_DRAGON_BLUE, BF_ACT_DRAGON_POWER] {
+            assert!(!ball_shaped(kind as i32), "{kind}");
+        }
+        for kind in [BF_SPELL_FIRE_BALL, BF_SPELL_STINK_CLOUD, BF_ACT_RING_FIRE, BF_ACT_STARLIGHT] {
+            assert!(ball_shaped(kind as i32), "{kind}");
+        }
     }
 
     /// Re-review of #1128, F1: only a ball gives slack; a dispel's or

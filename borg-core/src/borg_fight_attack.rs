@@ -84,6 +84,14 @@ pub struct FightAttackState {
     /// elsewhere): a believed monster that moved fewer grids is still hit
     /// (`unseen_spread`).
     pub(crate) unseen_blast_slack: i32,
+    /// borg-reborn-rs (#889, Codex re-review of #1128): grids of records a
+    /// ball could still reach but nothing else may aim at (`blast_only`).
+    /// Filled by `borg_attack` apart from its aim list (`st.flow.temp_*`),
+    /// read only by ball-shaped scoring (`choose_bolt`, `ball_shape`).
+    pub(crate) blast_aims: Vec<(i32, i32)>,
+    /// borg-reborn-rs (#889): whether the attack rated now projects a ball
+    /// (not a dragon's breath cone), so a ball's slack and `blast_aims` apply.
+    pub(crate) ball_shape: bool,
     /// borg-reborn-rs (#889, review of #1128 F3): Light Room cast at a
     /// believed record, by kill index, with the record's `when` at the time
     /// (once per sighting).
@@ -165,6 +173,8 @@ impl Default for FightAttackState {
             unseen_shots: std::collections::BTreeMap::new(),
             pending_unseen: crate::borg_unseen_belief::PendingAttack::default(),
             unseen_blast_slack: 0,
+            blast_aims: Vec::new(),
+            ball_shape: false,
             unseen_reveals: std::collections::BTreeMap::new(),
             successful_target: 0,
             target_closest: 0,
@@ -2216,7 +2226,7 @@ fn borg_launch_bolt_at_location(
             // ball's: a dispel or other line-of-sight effect (rad 10) and
             // Starlight's lines (rad 7) reach what the player sees, not a
             // radius around the aim (re-review of #1128, F1).
-            let slack = crate::borg_unseen_belief::blast_slack(rad, r);
+            let slack = if st.fight_attack.ball_shape { crate::borg_unseen_belief::blast_slack(rad, r) } else { 0 };
 
             /*  dispel spells should hurt the same no matter the rad: make r= y
              * and x */
@@ -2271,6 +2281,19 @@ fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_
     // left by an earlier think never restricts another caller (Teleport
     // Other, `borg_fight_defend.rs`).
     let confused_aim = st.fight_attack.confused_aim && confused_by_direction(st);
+
+    // borg-reborn-rs (#889, Codex re-review of #1128): a ball (not a breath,
+    // not a focused attack) also considers the blast-only aims, appended to
+    // the aim list for this call only.
+    let base_n = st.flow.temp_n;
+    if st.fight_attack.ball_shape
+        && st.fight_attack.focused_target.is_none()
+        && (1..=crate::borg_unseen_belief::MAX_BALL_RADIUS).contains(&rad)
+    {
+        for (y, x) in st.fight_attack.blast_aims.clone() {
+            st.flow.temp_push(y, x);
+        }
+    }
 
     /* Examine possible destinations */
 
@@ -2384,11 +2407,13 @@ fn choose_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_
         i += 1;
     }
     if b_i == -1 {
+        st.flow.temp_n = base_n;
         return ProjectedAttack::default();
     }
 
     st.fight_attack.tp_other_n = 0;
     let (ty, tx) = st.flow.temp_at(b_i as usize);
+    st.flow.temp_n = base_n;
     ProjectedAttack {
         score: b_n,
         aim: Some(loc { x: tx + b_o_x, y: ty + b_o_y }),
@@ -4597,6 +4622,15 @@ fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, 
 /// Simulate/Apply the optimal result of using the given "type" of attack
 /// (`borg_calculate_attack_effectiveness`).
 pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
+    // borg-reborn-rs (#889, Codex re-review of #1128 F2): only a ball gets a
+    // ball's slack and blast-only aims; a dragon's breath is a cone.
+    st.fight_attack.ball_shape = crate::borg_unseen_belief::ball_shaped(attack_type);
+    let value = calculate_attack_effectiveness(st, attack_type);
+    st.fight_attack.ball_shape = false;
+    value
+}
+
+fn calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
     // borg-reborn-rs (#867): set by the attack rated now, if it is aimed by
     // a confused Borg.
     clear_confused_aim(st);
@@ -5249,6 +5283,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Reset list */
     st.flow.temp_n = 0;
+    st.fight_attack.blast_aims.clear();
 
     /* Find "nearby" monsters */
     let mut i = 1;
@@ -5374,6 +5409,13 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Save the location (careful) */
+        // borg-reborn-rs (#889, Codex re-review of #1128 F1): a record only
+        // a ball could reach goes to the ball's own list, never to the aim
+        // list every other attack (Vampire Strike, melee, bolts) walks.
+        if crate::borg_unseen_belief::blast_only(st, k as usize) {
+            st.fight_attack.blast_aims.push((kill.pos.y, kill.pos.x));
+            continue;
+        }
         st.flow.temp_push(kill.pos.y, kill.pos.x);
     }
 
@@ -5397,12 +5439,6 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let immobile = |st: &BorgState, k: usize| k != 0 && rf(st.kills.kills[k].r_idx, RF_NEVER_MOVE);
         let mut threat = false;
         for &(_, _, k) in &targets {
-            // borg-reborn-rs (#889, re-review of #1128 F2): a record only a
-            // ball could still reach (unseen_spread) is no threat that drops
-            // the immobile targets: the Borg may have no ball to throw.
-            if k != 0 && crate::borg_unseen_belief::blast_only(st, k) {
-                continue;
-            }
             if k != 0 && !immobile(st, k) && crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false) * 100 >= hp * percent {
                 threat = true;
                 break;
@@ -5420,7 +5456,8 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     }
 
     /* No destinations */
-    if st.flow.temp_n == 0 {
+    // borg-reborn-rs (#889): a ball may still have a blast-only aim.
+    if st.flow.temp_n == 0 && st.fight_attack.blast_aims.is_empty() {
         st.traits.attacking = false;
         return false;
     }
