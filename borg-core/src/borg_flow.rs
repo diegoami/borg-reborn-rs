@@ -121,6 +121,9 @@ pub struct FlowState {
     /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
     /// danger (as the desperate walk); a monster on the path is the test.
     pub flight_no_danger: bool,
+    /// borg-reborn-rs (#1067): the spread running is `borg_trap_way`'s,
+    /// which crosses known traps (to reopen a way back they cut).
+    pub through_traps: bool,
     /// borg-reborn-rs (#713): the spread running is a stair flow's
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
@@ -159,6 +162,7 @@ impl Default for FlowState {
             data_icky: Vec::new(),
             hunting: false,
             flight_no_danger: false,
+            through_traps: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
             up_stair_flight: false,
@@ -491,7 +495,8 @@ fn spread_blocked(
     }
 
     /* Avoid Traps if low level-- unless brave */
-    if ag.trap && !ag.glyph && !twitchy {
+    // borg-reborn-rs (#1067): not for `trap_way_back`'s own spread.
+    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps {
         /* Do not disarm when you could end up dead */
         if b.tr(BI_CURHP) < 60 {
             return true;

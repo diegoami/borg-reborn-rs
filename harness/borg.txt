@@ -1981,3 +1981,15 @@ borg_param_caution_unseen_bump_throw_tries = 3
 
 # #829: a teleport curse stops every teleport (the engine's "Teleportation forbidden!").
 borg_param_escape_teleport_block = 1
+
+# #1067: a trap next to the arrival stairs cuts a weak Borg off (Warrior
+# 1868115537: a poison pit four steps from its up staircase; below 60 HP every
+# known trap is a wall to the flows, so it explored on and died 5 steps from
+# the stairs). Shipped off (0) until borg-zoo measures them: recover at the
+# stairs after a trap that hurts (trap_recover, below trap_recover_max_hp max
+# HP), reopen a way back that a trap cuts (trap_way_back: disarm, or walk onto
+# a trap that cannot kill), leave a trap-dense level (trap_leave_level_count,
+# the issue proposes 2).
+borg_param_trap_recover = 0
+borg_param_trap_way_back = 0
+borg_param_trap_leave_level_count = 0

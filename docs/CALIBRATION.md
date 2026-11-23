@@ -741,8 +741,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2012` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2012` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
@@ -1047,8 +1047,8 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2014` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2015` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2019` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2020` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2016` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2017` |
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2018` |
@@ -6790,3 +6790,68 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
+
+## Traps that cut the way back (#1067)
+
+The Half-Elf Warrior 1868115537 (borg-zoo run 45070528012, track-p
+`206cf4e7`, the same keys on `7a466d73`; diegoami/borg-cemetery#138, study
+`lvl1-deaths-trackp-206cf4e7`): four steps from its up staircase, at 31/31 HP,
+it set off a poison pit that filled the only corridor back. Below 60 HP every
+known trap is a wall to the flows (`spread_blocked`: C's "Avoid Traps if low
+level -- unless brave"), so the staircase became unreachable ("Bored but
+unable to flow to up stairs.", 24 times), `borg_flow_cost_stair` went "off
+leash" (#1062), and it explored on into a blinding gas trap and died 5 steps
+from the stairs. New module `borg_trap_way.rs`, run in the dungeon think
+after the flight, the caution and the light, before the recovery flows. All
+three switches are compiled and shipped 0, so shipped play is unchanged; the
+values are hypotheses (RULES 14).
+
+A trap is **set off** when the engine prints one of trap.txt's activation
+messages (`msg`, `msg-good`, `msg-bad`, `msg-xtra`; `hit_trap`, trap.c) or
+"You set off the %s!" (`do_cmd_disarm_aux`, cmd-cave.c:842-845); a unit test
+checks every trap.txt message is read. Messages another source also prints
+(the fire blow's "You are enveloped in flames!", "The ground shakes.") count
+only when the Borg then stands on a known trap. The kind it names (a pit, a
+spiked or poison pit, a blinding or confusion gas trap) is remembered by grid
+for the level.
+
+1. **Recover at the stairs** (`trap_recover`). Below `trap_recover_max_hp`
+   max HP, a trap that hurts (at the next think: HP below the maximum,
+   poisoned, cut, blind, confused or stunned) stops exploration: the Borg
+   flows to the nearest known staircase (`borg_flow_stair_both`, refusing
+   traps as today), cures or rests there (`borg_recover`, else `R&`), takes it
+   at the first threat (danger above 0 on it; a down staircase only when not
+   rising and not refused, `more_refused`), and explores again whole. No
+   staircase in reach: it rests where it stands (danger 0, not hungry).
+2. **Reopen the way back** (`trap_way_back`). When a spread from every known
+   staircase that refuses traps does not reach the Borg and one through them
+   does, the first trap of that route is cleared before anything else: from
+   the adjacent grid `D` (disarm) when the engine's chance (the skill less
+   depth/5, at least 2; physical for pits and gas, the lower skill for an
+   unknown kind) is at least `trap_disarm_min_percent`; else `W` (walk onto
+   it, `CMD_JUMP`) when its kind is known and its worst cost (a pit 12 HP, a
+   spiked pit 48, a poison pit 84 counting cut and poison turns, gas 0) is
+   below the current HP; else, hurt, it rests first and disarms whole. Not
+   adjacent, it follows the flow through the traps (`GOAL_MISC`). Blind,
+   confused, hallucinating or without light it rests first. After
+   `trap_disarm_max_tries` attempts on one trap the rule gives up (play is
+   then as today).
+3. **Leave a trap-dense level** (`trap_leave_level_count`). Below
+   `trap_recover_max_hp`, the level's n-th trap set off, or the n-th within
+   `trap_leave_radius` of the Borg's first grid on the level, makes it leave
+   by the nearest staircase once it reaches one, whole first when rule 1 is
+   on (the owner: "the form of a cursed level").
+
+`trap_recover_max_hp` is 60, the core's own line for a known trap and above
+every CL1-6 character; #1061's stair_scum threshold (25) would not cover this
+Warrior (31, then 57 HP). Per class with `trap_recover_max_hp__<class>`.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:267` |
+| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:298` |
+| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:267` |
+| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:442` |
+| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:443` |
+| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:267` |
+| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:325` |

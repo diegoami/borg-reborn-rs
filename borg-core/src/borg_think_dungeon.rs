@@ -954,6 +954,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_check_light");
     }
 
+    // borg-reborn-rs (#1067): a trap set off or a trap that cuts the way
+    // back: recover at the stairs, reopen the way, leave a trap-dense level.
+    if crate::borg_trap_way::think(st) {
+        return choice!("borg_trap_way");
+    }
+
     /* Continue flowing to a safe grid on which I may recover */
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
     if !crate::borg_recover::holding_for_stairs(st)
