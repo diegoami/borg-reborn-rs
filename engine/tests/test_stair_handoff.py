@@ -63,6 +63,9 @@ PINNED_TOWN_SETTINGS = [
     ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
     # #1100 shipped the position belief (#879) at decay 5 after these incidents.
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
+    # #1128 shipped #885's dark-floor light and #917's rubble sight after
+    # these incidents.
+    ("update_dark_clears_light", 0), ("view_rubble_blocks_sight", 0),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
     # #1067 shipped the trap rules after these incidents.
@@ -79,6 +82,15 @@ PINNED_TOWN_SETTINGS = [
     # #1098 shipped the mixed walk and the C exploration's stair exit after
     # these incidents (owner, 2026-11-23: "merge it but with all settings on").
     ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
+    # #1130 shipped the committed brave stair walk after these incidents.
+    ("flow_brave_walk_commit", 0),
+    # #1140 shipped deal_with_poison (the poison triage) after these
+    # incidents (owner, 2026-11-23: "merge with deal_with_poison 1").
+    ("deal_with_poison", 0),
+    # #941: the speed flag synced to the engine timer, shipped after the
+    # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
+    # end, which the recorded turns depend on).
+    ("trait_timed_sync", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -167,7 +179,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             # #1061: the stair_scum mode (shipped after these cases) is not
             # what they test; pin it off.
             # #1098: nor the mixed walk and the C exploration's stair exit.
-            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done"):
+            # #1140: nor the poison triage (deal_with_poison).
+            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
+                        "borg_param_deal_with_poison"):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = 0\n"

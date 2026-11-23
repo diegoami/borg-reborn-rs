@@ -712,6 +712,29 @@ borg_param_kill_live_zero_hp = 1
 # every non-unique race of monster.txt reads back from its grouped subject
 # (unit test), and seed 2008390085 plays the same keys and danger either way.
 borg_param_kill_grouped_names = 1
+# #941: the speed flag follows the engine timer both ways, and "You feel
+# yourself slow down." is no longer taken for monster pain. At 0 (C) the first
+# Potion of Speed leaves the Borg believing it is hasted for the rest of the
+# game: no speed rule fires again and the danger counts it at +10. Shipped 1
+# (P8, owner 2026-11-22: a fix that ships 0 leaves the stuck flag in shipped
+# play): with it the flag equals the engine's TMD_FAST/SPRINT/TERROR timers
+# (seed 2008390085 replayed; zoo pilot borg-zoo#652, run 45033305701).
+borg_param_trait_timed_sync = 1
+
+# #1032: the player's own messages ("You are no longer confused.", "You are no
+# longer stunned.", "You can move again.") are not monster pain; at 0 (C) each
+# is a pain reaction for a monster named "You". Shipped 0 (owner, 2026-11-23:
+# only the speed flag ships on; no replayed game changes its keys with it).
+borg_param_messages_player_not_pain = 0
+
+# #1033: BI_SPEED counts SLOW (-10) and TERROR (+10, on top of haste) as the
+# engine does (player-calcs.c:2176-2187); at 0 (C) SLOW is ignored and TERROR
+# is +5, not stacked with haste. Shipped 0 (owner, 2026-11-23: only the speed
+# flag ships on); at 1 a slowed Borg's BI_SPEED equals the engine's speed.
+# Residual: borg_danger adds +10 more while temp.fast is set, and TERROR sets
+# it, so TERROR alone at base 110 is modelled 125 at 0 and 130 at 1 against
+# the engine's 120 (docs/CALIBRATION.md, #1033).
+borg_param_trait_speed_timed = 0
 
 # Kill the dangerous town monsters on sight (#619, owner): once the town is
 # not scary (the scary list's level per monster and class decides that), a
@@ -886,12 +909,22 @@ borg_param_explore_c_leave_when_done = 1
 # explore_mix_max_radius and C's leash. Shipped 1 (owner, 2026-11-23: "merge
 # it but with all settings on"), up to explore_mix_max_clevel per class.
 borg_param_explore_mixed = 1
-borg_param_explore_mix_radius = 5
-borg_param_explore_mix_step = 2
+borg_param_explore_mix_radius = 3
+borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-borg_param_explore_mix_max_radius = 30
+borg_param_explore_mix_max_radius = 10
+# #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
+# (and class)"): per mille a character level from CL1, linearly:
+# value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
+# Owner, 2026-11-23: "I would like the radius to start small and increase by
+# level", "make CL1 start from 10 maximum radius": the starting radius 3 at
+# CL1, 5 at CL3, 7 at CL5, 8 at CL7; the step 3, 4, 4, 5; the cap 10, 20, 30,
+# 40. The level caps stay as #1098 shipped them (the +1 added back-and-forth).
+borg_param_explore_mix_radius_dp = 300
+borg_param_explore_mix_step_dp = 100
+borg_param_explore_mix_max_radius_dp = 500
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50
@@ -1325,9 +1358,36 @@ borg_param_caution_retreat_reentry_ticks = 128
 # #932 (seed 829474344): after three strategic retreats undone by the next
 # stair-flow step, let the escape, cure or attack decision act instead.
 borg_param_caution_retreat_oscillation_limit = 3
+# #1130 (owner, 2026-11-23: "it must definitely be fixed"): a stair walk
+# started under boosted bravery is committed; the next thinks continue it with
+# the same avoidance (spread again when the flow buffer was replaced), while
+# recent, budgeted and out of danger. Blackguard 312081895 stayed 60,000 turns
+# between two grids without it.
+borg_param_flow_brave_walk_commit = 1
+# #1153 (owner, 2026-11-23: "why would you ship it off by default, no
+# loopbreaker"): a general movement-loop detector and breaker: 16 moves among
+# at most 3 grids with the map unchanged and no danger: walk to a staircase,
+# else a committed brave walk to one, else close the loop's grids for 20 thinks.
+borg_param_loop_breaker = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
+
+# #916: no strategic retreat (the step to a happier grid) while an awake
+# adjacent monster record (no freshness or mobility check) has a haste
+# forecast at least the margin above player->state.speed: observed mspeed,
+# +10 for observed FAST, the engine's SLOW adjustment (mon-move.c:1928-1938)
+# not subtracted, so not the engine's net speed. Also, the selected
+# destination's danger at or above HP vetoes the whole retreat (no other
+# candidate tried, first step unchecked). The escapes and the outmatched cure
+# decide. Shipped 0 (today's play): in borg-zoo#652's small and medium runs
+# (360 starts) it rescued none and newly killed 3 (one, the Ranger's Fang
+# death, follows the refusals directly; the Paladin and the Priest died
+# later). Where no escape takes the turn the Borg fights instead. Margin 5,
+# the HP cutoff and margin 15 (where the three new deaths replay the
+# control) are hypotheses.
+borg_param_caution_retreat_from_faster = 0
+borg_param_caution_retreat_faster_margin = 5
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
@@ -1526,6 +1586,24 @@ borg_param_caution_cornered_danger_tenths = 10
 borg_param_caution_cornered_radius = 2
 borg_param_caution_cornered_big_level_margin = 0
 borg_param_caution_cornered_spell_fail = 25
+# #913: emergency Speed. Drink a Potion of Speed (or cast Haste Self) after
+# the healing paths (and, where they act, the #1140 poison race, the immobile
+# step-away and borg_defend), before the swap, the stair walks, the retreat
+# and the escapes, when the danger of the awake monsters within the radius
+# that are faster than the Borg by the margin (a haste forecast: observed FAST
+# counted, monster SLOW not, mon-move.c:1928-1938) reaches this percent of the
+# HP. Compiled 0 (off) and shipped 0 (owner, 2026-11-23: of the cave-spider
+# switches only #941's speed flag ships on). Candidate settings to try: 50
+# (the share #747's stair test ships, caution_desperate_fast_danger_percent),
+# radius 2, margin 5. The rule reads the Borg's fast flag, not
+# trait_timed_sync: with #941 off it can fire before the game's first Potion
+# of Speed, and after it the stuck flag makes it return at its guard; only a
+# drink after the game's first Speed (any rule's) needs #941. A failed Haste
+# Self cast leaves it eligible again.
+# 50, 2 and 5 are hypotheses until borg-zoo measures them (RULES 14).
+borg_param_caution_emergency_speed_danger_percent = 0
+borg_param_caution_emergency_speed_radius = 2
+borg_param_caution_emergency_speed_margin = 5
 # #719 (owner): cornered, throw or shoot first while no monster is adjacent
 # and a ranged attack does damage; buff once one is next to it. 1 = the
 # cornered boost, 2 = also the breeder fight's boost; 0 = buff first.
@@ -1741,6 +1819,19 @@ borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
+# #914: above 0, more than this many marked attackers in contact skip the
+# fast-fragile attack on every marked target (one out of contact too) and lift
+# the heal ban whether or not an escape is available (a group exception to
+# #842). No hand-off to caution is guaranteed: other attack-on-sight entries,
+# the lone-target attack and the winning fight can act first, and caution
+# heals before its Phase Door. At 0 nothing is counted: today's play.
+# Shipped 0 (owner, 2026-11-23: of the cave-spider switches only #941's speed
+# flag ships on); 1 is the value to try, a hypothesis (seed 2008390085, three
+# cave spiders: it changes that game, no survival effect is measured).
+# With fast_fragile_by_stats = 0 only crows and wild cats are marked, neither
+# declares friends, but independent spawns (a crow and a wild cat too) can
+# still be adjacent. The zoo has not measured it (borg-zoo#652).
+borg_param_fast_fragile_contact_max = 0
 # #926: the heal floor (percent of max HP), the quantile of "the next turn
 # kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
 # it. 0 = the play before #1072. Shipped together (#1072, owner 2026-11-23:
@@ -1781,6 +1872,24 @@ borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
 borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
+# #889: follow-ups of the belief, each shipped 0 until the zoo measures it.
+# unseen_death_stops_shots 1 = "It dies." after a shot whose only believed
+# target was one record ends the shots at it (the record is kept);
+# unseen_light_reveal 1 = Light Room at a believed HURT_LIGHT monster within
+# two grids on an unlit grid, once per sighting (2 = any believed monster);
+# unseen_spread 1 = erratic movers and a blast's reach spread the belief.
+borg_param_unseen_death_stops_shots = 0
+borg_param_unseen_light_reveal = 0
+borg_param_unseen_spread = 0
+# #885: 1 = a floor the engine shows dark loses a stale BORG_LIGHT (lit once
+# by a monster's light). #917: 1 = passable rubble stops the Borg's view, as
+# the engine's (terrain.txt: no LOS). Both shipped 1 (owner, 2026-11-23:
+# "merge with both"), the `both` arm of borg-zoo#736's full tier at
+# 7bfbe121 (classes-1800 starts 901-1800, 900 per arm): 5 deaths against 9
+# for ctl (8 rescued, 4 newly killed, p 0.39), DL5 reached 33 against 19.
+# A lead, not a result (RULES 14); `dark` alone was 9 against 9.
+borg_param_update_dark_clears_light = 1
+borg_param_view_rubble_blocks_sight = 1
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
@@ -2294,3 +2403,26 @@ borg_param_trap_recover = 1
 borg_param_trap_way_back = 1
 borg_param_trap_leave_level_count = 2
 borg_param_trap_leave_near_count = 0
+
+# #1151: a worn dullness, sickliness, weakness or clumsiness curse takes its
+# stats (curse.txt) in the Borg's own stats, as in the engine
+# (player-calcs.c:calc_bonuses). Off, the Borg believed a CL17 Gnome Mage
+# wearing a sickliness and dullness cap had 5 more STR, DEX, CON, INT and WIS
+# than it did: its weight allowance was 5 STR too high, and the power model
+# never priced the curse against the cap's AC.
+borg_param_trait_curse_stats = 1
+
+# #1140: deal with poison (one switch, owner 2026-11-23; zoo run 45121432449,
+# borg-cemetery#146). The HP the poison still takes, ceil(counter /
+# (adj_con_fix[CON] + 1)), against the HP and the Cure Light/Serious Wounds
+# carried. On: note it; use a poison cure it carries once the poison is
+# poison_cure_pending_percent of the HP; drink CLW/CSW late while safe (at HP
+# <= the next turn's poison + poison_late_drink_margin, or when the heal
+# fits); leave for town when the poison outlasts HP + healing; the Alchemist
+# first in town (Neutralize Poison or CCW if affordable, else enough CLW), no
+# sale paying nothing; a fight the pending poison would finish is lost.
+# Shipped on by the owner, 2026-11-23 ("merge with deal_with_poison 1"), before
+# a zoo measurement (borg-zoo#745); the values are hypotheses (RULES 14).
+borg_param_deal_with_poison = 1
+borg_param_poison_late_drink_margin = 2
+borg_param_poison_cure_pending_percent = 50

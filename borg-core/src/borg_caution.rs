@@ -516,6 +516,12 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, the
+    // held Cure Light Wounds is drunk at the line.
+    if crate::borg_poison::late_drink(st, danger) {
+        return true;
+    }
+
     // Heal when wounded a percent of the time
     let mut chance = engine::randint0(100);
 
@@ -565,6 +571,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
         && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
+        // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
+        && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CLW_HEAL)
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
             || borg_activate_item(st, st.act.cure_light))
@@ -577,6 +585,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
+        // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
+        && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CSW_HEAL)
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_activate_item(st, st.act.cure_serious))
     {
@@ -1158,6 +1168,16 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
 /// of `borg_caution`).
 fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
+    // borg-reborn-rs (#916): no step away from an awake adjacent record whose
+    // haste forecast (mspeed, +10 if FAST, SLOW not subtracted) beats the
+    // Borg's speed by the margin (C's "adjacent to a faster" test never acts).
+    let from_faster = p(Param::caution_retreat_from_faster) != 0;
+    if from_faster {
+        if let Some((name, over)) = faster_in_contact(st, p(Param::caution_retreat_faster_margin)) {
+            borg_note(st, &format!("# No retreat: {name} in contact is faster by {over} (#916)"));
+            return false;
+        }
+    }
     // borg-reborn-rs (#881): no retreat into a dead end near breeders.
     let exits = RetreatExits::for_think(st);
     let mut b_r = -1;
@@ -1354,6 +1374,13 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         }
     }
 
+    // borg-reborn-rs (#916): the selected destination's danger at or above HP
+    // vetoes the whole retreat (no other candidate, first step unchecked).
+    if from_faster && b_r >= 0 && b_p >= st.borg.tr(BI_CURHP) {
+        borg_note(st, &format!("# No retreat: {},{} keeps danger {} at HP {} (#916)", b_y, b_x, b_p, st.borg.tr(BI_CURHP)));
+        return false;
+    }
+
     // Retreat
     if b_r >= 0 {
         // Save direction
@@ -1381,6 +1408,28 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         return true;
     }
     false
+}
+
+/// borg-reborn-rs (#916): an awake monster record next to the Borg (no
+/// freshness or mobility check) whose haste forecast (`forecast_monster_speed`:
+/// `mspeed`, +10 for an observed FAST; the engine's SLOW adjustment,
+/// `mon-move.c:1932-1935`, is not subtracted) exceeds `player->state.speed`
+/// by at least `margin`: its name and the difference.
+fn faster_in_contact(st: &BorgState, margin: i32) -> Option<(String, i32)> {
+    let own = engine::player_combat_speed();
+    (1..st.kills.nxt.max(0) as usize).find_map(|i| {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1 {
+            return None;
+        }
+        let over = forecast_monster_speed(kill) - own;
+        faster_by(over, margin).then(|| (String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned(), over))
+    })
+}
+
+/// `over` speed points faster counts at `margin` or more (at least 1).
+fn faster_by(over: i32, margin: i32) -> bool {
+    over >= margin.max(1)
 }
 
 /// borg-reborn-rs (#881): `caution_retreat_dead_end`. Retreat and back-up
@@ -3400,8 +3449,40 @@ mod recall_quantity_tests {
 /// no approach discount. The maximum delay is conservative, not knowledge
 /// of the engine's next random roll (effect-handler-general.c:1145).
 pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
+    recall_survivable_with(st, None)
+}
+
+/// borg-reborn-rs (#1140, `deal_with_poison`; third review of #1146): the
+/// poison triage's Recall gate. The same monster exposure as the flight
+/// Recall's, over the triage's own delay (`ticks`: 34, or 15 with no up
+/// staircase known), and against its own budget (the HP plus the CLW/CSW it
+/// carries, drunk late) instead of the HP alone. The running poison is
+/// charged as what it takes during that delay (`pending`, at most `ticks`),
+/// plus what new poison the monsters add, never more than a HP a tick; the
+/// flight Recall charges the whole delay against the HP (#880), which
+/// refused a Borg at 25/25 HP with a CLW and no monster near.
+pub(crate) fn poison_recall_survivable(st: &mut BorgState, budget: i32, ticks: i32, pending: i32) -> bool {
+    recall_survivable_with(st, Some(PoisonRecall { budget, ticks, pending }))
+}
+
+/// The poison triage's Recall terms (`poison_recall_survivable`).
+#[derive(Clone, Copy)]
+struct PoisonRecall {
+    budget: i32,
+    ticks: i32,
+    pending: i32,
+}
+
+/// The poison the triage's Recall gate charges: the running counter's HP
+/// within the delay plus the new poison, at most one HP a world tick.
+fn poison_recall_charge(ticks: i32, pending: i32, new: f64) -> f64 {
+    let ticks = f64::from(ticks.max(0));
+    (f64::from(pending.max(0)).min(ticks) + new.max(0.0)).min(ticks)
+}
+
+fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
-    let ticks = p(Param::caution_recall_survival_delay);
+    let ticks = poison.map_or_else(|| p(Param::caution_recall_survival_delay), |b| b.ticks);
     // #880: 1 prices POISON as damage, status blows by their dice and
     // never vetoes on a breeder; 0 is #758's rule (every blow other than
     // HURT/ACID/ELEC/FIRE/COLD/NONE is an unmodelled risk).
@@ -3481,7 +3562,12 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         let cap = recall_contact_cap(&contact_rates, open, player_energy, ticks);
         if cap < exposure { capped = Some((exposure, open)); exposure = cap; }
     }
-    let poison_hp = if blow_model {
+    let poison_hp = if let Some(b) = poison {
+        let new = if blow_model {
+            recall_poison_hp(ticks, false, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
+        } else { 0.0 };
+        poison_recall_charge(ticks, b.pending, new)
+    } else if blow_model {
         recall_poison_hp(ticks, st.borg.tr(BI_ISPOISONED) != 0, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
     } else { 0.0 };
     exposure += poison_hp;
@@ -3492,14 +3578,17 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         if breeders_waived > 0 { parts.push(format!("{breeders_waived} breeders' unmodelled risk waived")); }
         borg_note(st, &format!("# Flight Recall forecast: {} (#880)", parts.join("; ")));
     }
-    let allowed = recall_forecast_allows(exposure, unknown_risks, st.borg.tr(BI_CURHP));
+    // #1140: the poison triage's budget is the HP plus the healing carried.
+    let budget = poison.map_or_else(|| st.borg.tr(BI_CURHP), |b| b.budget);
+    let what = if poison.is_some() { "HP + healing" } else { "HP" };
+    let allowed = recall_forecast_allows(exposure, unknown_risks, budget);
     if allowed && asleep > 0 {
-        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, HP {}: allowed (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Flight Recall forecast: known {awake} awake + {asleep} asleep; {reachable} reachable among them; {exposure:.2} modelled contact HP, {what} {budget}: allowed (#758)"));
     }
     if unknown_risks > 0 {
-        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Refusing flight Recall: unmodelled spell/status risk from {unknown_risks} reachable monsters; modelled contact exposure {exposure:.2} HP during {ticks} world ticks, {what} {budget} (#758)"));
     } else if !allowed {
-        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, HP {} (#758)", st.borg.tr(BI_CURHP)));
+        borg_note(st, &format!("# Refusing flight Recall: modelled contact exposure {exposure:.2} HP during {ticks} world ticks, {what} {budget} (#758)"));
     }
     allowed
 }
@@ -3507,6 +3596,26 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod recall_survival_tests {
     use super::*;
+
+    #[test]
+    fn poison_recall_charges_the_delay_against_hp_and_healing() {
+        // Third review of #1146: 20 HP, no up staircase known, no monster:
+        // the 15-tick delay costs 15 poison HP, below 20.
+        let short = poison_recall_charge(15, 30, 0.0);
+        assert_eq!(short, 15.0);
+        assert!(recall_forecast_allows(short, 0, 20));
+        // 25/25 HP with one CLW (a budget of 45): 34 ticks cost 34, below 45;
+        // the flight Recall charged the 34 against 25 alone and refused.
+        let long = poison_recall_charge(34, 50, 0.0);
+        assert_eq!(long, 34.0);
+        assert!(recall_forecast_allows(long, 0, 45));
+        assert!(!recall_forecast_allows(long, 0, 25));
+        // A short running poison and a poisoner's new poison: one HP a tick.
+        assert_eq!(poison_recall_charge(34, 5, 6.0), 11.0);
+        assert_eq!(poison_recall_charge(34, 30, 10.0), 34.0, "never more than a HP a tick");
+        // Monster contact still counts on top.
+        assert!(!recall_forecast_allows(long + 12.0, 0, 45));
+    }
 
     #[test]
     fn recall_delay_uses_world_time_at_every_player_speed() {
@@ -4016,6 +4125,18 @@ mod breeder_danger_tests {
 }
 
 #[cfg(test)]
+mod retreat_faster_tests {
+    #[test]
+    fn faster_counts_from_the_margin() {
+        assert!(super::faster_by(20, 5), "a hasted cave spider against an unhasted rogue");
+        assert!(super::faster_by(5, 5));
+        assert!(!super::faster_by(2, 5), "the +-2 spread of a normal-speed race");
+        assert!(!super::faster_by(0, 0), "never equal speed, whatever the margin");
+        assert!(super::faster_by(1, 0));
+    }
+}
+
+#[cfg(test)]
 mod category_threat_tests {
     /// #1010 (review of #1015, F3): `category_attack_safe_with` reads the
     /// switch on the gated path and then judges `unpriced_damage` and the
@@ -4074,6 +4195,12 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
     if crate::borg_escape::paralyser_defers_early_fight(st) {
         return false;
     }
+    // borg-reborn-rs (#1140, `deal_with_poison`; review of #1146, finding 3):
+    // poisoned next to an awake poisoner, with a cure due, or past the HP and
+    // the healing, `borg_caution` (the race, the cure, the leave) goes first.
+    if crate::borg_poison::defers_early_fight(st) {
+        return false;
+    }
     crate::borg_fight_attack::attack_on_sight(st)
         // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
         || crate::borg_lone_target::attack(st)
@@ -4083,6 +4210,8 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
     observe_retreat_landing(st);
+    // borg-reborn-rs (#1140): the poison still to come, noted (A).
+    crate::borg_poison::observe(st);
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
@@ -4249,6 +4378,29 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     let (on_upstair, on_dnstair) = note_standing(st);
 
 
+    // borg-reborn-rs (#1140, `deal_with_poison`): a fight the pending
+    // poison and the poison it adds would finish is lost: leave, and step out
+    // of reach of a poisoner that never moves, before any cure is drunk to
+    // stay in it.
+    if let Some((true, immobile)) = crate::borg_poison::fight_race(st) {
+        start_leaving(st, "# Leaving (a poison fight lost, #1140)");
+        start_fleeing(st, "# Fleeing (a poison fight lost, #1140)");
+        if immobile {
+            if let Some(i) = best_step_away_from(st, true) {
+                borg_note(st, "# Stepping out of reach of a poisoner that never moves (#1140)");
+                borg_keypress(st, i2d(i32::from(engine::ddd(i))));
+                st.borg.goal.type_0 = 0;
+                return true;
+            }
+        }
+    }
+
+    // borg-reborn-rs (#1140, `deal_with_poison`): a poison cure the Borg
+    // has is used once the poison matters, at any danger and with no roll.
+    if crate::borg_poison::cure_carried(st) {
+        return true;
+    }
+
     // borg-reborn-rs (#713): a creature kept at range is stepped away from
     // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
     // stairs it could reach).
@@ -4300,6 +4452,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         if borg_heal(st, pos_danger) {
             return true;
         }
+    }
+
+    // borg-reborn-rs (#913): Speed after healing (and #1140, #646/#713, defend) and before the swap, the
+    // stair walks, the retreat and the escapes below, when faster monsters are on the Borg
+    // (fleeing too: borg_defend's Speed is never asked while fleeing).
+    if emergency_speed(st) {
+        return true;
     }
 
     // do some swapping before running away!
@@ -4721,6 +4880,17 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     {
         start_leaving(st, "# Leaving (low hit-points)");
         start_fleeing(st, "# Fleeing (low hit-points)");
+    }
+
+    // borg-reborn-rs (#1140, `deal_with_poison`): the poison will take
+    // more than the HP and the healing carried: leave for town now, by
+    // Recall or climbing, without waiting for half HP and a roll.
+    if let Some(t) = crate::borg_poison::unfixable_here(st) {
+        start_leaving(st, "# Leaving (the poison outlasts HP and healing, #1140)");
+        start_fleeing(st, "# Fleeing (the poison outlasts HP and healing, #1140)");
+        if crate::borg_poison::leave_recall(st, &t) {
+            return true;
+        }
     }
 
     // Flee from bleeding wounds or poison and no heals
@@ -6466,6 +6636,75 @@ fn big_monster_adjacent(st: &BorgState) -> bool {
             && (engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE)
                 || i32::from(kill.level) > st.borg.tr(BI_CLEVEL) + margin)
     })
+}
+
+/// borg-reborn-rs (#913): the summed danger here of the awake known monsters
+/// within `radius` that are faster than the Borg by `margin` (a haste forecast, observed FAST
+/// counted, `forecast_monster_speed`; no SLOW term, mon-move.c:1928-1938), and how many.
+fn faster_danger_near(st: &mut BorgState, radius: i32, margin: i32) -> (i32, i32) {
+    let own = engine::player_combat_speed();
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let (mut danger, mut count) = (0i32, 0i32);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > radius {
+            continue;
+        }
+        if forecast_monster_speed(&kill) - own < margin.max(1) {
+            continue;
+        }
+        danger = danger.saturating_add(
+            crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i as i32, true, false).max(0),
+        );
+        count += 1;
+    }
+    (danger, count)
+}
+
+/// borg-reborn-rs (#913): Speed is wanted when the danger of the faster
+/// monsters near reaches `percent` of the current HP (0 = off).
+fn emergency_speed_wanted(percent: i32, fast: bool, depth: i32, danger: i32, hp: i32) -> bool {
+    percent > 0 && !fast && depth > 0 && i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#913): drink a Potion of Speed (+10 speed, 20+2d10 turns,
+/// object.txt:3429-3439, player-calcs.c:2176-2177) or cast Haste Self when
+/// faster monsters near are a large share of the HP (seed 2008390085: three
+/// cave spiders, hasted to +20, killed a rogue carrying three potions).
+fn emergency_speed(st: &mut BorgState) -> bool {
+    let percent = p(Param::caution_emergency_speed_danger_percent);
+    if percent == 0 || st.borg.temp.fast || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let (danger, count) = faster_danger_near(
+        st,
+        p(Param::caution_emergency_speed_radius),
+        p(Param::caution_emergency_speed_margin),
+    );
+    let hp = st.borg.tr(BI_CURHP);
+    if count == 0 || !emergency_speed_wanted(percent, false, 1, danger, hp) {
+        return false;
+    }
+    let fail = p(Param::caution_cornered_spell_fail);
+    if borg_spell_fail(st, HASTE_SELF, fail) || borg_quaff_potion(st, st.item_val.sv_potion_speed) {
+        borg_note(st, &format!("# Emergency Speed: {count} faster monsters near, danger {danger} at HP {hp} (#913)"));
+        return true;
+    }
+    false
+}
+
+#[cfg(test)]
+mod emergency_speed_tests {
+    #[test]
+    fn speed_when_the_faster_monsters_reach_the_share_of_hp() {
+        let w = super::emergency_speed_wanted;
+        assert!(!w(0, false, 2, 1000, 10), "0 is off");
+        assert!(w(50, false, 2, 20, 39), "20 of 39 is over half");
+        assert!(!w(50, false, 2, 19, 39));
+        assert!(!w(50, true, 2, 1000, 10), "already fast");
+        assert!(!w(50, false, 0, 1000, 10), "town");
+        assert!(w(50, false, 2, 1, 0), "HP 0 counts as 1");
+    }
 }
 
 /// borg-reborn-rs (#504): a cornered boost.

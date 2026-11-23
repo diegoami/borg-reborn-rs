@@ -95,6 +95,15 @@ pub struct KitItem {
     pub unknown_flavour: bool,
     /// Bought this visit: never sold back.
     pub just_bought: bool,
+    /// borg-reborn-rs (#1151, plan schema 20): a pack item known to be
+    /// cursed. While the pack is over its weight allowance, one that adds no
+    /// power is not protected as unknown (its other runes still unknown).
+    pub cursed_spare: bool,
+    /// borg-reborn-rs (#1151, plan schema 20): the light turns one copy
+    /// holds (a torch's turns, a flask's fuel) in `UNIT`s, 0 for anything
+    /// else. The capability model spreads a flask stack's refuelling bottles
+    /// over the whole stack; the light reserve's floor counts real copies.
+    pub fuel: i64,
 }
 
 /// What the dispositions free for the purchases (the second stage).
@@ -299,6 +308,8 @@ mod tests {
             unknown: false,
             unknown_flavour: false,
             just_bought: false,
+            cursed_spare: false,
+            fuel: 0,
         }
     }
 

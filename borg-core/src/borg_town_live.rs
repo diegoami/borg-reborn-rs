@@ -287,7 +287,9 @@ fn set_action(st: &mut BorgState, a: TownAction) -> bool {
 
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) != 0 || !active(st) || configured_limit(st) <= 0
-        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some() {
+        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some()
+        // borg-reborn-rs (#1140): the poison triage goes first.
+        || crate::borg_poison::town_triage_holds(st) {
         return false;
     }
     let Some(action) = overflow_action(st) else { return false; };
@@ -301,7 +303,11 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
-    if let Some(a) = overflow_action(st) { return set_action(st, a); }
+    // borg-reborn-rs (#1140, `deal_with_poison`): the poison first, and no
+    // sale or excess trip while selling pays nothing during it.
+    if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
+    let no_sale = crate::borg_poison::no_sale_now(st);
+    if let Some(a) = overflow_action(st).filter(|_| !no_sale) { return set_action(st, a); }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
         || st.borg.antibounce_count > 1350 { clear(st); return false; }
     // While walking, retain only the destination. On entering a store the
@@ -405,6 +411,13 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     executed
 }
 
+/// The copies a planned drop types: the plan's split when the stack may be
+/// split (it is one of `splits`' kinds) and the split leaves some carried,
+/// else the whole stack.
+fn drop_quantity(planned: i64, qty: i64, splits: bool) -> i64 {
+    if splits && (1..qty).contains(&planned) { planned } else { qty }
+}
+
 /// A drop is an outside action, not a request to route to shop -1.
 pub fn execute_outside(st: &mut BorgState) -> bool {
     if !active(st) || st.borg.in_shop { return false; }
@@ -415,14 +428,14 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
-    let drop_qty = if (1..qty).contains(&a.at[2])
-        && ((crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
-            && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item))
-    {
-        a.at[2]
-    } else {
-        qty
-    };
+    // borg-reborn-rs (#1151, review of #1155): so does a split fuel stack
+    // (torches, flasks), whose floor is the light reserve. Other drops stay
+    // whole: a split applied to every drop moved a smoke game (review of #989).
+    let fuel = matches!(u32::from(item.tval),
+        crate::headers::list_tvals_h::TV_LIGHT | crate::headers::list_tvals_h::TV_FLASK);
+    let splits = (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel;
+    let drop_qty = drop_quantity(a.at[2], qty, splits);
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
@@ -512,6 +525,18 @@ mod tests {
         assert_eq!(purchase_quantity(5, 99, 80, 50, 20), 1);
         assert_eq!(purchase_quantity(5, 99, 0, 1, 200), 1);
         assert_eq!(purchase_quantity(5, 99, 80, 0, 0), 5, "a free ware is capped by the stack only");
+    }
+    /// #1151 (review of #1155): a split drop of a fuel stack no shop buys
+    /// leaves the light reserve carried: 30 of 34 torches, not all 34.
+    /// Kinds that may not split, and a plan for the whole stack or more, drop
+    /// the whole stack.
+    #[test]
+    fn a_split_drop_keeps_the_reserved_copies() {
+        assert_eq!(drop_quantity(30, 34, true), 30);
+        assert_eq!(drop_quantity(30, 34, false), 34, "a kind that may not split");
+        assert_eq!(drop_quantity(34, 34, true), 34);
+        assert_eq!(drop_quantity(0, 34, true), 34);
+        assert_eq!(drop_quantity(1, 1, true), 1);
     }
     #[test]
     fn a_purchase_logs_the_gold_it_took() {

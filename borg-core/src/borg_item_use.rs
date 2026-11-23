@@ -792,6 +792,24 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
+/// borg-reborn-rs (#1140, re-review of #1146): whether `borg_zap_rod` (a rod)
+/// or `borg_use_staff_fail` (a staff) of `sval` would use the device now:
+/// their slot, charge and `*_use_max_failure` tests, without a key. The
+/// `borg_equips_*` probes read the `*_equip_max_failure` limits, which may
+/// differ, so a device could count as a cure and then refuse to fire.
+pub(crate) fn device_would_fire(st: &mut BorgState, tval: u32, sval: i32) -> bool {
+    let staff = tval == TV_STAFF;
+    if staff && crate::borg_escape::teleport_staff_blocked(st, sval) {
+        return false;
+    }
+    let i = borg_slot(st, tval as i32, sval);
+    if i < 0 || st.items.items[i as usize].pval == 0 {
+        return false;
+    }
+    let fail = device_fail(device_skill(st), i32::from(st.items.items[i as usize].level));
+    fail <= param(if staff { Param::item_use_staff_use_max_failure } else { Param::item_use_rod_use_max_failure })
+}
+
 /// Attempt to use the given (charged) staff (by sval).
 pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     /* borg-reborn-rs (#829): not a teleport under a teleport curse */
