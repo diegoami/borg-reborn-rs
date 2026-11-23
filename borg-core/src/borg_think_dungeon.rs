@@ -982,6 +982,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_wear_rings");
     }
 
+    // borg-reborn-rs (#1067): a trap set off or a trap that cuts the way
+    // back: recover at the stairs, reopen the way, leave a trap-dense level.
+    // Before the item flows (review of #1086).
+    if crate::borg_trap_way::think(st) {
+        return choice!("borg_trap_way");
+    }
+
     /* Continue flowing towards objects */
     if borg_flow_old(st, GOAL_TAKE) {
         return choice!("borg_flow_old");

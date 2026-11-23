@@ -126,6 +126,7 @@ pub mod errands_plan;
 pub mod scary_list;
 mod borg_fast_fragile;
 mod borg_unseen_belief;
+mod borg_trap_way;
 mod borg_lone_target;
 mod borg_leash; // borg-reborn-rs (#1062)
 mod borg_town_hunt;
