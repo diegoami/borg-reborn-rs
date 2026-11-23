@@ -331,6 +331,29 @@ impl Model {
         self.units(Self::scope(it), i64::from(it.slot), i64::from(it.qty)).iter()
             .any(|&(id, turns)| id == LIGHT && turns > 0 && row[3] - turns < -row[2])
     }
+    /// borg-reborn-rs (#1151): the copies of this fuel stack the light
+    /// reserve still needs once the other carried fuel is counted, so the
+    /// copies past them can go. `protects_fuel` asks the same of the whole
+    /// stack (more than zero here). A CL17 Mage with 34 torches and a
+    /// 20,000-turn reserve kept all of them (four would do) at -12 speed.
+    pub fn fuel_keep(&self, it: &KitItem) -> i32 {
+        let Some(row) = self.curves.get(LIGHT) else { return 0; };
+        if row[1] <= 0 || row[2] >= 0 { return 0; }
+        let per_copy: i64 = self.units(Self::scope(it), i64::from(it.slot), 1).iter()
+            .filter(|&&(id, _)| id == LIGHT).map(|&(_, turns)| turns).sum();
+        if per_copy <= 0 { return 0; }
+        let other = row[3] - per_copy * i64::from(it.qty);
+        let missing = (-row[2] - other).max(0);
+        ((missing + per_copy - 1) / per_copy).clamp(0, i64::from(it.qty)) as i32
+    }
+    /// borg-reborn-rs (#1151): a ware that removes a curse while the Borg has
+    /// one it wants removed (the CURSE row has weight: `BI_FIRST_CURSED`).
+    /// A scroll of it is read in town by `borg_enchanting`
+    /// (`borg_decurse_any`), so its weight does not leave town.
+    pub fn decurses_now(&self, shop: u8, slot: u8) -> bool {
+        self.curves.get(CURSE).is_some_and(|row| row[1] > 0)
+            && self.units(i64::from(shop), i64::from(slot), 1).iter().any(|&(id, n)| id == CURSE && n > 0)
+    }
     /// Copies this pack stack must retain after counting other carried stacks.
     pub fn restore_life_keep(&self, item: &KitItem) -> i32 {
         let Some(row) = self.curves.get(RESTORE_LIFE_RESERVE) else { return 0; };
@@ -1468,7 +1491,7 @@ mod tests {
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
         KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
-            power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
+            power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, serves: 0 }
     }
     #[test]
     fn alchemist_restore_life_purchase_and_retention_follow_need_and_stock() {
@@ -2070,6 +2093,74 @@ mod tests {
         m.curves[LIGHT][2] = torch_turns;
         m.curves[LIGHT][3] = 2 * torch_turns;
         assert!(!m.protects_fuel(&spare));
+    }
+
+    /// #1151: the copies of a fuel stack the light reserve still needs. 34
+    /// torches of 5,000 turns against 20,000: four, the rest can go. Other
+    /// carried fuel lowers it; a reserve met elsewhere needs none; the whole
+    /// stack short of the reserve keeps all of it (what `protects_fuel` says).
+    #[test]
+    fn the_fuel_reserve_keeps_only_the_copies_it_needs() {
+        let mut m = model();
+        let torch_turns = 5000 * UNIT;
+        m.supplies.push([PACK, 0, LIGHT as i64, torch_turns]);
+        let stack = item(Place::Pack, 0, 34);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -4 * torch_turns, 34 * torch_turns, 0];
+        assert_eq!(m.fuel_keep(&stack), 4);
+        assert!(m.protects_fuel(&stack), "the whole stack would undercut the reserve");
+        m.curves[LIGHT][3] = 34 * torch_turns + 3 * torch_turns / 2; // a flask's worth carried elsewhere
+        assert_eq!(m.fuel_keep(&stack), 3);
+        m.curves[LIGHT][3] = 38 * torch_turns;
+        assert_eq!(m.fuel_keep(&stack), 0);
+        assert!(!m.protects_fuel(&stack));
+        let few = item(Place::Pack, 0, 3);
+        m.curves[LIGHT][3] = 3 * torch_turns;
+        assert_eq!(m.fuel_keep(&few), 3, "short of the reserve: all of it stays");
+        m.curves[LIGHT][2] = torch_turns; // no reserve row
+        assert_eq!(m.fuel_keep(&stack), 0);
+    }
+
+    /// #1151: a Remove Curse ware is read in town while the CURSE row has
+    /// weight (`BI_FIRST_CURSED`); without a curse to remove it is not.
+    #[test]
+    fn a_remove_curse_ware_decurses_now_only_with_a_curse() {
+        let mut m = model();
+        m.supplies.push([5, 2, CURSE as i64, UNIT]);
+        m.curves[CURSE] = [CURSE as i64, 100 * UNIT, -UNIT, 0, 0];
+        assert!(m.decurses_now(5, 2));
+        assert!(!m.decurses_now(5, 3), "another ware");
+        m.curves[CURSE][1] = 0;
+        assert!(!m.decurses_now(5, 2), "no curse to remove");
+    }
+
+    /// #1151: an overweight Borg with a curse to remove still buys a Remove
+    /// Curse scroll (schema 20): it is read in town, so the weight repair
+    /// does not take it away. Schema 19 left without it.
+    #[test]
+    fn an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town() {
+        use crate::borg_town_record::{action, first_action, step, StepInput, PARAMS};
+        use crate::borg_town_solve::Limits;
+        use crate::borg_town_stock::Candidate;
+        let scroll = Candidate { shop: 4, slot: 0, kind: 1, tval: crate::headers::list_tvals_h::TV_SCROLL as u8, sval: 1,
+            price: 100, qty: 5, weight: 5, slots_cost: 1, stack_count: 0, class: 1 };
+        let decide = |revision: i64, weight: i64, curse: bool| {
+            let mut m = Model { available: vec![[4, 0, 5]], packing: None,
+                curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: vec![[4, 0, CURSE as i64, UNIT]] };
+            m.curves[CURSE] = [CURSE as i64, if curse { 100 * UNIT } else { 0 }, -UNIT, 0, 0];
+            let mut traits = [0; BI_MAX as usize];
+            traits[BI_CARRY as usize] = 100;
+            let input = StepInput { storing: None, revision, capability: Some(&m), utility: true,
+                black_market_reserve: 0, black_market_percentage: -1, candidates: vec![scroll.clone()],
+                facts: &[], tryon: &[], limits: Limits { gold: 89_159, pack_slots: 4, weight },
+                urgent: vec![], params: [0; PARAMS], traits: &traits, power: 0, carried: &[],
+                cure_spell: false, kit: &[], home_slots: 0 };
+            let output = step(&input);
+            first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit).0
+        };
+        assert_eq!(decide(20, -993, true), action::BUY, "overweight, read in town");
+        assert_eq!(decide(19, -993, true), action::LEAVE, "the recorded visit's weight repair");
+        assert_eq!(decide(20, 100, true), action::BUY);
+        assert_eq!(decide(20, -993, false), action::LEAVE, "no curse to remove");
     }
 
     #[test]

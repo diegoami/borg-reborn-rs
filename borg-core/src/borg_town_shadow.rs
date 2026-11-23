@@ -307,6 +307,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             unknown: unknown_durable(it) || unknown_flavour,
             unknown_flavour,
             just_bought,
+            // borg-reborn-rs (#1151)
+            cursed_spare: place == Place::Pack && it.cursed,
         }
     };
 

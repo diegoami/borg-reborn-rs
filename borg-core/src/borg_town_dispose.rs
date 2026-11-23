@@ -95,6 +95,10 @@ pub struct KitItem {
     pub unknown_flavour: bool,
     /// Bought this visit: never sold back.
     pub just_bought: bool,
+    /// borg-reborn-rs (#1151, plan schema 20): a pack item known to be
+    /// cursed. While the pack is over its weight allowance, one that adds no
+    /// power is not protected as unknown (its other runes still unknown).
+    pub cursed_spare: bool,
 }
 
 /// What the dispositions free for the purchases (the second stage).
@@ -299,6 +303,7 @@ mod tests {
             unknown: false,
             unknown_flavour: false,
             just_bought: false,
+            cursed_spare: false,
         }
     }
 

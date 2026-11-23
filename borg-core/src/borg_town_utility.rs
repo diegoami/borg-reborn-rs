@@ -591,15 +591,22 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             && home_counts.get(&whole.kind).copied().unwrap_or(0) >= limit;
         let capped_floor = if capped { (usable_floor(u, whole, held, keep_min) - (held - whole.qty)).max(0) } else { 0 };
         if capped && capped_floor >= whole.qty { continue; }
-        let floor = capped_floor.max(restore_keep).max(if surplus(whole) { keep_min } else { 0 });
+        // borg-reborn-rs (#1151, plan schema 20): a fuel stack keeps the
+        // copies the light reserve needs and the rest can go; before, the
+        // whole stack was skipped when all of it would undercut the reserve.
+        let fuel_keep = if input.revision >= 20 {
+            u.capability.as_ref().map_or(0, |model| model.fuel_keep(whole))
+        } else { 0 };
+        if fuel_keep >= whole.qty { continue; }
+        let floor = capped_floor.max(restore_keep).max(fuel_keep).max(if surplus(whole) { keep_min } else { 0 });
         let qty = whole.qty - floor;
-        let proceeds = if restore_keep > 0 || capped {
+        let proceeds = if restore_keep > 0 || capped || fuel_keep > 0 {
             whole.proceeds * i64::from(qty) / i64::from(whole.qty)
         } else { whole.proceeds };
         let part = KitItem { qty, proceeds, ..*whole };
         let partial = floor > 0 && !whole.unknown_flavour;
         let it = if partial { &part } else { whole };
-        if u.capability.as_ref().is_some_and(|model| model.protects_fuel(whole)) {
+        if input.revision < 20 && u.capability.as_ref().is_some_and(|model| model.protects_fuel(whole)) {
             continue;
         }
         if floored(whole) { continue; }
@@ -653,7 +660,15 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
         // still sends the copies past it away.
         let potion_or_scroll_protected = if capped { it.protect_disposal } else { keeps_detect_invisible(st, it) };
-        let protected = it.unknown || it.just_bought || urgent_loss || potion_or_scroll_protected;
+        // borg-reborn-rs (#1151, plan schema 20): an unknown pack item is
+        // kept to learn its runes, but one known to be cursed that adds no
+        // power is not worth carrying over the weight allowance (a CL17 Mage
+        // at -12 speed carried a 25 lb cursed Lochaber Axe). It is stored if
+        // it is worth that, else sold or dropped. An unknown item with no
+        // known curse stays protected.
+        let cursed_spare = input.revision >= 20 && it.cursed_spare && it.place == Place::Pack
+            && u.power(it.power) == 0 && input.limits.weight + freed.weight < 0;
+        let protected = (it.unknown && !cursed_spare) || it.just_bought || urgent_loss || potion_or_scroll_protected;
         // borg-reborn-rs (#651, plan schema 12): what this visit bought is
         // carried, not stored: a Cure Light Wounds bought to carry went to
         // the Home and was bought again (borg-cemetery#75).
@@ -672,8 +687,15 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let worth_more_at_home = !only_overweight && future - home_cost > loss - cost;
         let store = !capped && !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (worth_more_at_home ||
             overweight && (loss > 0 || future > 0 || protected));
+        // borg-reborn-rs (#1151, plan schema 20): over the weight allowance
+        // itself, with no room at Home, the copies past a stack's floor (the
+        // light reserve, `town_store_keep_min`, the Restore Life reserve) are
+        // excess: sold, or dropped when no shop buys them, the least
+        // valuable per weight first until the pack is under its allowance.
+        // The floor stays, so the trip's minimum readiness is kept.
+        let excess = input.revision >= 20 && partial && input.limits.weight + freed.weight < 0;
         let action = if store { Disposition::Store }
-            else if !protected && (capped || loss <= cost && future <= home_cost) {
+            else if !protected && (capped || excess || loss <= cost && future <= home_cost) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
             } else { Disposition::Keep };
         out[i] = action;
@@ -951,7 +973,7 @@ mod tests {
 
     fn recall(place: Place) -> KitItem {
         KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
-            reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false }
+            reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false }
     }
 
     #[test]
@@ -1847,6 +1869,78 @@ mod tests {
             qty: 4, weight: 5, slots_cost: 1, stack_count: 0, class: 0 }];
         assert_eq!(storing_target(&inp, &u, Room { weight: 30, slots: 2 }), Room { weight: 35, slots: 3 });
         assert_eq!(storing_target(&inp, &u, Room::default()), Room::default());
+    }
+
+    /// #1151: the observed kit of a CL17 Gnome Mage at -12 speed (game 14,
+    /// turn 9,221,029; borg-cemetery scenario
+    /// mage-overweight-cursed-kit-9221204): 34 spare Wooden Torches of 5,000
+    /// turns against a 20,000-turn reserve, a cursed Lochaber Axe {cursed,
+    /// ??}, a Dagger {??} with no known curse, three Phase Door, a full Home,
+    /// and 99.3 lb over the departure room with the shipped storing
+    /// settings. Schema 20 keeps four torches and lets thirty go, and lets
+    /// the axe go; the dagger, unknown and not known cursed, stays. Schema 19
+    /// (the recorded visit) kept everything.
+    #[test]
+    fn an_overweight_mage_unloads_surplus_torches_and_a_cursed_spare() {
+        use crate::borg_town_capability::{Model, NAMES, PACK};
+        let light = NAMES.iter().position(|&n| n == "light turns").unwrap();
+        let st = state(5, 17, 105);
+        let torch_turns = 5000 * UNIT;
+        let torches = KitItem { slot: 6, kind: 300, qty: 34, weight: 22, need: -1, reduction: 0,
+            sell_shop: 0, ..recall(Place::Pack) };
+        let axe = KitItem { slot: 20, kind: 301, qty: 1, weight: 250, need: -1, reduction: 0,
+            sell_shop: -1, unknown: true, cursed_spare: true, ..recall(Place::Pack) };
+        let dagger = KitItem { slot: 15, kind: 302, qty: 1, weight: 12, need: -1, reduction: 0,
+            sell_shop: -1, unknown: true, ..recall(Place::Pack) };
+        let phase = KitItem { slot: 5, kind: 303, qty: 3, weight: 5, need: index(Need::Escape) as i8,
+            ..recall(Place::Pack) };
+        let kit = [torches, axe, dagger, phase];
+        let model = || {
+            let mut curves: Vec<[i64; 5]> = (0..NAMES.len()).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            curves[light] = [light as i64, 100 * UNIT, -4 * torch_turns, 34 * torch_turns, 0];
+            Model { available: Vec::new(), packing: None, curves, supplies: vec![[PACK, 6, light as i64, torch_turns]] }
+        };
+        let shipped = Storing { only_overweight: true, room: Room { weight: 50, slots: 2 }, keep_min: 3,
+            home_stack_limit: 2, ..Storing::default() };
+        let solve = |revision: i64| {
+            let mut inp = input(&kit);
+            inp.revision = revision;
+            inp.home_slots = 0;
+            inp.limits.weight = -943;
+            let mut u = Utility::of(&st, &kit, false);
+            u.capability = Some(model());
+            dispositions_by(&inp, &mut u, &st, shipped)
+        };
+        let (d, freed, copies) = solve(20);
+        assert_eq!(d[0], Disposition::Sell, "the surplus torches go");
+        assert_eq!(copies[0], 30, "four torches cover the 20,000-turn reserve");
+        assert_eq!(d[1], Disposition::Drop, "the cursed spare goes");
+        assert_eq!(d[2], Disposition::Keep, "an unknown item with no known curse stays");
+        assert_eq!(freed.weight, 30 * 22 + 250);
+        assert_eq!(freed.pack_slots, 1, "the torch stack keeps its slot");
+        let (d, freed, _) = solve(19);
+        assert_eq!(&d[..3], &[Disposition::Keep; 3], "the recorded visit kept the kit");
+        assert_eq!(freed.weight, 0);
+        // Within the allowance (only the departure room short) with a full
+        // Home: no sale and no drop, the cursed spare is not junk yet.
+        let mut inp = input(&kit);
+        inp.revision = 20;
+        inp.home_slots = 0;
+        inp.limits.weight = 20;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model());
+        let (d, freed, _) = dispositions_by(&inp, &mut u, &st, shipped);
+        assert_eq!(&d[..3], &[Disposition::Keep; 3], "nothing is sold or dropped within the allowance");
+        assert_eq!(freed.weight, 0);
+        // With room at Home, the surplus torches are stored (the cursed
+        // spare is worth nothing there and goes).
+        inp.home_slots = 5;
+        inp.limits.weight = -943;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model());
+        let (d, _, copies) = dispositions_by(&inp, &mut u, &st, shipped);
+        assert_eq!((d[0], copies[0]), (Disposition::Store, 30));
+        assert_eq!(d[1], Disposition::Drop);
     }
 
     /// #859: the first Recall is urgent once the next trip reaches the dive

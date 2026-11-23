@@ -1,0 +1,60 @@
+## 2026-11-23: an overweight Mage's torches, cursed spares and stat curse (#1151)
+
+**Done.** Four fixes for the CL17 Gnome Mage stuck at **Slow (−12)**
+([borg-cemetery scenario](https://github.com/diegoami/borg-cemetery/tree/0cca725f4f59bd70f91467ba6af6c6fa8604a1e6/scenarios/mage-overweight-cursed-kit-9221204)).
+The rules are in `docs/CALIBRATION.md` ("An overweight Mage's torches, cursed
+spares and stat curse").
+
+- `trait_curse_stats` (compiled 0, **shipped 1**): a worn dullness,
+  sickliness, weakness or clumsiness curse takes its stats in the Borg's own
+  stats, as in the engine. `borg_notice` took the stats off `BI_CSTR`.. and
+  then overwrote them with `stat_cur`, so the curse never reached `BI_STR`,
+  the weight allowance or the power model. This is a C Borg defect too
+  (`borg-trait.c` does the same); it is not yet in the C defect catalogue.
+- Plan schema 20 (older records keep their schema and replay as before):
+  - a fuel stack splits at the light reserve (`Model::fuel_keep`);
+  - over the weight allowance with no room at Home, the copies past a
+    stack's floor are sold or dropped;
+  - a known-cursed spare that adds no power is not protected as unknown
+    over the allowance (`KitItem::cursed_spare`, kit flag 128);
+  - a Remove Curse scroll bought for a curse is not charged against the
+    weight, because it is read in town.
+
+**Checked.**
+- CI's commands pass, as do `check-param-citations.py` (twenty town
+  citations were moved by the tool after the new methods shifted lines),
+  `borg-core-vendor.py check`, and the `engine`, `scripts` and `tools` tests.
+- The smoke suite on the default core: 4/4 identical to `smoke-borg-rs`, so
+  there is no re-record.
+- Regression tests on the observed kit:
+  - `an_overweight_mage_unloads_surplus_torches_and_a_cursed_spare`: schema
+    20 keeps four torches, sells thirty and drops the axe; the dagger with
+    no known curse stays; schema 19 keeps everything.
+  - `an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town`.
+  - Unit tests for `fuel_keep`, `decurses_now` and `curse_stat_add`.
+- The owner's save, from turn 9,221,204, for 200,000 game turns: the
+  `track-p` head (`bf76b64d`) against this branch, both built with a local,
+  uncommitted frontend change so the Borg starts at all (#1154). On this
+  branch the Borg takes the cap off at once: power with it 1,796,542,
+  without it 1,862,497. Max HP goes from 105 to 113 and SP from 24 to 33.
+  It drops the cap, then in town sells 32 torches and drops the axe. The
+  first departure room reads −0.8 lb, where `track-p` read −101.8 lb at
+  each of its five departures. The other carried fuel (a lantern, flasks)
+  met the rest of the light reserve. It reaches DL4, while `track-p` stays on DL1. Remove Curse was
+  not needed: removing the cap ends the curse. Neither arm died. This is one
+  named case, not a measurement (RULES 14, 20).
+
+**Found.** A loaded save whose first screen has a `-more-` prompt swallows
+the frontend's `^Z` start, which is why the Cemetery reload issued no keys
+(#1154, a frontend PR of its own under RULES 22).
+
+**Left.**
+- #1154 (frontend start on a loaded save).
+- The before/after trial on the owner's save is not yet a Cemetery trial
+  report. The owner decides whether it should be.
+- The zoo measures `trait_curse_stats` against 0 and schema 20's town
+  rules, if the owner wants a comparison before P8's exit run.
+
+**For the owner.** `trait_curse_stats` is shipped at 1, because it is a
+perception fix (the Borg's stats now match the engine's). Ship 0 if you want
+it measured first.
