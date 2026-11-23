@@ -6832,6 +6832,10 @@ lead only, RULES 14; keys.log sha256 prefixes):
 | 526144893 | Human Ranger | alive CL6 DL2 `c24cf291` | alive CL7 DL4 `e362880f` | alive CL6 `e4db15f1` | alive CL6 `abe52f3f` | alive CL7 DL2 `15746742` |
 | 1024822556 | Dunadan Druid | Fang, t3086 `3687ca84` | alive CL8 DL3 `d8ef456f` | = shipped | alive CL7 `450d1575` | alive CL8 DL3 `3206117e` |
 
+These are on track-p `f67fad19`. On `bf8d2604`, which ships the #926 bundle
+(#1074), only 592754909 changes: shipped alive CL6 `6e04db66`, `recall`
+`fede61f2`.
+
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2047` |
