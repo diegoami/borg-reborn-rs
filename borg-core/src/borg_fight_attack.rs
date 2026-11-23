@@ -5980,11 +5980,16 @@ fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
         |st, plan| match plan {
             FloorCure::Nothing => {}
             FloorCure::Escape { danger, heal, .. } => borg_note(st, &format!(
-                "# Not drinking the floor's cure: damage {danger} against HP {hp} + {heal}, the escape first (#1064)")),
+                "# Kill-on-sight floor prefers the escape to its cure: damage {danger} against HP {hp} + {heal} (#1064)")),
             FloorCure::Drink { danger, .. } => borg_note(st, &format!(
                 "# Taking the cure the kill-on-sight floor counted: HP {hp}/{max_hp}{}, damage {danger} (#1064)",
                 if confused { ", confused" } else { "" })),
         },
+        // Review of #1082 (third review, P3): the drink after a failed escape
+        // has its own marker, so a count of the floor's drinks includes it.
+        |st| borg_note(st, &format!(
+            "# Kill-on-sight floor: no escape usable, taking the cure after all: HP {hp}/{max_hp}{} (#1064)",
+            if confused { ", confused" } else { "" })),
         floor_escape,
         |st, sval| if sval == st.item_val.sv_potion_cure_critical {
             crate::borg_item_use::borg_quaff_crit(st, true)
@@ -6024,19 +6029,24 @@ fn floor_escape(st: &mut BorgState) -> bool {
 /// re-review P2: the decision is carried to the action): `Escape` takes the
 /// escape, and when it cannot be used drinks after all (the potion is then
 /// the best move left); `Drink` quaffs. The think is spent when an action
-/// was made (true). `note` names the plan first. The decision tests call it
+/// was made (true). `note` names the plan first; `fallback_note` marks the
+/// drink after an escape that could not be used. The decision tests call it
 /// with the engine's parts given.
 fn floor_cure_act(
     st: &mut BorgState,
     plan: FloorCure,
     note: impl FnOnce(&mut BorgState, &FloorCure),
+    fallback_note: impl FnOnce(&mut BorgState),
     escape: impl FnOnce(&mut BorgState) -> bool,
     quaff: impl FnOnce(&mut BorgState, i32) -> bool,
 ) -> bool {
     note(st, &plan);
     match plan {
         FloorCure::Nothing => false,
-        FloorCure::Escape { sval, .. } => escape(st) || quaff(st, sval),
+        FloorCure::Escape { sval, .. } => escape(st) || {
+            fallback_note(st);
+            quaff(st, sval)
+        },
         FloorCure::Drink { sval, .. } => quaff(st, sval),
     }
 }
@@ -6384,7 +6394,7 @@ mod floor_cure_tests {
         let mut st = druid(true);
         let mut keys = Vec::new();
         let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
-        let spent = floor_cure_act(&mut st, plan, |_, _| {}, |_| { keys.push(b'<'); true }, |_, _| panic!("the rejected potion"));
+        let spent = floor_cure_act(&mut st, plan, |_, _| {}, |_| panic!("no fallback"), |_| { keys.push(b'<'); true }, |_, _| panic!("the rejected potion"));
         assert!(spent, "the think is spent");
         assert_eq!(keys, vec![b'<']);
     }
@@ -6394,10 +6404,11 @@ mod floor_cure_tests {
     #[test]
     fn an_escape_that_cannot_be_used_drinks_after_all() {
         let mut st = druid(true);
-        let mut quaffed = None;
+        let (mut quaffed, mut marked) = (None, false);
         let plan = FloorCure::Escape { sval: CSW, danger: 88, heal: 40 };
-        assert!(floor_cure_act(&mut st, plan, |_, _| {}, |_| false, |_, s| { quaffed = Some(s); true }));
+        assert!(floor_cure_act(&mut st, plan, |_, _| {}, |_| marked = true, |_| false, |_, s| { quaffed = Some(s); true }));
         assert_eq!(quaffed, Some(CSW));
+        assert!(marked, "the fallback drink has its own marker (third review, P3)");
     }
 
     /// `Drink` quaffs and spends the think; `Nothing` asks nothing.
@@ -6405,9 +6416,9 @@ mod floor_cure_tests {
     fn drink_quaffs_and_nothing_acts_on_nothing() {
         let mut st = druid(true);
         let mut quaffed = None;
-        assert!(floor_cure_act(&mut st, FloorCure::Drink { sval: CLW, danger: 8 }, |_, _| {}, |_| panic!("no escape"), |_, s| { quaffed = Some(s); true }));
+        assert!(floor_cure_act(&mut st, FloorCure::Drink { sval: CLW, danger: 8 }, |_, _| {}, |_| panic!("no fallback"), |_| panic!("no escape"), |_, s| { quaffed = Some(s); true }));
         assert_eq!(quaffed, Some(CLW));
-        assert!(!floor_cure_act(&mut st, FloorCure::Nothing, |_, _| {}, |_| panic!("no escape"), |_, _| panic!("no quaff")));
+        assert!(!floor_cure_act(&mut st, FloorCure::Nothing, |_, _| {}, |_| panic!("no fallback"), |_| panic!("no escape"), |_, _| panic!("no quaff")));
     }
 
     /// The stair key `floor_escape` presses, as `escape_available` counts the

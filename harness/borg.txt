@@ -1579,7 +1579,8 @@ borg_param_attack_kill_on_sight_min_hp_percent = 50
 # the same think (confused: Cure Serious, then Critical, which cure the
 # confusion; then Cure Light, which shortens it by 20 turns) unless it does not
 # outlive the next turn and an escape is at hand (it then takes the stairs
-# underfoot or Phase Door in the same think), and #867's "attacking first" hold of the
+# underfoot or Phase Door in the same think, and drinks after all if the Phase
+# Door's own gates refuse it), and #867's "attacking first" hold of the
 # confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
 # neither attacking nor drinking with this 0. 0 = #969 alone.
 borg_param_attack_kill_on_sight_floor_cure = 1
