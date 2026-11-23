@@ -580,6 +580,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    crate::borg_flow::observe_flight_retreats(st);
     let mut b_j = -1;
     let lightless = crate::borg_lightless::update(st);
 
