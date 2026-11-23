@@ -36,7 +36,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_FOOD, BI_ISAFRAID, BI_ISBLIND,
     BI_ISCONFUSED, BI_ISCUT, BI_ISFIXALL, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_MAXHP, BI_MAXSP,
+    BI_ISWEAK, BI_LIGHT, BI_MAXHP, BI_MAXSP,
 };
 use crate::headers::list_tvals_h::{TV_FOOD, TV_MUSHROOM, TV_ROD};
 use crate::headers::ui_event_h::keycode_t;
@@ -765,13 +765,49 @@ pub(crate) fn note_unseen_attack(st: &mut BorgState, who: &[u8]) {
     if !unseen_name(who) {
         return;
     }
+    note_unseen(st, false);
+}
+
+/// borg-reborn-rs (#981): `recover_unseen_shot` is on and `msg` is the
+/// engine's message for a projection that hit the Borg from a monster it
+/// cannot see, or any projection while it is blind:
+/// `msg("You are hit by %s!", projections[typ].blind_desc)`
+/// (`project-player.c:798-799, 840-842, 886-888`, the only producer of the
+/// message). It covers every projection (`projection.txt`'s `blind-desc`:
+/// arrows, bolts, breaths, spit), so it says nothing about the distance. A
+/// kobold archer out of the light is such a monster: not invisible, only
+/// unseen (#981).
+pub(crate) fn unseen_shot_message(msg: &[u8]) -> bool {
+    param(Param::recover_unseen_shot) != 0 && unseen_shot_text(msg)
+}
+
+fn unseen_shot_text(msg: &[u8]) -> bool {
+    msg.starts_with(b"You are hit by ") && msg.ends_with(b"!")
+}
+
+/// borg-reborn-rs (#981): an unseen monster's projection hit the Borg
+/// (`SHOT_BY:`): an unseen attack, as #697's blow.
+pub(crate) fn note_unseen_shot(st: &mut BorgState) {
+    note_unseen(st, true);
+}
+
+/// #697's record of an unseen attack; `ranged`: a projection's hit (#981),
+/// not a blow.
+fn note_unseen(st: &mut BorgState, ranged: bool) {
     let now = engine::game_turn();
     let (x, y) = (st.borg.c.x, st.borg.c.y);
     let turns = param(Param::recover_unseen_attack_turns);
     let recent = unseen_recent(turns, now, st.borg.unseen_turn);
     let far = engine::distance(loc { x, y }, loc { x: st.borg.unseen_x, y: st.borg.unseen_y })
         >= param(Param::recover_unseen_attack_distance);
-    st.borg.unseen_followed = unseen_followed_next(st.borg.unseen_followed, recent, far);
+    // borg-reborn-rs (review of #998): only a blow struck far from the last
+    // attack is news that the attacker moved; a projection hits from where it
+    // stands, so a hit after the Borg walked away is not "followed".
+    st.borg.unseen_followed = unseen_followed_next(st.borg.unseen_followed, recent, moved_far(far, ranged));
+    // A new episode: the window lapsed, or the mode had ended (its end also
+    // clears the clock, so `recent` is false then too; review of #998).
+    let new_episode = turns > 0 && (!recent || !st.borg.unseen_mode);
+    st.borg.unseen_shot_only = episode_shot_only(st.borg.unseen_shot_only, new_episode, ranged);
     st.borg.unseen_turn = now;
     st.borg.unseen_x = x;
     st.borg.unseen_y = y;
@@ -797,6 +833,59 @@ pub(crate) fn note_unseen_attack(st: &mut BorgState, who: &[u8]) {
 /// leaves); cleared when the window had lapsed (and on a new level).
 fn unseen_followed_next(followed: bool, recent: bool, far: bool) -> bool {
     recent && (followed || far)
+}
+
+/// borg-reborn-rs (#981, review of #998): the attack says the attacker moved
+/// far: a blow struck far from the last attack. A hit does not.
+fn moved_far(far: bool, ranged: bool) -> bool {
+    far && !ranged
+}
+
+/// borg-reborn-rs (#981, review of #998): the episode's kind after an unseen
+/// attack: set when the episode starts (`new_episode`), and lost for good by
+/// the first blow in it.
+fn episode_shot_only(shot_only: bool, new_episode: bool, ranged: bool) -> bool {
+    ranged && (new_episode || shot_only)
+}
+
+/// borg-reborn-rs (#981, review of #998): the blind attack on the adjacent
+/// grids. A monster in view on a grid the Borg sees is visible unless it is
+/// invisible (`mon-util.c:359-388`), and Detect Invisible answers that case;
+/// so in an episode of projection hits only, the attacker is known to be
+/// adjacent no more than anywhere else, unless the Borg is blind or has no
+/// light. A blow in the episode says it is adjacent.
+fn probe_fits_episode(shot_only: bool, blind: bool, no_light: bool) -> bool {
+    !shot_only || blind || no_light
+}
+
+/// borg-reborn-rs (#981, review of #998): an episode of projection hits
+/// only ends when a known monster that casts or shoots (`ranged_attack`, its
+/// race's spells) dies: a death the Borg saw and located, which may be the
+/// attacker's. No other death ends it.
+fn shooter_death_ends(mode: bool, shot_only: bool, ranged_attack: u8) -> bool {
+    mode && shot_only && ranged_attack != 0
+}
+
+/// Called with the kill index of a located death (`DIED:`, before the record
+/// is deleted).
+pub(crate) fn unseen_monster_died(st: &mut BorgState, k: i32) {
+    let kill = st.kills.kills[k as usize];
+    if !shooter_death_ends(st.borg.unseen_mode, st.borg.unseen_shot_only, kill.ranged_attack) {
+        return;
+    }
+    end_unseen_episode(st);
+    let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx)));
+    borg_note(st, &format!("# Mode: over (a {name}, which casts or shoots, died after unseen hits)"));
+}
+
+/// The end of an episode: the mode, the clock and the episode's state.
+fn end_unseen_episode(st: &mut BorgState) {
+    st.borg.unseen_mode = false;
+    st.borg.unseen_turn = 0;
+    st.borg.unseen_followed = false;
+    st.borg.unseen_probe = None;
+    st.borg.unseen_found = None;
+    st.borg.unseen_shot_only = false;
 }
 
 /// borg-reborn-rs (#697): an unseen attack at game turn `at` (0: none) is
@@ -935,6 +1024,7 @@ fn unseen_deal(st: &mut BorgState) -> bool {
     if !unseen_active(st) {
         if st.borg.unseen_mode {
             st.borg.unseen_mode = false;
+            st.borg.unseen_shot_only = false;
             borg_note(st, "# Mode: invisible attacker gone (no blow for a while)");
         }
         return false;
@@ -967,6 +1057,7 @@ fn unseen_detect(st: &mut BorgState) -> bool {
 /// enough to drink a cure first (`recover_unseen_heal_hp_percent`).
 fn unseen_probe(st: &mut BorgState) -> bool {
     if param(Param::recover_unseen_probe_tries) <= 0
+        || !probe_fits_episode(st.borg.unseen_shot_only, st.borg.tr(BI_ISBLIND) != 0, st.borg.tr(BI_LIGHT) == 0)
         || unseen_probes_spent(st)
         || st.borg.tr(BI_ISAFRAID) != 0
         || st.borg.tr(BI_ISCONFUSED) != 0
@@ -999,12 +1090,8 @@ pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) -> Option<&'st
         return None;
     }
     if mode_ends_on(msg, st.borg.unseen_detects) {
-        let note = if unseen_kill_message(msg) { "# Mode: invisible attacker killed" } else { "# Mode: over (a monster died after a detection was read)" };
-        st.borg.unseen_mode = false;
-        st.borg.unseen_turn = 0;
-        st.borg.unseen_followed = false;
-        st.borg.unseen_probe = None;
-        st.borg.unseen_found = None;
+        let note = mode_end_note(unseen_kill_message(msg), st.borg.unseen_shot_only);
+        end_unseen_episode(st);
         return Some(note);
     }
     let Some(g) = st.borg.unseen_probe else { return None };
@@ -1025,6 +1112,17 @@ pub(crate) fn unseen_mode_message(st: &mut BorgState, msg: &[u8]) -> Option<&'st
 /// A kill message that ends the mode: that of an unseen monster, or (with a
 /// detection read in the episode, `detects`) any of the game's death messages
 /// of a monster the Borg did not necessarily see.
+/// The note of an episode that ends on a message: a kill of a monster the
+/// Borg cannot see, or a death after a detection; an episode of projection
+/// hits only has no invisible attacker known (#981, review of #998).
+fn mode_end_note(unseen_kill: bool, shot_only: bool) -> &'static str {
+    match (unseen_kill, shot_only) {
+        (true, true) => "# Mode: unseen attacker killed",
+        (true, false) => "# Mode: invisible attacker killed",
+        (false, _) => "# Mode: over (a monster died after a detection was read)",
+    }
+}
+
 #[inline(always)]
 fn mode_ends_on(msg: &[u8], detects: i32) -> bool {
     unseen_kill_message(msg) || (detects > 0 && revealed_kill_message(msg))
@@ -1340,6 +1438,44 @@ mod unseen_tests {
         assert!(!st.borg.unseen_mode && st.borg.unseen_turn == 0, "the episode is over");
     }
 
+    /// #981 (review of #998): an episode of projection hits only is not
+    /// ended by a death message (the death of a known caster or shooter ends
+    /// it, `unseen_monster_died`), and its notes name no invisible attacker.
+    #[test]
+    fn a_shot_only_episode_and_its_end() {
+        use super::{episode_shot_only, mode_end_note, probe_fits_episode, shooter_death_ends};
+        let mut st = BorgState::default();
+        st.borg.unseen_mode = true;
+        st.borg.unseen_turn = 100;
+        st.borg.unseen_shot_only = true;
+        assert_eq!(unseen_mode_message(&mut st, b"The kobold archer dies."), None, "no detection read: a death message does not end it");
+        assert!(st.borg.unseen_mode);
+        assert!(shooter_death_ends(true, true, 1), "a caster or shooter died");
+        assert!(!shooter_death_ends(true, true, 0), "a grey mold died");
+        assert!(!shooter_death_ends(true, false, 1), "a blow's episode");
+        assert!(!shooter_death_ends(false, true, 1), "no episode");
+        assert_eq!(mode_end_note(true, true), "# Mode: unseen attacker killed");
+        assert_eq!(mode_end_note(true, false), "# Mode: invisible attacker killed");
+        assert!(episode_shot_only(false, true, true), "a hit starts the episode");
+        assert!(!episode_shot_only(true, false, false), "a blow in it: no longer");
+        assert!(!episode_shot_only(false, false, true), "a hit after a blow does not make it one");
+        assert!(episode_shot_only(true, false, true), "hits only");
+        assert!(!episode_shot_only(true, true, false), "a blow starts a new episode");
+        assert!(!probe_fits_episode(true, false, false), "hits only, with light: no blind attack");
+        assert!(probe_fits_episode(true, true, false), "blind");
+        assert!(probe_fits_episode(true, false, true), "no light");
+        assert!(probe_fits_episode(false, false, false), "a blow");
+    }
+
+    /// #981 (review of #998): a hit far from the last attack is not "followed".
+    #[test]
+    fn a_hit_is_not_a_follow() {
+        use super::moved_far;
+        assert!(!moved_far(true, true), "a far hit");
+        assert!(moved_far(true, false), "a far blow");
+        assert!(!moved_far(false, false), "a near blow");
+    }
+
     /// #831: a melee kill of a monster the Borg cannot see (`mon-util.c:1070`:
     /// "You have killed %s.", "it"; the other two names are accepted defensively); a seen one's is "slain" or "destroyed".
     #[test]
@@ -1360,6 +1496,31 @@ mod unseen_tests {
         assert!(!unseen_heal_due(0, 1, 100), "0 is off");
         assert!(unseen_heal_due(100, 99, 100), "100: below the maximum");
         assert!(!unseen_heal_due(100, 100, 100));
+    }
+
+    /// #981: the engine's message for a bolt from a monster the Borg cannot
+    /// see is "You are hit by <blind-desc>!" (`project-player.c:887`, the
+    /// blind descriptions of `projection.txt`); a blow's is not.
+    #[test]
+    fn unseen_shot_messages() {
+        use super::{unseen_shot_message, unseen_shot_text};
+        for m in [
+            b"You are hit by something sharp!".as_slice(),
+            b"You are hit by something hard!",
+            b"You are hit by fire!",
+            b"You are hit by something!",
+        ] {
+            assert!(unseen_shot_text(m), "{}", String::from_utf8_lossy(m));
+        }
+        for m in [
+            b"Something hits you.".as_slice(),
+            b"You hear a soft twang.",
+            b"The kobold archer fires a small arrow.",
+            b"You are hit by something sharp",
+        ] {
+            assert!(!unseen_shot_text(m), "{}", String::from_utf8_lossy(m));
+        }
+        assert!(!unseen_shot_message(b"You are hit by something sharp!"), "off by default (today's play)");
     }
 
     /// #697: the names the game gives a monster the Borg cannot see.

@@ -716,6 +716,19 @@ borg_param_recover_unseen_probe_tries = 10
 borg_param_recover_unseen_probe_max_grids = 3
 borg_param_recover_unseen_act_age = 30
 
+# An unseen shooter (#981): with shot = 1, "You are hit by ...!" (the
+# engine's message for any projection, an arrow, a bolt or a breath, from a
+# monster the Borg cannot see, or any projection while it is blind) enters
+# the mode above as a blow does: no rest near where it struck, Detect
+# Invisible, walk away, drink below heal_hp_percent. A hit is not taken to
+# mean the attacker is adjacent (no blind attacks in an episode of hits only,
+# unless blind or without light) or that it followed (no leave for it); the
+# episode ends when a known monster that casts or shoots dies. 0 = off.
+# Shipped 1 by the owner (2026-11-22) after the borg-zoo#671 pilot
+# (classes-18: acts in 2 of 18 games, no outcome changed); Elf Warrior
+# 1312323730 rested 18 times under a kobold archer out of the light.
+borg_param_recover_unseen_shot = 1
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term
