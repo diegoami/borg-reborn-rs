@@ -256,7 +256,7 @@ fn active_retreat_grids(st: &mut BorgState, why: i32) -> Vec<loc> {
     retreats.retain_mut(|retreat| {
         if retreat.state == RetreatLanding::Pending
             || !retreat.still_applies(st.borg.c, depth, st.borg.time.level, st.borg.time.now, window)
-            || borg_danger(st, retreat.from.y, retreat.from.x, 1, true, false) <= threshold
+            || crate::borg_caution::retreat_hold_danger(st, retreat.from.y, retreat.from.x) <= threshold
         {
             return false;
         }

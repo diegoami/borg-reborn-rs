@@ -3980,6 +3980,10 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
     }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if st.flow.has_retreat_exclusions() {
+        // #932 (review of #964): with a hold active, spread as the walk does.
+        return track.num > 0 && crate::borg_flow_stairs::guarded_unweighted_stair_reachable(st, up);
+    }
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
         return false;
@@ -6146,6 +6150,13 @@ pub(crate) fn flight_retreat_ticks() -> i32 {
 /// strategic-retreat threshold.
 pub(crate) fn retreat_danger_threshold(st: &BorgState) -> i32 {
     i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor)
+}
+
+/// #932 (review of #964): the danger of a held grid, over the horizon the
+/// strategic retreat reads (`caution_danger_horizon`), so the hold lasts as
+/// long as the same retreat would still fire there.
+pub(crate) fn retreat_hold_danger(st: &mut BorgState, y: i32, x: i32) -> i32 {
+    borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false)
 }
 
 /// borg-reborn-rs (#881): `caution_stairs_flight_unknown` (0 = an unknown
