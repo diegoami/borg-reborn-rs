@@ -35,3 +35,9 @@ borg_param_town_staple_clw = 6
 borg_param_town_staple_csw = 3
 borg_param_town_staple_phase = 12
 borg_param_town_staple_oil = 10
+# #1085 (owner, 2026-11-23: "ship it like that"): breadth-first exploration
+# from the staircases while max HP < 35 + 1 x CL (docs/CALIBRATION.md: through
+# the last CL with 1 DL1 death per 100 games in #1080's table, for a Human,
+# then 10 more: owner, 2026-11-23, "increase those explore_bfs_max_hp by 10").
+borg_param_explore_bfs_max_hp = 35
+borg_param_explore_bfs_hp_per_level = 1
