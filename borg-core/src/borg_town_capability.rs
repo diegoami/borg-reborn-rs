@@ -150,12 +150,19 @@ const DEV_ATTACK: usize = FIRST_CURE + 1;
 const DEV_ESCAPE: usize = DEV_ATTACK + 1;
 const DEV_DETECT: usize = DEV_ESCAPE + 1;
 const DEV_CONTROL: usize = DEV_DETECT + 1;
+/// borg-reborn-rs (#1134, owner: "make the town planner start buying CCW and
+/// cure poison in the same way that they buy detect invisible"): with
+/// `town_prepared_ccw` above 0, a prepared row of its own fed one copy per
+/// Potion of Cure Critical Wounds. Held only while it (or a row after it) is
+/// on, so the model keeps its shape (and the play) with it off.
+const PREP_CCW: usize = DEV_CONTROL + 1;
 /// borg-reborn-rs (#1103; review of #1112, F1): one copy of a restoring
 /// mushroom (Vigor, Purging) while nothing is drained, a requirement of one on
 /// a row of its own, weighted by `town_restore_stat_percent`. It is not counted
 /// on the stat rows: a mushroom that restores a drain cannot raise a healthy
 /// stat, and a second copy adds nothing.
-const RESTORE_STAT_RESERVE: usize = DEV_CONTROL + 1;
+/// After the CCW row (#1135 merged first), the last row.
+const RESTORE_STAT_RESERVE: usize = PREP_CCW + 1;
 /// Situation capabilities a device supplies -> its device row. Invisible
 /// detection is not here: a Staff of Detect Invisible already fills the prepared
 /// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
@@ -244,7 +251,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 const HUNGRY_PERCENT: i64 = 15;
 
 const _: () = assert!(RESTORE_STAT_RESERVE + 1 == NAMES.len());
-pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 84] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -253,7 +260,8 @@ pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
-    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges", "restore stat reserve"];
+    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
+    "prepared: Cure Critical Wounds", "restore stat reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -908,6 +916,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         for (cap, row) in PREPARED {
             if out.iter().any(|&(id, _)| id == cap) { out.push((row, UNIT)); }
         }
+        // borg-reborn-rs (#1134): a Cure Critical Wounds is one copy on its own row.
+        if prepared_ccw_on(st) && tval == TV_POTION && i32::from(item.sval) == st.item_val.sv_potion_cure_critical {
+            out.push((PREP_CCW, UNIT));
+        }
     }
     // borg-reborn-rs (#863): each healing potion is one copy on its own
     // staple row, whose knee and decay are the kind's (the three share the
@@ -1016,7 +1028,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let first_cure = first_cure_count();
     let mut curves = curves;
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
-    if first_cure > 0 || devices || restore_stat_on(st) { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
+    // borg-reborn-rs (#1134): the CCW row, past the device rows, only while it
+    // is on; (#1103) the restore-stat reserve after it, all rows while it is on.
+    let full = if restore_stat_on(st) { COUNT } else if prepared_ccw_on(st) { PREP_CCW + 1 } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
+    while curves.len() < full { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
         packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
@@ -1129,11 +1144,24 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         // detect invisible and 2 remove curse"): each remedy's own copies.
         let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
         let percent = param(Param::town_prepared_percent);
-        for (row, copies) in [(PREP_POISON, Param::town_prepared_poison), (PREP_CURSE, Param::town_prepared_curse),
-            (PREP_INVISIBLE, Param::town_prepared_invisible), (PREP_CONFUSION, Param::town_prepared_confusion),
-            (PREP_FEAR, Param::town_prepared_fear)] {
-            let (weight, demand) = prepared_row(trip_weight, percent, param(copies));
+        // borg-reborn-rs (#1134): the poison remedy and the CCW row may have a
+        // percent of their own (0 = the shared one): a row prices a copy, not
+        // a gold piece, so at the shared percent a 15 gold scroll beats a 75
+        // gold Neutralize Poison and a 200 gold Cure Critical Wounds.
+        let own = |p: Param| { let v = param(p); if v > 0 { v } else { percent } };
+        for (row, copies, row_percent) in [(PREP_POISON, Param::town_prepared_poison, own(Param::town_prepared_poison_percent)),
+            (PREP_CURSE, Param::town_prepared_curse, percent),
+            (PREP_INVISIBLE, Param::town_prepared_invisible, percent), (PREP_CONFUSION, Param::town_prepared_confusion, percent),
+            (PREP_FEAR, Param::town_prepared_fear, percent)] {
+            let (weight, demand) = prepared_row(trip_weight, row_percent, param(copies));
             curve(row, weight, demand);
+        }
+        if count > PREP_CCW {
+            let copies = param(Param::town_prepared_ccw);
+            let (weight, demand) = if copies > 0 {
+                prepared_row(trip_weight, own(Param::town_prepared_ccw_percent), copies)
+            } else { (0, UNIT) };
+            curve(PREP_CCW, weight, demand);
         }
     }
     // borg-reborn-rs (#895, owner: "we are going to need space for other
@@ -1824,6 +1852,33 @@ mod tests {
         let fourth_detect = m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 3 * UNIT)]);
         assert!(fourth_detect > twenty_first, "the 4th Detect Invisible {fourth_detect} beats the 21st Cure Light Wounds {twenty_first}");
         assert_eq!(m.gain(&[(PREP_INVISIBLE, 5 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]), 0, "the 5th is worth nothing");
+    }
+
+    /// #1134 (owner: "make the town planner start buying CCW and cure poison in
+    /// the same way that they buy detect invisible"): a prepared row prices a
+    /// copy, not a gold piece. At the shared percent the first Neutralize
+    /// Poison (75 gold) is worth less per gold than the first Detect Invisible
+    /// (15 gold); at five times the percent the same; the CCW row (200 gold)
+    /// needs fourteen times (200/15 = 13.3). Past its copies a row is worth nothing.
+    #[test]
+    fn a_remedy_of_its_own_percent_buys_dear_cures_with_spare_gold() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        let first = |m: &mut Model, row: usize, percent: i32, copies: i32| {
+            let (w, d) = prepared_row(50 * 1000, percent, copies);
+            m.curves[row] = [row as i64, w, d, 0, 0];
+            m.gain(&[(row, UNIT)])
+        };
+        let detect = first(&mut m, PREP_INVISIBLE, 8, 4);
+        let shared = first(&mut m, PREP_POISON, 8, 3);
+        assert!(shared * 15 < detect * 75, "shared percent: Neutralize Poison {shared}/75 below Detect Invisible {detect}/15");
+        let own = first(&mut m, PREP_POISON, 40, 3);
+        assert!(own * 15 >= detect * 75, "five times: Neutralize Poison {own}/75 at least Detect Invisible {detect}/15");
+        let ccw = first(&mut m, PREP_CCW, 8 * 14, 2);
+        assert!(ccw * 15 >= detect * 200, "fourteen times: CCW {ccw}/200 at least Detect Invisible {detect}/15");
+        assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]) - m.gain(&[(PREP_CCW, 2 * UNIT)]), 0, "the 3rd CCW past 2 copies is worth nothing");
+        assert_eq!(PREP_CCW, DEV_CONTROL + 1, "the CCW row follows the device rows; with it off the model stops before it");
+        assert_eq!(RESTORE_STAT_RESERVE, COUNT - 1, "the restore-stat reserve (#1103) is the last row");
+        assert_eq!(NAMES[PREP_CCW], "prepared: Cure Critical Wounds");
     }
 
     /// #863 (review F2): a healing row's knee counts potions and prices them in
@@ -2534,6 +2589,9 @@ fn staple_on(st: &BorgState) -> bool {
 /// borg-reborn-rs (#863): whether the prepared rows exist (`town_prepared_percent`
 /// above 0, the variety started); off, the model has the shape it had before.
 fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_prepared_percent) > 0 }
+
+/// borg-reborn-rs (#1134): whether the Cure Critical Wounds row exists.
+fn prepared_ccw_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_ccw) > 0 }
 
 /// borg-reborn-rs (#863): a prepared row's weight and demand. A requirement
 /// (negative demand, as Phase Door's reserve): each of the first `copies`

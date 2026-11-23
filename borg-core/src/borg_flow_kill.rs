@@ -2086,6 +2086,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         b_stair = i;
     }
 
+    // borg-reborn-rs (#1061): stair_scum's map (None: off).
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
@@ -2186,8 +2189,21 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
 
+        // borg-reborn-rs (#1061): outside stair_scum's radius (the monster
+        // comes to the staircase or not at all).
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
+            continue;
+        }
+
         // Skip ones that make me wander too far
-        if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        let kill_leash = st.borg.tr(BI_CLEVEL) * 5 + 9;
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, kill_leash) {
+            if st.borg.tr(BI_CLEVEL) < 10 && skip {
+                continue;
+            }
+        } else if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
             // Check the distance of this monster to the stair
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);

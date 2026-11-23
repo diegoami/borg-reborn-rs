@@ -67,8 +67,18 @@ PINNED_TOWN_SETTINGS = [
     # reserve after these incidents.
     ("town_black_market_min_gold", 0), ("town_restore_life_reserve", 0),
     ("town_restore_stat_percent", 0), ("town_restore_stat_min_depth", 0), ("town_restore_life_min_depth", 12), ("town_restore_life_min_gold", 0),
+    # #1067 shipped the trap rules after these incidents.
+    ("trap_recover", 0), ("trap_way_back", 0), ("trap_leave_level_count", 0),
     # #1123 enabled the retreat guards after these incidents.
     ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
+    # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
+    # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
+    ("stair_scum", 0),
+    # #1062 shipped the stair-leash switches after these incidents.
+    ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
+    # #1098 shipped the mixed walk and the C exploration's stair exit after
+    # these incidents (owner, 2026-11-23: "merge it but with all settings on").
+    ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -154,6 +164,13 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
+            # #1061: the stair_scum mode (shipped after these cases) is not
+            # what they test; pin it off.
+            # #1098: nor the mixed walk and the C exploration's stair exit.
+            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done"):
+                config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{key} = 0\n"
             for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
                 key = f"borg_param_caution_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
@@ -179,6 +196,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
         self.run_case("interrupted-search", 5)
+
+    def test_dark_exploration_cannot_keep_restarting_the_two_step_floor_search(self):
+        self.run_case("interrupted-floor-search", 5, player_class=5, depth=3)
 
     def test_breeder_rest_veto_prevents_new_and_continued_recovery_routes(self):
         self.run_case("breeder-recovery", 5, player_class=1, depth=1)

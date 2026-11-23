@@ -1666,6 +1666,78 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         std::process::exit(0);
     }
 
+    if case == "interrupted-floor-search" {
+        use crate::borg_flow_misc::borg_flow_spastic;
+
+        let west = loc { x: 171, y: 26 };
+        let middle = loc { x: 172, y: 26 };
+        let east = loc { x: 173, y: 26 };
+        let wall = loc { x: 174, y: 26 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 25..=27 {
+            for x in 170..=174 {
+                st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+            }
+        }
+        for grid in [west, middle, east] {
+            st.cave.grid_mut(grid.x, grid.y).feat = FEAT_FLOOR as u8;
+        }
+        // Give the east square fewer than two diagonal walls, so it
+        // cannot become another secret-door search destination.
+        for x in [middle.x, wall.x] {
+            for y in [25, 27] {
+                st.cave.grid_mut(x, y).feat = FEAT_NONE as u8;
+            }
+        }
+        st.borg.c = west;
+        st.borg.avoidance = 163;
+        for (index, value) in [(BI_CLEVEL, 17), (BI_CURHP, 163), (BI_MAXHP, 163), (BI_LIGHT, 2)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.stairs.less.num = 0;
+
+        let explore_east = |st: &mut BorgState| {
+            borg_flow::borg_flow_clear(st);
+            borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
+            borg_flow::borg_flow_spread(st, 3, true, true, false, -1, false);
+            assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            observe_move(st, b'6', middle);
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            observe_move(st, b'6', east);
+            assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
+        };
+
+        // A cost-zero choice queues no search movement.
+        assert!(!borg_flow_spastic(st, true));
+        explore_east(st);
+        assert_eq!(st.cave.grid(west.x, west.y).xtra, 0);
+
+        // Construct the recorded alternation with a dark target that costs
+        // three steps but refuses the last step. Search returns west over
+        // two ordinary floor squares. Exploration wins again on arrival.
+        for _ in 0..4 {
+            let search_count = st.cave.grid(west.x, west.y).xtra;
+            assert!(borg_flow_spastic(st, true));
+            let search_goal = i32::from(st.borg.goal.type_0);
+            observe_move(st, b'4', middle);
+            assert!(borg_flow::borg_flow_old(st, search_goal));
+            observe_move(st, b'4', west);
+            assert!(!borg_flow::borg_flow_old(st, search_goal));
+            assert_eq!(st.cave.grid(west.x, west.y).xtra, search_count);
+
+            explore_east(st);
+        }
+        assert!(!borg_flow_spastic(st, true), "the repeated floor search must end");
+        assert!(st.io.queued_keys().is_empty());
+        assert_eq!(st.cave.grid(west.x, west.y).xtra, 20);
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
+    }
+
     let start = loc { x: 40, y: 20 };
     let dangerous = loc { x: 39, y: 21 };
     let approach = loc { x: 41, y: 21 };

@@ -40,12 +40,19 @@ def check_arm(out, reserve):
     # are bought first and the trace's order changes). #1085's breadth-first
     # exploration (shipped 1) is off: with it the reserve-2 character walks
     # another way and picks up four more scrolls before its first foe.
+    # #1061's stair_scum (shipped 1) is off for the same reason: it keeps the
+    # CL1 Ranger by the stairs, and its first foe comes later.
+    # #1098's mixed walk and C stair exit (shipped 1) are off too: the trace
+    # predates them.
     env.update(BORG_CORE="borg-rs", BORG_IMPL="rust",
                BORG_TXT_SET=f"borg_param_town_phase_reserve__ranger={reserve};"
                             "borg_param_town_phase_reserve_percent=100;"
                             "borg_param_town_light_reserve_turns=0;"
                             "borg_param_town_first_cure__ranger=0;"
-                            "borg_param_explore_breadth_first=0")
+                            "borg_param_explore_breadth_first=0;"
+                            "borg_param_stair_scum=0;"
+                            "borg_param_explore_mixed=0;"
+                            "borg_param_explore_c_leave_when_done=0")
     subprocess.run([str(ROOT / "harness/run.sh"), str(out), "2095979189",
                     "6", "7", "1900", "exact,menu"], cwd=ROOT, env=env,
                    check=True, timeout=90)
