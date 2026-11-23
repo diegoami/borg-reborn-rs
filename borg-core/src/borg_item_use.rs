@@ -101,6 +101,17 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
+/// borg-reborn-rs (#854 review F4): `borg_activate_failure`'s failure for an
+/// item that need not be carried (a shop's or the Home's wand or rod), from
+/// the same device skill and item level. It is asked of every ware on every
+/// visit, so a level 90 or more above the skill, where `device_fail` divides
+/// by zero (C bug 20) or turns negative, counts as never working.
+pub(crate) fn device_failure_of(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> i32 {
+    let (skill, lev) = (device_skill(st), i32::from(item.level));
+    if lev - skill >= 100 - 10 { return i32::MAX; }
+    device_fail(skill, lev)
+}
+
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us

@@ -52,7 +52,7 @@ const CLASS_MAGE: i32 = 1;
 const CLASS_NECROMANCER: i32 = 4;
 
 /// What a flask of oil refuels (`object.txt`, "Flask of oil", pval:7500).
-const FLASK_TURNS: i32 = 7500;
+pub(crate) const FLASK_TURNS: i32 = 7500;
 /// A light that never runs out (an Everburning one, a Necromancer's unlight):
 /// `borg_trait.rs` adds 1000 to `BI_AFUEL` for them.
 const NO_FUEL: i32 = 1000;
