@@ -1795,11 +1795,9 @@ borg_param_caution_recall_survival_delay = 34
 # never vetoes on a breeder; compiled 0, shipped 1 (owner, 2026-11-22).
 borg_param_caution_recall_blow_model = 1
 # #1136: already poisoned, charge the HP the running poison timer still takes
-# (read from the engine, owner 2026-11-23) instead of the whole delay; and
-# leave the running poison out, since every option pays it. Shipped 0 until
-# borg-zoo measures them (RULES 14).
+# (read from the engine, owner 2026-11-23) instead of the whole delay. Shipped
+# 0 until borg-zoo measures it (RULES 14).
 borg_param_caution_recall_poison_remaining = 0
-borg_param_caution_recall_poison_common = 0
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this
