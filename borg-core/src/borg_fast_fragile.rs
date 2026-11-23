@@ -1202,6 +1202,11 @@ mod tests_1065 {
             }
         }
         assert!(!caution.contains("fn fast_fragile_cure("), "no cure before the caution's order");
+        // #1064's kill-on-sight floor cure asks the same gate.
+        let attack = include_str!("borg_fight_attack.rs");
+        let at = attack.find("fn kill_on_sight_floor_cure(").expect("#1064's floor cure");
+        let floor = &attack[at..at + attack[at..].find("\n}\n").expect("end")];
+        assert!(floor.contains("ratio_gate(st)") && floor.contains("gate(a) &&"), "the floor cure asks the contact ratio");
         let think = include_str!("borg_think_dungeon.rs");
         let c = think.find("if borg_caution(st) {").expect("caution in the think");
         let d = think.find("fast_fragile_deferred_attack(st)").expect("the deferred attack in the think");
