@@ -230,6 +230,18 @@ fn apparently_saleable(it: &borg_item) -> bool {
     it.value > 0
 }
 
+/// For a capped carried kind, the Home floor protects keeper withdrawals.
+/// Reserve the purchase-history shield for supplies bought from a shop.
+pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, home_at_limit: bool) -> bool {
+    let bought = &st.buy;
+    let count = usize::try_from(bought.bought_item_num).unwrap_or(0).min(10);
+    (0..count).any(|i| {
+        bought.bought_item_tval[i] == i32::from(item.tval)
+            && bought.bought_item_sval[i] == i32::from(item.sval)
+            && !(place == Place::Pack && home_at_limit && bought.bought_item_store[i] == BORG_HOME as i32)
+    })
+}
+
 /// The kit: the pack's and the Home's stacks, with what the dispositions
 /// read (slice 3). The power of a pack stack is a **try-off** - its
 /// quantity set to 0, `borg_notice` and `borg_power` run - and of a Home
@@ -262,9 +274,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                     .map_or(0, |o| i64::from(o.sale_quote(sell_shop as usize, i32::from(it.iqty)))),
             }
         };
-        let bought = &st.buy;
-        let just_bought = (0..usize::try_from(bought.bought_item_num).unwrap_or(0).min(10))
-            .any(|i| bought.bought_item_tval[i] == i32::from(it.tval) && bought.bought_item_sval[i] == i32::from(it.sval));
+        let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
+        let just_bought = kit_just_bought(st, it, place, at_limit);
         let home_room = if place == Place::Home {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
                 let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)

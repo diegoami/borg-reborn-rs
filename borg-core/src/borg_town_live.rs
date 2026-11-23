@@ -85,7 +85,7 @@ pub fn acquisition_room(st: &BorgState, tval: u8, kind: u32) -> i32 {
         .map_or(i32::MAX, |limit| limit.saturating_sub(carried_kind(st, kind)) as i32)
 }
 
-fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
     let limit = crate::borg_town_utility::home_stack_limit();
     limit > 0 && item.aware && crate::borg_town_utility::home_limited_kind(item.tval)
         && st.store.shops[BORG_HOME].ware.iter()

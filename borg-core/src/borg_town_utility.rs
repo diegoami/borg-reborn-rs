@@ -407,7 +407,10 @@ fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
         let pending = partial_stacks.get(&item.kind).copied().unwrap_or(0);
         let surplus = limit > 0 && count > limit + pending && held >= usable_floor(u, item, held, minimum);
         if !(item.home_unwanted || surplus)
-            || item.unknown || item.unknown_flavour || item.just_bought
+            || item.unknown || item.unknown_flavour
+            // Kind-level purchase history cannot make an existing surplus
+            // Home stack a purchase. The carried reserve is checked above.
+            || (item.just_bought && (input.revision < 17 || !surplus))
             || (item.sell_shop < 0 && !(input.revision >= 15 && item.home_unwanted))
         { continue; }
         let qty = home_disposal_copies(input, u, item);
@@ -1600,6 +1603,66 @@ mod tests {
         out.copies = copies;
         let (code, at, _, _) = first_executable_action(&[], &[], &out, &[], &kit, 0, 0, 20);
         assert_eq!((code, at[1], at[2]), (action::TAKE_HOME, i64::from(home.slot), 4));
+    }
+
+    #[test]
+    fn topping_up_from_home_still_allows_the_surplus_to_be_sold() {
+        use crate::borg_town_shadow::kit_just_bought;
+        use crate::borg_store::BORG_HOME;
+        use crate::headers::list_tvals_h::TV_SCROLL;
+
+        let mut st = state(9, 26, 198);
+        let mut item = crate::borg_item::blank_item();
+        item.tval = TV_SCROLL as u8;
+        item.sval = 12;
+        let phase = KitItem { kind: 51, qty: 2, home_limited: true,
+            need: index(Need::Escape) as i8, ..recall(Place::Pack) };
+        let home = KitItem { place: Place::Home, home_room: Some([19, 19, 19]), qty: 19, ..phase };
+        let storing = Storing { keep_min: 6, home_stack_limit: 2, ..Storing::default() };
+        let solve = |st: &BorgState, kit: &[KitItem], revision| {
+            let mut inp = input(kit);
+            inp.revision = revision;
+            inp.storing = Some(storing);
+            let mut u = Utility::of(st, kit, false);
+            u.home_discount = 0;
+            u.space_weight = 0;
+            dispositions_by(&inp, &mut u, st, storing)
+        };
+        let observe = |st: &BorgState, held, surplus| [
+            KitItem { qty: held, just_bought: kit_just_bought(st, &item, Place::Pack, true), ..phase },
+            KitItem { qty: surplus, just_bought: kit_just_bought(st, &item, Place::Home, false), ..home },
+            KitItem { slot: 1, qty: 40, just_bought: kit_just_bought(st, &item, Place::Home, false), ..home },
+            KitItem { slot: 2, qty: 40, just_bought: kit_just_bought(st, &item, Place::Home, false), ..home },
+        ];
+
+        st.borg.trait_[BI_APHASE as usize] = 2;
+        let (actions, _, copies) = solve(&st, &observe(&st, 2, 19), 17);
+        assert_eq!(actions, [Disposition::Keep, Disposition::Take, Disposition::Keep, Disposition::Keep]);
+        assert_eq!(copies[1], 4);
+
+        st.buy.bought_item_num = 1;
+        st.buy.bought_item_store[0] = BORG_HOME as i32;
+        st.buy.bought_item_tval[0] = i32::from(item.tval);
+        st.buy.bought_item_sval[0] = i32::from(item.sval);
+        assert!(kit_just_bought(&st, &item, Place::Pack, false), "uncapped keepers keep the usual protection");
+        st.borg.trait_[BI_APHASE as usize] = 6;
+        let kit = observe(&st, 6, 15);
+        let (actions, freed, _) = solve(&st, &kit, 17);
+        assert_eq!(actions, [Disposition::Keep, Disposition::Sell, Disposition::Keep, Disposition::Keep]);
+        assert_eq!(freed.home_slots, 1);
+        assert_eq!(solve(&st, &kit, 16).0, [Disposition::Keep; 4]);
+
+        // The sale withdrawal itself does not replace the keeper history.
+        st.borg.trait_[BI_APHASE as usize] = 21;
+        let kit = [observe(&st, 21, 15)[0],
+            KitItem { slot: 1, qty: 40, ..home }, KitItem { slot: 2, qty: 40, ..home }];
+        let (actions, freed, copies) = solve(&st, &kit, 17);
+        assert_eq!(actions, [Disposition::Sell, Disposition::Keep, Disposition::Keep]);
+        assert_eq!(copies[0], 15, "the six-scroll reserve stays carried");
+        assert_eq!(freed.pack_slots, 0);
+
+        st.buy.bought_item_store[0] = 4;
+        assert!(kit_just_bought(&st, &item, Place::Pack, true), "actual shop purchases stay protected");
     }
 
     #[test]

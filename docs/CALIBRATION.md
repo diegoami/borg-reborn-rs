@@ -10,31 +10,6 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
-## Home stock the town planner deliberately declines (#1049)
-
-The live planner uses the same known-kind exclusions for purchase utility
-and Home storage when `town_home_reject_unwanted` is enabled (the
-default). A deliberately unwanted kind such as Treasure
-Detection uses ordinary sale or drop paths. At Home these kinds go
-before stack surplus so a known useless stack can free a slot even when
-the character cannot earn gold by selling. The rule follows positive
-knowledge of the kind and leaves unknown flavours to the learning
-policy. A known unwanted Home stack with no buyer is withdrawn and
-dropped. Temporary prices and shortages do not make a kind unwanted.
-
-## Home stock variety (#1048)
-
-`town_home_stack_limit` is a physical stack limit per known consumable
-kind. The harness uses two, and zero keeps the previous policy. The live
-plan applies it to known potions, scrolls, food, mushrooms and flasks.
-It sends extra copies to a shop or the floor once the carried floor is
-covered. The floor uses the higher of the configured minimum and the
-planner's explicit reserve requirements. The plan retains the largest allowed Home stacks. Normal Home withdrawals can still cover a short
-carried kit. Sufficiently stocked kinds yield their optional shopping
-budget to other goods. The planner withdraws only the excess copies that
-fit and credits a Home slot when the final copies leave. Schema 15
-records the native room, and schema 16 enables partial surplus disposal.
-
 ## Phase Door into unexplored grids, and the newcomer at range (#1066)
 
 The registry now holds **2425** parameters (2419 before; six added: four,
@@ -6539,6 +6514,33 @@ hypotheses.
 | `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:193` |
 | `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:216` |
 | `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:205` |
+
+## Home stock the town planner deliberately declines (#1049)
+
+The live planner uses the same known-kind exclusions for purchase utility
+and Home storage when `town_home_reject_unwanted` is enabled (the
+default). A deliberately unwanted kind such as Treasure
+Detection uses ordinary sale or drop paths. At Home these kinds go
+before stack surplus so a known useless stack can free a slot even when
+the character cannot earn gold by selling. The rule follows positive
+knowledge of the kind and leaves unknown flavours to the learning
+policy. A known unwanted Home stack with no buyer is withdrawn and
+dropped. Temporary prices and shortages do not make a kind unwanted.
+
+## Home stock variety (#1048)
+
+`town_home_stack_limit` is a physical stack limit per known consumable
+kind. The harness uses two, and zero keeps the previous policy. The live
+plan applies it to known potions, scrolls, food, mushrooms and flasks.
+It sends extra copies to a shop or the floor once the carried floor is
+covered. The floor uses the higher of the configured minimum and the
+planner's explicit reserve requirements. The plan retains the largest allowed Home stacks. Normal Home withdrawals can still cover a short
+carried kit. Sufficiently stocked kinds yield their optional shopping
+budget to other goods. The planner withdraws only the excess copies that
+fit and credits a Home slot when the final copies leave. Schema 15
+records the native room, and schema 16 enables partial surplus disposal.
+Schema 17 lets the Borg finish clearing the surplus after withdrawing its
+carried reserve from Home.
 
 ## #863: variety in the backpack (town, prepared remedies)
 

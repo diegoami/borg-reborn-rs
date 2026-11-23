@@ -42,8 +42,9 @@ use crate::state::BorgState;
 /// `town_store_only_overweight`), so a replay stores as the visit did.
 /// #1048: v14 records the Home stack limit and the eligible kit kinds.
 /// V15 records native Home room and disposal of known unwanted stock without a buyer.
-/// V16 permits partial surplus disposal.
-pub const PLAN_SCHEMA: i64 = 16;
+/// V16 permits partial surplus disposal. V17 separates Home cleanup from
+/// purchase history while the carried reserve is covered.
+pub const PLAN_SCHEMA: i64 = 17;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -517,7 +518,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != 16 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
