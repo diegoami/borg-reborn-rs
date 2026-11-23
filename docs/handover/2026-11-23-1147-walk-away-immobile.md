@@ -89,3 +89,12 @@ DL3. With it on:
   (at most 20 in one game);
 - when cornered: 7 confusion cures, 1 Phase Door, 4 last-resort blows;
 - 19 records kept through the bounce reset.
+
+**Re-review of #1148 (Codex, owner-requested, on 9954e345).**
+1. The cornered confusion cure drinks Cure Critical Wounds through the
+   emergency path (`borg_quaff_crit(st, true)`), so the last one is used
+   before a blow.
+2. The cornered Phase Door goes through `phase_door` as its own site,
+   `PhaseSite::WalkAwayCornered` ("walk-away cornered"), with the danger
+   site's landing test. The teleport block, #584's adjacent rule and #1066's
+   never-seen landings apply. Documented in `docs/PHASE-DOOR.md`.

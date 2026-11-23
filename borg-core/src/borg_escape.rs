@@ -833,6 +833,11 @@ pub(crate) enum PhaseSite {
     /// `kill-on-sight` entry and its cure does not outlive the next turn
     /// (`borg_fight_attack.rs` `floor_escape`).
     KillOnSightFloor,
+    /// #1147 (re-review of #1148, finding 2): `caution_walk_away_immobile`,
+    /// cornered next to a walk-away monster with no square out of its reach
+    /// and not confused; the last try before a blow (`borg_caution.rs`
+    /// `walk_away_phase`).
+    WalkAwayCornered,
 }
 
 impl PhaseSite {
@@ -858,6 +863,7 @@ impl PhaseSite {
             PhaseSite::TwitchyThink => "twitchy think",
             PhaseSite::FastFragile => "fast-fragile",
             PhaseSite::KillOnSightFloor => "kill-on-sight floor",
+            PhaseSite::WalkAwayCornered => "walk-away cornered",
         }
     }
 }

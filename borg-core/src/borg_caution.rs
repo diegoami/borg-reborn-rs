@@ -3048,16 +3048,30 @@ fn walk_away_best_step(st: &mut BorgState) -> Option<(usize, String)> {
 fn walk_away_confusion_cure(st: &mut BorgState) -> bool {
     borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
         || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-        || borg_quaff_crit(st, false)
+        // Re-review of #1148, finding 1: the emergency path, so the last
+        // Cure Critical Wounds is drunk before a blow is allowed (the
+        // ordinary path keeps a stock of two).
+        || borg_quaff_crit(st, true)
         || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
 }
 
 /// #1147 (review of #1148, finding 2): Phase Door for a cornered Borg: an
-/// activation, a scroll, or the spell.
+/// activation, a scroll, or the spell. Re-review, finding 2: through the one
+/// Phase Door decision (`phase_door`, docs/PHASE-DOOR.md) as its own site,
+/// with the danger site's landing test (`escape_phase_tolerance`,
+/// `escape_phase_horizon`), so the teleport block, #584's adjacent rule and
+/// #1066's never-seen landings apply as everywhere else.
 fn walk_away_phase(st: &mut BorgState) -> bool {
-    borg_activate_item(st, st.act.tele_phase)
-        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-        || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_walk_away_phase_fail))
+    let danger = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    let check = crate::borg_escape::PhaseCheck::Landing {
+        tolerance: p(Param::escape_phase_tolerance),
+        horizon: p(Param::escape_phase_horizon),
+    };
+    crate::borg_escape::phase_door(st, crate::borg_escape::PhaseSite::WalkAwayCornered, check, Some(danger), |st| {
+        borg_activate_item(st, st.act.tele_phase)
+            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+            || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_walk_away_phase_fail))
+    })
 }
 
 /// borg-reborn-rs (#1147): `caution_walk_away_immobile`. Next to a known
@@ -9134,6 +9148,18 @@ mod walk_away_tests {
         let lava = [route_floor(true, true, false), route_floor(true, true, true), route_floor(true, true, false)];
         let d = grid_steps(3, 1, &lava, &[2]);
         assert_eq!(d[0], u16::MAX, "the stairs at x=2 only across the lava at x=1");
+    }
+
+    #[test]
+    fn the_cornered_fallback_takes_the_last_ccw_and_the_shared_phase_door() {
+        // Re-review of #1148: the emergency CCW path (finding 1) and the one
+        // Phase Door decision with a site of its own (finding 2).
+        let src = include_str!("borg_caution.rs");
+        let cure = src.find(concat!("fn walk_away_", "confusion_cure")).expect("cure");
+        let phase = src.find(concat!("fn walk_away_", "phase")).expect("phase");
+        assert!(src[cure..phase].contains(concat!("borg_quaff_crit(st, ", "true)")));
+        assert!(src[phase..].contains(concat!("PhaseSite::", "WalkAwayCornered")));
+        assert_eq!(crate::borg_escape::PhaseSite::WalkAwayCornered.label(), "walk-away cornered");
     }
 
     #[test]
