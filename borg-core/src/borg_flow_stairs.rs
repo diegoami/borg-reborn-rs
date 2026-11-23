@@ -1531,7 +1531,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     }
 
     if case == "interrupted-search" {
-        use crate::borg_flow_misc::{borg_flow_spastic, notice_spastic_arrival};
+        use crate::borg_flow_misc::borg_flow_spastic;
 
         let stair = loc { x: 51, y: 19 };
         let floor = loc { x: 51, y: 20 };
@@ -1556,22 +1556,26 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.kills.nxt = 1;
         st.danger = Default::default();
         st.stairs.less.num = 0;
+        st.flow.track_step.num = 3;
 
         // A cost-one search returns to the stair, then dark exploration
-        // wins the next move. Recording search arrival before that move
-        // exhausts the search instead of scheduling this pair indefinitely.
+        // wins the next move. The observed stair-floor-stair trail lets
+        // the reversing dark step count the search before leaving again.
         for searches in 1..=5 {
             assert!(borg_flow_spastic(st, true));
             observe_move(st, b'8', stair);
-            assert!(notice_spastic_arrival(st));
-            assert!(!notice_spastic_arrival(st), "arrival is counted once");
-            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
+            for (i, grid) in [stair, floor, stair].into_iter().enumerate() {
+                st.flow.track_step.x[i] = grid.x;
+                st.flow.track_step.y[i] = grid.y;
+            }
+            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * (searches - 1));
 
             borg_flow::borg_flow_clear(st);
             borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
             borg_flow::borg_flow_spread(st, 2, true, true, false, -1, false);
             assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
             assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
             observe_move(st, b'2', floor);
             assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
         }

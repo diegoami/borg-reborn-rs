@@ -641,8 +641,21 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
     Some(v)
 }
 
-/// Record arrival at the search destination before exploration can move away.
-pub(crate) fn notice_spastic_arrival(st: &mut BorgState) -> bool {
+/// Count the staircase search when exploration immediately reverses it.
+pub(crate) fn notice_reversed_stair_search(st: &mut BorgState, next: loc) {
+    let trail = &st.flow.track_step;
+    let n = trail.num as usize;
+    let here = (st.borg.c.y, st.borg.c.x);
+    if n >= 3 && trail.at(n - 1) == here && trail.at(n - 3) == here
+        && trail.at(n - 2) == (next.y, next.x)
+        && u32::from(st.cave.grid(here.1, here.0).feat) == FEAT_LESS
+    {
+        notice_spastic_arrival(st);
+    }
+}
+
+/// Record arrival at the secret-door search destination.
+fn notice_spastic_arrival(st: &mut BorgState) -> bool {
     let (x, y) = (st.borg.c.x, st.borg.c.y);
     if st.flow_misc.spastic_x == 0
         || i32::from(st.flow_misc.spastic_x) != x

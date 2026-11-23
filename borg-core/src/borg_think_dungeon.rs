@@ -38,7 +38,7 @@ use crate::borg_flow_kill::{
 };
 use crate::borg_flow_misc::{
     borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
-    borg_flow_vein, borg_twitchy, notice_spastic_arrival,
+    borg_flow_vein, borg_twitchy,
 };
 use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
 use crate::borg_flow_take::{borg_delete_take, borg_flow_take};
@@ -1362,10 +1362,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Exploration ***/
-
-    // #1106: a completed secret-door flow must be counted even when a dark
-    // flow can take the next turn. Otherwise it can keep picking the same grid.
-    notice_spastic_arrival(st);
 
     /* Continue flowing (see below) */
     if borg_flow_old(st, GOAL_MISC) {

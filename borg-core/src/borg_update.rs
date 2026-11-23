@@ -2131,8 +2131,6 @@ fn new_level(st: &mut BorgState) {
     st.flow.track_door.num = 0;
     st.flow.track_closed.num = 0;
     st.flow_misc.track_vein.num = 0;
-    st.flow_misc.spastic_x = 0;
-    st.flow_misc.spastic_y = 0;
 
     // No artifacts swapping in and out
     st.wear.track_worn_num = 0;
