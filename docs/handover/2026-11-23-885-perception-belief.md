@@ -43,16 +43,17 @@ play at the shipped settings is unchanged. Each is documented in
   `unseen_max_age` (10) bounds a same-speed monster too.
 
 **Left.**
-- #889 item 1, beliefs from unseen contact and noise: #1127. A record needs a
-  race, and an unseen attacker's is unknown.
-- CBUG-0153 has no canonical issue in diegoami/neo-angband-tracker, where
-  every other finding has one (`tracker` is null). This session cannot write
-  there.
-- None of the five switches is measured. #885 and #917 still have no
-  recorded case (a forget or a mis-aim next to rubble or a monster's light).
-  A zoo request would pair them with the shipped light and belief arms.
+- #889 item 1, beliefs from unseen contact and noise: #1127 (P9). A record
+  needs a race, and an unseen attacker's is unknown.
+- CBUG-0153's canonical issue is diegoami/neo-angband-tracker#644 (source
+  check; no native C reproduction yet).
+- The zoo measures #885 and #917 on borg-zoo#736: ctl / dark / rubble / both
+  at `c831a693` (this PR merged with `track-p` `d3d1629f`), pilot then full.
+  On the smoke suite locally, `rubble` changed 2 of 4 games (no outcome
+  changed) and every other switch none. Whether each ships in P8 waits for
+  that result.
 
-**Owner to decide.** Which switches the zoo measures, and in which milestone:
-#885 and #917 are perception bugs (P8?); the #889 switches are new capability
-(P9 by PLAN.md, where a PR merges into `track-p` only with its switches off,
-as here).
+**Decided (owner, 2026-11-23: "your call").** #885 and #917 are P8: they are
+perception bugs the shipped light and belief exposed, and they are measured
+now. The three #889 switches are P9: new capability, kept off until P8 is
+promoted, and measured then.
