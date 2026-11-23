@@ -2273,6 +2273,48 @@ fn may_move_away(
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
+/// borg-reborn-rs (#931): `caution_stairs_immobile_reach` (the weighted stair
+/// flight keeps out of the reach of immobile attackers).
+pub(crate) fn stairs_immobile_reach_on() -> bool {
+    p(Param::caution_stairs_immobile_reach) != 0
+}
+
+/// borg-reborn-rs (#931): grid (`y`, `x`) is next to a known immobile
+/// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
+/// 1621-1644).
+pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
+    immobile_attacker_next_to(st, y, x).is_some()
+}
+
+/// borg-reborn-rs (#931): note the kept-out route when an immobile attacker
+/// is within two grids of the Borg (where the plain route would pass it).
+pub(crate) fn note_immobile_reach_kept(st: &mut BorgState) {
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let near = (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
+        let kill = &st.kills.kills[i];
+        immobile_attacker(usize::from(kill.r_idx)) && within_two(i32::from(kill.pos.y) - cy, i32::from(kill.pos.x) - cx)
+    });
+    if let Some(i) = near {
+        let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))).into_owned();
+        borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
+    }
+}
+
+/// borg-reborn-rs (#931): an offset of at most two king moves.
+fn within_two(dy: i32, dx: i32) -> bool {
+    dy.abs().max(dx.abs()) <= 2
+}
+
+#[cfg(test)]
+mod immobile_reach_tests {
+    #[test]
+    fn within_two_is_king_moves() {
+        assert!(super::within_two(1, 2), "the jelly at (14,96) from (13,94)");
+        assert!(super::within_two(-2, -2));
+        assert!(!super::within_two(0, 3));
+    }
+}
+
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
 /// initiative back and lets a flee route walk straight back into reach.
