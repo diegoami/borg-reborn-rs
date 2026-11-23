@@ -1070,12 +1070,27 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
         }
     }
 
-    /* Only the candidates the Borg can reach (one spread from the Borg) */
+    /* Only the candidates the Borg can reach (one spread from the Borg),
+     * through no grid past the return leash: the route planner below closes
+     * those too (second re-review of #1088) */
     crate::borg_flow::borg_flow_clear(st);
     crate::borg_flow::borg_flow_enqueue_grid(st, st.borg.c.y, st.borg.c.x);
     if st.flow.cost_at(st.borg.c.y, st.borg.c.x) == 0 {
+        let mut closed = Vec::new();
+        for (y, row) in past_return.iter().enumerate() {
+            for (x, &past) in row.iter().enumerate() {
+                if past && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
+                    st.flow.data_cost[y][x] = 0;
+                    closed.push((y, x));
+                }
+            }
+        }
         crate::borg_flow::borg_flow_spread(st, 250, false, true, false, -1, false);
-        let reach = st.flow.data_cost.clone();
+        let mut reach = st.flow.data_cost.clone();
+        for (y, x) in closed {
+            st.flow.data_cost[y][x] = st.flow.data_hard[y][x];
+            reach[y][x] = NO_RING;
+        }
         reachable_only(&mut cands, &reach);
     }
 
@@ -1206,7 +1221,8 @@ mod breadth_first_tests {
 
     /// A synthetic map: '#' wall, '?' unknown, '^' a known trap (a wall to
     /// the flow below 60 HP), '<' or '>' a staircase, '@' the Borg, '.'
-    /// known floor.
+    /// known floor, 'P' known floor past the return leash (the rings cross
+    /// it; the reach and the route do not).
     struct Map {
         g: Vec<Vec<u8>>,
         borg: (i32, i32),
@@ -1234,7 +1250,30 @@ mod breadth_first_tests {
         }
 
         fn open(&self, y: i32, x: i32) -> bool {
-            matches!(self.at(y, x), b'.' | b'<' | b'>' | b'@')
+            matches!(self.at(y, x), b'.' | b'<' | b'>' | b'@' | b'P')
+        }
+
+        /// Open to the reach and the route: not past the return leash.
+        fn walkable(&self, y: i32, x: i32) -> bool {
+            self.open(y, x) && self.at(y, x) != b'P'
+        }
+
+        /// The reach, as the spread from the Borg gives it (past-leash grids
+        /// closed, as in the game).
+        fn reach(&self) -> Vec<Vec<u8>> {
+            let mut r = vec![vec![NO_RING; self.g[0].len()]; self.g.len()];
+            r[self.borg.0 as usize][self.borg.1 as usize] = 0;
+            let mut queue = std::collections::VecDeque::from([self.borg]);
+            while let Some((y, x)) = queue.pop_front() {
+                for (dy, dx) in NEIGHBOURS {
+                    let (ny, nx) = (y + dy, x + dx);
+                    if self.walkable(ny, nx) && r[ny as usize][nx as usize] == NO_RING {
+                        r[ny as usize][nx as usize] = r[y as usize][x as usize] + 1;
+                        queue.push_back((ny, nx));
+                    }
+                }
+            }
+            r
         }
 
         /// The rings, as the spread from every staircase gives them.
@@ -1286,7 +1325,7 @@ mod breadth_first_tests {
             while let Some((y, x)) = queue.pop_front() {
                 for (dy, dx) in NEIGHBOURS {
                     let (ny, nx) = (y + dy, x + dx);
-                    if self.open(ny, nx)
+                    if self.walkable(ny, nx)
                         && !beyond_limit(rings[ny as usize][nx as usize], t.limit)
                         && dist[ny as usize][nx as usize] == i32::MAX
                     {
@@ -1440,6 +1479,25 @@ mod breadth_first_tests {
         assert_eq!(cands, vec![(2, 0, 17)]);
         let Plan::Rings(tries) = plan(&cands, Some(18), None, 0, 16) else { panic!("planned") };
         assert_eq!(tries[0].goals, vec![(2, 0)]);
+    }
+
+    #[test]
+    fn a_ring_reachable_only_past_the_return_leash_does_not_use_up_the_tries() {
+        // Second re-review of #1088: the near ring (2, by the staircase) is
+        // reachable from the Borg only up a corridor past the return leash
+        // ('P'), which the route planner closes; ring 4, next to the Borg, is
+        // the one it can walk to. With one try, the reach must drop ring 2.
+        let m = Map::new(&["######", "#<.?##", "#P####", "#P####", "#P####", "#@?###", "######"]);
+        let rings = m.rings();
+        let mut cands = m.cands(&rings);
+        assert_eq!(cands, vec![(1, 3, 2), (5, 2, 4)]);
+        let borg_ring = ring_of(&rings, m.borg.0, m.borg.1);
+        let Plan::Rings(tries) = plan(&cands, borg_ring, None, 0, 1) else { panic!("planned") };
+        assert_eq!(m.nearest_goal(&rings, &tries[0]), None, "unfiltered: ring 2 has no route, and uses the try");
+        reachable_only(&mut cands, &m.reach());
+        assert_eq!(cands, vec![(5, 2, 4)]);
+        let Plan::Rings(tries) = plan(&cands, borg_ring, None, 0, 1) else { panic!("planned") };
+        assert_eq!(m.nearest_goal(&rings, &tries[0]), Some((5, 2)));
     }
 
     #[test]
