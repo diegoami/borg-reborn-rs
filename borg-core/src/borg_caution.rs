@@ -2091,10 +2091,19 @@ fn confusion_cure_hold(st: &mut BorgState) -> Option<CureHold> {
 /// dangerous as the HP left, and only while an attack is open (review of
 /// #868: afraid, no blow; hallucinating, no item attack; a magic mushroom
 /// patch does both, with `SCARE` and `SPORE:HALLU`, monster.txt).
+///
+/// borg-reborn-rs (#1064, `attack_kill_on_sight_floor_cure`): not when #969's
+/// floor declines the attack on sight of that confuser in this think: the
+/// attack does not come first, so the cure must not wait for it (Druid
+/// 781905420 neither attacked nor cured, and died with 8 CLW).
 fn cure_held_for_attack(st: &mut BorgState) -> bool {
-    st.borg.tr(BI_ISCONFUSED) != 0
-        && p(Param::attack_confused_by_direction) != 0
-        && immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+    if st.borg.tr(BI_ISCONFUSED) == 0 || p(Param::attack_confused_by_direction) == 0 {
+        return false;
+    }
+    let Some(confuser) = immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x) else {
+        return false;
+    };
+    !crate::borg_fight_attack::kill_on_sight_floor_declines(st, confuser)
         && mobile_danger(st) < st.borg.tr(BI_CURHP)
         && confused_attack_open(st)
 }

@@ -5915,6 +5915,55 @@ fn kill_on_sight_hp_low(st: &mut BorgState) -> bool {
         && (crate::borg_fast_fragile::has_cure(st) || crate::borg_fast_fragile::escape_available(st))
 }
 
+/// borg-reborn-rs (#1064): whether #969's floor declines the attack on sight
+/// of the monster at kill index `i` in this think (a `kill-on-sight` entry,
+/// the HP below the floor, a cure or an escape at hand), with
+/// `attack_kill_on_sight_floor_cure`: then #867's "attacking first" hold on
+/// the confusion cure does not apply either (`borg_caution`'s
+/// `cure_held_for_attack`), or the Borg neither attacks nor cures.
+pub(crate) fn kill_on_sight_floor_declines(st: &mut BorgState, i: usize) -> bool {
+    param(Param::attack_kill_on_sight_floor_cure) != 0
+        && attack_on_sight_reason(st, usize::from(st.kills.kills[i].r_idx)) == Some(KILL_ON_SIGHT)
+        && kill_on_sight_hp_low(st)
+}
+
+/// borg-reborn-rs (#1064): which of the cure potions #969's floor counted
+/// (`borg_fast_fragile::has_cure`: Cure Light, Serious, Critical Wounds) is
+/// drunk once the floor has declined the attack, `carried` telling which are
+/// in the pack. Confused, Cure Serious and then Critical first, which cure
+/// the confusion (`CURE:CONFUSED`, `object.txt`), then Cure Light, which heals
+/// 20 and shortens it by 20 turns (`TIMED_DEC:CONFUSED`); not confused, the
+/// cheapest heal first.
+fn floor_cure_choice(confused: bool, [clw, csw, ccw]: [i32; 3], mut carried: impl FnMut(i32) -> bool) -> Option<i32> {
+    let order = if confused { [csw, ccw, clw] } else { [clw, csw, ccw] };
+    order.into_iter().find(|&sval| carried(sval))
+}
+
+/// borg-reborn-rs (#1064, `attack_kill_on_sight_floor_cure`): drink the cure
+/// #969's floor counted when it declined the attack on sight. Without it the
+/// caution's own heal gates could decline it too, and #867's hold the
+/// confusion cure: Druid 781905420 died two steps from the stairs, 8 CLW in
+/// the pack, neither attacking nor drinking. A CLW heals 20 (`object.txt`),
+/// a patch's spore at most 4 (`SPORE:CONFUSE:1d4`, `monster.txt`). False
+/// when no cure potion is carried (the floor counted an escape).
+fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
+    if param(Param::attack_kill_on_sight_floor_cure) == 0 {
+        return false;
+    }
+    let confused = tr(st, BI_ISCONFUSED) != 0;
+    let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
+    let Some(sval) = floor_cure_choice(confused, svals, |sval| borg_slot(st, TV_POTION as i32, sval) >= 0) else {
+        return false;
+    };
+    borg_note(st, &format!("# Taking the cure the kill-on-sight floor counted: HP {}/{}{} (#1064)",
+        tr(st, BI_CURHP), tr(st, BI_MAXHP), if confused { ", confused" } else { "" }));
+    if sval == st.item_val.sv_potion_cure_critical {
+        crate::borg_item_use::borg_quaff_crit(st, true)
+    } else {
+        crate::borg_item_use::borg_quaff_potion(st, sval)
+    }
+}
+
 /// #760: the category target comes before flight and remains the target on
 /// subsequent thinks. A breeder colony already lost is not an attack entry.
 pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
@@ -5970,6 +6019,8 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
             borg_note(st, &format!("# Not attacking on sight: {} (kill-on-sight), HP {}/{} below {}%, a cure or an escape at hand (#969)",
                 String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))),
                 tr(st, BI_CURHP), tr(st, BI_MAXHP), param(Param::attack_kill_on_sight_min_hp_percent)));
+            // borg-reborn-rs (#1064): the cure the floor counted is taken.
+            if kill_on_sight_floor_cure(st) { return true; }
             continue;
         }
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
@@ -6082,6 +6133,65 @@ mod reserve_faint_tests {
         assert!(faint_reaches(1, true), "an adjacent mold");
         assert!(!faint_reaches(2, true), "a mold two grids away");
         assert!(faint_reaches(4, false), "a worm walks in");
+    }
+}
+
+#[cfg(test)]
+mod floor_cure_tests {
+    use super::floor_cure_choice;
+
+    const CLW: i32 = 1;
+    const CSW: i32 = 2;
+    const CCW: i32 = 3;
+
+    /// #1064: Druid 781905420, confused next to a grey mushroom patch at HP
+    /// 5/12 with 8 CLW and nothing else: the floor declined the attack, and
+    /// the potion it counted is the action.
+    #[test]
+    fn confused_with_only_cure_light_drinks_it() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |s| s == CLW), Some(CLW));
+    }
+
+    #[test]
+    fn confused_prefers_the_potions_that_cure_confusion() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |_| true), Some(CSW));
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |s| s != CSW), Some(CCW));
+    }
+
+    #[test]
+    fn not_confused_drinks_the_cheapest_heal() {
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |_| true), Some(CLW));
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |s| s == CCW), Some(CCW));
+    }
+
+    /// The floor counted an escape only: no potion, nothing drunk.
+    #[test]
+    fn no_cure_carried_drinks_nothing() {
+        assert_eq!(floor_cure_choice(true, [CLW, CSW, CCW], |_| false), None);
+        assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |_| false), None);
+    }
+
+    /// The flag is off when compiled, shipped on in `harness/borg.txt`.
+    #[test]
+    fn the_floor_cure_is_compiled_off_and_shipped_on() {
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "attack_kill_on_sight_floor_cure").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 1));
+        let shipped = include_str!("../../harness/borg.txt");
+        assert!(shipped.lines().any(|l| l.trim() == "borg_param_attack_kill_on_sight_floor_cure = 1"));
+    }
+
+    /// #1064: the floor's decline drinks before it moves on, and #867's hold
+    /// asks the floor first, so the two never leave the Borg doing neither.
+    #[test]
+    fn the_decline_drinks_and_lifts_the_attack_hold() {
+        let src = include_str!("borg_fight_attack.rs");
+        let decline = &src[src.find(concat!("a cure or an escape at hand (", "#969)")).unwrap()..];
+        let decline = &decline[..decline.find("continue;").unwrap()];
+        assert!(decline.contains(concat!("kill_on_sight_floor_", "cure(st)")), "the decline drinks first");
+        let caution = include_str!("borg_caution.rs");
+        let hold = &caution[caution.find(concat!("fn cure_held_for_", "attack(")).unwrap()..];
+        let hold = &hold[..hold.find("\n}\n").unwrap()];
+        assert!(hold.contains(concat!("kill_on_sight_floor_", "declines(st, confuser)")), "the hold asks the floor");
     }
 }
 
