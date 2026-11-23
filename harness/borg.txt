@@ -1594,6 +1594,12 @@ borg_param_item_test_unknown_max_depth = 30
 # stays.
 borg_param_item_test_unknown_min_hp = 60
 borg_param_item_test_unknown_min_hp_cure_exempt = 1
+# #1060 (owner: "a character drank a potion of poison and then goes happily
+# exploring"): after a test, wait out its harmful status (a Slowness or a scramble too) on
+# the test grid, for at most 180 world ticks (Blindness, the longest, lasts up
+# to 175), while nothing is dangerous: in-place recovery first, else stand
+# still; danger, a move or a new level ends it.
+borg_param_item_test_unknown_hold_turns = 180
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs
