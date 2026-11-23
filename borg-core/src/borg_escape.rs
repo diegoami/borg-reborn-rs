@@ -1169,6 +1169,96 @@ fn landing_danger(st: &mut BorgState) -> i32 {
     if n == 0 { i32::MAX } else { (sum / n) as i32 }
 }
 
+/// borg-reborn-rs (#1083): `adj_con_fix` (player-calcs.c:686-726), by the
+/// CON index (`BI_CON_INDEX`, 0 for CON 3, as `stat_ind`): the poison timer
+/// falls by this plus one each world tick (game-world.c:280-282, 317-320).
+const ADJ_CON_FIX: [i32; 38] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 5, 6, 6, 7, 7, 8, 8, 8, 9, 9, 9];
+
+/// #1083: the timer's fall per world tick at CON index `con_index`.
+fn poison_decay_per_tick(con_index: i32) -> i32 {
+    ADJ_CON_FIX[con_index.clamp(0, 37) as usize] + 1
+}
+
+/// #1083: the estimated timer brought from game turn `from` to `to`: one
+/// decay at each world tick between (process_world runs when `turn % 10 ==
+/// 0`, game-world.c:1080-1081).
+fn poison_decayed(timer: i32, from: i32, to: i32, con_index: i32) -> i32 {
+    let ticks = (to.div_euclid(10) - from.div_euclid(10)).max(0);
+    (timer - ticks.saturating_mul(poison_decay_per_tick(con_index))).max(0)
+}
+
+/// #1083: what one poisoning adds to the timer, on average: 5 + 1d(rlev)
+/// (mon-blows.c:683-684), the mean of 1d(rlev) being (rlev + 1) / 2.
+fn poison_added(rlev: i32) -> i32 {
+    5 + (rlev.max(1) + 1) / 2
+}
+
+/// #1083: the HP the timer still takes: 1 a world tick while it runs
+/// (game-world.c:512-519), so the ticks it needs to fall to 0.
+fn poison_hp_left(timer: i32, con_index: i32) -> i32 {
+    let fall = poison_decay_per_tick(con_index);
+    (timer.max(0) + fall - 1) / fall
+}
+
+/// #1083: the estimate after a message: "You are poisoned!" starts a timer,
+/// "You are more poisoned!" adds to it, "You are no longer poisoned." ends it
+/// (player_timed.txt:256-258). `None`: not a poison message.
+fn poison_after_message(msg: &[u8], timer: i32, rlev: i32) -> Option<i32> {
+    if msg.starts_with(b"You are poisoned!") {
+        Some(poison_added(rlev))
+    } else if msg.starts_with(b"You are more poisoned!") {
+        Some(timer + poison_added(rlev))
+    } else if msg.starts_with(b"You are no longer poisoned.") {
+        Some(0)
+    } else {
+        None
+    }
+}
+
+/// borg-reborn-rs (#1083): read a poison message into the estimate (only
+/// with `escape_phase_lost_poison_pending`). The poisoner is taken as the
+/// highest-level known monster next to the Borg, else the depth: the screen
+/// shows one grade (player_timed.txt:255), so the amount is never seen.
+pub(crate) fn poison_message(st: &mut BorgState, msg: &[u8]) {
+    if param(Param::escape_phase_lost_poison_pending) == 0 {
+        return;
+    }
+    let turn = engine::game_turn();
+    let con = st.borg.tr(crate::borg_headers::borg_trait_h::BI_CON_INDEX);
+    let timer = poison_decayed(st.borg.poison_timer_est, st.borg.poison_est_turn, turn, con);
+    let rlev = adjacent_poisoner_level(st).unwrap_or_else(|| st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH));
+    if let Some(next) = poison_after_message(msg, timer, rlev) {
+        st.borg.poison_timer_est = next;
+        st.borg.poison_est_turn = turn;
+    }
+}
+
+/// #1083: the highest race level among the known monsters next to the Borg.
+fn adjacent_poisoner_level(st: &BorgState) -> Option<i32> {
+    (1..usize::try_from(st.kills.nxt).unwrap_or(0))
+        .filter(|&i| st.kills.kills[i].r_idx != 0 && engine::distance(st.borg.c, st.kills.kills[i].pos) <= 1)
+        .map(|i| i32::from(engine::race(usize::from(st.kills.kills[i].r_idx)).level))
+        .max()
+}
+
+/// borg-reborn-rs (#1083): with `escape_phase_lost_poison_pending`, the HP
+/// the estimated poison still takes (0 when off, not poisoned, or never seen
+/// poisoned by a message).
+fn pending_poison_hp(st: &mut BorgState) -> i32 {
+    if param(Param::escape_phase_lost_poison_pending) == 0 {
+        return 0;
+    }
+    if st.borg.tr(BI_ISPOISONED) == 0 {
+        st.borg.poison_timer_est = 0;
+        return 0;
+    }
+    let turn = engine::game_turn();
+    let con = st.borg.tr(crate::borg_headers::borg_trait_h::BI_CON_INDEX);
+    st.borg.poison_timer_est = poison_decayed(st.borg.poison_timer_est, st.borg.poison_est_turn, turn, con);
+    st.borg.poison_est_turn = turn;
+    poison_hp_left(st.borg.poison_timer_est, con)
+}
+
 /// borg-reborn-rs (#584, owner): the rule's verdict this think. Decided and
 /// noted once, at the first site that asks (re-review of #612: one note and
 /// no attack simulation per site); later sites reuse it. `danger` is the
@@ -1194,7 +1284,14 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false))
     };
     let adjacent = adjacent_awake(st);
-    let lost = adjacent && fight_lost(st, here, hp) && !newcomer_wait(st, hp);
+    // borg-reborn-rs (#1083): with `escape_phase_lost_poison_pending`, the
+    // fight is judged on the HP the poison still to come leaves (0 when off).
+    let pending = if adjacent { pending_poison_hp(st) } else { 0 };
+    if pending > 0 {
+        borg_note(st, &format!("# Phase rule: about {pending} HP of poison still to come (timer {}): the fight judged on HP {} (#1083)", st.borg.poison_timer_est, hp - pending));
+    }
+    let fight_hp = hp - pending;
+    let lost = adjacent && fight_lost(st, here, fight_hp) && !newcomer_wait(st, hp);
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {
@@ -2756,12 +2853,52 @@ mod unknown_landing_tests {
         assert!(!newcomer_turn_safe(f64::INFINITY, 0, 41, 100));
     }
 
+    /// #1083: the poison estimate, from the engine's numbers.
+    #[test]
+    fn the_poison_still_to_come() {
+        use super::{poison_added, poison_after_message, poison_decayed, poison_hp_left};
+        // A white jelly (level 10, TOUCH:POISON): 5 + 1d10, mean 10.
+        assert_eq!(poison_added(10), 10);
+        assert_eq!(poison_added(0), 6, "an unknown level counts as 1");
+        assert_eq!(poison_after_message(b"You are poisoned!", 99, 10), Some(10), "a new poisoning starts the timer");
+        assert_eq!(poison_after_message(b"You are more poisoned!", 30, 10), Some(40));
+        assert_eq!(poison_after_message(b"You are no longer poisoned.", 30, 10), Some(0));
+        assert_eq!(poison_after_message(b"You are less poisoned.", 30, 10), None);
+        // CON 18/50 (index 20): adj_con_fix 3, the timer falls 4 a world tick.
+        assert_eq!(poison_decayed(40, 1000, 1009, 20), 40, "no world tick between");
+        assert_eq!(poison_decayed(40, 1009, 1010, 20), 36, "the tick at turn 1010");
+        assert_eq!(poison_decayed(40, 1000, 1100, 20), 0, "ten ticks: 40 gone");
+        assert_eq!(poison_hp_left(40, 20), 10, "1 HP a tick for 10 ticks");
+        assert_eq!(poison_hp_left(41, 20), 11);
+        assert_eq!(poison_hp_left(40, 5), 40, "CON 8: 1 a tick");
+        assert_eq!(poison_hp_left(0, 20), 0);
+    }
+
+    /// #1083: the estimate is read and charged only with the switch, and the
+    /// Phase rule judges the fight on the HP it leaves.
+    #[test]
+    fn the_phase_rule_counts_the_poison_only_with_the_switch() {
+        let src = include_str!("borg_escape.rs");
+        for f in [concat!("pub(crate) fn poison_", "message("), concat!("fn pending_poison_", "hp(")] {
+            let at = &src[src.find(f).unwrap()..];
+            let body = &at[..at.find("\n}\n").unwrap()];
+            let gate = body.find(concat!("Param::escape_phase_lost_", "poison_pending) == 0")).expect("reads the switch");
+            assert!(body[gate..].find("return").unwrap() < body[gate..].find("st.borg.poison_").unwrap(), "{f}: nothing written when off");
+        }
+        let rule = &src[src.find(concat!("fn phase_rule_", "verdict(")).unwrap()..];
+        let pending = rule.find(concat!("pending_poison_", "hp(st)")).unwrap();
+        let lost = rule.find(concat!("fight_lost(st, here, ", "fight_hp)")).unwrap();
+        assert!(pending < lost);
+        let messages = include_str!("borg_messages.rs");
+        assert!(messages.contains(concat!("crate::borg_escape::poison_", "message(st, msg);")));
+    }
+
     /// #1066: the newcomer wait is asked only after the rule judged the
     /// fight lost, and it races the adjacent monsters alone.
     #[test]
     fn the_newcomer_wait_follows_a_lost_verdict() {
         let src = include_str!("borg_escape.rs");
-        assert!(src.contains(concat!("adjacent && fight_lost(st, here, hp) && !newcomer_", "wait(st, hp)")));
+        assert!(src.contains(concat!("adjacent && fight_lost(st, here, fight_hp) && !newcomer_", "wait(st, hp)")));
         let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
         let wait = &at[..at.find("\n}\n").unwrap()];
         assert!(wait.contains(concat!("fight_race(st, ", "true)")));

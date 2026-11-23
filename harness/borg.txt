@@ -1086,6 +1086,11 @@ borg_param_escape_phase_adjacent_rule = 1
 borg_param_escape_phase_lost_test = 0
 borg_param_escape_phase_lost_danger_percent = 100
 
+# #1083 (seed 829474344, poisoned by a white jelly): 1 = the fight is judged
+# on the HP left after the poison still to come, estimated from the poisoning
+# messages. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_escape_phase_lost_poison_pending = 0
+
 # With lost_test 1 or 2 (#625): 1 = the chosen attack counts at its success
 # chance (spell fail rate, device failure), and only for the uses the Borg can
 # pay for: all its mana (owner: the escape reserve is not set aside), a

@@ -10,6 +10,36 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## The Phase rule counts the poison still to come (#1083)
+
+The registry now holds **2445** parameters (2444 before; one added). A
+follow-up of #934 (PR #968): poisoned next to a white jelly, the Half-Troll
+Ranger 829474344 had its escapes tried first and declined ("the fight is not
+lost (danger 36, HP 69)") while poison was killing it. The danger counts no
+poison. The zoo measures the switch; its value is a hypothesis.
+
+- **`escape_phase_lost_poison_pending`** (flag, compiled and shipped 0). The
+  Phase rule (`escape_phase_adjacent_rule`) judges the adjacent fight on the HP
+  left after the poison still to come, with every form of
+  `escape_phase_lost_test`. The screen shows one grade (`player_timed.txt:255`),
+  so the timer is estimated from the messages:
+  - "You are poisoned!" starts it and "You are more poisoned!" adds to it, each
+    by 5 + the mean of 1d(rlev) (`mon-blows.c:683-684`). The poisoner is the
+    highest-level known monster next to the Borg, else the depth.
+  - "You are no longer poisoned." ends it.
+  - It falls by `adj_con_fix[CON] + 1` each world tick (`game-world.c:280-282`,
+    `317-320`; `player-calcs.c:686-726`), and poison takes 1 HP a tick
+    (`game-world.c:512-519`).
+  - Not poisoned: 0.
+- Note, when the poison counts: `# Phase rule: about <n> HP of poison still to
+  come (timer <t>): the fight judged on HP <h> (#1083)`.
+- On 829474344 the estimate ran about 15% under the true timer (`state.log`:
+  16 against 19, then 40/46, 74/85, 62/75, 104/123).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_phase_lost_poison_pending` | 0 | flag | 0–1 | `borg_escape.rs:1223` |
+
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
 The registry now holds **2442** parameters (2441 before; one added). From the death of the
@@ -190,12 +220,12 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1409` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1410` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1234` |
-| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1506` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1507` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1331` |
+| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1335` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
-| `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
+| `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1363` |
 
 - `escape_phase_unknown_scary` = 1: in the Phase Door landing check (every
   site that asks `caution_phase`), a sampled grid never seen (`FEAT_NONE`)
@@ -501,7 +531,7 @@ chose them (RULES 14).
 | `lone_slow_radius` | 3 | grids | 1–20 | `borg_lone_target.rs:71` |
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
-| `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
+| `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1278` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
 | `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3322` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8084` |
@@ -4079,29 +4109,29 @@ the vendored mechanics model:
 | `escape_landing_samples` | 100 | count | 1–1000 | `borg_escape.rs:379` |
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
-| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1750` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1759` |
-| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1850` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1861` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
-| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1891` |
-| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1909` |
-| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1927` |
-| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1935` |
-| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1936` |
-| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1939` |
-| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:1940` |
-| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1943` |
-| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1944` |
-| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:1946` |
-| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1947` |
-| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1948` |
-| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1949` |
-| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1951` |
+| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1615` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1847` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1856` |
+| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1899` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1947` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1958` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1961` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1962` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1967` |
+| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1988` |
+| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:2006` |
+| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:2024` |
+| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:2032` |
+| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:2033` |
+| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:2036` |
+| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:2037` |
+| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:2040` |
+| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:2041` |
+| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:2043` |
+| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:2044` |
+| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:2045` |
+| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:2046` |
+| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:2048` |
 | `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1955` |
 | `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1964` |
 | `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1974` |
@@ -4128,10 +4158,10 @@ the vendored mechanics model:
 | `escape_phase_unique_min_count` | 2 | count | 1–9 | `borg_escape.rs:2101` |
 | `escape_phase_ordinary_danger_tenths` | 10 | tenths | 0–100 | `borg_escape.rs:2102` |
 | `escape_afraid_warrior_danger_tenths` | 10 | tenths | 0–100 | `borg_escape.rs:2103` |
-| `escape_phase_tolerance` | 25 | count | 0–1000 | `borg_escape.rs:1894` |
-| `escape_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1894` |
-| `escape_fallback_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1929` |
-| `escape_fallback_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1929` |
+| `escape_phase_tolerance` | 25 | count | 0–1000 | `borg_escape.rs:2206` |
+| `escape_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:2206` |
+| `escape_fallback_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:2241` |
+| `escape_fallback_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:2241` |
 | `escape_failed_teleport_flee_max_level` | 35 | level | 1–51 | `borg_escape.rs:1959` |
 | `escape_failed_teleport_leave_max_level` | 35 | level | 1–51 | `borg_escape.rs:1971` |
 | `escape_compromised_danger_tenths` | 8 | tenths | 0–100 | `borg_escape.rs:1983` |
@@ -6152,7 +6182,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1642` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1739` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
