@@ -976,7 +976,7 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
-fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bool {
+fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1010,10 +1010,10 @@ fn desperate_flow(st: &mut BorgState, up: bool, max_moves: i32, why: &str) -> bo
         }
     }
     st.borg.status.desperate = true;
-    let ok = if weight > 0 {
+    let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) {
         // A stair that is close across the map may be far away on foot.
         // Keep the proximity limit on the route, including any detour.
-        crate::borg_flow_stairs::weighted_desperate_flight(st, up, max_moves, ranged_reach)
+        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach)
     } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
@@ -1064,7 +1064,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     if b_j <= near_up
         && b_j != -1
         && pos_danger < st.borg.tr(BI_CURHP)
-        && desperate_flow(st, true, near_up, "# Desperate for Stairs (one)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(near_up), "# Desperate for Stairs (one)")
     {
         return true;
     }
@@ -1073,7 +1073,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_up = p(Param::caution_desperate_adjacent_up_distance);
     if b_j <= adjacent_up
         && b_j != -1
-        && desperate_flow(st, true, adjacent_up, "# Desperate for Stairs (two)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(adjacent_up), "# Desperate for Stairs (two)")
     {
         return true;
     }
@@ -1121,7 +1121,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             || !safe
         {
             // try to take them on, you cant outrun them
-        } else if desperate_flow(st, true, scary_up, "# Desperate for Stairs (three)") {
+        } else if desperate_flow(st, true, DesperateStairRange::Nearby(scary_up), "# Desperate for Stairs (three)") {
             return true;
         }
     }
@@ -1130,7 +1130,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
     if b_m <= adjacent_down
         && b_m != -1
-        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, adjacent_down, "# Desperate for Stairs (four)"))
+        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)"))
     {
         return true;
     }
@@ -2959,9 +2959,41 @@ mod incoming_units_tests {
 fn winning_fight(st: &mut BorgState) -> bool {
     let mode = p(Param::caution_winning_fight);
     if mode == 0 { return false; }
+    let Some(race) = fight_race(st, false) else { return false };
+    let FightRace { won, turns, incoming, hp, ref plans } = race;
+    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
+    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
+        plans.len(), if won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
+    // Mode 2 is a diagnostic: retain the unchanged control's actions so
+    // estimates can be checked on its original losing AND winning fights.
+    if !won || mode == 2 { return false; }
+    let (i, _, attack) = plans[0];
+    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+/// #759's race, as computed (`None`: not certified, so never winning).
+pub(crate) struct FightRace {
+    pub won: bool,
+    /// The turns to kill every counted attacker, one after another.
+    pub turns: f64,
+    /// Their HP a turn against the Borg, for the whole fight.
+    pub incoming: f64,
+    pub hp: i32,
+    /// The counted attackers, fastest to kill first: (kill index, HP to
+    /// take, the attack).
+    pub plans: Vec<(usize, i32, crate::borg_fight_attack::FocusedAttack)>,
+}
+
+/// #759's race (`winning_fight`). borg-reborn-rs (#1066): with
+/// `adjacent_only`, only the awake monsters next to the Borg are fought and
+/// counted; every other check (the Borg's own status, a town-hunt target,
+/// an unseen attacker anywhere) still refuses the verdict.
+pub(crate) fn fight_race(st: &mut BorgState, adjacent_only: bool) -> Option<FightRace> {
     // The direct-damage race does not model random confused commands or
     // ongoing poison/bleeding damage. Let the ordinary cures act first.
-    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return false; }
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISCUT, BI_ISPOISONED].iter().any(|&t| st.borg.tr(t) != 0) { return None; }
     let mut plans = Vec::new();
     let mut incoming = 0.0;
     let mut in_contact = false;
@@ -2971,29 +3003,32 @@ fn winning_fight(st: &mut BorgState) -> bool {
             continue;
         }
         if crate::borg_town_hunt::viewed_target(st, &kill) {
-            return false;
+            return None;
         }
         let d = engine::distance(st.borg.c, kill.pos);
         if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
             if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
-                return false; // an attacker without a current observable target
+                return None; // an attacker without a current observable target
             }
+            continue;
+        }
+        if adjacent_only && d > 1 {
             continue;
         }
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
             continue;
         }
         let forecast = fight_incoming(st, i);
-        if forecast.unknown_fight || forecast.unknown_damage { return false; }
+        if forecast.unknown_fight || forecast.unknown_damage { return None; }
         let danger = forecast.hp_per_turn;
         if danger <= 0.0 { continue; }
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
-        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return false };
-        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
+        let Some(attack) = crate::borg_fight_attack::focused_attack(st, i) else { return None };
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return None };
         plans.push((i, hp, attack));
     }
-    if plans.is_empty() || !in_contact { return false; }
+    if plans.is_empty() || !in_contact { return None; }
     // Remove the fastest-to-kill attacker first. Incoming remains the full
     // sum for the entire fight, a conservative bound as attackers die.
     plans.sort_by(|a, b| {
@@ -3020,7 +3055,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
         let regen = fight_regeneration(&kill);
         let damage = f64::from(attack.hp_per_turn_milli) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
         let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
-        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return false };
+        let Some((t, used)) = race_turns(hp, damage, uses, attack.duration, fallback) else { return None };
         turns += t;
         if let Some(c) = cost {
             if c.spell {
@@ -3031,16 +3066,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     }
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
-    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
-        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
-    borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
-        plans.len(), if won { "winning" } else { "not winning" }));
-    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
-    // Mode 2 is a diagnostic: retain the unchanged control's actions so
-    // estimates can be checked on its original losing AND winning fights.
-    if !won || mode == 2 { return false; }
-    let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    Some(FightRace { won, turns, incoming, hp, plans })
 }
 
 pub(crate) fn fight_regeneration(kill: &crate::borg_flow_kill::BorgKill) -> f64 {
@@ -3885,8 +3911,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // Nothing
-    false
+    // Give the interrupted stair walk a turn before ordinary movement.
+    resume_emergency_down_flight(st, pos_danger)
 }
 
 /// borg-reborn-rs (#539, owner): "use recall only if a stair is not
@@ -7868,6 +7894,48 @@ pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
         || (st.borg.tr(BI_ISHUNGRY) != 0
             && crate::borg_item_use::borg_eat_when_hungry(st))
         || (st.borg.tr(BI_ISWEAK) != 0 && borg_eat_food_any(st))
+}
+
+enum DesperateStairRange {
+    Nearby(i32),
+    Remaining(i32),
+}
+
+impl DesperateStairRange {
+    fn moves(&self) -> i32 {
+        match *self {
+            Self::Nearby(moves) | Self::Remaining(moves) => moves,
+        }
+    }
+}
+
+/// #1052: caution has had its full turn to act on the current danger.
+/// Replan the remaining escape before the dungeon thinker resumes exploring.
+fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
+    let Some(handoff) = st.stairs.off_stair_handoff.down else { return false; };
+    if !handoff.can_resume(st.borg.c, st.borg.time.level, st.borg.time.now, danger, st.borg.tr(BI_CURHP))
+        || st.borg.tr(BI_ISCONFUSED) != 0
+        || rising_holds_descent(st, danger)
+    {
+        st.stairs.off_stair_handoff.down = None;
+        return false;
+    }
+
+    if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE {
+        st.stairs.off_stair_handoff.down = None;
+        if !rising_holds_flee_descent(st) && !crate::borg_flow_stairs::more_refused(st, false) {
+            borg_note(st, "# Taking down stairs after emergency flight (#1052)");
+            borg_keypress(st, key(b'>'));
+            return true;
+        }
+    } else if handoff.steps_left > 0
+        && desperate_flow(st, false, DesperateStairRange::Remaining(handoff.steps_left), "# Continuing emergency down-stair flight (#1052)")
+    {
+        return true;
+    }
+
+    st.stairs.off_stair_handoff.down = None;
+    false
 }
 
 #[cfg(test)]
