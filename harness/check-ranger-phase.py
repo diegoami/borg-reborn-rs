@@ -77,8 +77,11 @@ def check_arm(out, reserve):
                            if turn >= departure and note.startswith("# Creating a monster ")), None)
     assert first_sighting is not None, (reserve, "no dungeon monster sighting")
     assert contact["game_turn"] == first_sighting, (reserve, contact, first_sighting)
-    # The reserve-2 character picked up four more scrolls before seeing a foe.
-    assert contact["phase_scrolls"] == (1 if reserve == 0 else 6), (reserve, contact)
+    # Each character meets its first foe with the scrolls it bought: 1, or the
+    # reserve's 2. With C's light radius the reserve-2 character picked up four
+    # more first (6); with the engine's (#1078, shipped) it sees a foe at turn
+    # 473, before those pickups.
+    assert contact["phase_scrolls"] == (1 if reserve == 0 else 2), (reserve, contact)
     print(f"Ranger reserve {reserve}: first town purchases and contact kit matched")
 
 
