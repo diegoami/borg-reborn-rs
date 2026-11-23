@@ -1138,16 +1138,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
         // `ranged_damage`) and the expected damage over the engine's hit
         // chance, as melee scales by its own (`borg_thrust_damage_one`).
         BORG_ATTACK_ARROW if st.fight_attack.throwing => {
-            let mult = borg_best_mult(&ammo, r);
-            if mult > 1 {
-                dam *= 1 + mult;
-            }
-            let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
-            let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
-            let divisor = throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
-                point_blank_divisor(tr(st, BI_CLASS)));
-            dam = rated_throw_damage(dam, cur_dis, rf(r, RF_UNIQUE), divisor,
-                throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac));
+            dam = rated_throw(st, &ammo, r, cur_dis, dam);
         }
 
         BORG_ATTACK_ARROW => {
@@ -2924,6 +2915,17 @@ pub(crate) fn short_gold_ranged_spell(st: &BorgState) -> bool {
     ].into_iter().any(|spell| borg_spell_okay_fail(st, spell, param(Param::attack_spell_fail)))
 }
 
+/// borg-reborn-rs (#854 review F4): whether combat would zap this attack wand
+/// or rod: its failure within the limit the bolt attacks use
+/// (`borg_attack_aux_wand_bolt`: `attack_unknown_wand_max_failure`;
+/// `borg_attack_aux_rod_bolt`: `attack_rod_max_failure`). The town planner
+/// credits the #828 ranged reserve only for such a device.
+pub(crate) fn short_gold_device_usable(st: &BorgState, item: &borg_item) -> bool {
+    let limit = if u32::from(item.tval) == TV_WAND { param(Param::attack_unknown_wand_max_failure) }
+        else { param(Param::attack_rod_max_failure) };
+    crate::borg_item_use::device_failure_of(st, item) <= limit
+}
+
 pub(crate) fn short_gold_throwable_shot(item: &borg_item) -> bool {
     u32::from(item.tval) == TV_SHOT && !item.cursed
         && item.dd > 0 && item.ds > 0 && (item.art_idx == 0 && item.ego_idx == 0)
@@ -2940,9 +2942,9 @@ fn short_gold_throwable_oil(st: &BorgState, item: &borg_item) -> i32 {
         && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32)
     {
-        let turns = crate::borg_town_utility::Journey::of(st).turns;
-        ((turns - i64::from(light.timeout)).max(0) as u64)
-            .div_ceil(i64::from(item.pval).max(1) as u64) as i32
+        // #854 review F1: the town planner's fuel goal, not the trip alone.
+        let goal = crate::borg_town_capability::fuel_goal(crate::borg_town_utility::Journey::of(st));
+        crate::borg_town_capability::fuel_bottles_needed(goal, i64::from(light.timeout), i64::from(item.pval)) as i32
     } else {
         0
     };
@@ -2950,6 +2952,31 @@ fn short_gold_throwable_oil(st: &BorgState, item: &borg_item) -> i32 {
         .filter(|i| i.aware && short_gold_oil(st, i))
         .map(|i| i32::from(i.iqty)).sum();
     (carried - fuel).max(0)
+}
+
+/// borg-reborn-rs (#568): a throw's expected damage against race `r` at
+/// `distance`, as the scorer rates it: the brand multiplier for a throw
+/// (`1 + brand`, `ranged_damage`), the point-blank divisor for a non-unique
+/// and the engine's hit chance (`throw_hit_percent`).
+fn rated_throw(st: &BorgState, ammo: &borg_item, r: u16, distance: i32, mut dam: i32) -> i32 {
+    let mult = borg_best_mult(ammo, r);
+    if mult > 1 {
+        dam *= 1 + mult;
+    }
+    let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
+    let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
+    let divisor = throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
+        point_blank_divisor(tr(st, BI_CLASS)));
+    rated_throw_damage(dam, distance, rf(r, RF_UNIQUE), divisor,
+        throw_hit_percent(tr(st, BI_THT), bonus, throwing, distance, engine::race(usize::from(r)).ac))
+}
+
+/// player-attack.c, do_cmd_throw: a throw's range in grids, from the object's
+/// weight and the player's strength, even with a launcher equipped.
+fn throw_range(st: &BorgState, k: i32) -> i32 {
+    let strength = i32::from(engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize));
+    let weight = i32::from(st.items.items[k as usize].weight).max(10);
+    ((strength + 20) * 10 / weight).min(10)
 }
 
 fn held_oil_target(st: &mut BorgState, i: i32, oil: &borg_item) -> bool {
@@ -2965,7 +2992,13 @@ fn held_oil_target(st: &mut BorgState, i: i32, oil: &borg_item) -> bool {
     }
 
     // A cheaper throw that can finish this target is already a candidate.
-    let (_, cheap_damage) = best_throw_of(st, ThrowSupply::NonOil);
+    // #854 review F3: as the scorer rates it against this target (range, hit
+    // chance, the point-blank divisor), not its raw average, so a throw the
+    // scorer would reject does not veto the held oil.
+    let (cheap_k, cheap_raw) = best_throw_of(st, ThrowSupply::NonOil);
+    let cheap_damage = if cheap_k >= 0 && distance <= throw_range(st, cheap_k) {
+        rated_throw(st, &st.items.items[cheap_k as usize], kill.r_idx, distance, cheap_raw)
+    } else { 0 };
     let hp = observed_kill_hp(&kill).unwrap_or(i32::from(kill.power).max(1));
     if cheap_damage >= hp.max(1) {
         return false;
@@ -2994,6 +3027,8 @@ fn held_oil_target(st: &mut BorgState, i: i32, oil: &borg_item) -> bool {
         engine::flag_has(&oil.flags, OF_THROWING as i32),
         engine::flag_has(&oil.flags, OF_EXPLODE as i32),
     );
+    // #854 review F3: both throws rated the same way against this target.
+    let damage = rated_throw(st, oil, kill.r_idx, distance, damage);
     // A faster pursuer at the usual fast-monster frontier can close on
     // the next exchange; farther out require danger over two turns.
     damage > cheap_damage && (distance <= param(Param::attack_fast_monster_distance) + 1
@@ -3209,13 +3244,7 @@ pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
 fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
     let short_gold = param(Param::town_short_gold) != 0;
-    let power = if short_gold {
-        // player-attack.c, do_cmd_throw: the range is based on the object
-        // being thrown, even with a launcher equipped.
-        let strength = i32::from(engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize));
-        let weight = i32::from(st.items.items[b_k as usize].weight).max(10);
-        ((strength + 20) * 10 / weight).min(10)
-    } else { 6 + 2 * tr(st, BI_AMMO_POWER) };
+    let power = if short_gold { throw_range(st, b_k) } else { 6 + 2 * tr(st, BI_AMMO_POWER) };
     st.fight_attack.throwing = short_gold
         || st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
@@ -6350,6 +6379,31 @@ mod point_blank_tests {
 #[cfg(test)]
 mod fallback_tests {
     use super::*;
+
+    /// #854 review F4: the town planner credits only a device combat would
+    /// zap, by the bolt attacks' failure limits (500 permille shipped).
+    #[test]
+    fn a_device_combat_would_refuse_fills_no_ranged_reserve() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        let device = |tval: u32, level: u8| {
+            let mut item = crate::borg_item::blank_item();
+            item.tval = tval as u8;
+            item.level = level.into();
+            item
+        };
+        st.borg.trait_[BI_DEV as usize] = 30;
+        assert!(short_gold_device_usable(&st, &device(TV_WAND, 5)), "an easy Magic Missile wand");
+        assert!(short_gold_device_usable(&st, &device(TV_ROD, 5)));
+        st.borg.trait_[BI_DEV as usize] = 5;
+        assert!(!short_gold_device_usable(&st, &device(TV_WAND, 80)), "failure over the limit");
+        assert!(!short_gold_device_usable(&st, &device(TV_ROD, 95)), "past device_fail's pole: never");
+        st.borg.trait_[BI_DEV as usize] = 10;
+        // device_fail(10, 61) = 489, device_fail(7, 61) = 538 permille.
+        assert!(short_gold_device_usable(&st, &device(TV_WAND, 61)));
+        st.borg.trait_[BI_ISCONFUSED as usize] = 1;
+        assert!(!short_gold_device_usable(&st, &device(TV_WAND, 61)), "confusion lowers the skill, as in combat");
+    }
 
     #[test]
     fn a_launched_ball_counts_and_wakes_a_penalized_sleeper_once() {

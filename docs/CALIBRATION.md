@@ -295,8 +295,8 @@ it to try. Owner, 2026-11-22: "test when safe".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:203` |
-| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:211` |
+| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:215` |
+| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:230` |
 | `item_test_unknown_danger_turns` | 10 | turns | 1–50 | `borg_item_use.rs:215` |
 | `item_test_unknown_max_depth` | 30 | level | 0–128 | `borg_item_use.rs:217` |
 
@@ -319,7 +319,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:6078` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:6107` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -345,7 +345,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3580` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3487` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3516` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:7721` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:7721` |
 
@@ -657,8 +657,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2120` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2220` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2683` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2676` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2734` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2727` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -822,13 +822,13 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
-| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
+| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1142` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1153` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2159` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2159` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:739` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:757` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1066` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1013` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1082` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -966,7 +966,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1010` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1032` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1210,8 +1210,8 @@ the less value they have".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:1014` |
-| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:998` |
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:1279` |
+| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1280` |
 
 ## Thrown oil, a town-planner curve of its own (#712)
 
@@ -1231,7 +1231,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:626` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:644` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -1820,7 +1820,7 @@ same way are healing objects"; no reserve, only the curve.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:998` |
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:1136` |
 | `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:802` |
 
 ## No rest while breeders are known (#644)
@@ -2864,9 +2864,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:686` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:704` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:543` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:677` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:695` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2994,11 +2994,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:601` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:635` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:653` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1228` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2636` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2524` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2687` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2575` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5415,7 +5415,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6177` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6206` |
 
 ## C Borg dive gates (#768)
 
@@ -6102,7 +6102,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1015` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:634` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -6758,7 +6758,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1204` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1205` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1206` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2565` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2616` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -6848,7 +6848,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2627` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2678` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)

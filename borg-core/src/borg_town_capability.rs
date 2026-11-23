@@ -138,10 +138,13 @@ const FIRST_CURE: usize = RESTORE_LIFE_RESERVE + 1;
 // The #828 pilot's rows (`town_short_gold`) follow the device rows and exist
 // only with the pilot on; the model without it stops at FIRST_HEAL or before.
 /// borg-reborn-rs (#828 pilot, `town_short_gold`): the first healing potion
-/// as a requirement, then one row per launcher family (sling, bow, crossbow)
-/// and one per its ammunition.
+/// and the first Phase Door as requirements, then one row per launcher family
+/// (sling, bow, crossbow) and one per its ammunition. The first Phase Door is
+/// a row of its own (#854 review F2), so the configured Phase Door reserve
+/// (`town_phase_reserve`, PHASE_RESERVE) stays as it is in both arms.
 const FIRST_HEAL: usize = DEV_CONTROL + 1;
-const LAUNCHER: usize = FIRST_HEAL + 1;
+const FIRST_PHASE: usize = FIRST_HEAL + 1;
+const LAUNCHER: usize = FIRST_PHASE + 1;
 const LAUNCHER_AMMO: usize = LAUNCHER + 3;
 const _: () = assert!(LAUNCHER_AMMO + 3 == NAMES.len());
 const SHORT_GOLD_OIL: i64 = 5;
@@ -221,7 +224,7 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 const HUNGRY_PERCENT: i64 = 15;
 
 const _: () = assert!(FIRST_HEAL == DEV_CONTROL + 1);
-pub const NAMES: [&str; 89] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 90] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -231,7 +234,7 @@ pub const NAMES: [&str; 89] = ["light turns", "nutrition", "healing HP", "poison
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
     "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
-    "first healing potion", "sling", "bow", "crossbow", "shot for sling", "arrows for bow", "bolts for crossbow"];
+    "first healing potion", "first Phase Door", "sling", "bow", "crossbow", "shot for sling", "arrows for bow", "bolts for crossbow"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -336,7 +339,7 @@ impl Model {
     pub fn short_gold_purchase_priority(&self, shop: u8, slot: u8) -> Option<(usize, i32)> {
         self.curves.get(FIRST_HEAL)?;
         let supplies = self.units(i64::from(shop), i64::from(slot), 1);
-        [LIGHT, FOOD, PHASE_RESERVE, FIRST_HEAL, RANGED_RESERVE].into_iter().enumerate().find_map(|(priority, cap)| {
+        [LIGHT, FOOD, FIRST_PHASE, FIRST_HEAL, RANGED_RESERVE].into_iter().enumerate().find_map(|(priority, cap)| {
             let row = self.curves[cap];
             let serves = supplies.iter().any(|&(id, n)| id == cap && n > 0);
             let finishes_pair = cap == RANGED_RESERVE && supplies.iter().any(|&(id, _)| id >= LAUNCHER)
@@ -616,6 +619,21 @@ fn thrown_damage(dd: i64, ds: i64, weight: i64, explode: bool) -> i64 {
     (if explode { throw * 3 } else { throw }).max(UNIT)
 }
 
+/// borg-reborn-rs (#854 review F1): the whole bottles of fuel a lantern with
+/// `timeout` turns left still needs to reach `goal` turns, at `per_bottle`
+/// turns each. The town planner (`goal` = `Journey::fuel_goal` of
+/// `town_light_reserve_turns`) and the #828 pilot's held oil in combat
+/// (`borg_fight_attack::short_gold_throwable_oil`) count fuel with it, so a
+/// flask the planner buys to throw is one combat may throw.
+pub(crate) fn fuel_bottles_needed(goal: i64, timeout: i64, per_bottle: i64) -> i64 {
+    ((goal - timeout).max(0) as u64).div_ceil(per_bottle.max(1) as u64) as i64
+}
+
+/// borg-reborn-rs (#854 review F1): the fuel goal of the trip, in turns.
+pub(crate) fn fuel_goal(journey: Journey) -> i64 {
+    journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns)))
+}
+
 fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(usize, i64)> {
     let mut out = Vec::new();
     let n = quantity.max(1);
@@ -747,7 +765,7 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
 /// `r[3] > 0`), and a kept one stopped the town replay of 425904011 with
 /// "invalid capability facts" (review of #778).
 fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
-    out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE | RESTORE_LIFE_RESERVE | FIRST_HEAL) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
+    out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE | RESTORE_LIFE_RESERVE | FIRST_HEAL | FIRST_PHASE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
 fn launcher_family(st: &BorgState, sval: i32) -> Option<usize> {
@@ -778,7 +796,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_phase_door {
         // TELEPORT(10) is not full Teleportation. A Phase Door also counts
         // toward the reserve (#761).
-        return vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)];
+        // The #828 pilot's first Phase Door is a row of its own (#854 review F2).
+        return if ctx.short_gold { vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT), (FIRST_PHASE, UNIT)] }
+            else { vec![(PHASE, UNIT), (PHASE_RESERVE, UNIT)] };
     }
     if tval == TV_FLASK {
         // borg-reborn-rs (#649): the engine's thrown damage, not the dice alone.
@@ -788,7 +808,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         let light = &st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
         let usable_oil = i32::from(item.sval) == st.item_val.sv_flask_oil && !item.cursed;
         let needed = if ctx.lantern && fuel > 0 && (ctx.light_reserve == 0 || usable_oil) {
-            ((ctx.light_goal - i64::from(light.timeout)).max(0) as u64).div_ceil(fuel as u64) as i64
+            fuel_bottles_needed(ctx.light_goal, i64::from(light.timeout), fuel)
         } else { 0 };
         // Allocate whole bottles to fuel before ammunition. A bottle cannot
         // supply both uses. Shop options are prospective single copies; live
@@ -956,6 +976,8 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if ctx.short_gold && (origin.0 >= PACK || ctx.buy_shot) && matches!(tval, TV_WAND | TV_ROD)
         && (if tval == TV_WAND { item.pval > 0 } else { i64::from(item.timeout) < qty * i64::from(engine::kind_recharge_average(item.kind as usize).max(1)) })
         && effect_supply_for_consumer(&effects, ctx.journey.hp, 1, false).iter().any(|&(cap, n)| cap == ATTACK && n > 0)
+        // #854 review F4: only a device combat would use, by its failure gate.
+        && crate::borg_fight_attack::short_gold_device_usable(st, item)
     {
         out.push((RANGED_RESERVE, SHORT_GOLD_OIL * UNIT));
     }
@@ -1008,12 +1030,25 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
     let short_gold = param(Param::town_short_gold) != 0;
     let ranged_reserve = if short_gold { SHORT_GOLD_OIL } else { i64::from(param(Param::town_ranged_reserve)) };
-    let buy_shot = short_gold && !stock.candidates.iter().any(|c| {
-        u32::from(c.tval) == TV_FLASK && i32::from(c.sval) == st.item_val.sv_flask_oil
-            && c.qty > 0 && i64::from(c.price) <= gold_after_urgent
-    });
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let light_goal = journey.fuel_goal(light_reserve);
+    let light_goal = fuel_goal(journey);
+    // #828: shot and a launcher are the fallback when no flask of oil the
+    // Borg can afford would be left to throw once the lantern's fuel is
+    // counted (#854 review F1: affordable flasks that all go to fuel do not
+    // close the fallback).
+    let buy_shot = short_gold && {
+        let affordable: i64 = stock.candidates.iter().filter(|c| {
+            u32::from(c.tval) == TV_FLASK && i32::from(c.sval) == st.item_val.sv_flask_oil
+                && c.qty > 0 && i64::from(c.price) <= gold_after_urgent
+        }).map(|c| i64::from(c.qty)).sum();
+        let carried: i64 = st.items.items.iter().take(crate::borg_item::inven_wield() as usize)
+            .filter(|i| i.aware && u32::from(i.tval) == TV_FLASK && i32::from(i.sval) == st.item_val.sv_flask_oil)
+            .map(|i| i64::from(i.iqty)).sum();
+        let fuel = if lantern {
+            fuel_bottles_needed(light_goal, i64::from(light.timeout), i64::from(crate::borg_kit::FLASK_TURNS))
+        } else { 0 };
+        affordable <= (fuel - carried).max(0)
+    };
     let restore_life_reserve = i64::from(restore_life_reserve(st));
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve, short_gold, buy_shot };
     // Keep the historical facts shape when the reserve is disabled.
@@ -1106,11 +1141,15 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#840 remedy b): at least the kit's Phase Door reserve.
     let phase_reserve = i64::from(param(Param::town_phase_reserve).max(crate::borg_kit::start_phase_reserve())).max(0);
     if short_gold {
-        curve(LIGHT, 32 * SHORT_GOLD_RANGED_WEIGHT, -(journey.turns.max(1) * UNIT));
+        // #854 review F1: the light requirement is the planner's fuel goal,
+        // the one that classifies a flask as fuel or as a throw.
+        curve(LIGHT, 32 * SHORT_GOLD_RANGED_WEIGHT, -(light_goal.max(1) * UNIT));
         curve(FOOD, 16 * SHORT_GOLD_RANGED_WEIGHT, -(RATION_NUTRITION * READY_FOOD * UNIT));
-        curve(PHASE_RESERVE, 8 * SHORT_GOLD_RANGED_WEIGHT, -UNIT);
+        curve(FIRST_PHASE, 8 * SHORT_GOLD_RANGED_WEIGHT, -UNIT);
         curve(FIRST_HEAL, 4 * SHORT_GOLD_RANGED_WEIGHT, -UNIT);
-    } else if phase_reserve > 0 {
+    }
+    // #854 review F2: the configured reserve holds with the pilot on as well.
+    if phase_reserve > 0 {
         curve(PHASE_RESERVE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_phase_reserve_percent)) * phase_reserve,
             -(phase_reserve * UNIT));
     } else {
@@ -1570,11 +1609,11 @@ mod tests {
 
         let mut model = model();
         for row in &mut model.curves { row[1] = 0; }
-        model.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, 16_000_000, -UNIT, 0, 0];
+        model.curves[FIRST_PHASE] = [FIRST_PHASE as i64, 16_000_000, -UNIT, 0, 0];
         model.curves[FIRST_HEAL] = [FIRST_HEAL as i64, 8_000_000, -UNIT, 0, 0];
         model.curves[RANGED_RESERVE] = [RANGED_RESERVE as i64, SHORT_GOLD_RANGED_WEIGHT, -5 * UNIT, 0, 0];
         model.supplies = vec![
-            [0, 0, PHASE_RESERVE as i64, UNIT],
+            [0, 0, FIRST_PHASE as i64, UNIT],
             [0, 1, FIRST_HEAL as i64, UNIT],
             [0, 2, RANGED_RESERVE as i64, UNIT],
         ];
@@ -1597,12 +1636,24 @@ mod tests {
         assert_eq!(buy(&model, 9)[1..3], [2, 1], "oil is affordable on its own");
         assert_eq!(buy(&model, 2)[1], -1);
 
-        model.curves[PHASE_RESERVE][3] = UNIT;
+        model.curves[FIRST_PHASE][3] = UNIT;
         model.curves[FIRST_HEAL][3] = UNIT;
         model.curves[RANGED_RESERVE][3] = 4 * UNIT;
         assert_eq!(buy(&model, 30)[1..3], [2, 1], "carried safety supplies leave room for the fifth flask");
         model.curves[RANGED_RESERVE][3] = 5 * UNIT;
         assert_eq!(buy(&model, 30)[1], -1, "the reserve is satisfied");
+    }
+
+    /// #854 review F1: one fuel count for the planner and combat. A lantern
+    /// with 8,000 turns left needs two 7,500-turn flasks for the shipped
+    /// 20,000-turn goal and none for a 4,000-turn one.
+    #[test]
+    fn fuel_bottles_are_counted_against_one_goal() {
+        assert_eq!(fuel_bottles_needed(20_000, 8_000, 7_500), 2);
+        assert_eq!(fuel_bottles_needed(4_000, 8_000, 7_500), 0);
+        assert_eq!(fuel_bottles_needed(15_500, 8_000, 7_500), 1);
+        assert_eq!(fuel_bottles_needed(15_501, 8_000, 7_500), 2);
+        assert_eq!(fuel_bottles_needed(1, 0, 0), 1, "a bottle of no fuel counts as one turn");
     }
 
     #[test]
