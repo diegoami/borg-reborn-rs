@@ -40,7 +40,7 @@
 //!   Neutralize Poison, a staff, Cure Critical Wounds; Healing, *Healing* or
 //!   Life only when the CLW/CSW carried cannot outlast it). Today's cures
 //!   wait out the danger or a 25 % roll: the Paladin 1200156945 (#1134)
-//!   died holding 2 Neutralize Poison.
+//!   died holding 2 Neutralize Poison. Never next to an awake poisoner.
 //! * E, the poison fight race: poisoned, next to an awake poisoner: the
 //!   poison already pending plus the poison and damage the fight adds count
 //!   against the HP and the healing carried; a lost race leaves, stepping
@@ -296,8 +296,8 @@ fn poisoner_adjacent(st: &BorgState) -> bool {
 
 /// F: poisoned with the poison still to come at
 /// least `poison_cure_pending_percent` of the HP, use a poison cure the
-/// Borg has, whatever the danger and with no roll; next to an awake
-/// poisoner only when the poison already reaches the HP. Cheapest first:
+/// Borg has, whatever the danger and with no roll; never next to an awake
+/// poisoner. Cheapest first:
 /// Cure Poison and Herbal Curing (the spells), a rod of Curing, an
 /// activation that cures poison, a food or mushroom that does
 /// (`CURE:POISONED`, the items `BI_ACUREPOIS` counts), Neutralize Poison, a
@@ -313,7 +313,11 @@ pub(crate) fn cure_carried(st: &mut BorgState) -> bool {
     if !enabled() { return false; }
     let Some(t) = read(st) else { return false };
     if !t.cure_carried || !cure_due(t.pending, t.hp, param(Param::poison_cure_pending_percent)) { return false; }
-    if t.pending < t.hp && poisoner_adjacent(st) { return false; }
+    // Never next to an awake poisoner: it poisons again at once (the Paladin
+    // 1200156945, #1140's replay: Neutralize Poison at HP 10/49 beside a
+    // blubbering icky thing, poisoned again the next blow, dead 20 turns
+    // sooner). E and the escapes act there; the cure follows.
+    if poisoner_adjacent(st) { return false; }
     let fail = param(Param::caution_heal_spell_fail);
     let v = &st.item_val;
     let (rod, staff, np, ccw) = (v.sv_rod_curing, v.sv_staff_curing, v.sv_potion_cure_poison, v.sv_potion_cure_critical);

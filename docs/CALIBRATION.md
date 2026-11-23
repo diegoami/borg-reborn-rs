@@ -7762,8 +7762,10 @@ legal; Minor Healing makes the healing renewable. With `deal_with_poison` on:
   mushroom with `CURE:POISONED`, Neutralize Poison, a staff of Curing, Cure
   Critical Wounds (the raw quaff: `borg_quaff_crit` keeps the last two) or
   its activation; Healing, *Healing* or Life only when the poison outlasts
-  the HP and the CLW/CSW carried. Next to an awake poisoner only once the
-  poison reaches the HP. It runs in `borg_caution` after E's step and
+  the HP and the CLW/CSW carried. Never next to an awake poisoner: it
+  poisons again at once (the Paladin 1200156945 replay drank Neutralize
+  Poison at HP 10/49 beside a blubbering icky thing, was poisoned again the
+  next blow and died 20 turns sooner). It runs in `borg_caution` after E's step and
   before `borg_heal`. With a cure carried, B, C and E stand aside.
 - **B, the late drink.** Poisoned, not cut, no cure, danger 0:
   `borg_heal`'s Cure Light and Cure Serious tiers hold the potion unless the
