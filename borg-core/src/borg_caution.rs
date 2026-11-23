@@ -1606,7 +1606,7 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     // character is protected from is not annoying (mode 2 only).
     let effects = race_blow_effects(r_idx);
     let annoying = if p(Param::caution_immobile_resists) != 0 {
-        unprotected_annoying(&effects, |bi| st.borg.tr(bi) != 0)
+        unprotected_annoying(&effects, |bi| protected(st, bi))
     } else {
         effects.iter().any(|e| annoying_effect(e))
     };
@@ -1643,6 +1643,14 @@ fn listed_kept(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
     !effects.iter().any(|e| annoying_effect(e)) || unprotected_annoying(effects, has)
 }
 
+/// borg-reborn-rs (#852, review of #1126): the character has protection
+/// `bi`, as `borg_danger_one_kill` reads it: the trait, or for poison also the
+/// temporary resistance (`MONBLOW_POISON` checks `BI_RPOIS`, then
+/// `temp.res_pois`; the engine blocks poisoning while `TMD_OPP_POIS` runs).
+fn protected(st: &BorgState, bi: u32) -> bool {
+    st.borg.tr(bi) != 0 || (bi == BI_RPOIS && st.borg.temp.res_pois)
+}
+
 /// The effect names of race `r_idx`'s blows. Every race has its blow array
 /// (`mon-init.c:1826`, `finish_parse_monster`); the caller skips race 0 and
 /// the placeholder race past the last one (#726).
@@ -1667,7 +1675,7 @@ pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
         levels_less: 0,
     };
     crate::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
-        && listed_kept(&race_blow_effects(r_idx), |bi| st.borg.tr(bi) != 0)
+        && listed_kept(&race_blow_effects(r_idx), |bi| protected(st, bi))
 }
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
@@ -6806,6 +6814,28 @@ mod immobile_range_tests {
         assert!(unprotected_annoying(&[b"CONFUSE"], none));
         assert!(!unprotected_annoying(&[b"CONFUSE"], with(BI_RCONF)));
         assert!(unprotected_annoying(&[b"LOSE_STR"], |_| true));
+    }
+
+    /// Review of #1126: temporary poison resistance protects, as in
+    /// `borg_danger_one_kill`; it protects from nothing else.
+    #[test]
+    fn temporary_poison_resistance() {
+        use super::{listed_kept, protected, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_MAX, BI_RCONF, BI_RPOIS};
+        let mut st = crate::state::BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        let spotted: &[&[u8]] = &[b"POISON"];
+        assert!(!protected(&st, BI_RPOIS));
+        assert!(listed_kept(spotted, |bi| protected(&st, bi)), "no resistance: kept");
+        st.borg.temp.res_pois = true;
+        assert!(protected(&st, BI_RPOIS), "temporary only");
+        assert!(!protected(&st, BI_RCONF), "poison only");
+        assert!(!listed_kept(spotted, |bi| protected(&st, bi)), "the spotted mushroom patch is fought");
+        assert!(!unprotected_annoying(spotted, |bi| protected(&st, bi)), "mode 2's check too");
+        assert!(listed_kept(&[b"CONFUSE"], |bi| protected(&st, bi)), "a grey mushroom patch still kept");
+        st.borg.temp.res_pois = false;
+        st.borg.trait_[BI_RPOIS as usize] = 1;
+        assert!(!listed_kept(spotted, |bi| protected(&st, bi)), "the permanent one");
     }
 }
 

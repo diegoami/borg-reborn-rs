@@ -66,9 +66,12 @@ switch is exercised by the unit test only.
   entry with only plain-damage blows (or none) stays kept, since it was
   listed by name. None of the 14 shipped entries has a plain-damage blow, so
   this matters only for entries added later.
-- The protections are the traits `borg_danger_one_kill` reads (`BI_RPOIS`
-  and the others), temporary resistances included where those traits
-  include them.
+- The protections are what `borg_danger_one_kill` reads: the five traits,
+  and for poison also the temporary resistance (`temp.res_pois`), which its
+  `MONBLOW_POISON` branch checks after `BI_RPOIS` (review of #1126: the first
+  version read the trait only, so a Borg with only the temporary resistance
+  still refused a spotted mushroom patch; `protected`, with the unit test
+  `temporary_poison_resistance`). The other four have no temporary form there.
 
 **Left.**
 - Zoo measurement (RULES 20) of the new `caution_ranged_only` against
