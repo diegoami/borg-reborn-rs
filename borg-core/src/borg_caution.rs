@@ -3736,6 +3736,13 @@ mod category_threat_tests {
 /// attack on sight (#760), the lone slow monster (#878, `lone_slow_attack`),
 /// the winning fight (#759).
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1125, review of #1129, finding 2): with
+    // `escape_paralyser_fight_lost`, next to an awake paralyser the early
+    // fight waits: caution and its escapes decide first (an equal-speed
+    // homunculus drew `lone_slow_attack` ahead of the Phase rule).
+    if crate::borg_escape::paralyser_defers_early_fight(st) {
+        return false;
+    }
     crate::borg_fight_attack::attack_on_sight(st)
         // borg-reborn-rs (#878): a lone slow monster, by the ranged attack.
         || crate::borg_lone_target::attack(st)

@@ -52,3 +52,13 @@ start, not a rate (RULES 14).
 - Switch 2 is only useful with 3, and 3 needs 4 when the record was
   dropped. The zoo request bundles them (`walk`).
 - Merge into `track-p` after the review (RULES 1a).
+
+**Review fixes (owner-run review of `c3710319`, relayed on #1129).**
+- Finding 1: a flow destination in a known paralyser's reach is no longer
+  seeded (`borg_flow_enqueue_grid`). Before, an unweighted stair flow could
+  still end on a staircase beside the eye.
+- Finding 2: with `escape_paralyser_fight_lost`, an awake adjacent
+  paralyser defers the early fight (`fight_before_flight`: attack on sight,
+  the lone slow monster, the winning fight). Caution and the Phase rule
+  decide first.
+- A source-order unit test covers both.

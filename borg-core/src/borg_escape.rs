@@ -1234,6 +1234,23 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
     verdict
 }
 
+/// borg-reborn-rs (#1125, review of #1129, finding 2): with
+/// `escape_paralyser_fight_lost`, an awake known paralyser next to the Borg
+/// (no Free Action) defers the early fight (`fight_before_flight`: attack on
+/// sight, the lone slow monster, the winning fight), so `borg_caution` and
+/// the Phase rule, which judges that fight lost, come first.
+pub(crate) fn paralyser_defers_early_fight(st: &mut BorgState) -> bool {
+    if param(Param::escape_paralyser_fight_lost) == 0 {
+        return false;
+    }
+    let Some(k) = crate::borg_caution::awake_paralyser_adjacent(st) else {
+        return false;
+    };
+    let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+    borg_note(st, &format!("# Next to the paralysing {name} without Free Action: no early fight, caution first (#1125)"));
+    true
+}
+
 /// The Phase rule's "lost": an awake enemy adjacent, and the fight lost
 /// (`fight`, asked only when needed); borg-reborn-rs (#1125): next to an
 /// awake paralyser without Free Action (`paralyser`) it is lost without the
@@ -2928,5 +2945,23 @@ mod paralyser_phase_tests {
             false
         }));
         assert!(!asked, "the fight's test (and its notes) is skipped");
+    }
+
+    /// Review of #1129: the paralyser's deferral comes before every early
+    /// fight, and every flow destination is checked for a paralyser's reach.
+    #[test]
+    fn the_early_fight_and_the_flow_goals_respect_the_paralyser() {
+        let caution = include_str!("borg_caution.rs");
+        let at = &caution[caution.find(concat!("pub(crate) fn fight_before_", "flight(")).unwrap()..];
+        let body = &at[..at.find("\n}\n").unwrap()];
+        let defer = body.find(concat!("paralyser_defers_", "early_fight(st)")).expect("the deferral");
+        for early in [concat!("attack_on_", "sight(st)"), concat!("borg_lone_target::", "attack(st)"), concat!("winning_", "fight(st)")] {
+            assert!(defer < body.find(early).expect(early), "{early} comes after the deferral");
+        }
+        let flow = include_str!("borg_flow.rs");
+        let at = &flow[flow.find(concat!("pub fn borg_flow_enqueue_", "grid(")).unwrap()..];
+        let body = &at[..at.find("\n}\n").unwrap()];
+        let reach = body.find(concat!("in_paralyser_", "reach(st, x, y)")).expect("the seed check");
+        assert!(reach < body.find(concat!("data_cost[y as usize][x as usize] = ", "0")).unwrap(), "checked before the seed");
     }
 }
