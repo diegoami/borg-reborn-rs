@@ -83,6 +83,8 @@ pub struct FlowMiscState {
     pub spastic_x: u8,
     /// `spastic_y`
     pub spastic_y: u8,
+    /// Whether the search flow queued a step toward the target.
+    pub spastic_flow_started: bool,
 }
 
 /// `borg_timer(t)`: game turns since `t`.
@@ -668,7 +670,9 @@ pub(crate) fn notice_interrupted_spastic_search(st: &mut BorgState, next: loc) {
     let here = (st.borg.c.y, st.borg.c.x);
     let feat = u32::from(st.cave.grid(here.1, here.0).feat);
     if feat == FEAT_FLOOR {
-        notice_spastic_arrival(st);
+        if st.flow_misc.spastic_flow_started {
+            notice_spastic_arrival(st);
+        }
         return;
     }
 
@@ -694,6 +698,7 @@ fn notice_spastic_arrival(st: &mut BorgState) -> bool {
 
     st.flow_misc.spastic_x = 0;
     st.flow_misc.spastic_y = 0;
+    st.flow_misc.spastic_flow_started = false;
     let xtra = st.cave.grid(x, y).xtra;
     borg_note(st, &format!("# Spastic Searching at ({x},{y})...value:{xtra}"));
 
@@ -887,7 +892,9 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Spread the flow */
     borg_flow_spread(st, 250, true, false, false, -1, false);
 
-    commit_and_step(st, c"spastic", GOAL_XTRA)
+    let started = commit_and_step(st, c"spastic", GOAL_XTRA);
+    st.flow_misc.spastic_flow_started = started;
+    started
 }
 
 /// Prepare to "flow" towards a specific shop entry

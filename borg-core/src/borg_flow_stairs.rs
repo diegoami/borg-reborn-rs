@@ -1689,7 +1689,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
                 st.cave.grid_mut(x, y).feat = FEAT_NONE as u8;
             }
         }
-        st.borg.c = east;
+        st.borg.c = west;
         st.borg.avoidance = 163;
         for (index, value) in [(BI_CLEVEL, 17), (BI_CURHP, 163), (BI_MAXHP, 163), (BI_LIGHT, 2)] {
             st.borg.trait_[index as usize] = value;
@@ -1698,6 +1698,23 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.kills.nxt = 1;
         st.danger = Default::default();
         st.stairs.less.num = 0;
+
+        let explore_east = |st: &mut BorgState| {
+            borg_flow::borg_flow_clear(st);
+            borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
+            borg_flow::borg_flow_spread(st, 3, true, true, false, -1, false);
+            assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            observe_move(st, b'6', middle);
+            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
+            observe_move(st, b'6', east);
+            assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
+        };
+
+        // A cost-zero choice queues no search movement.
+        assert!(!borg_flow_spastic(st, true));
+        explore_east(st);
+        assert_eq!(st.cave.grid(west.x, west.y).xtra, 0);
 
         // Construct the recorded alternation with a dark target that costs
         // three steps but refuses the last step. Search returns west over
@@ -1712,15 +1729,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
             assert!(!borg_flow::borg_flow_old(st, search_goal));
             assert_eq!(st.cave.grid(west.x, west.y).xtra, search_count);
 
-            borg_flow::borg_flow_clear(st);
-            borg_flow::borg_flow_enqueue_grid(st, wall.y, wall.x);
-            borg_flow::borg_flow_spread(st, 3, true, true, false, -1, false);
-            assert!(borg_flow::borg_flow_commit(st, c"dark-3", GOAL_DARK));
-            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
-            observe_move(st, b'6', middle);
-            assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
-            observe_move(st, b'6', east);
-            assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
+            explore_east(st);
         }
         assert!(!borg_flow_spastic(st, true), "the repeated floor search must end");
         assert!(st.io.queued_keys().is_empty());
