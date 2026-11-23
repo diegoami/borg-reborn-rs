@@ -50,6 +50,17 @@ the hold outlasting a short cap): kept; the rest is in place and the engine
 ends it on any disturbance, and with the cap above every status it cannot
 outlast the hold's purpose.
 
+**Second re-review (Codex, at 8fb76110): no blocker, two P3s.** (1) A
+short configured cap still cannot interrupt a recovery rest the hold starts
+(Codex's fixture: a two-tick cap, `R&` at turn 21, the next decision at 211).
+Codex also ran the fixture with the hold off: ordinary recovery chose the same
+actions, with identical key, message and state logs. Kept and documented in
+CALIBRATION.md: the cap bounds when a hold decision starts, not a rest it
+starts. (2) `fight_before_flight` could act and return before
+`potion_test_hold_validate`, so a fight won from the test grid would let the
+hold resume once the danger was back to 0. Validation now runs before the
+early fight.
+
 **Where this meets other work.** #934 (another session: how poison is
 weighed in general, CLW drunk against poison) is untouched; this only changes
 what follows the Borg's own test. `engine/tests/test_stair_handoff.py` pins

@@ -749,6 +749,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let town_retreat = crate::borg_town_hunt::enabled(st)
         && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
 
+    // borg-reborn-rs (#1060, reviews of #1071): end the potion-test hold on
+    // danger or a move before an early fight or caution can act and return.
+    crate::borg_item_use::potion_test_hold_validate(st);
+
     // #760/#759/#878: an attack-on-sight target, a lone slow monster (with
     // lone_slow_attack) or a winning fight owns the action before even an
     // out-of-light wait or a depth-return flight.
@@ -811,10 +815,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     if borg_flow_old(st, GOAL_DIGGING) {
         return choice!("borg_flow_old");
     }
-
-    // borg-reborn-rs (#1060, review of #1071): end the potion-test hold on
-    // danger or a move before caution can act and return.
-    crate::borg_item_use::potion_test_hold_validate(st);
 
     /* Try not to die */
     if borg_caution(st) {

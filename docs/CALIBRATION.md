@@ -26,8 +26,12 @@ a 76-step walk to the stairs at 1 HP a turn, 26 -> 18).
   lasts (a Slowness included, read from its timer) and the danger here is 0,
   the Borg stays where it tested (`potion_test_hold`, right after
   `borg_caution`): the ordinary in-place recovery (`borg_recover`) first, else
-  it stands still (`,`). `potion_test_hold_validate`, before `borg_caution`,
-  ends the hold on danger, a move or a new level. 0 = no hold.
+  it stands still (`,`). `potion_test_hold_validate`, before the early fight
+  (`fight_before_flight`) and `borg_caution`, ends the hold on danger, a move
+  or a new level. 0 = no hold. The cap bounds when a hold decision can start:
+  a recovery rest (`R&`) that `borg_recover` starts inside the hold runs in the
+  engine until the status clears or something disturbs it, past the cap if
+  need be, as the same rest chosen by the ordinary order would.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
