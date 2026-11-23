@@ -33,8 +33,8 @@ re-review's case does not arise there. But the landing sites' tolerances
 differ: 2.2 is 50, 3.1 is 25, and 4.1 and 5.1 are 20. Under the policy, a
 twitchy or fast-fragile gate later in a think that already ran those checks
 is now stricter. The critical and last-ditch gates follow the emergency
-check directly, so they keep 75. Both switches ship 0, so today's play is
-unchanged.
+check directly, so they keep 75. Both switches still shipped 0 at that
+point; the owner then shipped them at 1 (below).
 
 ### Checks
 
@@ -91,6 +91,21 @@ likely. The gap was already in #1066 at any tolerance.
 Not replayed: the change acts only with the policy on, after a gate refusal
 in the twitchy think. 726 tests pass (728 after merging track-p `09580159`;
 smoke 4/4 identical; `--fix` re-pointed the citations the merge shifted).
+
+### Shipped (owner, 2026-11-23)
+
+The owner said: "I would put both of escape_phase at 1 and merge". So
+`harness/borg.txt` now sets `escape_phase_unknown_scary = 1` and
+`escape_phase_newcomer_wait = 1`, with a comment. The four tuning values
+ship at their compiled defaults: 50, 75, 50 and 100.
+
+`scripts/rerecord-smoke-borg-rs.sh` re-recorded `smoke-borg-rs`. Three of
+the four games are byte-identical. In `smoke-mage-overexert-4` (seed
+592754909), at game turn 31 and HP 4/8 (50%, so the policy is on), the
+critical Phase Door is refused: "100 never-seen landing grids of 100". It
+had nothing to phase with anyway. Its keys (221) and its death (a cave
+spider at game turn 2,596) are the same, so only `messages.log` changed.
+No zoo run has measured the shipped pair (#1073).
 
 ### Left, and for the owner
 

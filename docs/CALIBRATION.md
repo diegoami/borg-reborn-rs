@@ -213,9 +213,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   the full possible one-turn damage (`full_damage`): no spell-frequency
   discount (`spell_frequency_discount`, lifted from `borg_danger` with the
   same arithmetic) and whole monster turns (re-review of #1075).
-- Both switches compiled and shipped **0**; `harness/borg.txt` sets none of
-  the six.
-  Hypotheses: no measurement chose them (RULES 14).
+- Both switches compiled **0**. **Shipped 1** in `harness/borg.txt` since
+  #1094 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+  merge"); the four tuning values ship at their compiled defaults.
+  Hypotheses: no zoo measurement chose them (RULES 14; #1073).
 
 ## Attack on sight prices poison and drain blows (#1010)
 
