@@ -1480,15 +1480,11 @@ pub fn player_stat_ind(stat: u32) -> i32 {
     player_ref().state.stat_ind[stat as usize]
 }
 
-/// borg-reborn-rs (#1136): whether the engine blocks a new poisoning.
-/// `player_inc_check` fails POISONED (player_timed.txt `fail:2:POIS`,
-/// `fail:5:OPP_POIS`) on `p->state.el_info[ELEM_POIS].res_level > 0`
-/// (player-timed.c:960-971) or a running Opposition to Poison
-/// (player-timed.c:1007-1017).
-pub fn player_blocks_new_poison() -> bool {
-    use crate::headers::list_elements_h::ELEM_POIS;
-    use crate::headers::list_player_timed_h::TMD_OPP_POIS;
-    player_ref().state.el_info[ELEM_POIS as usize].res_level > 0 || player_timed(TMD_OPP_POIS) != 0
+/// borg-reborn-rs (#1136): `player->state.el_info[elem].res_level`, the
+/// resistance `player_inc_check` reads (player-timed.c:960-971). A running
+/// temporary resistance is folded in: +1, at most 2 (player-calcs.c:2188-2193).
+pub fn player_res_level(elem: u32) -> i16 {
+    player_ref().state.el_info[elem as usize].res_level
 }
 
 /// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
