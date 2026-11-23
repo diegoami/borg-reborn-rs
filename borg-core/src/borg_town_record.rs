@@ -41,7 +41,8 @@ use crate::state::BorgState;
 /// settings (`storing`: the departure room, `town_store_keep_min` and
 /// `town_store_only_overweight`), so a replay stores as the visit did.
 /// #1048: v14 records the Home stack limit and the eligible kit kinds.
-pub const PLAN_SCHEMA: i64 = 15;
+/// V15 records native Home room. V16 permits partial surplus disposal.
+pub const PLAN_SCHEMA: i64 = 16;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -514,7 +515,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
@@ -1085,7 +1086,11 @@ fn first_action_with_room(
             // Split storage, disposal and short-kit withdrawals use the
             // quantity the utility pass priced.
             let copies = out.copies.get(i).copied().filter(|&n| n > 0);
-            return (code, [at, i64::from(k.slot), i64::from(copies.unwrap_or(k.qty)), k.proceeds], i64::from(k.need), false);
+            let qty = i64::from(copies.unwrap_or(k.qty));
+            let proceeds = if code == action::SELL_HOME && copies.is_some() {
+                k.proceeds * qty / i64::from(k.qty)
+            } else { k.proceeds };
+            return (code, [at, i64::from(k.slot), qty, proceeds], i64::from(k.need), false);
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }

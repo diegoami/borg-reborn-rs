@@ -19,7 +19,9 @@ It sends extra copies to a shop or the floor once the carried floor is
 covered. The floor uses the higher of the configured minimum and the
 planner's explicit reserve requirements. The plan retains the largest allowed Home stacks. Normal Home withdrawals can still cover a short
 carried kit. Sufficiently stocked kinds yield their optional shopping
-budget to other goods. Plan schema 14 records the limit and eligibility.
+budget to other goods. The planner withdraws only the excess copies that
+fit and credits a Home slot when the final copies leave. Schema 15
+records the native room, and schema 16 enables partial surplus disposal.
 
 ## Attack on sight prices poison and drain blows (#1010)
 
