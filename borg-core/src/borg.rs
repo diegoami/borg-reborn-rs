@@ -59,6 +59,7 @@ pub struct Borg {
     pub status: BorgStatus,
     pub time: BorgTimes,
     pub need_see_invis: BorgTime,
+    pub hallway_beams: crate::borg_light::HallwayBeams,
     pub see_inv: i16,
     pub need_shift_panel: bool,
     pub when_shift_panel: BorgTime,
