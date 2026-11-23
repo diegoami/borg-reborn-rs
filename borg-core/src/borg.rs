@@ -59,6 +59,7 @@ pub struct Borg {
     pub status: BorgStatus,
     pub time: BorgTimes,
     pub need_see_invis: BorgTime,
+    pub hallway_beams: crate::borg_light::HallwayBeams,
     pub see_inv: i16,
     pub need_shift_panel: bool,
     pub when_shift_panel: BorgTime,
@@ -70,6 +71,14 @@ pub struct Borg {
     pub times_twitch: i16,
     pub escapes: i16,
     pub trying_unknown: bool,
+    /// borg-reborn-rs (#1060): after an unknown potion test, the game turn
+    /// (`turn`, the clock the status timers run on) until which it waits out a
+    /// harmful status the potion caused (`borg_item_use::potion_test_hold`);
+    /// 0 = no hold. Bound to the grid and level of the test (review of #1071).
+    pub potion_test_hold_until: i32,
+    pub potion_test_hold_x: i32,
+    pub potion_test_hold_y: i32,
+    pub potion_test_hold_depth: i32,
     /// `borg.dont_react`: the reaction gate (set while knocked out or
     /// paralyzed, cleared on every message pump).
     pub dont_react: bool,
@@ -109,6 +118,11 @@ pub struct Borg {
     pub unseen_probe: Option<loc>,
     pub unseen_empty: Vec<loc>,
     pub unseen_found: Option<loc>,
+    /// borg-reborn-rs (#981, review of #998): every unseen attack of the
+    /// episode so far was a projection's hit ("You are hit by ...!",
+    /// `SHOT_BY:`), not a blow. Set when the episode starts, cleared by a blow
+    /// and when the episode ends.
+    pub unseen_shot_only: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
@@ -143,6 +157,35 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
+    /// the last Phase Door landing check under the policy, as (the think's
+    /// `time.now`, the Borg's grid, the count, that site's tolerance). The
+    /// gate of the sites without a landing check reuses it in the same think
+    /// and grid instead of drawing again, judged by the stricter of the two
+    /// tolerances (#1094).
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32, i32)>,
+    /// borg-reborn-rs (#1094, review of #1096): the think's `time.now` when
+    /// the last `phase_door` call was refused by the never-seen gate (`None`
+    /// when it was not). The twitchy think then still tries its longer-range
+    /// teleports, which the gate does not judge.
+    pub phase_gate_refused: Option<BorgTime>,
+    /// borg-reborn-rs (#1130): a stair walk started under boosted bravery
+    /// (`boost_bravery`, "Goal_less, brave"), committed so that the next
+    /// thinks continue it with the same avoidance instead of undoing its step
+    /// (`borg_flow::brave_walk_avoidance`).
+    pub brave_walk: Option<crate::borg_flow::BraveWalk>,
+    /// borg-reborn-rs (#1098, review of #1117): the think (`time.now`) whose
+    /// stair-anchored exploration (breadth-first or mixed) found nothing it
+    /// may reach left: the area it may cover is done, so `borg_leave_level`
+    /// takes the stairs then, before the secret-door search and the other
+    /// fallbacks (owner, 2026-11-23: "once there is nothing to explore, take
+    /// the stairs").
+    pub stair_explore_exhausted: Option<BorgTime>,
+    /// borg-reborn-rs (#1098): the level (`time.level`) on which leaving
+    /// after that failed in every allowed direction (no usable staircase
+    /// known, say while rising with no up staircase): both stair-anchored
+    /// modes stand down there and C explores, so the Borg can find one.
+    pub stair_explore_released: Option<BorgTime>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
@@ -328,6 +371,26 @@ pub struct BorgMonInfo {
     /// so a flow that passes them again does not loop.
     pub immobile_stepped: [[u8; 4]; 16],
     pub immobile_stepped_level: BorgTime,
+    /// borg-reborn-rs (#1147, `caution_walk_away_immobile`): the think
+    /// (`time.now`) in which the Borg stood next to a walk-away monster with
+    /// no grid out of its reach to step to; in that think a blow at it is
+    /// allowed again (the last resort).
+    pub walk_away_cornered: Option<BorgTime>,
+    /// borg-reborn-rs (#932): the last strategic retreat: the think it was
+    /// taken (`time.now`), the level's arrival time, the grid it left, and
+    /// how many retreats in a row left that place (each within
+    /// `caution_retreat_oscillation_thinks` of the last, from a grid next
+    /// to or on the last one left).
+    pub retreat_last: BorgTime,
+    pub retreat_level: BorgTime,
+    pub retreat_from: loc,
+    /// borg-reborn-rs (#1023, review of #966): the grid that move stepped
+    /// to, whether a later think found the Borg on it (the landing
+    /// confirmed), and the think of the last veto note (one per think).
+    pub retreat_to: loc,
+    pub retreat_landed: bool,
+    pub retreat_noted: BorgTime,
+    pub retreat_run: u16,
     pub morgoth_panel: loc,
     pub unique: u32,
 }
@@ -630,6 +693,10 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     if borg_ch != 0 {
         key.code = borg_ch;
         return key;
+    }
+
+    if st.fight_attack.pending_unseen.has_targets() && engine::inkey_flag() {
+        crate::borg_unseen_belief::confirm_attack(st);
     }
 
     if user_abort(st) {

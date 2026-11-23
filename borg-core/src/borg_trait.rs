@@ -58,6 +58,8 @@ use crate::headers::list_object_modifiers_h::{
     OBJ_MOD_SEARCH, OBJ_MOD_SHOTS, OBJ_MOD_SPEED, OBJ_MOD_STEALTH, OBJ_MOD_TUNNEL,
 };
 use crate::headers::list_options_h::OPT_birth_percent_damage;
+// borg-reborn-rs (#1151): trait_curse_stats
+use crate::params::{value as param, Param};
 use crate::headers::list_player_flags_h::{PF_BLESS_WEAPON, PF_BRAVERY_30, PF_FAST_SHOT};
 use crate::headers::list_player_timed_h::*;
 use crate::headers::list_stats_h::{
@@ -520,6 +522,30 @@ impl IndexMut<u32> for Traits<'_> {
     fn index_mut(&mut self, i: u32) -> &mut i32 {
         &mut self.0[i as usize]
     }
+}
+
+/// borg-reborn-rs (#1151): what the worn stat curses add to STR, INT, WIS,
+/// DEX and CON, given which of dullness, sickliness, weakness and
+/// clumsiness are worn (`BI_CRSDULL`, `BI_CRSSICK`, `BI_CRSWEAK`,
+/// `BI_CRSCLUM`) and the stat runes the player knows. The values are
+/// `engine/angband/lib/gamedata/curse.txt` (dullness `INT[-5] | WIS[-5]`,
+/// sickliness `STR[-5] | DEX[-5] | CON[-5]`, weakness `STR[-10]`,
+/// clumsiness `DEX[-10]`); the engine adds a curse object's modifiers to
+/// `stat_add` times the known rune (`player-calcs.c:calc_bonuses`, lines
+/// 2009-2020 and 1941-1950), once per worn item that carries the curse. The
+/// flags say only that some item carries it, so this counts one.
+fn curse_stat_add(worn: [bool; 4], known: &[i16; 16]) -> [i32; 5] {
+    const CURSES: [[i32; 5]; 4] = [[0, -5, -5, 0, 0], [-5, 0, 0, -5, -5], [-10, 0, 0, 0, 0], [0, 0, 0, -10, 0]];
+    let runes = [OBJ_MOD_STR, OBJ_MOD_INT, OBJ_MOD_WIS, OBJ_MOD_DEX, OBJ_MOD_CON].map(|m| i32::from(known[m as usize]));
+    let mut add = [0; 5];
+    for (curse, values) in worn.iter().zip(CURSES) {
+        if *curse {
+            for s in 0..5 {
+                add[s] += values[s] * runes[s];
+            }
+        }
+    }
+    add
 }
 
 fn tr(st: &mut BorgState) -> Traits<'_> {
@@ -1319,6 +1345,18 @@ fn borg_notice_equipment(st: &mut BorgState) {
             t[BI_SPEED] -= 10;
             t[BI_STL] -= 10;
             t[BI_CRSAGRV] = 1;
+        }
+
+        /* borg-reborn-rs (#1151): the BI_C* changes above do not last (the
+         * loop below sets BI_CSTR.. from stat_cur), so a worn curse's stats
+         * never reached the stats the Borg plays with. The engine adds a
+         * curse's modifiers to the additive stats like an item's own, each
+         * where its rune is known. */
+        if param(Param::trait_curse_stats) != 0 {
+            let worn = [t[BI_CRSDULL], t[BI_CRSSICK], t[BI_CRSWEAK], t[BI_CRSCLUM]].map(|f| f != 0);
+            for (i, delta) in (0u32..).zip(curse_stat_add(worn, &p.obj_k_modifiers)) {
+                t[BI_ASTR + i] += delta;
+            }
         }
 
         /* The borg needs to update his base stat points */
@@ -2935,6 +2973,20 @@ pub fn borg_trait_free(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #1151: the stat curses' modifiers (curse.txt), each counted where its
+    /// stat rune is known, as the engine does.
+    #[test]
+    fn worn_stat_curses_take_their_stats_where_the_rune_is_known() {
+        let all = [1i16; 16];
+        // dullness and sickliness: the Mage's cap
+        assert_eq!(curse_stat_add([true, true, false, false], &all), [-5, -5, -5, -5, -5]);
+        assert_eq!(curse_stat_add([false, false, true, true], &all), [-10, 0, 0, -10, 0]);
+        assert_eq!(curse_stat_add([false; 4], &all), [0; 5]);
+        let mut no_str = all;
+        no_str[OBJ_MOD_STR as usize] = 0;
+        assert_eq!(curse_stat_add([false, true, false, false], &no_str), [0, 0, 0, -5, -5]);
+    }
 
     #[test]
     fn remove_hunger_scrolls_are_food_beside_rations_under_the_plan() {

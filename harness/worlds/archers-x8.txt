@@ -1,0 +1,11 @@
+# An archer world (#981, for recover_unseen_shot): every other race's rarity is
+# multiplied by 8, so the kobold archer and the scout, the shallow races that
+# shoot most often (monster.txt: depth 4, rarity 1, spells ARROW, innate-freq
+# 2 and 3), are about 8x as likely against a rarity-r race (the engine
+# truncates 100 / rarity, mon-make.c:113, so the realised odds differ; the zoo
+# measures the encounters). The level's monster count is unchanged. favour
+# changes weights, not depth: they are generated from DL4 (or out of depth).
+# Out of the light they shoot unseen: "You are hit by something sharp!"
+# (project-player.c:840-842, 887), the case of Elf Warrior 1312323730.
+favour = kobold archer, scout
+favour_weight = 8

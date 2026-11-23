@@ -27,11 +27,12 @@ use crate::borg_item_use::{
 };
 use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
+use crate::borg_projection::known_projectable;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::params::{value as param, Param};
 use crate::borg_headers::borg_magic_h::{
-    CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
+    borg_spells, CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
     DETECT_STAIRS, FIND_TRAPS_DOORS_STAIRS, FUME_OF_MORDOR, LIGHT_ROOM, OBJECT_DETECTION,
     MAGIC_MISSILE, NETHER_BOLT, PHASE_DOOR, READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS,
     SPEAR_OF_LIGHT, TELEPORT_SELF,
@@ -46,6 +47,7 @@ use crate::headers::list_terrain_h::FEAT_NONE;
 use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT, TV_WAND};
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// `CLASS_NECROMANCER` (list-classes.h order).
 const CLASS_NECROMANCER: i32 = 4;
@@ -196,7 +198,8 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     // switch 1 and keeps C's corner test; only no light at all (BI_LIGHT 0)
     // takes neither test and calls light, as in C (review of #894).
     let radius = own_light_radius(st);
-    if radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1) {
+    let uses_corner_test = radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1);
+    if uses_corner_test {
         let mut corners = 0;
 
         /* Scan diagonal neighbors.
@@ -277,8 +280,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         || borg_zap_rod(st, st.item_val.sv_rod_illumination)
         || borg_use_staff(st, st.item_val.sv_staff_light)
         || borg_read_scroll(st, st.item_val.sv_scroll_light)
-        || borg_spell_fail(st, LIGHT_ROOM, 40)
-        || borg_spell_fail(st, CALL_LIGHT, 40)
+        || cast_room_lighting(st, uses_corner_test, borg_spell_fail, dark_floor_on_panel)
     {
         borg_note(st, "# Illuminating the dungeon");
         borg_react(st, b"SELF:lite", b"SELF:lite");
@@ -287,6 +289,97 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     }
 
     false
+}
+
+type GridPosition = (i32, i32);
+
+#[derive(Default)]
+pub(crate) struct RoomLighting {
+    pending: Option<(GridPosition, bool)>,
+    dark_after_cast: BTreeMap<GridPosition, BTreeSet<GridPosition>>,
+}
+
+impl RoomLighting {
+    fn should_cast<I: Iterator<Item = GridPosition>>(
+        &self,
+        from: GridPosition,
+        dark_floors: impl FnOnce() -> I,
+    ) -> bool {
+        // Both Light Room and Call Light flood the room through LIGHT_AREA
+        // (lib/gamedata/class.txt; src/cave-map.c, light_room).
+        // A glowing patch is insufficient evidence on the first visit.
+        self.dark_after_cast.get(&from).is_none_or(|previous| {
+            dark_floors().any(|grid| !previous.contains(&grid))
+        })
+    }
+
+    pub(crate) fn confirm_message(&mut self, msg: &[u8]) {
+        // effect-handler-general.c, effect_handler_LIGHT_AREA.
+        if msg == b"You are surrounded by a white light." {
+            if let Some((_, confirmed)) = &mut self.pending {
+                *confirmed = true;
+            }
+        }
+    }
+
+    fn finish(&mut self, here: GridPosition, dark_floors: impl FnOnce() -> BTreeSet<GridPosition>) {
+        if self.pending.take() == Some((here, true)) {
+            self.dark_after_cast.insert(here, dark_floors());
+        }
+    }
+}
+
+fn dark_floor_on_panel(y: i32, x: i32) -> bool {
+    engine::panel_contains(y, x) && !engine::square_isglow(x, y)
+}
+
+fn observed_dark_floors<'a>(
+    st: &'a BorgState,
+    is_dark_on_panel: impl Fn(i32, i32) -> bool + 'a,
+) -> impl Iterator<Item = GridPosition> + 'a {
+    let count = st.view.view_n as usize;
+    st.view.view_y[..count].iter().zip(&st.view.view_x[..count]).filter_map(move |(&y, &x)| {
+        let (y, x) = (i32::from(y), i32::from(x));
+        let grid = st.cave.grid(x, y);
+        (u32::from(grid.feat) != FEAT_NONE
+            && borg_cave_floor_grid(grid)
+            && is_dark_on_panel(y, x)).then_some((y, x))
+    })
+}
+
+fn cast_room_lighting(
+    st: &mut BorgState,
+    uses_corner_test: bool,
+    mut cast: impl FnMut(&mut BorgState, borg_spells, i32) -> bool,
+    is_dark_on_panel: impl Fn(i32, i32) -> bool,
+) -> bool {
+    let here = (st.borg.c.y, st.borg.c.x);
+    if uses_corner_test
+        && !st.light.room_lighting.should_cast(here, || observed_dark_floors(st, is_dark_on_panel))
+    {
+        return false;
+    }
+    if !cast(st, LIGHT_ROOM, 40) && !cast(st, CALL_LIGHT, 40) {
+        return false;
+    }
+    if uses_corner_test {
+        st.light.room_lighting.pending = Some((here, false));
+    }
+    true
+}
+
+/// Resolve the attempt after the map and view have observed the spell's effect.
+pub(crate) fn finish_room_lighting(st: &mut BorgState) {
+    observe_room_lighting(st, dark_floor_on_panel);
+}
+
+fn observe_room_lighting(st: &mut BorgState, is_dark_on_panel: impl Fn(i32, i32) -> bool) {
+    let here = (st.borg.c.y, st.borg.c.x);
+    if st.light.room_lighting.pending.is_some() {
+        let mut lighting = std::mem::take(&mut st.light.room_lighting);
+        lighting.finish(here, || observed_dark_floors(st, is_dark_on_panel).collect());
+        st.light.room_lighting = lighting;
+    }
 }
 
 /// The arrival square or the forward sector after a single step. A wait,
@@ -696,6 +789,41 @@ pub(crate) fn torch_fuel_turns(st: &BorgState) -> Option<i32> {
         .iter().map(light_stack_turns).sum::<i32>())
 }
 
+/// borg-reborn-rs (#1110): the light goal of a trip: the trip's turns or
+/// `town_light_reserve_turns`, whichever is larger, scaled while
+/// breadth-first exploration applies (`explore_bfs_light_percent`). The
+/// town planner, the torch replenishment, the oil-throw guard and the
+/// fuel-junking guard all read this one goal (review of #1113).
+pub(crate) fn fuel_goal(st: &BorgState, journey: crate::borg_town_utility::Journey) -> i64 {
+    scaled_goal(journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns))),
+        crate::borg_flow_dark::bfs_supply_percent(st, true))
+}
+
+/// `goal` x `percent` / 100 (100 = the goal itself).
+pub(crate) fn scaled_goal(goal: i64, percent: i32) -> i64 {
+    goal.saturating_mul(i64::from(percent.max(0))) / 100
+}
+
+#[cfg(test)]
+mod bfs_fuel_goal_tests {
+    use super::scaled_goal;
+
+    #[test]
+    fn twenty_thousand_turns_on_hand_fall_short_while_breadth_first_applies() {
+        // Review of #1113: a short trip (3,000 turns) under the 20,000-turn
+        // reserve. Off, 20,000 turns on hand meet the goal; at the shipped
+        // 150 the goal is 30,000, so the replenishment buys torches and the
+        // throw and junking guards keep the fuel (all read `fuel_goal`).
+        let goal = 3_000_i64.max(20_000);
+        let on_hand = 20_000;
+        assert!(on_hand >= scaled_goal(goal, 100), "off: no replenishment");
+        assert_eq!(scaled_goal(goal, 150), 30_000);
+        assert!(on_hand < scaled_goal(goal, 150), "on: two more torches wanted");
+        // A long trip past the reserve scales the same way.
+        assert_eq!(scaled_goal(40_000_i64.max(20_000), 150), 60_000);
+    }
+}
+
 /// Keep a usable fuel stack when discarding it would break the configured
 /// reserve. Torch-only characters cannot count oil as light.
 pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
@@ -721,7 +849,7 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
     if fuel(&pack[slot]) == 0 { return false; }
     let remaining = fuel(equipped) + pack.iter().enumerate()
         .filter(|(index, _)| *index != slot).map(|(_, item)| fuel(item)).sum::<i32>();
-    let goal = crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve));
+    let goal = fuel_goal(st, crate::borg_town_utility::Journey::of(st));
     i64::from(remaining) < goal
 }
 
@@ -874,6 +1002,49 @@ pub fn borg_maintain_light(st: &mut BorgState) -> BorgNeed {
     }
 }
 
+/// borg-reborn-rs (#995): remember the observed terrain for each aimed
+/// direction at the last beam origin. Spell, rod and wand share the history.
+#[derive(Clone, Default)]
+pub struct HallwayBeams {
+    origin: Option<(i32, i32)>,
+    terrain: [Option<Vec<u8>>; 4],
+}
+
+impl HallwayBeams {
+    fn tried(&self, origin: (i32, i32), direction: usize, terrain: &[u8]) -> bool {
+        self.origin == Some(origin) && self.terrain[direction].as_deref() == Some(terrain)
+    }
+
+    fn record(&mut self, origin: (i32, i32), direction: usize, terrain: Vec<u8>) {
+        if self.origin != Some(origin) {
+            self.terrain = Default::default();
+            self.origin = Some(origin);
+        }
+        self.terrain[direction] = Some(terrain);
+    }
+}
+
+/// LINE uses the projection range and stops at a blocking grid
+/// (src/effect-handler-attack.c:effect_handler_LINE:173-180,
+/// src/project.c:project_path:293-335). Unknown terrain may be open.
+fn hallway_beam_terrain(st: &BorgState, dx: i32, dy: i32) -> Vec<u8> {
+    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    let mut terrain = Vec::new();
+    for step in 1..=i32::from(engine::z_info().max_range) {
+        let (x, y) = (cx + dx * step, cy + dy * step);
+        if !(0..AUTO_MAX_X).contains(&x) || !(0..AUTO_MAX_Y).contains(&y) {
+            break;
+        }
+        let grid = st.cave.grid(x, y);
+        terrain.push(grid.feat);
+        let feat = u32::from(grid.feat);
+        if feat != FEAT_NONE && !known_projectable(feat, grid.trap, engine::feat_is_shop(i32::from(grid.feat))) {
+            break;
+        }
+    }
+    terrain
+}
+
 /// One direction test of `borg_light_beam`: are the grids `0..=light`
 /// steps (`first..=light`) from the Borg along `(dx, dy)` all floor or
 /// unknown, with the grid `light + 1` steps away (`beyond`) unknown?
@@ -903,6 +1074,11 @@ fn beam_blocked(st: &BorgState, dx: i32, dy: i32, first: i32, light: i32) -> Opt
     Some(false)
 }
 
+/// The shipped hallway fix is disabled only for legacy profiles and replays.
+pub(crate) fn hallway_beam_guard_enabled() -> bool {
+    param(Param::light_hallway_repeat_guard) != 0
+}
+
 /// Look down a hallway and possibly light it up using the Light Beam
 /// spell, a rod or a wand (`borg_light_beam`). With `simulation`, only
 /// tell whether it would.
@@ -913,9 +1089,7 @@ fn beam_blocked(st: &BorgState, dx: i32, dy: i32, first: i32, light: i32) -> Opt
 /// Borg has a problem when not on map centering mode and casting the beam
 /// repeatedly, down or up when at the edge of a panel.
 pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
-    let mut dir = 5;
     let mut spell_ok = false;
-    let mut blocked = false;
 
     /* Weak/dark is very unhappy */
     if st.borg.tr(BI_ISWEAK) != 0 {
@@ -934,71 +1108,155 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
         spell_ok = true;
     }
 
-    /* borg-reborn-rs (#884): "my light" is the Borg's own light radius
-     * (BI_LIGHT, C's, at cave_light_engine_radius 0; BI_LIGHT - 1 at 1) */
-    let light = own_light_radius(st);
-    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    if !spell_ok {
+        return false;
+    }
 
-    /* The four directions in C's order: north, south, east, west. Each
-     * later test runs only while no direction was found (`dir == 5`) and
-     * resets `blocked`; a test that applies sets `dir` (or 5 and
-     * `blocked` when the way is blocked). */
+    let near_panel_edge = st.borg.c.y - engine::term_geometry().offset_y > borg_panel_hgt() - 2;
+    let light = own_light_radius(st);
+    let guard = hallway_beam_guard_enabled();
+    try_hallway_beam(
+        st, simulation, light, near_panel_edge, guard,
+        |st, dx, dy, first| {
+            if beam_blocked(st, dx, dy, first, light) != Some(false) {
+                return None;
+            }
+            Some(if guard { hallway_beam_terrain(st, dx, dy) } else { Vec::new() })
+        },
+        |st, dir| {
+            if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
+                || borg_zap_rod(st, st.item_val.sv_rod_light)
+                || borg_aim_wand(st, st.item_val.sv_wand_light)
+            {
+                borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
+                borg_note(st, "# Illuminating this hallway");
+                return true;
+            }
+            false
+        },
+    )
+}
+
+fn try_hallway_beam(
+    st: &mut BorgState, simulation: bool, light: i32, near_panel_edge: bool, guard: bool,
+    open_ray: impl Fn(&BorgState, i32, i32, i32) -> Option<Vec<u8>>,
+    queue_beam: impl FnOnce(&mut BorgState, i32) -> bool,
+) -> bool {
+    let (cx, cy) = (st.borg.c.x, st.borg.c.y);
+    /* Preserve C's first viable direction when deciding whether to yield. */
     let tests = [
         (cy - light - 1 > 0, 0, -1, 0, 8),
         (cy + light + 1 < AUTO_MAX_Y, 0, 1, 0, 2),
         (cx + light + 1 < AUTO_MAX_X, 1, 0, 0, 6),
         (cx - light - 1 > 0, -1, 0, 1, 4),
     ];
-    for (k, &(in_map, dx, dy, first, d)) in tests.iter().enumerate() {
-        /* Quick Boundary check */
-        if !in_map || (k > 0 && dir != 5) {
-            continue;
-        }
-        if k > 0 {
-            blocked = false;
-        }
-        match beam_blocked(st, dx, dy, first, light) {
-            None => {}
-            Some(true) => {
-                dir = 5;
-                blocked = true;
+    let Some((direction, dir, terrain)) = tests.into_iter().enumerate().find_map(
+        |(direction, (in_map, dx, dy, first, dir))| {
+            if !in_map || light < first {
+                return None;
             }
-            /* a loop that ran at least once notes the direction */
-            Some(false) if light >= first => dir = d,
-            Some(false) => {}
-        }
-    }
-
-    /* Don't do it if on the edge of shifting the panel. */
-    if dir == 5
-        || !spell_ok
-        || blocked
-        || (dir == 2 && cy - engine::term_geometry().offset_y > borg_panel_hgt() - 2)
-        || (dir == 8 && cy - engine::term_geometry().offset_y > borg_panel_hgt() - 2)
-    {
+            open_ray(st, dx, dy, first).map(|terrain| (direction, dir, terrain))
+        },
+    ) else {
+        return false;
+    };
+    if (dir == 2 || dir == 8) && near_panel_edge {
         return false;
     }
 
-    /* simulation */
+    if guard && st.borg.hallway_beams.tried((cx, cy), direction, &terrain) {
+        return false;
+    }
     if simulation {
         return true;
     }
-
-    /* cast the light beam */
-    if borg_spell_fail(st, SPEAR_OF_LIGHT, 20)
-        || borg_zap_rod(st, st.item_val.sv_rod_light)
-        || borg_aim_wand(st, st.item_val.sv_wand_light)
-    {
-        /* apply the direction */
-        borg_keypress(st, (dir + i32::from(b'0')) as keycode_t);
-        borg_note(st, "# Illuminating this hallway");
-        return true;
+    if !queue_beam(st, dir) {
+        return false;
     }
 
-    /* cant do it */
-    false
+    // Mana, rod recharge and rests leave a queued direction tried.
+    if guard {
+        st.borg.hallway_beams.record((cx, cy), direction, terrain);
+    }
+    true
 }
 
+
+
+#[cfg(test)]
+mod room_lighting_tests {
+    use super::{cast_room_lighting, observe_room_lighting, GridPosition, RoomLighting};
+    use crate::borg_headers::borg_magic_h::{CALL_LIGHT, LIGHT_ROOM};
+    use crate::state::BorgState;
+    use std::collections::BTreeSet;
+
+    const CAST_FROM: GridPosition = (44, 46);
+
+    #[test]
+    fn both_room_lighting_spells_remember_a_confirmed_cast() {
+        for learned_spell in [LIGHT_ROOM, CALL_LIGHT] {
+            let mut st = BorgState::default();
+            (st.borg.c.y, st.borg.c.x) = CAST_FROM;
+            let mut cast = |_: &mut BorgState, spell, max_failure| {
+                assert_eq!(max_failure, 40);
+                spell == learned_spell
+            };
+            let no_observed_dark_floor = |_, _| false;
+
+            assert!(cast_room_lighting(&mut st, true, &mut cast, no_observed_dark_floor));
+            st.light.room_lighting.confirm_message(b"You are surrounded by a white light.");
+            observe_room_lighting(&mut st, no_observed_dark_floor);
+
+            st.borg.c.x += 1;
+            observe_room_lighting(&mut st, no_observed_dark_floor);
+            st.borg.c.x -= 1;
+            let unexpected_cast = |_: &mut BorgState, _, _| panic!("revisit tried a spell");
+            assert!(!cast_room_lighting(&mut st, true, unexpected_cast, no_observed_dark_floor));
+        }
+    }
+
+    #[test]
+    fn first_cast_can_light_a_room_beyond_the_glowing_patch() {
+        let mut lighting = RoomLighting::default();
+        let dark_end_of_room = (44, 50);
+        assert!(lighting.should_cast(CAST_FROM, || [dark_end_of_room].into_iter()));
+        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+
+        lighting.pending = Some((CAST_FROM, false));
+        lighting.confirm_message(b"You are surrounded by a white light.");
+        lighting.finish(CAST_FROM, BTreeSet::new);
+
+        assert!(!lighting.should_cast(CAST_FROM, std::iter::empty));
+        assert!(lighting.should_cast((44, 47), std::iter::empty));
+        assert!(!lighting.should_cast(CAST_FROM, std::iter::empty));
+    }
+
+    #[test]
+    fn newly_observed_dark_floor_can_justify_a_recast() {
+        let mut lighting = RoomLighting::default();
+        let unchanged_dark_floor = (44, 50);
+        lighting.pending = Some((CAST_FROM, false));
+        lighting.confirm_message(b"You are surrounded by a white light.");
+        lighting.finish(CAST_FROM, || BTreeSet::from([unchanged_dark_floor]));
+
+        assert!(!lighting.should_cast(CAST_FROM, || [unchanged_dark_floor].into_iter()));
+        assert!(lighting.should_cast(CAST_FROM, || [unchanged_dark_floor, (44, 53)].into_iter()));
+    }
+
+    #[test]
+    fn failed_or_unobserved_casts_leave_the_square_eligible() {
+        let mut lighting = RoomLighting::default();
+        lighting.pending = Some((CAST_FROM, false));
+        lighting.confirm_message(b"You failed to concentrate hard enough!");
+        lighting.finish(CAST_FROM, BTreeSet::new);
+        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+
+        lighting.pending = Some((CAST_FROM, false));
+        lighting.confirm_message(b"You are surrounded by a white light.");
+        lighting.finish((44, 47), BTreeSet::new);
+        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+    }
+}
 
 #[cfg(test)]
 mod dark_entry_tests {
@@ -1134,4 +1392,37 @@ mod lightless_tests {
         );
     }
 
+}
+
+#[cfg(test)]
+mod hallway_beam_tests {
+    use super::*;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    #[test]
+    fn unchanged_hallway_yields_and_a_changed_ray_can_be_lit() {
+        let mut st = BorgState::default();
+        (st.borg.c.x, st.borg.c.y) = (117, 22);
+        let north = std::cell::Cell::new(FEAT_NONE as u8);
+        let try_beam = |st: &mut BorgState, simulation, queue: fn(&mut BorgState, i32) -> bool| {
+            try_hallway_beam(st, simulation, 1, false, true, |_, _, dy, _| {
+                Some(vec![if dy == -1 { north.get() } else { FEAT_NONE as u8 }])
+            }, queue)
+        };
+        let queue_north = |_: &mut BorgState, dir| {
+            assert_eq!(dir, 8);
+            true
+        };
+        let unexpected = |_: &mut BorgState, _| panic!("queued an unexpected beam");
+
+        assert!(try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, |_, _| false));
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, true, unexpected));
+        assert!(!try_beam(&mut st, false, unexpected));
+
+        north.set(FEAT_FLOOR as u8);
+        assert!(try_beam(&mut st, false, queue_north));
+        assert!(!try_beam(&mut st, false, unexpected));
+    }
 }
