@@ -893,6 +893,8 @@ pub(crate) fn phase_door(
     // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
     // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
     // grid does not (`dis` 10 is not above 10), so the grid is not asked.
+    // borg-reborn-rs (#1094): set again below only if the gate refuses.
+    st.borg.phase_gate_refused = None;
     if teleport_stopped(st) {
         borg_note(st, &format!("# Phase ({}): no, teleport is blocked", site.label()));
         return false;
@@ -934,10 +936,12 @@ pub(crate) fn phase_door(
     let policy = phase_unknown_policy(st);
     let tolerance = param(Param::escape_phase_unknown_tolerance);
     // Re-review of #1075 (finding 2): a landing check in this think, at
-    // this grid, already counted the never seen; reuse it, do not redraw.
+    // this grid, already counted the never seen; reuse it, do not redraw,
+    // and keep that site's tolerance when it is stricter (#1094).
     let (record, now, at) = (st.borg.phase_unknown_seen, st.borg.time.now, st.borg.c);
-    if let Some(n) = unknown_gate(check, policy, tolerance, || gate_count(record, now, at, || never_seen_landings(st))) {
-        borg_note(st, &format!("# Phase ({}): no, {n} never-seen landing grids of 100 (at most {tolerance}) (#1066)", site.label()));
+    if let Some((n, at_most)) = unknown_gate(check, policy, || gate_count(record, now, at, tolerance, || never_seen_landings(st))) {
+        borg_note(st, &format!("# Phase ({}): no, {n} never-seen landing grids of 100 (at most {at_most}) (#1066)", site.label()));
+        st.borg.phase_gate_refused = Some(st.borg.time.now);
         return false;
     }
     if rule && site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
@@ -1391,7 +1395,7 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
     if unknown_scary {
         // Re-review of #1075 (finding 2): for the gate of a later site in
         // this think (the critical phase after a refused emergency).
-        st.borg.phase_unknown_seen = Some((st.borg.time.now, st.borg.c, unknown));
+        st.borg.phase_unknown_seen = Some((st.borg.time.now, st.borg.c, unknown, emergency));
     }
 
     // Too much danger
@@ -1418,23 +1422,27 @@ pub(crate) fn phase_unknown_policy(st: &BorgState) -> bool {
 /// Review of #1075 (finding 2): the never-seen gate of a Phase Door site.
 /// It applies only to the checks that sample no landing (`MonsterNear`,
 /// `None`; `Landing` counts the unknown itself, and Shoot N Scoot's sampler
-/// does), only under the policy, and samples (`count`) only then. Returns
-/// the never-seen count when it refuses: above `tolerance` of 100.
-fn unknown_gate(check: PhaseCheck, policy: bool, tolerance: i32, count: impl FnOnce() -> i32) -> Option<i32> {
+/// does), only under the policy, and asks `count` only then: the
+/// never-seen count of 100 and the tolerance to judge it by. Returns both
+/// when it refuses (the count above the tolerance).
+fn unknown_gate(check: PhaseCheck, policy: bool, count: impl FnOnce() -> (i32, i32)) -> Option<(i32, i32)> {
     if !policy || !matches!(check, PhaseCheck::MonsterNear | PhaseCheck::None) {
         return None;
     }
-    let n = count();
-    (n > tolerance).then_some(n)
+    let (n, at_most) = count();
+    (n > at_most).then_some((n, at_most))
 }
 
-/// Re-review of #1075 (finding 2): the never-seen count the gate judges. The
-/// last landing check's (`record`) when it was made in this think (`now`)
-/// at this grid (`at`); else a fresh draw (`sample`).
-fn gate_count(record: Option<(BorgTime, loc, i32)>, now: BorgTime, at: loc, sample: impl FnOnce() -> i32) -> i32 {
+/// Re-review of #1075 (finding 2): the never-seen count the gate judges, and
+/// its tolerance. The last landing check's (`record`) when it was made in
+/// this think (`now`) at this grid (`at`), judged by the stricter of that
+/// site's tolerance and the gate's (`tolerance`; #1094, the re-review's
+/// P3): a scroll the landing site refused on the unknown alone stays
+/// refused. Else a fresh draw (`sample`) at the gate's tolerance.
+fn gate_count(record: Option<(BorgTime, loc, i32, i32)>, now: BorgTime, at: loc, tolerance: i32, sample: impl FnOnce() -> i32) -> (i32, i32) {
     match record {
-        Some((t, grid, n)) if t == now && grid == at => n,
-        _ => sample(),
+        Some((t, grid, n, site)) if t == now && grid == at => (n, site.min(tolerance)),
+        _ => (sample(), tolerance),
     }
 }
 
@@ -2681,14 +2689,14 @@ mod unknown_landing_tests {
         let scoot = PhaseCheck::ShootScoot { tolerance: 20, horizon: 2, danger: 50 };
         let mut runs = 0;
         let policy = unknown_counts_scary(43, 60, 50);
-        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, 75, || { runs += 1; 88 }), Some(88), "critical, above the floor: refused");
-        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, 75, || { runs += 1; 75 }), None, "at the tolerance: allowed");
-        assert_eq!(unknown_gate(PhaseCheck::None, policy, 75, || { runs += 1; 90 }), Some(90), "twitchy and fast-fragile too");
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, || { runs += 1; (88, 75) }), Some((88, 75)), "critical, above the floor: refused");
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, || { runs += 1; (75, 75) }), None, "at the tolerance: allowed");
+        assert_eq!(unknown_gate(PhaseCheck::None, policy, || { runs += 1; (90, 75) }), Some((90, 75)), "twitchy and fast-fragile too");
         assert_eq!(runs, 3);
         let low = unknown_counts_scary(15, 60, 50);
-        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, low, 75, || { runs += 1; 100 }), None, "below the floor: a real emergency");
-        assert_eq!(unknown_gate(landing, policy, 75, || { runs += 1; 100 }), None, "the landing check counts the unknown itself");
-        assert_eq!(unknown_gate(scoot, policy, 75, || { runs += 1; 100 }), None, "so does Shoot N Scoot's sampler");
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, low, || { runs += 1; (100, 75) }), None, "below the floor: a real emergency");
+        assert_eq!(unknown_gate(landing, policy, || { runs += 1; (100, 75) }), None, "the landing check counts the unknown itself");
+        assert_eq!(unknown_gate(scoot, policy, || { runs += 1; (100, 75) }), None, "so does Shoot N Scoot's sampler");
         assert_eq!(runs, 3, "the sampler runs only where the gate applies");
         // The order in `phase_door`: the site's own check, then the gate,
         // then the cast.
@@ -2707,12 +2715,12 @@ mod unknown_landing_tests {
     fn a_refused_emergency_is_not_undone_by_a_lower_redraw() {
         use super::{gate_count, unknown_gate, PhaseCheck};
         let here = super::loc { x: 25, y: 125 };
-        let record = Some((40580, here, 76));
+        let record = Some((40580, here, 76, 75));
         let mut draws = 0;
         let critical = |record, now, at, draws: &mut i32| {
-            unknown_gate(PhaseCheck::MonsterNear, true, 75, || gate_count(record, now, at, || { *draws += 1; 75 }))
+            unknown_gate(PhaseCheck::MonsterNear, true, || gate_count(record, now, at, 75, || { *draws += 1; 75 }))
         };
-        assert_eq!(critical(record, 40580, here, &mut draws), Some(76), "the emergency's verdict carries over");
+        assert_eq!(critical(record, 40580, here, &mut draws), Some((76, 75)), "the emergency's verdict carries over");
         assert_eq!(draws, 0, "no redraw");
         assert_eq!(critical(record, 40590, here, &mut draws), None, "the next think draws again");
         assert_eq!(critical(record, 40580, super::loc { x: 26, y: 125 }, &mut draws), None, "another grid draws again");
@@ -2722,7 +2730,55 @@ mod unknown_landing_tests {
         let src = include_str!("borg_escape.rs");
         let at = &src[src.find(concat!("fn caution_", "phase(st: &mut BorgState")).unwrap()..];
         let phase = &at[..at.find("\n}\n").unwrap()];
-        assert!(phase.contains(concat!("st.borg.phase_unknown_seen = ", "Some((st.borg.time.now, st.borg.c, unknown))")));
+        assert!(phase.contains(concat!("st.borg.phase_unknown_seen = ", "Some((st.borg.time.now, st.borg.c, unknown, emergency))")));
+    }
+
+    /// #1094 (review of #1096): a never-seen refusal stops only the Phase
+    /// Door. `phase_door` clears the flag on entry and sets it only when the
+    /// gate refuses; the twitchy think then tries its longer-range teleports
+    /// (Dimension Door, Teleport Self, Portal, Shadow Shift, in the order
+    /// they had inside the cast) and no others. Any other refusal (the
+    /// teleport curse, the #584 rule) still stops them. Needs the engine to
+    /// play, so this pins the sources.
+    #[test]
+    fn a_gate_refusal_leaves_the_twitchy_teleports() {
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("pub(crate) fn phase_", "door(")).unwrap()..];
+        let door = &at[..at.find("\n}\n").unwrap()];
+        let clear = door.find(concat!("st.borg.phase_gate_refused = ", "None;")).unwrap();
+        let set = door.find(concat!("st.borg.phase_gate_refused = ", "Some(st.borg.time.now);")).unwrap();
+        assert!(clear < door.find(concat!("if teleport_", "stopped(st)")).unwrap(), "cleared before any refusal");
+        assert!(door.find(concat!("unknown_gate(check, ", "policy,")).unwrap() < set, "set only by the gate");
+        assert_eq!(door.matches(concat!("phase_gate_refused = ", "Some(")).count(), 1);
+        let think = include_str!("borg_think_dungeon.rs");
+        let at = &think[think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()..];
+        let twitch = &at[..at.find(concat!("return choice!(\"twitch_", "phase\")")).unwrap()];
+        assert!(twitch.contains(concat!("|| longer", "(st)\n")), "inside the cast, after the Phase Door ways");
+        assert!(twitch.contains(concat!("st.borg.phase_gate_refused == Some(st.borg.time.now) && ", "longer(st)")));
+        let before = &think[..think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()];
+        let longer = &before[before.rfind(concat!("let longer = ", "|st")).unwrap()..];
+        let order = ["borg_dimension_door(st, 90)", "borg_spell(st, TELEPORT_SELF)", "borg_spell(st, PORTAL)", "borg_shadow_shift(st, 90)"];
+        let at: Vec<usize> = order.iter().map(|o| longer.find(o).unwrap()).collect();
+        assert!(at.windows(2).all(|w| w[0] < w[1]), "the original order");
+    }
+
+    /// #1094 (re-review of #1075, P3): the emergency tolerance 50, the gate's
+    /// 75, 60 never-seen landings. The emergency refused on the unknown
+    /// alone, so the critical fall-through in the same think keeps the
+    /// stricter 50 and refuses too. A looser landing site does not loosen
+    /// the gate, and without an earlier check the gate's own 75 applies.
+    #[test]
+    fn the_stricter_tolerance_carries_into_the_fall_through() {
+        use super::{gate_count, unknown_gate, PhaseCheck};
+        let here = super::loc { x: 25, y: 125 };
+        let gate = |record, tolerance, fresh: i32| {
+            unknown_gate(PhaseCheck::MonsterNear, true, || gate_count(record, 40580, here, tolerance, || fresh))
+        };
+        assert_eq!(gate(Some((40580, here, 60, 50)), 75, 0), Some((60, 50)), "the emergency's 50 is kept");
+        assert_eq!(gate(Some((40580, here, 60, 90)), 75, 0), None, "a looser site does not loosen the gate: 60 <= 75");
+        assert_eq!(gate(Some((40580, here, 80, 90)), 75, 0), Some((80, 75)), "the gate's own 75 still binds");
+        assert_eq!(gate(Some((40570, here, 60, 50)), 75, 60), None, "another think: a fresh draw at the gate's 75");
+        assert_eq!(gate(None, 75, 76), Some((76, 75)), "no earlier check: the gate's own tolerance");
     }
 
     /// Re-review of #1075 (finding 1): an infrequent lethal cast vetoes the
