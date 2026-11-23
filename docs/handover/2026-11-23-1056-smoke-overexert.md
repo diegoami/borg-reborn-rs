@@ -24,3 +24,7 @@ three games play the same on both cores.
 
 **Left.** The scenario covers one path (Magic Missile from attack on sight);
 the zoo still has to measure the setting over many starts (borg-zoo#675).
+
+**CI fixes (after the first two runs).**
+- `harness/make-reference.sh` keeps a run's `config.txt` when its flags go beyond `menu`: `harness/diff` checks a built start's flags against it, and no reference had one before.
+- `harness/check-boundary.py` now lets the normal suite hold runs the exact one lacks. Every exact run still needs its normal run, and each manifest is checked against its own runs. `smoke-exact` keeps the three natural-birth games; a built start has no exact-boundary contract. There are two new tests in `tools/tests/test_check_boundary.py`.
