@@ -59,7 +59,10 @@ class MakeWorldTest(unittest.TestCase):
     def make(self, config):
         cfg = Path(self.tmp.name) / 'w.txt'
         cfg.write_text(config)
-        out = Path(self.tmp.name) / 'out'
+        # A fresh output directory per call: with one shared `out`, every
+        # call after a refusal failed on "out exists" instead of what it tests.
+        self.calls = getattr(self, 'calls', 0) + 1
+        out = Path(self.tmp.name) / ('out' if self.calls == 1 else f'out{self.calls}')
         so, se = io.StringIO(), io.StringIO()
         with redirect_stdout(so), redirect_stderr(se):
             mw.main(['--config', str(cfg), '--lib', str(self.lib), '--out', str(out)])
@@ -91,6 +94,28 @@ class MakeWorldTest(unittest.TestCase):
         with redirect_stdout(io.StringIO()) as so, redirect_stderr(io.StringIO()):
             mw.main(['--config', str(Path(self.tmp.name) / 'w.txt'), '--lib', str(self.lib), '--out', str(out2)])
         self.assertEqual(so.getvalue().strip(), sha, 'the data hash is deterministic')
+
+    def test_favour_names_any_race(self):
+        out, _ = self.make('favour = Soldier\nfavour_weight = 8\n')
+        m = (out / 'gamedata' / 'monster.txt').read_text()
+        self.assertEqual(field(m, 'soldier', 'rarity'), 1, 'the named race keeps its rarity')
+        self.assertEqual(field(m, 'white worm mass', 'rarity'), 8, 'a breeder not named: weighted like the rest')
+        self.assertEqual(field(m, 'yellow worm mass', 'rarity'), 16)
+        self.assertEqual(field(m, 'yellow worm mass', 'depth'), 3, 'depths unchanged')
+
+    def test_favour_refusals(self):
+        for bad in ('favour = soldir\nfavour_weight = 4\n', 'favour_weight = 4\n',
+                    'favour = soldier\nfavour_weight = 4\nbreeder_weight = 2\n',
+                    'favour = soldier\nfavour_weight = 4\nbreeder_depth_shift = 1\n',
+                    'favour = soldier\nfavour_weight = 51\n',
+                    'favour = , ,\nbreeder_weight = 4\n',   # review of #971: an empty list is not "no favour"
+                    'favour =\nfavour_weight = 4\n',
+                    # review of #971: favour alone (weight 1) changed nothing
+                    # and reported success; a weight of 1 is no world either.
+                    'favour = soldier\n',
+                    'favour = soldier\nfavour_weight = 1\n'):
+            with self.assertRaises(SystemExit, msg=bad):
+                self.make(bad)
 
     def test_refusals(self):
         with self.assertRaises(SystemExit):

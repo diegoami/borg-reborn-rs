@@ -63,7 +63,7 @@ const BORG_DIG_MOD: i32 = 20;
 const BORG_DIG_HARD: i32 = 40;
 
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
-const GOAL_DARK: i32 = 4;
+pub(crate) const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
 const GOAL_FLEE: i32 = 7;
@@ -607,6 +607,7 @@ pub(crate) fn weighted_stair_path(
     let was = std::mem::replace(&mut st.flow.to_stairs, true);
     let twitchy = i32::from(st.borg.avoidance) > st.borg.tr(BI_CURHP);
     let hp = st.borg.tr(BI_CURHP);
+    let unknown_rule = crate::borg_caution::stair_flight_unknown_rule();
     let path = least_cost_stair_path(st.borg.c, stairs, depth.min(249), |grid| {
         let loc { x, y } = grid;
         if !engine::square_in_bounds_fully(x, y) {
@@ -621,10 +622,24 @@ pub(crate) fn weighted_stair_path(
         {
             return None;
         }
-        Some(stair_entry_cost(borg_danger(st, y, x, 1, true, false), hp, weight))
+        // borg-reborn-rs (#881): an unknown grid is priced or refused.
+        let unknown = flight_unknown_extra(u32::from(ag.feat) == FEAT_NONE, unknown_rule)?;
+        Some(stair_entry_cost(borg_danger(st, y, x, 1, true, false), hp, weight) + unknown)
     });
     st.flow.to_stairs = was;
     path
+}
+
+/// borg-reborn-rs (#881): the extra cost, in hundredths of a step, of
+/// entering a grid on a weighted stair flight; None refuses it. Unseen rock
+/// behind the pillars of a lattice room looked like a shortcut to the
+/// corridor (Priest 399497898: 58 of 68 flight paths crossed it).
+fn flight_unknown_extra(unknown: bool, (mode, steps): (i32, i32)) -> Option<u64> {
+    match (unknown, mode) {
+        (false, _) | (true, 0) => Some(0),
+        (true, 1) => Some(100 * steps.max(0) as u64),
+        _ => None,
+    }
 }
 
 pub(crate) struct StairPath {
@@ -1667,6 +1682,11 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         /* Attempt motion */
         if borg_play_step(st, y, x) {
             st.stairs.up_search_departure = departure;
+            if st.borg.tr(BI_CDEPTH) > 0 {
+                let emergency_down = why == GOAL_FLEE && st.borg.flight_to_stairs
+                    && st.borg.status.desperate && !known;
+                borg_flow_stairs::record_off_stair_step(st, loc { x, y }, why == GOAL_DARK, emergency_down);
+            }
             return true;
         }
     }
@@ -1919,6 +1939,32 @@ mod breeder_block_tests {
         let route = least_cost_stair_path(start, &[near], 1, enter).unwrap();
         assert_eq!(route.grids, vec![start, near]);
         assert_eq!(stair_entry_cost(1, 20, 1), 105);
+    }
+
+    /// #881: priced, an unknown shortcut loses to a longer known route;
+    /// refused, it is never entered; mode 0 keeps one step.
+    #[test]
+    fn weighted_stairs_price_or_refuse_unknown_grids() {
+        assert_eq!(flight_unknown_extra(true, (0, 5)), Some(0));
+        assert_eq!(flight_unknown_extra(false, (2, 5)), Some(0));
+        assert_eq!(flight_unknown_extra(true, (1, 5)), Some(500));
+        assert_eq!(flight_unknown_extra(true, (2, 5)), None);
+        // Straight east through three unknown grids (row 3), or round by
+        // known floor on row 5 (six moves).
+        let start = loc { x: 2, y: 3 };
+        let stair = loc { x: 6, y: 3 };
+        let route = |rule| {
+            let enter = |loc { x, y }| match (x, y) {
+                (3..=5, 3) => flight_unknown_extra(true, rule).map(|extra| 100 + extra),
+                (2 | 6, 4) | (3..=5, 5) | (6, 3) => Some(100),
+                _ => None,
+            };
+            least_cost_stair_path(start, &[stair], 10, enter).map(|path| path.grids[1])
+        };
+        assert_eq!(route((0, 5)), Some(loc { x: 3, y: 3 }));
+        assert_eq!(route((1, 5)), Some(loc { x: 2, y: 4 }));
+        assert_eq!(route((1, 0)), Some(loc { x: 3, y: 3 }));
+        assert_eq!(route((2, 5)), Some(loc { x: 2, y: 4 }));
     }
 
     #[test]

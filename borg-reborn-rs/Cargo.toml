@@ -23,6 +23,7 @@ test-hallucinate = []
 # against the engine through other routes (engine.rs, ENGINE TRUTH), and the
 # report goes to BORG_RUN_DIR/truth.jsonl.
 test-perception = []
+test-stair-handoff = ["borg-core/test-stair-handoff"]
 
 [dependencies]
 libc = "0.2"
