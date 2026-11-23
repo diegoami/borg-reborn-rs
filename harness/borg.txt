@@ -1096,6 +1096,11 @@ borg_param_escape_teleport_landing_either = 0
 # and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
+# #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
+# that melee kills in this many turns while its danger is below the percent of
+# the HP. Shipped 0 (today's play); 3 turns is the hypothesis.
+borg_param_caution_retreat_immobile_kill_turns = 0
+borg_param_caution_retreat_immobile_danger_percent = 50
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
