@@ -6987,8 +6987,11 @@ piece of #1080, split out as #1085):
    stands farther out (its way back passes there): no target is reached
    around behind the Borg's back. With no path, the next ring (at most 16
    per think);
-4. a staircase newly seen (`borg_update`) drops a committed exploration flow,
-   so the next think plans with the new rings (review of #1088).
+4. a staircase newly seen (`borg_update`), or a monster newly tracked, in
+   view or not (`borg_flow_kill`), drops a committed exploration flow, so the
+   next think plans again (reviews of #1088);
+5. only the candidates the Borg can reach (one spread from the Borg) enter
+   the plan, so another region's rings do not use up the 16 tries.
 
 While the "wandered too far" return leash of `borg_think_dungeon` applies
 (`return_leash`: 3 x CL + 14 from the nearest up staircase, by `distance`),
@@ -6997,7 +7000,9 @@ staircase but past the return leash sent the Borg out and back: 622 returns
 in 20 games against 65 for the control, and one Necromancer at CL3 on DL1
 after 100,000 turns.
 
-When the Borg itself has no route to a known staircase (none known, a
+Under boosted bravery (avoidance above HP: the flow then crosses unknown
+grids and known traps), and when the Borg itself has no route to a known
+staircase (none known, a
 teleport into an unexplored region, a known trap across the only way back,
 #1067), C's methods run as before (review of #1088: the stair side's
 candidates no longer stop them). When no candidate is left within the
