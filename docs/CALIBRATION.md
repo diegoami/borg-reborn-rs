@@ -7343,12 +7343,16 @@ interesting grids the Borg can reach, and the grids past the return leash.
    the path limit cuts off (at most 16 tries a think; a radius whose goals
    and path limit repeat the last try's is skipped, review of #1117).
 5. **When there is nothing more.** With no candidate within the limit, the
-   walk is exhausted (`MixOutcome::Exhausted`, review of #1117). It marks the
+   walk is exhausted (`MixOutcome::Exhausted`, review of #1117), and so it
+   is when there are tries but none gives a path (re-review). It marks the
    think, and `borg_leave_level` takes that as a reason to leave, like the
    level timer. The first leave call of the dungeon loop comes before the
-   secret-door search and the direct monster flow. If no staircase can be
-   taken (rising with no up staircase known, say), the walk stands down for
-   that level and C explores for one (`release_after_failed_exit`).
+   secret-door search and the direct monster flow. When the policy picked
+   the direction at random (either allowed), a direction it cannot reach
+   tries the other (re-review of #1117). If no staircase can be taken in
+   any allowed direction (rising with no up staircase known, say), the walk
+   stands down for that level and C explores for one
+   (`release_after_failed_exit`).
 6. **Edges.** With no route from the Borg to a known staircase (none known,
    a teleport, a known trap across the way back, #1067), or under boosted
    bravery, C's methods run, with C's leash (#1062). A staircase newly seen

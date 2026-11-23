@@ -1305,47 +1305,46 @@ fn borg_flow_dark_mixed(st: &mut BorgState) -> Option<bool> {
     }
     let step = value(Param::explore_mix_step);
     let plan = mixed_plan(&frame.cands, Some(frame.borg_ring), start, step, limit, BREADTH_FIRST_MAX_RINGS);
-    match mix_outcome(&plan) {
-        MixOutcome::Fallback => None,
-        MixOutcome::Exhausted => {
-            // Review of #1117: not an ordinary miss. The area within the
-            // limit is covered: `borg_leave_level` takes the stairs this
-            // think, before the secret-door search and the direct monster
-            // flow (`exhausted_this_think`).
-            if st.borg.mix_exhausted != Some(st.borg.time.now) {
-                let left = frame.cands.len();
-                crate::borg_io::borg_note(
-                    st,
-                    &format!("# Mixed exploration: nothing left within radius {limit} ({left} frontier grids beyond), leaving the level (#1098)"),
-                );
-            }
-            st.borg.mix_exhausted = Some(st.borg.time.now);
-            Some(false)
-        }
-        MixOutcome::Tries => {
-            let Plan::Rings(tries) = plan else { return None };
-            Some(run_tries(st, &frame, tries, |t| format!("dark-mix (radius {} of {limit})", t.base)))
-        }
+    let stepped = match plan {
+        Plan::Fallback => return None,
+        Plan::Rings(tries) => run_tries(st, &frame, tries, |t| format!("dark-mix (radius {} of {limit})", t.base)),
+    };
+    if mix_result(stepped) == MixOutcome::Stepped {
+        return Some(true);
     }
+    // Review of #1117: not an ordinary miss. Nothing within the limit, or
+    // no allowed path to any of it (re-review: every try failed): the area
+    // the walk may cover is done, so `borg_leave_level` takes the stairs
+    // this think, before the secret-door search and the direct monster
+    // flow (`exhausted_this_think`).
+    if st.borg.mix_exhausted != Some(st.borg.time.now) {
+        let left = frame.cands.len();
+        crate::borg_io::borg_note(
+            st,
+            &format!("# Mixed exploration: nothing reachable left within radius {limit} ({left} frontier grids known), leaving the level (#1098)"),
+        );
+    }
+    st.borg.mix_exhausted = Some(st.borg.time.now);
+    Some(false)
 }
 
-/// #1098 (review of #1117): what a mixed plan means for the think.
+/// #1098 (reviews of #1117): what a mixed plan that the Borg can route
+/// from (not `Plan::Fallback`) means for the think.
 #[derive(Debug, PartialEq)]
 enum MixOutcome {
-    /// No route to a known staircase: C's methods.
-    Fallback,
-    /// Nothing within the limit: the level is left (the stair-exit policy,
-    /// `borg_leave_level`), not searched for secret doors first.
+    /// A try gave a path: the Borg steps.
+    Stepped,
+    /// No try gave a path, or there was none (nothing within the limit): the
+    /// level is left (the stair-exit policy, `borg_leave_level`), not
+    /// searched for secret doors first.
     Exhausted,
-    /// Goals to try.
-    Tries,
 }
 
-fn mix_outcome(plan: &Plan) -> MixOutcome {
-    match plan {
-        Plan::Fallback => MixOutcome::Fallback,
-        Plan::Rings(tries) if tries.is_empty() => MixOutcome::Exhausted,
-        Plan::Rings(_) => MixOutcome::Tries,
+fn mix_result(stepped: bool) -> MixOutcome {
+    if stepped {
+        MixOutcome::Stepped
+    } else {
+        MixOutcome::Exhausted
     }
 }
 
@@ -1882,16 +1881,27 @@ mod breadth_first_tests {
         assert_eq!(tries[1], RingTry { base: 21, limit: 21, goals: vec![(0, 43)] }, "radii 6-20 are no tries of their own");
         assert_eq!(m.nearest_goal(&rings, &tries[1]), Some((0, 43)));
         assert_eq!(m.explore_mixed(5, 1, 30), Some(vec![1]));
+        // Re-review of #1117: with the limit at 20, the plan has a try, but
+        // its path crosses ring 21: no try has a path, so the walk is
+        // exhausted (and leaves), not an ordinary miss.
+        let mut m = Map::new(&rows.iter().map(String::as_str).collect::<Vec<_>>());
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(20), 5, 1, 20, 16) else { panic!("planned") };
+        assert_eq!(tries, vec![RingTry { base: 5, limit: 20, goals: vec![(0, 43)] }], "one try, the rest repeat it");
+        let stepped = tries.iter().any(|t| m.nearest_goal(&rings, t).is_some());
+        assert!(!stepped);
+        assert_eq!(mix_result(stepped), MixOutcome::Exhausted);
+        assert_eq!(m.explore_mixed(5, 1, 20), Some(vec![]), "nothing explored past the limit");
     }
 
     #[test]
     fn mixed_radius_exhaustion_is_its_own_outcome() {
-        // Review of #1117: nothing within the limit is not an ordinary miss:
-        // the level is left (borg_leave_level reads `exhausted_this_think`).
-        assert_eq!(mix_outcome(&mixed_plan(&[(0, 0, 12)], Some(0), 5, 2, 10, 16)), MixOutcome::Exhausted);
-        assert_eq!(mix_outcome(&mixed_plan(&[], Some(0), 5, 2, 10, 16)), MixOutcome::Exhausted, "nothing at all");
-        assert_eq!(mix_outcome(&mixed_plan(&[(0, 0, 3)], Some(0), 5, 2, 10, 16)), MixOutcome::Tries);
-        assert_eq!(mix_outcome(&mixed_plan(&[(0, 0, 3)], None, 5, 2, 10, 16)), MixOutcome::Fallback);
+        // Review of #1117: nothing within the limit, or no try with a path,
+        // is not an ordinary miss: the level is left (borg_leave_level reads
+        // `exhausted_this_think`).
+        assert_eq!(mixed_plan(&[(0, 0, 12)], Some(0), 5, 2, 10, 16), Plan::Rings(vec![]), "no try: exhausted");
+        assert_eq!(mix_result(false), MixOutcome::Exhausted);
+        assert_eq!(mix_result(true), MixOutcome::Stepped);
+        assert_eq!(mixed_plan(&[(0, 0, 3)], None, 5, 2, 10, 16), Plan::Fallback, "no route to a staircase: C");
     }
 
     #[test]
