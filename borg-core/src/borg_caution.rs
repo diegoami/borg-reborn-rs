@@ -33,7 +33,7 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
+    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -2532,6 +2532,79 @@ mod immobile_neighbour_tests {
     }
 }
 
+/// borg-reborn-rs (#934, review of #968): with
+/// `caution_poisoned_no_cure_retreat_hp_percent`, poisoned, with no usable
+/// poison cure (`has_poison_cure`) and below that percent of the maximum HP,
+/// and an escape actually at hand (a staircase underfoot, or a Phase Door the
+/// Borg can read or cast: `borg_fast_fragile::escape_available`), the escapes
+/// are tried before the strategic retreat. When they decline, the retreat goes
+/// on as usual, so a safe step is never thrown away (seed 829474344: 12 CLW
+/// drunk against poison, two Phase Doors never read). The screen shows one
+/// grade, "Poisoned" (player_timed.txt:255), so the amount is not used. Off at 0.
+fn poisoned_escape_first(st: &mut BorgState, pos_danger: i32) -> bool {
+    let (hp, max) = (st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP));
+    let percent = p(Param::caution_poisoned_no_cure_retreat_hp_percent);
+    if percent <= 0 || st.borg.tr(BI_ISPOISONED) == 0 || has_poison_cure(st) {
+        return false;
+    }
+    if !poisoned_below(true, hp, max, percent) || !crate::borg_fast_fragile::escape_available(st) {
+        return false;
+    }
+    borg_note(st, &format!("# Poisoned, no cure, HP {hp} of {max} (danger {pos_danger}): the escape before the retreat (#934)"));
+    if borg_escape(st, pos_danger) {
+        return true;
+    }
+    borg_note(st, "# Poisoned, no cure: the escape declined, the retreat decides (#934)");
+    false
+}
+
+/// borg-reborn-rs (#934, review of #968): a poison cure the Borg can use: a
+/// Potion of Neutralize Poison or poison-curing food (`BI_ACUREPOIS`), Cure
+/// Critical Wounds (`BI_ACCW`, which counts the spell too), Healing, *Healing*
+/// or Life (object.txt: each has `CURE:POISONED`), or a Cure Poison or Herbal
+/// Curing spell it can cast now.
+fn has_poison_cure(st: &BorgState) -> bool {
+    let counts = [BI_ACUREPOIS, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE].map(|t| st.borg.tr(t));
+    cure_at_hand(counts, || {
+        crate::borg_magic::borg_spell_okay(st, CURE_POISON) || crate::borg_magic::borg_spell_okay(st, HERBAL_CURING)
+    })
+}
+
+/// borg-reborn-rs (#934): any of the carried poison cures (Neutralize Poison
+/// or food, CCW, Healing, *Healing*, Life), else a castable cure spell. Cure
+/// Light and Serious Wounds are not cures (object.txt:3156-3190).
+fn cure_at_hand(counts: [i32; 5], spell: impl FnOnce() -> bool) -> bool {
+    counts.iter().any(|&n| n > 0) || spell()
+}
+
+/// borg-reborn-rs (#934): poisoned without a cure and below `percent` of the
+/// maximum HP (never at 0).
+fn poisoned_below(poisoned_no_cure: bool, hp: i32, max: i32, percent: i32) -> bool {
+    percent > 0 && poisoned_no_cure && hp * 100 < max * percent
+}
+
+#[cfg(test)]
+mod poisoned_retreat_tests {
+    #[test]
+    fn below_the_percent_only() {
+        assert!(super::poisoned_below(true, 69, 96, 75), "829474344 at 95,380");
+        assert!(!super::poisoned_below(true, 72, 96, 75), "exactly 75% is not below");
+        assert!(!super::poisoned_below(false, 10, 96, 75), "a cure carried, or not poisoned");
+        assert!(!super::poisoned_below(true, 10, 96, 0), "off");
+    }
+
+    #[test]
+    fn every_poison_cure_counts() {
+        use super::cure_at_hand;
+        // [Neutralize Poison or food, CCW, Healing, *Healing*, Life]
+        assert!(cure_at_hand([0, 1, 0, 0, 0], || false), "CCW only (review of #968)");
+        assert!(cure_at_hand([2, 0, 0, 0, 0], || false), "Neutralize Poison");
+        assert!(cure_at_hand([0, 0, 0, 0, 0], || true), "a castable Herbal Curing");
+        assert!(cure_at_hand([0, 0, 0, 1, 0], || false), "*Healing*");
+        assert!(!cure_at_hand([0, 0, 0, 0, 0], || false), "Cure Light Wounds only: no cure");
+    }
+}
+
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
 /// initiative back and lets a flee route walk straight back into reach.
@@ -3976,6 +4049,17 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
+    // borg-reborn-rs (#934, review of #968): poisoned without a cure, the
+    // escapes first when one is at hand; when they decline, the retreat.
+    if !all_out
+        && !through
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && poisoned_escape_first(st, pos_danger)
+    {
+        st.borg.escapes = st.borg.escapes.wrapping_add(1);
+        st.borg.goal.type_0 = 0;
+        return true;
+    }
     let from = st.borg.c;
     if !all_out
         && !through
