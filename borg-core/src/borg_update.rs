@@ -2061,6 +2061,7 @@ fn new_level(st: &mut BorgState) {
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;
+    b.hallway_beams = Default::default();
 
     // reset our 'shoot in the dark' flag
     st.fight_attack.successful_target = 0;

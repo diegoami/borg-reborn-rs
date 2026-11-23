@@ -91,7 +91,7 @@ pub(crate) fn borg_los_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2
 }
 
 /// Whether a known grid allows a projection to pass through it.
-fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
+pub(crate) fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
     trap || shop || [FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN, FEAT_LESS, FEAT_MORE, FEAT_LAVA].contains(&feat)
 }
 
