@@ -1452,6 +1452,8 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         borg_keypress(st, keycode_t::from(b'o'));
     }
     borg_queue_direction(st, i2d(dir));
+    // borg-reborn-rs (#1061): stair_scum peeks before walking through.
+    crate::borg_stair_scum::opened_door(st, dir);
 
     /* Remove this closed door from the list.
      * Its faster to clear all doors from the list
@@ -1795,6 +1797,13 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     // borg-reborn-rs (#620): a low-level Druid's walk in town: Fox Form first.
     if next.is_some() && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
         return true;
+    }
+
+    // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
+    // step, a resumed flow's too, against its safe area.
+    if next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x)) {
+        st.borg.goal.type_0 = 0;
+        return false;
     }
 
     /* Try it */

@@ -39,6 +39,9 @@ use crate::headers::z_type_h::loc;
 use crate::params::{value, Param};
 use crate::state::BorgState;
 
+/// borg-reborn-rs (#1061)
+type Scum = crate::borg_stair_scum::Map;
+
 
 /// One of the flow arrays of borg-flow.c (`st.flow`).
 #[derive(Clone, Copy)]
@@ -528,7 +531,7 @@ fn local_region(st: &BorgState, r: i32) -> (i32, i32, i32, i32) {
 /// Prepare to "flow" towards "interesting" grids (method 1)
 ///
 /// This function examines the torch-lit grids for "interesting" grids.
-fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -558,6 +561,11 @@ fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
         st.flow.temp_push(y, x);
     }
 
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
+
     /* Nothing */
     if st.flow.temp_n == 0 {
         return false;
@@ -578,7 +586,7 @@ fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
 ///
 /// This function examines the grids just outside the torch-lit grids
 /// for "unknown" grids, and flows directly towards them (one step).
-fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -622,6 +630,11 @@ fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
+    }
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
     }
 
     /* Nothing */
@@ -698,7 +711,7 @@ fn scan_region(
 /// help optimize this function to only handle "easily reachable" grids.
 ///
 /// The "borg_temp" array is much larger than any "local region".
-fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -712,6 +725,11 @@ fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
 
     /* Examine the region */
     scan_region(st, region, b_stair, StairTest::Leash, false);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing interesting */
     if st.flow.temp_n == 0 {
@@ -741,7 +759,7 @@ fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
 /// and then clearing them when done, to prevent confusion elsewhere.
 ///
 /// The "borg_temp" array is large enough to hold one panel full of grids.
-fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, false);
 
     /* Not in town */
@@ -762,6 +780,11 @@ fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
 
     /* Examine the panel */
     scan_region(st, (y1, x1, y2, x2), b_stair, StairTest::Dist(leash), false);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing useful */
     if st.flow.temp_n == 0 {
@@ -795,7 +818,7 @@ fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
 }
 
 /// Prepare to "flow" towards "interesting" grids (method 5)
-fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, false);
 
     /* Not in town */
@@ -809,6 +832,11 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
     /* Examine every "legal" grid */
     let region = (1, 1, AUTO_MAX_Y - 2, AUTO_MAX_X - 2);
     scan_region(st, region, b_stair, StairTest::Dist(leash), true);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing useful */
     if st.flow.temp_n == 0 {
@@ -841,15 +869,32 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
 /// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class). Not on
 /// a level where leaving after it failed (`release_after_failed_exit`).
 pub(crate) fn breadth_first_active(st: &BorgState) -> bool {
+    st.borg.tr(BI_CDEPTH) > 0 && !released(st) && breadth_first_applies(st)
+}
+
+/// #1110: would breadth-first exploration apply to this character in the
+/// dungeon (the switch on, maximum HP below its threshold)? The town planner
+/// asks this in town.
+pub(crate) fn breadth_first_applies(st: &BorgState) -> bool {
     value(Param::explore_breadth_first) != 0
-        && st.borg.tr(BI_CDEPTH) > 0
-        && !released(st)
         && st.borg.tr(BI_MAXHP)
             < bfs_hp_threshold(
                 value(Param::explore_bfs_max_hp),
                 value(Param::explore_bfs_hp_per_level),
                 st.borg.tr(BI_CLEVEL),
             )
+}
+
+/// #1110 (owner, 2026-11-23: "plan a little more food and light if we do
+/// that"): breadth-first exploration walks back toward the stairs between
+/// targets, so a trip takes more turns. While it would apply, the town
+/// planner's food target and light goal are this percent of today's
+/// (`explore_bfs_food_percent`, `explore_bfs_light_percent`); else 100.
+pub(crate) fn bfs_supply_percent(st: &BorgState, light: bool) -> i32 {
+    if !breadth_first_applies(st) {
+        return 100;
+    }
+    value(if light { Param::explore_bfs_light_percent } else { Param::explore_bfs_food_percent })
 }
 
 /// #1085: the maximum HP below which breadth-first applies at character
@@ -1010,7 +1055,7 @@ struct StairFrame {
 ///
 /// `None`: no staircase known, boosted bravery, or the Borg has no route to
 /// a known staircase (C's methods explore then).
-fn stair_frame(st: &mut BorgState) -> Option<StairFrame> {
+fn stair_frame(st: &mut BorgState, scum: Option<&Scum>) -> Option<StairFrame> {
     if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
         return None;
     }
@@ -1058,6 +1103,10 @@ fn stair_frame(st: &mut BorgState) -> Option<StairFrame> {
             return;
         }
         if !borg_flow_dark_interesting(st, y, x) || (!lit && !borg_flow_dark_reachable(st, y, x)) {
+            return;
+        }
+        // borg-reborn-rs (#1061): with stair_scum, only targets in its safe area.
+        if scum.is_some_and(|m| !m.admits_target(st, y, x)) {
             return;
         }
         seen[y as usize][x as usize] = true;
@@ -1163,8 +1212,18 @@ fn c_leash_on(st: &BorgState) -> bool {
 ///
 /// `Some(stepped)`: this order decided (`false`: nothing to explore within
 /// the leashes); `None`: the Borg has no route to a known staircase.
-fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
-    let frame = stair_frame(st)?;
+fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
+    let frame = stair_frame(st, scum)?;
+
+    // borg-reborn-rs (#1061): with stair_scum, back to the staircase first
+    // when the nearest target lies farther out than the Borg.
+    if let Some(m) = scum {
+        let goals: Vec<(i32, i32)> = frame.cands.iter().map(|&(y, x, _)| (y, x)).collect();
+        if crate::borg_stair_scum::return_before(st, m, &goals) {
+            return Some(false);
+        }
+    }
+
     let leash = c_leash_on(st).then(|| borg_flow_misc::borg_get_leash(st, false));
     let slack = value(Param::explore_bfs_slack);
     let Plan::Rings(tries) = plan(&frame.cands, Some(frame.borg_ring), leash, slack, BREADTH_FIRST_MAX_RINGS) else {
@@ -1324,8 +1383,8 @@ fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, ste
 /// `Some(stepped)`: this order decided (`false`: nothing to explore within
 /// the limit, so the level is left); `None`: the Borg has no route to a
 /// known staircase.
-fn borg_flow_dark_mixed(st: &mut BorgState) -> Option<bool> {
-    let frame = stair_frame(st)?;
+fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
+    let frame = stair_frame(st, scum)?;
     let start = value(Param::explore_mix_radius);
     let mut limit = mix_limit(MixModel {
         start,
@@ -1434,11 +1493,14 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         i += 1;
     }
 
+    // borg-reborn-rs (#1061): stair_scum's map, measured once (None: off).
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     // borg-reborn-rs (#1080, #1085): below explore_bfs_max_hp, both calls
     // explore breadth-first from the staircases (`None`: the Borg has no
     // route to a known staircase; C's methods then run as before).
     if breadth_first_active(st) {
-        if let Some(stepped) = borg_flow_dark_breadth_first(st) {
+        if let Some(stepped) = borg_flow_dark_breadth_first(st, scum.as_ref()) {
             return stepped;
         }
     }
@@ -1446,7 +1508,7 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
     // calls explore depth-first inside a radius from the staircases that
     // grows only when every branch inside it is covered.
     if mixed_active(st) {
-        if let Some(stepped) = borg_flow_dark_mixed(st) {
+        if let Some(stepped) = borg_flow_dark_mixed(st, scum.as_ref()) {
             return stepped;
         }
     }
@@ -1455,29 +1517,29 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         /* Near */
 
         /* Method 1 */
-        if borg_flow_dark_1(st, b_stair) {
+        if borg_flow_dark_1(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 2 */
-        if borg_flow_dark_2(st, b_stair) {
+        if borg_flow_dark_2(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 3 */
-        if borg_flow_dark_3(st, b_stair) {
+        if borg_flow_dark_3(st, b_stair, scum.as_ref()) {
             return true;
         }
     } else {
         /* Far */
 
         /* Method 4 */
-        if borg_flow_dark_4(st, b_stair) {
+        if borg_flow_dark_4(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 5 */
-        if borg_flow_dark_5(st, b_stair) {
+        if borg_flow_dark_5(st, b_stair, scum.as_ref()) {
             return true;
         }
 
@@ -1848,6 +1910,8 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
         assert_eq!(value(Param::explore_bfs_leave_when_done), 0, "compiled 0: an ordinary miss (borg.txt ships 1)");
         assert_eq!(value(Param::explore_c_leave_when_done), 0, "compiled 0: C stays until a reason to leave");
+        assert_eq!(value(Param::explore_bfs_food_percent), 100, "#1110: today's food");
+        assert_eq!(value(Param::explore_bfs_light_percent), 100, "#1110: today's light");
     }
 
     /// Two corridors from a staircase, each 8 unknown grids long.
