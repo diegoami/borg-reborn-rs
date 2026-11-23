@@ -2312,6 +2312,9 @@ mod immobile_reach_tests {
         assert!(super::within_two(1, 2), "the jelly at (14,96) from (13,94)");
         assert!(super::within_two(-2, -2));
         assert!(!super::within_two(0, 3));
+    }
+}
+
 /// borg-reborn-rs (#932): `caution_retreat_oscillation_limit` retreats in a
 /// row have left this place (the grid the last one left, or one next to it),
 /// the last within `caution_retreat_oscillation_thinks` thinks: the flow
