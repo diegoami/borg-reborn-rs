@@ -1540,6 +1540,8 @@ pub fn borg_update(st: &mut BorgState) {
     // Save the hit points
     st.borg.oldchp = st.borg.tr(BI_CURHP) as i16;
 
+    crate::borg_light::finish_room_lighting(st);
+
     // Forget failure
     st.update.failure = false;
 
@@ -1960,6 +1962,7 @@ fn created_traps_here(st: &mut BorgState) {
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
     st.light.detected_entries.clear();
+    st.light.room_lighting = Default::default();
     let b = &mut st.borg;
     // Restart the clock
     b.time.level = b.time.now;
