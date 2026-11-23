@@ -508,7 +508,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5936` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5942` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -537,7 +537,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5953` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5959` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -563,7 +563,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3337` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3342` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8084` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8084` |
 
@@ -703,7 +703,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:289` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:294` |
 
 ## Thrown objects at point blank (#870)
 
@@ -5633,7 +5633,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6220` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6226` |
 
 ## C Borg dive gates (#768)
 
@@ -6736,10 +6736,10 @@ on borg-zoo#702.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:343` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:351` |
-| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:382` |
-| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:363` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:385` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:393` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:424` |
+| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:221` |
 
 ## Perception and belief follow-ups (#885, #917, #889)
 
@@ -6767,20 +6767,29 @@ to be visible both deletes an unseen record and refuses it a belief
   (:85-248, `square_isprojectable`) stop at it. C's view asks the walk test
   (`borg_cave_floor_grid`, `borg_cave_floor_bold`), which counts it as floor,
   so grids behind it got `BORG_VIEW`. The rubble itself is still seen, as a
-  wall is, and unknown grids stay see-through, as in C. The light map already
+  wall is, and unknown grids stay see-through, as in C. A grid in view whose
+  sight changes when the map is read (an unknown grid found to be passable
+  rubble, which the walk test misses) redoes the view (`view_needs_update`;
+  review of #1128, F2). The light map already
   had its own projectable test (#894, `borg_los_projectable`); attack
   forecasts through rubble are #1017 (P9).
-- **`unseen_death_clears`** (#889, item 2). "It dies." or "It is destroyed."
+- **`unseen_death_stops_shots`** (#889, item 2). "It dies." or "It is destroyed."
   among the messages of a ranged attack whose only believed target was one
-  record deletes that record at once (`believed_dead`). The engine names a
-  monster the player cannot see "It" (`get_subject`, src/mon-msg.c:320-330;
-  a missile's note, src/player-attack.c:1122-1123). With several believed
-  targets, or "2 monsters die.", nothing is deleted. Without it the record
-  stays until `unseen_max_shots`.
+  record spends that record's remaining unseen shots for this sighting
+  (`believed_dead`, `spend_shots`). The record is kept (review of #1128, F1):
+  the engine names a monster the player cannot see "It" (`get_subject`,
+  src/mon-msg.c:320-330; a missile's note, src/player-attack.c:1122-1123), so
+  the message cannot say which monster died, and a bolt can kill an untracked
+  monster that stepped into its path, a ball another unseen one. With several
+  believed targets, or "2 monsters die.", nothing changes. Without it the
+  Borg shoots up to `unseen_max_shots` times.
 - **`unseen_light_reveal`** (#889, item 3; mode 0–2). Before the attack choice
   (`borg_think_dungeon`), cast Light Room (fail 40% or less) at a believed
   monster inside its sphere: `SPHERE:LIGHT_WEAK:2` (lib/gamedata/class.txt:221-224),
-  at most two grids and in line of sight for a projection. The sphere hurts
+  at most two grids and in line of sight for a projection, on a grid the Borg
+  does not already count as lit, and once per sighting of the record (review
+  of #1128, F3: lighting an invisible monster's grid again reveals nothing to
+  a Borg without see-invisible). The sphere hurts
   `HURT_LIGHT` monsters and lights the grids it reaches, so the monster is seen
   or its record forgotten. 1 = only at a `HURT_LIGHT` monster, 2 = at any
   believed monster. Call Light's sphere is radius 1 (:727-730) and never reaches
@@ -6793,7 +6802,10 @@ to be visible both deletes an unseen record and refuses it a belief
   ball or dispel still hits a monster that moved fewer grids than the blast
   reaches beyond its last grid (`unseen_blast_slack`: the radius less that
   grid's distance from the centre). Bolts, beams, arcs and throws take no
-  slack.
+  slack. So that such a blast is scored at all, `borg_attack`'s aim list and
+  its next-to-me test admit a record a blast could still reach
+  (`believed_for_aim`, slack up to a dispel's radius, 10; review of #1128,
+  F4).
 - **Beams and arcs** (#889, item 5) were already covered: every projection
   path (`borg_launch_bolt_at_location` for bolts, beams and balls,
   `borg_launch_arc_at_location` for arcs) scores a record through
@@ -6809,9 +6821,9 @@ to be visible both deletes an unseen record and refuses it a belief
 |---|---|---|---|---|
 | `update_dark_clears_light` | 0 | flag | 0–1 | `borg_update.rs:439` |
 | `view_rubble_blocks_sight` | 0 | flag | 0–1 | `borg_cave_view.rs:258` |
-| `unseen_death_clears` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
-| `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:294` |
-| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:370` |
+| `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
+| `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
+| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:412` |
 
 ## Home stock the town planner deliberately declines (#1049)
 

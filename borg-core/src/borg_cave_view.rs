@@ -95,7 +95,7 @@ fn borg_cave_view_hack(st: &mut BorgState, y: i32, x: i32) {
 /// `los()` (:85-248, `square_isprojectable`) stop at it as at ordinary rubble. The
 /// rubble itself is still seen, as a wall is. Unknown grids stay
 /// see-through, as in C.
-fn sight_grid(ag: &BorgGrid, rubble_blocks: bool) -> bool {
+pub(crate) fn sight_grid(ag: &BorgGrid, rubble_blocks: bool) -> bool {
     borg_cave_floor_grid(ag) && !(rubble_blocks && u32::from(ag.feat) == FEAT_PASS_RUBBLE)
 }
 

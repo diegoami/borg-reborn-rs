@@ -46,9 +46,11 @@
 //! `unseen_max_age`, shipped 10, bounds it too.)
 //!
 //! #889, follow-ups of #879, each a switch shipped 0 (hypotheses, RULES 14):
-//! - `unseen_death_clears`: "It dies." / "It is destroyed." after a projection
-//!   with a single believed target deletes that record at once
-//!   (`believed_dead`), instead of keeping it until `unseen_max_shots`.
+//! - `unseen_death_stops_shots`: "It dies." / "It is destroyed." after a
+//!   projection with a single believed target spends that record's remaining
+//!   unseen shots for this sighting (`believed_dead`), instead of shooting
+//!   until `unseen_max_shots`. The record is kept: the message names no
+//!   monster, and the victim may be another unseen one (review of #1128, F1).
 //! - `unseen_light_reveal`: Light Room at a believed light-sensitive monster
 //!   within its sphere (`light_reveal`, `reveal_target`), which hurts it and
 //!   lights its grid; 2 = at any believed monster there.
@@ -65,7 +67,8 @@
 //! or arc case yet). Beliefs from unseen contact or noise (#889 item 1, #1127) are
 //! not modelled: a record needs a race, and an unseen attacker's is unknown.
 
-use crate::borg_flow_kill::{borg_delete_kill, borg_follow_kill_aux};
+use crate::borg_cave_light::BORG_LIGHT;
+use crate::borg_flow_kill::borg_follow_kill_aux;
 use crate::borg_headers::borg_magic_h::LIGHT_ROOM;
 use crate::borg_headers::borg_trait_h::{BI_ISBLIND, BI_ISCONFUSED, BI_ISIMAGE, BI_SPEED};
 use crate::engine;
@@ -170,7 +173,7 @@ pub(crate) fn reject_attack(st: &mut BorgState, msg: &[u8]) {
 const UNSEEN_DEATHS: [&[u8]; 2] = [b"It dies.", b"It is destroyed."];
 
 /// #889: count an unseen death among the messages of a queued projection at
-/// believed targets (read whatever `unseen_death_clears` says; only
+/// believed targets (read whatever `unseen_death_stops_shots` says; only
 /// `finish_attack` acts on it).
 pub(crate) fn death_message(st: &mut BorgState, msg: &[u8]) {
     let pending = &mut st.fight_attack.pending_unseen;
@@ -179,9 +182,11 @@ pub(crate) fn death_message(st: &mut BorgState, msg: &[u8]) {
     }
 }
 
-/// #889: the record an unseen death message names, when it can name one:
-/// the projection had a single believed target. With several, or with none
-/// ("It dies." for a monster the Borg had no record of), nothing is deleted.
+/// #889: the record an unseen death message may concern: the projection had
+/// a single believed target. With several, or with none, none. It is only
+/// likely: a bolt can kill an untracked monster that stepped into its path,
+/// a ball another unseen monster (review of #1128, F1), so the record is not
+/// deleted, only shot at no more this sighting.
 pub(crate) fn believed_dead(deaths: u8, targets: &[BelievedTarget]) -> Option<BelievedTarget> {
     match targets {
         [only] if deaths > 0 => Some(only.clone()),
@@ -192,8 +197,9 @@ pub(crate) fn believed_dead(deaths: u8, targets: &[BelievedTarget]) -> Option<Be
 /// Called at the next normal command request, after parsing the completed
 /// command's messages. A miss still spends a shot. A failure or flush
 /// discards the pending projection before it gets here. With
-/// `unseen_death_clears` = 1 it returns the record an unseen death message
-/// names (`believed_dead`), for the caller to delete.
+/// `unseen_death_stops_shots` = 1, after an unseen death with a single
+/// believed target (`believed_dead`), that record's shots for this sighting
+/// are spent (`unseen_max_shots`), and it is returned for the note.
 pub(crate) fn finish_attack(
     st: &mut BorgState,
     mut log: impl FnMut(&mut BorgState, BelievedTarget),
@@ -206,10 +212,13 @@ pub(crate) fn finish_attack(
     let mut targets = pending.targets;
     targets.sort_unstable_by_key(|target| target.index);
     targets.dedup_by_key(|target| target.index);
-    let dead = if param(Param::unseen_death_clears) != 0 { believed_dead(pending.deaths, &targets) } else { None };
+    let dead = if param(Param::unseen_death_stops_shots) != 0 { believed_dead(pending.deaths, &targets) } else { None };
     for target in targets {
         note_shot(st, target.index);
         log(st, target);
+    }
+    if let Some(target) = &dead {
+        spend_shots(st, target.index, param(Param::unseen_max_shots));
     }
     dead
 }
@@ -228,18 +237,17 @@ pub(crate) fn confirm_attack(st: &mut BorgState) {
             ),
         );
     });
-    // #889: the record is gone, unless its slot was reused meanwhile.
-    if let Some(target) = dead.filter(|target| st.kills.kills[target.index].r_idx == target.race) {
+    // #889: the record stays (review of #1128, F1); no more unseen shots.
+    if let Some(target) = dead {
         crate::borg_io::borg_note(
             st,
             &format!(
-                "# Unseen target (#889): an unseen death after the only believed target, {} at ({},{})",
+                "# Unseen target (#889): an unseen death after the only believed target, {} at ({},{}): no more shots this sighting",
                 engine::race_name(usize::from(target.race)).iter().map(|&c| c as char).collect::<String>(),
                 target.pos.y,
                 target.pos.x
             ),
         );
-        borg_delete_kill(st, target.index as i32);
     }
 }
 
@@ -282,14 +290,30 @@ const LIGHT_ROOM_RADIUS: i32 = 2;
 /// src/effect-handler-attack.c:571-586), and light-sensitive (`HURT_LIGHT`,
 /// the only monsters `LIGHT_WEAK` hurts) unless `mode` is 2. The sphere
 /// lights the grids it reaches, so the monster is revealed either way.
-pub(crate) fn reveal_target(mode: i32, believed: bool, hurt_light: bool, distance: i32, projectable: bool) -> bool {
-    mode != 0 && believed && projectable && distance <= LIGHT_ROOM_RADIUS && (mode == 2 || hurt_light)
+/// Review of #1128 (F3): only at a grid the Borg does not already count as
+/// lit (`lit`: `BORG_GLOW` or `BORG_LIGHT`), since lighting it again reveals
+/// nothing (an invisible monster stays unseen without see-invisible), and at
+/// most once per sighting of the record (`cast_before`).
+pub(crate) fn reveal_target(
+    mode: i32, believed: bool, hurt_light: bool, distance: i32, projectable: bool, lit: bool, cast_before: bool,
+) -> bool {
+    mode != 0
+        && believed
+        && projectable
+        && !lit
+        && !cast_before
+        && distance <= LIGHT_ROOM_RADIUS
+        && (mode == 2 || hurt_light)
 }
+
+/// `BORG_GLOW` (borg-cave.h): the grid is lit by the room (borg_update.rs).
+const BORG_GLOW: u16 = 0x02;
 
 /// #889 (`unseen_light_reveal`): cast Light Room at a believed monster in its
 /// sphere (`reveal_target`). Called before the attack choice
 /// (`borg_think_dungeon`). Once lit, the grid shows the monster or the
-/// record is forgotten (`borg_follow_kill`), so the cast does not repeat.
+/// record is forgotten (`borg_follow_kill`); a monster that stays unseen on
+/// the lit grid (invisible) is not cast at again (review of #1128, F3).
 pub(crate) fn light_reveal(st: &mut BorgState) -> bool {
     let mode = param(Param::unseen_light_reveal);
     if mode == 0 {
@@ -308,6 +332,8 @@ pub(crate) fn light_reveal(st: &mut BorgState) -> bool {
                 engine::race_flag_has(usize::from(kill.r_idx), RF_HURT_LIGHT),
                 engine::distance(c, kill.pos),
                 crate::borg_projection::borg_los_projectable(st, c.y, c.x, kill.pos.y, kill.pos.x),
+                st.cave.grid(kill.pos.x, kill.pos.y).info & (BORG_GLOW | BORG_LIGHT) != 0,
+                st.fight_attack.unseen_reveals.get(&k) == Some(&kill.when),
             )
     }) else {
         return false;
@@ -316,6 +342,7 @@ pub(crate) fn light_reveal(st: &mut BorgState) -> bool {
     if !crate::borg_magic::borg_spell_fail(st, LIGHT_ROOM, 40) {
         return false;
     }
+    st.fight_attack.unseen_reveals.insert(k, kill.when);
     crate::borg_io::borg_note(
         st,
         &format!(
@@ -335,6 +362,21 @@ pub(crate) fn light_reveal(st: &mut BorgState) -> bool {
 /// believed target (too old, too close, its grid expected visible, belief 0).
 pub(crate) fn believed_weight(st: &BorgState, k: usize) -> Option<i32> {
     believed_weight_with(st, k, 0)
+}
+
+/// The most a blast's reach can exceed a record's distance from its centre:
+/// a dispel's radius, 10 (`borg_attack_aux_spell_dispel`), the largest any
+/// attack scores.
+pub(crate) const MAX_BLAST_SLACK: i32 = 10;
+
+/// #889 (review of #1128 F4): the belief with which `borg_attack` admits a
+/// record to its aim list (and its "next to me" test): with `unseen_spread`
+/// a record a blast could still reach counts, though its belief at slack 0 is
+/// gone, so a ball or dispel centred near it is scored. A bolt at it scores
+/// nothing (`borg_launch_bolt_aux_hack` asks the slack of its own shot). With
+/// `unseen_spread` 0 the slack is ignored: `believed_weight`.
+pub(crate) fn believed_for_aim(st: &BorgState, k: usize) -> Option<i32> {
+    believed_weight_with(st, k, MAX_BLAST_SLACK)
 }
 
 /// `believed_weight` for a record a blast reaches with `slack` grids to spare
@@ -392,6 +434,13 @@ fn shots_since_seen(st: &BorgState, k: usize) -> i32 {
         Some(&(when, n)) if when == st.kills.kills[k].when => n,
         _ => 0,
     }
+}
+
+/// #889: spend the rest of record `k`'s unseen shots for this sighting.
+fn spend_shots(st: &mut BorgState, k: usize, max_shots: i32) {
+    let when = st.kills.kills[k].when;
+    let n = shots_since_seen(st, k).max(max_shots);
+    st.fight_attack.unseen_shots.insert(k, (when, n));
 }
 
 /// Count a launched shot and treat the last-known sleeper as awake.
@@ -529,8 +578,12 @@ mod tests {
             death_message(&mut st, msg);
         }
         assert_eq!(st.fight_attack.pending_unseen.deaths, 2);
-        assert!(finish_attack(&mut st, |_, _| ()).is_none(), "unseen_death_clears ships 0");
+        assert!(finish_attack(&mut st, |_, _| ()).is_none(), "unseen_death_stops_shots ships 0");
         assert_eq!(shots_since_seen(&st, 1), 1, "the shot still counts");
+        // Under the switch the record stays and its shots are spent.
+        spend_shots(&mut st, 1, 3);
+        assert_eq!(shots_since_seen(&st, 1), 3);
+        assert_eq!(st.kills.kills[1].r_idx, 1, "the record is kept");
 
         let mut st = BorgState::default();
         st.fight_attack.pending_unseen.stage(vec![target(1)]);
@@ -558,16 +611,30 @@ mod tests {
         assert_eq!(belief_percent_spread(9, false, false, 10, 10, 20, 0, 0), 100);
     }
 
+    /// Review of #1128, F4: a record whose belief is gone at slack 0 can
+    /// still be a blast's target, so the aim list asks the largest slack.
+    #[test]
+    fn the_aim_list_admits_a_record_only_a_blast_reaches() {
+        assert_eq!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 0), 0, "no belief at its grid");
+        assert!(belief_percent_spread(9, false, true, 10, 10, 20, 0, MAX_BLAST_SLACK) > 0, "a dispel still reaches it");
+        assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 0), 0);
+        assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 2), 20, "a radius-2 ball at its grid");
+    }
+
     /// #889, item 3: Light Room is cast only at a believed record inside its
     /// sphere and in line of sight; mode 1 needs HURT_LIGHT, 2 does not.
     #[test]
     fn light_room_reveals_a_believed_monster_inside_its_sphere() {
-        assert!(reveal_target(1, true, true, 2, true));
-        assert!(!reveal_target(1, true, false, 2, true), "not light-sensitive");
-        assert!(reveal_target(2, true, false, 2, true));
-        assert!(!reveal_target(0, true, true, 2, true), "switch off");
-        assert!(!reveal_target(1, false, true, 2, true), "not believed");
-        assert!(!reveal_target(1, true, true, 3, true), "outside the sphere");
-        assert!(!reveal_target(1, true, true, 2, false), "behind a wall");
+        let ok = |mode, believed, hurt, d, proj| reveal_target(mode, believed, hurt, d, proj, false, false);
+        assert!(ok(1, true, true, 2, true));
+        assert!(!ok(1, true, false, 2, true), "not light-sensitive");
+        assert!(ok(2, true, false, 2, true));
+        assert!(!ok(0, true, true, 2, true), "switch off");
+        assert!(!ok(1, false, true, 2, true), "not believed");
+        assert!(!ok(1, true, true, 3, true), "outside the sphere");
+        assert!(!ok(1, true, true, 2, false), "behind a wall");
+        // Review of #1128, F3: nothing new to reveal, or cast already.
+        assert!(!reveal_target(2, true, true, 2, true, true, false), "already lit (an invisible monster stays unseen)");
+        assert!(!reveal_target(2, true, true, 2, true, false, true), "once per sighting");
     }
 }

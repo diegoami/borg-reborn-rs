@@ -84,6 +84,10 @@ pub struct FightAttackState {
     /// elsewhere): a believed monster that moved fewer grids is still hit
     /// (`unseen_spread`).
     pub(crate) unseen_blast_slack: i32,
+    /// borg-reborn-rs (#889, review of #1128 F3): Light Room cast at a
+    /// believed record, by kill index, with the record's `when` at the time
+    /// (once per sighting).
+    pub(crate) unseen_reveals: std::collections::BTreeMap<usize, BorgTime>,
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower
     /// is "do not shoot".
@@ -161,6 +165,7 @@ impl Default for FightAttackState {
             unseen_shots: std::collections::BTreeMap::new(),
             pending_unseen: crate::borg_unseen_belief::PendingAttack::default(),
             unseen_blast_slack: 0,
+            unseen_reveals: std::collections::BTreeMap::new(),
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
@@ -5268,9 +5273,10 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Require current knowledge */
-        // borg-reborn-rs (#879): or a monster believed at its last grid.
+        // borg-reborn-rs (#879): or a monster believed at its last grid;
+        // #889 (review of #1128 F4): or one a blast could still reach.
         if borg_timer(st, kill.when) > param(Param::attack_max_target_age)
-            && crate::borg_unseen_belief::believed_weight(st, k as usize).is_none()
+            && crate::borg_unseen_belief::believed_for_aim(st, k as usize).is_none()
         {
             continue;
         }
@@ -5297,7 +5303,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         // at its last grid is not "next to me": it never turns a scary
         // level's flight into a fight.
         if counts_as_adjacent(
-            crate::borg_unseen_belief::believed_weight(st, k as usize).is_some(),
+            crate::borg_unseen_belief::believed_for_aim(st, k as usize).is_some(),
             i32::from(kill.speed) > tr(st, BI_SPEED),
             engine::distance(st.borg.c, kill.pos),
             param(Param::attack_fast_monster_distance),

@@ -347,6 +347,14 @@ fn dark_floor_info(info: u16, clear_light: bool) -> u16 {
     }
 }
 
+/// borg-reborn-rs (#917, review of #1128 F2): whether a grid in view
+/// changed whether sight passes it (`sight_grid`), so the view is redone.
+/// With `view_rubble_blocks_sight` 0 sight is the walk test, and the wall
+/// test of `update_map_grid` already asks for it (C's behaviour).
+fn view_needs_update(old_sight: bool, new_sight: bool, info: u16) -> bool {
+    old_sight != new_sight && info & BORG_VIEW != 0
+}
+
 /// One grid of `borg_update_map` (the body of its loop; a C `continue` is
 /// a `return`).
 fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
@@ -367,6 +375,11 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
     // Save the old "wall" or "door", before the feature below is
     // overwritten with what the game shows now
     let old_wall = !borg_cave_floor_grid(ag);
+    // borg-reborn-rs (#917, review of #1128 F2): and whether sight passes,
+    // which differs from the walk test for passable rubble under
+    // view_rubble_blocks_sight.
+    let rubble_blocks = param(Param::view_rubble_blocks_sight) != 0;
+    let old_sight = crate::borg_cave_view::sight_grid(ag, rubble_blocks);
 
     // Notice "knowledge": if this square is not in view and the borg
     // previously cast stone to mud here, ignore the map info so repeated
@@ -576,6 +589,13 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
     // Save the new "wall" or "door"
     let ag = *st.cave.grid(x, y);
     let new_wall = !borg_cave_floor_grid(&ag);
+
+    // borg-reborn-rs (#917, review of #1128 F2): an unknown grid found to be
+    // passable rubble stays walkable, so the test below misses it; under
+    // view_rubble_blocks_sight it now stops sight, and the view is redone.
+    if view_needs_update(old_sight, crate::borg_cave_view::sight_grid(&ag, rubble_blocks), ag.info) {
+        st.update.do_update_view = true;
+    }
 
     // Notice wall changes
     if old_wall != new_wall {
@@ -2750,5 +2770,20 @@ mod dark_floor_tests {
         assert_eq!(dark_floor_info(stale, true), BORG_VIEW | BORG_OKAY | BORG_DARK);
         assert_eq!(dark_floor_info(0, true), BORG_DARK);
         assert_eq!(dark_floor_info(0, false), BORG_DARK);
+    }
+
+    /// #917 (review of #1128 F2): an unknown grid in view found to be
+    /// passable rubble changes sight under the switch, not the walk test:
+    /// the view is redone. Out of view, or no change, nothing.
+    #[test]
+    fn rubble_found_in_view_redoes_the_view_under_the_switch() {
+        use crate::headers::list_terrain_h::{FEAT_NONE, FEAT_PASS_RUBBLE};
+        let grid = |feat: u32| BorgGrid { feat: feat as u8, info: BORG_VIEW, ..BorgGrid::default() };
+        let (unknown, rubble) = (grid(FEAT_NONE), grid(FEAT_PASS_RUBBLE));
+        let sight = crate::borg_cave_view::sight_grid;
+        assert_eq!(borg_cave_floor_grid(&unknown), borg_cave_floor_grid(&rubble), "the walk test sees no change");
+        assert!(view_needs_update(sight(&unknown, true), sight(&rubble, true), BORG_VIEW));
+        assert!(!view_needs_update(sight(&unknown, false), sight(&rubble, false), BORG_VIEW), "switch off: C");
+        assert!(!view_needs_update(sight(&unknown, true), sight(&rubble, true), 0), "not in view");
     }
 }

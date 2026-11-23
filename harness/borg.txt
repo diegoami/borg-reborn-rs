@@ -1683,11 +1683,12 @@ borg_param_unseen_max_age = 10
 borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
 # #889: follow-ups of the belief, each shipped 0 until the zoo measures it.
-# unseen_death_clears 1 = "It dies." after a shot whose only believed target
-# was one record deletes it; unseen_light_reveal 1 = Light Room at a believed
-# HURT_LIGHT monster within two grids (2 = at any believed monster);
+# unseen_death_stops_shots 1 = "It dies." after a shot whose only believed
+# target was one record ends the shots at it (the record is kept);
+# unseen_light_reveal 1 = Light Room at a believed HURT_LIGHT monster within
+# two grids on an unlit grid, once per sighting (2 = any believed monster);
 # unseen_spread 1 = erratic movers and a blast's reach spread the belief.
-borg_param_unseen_death_clears = 0
+borg_param_unseen_death_stops_shots = 0
 borg_param_unseen_light_reveal = 0
 borg_param_unseen_spread = 0
 # #885: 1 = a floor the engine shows dark loses a stale BORG_LIGHT (lit once
