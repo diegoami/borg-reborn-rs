@@ -255,7 +255,7 @@ pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, ho
 fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     use crate::headers::list_options_h::OPT_birth_no_selling;
     let no_selling = engine::player_opt(OPT_birth_no_selling);
-    // borg-reborn-rs (#1140, `poison_town_triage`): no sale (it pays nothing)
+    // borg-reborn-rs (#1140, `deal_with_poison`): no sale (it pays nothing)
     // while the poison triage holds.
     let triage_no_sale = crate::borg_poison::no_sale_now(st);
     let pack_end = inven_wield() as usize;

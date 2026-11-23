@@ -13,26 +13,35 @@
 //! with poison 82 and 2 CLW; the Druid 799968561 drank 11 CLW to keep
 //! meleeing a white jelly while the poison rose from 4 to 190.
 //!
-//! Five settings, each compiled and shipped 0 (RULES 14: hypotheses until
-//! borg-zoo measures them):
+//! One switch, `deal_with_poison` (owner, 2026-11-23: "just one switch"),
+//! compiled and shipped 0, turns on all six parts (RULES 14: a hypothesis
+//! until borg-zoo measures it); `poison_late_drink_margin` and
+//! `poison_cure_pending_percent` tune B and F:
 //!
-//! * A, `poison_pending_note`: the pending damage, from the engine counter
+//! * A, the note: the pending damage, from the engine counter
 //!   (the owner's choice for #1136) and the CON index, is noted with the HP
 //!   and the healing carried; `pending >= HP + healing` is named.
-//! * B, `poison_late_drink`: poisoned and safe (danger 0, not cut), Cure Light
+//! * B, the late drink: poisoned and safe (danger 0, not cut), Cure Light
 //!   and Cure Serious Wounds are drunk only when the whole heal fits under the
 //!   maximum HP, or when the HP is at most the next turn's poison plus
 //!   `poison_late_drink_margin`.
-//! * C, `poison_leave_unfixable`: when the poison will take more than the HP
+//! * C, leave while it can be fixed: when the poison will take more than the HP
 //!   and the healing carried and no cure is carried, leave for town now:
 //!   Recall (below DL1, or on DL1 with no known up staircase), else the
 //!   stairs, rising level by level.
-//! * D, `poison_town_triage`: in town with `pending >= HP`, the Alchemist
+//! * D, the town triage: in town with `pending >= HP`, the Alchemist
 //!   first: a Neutralize Poison or a Cure Critical Wounds if stocked and
 //!   affordable (then drunk), else enough Cure Light Wounds to cover the gap
 //!   (drunk late, as B); no sale while selling pays nothing
 //!   (`birth_no_selling`); then the usual plan.
-//! * E, `poison_fight_pending`: poisoned, next to an awake poisoner: the
+//! * F, the cure carried: a poison cure the Borg has is used once the
+//!   poison still to come is `poison_cure_pending_percent` of the HP, at any
+//!   danger and with no roll (the spells, a rod, an activation, food,
+//!   Neutralize Poison, a staff, Cure Critical Wounds; Healing, *Healing* or
+//!   Life only when the CLW/CSW carried cannot outlast it). Today's cures
+//!   wait out the danger or a 25 % roll: the Paladin 1200156945 (#1134)
+//!   died holding 2 Neutralize Poison.
+//! * E, the poison fight race: poisoned, next to an awake poisoner: the
 //!   poison already pending plus the poison and damage the fight adds count
 //!   against the HP and the healing carried; a lost race leaves, stepping
 //!   out of reach of a poisoner that never moves.
@@ -110,6 +119,13 @@ pub(crate) struct Triage {
     /// A poison cure carried or castable: Neutralize Poison and any other
     /// item that cures poison (`BI_ACUREPOIS`), Cure Critical Wounds
     /// (`BI_ACCW`), Healing, *Healing* or Life, Cure Poison or Herbal Curing.
+    pub cure_carried: bool,
+    /// `cure_carried`, trusted to fix the poison: only with `deal_with_poison` on,
+    /// whose part F drinks it. Off, nothing drinks it
+    /// reliably (`borg_heal`'s cures wait while the danger is above a fifth
+    /// of the avoidance; `borg_recover`'s costly cure needs a 25 % roll and
+    /// keeps the last two CCW), so the parts act as if none were carried
+    /// (they are off then too; kept for the tests and the note).
     pub cure: bool,
     /// A healing spell (Minor Healing): the healing is not finite.
     pub renewable: bool,
@@ -144,13 +160,10 @@ pub struct PoisonState {
     triage_actions: (i32, i32),
 }
 
-fn on(name: Param) -> bool {
-    param(name) != 0
-}
-
-fn any_switch() -> bool {
-    on(Param::poison_pending_note) || on(Param::poison_late_drink) || on(Param::poison_leave_unfixable)
-        || on(Param::poison_town_triage) || on(Param::poison_fight_pending)
+/// The one switch (owner, 2026-11-23: "just one switch"): every part,
+/// A to F, acts only with `deal_with_poison` on.
+fn enabled() -> bool {
+    param(Param::deal_with_poison) != 0
 }
 
 fn potions(st: &mut BorgState, sval: i32) -> i32 {
@@ -169,9 +182,10 @@ pub(crate) fn read(st: &mut BorgState) -> Option<Triage> {
     let csw = potions(st, csw_sv);
     let maxhp = st.borg.tr(BI_MAXHP);
     let t = |i| st.borg.tr(i);
-    let cure = t(BI_ACUREPOIS) + t(BI_ACCW) + t(BI_AHEAL) + t(BI_AEZHEAL) + t(BI_ALIFE) > 0
+    let cure_carried = t(BI_ACUREPOIS) + t(BI_ACCW) + t(BI_AHEAL) + t(BI_AEZHEAL) + t(BI_ALIFE) > 0
         || crate::borg_magic::borg_spell_legal(st, CURE_POISON)
         || crate::borg_magic::borg_spell_legal(st, HERBAL_CURING);
+    let cure = cure_carried && enabled();
     let renewable = crate::borg_magic::borg_spell_legal(st, MINOR_HEALING);
     Some(Triage {
         counter,
@@ -181,6 +195,7 @@ pub(crate) fn read(st: &mut BorgState) -> Option<Triage> {
         clw,
         csw,
         healing: healing_carried(clw, csw, maxhp),
+        cure_carried,
         cure,
         renewable,
     })
@@ -188,16 +203,16 @@ pub(crate) fn read(st: &mut BorgState) -> Option<Triage> {
 
 /// A: the note, when any of the five switches is on and the state moved.
 pub(crate) fn observe(st: &mut BorgState) {
-    if !any_switch() { return; }
+    if !enabled() { return; }
     let Some(t) = read(st) else {
         st.poison.noted = None;
         return;
     };
-    let key = (t.pending - t.hp, t.healing, t.maxhp, t.cure || t.renewable);
+    let key = (t.pending - t.hp, t.healing, t.maxhp, t.cure_carried || t.renewable);
     if st.poison.noted == Some(key) { return; }
     st.poison.noted = Some(key);
     let d = decay(st.borg.tr(BI_CON_INDEX));
-    let verdict = if t.cure { "a cure carried".to_owned() } else if t.renewable {
+    let verdict = if t.cure_carried { "a cure carried".to_owned() } else if t.renewable {
         "a healing spell".to_owned()
     } else if t.unfixable() {
         format!("more than HP + healing by {}", t.pending - t.hp - t.healing + 1)
@@ -222,12 +237,11 @@ pub(crate) fn late_drink_hold(hp: i32, maxhp: i32, heal: i32, per_turn: i32, mar
     hp + heal > maxhp && hp > per_turn + margin
 }
 
-/// B (`poison_late_drink`; and D in town): `borg_heal` holds a Cure Light
+/// B (and D in town): `borg_heal` holds a Cure Light
 /// (`heal` 20) or Cure Serious Wounds (40) while poisoned and safe. A cure
 /// the tiers below drink (Cure Critical Wounds) is not held.
 pub(crate) fn late_drink_holds(st: &mut BorgState, danger: i32, heal: i32) -> bool {
-    let town = st.borg.tr(BI_CDEPTH) == 0 && on(Param::poison_town_triage);
-    if !(on(Param::poison_late_drink) || town) || danger != 0 || st.borg.tr(BI_ISCUT) != 0 {
+    if !enabled() || danger != 0 || st.borg.tr(BI_ISCUT) != 0 {
         return false;
     }
     let Some(t) = read(st) else { return false };
@@ -249,8 +263,7 @@ pub(crate) fn late_drink_holds(st: &mut BorgState, danger: i32, heal: i32) -> bo
 /// would refuse it at a large loss past `caution_clw_max_level`. True when
 /// one was drunk.
 pub(crate) fn late_drink(st: &mut BorgState, danger: i32) -> bool {
-    let town = st.borg.tr(BI_CDEPTH) == 0 && on(Param::poison_town_triage);
-    if !(on(Param::poison_late_drink) || town) || danger != 0 || st.borg.tr(BI_ISCUT) != 0 {
+    if !enabled() || danger != 0 || st.borg.tr(BI_ISCUT) != 0 {
         return false;
     }
     let Some(t) = read(st) else { return false };
@@ -265,11 +278,76 @@ pub(crate) fn late_drink(st: &mut BorgState, danger: i32) -> bool {
     drunk
 }
 
-/// C (`poison_leave_unfixable`): in the dungeon, the poison will take more
+/// F's trigger, apart from the engine: the poison still to come is at least
+/// `percent` of the current HP.
+pub(crate) fn cure_due(pending: i32, hp: i32, percent: i32) -> bool {
+    pending > 0 && i64::from(pending) * 100 >= i64::from(hp.max(0)) * i64::from(percent)
+}
+
+/// F: an awake monster next to the Borg with a `POISON` blow (it would
+/// poison again at once).
+fn poisoner_adjacent(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) == 1
+            && crate::borg_caution::fight_incoming(st, i).poisons
+    })
+}
+
+/// F: poisoned with the poison still to come at
+/// least `poison_cure_pending_percent` of the HP, use a poison cure the
+/// Borg has, whatever the danger and with no roll; next to an awake
+/// poisoner only when the poison already reaches the HP. Cheapest first:
+/// Cure Poison and Herbal Curing (the spells), a rod of Curing, an
+/// activation that cures poison, a food or mushroom that does
+/// (`CURE:POISONED`, the items `BI_ACUREPOIS` counts), Neutralize Poison, a
+/// staff of Curing, Cure Critical Wounds (the raw quaff: `borg_quaff_crit`
+/// keeps the last two) or its activation. Healing, *Healing* and Life only
+/// when the poison outlasts the HP and the CLW/CSW carried. True when one
+/// was used.
+pub(crate) fn cure_carried(st: &mut BorgState) -> bool {
+    use crate::borg_headers::borg_magic_h::{CURE_POISON, HERBAL_CURING};
+    use crate::borg_item_use::{borg_activate_item, borg_eat, borg_quaff_potion, borg_use_staff_fail, borg_zap_rod};
+    use crate::headers::list_effects_h::EF_CURE;
+    use crate::headers::list_tvals_h::{TV_FOOD, TV_MUSHROOM};
+    if !enabled() { return false; }
+    let Some(t) = read(st) else { return false };
+    if !t.cure_carried || !cure_due(t.pending, t.hp, param(Param::poison_cure_pending_percent)) { return false; }
+    if t.pending < t.hp && poisoner_adjacent(st) { return false; }
+    let fail = param(Param::caution_heal_spell_fail);
+    let v = &st.item_val;
+    let (rod, staff, np, ccw) = (v.sv_rod_curing, v.sv_staff_curing, v.sv_potion_cure_poison, v.sv_potion_cure_critical);
+    let (heal, star, life) = (v.sv_potion_healing, v.sv_potion_star_healing, v.sv_potion_life);
+    let (act_pois, act_ccw) = (st.act.rem_fear_pois, st.act.cure_critical);
+    let food = st.items.items.iter().take(crate::borg_item::inven_wield() as usize)
+        .find(|it| it.iqty > 0 && it.aware && matches!(u32::from(it.tval), TV_FOOD | TV_MUSHROOM)
+            && crate::borg_item_analyze::borg_obj_has_effect(it.kind, EF_CURE as i32, TMD_POISONED as i32))
+        .map(|it| (i32::from(it.tval), i32::from(it.sval)));
+    let mut used = crate::borg_magic::borg_spell_fail(st, CURE_POISON, fail)
+        || crate::borg_magic::borg_spell_fail(st, HERBAL_CURING, fail)
+        || borg_zap_rod(st, rod)
+        || borg_activate_item(st, act_pois)
+        || food.is_some_and(|(tval, sval)| borg_eat(st, tval, sval))
+        || borg_quaff_potion(st, np)
+        || borg_use_staff_fail(st, staff)
+        || borg_quaff_potion(st, ccw)
+        || borg_activate_item(st, act_ccw);
+    let precious = !used && t.pending >= t.hp + t.healing;
+    if precious {
+        used = borg_quaff_potion(st, heal) || borg_quaff_potion(st, star) || borg_quaff_potion(st, life);
+    }
+    if used {
+        borg_note(st, &format!("# Poison: cured with what it carries, about {} HP of poison against HP {}{} (#1140)",
+            t.pending, t.hp, if precious { ", a dear potion: the CLW carried do not outlast it" } else { "" }));
+    }
+    used
+}
+
+/// C: in the dungeon, the poison will take more
 /// than the HP and the healing carried, and no cure is carried. The caller
 /// then sets leaving and fleeing and calls `leave_recall`.
 pub(crate) fn unfixable_here(st: &mut BorgState) -> Option<Triage> {
-    if !on(Param::poison_leave_unfixable) || st.borg.tr(BI_CDEPTH) == 0 { return None; }
+    if !enabled() || st.borg.tr(BI_CDEPTH) == 0 { return None; }
     read(st).filter(Triage::unfixable)
 }
 
@@ -313,7 +391,7 @@ fn poison_timer_per_turn(st: &BorgState, r: usize, ratio: f64) -> f64 {
     sum * ratio
 }
 
-/// E (`poison_fight_pending`): poisoned, next to awake visible poisoners.
+/// E: poisoned, next to awake visible poisoners.
 /// `Some((lost, never_moves))` when the race could be computed: `lost` when
 /// the fight and the poison take the HP and the healing carried;
 /// `never_moves` when one of them never moves (the caller steps out of its
@@ -321,7 +399,7 @@ fn poison_timer_per_turn(st: &BorgState, r: usize, ratio: f64) -> f64 {
 /// unknown (the fight is then left to the other rules).
 pub(crate) fn fight_race(st: &mut BorgState) -> Option<(bool, bool)> {
     use crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE;
-    if !on(Param::poison_fight_pending) || st.borg.tr(BI_CDEPTH) == 0 { return None; }
+    if !enabled() || st.borg.tr(BI_CDEPTH) == 0 { return None; }
     let t = read(st)?;
     if t.cure || t.renewable { return None; }
     // Only the temporary resistance, read from the engine (`TMD_OPP_POIS`):
@@ -365,7 +443,7 @@ pub(crate) fn fight_race(st: &mut BorgState) -> Option<(bool, bool)> {
 /// A cure carried keeps it holding until it is drunk (`town_cure`), so no
 /// excess trip walks the Borg into a store it must leave to drink.
 pub(crate) fn town_triage_holds(st: &mut BorgState) -> bool {
-    on(Param::poison_town_triage) && st.borg.tr(BI_CDEPTH) == 0
+    enabled() && st.borg.tr(BI_CDEPTH) == 0
         && read(st).is_some_and(|t| t.outlasts_hp())
 }
 
@@ -384,7 +462,7 @@ const TRIAGE_ACTIONS: i32 = 4;
 pub(crate) fn town_triage_action(st: &mut BorgState) -> Option<crate::borg_town_shadow::TownAction> {
     use crate::borg_town_record::action;
     if !town_triage_holds(st) { return None; }
-    if read(st).is_some_and(|t| t.cure) { return None; }
+    if read(st).is_some_and(|t| t.cure_carried) { return None; }
     let level = st.borg.time.level;
     if st.poison.triage_actions.0 != level { st.poison.triage_actions = (level, 0); }
     if st.poison.triage_actions.1 >= TRIAGE_ACTIONS { return None; }
@@ -433,7 +511,7 @@ pub(crate) fn no_sale_now(st: &mut BorgState) -> bool {
 /// `unseen_heal`: `borg_quaff_crit` keeps the last two). CLW are left to
 /// `borg_heal` (late, B). True when a potion was drunk.
 pub(crate) fn town_cure(st: &mut BorgState) -> bool {
-    if !on(Param::poison_town_triage) || st.borg.tr(BI_CDEPTH) != 0 { return false; }
+    if !enabled() || st.borg.tr(BI_CDEPTH) != 0 { return false; }
     let Some(t) = read(st) else { return false };
     if t.pending < t.hp || st.borg.in_shop { return false; }
     let (np, ccw) = (st.item_val.sv_potion_cure_poison, st.item_val.sv_potion_cure_critical);
@@ -448,11 +526,13 @@ pub(crate) fn town_cure(st: &mut BorgState) -> bool {
 /// >= HP`, or the HP at the late-drink line with a CLW or CSW carried): the
 /// drink happens outside.
 pub(crate) fn store_leave_to_drink(st: &mut BorgState) -> bool {
-    if !on(Param::poison_town_triage) || st.borg.tr(BI_CDEPTH) != 0 { return false; }
+    if !enabled() || st.borg.tr(BI_CDEPTH) != 0 { return false; }
     let Some(t) = read(st) else { return false };
     let np = potions(st, st.item_val.sv_potion_cure_poison);
     let ccw = potions(st, st.item_val.sv_potion_cure_critical);
-    let cure_due = t.pending >= t.hp && np + ccw > 0;
+    let cure_due = t.pending >= t.hp && np + ccw > 0
+        || (enabled() && t.cure_carried
+            && cure_due(t.pending, t.hp, param(Param::poison_cure_pending_percent)));
     let heal_due = t.clw + t.csw > 0 && t.hp <= ticks_per_turn() + param(Param::poison_late_drink_margin);
     if cure_due || heal_due {
         borg_note(st, &format!("# Poison triage: leaving the store to drink at HP {}/{} (#1140)", t.hp, t.maxhp));
@@ -526,7 +606,7 @@ mod tests {
     }
 
     fn triage(pending: i32, hp: i32, maxhp: i32, clw: i32) -> Triage {
-        Triage { counter: pending, pending, hp, maxhp, clw, csw: 0, healing: healing_carried(clw, 0, maxhp), cure: false, renewable: false }
+        Triage { counter: pending, pending, hp, maxhp, clw, csw: 0, healing: healing_carried(clw, 0, maxhp), cure_carried: false, cure: false, renewable: false }
     }
 
     #[test]
@@ -567,6 +647,18 @@ mod tests {
         assert_eq!(clw_to_cover(0, 47), 1, "pending = HP + healing: one HP short");
         assert_eq!(clw_to_cover(-1, 47), 0);
         assert_eq!(clw_to_cover(5, 1), 0, "max HP 1: a potion gives nothing");
+    }
+
+    #[test]
+    fn a_carried_cure_is_used_once_the_poison_matters() {
+        // The Paladin 1200156945 (#1134) died holding 2 Neutralize Poison.
+        assert!(cure_due(20, 20, 50), "the poison takes all the HP");
+        assert!(cure_due(10, 20, 50), "half");
+        assert!(!cure_due(9, 20, 50));
+        assert!(cure_due(1, 20, 0), "0: any poison");
+        assert!(cure_due(5, 0, 100), "at 0 HP any poison is due");
+        assert!(!cure_due(0, 20, 0), "no poison, nothing to cure");
+        assert!(!cure_due(19, 20, 100));
     }
 
     #[test]

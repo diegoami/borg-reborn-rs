@@ -303,7 +303,7 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
-    // borg-reborn-rs (#1140, `poison_town_triage`): the poison first, and no
+    // borg-reborn-rs (#1140, `deal_with_poison`): the poison first, and no
     // sale or excess trip while selling pays nothing during it.
     if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
     let no_sale = crate::borg_poison::no_sale_now(st);

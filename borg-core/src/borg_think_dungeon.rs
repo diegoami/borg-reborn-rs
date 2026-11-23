@@ -937,7 +937,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             }
         }
 
-        // borg-reborn-rs (#1140, `poison_town_triage`): a poison cure bought
+        // borg-reborn-rs (#1140, `deal_with_poison`): a poison cure bought
         // for the triage is drunk at once.
         if crate::borg_poison::town_cure(st) {
             return choice!("poison_town_cure");

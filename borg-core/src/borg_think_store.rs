@@ -438,7 +438,7 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // borg-reborn-rs (#1140, `poison_town_triage`): a drink is due: outside.
+    // borg-reborn-rs (#1140, `deal_with_poison`): a drink is due: outside.
     if crate::borg_poison::store_leave_to_drink(st) {
         leave(st);
         st.borg.in_shop = false;
