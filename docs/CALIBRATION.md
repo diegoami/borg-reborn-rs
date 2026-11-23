@@ -7286,7 +7286,7 @@ has no leash; with no staircase known or reachable there is no leash
 (`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
 measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
 can also throw a CL1 Borg far from every staircase it knows. Six parameters
-(the registry now holds **2454**, 2448 on track-p `a82d7042`), read in
+(the registry now holds **2455**, 2449 on track-p `bc215cf8`), read in
 `leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
 compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
 None acts in town, where C's leashes never act (town has no up staircase).
@@ -7309,7 +7309,8 @@ corridor back does not hide it, and an unexplored gap is not a shortcut
   ends ("Close enough", under 3) on them only for a return it started (the
   depth correction's climb ends on C's distance to an up staircase), starts
   only on a walk the stair flows can plan (at most 249 steps; one that
-  becomes unwalkable is dropped), and its
+  becomes unwalkable is dropped), bounds breadth-first exploration (#1085)
+  the same way, and its
   walk back flows to the nearest staircase of either kind
   (`borg_flow_stair_both`) before the up staircases.
 - **`flow_leash_unknown_stair_steps`** = N: with no staircase the exploration
@@ -7331,16 +7332,16 @@ corridor back does not hide it, and an unexplored gap is not a shortcut
   at the first dungeon think at danger 0, after the fights that own the
   action.
 
-The four named seeds, replayed from birth on track-p `a82d7042` (which ships
+The four named seeds, replayed from birth on track-p `bc215cf8` (which ships
 `explore_breadth_first = 1`, #1088) with this change (100,000 game turns,
 local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | seed | character | shipped | `any_stair` 1 | `unknown_stair_steps` 20 | `teleported_recall` 1 | all three |
 |---|---|---|---|---|---|---|
-| 592754909 | Kobold Mage | alive CL5 `5d2d6844` | alive CL5 `2150d987` | = shipped | = shipped | alive CL5 `2150d987` |
-| 645909552 | Dwarf Mage | alive CL5 `0bc0bf21` | alive CL4 `25865e52` | alive CL4 `6e3f27ac` | alive CL4 `ff452067` | alive CL5 `7f518974` |
-| 526144893 | Human Ranger | alive CL4 `c1d0ce93` | alive CL4 `08087903` | alive CL5 `e3622e2f` | = shipped | alive CL5 `35c09a15` |
-| 1024822556 | Dunadan Druid | alive CL6 `f3d29211` | alive CL4 `4acabc84` | alive CL6 `224787c1` | alive CL5 `f357ddb2` | alive CL5 `a9ccae1e` |
+| 592754909 | Kobold Mage | alive CL5 `5d2d6844` | alive CL5 `fbeaff39` | = shipped | = shipped | alive CL5 `fbeaff39` |
+| 645909552 | Dwarf Mage | alive CL5 `0bc0bf21` | alive CL4 `e634cb27` | alive CL4 `6e3f27ac` | alive CL4 `ff452067` | alive CL5 `4acd96d2` |
+| 526144893 | Human Ranger | alive CL4 `c1d0ce93` | alive CL5 `4ec45594` | alive CL5 `e3622e2f` | = shipped | alive CL5 `4ec45594` |
+| 1024822556 | Dunadan Druid | alive CL6 `f3d29211` | alive CL6 `90c0127a` | alive CL6 `224787c1` | alive CL4 `c5311c09` | alive CL4 `16838cba` |
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
