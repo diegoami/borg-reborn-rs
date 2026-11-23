@@ -267,6 +267,10 @@ borg_param_town_departure_free_slots = 2
 # at or below it goes only after every surplus. 0 = whole stacks.
 
 borg_param_town_store_keep_min = 3
+# #1048: keep Home space for different consumables once the carried reserve is covered.
+borg_param_town_home_stack_limit = 2
+# #1049: clear known kinds the town planner deliberately excludes from purchases.
+borg_param_town_home_reject_unwanted = 1
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
 # situations"; "if I have 20 CLW I would have say 4 detect invisible and 2
@@ -871,6 +875,11 @@ borg_param_defend_bless_fail = 25
 # 0.
 
 borg_param_caution_heal_when_outmatched = 1
+# #934 (seed 829474344): poisoned, no usable poison cure and below this
+# percent of max HP, with an escape at hand: the escapes before the strategic
+# retreat, the retreat when they decline. Shipped 0 (today's play); 75 is the
+# hypothesis.
+borg_param_caution_poisoned_no_cure_retreat_hp_percent = 0
 borg_param_caution_heal_outmatched_min_loss = 50
 
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
@@ -1152,6 +1161,13 @@ borg_param_escape_teleport_landing_either = 0
 # and steps instead of reading Phase Door. Mode 3 crashed (#726). Replaced by
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
+# #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
+# that melee kills in this many turns while the danger here from every
+# monster over the fight stays below the percent of the HP. The turns ship 0
+# (today's play; 3 is the hypothesis); the percent, read only when the turns
+# are on, is 100.
+borg_param_caution_retreat_immobile_kill_turns = 0
+borg_param_caution_retreat_immobile_danger_percent = 100
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
