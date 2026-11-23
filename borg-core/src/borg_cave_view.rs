@@ -14,9 +14,11 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
-use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
+use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_grid;
-use crate::borg_projection::borg_los;
+use crate::borg_projection::{borg_los, borg_los_sight};
+use crate::headers::list_terrain_h::FEAT_PASS_RUBBLE;
+use crate::params::{value, Param};
 use crate::state::BorgState;
 use crate::engine;
 
@@ -82,11 +84,28 @@ fn borg_cave_view_hack(st: &mut BorgState, y: i32, x: i32) {
     st.view.view_n += 1;
 }
 
+/// Whether sight passes through a grid, for the view.
+///
+/// C asks `borg_cave_floor_grid`, the walk test, which counts passable
+/// rubble as floor. borg-reborn-rs (#917): with `rubble_blocks`
+/// (`view_rubble_blocks_sight` = 1) passable rubble stops sight, as in the
+/// engine: "pile of passable rubble" has neither `LOS` nor `PROJECT`
+/// (lib/gamedata/terrain.txt:346-354, "Ends LOS"), so the engine's view
+/// (`update_view_one`, src/cave-view.c:765-830, `square_allowslos`) and
+/// `los()` (:85-248, `square_isprojectable`) stop at it as at ordinary rubble. The
+/// rubble itself is still seen, as a wall is. Unknown grids stay
+/// see-through, as in C.
+pub(crate) fn sight_grid(ag: &BorgGrid, rubble_blocks: bool) -> bool {
+    borg_cave_floor_grid(ag) && !(rubble_blocks && u32::from(ag.feat) == FEAT_PASS_RUBBLE)
+}
+
 /// Helper for `borg_update_view()` (`borg_update_view_aux`).
 ///
 /// See `update_view_aux()` in `cave.c` for complete documentation.
+#[allow(clippy::too_many_arguments)]
 fn borg_update_view_aux(
     st: &mut BorgState,
+    rubble_blocks: bool,
     y: i32,
     x: i32,
     y1: i32,
@@ -99,8 +118,8 @@ fn borg_update_view_aux(
     let g2_ag = *st.cave.grid(x2, y2);
 
     /* Check for walls */
-    let f1 = borg_cave_floor_grid(&g1_ag);
-    let f2 = borg_cave_floor_grid(&g2_ag);
+    let f1 = sight_grid(&g1_ag, rubble_blocks);
+    let f2 = sight_grid(&g2_ag, rubble_blocks);
 
     /* Totally blocked by physical walls */
     if !f1 && !f2 {
@@ -117,7 +136,7 @@ fn borg_update_view_aux(
     }
 
     /* Check for walls */
-    let wall = !borg_cave_floor_grid(st.cave.grid(x, y));
+    let wall = !sight_grid(st.cave.grid(x, y), rubble_blocks);
 
     /* Check the "ease" of visibility */
     let vis1 = v1 && (g1_ag.info & BORG_XTRA) != 0;
@@ -157,7 +176,8 @@ fn borg_update_view_aux(
 
     /* Check line of sight */
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    if borg_los(st, cy, cx, y, x) {
+    let los = if rubble_blocks { borg_los_sight(st, cy, cx, y, x) } else { borg_los(st, cy, cx, y, x) };
+    if los {
         borg_cave_view_hack(st, y, x);
 
         return wall;
@@ -170,7 +190,7 @@ fn borg_update_view_aux(
 /// Steps 2 and 3: scan from (x, y) in direction (dx, dy) for `d` in
 /// `1..=limit`, marking grids as easily viewable until a wall. Grids not
 /// fully in bounds are skipped (not a stop). Returns the final `d`.
-fn scan_ray(st: &mut BorgState, y: i32, x: i32, dy: i32, dx: i32, limit: i32) -> i32 {
+fn scan_ray(st: &mut BorgState, rubble_blocks: bool, y: i32, x: i32, dy: i32, dx: i32, limit: i32) -> i32 {
     let mut d = 1;
     while d <= limit {
         let gx = x + dx * d;
@@ -180,7 +200,7 @@ fn scan_ray(st: &mut BorgState, y: i32, x: i32, dy: i32, dx: i32, limit: i32) ->
         if engine::square_in_bounds_fully(gx, gy) {
             st.cave.grid_mut(gx, gy).info |= BORG_XTRA;
             borg_cave_view_hack(st, gy, gx);
-            if !borg_cave_floor_grid(st.cave.grid(gx, gy)) {
+            if !sight_grid(st.cave.grid(gx, gy), rubble_blocks) {
                 break;
             }
         }
@@ -194,6 +214,7 @@ fn scan_ray(st: &mut BorgState, y: i32, x: i32, dy: i32, dx: i32, limit: i32) ->
 /// limit for the next strip (`k + 1`).
 fn scan_strip(
     st: &mut BorgState,
+    rubble_blocks: bool,
     n: i32,
     m: i32,
     limit: i32,
@@ -205,7 +226,7 @@ fn scan_strip(
         let (y, x, y1, x1, y2, x2) = aux(d);
 
         /* Check grid "d" in strip "n", notice "blockage" */
-        if borg_update_view_aux(st, y, x, y1, x1, y2, x2) {
+        if borg_update_view_aux(st, rubble_blocks, y, x, y1, x1, y2, x2) {
             if n + d >= limit {
                 break;
             }
@@ -232,6 +253,9 @@ pub fn borg_update_view(st: &mut BorgState) {
     /*** Initialize ***/
 
     let max_sight = i32::from(engine::z_info().max_sight);
+
+    /* borg-reborn-rs (#917): passable rubble stops sight (sight_grid) */
+    let rubble_blocks = value(Param::view_rubble_blocks_sight) != 0;
 
     /* Full radius (20) */
     let full = max_sight;
@@ -271,42 +295,42 @@ pub fn borg_update_view(st: &mut BorgState) {
     let z = full * 2 / 3;
 
     /* Scan south-east */
-    scan_ray(st, y, x, 1, 1, z);
+    scan_ray(st, rubble_blocks, y, x, 1, 1, z);
 
     /* Scan south-west */
-    scan_ray(st, y, x, 1, -1, z);
+    scan_ray(st, rubble_blocks, y, x, 1, -1, z);
 
     /* Scan north-east */
-    scan_ray(st, y, x, -1, 1, z);
+    scan_ray(st, rubble_blocks, y, x, -1, 1, z);
 
     /* Scan north-west */
-    scan_ray(st, y, x, -1, -1, z);
+    scan_ray(st, rubble_blocks, y, x, -1, -1, z);
 
     /*** Step 3 -- major axes ***/
 
     /* Scan south */
-    let d = scan_ray(st, y, x, 1, 0, full);
+    let d = scan_ray(st, rubble_blocks, y, x, 1, 0, full);
 
     /* Initialize the "south strips" */
     let mut se = d;
     let mut sw = d;
 
     /* Scan north */
-    let d = scan_ray(st, y, x, -1, 0, full);
+    let d = scan_ray(st, rubble_blocks, y, x, -1, 0, full);
 
     /* Initialize the "north strips" */
     let mut ne = d;
     let mut nw = d;
 
     /* Scan east */
-    let d = scan_ray(st, y, x, 0, 1, full);
+    let d = scan_ray(st, rubble_blocks, y, x, 0, 1, full);
 
     /* Initialize the "east strips" */
     let mut es = d;
     let mut en = d;
 
     /* Scan west */
-    let d = scan_ray(st, y, x, 0, -1, full);
+    let d = scan_ray(st, rubble_blocks, y, x, 0, -1, full);
 
     /* Initialize the "west strips" */
     let mut ws = d;
@@ -339,14 +363,14 @@ pub fn borg_update_view(st: &mut BorgState) {
 
             /* East side */
             if (xpn < AUTO_MAX_X) && (n < se) {
-                se = scan_strip(st, n, m, se, |d| {
+                se = scan_strip(st, rubble_blocks, n, m, se, |d| {
                     (ypn + d, xpn, ypn + d - 1, xpn - 1, ypn + d - 1, xpn)
                 });
             }
 
             /* West side */
             if (xmn >= 0) && (n < sw) {
-                sw = scan_strip(st, n, m, sw, |d| {
+                sw = scan_strip(st, rubble_blocks, n, m, sw, |d| {
                     (ypn + d, xmn, ypn + d - 1, xmn + 1, ypn + d - 1, xmn)
                 });
             }
@@ -359,14 +383,14 @@ pub fn borg_update_view(st: &mut BorgState) {
 
             /* East side */
             if (xpn < AUTO_MAX_X) && (n < ne) {
-                ne = scan_strip(st, n, m, ne, |d| {
+                ne = scan_strip(st, rubble_blocks, n, m, ne, |d| {
                     (ymn - d, xpn, ymn - d + 1, xpn - 1, ymn - d + 1, xpn)
                 });
             }
 
             /* West side */
             if (xmn >= 0) && (n < nw) {
-                nw = scan_strip(st, n, m, nw, |d| {
+                nw = scan_strip(st, rubble_blocks, n, m, nw, |d| {
                     (ymn - d, xmn, ymn - d + 1, xmn + 1, ymn - d + 1, xmn)
                 });
             }
@@ -379,14 +403,14 @@ pub fn borg_update_view(st: &mut BorgState) {
 
             /* South side */
             if (ypn < AUTO_MAX_Y) && (n < es) {
-                es = scan_strip(st, n, m, es, |d| {
+                es = scan_strip(st, rubble_blocks, n, m, es, |d| {
                     (ypn, xpn + d, ypn - 1, xpn + d - 1, ypn, xpn + d - 1)
                 });
             }
 
             /* North side */
             if (ymn >= 0) && (n < en) {
-                en = scan_strip(st, n, m, en, |d| {
+                en = scan_strip(st, rubble_blocks, n, m, en, |d| {
                     (ymn, xpn + d, ymn + 1, xpn + d - 1, ymn, xpn + d - 1)
                 });
             }
@@ -399,14 +423,14 @@ pub fn borg_update_view(st: &mut BorgState) {
 
             /* South side */
             if (ypn < AUTO_MAX_Y) && (n < ws) {
-                ws = scan_strip(st, n, m, ws, |d| {
+                ws = scan_strip(st, rubble_blocks, n, m, ws, |d| {
                     (ypn, xmn - d, ypn - 1, xmn - d + 1, ypn, xmn - d + 1)
                 });
             }
 
             /* North side */
             if (ymn >= 0) && (n < wn) {
-                wn = scan_strip(st, n, m, wn, |d| {
+                wn = scan_strip(st, rubble_blocks, n, m, wn, |d| {
                     (ymn, xmn - d, ymn + 1, xmn - d + 1, ymn, xmn - d + 1)
                 });
             }
@@ -423,5 +447,30 @@ pub fn borg_update_view(st: &mut BorgState) {
 
         /* Clear the "BORG_XTRA" flag */
         st.cave.grid_mut(x, y).info &= !BORG_XTRA;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_NONE, FEAT_RUBBLE};
+
+    fn grid(feat: u32) -> BorgGrid {
+        BorgGrid { feat: feat as u8, ..BorgGrid::default() }
+    }
+
+    /// #917: passable rubble stops sight only under the switch; floor and
+    /// unknown grids stay see-through, walls and ordinary rubble block
+    /// either way (C's walk test).
+    #[test]
+    fn passable_rubble_blocks_sight_only_under_the_switch() {
+        assert!(sight_grid(&grid(FEAT_PASS_RUBBLE), false));
+        assert!(!sight_grid(&grid(FEAT_PASS_RUBBLE), true));
+        for blocks in [false, true] {
+            assert!(sight_grid(&grid(FEAT_FLOOR), blocks));
+            assert!(sight_grid(&grid(FEAT_NONE), blocks));
+            assert!(!sight_grid(&grid(FEAT_GRANITE), blocks));
+            assert!(!sight_grid(&grid(FEAT_RUBBLE), blocks));
+        }
     }
 }

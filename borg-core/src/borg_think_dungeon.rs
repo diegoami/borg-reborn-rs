@@ -1050,6 +1050,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_flow_kill_corridor");
     }
 
+    /* borg-reborn-rs (#889): Light Room at a believed light-sensitive
+     * monster in its sphere (unseen_light_reveal) */
+    if crate::borg_unseen_belief::light_reveal(st) {
+        return choice!("unseen_light_reveal");
+    }
+
     /* Attack monsters */
     if crate::borg_fight_attack::borg_attack(st, false) {
         return choice!("borg_attack");
