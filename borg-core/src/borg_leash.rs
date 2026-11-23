@@ -55,10 +55,11 @@ use crate::state::BorgState;
 pub struct LeashState {
     /// `time.level` of the level the grids below belong to (`None`: none yet).
     pub level_time: Option<i32>,
-    /// The grids the arrival leash measures from, (y, x): where the Borg
+    /// The grids the arrival leash can measure from, (y, x): where the Borg
     /// stood at its first update on this level, then the landing of every
     /// jump with no known route back to these (review of #1087: a
-    /// disconnected landing area is bounded too). At most `MAX_ANCHORS`.
+    /// disconnected landing area is bounded too). At most `MAX_ANCHORS`;
+    /// `current_anchor` picks the one the Borg's area is connected to.
     pub anchors: Vec<(i32, i32)>,
     /// Where it stood at the last update, (y, x).
     pub last: Option<(i32, i32)>,
@@ -322,8 +323,10 @@ pub fn beyond(st: &mut BorgState, y: i32, x: i32, b_stair: i32, limit: i32) -> b
     crate::borg_flow::borg_flow_clear(st);
     let sources = leash_sources(any, b_stair, &track_list(&st.stairs.less), &track_list(&st.stairs.more));
     let stairs = steps_from(st, y, x, &sources);
-    let anchors = st.leash.anchors.clone();
-    beyond_verdict(stairs, limit, unknown_steps, || steps_from(st, y, x, &anchors))
+    beyond_verdict(stairs, limit, unknown_steps, || {
+        let anchor = current_anchor(st)?;
+        steps_from(st, y, x, &[anchor])
+    })
 }
 
 /// `engine::distance` from `c` to the nearest of the staircases, (y, x);
@@ -410,11 +413,33 @@ pub fn update(st: &mut BorgState) {
 const MAX_ANCHORS: usize = 16;
 
 /// A jump landed on `landing`: it becomes an anchor unless the known
-/// terrain leads back to one (`reached`), up to `MAX_ANCHORS`.
+/// terrain leads back to one (`reached`). A full list replaces its newest
+/// landing, so the arrival grid and the current landing always stay (review
+/// of #1087).
 fn add_anchor(anchors: &mut Vec<(i32, i32)>, landing: (i32, i32), reached: bool) {
-    if !reached && anchors.len() < MAX_ANCHORS && !anchors.contains(&landing) {
-        anchors.push(landing);
+    if reached || anchors.contains(&landing) {
+        return;
     }
+    if anchors.len() >= MAX_ANCHORS {
+        anchors.pop();
+    }
+    anchors.push(landing);
+}
+
+/// The first anchor, oldest first, that `reaches` the Borg's grid: the
+/// arrival grid while the Borg's area is connected to it, a landing only
+/// while it is not (review of #1087: a reconnected area returns to the
+/// arrival grid). `None`: no anchor reaches it.
+fn first_reaching(anchors: &[(i32, i32)], mut reaches: impl FnMut((i32, i32)) -> bool) -> Option<(i32, i32)> {
+    anchors.iter().copied().find(|&a| reaches(a))
+}
+
+/// The anchor the arrival leash measures from now (`first_reaching`, over
+/// known terrain).
+fn current_anchor(st: &mut BorgState) -> Option<(i32, i32)> {
+    let anchors = st.leash.anchors.clone();
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    first_reaching(&anchors, |a| steps_from(st, y, x, &[a]).is_some())
 }
 
 /// A "You failed ..." message: the action that marked a cause did not
@@ -424,11 +449,13 @@ pub fn action_failed(st: &mut BorgState) {
 }
 
 /// The early "far while near" filters of `take_select` and the kill flow
-/// with `flow_leash_any_stair` (review of #1087): the distance
-/// (`engine::distance`, as C's) from the Borg, and from the target (y, x),
-/// to the nearest known staircase of either kind. `None`: the switch is
-/// off, or no staircase is known (C's up-staircase filter decides).
-pub fn near_far(st: &BorgState, y: i32, x: i32) -> Option<(i32, i32)> {
+/// with `flow_leash_any_stair` (review of #1087): skip the target (y, x)
+/// when the Borg is within `leash` of the nearest known staircase of either
+/// kind and the target is `leash` or more from it, both in walking steps
+/// over known terrain (`steps_from`; a staircase across a wall is not
+/// near). `None`: the switch is off, or no staircase is known (C's
+/// up-staircase filter decides).
+pub fn far_while_near(st: &mut BorgState, y: i32, x: i32, leash: i32) -> Option<bool> {
     if !any_stair(st) {
         return None;
     }
@@ -436,7 +463,16 @@ pub fn near_far(st: &BorgState, y: i32, x: i32) -> Option<(i32, i32)> {
     if all.is_empty() {
         return None;
     }
-    Some((nearest_distance((st.borg.c.y, st.borg.c.x), &all), nearest_distance((y, x), &all)))
+    let (by, bx) = (st.borg.c.y, st.borg.c.x);
+    let near = steps_from(st, by, bx, &all);
+    let far = steps_from(st, y, x, &all);
+    Some(far_while_near_verdict(near, far, leash))
+}
+
+/// `far_while_near`'s verdict: C's `b_j <= leash && j >= leash`, with a
+/// distance the walk does not reach never near and never far.
+fn far_while_near_verdict(near: Option<i32>, far: Option<i32>, leash: i32) -> bool {
+    matches!((near, far), (Some(n), Some(f)) if n <= leash && f >= leash)
 }
 
 /// The verdict of `flow_leash_teleported_recall` on a jump of `jump` grids
@@ -673,9 +709,28 @@ mod tests_1062 {
             add_anchor(&mut a, (1, i), false);
         }
         assert_eq!(a.len(), MAX_ANCHORS);
+        assert_eq!(a[0], (10, 10), "the arrival grid stays");
+        assert_eq!(a[MAX_ANCHORS - 1], (1, 39), "the newest landing is kept");
+        // Reconnected: the arrival grid reaches the Borg, so it is the one
+        // measured from, not the old landing 15 steps away.
+        assert_eq!(first_reaching(&a, |_| true), Some((10, 10)));
+        // Cut off: the first landing that reaches it.
+        assert_eq!(first_reaching(&a, |g| g == (1, 39)), Some((1, 39)));
+        assert_eq!(first_reaching(&a, |_| false), None);
         // The verdict measures from the nearest anchor: 25 steps from the
         // landing is beyond 20 even with the arrival unreachable.
         assert!(beyond_verdict(None, 12, 20, || Some(25)));
+    }
+
+    /// Review of #1087: the early filters in walking steps. A staircase 10
+    /// grids away across a wall is 34 steps away: the Borg is not near it,
+    /// so the item 3 moves away (36 steps from it) is not skipped.
+    #[test]
+    fn far_while_near_in_steps() {
+        assert!(!far_while_near_verdict(Some(34), Some(36), 12));
+        assert!(far_while_near_verdict(Some(10), Some(13), 12));
+        assert!(!far_while_near_verdict(None, Some(13), 12));
+        assert!(!far_while_near_verdict(Some(10), None, 12));
     }
 
     /// The default state follows nothing.

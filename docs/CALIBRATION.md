@@ -6995,9 +6995,11 @@ corridor back does not hide it, and an unexplored gap is not a shortcut
   walk back flows to the nearest staircase of either kind
   (`borg_flow_stair_both`) before the up staircases.
 - **`flow_leash_unknown_stair_steps`** = N: with no staircase the exploration
-  leash counts, or none reachable, it is N steps from the nearest anchor: the
-  grid where the Borg arrived on the level, or the landing of a jump with no
-  known route back (at most 16). The return leash has no walk to that grid and is
+  leash counts, or none reachable, it is N steps from an anchor: the grid
+  where the Borg arrived on the level while its area is connected to it, else
+  the landing of a jump with no known route back that the area is connected
+  to (at most 16, the newest always kept). The early "far while near"
+  filters measure walking steps too. The return leash has no walk to that grid and is
   unchanged.
 - **`flow_leash_teleported_recall`**: up to `flow_leash_recall_max_level`, a
   teleport, by its cause: a teleport trap (the message) or the Borg's own
