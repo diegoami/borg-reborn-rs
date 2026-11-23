@@ -79,6 +79,9 @@ PINNED_TOWN_SETTINGS = [
     # #1098 shipped the mixed walk and the C exploration's stair exit after
     # these incidents (owner, 2026-11-23: "merge it but with all settings on").
     ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
+    # #1136 shipped the poison still to come in the flight Recall forecast
+    # after these incidents.
+    ("caution_recall_poison_remaining", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

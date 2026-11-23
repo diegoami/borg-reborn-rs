@@ -6089,7 +6089,8 @@ rate is scaled by its attack share, 1 − s + s·(1 − (7/8)^5) for stagger cha
 s (`mon-move.c:1087-1103,1571-1632`). A hypothesis
 until borg-zoo measures it (RULES 14).
 
-`caution_recall_poison_remaining` (#1136) compiles and ships **0** and needs
+`caution_recall_poison_remaining` (#1136) compiles to **0** and ships **1**
+(owner, 2026-11-23: "ship with the new switch"), and needs
 `caution_recall_blow_model = 1`. At 0 an already poisoned Borg is charged the
 whole delay (34 HP), whatever the timer holds. At 1 it is charged the HP the
 running timer still takes, `ceil(timer / (adj_con_fix[CON] + 1))`, plus the
@@ -6120,7 +6121,9 @@ new poison of reachable poisoners, capped at the delay.
 The running poison stays charged to Recall in full. #1136's proposal B left it
 out (every option pays it) and was dropped in review (#1143, P1): a Borg the
 poison kills during the delay dies after reading Recall. Comparing Recall with
-the fallback is #1144. A hypothesis until borg-zoo measures it (RULES 14).
+the fallback is #1144. Shipped before a zoo measure; in #1143's replays of zoo
+run 45121432449 it changed none of 25 deaths and 18 survivors. A hypothesis
+until borg-zoo measures it (RULES 14).
 
 Reachability uses the Borg's remembered terrain and race movement flags.
 Known permanent walls block every route; other known walls and closed doors
