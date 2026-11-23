@@ -6254,10 +6254,14 @@ them.
     cornered exception (`fast_fragile_no_heal = 2`) allows any cure; then
     the ratio. When not even a full heal passes, the escape or the attack
     decides. Out of contact the floor applies at any ratio.
-  - **A declined cure costs no attack** (re-review of #1089). With the ratio
-    on, attack on sight tries the cure at once with the caution's healing
-    (`borg_caution::fast_fragile_cure`) and attacks if the caution declines
-    it.
+  - **A declined cure costs no attack** (re-reviews of #1089). With the
+    ratio on, attack on sight defers its priority attack when it steps
+    aside for a cure. If the whole caution then takes no action (no cure,
+    retreat or escape, in its usual order), the attack goes on
+    (`fast_fragile_deferred_attack`, right after `borg_caution`).
+  - **The healing fallbacks** outside `borg_heal` ask the same contact ratio
+    for each cure (`ratio_gate`): the unseen-bump heal, the Recall wait and
+    #1064's kill-on-sight floor cure.
   - **The confusion and blindness fixes** of `borg_heal` come before the ban,
     as before #842: they restore the Phase Door the ban relies on. Pinned by
     a test.
