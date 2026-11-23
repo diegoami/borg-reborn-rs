@@ -63,6 +63,9 @@ PINNED_TOWN_SETTINGS = [
     ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
     # #1100 shipped the position belief (#879) at decay 5 after these incidents.
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
+    # #1128 shipped #885's dark-floor light and #917's rubble sight after
+    # these incidents.
+    ("update_dark_clears_light", 0), ("view_rubble_blocks_sight", 0),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
     # #1067 shipped the trap rules after these incidents.
