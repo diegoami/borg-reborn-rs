@@ -1168,6 +1168,16 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
 /// of `borg_caution`).
 fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
+    // borg-reborn-rs (#916): no step away from an awake adjacent record whose
+    // haste forecast (mspeed, +10 if FAST, SLOW not subtracted) beats the
+    // Borg's speed by the margin (C's "adjacent to a faster" test never acts).
+    let from_faster = p(Param::caution_retreat_from_faster) != 0;
+    if from_faster {
+        if let Some((name, over)) = faster_in_contact(st, p(Param::caution_retreat_faster_margin)) {
+            borg_note(st, &format!("# No retreat: {name} in contact is faster by {over} (#916)"));
+            return false;
+        }
+    }
     // borg-reborn-rs (#881): no retreat into a dead end near breeders.
     let exits = RetreatExits::for_think(st);
     let mut b_r = -1;
@@ -1364,6 +1374,13 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         }
     }
 
+    // borg-reborn-rs (#916): the selected destination's danger at or above HP
+    // vetoes the whole retreat (no other candidate, first step unchecked).
+    if from_faster && b_r >= 0 && b_p >= st.borg.tr(BI_CURHP) {
+        borg_note(st, &format!("# No retreat: {},{} keeps danger {} at HP {} (#916)", b_y, b_x, b_p, st.borg.tr(BI_CURHP)));
+        return false;
+    }
+
     // Retreat
     if b_r >= 0 {
         // Save direction
@@ -1391,6 +1408,28 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         return true;
     }
     false
+}
+
+/// borg-reborn-rs (#916): an awake monster record next to the Borg (no
+/// freshness or mobility check) whose haste forecast (`forecast_monster_speed`:
+/// `mspeed`, +10 for an observed FAST; the engine's SLOW adjustment,
+/// `mon-move.c:1932-1935`, is not subtracted) exceeds `player->state.speed`
+/// by at least `margin`: its name and the difference.
+fn faster_in_contact(st: &BorgState, margin: i32) -> Option<(String, i32)> {
+    let own = engine::player_combat_speed();
+    (1..st.kills.nxt.max(0) as usize).find_map(|i| {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1 {
+            return None;
+        }
+        let over = forecast_monster_speed(kill) - own;
+        faster_by(over, margin).then(|| (String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned(), over))
+    })
+}
+
+/// `over` speed points faster counts at `margin` or more (at least 1).
+fn faster_by(over: i32, margin: i32) -> bool {
+    over >= margin.max(1)
 }
 
 /// borg-reborn-rs (#881): `caution_retreat_dead_end`. Retreat and back-up
@@ -4082,6 +4121,18 @@ mod breeder_danger_tests {
         // The boost at the shipped 5 tenths, HP 20: fires at 32, not at 2.
         let fires = |danger: i32| i64::from(danger) * 10 >= 20 * 5;
         assert!(fires(32) && !fires(2));
+    }
+}
+
+#[cfg(test)]
+mod retreat_faster_tests {
+    #[test]
+    fn faster_counts_from_the_margin() {
+        assert!(super::faster_by(20, 5), "a hasted cave spider against an unhasted rogue");
+        assert!(super::faster_by(5, 5));
+        assert!(!super::faster_by(2, 5), "the +-2 spread of a normal-speed race");
+        assert!(!super::faster_by(0, 0), "never equal speed, whatever the margin");
+        assert!(super::faster_by(1, 0));
     }
 }
 
