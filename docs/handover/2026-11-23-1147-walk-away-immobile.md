@@ -104,3 +104,12 @@ availability counts the spell up to `caution_walk_away_phase_fail`
 (`has_phase`/`phase_available` in `borg_escape.rs`). Previously `BI_APHASE`
 alone credited it only at 3% failure or less. Every other site still asks
 `BI_APHASE`.
+
+**Shipped on, 2026-11-23** (owner: "Merge with caution_walk_away_immobile = 1
+and leave caution_walk_away_phase_fail = 30"). `harness/borg.txt` ships 1,
+ahead of a zoo measurement: the local replays (55 of 60 games changed, 1 death
+against 0, DL3 reached 6 against 10) showed no gain, so the zoo arm (patches-x8,
+poison-x8, normal world; DL3/DL5 reach as well as deaths) is still owed.
+`smoke-borg-rs` was re-recorded for it in the PR (or found identical: see the
+PR). `engine/tests/test_stair_handoff.py` pins it to 0 for its recorded
+incident, as the earlier shipped switches are.

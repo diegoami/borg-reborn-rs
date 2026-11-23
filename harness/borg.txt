@@ -1296,8 +1296,11 @@ borg_param_caution_paralyser_no_reach = 0
 # no flow enters their reach (stair flights included), and next to one the
 # first action is to leave: up the staircase underfoot, else a step to the
 # best square (a clean way to the stairs, then away from movers, then toward a
-# room exit, then free space). Cornered, a blow is the last resort. Shipped 0.
-borg_param_caution_walk_away_immobile = 0
+# room exit, then free space). Cornered, a blow is the last resort. Shipped
+# on by the owner (2026-11-23, merge of #1148) before a zoo measurement: in
+# 60 patches-x8 replays 55 games changed, 1 death against 0, 6 reached DL3
+# against 10. 0 = the play before #1147.
+borg_param_caution_walk_away_immobile = 1
 # #1147 (review of #1148): cornered next to a walk-away monster and not
 # confused, Phase Door by spell up to this failure rate before a blow.
 borg_param_caution_walk_away_phase_fail = 30
