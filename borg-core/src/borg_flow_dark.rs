@@ -1279,14 +1279,22 @@ fn released(st: &BorgState) -> bool {
 /// C's own leash applies (`c_leash_on`: the depth at least the level less
 /// `flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the
 /// kit short). Elsewhere exploration is C's depth-first order, as today.
-/// Not on a level where leaving after the walk failed
-/// (`release_after_failed_exit`).
+/// Not above `explore_mix_max_clevel` (per class), and not on a level where
+/// leaving after the walk failed (`release_after_failed_exit`).
 pub(crate) fn mixed_active(st: &BorgState) -> bool {
     value(Param::explore_mixed) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
         && c_leash_on(st)
+        && within_mix_levels(st.borg.tr(BI_CLEVEL), value(Param::explore_mix_max_clevel))
         && !released(st)
+}
+
+/// #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): mixed
+/// exploration applies up to this character level, per class; above it the
+/// class counts as prepared and C's depth-first order explores.
+fn within_mix_levels(clevel: i32, max_clevel: i32) -> bool {
+    clevel <= max_clevel
 }
 
 /// #1098: leaving after the stair-anchored exploration was exhausted failed
@@ -2117,5 +2125,14 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_mix_speed_ratio), 2);
         assert_eq!(value(Param::explore_mix_contact_damage), 5);
         assert_eq!(value(Param::explore_mix_max_radius), 30);
+        assert_eq!(value(Param::explore_mix_max_clevel), 50, "compiled: no cap (C's leash ends at CL20)");
+    }
+
+    #[test]
+    fn mixed_stops_above_the_class_cap() {
+        // Owner, 2026-11-23: "explore_mix_max_clevel by class".
+        assert!(within_mix_levels(6, 6), "up to the cap");
+        assert!(!within_mix_levels(7, 6), "above it, C's order");
+        assert!(within_mix_levels(19, 50), "compiled: no cap");
     }
 }

@@ -7524,6 +7524,30 @@ is, the mixed walk applies where C's own exploring leash applies
 `flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the kit
 short, #840). Elsewhere exploration stays C's depth-first order, as today.
 
+**A cap by class** (owner, 2026-11-23: "explore_mix_max_clevel by class").
+The walk applies only up to `explore_mix_max_clevel`; above it the class
+counts as prepared. The per-class values are a hypothesis from #1080's pooled
+table of DL1 deaths per 100 games that reached each CL: the level before the
+first CL whose rate, and every later one, is at most 0.25. Priest and
+Necromancer never get there within the table's CL1–7, so they take 7.
+Compiled 50: no cap, and the walk ends with C's leash at CL20.
+
+| class | DL1 deaths per 100 at CL3 / 4 / 5 / 6 / 7 | depth-first from | `explore_mix_max_clevel` |
+|---|---|---:|---:|
+| Warrior | 0.28 / 0.16 / 0.10 / 0.05 / 0.09 | CL4 | 3 |
+| Mage | 2.18 / 1.51 / 0.45 / 0.26 / 0.16 | CL7 | 6 |
+| Druid | 1.06 / 1.02 / 0.45 / 0.22 / 0.22 | CL6 | 5 |
+| Priest | 1.61 / 0.70 / 0.31 / 0.29 / 0.46 | after CL7 | 7 |
+| Necromancer | 2.17 / 0.45 / 0.95 / 0.37 / 0.59 | after CL7 | 7 |
+| Paladin | 0.83 / 0.80 / 0.39 / 0.26 / 0.07 | CL7 | 6 |
+| Rogue | 1.09 / 0.58 / 0.19 / 0.08 / 0.15 | CL5 | 4 |
+| Ranger | 1.31 / 1.02 / 0.35 / 0.14 / 0.07 | CL6 | 5 |
+| Blackguard | 0.67 / 0.63 / 0.11 / 0.14 / 0.23 | CL5 | 4 |
+
+The table pools every build, and recent runs are 5–10 times lower, so the cut
+at 0.25 is itself a hypothesis. borg-zoo#718's turns per (CL, DL) would turn
+these into rates per turn.
+
 **The walk.** It uses breadth-first's frame (`stair_frame`): each grid's ring
 (flow steps from the nearest known staircase of either kind), the
 interesting grids the Borg can reach, and the grids past the return leash.
@@ -7589,17 +7613,18 @@ is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
 The switch ships 0 and its numbers are hypotheses (RULES 14). borg-zoo
 measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
 full ladder), and with two values of `explore_mix_contact_damage`. With this
-section the registry holds **2470** parameters (`track-p` `d3d1629f` plus
-the nine below).
+section the registry holds **2471** parameters (`track-p` `d3d1629f` plus
+the ten below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1238` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1465` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1473` |
 | `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1285` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1400` |
-| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1402` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1403` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1405` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1408` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1422` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1411` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1413` |
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1407` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1409` |
+| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1289` |

@@ -47,3 +47,8 @@ borg_param_explore_bfs_max_hp = 28
 borg_param_explore_bfs_hp_per_level = 2
 # #1061 (owner, 2026-11-23: "none for warrior"): no stair_scum mode for the warrior.
 borg_param_stair_scum = 0
+# #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): with
+# explore_mixed, the mixed walk applies up to this CL; above it C's order. The
+# level before the first CL whose DL1 death rate, and every later one, is at
+# most 0.25 per 100 games in #1080's pooled table (a hypothesis).
+borg_param_explore_mix_max_clevel = 3
