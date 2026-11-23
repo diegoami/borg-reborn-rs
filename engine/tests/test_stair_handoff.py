@@ -55,6 +55,9 @@ PINNED_TOWN_SETTINGS = [
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
+    # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
+    # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
+    ("stair_scum", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -140,6 +143,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
+            # #1061: the stair_scum mode (shipped after these cases) is not
+            # what they test; pin it off.
+            config, changed = re.subn(r"^borg_param_stair_scum = .*$", "borg_param_stair_scum = 0", config, flags=re.M)
+            if changed == 0:
+                config += "\nborg_param_stair_scum = 0\n"
             for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
                 key = f"borg_param_caution_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
