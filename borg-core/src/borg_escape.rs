@@ -363,12 +363,18 @@ pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
 /// the grid checked after the search (`ag`) is the last one the search
 /// looked at (it starts as the Borg's own grid and carries over from one
 /// attempt to the next).
+///
+/// borg-reborn-rs (#1066): with `unknown_scary`, a candidate grid that
+/// `skip_unknown` would skip ends its attempt instead and counts as scary:
+/// the Borg cannot know what waits there. Returns the scary count and how
+/// many of them were such unknown grids.
 fn count_scary(
     st: &mut BorgState,
     dis: i32,
     turns: i32,
+    unknown_scary: bool,
     mut skip_unknown: impl FnMut(&mut BorgState, i32, i32) -> bool,
-) -> i32 {
+) -> (i32, i32) {
     let min = dis / 2;
 
     // `ag` of C, as a position
@@ -376,9 +382,11 @@ fn count_scary(
 
     // Simulate 100 attempts
     let mut n = 0;
+    let mut unknown = 0;
     for _k in 0..param(Param::escape_landing_samples) {
         let mut x = 0;
         let mut y = 0;
+        let mut never_seen = false;
 
         // Pick a location
         let mut i = 0;
@@ -405,6 +413,11 @@ fn count_scary(
 
             // Skip unknown grids
             if skip_unknown(st, x, y) {
+                // borg-reborn-rs (#1066): or count them as scary.
+                if unknown_scary {
+                    never_seen = true;
+                    break;
+                }
                 i += 1;
                 continue;
             }
@@ -429,6 +442,13 @@ fn count_scary(
 
             // Stop looking
             break;
+        }
+
+        // borg-reborn-rs (#1066): a landing never seen is scary.
+        if never_seen {
+            n += 1;
+            unknown += 1;
+            continue;
         }
 
         // If low level, unknown squares are scary
@@ -456,7 +476,7 @@ fn count_scary(
             n += 1;
         }
     }
-    n
+    (n, unknown)
 }
 
 /// borg-reborn-rs (#539, owner): "do not phase door when a monster is still
@@ -809,6 +829,10 @@ pub(crate) enum PhaseSite {
     /// #842: a fast-fragile monster next to the Borg, the next turn kills it
     /// and the kill needs more than one more turn (`borg_fast_fragile.rs`).
     FastFragile,
+    /// #1064 (review of #1082): #969's floor declined the attack on a
+    /// `kill-on-sight` entry and its cure does not outlive the next turn
+    /// (`borg_fight_attack.rs` `floor_escape`).
+    KillOnSightFloor,
 }
 
 impl PhaseSite {
@@ -833,6 +857,7 @@ impl PhaseSite {
             PhaseSite::TwitchyMove => "twitchy move",
             PhaseSite::TwitchyThink => "twitchy think",
             PhaseSite::FastFragile => "fast-fragile",
+            PhaseSite::KillOnSightFloor => "kill-on-sight floor",
         }
     }
 }
@@ -868,6 +893,8 @@ pub(crate) fn phase_door(
     // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
     // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
     // grid does not (`dis` 10 is not above 10), so the grid is not asked.
+    // borg-reborn-rs (#1094): set again below only if the gate refuses.
+    st.borg.phase_gate_refused = None;
     if teleport_stopped(st) {
         borg_note(st, &format!("# Phase ({}): no, teleport is blocked", site.label()));
         return false;
@@ -900,6 +927,21 @@ pub(crate) fn phase_door(
         PhaseCheck::None => true,
     };
     if !checked {
+        return false;
+    }
+    // borg-reborn-rs (review of #1075, finding 2): the sites with no landing
+    // check (the critical and last-ditch phases, the twitchy ones,
+    // fast-fragile without its landing test) still refuse a jump into the
+    // never seen, under #1066's policy.
+    let policy = phase_unknown_policy(st);
+    let tolerance = param(Param::escape_phase_unknown_tolerance);
+    // Re-review of #1075 (finding 2): a landing check in this think, at
+    // this grid, already counted the never seen; reuse it, do not redraw,
+    // and keep that site's tolerance when it is stricter (#1094).
+    let (record, now, at) = (st.borg.phase_unknown_seen, st.borg.time.now, st.borg.c);
+    if let Some((n, at_most)) = unknown_gate(check, policy, || gate_count(record, now, at, tolerance, || never_seen_landings(st))) {
+        borg_note(st, &format!("# Phase ({}): no, {n} never-seen landing grids of 100 (at most {at_most}) (#1066)", site.label()));
+        st.borg.phase_gate_refused = Some(st.borg.time.now);
         return false;
     }
     if rule && site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
@@ -1161,7 +1203,7 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false))
     };
     let adjacent = adjacent_awake(st);
-    let lost = adjacent && fight_lost(st, here, hp);
+    let lost = adjacent && fight_lost(st, here, hp) && !newcomer_wait(st, hp);
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {
@@ -1178,6 +1220,84 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
     borg_note(st, &format!("# Phase rule (from {label}): {why}"));
     st.borg.phase_rule = Some((now, verdict, false));
     verdict
+}
+
+/// borg-reborn-rs (#1066): with `escape_phase_newcomer_wait`, an adjacent
+/// fight the rule judged lost is not lost when the rise in danger comes from
+/// a newcomer at range: HP at least `escape_phase_newcomer_hp_percent` of
+/// the maximum, an awake known monster farther than one grid that endangers
+/// the Borg where it stands, and #759's fight race against the adjacent
+/// monsters alone winning (`fight_race`, adjacent only; not certified is
+/// not winning). The emergency Phase Door waits for the newcomer to arrive.
+///
+/// Review of #1075 (Codex, finding 1): the next turn must be survivable
+/// too. The race's HP a turn from the adjacent monsters plus the danger of
+/// the monsters at range (without fear when `escape_phase_lost_damage_only`
+/// is on, as the rule reads it) must stay below
+/// `escape_phase_newcomer_turn_percent` of HP (`newcomer_turn_safe`);
+/// otherwise the Phase Door stays. Re-review of #1075 (finding 1): that
+/// danger is the full possible one-turn damage (`full_damage`: no discount
+/// for the spell frequency, `spell_frequency_discount`, and whole monster
+/// turns), so an infrequent lethal cast still vetoes the wait.
+fn newcomer_wait(st: &mut BorgState, hp: i32) -> bool {
+    if param(Param::escape_phase_newcomer_wait) == 0 {
+        return false;
+    }
+    let max_hp = st.borg.tr(BI_MAXHP);
+    if !unknown_counts_scary(hp, max_hp, param(Param::escape_phase_newcomer_hp_percent)) {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let damage_only = param(Param::escape_phase_lost_damage_only) != 0;
+    let mut newcomers = 0;
+    let mut at_range = 0i64;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) <= 1 {
+            continue;
+        }
+        let one = |st: &mut BorgState| crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i as i32, true, true);
+        let danger = if damage_only { crate::params::damage_only(|| one(st)) } else { one(st) };
+        if danger > 0 {
+            newcomers += 1;
+            at_range += i64::from(danger);
+        }
+    }
+    if newcomers == 0 {
+        return false;
+    }
+    match crate::borg_caution::fight_race(st, true) {
+        None => {
+            borg_note(st, &format!("# Phase rule: {newcomers} monster(s) at range, the race against the adjacent ones not certified: no wait (#1066)"));
+            false
+        }
+        Some(race) => {
+            let percent = param(Param::escape_phase_newcomer_turn_percent);
+            let safe = newcomer_turn_safe(race.incoming, at_range, hp, percent);
+            let verdict = match (race.won, safe) {
+                (false, _) => "not winning".to_string(),
+                (true, false) => format!("winning, but the next turn is not safe ({:.3} + {at_range} at range, at least {percent}% of HP): no wait", race.incoming),
+                (true, true) => format!("winning and the next turn safe ({:.3} + {at_range} at range): the Phase Door waits for the newcomer", race.incoming),
+            };
+            borg_note(
+                st,
+                &format!(
+                    "# Phase rule: {newcomers} monster(s) at range; the race against the {} adjacent: {:.3} turns to kill, {:.3} damage/turn, HP {hp}/{max_hp}: {verdict} (#1066)",
+                    race.plans.len(),
+                    race.turns,
+                    race.incoming,
+                ),
+            );
+            race.won && safe
+        }
+    }
+}
+
+/// Review of #1075 (finding 1): the next turn is survivable when the adjacent
+/// monsters' HP a turn (`incoming`, #759's) plus the danger of the monsters
+/// at range stays below `percent` of HP.
+fn newcomer_turn_safe(incoming: f64, at_range: i64, hp: i32, percent: i32) -> bool {
+    incoming.is_finite() && (incoming + at_range as f64) * 100.0 < f64::from(hp) * f64::from(percent)
 }
 
 /// borg-reborn-rs (#584, owner): after `borg_escape` found no escape, act on
@@ -1262,21 +1382,115 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
         return false;
     }
 
+    // borg-reborn-rs (#1066): with `escape_phase_unknown_scary`, a landing
+    // grid the Borg has never seen is scary, unless HP is below
+    // `escape_phase_unknown_hp_percent` of the maximum (a real emergency).
+    let unknown_scary = phase_unknown_policy(st);
+
     // Skip unknown grids
-    let n = count_scary(st, 10, turns, |st, x, y| {
+    let (n, unknown) = count_scary(st, 10, turns, unknown_scary, |st, x, y| {
         u32::from(st.cave.grid(x, y).feat) == FEAT_NONE
     });
+    let never_seen = if unknown_scary { format!(", {unknown} of them never seen (#1066)") } else { String::new() };
+    if unknown_scary {
+        // Re-review of #1075 (finding 2): for the gate of a later site in
+        // this think (the critical phase after a refused emergency).
+        st.borg.phase_unknown_seen = Some((st.borg.time.now, st.borg.c, unknown, emergency));
+    }
 
     // Too much danger
     // in an emergency try with extra danger allowed
     if n > emergency {
-        borg_note(st, &format!("# Phase ({}): no, {n} scary landing grids of 100 (at most {emergency})", site.label()));
+        borg_note(st, &format!("# Phase ({}): no, {n} scary landing grids of 100 (at most {emergency}){never_seen}", site.label()));
         return false;
     }
-    borg_note(st, &format!("# Phase ({}): landing ok, {n} scary landing grids of 100 (at most {emergency})", site.label()));
+    borg_note(st, &format!("# Phase ({}): landing ok, {n} scary landing grids of 100 (at most {emergency}){never_seen}", site.label()));
 
     // Okay
     true
+}
+
+/// borg-reborn-rs (#1066): #1066's policy is on for this think:
+/// `escape_phase_unknown_scary` and HP at or above
+/// `escape_phase_unknown_hp_percent` of the maximum. Read by the landing
+/// check, the gate of the sites without one, and Shoot N Scoot's sampler.
+pub(crate) fn phase_unknown_policy(st: &BorgState) -> bool {
+    param(Param::escape_phase_unknown_scary) != 0
+        && unknown_counts_scary(st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::escape_phase_unknown_hp_percent))
+}
+
+/// Review of #1075 (finding 2): the never-seen gate of a Phase Door site.
+/// It applies only to the checks that sample no landing (`MonsterNear`,
+/// `None`; `Landing` counts the unknown itself, and Shoot N Scoot's sampler
+/// does), only under the policy, and asks `count` only then: the
+/// never-seen count of 100 and the tolerance to judge it by. Returns both
+/// when it refuses (the count above the tolerance).
+fn unknown_gate(check: PhaseCheck, policy: bool, count: impl FnOnce() -> (i32, i32)) -> Option<(i32, i32)> {
+    if !policy || !matches!(check, PhaseCheck::MonsterNear | PhaseCheck::None) {
+        return None;
+    }
+    let (n, at_most) = count();
+    (n > at_most).then_some((n, at_most))
+}
+
+/// Re-review of #1075 (finding 2): the never-seen count the gate judges, and
+/// its tolerance. The last landing check's (`record`) when it was made in
+/// this think (`now`) at this grid (`at`), judged by the stricter of that
+/// site's tolerance and the gate's (`tolerance`; #1094, the re-review's
+/// P3): a scroll the landing site refused on the unknown alone stays
+/// refused. Else a fresh draw (`sample`) at the gate's tolerance.
+fn gate_count(record: Option<(BorgTime, loc, i32, i32)>, now: BorgTime, at: loc, tolerance: i32, sample: impl FnOnce() -> i32) -> (i32, i32) {
+    match record {
+        Some((t, grid, n, site)) if t == now && grid == at => (n, site.min(tolerance)),
+        _ => (sample(), tolerance),
+    }
+}
+
+/// Review of #1075 (finding 2): of `escape_landing_samples` Phase Door
+/// landings drawn as `count_scary` draws them (range 10, at least 5), how
+/// many first meet a legal grid the Borg has never seen. Known walls,
+/// monsters and webs are drawn again, as there; a sample with no grid found
+/// is not counted (only the unknown is asked here).
+fn never_seen_landings(st: &mut BorgState) -> i32 {
+    let dis = 10;
+    let min = dis / 2;
+    let mut n = 0;
+    for _ in 0..param(Param::escape_landing_samples) {
+        let mut i = 0;
+        while i < param(Param::escape_landing_trials) {
+            let (x, y) = loop {
+                let y = rand_spread(st.borg.c.y, dis);
+                let x = rand_spread(st.borg.c.x, dis);
+                let d = engine::distance(st.borg.c, loc { x, y });
+                if d >= min && d <= dis {
+                    break (x, y);
+                }
+            };
+            if y <= 0 || y >= AUTO_MAX_Y - 1 || x <= 0 || x >= AUTO_MAX_X - 1 {
+                i += 1;
+                continue;
+            }
+            let g = *st.cave.grid(x, y);
+            if u32::from(g.feat) == FEAT_NONE {
+                n += 1;
+                break;
+            }
+            if !borg_cave_floor_bold(st, y, x) || g.kill != 0 || g.web {
+                i += 1;
+                continue;
+            }
+            break;
+        }
+    }
+    n
+}
+
+/// borg-reborn-rs (#1066): whether the Phase Door landing check counts a
+/// grid never seen as scary: HP at or above `percent` of the maximum. Below
+/// it, a Phase Door into the unknown is a real emergency's, and unknown
+/// grids are skipped as before.
+fn unknown_counts_scary(hp: i32, max_hp: i32, percent: i32) -> bool {
+    i64::from(hp) * 100 >= i64::from(max_hp) * i64::from(percent)
 }
 
 /// borg-reborn-rs (#724): whether `borg_caution_teleport` lacks the ability:
@@ -1308,7 +1522,7 @@ pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> 
 
     // Skip unknown grids if explored, or been on level for a while,
     // otherwise, consider ok
-    let n = count_scary(st, 100, turns, |st, x, y| {
+    let (n, _) = count_scary(st, 100, turns, false, |st, x, y| {
         u32::from(st.cave.grid(x, y).feat) == FEAT_NONE
             && ((detect_wall(st, q_y, q_x)
                 && detect_wall(st, q_y, q_x + 1)
@@ -2410,6 +2624,215 @@ mod landing_tests {
         assert!(lacks_teleport(false, 1, 0));
         assert!(lacks_teleport(false, 0, 1));
         assert!(!lacks_teleport(false, 1, 1));
+    }
+}
+
+#[cfg(test)]
+mod unknown_landing_tests {
+    use super::unknown_counts_scary;
+
+    /// #1066: unknown landing grids are scary at or above the HP floor, and
+    /// skipped (a real emergency) below it.
+    #[test]
+    fn unknown_grids_are_scary_above_the_hp_floor() {
+        assert!(unknown_counts_scary(41, 55, 50), "the Priest 694417276 at 41/55");
+        assert!(unknown_counts_scary(43, 60, 50), "the Blackguard 2025089708 at 43/60");
+        assert!(unknown_counts_scary(25, 50, 50), "exactly half");
+        assert!(!unknown_counts_scary(24, 50, 50), "below half: Phase Door into the unknown allowed");
+        assert!(unknown_counts_scary(0, 50, 0), "0 = always scary");
+        assert!(!unknown_counts_scary(55, 55, 101), "above 100: never");
+    }
+
+    /// #1066: `count_scary` and its callers need the engine (its RNG, the
+    /// cave bounds), so this pins their sources (the `recall_restricts`
+    /// pattern): only the Phase Door check passes the switch, the teleport
+    /// check passes `false`, and an unknown grid is counted before the wall
+    /// and danger tests can resample it.
+    #[test]
+    fn only_the_phase_door_landing_counts_unknown_grids() {
+        let src = include_str!("borg_escape.rs");
+        let body = |head: &str| {
+            let at = &src[src.find(head).unwrap_or_else(|| panic!("{head}"))..];
+            at[..at.find("\n}\n").unwrap()].to_string()
+        };
+        let phase = body(concat!("fn caution_", "phase(st: &mut BorgState"));
+        let teleport = body(concat!("pub fn borg_caution_", "teleport("));
+        assert!(phase.contains(concat!("count_scary(st, 10, turns, unknown_", "scary,")));
+        assert!(phase.contains(concat!("phase_unknown_", "policy(st)")));
+        let policy = body(concat!("pub(crate) fn phase_unknown_", "policy("));
+        assert!(policy.contains(concat!("Param::escape_phase_", "unknown_scary")));
+        assert!(policy.contains(concat!("Param::escape_phase_", "unknown_hp_percent")));
+        // Review of #1075 (finding 2): Shoot N Scoot's sampler asks the policy.
+        let flow = include_str!("borg_flow_kill.rs");
+        let at = &flow[flow.find(concat!("pub fn borg_shoot_scoot_", "safe(")).unwrap()..];
+        let scoot = &at[..at.find("\n}\n").unwrap()];
+        assert!(scoot.contains(concat!("crate::borg_escape::phase_unknown_", "policy(st)")));
+        assert!(scoot.find(concat!("never_seen = ", "true")).unwrap() < scoot.find(concat!("// Skip ", "walls")).unwrap());
+        assert!(teleport.contains(concat!("count_scary(st, 100, turns, ", "false,")));
+        let count = body(concat!("fn count_", "scary("));
+        let unknown = count.find(concat!("never_seen = ", "true")).unwrap();
+        assert!(unknown < count.find(concat!("// Skip ", "walls")).unwrap());
+        assert!(count.find(concat!("if never_", "seen {")).unwrap() < count.find(concat!("let p = borg_", "danger(")).unwrap());
+    }
+
+    /// Review of #1075 (finding 2): the emergency fall-through. When the
+    /// emergency site's landing check refuses, the critical Phase Door
+    /// (`MonsterNear`, no landing check) asks the never-seen gate: under the
+    /// policy (the Blackguard 2025089708 at 43/60) 88 never-seen landings of
+    /// 100 refuse it; below the HP floor (15/60: no policy) the scroll is
+    /// read, and the sampler is not even run. Sites that sample a landing
+    /// themselves are not gated twice.
+    #[test]
+    fn the_critical_phase_after_a_refused_emergency_asks_the_gate() {
+        use super::{unknown_counts_scary, unknown_gate, PhaseCheck};
+        let landing = PhaseCheck::Landing { tolerance: 75, horizon: 2 };
+        let scoot = PhaseCheck::ShootScoot { tolerance: 20, horizon: 2, danger: 50 };
+        let mut runs = 0;
+        let policy = unknown_counts_scary(43, 60, 50);
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, || { runs += 1; (88, 75) }), Some((88, 75)), "critical, above the floor: refused");
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, policy, || { runs += 1; (75, 75) }), None, "at the tolerance: allowed");
+        assert_eq!(unknown_gate(PhaseCheck::None, policy, || { runs += 1; (90, 75) }), Some((90, 75)), "twitchy and fast-fragile too");
+        assert_eq!(runs, 3);
+        let low = unknown_counts_scary(15, 60, 50);
+        assert_eq!(unknown_gate(PhaseCheck::MonsterNear, low, || { runs += 1; (100, 75) }), None, "below the floor: a real emergency");
+        assert_eq!(unknown_gate(landing, policy, || { runs += 1; (100, 75) }), None, "the landing check counts the unknown itself");
+        assert_eq!(unknown_gate(scoot, policy, || { runs += 1; (100, 75) }), None, "so does Shoot N Scoot's sampler");
+        assert_eq!(runs, 3, "the sampler runs only where the gate applies");
+        // The order in `phase_door`: the site's own check, then the gate,
+        // then the cast.
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("pub(crate) fn phase_", "door(")).unwrap()..];
+        let door = &at[..at.find("\n}\n").unwrap()];
+        let gate = door.find(concat!("unknown_gate(check, ", "policy,")).unwrap();
+        assert!(door.find(concat!("if !checked ", "{")).unwrap() < gate && gate < door.find(concat!("let done = ", "cast(st)")).unwrap());
+    }
+
+    /// Re-review of #1075 (finding 2): the emergency check refused on 76
+    /// never-seen landings of 100; the critical fall-through in the same
+    /// think and grid reuses that count, so a lower redraw (75) cannot read
+    /// the same scroll. Another think, or another grid, draws again.
+    #[test]
+    fn a_refused_emergency_is_not_undone_by_a_lower_redraw() {
+        use super::{gate_count, unknown_gate, PhaseCheck};
+        let here = super::loc { x: 25, y: 125 };
+        let record = Some((40580, here, 76, 75));
+        let mut draws = 0;
+        let critical = |record, now, at, draws: &mut i32| {
+            unknown_gate(PhaseCheck::MonsterNear, true, || gate_count(record, now, at, 75, || { *draws += 1; 75 }))
+        };
+        assert_eq!(critical(record, 40580, here, &mut draws), Some((76, 75)), "the emergency's verdict carries over");
+        assert_eq!(draws, 0, "no redraw");
+        assert_eq!(critical(record, 40590, here, &mut draws), None, "the next think draws again");
+        assert_eq!(critical(record, 40580, super::loc { x: 26, y: 125 }, &mut draws), None, "another grid draws again");
+        assert_eq!(critical(None, 40580, here, &mut draws), None, "no landing check this think");
+        assert_eq!(draws, 3);
+        // The landing check records its count under the policy.
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("fn caution_", "phase(st: &mut BorgState")).unwrap()..];
+        let phase = &at[..at.find("\n}\n").unwrap()];
+        assert!(phase.contains(concat!("st.borg.phase_unknown_seen = ", "Some((st.borg.time.now, st.borg.c, unknown, emergency))")));
+    }
+
+    /// #1094 (review of #1096): a never-seen refusal stops only the Phase
+    /// Door. `phase_door` clears the flag on entry and sets it only when the
+    /// gate refuses; the twitchy think then tries its longer-range teleports
+    /// (Dimension Door, Teleport Self, Portal, Shadow Shift, in the order
+    /// they had inside the cast) and no others. Any other refusal (the
+    /// teleport curse, the #584 rule) still stops them. Needs the engine to
+    /// play, so this pins the sources.
+    #[test]
+    fn a_gate_refusal_leaves_the_twitchy_teleports() {
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("pub(crate) fn phase_", "door(")).unwrap()..];
+        let door = &at[..at.find("\n}\n").unwrap()];
+        let clear = door.find(concat!("st.borg.phase_gate_refused = ", "None;")).unwrap();
+        let set = door.find(concat!("st.borg.phase_gate_refused = ", "Some(st.borg.time.now);")).unwrap();
+        assert!(clear < door.find(concat!("if teleport_", "stopped(st)")).unwrap(), "cleared before any refusal");
+        assert!(door.find(concat!("unknown_gate(check, ", "policy,")).unwrap() < set, "set only by the gate");
+        assert_eq!(door.matches(concat!("phase_gate_refused = ", "Some(")).count(), 1);
+        let think = include_str!("borg_think_dungeon.rs");
+        let at = &think[think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()..];
+        let twitch = &at[..at.find(concat!("return choice!(\"twitch_", "phase\")")).unwrap()];
+        assert!(twitch.contains(concat!("|| longer", "(st)\n")), "inside the cast, after the Phase Door ways");
+        assert!(twitch.contains(concat!("st.borg.phase_gate_refused == Some(st.borg.time.now) && ", "longer(st)")));
+        let before = &think[..think.find(concat!("PhaseSite::Twitchy", "Think")).unwrap()];
+        let longer = &before[before.rfind(concat!("let longer = ", "|st")).unwrap()..];
+        let order = ["borg_dimension_door(st, 90)", "borg_spell(st, TELEPORT_SELF)", "borg_spell(st, PORTAL)", "borg_shadow_shift(st, 90)"];
+        let at: Vec<usize> = order.iter().map(|o| longer.find(o).unwrap()).collect();
+        assert!(at.windows(2).all(|w| w[0] < w[1]), "the original order");
+    }
+
+    /// #1094 (re-review of #1075, P3): the emergency tolerance 50, the gate's
+    /// 75, 60 never-seen landings. The emergency refused on the unknown
+    /// alone, so the critical fall-through in the same think keeps the
+    /// stricter 50 and refuses too. A looser landing site does not loosen
+    /// the gate, and without an earlier check the gate's own 75 applies.
+    #[test]
+    fn the_stricter_tolerance_carries_into_the_fall_through() {
+        use super::{gate_count, unknown_gate, PhaseCheck};
+        let here = super::loc { x: 25, y: 125 };
+        let gate = |record, tolerance, fresh: i32| {
+            unknown_gate(PhaseCheck::MonsterNear, true, || gate_count(record, 40580, here, tolerance, || fresh))
+        };
+        assert_eq!(gate(Some((40580, here, 60, 50)), 75, 0), Some((60, 50)), "the emergency's 50 is kept");
+        assert_eq!(gate(Some((40580, here, 60, 90)), 75, 0), None, "a looser site does not loosen the gate: 60 <= 75");
+        assert_eq!(gate(Some((40580, here, 80, 90)), 75, 0), Some((80, 75)), "the gate's own 75 still binds");
+        assert_eq!(gate(Some((40570, here, 60, 50)), 75, 60), None, "another think: a fresh draw at the gate's 75");
+        assert_eq!(gate(None, 75, 76), Some((76, 75)), "no earlier check: the gate's own tolerance");
+    }
+
+    /// Re-review of #1075 (finding 1): an infrequent lethal cast vetoes the
+    /// wait. A 60 HP spell from a caster casting 1 turn in 10 (below the
+    /// 11% band) is 24 with the frequency discount (4 tenths) and 60 at full
+    /// damage; at 40 HP with 10 HP a turn from the adjacent monsters, the
+    /// discounted danger would let the wait through, the full one does not.
+    /// `newcomer_wait` asks the full damage.
+    #[test]
+    fn an_infrequent_lethal_cast_vetoes_the_wait() {
+        use super::newcomer_turn_safe;
+        use crate::borg_danger::spell_frequency_discount;
+        let discounted = spell_frequency_discount(60, 10, false);
+        let full = spell_frequency_discount(60, 10, true);
+        assert_eq!((discounted, full), (24, 60));
+        assert!(newcomer_turn_safe(10.0, i64::from(discounted), 40, 100), "the discount would wait");
+        assert!(!newcomer_turn_safe(10.0, i64::from(full), 40, 100), "the full damage keeps the Phase Door");
+        assert_eq!(spell_frequency_discount(60, 60, false), 60, "a frequent caster (51% or more) is not discounted");
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
+        let wait = &at[..at.find("\n}\n").unwrap()];
+        assert!(wait.contains(concat!("borg_danger_one_kill(st, y, x, 1, i as i32, ", "true, true)")));
+    }
+
+    /// Review of #1075 (finding 1): the wait needs the next turn
+    /// survivable. The Priest 694417276 at 41 HP: the soldier's 13.532 a
+    /// turn; a ranged danger of 27 or more makes the next turn unsafe at
+    /// 100%.
+    #[test]
+    fn the_newcomer_wait_needs_a_survivable_next_turn() {
+        use super::newcomer_turn_safe;
+        assert!(newcomer_turn_safe(13.532, 27, 41, 100));
+        assert!(!newcomer_turn_safe(13.532, 28, 41, 100));
+        assert!(!newcomer_turn_safe(13.532, 0, 13, 100), "the adjacent alone");
+        assert!(newcomer_turn_safe(13.532, 28, 41, 200), "a looser percent");
+        assert!(!newcomer_turn_safe(f64::INFINITY, 0, 41, 100));
+    }
+
+    /// #1066: the newcomer wait is asked only after the rule judged the
+    /// fight lost, and it races the adjacent monsters alone.
+    #[test]
+    fn the_newcomer_wait_follows_a_lost_verdict() {
+        let src = include_str!("borg_escape.rs");
+        assert!(src.contains(concat!("adjacent && fight_lost(st, here, hp) && !newcomer_", "wait(st, hp)")));
+        let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
+        let wait = &at[..at.find("\n}\n").unwrap()];
+        assert!(wait.contains(concat!("fight_race(st, ", "true)")));
+        assert!(wait.contains(concat!("Param::escape_phase_", "newcomer_hp_percent")));
+        assert!(wait.contains(concat!("race.won && ", "safe")), "review of #1075: winning is not enough");
+        let caution = include_str!("borg_caution.rs");
+        let at = &caution[caution.find(concat!("pub(crate) fn fight_", "race(")).unwrap()..];
+        let race = &at[..at.find("\n}\n").unwrap()];
+        let skip = race.find(concat!("if adjacent_only && ", "d > 1")).unwrap();
+        assert!(race.find(concat!("return None; // an attacker without", " a current")).unwrap() < skip, "an unseen attacker anywhere still refuses");
     }
 }
 

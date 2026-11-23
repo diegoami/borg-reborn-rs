@@ -41,3 +41,13 @@ borg_param_town_staple_oil = 11
 # thrown oil (common 1): "melee is infinite, flasks are not". 0 = inherit the
 # arrow divisor. A workaround until flasks are saved for when needed (#912).
 borg_param_attack_throw_point_blank_divisor = 0
+# #1085 (owner, 2026-11-23: "ship it like that"): breadth-first exploration
+# from the staircases while max HP < 31 + 2 x CL (docs/CALIBRATION.md: through
+# the last CL with 1 DL1 death per 100 games in #1080's table, for a Human,
+# then 10 more and 3 less: owner, 2026-11-23, "increase those
+# explore_bfs_max_hp by 10", then "reduce those numbers ... by 3").
+borg_param_explore_bfs_max_hp = 31
+borg_param_explore_bfs_hp_per_level = 2
+# #1061 (owner, 2026-11-23): stair_scum slack by class ("1 for druid and necromancers. 2 for mage and priest,
+# 3 for ranger, 4 for paladin and blackguard"; rogue 3, the owner's choice).
+borg_param_stair_scum_slack_steps = 4

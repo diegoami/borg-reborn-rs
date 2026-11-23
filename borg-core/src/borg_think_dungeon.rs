@@ -37,7 +37,7 @@ use crate::borg_flow_kill::{
     borg_flow_kill_direct, borg_near_monster_type,
 };
 use crate::borg_flow_misc::{
-    borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
+    borg_continue_recovery, borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
     borg_flow_vein, borg_twitchy,
 };
 use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
@@ -112,8 +112,6 @@ const GOAL_BORE: i32 = 6;
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
 const GOAL_VAULT: i32 = 8;
-/// `GOAL_RECOVER` (borg-flow.h)
-const GOAL_RECOVER: i32 = 9;
 /// `GOAL_DIGGING` (borg-flow.h)
 const GOAL_DIGGING: i32 = 10;
 
@@ -183,6 +181,35 @@ fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
         b_j = j;
     }
     b_j
+}
+
+/// The return leash of `borg_think_dungeon` ("Return to Stair (wandered
+/// too far)"): the distance from the nearest known up staircase beyond which
+/// the Borg walks back to it, or `None` where it does not apply. Shared with
+/// the breadth-first exploration (#1080), which never targets past it.
+pub(crate) fn return_leash(st: &BorgState) -> Option<i32> {
+    if !(st.stairs.less.num != 0
+        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
+        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5)
+    {
+        return None;
+    }
+    // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+    // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
+    let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+    // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
+    // enough" below clears the return, so a smaller one would flap).
+    if crate::borg_kit::leash_active(st) {
+        leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
+    }
+    Some(leash)
+}
+
+/// #1080: the distance (`distance`, as the return leash measures it) from
+/// `at` to the nearest known up staircase, or `None` with none known.
+pub(crate) fn up_stair_distance(st: &BorgState, at: loc) -> Option<i32> {
+    let t = &st.stairs.less;
+    (0..usize::try_from(t.num).unwrap_or(0)).map(|i| engine::distance(at, loc { x: t.x[i], y: t.y[i] })).min()
 }
 
 /// "Start leaving" and "Start fleeing", each with its note.
@@ -580,6 +607,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    crate::borg_flow::observe_flight_retreats(st);
     let mut b_j = -1;
     let lightless = crate::borg_lightless::update(st);
 
@@ -690,21 +718,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Keep borg on a short leash */
-    if st.stairs.less.num != 0
-        && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
-        && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5
-    {
+    if let Some(leash) = return_leash(st) {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
-
-        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
-        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
-        let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
-        // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
-        // enough" below clears the return, so a smaller one would flap).
-        if crate::borg_kit::leash_active(st) {
-            leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
-        }
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
@@ -748,6 +764,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
     let town_retreat = crate::borg_town_hunt::enabled(st)
         && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
+
+    // borg-reborn-rs (#1060, reviews of #1071): end the potion-test hold on
+    // danger or a move before an early fight or caution can act and return.
+    crate::borg_item_use::potion_test_hold_validate(st);
 
     // #760/#759/#878: an attack-on-sight target, a lone slow monster (with
     // lone_slow_attack) or a winning fight owns the action before even an
@@ -815,6 +835,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Try not to die */
     if borg_caution(st) {
         return choice!("borg_caution");
+    }
+
+    // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
+    if crate::borg_item_use::potion_test_hold(st) {
+        return choice!("potion_test_hold");
+    }
+
+    // borg-reborn-rs (#1061): stair_scum's door alarm, door peek and walk
+    // back inside its radius come before anything but caution (and the
+    // potion-test wait above).
+    if crate::borg_stair_scum::think(st) {
+        return choice!("stair_scum");
     }
 
     // #789: use the normal scary-town stair flow for a retreat without
@@ -956,9 +988,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Continue flowing to a safe grid on which I may recover */
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
+    // borg-reborn-rs (#1061): nor while stair_scum rests on its staircase.
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
-        && borg_flow_old(st, GOAL_RECOVER) {
+        && !crate::borg_stair_scum::holds_on_stairs(st)
+        && borg_continue_recovery(st) {
         return choice!("borg_flow_old");
     }
 
@@ -971,6 +1005,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * should work closely with borg_recover. */
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
+        && !crate::borg_stair_scum::holds_on_stairs(st)
         && borg_flow_recover(st, 50) {
         return choice!("borg_flow_recover");
     }
@@ -1224,6 +1259,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_test_stuff");
     }
 
+    // borg-reborn-rs (#983, owner): learn an unknown potion flavour by
+    // drinking it at a safe moment (item_test_unknown_potions).
+    if crate::borg_item_use::borg_quaff_unknown_when_safe(st) {
+        return choice!("borg_quaff_unknown_when_safe");
+    }
+
     /* Enchant things */
     if borg_enchanting(st) {
         return choice!("borg_enchanting");
@@ -1434,6 +1475,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_flow_dark");
     }
 
+    // borg-reborn-rs (#1061): stair_scum has used up the grids inside its
+    // radius: a new level.
+    if crate::borg_stair_scum::leave(st) {
+        return choice!("stair_scum_leave");
+    }
+
     /*** Deal with shops ***/
 
     /* Visit the shops */
@@ -1564,8 +1611,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Phase */
         /* borg-reborn-rs (#584): through the one Phase Door decision; no
          * check, as before. */
+        /* borg-reborn-rs (#1094, review of #1096): the longer-range
+         * teleports are not a Phase Door landing; when #1066's never-seen
+         * gate refused the decision, they are still tried, in the same
+         * order. Any other refusal stops them, as before. */
+        let longer = |st: &mut BorgState| {
+            borg_dimension_door(st, 90)
+                || borg_spell(st, TELEPORT_SELF)
+                || borg_spell(st, PORTAL)
+                || borg_shadow_shift(st, 90)
+        };
         if borg_allow_teleport(st)
-            && crate::borg_escape::phase_door(
+            && (crate::borg_escape::phase_door(
                 st,
                 crate::borg_escape::PhaseSite::TwitchyThink,
                 crate::borg_escape::PhaseCheck::None,
@@ -1580,12 +1637,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
                             let sv = st.item_val.sv_scroll_phase_door;
                             borg_read_scroll(st, sv)
                         }
-                        || borg_dimension_door(st, 90)
-                        || borg_spell(st, TELEPORT_SELF)
-                        || borg_spell(st, PORTAL)
-                        || borg_shadow_shift(st, 90)
+                        || longer(st)
                 },
-            )
+            ) || (st.borg.phase_gate_refused == Some(st.borg.time.now) && longer(st)))
         {
             /* Success */
             return choice!("twitch_phase");

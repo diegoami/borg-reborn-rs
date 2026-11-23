@@ -1317,6 +1317,7 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
         || borg_aim_wand(st, st.item_val.sv_wand_teleport_away)
         || borg_zap_rod(st, st.item_val.sv_rod_teleport_other)
     {
+        st.fight_attack.pending_unseen.command_queued(true);
         /* Use target */
         borg_keypress(st, key(b'5'));
 
@@ -3267,6 +3268,7 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
         || borg_activate_item(st, st.act.tele_other)
         || borg_aim_wand(st, st.item_val.sv_wand_teleport_away)
     {
+        st.fight_attack.pending_unseen.command_queued(true);
         /* Use target */
         borg_keypress(st, key(b'5'));
 

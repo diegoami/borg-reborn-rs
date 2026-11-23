@@ -58,6 +58,15 @@ pub enum Disposition {
 /// The facts of one stack the dispositions read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KitItem {
+    /// Schema 15: native carry room, stack merge room, and room under the
+    /// acquisition limit. Zero native room also marks a rejected Home offer.
+    pub home_room: Option<[i32; 3]>,
+    /// A known detection scroll with an explicit protection against disposal.
+    pub protect_disposal: bool,
+    /// A known kind the capability planner deliberately declines.
+    pub home_unwanted: bool,
+    /// A known repeatable consumable subject to the per-kind Home limit.
+    pub home_limited: bool,
     /// Schema 9: the whole withdrawal can join existing carried stock.
     pub joins_pack: bool,
     pub place: Place,
@@ -274,7 +283,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem {
+        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false,
             joins_pack: false,
             place,
             slot,

@@ -31,7 +31,7 @@ use crate::borg_cave_view::{borg_forget_view, borg_update_view, BORG_VIEW};
 use crate::borg_danger::borg_danger;
 use crate::borg_flow::{borg_can_dig, borg_ddxy_ddd, copy_data, zero_data};
 use crate::borg_flow_kill::{
-    borg_count_death, borg_create_kill, borg_delete_kill, borg_follow_kill, borg_locate_kill,
+    borg_count_death, borg_create_kill, borg_delete_kill, borg_follow_kill, borg_locate_kill, grouped_count,
     borg_race_name, borg_sleep_kill, observe_kill_diff, observe_kill_move, BorgKill,
 };
 use crate::borg_flow_stairs::StairTrack;
@@ -41,6 +41,7 @@ use crate::borg_flow_take::{
 use crate::borg_io::{borg_note, borg_note_bytes};
 use crate::borg_item_wear::borg_clear_best;
 use crate::borg_projection::{borg_los, borg_target_unknown_wall};
+use crate::params::{value as param, Param};
 use crate::engine;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
 use crate::borg_headers::borg_h::BORG_AUTOSAVE;
@@ -471,7 +472,9 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
     } else if g.f_idx == FEAT_CLOSED {
         // Doors, only while low level (do not overflow)
-        if st.borg.tr(BI_CLEVEL) <= 5
+        // borg-reborn-rs (#1061, re-review of #1090): and while stair_scum
+        // applies, which may outlast CL5, so a quiet door opening is seen.
+        if (st.borg.tr(BI_CLEVEL) <= 5 || crate::borg_stair_scum::active(st))
             && track_add(&mut st.flow.track_closed, x, y)
             && st.flow.track_closed.num > 254
         {
@@ -479,10 +482,15 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
     } else if g.f_idx == FEAT_LESS {
         // Up stairs
-        track_add(&mut st.stairs.less, x, y);
+        // borg-reborn-rs (#1085): a new one re-plans breadth-first exploration.
+        if track_add(&mut st.stairs.less, x, y) {
+            crate::borg_flow_dark::replan_on_new_stair(st);
+        }
     } else if g.f_idx == FEAT_MORE {
         // Down stairs
-        track_add(&mut st.stairs.more, x, y);
+        if track_add(&mut st.stairs.more, x, y) {
+            crate::borg_flow_dark::replan_on_new_stair(st);
+        }
     }
 
     let web = u32::from(st.cave.grid(x, y).feat) == FEAT_FLOOR && engine::square_iswebbed(x, y);
@@ -1153,6 +1161,9 @@ fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
         // borg-reborn-rs (#590): a scary monster's death, for the unlatch.
         let r_idx = st.kills.kills[k as usize].r_idx;
         crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
+        // borg-reborn-rs (#981): a caster's or shooter's death may end an
+        // episode of unseen hits.
+        crate::borg_recover::unseen_monster_died(st, k);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);
@@ -1427,6 +1438,17 @@ pub fn borg_update(st: &mut BorgState) {
         }
     }
 
+    // borg-reborn-rs (#1061): stair_scum, a known closed door now open that
+    // the Borg did not open (its own opening clears the list).
+    if crate::borg_stair_scum::active(st) {
+        for i in 0..usize::try_from(st.flow.track_closed.num).unwrap_or(0) {
+            let (x, y) = (st.flow.track_closed.x[i], st.flow.track_closed.y[i]);
+            if matches!(u32::from(st.cave.grid(x, y).feat), FEAT_OPEN | FEAT_BROKEN) {
+                crate::borg_stair_scum::door_opened_by_monster(st, y, x);
+            }
+        }
+    }
+
     // *** Track objects and monsters ***
     let y = |w: BorgWank| i32::from(w.y);
     let x = |w: BorgWank| i32::from(w.x);
@@ -1530,6 +1552,8 @@ pub fn borg_update(st: &mut BorgState) {
 
     // Save the hit points
     st.borg.oldchp = st.borg.tr(BI_CURHP) as i16;
+
+    crate::borg_light::finish_room_lighting(st);
 
     // Forget failure
     st.update.failure = false;
@@ -1733,12 +1757,50 @@ fn handle_messages(st: &mut BorgState) -> i32 {
     // prohibits a ranged attack.
     if st.fight_attack.successful_target < 0 && st.fight_attack.successful_target > -10 {
         st.fight_attack.successful_target -= 10;
-        if borg_target_unknown_wall(st, st.borg.goal.g.y, st.borg.goal.g.x) {
+        // borg-reborn-rs (#929): with update_miss_wall_guess = 1 a miss at
+        // a monster in view is not a wall, and no guess lands on the
+        // Borg's own grid.
+        let guard = param(Param::update_miss_wall_guess) != 0;
+        let missed = if guard { missed_visible_target(st) } else { None };
+        if let Some(age) = missed {
+            let g = st.borg.goal.g;
+            borg_note(st, &format!("# Missed a monster in view at ({},{}), seen {} ago: a miss, not a wall (#929)", g.y, g.x, age));
+            st.fight_attack.successful_target = 2;
+        } else if borg_target_unknown_wall(st, st.borg.goal.g.y, st.borg.goal.g.x, guard) {
             st.fight_attack.successful_target = 2;
         }
     }
 
     hit_dist
+}
+
+/// borg-reborn-rs (#929): the targeted grid holds a monster the Borg saw
+/// at the shot (`when` at most one think ago) and has in view. The engine
+/// stops a missile only before a grid that is neither passable nor
+/// projectable (player-attack.c:1101-1108), so the shot reached that grid;
+/// a thrown or fired miss (`make_ranged_throw`, player-attack.c:1278-1280:
+/// `test_hit` failed) prints no message. Returns how many thinks ago the
+/// monster was seen.
+fn missed_visible_target(st: &BorgState) -> Option<BorgTime> {
+    let g = st.borg.goal.g;
+    let ag = *st.cave.grid(g.x, g.y);
+    let kill = (ag.kill != 0).then(|| {
+        let kill = &st.kills.kills[usize::from(ag.kill)];
+        (kill.r_idx, borg_timer(st, kill.when))
+    });
+    in_view_target_age(g, st.borg.c, &ag, kill)
+}
+
+/// `missed_visible_target` on the targeted grid `ag` at `goal`, the Borg at
+/// `c`, and the grid's monster as (`r_idx`, thinks since seen), `None` when
+/// the grid holds none: a monster in view, seen at most one think ago (the
+/// think that shot), not on the Borg's grid.
+fn in_view_target_age(goal: loc, c: loc, ag: &BorgGrid, kill: Option<(u16, BorgTime)>) -> Option<BorgTime> {
+    if goal == c {
+        return None;
+    }
+    let (r_idx, age) = kill?;
+    (ag.info & BORG_VIEW != 0 && r_idx != 0 && (0..=1).contains(&age)).then_some(age)
 }
 
 /// One message of the "monsters at the goal" pass (use 2).
@@ -1765,15 +1827,22 @@ fn goal_message(st: &mut BorgState, i: i32, msg: &[u8]) {
         target_worked(st);
     } else if msg.starts_with(b"BLINK:") {
         // Handle "The xxx disappears!" via teleport other, and blinks away
-        let k = borg_locate_kill(st, args(what), g, 0);
-        if k > 0 {
+        // (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 0);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 2, false);
         }
         target_worked(st);
     } else if msg.starts_with(b"DIED:") {
-        // Handle "xxx dies."
-        let k = borg_locate_kill(st, args(what), g, 3);
-        if k > 0 {
+        // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 3);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 2, true);
         }
         target_worked(st);
@@ -1810,8 +1879,12 @@ fn old_location_message(st: &mut BorgState, i: i32, msg: &[u8], hit_dist: i32) -
         target_worked(st);
     } else if msg.starts_with(b"BLINK:") {
         // Handle "The xxx disappears!" via teleport other, and blinks away
-        let k = borg_locate_kill(st, args(what), g, 1);
-        if k > 0 {
+        // (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), g, 1);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 3, false);
         }
         // Shooting through darkness worked
@@ -1819,9 +1892,12 @@ fn old_location_message(st: &mut BorgState, i: i32, msg: &[u8], hit_dist: i32) -
             st.fight_attack.successful_target = 2;
         }
     } else if msg.starts_with(b"DIED:") {
-        // Handle "xxx dies."
-        let k = borg_locate_kill(st, args(what), old_c, 20);
-        if k > 0 {
+        // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+        for _ in 0..grouped_count(args(what)) {
+            let k = borg_locate_kill(st, args(what), old_c, 20);
+            if k <= 0 {
+                break;
+            }
             kill_found(st, k, i, 3, true);
         }
         target_worked(st);
@@ -1899,6 +1975,7 @@ fn created_traps_here(st: &mut BorgState) {
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
     st.light.detected_entries.clear();
+    st.light.room_lighting = Default::default();
     let b = &mut st.borg;
     // Restart the clock
     b.time.level = b.time.now;
@@ -2039,6 +2116,7 @@ fn new_level(st: &mut BorgState) {
     b.unseen_probe = None;
     b.unseen_empty.clear();
     b.unseen_found = None;
+    b.unseen_shot_only = false; // borg-reborn-rs (#981)
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
@@ -2377,13 +2455,17 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
             let c = st.borg.c;
 
             if msg.starts_with(b"DIED:") {
-                // Handle "xxx dies."
-                let k = borg_locate_kill(st, args(what), c, 20);
-                if k > 0 {
+                // Handle "xxx dies." (#915: up to N monsters for "N <plural>")
+                for _ in 0..grouped_count(args(what)) {
+                    let k = borg_locate_kill(st, args(what), c, 20);
+                    if k <= 0 {
+                        break;
+                    }
                     // borg-reborn-rs (#590, review of #592): a death in this
                     // pass counts for the unlatch too.
                     let r_idx = st.kills.kills[k as usize].r_idx;
                     crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
+                    crate::borg_recover::unseen_monster_died(st, k); // #981
                     borg_count_death(st, k);
                     borg_delete_kill(st, k);
                     set_msg_use(st, i, 4);
@@ -2391,6 +2473,12 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
             } else if msg.starts_with(b"PAIN:") {
                 // Handle "xxx screams in pain."
                 locate(st, args(what), c, 20, i, 4);
+            } else if msg.starts_with(b"SHOT_BY:") {
+                // borg-reborn-rs (#981): an unseen monster's bolt hit the
+                // Borg (`recover_unseen_shot`); there is no monster to
+                // locate, only the unseen attack to remember.
+                crate::borg_recover::note_unseen_shot(st);
+                set_msg_use(st, i, 4);
             } else if msg.starts_with(b"HIT_BY:") || msg.starts_with(b"MISS_BY:") {
                 // borg-reborn-rs (#697): remember an attack by a monster the
                 // Borg cannot see; it reads no setting and draws nothing.
@@ -2594,4 +2682,31 @@ pub fn borg_init_update(st: &mut BorgState) {
 /// Free the tracking list (`borg_free_update`).
 pub fn borg_free_update(st: &mut BorgState) {
     st.update.wanks = Vec::new();
+}
+
+#[cfg(test)]
+mod miss_wall_guess_tests {
+    use super::*;
+
+    /// #929: the Fang misses (Paladin 1194051723, Druid 1024822556) were
+    /// at a monster in view, seen at the think that threw: a miss, not a
+    /// wall. A monster out of view (detected, remembered) or seen long ago
+    /// still takes C's guess.
+    #[test]
+    fn a_miss_at_a_monster_in_view_is_not_a_wall() {
+        let at = |y, x| loc { x, y };
+        let (borg, fang) = (at(50, 87), at(51, 88));
+        let in_view = BorgGrid { info: BORG_VIEW, kill: 1, ..BorgGrid::default() };
+        let out_of_view = BorgGrid { kill: 1, ..BorgGrid::default() };
+        // Seen at the think that shot (1), or this think (0).
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 1))), Some(1));
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 0))), Some(0));
+        // Seen long ago, no race, no monster on the grid, out of view,
+        // or the goal on the Borg's own grid: C's guess.
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((54, 2))), None);
+        assert_eq!(in_view_target_age(fang, borg, &in_view, Some((0, 1))), None);
+        assert_eq!(in_view_target_age(fang, borg, &in_view, None), None);
+        assert_eq!(in_view_target_age(fang, borg, &out_of_view, Some((54, 1))), None);
+        assert_eq!(in_view_target_age(borg, borg, &in_view, Some((54, 1))), None);
+    }
 }

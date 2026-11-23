@@ -971,6 +971,8 @@ extern "C" fn borg_leave_game(
 pub fn borg_prepare_race_class_info(st: &mut BorgState) {
     // borg-reborn-rs (#520): the class whose parameter values apply.
     crate::params::set_class(engine::class_cidx() as i32);
+    // borg-reborn-rs (#1061): and the race whose values apply.
+    crate::params::set_race(engine::race_ridx() as i32);
     // ... and the class lines of the `borg_*` settings.
     apply_class_settings(&mut st.core, engine::class_cidx() as i32);
     crate::params::write_settings_receipt();
