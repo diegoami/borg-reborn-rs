@@ -41,14 +41,14 @@ chosen distance, whether known or not
 
 - `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace
   --all-targets -- -D warnings`, `cargo test --workspace --exclude
-  borg-core` and `cargo test --release -p borg-core` (712 passed) all pass,
+  borg-core` and `cargo test --release -p borg-core` (712 passed; 714 after merging track-p `769f3fbd`) all pass,
   and so does `scripts/check-param-citations.py`. `--fix` re-pointed the
   citations that my line shifts moved.
 - Three new unit tests: the HP floor, plus source pins showing that only the
   Phase Door check counts unknown grids and that the wait follows a lost
   verdict and races only the adjacent monsters.
-- Smoke: 3/3 runs identical to `harness/reference/smoke-borg-rs`, so it is
-  not re-recorded.
+- Smoke: 3/3 runs identical to `harness/reference/smoke-borg-rs`, before
+  and after the merge of `769f3fbd`, so it is not re-recorded.
 
 ### Replays at the fatal moment (leads, not measurements)
 
