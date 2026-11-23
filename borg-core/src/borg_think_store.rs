@@ -438,6 +438,13 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1140, `deal_with_poison`): a drink is due: outside.
+    if crate::borg_poison::store_leave_to_drink(st) {
+        leave(st);
+        st.borg.in_shop = false;
+        return true;
+    }
+
     /* Choose a shop to visit.  Goal_shop indicates he is trying to sell
      * something somewhere. */
     if borg_choose_shop(st) {
