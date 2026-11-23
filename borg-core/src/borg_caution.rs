@@ -2273,45 +2273,87 @@ fn may_move_away(
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
-/// borg-reborn-rs (#932): `caution_retreat_oscillation_limit` retreats in a
-/// row have left this place (the grid the last one left, or one next to it),
-/// the last within `caution_retreat_oscillation_thinks` thinks: the flow
-/// that follows each retreat walks back (seed 829474344: 74 retreats from a
-/// white jelly, each undone by the stair flight). The next retreat is not
-/// taken, with a note; the escapes, the outmatched cure and the attack
-/// decide. Off at 0.
+/// borg-reborn-rs (#932, #1023): `caution_retreat_oscillation_limit` moves
+/// away in a row were each undone: the Borg landed on the grid it stepped
+/// to and then came back to (or next to) the grid it had left, each within
+/// `caution_retreat_oscillation_thinks` thinks of the last, on one level
+/// (seed 829474344: 74 retreats from a white jelly, each undone by the stair
+/// flight; 312081895: by the exploration flow). Steps that keep going away
+/// (A to B, B to C) never count (review of #966). The next move away is not
+/// taken, with one note per think; the escapes, the outmatched cure and the
+/// attack decide. Off at 0.
 fn retreat_oscillation_veto(st: &mut BorgState) -> bool {
     let limit = p(Param::caution_retreat_oscillation_limit);
     if limit <= 0 {
         return false;
     }
     let m = &st.borg.mon;
-    let recent = m.retreat_level == st.borg.time.level
-        && st.borg.time.now - m.retreat_last <= p(Param::caution_retreat_oscillation_thinks);
+    let undone = run_follows(
+        m.retreat_level == st.borg.time.level,
+        st.borg.time.now - m.retreat_last,
+        p(Param::caution_retreat_oscillation_thinks),
+        m.retreat_landed,
+        st.borg.c,
+        m.retreat_from,
+        m.retreat_to,
+    );
     let run = m.retreat_run;
-    if recent && king_moves(m.retreat_from, st.borg.c) <= 1 && i32::from(run) >= limit {
-        borg_note(st, &format!("# No retreat: {run} retreats in a row from here were undone (#932)"));
-        return true;
+    if !(undone && i32::from(run) >= limit) {
+        return false;
     }
-    false
+    if st.borg.mon.retreat_noted != st.borg.time.now {
+        st.borg.mon.retreat_noted = st.borg.time.now;
+        borg_note(st, &format!("# No retreat: {run} moves away in a row from here were undone (#932)"));
+    }
+    true
 }
 
-/// borg-reborn-rs (#932): count the retreat just taken from `from`.
+/// borg-reborn-rs (#1023, review of #966): with the breaker on, a think that
+/// finds the Borg on the grid its last move away stepped to confirms the
+/// landing. Called at the start of `borg_caution`, before any move.
+fn observe_retreat_landing(st: &mut BorgState) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let m = &mut st.borg.mon;
+    if m.retreat_level == st.borg.time.level && st.borg.c.x == m.retreat_to.x && st.borg.c.y == m.retreat_to.y {
+        m.retreat_landed = true;
+    }
+}
+
+/// borg-reborn-rs (#932, #1023): count the move away just taken from `from`
+/// to the grid it steps to (`goal.g`, set by `retreat` and `back_away`).
 fn note_retreat_taken(st: &mut BorgState, from: loc) {
     if p(Param::caution_retreat_oscillation_limit) <= 0 {
         return;
     }
     let (now, level) = (st.borg.time.now, st.borg.time.level);
+    let to = loc { x: st.borg.goal.g.x, y: st.borg.goal.g.y };
     let thinks = p(Param::caution_retreat_oscillation_thinks);
     let m = &mut st.borg.mon;
-    let follows = m.retreat_level == level && now - m.retreat_last <= thinks && king_moves(m.retreat_from, from) <= 1;
+    let follows = run_follows(m.retreat_level == level, now - m.retreat_last, thinks, m.retreat_landed, from, m.retreat_from, m.retreat_to);
     m.retreat_run = next_retreat_run(follows, m.retreat_run);
     m.retreat_last = now;
     m.retreat_level = level;
     m.retreat_from = from;
+    m.retreat_to = to;
+    m.retreat_landed = false;
 }
 
-/// borg-reborn-rs (#932): the run of retreats after one more.
+/// borg-reborn-rs (#1023, review of #966): a move away from `start`
+/// continues the run when the last one was on this level within `thinks`
+/// thinks, its landing was confirmed, and `start` is back at (or next to)
+/// the grid it left but not on the grid it stepped to: the Borg returned,
+/// it did not go on.
+fn run_follows(same_level: bool, gap: BorgTime, thinks: i32, landed: bool, start: loc, prev_from: loc, prev_to: loc) -> bool {
+    same_level
+        && gap <= thinks
+        && landed
+        && !(start.x == prev_to.x && start.y == prev_to.y)
+        && king_moves(start, prev_from) <= 1
+}
+
+/// borg-reborn-rs (#932): the run of moves away after one more.
 fn next_retreat_run(follows: bool, run: u16) -> u16 {
     if follows { run.saturating_add(1) } else { 1 }
 }
@@ -2323,19 +2365,57 @@ fn king_moves(a: loc, b: loc) -> i32 {
 
 #[cfg(test)]
 mod retreat_oscillation_tests {
+    use super::{next_retreat_run, run_follows};
     use crate::headers::z_type_h::loc;
 
-    #[test]
-    fn a_run_grows_only_when_it_follows() {
-        assert_eq!(super::next_retreat_run(true, 2), 3);
-        assert_eq!(super::next_retreat_run(false, 7), 1, "a fresh start");
-        assert_eq!(super::next_retreat_run(true, u16::MAX), u16::MAX);
+    const fn g(y: i32, x: i32) -> loc {
+        loc { x, y }
+    }
+
+    /// Plays a sequence of moves away (from, to) with the landing confirmed
+    /// or not, each `gap` thinks after the last; returns the run lengths.
+    fn runs(moves: &[(loc, loc, bool)], gap: i32, thinks: i32, same_level: bool) -> Vec<u16> {
+        let (mut run, mut prev_from, mut prev_to, mut landed, mut first) = (0u16, g(0, 0), g(0, 0), false, true);
+        let mut out = Vec::new();
+        for &(from, to, lands) in moves {
+            let follows = !first && run_follows(same_level, gap, thinks, landed, from, prev_from, prev_to);
+            run = next_retreat_run(follows, run);
+            out.push(run);
+            (prev_from, prev_to, landed, first) = (from, to, lands, false);
+        }
+        out
     }
 
     #[test]
-    fn the_two_grids_of_829474344_are_one_place() {
-        assert_eq!(super::king_moves(loc { x: 95, y: 13 }, loc { x: 95, y: 14 }), 1);
-        assert_eq!(super::king_moves(loc { x: 94, y: 13 }, loc { x: 96, y: 14 }), 2);
+    fn going_and_coming_back_counts() {
+        // 829474344: 13,95 -> 13,94, the flow walks back to 13,95, again.
+        let a = (g(13, 95), g(13, 94), true);
+        assert_eq!(runs(&[a, a, a, a], 2, 3, true), vec![1, 2, 3, 4]);
+        // The two grids next to the jelly alternate (13,95 and 14,95).
+        let b = (g(14, 95), g(14, 94), true);
+        assert_eq!(runs(&[a, b, a, b], 2, 3, true), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn going_on_never_counts() {
+        // A -> B -> C -> D west along a corridor: real progress.
+        let m = [(g(5, 10), g(5, 9), true), (g(5, 9), g(5, 8), true), (g(5, 8), g(5, 7), true), (g(5, 7), g(5, 6), true)];
+        assert_eq!(runs(&m, 1, 3, true), vec![1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn no_landing_no_level_no_window_breaks_the_run() {
+        let a = (g(13, 95), g(13, 94), true);
+        let not_landed = (g(13, 95), g(13, 94), false);
+        assert_eq!(runs(&[not_landed, a, a], 2, 3, true), vec![1, 1, 2], "a key that did not land");
+        assert_eq!(runs(&[a, a, a], 2, 3, false), vec![1, 1, 1], "another level");
+        assert_eq!(runs(&[a, a, a], 4, 3, true), vec![1, 1, 1], "past the window");
+        assert_eq!(runs(&[a, a, a], 3, 3, true), vec![1, 2, 3], "the window is inclusive (312081895)");
+    }
+
+    #[test]
+    fn the_run_saturates() {
+        assert_eq!(next_retreat_run(true, u16::MAX), u16::MAX);
     }
 }
 
@@ -3258,6 +3338,7 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
+    observe_retreat_landing(st);
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/

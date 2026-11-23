@@ -341,6 +341,12 @@ pub struct BorgMonInfo {
     pub retreat_last: BorgTime,
     pub retreat_level: BorgTime,
     pub retreat_from: loc,
+    /// borg-reborn-rs (#1023, review of #966): the grid that move stepped
+    /// to, whether a later think found the Borg on it (the landing
+    /// confirmed), and the think of the last veto note (one per think).
+    pub retreat_to: loc,
+    pub retreat_landed: bool,
+    pub retreat_noted: BorgTime,
     pub retreat_run: u16,
     pub morgoth_panel: loc,
     pub unique: u32,

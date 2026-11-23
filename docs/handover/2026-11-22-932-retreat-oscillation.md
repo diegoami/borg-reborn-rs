@@ -1,7 +1,7 @@
 ## 2026-11-22: No retreat after a run of retreats that the next step undoes (#932)
 
-**Done.** `caution_retreat_oscillation_limit`, `caution_retreat_oscillation_thinks`, compiled and shipped 0 (today's
-play), from the white jelly death of seed 829474344 ([Cemetery case](https://github.com/diegoami/borg-cemetery/blob/claude/kind-brown-leqftg/studies/fastfrag-white-jelly-829474344/README.md),
+**Done.** `caution_retreat_oscillation_limit` (shipped 0, today's play) and
+`caution_retreat_oscillation_thinks` (shipped 3, read only when the limit is on), from the white jelly death of seed 829474344 ([Cemetery case](https://github.com/diegoami/borg-cemetery/blob/claude/kind-brown-leqftg/studies/fastfrag-white-jelly-829474344/README.md),
 borg-cemetery#116). `docs/CALIBRATION.md` has the section and the rows;
 `harness/borg.txt` the shipped lines; citations re-pointed with
 `scripts/check-param-citations.py --fix`.
@@ -27,3 +27,12 @@ join the run and are vetoed too (seed 1512540769, white worm masses: back-aways
 undone by the stair flight). The zoo request #654 measures the retreat-only
 form (its specimen `172bd671` has no back-away flag); a back-away arm needs a
 new specimen.
+
+**Review fixes (GPT-6 review of `429a286d`).** A move away now continues the
+run only when its landing was confirmed (a later think found the Borg on the
+grid it stepped to) and the Borg then came back to, or next to, the grid it
+had left without standing on that landing: steps that keep going (A to B, B to
+C) no longer count (review finding 1, P1). One veto note per think (finding 2).
+This note's defaults corrected (finding 3). Decision-sequence tests:
+go-and-return counts; going on, an unconfirmed landing, another level and an
+expired window do not. Merged `track-p` (`7afbdd67`).
