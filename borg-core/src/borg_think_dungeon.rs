@@ -597,6 +597,11 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
     /* Try anything */
     let done = borg_think_dungeon_brave(st);
 
+    // borg-reborn-rs (#1130): a stair walk it started is committed.
+    if done {
+        crate::borg_flow::commit_brave_walk(st, to as i16);
+    }
+
     /* Reset "avoidance" */
     st.borg.avoidance = st.borg.tr(BI_CURHP) as i16;
 

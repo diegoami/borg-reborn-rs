@@ -49,6 +49,7 @@ use crate::headers::list_tvals_h::{TV_DIGGING, TV_SHOT, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
+use crate::borg::BorgTime;
 use crate::{borg_flow_glyph, borg_flow_kill, borg_flow_misc, borg_flow_stairs, borg_flow_take, engine};
 
 /// Size of the circular flow queue (`AUTO_FLOW_MAX`).
@@ -1765,7 +1766,126 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 /// choice of locations based on some useful computations.
 ///
 /// If it works, return true, otherwise, cancel the goal and return false.
+/// borg-reborn-rs (#1130): a committed brave stair walk (`Borg::brave_walk`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BraveWalk {
+    /// The level it was started on (`time.level`).
+    pub level: BorgTime,
+    /// The avoidance the walk was spread with.
+    pub avoidance: i16,
+    /// The think of its last step (`time.now`).
+    pub last: BorgTime,
+    /// The steps it may still take.
+    pub steps_left: i32,
+}
+
+/// #1130: how many thinks after its last step a brave walk is still
+/// continued (a think spent on something else, an attack or a rest, does not
+/// drop it).
+const BRAVE_WALK_GAP: BorgTime = 3;
+
+/// #1130: steps a brave walk may take beyond the route's cost when it starts
+/// (a route through unknown grids changes as they are seen).
+const BRAVE_WALK_SLACK: i32 = 10;
+
+/// #1130 (Blackguard 312081895: 60,000 turns between two grids): a stair
+/// walk under boosted bravery took one step; the next think, at the normal
+/// avoidance, its step was refused (the goal cancelled) and exploration took
+/// the step back; the stuck think then boosted again. With
+/// `caution_brave_walk_commit`, the walk is committed: `borg_flow_old`
+/// continues it with the avoidance it was spread with, while it is recent, has
+/// steps left, is on its own level, and the Borg is in no danger above half
+/// its HP here (a monster that shows up is caution's).
+pub(crate) fn brave_walk_avoidance(st: &BorgState, danger_here: i32) -> Option<i16> {
+    use crate::params::{value, Param};
+    let w = st.borg.brave_walk?;
+    brave_walk_live(
+        value(Param::caution_brave_walk_commit) != 0,
+        w,
+        st.borg.time.level,
+        st.borg.time.now,
+        danger_here,
+        st.borg.tr(BI_CURHP),
+    )
+    .then_some(w.avoidance)
+}
+
+/// #1130: the conditions of `brave_walk_avoidance`, without the engine.
+fn brave_walk_live(on: bool, w: BraveWalk, level: BorgTime, now: BorgTime, danger_here: i32, curhp: i32) -> bool {
+    on && w.level == level && now.wrapping_sub(w.last) <= BRAVE_WALK_GAP && w.steps_left > 0 && danger_here <= curhp / 2
+}
+
+/// #1130: record the brave walk `boost_bravery` just committed (a GOAL_FLEE
+/// flow spread with `avoidance`): its budget is the route's cost here plus
+/// `BRAVE_WALK_SLACK`.
+pub(crate) fn commit_brave_walk(st: &mut BorgState, avoidance: i16) {
+    use crate::params::{value, Param};
+    if value(Param::caution_brave_walk_commit) == 0 || i32::from(st.borg.goal.type_0) != GOAL_FLEE {
+        return;
+    }
+    let cost = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+    st.borg.brave_walk = Some(BraveWalk {
+        level: st.borg.time.level,
+        avoidance,
+        last: st.borg.time.now,
+        steps_left: cost.saturating_add(BRAVE_WALK_SLACK),
+    });
+}
+
 pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
+    // borg-reborn-rs (#1130): a committed brave stair walk continues with the
+    // avoidance it was spread with.
+    if why == GOAL_FLEE && i32::from(st.borg.goal.type_0) == GOAL_FLEE {
+        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if let Some(to) = brave_walk_avoidance(st, here) {
+            let saved = st.borg.avoidance;
+            st.borg.avoidance = to;
+            st.danger.wipe = true;
+            // The flow buffer is shared: other spreads earlier in this think
+            // may have replaced the walk's, so the route is spread again (the
+            // brave think's own order) when the old step does not go.
+            let stepped = BRAVE_WALK_RESPREAD.with(|busy| {
+                if busy.get() {
+                    return borg_flow_old_step(st, why);
+                }
+                busy.set(true);
+                let stepped = borg_flow_old_step(st, why) || brave_walk_respread(st);
+                busy.set(false);
+                stepped
+            });
+            st.borg.avoidance = saved;
+            st.danger.wipe = true;
+            if let Some(w) = st.borg.brave_walk.as_mut() {
+                if stepped {
+                    w.last = st.borg.time.now;
+                    w.steps_left -= 1;
+                } else {
+                    st.borg.brave_walk = None;
+                }
+            }
+            if stepped {
+                borg_note(st, "# Continuing the brave stair walk (#1130)");
+            }
+            return stepped;
+        }
+    }
+    borg_flow_old_step(st, why)
+}
+
+thread_local! {
+    /// #1130: set while a brave walk's route is spread again, whose own
+    /// `borg_flow_old` must not spread it again in turn.
+    static BRAVE_WALK_RESPREAD: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// #1130: the brave think's stair flows, in its order (`borg_think_dungeon_brave`):
+/// any staircase while the return leash allows it (#1062), else an up one.
+fn brave_walk_respread(st: &mut BorgState) -> bool {
+    (st.leash.return_any && borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false))
+        || borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false)
+}
+
+fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
     /* Continue */
     if i32::from(st.borg.goal.type_0) != why {
         /* Nothing to do */
@@ -2369,3 +2489,31 @@ mod retreat_flight_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod brave_walk_tests {
+    use super::*;
+
+    fn walk() -> BraveWalk {
+        BraveWalk { level: 1000, avoidance: 92, last: 1100, steps_left: 5 }
+    }
+
+    #[test]
+    fn a_committed_brave_walk_continues_on_its_level_while_recent() {
+        // #1130: Blackguard 312081895, 46 HP, a walk spread at avoidance 92.
+        assert!(brave_walk_live(true, walk(), 1000, 1101, 0, 46), "the next think");
+        assert!(brave_walk_live(true, walk(), 1000, 1103, 0, 46), "a pause of a few thinks");
+        assert!(!brave_walk_live(true, walk(), 1000, 1104, 0, 46), "too old");
+        assert!(!brave_walk_live(true, walk(), 1200, 1101, 0, 46), "another level");
+        assert!(!brave_walk_live(true, BraveWalk { steps_left: 0, ..walk() }, 1000, 1101, 0, 46), "no steps left");
+        assert!(!brave_walk_live(true, walk(), 1000, 1101, 24, 46), "danger above half the HP: caution's");
+        assert!(brave_walk_live(true, walk(), 1000, 1101, 23, 46));
+        assert!(!brave_walk_live(false, walk(), 1000, 1101, 0, 46), "the switch off: C");
+    }
+
+    #[test]
+    fn the_switch_ships_off_in_the_code() {
+        assert_eq!(crate::params::value(crate::params::Param::caution_brave_walk_commit), 0);
+    }
+}
+

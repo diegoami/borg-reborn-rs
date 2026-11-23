@@ -1099,8 +1099,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2191` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2191` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2311` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2311` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:727` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1405,16 +1405,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2198` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2199` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2200` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2201` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2195` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2196` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2197` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2198` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2199` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2207` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2318` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2319` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2320` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2321` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2322` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2323` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2324` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2325` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2326` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2327` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -7728,12 +7728,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2227` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2228` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2229` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2230` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2231` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2232` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2347` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2348` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2349` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2350` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2351` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2352` |
 
 ## Mixed exploration from the staircases (#1080, #1098)
 
@@ -7857,3 +7857,41 @@ the ten below).
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1421` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1423` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1295` |
+
+## Committing to a brave stair walk (#1130)
+
+The owner (2026-11-23), on a two-grid loop of the #1117 replays: "it must
+definitely be fixed". Blackguard 312081895 (46 HP) stayed 60,000 turns
+between two grids on a level whose staircases its ordinary flows could not
+reach.
+- **The stuck think.** It boosted bravery (`boost_bravery`: avoidance 92 for
+  one think) and started a stair walk ("Goal_less, brave"), one step south.
+- **The next think.** The avoidance was back at the HP. Continuing the walk
+  failed: the shared flow buffer had been replaced by the think's other
+  spreads, and the goal was cancelled. Exploration then took the step back
+  north, to a target it could not step onto.
+
+At `caution_brave_walk_commit = 1` (compiled 0, **shipped 1**), a stair walk
+the brave think starts is committed (`Borg::brave_walk`):
+- **Continuation.** `borg_flow_old` continues it with the avoidance it was
+  spread with. When the old step does not go, it spreads the route again in
+  the brave think's own order: any staircase while the return leash allows
+  it (#1062), else an up one.
+- **While:**
+  - its last step is at most 3 thinks old;
+  - it has steps left: the route's cost at the start, plus 10;
+  - it is on its own level;
+  - the danger here is at most half the HP. A monster that shows up is
+    caution's.
+
+Checked on the build where the loop reproduces (`433457a4`, with
+`explore_c_leave_when_done = 1`):
+- switch off: the loop, CL3 at 100,000 turns;
+- switch on: the walk continued 159 times, "Spent too long" fell from 3,177
+  to 11, levels visited rose from 76 to 180, and the game reached CL7 and
+  DL3.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `caution_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1803` |
+

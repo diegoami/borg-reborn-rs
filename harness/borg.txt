@@ -1298,6 +1298,12 @@ borg_param_caution_retreat_reentry_ticks = 128
 # #932 (seed 829474344): after three strategic retreats undone by the next
 # stair-flow step, let the escape, cure or attack decision act instead.
 borg_param_caution_retreat_oscillation_limit = 3
+# #1130 (owner, 2026-11-23: "it must definitely be fixed"): a stair walk
+# started under boosted bravery is committed; the next thinks continue it with
+# the same avoidance (spread again when the flow buffer was replaced), while
+# recent, budgeted and out of danger. Blackguard 312081895 stayed 60,000 turns
+# between two grids without it.
+borg_param_caution_brave_walk_commit = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0

@@ -168,6 +168,11 @@ pub struct Borg {
     /// when it was not). The twitchy think then still tries its longer-range
     /// teleports, which the gate does not judge.
     pub phase_gate_refused: Option<BorgTime>,
+    /// borg-reborn-rs (#1130): a stair walk started under boosted bravery
+    /// (`boost_bravery`, "Goal_less, brave"), committed so that the next
+    /// thinks continue it with the same avoidance instead of undoing its step
+    /// (`borg_flow::brave_walk_avoidance`).
+    pub brave_walk: Option<crate::borg_flow::BraveWalk>,
     /// borg-reborn-rs (#1098, review of #1117): the think (`time.now`) whose
     /// stair-anchored exploration (breadth-first or mixed) found nothing it
     /// may reach left: the area it may cover is done, so `borg_leave_level`
