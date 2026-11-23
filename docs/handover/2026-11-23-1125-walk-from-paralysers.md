@@ -34,19 +34,22 @@ plays the same game, because the eye had already been forgotten. This is one
 start, not a rate (RULES 14).
 
 **Left.**
-- The population measure: a borg-zoo request, drafted in the PR, not filed
-  yet (see Owner).
+- The population measure is
+  [borg-zoo#735](https://github.com/diegoami/borg-zoo/issues/735), filed
+  on the owner's word (arms `ctl`, `lost`, `walk` = 2+3+4, `all`).
 - The 400-turn flow loop next to the eye (`dark-bfs` against `targetable
   position`) is not addressed here. It is its own issue, to be filed.
 - #1099, the same step for an immobile confuser after the floor's cure, is
   still the owner's decision. `best_step_away_from` can serve it.
 - #852 (the ranged-only scary entries) is unchanged.
 
+- The replay arms are the Cemetery study
+  `studies/paralyser-walk-away-453254028`
+  ([borg-cemetery#142](https://github.com/diegoami/borg-cemetery/pull/142)).
+  The two dying arms (2, and 1+2) are recorded there as trial
+  continuations of the case's life, with no dossier of their own.
+
 **Owner.**
-- Should the zoo request be filed?
-- Switch 2 is only useful with 3 (and 3 needs 4 when the record was
-  dropped). Should the zoo arms be bundles rather than singles?
-- The two dying replay arms (2, and 1+2) are counterfactual trials of a
-  recorded case. They are listed in the PR, and no Cemetery package was
-  made.
+- Switch 2 is only useful with 3, and 3 needs 4 when the record was
+  dropped. The zoo request bundles them (`walk`).
 - Merge into `track-p` after the review (RULES 1a).
