@@ -70,6 +70,14 @@ pub struct Borg {
     pub times_twitch: i16,
     pub escapes: i16,
     pub trying_unknown: bool,
+    /// borg-reborn-rs (#1060): after an unknown potion test, the game turn
+    /// (`turn`, the clock the status timers run on) until which it waits out a
+    /// harmful status the potion caused (`borg_item_use::potion_test_hold`);
+    /// 0 = no hold. Bound to the grid and level of the test (review of #1071).
+    pub potion_test_hold_until: i32,
+    pub potion_test_hold_x: i32,
+    pub potion_test_hold_y: i32,
+    pub potion_test_hold_depth: i32,
     /// `borg.dont_react`: the reaction gate (set while knocked out or
     /// paralyzed, cleared on every message pump).
     pub dont_react: bool,
@@ -150,10 +158,16 @@ pub struct Borg {
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     /// borg-reborn-rs (#1066, re-review of #1075): the never-seen count of
     /// the last Phase Door landing check under the policy, as (the think's
-    /// `time.now`, the Borg's grid, the count). The gate of the sites
-    /// without a landing check reuses it in the same think and grid instead
-    /// of drawing again.
-    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
+    /// `time.now`, the Borg's grid, the count, that site's tolerance). The
+    /// gate of the sites without a landing check reuses it in the same think
+    /// and grid instead of drawing again, judged by the stricter of the two
+    /// tolerances (#1094).
+    pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32, i32)>,
+    /// borg-reborn-rs (#1094, review of #1096): the think's `time.now` when
+    /// the last `phase_door` call was refused by the never-seen gate (`None`
+    /// when it was not). The twitchy think then still tries its longer-range
+    /// teleports, which the gate does not judge.
+    pub phase_gate_refused: Option<BorgTime>,
     /// borg-reborn-rs (#1098, review of #1117): the think (`time.now`) whose
     /// stair-anchored exploration (breadth-first or mixed) found nothing it
     /// may reach left: the area it may cover is done, so `borg_leave_level`

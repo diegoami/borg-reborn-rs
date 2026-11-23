@@ -10,6 +10,33 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Waiting out a bad test potion (#1060)
+
+The registry now holds **2445** parameters (2444 before; one added). Owner,
+2026-11-22: "a character drank a potion of poison and then goes happily
+exploring" (seed 1928291203: a Poison test, then a 76-step walk to the stairs
+at 1 HP a turn, 26 -> 18). The test's HP floor, `item_test_unknown_min_hp`,
+first added here, is #1063's section below (compiled 25, shipped 60, with the
+known-cure exemption).
+
+- **`item_test_unknown_hold_turns`** (compiled 180, **shipped 180**: Blindness, the longest supported potion, lasts up to 175 ticks): after a test,
+  for at most this many world ticks (10 game turns each, the clock the status
+  timers run on), on the test grid and level, while a harmful status it caused
+  lasts (a Slowness or Surprise's stat scramble included, read from their
+  timers) and the danger here is 0,
+  the Borg stays where it tested (`potion_test_hold`, right after
+  `borg_caution`): the ordinary in-place recovery (`borg_recover`) first, else
+  it stands still (`,`). `potion_test_hold_validate`, before the early fight
+  (`fight_before_flight`) and `borg_caution`, ends the hold on danger, a move
+  or a new level. 0 = no hold. The cap bounds when a hold decision can start:
+  a recovery rest (`R&`) that `borg_recover` starts inside the hold runs in the
+  engine until the status clears or something disturbs it, past the cap if
+  need be, as the same rest chosen by the ordinary order would.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_hold_turns` | 180 | turns | 0–1000 | `borg_item_use.rs:254` |
+
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
 The registry now holds **2442** parameters (2441 before; one added). From the death of the
@@ -190,12 +217,12 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1414` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1415` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1239` |
-| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1418` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1419` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1243` |
+| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1247` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
-| `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
+| `escape_phase_newcomer_turn_percent` | 100 | percent of current HP | 0–1000 | `borg_escape.rs:1260` |
 
 - `escape_phase_unknown_scary` = 1: in the Phase Door landing check (every
   site that asks `caution_phase`), a sampled grid never seen (`FEAT_NONE`)
@@ -215,7 +242,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   A landing check under the policy records its never-seen count
   (`phase_unknown_seen`); the gate reuses it in the same think at the same
   grid (`gate_count`), so a refused emergency cannot be undone by a lower
-  redraw in the critical fall-through (re-review of #1075).
+  redraw in the critical fall-through (re-review of #1075). The record also
+  carries that site's tolerance, and a reuse judges by the stricter of the
+  two (#1094). An emergency at 50 that refused 60 never-seen landings is
+  not undone by a gate at 75.
   Shoot N Scoot's own sampler (`borg_shoot_scoot_safe`) counts a
   never-seen grid as scary.
 - `escape_phase_newcomer_wait` = 1: with `escape_phase_adjacent_rule`, when
@@ -237,9 +267,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   the full possible one-turn damage (`full_damage`): no spell-frequency
   discount (`spell_frequency_discount`, lifted from `borg_danger` with the
   same arithmetic) and whole monster turns (re-review of #1075).
-- Both switches compiled and shipped **0**; `harness/borg.txt` sets none of
-  the six.
-  Hypotheses: no measurement chose them (RULES 14).
+- Both switches compiled **0**. **Shipped 1** in `harness/borg.txt` since
+  #1094 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+  merge"); the four tuning values ship at their compiled defaults.
+  Hypotheses: no zoo measurement chose them (RULES 14; #1073).
 
 ## Attack on sight prices poison and drain blows (#1010)
 
@@ -1011,8 +1042,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2159` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2159` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2163` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2163` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:720` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1317,7 +1348,7 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2166` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2170` |
 | `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2167` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2168` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2169` |
@@ -1843,7 +1874,7 @@ The registry now holds **2200** parameters (2199 after #625; one added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:452` |
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:550` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
@@ -1873,7 +1904,7 @@ the mana, and that its spells are likely enough to work.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:1000` |
+| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:1009` |
 
 
 ## Throws on melee's footing (#568)
@@ -2633,8 +2664,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:902` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:999` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1000` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:1003` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1004` |
 
 ## Town less scary (#622)
 
@@ -4109,13 +4140,13 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1755` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1764` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1763` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1772` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1855` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1866` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1863` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1874` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1877` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1878` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1891` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1909` |
@@ -6181,7 +6212,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1647` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1655` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
@@ -7232,8 +7263,10 @@ staircase (none known, a
 teleport into an unexplored region, a known trap across the only way back,
 #1067), C's methods run as before (review of #1088: the stair side's
 candidates no longer stop them). When no candidate is left within the
-leashes, neither call explores, so the level is left (`borg_leave_level`)
-once the area within them is done. The note is
+leashes, neither call explores, and the think is marked exhausted (#1098;
+owner, 2026-11-23: "once there is nothing to explore, take the stairs"):
+`borg_leave_level` takes the stairs then, as when the level timer is up,
+before the secret-door search, with the same exit as the mixed walk (below). The note is
 `# Flowing toward dark-bfs (ring d) at cost n`.
 
 **The threshold by level and class** (owner, 2026-11-23): breadth-first
@@ -7368,7 +7401,7 @@ is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
 The switch ships 0 and its numbers are hypotheses (RULES 14). borg-zoo
 measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
 full ladder), and with two values of `explore_mix_contact_damage`. With this
-section the registry holds **2456** parameters (`track-p` `8e1c8797` plus
+section the registry holds **2457** parameters (`track-p` `617a0b60` plus
 the seven below).
 
 | parameter | default | unit | range | source |

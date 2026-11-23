@@ -350,6 +350,19 @@ pub fn borg_happy_grid_bold(st: &BorgState, y: i32, x: i32) -> bool {
     false
 }
 
+/// #1118: a route to rest has run its course when the breeder policy
+/// requires hunting or leaving. Release it before taking another step.
+pub(crate) fn borg_continue_recovery(st: &mut BorgState) -> bool {
+    if i32::from(st.borg.goal.type_0) != GOAL_RECOVER {
+        return false;
+    }
+    if crate::borg_recover::hold_for_breeders(st) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+    borg_flow_old(st, GOAL_RECOVER)
+}
+
 /// Attempt to flow to a safe grid in order to rest up properly.  Following a
 /// battle, a borg needs to heal up. He will attempt to heal up right where the
 /// fight was, but if he cannot, then he needs to retreat a bit. This will help
@@ -426,7 +439,7 @@ pub fn borg_flow_recover(st: &mut BorgState, dist: i32) -> bool {
     }
 
     /* Nothing to kill */
-    if st.flow.temp_n == 0 {
+    if st.flow.temp_n == 0 || crate::borg_recover::hold_for_breeders(st) {
         return false;
     }
 
@@ -641,6 +654,45 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
     Some(v)
 }
 
+/// Count the staircase search when exploration immediately reverses it.
+pub(crate) fn notice_reversed_stair_search(st: &mut BorgState, next: loc) {
+    let trail = &st.flow.track_step;
+    let n = trail.num as usize;
+    let here = (st.borg.c.y, st.borg.c.x);
+    if n >= 3 && trail.at(n - 1) == here && trail.at(n - 3) == here
+        && trail.at(n - 2) == (next.y, next.x)
+        && u32::from(st.cave.grid(here.1, here.0).feat) == FEAT_LESS
+    {
+        notice_spastic_arrival(st);
+    }
+}
+
+/// Record arrival at the secret-door search destination.
+fn notice_spastic_arrival(st: &mut BorgState) -> bool {
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    if st.flow_misc.spastic_x == 0
+        || i32::from(st.flow_misc.spastic_x) != x
+        || i32::from(st.flow_misc.spastic_y) != y
+    {
+        return false;
+    }
+
+    st.flow_misc.spastic_x = 0;
+    st.flow_misc.spastic_y = 0;
+    let xtra = st.cave.grid(x, y).xtra;
+    borg_note(st, &format!("# Spastic Searching at ({x},{y})...value:{xtra}"));
+
+    for yy in y - 1..=y + 1 {
+        for xx in x - 1..=x + 1 {
+            let grid = st.cave.grid_mut(xx, yy);
+            if grid.xtra < 100 {
+                grid.xtra += 5;
+            }
+        }
+    }
+    true
+}
+
 /// Search carefully for secret doors and such
 pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     let mut b_x = st.borg.c.x;
@@ -676,36 +728,7 @@ pub fn borg_flow_spastic(st: &mut BorgState, bored: bool) -> bool {
     /* Check distance away from stairs, used later */
     let b_stair = farthest_up_stair(st);
 
-    /* We have arrived */
-    if i32::from(st.flow_misc.spastic_x) == st.borg.c.x
-        && i32::from(st.flow_misc.spastic_y) == st.borg.c.y
-    {
-        /* Cancel */
-        st.flow_misc.spastic_x = 0;
-        st.flow_misc.spastic_y = 0;
-
-        let (cx, cy) = (st.borg.c.x, st.borg.c.y);
-        let xtra = st.cave.grid(cx, cy).xtra;
-
-        /* Take note */
-        borg_note(st, &format!("# Spastic Searching at ({cx},{cy})...value:{xtra}"));
-
-        /* Count searching */
-        for i in 0..9 {
-            /* Extract the location */
-            let xx = cx + i32::from(engine::ddx_ddd(i));
-            let yy = cy + i32::from(engine::ddy_ddd(i));
-
-            /* Current grid */
-            let ag = st.cave.grid_mut(xx, yy);
-
-            /* Tweak -- Remember the search */
-            if ag.xtra < 100 {
-                ag.xtra += 5;
-            }
-        }
-
-        /* we searched here */
+    if notice_spastic_arrival(st) {
         return false;
     }
 
