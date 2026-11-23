@@ -29,6 +29,17 @@ direction, not an effect); 58 tests, 68 turns of waiting. Smoke: 0/3
 identical (the low-HP smoke characters no longer test below 25 HP),
 re-recorded; all three at their cap.
 
+**Review (Codex, at 529511a6).** Four P2s, fixed: (1) a Slowness test (no
+Borg trait) neither held nor stopped the next test: its timer is read
+(`slowed`) in both; (2) the hold returned before `borg_recover`, so a known
+Neutralize Poison waited for caution's HP threshold: the hold now runs
+`borg_recover` first and stands still only when it does nothing; (3) the cap
+was in Borg turns, about two per world tick at +10 speed: it is now a game-turn
+deadline (10 per world tick, game-world.c:1080); (4) an escape by
+`borg_caution` returned before the hold saw the danger, and a Phase Door
+landing could be waited on: `potion_test_hold_validate` runs before
+`borg_caution`, and the hold is bound to the test grid and level.
+
 **Where this meets other work.** #934 (another session: how poison is
 weighed in general, CLW drunk against poison) is untouched; this only changes
 what follows the Borg's own test. `engine/tests/test_stair_handoff.py` pins
