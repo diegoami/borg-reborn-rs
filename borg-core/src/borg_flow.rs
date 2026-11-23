@@ -1846,6 +1846,8 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
             // Exploration can take the turn that would count a search arrival.
             if why == GOAL_DARK {
                 borg_flow_misc::notice_interrupted_spastic_search(st, loc { x, y });
+            } else if why == borg_flow_misc::GOAL_XTRA {
+                borg_flow_misc::record_spastic_approach(st, loc { x, y });
             }
             st.stairs.up_search_departure = departure;
             if st.borg.tr(BI_CDEPTH) > 0 {
