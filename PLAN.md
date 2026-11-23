@@ -6,7 +6,7 @@
 differ, the goals win. Say so in your PR and propose a fix to whichever
 is wrong.*
 
-Track R current state: [R4 handover](docs/R1038-HANDOVER.md) and [work plan](docs/R4-PLAN.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
+Track R current state: [R4.5 handover](docs/R856-HANDOVER.md) and [fixed-main carry plan](docs/R45-PLAN.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
 [combined local validation report](docs/R3-EXIT-REPORT.md). New canonical
 validation evidence belongs in borg-cemetery; source receipts pin its bytes.
 
@@ -132,8 +132,9 @@ promoted to `main`.
 | **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225); the separate moving-reference refresh (#262) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **done**: accepted and merged in #266; feature-only tag `r1` |
 | **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted #302/#329; feature-only tags `r2`/`r2.1`; follow-ups retained in R3 preflight |
 | **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **done**: owner accepted #427 (2026-11-16); feature-only review ledger `17992dfc`; exact accepted snapshot `02c273db`; #418/#419 remain declared follow-ups |
-| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | **in progress**: owner opened R4 after accepting R3; reference refresh #429; ownership audit #431; use/activations #435 merged green via #442 at ba460186; P4 accepted/promoted via #477; reviewed carry #529 merged at 99fa7cc5; power #434 accepted/merged through #478; wear/identification #436 accepted/merged through #683 at 64acb1f1; adjacent maintenance remains shared under #680; store/home #437 implementation active; final review #438 |
-| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
+| **R4. Items** | `R4` | owned power, wearing/identify, item use and store/home with explicit shared limits | combined parity, coverage, evidence and owner review | **done**: owner accepted corrected snapshot #1093 at `40cbaf27` on 2026-11-23; full #1031 and correction #1041 reviews retained; [acceptance](docs/R4-ACCEPTANCE.md) |
+| **R4.5. Catch up with the core that plays** | `R4.5` | #856: carry accepted main into owned R2/R3 and reconcile affected R4 boundaries | fixed-pin native/check/switch parity under shipped settings; measured carry report and owner milestone review | **in progress — preflight**: owner named main `24be98732748230062882fe2b7d9601dba5e2cc0`; [plan](docs/R45-PLAN.md); later main and unpromoted track-p commits excluded |
+| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | paused until accepted R4.5 catch-up |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 
 R2 reforecast (2026-11-15; [measured report](docs/R2-VALIDATION.md)):

@@ -10,7 +10,7 @@ session, a local one, any model, or a person. It is the only entry point;
    Track R also reads [docs/R366-HANDOVER.md](docs/R366-HANDOVER.md) for the
    historical R3 state; [docs/R435-HANDOVER.md](docs/R435-HANDOVER.md) records
    completed item use; [docs/R436-HANDOVER.md](docs/R436-HANDOVER.md) records accepted wear;
-   [docs/R1038-HANDOVER.md](docs/R1038-HANDOVER.md) is the current R4 entry after
+   [docs/R856-HANDOVER.md](docs/R856-HANDOVER.md) is the current R4 entry after
    accepted power #434, wear #436/#683 and the [P4 carry](docs/R528-HANDOVER.md). [docs/R417-HANDOVER.md](docs/R417-HANDOVER.md) records
    its review corrections. The global file retains historical session material.
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
