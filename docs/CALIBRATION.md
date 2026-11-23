@@ -7310,7 +7310,16 @@ today's. Compiled 100; shipped 150 (owner: "a little more"): 7.5 rations
 instead of 5, and 30,000 light turns instead of 20,000 (two more torches).
 Not measured (RULES 14). The smoke Priest buys 3 torches and 7 rations.
 
+One goal for every reader (review of #1113): `borg_light::fuel_goal` gives
+the scaled light goal to the planner's curve, to the torch replenishment that
+runs before other shopping (`borg_town_shadow`), and to the dungeon guards
+that keep fuel from being thrown (`borg_fight_attack`) or junked
+(`borg_light::keep_fuel_stack`). Without that, the replenishment stopped at
+20,000 turns and combat could throw the oil bought for the extra 10,000.
+Both percents are at least 100, so the five rations `borg_prepared` asks for
+stay planned.
+
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_bfs_food_percent` | 100 | percent | 0–10000 | `borg_flow_dark.rs:868` |
-| `explore_bfs_light_percent` | 100 | percent | 0–10000 | `borg_flow_dark.rs:868` |
+| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:868` |
+| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:868` |
