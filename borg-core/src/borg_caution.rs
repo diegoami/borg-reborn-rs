@@ -7448,9 +7448,10 @@ mod scary_stand_tests {
     fn every_switched_site_asks_recall_restricts() {
         // The seven sites of #603 (review of #627): a site put back to
         // `goal.recalling != 0` would ignore the switch and still pass the
-        // helper's test, so count the calls in each file.
+        // helper's test, so count the calls in each file. borg_caution.rs:
+        // the three of #603 and #1147's walk-away staircase.
         for (file, src, calls) in [
-            ("borg_caution.rs", include_str!("borg_caution.rs"), 3),
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 4),
             ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
             ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
             ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
