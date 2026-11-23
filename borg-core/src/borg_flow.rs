@@ -1803,6 +1803,9 @@ pub struct BraveWalk {
     /// The stair search that started it, used again to rebuild its route
     /// (review of #1152).
     pub kind: BraveStairs,
+    /// Started by the loop breaker (#1153): continued under `loop_breaker`,
+    /// at whatever avoidance it was spread with.
+    pub from_loop: bool,
 }
 
 /// #1130 (review of #1152): which stair search a brave walk started with.
@@ -1839,8 +1842,9 @@ pub(crate) fn brave_walk_avoidance(st: &BorgState, danger_here: i32) -> Option<i
     if !own_flow(w, st.flow.commit_seq) {
         return None;
     }
+    let on = if w.from_loop { value(Param::loop_breaker) != 0 } else { value(Param::flow_brave_walk_commit) != 0 };
     brave_walk_live(
-        value(Param::flow_brave_walk_commit) != 0,
+        on,
         w,
         st.borg.time.level,
         st.borg.time.now,
@@ -1887,6 +1891,28 @@ pub(crate) fn commit_brave_walk(st: &mut BorgState, kind: BraveStairs) {
         steps_left: cost.saturating_add(BRAVE_WALK_SLACK),
         seq: st.flow.commit_seq,
         kind,
+        from_loop: false,
+    });
+}
+
+/// #1153: commit the stair walk the loop breaker just started (at the normal
+/// avoidance, or boosted), so the next thinks continue it as a brave walk is
+/// continued (#1130): a walk taken for one step and then dropped would let
+/// the loop start again.
+pub(crate) fn commit_loop_walk(st: &mut BorgState, kind: BraveStairs) {
+    use crate::params::{value, Param};
+    if value(Param::loop_breaker) == 0 || i32::from(st.borg.goal.type_0) != GOAL_FLEE {
+        return;
+    }
+    let cost = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+    st.borg.brave_walk = Some(BraveWalk {
+        level: st.borg.time.level,
+        avoidance: st.borg.avoidance,
+        last: st.borg.time.now,
+        steps_left: cost.saturating_add(BRAVE_WALK_SLACK),
+        seq: st.flow.commit_seq,
+        kind,
+        from_loop: true,
     });
 }
 
@@ -2551,7 +2577,7 @@ mod brave_walk_tests {
     use super::*;
 
     fn walk() -> BraveWalk {
-        BraveWalk { level: 1000, avoidance: 92, last: 1100, steps_left: 5, seq: 7, kind: BraveStairs::Up }
+        BraveWalk { level: 1000, avoidance: 92, last: 1100, steps_left: 5, seq: 7, kind: BraveStairs::Up, from_loop: false }
     }
 
     #[test]

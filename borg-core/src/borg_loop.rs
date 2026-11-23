@@ -7,8 +7,11 @@
 //! `LOOP_GRIDS` grids while the map learned nothing, with no danger here above
 //! a quarter of the HP. `loop_breaker` then breaks it, the first that
 //! applies:
-//! 1. a flow to a staircase at the normal avoidance;
-//! 2. a committed brave walk to a staircase (#1130's commitment);
+//! 1. a walk to a staircase at the normal avoidance;
+//! 2. a brave walk to a staircase (the avoidance boosted);
+//!
+//! either committed (`commit_loop_walk`), so the next thinks continue it as
+//! #1130's brave walk is continued;
 //! 3. for `LOOP_BAN_THINKS` thinks, no step onto the loop's grids other than
 //!    a staircase (`step_banned`, read by `borg_play_step`), so whatever
 //!    undid the other decision cannot.
@@ -156,6 +159,7 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
 
     /* 1: a staircase at the normal avoidance */
     if crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false) {
+        crate::borg_flow::commit_loop_walk(st, BraveStairs::Any);
         borg_note(st, &format!("{head}; breaking it by a walk to the stairs (#1153)"));
         st.loops.moves.clear();
         return true;
@@ -169,7 +173,7 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
         st.danger.wipe = true;
         let stepped = crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false);
         if stepped {
-            crate::borg_flow::commit_brave_walk(st, BraveStairs::Any);
+            crate::borg_flow::commit_loop_walk(st, BraveStairs::Any);
         }
         st.borg.avoidance = saved;
         st.danger.wipe = true;
