@@ -37,7 +37,7 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 | `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1238` |
 | `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
-| `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
+| `escape_phase_newcomer_turn_percent` | 100 | percent of current HP | 0–1000 | `borg_escape.rs:1260` |
 
 - `escape_phase_unknown_scary` = 1: in the Phase Door landing check (every
   site that asks `caution_phase`), a sampled grid never seen (`FEAT_NONE`)
