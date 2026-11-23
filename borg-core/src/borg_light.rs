@@ -31,7 +31,7 @@ use crate::borg_update::Detect;
 use crate::engine;
 use crate::params::{value as param, Param};
 use crate::borg_headers::borg_magic_h::{
-    CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
+    borg_spells, CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
     DETECT_STAIRS, FIND_TRAPS_DOORS_STAIRS, FUME_OF_MORDOR, LIGHT_ROOM, OBJECT_DETECTION,
     MAGIC_MISSILE, NETHER_BOLT, PHASE_DOOR, READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS,
     SPEAR_OF_LIGHT, TELEPORT_SELF,
@@ -279,8 +279,7 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         || borg_zap_rod(st, st.item_val.sv_rod_illumination)
         || borg_use_staff(st, st.item_val.sv_staff_light)
         || borg_read_scroll(st, st.item_val.sv_scroll_light)
-        || cast_light_room(st, uses_corner_test)
-        || borg_spell_fail(st, CALL_LIGHT, 40)
+        || cast_room_lighting(st, uses_corner_test, borg_spell_fail, dark_floor_on_panel)
     {
         borg_note(st, "# Illuminating the dungeon");
         borg_react(st, b"SELF:lite", b"SELF:lite");
@@ -305,8 +304,8 @@ impl RoomLighting {
         from: GridPosition,
         dark_floors: impl FnOnce() -> I,
     ) -> bool {
-        // LIGHT_AREA floods the room as well as the separate radius-two
-        // sphere (class.txt, Mage Light Room; cave-map.c, light_room).
+        // Both Light Room and Call Light flood the room through LIGHT_AREA
+        // (lib/gamedata/class.txt; src/cave-map.c, light_room).
         // A glowing patch is insufficient evidence on the first visit.
         self.dark_after_cast.get(&from).is_none_or(|previous| {
             dark_floors().any(|grid| !previous.contains(&grid))
@@ -329,24 +328,37 @@ impl RoomLighting {
     }
 }
 
-fn observed_dark_floors(st: &BorgState) -> impl Iterator<Item = GridPosition> + '_ {
+fn dark_floor_on_panel(y: i32, x: i32) -> bool {
+    engine::panel_contains(y, x) && !engine::square_isglow(x, y)
+}
+
+fn observed_dark_floors<'a>(
+    st: &'a BorgState,
+    is_dark_on_panel: impl Fn(i32, i32) -> bool + 'a,
+) -> impl Iterator<Item = GridPosition> + 'a {
     let count = st.view.view_n as usize;
-    st.view.view_y[..count].iter().zip(&st.view.view_x[..count]).filter_map(|(&y, &x)| {
+    st.view.view_y[..count].iter().zip(&st.view.view_x[..count]).filter_map(move |(&y, &x)| {
         let (y, x) = (i32::from(y), i32::from(x));
         let grid = st.cave.grid(x, y);
         (u32::from(grid.feat) != FEAT_NONE
             && borg_cave_floor_grid(grid)
-            && engine::panel_contains(y, x)
-            && !engine::square_isglow(x, y)).then_some((y, x))
+            && is_dark_on_panel(y, x)).then_some((y, x))
     })
 }
 
-fn cast_light_room(st: &mut BorgState, uses_corner_test: bool) -> bool {
+fn cast_room_lighting(
+    st: &mut BorgState,
+    uses_corner_test: bool,
+    mut cast: impl FnMut(&mut BorgState, borg_spells, i32) -> bool,
+    is_dark_on_panel: impl Fn(i32, i32) -> bool,
+) -> bool {
     let here = (st.borg.c.y, st.borg.c.x);
-    if uses_corner_test && !st.light.room_lighting.should_cast(here, || observed_dark_floors(st)) {
+    if uses_corner_test
+        && !st.light.room_lighting.should_cast(here, || observed_dark_floors(st, is_dark_on_panel))
+    {
         return false;
     }
-    if !borg_spell_fail(st, LIGHT_ROOM, 40) {
+    if !cast(st, LIGHT_ROOM, 40) && !cast(st, CALL_LIGHT, 40) {
         return false;
     }
     if uses_corner_test {
@@ -357,10 +369,14 @@ fn cast_light_room(st: &mut BorgState, uses_corner_test: bool) -> bool {
 
 /// Resolve the attempt after the map and view have observed the spell's effect.
 pub(crate) fn finish_room_lighting(st: &mut BorgState) {
+    observe_room_lighting(st, dark_floor_on_panel);
+}
+
+fn observe_room_lighting(st: &mut BorgState, is_dark_on_panel: impl Fn(i32, i32) -> bool) {
     let here = (st.borg.c.y, st.borg.c.x);
     if st.light.room_lighting.pending.is_some() {
         let mut lighting = std::mem::take(&mut st.light.room_lighting);
-        lighting.finish(here, || observed_dark_floors(st).collect());
+        lighting.finish(here, || observed_dark_floors(st, is_dark_on_panel).collect());
         st.light.room_lighting = lighting;
     }
 }
@@ -1078,10 +1094,35 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
 
 #[cfg(test)]
 mod room_lighting_tests {
-    use super::{GridPosition, RoomLighting};
+    use super::{cast_room_lighting, observe_room_lighting, GridPosition, RoomLighting};
+    use crate::borg_headers::borg_magic_h::{CALL_LIGHT, LIGHT_ROOM};
+    use crate::state::BorgState;
     use std::collections::BTreeSet;
 
     const CAST_FROM: GridPosition = (44, 46);
+
+    #[test]
+    fn both_room_lighting_spells_remember_a_confirmed_cast() {
+        for learned_spell in [LIGHT_ROOM, CALL_LIGHT] {
+            let mut st = BorgState::default();
+            (st.borg.c.y, st.borg.c.x) = CAST_FROM;
+            let mut cast = |_: &mut BorgState, spell, max_failure| {
+                assert_eq!(max_failure, 40);
+                spell == learned_spell
+            };
+            let no_observed_dark_floor = |_, _| false;
+
+            assert!(cast_room_lighting(&mut st, true, &mut cast, no_observed_dark_floor));
+            st.light.room_lighting.confirm_message(b"You are surrounded by a white light.");
+            observe_room_lighting(&mut st, no_observed_dark_floor);
+
+            st.borg.c.x += 1;
+            observe_room_lighting(&mut st, no_observed_dark_floor);
+            st.borg.c.x -= 1;
+            let unexpected_cast = |_: &mut BorgState, _, _| panic!("revisit tried a spell");
+            assert!(!cast_room_lighting(&mut st, true, unexpected_cast, no_observed_dark_floor));
+        }
+    }
 
     #[test]
     fn first_cast_can_light_a_room_beyond_the_glowing_patch() {
