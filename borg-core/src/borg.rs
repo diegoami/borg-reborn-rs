@@ -59,6 +59,7 @@ pub struct Borg {
     pub status: BorgStatus,
     pub time: BorgTimes,
     pub need_see_invis: BorgTime,
+    pub hallway_beams: crate::borg_light::HallwayBeams,
     pub see_inv: i16,
     pub need_shift_panel: bool,
     pub when_shift_panel: BorgTime,
@@ -370,6 +371,11 @@ pub struct BorgMonInfo {
     /// so a flow that passes them again does not loop.
     pub immobile_stepped: [[u8; 4]; 16],
     pub immobile_stepped_level: BorgTime,
+    /// borg-reborn-rs (#1147, `caution_walk_away_immobile`): the think
+    /// (`time.now`) in which the Borg stood next to a walk-away monster with
+    /// no grid out of its reach to step to; in that think a blow at it is
+    /// allowed again (the last resort).
+    pub walk_away_cornered: Option<BorgTime>,
     /// borg-reborn-rs (#932): the last strategic retreat: the think it was
     /// taken (`time.now`), the level's arrival time, the grid it left, and
     /// how many retreats in a row left that place (each within

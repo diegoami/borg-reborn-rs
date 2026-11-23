@@ -527,7 +527,7 @@ fn borg_check_bounciness(st: &mut BorgState) -> bool {
         let mut i = 1;
         while i < i32::from(st.kills.nxt) {
             let kill = st.kills.kills[i as usize];
-            if kill.r_idx != 0 && crate::borg_caution::remember_never_move(usize::from(kill.r_idx)) {
+            if kill.r_idx != 0 && crate::borg_caution::remember_record(st, usize::from(kill.r_idx)) {
                 let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned();
                 borg_note(st, &format!("# Keeping the never-moving {name} at ({},{}) through the bounce reset (#1125)", kill.pos.y, kill.pos.x));
                 kept += 1;
@@ -798,6 +798,15 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#840): the purse in town, and a note when the kit's
     // score or leash moves (only with a kit switch on).
     crate::borg_kit::tick(st);
+
+    // borg-reborn-rs (#1147, `caution_walk_away_immobile`): out of a
+    // walk-away monster's reach (the eye, the patches, the jellies) first,
+    // to the square the owner's order ranks best, or up the staircase it
+    // stands on. Before #1125's paralyser step (review of #1148, finding 5):
+    // that step does not take the staircase underfoot (#1139).
+    if crate::borg_caution::walk_away_step(st) {
+        return choice!("walk_away_step");
+    }
 
     // borg-reborn-rs (#1125, `caution_paralyser_step_away`): out of a
     // never-moving paralyser's reach first, before any fight, rest, cure or

@@ -57,6 +57,8 @@ PINNED_TOWN_SETTINGS = [
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
+    # #995 changed hallway lighting after the recorded stair incidents.
+    ("light_hallway_repeat_guard", 0),
     # #1094 shipped #1066's two Phase Door switches after these incidents.
     ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
     # #1100 shipped the position belief (#879) at decay 5 after these incidents.
@@ -70,6 +72,8 @@ PINNED_TOWN_SETTINGS = [
     # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
     # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
     ("stair_scum", 0),
+    # #1148 shipped the walk-away from immobile monsters after these incidents.
+    ("caution_walk_away_immobile", 0),
     # #1062 shipped the stair-leash switches after these incidents.
     ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
     # #1098 shipped the mixed walk and the C exploration's stair exit after
