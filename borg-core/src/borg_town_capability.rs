@@ -881,7 +881,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // restoration counts only for a drained stat), so the reserve is never counted
     // as a permanent gain.
     let sval = i32::from(item.sval);
-    let reserve_kind = param(Param::town_restore_stat_percent) > 0 && tval == TV_MUSHROOM
+    let reserve_kind = restore_stat_on(st) && tval == TV_MUSHROOM
         && (sval == st.item_val.sv_mush_restoring || sval == st.item_val.sv_mush_purging);
     let restore_reserve = effects.iter().any(|&(e, sub, _)| u32::from(e) == EF_RESTORE_STAT && (0..5).contains(&sub)
         && restore_reserved(reserve_kind, st.borg.tr(BI_CSTR + sub as u32)));
@@ -1016,7 +1016,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let first_cure = first_cure_count();
     let mut curves = curves;
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
-    if first_cure > 0 || devices || restore_stat_on() { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
+    if first_cure > 0 || devices || restore_stat_on(st) { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
         packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
@@ -1152,7 +1152,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     // borg-reborn-rs (#1103; review of #1112, F1): the restore-stat reserve, one
     // copy worth `town_restore_stat_percent` of one stat's restore weight.
-    if restore_stat_on() {
+    if restore_stat_on(st) {
         curve(RESTORE_STAT_RESERVE, scale_percent(cfg(BORG_TOWN_W_RESTORE) * UNIT, param(Param::town_restore_stat_percent)), -UNIT);
     } else if count > RESTORE_STAT_RESERVE {
         curve(RESTORE_STAT_RESERVE, 0, UNIT);
@@ -2479,7 +2479,11 @@ fn variety_started(st: &BorgState) -> bool {
 
 /// borg-reborn-rs (#895): the device rows exist with `town_device_percent`
 /// above 0 once the variety has started (the first level buys the staples alone).
-fn restore_stat_on() -> bool { param(Param::town_restore_stat_percent) > 0 }
+/// The restoring-mushroom reserve row is on with the other variety rows: from
+/// `town_variety_min_depth`, so the first level and the model's shape before it
+/// are as they were (a model padded to every row from the first shop changed a
+/// recorded smoke game).
+fn restore_stat_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_restore_stat_percent) > 0 }
 
 fn device_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_device_percent) > 0 }
 
