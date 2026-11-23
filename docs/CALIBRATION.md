@@ -6813,7 +6813,7 @@ engine's light, every step checked, the unplaced door sound).
 | `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:414` |
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:407` |
 | `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:417` |
-| `stair_scum_slack_per_level_percent` | 0 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:424` |
+| `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:424` |
 | `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:684` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
@@ -6857,7 +6857,10 @@ means that druids at level 3 get to slack 2"):
 `stair_scum_slack_per_level_percent` adds that percent of a step per character
 level above 1, rounded down (50 with a Druid's slack 1: 1 at CL1, 2 at CL3, 3
 at CL5). The three add up: steps + max HP × tenths / 10 + (CL − 1) × percent /
-100.
+100. Its default is 50 (owner, 2026-11-23: "stair_scum_slack_per_level_percent:
+50 as default"): with `stair_scum` 0 it does nothing, so play is unchanged;
+with the mode on, the strict count of the review holds at CL1 and loosens by
+a step every two levels.
 
 **The safe area** is every safe walkable grid joined to a staircase through
 safe grids. The dark flows (`borg_flow_dark_1..5`) keep only the candidates in
