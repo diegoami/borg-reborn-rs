@@ -37,7 +37,7 @@ use crate::borg_flow_kill::{
     borg_flow_kill_direct, borg_near_monster_type,
 };
 use crate::borg_flow_misc::{
-    borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
+    borg_continue_recovery, borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
     borg_flow_vein, borg_twitchy,
 };
 use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
@@ -112,8 +112,6 @@ const GOAL_BORE: i32 = 6;
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
 const GOAL_VAULT: i32 = 8;
-/// `GOAL_RECOVER` (borg-flow.h)
-const GOAL_RECOVER: i32 = 9;
 /// `GOAL_DIGGING` (borg-flow.h)
 const GOAL_DIGGING: i32 = 10;
 
@@ -1013,7 +1011,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
-        && borg_flow_old(st, GOAL_RECOVER) {
+        && borg_continue_recovery(st) {
         return choice!("borg_flow_old");
     }
 

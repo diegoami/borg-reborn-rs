@@ -144,7 +144,7 @@ class StairHandoffTest(unittest.TestCase):
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight):
+    def run_case(self, case, weight, player_class=6, depth=5):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
@@ -161,7 +161,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case)
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
-                 "--", "-seed", "101", "-race", "3", "-class", "6", "-menu-letters", "-start-depth", "5", "-keys", "250"],
+                 "--", "-seed", "101", "-race", "3", "-class", str(player_class), "-menu-letters", "-start-depth", str(depth), "-keys", "250"],
                 cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -175,6 +175,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
         self.run_case("interrupted-search", 5)
+
+    def test_breeder_rest_veto_prevents_new_and_continued_recovery_routes(self):
+        self.run_case("breeder-recovery", 5, player_class=1, depth=1)
 
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)

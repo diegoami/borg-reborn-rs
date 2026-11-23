@@ -350,6 +350,19 @@ pub fn borg_happy_grid_bold(st: &BorgState, y: i32, x: i32) -> bool {
     false
 }
 
+/// #1118: a route to rest has run its course when the breeder policy
+/// requires hunting or leaving. Release it before taking another step.
+pub(crate) fn borg_continue_recovery(st: &mut BorgState) -> bool {
+    if i32::from(st.borg.goal.type_0) != GOAL_RECOVER {
+        return false;
+    }
+    if crate::borg_recover::hold_for_breeders(st) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+    borg_flow_old(st, GOAL_RECOVER)
+}
+
 /// Attempt to flow to a safe grid in order to rest up properly.  Following a
 /// battle, a borg needs to heal up. He will attempt to heal up right where the
 /// fight was, but if he cannot, then he needs to retreat a bit. This will help
@@ -426,7 +439,7 @@ pub fn borg_flow_recover(st: &mut BorgState, dist: i32) -> bool {
     }
 
     /* Nothing to kill */
-    if st.flow.temp_n == 0 {
+    if st.flow.temp_n == 0 || crate::borg_recover::hold_for_breeders(st) {
         return false;
     }
 
