@@ -23,3 +23,16 @@ unweighted desperate-walk checks use the same exclusions as the route.
 A guarded unweighted reachability probe also checks whether the spread's
 path passes the actual flight's clean-path gate. A reachable detour with
 an awake blocker now leaves Recall and ranged fallbacks available.
+
+2026-11-23, review of `884ffa13`: the guarded unweighted probe now runs the
+walk's own stair spread (`spread_unweighted_stairs`) under the walk's flight
+danger rule (`with_flight_danger_rule`), so it cannot mark icky or call
+unreachable a detour the walk would take. A held grid is rechecked over
+`caution_danger_horizon`, the horizon strategic retreat reads. No unit test
+walks the probe and then the flight on one map: the spread and the path walk
+read the engine's cave, so that check needs an engine scenario. The branch
+also merges track-p `09580159`.
+
+The [two-arm Zoo pilot](https://github.com/diegoami/borg-zoo/issues/657) ran
+on `e43b6d87`. It finished with no errors: one death per arm, the same start,
+and 17 of 18 games changed. It did not compute the issue's own measure.
