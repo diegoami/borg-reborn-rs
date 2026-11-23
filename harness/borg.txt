@@ -1262,10 +1262,12 @@ borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
-# #932 (seed 829474344): no strategic retreat after this many in a row from
-# the same place, each within the thinks of the last (the next flow step undid
-# each). Shipped 0 (today's play); 3 is the hypothesis.
-borg_param_caution_retreat_oscillation_limit = 0
+# #1123: avoid a recently retreated-from grid on a stair route while it
+# is still dangerous. The hold lasts at most 128 Borg thinks.
+borg_param_caution_retreat_reentry_ticks = 128
+# #932 (seed 829474344): after three strategic retreats undone by the next
+# stair-flow step, let the escape, cure or attack decision act instead.
+borg_param_caution_retreat_oscillation_limit = 3
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
