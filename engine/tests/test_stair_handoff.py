@@ -65,6 +65,8 @@ PINNED_TOWN_SETTINGS = [
     ("explore_breadth_first", 0),
     # #1067 shipped the trap rules after these incidents.
     ("trap_recover", 0), ("trap_way_back", 0), ("trap_leave_level_count", 0),
+    # #1123 enabled the retreat guards after these incidents.
+    ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
