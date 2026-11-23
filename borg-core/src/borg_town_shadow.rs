@@ -224,6 +224,18 @@ fn unknown_durable(it: &borg_item) -> bool {
         && !matches!(u32::from(it.tval), TV_FLASK | TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL)
 }
 
+/// borg-reborn-rs (#1151): the light turns one copy holds, in `UNIT`s: a
+/// torch's or lantern's turns, a flask's fuel (`object.txt`: pval 7500).
+fn fuel_per_copy(it: &borg_item) -> i64 {
+    use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT};
+    let unit = crate::borg_town_utility::UNIT;
+    match u32::from(it.tval) {
+        TV_LIGHT => i64::from(it.timeout).max(0) * unit,
+        TV_FLASK => i64::from(it.pval).max(0) * unit,
+        _ => 0,
+    }
+}
+
 fn apparently_saleable(it: &borg_item) -> bool {
     // The engine refuses apparently worthless goods. Unknown durable
     // rune exceptions under no-selling are protected, not disposal stock.
@@ -309,6 +321,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             just_bought,
             // borg-reborn-rs (#1151)
             cursed_spare: place == Place::Pack && it.cursed,
+            fuel: fuel_per_copy(it),
         }
     };
 

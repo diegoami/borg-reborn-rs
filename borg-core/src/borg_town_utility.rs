@@ -692,8 +692,14 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // light reserve, `town_store_keep_min`, the Restore Life reserve) are
         // excess: sold, or dropped when no shop buys them, the least
         // valuable per weight first until the pack is under its allowance.
-        // The floor stays, so the trip's minimum readiness is kept.
-        let excess = input.revision >= 20 && partial && input.limits.weight + freed.weight < 0;
+        // Only when the floor keeps every weighted reserve the stack serves
+        // (review of #1155: six Phase Door against a reserve of six were sold
+        // down to `town_store_keep_min`), and a drop only for a fuel stack,
+        // whose split the live executor carries out (`execute_outside`);
+        // it drops other stacks whole.
+        let reserves_kept = u.capability.as_ref().is_none_or(|model| model.reserve_keep(whole) <= floor);
+        let excess = input.revision >= 20 && partial && reserves_kept && (it.sell_shop >= 0 || it.fuel > 0)
+            && input.limits.weight + freed.weight < 0;
         let action = if store { Disposition::Store }
             else if !protected && (capped || excess || loss <= cost && future <= home_cost) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
@@ -973,7 +979,7 @@ mod tests {
 
     fn recall(place: Place) -> KitItem {
         KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
-            reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false }
+            reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }
     }
 
     #[test]
@@ -1887,7 +1893,7 @@ mod tests {
         let st = state(5, 17, 105);
         let torch_turns = 5000 * UNIT;
         let torches = KitItem { slot: 6, kind: 300, qty: 34, weight: 22, need: -1, reduction: 0,
-            sell_shop: 0, ..recall(Place::Pack) };
+            sell_shop: 0, fuel: torch_turns, ..recall(Place::Pack) };
         let axe = KitItem { slot: 20, kind: 301, qty: 1, weight: 250, need: -1, reduction: 0,
             sell_shop: -1, unknown: true, cursed_spare: true, ..recall(Place::Pack) };
         let dagger = KitItem { slot: 15, kind: 302, qty: 1, weight: 12, need: -1, reduction: 0,
@@ -1941,6 +1947,59 @@ mod tests {
         let (d, _, copies) = dispositions_by(&inp, &mut u, &st, shipped);
         assert_eq!((d[0], copies[0]), (Disposition::Store, 30));
         assert_eq!(d[1], Disposition::Drop);
+    }
+
+    /// #1151 (review of #1155): selling for weight keeps every reserve. An
+    /// overweight Borg with six Phase Door against a reserve of six, a full
+    /// Home and `town_store_keep_min` 3 keeps all six (the excess rule sold
+    /// three). Torches no shop buys drop only the copies past the light
+    /// reserve, and an unsplittable stack with no buyer is not dropped
+    /// for weight.
+    #[test]
+    fn selling_for_weight_keeps_every_reserve() {
+        use crate::borg_town_capability::{Model, NAMES, PACK};
+        let col = |name: &str| NAMES.iter().position(|&n| n == name).unwrap();
+        let (phase, reserve, light) = (col("phase"), 61, col("light turns"));
+        let st = state(5, 17, 105);
+        let scrolls = KitItem { slot: 5, kind: 303, qty: 6, weight: 5, need: -1, reduction: 0,
+            sell_shop: 5, ..recall(Place::Pack) };
+        let model = |reserve_units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..NAMES.len()).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            curves[phase] = [phase as i64, 100 * UNIT, 10 * UNIT, 6 * UNIT, 0];
+            curves[reserve] = [reserve as i64, 100 * UNIT, -reserve_units, 6 * UNIT, 0];
+            Model { available: Vec::new(), packing: None, curves,
+                supplies: vec![[PACK, 5, phase as i64, UNIT], [PACK, 5, reserve as i64, UNIT]] }
+        };
+        let shipped = Storing { only_overweight: true, room: Room { weight: 50, slots: 2 }, keep_min: 3,
+            home_stack_limit: 2, ..Storing::default() };
+        let solve = |kit: &[KitItem], m: Model| {
+            let mut inp = input(kit);
+            inp.revision = 20;
+            inp.home_slots = 0;
+            inp.limits.weight = -943;
+            let mut u = Utility::of(&st, kit, false);
+            u.capability = Some(m);
+            dispositions_by(&inp, &mut u, &st, shipped)
+        };
+        let kit = [scrolls];
+        let (d, freed, _) = solve(&kit, model(6 * UNIT));
+        assert_eq!((d[0], freed.weight), (Disposition::Keep, 0), "the reserve of six stays");
+        // A reserve of three: the floor covers it, so the three past it are excess.
+        let (d, _, copies) = solve(&kit, model(3 * UNIT));
+        assert_eq!((d[0], copies[0]), (Disposition::Sell, 3));
+        // No buyer for a stack that the executor drops whole: not dropped for weight.
+        let unsold = [KitItem { sell_shop: -1, ..scrolls }];
+        let (d, _, _) = solve(&unsold, model(3 * UNIT));
+        assert_ne!(d[0], Disposition::Drop, "a split drop would lose the floor");
+        // Torches no shop buys: the copies past the light reserve are dropped.
+        let torch_turns = 5000 * UNIT;
+        let torches = [KitItem { slot: 6, kind: 300, qty: 34, weight: 22, need: -1, reduction: 0,
+            sell_shop: -1, fuel: torch_turns, ..recall(Place::Pack) }];
+        let mut curves: Vec<[i64; 5]> = (0..NAMES.len()).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+        curves[light] = [light as i64, 100 * UNIT, -4 * torch_turns, 34 * torch_turns, 0];
+        let m = Model { available: Vec::new(), packing: None, curves, supplies: vec![[PACK, 6, light as i64, torch_turns]] };
+        let (d, _, copies) = solve(&torches, m);
+        assert_eq!((d[0], copies[0]), (Disposition::Drop, 30));
     }
 
     /// #859: the first Recall is urgent once the next trip reaches the dive

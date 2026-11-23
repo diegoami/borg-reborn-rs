@@ -58,3 +58,23 @@ the frontend's `^Z` start, which is why the Cemetery reload issued no keys
 **For the owner.** `trait_curse_stats` is shipped at 1, because it is a
 perception fix (the Borg's stats now match the engine's). Ship 0 if you want
 it measured first.
+
+**Review of #1155 (Codex, `1d1cc919`).** All four findings are fixed.
+- *P1, split drops:* `execute_outside` drops only the planned copies of a
+  split fuel stack (torches, flasks), as it does for Restore Life Levels.
+  Other drops stay whole, because applying the split to every drop moved a
+  smoke game in #989's review. The excess rule drops only a fuel stack.
+  A stack the executor would drop whole needs a buyer. Test:
+  `a_split_drop_keeps_the_reserved_copies`.
+- *P1, reserves:* excess applies only when the stack's floor keeps every
+  weighted reserve row (`Model::reserve_keep`). Test:
+  `selling_for_weight_keeps_every_reserve`, where six Phase Door against a
+  reserve of six stay. With the gate removed, the test sells them.
+- *P2, oil:* the light floor counts a copy's physical fuel
+  (`KitItem::fuel`, a new kit column in schema 20). Test:
+  `the_light_floor_counts_physical_flasks`, where two flasks stay, not six.
+- *P2, Remove Curse:* the weight exemption applies only while the scroll
+  can be read, and only to the copies needed now. Tests:
+  `an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town`
+  (blind, and one copy) and `a_remove_curse_ware_is_read_now_only_for_a_curse`.
+

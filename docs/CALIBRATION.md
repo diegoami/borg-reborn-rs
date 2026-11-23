@@ -932,8 +932,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2158` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2662` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2655` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2725` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2718` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -1101,8 +1101,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2191` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2191` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:750` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:772` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1046` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1005` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
@@ -1241,7 +1241,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:972` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:994` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1506,7 +1506,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:628` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:650` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -3139,9 +3139,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:688` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:545` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:679` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:710` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:567` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:701` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -3269,11 +3269,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:573` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:637` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:659` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2615` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2486` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2678` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2549` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6377,7 +6377,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:973` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:995` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -7071,7 +7071,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1146` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1147` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1148` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2527` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2590` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7161,7 +7161,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2592` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2655` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7881,15 +7881,23 @@ replay as they were):
 
 - *A fuel stack splits at the light reserve.* `Model::fuel_keep` counts the
   copies of a fuel stack the light reserve still needs once the other carried
-  fuel is counted. The copies past it can go. Before, the whole stack was
+  fuel is counted. The copies past it can go. It counts a copy's physical
+  fuel (`KitItem::fuel`, a new kit column): the model spreads a flask stack's
+  refuelling bottles over the whole stack, so six 7,500-turn flasks of which
+  two refuel the lantern count 2,500 turns each. Before, the whole stack was
   skipped when all of it would undercut the reserve (`protects_fuel`), so 34
-  torches stayed for a reserve four cover.
+  torches stayed for a reserve four cover. The live executor drops a split
+  fuel stack's planned copies only (`execute_outside`), as it does for
+  Restore Life Levels; other drops stay whole.
 - *Excess goes when the pack is over its allowance and the Home cannot take
   it.* The copies past a stack's floor (the light reserve,
   `town_store_keep_min`, the Restore Life reserve) are sold, or dropped
   without a buyer, the least valuable per weight first, until the pack is
-  under its weight allowance. Short only of the departure room, nothing is
-  sold or dropped for weight.
+  under its weight allowance. This applies only when the floor keeps every
+  weighted reserve the stack serves (`Model::reserve_keep`: the Phase Door,
+  ranged and Restore Life reserves, a first cure, a book). A drop applies
+  only to a fuel stack, the one split the executor carries out. Short only of
+  the departure room, nothing is sold or dropped for weight.
 - *A known-cursed spare is not protected as unknown over the allowance.* A
   pack item with a known curse (`KitItem::cursed_spare`, kit flag 128) that
   adds no power goes like any worthless item while the pack is over its
@@ -7898,7 +7906,11 @@ replay as they were):
 - *A Remove Curse scroll bought for a curse is not charged against the
   weight.* While the CURSE row has weight (`BI_FIRST_CURSED`),
   `borg_enchanting` reads it in town (`borg_decurse_any`). Overweight, the
-  solver's weight repair took away even this 0.5 lb scroll.
+  solver's weight repair took away even this 0.5 lb scroll. The exemption
+  applies only while the Borg can read it (not blind, confused or amnesiac:
+  `borg_read_scroll`), and only to the copies the row still lacks
+  (`Model::decurse_copies`). Spares are bought by a later solve, at their
+  carried weight.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
