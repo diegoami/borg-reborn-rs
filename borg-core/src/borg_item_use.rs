@@ -18,7 +18,8 @@
 // borg-reborn-rs (#242): named item_use policy; default operations unchanged.
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
-use crate::borg_inventory::borg_slot;
+use crate::borg_inventory::{borg_slot, borg_slot_in_pack};
+use crate::borg_item_val::ItemValState;
 use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
 use crate::borg_item::inven_wield;
 use crate::borg_item_analyze::borg_obj_has_effect;
@@ -457,9 +458,11 @@ fn eat_in_current_shape(st: &mut BorgState, tval: i32, sval: i32, shapechanged: 
         return false;
     }
 
-    /* Look for that food */
     let i = borg_slot(st, tval, sval);
+    eat_from_slot(st, i)
+}
 
+fn eat_from_slot(st: &mut BorgState, i: i32) -> bool {
     /* None available */
     if i < 0 {
         return false;
@@ -1311,23 +1314,48 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
 
 /// Satisfy hunger using known supplies without using unrelated items.
 pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
-    let food = TV_FOOD as i32;
-    /* Attempt to satisfy hunger */
     // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
-    borg_satisfy_hunger_before_food(st)
+    if borg_satisfy_hunger_before_food(st)
         || borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
         || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
-        || borg_eat(st, food, st.item_val.sv_food_slime_mold)
-        || borg_eat(st, food, st.item_val.sv_food_slice)
-        || borg_eat(st, food, st.item_val.sv_food_apple)
-        || borg_eat(st, food, st.item_val.sv_food_pint)
-        || borg_eat(st, food, st.item_val.sv_food_handful)
-        || borg_eat(st, food, st.item_val.sv_food_honey_cake)
-        || borg_eat(st, food, st.item_val.sv_food_ration)
-        || borg_eat(st, food, st.item_val.sv_food_waybread)
-        || borg_eat(st, food, st.item_val.sv_food_draught)
-        || borg_activate_item(st, st.act.food_waybread)
+    {
+        return true;
+    }
+
+    if engine::player_is_shapechanged() {
+        return borg_activate_item(st, st.act.food_waybread);
+    }
+
+    let pack_size = usize::from(engine::z_info().pack_size);
+    let slot = hungry_food_slot(&st.item_val, &st.items.items[..pack_size]);
+    // borg-reborn-rs (#1109): keep the Waybread activation ahead of biscuits.
+    if (slot < 0 || i32::from(st.items.items[slot as usize].sval) == st.item_val.sv_food_biscuit)
+        && borg_activate_item(st, st.act.food_waybread)
+    {
+        return true;
+    }
+    eat_from_slot(st, slot)
+}
+
+fn hungry_food_slot(values: &ItemValState, pack: &[borg_item]) -> i32 {
+    [
+        values.sv_food_slime_mold,
+        values.sv_food_slice,
+        values.sv_food_apple,
+        values.sv_food_pint,
+        values.sv_food_handful,
+        values.sv_food_honey_cake,
+        values.sv_food_ration,
+        values.sv_food_waybread,
+        values.sv_food_draught,
+        // object.txt: Hard Biscuit adds 10 nutrition and has no harmful effect.
+        values.sv_food_biscuit,
+    ]
+    .into_iter()
+    .map(|sval| borg_slot_in_pack(pack, TV_FOOD as i32, sval))
+    .find(|&slot| slot >= 0)
+    .unwrap_or(-1)
 }
 
 /// Recharge things.
@@ -1461,6 +1489,36 @@ mod tests {
         st.items.items[2].tval = TV_MUSHROOM as u8;
         assert!(!eat_in_current_shape(&mut st, TV_MUSHROOM as i32, 1, true));
         assert!(st.io.queued_keys().is_empty());
+    }
+
+    #[test]
+    fn hungry_food_uses_a_known_biscuit_after_the_existing_foods() {
+        let values = ItemValState {
+            sv_food_biscuit: 1,
+            sv_food_ration: 2,
+            ..ItemValState::default()
+        };
+        let food = |sval, aware| borg_item {
+            iqty: 1,
+            tval: TV_FOOD as u8,
+            sval,
+            aware,
+            ..blank_item()
+        };
+
+        let mut pack = [
+            food(1, true),  // Hard Biscuit
+            food(3, true),  // Scrap of Flesh
+            food(2, false), // Unaware Ration of Food
+        ];
+        assert_eq!(hungry_food_slot(&values, &pack), 0);
+
+        pack[2].aware = true;
+        assert_eq!(hungry_food_slot(&values, &pack), 2);
+
+        pack[0].aware = false;
+        pack[2].iqty = 0;
+        assert_eq!(hungry_food_slot(&values, &pack), -1);
     }
 
     #[test]
