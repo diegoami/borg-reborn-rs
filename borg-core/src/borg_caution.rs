@@ -1168,9 +1168,9 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
 /// of `borg_caution`).
 fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
-    // borg-reborn-rs (#916): no step away from an awake monster in contact
-    // that is faster than the Borg: it reaches the new grid in the same
-    // turn (C's own "adjacent to a faster monster" test below never acts).
+    // borg-reborn-rs (#916): no step away from an awake adjacent record whose
+    // haste forecast (mspeed, +10 if FAST, SLOW not subtracted) beats the
+    // Borg's speed by the margin (C's "adjacent to a faster" test never acts).
     let from_faster = p(Param::caution_retreat_from_faster) != 0;
     if from_faster {
         if let Some((name, over)) = faster_in_contact(st, p(Param::caution_retreat_faster_margin)) {
@@ -1374,8 +1374,8 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         }
     }
 
-    // borg-reborn-rs (#916): a destination still at or above the HP buys
-    // nothing (64,462 of 2008390085: "53 > 14" at HP 7).
+    // borg-reborn-rs (#916): the selected destination's danger at or above HP
+    // vetoes the whole retreat (no other candidate, first step unchecked).
     if from_faster && b_r >= 0 && b_p >= st.borg.tr(BI_CURHP) {
         borg_note(st, &format!("# No retreat: {},{} keeps danger {} at HP {} (#916)", b_y, b_x, b_p, st.borg.tr(BI_CURHP)));
         return false;
@@ -1410,9 +1410,11 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
-/// borg-reborn-rs (#916): an awake known monster next to the Borg whose
-/// speed, with an observed haste (`forecast_monster_speed`), exceeds the
-/// Borg's by at least `margin`: its name and the difference.
+/// borg-reborn-rs (#916): an awake monster record next to the Borg (no
+/// freshness or mobility check) whose haste forecast (`forecast_monster_speed`:
+/// `mspeed`, +10 for an observed FAST; the engine's SLOW adjustment,
+/// `mon-move.c:1932-1935`, is not subtracted) exceeds `player->state.speed`
+/// by at least `margin`: its name and the difference.
 fn faster_in_contact(st: &BorgState, margin: i32) -> Option<(String, i32)> {
     let own = engine::player_combat_speed();
     (1..st.kills.nxt.max(0) as usize).find_map(|i| {
