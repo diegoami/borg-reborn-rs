@@ -736,6 +736,21 @@ borg_param_attack_throw_as_melee = 1
 
 borg_param_attack_throw_point_blank_divisor = 1
 
+# Flask saving (#912, owner 2026-11-22: "melee is infinite, flasks are not"):
+# the ordinary attack chooser does not throw a flask of oil while melee is
+# enough. 1 = at an adjacent monster; 2 = also at one coming to melee anyway
+# (awake, able to move, no ranged attack). Enough: not afraid, not confused,
+# melee kills it within attack_flask_melee_rounds player turns at its real
+# damage (blows, hit chance), and the monster's danger over the turns melee
+# needs beyond the flask's stays below attack_flask_danger_percent of the HP
+# left. Attack on sight and the focused planner keep the oil (the grey
+# mushroom patch, #869). 0 = today. Meant to replace the melee classes'
+# point-blank overrides. Hypotheses until borg-zoo measures them.
+
+borg_param_attack_flask_saving = 0
+borg_param_attack_flask_melee_rounds = 3
+borg_param_attack_flask_danger_percent = 50
+
 # Confused attacks by direction (#867, owner 2026-11-21): 1 = a confused
 # Borg (not blind, not hallucinating) may also throw, shoot and use a wand,
 # rod or staff at an adjacent monster. Aimed attacks (melee too) are rated at
