@@ -8214,9 +8214,13 @@ game; at 1 it equals the timer at every Borg update, and later Potions of Speed
 are drunk again. The engine messages the pain skip changes are exactly two,
 "You feel yourself slow down." and "You feel yourself speed up."
 (`player_timed.txt:197`, `:203`); no other "You feel ..." message of
-`lib/gamedata` or `src` ends in a pain suffix. borg-zoo#652's pilot (run
-45033305701, classes-18) changed 8 of 18 games with no new death; its small and
-medium runs are the measurement.
+`lib/gamedata` or `src` ends in a pain suffix. borg-zoo#652 (specimen
+`67a0c69d`, 378 starts: pilot 18, small 90, medium 270) measured it neutral:
+0 rescued, 1 newly killed (a Half-Orc Warrior, 1824713728, dying to a
+gallant 1,100 turns after a haste ends mid-fight; the sync's danger was
+correct), mean CL and max DL unchanged. It ships 1 because the Borg's state
+then matches the engine (owner, 2026-11-23: "all inactive but the stale-speed
+flag").
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
@@ -8249,10 +8253,10 @@ at 0 `BI_SPEED` stayed 110 while the engine's speed was 100; at 1 they were equa
 throughout. C's other double count, +10 in `borg_danger` while `temp.fast` is
 set on top of `BI_SPEED`'s own +10, is unchanged.
 
-Both are compiled 0 (C) and **shipped 1** (P8). No replayed game changes its keys
-with either (smoke, seed 2008390085, seed 224, the tamer check). Smoke's
-messages lose the false "PAIN:You" notes. Neither is a measured improvement
-(RULES 14).
+Both are compiled 0 (C) and **shipped 0** (owner, 2026-11-23: of this PR only
+the speed flag, `trait_timed_sync`, ships on). No replayed game changes its keys
+with either (smoke, seed 2008390085, seed 224, the tamer check); at 1 smoke's
+messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
