@@ -633,6 +633,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
     crate::borg_escape::teleport_block_message(st, msg);
+    // borg-reborn-rs (#1067): a trap was set off (`trap_recover` and friends).
+    crate::borg_trap_way::note_message(st, msg);
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
