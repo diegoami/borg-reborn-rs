@@ -5927,18 +5927,19 @@ them.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:47` |
-| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:340` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:517` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:519` |
-| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:573` |
+| `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:53` |
+| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:363` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:588` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:590` |
+| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:657` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:353` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:348` |
 | `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:349` |
 | `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:349` |
-| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:484` |
-| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:464` |
-| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:430` |
+| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:511` |
+| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:487` |
+| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:446` |
+| `fast_fragile_heal_min_ratio` | 0 | tenths | 0–1000 | `borg_fast_fragile.rs:529` |
 
 #926 added the last three, each 0 (today's play), none shipped:
 
@@ -5962,6 +5963,18 @@ them.
   coming window from the game turn and the Borg's energy (the player acts
   before the turn's tick, game-world.c:1016-1095), so it is exact, not an
   average: a hasted Borg's windows hold one tick and none in turn.
+- #1065 adds `fast_fragile_heal_min_ratio` (tenths, 0 = today, not shipped):
+  in contact (an awake fast-fragile monster adjacent) the heal floor lifts
+  the ban, and attack on sight steps aside for the cure, only when
+  min(max HP, HP + the first carried cure's heal) is at least this many
+  tenths of the next turn's damage (the monsters within two grids, mean or
+  `fast_fragile_escape_quantile`). CLW, CSW and CCW heal exactly 20, 40 and
+  60 (object.txt, `HEAL_HP`; capped at max HP, effect-handler-attack.c:201).
+  Below it the escape or the attack decides; out of contact the floor
+  applies at any ratio; bleeding out lifts the ban at any ratio. The issue's
+  30 (a ratio of 3) separates the level-1 deaths of 206cf4e7 (ratios 1.5 to
+  2.2: a cure resets the race) from the Mage 645909552 (4.1). A hypothesis
+  until the zoo measures it with #926's switches as one bundle.
 
 - `fast_fragile_policy=1`: a monster marked fast-fragile is attacked by the
   focused planner's best attack every turn, without attack-on-sight's

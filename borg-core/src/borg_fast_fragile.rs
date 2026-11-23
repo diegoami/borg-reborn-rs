@@ -19,6 +19,12 @@
 //! kills" reads an upper quantile of the damage distribution instead of the
 //! mean (`fast_fragile_escape_quantile`); and it counts the Borg's own cut
 //! and poison ticks (`fast_fragile_count_dot`).
+//!
+//! #1065 adds `fast_fragile_heal_min_ratio` (0 by default, today's play): in
+//! contact, the heal floor lifts the ban only when the cure buys turns, the
+//! HP after it at least that many times the damage of the next turn. Against
+//! a crow at 11 max HP a cure resets a race the Borg loses anyway; at 26 it
+//! buys about three casts.
 
 use crate::borg_caution::{fight_incoming_with, forecast_monster_speed};
 use crate::borg_cave_view::BORG_VIEW;
@@ -246,6 +252,22 @@ pub(crate) fn dot_cure(poisoned: bool, cut: i32, rock: bool, carried: impl Fn(Do
     options.iter().copied().find(|&c| carried(c))
 }
 
+/// #1065: HP a Potion of Cure Light, Serious or Critical Wounds heals:
+/// `HEAL_HP` with dice 20, 40 and 60 and no percentage (lib/gamedata/
+/// object.txt:3165-3166, :3184-3185, :3201-3202), so exactly that, capped at
+/// the maximum (effect_handler_HEAL_HP, effect-handler-attack.c:201-232).
+pub(crate) const CURE_HEAL: [i32; 3] = [20, 40, 60];
+
+/// #1065: whether a cure buys turns in contact: the HP after it,
+/// `min(max_hp, cur_hp + heal)`, is at least `min_ratio_tenths` / 10 times
+/// the `damage` of the next turn. 0 = always (today: the heal floor alone
+/// decides). With no damage at all the cure is never a reset.
+pub(crate) fn heal_buys_turns(cur_hp: i32, max_hp: i32, heal: i32, damage: f64, min_ratio_tenths: i32) -> bool {
+    if min_ratio_tenths <= 0 || damage <= 0.0 { return true; }
+    let after = cur_hp.saturating_add(heal.max(0)).min(max_hp.max(cur_hp));
+    f64::from(after) * 10.0 >= f64::from(min_ratio_tenths) * damage
+}
+
 /// #926: whether `cur_hp` is at or below `floor` percent of `max_hp` (0 =
 /// never): where the heal ban lifts.
 pub(crate) fn below_heal_floor(cur_hp: i32, max_hp: i32, floor: i32) -> bool {
@@ -455,15 +477,21 @@ fn own_dot_cure(st: &mut BorgState) -> Option<(DotCure, i32)> {
 /// distribution; plus the Borg's own cut and poison with
 /// `fast_fragile_count_dot`.
 fn next_turn_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
+    monsters_damage(st, target, f) + own_dot()
+}
+
+/// The monsters' part of `next_turn_damage`: the mean, or the quantile of
+/// `fast_fragile_escape_quantile`. Also #1065's ratio, which leaves out the
+/// Borg's own cut and poison: the cure that heals stops or shortens them.
+fn monsters_damage(st: &mut BorgState, target: usize, f: &Facts) -> f64 {
     let q = param(Param::fast_fragile_escape_quantile);
-    let blows = if q > 0 {
+    if q > 0 {
         let monsters = in_reach(st, target);
         let pmf = monsters.iter().fold(vec![1.0], |acc, &j| convolve(&acc, &monster_pmf(st, j)));
         quantile(&pmf, q)
     } else {
         incoming_total(st, target, f)
-    };
-    blows + own_dot()
+    }
 }
 
 /// #926: the Borg's own cut and poison kill it before its next action
@@ -478,10 +506,53 @@ fn dot_kills(cur_hp: i32) -> bool {
     per_tick > 0 && per_tick * ticks > cur_hp
 }
 
-/// #926: the heal ban lifts at or below `fast_fragile_heal_floor` percent of
-/// the maximum HP, or when the Borg's own cut and poison kill it first.
-fn ban_lifted(st: &BorgState, cur_hp: i32) -> bool {
-    below_heal_floor(cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor)) || dot_kills(cur_hp)
+/// #926: at or below `fast_fragile_heal_floor` percent of the maximum HP.
+fn at_heal_floor(st: &BorgState, cur_hp: i32) -> bool {
+    below_heal_floor(cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor))
+}
+
+/// #1065: the heal of the first cure the caution drinks (Cure Light, then
+/// Serious, then Critical Wounds: borg_heal_outmatched and borg_heal's
+/// order), 0 with none carried.
+fn first_cure_heal(st: &mut BorgState) -> i32 {
+    let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
+    svals.into_iter().zip(CURE_HEAL)
+        .find(|&(sval, _)| crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0)
+        .map_or(0, |(_, heal)| heal)
+}
+
+/// #1065: in contact with the fast-fragile monster `target`, whether a cure
+/// buys turns (`heal_buys_turns` at `fast_fragile_heal_min_ratio`, against
+/// `monsters_damage`). When it does not, the trace says so: the escape or the
+/// attack decides, not the heal floor.
+fn cure_buys_turns(st: &mut BorgState, target: usize, f: &Facts) -> bool {
+    let ratio = param(Param::fast_fragile_heal_min_ratio);
+    if ratio <= 0 { return true; }
+    let max_hp = st.borg.tr(BI_MAXHP);
+    let heal = first_cure_heal(st);
+    let damage = monsters_damage(st, target, f);
+    let ok = heal_buys_turns(f.cur_hp, max_hp, heal, damage, ratio);
+    if !ok {
+        let after = f.cur_hp.saturating_add(heal).min(max_hp.max(f.cur_hp));
+        borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: a cure leaves {after} HP against {damage:.1} damage/turn, {:.1} turns, under {:.1}; no cure at the heal floor (#1065)",
+            f.cur_hp, max_hp, f64::from(after) / damage.max(0.001), f64::from(ratio) / 10.0));
+    }
+    ok
+}
+
+/// #1065: the first awake fast-fragile monster next to the Borg, with its
+/// facts: "in contact".
+fn contact(st: &mut BorgState) -> Option<(usize, Facts)> {
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) > 1 {
+            continue;
+        }
+        if let Some((_, f, _)) = classify(st, i) {
+            return Some((i, f));
+        }
+    }
+    None
 }
 
 /// Whether `escape_instead` could act now: a staircase underfoot, or a Phase
@@ -524,12 +595,22 @@ pub(crate) fn cornered(st: &mut BorgState, target: usize, f: &Facts) -> bool {
 /// Attack-on-sight steps aside for the heal when the Borg carries a cure and
 /// is `cornered` (#842) or at the heal floor (#926); without one the attack
 /// is all it has. `Some(note)` names the reason for the decision trace.
+///
+/// #1065: in contact the floor yields only when the cure buys turns
+/// (`fast_fragile_heal_min_ratio`); out of contact it yields at any ratio.
 pub(crate) fn yield_to_cure(st: &mut BorgState, target: usize, f: &Facts) -> Option<&'static str> {
-    if below_heal_floor(f.cur_hp, st.borg.tr(BI_MAXHP), param(Param::fast_fragile_heal_floor)) {
+    if at_heal_floor(st, f.cur_hp) {
         let cure = has_cure(st);
         borg_note(st, &format!("# Fast-fragile: HP {}/{}, at the heal floor; a cure is {} (#926)",
             f.cur_hp, st.borg.tr(BI_MAXHP), if cure { "carried" } else { "not carried, the attack goes on" }));
-        if cure { return Some("# At the fast-fragile heal floor: the cure decides (#926)"); }
+        if cure {
+            // 0 = today: no contact search, so play is unchanged.
+            let buys = param(Param::fast_fragile_heal_min_ratio) <= 0 || match contact(st) {
+                Some((j, g)) => cure_buys_turns(st, j, &g),
+                None => true,
+            };
+            if buys { return Some("# At the fast-fragile heal floor: the cure decides (#926)"); }
+        }
     }
     (cornered(st, target, f) && has_cure(st))
         .then_some("# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; the cure decides (#842)")
@@ -612,7 +693,10 @@ pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
             continue;
         }
         if let Some((source, f, _)) = classify(st, i) {
-            if ban_lifted(st, f.cur_hp) {
+            // #926: the ban lifts when the Borg's own cut and poison kill it
+            // first, or at the heal floor; #1065: the floor, only when the
+            // cure buys turns against the monsters in reach.
+            if dot_kills(f.cur_hp) || (at_heal_floor(st, f.cur_hp) && cure_buys_turns(st, i, &f)) {
                 borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: at the heal floor or bleeding out, a cure is allowed (#926)", f.cur_hp, st.borg.tr(BI_MAXHP)));
                 continue;
             }
@@ -815,5 +899,50 @@ mod tests_1028 {
     fn the_cures_are_named_as_items() {
         assert_eq!(DotCure::Serious.name(), "Cure Serious Wounds");
         assert_eq!(DotCure::Neutralize.name(), "Neutralize Poison");
+    }
+}
+
+#[cfg(test)]
+mod tests_1065 {
+    use super::*;
+
+    /// The fatal points of the level-1 review of 206cf4e7 (#1065): max HP,
+    /// HP, the Borg's own damage-per-turn estimate, the first cure's heal.
+    #[test]
+    fn a_cure_in_contact_buys_turns_only_well_above_the_damage() {
+        let three = 30;
+        // Priest 848342657, CL1: 10 max HP against a crow's 7.2.
+        assert!(!heal_buys_turns(3, 10, 20, 7.2, three), "a heal resets the losing turn");
+        // Mage 592754909, CL2: 11 against 7.2 (ratio 1.5).
+        assert!(!heal_buys_turns(3, 11, 20, 7.2, three));
+        // Necromancers 1398933929, 2136378178, 2125189042: 13, 14, 17.
+        assert!(!heal_buys_turns(8, 13, 20, 7.6, three));
+        assert!(!heal_buys_turns(5, 14, 20, 8.0, three));
+        assert!(!heal_buys_turns(2, 17, 20, 7.6, three));
+        // Mage 645909552, CL4: 26 against 6.4 (ratio 4.1): a cure buys about
+        // three casts.
+        assert!(heal_buys_turns(13, 26, 20, 6.4, three));
+        assert!(heal_buys_turns(2, 26, 20, 6.4, three), "even from 2 HP: 22 >= 19.2");
+        assert!(!heal_buys_turns(0, 26, 20, 6.7, three), "20 HP after the cure, under 3 x 6.7");
+        assert!(heal_buys_turns(0, 26, 40, 6.7, three), "Cure Serious Wounds heals to 26");
+        // Blackguard 2025089708, CL6: 60 against about 10 to 14.
+        assert!(heal_buys_turns(15, 60, 20, 10.0, three), "35 HP after a CLW, 3.5 turns");
+        assert!(!heal_buys_turns(15, 60, 20, 12.0, three), "35 against 12: 2.9 turns");
+        assert!(heal_buys_turns(15, 60, 40, 12.0, three), "a CSW: 55, 4.6 turns");
+    }
+
+    #[test]
+    fn the_ratio_is_in_tenths_and_capped_at_the_maximum() {
+        assert!(heal_buys_turns(1, 10, 20, 7.2, 0), "0 = today: the floor alone decides");
+        assert!(heal_buys_turns(1, 10, 0, 0.0, 30), "no damage, no race to lose");
+        assert!(heal_buys_turns(5, 18, 20, 7.2, 25), "18 = 2.5 x 7.2: at the ratio counts");
+        assert!(!heal_buys_turns(5, 17, 20, 7.2, 25));
+        assert!(!heal_buys_turns(5, 100, 0, 7.2, 30), "no cure carried: HP 5 only");
+        assert!(heal_buys_turns(30, 20, 0, 6.0, 30), "HP above the maximum (a potion of Berserk): the HP stands");
+    }
+
+    #[test]
+    fn the_cures_heal_what_object_txt_says() {
+        assert_eq!(CURE_HEAL, [20, 40, 60]);
     }
 }
