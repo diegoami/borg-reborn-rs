@@ -195,6 +195,29 @@ fn decayed(amount: i64, free: i64, copy: i64, decay: i64) -> i64 {
 const PREPARED: [(usize, usize); 5] = [(POISON, PREP_POISON), (CURSE, PREP_CURSE),
     (INVISIBLE, PREP_INVISIBLE), (CONFUSION, PREP_CONFUSION), (FEAR, PREP_FEAR)];
 const CLASS_RANGER: i32 = 7;
+const CLASS_MAGE: i32 = 1;
+const CLASS_DRUID: i32 = 2;
+const CLASS_PRIEST: i32 = 3;
+const CLASS_NECROMANCER: i32 = 4;
+
+/// borg-reborn-rs (#1103, owner: buy "the potions to gain stats" the Borg uses):
+/// whether this class drinks the Potion of Brawn, Intellect, Contemplation,
+/// Nimbleness or Toughness for `stat` (0 strength .. 4 constitution), which
+/// gain that stat and lose another at random. The rule is `borg_junk`'s
+/// (`borg_test_stuff`, the `sv_potion_inc_*2` kinds): a class that does not
+/// want to risk the other stat never drinks it, so it is worth nothing to
+/// buy. The five 8000-gold potions (Strength...) and Augmentation are drunk
+/// at once by every class (`borg_use_things`) and are not asked here.
+pub(crate) fn drinks_second_stat_potion(class: i32, stat: usize) -> bool {
+    let caster = matches!(class, CLASS_MAGE | CLASS_DRUID | CLASS_NECROMANCER);
+    match stat {
+        0 => !caster,
+        1 => matches!(class, CLASS_MAGE | CLASS_NECROMANCER),
+        2 => matches!(class, CLASS_PRIEST | CLASS_DRUID),
+        3 => !matches!(class, CLASS_MAGE | CLASS_PRIEST | CLASS_DRUID | CLASS_NECROMANCER),
+        _ => true,
+    }
+}
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
 /// prepared for any level (`borg_prepared`: "5 Food").
@@ -804,6 +827,18 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // so they are worth nothing to the planner until it does.
     if worthless(tval, i32::from(item.sval)) {
         return Vec::new();
+    }
+    // borg-reborn-rs (#1103): a stat potion that gains one stat and loses another
+    // is drunk only by the classes `borg_junk` lets (`drinks_second_stat_potion`).
+    if tval == TV_POTION {
+        let iv = &st.item_val;
+        let sval = i32::from(item.sval);
+        let class = st.borg.tr(BI_CLASS);
+        if [iv.sv_potion_inc_str2, iv.sv_potion_inc_int2, iv.sv_potion_inc_wis2, iv.sv_potion_inc_dex2, iv.sv_potion_inc_con2]
+            .iter().enumerate().any(|(stat, &kind)| kind == sval && !drinks_second_stat_potion(class, stat))
+        {
+            return Vec::new();
+        }
     }
     // borg-reborn-rs (food counting): only what borg_trait counts in BI_FOOD
     // feeds the core (its readiness checks). A Remove Hunger scroll counted
@@ -2449,6 +2484,20 @@ pub(crate) fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> 
 
 #[cfg(test)]
 mod recall_value_tests {
+    /// #1103: a Warrior buys Brawn and Toughness for the Borg to drink, not
+    /// Intellect or Contemplation; a Mage the reverse (`borg_junk`).
+    #[test]
+    fn a_class_buys_only_the_second_stat_potions_it_drinks() {
+        use super::drinks_second_stat_potion as d;
+        let (warrior, mage, druid, priest, necromancer, rogue) = (0, 1, 2, 3, 4, 6);
+        assert!(d(warrior, 0) && !d(warrior, 1) && !d(warrior, 2) && d(warrior, 3) && d(warrior, 4));
+        assert!(!d(mage, 0) && d(mage, 1) && !d(mage, 2) && !d(mage, 3) && d(mage, 4));
+        assert!(!d(druid, 0) && !d(druid, 1) && d(druid, 2) && !d(druid, 3));
+        assert!(d(priest, 0) && !d(priest, 1) && d(priest, 2) && !d(priest, 3));
+        assert!(!d(necromancer, 0) && d(necromancer, 1) && !d(necromancer, 2) && !d(necromancer, 3));
+        assert!(d(rogue, 0) && d(rogue, 3), "the other classes drink strength and dexterity");
+    }
+
     #[test]
     fn recall_reserve_and_purchase_respect_the_gold_floor() {
         use super::eligible_recall_reserve;

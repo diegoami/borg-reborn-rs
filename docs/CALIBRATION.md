@@ -7190,6 +7190,29 @@ Changed:
   the threshold gates them. Wearables that raise `borg_power` (a resistance or
   an ability not worn yet) are priced by the try-on and gated the same way.
 
+- Owner (2026-11-23, later): "let us not forget mushrooms, they should buy the
+  ones he uses, such ones of curing of something. And potions to gain stats
+  levels and so on." Read of the use sites against the planner's rows:
+  - Mushrooms the core eats on purpose: Clear Mind (cures confusion and
+    fear, restores mana), Fast Recovery (heals, cures stun, cuts, poison and
+    blindness), Vigor (restores all five stats), Purging (restores strength
+    and constitution, cures poison), Stoneskin. They are priced on those rows
+    through their effects, so the threshold is all they needed. The others
+    (Second Sight, Emergency, Terror, Debility, Sprinting, Turbulence, Shadows)
+    were already on the worthless list (#443), by the same audit.
+  - Stat potions: the five 8000-gold potions (Strength, Intelligence, Wisdom,
+    Dexterity, Constitution) and Augmentation are drunk at once by every class
+    (`borg_use_things`); they are priced on the stat rows, so also gated by the
+    threshold only (16000 gold at the Black Market: out of the cap for the
+    purses seen). **Fixed:** Brawn, Intellect, Contemplation, Nimbleness and
+    Toughness (1000 gold; each gains one stat and loses another at random) were
+    priced for every class, but `borg_junk` drinks them only for some (Brawn not
+    a Mage, Druid or Necromancer; Intellect only a Mage or Necromancer;
+    Contemplation only a Priest or Druid; Nimbleness not a Mage, Priest, Druid
+    or Necromancer; Toughness any class, each below 18/100). A Warrior would
+    have paid 2000 at the Black Market for an Intellect it never drinks.
+    `drinks_second_stat_potion` now makes the others supply nothing.
+
 Not measured. At the owner's values the Black Market opens at 5900 gold for a
 level 1 Borg and 3000 at level 30; whether the Borg ever has that much, and what
 it buys, is the zoo's to measure (issue #1103, item 4). Hypotheses until then.
