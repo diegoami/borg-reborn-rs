@@ -641,6 +641,10 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
         return key;
     }
 
+    if st.fight_attack.pending_unseen.has_targets() && engine::inkey_flag() {
+        crate::borg_unseen_belief::confirm_attack(st);
+    }
+
     if user_abort(st) {
         key.code = ESCAPE;
         return key;
