@@ -7148,3 +7148,102 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
 | `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
 | `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
 | `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:993` |
+
+## Breadth-first exploration from the staircases (#1080, #1085)
+
+The owner (2026-11-23): "it seems to me that the borg explores depth-first,
+but a safer way would be breadth-first." C's `borg_flow_dark` takes the first
+of five methods that finds a target, and every one measures from the Borg:
+in a corridor the nearest unknown grid is the next one ahead, so the Borg
+follows the corridor to its end. At `explore_breadth_first = 1`, while the
+Borg's maximum HP is below `explore_bfs_max_hp`, both exploration calls (near
+and far) use one method instead (`borg_flow_dark_breadth_first`, the first
+piece of #1080, split out as #1085):
+
+1. one spread from every known staircase, up and down, over known grids
+   gives each grid its **ring**, its flow steps from the nearest staircase;
+   a grid the spread does not enter (an unknown grid, rubble, a vein, a
+   known trap below 60 HP) is one more than its nearest entered neighbour;
+2. the candidates are the interesting grids of the whole known map (methods
+   3–5's, reachable, and method 1's torch-lit ones) within the leash
+   (`borg_get_leash`, where C's distance test applies, measured from that
+   nearest staircase, not from the farthest up one);
+3. the nearest ring *d* is explored first (`plan`): all the candidates from
+   *d* to *d* + `explore_bfs_slack` are goals of one spread, so the flow leads
+   to the one nearest the Borg (the tie-break). A path may not cross a grid
+   of a ring farther out than *d* + slack, or than the Borg's own when it
+   stands farther out (its way back passes there): no target is reached
+   around behind the Borg's back. With no path, the next ring (at most 16
+   per think);
+4. a staircase newly seen (`borg_update`), or a monster newly tracked, in
+   view or not (`borg_flow_kill`), drops a committed exploration flow, so the
+   next think plans again (reviews of #1088);
+5. only the candidates the Borg can reach (one spread from the Borg, through
+   no grid past the return leash, as the route) enter the plan, so rings it
+   cannot walk to do not use up the 16 tries.
+
+While the "wandered too far" return leash of `borg_think_dungeon` applies
+(`return_leash`: 3 x CL + 14 from the nearest up staircase, by `distance`),
+no target and no path grid lies past it. Without that, a target near a down
+staircase but past the return leash sent the Borg out and back: 622 returns
+in 20 games against 65 for the control, and one Necromancer at CL3 on DL1
+after 100,000 turns.
+
+Under boosted bravery (avoidance above HP: the flow then crosses unknown
+grids and known traps), and when the Borg itself has no route to a known
+staircase (none known, a
+teleport into an unexplored region, a known trap across the only way back,
+#1067), C's methods run as before (review of #1088: the stair side's
+candidates no longer stop them). When no candidate is left within the
+leashes, neither call explores, so the level is left (`borg_leave_level`)
+once the area within them is done. The note is
+`# Flowing toward dark-bfs (ring d) at cost n`.
+
+**The threshold by level and class** (owner, 2026-11-23): breadth-first
+applies while max HP < `explore_bfs_max_hp` + `explore_bfs_hp_per_level` x CL,
+both values per class (`__<class>`). The engine gives a character its hit die
+(race + class, `player-birth.c:999`) at CL1 and `randint1(hitdie)` more per
+level (`:295`), so the delta sets how many levels the switch lasts. A delta
+near a quarter of the class's mean gain keeps a level or two more for the
+frail races (Hobbit, Kobold) than for the sturdy ones (Half-Troll). A delta
+of half the gain makes the threshold grow almost as fast as the HP of a small
+hit die: a Hobbit Mage would stay breadth-first to CL12.
+
+**The shipped list** (owner, 2026-11-23: "ship it like that ... turn it on by
+default": `explore_breadth_first = 1` in `harness/borg.txt`, these values in
+the class files; compiled 0, so a profile without them plays C's order). It is
+not measured yet (RULES 14): borg-zoo compares it with the control. For each class, the
+target is the last CL with at least one DL1 death per 100 games that reached
+it, in #1080's pooled table. That table pools every build, and recent runs are
+5–10 times lower, so the cut at 1 per 100 is itself a hypothesis. The delta is
+a quarter of the Human mean gain, and the base puts the threshold halfway
+between the mean max HP at the target and the next CL (CON ignored). The owner
+then raised every `explore_bfs_max_hp` by 10 (2026-11-23: "increase those
+explore_bfs_max_hp by 10"); the table gives the shipped values and the levels
+they reach:
+
+| class | hit die (Human) | target CL | `explore_bfs_max_hp` | `explore_bfs_hp_per_level` | Human through | all races through |
+|---|---:|---:|---:|---:|---:|---:|
+| warrior | 19 | 1 | 31 | 2 | CL2 | CL2–3 |
+| mage | 10 | 4 | 35 | 1 | CL6 | CL5–10 |
+| druid | 12 | 4 | 36 | 2 | CL6 | CL5–10 |
+| priest | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
+| necromancer | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
+| paladin | 16 | 2 | 34 | 2 | CL4 | CL3–5 |
+| rogue | 14 | 3 | 36 | 2 | CL5 | CL4–7 |
+| ranger | 15 | 4 | 44 | 2 | CL6 | CL5–8 |
+| blackguard | 18 | 1 | 30 | 2 | CL2 | CL2–3 |
+
+The race delta of #1061's threshold (`__<race>`) is not part of this change:
+the suffix is #1061's, and this threshold takes it when that lands.
+borg-zoo measures the shipped list against `explore_breadth_first = 0`, and
+the arms of #1085 (`explore_bfs_max_hp` 20, 25 and 30). With this
+section the registry holds **2448** parameters (`track-p` `57d47863` plus the four
+below).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:843` |
+| `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:845` |
+| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1030` |
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:848` |

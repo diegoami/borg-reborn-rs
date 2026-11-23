@@ -57,6 +57,8 @@ PINNED_TOWN_SETTINGS = [
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
+    # #1085 shipped breadth-first exploration after these incidents.
+    ("explore_breadth_first", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
