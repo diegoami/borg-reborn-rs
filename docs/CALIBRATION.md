@@ -7339,7 +7339,7 @@ engine's light, every step checked, the unplaced door sound).
 | `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:152` |
 | `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:159` |
 | `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:159` |
-| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:537` |
+| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:559` |
 | `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:539` |
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
 | `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:542` |
@@ -7361,8 +7361,9 @@ the nearest known staircase the Borg will take (up unless descent is forced;
 down when prepared for the next depth and not rising: one rule for the area,
 the walk back, the level change and the departure on a threat) over known
 floor, no closed door (an open costs a turn and may fail) and no known trap
-(below 60 HP the flows treat a known trap as a wall), 8-connected; a staircase
-a monster stands on does not count;
+(below 60 HP the flows treat a known trap as a wall), 8-connected, through no
+grid a monster stands on (so a monster in a shortcut leaves the open detour as
+the walk); a staircase a monster stands on does not count;
 an unknown grid or rubble counts one step past its nearest walkable
 neighbour. *g* is safe when a monster first seen *D(g)* grids off survives
 being outrun: `attacks_on_retreat` lets it act `stair_scum_speed_ratio` times
@@ -7402,7 +7403,8 @@ a step every two levels.
 from the frontier nearest its staircase (an unknown grid or a closed door next
 to the walk), acting `ratio - 1` times before the Borg and `ratio` times after
 each of its steps but the last, reaches the staircase before the Borg does
-(`cut_off`). The walk back steps over the same grids (`step_home`), never
+(`cut_off`, timed on the real walk: the slack shortens only the damage
+budget). The walk back steps over the same grids (`step_home`), never
 through a closed door, and a committed departure walk resumes before the
 return.
 

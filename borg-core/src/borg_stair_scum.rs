@@ -277,6 +277,15 @@ fn slack_steps(steps: i32, per_hp_tenths: i32, max_hp: i32, per_level_percent: i
     (i64::from(steps.max(0)) + by_hp + by_level).min(i64::from(MAX_STEPS)) as i32
 }
 
+/// A retreat of `walk` actions is safe (pure): the slack shortens the walk
+/// the damage budget counts (the owner's dial), but the cut-off is timed on
+/// the real walk (re-review of #1090 at `9276b75a`, P1: with a Mage's slack 2
+/// a two-step walk counted as none, and a monster one step from the
+/// staircase got there first).
+fn retreat_ok(walk: i32, slack: i32, sight: i32, ratio: i32, hp: i32, per_attack: i32, front: i32) -> bool {
+    survives(slackened(walk, slack), sight, ratio, hp, per_attack) && !cut_off(walk, front, ratio)
+}
+
 /// The longest walk that survives (pure; for the notes and the tests).
 fn radius(seen_at: i32, ratio: i32, hp: i32, per_attack: i32) -> i32 {
     let mut r = 0;
@@ -399,14 +408,24 @@ fn safe_area(dist: &[u16], walkable: impl Fn(i32, i32) -> bool, safe: impl Fn(i3
 /// known trap. A closed door is not one until it is open (review of #1090,
 /// P1): opening it costs a turn, a lock can cost more, and the Borg will not
 /// open a door with a monster next to it (`borg_flow.rs`, `step_closed_door`).
+/// Nor is a grid a monster stands on (re-review of #1090 at `9276b75a`, P1):
+/// the retreat field is built over the grids the Borg can step on now, so a
+/// monster in a short corridor leaves the longer open way as the walk.
 fn walkable(st: &BorgState, y: i32, x: i32) -> bool {
     let ag = st.cave.grid(x, y);
-    walk_grid(u32::from(ag.feat), ag.trap, borg_cave_floor_grid(ag))
+    walk_grid(u32::from(ag.feat), ag.trap, borg_cave_floor_grid(ag), ag.kill != 0)
+}
+
+/// The grids a monster walks to the staircase over (`walkable` without the
+/// monsters: they do not block each other's way here).
+fn terrain_walkable(st: &BorgState, y: i32, x: i32) -> bool {
+    let ag = st.cave.grid(x, y);
+    walk_grid(u32::from(ag.feat), ag.trap, borg_cave_floor_grid(ag), false)
 }
 
 /// `walkable` on the grid's facts (pure).
-fn walk_grid(feat: u32, trap: bool, floor_like: bool) -> bool {
-    feat != FEAT_NONE && feat != FEAT_LAVA && feat != FEAT_CLOSED && !trap && floor_like
+fn walk_grid(feat: u32, trap: bool, floor_like: bool, occupied: bool) -> bool {
+    feat != FEAT_NONE && feat != FEAT_LAVA && feat != FEAT_CLOSED && !trap && floor_like && !occupied
 }
 
 fn lit_floor(st: &BorgState, y: i32, x: i32) -> bool {
@@ -519,11 +538,11 @@ impl Map {
     fn measure(st: &BorgState, up: bool, down: bool) -> Map {
         let stairs = stair_grids(st, up, down);
         let (dist, source) = distances_from(&stairs, |y, x| walkable(st, y, x));
-        let edge = frontier(|y, x| walkable(st, y, x), |y, x| {
+        let edge = frontier(|y, x| terrain_walkable(st, y, x), |y, x| {
             let feat = u32::from(st.cave.grid(x, y).feat);
             feat == FEAT_NONE || feat == FEAT_CLOSED
         });
-        let from_edge = distances(&edge, |y, x| walkable(st, y, x));
+        let from_edge = distances(&edge, |y, x| terrain_walkable(st, y, x));
         let front_of: Vec<u16> = stairs.iter().map(|&(y, x)| from_edge[index(y, x)]).collect();
         let stair_front = source.iter().map(|&k| if k == FAR { FAR } else { front_of[usize::from(k)] }).collect();
         let lit_sources = entries(|y, x| lit_floor(st, y, x), |y, x| known_wall(st, y, x));
@@ -597,7 +616,7 @@ impl Map {
         }
         // A closed door: the open is one action more before the retreat.
         let extra = i32::from(u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED);
-        let walk = slackened(s + extra, self.slack);
+        let walk = s + extra;
         // The staircase its walk leads to (an off-walk grid: its best neighbour's).
         let front = if walkable(st, y, x) {
             self.at(&self.stair_front, y, x)
@@ -607,8 +626,7 @@ impl Map {
                 .min_by_key(|&&(dy, dx)| self.at(&self.dist, y + dy, x + dx))
                 .map_or(FAR, |&(dy, dx)| self.at(&self.stair_front, y + dy, x + dx))
         };
-        survives(walk, self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
-            && !cut_off(walk, i32::from(front), self.ratio)
+        retreat_ok(walk, self.slack, self.sight(st, y, x), self.ratio, self.hp, self.per_attack, i32::from(front))
     }
 
     fn in_area(&self, y: i32, x: i32) -> bool {
@@ -644,7 +662,7 @@ impl Map {
         let (y, x) = (st.borg.c.y, st.borg.c.x);
         next_home(self.at(&self.dist, y, x), DIRS.iter().map(|&(dy, dx)| {
             let (ny, nx) = (y + dy, x + dx);
-            let open = inside(ny, nx) && walkable(st, ny, nx) && st.cave.grid(nx, ny).kill == 0;
+            let open = inside(ny, nx) && walkable(st, ny, nx);
             ((ny, nx), if open { self.at(&self.dist, ny, nx) } else { FAR })
         }))
     }
@@ -1165,10 +1183,11 @@ mod tests {
     /// it is open; a corridor behind one is cut off from the staircase.
     #[test]
     fn a_closed_door_is_not_on_the_retreat() {
-        assert!(!walk_grid(FEAT_CLOSED, false, false));
-        assert!(walk_grid(FEAT_OPEN, false, true), "an open door is floor");
-        assert!(walk_grid(FEAT_BROKEN, false, true));
-        assert!(!walk_grid(FEAT_OPEN, true, true), "nor a known trap");
+        assert!(!walk_grid(FEAT_CLOSED, false, false, false));
+        assert!(walk_grid(FEAT_OPEN, false, true, false), "an open door is floor");
+        assert!(walk_grid(FEAT_BROKEN, false, true, false));
+        assert!(!walk_grid(FEAT_OPEN, true, true, false), "nor a known trap");
+        assert!(!walk_grid(FEAT_OPEN, false, true, true), "nor a grid a monster stands on");
         // A staircase at x = 5, a closed door at x = 7: the floor beyond has
         // no route, the door itself is one past its neighbour.
         let walk = |y: i32, x: i32| y == 5 && (5..=12).contains(&x) && x != 7;
@@ -1258,6 +1277,45 @@ mod tests {
         assert_eq!(next_home(3, [((4, 7), FAR)].into_iter()), None, "only the door: no step");
         assert_eq!(next_home(1, [((5, 5), 0), ((4, 5), 0)].into_iter()), Some((5, 5)), "a tie: the first");
         assert_eq!(next_home(2, [((5, 6), 2)].into_iter()), None, "not nearer");
+    }
+
+    /// Re-review of #1090 at `9276b75a`, P1: a monster in the three-step
+    /// shortcut leaves the open five-step detour as the walk home, and the
+    /// first step of the detour is a step home.
+    #[test]
+    fn a_monster_in_the_shortcut_leaves_the_detour() {
+        // The staircase at (5, 5). Shortcut along row 5 to (5, 8); detour
+        // round row 7: (6,6)..(7,7)..(6,9)? A plain loop: row 5 and row 7,
+        // joined at x = 5 and x = 9 through rows 6.
+        let floor = |y: i32, x: i32| (y == 5 && (5..=9).contains(&x)) || (y == 7 && (5..=9).contains(&x))
+            || ((y == 6) && (x == 4 || x == 10)) || (y == 5 && x == 4) || (y == 7 && x == 4)
+            || (y == 5 && x == 10) || (y == 7 && x == 10);
+        let monster = |y: i32, x: i32| (y, x) == (5, 7);
+        let walk = |y: i32, x: i32| floor(y, x) && !monster(y, x);
+        let through = distances(&[(5, 5)], floor);
+        let open = distances(&[(5, 5)], walk);
+        assert_eq!(through[index(5, 8)], 3, "the shortcut");
+        assert!(open[index(5, 8)] > 3, "the open way is the detour");
+        // From (5, 8) the step home is onto the detour, not the monster.
+        let here = open[index(5, 8)];
+        let n = DIRS.iter().map(|&(dy, dx)| {
+            let (y, x) = (5 + dy, 8 + dx);
+            ((y, x), if walk(y, x) { open[index(y, x)] } else { FAR })
+        });
+        let step = next_home(here, n).expect("a step home exists");
+        assert_ne!(step, (5, 7));
+    }
+
+    /// Re-review of #1090 at `9276b75a`, P1: the slack loosens the damage
+    /// budget, not the race to the staircase.
+    #[test]
+    fn the_cutoff_is_timed_on_the_real_walk() {
+        // A Mage's slack 2, a two-step walk, a +10 monster one step from the
+        // staircase, full HP 20: the damage budget passes, the race does not.
+        assert!(survives(slackened(2, 2), 1, 2, 20, 4));
+        assert!(!retreat_ok(2, 2, 1, 2, 20, 4, 1), "the monster reaches the staircase first");
+        assert!(retreat_ok(2, 2, 1, 2, 20, 4, 9), "a far frontier: safe");
+        assert!(retreat_ok(0, 2, 1, 2, 20, 4, 1), "on the staircase");
     }
 
     /// Review, P2: a door sound is placed by a changed door seen at or after
