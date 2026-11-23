@@ -835,6 +835,12 @@ borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
 # explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
 borg_param_explore_bfs_hp_per_level = 0
+# #1110 (owner, 2026-11-23: "plan a little more food and light if we do
+# that"): while breadth-first exploration applies, the town planner's food
+# target (the five-ration floor included) and light goal (the light reserve
+# included) are this percent of today's. 150: 7.5 rations, 30,000 light turns.
+borg_param_explore_bfs_food_percent = 150
+borg_param_explore_bfs_light_percent = 150
 
 # The holes in C's leash (#1062). Compiled 0 = C; shipped on with the values
 # of the zoo arms (owner, 2026-11-23: "merge with the values to try"),
@@ -1232,10 +1238,12 @@ borg_param_caution_stairs_immobile_reach_extra_steps = 20
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
-# #932 (seed 829474344): no strategic retreat after this many in a row from
-# the same place, each within the thinks of the last (the next flow step undid
-# each). Shipped 0 (today's play); 3 is the hypothesis.
-borg_param_caution_retreat_oscillation_limit = 0
+# #1123: avoid a recently retreated-from grid on a stair route while it
+# is still dangerous. The hold lasts at most 128 Borg thinks.
+borg_param_caution_retreat_reentry_ticks = 128
+# #932 (seed 829474344): after three strategic retreats undone by the next
+# stair-flow step, let the escape, cure or attack decision act instead.
+borg_param_caution_retreat_oscillation_limit = 3
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
@@ -1924,7 +1932,7 @@ borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
-borg_param_explore_bfs_max_hp__warrior = 31
+borg_param_explore_bfs_max_hp__warrior = 28
 borg_param_explore_bfs_hp_per_level__warrior = 2
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
@@ -1947,7 +1955,7 @@ borg_param_town_staple_clw__mage = 6
 borg_param_town_staple_csw__mage = 3
 borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
-borg_param_explore_bfs_max_hp__mage = 35
+borg_param_explore_bfs_max_hp__mage = 32
 borg_param_explore_bfs_hp_per_level__mage = 1
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
@@ -1969,7 +1977,7 @@ borg_param_town_staple_clw__druid = 5
 borg_param_town_staple_csw__druid = 3
 borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
-borg_param_explore_bfs_max_hp__druid = 36
+borg_param_explore_bfs_max_hp__druid = 33
 borg_param_explore_bfs_hp_per_level__druid = 2
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
@@ -1992,7 +2000,7 @@ borg_param_town_staple_csw__priest = 3
 borg_param_town_staple_phase__priest = 12
 borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
-borg_param_explore_bfs_max_hp__priest = 31
+borg_param_explore_bfs_max_hp__priest = 28
 borg_param_explore_bfs_hp_per_level__priest = 2
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
@@ -2015,7 +2023,7 @@ borg_param_town_staple_clw__necromancer = 5
 borg_param_town_staple_csw__necromancer = 3
 borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
-borg_param_explore_bfs_max_hp__necromancer = 31
+borg_param_explore_bfs_max_hp__necromancer = 28
 borg_param_explore_bfs_hp_per_level__necromancer = 2
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
@@ -2040,7 +2048,7 @@ borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
-borg_param_explore_bfs_max_hp__paladin = 34
+borg_param_explore_bfs_max_hp__paladin = 31
 borg_param_explore_bfs_hp_per_level__paladin = 2
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
@@ -2065,7 +2073,7 @@ borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
-borg_param_explore_bfs_max_hp__rogue = 36
+borg_param_explore_bfs_max_hp__rogue = 33
 borg_param_explore_bfs_hp_per_level__rogue = 2
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
@@ -2093,7 +2101,7 @@ borg_param_town_staple_clw__ranger = 7
 borg_param_town_staple_csw__ranger = 4
 borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
-borg_param_explore_bfs_max_hp__ranger = 44
+borg_param_explore_bfs_max_hp__ranger = 41
 borg_param_explore_bfs_hp_per_level__ranger = 2
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
@@ -2118,7 +2126,7 @@ borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
-borg_param_explore_bfs_max_hp__blackguard = 30
+borg_param_explore_bfs_max_hp__blackguard = 27
 borg_param_explore_bfs_hp_per_level__blackguard = 2
 # ---- END CLASS FILES ----
 

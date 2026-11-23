@@ -840,14 +840,32 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
 /// `explore_breadth_first` on, in the dungeon, and the Borg's maximum HP
 /// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class).
 pub(crate) fn breadth_first_active(st: &BorgState) -> bool {
+    st.borg.tr(BI_CDEPTH) > 0 && breadth_first_applies(st)
+}
+
+/// #1110: would breadth-first exploration apply to this character in the
+/// dungeon (the switch on, maximum HP below its threshold)? The town planner
+/// asks this in town.
+pub(crate) fn breadth_first_applies(st: &BorgState) -> bool {
     value(Param::explore_breadth_first) != 0
-        && st.borg.tr(BI_CDEPTH) > 0
         && st.borg.tr(BI_MAXHP)
             < bfs_hp_threshold(
                 value(Param::explore_bfs_max_hp),
                 value(Param::explore_bfs_hp_per_level),
                 st.borg.tr(BI_CLEVEL),
             )
+}
+
+/// #1110 (owner, 2026-11-23: "plan a little more food and light if we do
+/// that"): breadth-first exploration walks back toward the stairs between
+/// targets, so a trip takes more turns. While it would apply, the town
+/// planner's food target and light goal are this percent of today's
+/// (`explore_bfs_food_percent`, `explore_bfs_light_percent`); else 100.
+pub(crate) fn bfs_supply_percent(st: &BorgState, light: bool) -> i32 {
+    if !breadth_first_applies(st) {
+        return 100;
+    }
+    value(if light { Param::explore_bfs_light_percent } else { Param::explore_bfs_food_percent })
 }
 
 /// #1085: the maximum HP below which breadth-first applies at character
@@ -1530,5 +1548,7 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_max_hp), 25);
         assert_eq!(value(Param::explore_bfs_slack), 0, "strict rings");
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
+        assert_eq!(value(Param::explore_bfs_food_percent), 100, "#1110: today's food");
+        assert_eq!(value(Param::explore_bfs_light_percent), 100, "#1110: today's light");
     }
 }
