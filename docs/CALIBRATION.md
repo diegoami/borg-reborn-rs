@@ -6806,9 +6806,9 @@ engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:137` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:144` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:144` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:140` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:147` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:147` |
 | `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:390` |
 | `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:392` |
 | `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:651` |
