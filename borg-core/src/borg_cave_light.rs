@@ -37,6 +37,7 @@ pub const BORG_LIGHT: u16 = 0x10;
 /// after `borg_update_light()` when the player has a light.
 pub struct LightState {
     pub(crate) detected_entries: std::collections::BTreeSet<(i32, i32)>,
+    pub(crate) room_lighting: crate::borg_light::RoomLighting,
     /// `borg_light_n`
     pub light_n: i16,
     /// `borg_light_x`
@@ -55,6 +56,7 @@ impl Default for LightState {
     fn default() -> Self {
         LightState {
             detected_entries: std::collections::BTreeSet::new(),
+            room_lighting: Default::default(),
             light_n: 0,
             light_x: vec![0; AUTO_LIGHT_MAX],
             light_y: vec![0; AUTO_LIGHT_MAX],
