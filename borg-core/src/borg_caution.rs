@@ -2767,6 +2767,15 @@ pub(crate) fn remember_never_move(r_idx: usize) -> bool {
         && engine::race_flag_has(r_idx, RF_NEVER_MOVE)
 }
 
+/// borg-reborn-rs (#1147, review of #1148, finding 3): the record of race
+/// `r_idx` survives the anti-bounce reset and the 2,000-turn expiry: with
+/// `caution_remember_never_move` (#1125) for every monster that never moves,
+/// and with `caution_walk_away_immobile` for every walk-away monster, whose
+/// reach stays closed only while its record is kept.
+pub(crate) fn remember_record(st: &BorgState, r_idx: usize) -> bool {
+    remember_never_move(r_idx) || walk_away_listed(st, r_idx)
+}
+
 /// borg-reborn-rs (#1125): the next free index (`kills.nxt`) once the
 /// records past the last live one are gone: 1 when none is left.
 pub(crate) fn kills_tail(kills: &[crate::borg_flow_kill::BorgKill], nxt: i16) -> i16 {
@@ -2902,6 +2911,12 @@ fn walk_away_rank(squares: &[WalkAwaySquare]) -> Option<WalkAwaySquare> {
     squares.iter().copied().min_by_key(key)
 }
 
+/// #1147: a grid a walk-away route may cross: known floor, and not lava the
+/// Borg may not walk on (review of #1148, finding 4).
+fn route_floor(floor: bool, known: bool, lava_forbidden: bool) -> bool {
+    floor && known && !lava_forbidden
+}
+
 /// #1147: steps from the nearest source to every grid of a `w` by `h` map
 /// (row-major), moving in the eight directions over `passable` grids;
 /// `u16::MAX` where none reaches.
@@ -2974,7 +2989,9 @@ fn walk_away_best_step(st: &mut BorgState) -> Option<(usize, String)> {
         .map(|g| {
             let (x, y) = ((g % w) as i32, (g / w) as i32);
             let ag = st.cave.grid(x, y);
-            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+            // Review of #1148, finding 4: lava the Borg may not cross is no
+            // way to the stairs (the stair flow and the step refuse it too).
+            route_floor(borg_cave_floor_grid(ag), u32::from(ag.feat) != FEAT_NONE, lava_forbids_step(st, ag))
         })
         .collect();
     let open: Vec<bool> = (0..w * h).map(|g| floor[g] && !reach[g]).collect();
@@ -3025,6 +3042,24 @@ fn walk_away_best_step(st: &mut BorgState) -> Option<(usize, String)> {
     Some((best.dir, why))
 }
 
+/// #1147 (review of #1148, finding 2): a confusion cure for a cornered
+/// Borg: a Cure Mind mushroom, Cure Serious or Critical Wounds, else Cure
+/// Light Wounds (20 turns of confusion, object.txt).
+fn walk_away_confusion_cure(st: &mut BorgState) -> bool {
+    borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        || borg_quaff_crit(st, false)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+}
+
+/// #1147 (review of #1148, finding 2): Phase Door for a cornered Borg: an
+/// activation, a scroll, or the spell.
+fn walk_away_phase(st: &mut BorgState) -> bool {
+    borg_activate_item(st, st.act.tele_phase)
+        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+        || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_walk_away_phase_fail))
+}
+
 /// borg-reborn-rs (#1147): `caution_walk_away_immobile`. Next to a known
 /// walk-away monster (`walk_away_listed`), awake or asleep, the first
 /// action of the dungeon think (`borg_think_dungeon`, after #1125's
@@ -3061,8 +3096,21 @@ pub(crate) fn walk_away_step(st: &mut BorgState) -> bool {
             true
         }
         None => {
+            // Review of #1148, finding 2: the owner's fallback before the
+            // blow. Confused, a confusion cure (a Cure Light Wounds takes 20
+            // turns off, object.txt); clear-headed, Phase Door (a confused
+            // Borg cannot read, player-util.c:1182). Only then the blow.
+            if st.borg.tr(BI_ISCONFUSED) != 0 {
+                if walk_away_confusion_cure(st) {
+                    borg_note(st, &format!("# Walk-away: cornered next to the {name}, curing the confusion first (#1147)"));
+                    return true;
+                }
+            } else if walk_away_phase(st) {
+                borg_note(st, &format!("# Walk-away: cornered next to the {name}, Phase Door (#1147)"));
+                return true;
+            }
             st.borg.mon.walk_away_cornered = Some(st.borg.time.now);
-            borg_note(st, &format!("# Walk-away: next to the {name} with no square out of its reach; a blow at it is the last resort (#1147)"));
+            borg_note(st, &format!("# Walk-away: next to the {name} with no square out of its reach, no cure and no Phase Door; a blow at it is the last resort (#1147)"));
             false
         }
     }
@@ -9073,5 +9121,28 @@ mod walk_away_tests {
     #[test]
     fn shipped_off() {
         assert_eq!(crate::params::value(crate::params::Param::caution_walk_away_immobile), 0);
+    }
+
+    #[test]
+    fn lava_the_borg_may_not_cross_is_no_way_to_the_stairs() {
+        // Review of #1148, finding 4: a neighbour whose only way to the
+        // stairs crosses forbidden lava has no clean way.
+        use super::route_floor;
+        assert!(route_floor(true, true, false));
+        assert!(!route_floor(true, true, true), "forbidden lava");
+        assert!(!route_floor(true, false, false), "unknown");
+        let lava = [route_floor(true, true, false), route_floor(true, true, true), route_floor(true, true, false)];
+        let d = grid_steps(3, 1, &lava, &[2]);
+        assert_eq!(d[0], u16::MAX, "the stairs at x=2 only across the lava at x=1");
+    }
+
+    #[test]
+    fn the_walk_away_step_comes_before_the_paralyser_step() {
+        // Review of #1148, finding 5: with both switches on, the walk-away
+        // policy (which takes the staircase underfoot) acts first.
+        let src = include_str!("borg_think_dungeon.rs");
+        let walk = src.find(concat!("walk_away_", "step(st)")).expect("walk-away call");
+        let para = src.find(concat!("paralyser_", "step_away(st)")).expect("paralyser call");
+        assert!(walk < para);
     }
 }

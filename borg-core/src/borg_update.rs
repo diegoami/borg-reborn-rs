@@ -1602,7 +1602,7 @@ fn expire_kills(st: &mut BorgState) {
                 && !(st.borg.tr(BI_ISIMAGE) != 0 && st.borg.tr(BI_ISAFRAID) != 0);
             // borg-reborn-rs (#1125, `caution_remember_never_move`): a
             // monster that never moves is still where it was seen.
-            if !recent && !crate::borg_caution::remember_never_move(usize::from(kill.r_idx)) {
+            if !recent && !crate::borg_caution::remember_record(st, usize::from(kill.r_idx)) {
                 let mut note = b"# Expiring a monster '".to_vec();
                 note.extend_from_slice(pct_s(borg_race_name(i32::from(kill.r_idx)).to_bytes()));
                 note.extend_from_slice(
