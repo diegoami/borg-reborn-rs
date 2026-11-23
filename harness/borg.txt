@@ -1320,9 +1320,30 @@ borg_param_caution_retreat_oscillation_limit = 3
 # recent, budgeted and out of danger. Blackguard 312081895 stayed 60,000 turns
 # between two grids without it.
 borg_param_flow_brave_walk_commit = 1
+# #1153 (owner, 2026-11-23: "why would you ship it off by default, no
+# loopbreaker"): a general movement-loop detector and breaker: 16 moves among
+# at most 3 grids with the map unchanged and no danger: walk to a staircase,
+# else a committed brave walk to one, else close the loop's grids for 20 thinks.
+borg_param_loop_breaker = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
+
+# #916: no strategic retreat (the step to a happier grid) while an awake
+# adjacent monster record (no freshness or mobility check) has a haste
+# forecast at least the margin above player->state.speed: observed mspeed,
+# +10 for observed FAST, the engine's SLOW adjustment (mon-move.c:1928-1938)
+# not subtracted, so not the engine's net speed. Also, the selected
+# destination's danger at or above HP vetoes the whole retreat (no other
+# candidate tried, first step unchecked). The escapes and the outmatched cure
+# decide. Shipped 0 (today's play): in borg-zoo#652's small and medium runs
+# (360 starts) it rescued none and newly killed 3 (one, the Ranger's Fang
+# death, follows the refusals directly; the Paladin and the Priest died
+# later). Where no escape takes the turn the Borg fights instead. Margin 5,
+# the HP cutoff and margin 15 (where the three new deaths replay the
+# control) are hypotheses.
+borg_param_caution_retreat_from_faster = 0
+borg_param_caution_retreat_faster_margin = 5
 # #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
 # desperate walk does not start toward a dangerous monster within this many
 # grids of its path and nearer the stairs (0 = C).
