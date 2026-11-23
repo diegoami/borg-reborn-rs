@@ -20,3 +20,10 @@ spend their mana on light, the light-casting rules (Call Light, the dark flow)
 may need their own look.
 
 **For the owner.** The Priest's mana spent on Call Light (above).
+
+**After merging track-p (#1058, #1074).** `smoke-borg-rs` re-recorded again,
+with four games, and none plays as before. `smoke-mage-overexert-4`: at the
+shipped `attack_reserve_spell_overexert = 0` the Mage now dies to a cave
+spider at game turn 2,596 (CL2), where it had lived to 6,000. At 1 it still
+faints and dies at 56, so the game still tells the two apart. It is a
+synthetic start, so the death needs no Cemetery record.
