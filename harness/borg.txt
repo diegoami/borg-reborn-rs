@@ -1613,6 +1613,11 @@ borg_param_kit_start_reserve = 0
 borg_param_kit_money_first = 0
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
+# #910: the fight race wins only below (100 - margin) percent of the HP; and a
+# monster generated with a group counts 100 + group percent of its damage
+# (0 = today).
+borg_param_caution_winning_fight_margin_percent = 0
+borg_param_caution_winning_fight_group_percent = 0
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34

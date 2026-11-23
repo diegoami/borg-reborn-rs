@@ -850,6 +850,15 @@ pub fn race_flag_has(r_idx: usize, flag: u32) -> bool {
     flag_has(&race(r_idx).flags, flag as i32)
 }
 
+/// borg-reborn-rs (#910): whether `r_info[r_idx]` is generated with a group:
+/// any `friends:` or `friends-base:` line in monster.txt (mon-make.c places
+/// them with the monster). Game data, as `r_info`'s other fields; no
+/// monster's state is read.
+pub fn race_has_friends(r_idx: usize) -> bool {
+    let r = race(r_idx);
+    !r.friends.is_null() || !r.friends_base.is_null()
+}
+
 // ---------------------------------------------------------------------------
 // Player class magic (books and spells)
 
