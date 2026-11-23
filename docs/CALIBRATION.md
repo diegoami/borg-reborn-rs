@@ -1015,8 +1015,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2163` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2163` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2169` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2169` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:720` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
@@ -1321,13 +1321,13 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2170` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2167` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2168` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2169` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2170` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2171` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2172` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2176` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2177` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2178` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2179` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2180` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2181` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2182` |
 | `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2173` |
 | `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2174` |
 | `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2175` |
