@@ -7712,3 +7712,77 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 | `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2230` |
 | `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2231` |
 | `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2232` |
+
+## Poison triage (#1140)
+
+Poison costs 1 HP each world tick and stops regeneration (`process_world`,
+game-world.c:513-519; `player_regen_hp`, player-util.c:468), while
+`decrease_timeouts` lowers the counter by `adj_con_fix[stat_ind[CON]] + 1`
+(game-world.c:282, 317-320; the table `player-calcs.c:686-725`, pinned by a
+unit test). A poisoned Borg with no monster near still loses
+`ceil(counter / (adj_con_fix + 1))` HP. The core held poison as a flag
+(`BI_ISPOISONED`) and never compared that with its HP and the healing it
+carries (zoo run 45121432449, track-p `1c071812`, borg-cemetery#146: the
+Rogue 626789725, the Ranger 956247604, the Druid 799968561). New module
+`borg_poison.rs`; every switch is compiled and shipped 0, so play is
+unchanged (smoke 4/4 identical to `smoke-borg-rs`). The values are
+hypotheses until borg-zoo measures them (RULES 14).
+
+The counter is read from the engine (`player_timed(TMD_POISONED)`), the
+owner's choice for #1136, as `borg_town_capability` and `borg_fast_fragile`
+already do. The healing carried counts each Cure Light Wounds (20 HP) and
+Cure Serious Wounds (40 HP; `HEAL_HP` `dice:20` and `dice:40`, object.txt,
+pinned by a unit test) at most `max HP - 1`, the most it can give drunk at
+1 HP. A cure is carried when `BI_ACUREPOIS`, `BI_ACCW`, `BI_AHEAL`,
+`BI_AEZHEAL` or `BI_ALIFE` is above 0 or Cure Poison or Herbal Curing is
+legal; Minor Healing makes the healing renewable. With a cure or a renewable
+heal, no rule below acts.
+
+- **A, `poison_pending_note`.** A note while poisoned: the counter, its
+  decay, the HP still to come, the HP, the healing carried and the verdict
+  ("covered", "more than HP + healing by n", "a cure carried"). Written when
+  any of the five switches is on, once per change. Notes only.
+- **B, `poison_late_drink`.** Poisoned, not cut, no cure, danger 0:
+  `borg_heal`'s Cure Light and Cure Serious tiers hold the potion unless the
+  whole heal fits under the maximum HP or the HP is at most the next turn's
+  poison (ticks per turn from the Borg's speed) plus
+  `poison_late_drink_margin`; at that line a CLW (else a CSW) is drunk
+  directly (`late_drink`), since the tiers refuse a CLW at a large loss past
+  `caution_clw_max_level`. Danger above 0 keeps today's tiers.
+- **C, `poison_leave_unfixable`.** In the dungeon, when the poison still to
+  come is at least the HP plus the healing carried, the Borg starts leaving
+  and fleeing and sets `rising` (each level climbs on); it reads Recall below
+  DL1, or on DL1 with no known up staircase. Today's rule waits for HP below
+  half and a 25 % roll.
+- **D, `poison_town_triage`.** In town, while the poison still to come is
+  at least the HP: the town plan's first action (`borg_town_live::choose`,
+  before the excess-copies trip) is a purchase at the Alchemist, from the
+  Borg's record of its stock: a Neutralize Poison, else a Cure Critical
+  Wounds, if affordable; else the Cure Light Wounds that make HP + healing
+  exceed the poison (the executor caps the copies at the gold). At most 4
+  triage purchases a visit. A bought cure is drunk outside the store
+  (`town_cure`, before `borg_recover`, whose costly cure needs a 25 % roll
+  and two CCW); a store is left when a drink is due. CLW are drunk late, as
+  B, in town even with B off. While it holds and `birth_no_selling` is on
+  (list-options.h:90), nothing is sold (`kit_of`'s sale shop is none) and
+  no excess trip is taken. The route is the usual shop flow (a breadth-first
+  spread, already shortest in steps).
+- **E, `poison_fight_pending`.** Poisoned, no cure, next to awake visible
+  poisoners (a `POISON` blow): the turns to kill them (observed HP over the
+  focused attack, #759), their damage a turn (`fight_incoming`) and the
+  poison they add a turn (each hit `5 + 1d(rlev)`, mon-blows.c:683-684, at
+  the blow's hit chance, times their actions per Borg turn, unless the Borg
+  resists poison) count with the poison already pending; when that reaches
+  the HP plus the healing carried the fight is lost: leaving and fleeing,
+  and a step out of reach of a poisoner that never moves
+  (`best_step_away_from`, as #1125's) before any cure is drunk. A health or
+  attack that cannot be estimated leaves the fight to the other rules.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `poison_pending_note` | 0 | flag | 0–1 | `borg_poison.rs:151` |
+| `poison_late_drink` | 0 | flag | 0–1 | `borg_poison.rs:151` |
+| `poison_late_drink_margin` | 2 | HP | 0–100 | `borg_poison.rs:234` |
+| `poison_leave_unfixable` | 0 | flag | 0–1 | `borg_poison.rs:151` |
+| `poison_town_triage` | 0 | flag | 0–1 | `borg_poison.rs:152` |
+| `poison_fight_pending` | 0 | flag | 0–1 | `borg_poison.rs:152` |

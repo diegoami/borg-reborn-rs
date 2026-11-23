@@ -138,8 +138,8 @@ impl Triage {
 #[derive(Default, Debug)]
 pub struct PoisonState {
     noted: Option<(i32, i32, i32, bool)>,
-    /// B's last hold note: (HP, the held potion's heal).
-    held: Option<(i32, i32)>,
+    /// The HP at B's last hold note.
+    held: Option<i32>,
     /// (`time.level` of the town visit, triage actions on it).
     triage_actions: (i32, i32),
 }
@@ -233,14 +233,12 @@ pub(crate) fn late_drink_holds(st: &mut BorgState, danger: i32, heal: i32) -> bo
     let Some(t) = read(st) else { return false };
     if t.cure || t.renewable { return false; }
     let hold = late_drink_hold(t.hp, t.maxhp, heal, ticks_per_turn(), param(Param::poison_late_drink_margin));
-    if hold {
-        // One note a HP value, not one a think.
-        let key = (t.hp, heal);
-        if st.poison.held != Some(key) {
-            st.poison.held = Some(key);
-            borg_note(st, &format!("# Poison: holding a {heal} HP cure at HP {}/{}, drunk at HP {} or when it fits (#1140)",
-                t.hp, t.maxhp, ticks_per_turn() + param(Param::poison_late_drink_margin)));
-        }
+    let carried = if heal == CLW_HEAL { t.clw } else { t.csw };
+    if hold && carried > 0 && st.poison.held != Some(t.hp) {
+        // One note a HP value, for a potion carried, not one a think.
+        st.poison.held = Some(t.hp);
+        borg_note(st, &format!("# Poison: holding a {heal} HP cure at HP {}/{}, drunk at HP {} or when it fits (#1140)",
+            t.hp, t.maxhp, ticks_per_turn() + param(Param::poison_late_drink_margin)));
     }
     hold
 }
@@ -326,7 +324,13 @@ pub(crate) fn fight_race(st: &mut BorgState) -> Option<(bool, bool)> {
     if !on(Param::poison_fight_pending) || st.borg.tr(BI_CDEPTH) == 0 { return None; }
     let t = read(st)?;
     if t.cure || t.renewable { return None; }
-    let resists = st.borg.tr(BI_RPOIS) != 0 || st.borg.temp.res_pois;
+    // Only the temporary resistance, read from the engine (`TMD_OPP_POIS`):
+    // a resistance blocks every new poisoning (`player_inc_check`,
+    // player-timed.c:960-967; player_timed.txt POISONED `fail:2:POIS`), and
+    // the Elf Druid 799968561 had `BI_RPOIS` 1 while the white jelly raised
+    // its counter by about 10 a turn (#1140's replay). A Borg that resists
+    // is rarely poisoned at all, so the race errs toward leaving.
+    let resists = st.borg.temp.res_pois;
     let energy = |s: i32| f64::from(engine::extract_energy(s.clamp(0, 199) as usize)).max(1.0);
     let me = energy(engine::player_combat_speed());
     let (mut turns, mut damage, mut timer, mut immobile, mut count) = (0.0, 0.0, 0.0, false, 0);
