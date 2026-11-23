@@ -32,8 +32,8 @@ use crate::borg_headers::borg_trait_h::{
     BI_ISBLIND, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
 };
 use crate::headers::list_terrain_h::{
-    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_NONE, FEAT_PERM,
-    FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_MORE, FEAT_NONE,
+    FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::z_type_h::loc;
 use crate::params::{value, Param};
@@ -1252,6 +1252,12 @@ fn mark_exhausted(st: &mut BorgState, what: &str) {
     st.borg.stair_explore_exhausted = Some(st.borg.time.now);
 }
 
+/// #1098: is this feature a staircase (a failed stair flow from it is no
+/// failed exit)?
+fn on_a_staircase(feat: u32) -> bool {
+    feat == FEAT_LESS || feat == FEAT_MORE
+}
+
 /// #1098 (replays of #1117): is the Borg in a state where its exploration
 /// and its stair flows fail for its own state, not the map? Confused, blind
 /// or hallucinating (`status`), moving under boosted bravery, or in an
@@ -1288,6 +1294,12 @@ pub(crate) fn mixed_active(st: &BorgState) -> bool {
 /// could take): breadth-first and mixed stand down on this level, so C's
 /// exploration can look for one.
 pub(crate) fn release_after_failed_exit(st: &mut BorgState) {
+    // Smoke after merging #1061: standing on a staircase, the stair flow
+    // "fails" at cost 0, but taking that staircase is the exit itself.
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    if on_a_staircase(feat) {
+        return;
+    }
     if !released(st) {
         crate::borg_io::borg_note(st, "# Exploration from the stairs: no staircase to leave by, exploring on (#1098)");
     }
@@ -2043,6 +2055,13 @@ mod breadth_first_tests {
         assert!(released(&st));
         st.borg.time.level = 1200; // a new level
         assert!(!released(&st));
+    }
+
+    #[test]
+    fn standing_on_a_staircase_is_no_failed_exit() {
+        assert!(on_a_staircase(FEAT_LESS));
+        assert!(on_a_staircase(FEAT_MORE));
+        assert!(!on_a_staircase(FEAT_RUBBLE));
     }
 
     #[test]
