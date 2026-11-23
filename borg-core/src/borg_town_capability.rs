@@ -334,6 +334,19 @@ impl Model {
         ((-row[2] - row[3]) / UNIT + i64::from(item.qty)).clamp(0, i64::from(item.qty)) as i32
     }
 
+    /// Copies of one kind needed to meet the live kit's explicit reserve
+    /// rows, after crediting the other carried ways to meet each reserve.
+    pub(crate) fn home_stock_floor(&self, item: &KitItem, held: i32) -> i32 {
+        self.units(Self::scope(item), i64::from(item.slot), 1).into_iter()
+            .filter_map(|(id, per_copy)| {
+                let row = self.curves.get(id)?;
+                if row[1] == 0 || row[2] >= 0 { return None; }
+                let other = (row[3] - i64::from(held) * per_copy).max(0);
+                let missing = (-row[2] - other).max(0);
+                Some(((missing + per_copy - 1) / per_copy).min(i64::from(i32::MAX)) as i32)
+            }).max().unwrap_or(0)
+    }
+
     pub fn keep(&self, it: &KitItem) -> i64 {
         -self.gain(&self.units(Self::scope(it), i64::from(it.slot), -i64::from(it.qty)))
     }
@@ -687,6 +700,15 @@ fn worthless(tval: u32, sval: i32) -> bool {
             && tval == TV_SCROLL
             && sval >= 0
             && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
+}
+
+/// #1049: apply the purchase model's deliberate exclusions to known
+/// items in the pack and Home as well. A temporary lack of demand for a
+/// useful effect does not make it an unwanted kind.
+pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
+    param(Param::town_home_reject_unwanted) != 0
+        && item.kind != 0 && item.aware && item.flavour_aware
+        && worthless(u32::from(item.tval), i32::from(item.sval))
 }
 
 /// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
@@ -1418,7 +1440,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
     }
     #[test]
