@@ -928,7 +928,10 @@ pub(crate) fn phase_door(
     // never seen, under #1066's policy.
     let policy = phase_unknown_policy(st);
     let tolerance = param(Param::escape_phase_unknown_tolerance);
-    if let Some(n) = unknown_gate(check, policy, tolerance, || never_seen_landings(st)) {
+    // Re-review of #1075 (finding 2): a landing check in this think, at
+    // this grid, already counted the never seen; reuse it, do not redraw.
+    let (record, now, at) = (st.borg.phase_unknown_seen, st.borg.time.now, st.borg.c);
+    if let Some(n) = unknown_gate(check, policy, tolerance, || gate_count(record, now, at, || never_seen_landings(st))) {
         borg_note(st, &format!("# Phase ({}): no, {n} never-seen landing grids of 100 (at most {tolerance}) (#1066)", site.label()));
         return false;
     }
@@ -1223,7 +1226,10 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
 /// the monsters at range (without fear when `escape_phase_lost_damage_only`
 /// is on, as the rule reads it) must stay below
 /// `escape_phase_newcomer_turn_percent` of HP (`newcomer_turn_safe`);
-/// otherwise the Phase Door stays.
+/// otherwise the Phase Door stays. Re-review of #1075 (finding 1): that
+/// danger is the full possible one-turn damage (`full_damage`: no discount
+/// for the spell frequency, `spell_frequency_discount`, and whole monster
+/// turns), so an infrequent lethal cast still vetoes the wait.
 fn newcomer_wait(st: &mut BorgState, hp: i32) -> bool {
     if param(Param::escape_phase_newcomer_wait) == 0 {
         return false;
@@ -1241,7 +1247,7 @@ fn newcomer_wait(st: &mut BorgState, hp: i32) -> bool {
         if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) <= 1 {
             continue;
         }
-        let one = |st: &mut BorgState| crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i as i32, true, false);
+        let one = |st: &mut BorgState| crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i as i32, true, true);
         let danger = if damage_only { crate::params::damage_only(|| one(st)) } else { one(st) };
         if danger > 0 {
             newcomers += 1;
@@ -1377,6 +1383,11 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
         u32::from(st.cave.grid(x, y).feat) == FEAT_NONE
     });
     let never_seen = if unknown_scary { format!(", {unknown} of them never seen (#1066)") } else { String::new() };
+    if unknown_scary {
+        // Re-review of #1075 (finding 2): for the gate of a later site in
+        // this think (the critical phase after a refused emergency).
+        st.borg.phase_unknown_seen = Some((st.borg.time.now, st.borg.c, unknown));
+    }
 
     // Too much danger
     // in an emergency try with extra danger allowed
@@ -1410,6 +1421,16 @@ fn unknown_gate(check: PhaseCheck, policy: bool, tolerance: i32, count: impl FnO
     }
     let n = count();
     (n > tolerance).then_some(n)
+}
+
+/// Re-review of #1075 (finding 2): the never-seen count the gate judges. The
+/// last landing check's (`record`) when it was made in this think (`now`)
+/// at this grid (`at`); else a fresh draw (`sample`).
+fn gate_count(record: Option<(BorgTime, loc, i32)>, now: BorgTime, at: loc, sample: impl FnOnce() -> i32) -> i32 {
+    match record {
+        Some((t, grid, n)) if t == now && grid == at => n,
+        _ => sample(),
+    }
 }
 
 /// Review of #1075 (finding 2): of `escape_landing_samples` Phase Door
@@ -2671,6 +2692,54 @@ mod unknown_landing_tests {
         let door = &at[..at.find("\n}\n").unwrap()];
         let gate = door.find(concat!("unknown_gate(check, ", "policy,")).unwrap();
         assert!(door.find(concat!("if !checked ", "{")).unwrap() < gate && gate < door.find(concat!("let done = ", "cast(st)")).unwrap());
+    }
+
+    /// Re-review of #1075 (finding 2): the emergency check refused on 76
+    /// never-seen landings of 100; the critical fall-through in the same
+    /// think and grid reuses that count, so a lower redraw (75) cannot read
+    /// the same scroll. Another think, or another grid, draws again.
+    #[test]
+    fn a_refused_emergency_is_not_undone_by_a_lower_redraw() {
+        use super::{gate_count, unknown_gate, PhaseCheck};
+        let here = super::loc { x: 25, y: 125 };
+        let record = Some((40580, here, 76));
+        let mut draws = 0;
+        let critical = |record, now, at, draws: &mut i32| {
+            unknown_gate(PhaseCheck::MonsterNear, true, 75, || gate_count(record, now, at, || { *draws += 1; 75 }))
+        };
+        assert_eq!(critical(record, 40580, here, &mut draws), Some(76), "the emergency's verdict carries over");
+        assert_eq!(draws, 0, "no redraw");
+        assert_eq!(critical(record, 40590, here, &mut draws), None, "the next think draws again");
+        assert_eq!(critical(record, 40580, super::loc { x: 26, y: 125 }, &mut draws), None, "another grid draws again");
+        assert_eq!(critical(None, 40580, here, &mut draws), None, "no landing check this think");
+        assert_eq!(draws, 3);
+        // The landing check records its count under the policy.
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("fn caution_", "phase(st: &mut BorgState")).unwrap()..];
+        let phase = &at[..at.find("\n}\n").unwrap()];
+        assert!(phase.contains(concat!("st.borg.phase_unknown_seen = ", "Some((st.borg.time.now, st.borg.c, unknown))")));
+    }
+
+    /// Re-review of #1075 (finding 1): an infrequent lethal cast vetoes the
+    /// wait. A 60 HP spell from a caster casting 1 turn in 10 (below the
+    /// 11% band) is 24 with the frequency discount (4 tenths) and 60 at full
+    /// damage; at 40 HP with 10 HP a turn from the adjacent monsters, the
+    /// discounted danger would let the wait through, the full one does not.
+    /// `newcomer_wait` asks the full damage.
+    #[test]
+    fn an_infrequent_lethal_cast_vetoes_the_wait() {
+        use super::newcomer_turn_safe;
+        use crate::borg_danger::spell_frequency_discount;
+        let discounted = spell_frequency_discount(60, 10, false);
+        let full = spell_frequency_discount(60, 10, true);
+        assert_eq!((discounted, full), (24, 60));
+        assert!(newcomer_turn_safe(10.0, i64::from(discounted), 40, 100), "the discount would wait");
+        assert!(!newcomer_turn_safe(10.0, i64::from(full), 40, 100), "the full damage keeps the Phase Door");
+        assert_eq!(spell_frequency_discount(60, 60, false), 60, "a frequent caster (51% or more) is not discounted");
+        let src = include_str!("borg_escape.rs");
+        let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
+        let wait = &at[..at.find("\n}\n").unwrap()];
+        assert!(wait.contains(concat!("borg_danger_one_kill(st, y, x, 1, i as i32, ", "true, true)")));
     }
 
     /// Review of #1075 (finding 1): the wait needs the next turn

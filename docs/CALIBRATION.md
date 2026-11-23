@@ -32,10 +32,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1398` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1399` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1228` |
-| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1232` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1409` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1410` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1234` |
+| `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
 | `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
 
@@ -54,6 +54,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   fast-fragile with `fast_fragile_phase_landing` 0 (`PhaseCheck::None`)
   sample 100 landings the same way (`never_seen_landings`) and refuse when
   more than `escape_phase_unknown_tolerance` first meet a never-seen grid.
+  A landing check under the policy records its never-seen count
+  (`phase_unknown_seen`); the gate reuses it in the same think at the same
+  grid (`gate_count`), so a refused emergency cannot be undone by a lower
+  redraw in the critical fall-through (re-review of #1075).
   Shoot N Scoot's own sampler (`borg_shoot_scoot_safe`) counts a
   never-seen grid as scary.
 - `escape_phase_newcomer_wait` = 1: with `escape_phase_adjacent_rule`, when
@@ -69,9 +73,12 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   The race is computed only on a lost verdict, and only with the switch on.
   The next turn must be survivable too (review of #1075, finding 1). The
   race's HP a turn from the adjacent monsters, plus the danger of the
-  monsters at range (without fear when `escape_phase_lost_damage_only` is
-  on, as the rule reads it), must stay below
-  `escape_phase_newcomer_turn_percent` of HP.
+  monsters at range, must stay below `escape_phase_newcomer_turn_percent`
+  of HP. That danger is read without fear when
+  `escape_phase_lost_damage_only` is on, as the rule reads it. It is also
+  the full possible one-turn damage (`full_damage`): no spell-frequency
+  discount (`spell_frequency_discount`, lifted from `borg_danger` with the
+  same arithmetic) and whole monster turns (re-review of #1075).
 - Both switches compiled and shipped **0**; `harness/borg.txt` sets none of
   the six.
   Hypotheses: no measurement chose them (RULES 14).
@@ -336,7 +343,7 @@ chose them (RULES 14).
 | `lone_slow_radius` | 3 | grids | 1–20 | `borg_lone_target.rs:71` |
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
-| `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1175` |
+| `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
 | `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3322` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:7672` |
@@ -2429,8 +2436,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:902` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:991` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:992` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:994` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:995` |
 
 ## Town less scary (#622)
 
@@ -3822,8 +3829,8 @@ the vendored mechanics model:
 | `danger_fast_player_threshold` | 135 | speed | 110–135 | `borg_danger.rs:2143` |
 | `danger_fast_player_unique_speed` | 120 | speed | 110–189 | `borg_danger.rs:2144` |
 | `danger_fast_player_normal_speed` | 125 | speed | 110–189 | `borg_danger.rs:2144` |
-| `danger_low_hp_speed_limit` | 20 | hp | 0–10000 | `borg_danger.rs:2085` |
-| `danger_low_hp_monster_speed_bonus` | 3 | speed | 0–3 | `borg_danger.rs:2086` |
+| `danger_low_hp_speed_limit` | 20 | hp | 0–10000 | `borg_danger.rs:2180` |
+| `danger_low_hp_monster_speed_bonus` | 3 | speed | 0–3 | `borg_danger.rs:2181` |
 | `danger_minimum_monster_energy` | 10 | energy_tenths | 1–100 | `borg_danger.rs:2122` |
 | `danger_stuck_bounce_limit` | 1200 | count | 0–10000 | `borg_danger.rs:2135` |
 | `danger_stuck_level_turns` | 25000 | turns | 0–100000 | `borg_danger.rs:2135` |
@@ -3868,12 +3875,12 @@ the vendored mechanics model:
 | `danger_stunned_spell_numerator` | 10 | coefficient | 0–1000 | `borg_danger.rs:2456` |
 | `danger_stunned_spell_divisor` | 13 | divisor | 1–1000 | `borg_danger.rs:2456` |
 | `danger_confuse_spell_divisor` | 6 | divisor | 1–1000 | `borg_danger.rs:2459` |
-| `danger_frequency_low_percent` | 11 | percent | 0–100 | `borg_danger.rs:2467` |
-| `danger_frequency_low_tenths` | 4 | tenths | 0–30 | `borg_danger.rs:2468` |
-| `danger_frequency_mid_percent` | 26 | percent | 0–100 | `borg_danger.rs:2469` |
-| `danger_frequency_mid_tenths` | 6 | tenths | 0–30 | `borg_danger.rs:2470` |
-| `danger_frequency_high_percent` | 51 | percent | 0–100 | `borg_danger.rs:2471` |
-| `danger_frequency_high_tenths` | 8 | tenths | 0–30 | `borg_danger.rs:2472` |
+| `danger_frequency_low_percent` | 11 | percent | 0–100 | `borg_danger.rs:2087` |
+| `danger_frequency_low_tenths` | 4 | tenths | 0–30 | `borg_danger.rs:2088` |
+| `danger_frequency_mid_percent` | 26 | percent | 0–100 | `borg_danger.rs:2089` |
+| `danger_frequency_mid_tenths` | 6 | tenths | 0–30 | `borg_danger.rs:2090` |
+| `danger_frequency_high_percent` | 51 | percent | 0–100 | `borg_danger.rs:2091` |
+| `danger_frequency_high_tenths` | 8 | tenths | 0–30 | `borg_danger.rs:2092` |
 | `danger_maximum` | 2000 | danger | 0–5000 | `borg_danger.rs:2487` |
 | `danger_regional_fear_max_depth` | 80 | depth | 0–127 | `borg_danger.rs:2618` |
 | `danger_morgoth_regional_fear_cap` | 300 | danger | 0–5000 | `borg_danger.rs:2623` |
@@ -3905,14 +3912,14 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1497` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1729` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1738` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1750` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1759` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1781` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1829` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1840` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1843` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1844` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1849` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1850` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1861` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1870` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1888` |
 | `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1906` |
@@ -3926,7 +3933,7 @@ the vendored mechanics model:
 | `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1926` |
 | `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1927` |
 | `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1928` |
-| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1836` |
+| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1951` |
 | `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1934` |
 | `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1943` |
 | `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1953` |
@@ -3941,11 +3948,11 @@ the vendored mechanics model:
 | `escape_endgame_stay_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:2019` |
 | `escape_endgame_stay_unique_count` | 3 | count | 1–9 | `borg_escape.rs:2021` |
 | `escape_endgame_stay_min_depth` | 97 | depth | 0–127 | `borg_escape.rs:2022` |
-| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1841` |
-| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:1843` |
-| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1844` |
-| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1845` |
-| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1846` |
+| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:2052` |
+| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:2054` |
+| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:2055` |
+| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:2056` |
+| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:2057` |
 | `escape_teleport_phase_tolerance` | 50 | count | 0–1000 | `borg_escape.rs:1968` |
 | `escape_teleport_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1968` |
 | `escape_phase_antisummon_delay` | 50 | turns | 0–100000 | `borg_escape.rs:1969` |
@@ -5977,7 +5984,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1621` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1642` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 

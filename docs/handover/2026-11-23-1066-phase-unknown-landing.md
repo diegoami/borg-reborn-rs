@@ -150,6 +150,46 @@ pass, and smoke is 4/4 identical to `smoke-borg-rs`. The replays on `206cf4e7` p
   site refused. The over-refusal is now stronger: across both sites, the
   Priest's game refused 67 of 70 landing checks.
 
+### Re-review of #1075 (Codex, on `1912a09e`)
+
+The findings are in [#1075](https://github.com/diegoami/borg-reborn-rs/pull/1075#issuecomment-7089454235). Both are fixed in the commit after `1912a09e`.
+
+1. **[P2] The veto must read the full possible ranged damage.** It read
+   `borg_danger_one_kill(.., full_damage = false)`, which discounts a spell
+   by its cast frequency and allows partial monster turns. It now passes
+   `full_damage = true`. The discount was lifted, with the same arithmetic,
+   into `borg_danger::spell_frequency_discount`, so a unit test can show the
+   reviewer's case without the engine (`an_infrequent_lethal_cast_vetoes_the_wait`).
+   A 60 HP spell cast 1 turn in 10 is 24 discounted and 60 in full. At 40
+   HP, with 10 a turn from the adjacent monsters, 10 + 24 would wait and
+   10 + 60 keeps the Phase Door. A pin checks that `newcomer_wait` asks the
+   full damage. The blindness case stays a limit of damage-only mode, as
+   the reviewer says.
+2. **[P2] A refused emergency must not be undone by a lower redraw.** Under
+   the policy, `caution_phase` records its never-seen count with the think
+   and the grid, in `st.borg.phase_unknown_seen`. The gate reuses it in the
+   same think at the same grid (`gate_count`) and draws only otherwise. The
+   test `a_refused_emergency_is_not_undone_by_a_lower_redraw` covers it:
+   - a refusal at 76, then a critical fall-through whose fresh draw would
+     be 75: refused at 76, with no redraw;
+   - the next think, another grid, or no record: a fresh draw.
+
+   A pin checks that the landing check writes the record.
+
+Re-checked: `cargo test --release -p borg-core` 723 passed, and
+`scripts/borg-core-vendor.py check` is ok for the two vendored files touched
+(`borg.rs`, `borg_danger.rs`). The other checks are below. The replays on
+`206cf4e7` plus the patch:
+- The control still reproduces the zoo's keys.
+- `newcomer_wait`: the same two games, alive (`9783cb54a70f3570`,
+  `d9921fd672ef8ed4`). At full damage the danger at range is 22 in both
+  cases, against 8 and 11 before: 13.5 + 22 < 41 for the Priest, and
+  5.5 + 22 < 42 for the Blackguard. Both waits still pass.
+- `unknown_scary`: both alive to the cap, in other games (`48cb61f0d30ebb6f`,
+  CL7; `1d138dd085db21e1`, CL7 DL4).
+  - Priest: 10 gate refusals; 71 of 83 landing checks refused.
+  - Blackguard: 3 gate refusals; 35 of 36 refused.
+
 ### Left, and for the owner
 
 - **To decide:** the unknown count's strictness. It is literal now (every
