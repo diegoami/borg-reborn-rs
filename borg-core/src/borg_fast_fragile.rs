@@ -643,6 +643,25 @@ pub(crate) fn escape_available(st: &mut BorgState) -> bool {
             st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
 }
 
+/// borg-reborn-rs (#1064, review of #1082): the key that takes the staircase
+/// underfoot, as `escape_available` counts it: `<` on an up staircase unless
+/// `birth_force_descend`, `>` on a down one.
+pub(crate) fn stair_key(feat: u32, force_descend: bool) -> Option<u8> {
+    if feat == FEAT_LESS && !force_descend {
+        Some(b'<')
+    } else if feat == FEAT_MORE {
+        Some(b'>')
+    } else {
+        None
+    }
+}
+
+/// `stair_key` at the Borg's grid.
+pub(crate) fn stair_key_here(st: &BorgState) -> Option<u8> {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    stair_key(feat, engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend))
+}
+
 /// A Potion of Cure Light, Serious or Critical Wounds in the pack (also #969).
 pub(crate) fn has_cure(st: &mut BorgState) -> bool {
     let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
