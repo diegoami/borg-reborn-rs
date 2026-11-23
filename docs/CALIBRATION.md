@@ -565,7 +565,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5923` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5992` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -594,7 +594,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5940` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:6009` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -619,8 +619,8 @@ chose them (RULES 14).
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1203` |
-| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3324` |
+| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3467` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3374` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8732` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8732` |
 
@@ -760,7 +760,7 @@ would be the flask", and "if it has a wand/rod that must be an option too".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:283` |
+| `attack_confused_by_direction` | 0 | flag | 0–1 | `borg_fight_attack.rs:304` |
 
 ## Thrown objects at point blank (#870)
 
@@ -932,8 +932,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2178` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1909` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2279` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2571` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2564` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2725` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2718` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -1103,11 +1103,11 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2200` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2200` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:727` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:978` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:959` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2362` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2362` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:772` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1046` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1005` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -1245,7 +1245,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:949` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:994` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1409,16 +1409,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2207` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2208` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2209` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2210` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2211` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2212` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2213` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2214` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2215` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2207` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2369` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2370` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2371` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2372` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2373` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2374` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2375` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2376` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2377` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2378` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -1459,8 +1459,8 @@ idea ... target the mobile one"; "I would put them already on".
 | `caution_stairs_clean_path` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:1000` |
 | `caution_stairs_block_danger_percent` | 50 | percent | 0–10000 | `borg_caution.rs:995` |
 | `caution_immobile_step_to_exit` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2287` |
-| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5216` |
-| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5217` |
+| `attack_mobile_threat_first` | 0 (shipped 1) | flag | 0–1 | `borg_fight_attack.rs:5433` |
+| `attack_mobile_threat_percent` | 50 | percent | 0–10000 | `borg_fight_attack.rs:5434` |
 
 ## Ranger arrows: a soft cap, then a diminishing curve (#716)
 
@@ -1510,7 +1510,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:598` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:650` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -2100,7 +2100,7 @@ same way are healing objects"; no reserve, only the curve.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:998` |
-| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:758` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:797` |
 
 ## No rest while breeders are known (#644)
 
@@ -3142,9 +3142,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:665` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:522` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:656` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:710` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:567` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:701` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -3272,11 +3272,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:573` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:614` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:659` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2524` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2395` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2680` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2551` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5693,7 +5693,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6207` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6276` |
 
 ## C Borg dive gates (#768)
 
@@ -6380,7 +6380,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:950` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:995` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -6796,10 +6796,117 @@ on borg-zoo#702.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:185` |
-| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:193` |
-| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:216` |
-| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:205` |
+| `unseen_belief` | 0 | flag | 0–1 | `borg_unseen_belief.rs:448` |
+| `unseen_max_age` | 10 | Borg turns | 3–2000 | `borg_unseen_belief.rs:456` |
+| `unseen_decay_percent` | 20 | percent per monster turn | 0–100 | `borg_unseen_belief.rs:471` |
+| `unseen_max_shots` | 3 | shots | 1–100 | `borg_unseen_belief.rs:221` |
+
+## Perception and belief follow-ups (#885, #917, #889)
+
+Five switches, compiled **0**. `update_dark_clears_light` and
+`view_rubble_blocks_sight` are **shipped 1** in `harness/borg.txt` (owner,
+2026-11-23: "merge with both"), on borg-zoo#736's full tier at `7bfbe121`
+(classes-1800 starts 901-1800, 900 per arm, paired against ctl):
+
+| arm | deaths | rescued / newly killed | p | DL3 / DL5 reached | CL |
+|---|---:|---|---:|---|---:|
+| ctl | 9 | | | 221 / 19 | 5.48 |
+| dark | 9 | 2 / 2 | 1.0 | 222 / 21 | 5.51 |
+| rubble | 5 | 8 / 4 | 0.39 | 223 / 26 | 5.49 |
+| both (shipped) | 5 | 8 / 4 | 0.39 | 216 / 33 | 5.48 |
+
+A lead, not a result (RULES 14): 8 against 4 is not significant, and `dark`
+alone changes nothing in deaths. No single forget or mis-aim has been traced
+to a recorded game yet. The three #889 switches ship **0** (P9).
+Two are perception fixes, where the Borg's map disagrees with the engine, and
+both feed the position belief of #879: a grid `borg_follow_kill_aux` expects
+to be visible both deletes an unseen record and refuses it a belief
+(`believed_weight`).
+
+- **`update_dark_clears_light`** (#885). A floor grid the engine shows neither
+  glowing nor lit loses `BORG_LIGHT` when the map is read (`dark_floor_info`,
+  `borg_update.rs`). C keeps the mark, and `borg_update_light` clears only the
+  grids of the Borg's own light list, so a grid lit once another way (a
+  monster's light) stays `BORG_LIGHT` after it goes dark. A cleared mark asks
+  for `borg_update_light` in the same think, so the Borg's own light set is
+  marked again (at `cave_light_engine_radius` 0 that list holds grids the
+  engine leaves dark).
+- **`view_rubble_blocks_sight`** (#917). Passable rubble stops the Borg's view
+  (`borg_update_view`, through `sight_grid`) and the line of sight the view
+  falls back on (`borg_los_sight`). The engine's passable rubble has neither
+  `LOS` nor `PROJECT` (`lib/gamedata/terrain.txt:346-354`), so
+  `update_view_one` (src/cave-view.c:765-830, `square_allowslos`) and `los()`
+  (:85-248, `square_isprojectable`) stop at it. C's view asks the walk test
+  (`borg_cave_floor_grid`, `borg_cave_floor_bold`), which counts it as floor,
+  so grids behind it got `BORG_VIEW`. The rubble itself is still seen, as a
+  wall is, and unknown grids stay see-through, as in C. A grid in view whose
+  sight changes when the map is read (an unknown grid found to be passable
+  rubble, which the walk test misses) redoes the view (`view_needs_update`;
+  review of #1128, F2). The light map already
+  had its own projectable test (#894, `borg_los_projectable`); attack
+  forecasts through rubble are #1017 (P9).
+- **`unseen_death_stops_shots`** (#889, item 2). "It dies." or "It is destroyed."
+  among the messages of a ranged attack whose only believed target was one
+  record spends that record's remaining unseen shots for this sighting
+  (`believed_dead`, `spend_shots`). The record is kept (review of #1128, F1):
+  the engine names a monster the player cannot see "It" (`get_subject`,
+  src/mon-msg.c:320-330; a missile's note, src/player-attack.c:1122-1123), so
+  the message cannot say which monster died, and a bolt can kill an untracked
+  monster that stepped into its path, a ball another unseen one. With several
+  believed targets, or "2 monsters die.", nothing changes. Without it the
+  Borg shoots up to `unseen_max_shots` times.
+- **`unseen_light_reveal`** (#889, item 3; mode 0–2). Before the attack choice
+  (`borg_think_dungeon`), cast Light Room (fail 40% or less) at a believed
+  monster inside its sphere: `SPHERE:LIGHT_WEAK:2` (lib/gamedata/class.txt:221-224),
+  at most two grids and in line of sight for a projection, on a grid the Borg
+  does not already count as lit, and once per sighting of the record (review
+  of #1128, F3: lighting an invisible monster's grid again reveals nothing to
+  a Borg without see-invisible). The sphere hurts
+  `HURT_LIGHT` monsters and lights the grids it reaches, so the monster is seen
+  or its record forgotten. 1 = only at a `HURT_LIGHT` monster, 2 = at any
+  believed monster. Call Light's sphere is radius 1 (:727-730) and never reaches
+  a believed target (at least two grids away). A separate step rather than an
+  attack type: a new `BF_*` kind would renumber the attack kinds before
+  `BF_ACT_STARLIGHT`.
+- **`unseen_spread`** (#889, item 4). The belief spreads around the last grid
+  (`belief_percent_spread`): an erratic mover's random steps do not count as
+  leaving (RAND_25 25%, RAND_50 50%, both 75%: src/mon-move.c:1087-1101), and a
+  ball still hits a monster that took no more steps than the ball covers in
+  every direction from its last grid (`unseen_blast_slack`, `blast_slack`:
+  the most steps `n` such that every grid `n` king's moves away is within the
+  ball by the engine's `distance()`, radius 1 to 4). It is not the radius less
+  the distance: one diagonal step can add 2 (from (1,1), distance 1, to
+  (2,2), distance 3), so a radius-2 ball gives a monster last seen at (1,1)
+  no slack (re-review of #1128 at `e0278dcf`). Bolts, beams, arcs,
+  throws, Starlight's lines (radius 7) and the line-of-sight effects
+  (dispels, mass sleep, slow, confuse: radius 10, which reach what the player
+  sees, not a radius around the aim) take no slack (re-review of #1128, F1).
+  The dragon breaths (`BF_DRAGON_*`, `BF_ACT_DRAGON_*`) are cones, not
+  balls, and take none either (`ball_shaped`; Codex re-review of #1128, F2).
+  So that such a ball is scored at all, `borg_attack` admits a record a ball
+  could still reach (`believed_for_aim`, slack up to 3; review of #1128, F4),
+  but only to the ball's own list (`blast_aims`), read by ball-shaped scoring
+  alone. No other attack aims at it (Vampire Strike, melee, bolts), and it
+  never makes `attack_mobile_threat_first` drop the immobile targets
+  (`blast_only`; re-review F2, Codex re-review F1).
+- **Beams and arcs** (#889, item 5) were already covered: every projection
+  path (`borg_launch_bolt_at_location` for bolts, beams and balls,
+  `borg_launch_arc_at_location` for arcs) scores a record through
+  `borg_launch_bolt_aux_hack`, which asks `believed_weight`, and stages it with
+  `ProjectedAttack::target`. Checked in the code, not on a recorded case.
+- **Not done** (#889, item 1; now #1127): beliefs from unseen contact ("It bites you",
+  `Unseen bump: occupied`) and from noises. A record needs a race, and an
+  unseen attacker's is unknown; the unseen-bump response (#781,
+  `caution_unseen_bump_*`) and the unseen mode of `borg_recover` (#831) already
+  answer such contact apart from the belief.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:439` |
+| `view_rubble_blocks_sight` | 0 (shipped 1) | flag | 0–1 | `borg_cave_view.rs:258` |
+| `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
+| `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
+| `unseen_spread` | 0 | flag | 0–1 | `borg_unseen_belief.rs:475` |
 
 ## Home stock the town planner deliberately declines (#1049)
 
@@ -7074,7 +7181,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1146` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1147` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1148` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2436` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2592` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7115,7 +7222,7 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3408` |
+| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3456` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
 Not shipped; the zoo measures it (a request issue). The four replays are
@@ -7164,7 +7271,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2501` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2657` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7731,12 +7838,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2236` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2237` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2238` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2239` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2240` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2241` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2398` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2399` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2400` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2401` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2402` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2403` |
 
 ## Deal with poison (#1140)
 
@@ -7983,3 +8090,108 @@ the ten below).
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1421` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1423` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1295` |
+
+## An overweight Mage's torches, cursed spares and stat curse (#1151)
+
+A CL17 Gnome Mage stayed at **Slow (−12)** with 89,159 gold: 34 spare Wooden
+Torches (74.8 lb), a cursed Lochaber Axe (25 lb) and a worn Hard Leather Cap
+with sickliness and dullness (borg-cemetery scenario
+`mage-overweight-cursed-kit-9221204`). Four things kept it there.
+
+**The curse's stats were not the Borg's** (`trait_curse_stats`, compiled 0,
+shipped 1). `borg_notice` took 5 off `BI_CSTR`.. for a worn sickliness, then
+set `BI_CSTR`.. from the game's `stat_cur`, so the curse never reached
+`BI_STR` and the weight allowance or the power model. On, the curse's
+modifiers (`curse.txt`: dullness `INT[-5] | WIS[-5]`, sickliness
+`STR[-5] | DEX[-5] | CON[-5]`, weakness `STR[-10]`, clumsiness `DEX[-10]`) go
+into the additive stats where the stat rune is known, as
+`player-calcs.c:calc_bonuses` adds a curse object's modifiers. Slowness and
+annoyance already took their speed. The C Borg has the same defect (the
+`BI_C*` changes in `borg-trait.c` are overwritten the same way).
+
+**Plan schema 20** (no setting; a record keeps its schema, so older visits
+replay as they were):
+
+- *A stack keeps its reserves, and a fuel stack splits at the light
+  reserve.* `Model::reserve_keep` counts the copies of a stack that every
+  weighted reserve row it serves still needs once the other carried supply is
+  counted (the light, Phase Door, ranged and Restore Life reserves, a first
+  cure, a book). They are the stack's floor before any move is priced:
+  stored, sold or dropped, the copies past it can go, never those. For light
+  this is the light row (`fuel_keep` in the tests). It counts a copy's physical
+  fuel (`KitItem::fuel`, a new kit column): the model spreads a flask stack's
+  refuelling bottles over the whole stack, so six 7,500-turn flasks of which
+  two refuel the lantern count 2,500 turns each. Before, the whole stack was
+  skipped when all of it would undercut the reserve (`protects_fuel`), so 34
+  torches stayed for a reserve four cover. The live executor drops a split
+  fuel stack's planned copies only (`execute_outside`), as it does for
+  Restore Life Levels; other drops stay whole.
+- *Excess goes when the pack is over its allowance and the Home cannot take
+  it.* The copies past a stack's floor (the light reserve,
+  `town_store_keep_min`, the Restore Life reserve) are sold, or dropped
+  without a buyer, the least valuable per weight first, until the pack is
+  under its weight allowance. Only the copies that cover the deficit go
+  this way (one 2.2 lb torch for a 1 lb deficit). A drop applies only to a
+  fuel stack, the one split the executor carries out. Whenever a reserve sets
+  the floor, a planned drop of any kind of stack the executor drops whole
+  (anything but fuel, Restore Life Levels or a kind at its Home limit) is
+  kept instead. Short only of the
+  departure room, nothing is sold or dropped for weight.
+- *A known-cursed spare is not protected as unknown over the allowance.* A
+  pack item with a known curse (`KitItem::cursed_spare`, kit flag 128) that
+  adds no power goes like any worthless item while the pack is over its
+  allowance, with its other runes still unknown. An unknown item with no
+  known curse stays protected so it can still be identified.
+- *A Remove Curse scroll bought for a curse is not charged against the
+  weight.* While the CURSE row has weight (`BI_FIRST_CURSED`),
+  `borg_enchanting` reads it in town (`borg_decurse_any`). Overweight, the
+  solver's weight repair took away even this 0.5 lb scroll. The exemption
+  applies only while town enchanting would read it now
+  (`reads_scroll_in_town`: `borg_enchanting`'s gates, not blind or confused
+  and its town timer `enchant_town_max_turns` not run out, and
+  `borg_read_scroll`'s, light and not amnesiac; recorded as the plan's
+  `spells` bit 1), and only to the copies the row still lacks
+  (`Model::decurse_copies`). Spares are bought by a later solve, at their
+  carried weight.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
+
+## Committing to a brave stair walk (#1130)
+
+The owner (2026-11-23), on a two-grid loop of the #1117 replays: "it must
+definitely be fixed". Blackguard 312081895 (46 HP) stayed 60,000 turns
+between two grids on a level whose staircases its ordinary flows could not
+reach.
+- **The stuck think.** It boosted bravery (`boost_bravery`: avoidance 92 for
+  one think) and started a stair walk ("Goal_less, brave"), one step south.
+- **The next think.** The avoidance was back at the HP. Continuing the walk
+  failed: the shared flow buffer had been replaced by the think's other
+  spreads, and the goal was cancelled. Exploration then took the step back
+  north, to a target it could not step onto.
+
+At `flow_brave_walk_commit = 1` (compiled 0, **shipped 1**), a stair walk
+the brave think starts is committed (`Borg::brave_walk`):
+- **Continuation.** `borg_flow_old` continues it with the avoidance it was
+  spread with. When the old step does not go, it spreads the route again in
+  the brave think's own order: any staircase while the return leash allows
+  it (#1062), else an up one.
+- **While:**
+  - its last step is at most 3 thinks old;
+  - it has steps left: the route's cost at the start, plus 10;
+  - it is on its own level;
+  - the danger here is at most half the HP. A monster that shows up is
+    caution's.
+
+Checked on the build where the loop reproduces (`433457a4`, with
+`explore_c_leave_when_done = 1`):
+- switch off: the loop, CL3 at 100,000 turns;
+- switch on: the walk continued 159 times, "Spent too long" fell from 3,177
+  to 11, levels visited rose from 76 to 180, and the game reached CL7 and
+  DL3.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1838` |
+

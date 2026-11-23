@@ -629,6 +629,8 @@ fn inven_wield() -> usize {
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     st.light.room_lighting.confirm_message(msg);
     crate::borg_unseen_belief::reject_attack(st, msg);
+    // borg-reborn-rs (#889): "It dies." after a shot at a believed monster.
+    crate::borg_unseen_belief::death_message(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.

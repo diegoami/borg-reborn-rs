@@ -1314,6 +1314,12 @@ borg_param_caution_retreat_reentry_ticks = 128
 # #932 (seed 829474344): after three strategic retreats undone by the next
 # stair-flow step, let the escape, cure or attack decision act instead.
 borg_param_caution_retreat_oscillation_limit = 3
+# #1130 (owner, 2026-11-23: "it must definitely be fixed"): a stair walk
+# started under boosted bravery is committed; the next thinks continue it with
+# the same avoidance (spread again when the flow buffer was replaced), while
+# recent, budgeted and out of danger. Blackguard 312081895 stayed 60,000 turns
+# between two grids without it.
+borg_param_flow_brave_walk_commit = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
@@ -1770,6 +1776,24 @@ borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
 borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
+# #889: follow-ups of the belief, each shipped 0 until the zoo measures it.
+# unseen_death_stops_shots 1 = "It dies." after a shot whose only believed
+# target was one record ends the shots at it (the record is kept);
+# unseen_light_reveal 1 = Light Room at a believed HURT_LIGHT monster within
+# two grids on an unlit grid, once per sighting (2 = any believed monster);
+# unseen_spread 1 = erratic movers and a blast's reach spread the belief.
+borg_param_unseen_death_stops_shots = 0
+borg_param_unseen_light_reveal = 0
+borg_param_unseen_spread = 0
+# #885: 1 = a floor the engine shows dark loses a stale BORG_LIGHT (lit once
+# by a monster's light). #917: 1 = passable rubble stops the Borg's view, as
+# the engine's (terrain.txt: no LOS). Both shipped 1 (owner, 2026-11-23:
+# "merge with both"), the `both` arm of borg-zoo#736's full tier at
+# 7bfbe121 (classes-1800 starts 901-1800, 900 per arm): 5 deaths against 9
+# for ctl (8 rescued, 4 newly killed, p 0.39), DL5 reached 33 against 19.
+# A lead, not a result (RULES 14); `dark` alone was 9 against 9.
+borg_param_update_dark_clears_light = 1
+borg_param_view_rubble_blocks_sight = 1
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0
@@ -2283,6 +2307,14 @@ borg_param_trap_recover = 1
 borg_param_trap_way_back = 1
 borg_param_trap_leave_level_count = 2
 borg_param_trap_leave_near_count = 0
+
+# #1151: a worn dullness, sickliness, weakness or clumsiness curse takes its
+# stats (curse.txt) in the Borg's own stats, as in the engine
+# (player-calcs.c:calc_bonuses). Off, the Borg believed a CL17 Gnome Mage
+# wearing a sickliness and dullness cap had 5 more STR, DEX, CON, INT and WIS
+# than it did: its weight allowance was 5 STR too high, and the power model
+# never priced the curse against the cap's AC.
+borg_param_trait_curse_stats = 1
 
 # #1140: deal with poison (one switch, owner 2026-11-23; zoo run 45121432449,
 # borg-cemetery#146). The HP the poison still takes, ceil(counter /
