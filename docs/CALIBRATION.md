@@ -7340,10 +7340,15 @@ interesting grids the Borg can reach, and the grids past the return leash.
    sequence that holds a candidate. It is not stored: each think takes it
    afresh, so a branch newly found near the stairs is covered before the
    walk goes deeper again. Larger radii follow as further tries, for goals
-   the path limit cuts off (at most 16 tries a think).
-5. **When there is nothing more.** With no candidate within the limit,
-   neither call explores, so the level is left (`borg_leave_level`), as
-   with breadth-first.
+   the path limit cuts off (at most 16 tries a think; a radius whose goals
+   and path limit repeat the last try's is skipped, review of #1117).
+5. **When there is nothing more.** With no candidate within the limit, the
+   walk is exhausted (`MixOutcome::Exhausted`, review of #1117). It marks the
+   think, and `borg_leave_level` takes that as a reason to leave, like the
+   level timer. The first leave call of the dungeon loop comes before the
+   secret-door search and the direct monster flow. If no staircase can be
+   taken (rising with no up staircase known, say), the walk stands down for
+   that level and C explores for one (`release_after_failed_exit`).
 6. **Edges.** With no route from the Borg to a known staircase (none known,
    a teleport, a known trap across the way back, #1067), or under boosted
    bravery, C's methods run, with C's leash (#1062). A staircase newly seen
