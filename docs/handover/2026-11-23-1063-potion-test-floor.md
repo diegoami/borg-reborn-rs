@@ -39,8 +39,13 @@ shipped values: without a cure the test needs 60 HP, and Poison costs at most
 arithmetic, in another PR.
 
 **Checked.** fmt, clippy, the workspace and `borg-core` tests (718),
-`scripts/tests`, `check-param-citations.py` (2,421, 0 wrong). Smoke: see the
-PR. `borg-core-vendor.py check` was not run here (no `vendor/borg-rs` in this
+`scripts/tests`, `check-param-citations.py` (2,421, 0 wrong). Smoke: 2/4
+identical to `track-p`'s reference (`60e04a21`); smoke-warrior-1 and
+smoke-mage-2 diverge at their first old potion test (game turns 5,703, at
+20/20 HP, and 16,798): 6 and 1 tests before, 0 now. Re-recorded; 4/4 identical
+to the new reference. The suite needs a borg-cemetery checkout at
+`death-tools-pin.txt` (`BORG_CEMETERY_DIR`); the sibling checkout here had
+moved past it. `borg-core-vendor.py check` was not run here (no `vendor/borg-rs` in this
 container); CI runs it. The Ranger's seed was not replayed: the study's
 replays need the zoo's per-death configs, and on the head that start already
 plays another game and lives.
