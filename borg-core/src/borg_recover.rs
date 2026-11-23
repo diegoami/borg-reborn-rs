@@ -745,7 +745,7 @@ fn withdraw_own_leave(own: bool, leaving: bool, fleeing: bool) -> bool {
 /// A rest that is due is held for breeders: decide, act on the decision,
 /// and say whether the rest is held. Kept when confused, blind,
 /// hallucinating or stunned: walking then is worse (#615 rule a).
-fn hold_for_breeders(st: &mut BorgState) -> bool {
+pub(crate) fn hold_for_breeders(st: &mut BorgState) -> bool {
     let d = breeder_rest_decision(st);
     apply_breeder_rest(st, d);
     d != BreederRest::Rest

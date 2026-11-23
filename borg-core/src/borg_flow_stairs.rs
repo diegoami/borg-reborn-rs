@@ -1530,6 +1530,87 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         assert_eq!(st.borg.c, expected);
     }
 
+    if case == "breeder-recovery" {
+        use crate::borg_flow_misc::borg_flow_recover;
+        use crate::borg_think_dungeon::borg_think_dungeon;
+        use crate::borg_headers::borg_trait_h::{BI_CURSP, BI_FOOD, BI_MAXSP};
+
+        let start = loc { x: 40, y: 20 };
+        let halfway = loc { x: 41, y: 20 };
+        let second_step = loc { x: 42, y: 20 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 19..=21 {
+            for x in 39..=48 {
+                st.cave.grid_mut(x, y).feat = if y == 20 && (40..=47).contains(&x) {
+                    FEAT_FLOOR as u8
+                } else { FEAT_GRANITE as u8 };
+            }
+        }
+        st.cave.grid_mut(47, 20).feat = FEAT_LESS as u8;
+        st.borg.c = start;
+        st.borg.avoidance = 47;
+        for (index, value) in [(BI_CLEVEL, 11), (BI_CURHP, 47), (BI_MAXHP, 47),
+            (BI_CURSP, 2), (BI_MAXSP, 20), (BI_LIGHT, 2), (BI_FOOD, 3)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.borg.mon.breeders = 0;
+        st.borg.time.now = 20;
+        st.borg.time.level = 20;
+        st.borg.time.call_light = 20;
+        // Recovery is still eligible at this count. Equipment removal is not.
+        st.borg.antibounce_count = 151;
+        // Leave food in the pack and preserve equipped gear. Study and
+        // equipment swaps must not intercept the recovery decision.
+        let pack_size = usize::from(engine::z_info().pack_size);
+        for item in &mut st.items.items[..pack_size] {
+            if u32::from(item.tval) != crate::headers::list_tvals_h::TV_FOOD {
+                *item = crate::borg_item::blank_item();
+            }
+        }
+
+        assert!(borg_flow_recover(st, 50), "a low-mana Mage can seek a safe rest with no breeders");
+        let recovery_goal = st.borg.goal.type_0;
+        observe_move(st, b'6', halfway);
+
+        assert!(borg_think_dungeon(st), "the dungeon thinker can continue a recovery route");
+        assert_eq!(st.borg.goal.type_0, recovery_goal);
+        observe_move(st, b'6', second_step);
+
+        st.borg.mon.breeders = 1;
+        st.cave.grid_mut(start.x, start.y).feat = FEAT_LESS as u8;
+        st.stairs.less.x[0] = start.x;
+        st.stairs.less.y[0] = start.y;
+        st.stairs.less.num = 1;
+        assert!(borg_think_dungeon(st), "the dungeon thinker acts after the veto");
+        assert_ne!(st.borg.goal.type_0, recovery_goal, "the veto must release the active recovery route");
+        assert!(st.borg.goal.leaving);
+        assert_ne!(st.io.queued_keys(), [u32::from(b'6')], "the former recovery step goes east");
+        while !st.io.queued_keys().is_empty() {
+            borg_io::borg_inkey(st, true);
+        }
+
+        st.cave.grid_mut(start.x, start.y).feat = FEAT_FLOOR as u8;
+        st.stairs.less.num = 0;
+        st.borg.c = start;
+        st.borg.goal.fleeing = false;
+        st.borg.trait_[BI_CLEVEL as usize] = 11;
+        st.borg.trait_[BI_CURSP as usize] = 2;
+        st.borg.trait_[BI_MAXSP as usize] = 20;
+        st.borg.trait_[BI_LIGHT as usize] = 2;
+        st.borg.trait_[BI_FOOD as usize] = 3;
+        assert!(!borg_flow_recover(st, 50), "the veto also prevents a new recovery route");
+        assert!(st.io.queued_keys().is_empty());
+        st.borg.mon.breeders = 0;
+        assert!(borg_flow_recover(st, 50), "the ordinary route remains usable when resting is permitted");
+        observe_move(st, b'6', halfway);
+
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
+    }
+
     if case == "interrupted-search" {
         use crate::borg_flow_misc::borg_flow_spastic;
 
