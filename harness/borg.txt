@@ -1531,9 +1531,9 @@ borg_param_item_test_unknown_danger_turns = 10
 borg_param_item_test_unknown_max_depth = 30
 # #1063 (owner, 2026-11-23: "put minimum hp at 60"; Ranger 142490685 tested at
 # 18/18 HP with no cure and died of the Poison, which costs up to 24): test
-# only with at least 60 HP, unless a known Cure Critical Wounds or Neutralize
-# Poison (or a poison-curing food) is in the pack, which waives it; the percent
-# floor above stays.
+# only with at least 60 HP, unless a known potion of Cure Critical Wounds or
+# Neutralize Poison is in the pack, which waives it; the percent floor above
+# stays.
 borg_param_item_test_unknown_min_hp = 60
 borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom

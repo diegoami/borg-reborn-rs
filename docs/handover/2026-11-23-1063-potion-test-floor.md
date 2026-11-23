@@ -21,11 +21,15 @@ kills by itself" was wrong at low HP.
   2026-11-23: "put minimum hp at 60"): the test needs at least this many
   current HP, besides the percent floor.
 - `item_test_unknown_min_hp_cure_exempt` (compiled 0, **shipped 1**): a
-  known Cure Critical Wounds (potion or device, `BI_ACCW`) or Neutralize
-  Poison / poison-curing food (`BI_ACUREPOIS`) waives the HP floor; the percent
-  floor (50) stays. All are `CURE:POISONED` in object.txt (:3205, :3287);
-  unaware flavours are not counted (`borg_notice_inventory` skips them), and
-  `borg_caution`'s poison cure drinks them.
+  known potion of Neutralize Poison or Cure Critical Wounds
+  (`carries_poison_cure_potion`) waives the HP floor; the percent floor (50)
+  stays. Both are `CURE:POISONED` in object.txt (:3205, :3287), and they are
+  the two cures `borg_caution`'s poison cure drinks without a further gate;
+  `borg_slot` skips unaware flavours. After the Codex review of #1097, a
+  poison-curing food (eaten only by `borg_recover`, behind a random roll) and a
+  CCW activation (whose +1000 in `borg_trait` ignores the charge) no longer
+  count, and the death probabilities in `docs/CALIBRATION.md` use the engine's
+  `chp < 0` (P(10 + 2d7 > h): 43% at 18 HP, 0 at 24).
 - `unknown_potion_min_hp` (`borg_item_use.rs`), unit-tested with the
   Ranger's numbers. The "none kills by itself" sentence is corrected in
   `harness/borg.txt` and in `item_test_unknown_potions`' description.

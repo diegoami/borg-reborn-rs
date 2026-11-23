@@ -29,7 +29,7 @@ use crate::borg_headers::borg_magic_h::{
     HERBAL_CURING, RECHARGING, REMEMBRANCE, REMOVE_HUNGER, REVITALIZE, UNHOLY_REPRIEVE,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_ACUREPOIS, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FOOD, BI_FRACT, BI_ISAFRAID, BI_ISBLIND,
+    BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FOOD, BI_FRACT, BI_ISAFRAID, BI_ISBLIND,
     BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR,
     BI_ISFIXWIS, BI_ISFORGET, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPARALYZED, BI_ISPOISONED, BI_ISSTUN,
     BI_ISWEAK, BI_MAXHP, BI_RBLIND, BI_RCONF, BI_SPEED,
@@ -203,8 +203,22 @@ pub(crate) fn unknown_potion_test_safe(depth: i32, max_depth: i32, cur_hp: i32, 
 /// Critical Wounds or Neutralize Poison ends it (`CURE:POISONED`,
 /// object.txt), drunk by `borg_caution`'s poison cure. Ranger 142490685
 /// tested at 18/18 HP with no cure and died of the Poison.
+/// `carries_poison_cure` is `carries_poison_cure_potion`.
 pub(crate) fn unknown_potion_min_hp(min_hp: i32, cure_exempt: bool, carries_poison_cure: bool) -> i32 {
     if cure_exempt && carries_poison_cure { 0 } else { min_hp }
+}
+
+/// borg-reborn-rs (#1063, Codex review of #1097): whether the pack holds a
+/// known potion that `borg_caution`'s poison cure drinks without a further
+/// gate: Neutralize Poison (`borg_quaff_potion(sv_potion_cure_poison)`) or
+/// Cure Critical Wounds (`borg_quaff_crit(st, true)`, no stock or repeat
+/// check). A poison-curing food is not one (only `borg_recover` eats it, behind
+/// a random roll), nor a CCW activation (`borg_trait`'s +1000 does not check
+/// the charge). `borg_slot` skips unaware flavours.
+fn carries_poison_cure_potion(st: &mut BorgState) -> bool {
+    let (neutralize, critical) = (st.item_val.sv_potion_cure_poison, st.item_val.sv_potion_cure_critical);
+    crate::borg_inventory::borg_slot(st, TV_POTION as i32, neutralize) >= 0
+        || crate::borg_inventory::borg_slot(st, TV_POTION as i32, critical) >= 0
 }
 
 /// borg-reborn-rs (#983, owner: "test when safe"): with
@@ -228,12 +242,11 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     let turns = param(Param::item_test_unknown_danger_turns).max(1);
     let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
-    // #1063: a known Cure Critical Wounds (a potion, or a device: borg_trait
-    // adds 1000) or a Neutralize Poison or poison-curing food (BI_ACUREPOIS)
-    // waives the HP floor; unknown items are not counted (borg_notice_inventory).
+    // #1063: a known potion of Neutralize Poison or Cure Critical Wounds,
+    // which borg_caution's poison cure drinks, waives the HP floor.
+    let cure = carries_poison_cure_potion(st);
     let min_hp = unknown_potion_min_hp(param(Param::item_test_unknown_min_hp),
-        param(Param::item_test_unknown_min_hp_cure_exempt) != 0,
-        st.borg.tr(BI_ACCW) + st.borg.tr(BI_ACUREPOIS) > 0);
+        param(Param::item_test_unknown_min_hp_cure_exempt) != 0, cure);
     if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), param(Param::item_test_unknown_max_depth),
         st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::item_test_unknown_min_hp_percent),
         min_hp, danger, bad_status, st.borg.tr(BI_FOOD))
