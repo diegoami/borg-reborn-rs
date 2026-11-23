@@ -625,7 +625,7 @@ pub(crate) fn heal_banned(st: &mut BorgState) -> bool {
     if param(Param::fast_fragile_no_heal) == 0 || param(Param::attack_on_sight) == 0 {
         return false;
     }
-    // #914: a group in contact is not a fragile monster to outrace.
+    // #914: a group in contact may heal, escape or not (a group exception to #842).
     if let Some(n) = crowded(st) {
         borg_note(st, &format!("# Healing allowed: {n} fast-fragile attackers in contact (#914)"));
         return false;
@@ -667,10 +667,10 @@ fn marked_in_contact(st: &mut BorgState) -> i32 {
     n
 }
 
-/// #914 (`fast_fragile_contact_max`, 0 = off): more than this many marked
-/// attackers in contact is a fight against a group, not a race against one
-/// fragile monster. Attack on sight steps aside for caution (its emergency
-/// Phase Door), and the heal ban lifts. `Some(count)` when crowded.
+/// #914 (`fast_fragile_contact_max`, 0 = off, returns before counting): more
+/// than this many marked attackers in contact skip the fast-fragile attack on
+/// every marked target (other entries may still act before caution) and lift
+/// the heal ban, escape or not. `Some(count)` when crowded.
 pub(crate) fn crowded(st: &mut BorgState) -> Option<i32> {
     let max = param(Param::fast_fragile_contact_max);
     if max == 0 {
