@@ -66,3 +66,26 @@ borg-zoo#740's deaths and 18 survivors, 100,000 turns each, through
 - Measuring it is the zoo's (RULES 14, 20): patches-x8, poison-x8
   (borg-zoo#741) and the normal world. Shipping 1 is the owner's call and
   re-records `smoke-borg-rs`.
+
+**Review of #1148 (Codex, owner-requested, on 1ad00061), fixed in e32df309.**
+1. Citations: `scripts/check-param-citations.py --fix` after merging track-p
+   bf76b64d (48055970).
+2. Cornered: a confusion cure (Cure Mind, CSW, CCW, CLW) when confused, else
+   Phase Door (activation, scroll, spell up to the new
+   `caution_walk_away_phase_fail`, 30), inside `walk_away_step`, before the
+   melee ban lifts. Only then the blow.
+3. `remember_record`: a walk-away monster's record survives the bounce
+   reset and the 2,000-turn expiry, with walk-away on, whatever
+   `caution_remember_never_move` says.
+4. `route_floor`: lava the Borg may not cross is no clean way to the stairs.
+5. `walk_away_step` runs before #1125's `paralyser_step_away`
+   (source-order test).
+
+**Replays after the fixes** (60 patches-x8 starts, build e32df309 with
+track-p bf76b64d merged): with walk-away off, 0 deaths and 8 games reached
+DL3. With it on:
+- 0 deaths and 16 games reached DL3; 58 of 60 games changed;
+- 313 steps (300 with a clean way to the stairs) and 260 staircase leaves
+  (at most 20 in one game);
+- when cornered: 7 confusion cures, 1 Phase Door, 4 last-resort blows;
+- 19 records kept through the bounce reset.
