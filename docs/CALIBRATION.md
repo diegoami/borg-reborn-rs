@@ -7334,6 +7334,57 @@ Switch off with `town_black_market_min_gold` 0 (the cap alone, as before),
 | `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:2550` |
 | `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1156` |
 
+## #1138: more Cure Critical Wounds and Neutralize Poison (town)
+
+The owner (2026-11-23): "We need to get more CCW and cure poison potion, in a
+similar mechanism as Detect Invisible scrolls."
+
+Before (local, 36 games = 9 classes x 4 seeds, 200,000 turns, before #1112):
+bought per game Detect Invisible 2 to 15, Cure Critical Wounds 0 to 1.5,
+Neutralize Poison 0 to 1. A Detect Invisible scroll is 15 gold with a requirement
+row of its own (#863: 4 copies at 8 percent of the trip weight); a Cure Critical
+Wounds is about 200 gold and a Neutralize Poison 75 (`object.txt`), both only
+"normal" Alchemist stock (`store.txt`), and neither had a row of its own: a CCW
+counted on the healing curve, the CCW staple knee (`town_staple_ccw` 2) and the
+shared prepared-poison row (3 copies of any poison remedy).
+
+Changed: two requirement rows of their own, `PREP_CCW` and `PREP_NEUTRALIZE`
+(`NAMES` 85), fed by the one kind each: the first `town_prepared_ccw` (shipped 3)
+Cure Critical Wounds and `town_prepared_neutralize` (3) Neutralize Poison, each
+worth its own percent of the trip weight (`town_prepared_ccw_percent` 24,
+`town_prepared_neutralize_percent` 16; Detect Invisible's is 8), nothing past the
+target, from `town_variety_min_depth`, on top of the other rows. Compiled 0 = off.
+The percents are above Detect Invisible's because the potions cost 13 and 5 times
+as much; they are guesses.
+
+Local check (same build, rows on at the shipped percents against off, then at three
+times the percents; 36 games each, 200,000 turns; directional, one build, the
+games diverge so a difference is partly noise): potions bought per game
+
+| arm | CCW | Neutralize Poison | Cure Serious | Detect Invisible | Phase Door | Recall | mean CL | mean max depth | stopped early |
+|---|---|---|---|---|---|---|---|---|---|
+| off | 0.11 | 0.17 | 1.72 | 6.31 | 7.22 | 1.78 | 8.28 | 3.44 | 0 |
+| shipped (24, 16) | 0.47 | 0.39 | 1.67 | 6.39 | 7.31 | 1.47 | 8.47 | 3.50 | 0 |
+| 3 times (72, 48) | 0.72 | 0.72 | 0.64 | 5.97 | 7.25 | 1.28 | 8.33 | 3.39 | 1 (a Druid, poison, CL5) |
+
+At the shipped percents the extra Cure Critical Wounds are mostly the Warrior's
+(3.2 a game against 0: it bought three for 600 gold in one visit); the purse of
+the other classes seldom reaches 200 gold after the staples, so they buy none.
+Three times the percents buy 4 to 6 times the off arm's potions, and they cost
+Cure Serious Wounds (1.7 to 0.6) and Word of Recall (1.8 to 1.3, 1.5 at the
+shipped percents): the rows compete with them for the same gold. Recall is a
+staple (#859); whether that displacement is real or noise is for the zoo. Smoke:
+4/4 games identical to `smoke-borg-rs` (they never buy a Cure Critical Wounds).
+Hypotheses (RULES 14); `town_prepared_ccw` 0 and `town_prepared_neutralize` 0
+turn it off.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_prepared_ccw` | 0 | count | 0–20 | `borg_town_capability.rs:2539` |
+| `town_prepared_ccw_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:2539` |
+| `town_prepared_neutralize` | 0 | count | 0–20 | `borg_town_capability.rs:2540` |
+| `town_prepared_neutralize_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:2540` |
+
 ## Breadth-first exploration from the staircases (#1080, #1085)
 
 The owner (2026-11-23): "it seems to me that the borg explores depth-first,
