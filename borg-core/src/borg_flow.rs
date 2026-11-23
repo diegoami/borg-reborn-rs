@@ -547,6 +547,14 @@ fn monster_adjacent(st: &BorgState, x: i32, y: i32) -> bool {
 
 /// The grid tests of `borg_flow_spread()` before the icky/know/danger
 /// checks: `true` if the flow may not enter `ag` at (x, y).
+/// borg-reborn-rs (#1153, review of #1158): could a flow at the normal
+/// avoidance enter (x, y)? The same test as every spread (`spread_blocked`):
+/// a closed door is open to it, lava only with fire immunity, an unknown grid
+/// not.
+pub(crate) fn flow_open(st: &BorgState, x: i32, y: i32) -> bool {
+    !spread_blocked(st, st.cave.grid(x, y), x, y, true, false, false)
+}
+
 fn spread_blocked(
     st: &BorgState,
     ag: &BorgGrid,

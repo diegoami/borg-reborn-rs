@@ -192,8 +192,10 @@ fn take_stairs_here(st: &mut BorgState) -> bool {
     true
 }
 
-/// #1153: is any of the eight grids around the Borg one it could step to,
-/// other than the closed ones? Used to judge it boxed in by the ban.
+/// #1153: is any of the eight grids around the Borg one a flow could enter,
+/// other than the closed ones? Used to judge it boxed in by the ban. The test
+/// is the flows' own (`flow_open`, review of #1158): a closed door is an exit,
+/// lava only with fire immunity.
 fn open_neighbour(st: &BorgState, closed: &[loc]) -> bool {
     (0..8).any(|i| {
         let x = st.borg.c.x + i32::from(crate::engine::ddx_ddd(i));
@@ -201,7 +203,7 @@ fn open_neighbour(st: &BorgState, closed: &[loc]) -> bool {
         (1..AUTO_MAX_X - 1).contains(&x)
             && (1..AUTO_MAX_Y - 1).contains(&y)
             && !closed.iter().any(|g| g.x == x && g.y == y)
-            && crate::borg_cave_util::borg_cave_floor_grid(st.cave.grid(x, y))
+            && crate::borg_flow::flow_open(st, x, y)
     })
 }
 
