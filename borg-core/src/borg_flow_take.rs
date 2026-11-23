@@ -633,7 +633,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         if !is_phase
             && nearness > c.take_nearness
             && (st.borg.tr(BI_CLEVEL) < c.take_max_level || kit_leash)
-            && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
+            // borg-reborn-rs (#1062): C's `borg_flow_cost_stair(..) > leash` with its switches off.
+            && crate::borg_leash::beyond(st, y, x, b_stair, leash)
         {
             continue;
         }

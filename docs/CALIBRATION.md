@@ -6790,3 +6790,52 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
+
+## The holes in C's stair leash (#1062)
+
+From the level-1 death review of track-p `206cf4e7` (borg-zoo run
+45070528012; borg-cemetery#138). C's two stair leashes have three holes:
+they count only up staircases, so a Borg that arrives on a down staircase
+has no leash; with no staircase known or reachable there is no leash
+(`borg_flow_cost_stair` returns 0, "go off leash"); and the exploration leash
+measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
+can also throw a CL1 Borg far from every staircase it knows. Five parameters
+(the registry now holds **2424**, 2419 on track-p `f67fad19`), read in
+`leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
+compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
+None acts in town, where C's leashes never act (town has no up staircase).
+
+- **`flow_leash_any_stair`**: the exploration leash (the far-from-stairs
+  check of the dark, kill and take flows, take_select's own stair check and
+  the vein flow's) takes the flow steps from the nearest known staircase of
+  either kind, by one flow spread from all of them; the return leash
+  ("Return to Stair", 3 x CL + 14) takes the distance to the nearest of them,
+  and its walk back flows to the nearest staircase of either kind
+  (`borg_flow_stair_both`) before the up staircases.
+- **`flow_leash_unknown_stair_steps`** = N: with no staircase the exploration
+  leash counts, or none reachable, it is N flow steps from the grid where the
+  Borg arrived on the level. The return leash has no walk to that grid and is
+  unchanged.
+- **`flow_leash_teleported_recall`**: up to `flow_leash_recall_max_level`, a
+  jump of more than one grid between two updates that leaves every known
+  staircase more than `flow_leash_recall_steps` flow steps away (or none
+  known) reads Word of Recall at the first dungeon think at danger 0, after
+  the fights that own the action. A Phase Door counts too.
+
+The four named seeds, replayed from birth here (100,000 game turns, local, a
+lead only, RULES 14; keys.log sha256 prefixes):
+
+| seed | character | shipped | `any_stair` 1 | `unknown_stair_steps` 20 | `teleported_recall` 1 | all three |
+|---|---|---|---|---|---|---|
+| 592754909 | Kobold Mage | crow, t3569 `f1150483` | alive CL5 `445e7d20` | alive CL6 `4e1dfe0f` | alive CL6 `9de73335` | = any_stair |
+| 645909552 | Dwarf Mage | alive CL5 DL2 `ed01edd7` | alive CL5 DL1 `c0977f42` | = shipped | = shipped | = any_stair |
+| 526144893 | Human Ranger | alive CL6 DL2 `c24cf291` | alive CL7 DL4 `e362880f` | alive CL6 `e4db15f1` | alive CL6 `abe52f3f` | alive CL7 DL2 `15746742` |
+| 1024822556 | Dunadan Druid | Fang, t3086 `3687ca84` | alive CL8 DL3 `d8ef456f` | = shipped | alive CL7 `450d1575` | alive CL8 DL3 `3206117e` |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2042` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2043` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2044` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2045` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2046` |

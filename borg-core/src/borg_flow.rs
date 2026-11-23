@@ -2024,6 +2024,29 @@ pub(crate) fn c_leash() -> CLeash {
     }
 }
 
+/// borg-reborn-rs (#1062): the switches for the holes of C's leash
+/// (`borg_leash.rs`), read here as the registry's `flow_` file wants.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LeashHoles {
+    pub any_stair: bool,
+    pub unknown_stair_steps: i32,
+    pub teleported_recall: bool,
+    pub recall_max_level: i32,
+    pub recall_steps: i32,
+}
+
+/// The `LeashHoles` parameters, on each use (not cached).
+pub(crate) fn leash_holes() -> LeashHoles {
+    use crate::params::{value, Param};
+    LeashHoles {
+        any_stair: value(Param::flow_leash_any_stair) != 0,
+        unknown_stair_steps: value(Param::flow_leash_unknown_stair_steps),
+        teleported_recall: value(Param::flow_leash_teleported_recall) != 0,
+        recall_max_level: value(Param::flow_leash_recall_max_level),
+        recall_steps: value(Param::flow_leash_recall_steps),
+    }
+}
+
 #[cfg(test)]
 mod stair_loop_tests {
     use super::*;
