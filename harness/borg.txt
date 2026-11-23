@@ -1539,7 +1539,8 @@ borg_param_item_test_unknown_max_depth = 30
 borg_param_attack_kill_on_sight_min_hp_percent = 50
 # #1064: when that floor declines the attack, the cure it counted is drunk in
 # the same think (confused: Cure Serious, then Critical, which cure the
-# confusion; then Cure Light, which shortens it by 20 turns), and #867's "attacking first" hold of the
+# confusion; then Cure Light, which shortens it by 20 turns) unless it does not
+# outlive the next turn and an escape is at hand, and #867's "attacking first" hold of the
 # confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
 # neither attacking nor drinking with this 0. 0 = #969 alone.
 borg_param_attack_kill_on_sight_floor_cure = 1

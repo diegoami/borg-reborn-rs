@@ -2097,15 +2097,36 @@ fn confusion_cure_hold(st: &mut BorgState) -> Option<CureHold> {
 /// attack does not come first, so the cure must not wait for it (Druid
 /// 781905420 neither attacked nor cured, and died with 8 CLW).
 fn cure_held_for_attack(st: &mut BorgState) -> bool {
-    if st.borg.tr(BI_ISCONFUSED) == 0 || p(Param::attack_confused_by_direction) == 0 {
+    let confused = st.borg.tr(BI_ISCONFUSED) != 0;
+    let by_direction = p(Param::attack_confused_by_direction) != 0;
+    attack_hold(
+        st,
+        confused && by_direction,
+        |st| immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x),
+        crate::borg_fight_attack::kill_on_sight_floor_declines,
+        |st| mobile_danger(st) < st.borg.tr(BI_CURHP) && confused_attack_open(st),
+    )
+}
+
+/// `cure_held_for_attack` with its tests given, each asked only when the
+/// one before passed (review of #1082, P3: the decision tests call it):
+/// confused with direction attacks (`armed`), an immobile confuser next to
+/// the Borg, #969's floor not declining it (#1064), then the moving danger
+/// and an open attack.
+fn attack_hold(
+    st: &mut BorgState,
+    armed: bool,
+    confuser: impl FnOnce(&BorgState) -> Option<usize>,
+    floor_declines: impl FnOnce(&mut BorgState, usize) -> bool,
+    attack_first: impl FnOnce(&mut BorgState) -> bool,
+) -> bool {
+    if !armed {
         return false;
     }
-    let Some(confuser) = immobile_confuser_next_to(st, st.borg.c.y, st.borg.c.x) else {
+    let Some(confuser) = confuser(st) else {
         return false;
     };
-    !crate::borg_fight_attack::kill_on_sight_floor_declines(st, confuser)
-        && mobile_danger(st) < st.borg.tr(BI_CURHP)
-        && confused_attack_open(st)
+    !floor_declines(st, confuser) && attack_first(st)
 }
 
 /// borg-reborn-rs (#646, review of #659): the confusion cure is held next to
@@ -8037,5 +8058,39 @@ mod recall_dl1_hold_up_tests {
         assert!(!recall_holds_up_with(true, 140, 1, 41, 40), "a danger above the avoidance still takes them");
         assert!(!recall_holds_up_with(true, 140, 2, 0, 40), "DL2: the staircase leads to DL1, not town");
         assert!(!recall_holds_up_with(true, 0, 1, 0, 40), "no Recall pending");
+    }
+}
+
+// borg-reborn-rs (#1064, review of #1082, P3)
+#[cfg(test)]
+mod attack_hold_tests {
+    use super::attack_hold;
+    use crate::state::BorgState;
+
+    /// The confuser at kill index 3, the moving danger low, an attack open.
+    fn hold(armed: bool, declines: bool) -> bool {
+        let mut st = BorgState::default();
+        attack_hold(&mut st, armed, |_| Some(3), |_, i| { assert_eq!(i, 3); declines }, |_| true)
+    }
+
+    /// No cure potion, the stairs underfoot: #969's floor declines the
+    /// attack on the patch, and #867's hold must not keep the caution's own
+    /// confusion cure (a Cure Mind mushroom, which the floor does not count)
+    /// waiting for an attack that will not come.
+    #[test]
+    fn an_escape_only_decline_lifts_the_hold() {
+        assert!(!hold(true, true), "the floor declines: no hold");
+        assert!(hold(true, false), "the floor attacks first: #867's hold");
+        assert!(!hold(false, false), "not confused, or no direction attacks: no hold");
+    }
+
+    /// The floor is asked only next to a confuser, and the danger and the
+    /// attack's dry run only when the floor does not decline.
+    #[test]
+    fn each_test_is_asked_only_after_the_one_before() {
+        let mut st = BorgState::default();
+        assert!(!attack_hold(&mut st, true, |_| None, |_, _| panic!("no confuser"), |_| panic!("no confuser")));
+        assert!(!attack_hold(&mut st, true, |_| Some(1), |_, _| true, |_| panic!("the floor declined")));
+        assert!(!attack_hold(&mut st, false, |_| panic!("not armed"), |_, _| panic!(), |_| panic!()));
     }
 }
