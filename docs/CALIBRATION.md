@@ -7296,7 +7296,11 @@ measures the farthest up staircase (`borg_flow_dark`, C bug 31). A teleport
 can also throw a CL1 Borg far from every staircase it knows. Six parameters
 (the registry now holds **2455**, 2449 on track-p `8e1c8797`), read in
 `leash_holes` (`borg_flow.rs`) and used by `borg_leash.rs`. Every switch is
-compiled and shipped 0, which is C's play: smoke-borg-rs plays the same keys.
+compiled 0, which is C's play. **Shipped on** in `harness/borg.txt` with the
+values of the zoo arms (owner, 2026-11-23: "merge with the values to try"):
+`flow_leash_any_stair = 1`, `flow_leash_unknown_stair_steps = 20`,
+`flow_leash_teleported_recall = 1` (5, 30, 12). That is borg-zoo#719's
+`leash3` arm, unmeasured (RULES 14), and smoke-borg-rs is re-recorded.
 None acts in town, where C's leashes never act (town has no up staircase).
 
 With a switch on, distances are **walking steps over known terrain**
