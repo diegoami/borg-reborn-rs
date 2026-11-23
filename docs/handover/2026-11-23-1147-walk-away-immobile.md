@@ -98,3 +98,9 @@ DL3. With it on:
    `PhaseSite::WalkAwayCornered` ("walk-away cornered"), with the danger
    site's landing test. The teleport block, #584's adjacent rule and #1066's
    never-seen landings apply. Documented in `docs/PHASE-DOOR.md`.
+
+**Second re-review (on 81a52114).** The cornered site's Phase Door
+availability counts the spell up to `caution_walk_away_phase_fail`
+(`has_phase`/`phase_available` in `borg_escape.rs`). Previously `BI_APHASE`
+alone credited it only at 3% failure or less. Every other site still asks
+`BI_APHASE`.
