@@ -10,6 +10,49 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## The unknown-potion test's HP floor, and a known cure (#1063)
+
+Two parameters added; the registry now holds 2433. Human Ranger 142490685
+(CL2, 18/18 HP, no cure) drank its unknown "Cloudy Potions" as the #983 test on
+DL1's up staircase: a Potion of Poison (`TIMED_INC:POISONED` 10+2d7,
+object.txt), 1 HP a world tick with no regeneration (game-world.c:514-516,
+`player_regen_hp`), and it died 180 game turns later. The engine kills below
+0 HP (`player-util.c:228`, `chp < 0`), so without a cure a test at h HP kills
+with probability at most P(10 + 2d7 > h): 12: 48/49 (98%), 15: 39/49 (80%),
+18: 21/49 (43%), 20: 10/49 (20%), 24: 0. At most: a higher CON shortens the
+timer faster (`player_timed_decrement_effects`, game-world.c:280-321) and the
+fractional part of base regeneration is kept (`player_regen_hp`); review of
+#1097.
+
+- **`item_test_unknown_min_hp`** (compiled 25, **shipped 60**, owner
+  2026-11-23: "put minimum hp at 60"): the test needs at least this many
+  current HP, besides `item_test_unknown_min_hp_percent`. The compiled 25 is
+  Poison's worst case (24) plus 1, the same parameter and default as #1060's
+  PR #1071; 60 is the owner's margin, a hypothesis until borg-zoo measures it
+  (RULES 14). The cost is fewer tests: a low-level character learns its
+  potions later.
+- **`item_test_unknown_min_hp_cure_exempt`** (compiled 0, **shipped 1**): a
+  known potion of Neutralize Poison or Cure Critical Wounds in the pack
+  (`CURE:POISONED`, object.txt; `carries_poison_cure_potion`, `borg_slot`
+  skips unaware flavours) waives that floor, leaving only the percent floor
+  (50). These are the two cures `borg_caution`'s poison cure drinks without a
+  further gate (`borg_quaff_potion`, `borg_quaff_crit(st, true)`) once HP
+  falls below max HP / `caution_poison_cure_hp_divisor`. Not counted (review
+  of #1097): a poison-curing food such as Elvish Waybread (only `borg_recover`
+  eats it, behind a random roll) and a Cure Critical Wounds activation
+  (`borg_trait`'s +1000 does not check the charge). The engine's other cures
+  (Healing, *Healing*, Life, Resist Poison, Curing staves and rods) are not
+  counted either. 0 = the floor holds with a cure too.
+
+#1063's second point (a poisoned Borg with no cure that the poison can kill
+goes to the stairs or to town) cannot arise at the shipped values: without a
+cure the test needs 60 HP, and Poison costs at most 24.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_min_hp` | 25 | hp | 0–10000 | `borg_item_use.rs:248` |
+| `item_test_unknown_min_hp_cure_exempt` | 0 | flag | 0–1 | `borg_item_use.rs:235` |
+
 ## Phase Door into unexplored grids, and the newcomer at range (#1066)
 
 The registry now holds **2425** parameters (2419 before; six added: four,
@@ -295,10 +338,10 @@ it to try. Owner, 2026-11-22: "test when safe".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:203` |
-| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:211` |
-| `item_test_unknown_danger_turns` | 10 | turns | 1–50 | `borg_item_use.rs:215` |
-| `item_test_unknown_max_depth` | 30 | level | 0–128 | `borg_item_use.rs:217` |
+| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:231` |
+| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:238` |
+| `item_test_unknown_danger_turns` | 10 | turns | 1–50 | `borg_item_use.rs:243` |
+| `item_test_unknown_max_depth` | 30 | level | 0–128 | `borg_item_use.rs:250` |
 
 ## Kill-on-sight HP floor (#969)
 
