@@ -3063,12 +3063,12 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
             let ordinary = if chosen.0 >= 0 {
                 borg_attack_aux_object_fire(st, chosen.0, chosen.1)
             } else { 0 };
-            let cheap_kill = ordinary > 0 && st.fight_attack.kill_best >= 1.0;
+            // #854 re-review F2: oil is always scored. A cheap kill may be of
+            // another monster; against the same threat, `held_oil_target`
+            // already gives held oil no value when a cheaper throw finishes it.
             st.fight_attack = saved.clone();
             st.traits.simulate = true;
-            let oil_value = if cheap_kill { 0 } else {
-                borg_attack_aux_object_fire(st, oil.0, oil.1)
-            };
+            let oil_value = borg_attack_aux_object_fire(st, oil.0, oil.1);
             st.fight_attack = saved;
             st.traits.simulate = was_simulating;
             if oil_value > ordinary { chosen = oil; }

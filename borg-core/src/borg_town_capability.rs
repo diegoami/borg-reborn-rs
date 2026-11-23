@@ -996,7 +996,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         out.push((FIRST_HEAL, UNIT));
     }
     if ctx.short_gold && (origin.0 >= PACK || ctx.buy_shot) && matches!(tval, TV_WAND | TV_ROD)
-        && (if tval == TV_WAND { item.pval > 0 } else { i64::from(item.timeout) < qty * i64::from(engine::kind_recharge_average(item.kind as usize).max(1)) })
+        // #854 re-review F1: ready as combat sees it. The item analyzer sets a
+        // wand's pval to its charges and a rod's to 1 only when it (a single
+        // rod: no timeout; a stack: one rod not charging) can be zapped now.
+        && item.pval > 0
         && effect_supply_for_consumer(&effects, ctx.journey.hp, 1, false).iter().any(|&(cap, n)| cap == ATTACK && n > 0)
         // #854 review F4: only a device combat would use, by its failure gate.
         && crate::borg_fight_attack::short_gold_device_usable(st, item)
