@@ -6583,7 +6583,8 @@ budget to other goods. The planner withdraws only the excess copies that
 fit and credits a Home slot when the final copies leave. Schema 15
 records the native room, and schema 16 enables partial surplus disposal.
 Schema 17 lets the Borg finish clearing the surplus after withdrawing its
-carried reserve from Home.
+carried reserve from Home. Schema 18 defers cleanup if a recent shop
+purchase would prevent selling the withdrawn surplus.
 
 ## #863: variety in the backpack (town, prepared remedies)
 

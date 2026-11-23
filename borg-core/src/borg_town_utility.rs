@@ -413,6 +413,12 @@ fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
             || (item.just_bought && (input.revision < 17 || !surplus))
             || (item.sell_shop < 0 && !(input.revision >= 15 && item.home_unwanted))
         { continue; }
+        // A recent shop purchase shields the merged pack stack from
+        // ordinary sale. Leave surplus at Home until it can be disposed of.
+        if input.revision >= 18 && !item.home_unwanted
+            && input.kit.iter().any(|carried| carried.place == Place::Pack
+                && carried.kind == item.kind && carried.just_bought)
+        { continue; }
         let qty = home_disposal_copies(input, u, item);
         if qty <= 0 { continue; }
         out[i] = if item.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
@@ -1636,7 +1642,7 @@ mod tests {
         ];
 
         st.borg.trait_[BI_APHASE as usize] = 2;
-        let (actions, _, copies) = solve(&st, &observe(&st, 2, 19), 17);
+        let (actions, _, copies) = solve(&st, &observe(&st, 2, 19), 18);
         assert_eq!(actions, [Disposition::Keep, Disposition::Take, Disposition::Keep, Disposition::Keep]);
         assert_eq!(copies[1], 4);
 
@@ -1647,7 +1653,7 @@ mod tests {
         assert!(kit_just_bought(&st, &item, Place::Pack, false), "uncapped keepers keep the usual protection");
         st.borg.trait_[BI_APHASE as usize] = 6;
         let kit = observe(&st, 6, 15);
-        let (actions, freed, _) = solve(&st, &kit, 17);
+        let (actions, freed, _) = solve(&st, &kit, 18);
         assert_eq!(actions, [Disposition::Keep, Disposition::Sell, Disposition::Keep, Disposition::Keep]);
         assert_eq!(freed.home_slots, 1);
         assert_eq!(solve(&st, &kit, 16).0, [Disposition::Keep; 4]);
@@ -1656,13 +1662,23 @@ mod tests {
         st.borg.trait_[BI_APHASE as usize] = 21;
         let kit = [observe(&st, 21, 15)[0],
             KitItem { slot: 1, qty: 40, ..home }, KitItem { slot: 2, qty: 40, ..home }];
-        let (actions, freed, copies) = solve(&st, &kit, 17);
+        let (actions, freed, copies) = solve(&st, &kit, 18);
         assert_eq!(actions, [Disposition::Sell, Disposition::Keep, Disposition::Keep]);
         assert_eq!(copies[0], 15, "the six-scroll reserve stays carried");
         assert_eq!(freed.pack_slots, 0);
 
         st.buy.bought_item_store[0] = 4;
-        assert!(kit_just_bought(&st, &item, Place::Pack, true), "actual shop purchases stay protected");
+        st.borg.trait_[BI_APHASE as usize] = 6;
+        let kit = observe(&st, 6, 15);
+        assert!(kit[0].just_bought, "actual shop purchases stay protected");
+        let (actions, freed, _) = solve(&st, &kit, 18);
+        assert_eq!(actions, [Disposition::Keep; 4], "do not withdraw stock the pack cannot sell");
+        assert_eq!(freed.home_slots, 0);
+        assert_eq!(solve(&st, &kit, 17).0[1], Disposition::Sell, "schema 17 keeps its recorded decision");
+
+        st.buy.bought_item_num = 0;
+        assert_eq!(solve(&st, &observe(&st, 6, 15), 18).0[1], Disposition::Sell,
+            "cleanup resumes when the purchase history clears");
     }
 
     #[test]
