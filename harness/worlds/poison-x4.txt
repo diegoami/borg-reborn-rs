@@ -1,0 +1,15 @@
+# A poison world (#1134, borg-zoo#741; owner 2026-11-23: "We need zoo
+# experiments with high concentration of poisionous animals"): the six races
+# of DL1-3 whose blows poison (monster.txt blow:...:POISON) keep their rarity,
+# and every other race's rarity is multiplied by 4, so each of them is about
+# 4x as likely against a rarity-r race (the engine truncates 100 / rarity,
+# mon-make.c:113, so the realised odds differ; the zoo measures the
+# encounters). The level's monster count is unchanged. Their share of the
+# allocation weight of non-unique races at depth 1 to DL (shipped -> this world): DL1
+# 6.7 -> 22.2 %, DL2 9.1 -> 28.6 %, DL3 11.7 -> 34.7 %.
+# white worm mass (DL1, breeder), blubbering icky thing (DL2), white jelly
+# (DL2, never moves), spotted mushroom patch (DL3, never moves), yellow jelly
+# (DL3, never moves), clear worm mass (DL3, breeder). Zoo run 45121432449 lost
+# 5 of its 7 poison deaths to white jellies and worm masses (borg-cemetery#146).
+favour = white worm mass, blubbering icky thing, white jelly, spotted mushroom patch, yellow jelly, clear worm mass
+favour_weight = 4

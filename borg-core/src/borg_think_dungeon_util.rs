@@ -988,12 +988,25 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* do not hangout on boring levels for *too* long */
-    if g == 0 && borg_timer(st, st.borg.time.level) > borg_time_to_stay_on_level(st, bored) {
+    // borg-reborn-rs (#1098, review of #1117): nor once the stair-anchored
+    // exploration (breadth-first or mixed) has covered all it may of this
+    // level (`exhausted_this_think`; owner, 2026-11-23: "once there is
+    // nothing to explore, take the stairs"): the stairs are taken as when
+    // the time is up, before the secret-door search.
+    let exhausted = crate::borg_flow_dark::exhausted_this_think(st);
+    // The direction chosen at random after the walk, when either is allowed
+    // (re-review of #1117); `None` otherwise.
+    let mut either_way: Option<i32> = None;
+    if g == 0 && (exhausted || borg_timer(st, st.borg.time.level) > borg_time_to_stay_on_level(st, bored)) {
         /* don't get bored when hunting uniques */
         if st.borg.tr(BI_MAXDEPTH) < 99 || st.borg.mon.unique == 0 {
             /* Note */
             let t = i64::from(borg_timer(st, st.borg.time.level));
-            borg_note(st, &format!("# Spent too long ({t}) on level, leaving."));
+            if exhausted {
+                borg_note(st, &format!("# Exploration from the stairs done ({t} on level), leaving (#1098)."));
+            } else {
+                borg_note(st, &format!("# Spent too long ({t}) on level, leaving."));
+            }
 
             /* if we are trying not to go down, go up*/
             if try_not_to_descend {
@@ -1001,6 +1014,10 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
             } else {
                 /* otherwise use random stairs */
                 g = if engine::randint0(100) < 50 { -1 } else { 1 };
+                // borg-reborn-rs (#1098, re-review of #1117): after the
+                // stair-anchored exploration, either direction is allowed,
+                // so a failed one tries the other.
+                either_way = exhausted.then_some(g);
             }
         }
     }
@@ -1011,6 +1028,11 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         let before = (g, st.borg.goal.rising);
         (g, st.borg.goal.rising) = crate::borg_trip::apply_return(d.action, before);
         crate::borg_trip::record_application(st, d, before, (g, st.borg.goal.rising));
+    }
+    // A direction the trip policy changed, or a rise it asked for, is no
+    // longer free (re-review of #1117).
+    if either_way != Some(g) || st.borg.goal.rising {
+        either_way = None;
     }
 
     /* Go Up */
@@ -1075,6 +1097,11 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         } else if st.stairs.less.num == 0 {
             borg_note(st, "# no up stairs found, going down");
             g = 1;
+        } else if either_way.is_some() {
+            // borg-reborn-rs (#1098, re-review of #1117): the up stairs known
+            // cannot be reached; after the walk, down is allowed too.
+            borg_note(st, "# Up stairs out of reach; trying down stairs (#1098)");
+            g = 1;
         }
     }
 
@@ -1093,6 +1120,24 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         if borg_flow_stair_more(st, GOAL_BORE, false, false) {
             return true;
         }
+
+        // borg-reborn-rs (#1098, re-review of #1117): down was chosen at
+        // random after the walk and cannot be reached: up is allowed too.
+        if either_way == Some(1) && !engine::player_opt(OPT_birth_force_descend) {
+            borg_note(st, "# Down stairs out of reach; trying up stairs (#1098)");
+            st.borg.stair_less = true;
+            if borg_flow_stair_less(st, GOAL_BORE, false) {
+                borg_note(st, "# Going to stairs up. I'm bored.");
+                return true;
+            }
+        }
+    }
+
+    // borg-reborn-rs (#1098): the stair-anchored exploration's area is done
+    // but no staircase can be taken, in any direction allowed: it stands
+    // down on this level, and C explores for one.
+    if exhausted {
+        crate::borg_flow_dark::release_after_failed_exit(st);
     }
 
     /* Failure */
