@@ -8012,25 +8012,33 @@ default, no loopbreaker". Every loop found so far got a guard for its own
 pair of decisions (#1108, #1133, #1152, #932). `loop_breaker` (compiled 0,
 **shipped 1**, `borg_loop.rs`) is the net under them.
 
-- **Detect.** Every dungeon think records the Borg's grid when it moved (a
-  rest is no move), with the grids of the map it knows, per level. A loop is
-  the last 16 moves (`LOOP_MOVES`) among at most 3 grids (`LOOP_GRIDS`), the
-  known grids unchanged, with no danger here above a quarter of the HP.
-- **Break**, before any flow continues (`borg_think_dungeon`, at the
-  important goals), the first that applies:
-  1. a walk to a staircase at the normal avoidance, an up one first (a new
-     level is always safe), else either kind;
+- **Detect** (`observe`, at the start of every dungeon think).
+  - The Borg's grid is recorded when it moved (a rest is no move), with the
+    grids of the map it knows, per level. The arrival on a level only seeds
+    the position.
+  - Any think on which the map learned something, or the danger here passes
+    a quarter of the HP, clears the window, moved or not.
+  - A loop is the last 16 moves (`LOOP_MOVES`) among at most 3 grids
+    (`LOOP_GRIDS`).
+- **Break** (`break_loop`, right after `borg_caution`, before any other
+  flow), the first that applies:
+  0. the staircase underfoot, if the Borg may take it;
+  1. a walk to a staircase it may take, at the normal avoidance: up first,
+     unless descent is forced; down only when fleeing or prepared for the
+     next depth, as `borg_caution` decides;
   2. the same with the avoidance boosted to twice the HP;
-  3. the loop's grids, staircases excepted, closed to every step for 20
-     thinks (`step_banned`, read by `borg_play_step`), so whatever undid the
-     other decision cannot.
+  3. the loop's grids, staircases and the Borg's own excepted, closed to
+     every spread (`spread_blocked`) and twitch for 20 thinks, so the flows
+     route around them. If that would box the Borg in, the twitchy think's
+     Phase Door instead (`twitch_phase`, at most 3 a level), else the stuck
+     think.
 
-  The walks of 1 and 2 are committed (`commit_loop_walk`) and continued by
-  the breaker itself every think, before any other flow. The staircase is
-  taken on arrival: the leaving goal is set, with up stairs. Without the
-  commitment, the walk took one step and the loop came back. Without the
-  continuation, `borg_flow_kill_aim` took the think back each time (one
-  Necromancer: 58 detections of the same loop).
+  The walks of 1 and 2 are committed (`commit_loop_walk`). The breaker
+  continues them itself every think while they are live and own their flow,
+  and takes the staircase on arrival. A walk that is no longer live ends
+  there: no ordinary step falls through. Without the commitment, the walk
+  took one step and the loop came back. Without the continuation,
+  `borg_flow_kill_aim` took the think back each time.
 - **Note.** `# Loop detected: n moves among k grids since think t, the map
   unchanged; choices a / b / a / b; breaking it by ...`. The choices are the
   last decisions chosen (`core_trace::recent_choices`), so each new pair can
@@ -8038,19 +8046,10 @@ pair of decisions (#1108, #1133, #1152, #932). `loop_breaker` (compiled 0,
 
 Checked on #1130's loop (Blackguard 312081895, `433457a4`,
 `explore_c_leave_when_done = 1`) with `flow_brave_walk_commit = 0`, so that
-only the breaker acts:
+only the breaker acts (an earlier version of the breaker):
 - off: the loop, 76 levels, "Spent too long" 3,177, CL3;
 - on: 6 loops detected (choices `borg_flow_dark / boost_bravery_1`), 210
   levels, "Spent too long" 873, CL4.
-
-At this head, the 20 level-1 death starts of borg-cemetery#138, off against
-on:
-- 17 of 20 identical;
-- 5 loops detected in 3 games, of pairs `borg_recover / borg_flow_dark` (2),
-  `borg_flow_stair_less / borg_flow_dark` and `borg_flow_kill_aim /
-  borg_flow_dark`;
-- deaths 0 against 0, summed CL 101 against 103, summed deepest DL 43
-  against 41.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
