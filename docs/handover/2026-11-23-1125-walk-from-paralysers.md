@@ -38,11 +38,10 @@ start, not a rate (RULES 14).
   [borg-zoo#735](https://github.com/diegoami/borg-zoo/issues/735), filed
   on the owner's word (arms `ctl`, `lost`, `walk` = 2+3+4, `all`).
 - The 400-turn flow loop next to the eye (`dark-bfs` against `targetable
-  position`) is not addressed here. It is its own issue, to be filed.
+  position`) is not addressed here: #1132.
 - #1099, the same step for an immobile confuser after the floor's cure, is
   still the owner's decision. `best_step_away_from` can serve it.
 - #852 (the ranged-only scary entries) is unchanged.
-
 - The replay arms are the Cemetery study
   `studies/paralyser-walk-away-453254028`
   ([borg-cemetery#142](https://github.com/diegoami/borg-cemetery/pull/142)).
