@@ -89,7 +89,8 @@ likely. The gap was already in #1066 at any tolerance.
   it.
 
 Not replayed: the change acts only with the policy on, after a gate refusal
-in the twitchy think. 726 tests pass.
+in the twitchy think. 726 tests pass (728 after merging track-p `09580159`;
+smoke 4/4 identical; `--fix` re-pointed the citations the merge shifted).
 
 ### Left, and for the owner
 

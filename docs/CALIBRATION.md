@@ -32,9 +32,9 @@ grids only: a Borg beside an unexplored room counts the room as safe.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1409` |
-| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1410` |
-| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1234` |
+| `escape_phase_unknown_scary` | 0 | flag | 0–1 | `borg_escape.rs:1413` |
+| `escape_phase_unknown_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1414` |
+| `escape_phase_newcomer_wait` | 0 | flag | 0–1 | `borg_escape.rs:1238` |
 | `escape_phase_newcomer_hp_percent` | 50 | percent of max HP | 0–1000 | `borg_escape.rs:1238` |
 | `escape_phase_unknown_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:930` |
 | `escape_phase_newcomer_turn_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:1260` |
@@ -2439,8 +2439,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:902` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:994` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:995` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:998` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:999` |
 
 ## Town less scary (#622)
 
@@ -3915,12 +3915,12 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1755` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1764` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1758` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1767` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1855` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1858` |
 | `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1866` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1872` |
 | `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1891` |
@@ -5987,7 +5987,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1647` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1650` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
