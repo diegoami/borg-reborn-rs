@@ -9,16 +9,21 @@
 //!
 //! The mode applies in the dungeon while `stair_scum` is 1, the maximum HP
 //! is below the threshold (`stair_scum_max_hp`, per class, plus
-//! `stair_scum_max_hp_race_delta`, per race) and the Borg cannot detect
-//! monsters (a Detect Monsters, Reveal Monsters or Detection spell it can
-//! cast, or a Rod of Detection carried: the spells and the rod with
-//! `DETECT_VISIBLE_MONSTERS`, `lib/gamedata/class.txt` and `object.txt`;
-//! Detect Invisible and Detect Life do not count).
+//! `stair_scum_max_hp_race_delta`, per race) and the Borg does not detect
+//! monsters the way its exploration does (review of #1090, P1): a Rod of
+//! Detection carried or the Detection spell (zapped and cast by the panel
+//! checks of `borg_light.rs` with no level gate), or Detect Monsters from
+//! `light_detect_evil_spell_min_level` on (or with `light_detect_dark_entry`).
+//! Reveal Monsters, Detect Invisible and Detect Life do not count.
 //!
 //! 1. **Safe grids** (`Map`). *s(g)* is the walk from *g* to the nearest
-//!    known staircase of either kind over known, trap-free floor and doors
-//!    (the walk a retreat can take: below 60 HP the flows treat a known trap
-//!    as a wall, `borg_flow.rs`). *g* is safe when a monster first seen
+//!    known staircase the Borg will take (up unless descent is forced; down
+//!    when prepared for the next depth and not rising: the same rule for the
+//!    area, the walk back, the level change and the departure on a threat;
+//!    review of #1090, P1) over known, trap-free floor, no closed door (the
+//!    walk a retreat can take: below 60 HP the flows treat a known trap as a
+//!    wall, `borg_flow.rs`, and a closed door costs the open and may stay
+//!    shut; review of #1090, P1). *g* is safe when a monster first seen
 //!    *D(g)* grids off, acting `stair_scum_speed_ratio` times per player
 //!    action, lands fewer than HP / `stair_scum_contact_damage` attacks on
 //!    the walk of *s(g)* steps and the stair command (`attacks_on_retreat`;
@@ -34,7 +39,9 @@
 //!    crow, wild cat `speed:120`, 4 HP per round of blows): 1 step.
 //! 2. **The safe area** is every safe grid joined to a staircase through
 //!    safe grids. The dark flows keep only candidates in it (or next to it),
-//!    nearest the staircase first; items and monster hunts outside it are
+//!    nearest the staircase first, and when the nearest lies farther out than
+//!    the Borg, it goes back onto the staircase first (no chaining outward
+//!    along one corridor; review of #1090, P2); items and monster hunts outside it are
 //!    skipped; every voluntary flow step (`borg_flow_old`, a resumed flow
 //!    too) that leaves it and does not come nearer the staircase is refused
 //!    (review, P1); a Borg outside it walks back onto a staircase before
@@ -63,7 +70,7 @@
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_grid;
-use crate::borg_headers::borg_magic_h::{DETECTION, DETECT_MONSTERS, REVEAL_MONSTERS};
+use crate::borg_headers::borg_magic_h::{DETECTION, DETECT_MONSTERS};
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP, BI_LIGHT, BI_MAXHP};
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
@@ -152,13 +159,27 @@ fn below_threshold(max_hp: i32, threshold: i32) -> bool {
     max_hp < threshold
 }
 
-/// The Borg can find monsters before they find it: a monster detection
-/// spell it can cast, or a Rod of Detection carried (charging or not).
+/// The Borg finds monsters before they find it, with the detection its
+/// exploration actually uses (review of #1090, P1): `borg_light.rs`'s panel
+/// checks zap a Rod of Detection and cast Detection with no level gate, and
+/// cast Detect Monsters only from `light_detect_evil_spell_min_level` (the
+/// Mage's 10 in the shipped `borg.txt`) or on a dark entry with
+/// `light_detect_dark_entry`. Reveal Monsters is cast only against an
+/// invisible attacker (`borg_fight_defend.rs`), so it does not count.
 fn detects_monsters(st: &BorgState) -> bool {
-    [DETECT_MONSTERS, REVEAL_MONSTERS, DETECTION]
-        .into_iter()
-        .any(|spell| crate::borg_magic::borg_spell_legal(st, spell))
-        || carries(st, TV_ROD as i32, st.item_val.sv_rod_detection)
+    detection_used(
+        crate::borg_magic::borg_spell_legal(st, DETECT_MONSTERS),
+        st.borg.tr(BI_CLEVEL),
+        value(Param::light_detect_evil_spell_min_level),
+        value(Param::light_detect_dark_entry) != 0,
+        crate::borg_magic::borg_spell_legal(st, DETECTION),
+        carries(st, TV_ROD as i32, st.item_val.sv_rod_detection),
+    )
+}
+
+/// The detection exploration will use (pure).
+fn detection_used(detect_monsters: bool, clevel: i32, spell_min_level: i32, dark_entry: bool, detection: bool, rod: bool) -> bool {
+    (detect_monsters && (clevel >= spell_min_level || dark_entry)) || detection || rod
 }
 
 /// An aware item of this kind in the pack (`borg_slot` >= 0, read only).
@@ -337,12 +358,18 @@ fn safe_area(dist: &[u16], walkable: impl Fn(i32, i32) -> bool, safe: impl Fn(i3
     area
 }
 
-/// A grid a retreat can cross: known, floor-like (not lava), or a closed
-/// door, and no known trap.
+/// A grid a retreat can cross: known floor-like (not lava, not unknown), no
+/// known trap. A closed door is not one until it is open (review of #1090,
+/// P1): opening it costs a turn, a lock can cost more, and the Borg will not
+/// open a door with a monster next to it (`borg_flow.rs`, `step_closed_door`).
 fn walkable(st: &BorgState, y: i32, x: i32) -> bool {
     let ag = st.cave.grid(x, y);
-    let feat = u32::from(ag.feat);
-    feat != FEAT_NONE && feat != FEAT_LAVA && !ag.trap && (borg_cave_floor_grid(ag) || feat == FEAT_CLOSED)
+    walk_grid(u32::from(ag.feat), ag.trap, borg_cave_floor_grid(ag))
+}
+
+/// `walkable` on the grid's facts (pure).
+fn walk_grid(feat: u32, trap: bool, floor_like: bool) -> bool {
+    feat != FEAT_NONE && feat != FEAT_LAVA && feat != FEAT_CLOSED && !trap && floor_like
 }
 
 fn lit_floor(st: &BorgState, y: i32, x: i32) -> bool {
@@ -359,10 +386,24 @@ fn known_wall(st: &BorgState, y: i32, x: i32) -> bool {
     feat != FEAT_NONE && !borg_cave_floor_grid(ag) && feat != FEAT_CLOSED
 }
 
-/// Every known staircase of either kind, `(y, x)`.
-fn stair_grids(st: &BorgState) -> Vec<(i32, i32)> {
+/// Which staircase kinds the Borg will take (review of #1090, P1: the same
+/// rule for the safe area, the walk back, the level change and the
+/// departure on a threat): up unless descent is forced; down only when
+/// prepared for the next depth and not rising.
+fn usable_kinds(st: &mut BorgState) -> (bool, bool) {
+    let up = !engine::player_opt(OPT_birth_force_descend);
+    let down = !st.borg.goal.rising
+        && crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none();
+    (up, down)
+}
+
+/// Every known staircase of the kinds the Borg will take, `(y, x)`.
+fn stair_grids(st: &BorgState, up: bool, down: bool) -> Vec<(i32, i32)> {
     let mut stairs = Vec::new();
-    for track in [&st.stairs.less, &st.stairs.more] {
+    for (track, take) in [(&st.stairs.less, up), (&st.stairs.more, down)] {
+        if !take {
+            continue;
+        }
         for i in 0..usize::try_from(track.num).unwrap_or(0) {
             stairs.push(track.at(i));
         }
@@ -390,19 +431,23 @@ pub(crate) struct Map {
     /// count (owner, 2026-11-23: "a tunable parameter to make it less
     /// strict").
     slack: i32,
+    /// The staircase kinds the Borg will take (`usable_kinds`).
+    up: bool,
+    down: bool,
 }
 
 impl Map {
     /// The map while the mode applies; `None` otherwise (no restriction).
-    pub(crate) fn of(st: &BorgState) -> Option<Map> {
+    pub(crate) fn of(st: &mut BorgState) -> Option<Map> {
         if !active(st) {
             return None;
         }
-        Some(Map::measure(st))
+        let (up, down) = usable_kinds(st);
+        Some(Map::measure(st, up, down))
     }
 
-    fn measure(st: &BorgState) -> Map {
-        let stairs = stair_grids(st);
+    fn measure(st: &BorgState, up: bool, down: bool) -> Map {
+        let stairs = stair_grids(st, up, down);
         let dist = distances(&stairs, |y, x| walkable(st, y, x));
         let lit_sources = entries(|y, x| lit_floor(st, y, x), |y, x| known_wall(st, y, x));
         let entry = distances(&lit_sources, |_, _| true);
@@ -424,6 +469,8 @@ impl Map {
                 value(Param::stair_scum_slack_per_level_percent),
                 st.borg.tr(BI_CLEVEL),
             ),
+            up,
+            down,
         };
         let area = safe_area(&map.dist, |y, x| walkable(st, y, x), |y, x| map.grid_safe(st, y, x));
         map.area = area;
@@ -539,10 +586,34 @@ fn keep_lowest(st: &mut BorgState, key: impl Fn(&BorgState, i32, i32) -> Option<
 pub(crate) fn filter_dark(st: &mut BorgState, map: &Map) {
     if map.routed {
         keep_lowest(st, |st, y, x| map.target_safe(st, y, x).then(|| map.steps(st, y, x)));
+        // Review of #1090, P2: between targets the Borg goes back toward the
+        // staircase instead of chaining outward along one corridor: when the
+        // nearest new target lies farther from the staircase than the Borg,
+        // it walks onto the staircase first and takes the next ring from
+        // there (`think`, `leave`).
+        let here = map.steps(st, st.borg.c.y, st.borg.c.x);
+        let nearest = (0..usize::try_from(st.flow.temp_n).unwrap_or(0))
+            .map(|k| st.flow.temp_at(k))
+            .map(|(y, x)| map.steps(st, y, x))
+            .min();
+        if nearest.is_some_and(|n| return_first(here, n)) {
+            sync_level(st);
+            if !st.stair_scum.returning {
+                borg_note(st, &format!("# Stair scum: the next target is {} steps out, the Borg {here}: back to the stairs first.", nearest.unwrap_or(0)));
+            }
+            st.stair_scum.returning = true;
+            st.flow.temp_n = 0;
+        }
     } else {
         note_no_route(st);
         keep_lowest(st, |_, y, x| Some(i32::from(map.at(&map.stair_cheb, y, x))));
     }
+}
+
+/// Back to the staircase before the next target (pure): the Borg is off
+/// the staircase and the nearest target is farther out than it is.
+fn return_first(here: i32, nearest_target: i32) -> bool {
+    here > 0 && nearest_target > here
 }
 
 /// An item, vein or monster target: inside the safe area (none while there
@@ -564,7 +635,7 @@ pub(crate) fn admit(st: &mut BorgState, map: &Map, y: i32, x: i32) -> bool {
 /// the staircase. Flights and the walk to the staircase it leaves by
 /// (`leave`, `GOAL_BORE`: the kind the depth plan allows may not be the
 /// nearest) are never refused; with no route nothing is.
-pub(crate) fn step_allowed(st: &BorgState, why: i32, y: i32, x: i32) -> bool {
+pub(crate) fn step_allowed(st: &mut BorgState, why: i32, y: i32, x: i32) -> bool {
     if !flag() || why == GOAL_FLEE || why == GOAL_BORE {
         return true;
     }
@@ -635,8 +706,15 @@ fn on_stairs(st: &BorgState) -> bool {
 
 /// While the mode applies and the Borg stands on a staircase: it rests
 /// there, it does not walk to another grid to recover.
-pub(crate) fn holds_on_stairs(st: &BorgState) -> bool {
-    active(st) && on_stairs(st)
+pub(crate) fn holds_on_stairs(st: &mut BorgState) -> bool {
+    if !active(st) || !on_stairs(st) {
+        return false;
+    }
+    let (up, down) = usable_kinds(st);
+    match u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) {
+        FEAT_LESS => up,
+        _ => down,
+    }
 }
 
 /// Stay still a turn (`,`, as the Recall wait does).
@@ -648,9 +726,9 @@ fn hold(st: &mut BorgState, why: &str) -> bool {
 }
 
 /// One step of the walk back onto the nearest known staircase.
-fn step_to_stairs(st: &mut BorgState, why: &str) -> bool {
+fn step_to_stairs(st: &mut BorgState, map: &Map, why: &str) -> bool {
     crate::borg_flow::borg_flow_clear(st);
-    for (y, x) in stair_grids(st) {
+    for (y, x) in stair_grids(st, map.up, map.down) {
         crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
     }
     crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
@@ -692,7 +770,7 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
             if here == 0 {
                 return hold(st, "holding on the stairs after a door opened");
             }
-            if step_to_stairs(st, "a door opened") {
+            if step_to_stairs(st, &map, "a door opened") {
                 return true;
             }
         }
@@ -709,7 +787,7 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
             (FEAT_CLOSED, PeekStage::Opened) if adjacent => {}
             (FEAT_OPEN | FEAT_BROKEN, PeekStage::Opened) => {
                 st.stair_scum.peek = Some(Peek { stage: PeekStage::Back, ..peek });
-                if map.routed && here > 0 && step_to_stairs(st, "stepping back from a door") {
+                if map.routed && here > 0 && step_to_stairs(st, &map, "stepping back from a door") {
                     return true;
                 }
                 return hold(st, "waiting a turn by the door it opened");
@@ -737,7 +815,7 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
             let r = map.radius_here(st);
             borg_note(st, &format!("# Stair scum: {here} steps from the stairs, outside the safe area (radius here {r}): returning."));
         }
-        st.stair_scum.returning = step_to_stairs(st, "stair scum return");
+        st.stair_scum.returning = step_to_stairs(st, &map, "stair scum return");
         return st.stair_scum.returning;
     }
     false
@@ -773,14 +851,20 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
     if !flag() {
         return false;
     }
-    if !Map::of(st).is_some_and(|m| m.routed) {
+    let Some(map) = Map::of(st).filter(|m| m.routed) else {
         return false;
-    }
+    };
     sync_level(st);
+    // The exploration flows found nothing because the Borg goes back to the
+    // staircase between targets (`filter_dark`): that walk, not a new level.
+    if st.stair_scum.returning {
+        st.stair_scum.returning = step_to_stairs(st, &map, "back to the stairs between targets");
+        if st.stair_scum.returning {
+            return true;
+        }
+    }
     let depth = st.borg.tr(BI_CDEPTH);
-    let up_ok = !engine::player_opt(OPT_birth_force_descend);
-    let down_ok = !st.borg.goal.rising
-        && crate::borg_prepared::prepared_c_for_decision(st, depth + 1).is_none();
+    let (up_ok, down_ok) = (map.up, map.down);
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     for up in leave_order(depth, up_ok, down_ok) {
         let (here, k) = if up { (FEAT_LESS, b'<') } else { (FEAT_MORE, b'>') };
@@ -813,13 +897,10 @@ pub(crate) fn leave_on_threat(st: &mut BorgState, pos_danger: i32, threshold: i3
     if !flag() || !active(st) || pos_danger < threshold {
         return None;
     }
+    let (up, down) = usable_kinds(st);
     match u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) {
-        FEAT_LESS if !engine::player_opt(OPT_birth_force_descend) => Some(true),
-        FEAT_MORE
-            if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() =>
-        {
-            Some(false)
-        }
+        FEAT_LESS if up => Some(true),
+        FEAT_MORE if down => Some(false),
         _ => None,
     }
 }
@@ -929,6 +1010,68 @@ mod tests {
         // A safe grid cut off by an unsafe one is not in the area.
         let area = safe_area(&dist, walk, |y, x| dist[index(y, x)] != 2);
         assert!(!area[index(5, 8)]);
+    }
+
+    /// Review of #1090, P1: a closed door is not on the retreat walk until
+    /// it is open; a corridor behind one is cut off from the staircase.
+    #[test]
+    fn a_closed_door_is_not_on_the_retreat() {
+        assert!(!walk_grid(FEAT_CLOSED, false, false));
+        assert!(walk_grid(FEAT_OPEN, false, true), "an open door is floor");
+        assert!(walk_grid(FEAT_BROKEN, false, true));
+        assert!(!walk_grid(FEAT_OPEN, true, true), "nor a known trap");
+        // A staircase at x = 5, a closed door at x = 7: the floor beyond has
+        // no route, the door itself is one past its neighbour.
+        let walk = |y: i32, x: i32| y == 5 && (5..=12).contains(&x) && x != 7;
+        let dist = distances(&[(5, 5)], walk);
+        assert_eq!(dist[index(5, 6)], 1);
+        assert_eq!(dist[index(5, 8)], FAR, "beyond the closed door");
+    }
+
+    /// Review of #1090, P1: only detection the exploration casts lifts the
+    /// mode. A CL3 Mage that knows Detect Monsters, with the shipped spell
+    /// gate at CL10, stays in it.
+    #[test]
+    fn only_used_detection_lifts_the_mode() {
+        assert!(!detection_used(true, 3, 10, false, false, false), "Mage CL3, gate 10");
+        assert!(detection_used(true, 10, 10, false, false, false), "at the gate");
+        assert!(detection_used(true, 3, 10, true, false, false), "dark-entry detection on");
+        assert!(detection_used(false, 1, 10, false, true, false), "the Detection spell, no gate");
+        assert!(detection_used(false, 1, 10, false, false, true), "a Rod of Detection");
+        assert!(!detection_used(false, 30, 0, false, false, false));
+    }
+
+    /// Review of #1090, P1: the staircases the safe area is measured from
+    /// are those the Borg takes. With only a down staircase known and the
+    /// Borg not prepared for the next depth, nothing anchors the area.
+    #[test]
+    fn the_area_counts_only_stairs_the_borg_takes() {
+        let walk = |y: i32, x: i32| y == 5 && (5..=12).contains(&x);
+        let none: Vec<(i32, i32)> = Vec::new();
+        assert!(distances(&none, walk).iter().all(|&d| d == FAR), "no usable staircase: no route");
+        let dist = distances(&[(5, 12)], walk);
+        assert_eq!(dist[index(5, 10)], 2, "measured from the usable one only");
+    }
+
+    /// Review of #1090, P2: two branches off one staircase. At the end of
+    /// branch A (2 steps out), with only targets 3 steps out (A's next grid
+    /// or B's), the Borg goes back first; a target nearer the staircase
+    /// than it (B at 1) is taken directly; on the staircase it never
+    /// returns.
+    #[test]
+    fn between_targets_it_returns_toward_the_stairs() {
+        // Row 5: branch B west of the staircase at x = 10, branch A east.
+        let walk = |y: i32, x: i32| y == 5 && (6..=14).contains(&x);
+        let dist = distances(&[(5, 10)], walk);
+        let here = i32::from(dist[index(5, 12)]);
+        assert_eq!(here, 2, "the Borg at A's second grid");
+        let a_next = i32::from(dist[index(5, 13)]);
+        let b_far = i32::from(dist[index(5, 7)]);
+        let b_near = i32::from(dist[index(5, 9)]);
+        assert!(return_first(here, a_next.min(b_far)), "both rings 3 out: back first");
+        assert!(!return_first(here, b_near), "B's grid 1 out: straight there (past the stairs)");
+        assert!(!return_first(here, here), "the same ring: no return");
+        assert!(!return_first(0, a_next), "on the staircase: go");
     }
 
     /// Review, P2: a door sound is placed by a changed door seen at or after

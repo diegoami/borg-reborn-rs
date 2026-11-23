@@ -6809,24 +6809,29 @@ engine's light, every step checked, the unplaced door sound).
 | `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:140` |
 | `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:147` |
 | `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:147` |
-| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:404` |
-| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:414` |
-| `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:407` |
-| `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:417` |
-| `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:424` |
-| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:684` |
+| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:455` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:457` |
+| `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:459` |
+| `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:460` |
+| `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:462` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:762` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
 plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
-is new with this task, docs/ZOO-INTERFACE.md), and no monster detection: a
-Detect Monsters, Reveal Monsters or Detection spell the Borg can cast
-(`borg_spell_legal`), or a Rod of Detection in the pack (`class.txt` and
-`object.txt`: the spells and the rod with `DETECT_VISIBLE_MONSTERS`; Detect
-Invisible and Detect Life do not count).
+is new with this task, docs/ZOO-INTERFACE.md), and no monster detection the
+exploration uses (review of #1090): a Rod of Detection in the pack or the
+Detection spell (`borg_light.rs` zaps and casts them with no level gate), or
+Detect Monsters from `light_detect_evil_spell_min_level` on (the Mage's 10 in
+the shipped `borg.txt`; or with `light_detect_dark_entry`). Reveal Monsters
+(cast only against an invisible attacker), Detect Invisible and Detect Life do
+not count.
 
 **Safe grids** (`borg_stair_scum.rs`, `Map`). *s(g)* is the walk from *g* to
-the nearest known staircase of either kind over known floor and closed doors,
-no known trap (below 60 HP the flows treat a known trap as a wall), 8-connected;
+the nearest known staircase the Borg will take (up unless descent is forced;
+down when prepared for the next depth and not rising: one rule for the area,
+the walk back, the level change and the departure on a threat) over known
+floor, no closed door (an open costs a turn and may fail) and no known trap
+(below 60 HP the flows treat a known trap as a wall), 8-connected;
 an unknown grid or rubble counts one step past its nearest walkable
 neighbour. *g* is safe when a monster first seen *D(g)* grids off survives
 being outrun: `attacks_on_retreat` lets it act `stair_scum_speed_ratio` times
@@ -6865,7 +6870,9 @@ a step every two levels.
 **The safe area** is every safe walkable grid joined to a staircase through
 safe grids. The dark flows (`borg_flow_dark_1..5`) keep only the candidates in
 it (unknown grids and doors next to it, safe themselves), nearest the
-staircase first; the item and monster flows (`take_select`, `scum_select`,
+staircase first, and when the nearest lies farther out than the Borg it walks
+back onto the staircase before taking it (no chaining outward along one
+corridor); the item and monster flows (`take_select`, `scum_select`,
 `borg_flow_kill`) skip targets outside it; `borg_flow_old` refuses any
 voluntary step (flights excepted, resumed flows included) that leaves it
 without coming nearer the staircase. After caution, a Borg outside it walks
