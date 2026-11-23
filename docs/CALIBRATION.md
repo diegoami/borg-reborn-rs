@@ -6934,10 +6934,14 @@ for the level.
    arrival is also one of the level), makes it leave by the nearest staircase
    it may take once it reaches one, whole first when rule 1 is on (the owner:
    "the form of a cursed level"). A trap is placed at its own grid: a `D` or
-   `W` at its target (this module's or `borg_play_step`'s disarm), a walk at
-   the step's grid (`goal.g`, one grid from the Borg when the message came),
-   so a teleport rune set off twice is one trap; a disarm message with no
-   target is not placed.
+   `W` at its target (this module's or `borg_play_step`'s disarm); a walk
+   where the Borg then stands (a confused step may be turned,
+   cmd-cave.c:1299-1312); a teleport rune at the step's grid (`goal.g`, one
+   grid from the Borg when the message came) unless it was confused, so a
+   rune set off twice is one trap. A trap it cannot place (a disarm message
+   with no target, a confused teleport) is not counted. The cut-off probe and
+   the walk back seed the free staircases first, an occupied one only as the
+   stair flows' #597 fallback.
 
 `trap_recover_max_hp` is 60, the core's own line for a known trap and above
 every CL1-6 character; #1061's stair_scum threshold (25) would not cover this
@@ -6945,14 +6949,14 @@ Warrior (31, then 57 HP). Per class with `trap_recover_max_hp__<class>`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:323` |
-| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:360` |
-| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:271` |
-| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:573` |
-| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:562` |
-| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:325` |
-| `trap_leave_near_count` | 0 | traps | 0–100 | `borg_trap_way.rs:326` |
-| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:435` |
+| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:341` |
+| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:389` |
+| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:285` |
+| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:625` |
+| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:610` |
+| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:343` |
+| `trap_leave_near_count` | 0 | traps | 0–100 | `borg_trap_way.rs:344` |
+| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:466` |
 
 ## #895: devices as variety (town)
 

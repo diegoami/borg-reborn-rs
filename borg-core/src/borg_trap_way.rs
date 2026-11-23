@@ -241,24 +241,38 @@ fn chebyshev(a: loc, b: loc) -> i32 {
     (a.x - b.x).abs().max((a.y - b.y).abs())
 }
 
-/// The grid of the trap a message reports (review of #1086). A `D` or `W`
+/// The grid of the trap a message reports (reviews of #1086). A `D` or `W`
 /// names its own grid (`target`, set by this module and by `borg_play_step`'s
-/// disarm, consumed at the next think). Otherwise a walk set it off: the step
-/// the Borg had just begun (`dest`, one grid from where it stood when the
-/// message arrived, `from`), so a teleport rune is its own grid and not the
-/// landing grid. With neither, a disarm message is not placed (`None`) and a
-/// walk is the Borg's grid now.
-pub(crate) fn trigger_grid(disarm: bool, target: Option<loc>, from: loc, dest: loc, here: loc) -> Option<loc> {
+/// disarm, consumed at the next think); a disarm message without one is not
+/// placed (`None`). A walk is placed where the Borg is now (`here`): the
+/// engine may turn a confused step (`player_confuse_dir`, cmd-cave.c:1299-1312),
+/// so the intended step is not the square. A teleport moved the Borg off
+/// its trap: the step it had just begun (`dest`, one grid from where it stood
+/// when the message arrived, `from`) when it was not confused, else unknown.
+pub(crate) fn trigger_grid(
+    disarm: bool,
+    teleport: bool,
+    confused: bool,
+    target: Option<loc>,
+    from: loc,
+    dest: loc,
+    here: loc,
+) -> Option<loc> {
     if target.is_some() {
         target
     } else if disarm {
         None
-    } else if chebyshev(from, dest) == 1 {
+    } else if !teleport {
+        Some(here)
+    } else if !confused && chebyshev(from, dest) == 1 {
         Some(dest)
     } else {
-        Some(here)
+        None
     }
 }
+
+/// The engine's teleport rune message (trap.txt:227).
+const TELEPORT_MSG: &[u8] = b"You hit a teleport trap!";
 
 /// `spread_blocked`'s trap test lets a flow leave a trap the Borg stands on
 /// (after a `W`, or a pit) while `trap_way_back` is on; entering any other
@@ -287,6 +301,10 @@ struct Pending {
     kind: Kind,
     ambiguous: bool,
     disarm: bool,
+    /// The trap moved the Borg away (a teleport rune), and whether it was
+    /// confused when the message arrived.
+    teleport: bool,
+    confused: bool,
     when: BorgTime,
     from: loc,
     dest: loc,
@@ -334,15 +352,26 @@ pub(crate) fn note_message(st: &mut BorgState, msg: &[u8]) {
     let Some((kind, ambiguous)) = classify(msg) else { return };
     let now = st.borg.time.now;
     let disarm = msg.starts_with(b"You set off the ");
+    let teleport = msg == TELEPORT_MSG;
     st.trap_way.pending = Some(match st.trap_way.pending {
         // The lines of one trap arrive together.
         Some(p) if p.when == now => Pending {
             kind: refine(p.kind, kind),
             ambiguous: p.ambiguous && ambiguous,
             disarm: p.disarm || disarm,
+            teleport: p.teleport || teleport,
             ..p
         },
-        _ => Pending { kind, ambiguous, disarm, when: now, from: st.borg.c, dest: st.borg.goal.g },
+        _ => Pending {
+            kind,
+            ambiguous,
+            disarm,
+            teleport,
+            confused: st.borg.tr(BI_ISCONFUSED) != 0,
+            when: now,
+            from: st.borg.c,
+            dest: st.borg.goal.g,
+        },
     });
 }
 
@@ -368,7 +397,9 @@ fn usable(st: &mut BorgState, feat: u32) -> bool {
     if feat == FEAT_LESS {
         !engine::player_opt(OPT_birth_force_descend)
     } else {
-        !st.borg.goal.rising && !borg_flow_stairs::more_refused(st, false)
+        !st.borg.goal.rising
+            && !borg_flow_stairs::continuing_up_stair_search(st)
+            && !borg_flow_stairs::more_refused(st, false)
     }
 }
 
@@ -417,8 +448,8 @@ fn place_pending(st: &mut BorgState) {
     let target = st.trap_way.target.take();
     let Some(p) = st.trap_way.pending.take() else { return };
     let kind = p.kind;
-    let Some(grid) = trigger_grid(p.disarm, target, p.from, p.dest, st.borg.c) else {
-        // A disarm of a trap the Borg did not name: still a trap that may hurt.
+    let Some(grid) = trigger_grid(p.disarm, p.teleport, p.confused, target, p.from, p.dest, st.borg.c) else {
+        // A trap the Borg cannot place: still a trap that may hurt.
         if weak(st) && param(Param::trap_recover) != 0 && !whole(st) && !st.trap_way.recovering {
             st.trap_way.recovering = true;
             borg_note(st, "# Trap: hurt by a trap, back to the stairs to recover");
@@ -472,8 +503,25 @@ fn stair_cost(st: &mut BorgState, stairs: &[loc], through_traps: bool) -> u8 {
     if stairs.is_empty() {
         return 255;
     }
+    // As the stair flows (`enqueue_free_stairs`, #597): the free staircases
+    // first; one a monster is parked on only when no free one entered the
+    // flow (review of #1086).
+    let mut enqueued = 0;
+    let mut parked = Vec::new();
     for g in stairs {
+        if st.cave.grid(g.x, g.y).kill != 0 {
+            parked.push(*g);
+            continue;
+        }
         borg_flow::borg_flow_enqueue_grid(st, g.y, g.x);
+        if st.flow.cost_at(g.y, g.x) == 0 {
+            enqueued += 1;
+        }
+    }
+    if crate::borg_caution::stair_parked_fallback(enqueued, parked.len()) {
+        for g in parked {
+            borg_flow::borg_flow_enqueue_grid(st, g.y, g.x);
+        }
     }
     let was = std::mem::replace(&mut st.flow.through_traps, through_traps);
     borg_flow::borg_flow_spread_stairs(st, 250, false, true, false, -1, false);
@@ -751,17 +799,28 @@ mod tests {
     #[test]
     fn a_teleport_rune_is_its_own_grid_not_the_landing() {
         let (from, rune) = (at(10, 10), at(11, 10));
-        assert_eq!(trigger_grid(false, None, from, rune, at(40, 30)), Some(rune));
-        assert_eq!(trigger_grid(false, None, from, rune, at(5, 50)), Some(rune));
+        assert_eq!(trigger_grid(false, true, false, None, from, rune, at(40, 30)), Some(rune));
+        assert_eq!(trigger_grid(false, true, false, None, from, rune, at(5, 50)), Some(rune));
+        // Confused, the step may have been turned: unknown.
+        assert_eq!(trigger_grid(false, true, true, None, from, rune, at(40, 30)), None);
+        // No step under way (a stale goal): unknown.
+        assert_eq!(trigger_grid(false, true, false, None, from, at(30, 30), at(40, 30)), None);
     }
 
     #[test]
     fn a_disarm_is_placed_at_its_target_only() {
         let t = at(11, 10);
-        assert_eq!(trigger_grid(true, Some(t), at(10, 10), at(30, 30), at(10, 10)), Some(t));
-        assert_eq!(trigger_grid(true, None, at(10, 10), at(11, 10), at(10, 10)), None);
-        // A walk with no step under way (a stale goal) is where the Borg is.
-        assert_eq!(trigger_grid(false, None, at(10, 10), at(30, 30), at(10, 10)), Some(at(10, 10)));
+        assert_eq!(trigger_grid(true, false, false, Some(t), at(10, 10), at(30, 30), at(10, 10)), Some(t));
+        assert_eq!(trigger_grid(true, false, false, None, at(10, 10), at(11, 10), at(10, 10)), None);
+    }
+
+    /// A confused walk meant for (11,10) is turned onto a gas trap at
+    /// (10,11): the trap is where the Borg stands, not the intended square.
+    #[test]
+    fn a_confused_walk_is_placed_where_the_borg_landed() {
+        let (from, meant, landed) = (at(10, 10), at(11, 10), at(10, 11));
+        assert_eq!(trigger_grid(false, false, true, None, from, meant, landed), Some(landed));
+        assert_eq!(trigger_grid(false, false, false, None, from, meant, landed), Some(landed));
     }
 
     /// The turn after a `W` onto a trap that stays: the Borg stands on it in
