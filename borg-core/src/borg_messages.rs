@@ -1245,6 +1245,40 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     }
 }
 
+/// borg-reborn-rs (#941): a message about the player's own state.
+fn player_feels(msg: &[u8]) -> bool {
+    prefix(msg, b"You feel ")
+}
+
+/// borg-reborn-rs (#1032): a message whose subject is the player, other than
+/// the "You feel ..." ones `trait_timed_sync` governs (#941), so that the two
+/// switches stay separate.
+fn player_subject(msg: &[u8]) -> bool {
+    prefix(msg, b"You ") && !player_feels(msg)
+}
+
+#[cfg(test)]
+mod player_feels_tests {
+    #[test]
+    fn the_end_of_haste_is_the_players_own() {
+        assert!(super::player_feels(b"You feel yourself slow down."));
+        assert!(super::player_feels(b"You feel yourself speed up."));
+        assert!(!super::player_feels(b"The cave spider slows down."));
+        assert!(!super::player_feels(b"3 cave spiders start moving faster."));
+    }
+
+    #[test]
+    fn the_end_of_confusion_stun_and_paralysis_is_the_players_own() {
+        assert!(super::player_subject(b"You are no longer confused."));
+        assert!(super::player_subject(b"You are no longer stunned."));
+        assert!(super::player_subject(b"You can move again."));
+        assert!(!super::player_subject(b"You feel yourself slow down."), "#941's");
+        assert!(!super::player_subject(b"The kobold is no longer confused."));
+        assert!(!super::player_subject(b"Your mystic shield crumbles away."));
+        assert!(!super::player_subject(b"Young blue dragons are no longer stunned."));
+    }
+}
+
 /// The monster messages of `borg_parse_aux` (pain, kills, deaths, blinks,
 /// misses, hits, spells, states), for messages that do not start with
 /// "Your ". Returns true where C returns.
@@ -1256,8 +1290,16 @@ fn parse_monster_message(st: &mut BorgState, msg: &[u8], len: i32) -> bool {
     let who_after = |tmp: usize| who_text(size_of_int(1 + len - (tmp as i32 + 1)), &msg[tmp..]);
 
     // "It screams in pain." (etc)
+    // borg-reborn-rs (#941): the player's own "You feel yourself slow down." /
+    // "... speed up." (player_timed.txt:197, 203) are not monster pain.
+    let own = player_feels(msg)
+        && crate::borg_trait::timed_sync(crate::params::value(crate::params::Param::trait_timed_sync));
+    // borg-reborn-rs (#1032): no monster message has "You" as its subject; the
+    // player's "You are no longer confused.", "... stunned." and "You can move
+    // again." (player_timed.txt:227, 283, 219) are not monster pain either.
+    let own = own || (player_subject(msg) && crate::params::value(crate::params::Param::messages_player_not_pain) != 0);
     let pain = st.messages.suffix_pain.as_ref().expect("pain messages not initialised");
-    if let Some(p) = pain.iter().find(|p| suffix(msg, p)) {
+    if let Some(p) = pain.iter().find(|p| !own && suffix(msg, p)) {
         let who = who_before(p.len());
         borg_react(st, msg, &tagged(b"PAIN:", &who));
         return true;

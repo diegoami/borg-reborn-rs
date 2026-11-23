@@ -8406,3 +8406,91 @@ isolated contact arm (RULES 14).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `fast_fragile_contact_max` | 0 | monsters | 0–100 | `borg_fast_fragile.rs:675` |
+
+## The speed flag and the end of haste (#941)
+
+The engine's end of haste, "You feel yourself slow down." (`player_timed.txt:194-198`),
+matched the monster pain suffix "slow[s] down." in `parse_monster_message` before
+the temporary-effect table was tried, and the timer fallback in `borg_trait.rs`
+only ever sets `temp.fast`. After its first Potion of Speed the Borg believed it
+was hasted for the rest of the game. Every speed rule skipped itself as "already
+fast", and the danger counted the Borg at +10 (seed 2008390085, borg-zoo#596: from
+56,229 to the death at 64,483). At 1 the flag follows `TMD_FAST`/`TMD_SPRINT`/`TMD_TERROR`
+both ways, and "You feel ..." messages skip the pain table. Compiled 0 (C).
+
+**Shipped 1** (P8, owner 2026-11-22: the stuck flag is a candidate ship-blocker,
+and a fix shipped 0 leaves it in shipped play). The case is correctness, not a
+measured improvement (RULES 14): on seed 2008390085, at 0 the flag stays set
+with the engine timer at 0 from the end of the first haste to the end of the
+game; at 1 it equals the timer at every Borg update, and later Potions of Speed
+are drunk again. The engine messages the pain skip changes are exactly two,
+"You feel yourself slow down." and "You feel yourself speed up."
+(`player_timed.txt:197`, `:203`); no other "You feel ..." message of
+`lib/gamedata` or `src` ends in a pain suffix. borg-zoo#652 (specimen
+`67a0c69d`, 378 starts: pilot 18, small 90, medium 270), the sync arm
+against the control: small and medium (360 starts) 8 deaths against 7, 0 rescued, 1
+newly killed (Half-Orc Warrior 1824713728, killed by a gallant at turn
+70,353, about 1,100 turns after the games split at the end of a haste);
+weighted means CL 6.206 against 6.219 and max DL 2.464 against 2.453. The
+pilot, a separate 18-start tier: the same one death in both arms, means CL/max
+DL 6.39/2.39 against 6.56/2.56. The replay of 1824713728 describes how the two
+games split; it does not establish that the sync plays as well, and these
+numbers are no verdict either way. It ships 1 for the source-level reason
+above: the Borg's flag is then synchronized with the engine timer (owner,
+2026-11-23: "all inactive but the stale-speed flag"). Seed 224's local death
+with the sync on (62,200) is not recorded in borg-cemetery, a RULES 12
+evidence gap (handover of #941).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `trait_timed_sync` | 0 | flag | 0–1 | `borg_trait.rs:2814` |
+
+## The player's own messages and the speed of timed effects (#1032, #1033)
+
+Two more places where the Borg's reading of its own state differed from the
+engine, found while checking #941 and fixed in the same PR (owner, 2026-11-22).
+
+**`messages_player_not_pain`** (#1032). Three of the player's end-of-effect
+messages, "You are no longer confused.", "You are no longer stunned." and "You
+can move again." (`player_timed.txt:227`, `:283`, `:219`), matched the pain
+suffixes "[is|are] no longer confused." (etc.) of `MON_MSG_REPOSITORY`. The Borg
+reacted to pain of a monster named "You": a player-ghost guess, a kill search
+and `target_worked` (`borg_update.rs`). At 1 a message whose subject is "You"
+skips the pain table, except the "You feel ..." messages, which stay
+`trait_timed_sync`'s so that the two switches remain separate. Every "You ..."
+message of `lib/gamedata` and `src` was checked against the pain list: only these
+three (and #941's two) match, and no monster message has "You" as its subject. The
+states themselves (confusion, stun, paralysis) were read from the timers either way.
+
+**`trait_speed_timed`** (#1033). `BI_SPEED` added +10 for FAST or SPRINT, else
++5 for TERROR, and ignored SLOW (`borg_trait.rs:858-872`, C's). The engine adds
++10 for FAST or SPRINT, -10 for SLOW and +10 for TERROR, independently
+(`player-calcs.c:2176-2187`). At 1 the Borg adds the same. A synthetic check
+(labelled as such: Human Warrior, seed 11, `start-depth=4`,
+`start-monsters=tamer:2`, the tamer casts SLOW) was slowed from turn 320 to 387:
+at 0 `BI_SPEED` stayed 110 while the engine's speed was 100; at 1 they were equal
+throughout. C's other double count, +10 in `borg_danger` while `temp.fast` is
+set on top of `BI_SPEED`'s own +10, is unchanged.
+
+**Residual, before #1033 is turned on.** `borg_danger` adds +10 to the
+player's speed whenever `temp.fast` is set (`borg_danger.rs:2169-2171`), and
+`temp.fast` is also set by TERROR (`trait_timed_sync`'s OR of FAST, SPRINT and
+TERROR, `borg_trait.rs:2814`; C's fallback sets it for TERROR too). With TERROR
+alone and a base speed of 110, the engine's speed is 120
+(`player-calcs.c:2176-2187`), but the danger models 125 at
+`trait_speed_timed = 0` (115 + 10) and 130 at 1 (120 + 10). The +10 line is
+unchanged; turning #1033 on makes the TERROR overcount larger. A fix of that
+line must keep the defense probe's deliberate hypothetical haste
+(`borg_fight_defend.rs:437-439`: it sets `temp.fast` for one danger call, after
+rejecting a Borg already fast, to price a speed potion or spell), so it cannot
+simply drop the +10 for every `temp.fast`. Not done here.
+
+Both are compiled 0 (C) and **shipped 0** (owner, 2026-11-23: of this PR only
+the speed flag, `trait_timed_sync`, ships on). No replayed game changes its keys
+with either (smoke, seed 2008390085, seed 224, the tamer check); at 1 smoke's
+messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1300` |
+| `trait_speed_timed` | 0 | flag | 0–1 | `borg_trait.rs:885` |

@@ -87,6 +87,10 @@ PINNED_TOWN_SETTINGS = [
     # #1140 shipped deal_with_poison (the poison triage) after these
     # incidents (owner, 2026-11-23: "merge with deal_with_poison 1").
     ("deal_with_poison", 0),
+    # #941: the speed flag synced to the engine timer, shipped after the
+    # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
+    # end, which the recorded turns depend on).
+    ("trait_timed_sync", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
