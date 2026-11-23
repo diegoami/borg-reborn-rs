@@ -37,7 +37,7 @@ use crate::borg_flow_kill::{
     borg_flow_kill_direct, borg_near_monster_type,
 };
 use crate::borg_flow_misc::{
-    borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
+    borg_continue_recovery, borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
     borg_flow_vein, borg_twitchy,
 };
 use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
@@ -112,8 +112,6 @@ const GOAL_BORE: i32 = 6;
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
 const GOAL_VAULT: i32 = 8;
-/// `GOAL_RECOVER` (borg-flow.h)
-const GOAL_RECOVER: i32 = 9;
 /// `GOAL_DIGGING` (borg-flow.h)
 const GOAL_DIGGING: i32 = 10;
 
@@ -767,6 +765,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let town_retreat = crate::borg_town_hunt::enabled(st)
         && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
 
+    // borg-reborn-rs (#1060, reviews of #1071): end the potion-test hold on
+    // danger or a move before an early fight or caution can act and return.
+    crate::borg_item_use::potion_test_hold_validate(st);
+
     // #760/#759/#878: an attack-on-sight target, a lone slow monster (with
     // lone_slow_attack) or a winning fight owns the action before even an
     // out-of-light wait or a depth-return flight.
@@ -839,6 +841,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // priority attack deferred for a cure goes on (only with the ratio on).
     if crate::borg_fight_attack::fast_fragile_deferred_attack(st) {
         return choice!("fast_fragile_deferred_attack");
+    }
+
+    // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
+    if crate::borg_item_use::potion_test_hold(st) {
+        return choice!("potion_test_hold");
     }
 
     // #789: use the normal scary-town stair flow for a retreat without
@@ -982,7 +989,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
-        && borg_flow_old(st, GOAL_RECOVER) {
+        && borg_continue_recovery(st) {
         return choice!("borg_flow_old");
     }
 

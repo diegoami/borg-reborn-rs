@@ -10,6 +10,33 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Waiting out a bad test potion (#1060)
+
+The registry now holds **2445** parameters (2444 before; one added). Owner,
+2026-11-22: "a character drank a potion of poison and then goes happily
+exploring" (seed 1928291203: a Poison test, then a 76-step walk to the stairs
+at 1 HP a turn, 26 -> 18). The test's HP floor, `item_test_unknown_min_hp`,
+first added here, is #1063's section below (compiled 25, shipped 60, with the
+known-cure exemption).
+
+- **`item_test_unknown_hold_turns`** (compiled 180, **shipped 180**: Blindness, the longest supported potion, lasts up to 175 ticks): after a test,
+  for at most this many world ticks (10 game turns each, the clock the status
+  timers run on), on the test grid and level, while a harmful status it caused
+  lasts (a Slowness or Surprise's stat scramble included, read from their
+  timers) and the danger here is 0,
+  the Borg stays where it tested (`potion_test_hold`, right after
+  `borg_caution`): the ordinary in-place recovery (`borg_recover`) first, else
+  it stands still (`,`). `potion_test_hold_validate`, before the early fight
+  (`fight_before_flight`) and `borg_caution`, ends the hold on danger, a move
+  or a new level. 0 = no hold. The cap bounds when a hold decision can start:
+  a recovery rest (`R&`) that `borg_recover` starts inside the hold runs in the
+  engine until the status clears or something disturbs it, past the cap if
+  need be, as the same rest chosen by the ordinary order would.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_hold_turns` | 180 | turns | 0–1000 | `borg_item_use.rs:254` |
+
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
 The registry now holds **2442** parameters (2441 before; one added). From the death of the
@@ -1847,7 +1874,7 @@ The registry now holds **2200** parameters (2199 after #625; one added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:452` |
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:550` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
@@ -6202,14 +6229,14 @@ them.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:53` |
-| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:443` |
+| `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:464` |
 | `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:698` |
 | `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:700` |
-| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:753` |
-| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:449` |
-| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:450` |
-| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:451` |
-| `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:452` |
+| `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:774` |
+| `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:470` |
+| `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:471` |
+| `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:472` |
+| `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:473` |
 | `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:612` |
 | `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:588` |
 | `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:547` |
