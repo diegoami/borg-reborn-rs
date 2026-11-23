@@ -176,9 +176,11 @@ The findings are in [#1075](https://github.com/diegoami/borg-reborn-rs/pull/1075
 
    A pin checks that the landing check writes the record.
 
-Re-checked: `cargo test --release -p borg-core` 723 passed, and
+Re-checked after merging track-p `bf8d2604`: `cargo test --release -p
+borg-core` 724 passed, fmt, clippy, the workspace tests, the citations and
+`git diff --check` pass, smoke is 4/4 identical to `smoke-borg-rs`, and
 `scripts/borg-core-vendor.py check` is ok for the two vendored files touched
-(`borg.rs`, `borg_danger.rs`). The other checks are below. The replays on
+(`borg.rs`, `borg_danger.rs`). The replays on
 `206cf4e7` plus the patch:
 - The control still reproduces the zoo's keys.
 - `newcomer_wait`: the same two games, alive (`9783cb54a70f3570`,
