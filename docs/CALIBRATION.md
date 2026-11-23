@@ -508,7 +508,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5921` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5923` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -537,7 +537,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5938` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:5940` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -563,7 +563,7 @@ chose them (RULES 14).
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1188` |
 | `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3415` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3322` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3324` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:8084` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:8084` |
 
@@ -875,8 +875,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2158` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2481` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2483` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2516` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2509` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -1874,7 +1874,7 @@ The registry now holds **2200** parameters (2199 after #625; one added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:452` |
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:550` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
@@ -3215,8 +3215,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:607` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2443` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2331` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2469` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2343` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -5633,7 +5633,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6205` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6207` |
 
 ## C Borg dive gates (#768)
 
@@ -7014,7 +7014,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2372` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2384` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7104,7 +7104,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2434` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2446` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7287,20 +7287,21 @@ it, in #1080's pooled table. That table pools every build, and recent runs are
 a quarter of the Human mean gain, and the base puts the threshold halfway
 between the mean max HP at the target and the next CL (CON ignored). The owner
 then raised every `explore_bfs_max_hp` by 10 (2026-11-23: "increase those
-explore_bfs_max_hp by 10"); the table gives the shipped values and the levels
-they reach:
+explore_bfs_max_hp by 10") and lowered them by 3 ("reduce those numbers ...
+by 3", #1110's PR); the table gives the shipped values and the levels they
+reach:
 
 | class | hit die (Human) | target CL | `explore_bfs_max_hp` | `explore_bfs_hp_per_level` | Human through | all races through |
 |---|---:|---:|---:|---:|---:|---:|
-| warrior | 19 | 1 | 31 | 2 | CL2 | CL2–3 |
-| mage | 10 | 4 | 35 | 1 | CL6 | CL5–10 |
-| druid | 12 | 4 | 36 | 2 | CL6 | CL5–10 |
-| priest | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
-| necromancer | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
-| paladin | 16 | 2 | 34 | 2 | CL4 | CL3–5 |
-| rogue | 14 | 3 | 36 | 2 | CL5 | CL4–7 |
-| ranger | 15 | 4 | 44 | 2 | CL6 | CL5–8 |
-| blackguard | 18 | 1 | 30 | 2 | CL2 | CL2–3 |
+| warrior | 19 | 1 | 28 | 2 | CL2 | CL1–3 |
+| mage | 10 | 4 | 32 | 1 | CL6 | CL4–9 |
+| druid | 12 | 4 | 33 | 2 | CL6 | CL4–9 |
+| priest | 12 | 3 | 28 | 2 | CL4 | CL3–7 |
+| necromancer | 12 | 3 | 28 | 2 | CL4 | CL3–7 |
+| paladin | 16 | 2 | 31 | 2 | CL3 | CL2–4 |
+| rogue | 14 | 3 | 33 | 2 | CL4 | CL3–6 |
+| ranger | 15 | 4 | 41 | 2 | CL5 | CL4–7 |
+| blackguard | 18 | 1 | 27 | 2 | CL2 | CL2–3 |
 
 The race delta of #1061's threshold (`__<race>`) is not part of this change:
 the suffix is #1061's, and this threshold takes it when that lands.
@@ -7311,10 +7312,44 @@ below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:871` |
-| `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:875` |
-| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1030` |
-| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:876` |
+| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:878` |
+| `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:881` |
+| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1156` |
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:882` |
+
+## More food and light while breadth-first exploration applies (#1110)
+
+The owner (2026-11-23), after #1085 shipped breadth-first exploration on: "I
+guess we should plan a little more food and light if we do that". The order
+walks back toward the stairs between targets, so a trip of the same depth
+takes more game turns. The live town planner (`borg_town_capability::observe`)
+sizes food from the trip (`journey.turns / borg_town_food_turns` rations,
+never below the five-ration floor) and light from the larger of the trip and
+`town_light_reserve_turns` (20,000 shipped); both floors usually dominate, so
+lengthening the trip alone would buy nothing more.
+
+While breadth-first exploration would apply to the character
+(`breadth_first_applies`: `explore_breadth_first` on and max HP below
+`explore_bfs_max_hp` + `explore_bfs_hp_per_level` x CL, asked in town too),
+the food target, floor included (`food_curve`), and the light goal, reserve
+included, are `explore_bfs_food_percent` and `explore_bfs_light_percent` of
+today's. Compiled 100; shipped 150 (owner: "a little more"): 7.5 rations
+instead of 5, and 30,000 light turns instead of 20,000 (two more torches).
+Not measured (RULES 14). The smoke Priest buys 3 torches and 7 rations.
+
+One goal for every reader (review of #1113): `borg_light::fuel_goal` gives
+the scaled light goal to the planner's curve, to the torch replenishment that
+runs before other shopping (`borg_town_shadow`), and to the dungeon guards
+that keep fuel from being thrown (`borg_fight_attack`) or junked
+(`borg_light::keep_fuel_stack`). Without that, the replenishment stopped at
+20,000 turns and combat could throw the oil bought for the extra 10,000.
+Both percents are at least 100, so the five rations `borg_prepared` asks for
+stay planned.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:896` |
+| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:896` |
 
 ## stair_scum (#1061)
 
@@ -7323,7 +7358,7 @@ The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
 `studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
 character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
-**2459** parameters (9 added to `track-p` `69a5ff40`). `stair_scum` is compiled 0 and **shipped 1** in
+**2461** parameters (9 added to `track-p` `40c1c963`). `stair_scum` is compiled 0 and **shipped 1** in
 `harness/borg.txt` (owner, 2026-11-23: "ok let us merge with those settings"),
 with the owner's `byclass` arm of borg-zoo#721: `stair_scum_max_hp = 20`, slack
 per class in `harness/borg_<class>.txt` (Druid and Necromancer 1, Mage and Priest
