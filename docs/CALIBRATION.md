@@ -7769,10 +7769,17 @@ The counter is read from the engine (`player_timed(TMD_POISONED)`), the
 owner's choice for #1136, as `borg_town_capability` and `borg_fast_fragile`
 already do. The healing carried counts each Cure Light Wounds (20 HP) and
 Cure Serious Wounds (40 HP; `HEAL_HP` `dice:20` and `dice:40`, object.txt,
-pinned by a unit test) at most `max HP - 1`, the most it can give drunk at
-1 HP. A cure is carried when `BI_ACUREPOIS`, `BI_ACCW`, `BI_AHEAL`,
-`BI_AEZHEAL` or `BI_ALIFE` is above 0 or Cure Poison or Herbal Curing is
-legal; Minor Healing makes the healing renewable. With `deal_with_poison` on:
+pinned by a unit test) at most `max HP - line`, what it restores drunk at B's
+line (the next turn's poison plus `poison_late_drink_margin`; review of #1146:
+`max HP - 1` credited 18 HP at max HP 19 where the drink at 3 HP gives 16).
+A cure counts only when it is usable now: Cure Poison or Herbal Curing
+castable (mana and fail rate, `borg_spell_okay_fail`), a charged rod or staff
+of Curing, a charged activation that cures poison or is Cure Critical Wounds,
+a food or mushroom with `CURE:POISONED`, Neutralize Poison or Cure Critical
+Wounds (review of #1146: a known spell without mana counted, a rod or staff
+of Curing did not). Healing, *Healing* and Life are counted apart (F's last
+resort); spells of healing are not counted at all (their mana is finite).
+With `deal_with_poison` on:
 
 - **A, the note.** While poisoned: the counter, its decay, the HP still to
   come, the HP, the healing carried and the verdict ("covered", "more than
@@ -7799,7 +7806,18 @@ legal; Minor Healing makes the healing renewable. With `deal_with_poison` on:
 - **C, leave while it can be fixed.** In the dungeon, when the poison still
   to come is at least the HP plus the healing carried, the Borg starts
   leaving and fleeing and sets `rising` (each level climbs on); it reads
-  Recall below DL1, or on DL1 with no known up staircase.
+  Recall below DL1, or on DL1 with no known up staircase, only when the HP
+  and the healing outlast Recall's delay: its longest, 34 world ticks
+  (`15 + randint0(20)`, effect-handler-general.c:1145, counted down a tick
+  at a time, game-world.c:709-711), or with no up staircase known its
+  shortest, 15. Otherwise it walks (review of #1146: Recall at 8 HP with 12
+  poison to come).
+- **The early fights wait.** `fight_before_flight` (attack on sight, the
+  lone slow monster, the winning fight) runs before `borg_caution`; while
+  poisoned it defers when an awake poisoner is next to the Borg, when F
+  would use a cure, or when the poison is past the HP and the healing
+  (`defers_early_fight`; review of #1146: the lone-slow attack kept hitting
+  an adjacent poisoner).
 - **D, the town triage.** In town, while the poison still to come is at
   least the HP: the town plan's first action (`borg_town_live::choose`,
   before the excess-copies trip) is a purchase at the Alchemist, from the
