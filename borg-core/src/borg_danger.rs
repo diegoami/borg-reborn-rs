@@ -20,7 +20,9 @@
 //! and its race from the engine's `r_info`.
 
 // borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
-use crate::params::{value as param, Param};
+// borg-reborn-rs (#878): `danger_value` zeroes the fear terms inside
+// `params::damage_only`; elsewhere it is `value`.
+use crate::params::{danger_value as param, Param};
 use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_feature_protected};
 use crate::borg_cave_view::BORG_VIEW;
@@ -2618,9 +2620,13 @@ pub fn borg_danger(
         return param(Param::danger_maximum);
     }
 
+    // borg-reborn-rs (#878): inside `params::damage_only` the fear maps are
+    // fear, not hit points: skipped.
+    let fear_maps = !crate::params::damage_only_active();
+
     // Base danger (from regional fear) but not within a vault.  Cheating the
     // floor grid
-    if !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= param(Param::danger_regional_fear_max_depth) {
+    if fear_maps && !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= param(Param::danger_regional_fear_max_depth) {
         p += i32::from(st.danger.fear_region[(y / 11) as usize][(x / 11) as usize]) * c;
     }
 
@@ -2632,7 +2638,7 @@ pub fn borg_danger(
     // Added danger (from a lot of monsters).
     // But do not add it if we have been bouncing for too long, or monster's
     // in a vault.  The fear_monsters[][] can induce some bouncy behavior.
-    if i32::from(st.borg.antibounce_count) <= param(Param::danger_monster_fear_bounce_limit) && !engine::square_isvault(x, y) {
+    if fear_maps && i32::from(st.borg.antibounce_count) <= param(Param::danger_monster_fear_bounce_limit) && !engine::square_isvault(x, y) {
         p += i32::from(st.danger.fear_monsters[y as usize][x as usize]) * c;
     }
 
@@ -2662,6 +2668,13 @@ pub fn borg_danger(
     } else {
         p
     }
+}
+
+/// borg-reborn-rs (#878): `borg_danger` without its fear prices
+/// (`params::damage_only`): the danger_*_fear terms, the breeder and friends
+/// bonuses and the fear maps at 0.
+pub(crate) fn borg_danger_damage_only(st: &mut BorgState, y: i32, x: i32, c: i32, average: bool, full_damage: bool) -> i32 {
+    crate::params::damage_only(|| borg_danger(st, y, x, c, average, full_damage))
 }
 
 #[cfg(test)]
