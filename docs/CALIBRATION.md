@@ -7420,7 +7420,7 @@ secret-door searches). In the 20 replays of the PR, after the breadth-first
 exit, 578 of the 587 secret-door searches were C's: characters above the
 breadth-first threshold, whose far exploration had found nothing while no
 reason to leave applied yet. At `explore_c_leave_when_done = 1` (compiled 0,
-shipped 0), when the far methods (4 and 5; method 5 scans the whole known
+shipped 1: owner, 2026-11-23, "merge it but with all settings on"), when the far methods (4 and 5; method 5 scans the whole known
 map within the leash) find nothing, the think is marked exhausted.
 `borg_think_dungeon` then calls `borg_leave_level` right after the far
 exploration, before the door-finding spell and the secret-door search. The
@@ -7839,7 +7839,7 @@ this change: #1098's point 6 (fight near the stairs or leave, and a Phase
 Door that would land outside *R* or in never-seen grids is not an escape). It
 is left to the fight race (#926), #1061 and the Phase Door switches of #1066.
 
-The switch ships 0 and its numbers are hypotheses (RULES 14). borg-zoo
+The switch ships 1 (owner, 2026-11-23: "merge it but with all settings on"); its numbers are hypotheses (RULES 14). borg-zoo
 measures `explore_mixed = 1` alone, with `explore_breadth_first = 1` (the
 full ladder), and with two values of `explore_mix_contact_damage`. With this
 section the registry holds **2489** parameters (`track-p` `a5cac1cd` plus
