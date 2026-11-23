@@ -47,6 +47,8 @@ pub struct BorgState {
     pub trip: crate::borg_trip::TripState,
     /// borg-reborn-rs (#840): the basic kit's notes and the purse at the last town think.
     pub kit: crate::borg_kit::KitState,
+    /// borg-reborn-rs (#1153): the movement-loop detector.
+    pub loops: crate::borg_loop::LoopState,
     /// borg-reborn-rs (#1067): traps set off on this level, the way back they cut.
     pub trap_way: crate::borg_trap_way::TrapWayState,
     /// borg-reborn-rs (#1061): the stair_scum mode's doors and walks on this level.

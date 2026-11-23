@@ -132,3 +132,4 @@ mod borg_leash; // borg-reborn-rs (#1062)
 mod borg_town_hunt;
 // borg-reborn-rs (#1061): the stair_scum exploration mode.
 mod borg_stair_scum;
+mod borg_loop; // borg-reborn-rs (#1153)

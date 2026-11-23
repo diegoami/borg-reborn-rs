@@ -644,6 +644,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     crate::borg_flow::observe_flight_retreats(st);
+    crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;
     let lightless = crate::borg_lightless::update(st);
 
@@ -896,6 +897,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Important goals ***/
+
+    // borg-reborn-rs (#1153): a movement loop (n moves among a few grids,
+    // the map unchanged, no danger) is broken before any flow continues.
+    if crate::borg_loop::break_loop(st) {
+        return choice!("break_loop");
+    }
 
     /* Continue flowing towards good anti-summon grid */
     if borg_flow_old(st, GOAL_DIGGING) {

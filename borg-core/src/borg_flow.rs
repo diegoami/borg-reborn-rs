@@ -1502,6 +1502,11 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
 
 /// Take one "step" towards the given location, return true if possible.
 fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
+    // borg-reborn-rs (#1153): a loop's grids closed by the loop breaker.
+    if crate::borg_loop::step_banned(st, y2, x2) {
+        return false;
+    }
+
     /* Breeder levels, close all doors */
     if st.borg.near.breeder && close_breeder_door(st, y2, x2) {
         return true;
