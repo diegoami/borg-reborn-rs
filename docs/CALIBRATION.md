@@ -7774,10 +7774,14 @@ line (the next turn's poison plus `poison_late_drink_margin`; review of #1146:
 `max HP - 1` credited 18 HP at max HP 19 where the drink at 3 HP gives 16).
 A cure counts only when it is usable now: Cure Poison or Herbal Curing
 castable (mana and fail rate, `borg_spell_okay_fail`), a charged rod or staff
-of Curing, a charged activation that cures poison or is Cure Critical Wounds,
-a food or mushroom with `CURE:POISONED`, Neutralize Poison or Cure Critical
-Wounds (review of #1146: a known spell without mana counted, a rod or staff
-of Curing did not). Healing, *Healing* and Life are counted apart (F's last
+of Curing that `borg_zap_rod` / `borg_use_staff_fail` would fire (their
+`*_use_max_failure` limits, `device_would_fire`), a charged activation that
+cures poison or is Cure Critical Wounds, a food or mushroom with
+`CURE:POISONED` unless shapechanged (`borg_eat` refuses then), Neutralize
+Poison or Cure Critical Wounds (reviews of #1146: a known spell without mana
+counted, a rod or staff of Curing did not, the device probe read the equip
+limits). Next to an awake poisoner a carried cure does not make E and C
+stand aside: F declines there. Healing, *Healing* and Life are counted apart (F's last
 resort); spells of healing are not counted at all (their mana is finite).
 With `deal_with_poison` on:
 
@@ -7810,8 +7814,10 @@ With `deal_with_poison` on:
   and the healing outlast Recall's delay: its longest, 34 world ticks
   (`15 + randint0(20)`, effect-handler-general.c:1145, counted down a tick
   at a time, game-world.c:709-711), or with no up staircase known its
-  shortest, 15. Otherwise it walks (review of #1146: Recall at 8 HP with 12
-  poison to come).
+  shortest, 15, and the flight Recall's own exposure test allows it
+  (`borg_recall_for_flight`, #758/#880). Otherwise it walks (reviews of
+  #1146: Recall at 8 HP with 12 poison to come; a 35 HP budget with a lethal
+  monster near).
 - **The early fights wait.** `fight_before_flight` (attack on sight, the
   lone slow monster, the winning fight) runs before `borg_caution`; while
   poisoned it defers when an awake poisoner is next to the Borg, when F
