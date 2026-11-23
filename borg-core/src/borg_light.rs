@@ -27,6 +27,7 @@ use crate::borg_item_use::{
 };
 use crate::borg_magic::{borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
+use crate::borg_projection::borg_los_projectable;
 use crate::borg_update::Detect;
 use crate::engine;
 use crate::params::{value as param, Param};
@@ -196,7 +197,8 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     // switch 1 and keeps C's corner test; only no light at all (BI_LIGHT 0)
     // takes neither test and calls light, as in C (review of #894).
     let radius = own_light_radius(st);
-    if radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1) {
+    let uses_corner_test = radius == 1 || (radius == 0 && st.borg.tr(BI_LIGHT) >= 1);
+    if uses_corner_test {
         let mut corners = 0;
 
         /* Scan diagonal neighbors.
@@ -277,7 +279,8 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
         || borg_zap_rod(st, st.item_val.sv_rod_illumination)
         || borg_use_staff(st, st.item_val.sv_staff_light)
         || borg_read_scroll(st, st.item_val.sv_scroll_light)
-        || borg_spell_fail(st, LIGHT_ROOM, 40)
+        || ((!uses_corner_test || light_room_has_dark_floor(st))
+            && borg_spell_fail(st, LIGHT_ROOM, 40))
         || borg_spell_fail(st, CALL_LIGHT, 40)
     {
         borg_note(st, "# Illuminating the dungeon");
@@ -287,6 +290,34 @@ pub fn borg_check_light_only(st: &mut BorgState) -> bool {
     }
 
     false
+}
+
+fn light_room_has_dark_floor(st: &BorgState) -> bool {
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    light_room_reaches_dark_floor((cy, cx), |y, x| {
+        if !engine::square_in_bounds_fully(x, y) {
+            return false;
+        }
+        let grid = st.cave.grid(x, y);
+        u32::from(grid.feat) != FEAT_NONE
+            && borg_cave_floor_grid(grid)
+            && borg_los_projectable(st, cy, cx, y, x)
+    }, |y, x| engine::square_isglow(x, y))
+}
+
+fn light_room_reaches_dark_floor(
+    (cy, cx): (i32, i32),
+    is_known_reachable_floor: impl Fn(i32, i32) -> bool,
+    glows: impl Fn(i32, i32) -> bool,
+) -> bool {
+    // Light Room lights the room containing the player and projects a
+    // radius-2 LIGHT_WEAK sphere (lib/gamedata/class.txt, Mage Light Room).
+    // Look for a known dark floor in the sphere without reading room flags
+    // or assuming that unseen squares beyond it belong to the same room.
+    (-2..=2).any(|dy| (-2..=2).any(|dx| {
+        let (y, x) = (cy + dy, cx + dx);
+        engine_distance(dy, dx) <= 2 && is_known_reachable_floor(y, x) && !glows(y, x)
+    }))
 }
 
 /// The arrival square or the forward sector after a single step. A wait,
@@ -999,6 +1030,43 @@ pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
     false
 }
 
+
+#[cfg(test)]
+mod room_lighting_tests {
+    use super::light_room_reaches_dark_floor;
+
+    #[test]
+    fn light_room_skips_a_lit_square_after_rest_and_return() {
+        let cast_from = (44, 46);
+        let known_floor = |y, x| (43..=45).contains(&y) && (45..=47).contains(&x);
+
+        assert!(light_room_reaches_dark_floor(cast_from, known_floor, |_, _| false));
+
+        // The successful cast lit the known floor. Rest and a revisit do
+        // not change that glow, and unknown squares do not trigger a recast.
+        let glows = |y, x| {
+            assert!(known_floor(y, x));
+            true
+        };
+        assert!(!light_room_reaches_dark_floor((44, 47), known_floor, glows));
+        assert!(!light_room_reaches_dark_floor(cast_from, known_floor, glows));
+    }
+
+    #[test]
+    fn light_room_can_recast_when_a_dark_floor_comes_into_reach() {
+        let cast_from = (44, 46);
+        let new_floor = (44, 48);
+        let glows = |y, x| (y, x) == cast_from;
+
+        // A dark floor two diagonals away is outside the engine's sphere.
+        let known_floor = |y, x| (y, x) == cast_from || (y, x) == (46, 48);
+        assert!(!light_room_reaches_dark_floor(cast_from, known_floor, glows));
+        // A newly observed dark floor two straight steps away is in range,
+        // even if the casting square is already glowing.
+        let known_floor = |y, x| known_floor(y, x) || (y, x) == new_floor;
+        assert!(light_room_reaches_dark_floor(cast_from, known_floor, glows));
+    }
+}
 
 #[cfg(test)]
 mod dark_entry_tests {
