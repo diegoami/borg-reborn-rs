@@ -336,7 +336,7 @@ confused until it died, two steps from the stairs.
   the confusion, `object.txt`; then Cure Light, which heals 20 and shortens the confusion by 20 turns; not confused,
   the cheapest first), and #867's hold does not apply to a confuser the floor
   declines. The potion is not drunk when it does not outlive the next turn
-  (the danger at the Borg's grid at or above its HP plus the heal, capped at
+  (the damage-only danger at the Borg's grid, #878, at or above its HP plus the heal, capped at
   the HP missing) and an escape is at hand: the caution takes the escape
   (review of #1082). With an escape only (no cure potion) the floor itself
   drinks nothing, and the caution re-evaluates its cures with the hold lifted:
@@ -5431,7 +5431,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6135` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6137` |
 
 ## C Borg dive gates (#768)
 

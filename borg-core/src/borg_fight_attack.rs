@@ -5959,7 +5959,9 @@ fn kill_on_sight_floor_cure(st: &mut BorgState) -> bool {
     let plan = floor_cure_plan(
         st,
         |st, sval| borg_slot(st, TV_POTION as i32, sval) >= 0,
-        |st| borg_danger(st, y, x, 1, true, false),
+        // #878: hit points alone, as `borg_escape`'s own outlive test; the
+        // full danger prices a spore's confusion at 408 against 12 HP.
+        |st| crate::borg_danger::borg_danger_damage_only(st, y, x, 1, true, false),
         crate::borg_fast_fragile::escape_available,
     );
     let (hp, max_hp) = (tr(st, BI_CURHP), tr(st, BI_MAXHP));
@@ -5990,7 +5992,7 @@ fn floor_cure_heal(sval: i32, [clw, csw, ccw]: [i32; 3], hp: i32, max_hp: i32) -
 }
 
 /// Review of #1082 (P2): the potion is drunk when the Borg outlives the next
-/// turn with it (the danger at its grid below the HP it will have), or when
+/// turn with it (the damage-only danger at its grid below the HP it will have), or when
 /// no escape is at hand (the potion is then the best move left). Otherwise
 /// the escape outranks it: the caution takes the stairs underfoot or reads
 /// Phase Door, which a heal that the next turn undoes would only delay.
