@@ -1640,10 +1640,15 @@ borg_param_kit_money_first = 0
 # explains, holds it on the staircase for stair_scum_alarm_turns game
 # turns; nothing left in the area: it takes a staircase (DL1-2 first,
 # within the depth plan); on a staircase a threat the fight race does not
-# take is left by the stairs. Ships 0 until the zoo measures it (arms at max
-# HP 20, 25, 30); every number is a hypothesis.
-borg_param_stair_scum = 0
-borg_param_stair_scum_max_hp = 25
+# take is left by the stairs. Every number is a hypothesis until the zoo
+# measures it (borg-zoo#721: arms at max HP 20, 25, 30, the slack dials).
+# Shipped on (owner, 2026-11-23: "ok let us merge with those settings"), the
+# owner's byclass arm of borg-zoo#721, before its pilot: the mode at max HP
+# 20, slack per class in harness/borg_<class>.txt (Druid and Necromancer 1,
+# Mage and Priest 2, Ranger and Rogue 3, Paladin and Blackguard 4; the
+# Warrior with the mode off), the level rate at its default 50.
+borg_param_stair_scum = 1
+borg_param_stair_scum_max_hp = 20
 borg_param_stair_scum_max_hp_race_delta = 0
 borg_param_stair_scum_speed_ratio = 2
 borg_param_stair_scum_contact_damage = 4
@@ -1656,7 +1661,7 @@ borg_param_stair_scum_slack_per_hp_tenths = 0
 # ... and by level (owner, 2026-11-23): percent of a step of slack per
 # character level above 1, rounded down; 50 = a Druid at slack 1 has 2 at CL3.
 # 50 by default (owner: "stair_scum_slack_per_level_percent: 50 as default");
-# it acts only with stair_scum = 1, so play is unchanged.
+# it acts only with stair_scum = 1.
 borg_param_stair_scum_slack_per_level_percent = 50
 borg_param_stair_scum_alarm_turns = 100
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
@@ -1858,6 +1863,7 @@ borg_param_town_staple_csw__warrior = 4
 borg_param_town_staple_phase__warrior = 16
 borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
+borg_param_stair_scum__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -1879,6 +1885,7 @@ borg_param_town_staple_clw__mage = 6
 borg_param_town_staple_csw__mage = 3
 borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
+borg_param_stair_scum_slack_steps__mage = 2
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -1899,6 +1906,7 @@ borg_param_town_staple_clw__druid = 5
 borg_param_town_staple_csw__druid = 3
 borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
+borg_param_stair_scum_slack_steps__druid = 1
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -1920,6 +1928,7 @@ borg_param_town_staple_csw__priest = 3
 borg_param_town_staple_phase__priest = 12
 borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
+borg_param_stair_scum_slack_steps__priest = 2
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -1941,6 +1950,7 @@ borg_param_town_staple_clw__necromancer = 5
 borg_param_town_staple_csw__necromancer = 3
 borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
+borg_param_stair_scum_slack_steps__necromancer = 1
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -1964,6 +1974,7 @@ borg_param_town_staple_csw__paladin = 4
 borg_param_town_staple_phase__paladin = 14
 borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
+borg_param_stair_scum_slack_steps__paladin = 4
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1987,6 +1998,7 @@ borg_param_town_staple_csw__rogue = 4
 borg_param_town_staple_phase__rogue = 16
 borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
+borg_param_stair_scum_slack_steps__rogue = 3
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2013,6 +2025,7 @@ borg_param_town_staple_clw__ranger = 7
 borg_param_town_staple_csw__ranger = 4
 borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
+borg_param_stair_scum_slack_steps__ranger = 3
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2036,6 +2049,7 @@ borg_param_town_staple_phase__blackguard = 16
 borg_param_town_staple_oil__blackguard = 14
 borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
+borg_param_stair_scum_slack_steps__blackguard = 4
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.

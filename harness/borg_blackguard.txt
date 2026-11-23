@@ -39,3 +39,6 @@ borg_param_town_phase_reserve = 10
 # thrown oil (common 1): "melee is infinite, flasks are not". 0 = inherit the
 # arrow divisor. A workaround until flasks are saved for when needed (#912).
 borg_param_attack_throw_point_blank_divisor = 0
+# #1061 (owner, 2026-11-23): stair_scum slack by class ("1 for druid and necromancers. 2 for mage and priest,
+# 3 for ranger, 4 for paladin and blackguard"; rogue 3, the owner's choice).
+borg_param_stair_scum_slack_steps = 4

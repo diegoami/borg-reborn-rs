@@ -6968,8 +6968,13 @@ The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
 `studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
 character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
-**2441** parameters (9 added to `track-p` `c687334c`). `stair_scum` ships 0: play is byte-identical
-to before until it is 1. Every number is a hypothesis (RULES 14): borg-zoo
+**2441** parameters (9 added to `track-p` `c687334c`). `stair_scum` is compiled 0 and **shipped 1** in
+`harness/borg.txt` (owner, 2026-11-23: "ok let us merge with those settings"),
+with the owner's `byclass` arm of borg-zoo#721: `stair_scum_max_hp = 20`, slack
+per class in `harness/borg_<class>.txt` (Druid and Necromancer 1, Mage and Priest
+2, Ranger and Rogue 3, Paladin and Blackguard 4; the Warrior with the mode off),
+the level rate at its default 50. It ships before the zoo's pilot reports; the
+pilot (all arms explicit) is pinned to `0d09e318`, which ships it 0. Every number is a hypothesis (RULES 14): borg-zoo
 measures arms at a threshold of 20, 25 and 30, then per class. The design
 follows Codex's review on #1061 (the attacks on the way counted, the
 engine's light, every step checked, the unplaced door sound).
