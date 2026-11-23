@@ -29,11 +29,11 @@ use crate::borg_danger::borg_danger;
 use crate::{borg_flow_misc, engine};
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DISM, BI_DISP, BI_FOOD, BI_GOLD, BI_IFIRE, BI_ISCONFUSED,
-    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
+    BI_ISBLIND, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
 };
 use crate::headers::list_terrain_h::{
-    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_NONE, FEAT_PERM,
-    FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_MORE, FEAT_NONE,
+    FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::z_type_h::loc;
 use crate::params::{value, Param};
@@ -866,9 +866,10 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bo
 /// borg-reborn-rs (#1080, #1085; owner 2026-11-23: "a safer way would be
 /// breadth-first"): is exploration breadth-first from the staircases?
 /// `explore_breadth_first` on, in the dungeon, and the Borg's maximum HP
-/// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class).
+/// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class). Not on
+/// a level where leaving after it failed (`release_after_failed_exit`).
 pub(crate) fn breadth_first_active(st: &BorgState) -> bool {
-    st.borg.tr(BI_CDEPTH) > 0 && breadth_first_applies(st)
+    st.borg.tr(BI_CDEPTH) > 0 && !released(st) && breadth_first_applies(st)
 }
 
 /// #1110: would breadth-first exploration apply to this character in the
@@ -919,8 +920,15 @@ pub(crate) fn replan_on_new_monster(st: &mut BorgState) {
 }
 
 fn replan(st: &mut BorgState, why: &str) {
-    if breadth_first_active(st) && i32::from(st.borg.goal.type_0) == GOAL_DARK {
+    if i32::from(st.borg.goal.type_0) != GOAL_DARK {
+        return;
+    }
+    if breadth_first_active(st) {
         crate::borg_io::borg_note(st, &format!("# {why}: planning the breadth-first exploration again (#1085)"));
+        st.borg.goal.type_0 = 0;
+    } else if mixed_active(st) {
+        // borg-reborn-rs (#1098): the mixed walk re-plans the same way.
+        crate::borg_io::borg_note(st, &format!("# {why}: planning the mixed exploration again (#1098)"));
         st.borg.goal.type_0 = 0;
     }
 }
@@ -1023,24 +1031,31 @@ fn plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, leash: Option<i32>, s
 /// At most this many rings are tried in one think (one spread each).
 const BREADTH_FIRST_MAX_RINGS: usize = 16;
 
-/// #1080, #1085: breadth-first exploration from the staircases.
+/// #1080: what both stair-anchored orders (breadth-first and mixed) read.
+struct StairFrame {
+    /// Each grid's flow steps from the nearest known staircase (`ring_of`).
+    rings: crate::borg_flow::BorgData,
+    /// The Borg's own ring.
+    borg_ring: i32,
+    /// The interesting grids `(y, x, ring)` the Borg can reach.
+    cands: Vec<(i32, i32, i32)>,
+    /// The grids past the "wandered too far" return leash.
+    past_return: Vec<Vec<bool>>,
+}
+
+/// #1080, #1085: the frame of the stair-anchored orders.
 ///
 /// 1. One spread from every known staircase, of either kind, over known
 ///    grids gives each grid its ring (`ring_of`).
 /// 2. The candidates are the interesting grids of the whole known map
-///    (methods 3-5's, reachable, with method 1's torch-lit ones), within the
-///    leash measured from that nearest staircase (where C's distance test
-///    applies, `borg_flow_far_from_stairs_dist`), and within the return
-///    leash of `borg_think_dungeon` while it applies.
-/// 3. The nearest ring is explored first (`plan`): every candidate from it
-///    to it + `explore_bfs_slack` is a goal, so the flow leads to the one
-///    nearest the Borg (the tie-break). A path may not cross a grid of a
-///    farther ring than that (or than the Borg's own, `path_limit`), nor one
-///    past the return leash. When no path exists, the next ring.
+///    (methods 3-5's, reachable, with method 1's torch-lit ones) within the
+///    return leash of `borg_think_dungeon` while it applies.
+/// 3. Only the candidates the Borg can reach (one spread from the Borg,
+///    through no grid past the return leash) are kept.
 ///
-/// `Some(stepped)`: this order decided (`false`: nothing to explore within
-/// the leashes); `None`: the Borg has no route to a known staircase.
-fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
+/// `None`: no staircase known, boosted bravery, or the Borg has no route to
+/// a known staircase (C's methods explore then).
+fn stair_frame(st: &mut BorgState, scum: Option<&Scum>) -> Option<StairFrame> {
     if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
         return None;
     }
@@ -1062,17 +1077,7 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Opti
     let rings = st.flow.data_cost.clone();
 
     /* No route from the Borg to a staircase: C's methods */
-    let borg_ring = ring_of(&rings, st.borg.c.y, st.borg.c.x);
-    if borg_ring.is_none() {
-        return None;
-    }
-
-    /* The leash, where C's stair distance test applies */
-    let c = crate::borg_flow::c_leash();
-    let leash_on = (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin
-        && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
-        || crate::borg_kit::leash_active(st);
-    let leash = leash_on.then(|| borg_flow_misc::borg_get_leash(st, false));
+    let borg_ring = ring_of(&rings, st.borg.c.y, st.borg.c.x)?;
 
     /* The return leash ("wandered too far", from the nearest up staircase):
      * no target or path past it, or the Borg would walk out and back */
@@ -1150,34 +1155,30 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Opti
         reachable_only(&mut cands, &reach);
     }
 
-    // borg-reborn-rs (#1061): with stair_scum, back to the staircase first
-    // when the nearest target lies farther out than the Borg.
-    if let Some(m) = scum {
-        let goals: Vec<(i32, i32)> = cands.iter().map(|&(y, x, _)| (y, x)).collect();
-        if crate::borg_stair_scum::return_before(st, m, &goals) {
-            return Some(false);
-        }
-    }
+    Some(StairFrame { rings, borg_ring, cands, past_return })
+}
 
-    let slack = value(Param::explore_bfs_slack);
-    let Plan::Rings(tries) = plan(&cands, borg_ring, leash, slack, BREADTH_FIRST_MAX_RINGS) else {
-        return None;
-    };
+/// #1080, #1085: the tries of a stair-anchored order, in turn: each closes
+/// the grids beyond its path limit (behind the Borg's back) and past the
+/// return leash, spreads from all its goals, so the flow leads to the goal
+/// nearest the Borg, and commits to the first that gives a path. `label`
+/// names the try in the note (`# Flowing toward <label> at cost n`).
+fn run_tries(st: &mut BorgState, frame: &StairFrame, tries: Vec<RingTry>, label: impl Fn(&RingTry) -> String) -> bool {
     for t in tries {
         crate::borg_flow::borg_flow_clear(st);
 
         /* Close the grids behind the Borg's back (a zero cost is "reached") */
         let mut closed = Vec::new();
-        for (y, row) in rings.iter().enumerate() {
+        for (y, row) in frame.rings.iter().enumerate() {
             for (x, &r) in row.iter().enumerate() {
-                if (beyond_limit(r, t.limit) || past_return[y][x]) && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
+                if (beyond_limit(r, t.limit) || frame.past_return[y][x]) && (y as i32, x as i32) != (st.borg.c.y, st.borg.c.x) {
                     st.flow.data_cost[y][x] = 0;
                     closed.push((y, x));
                 }
             }
         }
 
-        /* Every goal of the ring is a starting grid */
+        /* Every goal of the try is a starting grid */
         for &(y, x) in &t.goals {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
@@ -1188,12 +1189,294 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Opti
             st.flow.data_cost[y][x] = st.flow.data_hard[y][x];
         }
 
-        let who = std::ffi::CString::new(format!("dark-bfs (ring {})", t.base)).expect("no NUL");
+        let who = std::ffi::CString::new(label(&t)).expect("no NUL");
         if commit_and_step(st, &who) {
-            return Some(true);
+            return true;
         }
     }
+    false
+}
+
+/// Is C's leash on for exploration? Where C's distance test applies
+/// (`borg_flow_far_from_stairs_dist`: the depth at least the level less the
+/// margin, below `flow_leash_stairs_max_level`), or while the kit is short.
+fn c_leash_on(st: &BorgState) -> bool {
+    let c = crate::borg_flow::c_leash();
+    (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
+        || crate::borg_kit::leash_active(st)
+}
+
+/// #1080, #1085: breadth-first exploration from the staircases.
+///
+/// On the frame of `stair_frame`, within the leash measured from the nearest
+/// staircase (where C's distance test applies), the nearest ring is explored
+/// first (`plan`): every candidate from it to it + `explore_bfs_slack` is a
+/// goal, so the flow leads to the one nearest the Borg (the tie-break). A
+/// path may not cross a grid of a farther ring than that (or than the Borg's
+/// own, `path_limit`), nor one past the return leash. When no path exists,
+/// the next ring.
+///
+/// `Some(stepped)`: this order decided (`false`: nothing to explore within
+/// the leashes); `None`: the Borg has no route to a known staircase.
+fn borg_flow_dark_breadth_first(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
+    let frame = stair_frame(st, scum)?;
+
+    // borg-reborn-rs (#1061): with stair_scum, back to the staircase first
+    // when the nearest target lies farther out than the Borg.
+    if let Some(m) = scum {
+        let goals: Vec<(i32, i32)> = frame.cands.iter().map(|&(y, x, _)| (y, x)).collect();
+        if crate::borg_stair_scum::return_before(st, m, &goals) {
+            return Some(false);
+        }
+    }
+
+    let leash = c_leash_on(st).then(|| borg_flow_misc::borg_get_leash(st, false));
+    let slack = value(Param::explore_bfs_slack);
+    let Plan::Rings(tries) = plan(&frame.cands, Some(frame.borg_ring), leash, slack, BREADTH_FIRST_MAX_RINGS) else {
+        return None;
+    };
+    if run_tries(st, &frame, tries, |t| format!("dark-bfs (ring {})", t.base)) {
+        return Some(true);
+    }
+    // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
+    // explore, take the stairs"): nothing reachable within the leashes is
+    // not an ordinary miss either: `borg_leave_level` takes the stairs.
+    if value(Param::explore_bfs_leave_when_done) == 0 {
+        return Some(false);
+    }
+    let left = frame.cands.len();
+    mark_exhausted(st, &format!("Breadth-first exploration: nothing reachable left within the leashes ({left} frontier grids known)"));
     Some(false)
+}
+
+/// #1098 (reviews of #1117): the stair-anchored exploration of this think
+/// has nothing it may reach left (`exhausted_this_think`); noted once a think.
+fn mark_exhausted(st: &mut BorgState, what: &str) {
+    if st.borg.stair_explore_exhausted != Some(st.borg.time.now) {
+        crate::borg_io::borg_note(st, &format!("# {what}, leaving the level (#1098)"));
+    }
+    st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+}
+
+/// #1098: is this feature a staircase (a failed stair flow from it is no
+/// failed exit)?
+fn on_a_staircase(feat: u32) -> bool {
+    feat == FEAT_LESS || feat == FEAT_MORE
+}
+
+/// #1098 (replays of #1117): is the Borg in a state where its exploration
+/// and its stair flows fail for its own state, not the map? Confused, blind
+/// or hallucinating (`status`), moving under boosted bravery, or in an
+/// invisible-attacker episode (`unseen`). C's exhaustion is not marked then.
+fn impaired(status: bool, bravery: bool, unseen: bool) -> bool {
+    status || bravery || unseen
+}
+
+/// #1098: has a failed exit released this level from the stair-anchored
+/// modes (`release_after_failed_exit`)?
+fn released(st: &BorgState) -> bool {
+    st.borg.stair_explore_released == Some(st.borg.time.level)
+}
+
+/// #1098 (second piece of #1080): is exploration mixed? `explore_mixed` on,
+/// in the dungeon, breadth-first not applying (its HP threshold passed, or
+/// its switch off), and the Borg not yet prepared for the depth. #1080's
+/// readiness model is not written: until it is, "not prepared" is where
+/// C's own leash applies (`c_leash_on`: the depth at least the level less
+/// `flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the
+/// kit short). Elsewhere exploration is C's depth-first order, as today.
+/// Not above `explore_mix_max_clevel` (per class), and not on a level where
+/// leaving after the walk failed (`release_after_failed_exit`).
+pub(crate) fn mixed_active(st: &BorgState) -> bool {
+    value(Param::explore_mixed) != 0
+        && st.borg.tr(BI_CDEPTH) > 0
+        && !breadth_first_active(st)
+        && c_leash_on(st)
+        && within_mix_levels(st.borg.tr(BI_CLEVEL), value(Param::explore_mix_max_clevel))
+        && !released(st)
+}
+
+/// #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): mixed
+/// exploration applies up to this character level, per class; above it the
+/// class counts as prepared and C's depth-first order explores.
+fn within_mix_levels(clevel: i32, max_clevel: i32) -> bool {
+    clevel <= max_clevel
+}
+
+/// #1098: leaving after the stair-anchored exploration was exhausted failed
+/// in every allowed direction (`borg_leave_level` found no staircase it
+/// could take): breadth-first and mixed stand down on this level, so C's
+/// exploration can look for one.
+pub(crate) fn release_after_failed_exit(st: &mut BorgState) {
+    // Smoke after merging #1061: standing on a staircase, the stair flow
+    // "fails" at cost 0, but taking that staircase is the exit itself.
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    if on_a_staircase(feat) {
+        return;
+    }
+    if !released(st) {
+        crate::borg_io::borg_note(st, "# Exploration from the stairs: no staircase to leave by, exploring on (#1098)");
+    }
+    st.borg.stair_explore_released = Some(st.borg.time.level);
+}
+
+/// #1098: the numbers of the escape model of #1061 that bound the radius.
+#[derive(Clone, Copy, Debug)]
+struct MixModel {
+    /// `explore_mix_radius`: the radius the walk starts at (and its floor).
+    start: i32,
+    /// `explore_mix_sight`: how far a monster is first seen, at least.
+    sight: i32,
+    /// The Borg's light radius: in a corridor it sees no farther.
+    light: i32,
+    /// `explore_mix_speed_ratio`: the speed ratio of the depth's fast monsters.
+    ratio: i32,
+    /// The Borg's maximum HP.
+    max_hp: i32,
+    /// `explore_mix_contact_damage`: the damage of one turn of contact at
+    /// DL1-5, multiplied by the depth band.
+    contact: i32,
+    /// The current depth.
+    depth: i32,
+    /// `explore_mix_max_radius`: the cap.
+    max: i32,
+}
+
+/// #1098: the depth band of the contact damage: 1 at DL1-5, 2 at DL6-10, ...
+fn depth_band(depth: i32) -> i32 {
+    ((depth.max(1) + 4) / 5).max(1)
+}
+
+/// #1098: the farthest the radius may grow, in flow steps from the nearest
+/// staircase: the escape model of #1061, *R* = ⌊*D* / (*r* − 1)⌋ + *k*.
+/// - *D* = max(`sight`, `light`): a monster first seen *D* grids away,
+///   *r* times as fast, closes the gap after the Borg has walked *D* / (*r*
+///   − 1) grids toward the stairs;
+/// - *k* = ⌊HP / *c*⌋: the turns of contact it survives on the rest of the
+///   way, with *c* = `contact` x the depth band.
+///
+/// No lower than the start, no higher than the cap.
+fn mix_limit(m: MixModel) -> i32 {
+    let d = m.sight.max(m.light).max(0);
+    let run = d / (m.ratio - 1).max(1);
+    let k = m.max_hp.max(0) / m.contact.max(1).saturating_mul(depth_band(m.depth));
+    run.saturating_add(k).max(m.start).min(m.max)
+}
+
+/// #1098: the mixed plan from the candidates `(y, x, ring)` and the Borg's
+/// own ring. The radius starts at `start` and grows by `step` up to `limit`;
+/// the first radius that holds a candidate is tried first: every candidate
+/// within it is a goal, so the flow leads to the one nearest the Borg
+/// (depth-first inside the radius), and a path may not cross a ring beyond
+/// the radius (or the Borg's own, `path_limit`). A branch whose frontier
+/// lies beyond the radius is parked; the radius grows only when no
+/// candidate is left inside it. The larger radii follow, for goals the
+/// path limit cuts off (at most `max` distinct tries: a radius whose goals
+/// and path limit are the last try's is skipped, review of #1117). Empty:
+/// nothing within the limit, and the level is done (`MixOutcome::Exhausted`).
+///
+/// The radius is not stored: each think takes the smallest that holds a
+/// candidate, so a branch newly found near the stairs is covered before the
+/// walk goes deeper again.
+fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, step: i32, limit: i32, max: usize) -> Plan {
+    let Some(borg_ring) = borg_ring else { return Plan::Fallback };
+    let mut tries = Vec::new();
+    let mut r = start.min(limit);
+    loop {
+        let goals: Vec<(i32, i32)> = cands.iter().filter(|&&(_, _, g)| g <= r).map(|&(y, x, _)| (y, x)).collect();
+        let limit_r = path_limit(r, borg_ring);
+        // Review of #1117: a radius with the same goals and path limit as
+        // the last try would spread the same way: it is no try of its own,
+        // and does not use up the budget.
+        let same = tries.last().is_some_and(|t: &RingTry| t.limit == limit_r && t.goals == goals);
+        if !goals.is_empty() && !same && tries.len() < max {
+            tries.push(RingTry { base: r, limit: limit_r, goals });
+        }
+        if r >= limit {
+            break;
+        }
+        r = r.saturating_add(step.max(1)).min(limit);
+    }
+    Plan::Rings(tries)
+}
+
+/// #1098 (second piece of #1080): mixed exploration from the staircases:
+/// depth-first inside a radius from the stairs that grows only when every
+/// branch inside it is covered (`mixed_plan`), on the frame of
+/// `stair_frame`. The limit is the escape model's (`mix_limit`), and never
+/// more than C's leash where that applies.
+///
+/// `Some(stepped)`: this order decided (`false`: nothing to explore within
+/// the limit, so the level is left); `None`: the Borg has no route to a
+/// known staircase.
+fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
+    let frame = stair_frame(st, scum)?;
+    let start = value(Param::explore_mix_radius);
+    let mut limit = mix_limit(MixModel {
+        start,
+        sight: value(Param::explore_mix_sight),
+        light: crate::borg_cave_light::own_light_radius(st),
+        ratio: value(Param::explore_mix_speed_ratio),
+        max_hp: st.borg.tr(BI_MAXHP),
+        contact: value(Param::explore_mix_contact_damage),
+        depth: st.borg.tr(BI_CDEPTH),
+        max: value(Param::explore_mix_max_radius),
+    });
+    if c_leash_on(st) {
+        limit = limit.min(borg_flow_misc::borg_get_leash(st, false));
+    }
+    let step = value(Param::explore_mix_step);
+    let plan = mixed_plan(&frame.cands, Some(frame.borg_ring), start, step, limit, BREADTH_FIRST_MAX_RINGS);
+    let stepped = match plan {
+        Plan::Fallback => return None,
+        Plan::Rings(tries) => run_tries(st, &frame, tries, |t| format!("dark-mix (radius {} of {limit})", t.base)),
+    };
+    if mix_result(stepped) == MixOutcome::Stepped {
+        return Some(true);
+    }
+    // Review of #1117: not an ordinary miss. Nothing within the limit, or
+    // no allowed path to any of it (re-review: every try failed): the area
+    // the walk may cover is done, so `borg_leave_level` takes the stairs
+    // this think, before the secret-door search and the direct monster
+    // flow (`exhausted_this_think`).
+    let left = frame.cands.len();
+    mark_exhausted(st, &format!("Mixed exploration: nothing reachable left within radius {limit} ({left} frontier grids known)"));
+    Some(false)
+}
+
+/// #1098 (reviews of #1117): what a mixed plan that the Borg can route
+/// from (not `Plan::Fallback`) means for the think.
+#[derive(Debug, PartialEq)]
+enum MixOutcome {
+    /// A try gave a path: the Borg steps.
+    Stepped,
+    /// No try gave a path, or there was none (nothing within the limit): the
+    /// level is left (the stair-exit policy, `borg_leave_level`), not
+    /// searched for secret doors first.
+    Exhausted,
+}
+
+fn mix_result(stepped: bool) -> MixOutcome {
+    if stepped {
+        MixOutcome::Stepped
+    } else {
+        MixOutcome::Exhausted
+    }
+}
+
+/// #1098 (review of #1117): did the exploration (breadth-first, mixed, or
+/// C's with `explore_c_leave_when_done`) find its area covered this think? Read by `borg_leave_level` as
+/// a reason to leave, like the level timer.
+pub(crate) fn exhausted_this_think(st: &BorgState) -> bool {
+    st.borg.stair_explore_exhausted == Some(st.borg.time.now)
+        && (breadth_first_active(st) || mixed_active(st) || c_leave_when_done(st))
+}
+
+/// #1098 (owner, 2026-11-23): C's exploration takes the stairs once it finds
+/// nothing (`explore_c_leave_when_done`), in the dungeon, on a level its
+/// exit has not failed on.
+fn c_leave_when_done(st: &BorgState) -> bool {
+    value(Param::explore_c_leave_when_done) != 0 && st.borg.tr(BI_CDEPTH) > 0 && !released(st)
 }
 
 /// Prepare to "flow" towards "interesting" grids
@@ -1247,6 +1530,14 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
             return stepped;
         }
     }
+    // borg-reborn-rs (#1098): above it, until prepared for the depth, both
+    // calls explore depth-first inside a radius from the staircases that
+    // grows only when every branch inside it is covered.
+    if mixed_active(st) {
+        if let Some(stepped) = borg_flow_dark_mixed(st, scum.as_ref()) {
+            return stepped;
+        }
+    }
 
     if neer {
         /* Near */
@@ -1276,6 +1567,28 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         /* Method 5 */
         if borg_flow_dark_5(st, b_stair, scum.as_ref()) {
             return true;
+        }
+
+        // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
+        // explore, take the stairs"): C's far exploration (method 5 scans the
+        // whole known map within the leash) found nothing either. With
+        // explore_c_leave_when_done the level is done: `borg_think_dungeon`
+        // takes the stairs before the secret-door search. Not on a level
+        // where that exit failed (`released`): the search may find the way.
+        // Not while impaired (replays of #1117: a confusion trap, an
+        // invisible attacker): exploration and the stairs then fail for the
+        // Borg's state, not the map, and the failed exit would release the
+        // whole level.
+        if value(Param::explore_c_leave_when_done) != 0
+            && st.borg.tr(BI_CDEPTH) > 0
+            && !released(st)
+            && !impaired(
+                st.borg.tr(BI_ISCONFUSED) != 0 || st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISIMAGE) != 0,
+                boosted_bravery(i32::from(st.borg.avoidance), st.borg.tr(BI_CURHP)),
+                st.borg.unseen_mode,
+            )
+        {
+            mark_exhausted(st, "C exploration: nothing reachable left within the leash");
         }
     }
 
@@ -1424,6 +1737,35 @@ mod breadth_first_tests {
                 let cands = self.cands(&rings);
                 let Plan::Rings(tries) =
                     plan(&cands, ring_of(&rings, self.borg.0, self.borg.1), leash, slack, BREADTH_FIRST_MAX_RINGS)
+                else {
+                    return None;
+                };
+                let Some((ring, (y, x))) =
+                    tries.iter().find_map(|t| self.nearest_goal(&rings, t).map(|g| (ring_of(&rings, g.0, g.1).unwrap(), g)))
+                else {
+                    return Some(order);
+                };
+                order.push(ring);
+                let (by, bx) = self.borg;
+                if self.g[by as usize][bx as usize] == b'@' {
+                    self.g[by as usize][bx as usize] = b'.';
+                }
+                self.g[y as usize][x as usize] = b'.';
+                self.borg = (y, x);
+            }
+        }
+    }
+
+    impl Map {
+        /// #1098: explore with the mixed plan until nothing is left within
+        /// the limit; the rings explored, in order (`None`: fell back).
+        fn explore_mixed(&mut self, start: i32, step: i32, limit: i32) -> Option<Vec<i32>> {
+            let mut order = Vec::new();
+            loop {
+                let rings = self.rings();
+                let cands = self.cands(&rings);
+                let Plan::Rings(tries) =
+                    mixed_plan(&cands, ring_of(&rings, self.borg.0, self.borg.1), start, step, limit, BREADTH_FIRST_MAX_RINGS)
                 else {
                     return None;
                 };
@@ -1592,7 +1934,211 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_max_hp), 25);
         assert_eq!(value(Param::explore_bfs_slack), 0, "strict rings");
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
+        assert_eq!(value(Param::explore_bfs_leave_when_done), 0, "compiled 0: an ordinary miss (borg.txt ships 1)");
+        assert_eq!(value(Param::explore_c_leave_when_done), 0, "compiled 0: C stays until a reason to leave");
         assert_eq!(value(Param::explore_bfs_food_percent), 100, "#1110: today's food");
         assert_eq!(value(Param::explore_bfs_light_percent), 100, "#1110: today's light");
+    }
+
+    /// Two corridors from a staircase, each 8 unknown grids long.
+    fn two_corridors() -> Map {
+        let mut m = Map::new(&["###################", "#????????@????????#", "###################"]);
+        m.g[1][9] = b'<';
+        m
+    }
+
+    #[test]
+    fn mixed_two_corridors_are_both_followed_to_the_radius_before_either_beyond() {
+        // #1098: R = 5. Depth-first inside it (one corridor to 5, then the
+        // other), then R grows by 2 (to 7: the second corridor, where the Borg
+        // stands, first), then to the limit 8.
+        let mut m = two_corridors();
+        let order = m.explore_mixed(5, 2, 8).unwrap();
+        assert_eq!(order, vec![1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 6, 7, 6, 7, 8, 8]);
+        assert!(order[..10].iter().all(|&r| r <= 5), "every branch to 5 before any beyond");
+        // Breadth-first alternates ring by ring; C goes to the end of one.
+        let mut b = two_corridors();
+        assert_eq!(&b.explore(None, 0).unwrap()[..4], &[1, 1, 2, 2]);
+    }
+
+    #[test]
+    fn mixed_a_corridor_longer_than_the_radius_is_parked_then_resumed() {
+        // #1098: a corridor east whose frontier (ring 6) lies past R = 5 where
+        // the Borg stands, and a side branch north near the staircase (ring 2).
+        // The Borg walks back to the branch (the corridor is parked), and
+        // resumes the corridor only when R grows.
+        let mut m = Map::new(&["#?##########", "#.##########", "<....@?#####", "############"]);
+        let rings = m.rings();
+        assert_eq!(ring_of(&rings, 2, 6), Some(6), "the corridor's frontier: past R");
+        assert_eq!(ring_of(&rings, 0, 1), Some(2), "the branch");
+        let cands = m.cands(&rings);
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(5), 5, 2, 9, 16) else { panic!("planned") };
+        assert_eq!(tries[0], RingTry { base: 5, limit: 5, goals: vec![(0, 1)] }, "only the branch inside R");
+        assert_eq!(m.nearest_goal(&rings, &tries[0]), Some((0, 1)));
+        assert_eq!(tries[1].base, 7, "the corridor comes with a larger radius");
+        assert_eq!(m.explore_mixed(5, 2, 9).unwrap(), vec![2, 6]);
+    }
+
+    #[test]
+    fn mixed_nothing_within_the_limit_ends_the_walk() {
+        // #1098: the only frontier is past the limit: no try, so the level is
+        // left (borg_flow_dark returns false), not explored beyond.
+        let cands = [(0, 0, 12)];
+        assert_eq!(mixed_plan(&cands, Some(0), 5, 2, 10, 16), Plan::Rings(vec![]));
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(0), 5, 2, 12, 16) else { panic!("planned") };
+        assert_eq!(tries.len(), 1);
+        assert_eq!(tries[0].base, 12, "the last step stops at the limit");
+        // A start beyond the limit starts at the limit.
+        let Plan::Rings(tries) = mixed_plan(&[(0, 0, 3)], Some(0), 5, 2, 4, 16) else { panic!("planned") };
+        assert_eq!(tries[0].base, 4);
+    }
+
+    #[test]
+    fn mixed_the_radius_is_the_smallest_that_holds_a_candidate() {
+        // #1098: the radius is not stored; a branch newly found near the
+        // stairs (ring 2) comes before the far one the Borg was walking (ring
+        // 9), and the path limit is the Borg's own ring when it stands
+        // farther out.
+        let cands = [(0, 0, 9), (0, 1, 2)];
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(8), 5, 2, 11, 16) else { panic!("planned") };
+        assert_eq!(tries[0], RingTry { base: 5, limit: 8, goals: vec![(0, 1)] });
+        assert_eq!(tries[1], RingTry { base: 9, limit: 9, goals: vec![(0, 0), (0, 1)] }, "radius 7 repeats radius 5: skipped");
+        assert_eq!(tries.len(), 3, "and radius 11, a looser path limit");
+    }
+
+    #[test]
+    fn mixed_identical_tries_do_not_use_up_the_budget() {
+        // Review of #1117: two staircases 42 steps apart, the Borg at ring 20
+        // from the west one, a lone frontier at ring 1 next to the east one.
+        // Its path crosses ring 21 (the middle). Start 5, step 1: radii 5-20
+        // all give the same goal and path limit 20, which has no path; the
+        // budget of 16 must still reach radius 21.
+        let mut row1 = vec![b'.'; 45];
+        row1[0] = b'#';
+        row1[44] = b'#';
+        row1[1] = b'<';
+        row1[43] = b'>';
+        row1[21] = b'@';
+        let mut row0 = vec![b'#'; 45];
+        row0[43] = b'?';
+        let rows = [String::from_utf8(row0).unwrap(), String::from_utf8(row1).unwrap(), "#".repeat(45)];
+        let mut m = Map::new(&rows.iter().map(String::as_str).collect::<Vec<_>>());
+        let rings = m.rings();
+        assert_eq!(ring_of(&rings, m.borg.0, m.borg.1), Some(20));
+        assert_eq!(ring_of(&rings, 1, 22), Some(21), "the middle");
+        let cands = m.cands(&rings);
+        assert_eq!(cands, vec![(0, 43, 1)]);
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(20), 5, 1, 30, 16) else { panic!("planned") };
+        assert_eq!(tries[0], RingTry { base: 5, limit: 20, goals: vec![(0, 43)] });
+        assert_eq!(m.nearest_goal(&rings, &tries[0]), None, "limit 20 cuts the way through the middle");
+        assert_eq!(tries[1], RingTry { base: 21, limit: 21, goals: vec![(0, 43)] }, "radii 6-20 are no tries of their own");
+        assert_eq!(m.nearest_goal(&rings, &tries[1]), Some((0, 43)));
+        assert_eq!(m.explore_mixed(5, 1, 30), Some(vec![1]));
+        // Re-review of #1117: with the limit at 20, the plan has a try, but
+        // its path crosses ring 21: no try has a path, so the walk is
+        // exhausted (and leaves), not an ordinary miss.
+        let mut m = Map::new(&rows.iter().map(String::as_str).collect::<Vec<_>>());
+        let Plan::Rings(tries) = mixed_plan(&cands, Some(20), 5, 1, 20, 16) else { panic!("planned") };
+        assert_eq!(tries, vec![RingTry { base: 5, limit: 20, goals: vec![(0, 43)] }], "one try, the rest repeat it");
+        let stepped = tries.iter().any(|t| m.nearest_goal(&rings, t).is_some());
+        assert!(!stepped);
+        assert_eq!(mix_result(stepped), MixOutcome::Exhausted);
+        assert_eq!(m.explore_mixed(5, 1, 20), Some(vec![]), "nothing explored past the limit");
+    }
+
+    #[test]
+    fn mixed_radius_exhaustion_is_its_own_outcome() {
+        // Review of #1117: nothing within the limit, or no try with a path,
+        // is not an ordinary miss: the level is left (borg_leave_level reads
+        // `exhausted_this_think`).
+        assert_eq!(mixed_plan(&[(0, 0, 12)], Some(0), 5, 2, 10, 16), Plan::Rings(vec![]), "no try: exhausted");
+        assert_eq!(mix_result(false), MixOutcome::Exhausted);
+        assert_eq!(mix_result(true), MixOutcome::Stepped);
+        assert_eq!(mixed_plan(&[(0, 0, 3)], None, 5, 2, 10, 16), Plan::Fallback, "no route to a staircase: C");
+    }
+
+    #[test]
+    fn a_failed_exit_releases_only_its_own_level() {
+        // #1098: the stand-down after a failed exit holds for the level it
+        // happened on (`time.level`), not the next one.
+        let mut st = BorgState::default();
+        st.borg.time.level = 1000;
+        st.borg.time.now = 1100;
+        assert!(!released(&st));
+        st.borg.stair_explore_released = Some(st.borg.time.level);
+        assert!(released(&st));
+        st.borg.time.level = 1200; // a new level
+        assert!(!released(&st));
+    }
+
+    #[test]
+    fn standing_on_a_staircase_is_no_failed_exit() {
+        assert!(on_a_staircase(FEAT_LESS));
+        assert!(on_a_staircase(FEAT_MORE));
+        assert!(!on_a_staircase(FEAT_RUBBLE));
+    }
+
+    #[test]
+    fn c_exhaustion_waits_while_impaired() {
+        // Replays of #1117: a confusion trap (Blackguard 312081895) and an
+        // invisible attacker (Druid 781905420) made the far exploration and
+        // both stair flows fail; the failed exit released the whole level.
+        assert!(!impaired(false, false, false));
+        assert!(impaired(true, false, false), "confused, blind or hallucinating");
+        assert!(impaired(false, true, false), "boosted bravery");
+        assert!(impaired(false, false, true), "an invisible attacker");
+    }
+
+    #[test]
+    fn mixed_without_a_route_to_a_staircase_c_explores() {
+        // #1098, as breadth-first: no ring for the Borg, C's methods.
+        let mut m = Map::new(&["#########", "#?<.^.@?#", "#########"]);
+        assert_eq!(m.explore_mixed(5, 2, 10), None);
+        assert_eq!(mixed_plan(&[(0, 0, 1)], None, 5, 2, 10, 16), Plan::Fallback);
+    }
+
+    /// The model at DL1-5 with the shipped numbers and `max_hp`.
+    fn model(max_hp: i32) -> MixModel {
+        MixModel { start: 5, sight: 5, light: 2, ratio: 2, max_hp, contact: 5, depth: 3, max: 30 }
+    }
+
+    #[test]
+    fn mixed_the_limit_grows_with_hp_as_the_escape_model_says() {
+        // #1098: R = D / (r - 1) + HP / c, D = max(sight, light).
+        assert_eq!(mix_limit(model(17)), 5 + 3, "Mage CL4 584191223, 17 HP: 8 (C's leash: 21)");
+        assert_eq!(mix_limit(model(26)), 5 + 5, "Mage CL4 645909552, 26 HP: 10");
+        assert_eq!(mix_limit(model(60)), 5 + 12);
+        assert!(mix_limit(model(60)) > mix_limit(model(26)), "a bigger HP pool, a bigger radius");
+        assert_eq!(mix_limit(MixModel { light: 7, ..model(26) }), 7 + 5, "a light wider than the sight");
+        assert_eq!(mix_limit(MixModel { ratio: 3, ..model(26) }), 2 + 5, "faster monsters: half the run");
+        assert_eq!(mix_limit(MixModel { depth: 7, ..model(26) }), 5 + 2, "DL6-10: twice the contact damage");
+        assert_eq!(mix_limit(model(500)), 30, "the cap");
+        assert_eq!(mix_limit(MixModel { sight: 0, light: 0, ..model(0) }), 5, "never below the start");
+        assert_eq!(depth_band(1), 1);
+        assert_eq!(depth_band(5), 1);
+        assert_eq!(depth_band(6), 2);
+        assert_eq!(depth_band(11), 3);
+    }
+
+    #[test]
+    fn mixed_ships_off() {
+        // #1098: the switch at 0 is C's order: borg_flow_dark never calls the
+        // mixed walk (`mixed_active` tests it first).
+        assert_eq!(value(Param::explore_mixed), 0, "compiled 0: C's order");
+        assert_eq!(value(Param::explore_mix_radius), 5);
+        assert_eq!(value(Param::explore_mix_step), 2);
+        assert_eq!(value(Param::explore_mix_sight), 5);
+        assert_eq!(value(Param::explore_mix_speed_ratio), 2);
+        assert_eq!(value(Param::explore_mix_contact_damage), 5);
+        assert_eq!(value(Param::explore_mix_max_radius), 30);
+        assert_eq!(value(Param::explore_mix_max_clevel), 50, "compiled: no cap (C's leash ends at CL20)");
+    }
+
+    #[test]
+    fn mixed_stops_above_the_class_cap() {
+        // Owner, 2026-11-23: "explore_mix_max_clevel by class".
+        assert!(within_mix_levels(6, 6), "up to the cap");
+        assert!(!within_mix_levels(7, 6), "above it, C's order");
+        assert!(within_mix_levels(19, 50), "compiled: no cap");
     }
 }
