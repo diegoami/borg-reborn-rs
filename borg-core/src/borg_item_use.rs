@@ -18,7 +18,8 @@
 // borg-reborn-rs (#242): named item_use policy; default operations unchanged.
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
-use crate::borg_inventory::borg_slot;
+use crate::borg_inventory::{borg_slot, borg_slot_in_pack};
+use crate::borg_item_val::ItemValState;
 use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
 use crate::borg_item::inven_wield;
 use crate::borg_item_analyze::borg_obj_has_effect;
@@ -238,7 +239,8 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     let bad_status = [BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISPOISONED, BI_ISCUT, BI_ISSTUN,
         BI_ISHEAVYSTUN, BI_ISIMAGE, BI_ISPARALYZED, BI_ISHUNGRY, BI_ISWEAK, BI_ISFORGET]
         .into_iter()
-        .any(|f| st.borg.tr(f) != 0);
+        .any(|f| st.borg.tr(f) != 0)
+        || untraited_bad_timer();
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     let turns = param(Param::item_test_unknown_danger_turns).max(1);
     let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
@@ -282,6 +284,93 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     borg_keypress(st, letter(n));
     clear_shop_goals(st);
     st.borg.trying_unknown = true;
+    // borg-reborn-rs (#1060): a bad potion's status is waited out here. The
+    // statuses count down once a world tick, every 10 game turns
+    // (game-world.c:1080), so the cap is in game turns, whatever the speed.
+    let hold = param(Param::item_test_unknown_hold_turns).max(0);
+    if hold > 0 {
+        st.borg.potion_test_hold_until = engine::game_turn().wrapping_add(hold * 10);
+        st.borg.potion_test_hold_x = st.borg.c.x;
+        st.borg.potion_test_hold_y = st.borg.c.y;
+        st.borg.potion_test_hold_depth = st.borg.tr(BI_CDEPTH);
+    }
+    true
+}
+
+/// borg-reborn-rs (#1060, reviews of #1071): the timed effects of a bad
+/// potion that have no Borg trait, read from their timers as `borg_trait`
+/// reads the haste timers: Slowness (`TIMED_INC:SLOW`, the status bar's
+/// "Slow") and Surprise's stat scramble (`TIMED_INC:SCRAMBLE` 20+1d20,
+/// object.txt; `SCRAMBLE_STATS` until it ends, player_timed.txt).
+fn untraited_bad_timer() -> bool {
+    use crate::headers::list_player_timed_h::{TMD_SCRAMBLE, TMD_SLOW};
+    engine::player_timed(TMD_SLOW) != 0 || engine::player_timed(TMD_SCRAMBLE) != 0
+}
+
+/// borg-reborn-rs (#1060): the statuses a bad unknown potion can leave
+/// (object.txt: Poison, Confusion, Blindness, Sleep, Salt Water's paralysis,
+/// Surprise's amnesia; fear and hallucination from others), waited out in
+/// place; and Slowness and Surprise's scramble (`untraited_bad_timer`, no trait).
+const POTION_TEST_HOLD_STATUSES: [crate::borg_headers::borg_trait_h::C2RustUnnamedH_8; 7] =
+    [BI_ISPOISONED, BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISIMAGE, BI_ISPARALYZED, BI_ISFORGET];
+
+/// borg-reborn-rs (#1060): whether the hold after a potion test goes on: it
+/// started (`hold_until` set), its game-turn cap is not reached, the Borg is
+/// still on the grid and level it tested on (`same_place`: an escape or any
+/// move ends it), in the dungeon, nothing is dangerous here and, unless only
+/// validated (`bad_status` None), a harmful status is active.
+pub(crate) fn potion_test_hold_continues(now: i32, hold_until: i32, depth: i32, same_place: bool,
+    bad_status: Option<bool>, danger: i32) -> bool {
+    hold_until != 0 && now.wrapping_sub(hold_until) <= 0 && depth > 0 && same_place && danger == 0
+        && bad_status.unwrap_or(true)
+}
+
+fn potion_test_same_place(st: &BorgState) -> bool {
+    st.borg.c.x == st.borg.potion_test_hold_x && st.borg.c.y == st.borg.potion_test_hold_y
+        && st.borg.tr(BI_CDEPTH) == st.borg.potion_test_hold_depth
+}
+
+/// borg-reborn-rs (#1060, review of #1071): before `borg_caution` can act
+/// (an escape returns before the hold is looked at), end the hold on any
+/// danger, a move off the test grid, a new level or the cap.
+pub fn potion_test_hold_validate(st: &mut BorgState) {
+    if st.borg.potion_test_hold_until == 0 {
+        return;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    let same = potion_test_same_place(st);
+    if !potion_test_hold_continues(engine::game_turn(), st.borg.potion_test_hold_until, st.borg.tr(BI_CDEPTH), same, None, danger) {
+        st.borg.potion_test_hold_until = 0;
+    }
+}
+
+/// borg-reborn-rs (#1060, owner: "a character drank a potion of poison and
+/// then goes happily exploring"): after a potion test, while the status it
+/// caused lasts and nothing is dangerous, stay still (`,`) in the spot the
+/// test was judged safe in, instead of exploring or walking to stairs (a
+/// Poison costs 1 HP a turn for 12-24 turns, game-world.c:514-516). Called
+/// after `borg_caution`, so the heals and escapes still come first. Any
+/// danger, the status's end or the cap ends the hold.
+pub fn potion_test_hold(st: &mut BorgState) -> bool {
+    if st.borg.potion_test_hold_until == 0 {
+        return false;
+    }
+    let bad_status = POTION_TEST_HOLD_STATUSES.into_iter().any(|f| st.borg.tr(f) != 0) || untraited_bad_timer();
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    let same = potion_test_same_place(st);
+    if !potion_test_hold_continues(engine::game_turn(), st.borg.potion_test_hold_until, st.borg.tr(BI_CDEPTH), same, Some(bad_status), danger) {
+        st.borg.potion_test_hold_until = 0;
+        return false;
+    }
+    // Review of #1071: the ordinary in-place recovery (a known cure, a heal,
+    // a rest) comes first; only when it does nothing does the Borg stand.
+    if crate::borg_recover::borg_recover(st) {
+        return true;
+    }
+    crate::borg_io::borg_note(st, "# Waiting out a bad potion where it was tested (#1060)");
+    borg_keypress(st, key(b','));
     true
 }
 
@@ -382,6 +471,22 @@ mod unknown_potion_tests {
     }
 
     #[test]
+    fn a_bad_potion_is_waited_out_where_it_was_tested() {
+        use super::potion_test_hold_continues as holds;
+        // Game turns: a 30-tick cap from turn 1000 ends at 1300.
+        assert!(holds(1100, 1300, 1, true, Some(true), 0), "poisoned, safe, within the cap");
+        assert!(!holds(1100, 0, 1, true, Some(true), 0), "no test, no hold");
+        assert!(!holds(1301, 1300, 1, true, Some(true), 0), "the cap ends it");
+        assert!(holds(1300, 1300, 1, true, Some(true), 0), "the last game turn of the cap");
+        assert!(!holds(1100, 1300, 1, true, Some(false), 0), "the status ended (or the potion was harmless)");
+        assert!(!holds(1100, 1300, 1, true, Some(true), 3), "a danger ends it: the ordinary caution decides");
+        assert!(!holds(1100, 1300, 0, true, Some(true), 0), "not in town");
+        assert!(!holds(1100, 1300, 1, false, Some(true), 0), "moved off the test grid (a Phase Door): no hold at the landing");
+        assert!(holds(1100, 1300, 1, true, None, 0), "validation alone does not need the status");
+        assert!(!holds(1100, 1300, 1, true, None, 5), "validation ends it on danger, before caution acts");
+    }
+
+    #[test]
     fn a_known_poison_cure_waives_the_hp_floor() {
         use super::unknown_potion_min_hp as floor;
         assert_eq!(floor(60, true, false), 60, "Ranger 142490685: 18/18 HP, no cure: no test (#1063)");
@@ -457,9 +562,11 @@ fn eat_in_current_shape(st: &mut BorgState, tval: i32, sval: i32, shapechanged: 
         return false;
     }
 
-    /* Look for that food */
     let i = borg_slot(st, tval, sval);
+    eat_from_slot(st, i)
+}
 
+fn eat_from_slot(st: &mut BorgState, i: i32) -> bool {
     /* None available */
     if i < 0 {
         return false;
@@ -1311,23 +1418,48 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
 
 /// Satisfy hunger using known supplies without using unrelated items.
 pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
-    let food = TV_FOOD as i32;
-    /* Attempt to satisfy hunger */
     // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
-    borg_satisfy_hunger_before_food(st)
+    if borg_satisfy_hunger_before_food(st)
         || borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
         || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
-        || borg_eat(st, food, st.item_val.sv_food_slime_mold)
-        || borg_eat(st, food, st.item_val.sv_food_slice)
-        || borg_eat(st, food, st.item_val.sv_food_apple)
-        || borg_eat(st, food, st.item_val.sv_food_pint)
-        || borg_eat(st, food, st.item_val.sv_food_handful)
-        || borg_eat(st, food, st.item_val.sv_food_honey_cake)
-        || borg_eat(st, food, st.item_val.sv_food_ration)
-        || borg_eat(st, food, st.item_val.sv_food_waybread)
-        || borg_eat(st, food, st.item_val.sv_food_draught)
-        || borg_activate_item(st, st.act.food_waybread)
+    {
+        return true;
+    }
+
+    if engine::player_is_shapechanged() {
+        return borg_activate_item(st, st.act.food_waybread);
+    }
+
+    let pack_size = usize::from(engine::z_info().pack_size);
+    let slot = hungry_food_slot(&st.item_val, &st.items.items[..pack_size]);
+    // borg-reborn-rs (#1109): keep the Waybread activation ahead of biscuits.
+    if (slot < 0 || i32::from(st.items.items[slot as usize].sval) == st.item_val.sv_food_biscuit)
+        && borg_activate_item(st, st.act.food_waybread)
+    {
+        return true;
+    }
+    eat_from_slot(st, slot)
+}
+
+fn hungry_food_slot(values: &ItemValState, pack: &[borg_item]) -> i32 {
+    [
+        values.sv_food_slime_mold,
+        values.sv_food_slice,
+        values.sv_food_apple,
+        values.sv_food_pint,
+        values.sv_food_handful,
+        values.sv_food_honey_cake,
+        values.sv_food_ration,
+        values.sv_food_waybread,
+        values.sv_food_draught,
+        // object.txt: Hard Biscuit adds 10 nutrition and has no harmful effect.
+        values.sv_food_biscuit,
+    ]
+    .into_iter()
+    .map(|sval| borg_slot_in_pack(pack, TV_FOOD as i32, sval))
+    .find(|&slot| slot >= 0)
+    .unwrap_or(-1)
 }
 
 /// Recharge things.
@@ -1461,6 +1593,36 @@ mod tests {
         st.items.items[2].tval = TV_MUSHROOM as u8;
         assert!(!eat_in_current_shape(&mut st, TV_MUSHROOM as i32, 1, true));
         assert!(st.io.queued_keys().is_empty());
+    }
+
+    #[test]
+    fn hungry_food_uses_a_known_biscuit_after_the_existing_foods() {
+        let values = ItemValState {
+            sv_food_biscuit: 1,
+            sv_food_ration: 2,
+            ..ItemValState::default()
+        };
+        let food = |sval, aware| borg_item {
+            iqty: 1,
+            tval: TV_FOOD as u8,
+            sval,
+            aware,
+            ..blank_item()
+        };
+
+        let mut pack = [
+            food(1, true),  // Hard Biscuit
+            food(3, true),  // Scrap of Flesh
+            food(2, false), // Unaware Ration of Food
+        ];
+        assert_eq!(hungry_food_slot(&values, &pack), 0);
+
+        pack[2].aware = true;
+        assert_eq!(hungry_food_slot(&values, &pack), 2);
+
+        pack[0].aware = false;
+        pack[2].iqty = 0;
+        assert_eq!(hungry_food_slot(&values, &pack), -1);
     }
 
     #[test]

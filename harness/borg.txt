@@ -1154,6 +1154,24 @@ borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
 borg_param_caution_unseen_bump_phase_min_danger = 5
 
+# #1066 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+# merge"). From the level-1 deaths of track-p 206cf4e7: the Priest 694417276
+# read Phase Door at 41/55 HP into an unexplored room ("0 scary landing grids
+# of 100"), and the Blackguard 2025089708 phased away from its staircase.
+# - escape_phase_unknown_scary: a Phase Door landing grid never seen counts
+#   as scary (escape_phase_unknown_hp_percent 50: only at half HP or more;
+#   escape_phase_unknown_tolerance 75 for the sites with no landing check).
+# - escape_phase_newcomer_wait: a fight lost only because a monster appeared
+#   at range is fought on while the race against the adjacent monsters wins,
+#   HP is at least escape_phase_newcomer_hp_percent (50) of max, and the next
+#   turn cannot cost escape_phase_newcomer_turn_percent (100) of current HP.
+# The replays of the two deaths (on the specimen, one seed each) lived to the
+# cap; no zoo measurement yet (#1073). The unknown switch refuses most Phase
+# Doors in unexplored areas above half HP (71 of 83 in the Priest's replay).
+
+borg_param_escape_phase_unknown_scary = 1
+borg_param_escape_phase_newcomer_wait = 1
+
 # #980: the emergency attack spell (Magic Missile, the reserve spell) only
 # within the current mana (#1056, owner 2026-11-22: "let us change value of
 # attack_reserve_spell_overexert to 0"). At 1 (C) it is cast beyond the
@@ -1605,6 +1623,12 @@ borg_param_item_test_unknown_max_depth = 30
 # stays.
 borg_param_item_test_unknown_min_hp = 60
 borg_param_item_test_unknown_min_hp_cure_exempt = 1
+# #1060 (owner: "a character drank a potion of poison and then goes happily
+# exploring"): after a test, wait out its harmful status (a Slowness or a scramble too) on
+# the test grid, for at most 180 world ticks (Blindness, the longest, lasts up
+# to 175), while nothing is dangerous: in-place recovery first, else stand
+# still; danger, a move or a new level ends it.
+borg_param_item_test_unknown_hold_turns = 180
 # #969: below this percent of max HP a kill-on-sight entry (the grey mushroom
 # patch, #869) is not attacked on sight when a known Cure Light, Serious or
 # Critical Wounds potion is in the pack or an escape is at hand (stairs
@@ -1614,6 +1638,15 @@ borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
 # confused at the patch until death, CLW in the pack).
 borg_param_attack_kill_on_sight_min_hp_percent = 50
+# #1064: when that floor declines the attack, the cure it counted is drunk in
+# the same think (confused: Cure Serious, then Critical, which cure the
+# confusion; then Cure Light, which shortens it by 20 turns) unless it does not
+# outlive the next turn and an escape is at hand (it then takes the stairs
+# underfoot or Phase Door in the same think, and drinks after all if the Phase
+# Door's own gates refuse it), and #867's "attacking first" hold of the
+# confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
+# neither attacking nor drinking with this 0. 0 = #969 alone.
+borg_param_attack_kill_on_sight_floor_cure = 1
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
@@ -1660,11 +1693,15 @@ borg_param_update_miss_wall_guess = 1
 # #879: ranged attacks at a monster the Borg saw recently and believes is
 # still at its last grid (dark, beyond its light), weighted by the chance it
 # is there (100 - decay per monster turn; 100 if immobile or asleep). Melee
-# never. Pairs with cave_light_engine_radius = 1. Ships 0 until the zoo
-# measures it; max_age and decay are hypotheses.
-borg_param_unseen_belief = 0
+# never. Pairs with cave_light_engine_radius = 1. Shipped 1 with decay 5
+# (owner, 2026-11-23: "let us switch to light+belief, decay 5"), on borg-zoo#702's
+# belief full tier at track-p f8725bc0 (900 starts: light+belief-decay5 13
+# deaths, ctl 23, light 17, light+belief at decay 20 15; p 0.087 against ctl,
+# descriptive). The decay grid 10/5/0 on an independent block (starts 1-900)
+# is requested on borg-zoo#702; max_age and decay remain hypotheses.
+borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
-borg_param_unseen_decay_percent = 20
+borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
