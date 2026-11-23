@@ -394,6 +394,24 @@ pub fn return_leash(st: &mut BorgState, up: i32) -> (i32, i32) {
     return_distances(any, st.leash.return_any, up, steps)
 }
 
+/// Breadth-first exploration's return boundary (#1085, `borg_flow_dark`) with
+/// `flow_leash_any_stair` (review of #1087): for every grid, whether its
+/// walking steps from the nearest known staircase of either kind exceed the
+/// return leash `r`, as the return leash itself measures (`steps_at`: an
+/// unknown grid beside a reached one is one more; an unreached one is not
+/// past). `None`: the switch is off or no staircase is known, and #1085's
+/// up-staircase rule decides.
+pub fn past_return(st: &mut BorgState, r: i32) -> Option<Vec<Vec<bool>>> {
+    if !any_stair(st) {
+        return None;
+    }
+    let all = all_stairs(st);
+    let i = steps_map(st, &all)?;
+    let walk = walk_here(st);
+    let map = &st.leash.maps[i].2;
+    Some((0..AUTO_MAX_Y).map(|y| (0..AUTO_MAX_X).map(|x| steps_at(map, &walk, y, x).is_some_and(|d| d > r)).collect()).collect())
+}
+
 /// Is a jump from `last` to `now` (y, x) more than a step? Returns its
 /// length in grids (`engine::distance`, as the engine's teleport measures).
 fn jump(last: (i32, i32), now: (i32, i32)) -> Option<i32> {

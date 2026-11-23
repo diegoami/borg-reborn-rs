@@ -7183,7 +7183,7 @@ piece of #1080, split out as #1085):
    cannot walk to do not use up the 16 tries.
 
 While the "wandered too far" return leash of `borg_think_dungeon` applies
-(`return_leash`: 3 x CL + 14 from the nearest up staircase, by `distance`),
+(`return_leash_with`: 3 x CL + 14 from the nearest up staircase, by `distance`; with `flow_leash_any_stair`, #1062, the walking steps to the nearest staircase of either kind),
 no target and no path grid lies past it. Without that, a target near a down
 staircase but past the return leash sent the Borg out and back: 622 returns
 in 20 games against 65 for the control, and one Necromancer at CL3 on DL1

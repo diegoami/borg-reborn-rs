@@ -189,13 +189,10 @@ fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
 /// too far)"): the distance from the nearest known up staircase beyond which
 /// the Borg walks back to it, or `None` where it does not apply. Shared with
 /// the breadth-first exploration (#1080), which never targets past it.
-pub(crate) fn return_leash(st: &BorgState) -> Option<i32> {
-    return_leash_with(st, false)
-}
-
-/// `return_leash`, where with `any_stair` (`flow_leash_any_stair`, #1062) a
-/// known down staircase also makes it apply.
-fn return_leash_with(st: &BorgState, any_stair: bool) -> Option<i32> {
+///
+/// With `any_stair` (`flow_leash_any_stair`, #1062) a known down staircase
+/// also makes it apply; without it, a known up staircase only (C's).
+pub(crate) fn return_leash_with(st: &BorgState, any_stair: bool) -> Option<i32> {
     if !((st.stairs.less.num != 0 || (any_stair && st.stairs.more.num != 0))
         && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
         && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5)
