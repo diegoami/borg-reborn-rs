@@ -47,6 +47,12 @@ pub struct BorgState {
     pub trip: crate::borg_trip::TripState,
     /// borg-reborn-rs (#840): the basic kit's notes and the purse at the last town think.
     pub kit: crate::borg_kit::KitState,
+    /// borg-reborn-rs (#1067): traps set off on this level, the way back they cut.
+    pub trap_way: crate::borg_trap_way::TrapWayState,
+    /// borg-reborn-rs (#1061): the stair_scum mode's doors and walks on this level.
+    pub stair_scum: crate::borg_stair_scum::StairScumState,
+    /// borg-reborn-rs (#1062): the leash's arrival grid, jumps and walk back.
+    pub leash: crate::borg_leash::LeashState,
     /// The token engine object handles borrow (`engine::Access`): a handle
     /// made from `&st.access` cannot be kept across an engine call that
     /// takes `&mut BorgState` (docs/SELF-REVIEW.md L4).

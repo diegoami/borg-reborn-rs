@@ -3004,7 +3004,9 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
             let reserve = if policy && lantern {
                 let journey = supply_journey.get_or_insert_with(||
                     crate::borg_town_utility::Journey::of(st));
-                let goal = journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns)));
+                // borg-reborn-rs (#1110): the planner's goal, scaled while
+                // breadth-first exploration applies.
+                let goal = crate::borg_light::fuel_goal(st, *journey);
                 let shortage = (goal - i64::from(light.timeout)).max(0) as u64;
                 shortage.div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };

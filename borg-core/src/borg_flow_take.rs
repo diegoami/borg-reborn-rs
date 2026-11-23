@@ -553,6 +553,9 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
     /* Check distance away from stairs, used later */
     let (b_stair, b_j) = nearest_up_stair(st);
 
+    // borg-reborn-rs (#1061): stair_scum takes only items inside its radius.
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     /* borg-reborn-rs (#761): short of Phase Doors, one on the floor is exempt from the leash */
     let (phase_short_below, phase_first) = crate::borg_flow::take_phase_rule();
     // borg-reborn-rs (#761, review of #778): the threshold is the held
@@ -581,7 +584,13 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         let is_phase = phase_short && take_is_phase(st, take.kidx);
 
         /* Skip ones that make me wander too far */
-        if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, leash) {
+            if !is_phase && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) && skip {
+                continue;
+            }
+        } else if !is_phase && b_stair != -1 && (st.borg.tr(BI_CLEVEL) < c.take_near_max_level || kit_leash) {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -593,6 +602,11 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
 
         /* skip worthless items */
         if take.value <= 0 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's radius.
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
@@ -633,7 +647,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
         if !is_phase
             && nearness > c.take_nearness
             && (st.borg.tr(BI_CLEVEL) < c.take_max_level || kit_leash)
-            && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
+            // borg-reborn-rs (#1062): C's `borg_flow_cost_stair(..) > leash` with its switches off.
+            && crate::borg_leash::beyond(st, y, x, b_stair, leash)
         {
             continue;
         }
@@ -743,6 +758,9 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
     /* Check for an existing "up stairs" */
     let (b_stair, _) = nearest_up_stair(st);
 
+    // borg-reborn-rs (#1061): stair_scum takes only items inside its radius.
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     /* Scan the object list -- set filter*/
     let mut i: i32 = 1;
     while i < i32::from(st.takes.nxt) {
@@ -760,6 +778,11 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
 
         /* skip worthless items */
         if take.value <= 0 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's radius.
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 

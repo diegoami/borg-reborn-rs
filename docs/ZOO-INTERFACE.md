@@ -229,6 +229,18 @@ Precedence: compiled default < `borg.txt` < a `borg.txt` class line <
 `BORG_PARAM_<NAME>` < `BORG_PARAM_<NAME>__<CLASS>`. The character's class picks
 its values (also after a reincarnation into another class).
 
+**Race values (#1061).** A `borg_param_<name>` can also have a value for one
+race, written the same way: `borg_param_<name>__<race> = <value>` (or
+`@<race>`) in `borg.txt`, `BORG_PARAM_<NAME>__<RACE>` in the environment. The
+race names are `p_race.txt`'s in lower case with `-` as `_`: human, half_elf,
+elf, hobbit, gnome, dwarf, half_orc, half_troll, dunadan, high_elf, kobold. No
+race name is a class name (a unit test checks it). A class value comes first,
+then the race's, then the common one; the race applies at birth and at every
+reincarnation, as the class does. The first parameter read per race is
+`stair_scum_max_hp_race_delta` (`borg_param_stair_scum_max_hp_race_delta__hobbit = 3`).
+`params-core.json` gives them as `race_values`, only where some are set. The
+core's own `borg_*` settings have no race values.
+
 Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
 `BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
 `borg_town_w_*`) have class values too, as `borg_<name>__<class> = <value>`

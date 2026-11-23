@@ -937,7 +937,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let light_goal = journey.fuel_goal(light_reserve);
+    // borg-reborn-rs (#1110): more light while breadth-first exploration applies.
+    let light_goal = crate::borg_light::fuel_goal(st, journey);
     let restore_life_reserve = i64::from(restore_life_reserve(st));
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve };
     // Keep the historical facts shape when the reserve is disabled.
@@ -985,12 +986,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#761, owner): a class's own food weight, in percent of
     // borg_town_w_food (100 = today).
     let w_food = scale_percent(cfg(BORG_TOWN_W_FOOD), param(Param::town_food_percent));
-    let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
-    if rations < READY_FOOD * UNIT {
-        curve(FOOD, w_food * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
-    } else {
-        curve(FOOD, w_food * rations, RATION_NUTRITION * rations);
-    }
+    // borg-reborn-rs (#1110): more food while breadth-first exploration
+    // applies: the trip's rations and the five-ration floor alike.
+    let food_percent = crate::borg_flow_dark::bfs_supply_percent(st, false);
+    let (food_weight, food_demand) =
+        food_curve(w_food, journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1), food_percent);
+    curve(FOOD, food_weight, food_demand);
     // borg-reborn-rs (#491, owner: "we can never have enough healing").
     // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
     // weight and demand scale together, so its first HP is worth the same
@@ -1307,7 +1308,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1944,6 +1945,17 @@ mod tests {
         assert!(units.contains(&(SPEED, UNIT)) && units.contains(&(FIRE, 20 * UNIT)));
     }
     #[test]
+    fn breadth_first_food_scales_the_trip_and_the_floor() {
+        // #1110: at 100 the curve is today's; at 150 a short trip's floor is
+        // 7.5 rations instead of 5, and a long trip's rations grow alike.
+        assert_eq!(food_curve(3, 2 * UNIT, 100), (3 * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT)));
+        assert_eq!(food_curve(3, 8 * UNIT, 100), (3 * 8 * UNIT, RATION_NUTRITION * 8 * UNIT));
+        let ready = READY_FOOD * UNIT * 3 / 2;
+        assert_eq!(food_curve(3, 2 * UNIT, 150), (3 * ready, -(RATION_NUTRITION * ready)));
+        assert_eq!(food_curve(3, 8 * UNIT, 150), (3 * 12 * UNIT, RATION_NUTRITION * 12 * UNIT));
+        assert_eq!(scale_percent(20_000, 150), 30_000, "the light goal: 20,000 reserve turns become 30,000");
+    }
+    #[test]
     fn food_uses_actual_nutrition_and_crunch_is_only_a_message() {
         let biscuit = effect_supply(&[(EF_NOURISH as u16, 0, 10), (EF_CRUNCH as u16, 0, 0)], 20, 1000);
         assert_eq!(biscuit, [(FOOD, 10 * UNIT)]);
@@ -2432,6 +2444,20 @@ fn prepared_row(trip_weight: i64, percent: i32, copies: i32) -> (i64, i64) {
 /// borg-reborn-rs (#987): the healing potions the first-cure row reserves
 /// (`town_first_cure`, 0 = off).
 fn first_cure_count() -> i64 { i64::from(param(Param::town_first_cure)).max(0) }
+
+/// The food row's (weight, demand): the trip's rations (in UNITs), never
+/// below the five-ration floor, both scaled by `percent` (#1110: more while
+/// breadth-first exploration applies; 100 = today). Below the floor, food is
+/// a requirement (negative demand).
+fn food_curve(w_food: i64, rations: i64, percent: i32) -> (i64, i64) {
+    let rations = scale_percent(rations, percent);
+    let ready = scale_percent(READY_FOOD * UNIT, percent);
+    if rations < ready {
+        (w_food * ready, -(RATION_NUTRITION * ready))
+    } else {
+        (w_food * rations, RATION_NUTRITION * rations)
+    }
+}
 
 fn scale_percent(value: i64, percent: i32) -> i64 {
     value.saturating_mul(i64::from(percent.max(0))) / 100

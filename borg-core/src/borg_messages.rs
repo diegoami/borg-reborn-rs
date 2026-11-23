@@ -633,6 +633,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
     crate::borg_escape::teleport_block_message(st, msg);
+    // borg-reborn-rs (#1067): a trap was set off (`trap_recover` and friends).
+    crate::borg_trap_way::note_message(st, msg);
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
@@ -688,6 +690,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // Store the keypress
         borg_note(st, "# Normal failure.");
 
+        // borg-reborn-rs (#1062): the failed action moved nothing
+        crate::borg_leash::action_failed(st);
+
         // Set the failure flag
         st.update.failure = true;
 
@@ -721,6 +726,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Ignore teleport trap
     if prefix(msg, b"You hit a teleport") {
+        // borg-reborn-rs (#1062): the cause of the next jump
+        crate::borg_leash::teleport_trap(st);
         return;
     }
 
@@ -1203,6 +1210,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
             st.borg.mon.scary = true;
             st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
+        // borg-reborn-rs (#1061): stair_scum goes back onto the stairs.
+        crate::borg_stair_scum::heard_door(st);
     }
 
     // Some spells move the borg from his grid

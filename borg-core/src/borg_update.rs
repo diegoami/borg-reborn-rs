@@ -472,7 +472,9 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
     } else if g.f_idx == FEAT_CLOSED {
         // Doors, only while low level (do not overflow)
-        if st.borg.tr(BI_CLEVEL) <= 5
+        // borg-reborn-rs (#1061, re-review of #1090): and while stair_scum
+        // applies, which may outlast CL5, so a quiet door opening is seen.
+        if (st.borg.tr(BI_CLEVEL) <= 5 || crate::borg_stair_scum::active(st))
             && track_add(&mut st.flow.track_closed, x, y)
             && st.flow.track_closed.num > 254
         {
@@ -1304,6 +1306,9 @@ pub fn borg_update(st: &mut BorgState) {
         step.num = 75;
     }
 
+    // borg-reborn-rs (#1062): the leash's arrival grid and jumps.
+    crate::borg_leash::update(st);
+
     // Reset
     if reset {
         // Fake old panel
@@ -1432,6 +1437,17 @@ pub fn borg_update(st: &mut BorgState) {
                 );
                 st.borg.mon.scary = true;
                 st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
+            }
+        }
+    }
+
+    // borg-reborn-rs (#1061): stair_scum, a known closed door now open that
+    // the Borg did not open (its own opening clears the list).
+    if crate::borg_stair_scum::active(st) {
+        for i in 0..usize::try_from(st.flow.track_closed.num).unwrap_or(0) {
+            let (x, y) = (st.flow.track_closed.x[i], st.flow.track_closed.y[i]);
+            if matches!(u32::from(st.cave.grid(x, y).feat), FEAT_OPEN | FEAT_BROKEN) {
+                crate::borg_stair_scum::door_opened_by_monster(st, y, x);
             }
         }
     }
@@ -1584,7 +1600,9 @@ fn expire_kills(st: &mut BorgState) {
             // Skip recently seen monsters (unless hallucinating and afraid)
             let recent = borg_timer(st, kill.when) < 2000
                 && !(st.borg.tr(BI_ISIMAGE) != 0 && st.borg.tr(BI_ISAFRAID) != 0);
-            if !recent {
+            // borg-reborn-rs (#1125, `caution_remember_never_move`): a
+            // monster that never moves is still where it was seen.
+            if !recent && !crate::borg_caution::remember_never_move(usize::from(kill.r_idx)) {
                 let mut note = b"# Expiring a monster '".to_vec();
                 note.extend_from_slice(pct_s(borg_race_name(i32::from(kill.r_idx)).to_bytes()));
                 note.extend_from_slice(

@@ -65,6 +65,15 @@ PINNED_TOWN_SETTINGS = [
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
+    # #1067 shipped the trap rules after these incidents.
+    ("trap_recover", 0), ("trap_way_back", 0), ("trap_leave_level_count", 0),
+    # #1123 enabled the retreat guards after these incidents.
+    ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
+    # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
+    # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
+    ("stair_scum", 0),
+    # #1062 shipped the stair-leash switches after these incidents.
+    ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -150,6 +159,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
+            # #1061: the stair_scum mode (shipped after these cases) is not
+            # what they test; pin it off.
+            config, changed = re.subn(r"^borg_param_stair_scum = .*$", "borg_param_stair_scum = 0", config, flags=re.M)
+            if changed == 0:
+                config += "\nborg_param_stair_scum = 0\n"
             for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
                 key = f"borg_param_caution_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)

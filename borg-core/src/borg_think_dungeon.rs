@@ -187,8 +187,11 @@ fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
 /// too far)"): the distance from the nearest known up staircase beyond which
 /// the Borg walks back to it, or `None` where it does not apply. Shared with
 /// the breadth-first exploration (#1080), which never targets past it.
-pub(crate) fn return_leash(st: &BorgState) -> Option<i32> {
-    if !(st.stairs.less.num != 0
+///
+/// With `any_stair` (`flow_leash_any_stair`, #1062) a known down staircase
+/// also makes it apply; without it, a known up staircase only (C's).
+pub(crate) fn return_leash_with(st: &BorgState, any_stair: bool) -> Option<i32> {
+    if !((st.stairs.less.num != 0 || (any_stair && st.stairs.more.num != 0))
         && (st.borg.tr(BI_MAXHP) < 30 || st.borg.tr(BI_CLEVEL) < 15)
         && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5)
     {
@@ -289,6 +292,13 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
             && st.borg.tr(BI_CDEPTH) == 0
             && borg_flow_stair_both(st, GOAL_FLEE, false)
         {
+            return true;
+        }
+
+        // borg-reborn-rs (#1062): the return leash's walk back goes to the
+        // nearest staircase of either kind (`flow_leash_any_stair`).
+        if st.leash.return_any && borg_flow_stair_both(st, GOAL_FLEE, false) {
+            borg_note(st, "# Looking for stairs. Goal_less, any stair, brave.");
             return true;
         }
 
@@ -496,15 +506,26 @@ fn borg_check_bounciness(st: &mut BorgState) -> bool {
         st.takes.nxt = 1;
 
         /* Forget old monsters */
+        // borg-reborn-rs (#1125, `caution_remember_never_move`): except
+        // those that never move (a floating eye forgotten here at 500 was
+        // walked next to, seed 453254028).
+        let mut kept: i16 = 0;
         let mut i = 1;
         while i < i32::from(st.kills.nxt) {
-            borg_delete_kill(st, i);
+            let kill = st.kills.kills[i as usize];
+            if kill.r_idx != 0 && crate::borg_caution::remember_never_move(usize::from(kill.r_idx)) {
+                let name = String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))).into_owned();
+                borg_note(st, &format!("# Keeping the never-moving {name} at ({},{}) through the bounce reset (#1125)", kill.pos.y, kill.pos.x));
+                kept += 1;
+            } else {
+                borg_delete_kill(st, i);
+            }
             i += 1;
         }
 
         /* No monsters here */
-        st.kills.cnt = 0;
-        st.kills.nxt = 1;
+        st.kills.cnt = kept;
+        st.kills.nxt = crate::borg_caution::kills_tail(&st.kills.kills, st.kills.nxt);
     }
 
     if st.borg.tr(BI_CDEPTH) != 0 && st.borg.antibounce_count >= 700 {
@@ -718,9 +739,19 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Keep borg on a short leash */
-    if let Some(leash) = return_leash(st) {
+    // borg-reborn-rs (#1062): with `flow_leash_any_stair` the nearest known
+    // staircase of either kind; the walk back goes to the nearest of them.
+    let any_stair = crate::borg_leash::any_stair(st);
+    if !st.borg.goal.less {
+        st.leash.return_any = false;
+    }
+    if let Some(leash) = return_leash_with(st, any_stair) {
         /* Check for an existing "up stairs" */
-        b_j = nearest_up_stair(st, b_j);
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, a return starts
+        // on the walking steps to the nearest staircase of either kind; it
+        // ends on them only if this leash started it (`return_leash`).
+        let (b_go, b_near) = crate::borg_leash::return_leash(st, nearest_up_stair(st, b_j));
+        b_j = b_go;
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
@@ -731,16 +762,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
                 /* Start returning */
                 st.borg.goal.less = true;
+                st.leash.return_any = any_stair;
             }
         }
         /* Clear the flag to Return to the upstair-- we are close enough now */
-        else if st.borg.goal.less && b_j < 3 {
+        else if st.borg.goal.less && b_near != -1 && b_near < 3 {
             /* Note */
             borg_note(st, "# Close enough to Stair.");
 
             /* Clear the flag */
             st.borg.goal.less = false;
             st.borg.goal.type_0 = 0;
+            st.leash.return_any = false;
         }
     }
 
@@ -750,6 +783,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#840): the purse in town, and a note when the kit's
     // score or leash moves (only with a kit switch on).
     crate::borg_kit::tick(st);
+
+    // borg-reborn-rs (#1125, `caution_paralyser_step_away`): out of a
+    // never-moving paralyser's reach first, before any fight, rest, cure or
+    // escape (without Free Action, standing next to it is a lost fight).
+    if crate::borg_caution::paralyser_step_away(st) {
+        return choice!("paralyser_step_away");
+    }
 
     // borg-reborn-rs (#830): a harmful curse comes off at once, before any
     // fight or flight (the curse itself keeps monsters awake and in view).
@@ -788,6 +828,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     if lightless {
         crate::borg_lightless::recover(st);
         return choice!("lightless_recovery");
+    }
+
+    // borg-reborn-rs (#1062): a jump that left every known staircase far
+    // reads Word of Recall at danger 0 (`flow_leash_teleported_recall`).
+    if crate::borg_leash::teleported_recall(st) {
+        return choice!("leash_teleported_recall");
     }
 
     /* Keep borg on a suitable level */
@@ -846,6 +892,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
     if crate::borg_item_use::potion_test_hold(st) {
         return choice!("potion_test_hold");
+    }
+
+    // borg-reborn-rs (#1061): stair_scum's door alarm, door peek and walk
+    // back inside its radius come before anything but caution (and the
+    // potion-test wait above).
+    if crate::borg_stair_scum::think(st) {
+        return choice!("stair_scum");
     }
 
     // #789: use the normal scary-town stair flow for a retreat without
@@ -953,6 +1006,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_wear_rings");
     }
 
+    // borg-reborn-rs (#1067): a trap set off or a trap that cuts the way
+    // back: recover at the stairs, reopen the way, leave a trap-dense level.
+    // Before the item flows (review of #1086).
+    if crate::borg_trap_way::think(st) {
+        return choice!("borg_trap_way");
+    }
+
     /* Continue flowing towards objects */
     if borg_flow_old(st, GOAL_TAKE) {
         return choice!("borg_flow_old");
@@ -987,8 +1047,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Continue flowing to a safe grid on which I may recover */
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
+    // borg-reborn-rs (#1061): nor while stair_scum rests on its staircase.
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
+        && !crate::borg_stair_scum::holds_on_stairs(st)
         && borg_continue_recovery(st) {
         return choice!("borg_flow_old");
     }
@@ -1002,6 +1064,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * should work closely with borg_recover. */
     if !crate::borg_recover::holding_for_stairs(st)
         && !crate::borg_recover::holding_for_monster(st)
+        && !crate::borg_stair_scum::holds_on_stairs(st)
         && borg_flow_recover(st, 50) {
         return choice!("borg_flow_recover");
     }
@@ -1120,6 +1183,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
         /* Try to find some stairs */
         if st.borg.mon.scary && borg_flow_stair_both(st, GOAL_FLEE, false) {
+            return choice!("borg_flow_stair_both");
+        }
+
+        // borg-reborn-rs (#1062): the return leash's walk back goes to the
+        // nearest staircase of either kind (`flow_leash_any_stair`).
+        if st.leash.return_any && borg_flow_stair_both(st, GOAL_FLEE, false) {
+            borg_note(st, "# Looking for stairs. Goal_less, any stair, Fleeing.");
             return choice!("borg_flow_stair_both");
         }
 
@@ -1469,6 +1539,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Explore interesting grids */
     if borg_flow_dark(st, false) {
         return choice!("borg_flow_dark");
+    }
+
+    // borg-reborn-rs (#1061): stair_scum has used up the grids inside its
+    // radius: a new level.
+    if crate::borg_stair_scum::leave(st) {
+        return choice!("stair_scum_leave");
     }
 
     /*** Deal with shops ***/

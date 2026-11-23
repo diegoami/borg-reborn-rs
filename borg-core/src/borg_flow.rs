@@ -121,6 +121,9 @@ pub struct FlowState {
     /// with `caution_stairs_flight_ignore_danger`: no grid is refused for its
     /// danger (as the desperate walk); a monster on the path is the test.
     pub flight_no_danger: bool,
+    /// borg-reborn-rs (#1067): the spread running is `borg_trap_way`'s,
+    /// which crosses known traps (to reopen a way back they cut).
+    pub through_traps: bool,
     /// borg-reborn-rs (#713): the spread running is a stair flow's
     /// (`borg_flow_spread_stairs`), which may pass through the reach of an
     /// immobile creature kept at range (never onto its grid).
@@ -163,6 +166,7 @@ impl Default for FlowState {
             data_icky: Vec::new(),
             hunting: false,
             flight_no_danger: false,
+            through_traps: false,
             to_stairs: false,
             weighted_flight: WeightedFlight::None,
             up_stair_flight: false,
@@ -594,6 +598,12 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_stepped_from(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#1125, `caution_paralyser_no_reach`): without Free
+    // Action, never onto a known paralyser's grid or next to it, stair
+    // flights included. Not the Borg's own grid, so a flow can lead out.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return true;
+    }
     if ag.kill != 0 && crate::borg_caution::kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }
@@ -626,7 +636,8 @@ fn spread_blocked(
     }
 
     /* Avoid Traps if low level-- unless brave */
-    if ag.trap && !ag.glyph && !twitchy {
+    // borg-reborn-rs (#1067): not for `trap_way_back`'s own spread.
+    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps && !crate::borg_trap_way::trap_underfoot_open(st, x, y) {
         /* Do not disarm when you could end up dead */
         if b.tr(BI_CURHP) < 60 {
             return true;
@@ -1060,6 +1071,13 @@ pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
     if st.flow.retreat_blocks(loc { x, y }) {
         return;
     }
+    // borg-reborn-rs (#1125, review of #1129, finding 1): a destination in a
+    // known paralyser's reach is not seeded either (`spread_blocked` only
+    // sees the grids the flow spreads to; a staircase next to a floating eye
+    // was still a goal). Not the Borg's own grid.
+    if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return;
+    }
     // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
     if crate::borg_caution::unseen_bump_blocked(st, x, y) {
         return;
@@ -1452,6 +1470,8 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         borg_keypress(st, keycode_t::from(b'o'));
     }
     borg_queue_direction(st, i2d(dir));
+    // borg-reborn-rs (#1061): stair_scum peeks before walking through.
+    crate::borg_stair_scum::opened_door(st, dir);
 
     /* Remove this closed door from the list.
      * Its faster to clear all doors from the list
@@ -1619,6 +1639,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* Disarm */
         borg_note(st, "# Disarming a trap");
+        crate::borg_trap_way::note_disarm(st, x, y); // borg-reborn-rs (#1067)
         borg_keypress(st, keycode_t::from(b'D'));
         borg_queue_direction(st, i2d(dir));
 
@@ -1795,6 +1816,13 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     // borg-reborn-rs (#620): a low-level Druid's walk in town: Fox Form first.
     if next.is_some() && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
         return true;
+    }
+
+    // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
+    // step, a resumed flow's too, against its safe area.
+    if next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x)) {
+        st.borg.goal.type_0 = 0;
+        return false;
     }
 
     /* Try it */
@@ -2177,6 +2205,31 @@ pub(crate) fn c_leash() -> CLeash {
         take_near_max_level: value(Param::flow_leash_take_near_max_level),
         take_nearness: value(Param::flow_leash_take_nearness),
         take_max_level: value(Param::flow_leash_take_max_level),
+    }
+}
+
+/// borg-reborn-rs (#1062): the switches for the holes of C's leash
+/// (`borg_leash.rs`), read here as the registry's `flow_` file wants.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LeashHoles {
+    pub any_stair: bool,
+    pub unknown_stair_steps: i32,
+    pub teleported_recall: bool,
+    pub recall_max_level: i32,
+    pub recall_steps: i32,
+    pub recall_min_jump: i32,
+}
+
+/// The `LeashHoles` parameters, on each use (not cached).
+pub(crate) fn leash_holes() -> LeashHoles {
+    use crate::params::{value, Param};
+    LeashHoles {
+        any_stair: value(Param::flow_leash_any_stair) != 0,
+        unknown_stair_steps: value(Param::flow_leash_unknown_stair_steps),
+        teleported_recall: value(Param::flow_leash_teleported_recall) != 0,
+        recall_max_level: value(Param::flow_leash_recall_max_level),
+        recall_steps: value(Param::flow_leash_recall_steps),
+        recall_min_jump: value(Param::flow_leash_recall_min_jump),
     }
 }
 
