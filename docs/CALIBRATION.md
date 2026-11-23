@@ -198,8 +198,8 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_stairs_flight_unknown` | 0 | mode | 0–2 | `borg_caution.rs:6106` |
-| `caution_stairs_flight_unknown_steps` | 5 | steps | 0–100 | `borg_caution.rs:6106` |
+| `caution_stairs_flight_unknown` | 0 | mode | 0–2 | `borg_caution.rs:6111` |
+| `caution_stairs_flight_unknown_steps` | 5 | steps | 0–100 | `borg_caution.rs:6111` |
 
 ## Testing unknown potions when safe (#983)
 
@@ -723,7 +723,7 @@ At a positive weight, only unoccupied staircases are eligible targets.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_stairs_flight_threat_weight` | 0 | extra steps at current HP | 0–100 | `borg_caution.rs:6099` |
+| `caution_stairs_flight_threat_weight` | 0 | extra steps at current HP | 0–100 | `borg_caution.rs:6104` |
 
 ## Phase Door first, unseen flavours, food and light (#761)
 
@@ -2036,8 +2036,8 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:5878` |
-| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:5881` |
+| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:5883` |
+| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:5886` |
 
 ## Kill on sight in town: caster walk, wands, a sure preference (#637)
 
@@ -2960,7 +2960,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:6123` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:6128` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:4325` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:4332` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:5121` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -5866,7 +5866,7 @@ confirmed directional oil kill. No race, HP, AC or monster index is invented.
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `caution_unseen_bump_turns` | 0 | 0–100000 | game turns | `borg_caution.rs:7525` | #781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off. |
+| `caution_unseen_bump_turns` | 0 | 0–100000 | game turns | `borg_caution.rs:7530` | #781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off. |
 | `caution_unseen_bump_response` | 0 | 0–1 | flag | `borg_caution.rs:7650` | #781: after ordinary healing, defence, Recall and food, before stair walking, try one carried Detect Invisible scroll under the existing detection danger/darkness gates, bounded directional oil throws with normal fuel reserves, then Phase Door under the emergency landing test. Requires caution_unseen_bump_turns. Counts successful phases toward level escape accounting. 0 = off. |
 | `caution_unseen_bump_heal_hp_percent` | 0 | 0–100 | percent | `borg_caution.rs:7642` | #781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW after ordinary healing/defence/Recall but before stair walking, even while fleeing. Intentionally ignores danger, including survivable-healing and no-rope-a-doping gates: regional fear does not quantify the unseen blow. Requires caution_unseen_bump_turns; independent of response. 0 = off. |
 | `caution_unseen_bump_throw_tries` | 3 | 0–100 | throws per grid | `borg_caution.rs:7661` | #781: maximum queued oil attempts at one remembered bump grid before trying Phase Door. Cancels also spend an attempt; only one command is queued per response. Expiry or a confirmed kill clears that grid and its budget. 0 = phase after detection; hypothesis, not calibrated. |
@@ -6279,7 +6279,7 @@ switches below are off by default, which reproduces today's play.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
-| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7938` |
+| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:7943` |
 
 ## The Borg's own light radius (#877)
 
@@ -6790,3 +6790,65 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
+
+## stair_scum (#1061)
+
+The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
+(borg-zoo run 45070528012; borg-cemetery study
+`studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
+character with few hit points, "they can go back to the stairs faster than
+any character can come at them". With this section the registry holds
+**2421** parameters (6 added). `stair_scum` ships 0: play is byte-identical
+to before until it is 1. Every number is a hypothesis (RULES 14): borg-zoo
+measures arms at a threshold of 20, 25 and 30, then per class.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:115` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:122` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:122` |
+| `stair_scum_speed_ratio` | 2 | ratio | 2–10 | `borg_stair_scum.rs:257` |
+| `stair_scum_contact_damage` | 8 | HP per turn | 1–1000 | `borg_stair_scum.rs:259` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:443` |
+
+**When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
+plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
+is new with this task, docs/ZOO-INTERFACE.md), and no monster detection: a
+Detect Monsters, Reveal Monsters or Detection spell the Borg can cast
+(`borg_spell_legal`), or a Rod of Detection in the pack (`class.txt` and
+`object.txt`: the spells and the rod with `DETECT_VISIBLE_MONSTERS`; Detect
+Invisible and Detect Life do not count).
+
+**The radius** (`borg_stair_scum.rs`, `Map`). *s(g)* is the walk from *g* to
+the nearest known staircase of either kind over known floor, doors included
+(8-connected, one step each); an unknown grid, rubble or a wall counts one step
+past its nearest walkable neighbour. *R(g)* = *D(g)* / (*r* − 1) + *HP* /
+`stair_scum_contact_damage`, with *D(g)* the Borg's own light radius
+(`own_light_radius`), or, on a known lit (`BORG_GLOW`) floor grid, the
+shortest of the eight straight runs of lit floor from *g* when that is longer.
+A torch in a corridor at 12 HP: 2 + 1 = 3 steps; the centre of a lit room of
+radius 8: 9. *r* = `stair_scum_speed_ratio` (Grip, Fang, the crow and the wild
+cat are `speed:120` in `monster.txt`).
+
+**What it changes.** The dark flows (`borg_flow_dark_1..5`) keep only the
+candidates inside the radius and, of them, the nearest to the staircase; the
+item and monster flows (`take_select`, `borg_flow_kill`) skip targets outside
+it. After caution, a Borg outside its radius walks back all the way onto a
+staircase (the radius on the way is at least the widest *D* of a target it
+admitted since it last stood on one, so a lit-room target reached through a
+dark corridor is not abandoned and retried for ever). A door it opens: one
+step back toward the staircase (or a turn's wait, on it), then a turn's wait,
+then it goes on. "You hear a door burst open!" (`mon-move.c:1269`), or a known
+closed door seen open inside the radius that the Borg did not open: it walks
+onto a staircase and stands there for `stair_scum_alarm_turns` game turns.
+Nothing left inside the radius (after the exploration flows): it takes a
+staircase, on DL1 down first when prepared for DL2, deeper up first, down only
+when prepared for the next depth. On a staircase it rests there (no walk to a
+recovery grid), and a threat of `caution_stairs_leave_danger_percent` of its
+HP that the fight race (`fight_before_flight`, before caution) did not take is
+left by the staircase under it (`leave_stairs_on_monster`).
+
+**Not done here** (the handover lists them): the fight race on the damage
+quantile (the existing race, on the mean, decides); the holes of the C leash
+(#1062: with no staircase known, or none reachable over known grids from the
+Borg's grid, the mode does not restrict the targets).

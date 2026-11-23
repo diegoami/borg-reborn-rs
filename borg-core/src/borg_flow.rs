@@ -1314,6 +1314,8 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         borg_keypress(st, keycode_t::from(b'o'));
     }
     borg_queue_direction(st, i2d(dir));
+    // borg-reborn-rs (#1061): stair_scum peeks before walking through.
+    crate::borg_stair_scum::opened_door(st, dir);
 
     /* Remove this closed door from the list.
      * Its faster to clear all doors from the list

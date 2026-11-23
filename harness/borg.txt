@@ -1568,6 +1568,28 @@ borg_param_kit_leave_danger_percent = 0
 borg_param_kit_restock = 0
 borg_param_kit_start_reserve = 0
 borg_param_kit_money_first = 0
+# stair_scum (#1061, the owner's proposal from the level-1 death review of
+# 206cf4e7): an exploration mode while max HP < stair_scum_max_hp (per class,
+# __<class>) + stair_scum_max_hp_race_delta (per race, __<race>: human,
+# half_elf, elf, hobbit, gnome, dwarf, half_orc, half_troll, dunadan,
+# high_elf, kobold) and no monster detection (Detect Monsters, Reveal
+# Monsters or Detection castable, a Rod of Detection carried). The dark
+# flows, items and monsters stay within R = D / (stair_scum_speed_ratio - 1)
+# + HP / stair_scum_contact_damage steps of the nearest known staircase (D:
+# the light radius, or a lit room's extent), nearest the staircase first;
+# outside it the Borg walks back onto the staircase; a door it opens is
+# peeked through (a step back, a turn's wait); a door heard or seen opened
+# holds it on the staircase for stair_scum_alarm_turns game turns; nothing
+# left inside the radius: it takes a staircase (DL1-2 first, within the
+# depth plan); on a staircase a threat the fight race does not take is left
+# by the stairs. Ships 0 until the zoo measures it (arms at max HP 20, 25,
+# 30); every number is a hypothesis.
+borg_param_stair_scum = 0
+borg_param_stair_scum_max_hp = 25
+borg_param_stair_scum_max_hp_race_delta = 0
+borg_param_stair_scum_speed_ratio = 2
+borg_param_stair_scum_contact_damage = 8
+borg_param_stair_scum_alarm_turns = 100
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.

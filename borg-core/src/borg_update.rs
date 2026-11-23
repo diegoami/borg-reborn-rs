@@ -1428,6 +1428,17 @@ pub fn borg_update(st: &mut BorgState) {
         }
     }
 
+    // borg-reborn-rs (#1061): stair_scum, a known closed door now open that
+    // the Borg did not open (its own opening clears the list).
+    if crate::borg_stair_scum::active(st) {
+        for i in 0..usize::try_from(st.flow.track_closed.num).unwrap_or(0) {
+            let (x, y) = (st.flow.track_closed.x[i], st.flow.track_closed.y[i]);
+            if matches!(u32::from(st.cave.grid(x, y).feat), FEAT_OPEN | FEAT_BROKEN) {
+                crate::borg_stair_scum::door_opened_by_monster(st, y, x);
+            }
+        }
+    }
+
     // *** Track objects and monsters ***
     let y = |w: BorgWank| i32::from(w.y);
     let x = |w: BorgWank| i32::from(w.x);

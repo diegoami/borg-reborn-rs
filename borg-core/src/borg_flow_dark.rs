@@ -38,6 +38,9 @@ use crate::headers::list_terrain_h::{
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
+/// borg-reborn-rs (#1061)
+type Scum = crate::borg_stair_scum::Map;
+
 
 /// One of the flow arrays of borg-flow.c (`st.flow`).
 #[derive(Clone, Copy)]
@@ -527,7 +530,7 @@ fn local_region(st: &BorgState, r: i32) -> (i32, i32, i32, i32) {
 /// Prepare to "flow" towards "interesting" grids (method 1)
 ///
 /// This function examines the torch-lit grids for "interesting" grids.
-fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -557,6 +560,11 @@ fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
         st.flow.temp_push(y, x);
     }
 
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
+
     /* Nothing */
     if st.flow.temp_n == 0 {
         return false;
@@ -577,7 +585,7 @@ fn borg_flow_dark_1(st: &mut BorgState, b_stair: i32) -> bool {
 ///
 /// This function examines the grids just outside the torch-lit grids
 /// for "unknown" grids, and flows directly towards them (one step).
-fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -621,6 +629,11 @@ fn borg_flow_dark_2(st: &mut BorgState, b_stair: i32) -> bool {
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
+    }
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
     }
 
     /* Nothing */
@@ -697,7 +710,7 @@ fn scan_region(
 /// help optimize this function to only handle "easily reachable" grids.
 ///
 /// The "borg_temp" array is much larger than any "local region".
-fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     /* Not in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
@@ -711,6 +724,11 @@ fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
 
     /* Examine the region */
     scan_region(st, region, b_stair, StairTest::Leash, false);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing interesting */
     if st.flow.temp_n == 0 {
@@ -740,7 +758,7 @@ fn borg_flow_dark_3(st: &mut BorgState, b_stair: i32) -> bool {
 /// and then clearing them when done, to prevent confusion elsewhere.
 ///
 /// The "borg_temp" array is large enough to hold one panel full of grids.
-fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, false);
 
     /* Not in town */
@@ -761,6 +779,11 @@ fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
 
     /* Examine the panel */
     scan_region(st, (y1, x1, y2, x2), b_stair, StairTest::Dist(leash), false);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing useful */
     if st.flow.temp_n == 0 {
@@ -794,7 +817,7 @@ fn borg_flow_dark_4(st: &mut BorgState, b_stair: i32) -> bool {
 }
 
 /// Prepare to "flow" towards "interesting" grids (method 5)
-fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
+fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32, scum: Option<&Scum>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, false);
 
     /* Not in town */
@@ -808,6 +831,11 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
     /* Examine every "legal" grid */
     let region = (1, 1, AUTO_MAX_Y - 2, AUTO_MAX_X - 2);
     scan_region(st, region, b_stair, StairTest::Dist(leash), true);
+
+    // borg-reborn-rs (#1061): stair_scum keeps the safe ones nearest the stairs.
+    if let Some(m) = scum {
+        crate::borg_stair_scum::filter_dark(st, m);
+    }
 
     /* Nothing useful */
     if st.flow.temp_n == 0 {
@@ -874,33 +902,36 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         i += 1;
     }
 
+    // borg-reborn-rs (#1061): stair_scum's map, measured once (None: off).
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     if neer {
         /* Near */
 
         /* Method 1 */
-        if borg_flow_dark_1(st, b_stair) {
+        if borg_flow_dark_1(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 2 */
-        if borg_flow_dark_2(st, b_stair) {
+        if borg_flow_dark_2(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 3 */
-        if borg_flow_dark_3(st, b_stair) {
+        if borg_flow_dark_3(st, b_stair, scum.as_ref()) {
             return true;
         }
     } else {
         /* Far */
 
         /* Method 4 */
-        if borg_flow_dark_4(st, b_stair) {
+        if borg_flow_dark_4(st, b_stair, scum.as_ref()) {
             return true;
         }
 
         /* Method 5 */
-        if borg_flow_dark_5(st, b_stair) {
+        if borg_flow_dark_5(st, b_stair, scum.as_ref()) {
             return true;
         }
     }

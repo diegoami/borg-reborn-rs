@@ -2084,6 +2084,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         b_stair = i;
     }
 
+    // borg-reborn-rs (#1061): stair_scum's map (None: off).
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
@@ -2181,6 +2184,12 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
         if st.borg.tr(BI_CLEVEL) <= 15 && p > i32::from(st.borg.avoidance) / 3 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's radius (the monster
+        // comes to the staircase or not at all).
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
