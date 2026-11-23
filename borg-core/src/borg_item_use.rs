@@ -189,9 +189,36 @@ fn last_unaware_potion(st: &BorgState) -> i32 {
 /// regeneration. Dragon Breath (DL40+) asks for an aim: `max_depth` keeps the
 /// test above it.
 pub(crate) fn unknown_potion_test_safe(depth: i32, max_depth: i32, cur_hp: i32, max_hp: i32,
-    min_hp_percent: i32, danger: i32, bad_status: bool, food: i32) -> bool {
+    min_hp_percent: i32, min_hp: i32, danger: i32, bad_status: bool, food: i32) -> bool {
     depth > 0 && depth <= max_depth && danger == 0 && !bad_status && food > 0
-        && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent
+        && max_hp > 0 && cur_hp * 100 >= max_hp * min_hp_percent && cur_hp >= min_hp
+}
+
+/// borg-reborn-rs (#1063): the HP floor of the unknown-potion test. It is
+/// `min_hp` (`item_test_unknown_min_hp`), except that with `cure_exempt`
+/// (`item_test_unknown_min_hp_cure_exempt`) a carried poison cure the Borg
+/// knows waives it (0), so only the percent floor stays: a Potion of Poison
+/// is the one test that can kill below the floor (`TIMED_INC:POISONED`
+/// 10+2d7, object.txt; 1 HP a world tick, game-world.c:514-516), and Cure
+/// Critical Wounds or Neutralize Poison ends it (`CURE:POISONED`,
+/// object.txt), drunk by `borg_caution`'s poison cure. Ranger 142490685
+/// tested at 18/18 HP with no cure and died of the Poison.
+/// `carries_poison_cure` is `carries_poison_cure_potion`.
+pub(crate) fn unknown_potion_min_hp(min_hp: i32, cure_exempt: bool, carries_poison_cure: bool) -> i32 {
+    if cure_exempt && carries_poison_cure { 0 } else { min_hp }
+}
+
+/// borg-reborn-rs (#1063, Codex review of #1097): whether the pack holds a
+/// known potion that `borg_caution`'s poison cure drinks without a further
+/// gate: Neutralize Poison (`borg_quaff_potion(sv_potion_cure_poison)`) or
+/// Cure Critical Wounds (`borg_quaff_crit(st, true)`, no stock or repeat
+/// check). A poison-curing food is not one (only `borg_recover` eats it, behind
+/// a random roll), nor a CCW activation (`borg_trait`'s +1000 does not check
+/// the charge). `borg_slot` skips unaware flavours.
+fn carries_poison_cure_potion(st: &mut BorgState) -> bool {
+    let (neutralize, critical) = (st.item_val.sv_potion_cure_poison, st.item_val.sv_potion_cure_critical);
+    crate::borg_inventory::borg_slot(st, TV_POTION as i32, neutralize) >= 0
+        || crate::borg_inventory::borg_slot(st, TV_POTION as i32, critical) >= 0
 }
 
 /// borg-reborn-rs (#983, owner: "test when safe"): with
@@ -215,9 +242,14 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     let turns = param(Param::item_test_unknown_danger_turns).max(1);
     let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
+    // #1063: a known potion of Neutralize Poison or Cure Critical Wounds,
+    // which borg_caution's poison cure drinks, waives the HP floor.
+    let cure = carries_poison_cure_potion(st);
+    let min_hp = unknown_potion_min_hp(param(Param::item_test_unknown_min_hp),
+        param(Param::item_test_unknown_min_hp_cure_exempt) != 0, cure);
     if !unknown_potion_test_safe(st.borg.tr(BI_CDEPTH), param(Param::item_test_unknown_max_depth),
         st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::item_test_unknown_min_hp_percent),
-        danger, bad_status, st.borg.tr(BI_FOOD))
+        min_hp, danger, bad_status, st.borg.tr(BI_FOOD))
     {
         return false;
     }
@@ -335,16 +367,31 @@ mod unknown_potion_tests {
 
     #[test]
     fn only_a_safe_moment_in_the_dungeon() {
-        assert!(safe(1, 30, 21, 28, 50, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28, danger 0");
-        assert!(!safe(0, 30, 28, 28, 50, 0, false, 3), "not in town");
-        assert!(!safe(31, 30, 28, 28, 50, 0, false, 3), "not below the depth cap (Dragon Breath)");
-        assert!(safe(30, 30, 28, 28, 50, 0, false, 3), "at the depth cap");
-        assert!(!safe(1, 30, 28, 28, 50, 5, false, 3), "a danger within the turns");
-        assert!(!safe(1, 30, 13, 28, 50, 0, false, 3), "below the HP floor");
-        assert!(safe(1, 30, 14, 28, 50, 0, false, 3), "at the floor");
-        assert!(!safe(1, 30, 28, 28, 50, 0, true, 3), "a harmful status (paralysis included)");
-        assert!(!safe(1, 30, 28, 28, 50, 0, false, 0), "no food after a Salt Water");
-        assert!(!safe(1, 30, 0, 0, 50, 0, false, 3), "no max HP");
+        assert!(!safe(1, 30, 21, 28, 50, 25, 0, false, 3), "seed 17626119 at turn 7295: HP 21/28 is below 25 (#1060)");
+        assert!(safe(1, 30, 25, 40, 50, 25, 0, false, 3), "25 HP of 40");
+        assert!(!safe(0, 30, 28, 28, 50, 25, 0, false, 3), "not in town");
+        assert!(!safe(31, 30, 28, 28, 50, 25, 0, false, 3), "not below the depth cap (Dragon Breath)");
+        assert!(safe(30, 30, 28, 28, 50, 25, 0, false, 3), "at the depth cap");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 5, false, 3), "a danger within the turns");
+        assert!(!safe(1, 30, 26, 60, 50, 25, 0, false, 3), "below the percent floor");
+        assert!(safe(1, 30, 30, 60, 50, 25, 0, false, 3), "at the percent floor");
+        assert!(!safe(1, 30, 24, 28, 50, 25, 0, false, 3), "below 25 HP: a Poison costs up to 24 (#1060)");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 0, true, 3), "a harmful status (paralysis included)");
+        assert!(!safe(1, 30, 28, 28, 50, 25, 0, false, 0), "no food after a Salt Water");
+        assert!(!safe(1, 30, 0, 0, 50, 25, 0, false, 3), "no max HP");
+    }
+
+    #[test]
+    fn a_known_poison_cure_waives_the_hp_floor() {
+        use super::unknown_potion_min_hp as floor;
+        assert_eq!(floor(60, true, false), 60, "Ranger 142490685: 18/18 HP, no cure: no test (#1063)");
+        assert_eq!(floor(60, true, true), 0, "a known CCW or Neutralize Poison: only the percent floor");
+        assert_eq!(floor(60, false, true), 60, "exemption off: the floor holds");
+        assert_eq!(floor(25, false, false), 25, "compiled defaults: #1060's floor");
+        assert!(!safe(1, 30, 18, 18, 50, floor(60, true, false), 0, false, 3), "142490685 does not test");
+        assert!(safe(1, 30, 18, 18, 50, floor(60, true, true), 0, false, 3), "with a cure it may");
+        assert!(!safe(1, 30, 59, 80, 50, floor(60, true, false), 0, false, 3), "59 HP: below 60");
+        assert!(safe(1, 30, 60, 80, 50, floor(60, true, false), 0, false, 3), "60 HP: at the floor");
     }
 }
 
