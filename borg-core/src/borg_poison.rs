@@ -212,18 +212,22 @@ fn food_cure(st: &BorgState) -> Option<(i32, i32)> {
 /// tries first, each checked as its use would be (spell mana and fail rate,
 /// device charge and fail rate, activation charge).
 fn usable_cure(st: &mut BorgState) -> bool {
-    use crate::borg_item_use::{borg_equips_item, borg_equips_rod, borg_equips_staff_fail};
+    use crate::borg_item_use::{borg_equips_item, device_would_fire};
+    use crate::headers::list_tvals_h::{TV_ROD, TV_STAFF};
     let fail = param(Param::caution_heal_spell_fail);
     let v = &st.item_val;
     let (rod, staff, np, ccw) = (v.sv_rod_curing, v.sv_staff_curing, v.sv_potion_cure_poison, v.sv_potion_cure_critical);
     let (act_pois, act_ccw) = (st.act.rem_fear_pois, st.act.cure_critical);
     crate::borg_magic::borg_spell_okay_fail(st, CURE_POISON, fail)
         || crate::borg_magic::borg_spell_okay_fail(st, HERBAL_CURING, fail)
-        || borg_equips_rod(st, rod)
-        || borg_equips_staff_fail(st, staff)
+        // The use limits, as `borg_zap_rod` and `borg_use_staff_fail` read
+        // them (re-review of #1146).
+        || device_would_fire(st, TV_ROD, rod)
+        || device_would_fire(st, TV_STAFF, staff)
         || borg_equips_item(st, act_pois, true)
         || borg_equips_item(st, act_ccw, true)
-        || food_cure(st).is_some()
+        // `borg_eat` refuses while shapechanged (a Druid in fox form).
+        || (!engine::player_is_shapechanged() && food_cure(st).is_some())
         || potions(st, np) > 0
         || potions(st, ccw) > 0
 }
@@ -258,7 +262,10 @@ pub(crate) fn read(st: &mut BorgState) -> Option<Triage> {
         healing: healing_carried(clw, csw, maxhp, line),
         cure_carried,
         precious,
-        cure: cure_carried && enabled(),
+        // Re-review of #1146: F declines next to an awake poisoner, so a cure
+        // it cannot use there must not stand E and C aside (a Borg with
+        // Neutralize Poison beside a white jelly still races and leaves).
+        cure: cure_carried && enabled() && !poisoner_adjacent(st),
     })
 }
 
@@ -427,14 +434,19 @@ pub(crate) fn unfixable_here(st: &mut BorgState) -> Option<Triage> {
 
 /// C: rising (each level climbs on), and Recall read below DL1, or on DL1
 /// with no known up staircase, when its delay can be outlived
-/// (`recall_survivable`); otherwise the stairs. True when Recall was read.
+/// (`recall_survivable`) and the flight Recall's exposure test allows it;
+/// otherwise the stairs. True when Recall was read.
 pub(crate) fn leave_recall(st: &mut BorgState, t: &Triage) -> bool {
     st.borg.goal.rising = true;
     let stairs_known = st.stairs.less.num != 0;
+    // Re-review of #1146: through the flight Recall's own test
+    // (`borg_recall_for_flight`: the monsters' exposure during the delay,
+    // #758/#880), not the plain read, so a nearby monster that makes waiting
+    // lethal still refuses it.
     let recall = st.borg.goal.recalling == 0
         && (st.borg.tr(BI_CDEPTH) >= 2 || !stairs_known)
         && recall_survivable(t.hp + t.healing, stairs_known)
-        && crate::borg_escape::borg_recall(st);
+        && crate::borg_escape::borg_recall_for_flight(st);
     if recall {
         borg_note(st, &format!("# Recalling: the poison takes about {} HP, more than HP {} + healing {} (#1140)",
             t.pending, t.hp, t.healing));

@@ -7843,8 +7843,8 @@ With `deal_with_poison` on:
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `deal_with_poison` | 0 | flag | 0–1 | `borg_poison.rs:191` |
-| `poison_late_drink_margin` | 2 | HP | 0–100 | `borg_poison.rs:233` |
-| `poison_cure_pending_percent` | 50 | percent of current HP | 0–1000 | `borg_poison.rs:371` |
+| `poison_late_drink_margin` | 2 | HP | 0–100 | `borg_poison.rs:237` |
+| `poison_cure_pending_percent` | 50 | percent of current HP | 0–1000 | `borg_poison.rs:378` |
 
 ## Mixed exploration from the staircases (#1080, #1098)
 
