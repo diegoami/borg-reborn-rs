@@ -35,11 +35,14 @@ def check_arm(out, reserve):
     env = {name: value for name, value in os.environ.items()
            if not name.startswith(("BORG_", "BORGH_", "ANGBAND_"))
            or name in ("BORG_CEMETERY_DIR", "BORG_DEATH_RECORDS_DIR")}
-    # Keep the original fuel policy for the exact Phase Door purchase trace.
+    # Keep the original fuel policy for the exact Phase Door purchase trace,
+    # and #987's first-cure floor off (the Ranger ships 2; with it the cures
+    # are bought first and the trace's order changes).
     env.update(BORG_CORE="borg-rs", BORG_IMPL="rust",
                BORG_TXT_SET=f"borg_param_town_phase_reserve__ranger={reserve};"
                             "borg_param_town_phase_reserve_percent=100;"
-                            "borg_param_town_light_reserve_turns=0")
+                            "borg_param_town_light_reserve_turns=0;"
+                            "borg_param_town_first_cure__ranger=0")
     subprocess.run([str(ROOT / "harness/run.sh"), str(out), "2095979189",
                     "6", "7", "1900", "exact,menu"], cwd=ROOT, env=env,
                    check=True, timeout=90)
