@@ -3304,11 +3304,16 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
         return false;
     }
 
+    // borg-reborn-rs (#1066, review of #1075): under the never-seen policy
+    // an unknown landing grid is scary here too.
+    let unknown_scary = crate::borg_escape::phase_unknown_policy(st);
+
     // Simulate 100 attempts
     let mut n = 0;
     for _k in 0..100 {
         let mut x = 0;
         let mut y = 0;
+        let mut never_seen = false;
 
         // Pick a location
         let mut i = 0;
@@ -3338,6 +3343,11 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
 
             // Skip unknown grids
             if u32::from(ag.feat) == FEAT_NONE {
+                // borg-reborn-rs (#1066): or count them as scary.
+                if unknown_scary {
+                    never_seen = true;
+                    break;
+                }
                 i += 1;
                 continue;
             }
@@ -3356,6 +3366,12 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
 
             // Stop looking.
             break;
+        }
+
+        // borg-reborn-rs (#1066): a landing never seen is scary.
+        if never_seen {
+            n += 1;
+            continue;
         }
 
         // No location: assume that there are unknown spots that you would
