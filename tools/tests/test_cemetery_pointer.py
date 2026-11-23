@@ -1,4 +1,5 @@
 """Forward only pinned Cemetery native bytes, including outside CI."""
+import io
 import os
 from pathlib import Path
 import subprocess
@@ -8,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import cemetery_tools
 from cemetery_tools import locate, forward
 
 
@@ -61,6 +63,106 @@ class CemeteryPointerTest(unittest.TestCase):
             with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
                     'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'):
                 self.assertEqual(locate(repo), cemetery)
+
+    def sibling_and_vendor(self, root):
+        """A primary checkout with a sibling Cemetery whose main has moved its
+        native tools past the pin, and a vendor/ clone at the pin (#902)."""
+        repo, sibling, native, pin = fixture(root, 'borg-cemetery', 'borg-reborn-rs')
+        vendor = repo / 'vendor/borg-cemetery'
+        vendor.parent.mkdir()
+        git(root, 'clone', '-q', str(sibling), str(vendor))
+        git(vendor, 'checkout', '-q', '--detach', pin)
+        (native / 'example.py').write_text('def owner():\n    return "later"\n')
+        git(sibling, 'commit', '-qam', 'native tools move past the pin')
+        return repo, sibling, vendor
+
+    def setUp(self):
+        cemetery_tools._NOTED.clear()
+
+    def test_sibling_past_the_pin_falls_back_to_the_pinned_vendor_checkout(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, sibling, vendor = self.sibling_and_vendor(Path(tmp))
+            stderr = io.StringIO()
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'), \
+                    patch('sys.stderr', stderr):
+                self.assertEqual(locate(repo), vendor)
+            self.assertIn(f'using {vendor}; refused {sibling}: native file differs from pin: example.py',
+                          stderr.getvalue())
+
+    def test_the_fallback_note_is_printed_once_per_process(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, _, vendor = self.sibling_and_vendor(Path(tmp))
+            stderr = io.StringIO()
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'), \
+                    patch('sys.stderr', stderr):
+                self.assertEqual(locate(repo), vendor)
+                self.assertEqual(locate(repo), vendor)
+            self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+
+    def test_an_api_refusal_gives_its_own_reason(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, sibling, vendor = self.sibling_and_vendor(Path(tmp))
+            (sibling / 'scripts/native/API_VERSION').write_text('2\n')
+            stderr = io.StringIO()
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'), \
+                    patch('sys.stderr', stderr):
+                self.assertEqual(locate(repo), vendor)
+            self.assertIn(f'refused {sibling}: scripts/native/API_VERSION is not 1\n', stderr.getvalue())
+
+    def test_a_malformed_or_missing_api_marker_is_a_refusal_not_a_crash(self):
+        for marker in (b'\xff\xfe', None):
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as tmp:
+                cemetery_tools._NOTED.clear()
+                repo, sibling, vendor = self.sibling_and_vendor(Path(tmp))
+                api = sibling / 'scripts/native/API_VERSION'
+                if marker is None:
+                    api.unlink()
+                else:
+                    api.write_bytes(marker)
+                stderr = io.StringIO()
+                with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                        'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'), \
+                        patch('sys.stderr', stderr):
+                    self.assertEqual(locate(repo), vendor)
+                self.assertIn(f'refused {sibling}: scripts/native/API_VERSION is', stderr.getvalue())
+                # An explicit checkout stays fail-closed.
+                with patch.dict(os.environ, BORG_CEMETERY_DIR=str(sibling)):
+                    with self.assertRaisesRegex(RuntimeError, 'API 1'):
+                        locate(repo)
+
+    def test_a_sibling_at_the_pin_is_still_preferred(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo, sibling, _, _ = fixture(root, 'borg-cemetery', 'borg-reborn-rs')
+            vendor = repo / 'vendor/borg-cemetery'
+            vendor.parent.mkdir()
+            git(root, 'clone', '-q', str(sibling), str(vendor))
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'):
+                self.assertEqual(locate(repo), sibling)
+
+    def test_an_explicit_checkout_past_the_pin_never_falls_back(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, sibling, _ = self.sibling_and_vendor(Path(tmp))
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=str(sibling)), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'):
+                with self.assertRaisesRegex(RuntimeError, 'refusing to execute'):
+                    locate(repo)
+
+    def test_no_matching_checkout_names_the_setup_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            repo, _, vendor = self.sibling_and_vendor(Path(tmp))
+            (vendor / 'scripts/native/unexpected.py').write_text('raise AssertionError()\n')
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch(
+                    'cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'):
+                with self.assertRaisesRegex(RuntimeError, 'refusing to execute.*scripts/setup.sh') as caught:
+                    locate(repo)
+            # Every refusal is listed, each with its own reason.
+            self.assertIn('native file differs from pin: example.py', str(caught.exception))
+            self.assertIn('native subtree contains files outside the pin', str(caught.exception))
 
     def test_forwarded_functions_keep_the_actual_consumer_context(self):
         with tempfile.TemporaryDirectory() as tmp:

@@ -1,5 +1,10 @@
-# smoke: 3 seeds x 20,000 game turns, mixed classes
+# smoke: 3 seeds x 20,000 game turns, mixed classes, and one built scenario
 # NAME            SEED  RACE CLASS TURNS
 smoke-warrior-1    101    0      0      20000  menu
 smoke-mage-2       102    2      1      20000  menu
 smoke-priest-3     103    5      3      20000  menu
+# #1056: the emergency attack spell beyond the current mana (#980). A Kobold
+# Mage on DL2 with two kobolds 4 grids away (Mage 592754909's start): with
+# attack_reserve_spell_overexert = 1 it casts Magic Missile without the mana,
+# faints and dies at game turn 56; at 0, shipped, it kills a kobold and plays on.
+smoke-mage-overexert-4 592754909 10 1 6000 menu,start-depth=2,start-monsters=kobold:2:4
