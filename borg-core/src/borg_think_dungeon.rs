@@ -585,6 +585,41 @@ fn borg_check_breeders(st: &mut BorgState) -> bool {
     false
 }
 
+/// The twitchy think's Phase Door (or a longer teleport): borg-reborn-rs
+/// (#1153) shares it with the loop breaker for a boxed-in Borg. The caller
+/// keeps the bound (`times_twitch` < 3 a level).
+pub(crate) fn twitch_phase(st: &mut BorgState) -> bool {
+    let longer = |st: &mut BorgState| {
+        borg_dimension_door(st, 90)
+            || borg_spell(st, TELEPORT_SELF)
+            || borg_spell(st, PORTAL)
+            || borg_shadow_shift(st, 90)
+    };
+    if borg_allow_teleport(st)
+        && (crate::borg_escape::phase_door(
+            st,
+            crate::borg_escape::PhaseSite::TwitchyThink,
+            crate::borg_escape::PhaseCheck::None,
+            None,
+            |st| {
+                borg_spell(st, PHASE_DOOR)
+                    || {
+                        let act = st.act.tele_phase;
+                        borg_activate_item(st, act)
+                    }
+                    || {
+                        let sv = st.item_val.sv_scroll_phase_door;
+                        borg_read_scroll(st, sv)
+                    }
+                    || longer(st)
+            },
+        ) || (st.borg.phase_gate_refused == Some(st.borg.time.now) && longer(st)))
+    {
+        return true;
+    }
+    false
+}
+
 /// "Boost bravery": raise `borg.avoidance` to `to`, try
 /// `borg_think_dungeon_brave`, then reset the avoidance to the current HP.
 /// `before` runs after the danger fields are forgotten and before the
@@ -898,12 +933,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /*** Important goals ***/
 
-    // borg-reborn-rs (#1153): a movement loop (n moves among a few grids,
-    // the map unchanged, no danger) is broken before any flow continues.
-    if crate::borg_loop::break_loop(st) {
-        return choice!("break_loop");
-    }
-
     /* Continue flowing towards good anti-summon grid */
     if borg_flow_old(st, GOAL_DIGGING) {
         return choice!("borg_flow_old");
@@ -912,6 +941,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Try not to die */
     if borg_caution(st) {
         return choice!("borg_caution");
+    }
+
+    // borg-reborn-rs (#1153; review of #1158: caution first): a movement loop
+    // (n moves among a few grids, the map unchanged, no danger) is broken, or
+    // its exit continued, before any other flow.
+    if crate::borg_loop::break_loop(st) {
+        return choice!("break_loop");
     }
 
     // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
@@ -1714,32 +1750,8 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
          * teleports are not a Phase Door landing; when #1066's never-seen
          * gate refused the decision, they are still tried, in the same
          * order. Any other refusal stops them, as before. */
-        let longer = |st: &mut BorgState| {
-            borg_dimension_door(st, 90)
-                || borg_spell(st, TELEPORT_SELF)
-                || borg_spell(st, PORTAL)
-                || borg_shadow_shift(st, 90)
-        };
-        if borg_allow_teleport(st)
-            && (crate::borg_escape::phase_door(
-                st,
-                crate::borg_escape::PhaseSite::TwitchyThink,
-                crate::borg_escape::PhaseCheck::None,
-                None,
-                |st| {
-                    borg_spell(st, PHASE_DOOR)
-                        || {
-                            let act = st.act.tele_phase;
-                            borg_activate_item(st, act)
-                        }
-                        || {
-                            let sv = st.item_val.sv_scroll_phase_door;
-                            borg_read_scroll(st, sv)
-                        }
-                        || longer(st)
-                },
-            ) || (st.borg.phase_gate_refused == Some(st.borg.time.now) && longer(st)))
-        {
+        // borg-reborn-rs (#1153): one function, shared with the loop breaker.
+        if twitch_phase(st) {
             /* Success */
             return choice!("twitch_phase");
         }

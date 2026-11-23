@@ -7947,5 +7947,5 @@ on:
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:97` |
+| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:108` |
 

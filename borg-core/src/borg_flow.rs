@@ -610,6 +610,11 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#1153, review of #1158): a loop's grids closed by the
+    // loop breaker are closed to every spread, so a flow routes around them.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_loop::step_banned(st, y, x) {
+        return true;
+    }
     // borg-reborn-rs (#1147, `caution_walk_away_immobile`): never into a
     // known walk-away monster's reach, stair flights included.
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_walk_away_reach(st, x, y) {
@@ -1502,11 +1507,6 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
 
 /// Take one "step" towards the given location, return true if possible.
 fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
-    // borg-reborn-rs (#1153): a loop's grids closed by the loop breaker.
-    if crate::borg_loop::step_banned(st, y2, x2) {
-        return false;
-    }
-
     /* Breeder levels, close all doors */
     if st.borg.near.breeder && close_breeder_door(st, y2, x2) {
         return true;

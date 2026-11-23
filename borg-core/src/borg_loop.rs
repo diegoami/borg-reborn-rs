@@ -7,14 +7,19 @@
 //! `LOOP_GRIDS` grids while the map learned nothing, with no danger here above
 //! a quarter of the HP. `loop_breaker` then breaks it, the first that
 //! applies:
-//! 1. a walk to a staircase at the normal avoidance (an up one first);
+//! 0. the staircase underfoot, when the Borg may take it;
+//! 1. a walk to a staircase it may take (up first; down only fleeing or
+//!    prepared), at the normal avoidance;
 //! 2. the same with the avoidance boosted to twice the HP;
 //!
-//! either committed (`commit_loop_walk`) and continued here every think, the
-//! staircase taken on arrival (the leaving goal);
-//! 3. for `LOOP_BAN_THINKS` thinks, no step onto the loop's grids other than
-//!    a staircase (`step_banned`, read by `borg_play_step`), so whatever
-//!    undid the other decision cannot.
+//! either committed (`commit_loop_walk`), continued here every think while
+//! live, and the staircase taken on arrival;
+//! 3. for `LOOP_BAN_THINKS` thinks, the loop's grids other than staircases
+//!    closed to every spread and twitch (`step_banned`), so whatever undid the
+//!    other decision cannot; boxed in by them, the twitchy think's bounded
+//!    Phase Door instead.
+//!
+//! It runs after `borg_caution` (review of #1158).
 //!
 //! The note names the two decisions that alternated (the trace's choices),
 //! so each new pair can still get a fix of its own.
@@ -63,6 +68,9 @@ pub struct LoopState {
     ban_until: BorgTime,
     /// The think since which the current loop runs (for the note).
     since: BorgTime,
+    /// An exit the breaker started (review of #1158): the stair kind it walks
+    /// to, taken on arrival.
+    exiting: Option<BraveStairs>,
 }
 
 /// #1153: do these moves make a loop? `LOOP_MOVES` of them, among at most
@@ -92,21 +100,29 @@ fn known_grids(st: &BorgState) -> u32 {
 }
 
 /// #1153: record this think's grid when the Borg moved (a rest is no move),
-/// per level. Called at the start of every dungeon think.
+/// per level. Called at the start of every dungeon think. The arrival on a
+/// level only seeds the position (no move); any think on which the map
+/// learned something, or the danger here passes a quarter of the HP, clears
+/// the window, moved or not (review of #1158).
 pub(crate) fn observe(st: &mut BorgState) {
     if value(Param::loop_breaker) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return;
     }
     let level = st.borg.time.level;
-    if st.loops.level != level {
-        st.loops = LoopState { level, ..LoopState::default() };
-    }
     let here = st.borg.c;
+    if st.loops.level != level {
+        st.loops = LoopState { level, last: Some(here), ..LoopState::default() };
+        return;
+    }
+    let known = known_grids(st);
+    let danger = borg_danger(st, here.y, here.x, 1, true, false);
+    if stale(st.loops.moves.back().map(|m| m.known), known, danger, st.borg.tr(BI_CURHP)) {
+        st.loops.moves.clear();
+    }
     if st.loops.last == Some(here) {
         return;
     }
     st.loops.last = Some(here);
-    let known = known_grids(st);
     let moves = &mut st.loops.moves;
     moves.push_back(Move { at: here, known });
     while moves.len() > LOOP_MOVES {
@@ -115,6 +131,13 @@ pub(crate) fn observe(st: &mut BorgState) {
     if moves.len() == 1 {
         st.loops.since = st.borg.time.now;
     }
+}
+
+/// #1153 (review of #1158): does this think make the window stale? The map
+/// learned something since its last move, or the danger here passes a
+/// quarter of the HP.
+fn stale(last_known: Option<u32>, known: u32, danger: i32, curhp: i32) -> bool {
+    last_known.is_some_and(|k| k != known) || danger > curhp / 4
 }
 
 /// #1153: is a step onto (y, x) closed by the third remedy?
@@ -128,21 +151,75 @@ fn is_staircase(feat: u32) -> bool {
     feat == FEAT_LESS || feat == FEAT_MORE
 }
 
-/// #1153: break a loop the Borg is in. `true`: it acted this think (a step
-/// toward a staircase); `false`: no loop, or the third remedy closed its
-/// grids and the think goes on.
+/// #1153 (review of #1158): may the Borg take up stairs (not under forced
+/// descent), and down stairs (fleeing, or prepared for the next depth, as
+/// `borg_caution` decides)?
+fn stairs_allowed(st: &mut BorgState) -> (bool, bool) {
+    let up = !crate::engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend);
+    let next = st.borg.tr(BI_CDEPTH) + 1;
+    let down = st.borg.goal.fleeing || crate::borg_prepared::prepared_c_for_decision(st, next).is_none();
+    (up, down)
+}
+
+/// #1153 (review of #1158): take the staircase underfoot when it is one the
+/// Borg may take (`stairs_allowed`).
+fn take_stairs_here(st: &mut BorgState) -> bool {
+    let (up, down) = stairs_allowed(st);
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let key = if feat == FEAT_LESS && up {
+        b'<'
+    } else if feat == FEAT_MORE && down {
+        b'>'
+    } else {
+        return false;
+    };
+    crate::borg_io::borg_keypress(st, crate::headers::ui_event_h::keycode_t::from(key));
+    true
+}
+
+/// #1153: is any of the eight grids around the Borg one it could step to,
+/// other than the closed ones? Used to judge it boxed in by the ban.
+fn open_neighbour(st: &BorgState, closed: &[loc]) -> bool {
+    (0..8).any(|i| {
+        let x = st.borg.c.x + i32::from(crate::engine::ddx_ddd(i));
+        let y = st.borg.c.y + i32::from(crate::engine::ddy_ddd(i));
+        (1..AUTO_MAX_X - 1).contains(&x)
+            && (1..AUTO_MAX_Y - 1).contains(&y)
+            && !closed.iter().any(|g| g.x == x && g.y == y)
+            && crate::borg_cave_util::borg_cave_floor_grid(st.cave.grid(x, y))
+    })
+}
+
+/// #1153: break a loop the Borg is in, or continue the exit it started.
+/// Called after `borg_caution` (review of #1158). `true`: it acted this
+/// think.
 pub(crate) fn break_loop(st: &mut BorgState) -> bool {
     if value(Param::loop_breaker) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
-    // A walk the breaker started is continued here, before any other flow
-    // takes the think (replays: `borg_flow_kill_aim` took it back each time,
-    // since a GOAL_FLEE flow is otherwise continued only while fleeing).
-    if st.borg.brave_walk.is_some_and(|w| w.from_loop) && i32::from(st.borg.goal.type_0) == GOAL_FLEE {
-        if crate::borg_flow::borg_flow_old(st, GOAL_FLEE) {
+
+    /* An exit underway: take the stairs on arrival, else continue the walk
+     * while it is live and owns its flow; otherwise it ends here (no
+     * ordinary step falls through, review of #1158) */
+    if st.loops.exiting.is_some() {
+        if take_stairs_here(st) {
+            borg_note(st, "# Loop broken: taking the stairs (#1153)");
+            st.loops.exiting = None;
             return true;
         }
+        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        let live = st.borg.brave_walk.is_some_and(|w| w.from_loop)
+            && i32::from(st.borg.goal.type_0) == GOAL_FLEE
+            && crate::borg_flow::brave_walk_avoidance(st, here).is_some();
+        if live && crate::borg_flow::borg_flow_old(st, GOAL_FLEE) {
+            return true;
+        }
+        st.loops.exiting = None;
+        if st.borg.brave_walk.is_some_and(|w| w.from_loop) {
+            st.borg.brave_walk = None;
+        }
     }
+
     let moves: Vec<Move> = st.loops.moves.iter().copied().collect();
     if !is_loop(&moves) {
         return false;
@@ -164,22 +241,32 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
         moves.len(),
         grids.len()
     );
+    st.loops.moves.clear();
 
-    /* 1, 2: a walk to a staircase (an up one first: a new level is always
-     * safe), at the normal avoidance, then boosted; committed, and taken on
-     * arrival (the leaving goal, up stairs) */
+    /* 0: standing on a staircase the Borg may take */
+    if take_stairs_here(st) {
+        borg_note(st, &format!("{head}; breaking it by the stairs underfoot (#1153)"));
+        return true;
+    }
+
+    /* 1, 2: a walk to a staircase the Borg may take (an up one first: a new
+     * level is always safe), at the normal avoidance, then boosted;
+     * committed, continued above, taken on arrival */
+    let (up, down) = stairs_allowed(st);
     let saved = st.borg.avoidance;
-    let boosted = st.borg.tr(BI_CURHP).saturating_mul(2);
-    for (avoid, how) in [(saved, "a walk to the stairs"), (boosted as i16, "a brave walk to the stairs")] {
-        if avoid < saved {
-            continue;
-        }
+    let boosted = st.borg.tr(BI_CURHP).saturating_mul(2).min(i32::from(i16::MAX)) as i16;
+    let mut tries = vec![(saved, "a walk to the stairs")];
+    if boosted > saved {
+        tries.push((boosted, "a brave walk to the stairs"));
+    }
+    for (avoid, how) in tries {
         st.borg.avoidance = avoid;
         st.danger.wipe = true;
-        let kind = if crate::borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false) {
+        let brave = avoid > saved;
+        let kind = if up && crate::borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false) {
             Some(BraveStairs::Up)
-        } else if crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false) {
-            Some(BraveStairs::Any)
+        } else if down && crate::borg_flow_stairs::borg_flow_stair_more(st, GOAL_FLEE, false, brave) {
+            Some(BraveStairs::Down)
         } else {
             None
         };
@@ -188,27 +275,34 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
         }
         st.borg.avoidance = saved;
         st.danger.wipe = true;
-        if kind.is_some() {
-            st.borg.goal.leaving = true;
-            st.borg.stair_less = true;
+        if let Some(kind) = kind {
+            st.loops.exiting = Some(kind);
             borg_note(st, &format!("{head}; breaking it by {how} (#1153)"));
-            st.loops.moves.clear();
             return true;
-        }
-        if avoid == boosted as i16 {
-            break;
         }
     }
 
-    /* 3: close the loop's grids (staircases excepted) for a while */
-    st.loops.ban = grids
+    /* 3: close the loop's grids (staircases and the Borg's own excepted) for
+     * a while; boxed in by them, the twitchy think's bounded Phase Door */
+    let closed: Vec<loc> = grids
         .into_iter()
         .filter(|g| !is_staircase(u32::from(st.cave.grid(g.x, g.y).feat)) && (g.y, g.x) != (st.borg.c.y, st.borg.c.x))
         .collect();
-    st.loops.ban_until = st.borg.time.now.saturating_add(LOOP_BAN_THINKS);
-    let n = st.loops.ban.len();
-    borg_note(st, &format!("{head}; no stairs reachable: closing its {n} other grids for {LOOP_BAN_THINKS} thinks (#1153)"));
-    st.loops.moves.clear();
+    if open_neighbour(st, &closed) {
+        let n = closed.len();
+        st.loops.ban = closed;
+        st.loops.ban_until = st.borg.time.now.saturating_add(LOOP_BAN_THINKS);
+        borg_note(st, &format!("{head}; no stairs to take: closing its {n} other grids for {LOOP_BAN_THINKS} thinks (#1153)"));
+        return false;
+    }
+    if st.borg.times_twitch < 3 {
+        st.borg.times_twitch = st.borg.times_twitch.wrapping_add(1);
+        borg_note(st, &format!("{head}; boxed in: the twitchy Phase Door (#1153)"));
+        if crate::borg_think_dungeon::twitch_phase(st) {
+            return true;
+        }
+    }
+    borg_note(st, &format!("{head}; boxed in, no Phase Door left: left to the stuck think (#1153)"));
     false
 }
 
@@ -251,6 +345,15 @@ mod tests {
         let mut moves: Vec<Move> = (0..10).map(|i| mv(10, i, 400 + i as u32)).collect();
         moves.extend((0..16).map(|i| mv(20 + i % 2, 3, 600)));
         assert!(is_loop(&moves));
+    }
+
+    #[test]
+    fn a_map_change_or_danger_makes_the_window_stale() {
+        // Review of #1158, finding 4.
+        assert!(!stale(Some(500), 500, 0, 40), "nothing learned, no danger");
+        assert!(stale(Some(500), 501, 0, 40), "the map learned a grid in place");
+        assert!(stale(Some(500), 500, 11, 40), "danger above a quarter of the HP");
+        assert!(!stale(None, 500, 0, 40), "an empty window");
     }
 
     #[test]
