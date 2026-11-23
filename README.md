@@ -63,22 +63,18 @@ repositories into `vendor/` at their pins (the original Angband, the C Borg,
 borg-rs, borg-zoo, ...). Playing does not need them; developing does. It is
 safe to rerun.
 
-**For headless runs**, also clone
-[borg-cemetery](https://github.com/diegoami/borg-cemetery) next to this
-repository, at the commit named in `death-tools-pin.txt`: every run ends by
-handing a death (if any) to its tools, and `harness/run.sh` fails without
-them.
+**For headless runs**, run `scripts/setup.sh` once: it keeps
+[borg-cemetery](https://github.com/diegoami/borg-cemetery) in `vendor/` at the
+commit named in `death-tools-pin.txt` (about 1.2 GB). Every run ends by handing
+a death (if any) to its tools, and `harness/run.sh` fails without them.
 
 ```bash
-git clone https://github.com/diegoami/borg-cemetery.git ../borg-cemetery
+bash scripts/setup.sh
 ```
 
-```bash
-git -C ../borg-cemetery checkout "$(cat death-tools-pin.txt)"
-```
-
-(Or set `BORG_CEMETERY_DIR` to a checkout elsewhere; see
-[tools/README.md](tools/README.md#cemetery-owned-death-tools).)
+A borg-cemetery checkout next to this repository is used instead when its
+tools match the pin, and `BORG_CEMETERY_DIR` names a checkout explicitly; see
+[tools/README.md](tools/README.md#cemetery-owned-death-tools).
 
 ## 3. Watch the Borg play
 
