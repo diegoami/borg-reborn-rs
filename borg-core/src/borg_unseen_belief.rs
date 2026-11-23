@@ -371,9 +371,10 @@ pub(crate) fn believed_weight(st: &BorgState, k: usize) -> Option<i32> {
 /// Starlight's lines: neither is a ball (re-review of #1128, F1).
 pub(crate) const MAX_BALL_RADIUS: i32 = 4;
 
-/// The most a blast's reach can exceed a record's distance from its centre:
-/// the largest ball radius.
-pub(crate) const MAX_BLAST_SLACK: i32 = MAX_BALL_RADIUS;
+/// The most steps any ball leaves a record (`blast_slack` at the centre of the
+/// largest ball, radius 4: distance(3,3) = 4 is inside, distance(4,4) = 6 is
+/// not).
+pub(crate) const MAX_BLAST_SLACK: i32 = 3;
 
 /// The dragon breaths (dragon armour, `BF_DRAGON_*`, and the random-artifact
 /// dragon activations, `BF_ACT_DRAGON_*`): the engine breathes a cone
@@ -391,15 +392,30 @@ pub(crate) fn ball_shaped(kind: i32) -> bool {
     u32::try_from(kind).map_or(true, |k| !BREATHS.iter().any(|r| r.contains(&k)))
 }
 
-/// #889: the slack a blast of radius `rad` gives a grid at distance `r` from
-/// its centre: `rad - r` for a ball (radius 1 to `MAX_BALL_RADIUS`), 0 for a
-/// bolt, a beam, a line-of-sight effect or Starlight.
-pub(crate) fn blast_slack(rad: i32, r: i32) -> i32 {
-    if (1..=MAX_BALL_RADIUS).contains(&rad) {
-        (rad - r).max(0)
-    } else {
-        0
+/// #889: the slack a ball of radius `rad` gives a record whose last grid is
+/// `(dy, dx)` from the ball's centre: the most monster steps `n` such that
+/// every grid `n` king's moves from the last grid (each step one of the eight
+/// neighbours, on open terrain) is still inside the ball, by the engine's
+/// distance (`distance() <= rad`, src/cave-view.c:distance; project()'s
+/// radius test). It is not `rad - distance`: one diagonal step can add 2 to the
+/// distance (from (1,1), distance 1, to (2,2), distance 3; re-review of
+/// #1128). Walls only shorten a monster's reach, so open terrain is the bound.
+/// 0 for a bolt, a beam, a line-of-sight effect or Starlight (radius outside
+/// 1 to `MAX_BALL_RADIUS`).
+pub(crate) fn blast_slack(rad: i32, dy: i32, dx: i32) -> i32 {
+    if !(1..=MAX_BALL_RADIUS).contains(&rad) {
+        return 0;
     }
+    let inside = |y: i32, x: i32| engine::distance(loc { x: 0, y: 0 }, loc { x, y }) <= rad;
+    let mut slack = 0;
+    for n in 1..=rad {
+        let all = (-n..=n).all(|ey| (-n..=n).all(|ex| inside(dy + ey, dx + ex)));
+        if !all {
+            break;
+        }
+        slack = n;
+    }
+    slack
 }
 
 /// #889 (re-reviews of #1128): a record `borg_attack` admits only because a
@@ -674,12 +690,37 @@ mod tests {
     /// other line-of-sight effect's 10 and Starlight's 7 do not.
     #[test]
     fn only_a_ball_gives_slack() {
-        assert_eq!(blast_slack(2, 0), 2);
-        assert_eq!(blast_slack(2, 1), 1);
-        assert_eq!(blast_slack(4, 1), 3);
-        assert_eq!(blast_slack(2, 3), 0, "never negative");
+        // At the centre of a radius-2 ball one step stays inside; two
+        // diagonal steps reach (2,2), distance 3.
+        assert_eq!(blast_slack(2, 0, 0), 1);
+        // Re-review of #1128 at e0278dcf: from (1,1) the diagonal step to
+        // (2,2) leaves a radius-2 ball, so no slack.
+        assert_eq!(blast_slack(2, 1, 1), 0);
+        assert_eq!(blast_slack(2, 0, 1), 1, "one step reaches (1,2), distance 2; two reach (0,3)");
+        assert_eq!(blast_slack(3, 0, 0), 2);
+        assert_eq!(blast_slack(4, 0, 0), MAX_BLAST_SLACK);
+        assert_eq!(blast_slack(4, 1, 0), 2);
+        assert_eq!(blast_slack(2, 3, 0), 0, "outside the ball");
         for rad in [-1, 0, 7, 10] {
-            assert_eq!(blast_slack(rad, 0), 0, "rad {rad}");
+            assert_eq!(blast_slack(rad, 0, 0), 0, "rad {rad}");
+        }
+        // Every grid of the slack's square stays inside, for every offset.
+        for rad in 1..=MAX_BALL_RADIUS {
+            for dy in -rad..=rad {
+                for dx in -rad..=rad {
+                    // The scoring only asks grids inside the ball.
+                    if engine::distance(loc { x: 0, y: 0 }, loc { x: dx, y: dy }) > rad {
+                        continue;
+                    }
+                    let n = blast_slack(rad, dy, dx);
+                    for ey in -n..=n {
+                        for ex in -n..=n {
+                            let d = engine::distance(loc { x: 0, y: 0 }, loc { x: dx + ex, y: dy + ey });
+                            assert!(d <= rad, "rad {rad} at ({dy},{dx}) slack {n}");
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -689,7 +730,7 @@ mod tests {
     fn the_aim_list_admits_a_record_only_a_blast_reaches() {
         assert_eq!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 0), 0, "no belief at its grid");
         assert!(belief_percent_spread(9, false, true, 10, 10, 20, 0, 9) > 0, "enough slack revives it");
-        assert_eq!(MAX_BLAST_SLACK, 4, "the largest ball, not a dispel's 10");
+        assert_eq!(MAX_BLAST_SLACK, 3, "the centre of the largest ball, not a dispel's 10");
         assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 0), 0);
         assert_eq!(belief_percent_spread(6, false, true, 10, 10, 20, 0, 2), 20, "a radius-2 ball at its grid");
     }

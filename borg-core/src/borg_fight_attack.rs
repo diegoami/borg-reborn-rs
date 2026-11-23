@@ -2221,12 +2221,16 @@ fn borg_launch_bolt_at_location(
                 continue;
             }
 
-            // borg-reborn-rs (#889): the blast reaches rad - r grids beyond
-            // this one (read by the belief only under unseen_spread). Only a
-            // ball's: a dispel or other line-of-sight effect (rad 10) and
-            // Starlight's lines (rad 7) reach what the player sees, not a
+            // borg-reborn-rs (#889): the monster steps the ball still covers
+            // from this grid (read by the belief only under unseen_spread).
+            // Only a ball's: a dispel or other line-of-sight effect (rad 10)
+            // and Starlight's lines (rad 7) reach what the player sees, not a
             // radius around the aim (re-review of #1128, F1).
-            let slack = if st.fight_attack.ball_shape { crate::borg_unseen_belief::blast_slack(rad, r) } else { 0 };
+            let slack = if st.fight_attack.ball_shape {
+                crate::borg_unseen_belief::blast_slack(rad, ry - y2, rx - x2)
+            } else {
+                0
+            };
 
             /*  dispel spells should hurt the same no matter the rad: make r= y
              * and x */

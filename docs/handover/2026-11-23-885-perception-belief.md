@@ -87,6 +87,14 @@ findings, both under `unseen_spread` only, both fixed.
   slack. `ball_shaped` excludes them, so they get no slack and no
   blast-only aims.
 
+**Re-review of #1128 at `e0278dcf`** (relayed, posted on the PR): one P2,
+under `unseen_spread` only, fixed. The slack was the radius less the
+distance, but one diagonal step can add 2 to the engine's distance: a
+radius-2 ball gave a monster last seen at (1,1) a step of slack, though the
+step to (2,2) leaves it. `blast_slack` now counts the steps after which every
+reachable grid is still inside the ball (open terrain; walls only shorten a
+monster's reach). `MAX_BLAST_SLACK` is 3, at the centre of a radius-4 ball.
+
 **Decided (owner, 2026-11-23: "your call").** #885 and #917 are P8: they are
 perception bugs the shipped light and belief exposed, and they are measured
 now. The three #889 switches are P9: new capability, kept off until P8 is
