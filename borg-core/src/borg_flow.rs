@@ -604,6 +604,11 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
         return true;
     }
+    // borg-reborn-rs (#1147, `caution_walk_away_immobile`): never into a
+    // known walk-away monster's reach, stair flights included.
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_walk_away_reach(st, x, y) {
+        return true;
+    }
     if ag.kill != 0 && crate::borg_caution::kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
         return true;
     }
@@ -1076,6 +1081,10 @@ pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
     // sees the grids the flow spreads to; a staircase next to a floating eye
     // was still a goal). Not the Borg's own grid.
     if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_paralyser_reach(st, x, y) {
+        return;
+    }
+    // borg-reborn-rs (#1147): nor in a walk-away monster's reach.
+    if (x, y) != (st.borg.c.x, st.borg.c.y) && crate::borg_caution::in_walk_away_reach(st, x, y) {
         return;
     }
     // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
