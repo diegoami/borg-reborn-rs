@@ -37,15 +37,12 @@ def check_arm(out, reserve):
            or name in ("BORG_CEMETERY_DIR", "BORG_DEATH_RECORDS_DIR")}
     # Keep the original fuel policy for the exact Phase Door purchase trace,
     # and #987's first-cure floor off (the Ranger ships 2; with it the cures
-    # are bought first and the trace's order changes), and C's light radius
-    # (#1078 ships the engine's; with it the first monster is seen before the
-    # reserve-2 character picks up its four extra scrolls).
+    # are bought first and the trace's order changes).
     env.update(BORG_CORE="borg-rs", BORG_IMPL="rust",
                BORG_TXT_SET=f"borg_param_town_phase_reserve__ranger={reserve};"
                             "borg_param_town_phase_reserve_percent=100;"
                             "borg_param_town_light_reserve_turns=0;"
-                            "borg_param_town_first_cure__ranger=0;"
-                            "borg_param_cave_light_engine_radius=0")
+                            "borg_param_town_first_cure__ranger=0")
     subprocess.run([str(ROOT / "harness/run.sh"), str(out), "2095979189",
                     "6", "7", "1900", "exact,menu"], cwd=ROOT, env=env,
                    check=True, timeout=90)
@@ -80,8 +77,11 @@ def check_arm(out, reserve):
                            if turn >= departure and note.startswith("# Creating a monster ")), None)
     assert first_sighting is not None, (reserve, "no dungeon monster sighting")
     assert contact["game_turn"] == first_sighting, (reserve, contact, first_sighting)
-    # The reserve-2 character picked up four more scrolls before seeing a foe.
-    assert contact["phase_scrolls"] == (1 if reserve == 0 else 6), (reserve, contact)
+    # Each character meets its first foe with the scrolls it bought: 1, or the
+    # reserve's 2. With C's light radius the reserve-2 character picked up four
+    # more first (6); with the engine's (#1078, shipped) it sees a foe at turn
+    # 473, before those pickups.
+    assert contact["phase_scrolls"] == (1 if reserve == 0 else 2), (reserve, contact)
     print(f"Ranger reserve {reserve}: first town purchases and contact kit matched")
 
 
