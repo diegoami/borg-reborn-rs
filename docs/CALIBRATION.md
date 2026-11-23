@@ -20,7 +20,7 @@ a 76-step walk to the stairs at 1 HP a turn, 26 -> 18).
   test (#983) also needs this many HP, besides its percent floor: a Potion of
   Poison costs 1 HP a turn for 10+2d7 turns (object.txt, game-world.c:514-516),
   up to 24.
-- **`item_test_unknown_hold_turns`** (compiled 30, **shipped 30**): after a test,
+- **`item_test_unknown_hold_turns`** (compiled 180, **shipped 180**: Blindness, the longest supported potion, lasts up to 175 ticks): after a test,
   for at most this many world ticks (10 game turns each, the clock the status
   timers run on), on the test grid and level, while a harmful status it caused
   lasts (a Slowness included, read from its timer) and the danger here is 0,
@@ -32,7 +32,7 @@ a 76-step walk to the stairs at 1 HP a turn, 26 -> 18).
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `item_test_unknown_min_hp` | 25 | hp | 0–10000 | `borg_item_use.rs:220` |
-| `item_test_unknown_hold_turns` | 30 | turns | 0–1000 | `borg_item_use.rs:254` |
+| `item_test_unknown_hold_turns` | 180 | turns | 0–1000 | `borg_item_use.rs:254` |
 
 ## Attack on sight prices poison and drain blows (#1010)
 

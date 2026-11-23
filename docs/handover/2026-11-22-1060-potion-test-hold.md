@@ -9,7 +9,7 @@ Confusion and spent a Cure Serious Wounds on it. The 50% floor let a 26-HP
 character test at 13 HP against a worst case of 24.
 
 **Done.** `item_test_unknown_min_hp` (25, shipped 25): the test also needs
-this many HP. `item_test_unknown_hold_turns` (30, shipped 30) and
+this many HP. `item_test_unknown_hold_turns` (180, shipped 180; 30 before the re-review) and
 `potion_test_hold` (`borg_item_use.rs`, called right after `borg_caution` in
 `borg_think_dungeon`): after a test, while a harmful status it caused lasts
 (poisoned, confused, blind, afraid, hallucinating, paralysed, amnesiac) and
@@ -39,6 +39,16 @@ deadline (10 per world tick, game-world.c:1080); (4) an escape by
 `borg_caution` returned before the hold saw the danger, and a Phase Door
 landing could be waited on: `potion_test_hold_validate` runs before
 `borg_caution`, and the hold is bound to the test grid and level.
+
+**Re-review (Codex, at eda49ea1).** P2: the 30-tick cap covered Poison but
+not Blindness (75+4d25, up to 175 ticks) or a long Slowness (up to 40):
+Codex reproduced a blind Borg walking off at 69,960 with the blind cures
+switched off. The cap is now 180 ticks (compiled and shipped), the longest
+supported potion's; the hold still ends earlier on the status's end, any
+danger or a move. P3 (a complete rest `R&` started by `borg_recover` inside
+the hold outlasting a short cap): kept; the rest is in place and the engine
+ends it on any disturbance, and with the cap above every status it cannot
+outlast the hold's purpose.
 
 **Where this meets other work.** #934 (another session: how poison is
 weighed in general, CLW drunk against poison) is untouched; this only changes
