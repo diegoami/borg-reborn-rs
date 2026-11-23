@@ -803,6 +803,15 @@ pub(crate) fn ban_of(contacts: &[Contact]) -> HealBan {
     ratio.unwrap_or(HealBan::Free)
 }
 
+/// #1065 (re-review of #1089, P2): with `fast_fragile_heal_min_ratio` on,
+/// attack on sight tries the cure it yields to at once
+/// (`borg_caution::fast_fragile_cure`) and attacks when the caution declines
+/// it, so carrying a cure the caution will not drink never costs the
+/// priority attack. 0: the yield is a plain yield, as before.
+pub(crate) fn cure_now() -> bool {
+    param(Param::fast_fragile_heal_min_ratio) > 0
+}
+
 /// Attack on sight steps aside for a cure (`yield_to_cure`) only when the
 /// largest cure carried passes the ban the caution reads, so the two agree.
 pub(crate) fn yield_allowed(min_ratio_tenths: i32, ban: HealBan, best_heal: i32) -> bool {
@@ -1109,6 +1118,31 @@ mod tests_1065 {
         assert!(!HealBan::Banned.allows(i32::MAX / 2));
         let crow = HealBan::Ratio { cur_hp: 3, max_hp: 11, damage: 7.2, min_ratio_tenths: 30 };
         assert!(!crow.allows(i32::MAX / 2), "11 max HP against a crow: no heal buys three turns");
+    }
+
+    /// Re-review of #1089, P2: the confusion and blindness fixes of
+    /// `borg_heal` come before the heal ban is read (they cure what keeps
+    /// the Borg from reading Phase Door; #842's ban never held them), and
+    /// every healing action after it asks the ban. The order is the
+    /// documented exception, so it is pinned here.
+    #[test]
+    fn the_status_cures_come_before_the_heal_ban() {
+        let src = include_str!("borg_caution.rs");
+        let heal = src.find("fn borg_heal(st: &mut BorgState, danger: i32)").expect("borg_heal");
+        let body = &src[heal..heal + src[heal..].find("\n}\n").expect("end of borg_heal")];
+        let at = |needle: &str| body.find(needle).unwrap_or_else(|| panic!("{needle} in borg_heal"));
+        let ban = at("let ban = crate::borg_fast_fragile::heal_ban(st);");
+        assert!(at("# Fixing Confusion. Level 1") < ban);
+        assert!(at("# Fixing Blindness.") < ban);
+        assert!(ban < at("// Cure light Wounds (20)"));
+        // After the ban every potion, staff, rod, spell and activation asks it.
+        let after = &body[ban..];
+        for call in ["borg_quaff_potion(", "borg_quaff_crit(", "borg_use_staff_fail(", "borg_zap_rod(", "borg_activate_item(", "borg_spell_fail("] {
+            for (k, _) in after.match_indices(call) {
+                let before = &after[k.saturating_sub(40)..k];
+                assert!(before.contains("ok(H::"), "{call} at +{k} after the ban without ok(...)");
+            }
+        }
     }
 
     /// Review of #1089, P2: the heal of every action is the engine's.

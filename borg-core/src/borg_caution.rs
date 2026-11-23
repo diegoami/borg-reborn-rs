@@ -389,6 +389,11 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         }
     }
     // Heal when blind. This is deadly.
+    // borg-reborn-rs (#1065, re-review of #1089, P2): the confusion fixes
+    // above and the blindness fixes here come before the fast-fragile heal
+    // ban is read, as they did before #842's ban: they cure what keeps the
+    // Borg from reading Phase Door, so neither the ban nor its ratio holds
+    // them back (`the_status_cures_come_before_the_heal_ban`).
     if st.borg.tr(BI_ISBLIND) != 0 && engine::randint0(100) < p(Param::caution_blind_cure_chance) {
         // if in extreme danger, use teleport then fix the
         // blindness later.
@@ -3217,6 +3222,17 @@ mod category_threat_tests {
         assert!(!super::category_threat_safe(20, 6.5, 41, 40), "other foes exceed existing flight threshold");
         assert!(super::category_threat_safe(20, 6.5, 40, 40), "ordinary threshold is strict greater-than");
     }
+}
+
+/// borg-reborn-rs (#1065, re-review of #1089, P2): the cure attack on sight
+/// steps aside for, tried at once with the caution's own healing at the
+/// danger the caution reads (borg_heal, then the outmatched heal, with their
+/// own loss, level, danger and chance gates and the heal ban). `true` when a
+/// cure took the turn; `false` when the caution declines it, and the
+/// priority attack then goes on instead of the turn being lost.
+pub(crate) fn fast_fragile_cure(st: &mut BorgState) -> bool {
+    let danger = borg_danger(st, st.borg.c.y, st.borg.c.x, p(Param::caution_danger_horizon), true, false);
+    borg_heal(st, danger) || borg_heal_outmatched(st, danger)
 }
 
 /// #760/#759: before any dungeon flight, including the light/countdown

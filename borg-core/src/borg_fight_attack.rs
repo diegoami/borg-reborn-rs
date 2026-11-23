@@ -5935,7 +5935,13 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
                 // heal floor (#926), a cure comes first; the note names which.
                 if let Some(why) = crate::borg_fast_fragile::yield_to_cure(st, i, &facts) {
                     borg_note(st, why);
-                    continue;
+                    // #1065 (re-review of #1089, P2): with the ratio on, the
+                    // cure is tried now; if the caution declines it, the
+                    // priority attack goes on. 0: the caution decides later,
+                    // as before.
+                    if !crate::borg_fast_fragile::cure_now() { continue; }
+                    if crate::borg_caution::fast_fragile_cure(st) { return true; }
+                    borg_note(st, "# Fast-fragile: the caution declines the cure; the attack goes on (#1065)");
                 }
                 borg_note(st, &format!("# Attack on sight: {} (fast-fragile), {} HP, attack {} (#842)",
                     String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
