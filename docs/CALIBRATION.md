@@ -57,7 +57,10 @@ grids only: a Borg beside an unexplored room counts the room as safe.
   A landing check under the policy records its never-seen count
   (`phase_unknown_seen`); the gate reuses it in the same think at the same
   grid (`gate_count`), so a refused emergency cannot be undone by a lower
-  redraw in the critical fall-through (re-review of #1075).
+  redraw in the critical fall-through (re-review of #1075). The record also
+  carries that site's tolerance, and a reuse judges by the stricter of the
+  two (#1094). An emergency at 50 that refused 60 never-seen landings is
+  not undone by a gate at 75.
   Shoot N Scoot's own sampler (`borg_shoot_scoot_safe`) counts a
   never-seen grid as scary.
 - `escape_phase_newcomer_wait` = 1: with `escape_phase_adjacent_rule`, when
@@ -3912,11 +3915,11 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:393` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1518` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1750` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1759` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1755` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1764` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1802` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1850` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1861` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1855` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1866` |
 | `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1864` |
 | `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1865` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1870` |
@@ -5984,7 +5987,7 @@ A zoo comparison sets `borg_param_escape_teleport_block = 0` for its control
 
 | Parameter | Default | Range | Unit | Source | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1642` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
+| `escape_teleport_block` | 0 | 0–1 | flag | `borg_escape.rs:1647` | #829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from "Your X prevents you teleporting." and "Teleportation forbidden!" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until "The anti-teleportation curse is removed!"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport). |
 
 ## Fast-fragile monsters (#842)
 
