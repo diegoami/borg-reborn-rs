@@ -1828,6 +1828,10 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         };
         /* Attempt motion */
         if borg_play_step(st, y, x) {
+            // #1106: exploration can take the turn that would count this search.
+            if why == GOAL_DARK {
+                borg_flow_misc::notice_reversed_stair_search(st, loc { x, y });
+            }
             st.stairs.up_search_departure = departure;
             if st.borg.tr(BI_CDEPTH) > 0 {
                 let emergency_down = why == GOAL_FLEE && st.borg.flight_to_stairs
