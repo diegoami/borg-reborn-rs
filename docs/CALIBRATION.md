@@ -7256,20 +7256,21 @@ it, in #1080's pooled table. That table pools every build, and recent runs are
 a quarter of the Human mean gain, and the base puts the threshold halfway
 between the mean max HP at the target and the next CL (CON ignored). The owner
 then raised every `explore_bfs_max_hp` by 10 (2026-11-23: "increase those
-explore_bfs_max_hp by 10"); the table gives the shipped values and the levels
-they reach:
+explore_bfs_max_hp by 10") and lowered them by 3 ("reduce those numbers ...
+by 3", #1110's PR); the table gives the shipped values and the levels they
+reach:
 
 | class | hit die (Human) | target CL | `explore_bfs_max_hp` | `explore_bfs_hp_per_level` | Human through | all races through |
 |---|---:|---:|---:|---:|---:|---:|
-| warrior | 19 | 1 | 31 | 2 | CL2 | CL2–3 |
-| mage | 10 | 4 | 35 | 1 | CL6 | CL5–10 |
-| druid | 12 | 4 | 36 | 2 | CL6 | CL5–10 |
-| priest | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
-| necromancer | 12 | 3 | 31 | 2 | CL5 | CL4–8 |
-| paladin | 16 | 2 | 34 | 2 | CL4 | CL3–5 |
-| rogue | 14 | 3 | 36 | 2 | CL5 | CL4–7 |
-| ranger | 15 | 4 | 44 | 2 | CL6 | CL5–8 |
-| blackguard | 18 | 1 | 30 | 2 | CL2 | CL2–3 |
+| warrior | 19 | 1 | 28 | 2 | CL2 | CL1–3 |
+| mage | 10 | 4 | 32 | 1 | CL6 | CL4–9 |
+| druid | 12 | 4 | 33 | 2 | CL6 | CL4–9 |
+| priest | 12 | 3 | 28 | 2 | CL4 | CL3–7 |
+| necromancer | 12 | 3 | 28 | 2 | CL4 | CL3–7 |
+| paladin | 16 | 2 | 31 | 2 | CL3 | CL2–4 |
+| rogue | 14 | 3 | 33 | 2 | CL4 | CL3–6 |
+| ranger | 15 | 4 | 41 | 2 | CL5 | CL4–7 |
+| blackguard | 18 | 1 | 27 | 2 | CL2 | CL2–3 |
 
 The race delta of #1061's threshold (`__<race>`) is not part of this change:
 the suffix is #1061's, and this threshold takes it when that lands.
