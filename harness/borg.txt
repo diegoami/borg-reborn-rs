@@ -295,16 +295,27 @@ borg_param_town_prepared_fear = 2
 # detect invisible or other when they have money to spare"). A prepared row
 # prices a copy, not a gold piece, so at the shared percent a 15 gold Detect
 # Invisible beats a 75 gold Neutralize Poison and a 200 gold Cure Critical
-# Wounds. town_prepared_poison_percent: the poison remedy's own percent
-# (0 = town_prepared_percent; 40 = five times 8, the same value per gold as
-# Detect Invisible). town_prepared_ccw: Cure Critical Wounds copies on a row of
-# their own (0 = off), each worth town_prepared_ccw_percent (0 = the shared
-# percent; 112 = fourteen times 8). Shipped on by the owner (2026-11-23,
-# merge of #1135) before a zoo measurement: replays of run 45121432449 changed
-# 12 of 18 survivors and killed none (borg-cemetery#146). 0 0 0 = the old play.
-borg_param_town_prepared_poison_percent = 40
+# Wounds.
+# town_prepared_poison_percent: the whole shared poison row's own percent
+# (Neutralize Poison, but also Resist Poison, Mushroom of Purging, CCW);
+# 0 = town_prepared_percent. Off since #1137 (owner: "40 just Neutralize
+# Poison"): town_prepared_neutralize is Neutralize Poison's own row instead,
+# its first copies each worth town_prepared_neutralize_percent (40 = five
+# times 8, the same value per gold as Detect Invisible).
+# town_prepared_ccw: Cure Critical Wounds copies on a row of their own
+# (0 = off), each worth town_prepared_ccw_percent (112 = fourteen times 8).
+# town_prepared_dear_after_recall (#1137, owner: "when he is rich enough to
+# get a WoR he starts buying antipoison and CCW"): 1 = the two dear rows
+# count only once the purse reaches buy_recall_from_gold and the Recall
+# reserve is carried, so they never take Recall's or the staples' gold.
+# Shipped on by the owner (2026-11-23) before a zoo measurement; 0 0 0 0 0
+# = the play before #1134.
+borg_param_town_prepared_poison_percent = 0
+borg_param_town_prepared_neutralize = 2
+borg_param_town_prepared_neutralize_percent = 40
 borg_param_town_prepared_ccw = 2
 borg_param_town_prepared_ccw_percent = 112
+borg_param_town_prepared_dear_after_recall = 1
 
 # Variety starts below the first level (#863, owner: "it is important that in
 # the first level we have the staples"): the staples' decay and the remedies

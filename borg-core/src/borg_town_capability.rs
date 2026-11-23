@@ -156,6 +156,12 @@ const DEV_CONTROL: usize = DEV_DETECT + 1;
 /// Potion of Cure Critical Wounds. The last row, held only while it is on, so
 /// the model keeps its shape (and the play) with it off.
 const PREP_CCW: usize = DEV_CONTROL + 1;
+/// borg-reborn-rs (#1137, owner: "40 just Neutralize Poison"): with
+/// `town_prepared_neutralize` above 0, a prepared row of its own fed one copy
+/// per Potion of Neutralize Poison, so its percent raises that potion alone,
+/// not every poison cure on the shared poison row (Resist Poison, Mushroom of
+/// Purging, CCW). Held, as the CCW row, only while a dear row is on.
+const PREP_NEUTRALIZE: usize = PREP_CCW + 1;
 /// Situation capabilities a device supplies -> its device row. Invisible
 /// detection is not here: a Staff of Detect Invisible already fills the prepared
 /// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
@@ -215,8 +221,8 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-const _: () = assert!(PREP_CCW + 1 == NAMES.len());
-pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+const _: () = assert!(PREP_NEUTRALIZE + 1 == NAMES.len());
+pub const NAMES: [&str; 84] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -226,7 +232,7 @@ pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
     "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
-    "prepared: Cure Critical Wounds"];
+    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -909,6 +915,11 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         if prepared_ccw_on(st) && tval == TV_POTION && i32::from(item.sval) == st.item_val.sv_potion_cure_critical {
             out.push((PREP_CCW, UNIT));
         }
+        // borg-reborn-rs (#1137): a Neutralize Poison is one copy on its own row
+        // (and still one on the shared poison row, as a CCW is).
+        if prepared_neutralize_on(st) && tval == TV_POTION && i32::from(item.sval) == st.item_val.sv_potion_cure_poison {
+            out.push((PREP_NEUTRALIZE, UNIT));
+        }
     }
     // borg-reborn-rs (#863): each healing potion is one copy on its own
     // staple row, whose knee and decay are the kind's (the three share the
@@ -1016,8 +1027,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let first_cure = first_cure_count();
     let mut curves = curves;
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
-    // borg-reborn-rs (#1134): the CCW row, past the device rows, only while it is on.
-    let full = if prepared_ccw_on(st) { COUNT } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
+    // borg-reborn-rs (#1134, #1137): the CCW and Neutralize Poison rows, past
+    // the device rows, only while one of them is on.
+    let full = if prepared_ccw_on(st) || prepared_neutralize_on(st) { COUNT } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
     while curves.len() < full { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
@@ -1135,7 +1147,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         // percent of their own (0 = the shared one): a row prices a copy, not
         // a gold piece, so at the shared percent a 15 gold scroll beats a 75
         // gold Neutralize Poison and a 200 gold Cure Critical Wounds.
-        let own = |p: Param| { let v = param(p); if v > 0 { v } else { percent } };
+        // borg-reborn-rs (#1137, owner: "when he is rich enough to get a WoR he
+        // starts buying antipoison and CCW"): with `town_prepared_dear_after_recall`
+        // the dear rows count only once the purse (after the urgent needs)
+        // reaches the Recall floor (`buy_recall_from_gold`) and the Recall
+        // reserve (`town_recall_reserve`, at least one) is carried; before,
+        // they are worth nothing and an own percent falls back to the shared
+        // one, so the gold goes to Recall and the staples first. Recall's own
+        // gate, so a CCW at 112 percent of the trip weight never outbids a
+        // missing reserve scroll (100 percent). 0 = no gate.
+        let dear = dear_rows_paid(param(Param::town_prepared_dear_after_recall) > 0,
+            gold_after_urgent, i64::from(crate::borg_store_buy::recall_purchase_floor()),
+            t(BI_RECALL), i64::from(param(Param::town_recall_reserve)));
+        let own = |p: Param| { let v = param(p); if v > 0 && dear { v } else { percent } };
         for (row, copies, row_percent) in [(PREP_POISON, Param::town_prepared_poison, own(Param::town_prepared_poison_percent)),
             (PREP_CURSE, Param::town_prepared_curse, percent),
             (PREP_INVISIBLE, Param::town_prepared_invisible, percent), (PREP_CONFUSION, Param::town_prepared_confusion, percent),
@@ -1143,12 +1167,15 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
             let (weight, demand) = prepared_row(trip_weight, row_percent, param(copies));
             curve(row, weight, demand);
         }
-        if count > PREP_CCW {
-            let copies = param(Param::town_prepared_ccw);
-            let (weight, demand) = if copies > 0 {
-                prepared_row(trip_weight, own(Param::town_prepared_ccw_percent), copies)
-            } else { (0, UNIT) };
-            curve(PREP_CCW, weight, demand);
+        if count > PREP_NEUTRALIZE {
+            for (row, copies, row_percent) in [(PREP_CCW, Param::town_prepared_ccw, Param::town_prepared_ccw_percent),
+                (PREP_NEUTRALIZE, Param::town_prepared_neutralize, Param::town_prepared_neutralize_percent)] {
+                let copies = param(copies);
+                let (weight, demand) = if copies > 0 && dear {
+                    prepared_row(trip_weight, own(row_percent), copies)
+                } else { (0, UNIT) };
+                curve(row, weight, demand);
+            }
         }
     }
     // borg-reborn-rs (#895, owner: "we are going to need space for other
@@ -1828,8 +1855,26 @@ mod tests {
         let ccw = first(&mut m, PREP_CCW, 8 * 14, 2);
         assert!(ccw * 15 >= detect * 200, "fourteen times: CCW {ccw}/200 at least Detect Invisible {detect}/15");
         assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]) - m.gain(&[(PREP_CCW, 2 * UNIT)]), 0, "the 3rd CCW past 2 copies is worth nothing");
-        assert_eq!(PREP_CCW, COUNT - 1, "the CCW row is the last, so the model keeps its shape with it off");
+        assert_eq!(PREP_NEUTRALIZE, COUNT - 1, "the dear rows are the last, so the model keeps its shape with them off");
+        assert_eq!(PREP_CCW, COUNT - 2);
         assert_eq!(NAMES[PREP_CCW], "prepared: Cure Critical Wounds");
+        assert_eq!(NAMES[PREP_NEUTRALIZE], "prepared: Neutralize Poison");
+        let neutralize = first(&mut m, PREP_NEUTRALIZE, 40, 2);
+        assert!(neutralize * 15 >= detect * 75, "its own row at five times: Neutralize Poison {neutralize}/75 at least Detect Invisible {detect}/15");
+        assert_eq!(m.gain(&[(PREP_NEUTRALIZE, 3 * UNIT)]) - m.gain(&[(PREP_NEUTRALIZE, 2 * UNIT)]), 0, "the 3rd past 2 copies is worth nothing");
+    }
+
+    /// #1137 (owner: "when he is rich enough to get a WoR he starts buying
+    /// antipoison and CCW"): the dear rows wait for Recall's purse floor and
+    /// the Recall reserve in the pack; off, they always count.
+    #[test]
+    fn the_dear_rows_wait_for_recall() {
+        assert!(dear_rows_paid(false, 0, 200, 0, 2), "no gate: always");
+        assert!(!dear_rows_paid(true, 10_000, 200, 1, 2), "rich, but a reserve scroll is missing: Recall first");
+        assert!(!dear_rows_paid(true, 199, 200, 2, 2), "the reserve carried, but below Recall's purse floor");
+        assert!(dear_rows_paid(true, 200, 200, 2, 2), "the reserve carried and the purse at the floor");
+        assert!(!dear_rows_paid(true, 500, 200, 0, 0), "no reserve set: still one scroll first");
+        assert!(dear_rows_paid(true, 500, 200, 1, 0));
     }
 
     /// #863 (review F2): a healing row's knee counts potions and prices them in
@@ -2641,6 +2686,16 @@ fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::tow
 
 /// borg-reborn-rs (#1134): whether the Cure Critical Wounds row exists.
 fn prepared_ccw_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_ccw) > 0 }
+
+/// borg-reborn-rs (#1137): whether the Neutralize Poison row exists.
+fn prepared_neutralize_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_neutralize) > 0 }
+
+/// borg-reborn-rs (#1137): whether the dear rows count at this decision: no
+/// gate, or `gold` (after the urgent needs) at the Recall floor and the
+/// Recall reserve (at least one scroll) already `carried`.
+fn dear_rows_paid(after_recall: bool, gold: i64, recall_floor: i64, carried: i64, reserve: i64) -> bool {
+    !after_recall || (gold >= recall_floor && carried >= reserve.max(1))
+}
 
 /// borg-reborn-rs (#863): a prepared row's weight and demand. A requirement
 /// (negative demand, as Phase Door's reserve): each of the first `copies`
