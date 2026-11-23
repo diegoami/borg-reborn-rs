@@ -875,17 +875,20 @@ borg_param_explore_c_leave_when_done = 1
 # explore_mix_max_radius and C's leash. Shipped 1 (owner, 2026-11-23: "merge
 # it but with all settings on"), up to explore_mix_max_clevel per class.
 borg_param_explore_mixed = 1
-borg_param_explore_mix_radius = 5
-borg_param_explore_mix_step = 2
+borg_param_explore_mix_radius = 3
+borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-borg_param_explore_mix_max_radius = 20
+borg_param_explore_mix_max_radius = 10
 # #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
 # (and class)"): per mille a character level from CL1, linearly:
 # value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
-# Radius 5 at CL1, 7 at CL5; step 2, 3 at CL5; cap 20, 60 at CL5.
-borg_param_explore_mix_radius_dp = 100
+# Owner, 2026-11-23: "I would like the radius to start small and increase by
+# level", "make CL1 start from 10 maximum radius": the starting radius 3 at
+# CL1, 5 at CL3, 7 at CL5, 8 at CL7; the step 3, 4, 4, 5; the cap 10, 20, 30,
+# 40. The level caps stay as #1098 shipped them (the +1 added back-and-forth).
+borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
 borg_param_explore_mix_max_radius_dp = 500
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
@@ -2083,7 +2086,7 @@ borg_param_attack_throw_point_blank_divisor__warrior = 0
 borg_param_explore_bfs_max_hp__warrior = 28
 borg_param_explore_bfs_hp_per_level__warrior = 2
 borg_param_stair_scum__warrior = 0
-borg_param_explore_mix_max_clevel__warrior = 4
+borg_param_explore_mix_max_clevel__warrior = 3
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -2108,7 +2111,7 @@ borg_param_town_staple_oil__mage = 10
 borg_param_explore_bfs_max_hp__mage = 32
 borg_param_explore_bfs_hp_per_level__mage = 1
 borg_param_stair_scum_slack_steps__mage = 2
-borg_param_explore_mix_max_clevel__mage = 7
+borg_param_explore_mix_max_clevel__mage = 6
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -2132,7 +2135,7 @@ borg_param_town_staple_oil__druid = 9
 borg_param_explore_bfs_max_hp__druid = 33
 borg_param_explore_bfs_hp_per_level__druid = 2
 borg_param_stair_scum_slack_steps__druid = 1
-borg_param_explore_mix_max_clevel__druid = 6
+borg_param_explore_mix_max_clevel__druid = 5
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -2157,7 +2160,7 @@ borg_param_town_phase_reserve__priest = 8
 borg_param_explore_bfs_max_hp__priest = 28
 borg_param_explore_bfs_hp_per_level__priest = 2
 borg_param_stair_scum_slack_steps__priest = 2
-borg_param_explore_mix_max_clevel__priest = 8
+borg_param_explore_mix_max_clevel__priest = 7
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -2182,7 +2185,7 @@ borg_param_town_staple_oil__necromancer = 14
 borg_param_explore_bfs_max_hp__necromancer = 28
 borg_param_explore_bfs_hp_per_level__necromancer = 2
 borg_param_stair_scum_slack_steps__necromancer = 1
-borg_param_explore_mix_max_clevel__necromancer = 8
+borg_param_explore_mix_max_clevel__necromancer = 7
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -2209,7 +2212,7 @@ borg_param_attack_throw_point_blank_divisor__paladin = 0
 borg_param_explore_bfs_max_hp__paladin = 31
 borg_param_explore_bfs_hp_per_level__paladin = 2
 borg_param_stair_scum_slack_steps__paladin = 4
-borg_param_explore_mix_max_clevel__paladin = 7
+borg_param_explore_mix_max_clevel__paladin = 6
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -2236,7 +2239,7 @@ borg_param_attack_throw_point_blank_divisor__rogue = 0
 borg_param_explore_bfs_max_hp__rogue = 33
 borg_param_explore_bfs_hp_per_level__rogue = 2
 borg_param_stair_scum_slack_steps__rogue = 3
-borg_param_explore_mix_max_clevel__rogue = 5
+borg_param_explore_mix_max_clevel__rogue = 4
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2266,7 +2269,7 @@ borg_param_town_staple_oil__ranger = 6
 borg_param_explore_bfs_max_hp__ranger = 41
 borg_param_explore_bfs_hp_per_level__ranger = 2
 borg_param_stair_scum_slack_steps__ranger = 3
-borg_param_explore_mix_max_clevel__ranger = 6
+borg_param_explore_mix_max_clevel__ranger = 5
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2293,7 +2296,7 @@ borg_param_attack_throw_point_blank_divisor__blackguard = 0
 borg_param_explore_bfs_max_hp__blackguard = 27
 borg_param_explore_bfs_hp_per_level__blackguard = 2
 borg_param_stair_scum_slack_steps__blackguard = 4
-borg_param_explore_mix_max_clevel__blackguard = 5
+borg_param_explore_mix_max_clevel__blackguard = 4
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.

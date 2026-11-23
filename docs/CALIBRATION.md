@@ -8007,23 +8007,28 @@ Compiled 50: no cap, and the walk ends with C's leash at CL20.
 | Blackguard | 0.67 / 0.63 / 0.11 / 0.14 / 0.23 | CL5 | 4 |
 
 The table pools every build, and recent runs are 5–10 times lower, so the cut
-at 0.25 is itself a hypothesis. The owner then raised every cap by one (2026-11-23,
-#1160: "we can increase the explore_mix_max_clevel by one"): Warrior 4, Mage
-7, Druid 6, Priest 8, Necromancer 8, Paladin 7, Rogue 5, Ranger 6,
-Blackguard 5.
+at 0.25 is itself a hypothesis.
 
 **Growth by level** (#1160; owner, 2026-11-23: "the mixed search is a little
-spastic"; "all of them should grow in decpercentile by level (and class)").
-`explore_mix_radius`, `explore_mix_step` and `explore_mix_max_radius` each
-grow by their `_dp`, per mille a character level from CL1, linearly and
-rounded: value × (1000 + dp × (CL − 1)) / 1000 (`grow_by_level`). Each `_dp`
-is per class with `__<class>`; compiled 0 means no growth. Shipped:
+spastic"; "all of them should grow in decpercentile by level (and class)";
+"I would like the radius to start small and increase by level"; "make CL1
+start from 10 maximum radius").
+- **The formula.** `explore_mix_radius`, `explore_mix_step` and
+  `explore_mix_max_radius` each grow by their `_dp`, per mille a character
+  level from CL1, linearly and rounded: value × (1000 + dp × (CL − 1)) / 1000
+  (`grow_by_level`).
+- **Per class.** Each `_dp` takes `__<class>`; compiled 0 means no growth.
+- **The level caps stay as #1098 shipped them.** Raising them by one, tried
+  first, added back-and-forth on the 20 starts (straight-back steps 7.7% →
+  9.2%) for no gain.
+
+Shipped:
 
 | | CL1 | CL3 | CL5 | CL7 |
 |---|---:|---:|---:|---:|
-| `explore_mix_radius` 5, `_dp` 100 | 5 | 6 | 7 | 8 |
-| `explore_mix_step` 2, `_dp` 100 | 2 | 2 | 3 | 3 |
-| `explore_mix_max_radius` 20 (was 30), `_dp` 500 | 20 | 40 | 60 | 80 | borg-zoo#718's turns per (CL, DL) would turn
+| `explore_mix_radius` 3, `_dp` 300 (the radius it starts at) | 3 | 5 | 7 | 8 |
+| `explore_mix_step` 3, `_dp` 100 | 3 | 4 | 4 | 5 |
+| `explore_mix_max_radius` 10, `_dp` 500 (the cap) | 10 | 20 | 30 | 40 | borg-zoo#718's turns per (CL, DL) would turn
 these into rates per turn.
 
 **The walk.** It uses breadth-first's frame (`stair_frame`): each grid's ring
