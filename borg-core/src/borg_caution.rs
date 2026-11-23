@@ -238,7 +238,7 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
     // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster;
     // #1065: at the heal floor, each cure by its own heal.
     let ban = crate::borg_fast_fragile::heal_ban(st);
-    if ban == crate::borg_fast_fragile::HealBan::Banned {
+    if ban.blocks_all() {
         return false;
     }
     use crate::borg_fast_fragile::{heal_of, HealAction as H};
@@ -525,7 +525,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // #1065 (reviews of #1076 and #1089, P2): at the heal floor, every
     // action below asks the ban with its own heal (`ok`).
     let ban = crate::borg_fast_fragile::heal_ban(st);
-    if ban == crate::borg_fast_fragile::HealBan::Banned {
+    if ban.blocks_all() {
         return false;
     }
     // #1065 (review of #1089, P2): every action below asks the ban with its

@@ -319,11 +319,16 @@ pub(crate) fn heal_of(a: HealAction, clevel: i32, missing: i32) -> i32 {
 pub(crate) enum HealBan {
     /// No ban: every heal may be used.
     Free,
-    /// Banned, whatever the heal.
+    /// Banned, whatever the heal: #842's ban in contact (above the heal floor).
     Banned,
     /// In contact at the heal floor (`fast_fragile_heal_min_ratio`): a heal
     /// is allowed when it buys turns (`heal_buys_turns`).
     Ratio { cur_hp: i32, max_hp: i32, damage: f64, min_ratio_tenths: i32 },
+    /// In contact at the heal floor with the ratio on, and not even a full
+    /// heal buys the turns (re-review of #1089 at 47b46056, P2): banned like
+    /// `Banned`, and, unlike #842's plain ban, also for the healing fallbacks
+    /// outside `borg_heal` (`ratio_gate` keeps it).
+    RatioClosed,
 }
 
 impl HealBan {
@@ -331,10 +336,26 @@ impl HealBan {
     pub(crate) fn allows(self, heal: i32) -> bool {
         match self {
             HealBan::Free => true,
-            HealBan::Banned => false,
+            HealBan::Banned | HealBan::RatioClosed => false,
             HealBan::Ratio { cur_hp, max_hp, damage, min_ratio_tenths } =>
                 heal_buys_turns(cur_hp, max_hp, heal, damage, min_ratio_tenths),
         }
+    }
+
+    /// No heal at all: `borg_heal` and `borg_heal_outmatched` stop here.
+    pub(crate) fn blocks_all(self) -> bool {
+        matches!(self, HealBan::Banned | HealBan::RatioClosed)
+    }
+}
+
+/// #1065 (re-review of #1089 at 47b46056, P2): the ban as the healing
+/// fallbacks outside `borg_heal` read it (`ratio_gate`): only the ratio's
+/// verdicts, `Ratio` and `RatioClosed`; #842's plain ban and no ban pass, as
+/// before #1065.
+pub(crate) fn fallback_ban(ban: HealBan) -> HealBan {
+    match ban {
+        HealBan::Ratio { .. } | HealBan::RatioClosed => ban,
+        HealBan::Free | HealBan::Banned => HealBan::Free,
     }
 }
 
@@ -782,7 +803,10 @@ pub(crate) enum Contact {
     Cornered,
     /// At the floor with the ratio on: a cure that buys turns.
     Ratio(HealBan),
-    /// The ban holds.
+    /// At the floor with the ratio on, and not even a full heal buys the
+    /// turns: no cure (`HealBan::RatioClosed`).
+    RatioClosed,
+    /// The ban holds (#842).
     Banned,
 }
 
@@ -797,18 +821,22 @@ pub(crate) fn contact_ban<S>(s: &mut S, dot: bool, floor: bool, min_ratio_tenths
     if dot || (floor && min_ratio_tenths <= 0) { return Contact::Lifted; }
     if cornered(s) { return Contact::Cornered; }
     if floor {
-        if let Some(b) = ratio(s) { return Contact::Ratio(b); }
+        // The floor with the ratio off lifted above, so the ratio is on here.
+        return match ratio(s) { Some(b) => Contact::Ratio(b), None => Contact::RatioClosed };
     }
     Contact::Banned
 }
 
-/// The ban of all the contacts together: any `Banned` bans; otherwise the
-/// ratio of the heaviest damage; otherwise free.
+/// The ban of all the contacts together: any `Banned` bans; otherwise any
+/// `RatioClosed` closes the ratio; otherwise the ratio of the heaviest
+/// damage; otherwise free.
 pub(crate) fn ban_of(contacts: &[Contact]) -> HealBan {
     let mut ratio: Option<HealBan> = None;
+    let mut closed = false;
     for c in contacts {
         match *c {
             Contact::Banned => return HealBan::Banned,
+            Contact::RatioClosed => closed = true,
             Contact::Ratio(b) => {
                 let heavier = match (ratio, b) {
                     (Some(HealBan::Ratio { damage: old, .. }), HealBan::Ratio { damage: new, .. }) => new > old,
@@ -819,6 +847,7 @@ pub(crate) fn ban_of(contacts: &[Contact]) -> HealBan {
             Contact::Lifted | Contact::Cornered => {}
         }
     }
+    if closed { return HealBan::RatioClosed; }
     ratio.unwrap_or(HealBan::Free)
 }
 
@@ -841,8 +870,7 @@ pub(crate) fn cure_now() -> bool {
 /// passes, as before (these fallbacks were never under #842's ban, and the
 /// ban is not extended to them here).
 pub(crate) fn ratio_gate(st: &mut BorgState) -> impl Fn(HealAction) -> bool {
-    let ban = if cure_now() { heal_ban(st) } else { HealBan::Free };
-    let ban = if matches!(ban, HealBan::Ratio { .. }) { ban } else { HealBan::Free };
+    let ban = fallback_ban(if cure_now() { heal_ban(st) } else { HealBan::Free });
     let (clevel, missing) = (st.borg.tr(BI_CLEVEL), st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP));
     move |a| ban.allows(heal_of(a, clevel, missing))
 }
@@ -886,10 +914,10 @@ pub(crate) fn heal_ban(st: &mut BorgState) -> HealBan {
                 Contact::Lifted => borg_note(st, &format!("# Fast-fragile in contact, HP {}/{}: at the heal floor or bleeding out, a cure is allowed (#926)", f.cur_hp, st.borg.tr(BI_MAXHP))),
                 Contact::Cornered => borg_note(st, "# Cornered by a fast-fragile attacker: no escape, the kill is more than one turn off; a cure is allowed (#842)"),
                 Contact::Ratio(_) => {}
-                Contact::Banned => {
+                Contact::Banned | Contact::RatioClosed => {
                     let note = describe(st, i, source, &f);
                     borg_note(st, &format!("# No healing potion in contact with a fast-fragile attacker (#842); {}", note.trim_start_matches("# ")));
-                    return HealBan::Banned;
+                    return ban_of(&[verdict]);
                 }
             }
             contacts.push(verdict);
@@ -1260,8 +1288,36 @@ mod tests_1065 {
         assert_eq!(contact_ban(&mut (), true, false, 30, |_| unreachable!(), |_| unreachable!()), Contact::Lifted);
         assert_eq!(contact_ban(&mut (), false, true, 0, |_| unreachable!(), |_| unreachable!()), Contact::Lifted);
         assert_eq!(contact_ban(&mut (), false, false, 30, |_| false, |_| unreachable!()), Contact::Banned);
-        assert_eq!(contact_ban(&mut (), false, true, 30, |_| false, |_| Option::None), Contact::Banned, "not even a full heal");
+        assert_eq!(contact_ban(&mut (), false, true, 30, |_| false, |_| Option::None), Contact::RatioClosed, "not even a full heal");
         assert_eq!(ban_of(&[Contact::Lifted, Contact::Banned]), HealBan::Banned);
         assert_eq!(ban_of(&[]), HealBan::Free);
+    }
+
+    /// Re-review of #1089 at 47b46056, P2: 5/11 HP against 8 a turn at ratio
+    /// 30 needs 24 HP after the cure, which not even a full heal (11) gives.
+    /// The contact is `RatioClosed`: `borg_heal` stops, and so do the
+    /// fallbacks (the unseen-bump heal, the Recall wait, #1064's floor cure),
+    /// which read the ratio's verdicts but not #842's plain ban.
+    #[test]
+    fn a_ratio_the_maximum_cannot_meet_closes_the_fallbacks_too() {
+        let ratio = HealBan::Ratio { cur_hp: 5, max_hp: 11, damage: 8.0, min_ratio_tenths: 30 };
+        assert!(!ratio.allows(i32::MAX / 2), "11 HP at most, 24 needed");
+        let closed = contact_ban(&mut (), false, true, 30, |_| false, |_| Option::None);
+        assert_eq!(closed, Contact::RatioClosed);
+        let ban = ban_of(&[closed]);
+        assert_eq!(ban, HealBan::RatioClosed);
+        assert!(ban.blocks_all(), "borg_heal stops");
+        let fallback = fallback_ban(ban);
+        for heal in CURE_HEAL { assert!(!fallback.allows(heal), "no fallback cure of {heal}"); }
+        // #842's plain ban still leaves the fallbacks as they were; the
+        // ratio's verdicts pass through.
+        assert_eq!(fallback_ban(HealBan::Banned), HealBan::Free);
+        assert_eq!(fallback_ban(HealBan::Free), HealBan::Free);
+        assert_eq!(fallback_ban(ratio), ratio);
+        assert!(HealBan::Banned.blocks_all() && !ratio.blocks_all() && !HealBan::Free.blocks_all());
+        // One closed contact closes the lot, a #842 ban still bans.
+        let open = Contact::Ratio(HealBan::Ratio { cur_hp: 5, max_hp: 60, damage: 8.0, min_ratio_tenths: 30 });
+        assert_eq!(ban_of(&[open, Contact::RatioClosed]), HealBan::RatioClosed);
+        assert_eq!(ban_of(&[Contact::RatioClosed, Contact::Banned]), HealBan::Banned);
     }
 }

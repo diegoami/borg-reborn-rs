@@ -6203,17 +6203,17 @@ them.
 |---|---:|---|---|---|
 | `fast_fragile_policy` | 0 | flag | 0–1 | `borg_fast_fragile.rs:53` |
 | `fast_fragile_by_stats` | 0 | flag | 0–1 | `borg_fast_fragile.rs:443` |
-| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:677` |
-| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:679` |
+| `fast_fragile_no_heal` | 0 | flag | 0–2 | `borg_fast_fragile.rs:698` |
+| `fast_fragile_escape_percent` | 100 | percent of HP | 0–1000 | `borg_fast_fragile.rs:700` |
 | `fast_fragile_phase_landing` | 0 | flag | 0–1 | `borg_fast_fragile.rs:753` |
 | `fast_fragile_speed_margin` | 5 | speed points | 1–40 | `borg_fast_fragile.rs:449` |
 | `fast_fragile_kill_turns` | 2 | turns | 1–10 | `borg_fast_fragile.rs:450` |
 | `fast_fragile_damage_percent` | 25 | percent of HP | 1–1000 | `borg_fast_fragile.rs:451` |
 | `fast_fragile_group_max` | 2 | monsters | 0–100 | `borg_fast_fragile.rs:452` |
-| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:591` |
-| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:567` |
-| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:526` |
-| `fast_fragile_heal_min_ratio` | 0 | tenths | 0–1000 | `borg_fast_fragile.rs:612` |
+| `fast_fragile_heal_floor` | 0 | percent of max HP | 0–100 | `borg_fast_fragile.rs:612` |
+| `fast_fragile_escape_quantile` | 0 | percent | 0–100 | `borg_fast_fragile.rs:588` |
+| `fast_fragile_count_dot` | 0 | flag | 0–1 | `borg_fast_fragile.rs:547` |
+| `fast_fragile_heal_min_ratio` | 0 | tenths | 0–1000 | `borg_fast_fragile.rs:633` |
 
 #926 added the last three, each 0 (today's play), none shipped:
 
@@ -6261,7 +6261,9 @@ them.
     (`fast_fragile_deferred_attack`, right after `borg_caution`).
   - **The healing fallbacks** outside `borg_heal` ask the same contact ratio
     for each cure (`ratio_gate`): the unseen-bump heal, the Recall wait and
-    #1064's kill-on-sight floor cure.
+    #1064's kill-on-sight floor cure. When not even a full heal meets the
+    ratio (`RatioClosed`), they refuse every cure as `borg_heal` does;
+    #842's plain ban still leaves them as they were.
   - **The confusion and blindness fixes** of `borg_heal` come before the ban,
     as before #842: they restore the Phase Door the ban relies on. Pinned by
     a test.
