@@ -1602,6 +1602,15 @@ borg_param_item_test_unknown_min_hp_cure_exempt = 1
 # not (#869, owner): confused, no scroll reads and a walk mostly goes astray. 0 = no floor (9085c266: 11 of 28 deaths swung
 # confused at the patch until death, CLW in the pack).
 borg_param_attack_kill_on_sight_min_hp_percent = 50
+# #1064: when that floor declines the attack, the cure it counted is drunk in
+# the same think (confused: Cure Serious, then Critical, which cure the
+# confusion; then Cure Light, which shortens it by 20 turns) unless it does not
+# outlive the next turn and an escape is at hand (it then takes the stairs
+# underfoot or Phase Door in the same think, and drinks after all if the Phase
+# Door's own gates refuse it), and #867's "attacking first" hold of the
+# confusion cure does not apply to that confuser. Druid 781905420 (8 CLW) died
+# neither attacking nor drinking with this 0. 0 = #969 alone.
+borg_param_attack_kill_on_sight_floor_cure = 1
 # #842: fast-fragile monsters (the policy: no HP gate, Phase Door or stairs
 # underfoot as the only alternative; the stats characterization; no healing
 # potion in contact). Compiled 0. Shipped by owner decision 2026-11-21 ("everything
