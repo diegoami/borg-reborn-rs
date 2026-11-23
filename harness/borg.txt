@@ -2315,3 +2315,18 @@ borg_param_trap_leave_near_count = 0
 # than it did: its weight allowance was 5 STR too high, and the power model
 # never priced the curse against the cap's AC.
 borg_param_trait_curse_stats = 1
+
+# #1140: deal with poison (one switch, owner 2026-11-23; zoo run 45121432449,
+# borg-cemetery#146). The HP the poison still takes, ceil(counter /
+# (adj_con_fix[CON] + 1)), against the HP and the Cure Light/Serious Wounds
+# carried. On: note it; use a poison cure it carries once the poison is
+# poison_cure_pending_percent of the HP; drink CLW/CSW late while safe (at HP
+# <= the next turn's poison + poison_late_drink_margin, or when the heal
+# fits); leave for town when the poison outlasts HP + healing; the Alchemist
+# first in town (Neutralize Poison or CCW if affordable, else enough CLW), no
+# sale paying nothing; a fight the pending poison would finish is lost.
+# Shipped on by the owner, 2026-11-23 ("merge with deal_with_poison 1"), before
+# a zoo measurement (borg-zoo#745); the values are hypotheses (RULES 14).
+borg_param_deal_with_poison = 1
+borg_param_poison_late_drink_margin = 2
+borg_param_poison_cure_pending_percent = 50

@@ -287,7 +287,9 @@ fn set_action(st: &mut BorgState, a: TownAction) -> bool {
 
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) != 0 || !active(st) || configured_limit(st) <= 0
-        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some() {
+        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some()
+        // borg-reborn-rs (#1140): the poison triage goes first.
+        || crate::borg_poison::town_triage_holds(st) {
         return false;
     }
     let Some(action) = overflow_action(st) else { return false; };
@@ -301,7 +303,11 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
-    if let Some(a) = overflow_action(st) { return set_action(st, a); }
+    // borg-reborn-rs (#1140, `deal_with_poison`): the poison first, and no
+    // sale or excess trip while selling pays nothing during it.
+    if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
+    let no_sale = crate::borg_poison::no_sale_now(st);
+    if let Some(a) = overflow_action(st).filter(|_| !no_sale) { return set_action(st, a); }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
         || st.borg.antibounce_count > 1350 { clear(st); return false; }
     // While walking, retain only the destination. On entering a store the

@@ -84,6 +84,9 @@ PINNED_TOWN_SETTINGS = [
     ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
     # #1130 shipped the committed brave stair walk after these incidents.
     ("flow_brave_walk_commit", 0),
+    # #1140 shipped deal_with_poison (the poison triage) after these
+    # incidents (owner, 2026-11-23: "merge with deal_with_poison 1").
+    ("deal_with_poison", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -172,7 +175,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             # #1061: the stair_scum mode (shipped after these cases) is not
             # what they test; pin it off.
             # #1098: nor the mixed walk and the C exploration's stair exit.
-            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done"):
+            # #1140: nor the poison triage (deal_with_poison).
+            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
+                        "borg_param_deal_with_poison"):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = 0\n"
