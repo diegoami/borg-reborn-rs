@@ -996,6 +996,12 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        desperate_flow_with_route_guard(st, up, range, why)
+    })
+}
+
+fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1384,6 +1390,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Strategic retreat
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(b_d));
 
         // Reset my Movement and Flow Goals
@@ -1782,6 +1789,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         borg_note(st, &note);
 
         // Back away from danger
+        crate::borg_flow::remember_flight_retreat(st);
         borg_keypress(st, i2d(i32::from(engine::ddd(bi))));
 
         // Reset my Movement and Flow Goals
@@ -2291,6 +2299,182 @@ fn may_move_away(
         && st.borg.tr(BI_CURHP) < p(Param::caution_move_max_hp)
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
+
+/// borg-reborn-rs (#932, #1023): `caution_retreat_oscillation_limit` moves
+/// away in a row were each undone: the Borg landed on the grid it stepped
+/// to and then came back to (or next to) the grid it had left, each within
+/// `caution_retreat_oscillation_thinks` thinks of the last, on one level
+/// (seed 829474344: 74 retreats from a white jelly, each undone by the stair
+/// flight; 312081895: by the exploration flow). Steps that keep going away
+/// (A to B, B to C) never count (review of #966). The next move away is not
+/// taken, with one note per think; the escapes, the outmatched cure and the
+/// attack decide. Off at 0.
+fn retreat_oscillation_veto(st: &mut BorgState) -> bool {
+    let limit = p(Param::caution_retreat_oscillation_limit);
+    if limit <= 0 {
+        return false;
+    }
+    let m = &st.borg.mon;
+    let undone = run_follows(
+        m.retreat_level == st.borg.time.level,
+        st.borg.time.now - m.retreat_last,
+        p(Param::caution_retreat_oscillation_thinks),
+        m.retreat_landed,
+        st.borg.c,
+        m.retreat_from,
+        m.retreat_to,
+    );
+    let run = m.retreat_run;
+    if !(undone && i32::from(run) >= limit) {
+        return false;
+    }
+    if st.borg.mon.retreat_noted != st.borg.time.now {
+        st.borg.mon.retreat_noted = st.borg.time.now;
+        borg_note(st, &format!("# No retreat: {run} moves away in a row from here were undone (#932)"));
+    }
+    true
+}
+
+/// borg-reborn-rs (#1023, review of #966): with the breaker on, a think that
+/// finds the Borg on the grid its last move away stepped to confirms the
+/// landing. Called at the start of `borg_caution`, before any move.
+fn observe_retreat_landing(st: &mut BorgState) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let m = &mut st.borg.mon;
+    if m.retreat_level == st.borg.time.level && st.borg.c.x == m.retreat_to.x && st.borg.c.y == m.retreat_to.y {
+        m.retreat_landed = true;
+    }
+}
+
+/// borg-reborn-rs (#932, #1023): count the move away just taken from `from`
+/// to the grid it steps to (`goal.g`, set by `retreat` and `back_away`).
+fn note_retreat_taken(st: &mut BorgState, from: loc) {
+    if p(Param::caution_retreat_oscillation_limit) <= 0 {
+        return;
+    }
+    let (now, level) = (st.borg.time.now, st.borg.time.level);
+    let to = loc { x: st.borg.goal.g.x, y: st.borg.goal.g.y };
+    let thinks = p(Param::caution_retreat_oscillation_thinks);
+    let m = &mut st.borg.mon;
+    let follows = run_follows(m.retreat_level == level, now - m.retreat_last, thinks, m.retreat_landed, from, m.retreat_from, m.retreat_to);
+    m.retreat_run = next_retreat_run(follows, m.retreat_run);
+    m.retreat_last = now;
+    m.retreat_level = level;
+    m.retreat_from = from;
+    m.retreat_to = to;
+    m.retreat_landed = false;
+}
+
+/// borg-reborn-rs (#1023, review of #966): a move away from `start`
+/// continues the run when the last one was on this level within `thinks`
+/// thinks, its landing was confirmed, and `start` is back at (or next to)
+/// the grid it left but not on the grid it stepped to: the Borg returned,
+/// it did not go on.
+fn run_follows(same_level: bool, gap: BorgTime, thinks: i32, landed: bool, start: loc, prev_from: loc, prev_to: loc) -> bool {
+    same_level
+        && gap <= thinks
+        && landed
+        && !(start.x == prev_to.x && start.y == prev_to.y)
+        && king_moves(start, prev_from) <= 1
+}
+
+/// borg-reborn-rs (#932): the run of moves away after one more.
+fn next_retreat_run(follows: bool, run: u16) -> u16 {
+    if follows { run.saturating_add(1) } else { 1 }
+}
+
+/// borg-reborn-rs (#932): king-move distance between two grids.
+fn king_moves(a: loc, b: loc) -> i32 {
+    (a.x - b.x).abs().max((a.y - b.y).abs())
+}
+
+#[cfg(test)]
+mod retreat_oscillation_tests {
+    use super::{next_retreat_run, run_follows};
+    use crate::headers::z_type_h::loc;
+
+    const fn g(y: i32, x: i32) -> loc {
+        loc { x, y }
+    }
+
+    /// Plays a sequence of moves away (from, to) with the landing confirmed
+    /// or not, each `gap` thinks after the last; returns the run lengths.
+    fn runs(moves: &[(loc, loc, bool)], gap: i32, thinks: i32, same_level: bool) -> Vec<u16> {
+        let (mut run, mut prev_from, mut prev_to, mut landed, mut first) = (0u16, g(0, 0), g(0, 0), false, true);
+        let mut out = Vec::new();
+        for &(from, to, lands) in moves {
+            let follows = !first && run_follows(same_level, gap, thinks, landed, from, prev_from, prev_to);
+            run = next_retreat_run(follows, run);
+            out.push(run);
+            (prev_from, prev_to, landed, first) = (from, to, lands, false);
+        }
+        out
+    }
+
+    #[test]
+    fn going_and_coming_back_counts() {
+        // 829474344: 13,95 -> 13,94, the flow walks back to 13,95, again.
+        let a = (g(13, 95), g(13, 94), true);
+        assert_eq!(runs(&[a, a, a, a], 2, 3, true), vec![1, 2, 3, 4]);
+        // The two grids next to the jelly alternate (13,95 and 14,95).
+        let b = (g(14, 95), g(14, 94), true);
+        assert_eq!(runs(&[a, b, a, b], 2, 3, true), vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn going_on_never_counts() {
+        // A -> B -> C -> D west along a corridor: real progress.
+        let m = [(g(5, 10), g(5, 9), true), (g(5, 9), g(5, 8), true), (g(5, 8), g(5, 7), true), (g(5, 7), g(5, 6), true)];
+        assert_eq!(runs(&m, 1, 3, true), vec![1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn no_landing_no_level_no_window_breaks_the_run() {
+        let a = (g(13, 95), g(13, 94), true);
+        let not_landed = (g(13, 95), g(13, 94), false);
+        assert_eq!(runs(&[not_landed, a, a], 2, 3, true), vec![1, 1, 2], "a key that did not land");
+        assert_eq!(runs(&[a, a, a], 2, 3, false), vec![1, 1, 1], "another level");
+        assert_eq!(runs(&[a, a, a], 4, 3, true), vec![1, 1, 1], "past the window");
+        assert_eq!(runs(&[a, a, a], 3, 3, true), vec![1, 2, 3], "the window is inclusive (312081895)");
+    }
+
+    #[test]
+    fn the_run_saturates() {
+        assert_eq!(next_retreat_run(true, u16::MAX), u16::MAX);
+    }
+}
+
+/// borg-reborn-rs (#931): `caution_stairs_immobile_reach` (the weighted stair
+/// flight keeps out of the reach of immobile attackers).
+pub(crate) fn stairs_immobile_reach_on() -> bool {
+    p(Param::caution_stairs_immobile_reach) != 0
+}
+
+/// borg-reborn-rs (#931, second review of #965): the most extra steps the
+/// reach-free route may cost over the ordinary one (0: no limit).
+pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
+    p(Param::caution_stairs_immobile_reach_extra_steps)
+}
+
+/// borg-reborn-rs (#931): grid (`y`, `x`) is next to a known immobile
+/// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
+/// 1621-1644).
+pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
+    immobile_attacker_next_to(st, y, x).is_some()
+}
+
+/// borg-reborn-rs (#931, review of #965): the known immobile attacker whose
+/// reach (the squares next to it) grid (`y`, `x`) is in, by kill index.
+/// Sleeping ones count (they wake as the Borg comes near: the white jelly of
+/// 829474344 woke at the first step beside it), and a record counts until the
+/// usual bookkeeping drops it; a route the refusal makes impossible falls back
+/// to the ordinary search.
+pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    immobile_attacker_next_to(st, y, x)
+}
+
 
 /// A lone adjacent known monster that one blow would kill does not justify
 /// retreat: swinging removes the threat outright, while retreating hands the
@@ -3248,6 +3432,7 @@ pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
 
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
+    observe_retreat_landing(st);
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
@@ -3742,16 +3927,18 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 2) we have boosted our avoidance because we are stuck
     // 3) we are in a Sea of Runes
     // 4) we are not in a vault
-    let danger_test =
-        pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    let danger_test = pos_danger > retreat_danger_threshold(st);
     // borg-reborn-rs (#556): fighting through breeders to the stairs, no
     // retreat or back-away undoes the flight while the danger is below the HP.
     let through = breeder_fighting_through(st, pos_danger);
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+        && !retreat_oscillation_veto(st)
         && retreat(st, pos_danger, borg_surround)
     {
+        note_retreat_taken(st, from);
         return true;
     }
 
@@ -3786,11 +3973,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
+    // borg-reborn-rs (#1023): with caution_retreat_oscillation_backaway, a
+    // back-away joins the run of retreats (seed 1512540769: "Backing up to
+    // 88,45" from 45,89, undone by the stair flight, mixed with retreats from
+    // 43,96 until death).
+    let backaway_counted = p(Param::caution_retreat_oscillation_backaway) != 0;
+    let from = st.borg.c;
     if !all_out
         && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+        && !(backaway_counted && retreat_oscillation_veto(st))
         && back_away(st, pos_danger, borg_surround)
     {
+        if backaway_counted {
+            note_retreat_taken(st, from);
+        }
         return true;
     }
 
@@ -3961,8 +4158,10 @@ fn stairs_before_recall(st: &mut BorgState) -> bool {
 /// elsewhere. Nothing is committed: the cost map is rebuilt by the next
 /// flow, and the danger marks are the ones that flow would make.
 fn stair_reachable(st: &mut BorgState) -> bool {
-    (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
-        || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
+            || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+    })
 }
 
 /// Would the flee flows take a down staircase (their gates, not the path)?
@@ -4001,6 +4200,10 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
     }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
+    if st.flow.has_retreat_exclusions() {
+        // #932 (review of #964): with a hold active, spread as the walk does.
+        return track.num > 0 && crate::borg_flow_stairs::guarded_unweighted_stair_reachable(st, up);
+    }
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
         return false;
@@ -4012,7 +4215,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
         }
     }
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
-    i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
+    crate::borg_flow_stairs::unweighted_flight_reachable(st)
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
@@ -5770,7 +5973,7 @@ pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing_or_leaving: bool) -
 }
 
 /// `fleeing_or_leaving`: `goal.fleeing || goal.leaving` (the caller's).
-fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
+pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
     why == GOAL_FLEE || (why == GOAL_BORE && fleeing_or_leaving)
 }
 
@@ -6134,13 +6337,15 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     let ok = if weight > 0 {
         crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
     } else {
-        crate::borg_flow::borg_flow_clear(st);
-        crate::borg_flow_stairs::enqueue_down_stairs(st);
-        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
-        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
-            st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
-        }
+        crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+            crate::borg_flow::borg_flow_clear(st);
+            crate::borg_flow_stairs::enqueue_down_stairs(st);
+            crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+            crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+                st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+                crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+            }
+        })
     };
     st.borg.status.desperate = false;
     if ok {
@@ -6153,6 +6358,25 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
 /// bored ascent while fleeing, so the up-stair flow can opt in there too.
 pub(crate) fn stair_flight_weight(why: i32, leaving_up: bool) -> i32 {
     if flight_goal(why, leaving_up) { p(Param::caution_stairs_flight_threat_weight) } else { 0 }
+}
+
+/// #932: remember a tactical retreat for this many Borg thinks during a
+/// dungeon flight. Zero leaves the original routes intact.
+pub(crate) fn flight_retreat_ticks() -> i32 {
+    p(Param::caution_retreat_reentry_ticks)
+}
+
+/// Re-open the abandoned grid if the current danger has fallen below the
+/// strategic-retreat threshold.
+pub(crate) fn retreat_danger_threshold(st: &BorgState) -> i32 {
+    i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor)
+}
+
+/// #932 (review of #964): the danger of a held grid, over the horizon the
+/// strategic retreat reads (`caution_danger_horizon`), so the hold lasts as
+/// long as the same retreat would still fire there.
+pub(crate) fn retreat_hold_danger(st: &mut BorgState, y: i32, x: i32) -> i32 {
+    borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false)
 }
 
 /// borg-reborn-rs (#881): `caution_stairs_flight_unknown` (0 = an unknown
