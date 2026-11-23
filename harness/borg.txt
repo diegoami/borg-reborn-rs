@@ -1110,10 +1110,12 @@ borg_param_escape_teleport_landing_either = 0
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
 # #933 (seed 829474344): no strategic retreat from a lone immobile neighbour
-# that melee kills in this many turns while its danger is below the percent of
-# the HP. Shipped 0 (today's play); 3 turns is the hypothesis.
+# that melee kills in this many turns while the danger here from every
+# monster over the fight stays below the percent of the HP. The turns ship 0
+# (today's play; 3 is the hypothesis); the percent, read only when the turns
+# are on, is 100.
 borg_param_caution_retreat_immobile_kill_turns = 0
-borg_param_caution_retreat_immobile_danger_percent = 50
+borg_param_caution_retreat_immobile_danger_percent = 100
 
 # Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
 # replays of #717's Druid deaths): "the path to the stairs is not clean, so the
