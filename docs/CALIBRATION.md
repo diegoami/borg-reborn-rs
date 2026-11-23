@@ -941,6 +941,10 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 
 The registry now holds **2275** parameters (2273 before; two added).
 
+- `light_hallway_repeat_guard=1` (shipped, compiled default 0). At 1,
+  defense and exploration yield when the first eligible ray has the same
+  observed terrain as the last beam queued from that square. At 0, historical
+  fixtures can replay with the original clock and beam behavior.
 - `light_detect_dark_entry=0` (compiled and shipped). At 1, the exception
   permits **Detect Monsters** and **Read Minds** below the regular level
   gate. A dungeon arrival or adjacent step must be on a non-glowing tile
@@ -3006,11 +3010,10 @@ of #513). On 18 classes-18 starts on main `aa9ebf49`:
   current time, which `borg_defend_aux_inviso` reads as "hit by an unseen
   monster recently", so every rest armed the defence. With
   `recover_rest_arms_see_invis = 0` a rest leaves the clock alone; only an
-  unseen attack (`borg_locate_kill`) arms it. The same clock has two other readers,
-  which read it the other way round: the Light Beam defence
-  (`borg_defend_aux_lbeam`, skipped while the stamp is recent) and the
-  removal of regional fear when a monster appears (`borg_flow_kill`, kept
-  while recent). At 0, both can now act after a rest where C did not.
+  unseen attack (`borg_locate_kill`) arms it. The Light Beam defence
+  (`borg_defend_aux_lbeam`) waits for the original 48-turn delay. With
+  `light_hallway_repeat_guard=1` (shipped), it also requires a set stamp. Regional fear is kept while the stamp is recent
+  (`borg_flow_kill`).
 
 Compiled defaults are C's (0 and 1); `harness/borg.txt` ships 2 and 0. On
 the same 18 starts: Detect Invisible read 95 times (0 in town) and bought
