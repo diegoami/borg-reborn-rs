@@ -294,6 +294,26 @@ borg_param_town_prepared_fear = 2
 
 borg_param_town_variety_min_depth = 2
 
+# Devices as variety (#895, owner: "we are going to need space for other
+# devices"). Above 0, the charges of a learned wand, staff or rod are valued on
+# one row per situation it answers: the first charges listed below, together,
+# are worth this percent of the trip weight (nothing past them), so a charged
+# device is kept and bought as variety and not only as one more source on a
+# shared curve (an attack wand competes with arrows and oil). One device per
+# row: a second one answering the same situation adds nothing on it. A Staff of
+# Teleportation (about 2700 gold) on offer is worth nothing while the purse after
+# the urgent needs is below town_device_escape_min_gold; one carried is never
+# sold. Starts with town_variety_min_depth. 0 = off. Hypotheses, not yet
+# measured in the zoo. NOT town_devices_percent (#666, further down): that one
+# scales every device's charges by the class's device skill.
+
+borg_param_town_device_percent = 24
+borg_param_town_device_attack = 10
+borg_param_town_device_escape = 5
+borg_param_town_device_detect = 5
+borg_param_town_device_control = 5
+borg_param_town_device_escape_min_gold = 3000
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class

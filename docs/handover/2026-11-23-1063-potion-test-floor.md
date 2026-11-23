@@ -38,8 +38,8 @@ shipped values: without a cure the test needs 60 HP, and Poison costs at most
 `borg_recover`). Point 3 (the "stopping cure", optional) is #1068's (#1028)
 arithmetic, in another PR.
 
-**Checked.** fmt, clippy, the workspace and `borg-core` tests (718),
-`scripts/tests`, `check-param-citations.py` (2,421, 0 wrong). Smoke: 2/4
+**Checked.** fmt, clippy, the workspace and `borg-core` tests,
+`scripts/tests`, `check-param-citations.py` (2,433, 0 wrong). Smoke: 2/4
 identical to `track-p`'s reference (`60e04a21`); smoke-warrior-1 and
 smoke-mage-2 diverge at their first old potion test (game turns 5,703, at
 20/20 HP, and 16,798): 6 and 1 tests before, 0 now. Re-recorded; 4/4 identical
