@@ -17,6 +17,13 @@ borg_param_town_phase_curve_scale_percent = 150
 # weight, on top of the Phase Door curve. #863 (owner, 2026-11-21: they run out of
 # them, especially rangers): 2 -> 8.
 borg_param_town_phase_reserve = 10
+# #987 (owner, 2026-11-22: "let us merge like that having the value 2 for
+# clw for rangers"): a 127-gold Ranger (seed 681096527) bought 6 Phase Door
+# and no Cure Light Wounds, each reserved scroll outbidding the first cure.
+# The first two healing potions carried are a requirement, each worth
+# town_first_cure_percent (200) of the escape weight, so they are bought
+# before the Phase Door reserve. Not measured by the zoo yet (#1006).
+borg_param_town_first_cure = 2
 borg_param_town_oil_curve_scale_percent = 50
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 6

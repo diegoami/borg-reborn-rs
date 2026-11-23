@@ -252,7 +252,7 @@ pub fn urgent_needs(st: &BorgState, trip: &crate::borg_town_usefulness::Trip) ->
 /// next trip reaches the dive gate (`prepared_recall_depth`) and none is
 /// carried: without it the Borg cannot dive, whatever else it buys.
 pub(crate) fn recall_urgent(st: &BorgState) -> bool {
-    let gate = param(Param::prepared_recall_depth);
+    let gate = urgent_recall_gate(param(Param::town_recall_urgent_depth), param(Param::prepared_recall_depth)); // borg-reborn-rs (#984)
     param(Param::town_recall_urgent) != 0
         && recall_gate_reached(Journey::of(st).depth, gate, st.borg.tr(BI_RECALL))
 }
@@ -287,15 +287,51 @@ pub(crate) fn departure_room() -> Room {
 }
 
 /// The storing settings `dispositions` reads, passed in so that tests can set
-/// them (the registry gives tests its compiled defaults).
-#[derive(Clone, Copy, Debug, Default)]
-struct Storing {
+/// them (the registry gives tests its compiled defaults). A plan record
+/// carries them from schema 13 (#957), so a replay stores as the visit did.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(crate) struct Storing {
     /// #711: `town_store_only_overweight`.
-    only_overweight: bool,
+    pub(crate) only_overweight: bool,
     /// #859: the departure room.
-    room: Room,
+    pub(crate) room: Room,
     /// #859: `town_store_keep_min`.
-    keep_min: i32,
+    pub(crate) keep_min: i32,
+    /// #557: `town_recall_reserve`, and the gold floor that makes it count
+    /// (`buy_recall_from_gold`): together they set the Recall room the
+    /// storing target adds (review of #962).
+    pub(crate) recall_reserve: i32,
+    pub(crate) recall_floor: i32,
+}
+
+impl Storing {
+    /// The process's settings: what a live solve uses.
+    pub(crate) fn settings() -> Self {
+        Storing {
+            only_overweight: param(Param::town_store_only_overweight) != 0,
+            room: departure_room(),
+            keep_min: param(Param::town_store_keep_min),
+            recall_reserve: param(Param::town_recall_reserve),
+            recall_floor: crate::borg_store_buy::recall_purchase_floor(),
+        }
+    }
+
+    /// As a plan record writes them: `[free weight, free slots, keep_min,
+    /// only_overweight, recall_reserve, recall_floor]`.
+    pub(crate) fn to_array(self) -> [i64; 6] {
+        [self.room.weight, i64::from(self.room.slots), i64::from(self.keep_min), i64::from(self.only_overweight),
+            i64::from(self.recall_reserve), i64::from(self.recall_floor)]
+    }
+
+    pub(crate) fn from_array(a: [i64; 6]) -> Self {
+        Storing {
+            only_overweight: a[3] != 0,
+            room: Room { weight: a[0], slots: a[1] as i32 },
+            keep_min: a[2] as i32,
+            recall_reserve: a[4] as i32,
+            recall_floor: a[5] as i32,
+        }
+    }
 }
 
 /// What storing frees before the purchases: the departure room, plus the
@@ -349,11 +385,9 @@ fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
 pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed, Vec<i32>) {
-    dispositions_by(input, u, st, Storing {
-        only_overweight: param(Param::town_store_only_overweight) != 0,
-        room: departure_room(),
-        keep_min: param(Param::town_store_keep_min),
-    })
+    // #957: the record's settings when a replay has them; older records and
+    // live solves read the process's.
+    dispositions_by(input, u, st, input.storing.unwrap_or_else(Storing::settings))
 }
 
 /// `dispositions` with `town_store_only_overweight` given (#711).
@@ -367,7 +401,7 @@ fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_ov
 /// surplus past `town_store_keep_min`); 0, or absent: the whole stack (#859,
 /// review F1). Empty unless a surplus was split.
 fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: Storing) -> (Vec<Disposition>, Freed, Vec<i32>) {
-    let Storing { only_overweight, room, keep_min } = storing;
+    let Storing { only_overweight, room, keep_min, .. } = storing;
     let mut out = vec![Disposition::Keep; input.kit.len()];
     let mut freed = Freed::default();
     let mut copies: Vec<i32> = Vec::new();
@@ -566,7 +600,7 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
     let mut out = Vec::new();
     let input = StepInput {
         revision: input.revision, capability: input.capability, utility: input.utility, candidates: candidates.to_vec(), facts: input.facts, tryon: input.tryon, limits: input.limits,
-        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
+        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried, storing: input.storing,
         cure_spell: input.cure_spell, kit: input.kit, home_slots: input.home_slots };
     let input = &input;
     for group in groups {
@@ -716,7 +750,7 @@ mod tests {
     }
 
     fn input<'a>(kit: &'a [KitItem]) -> StepInput<'a> {
-        StepInput { revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
+        StepInput { storing: None, revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
             limits: Limits { gold: 300, pack_slots: 15, weight: 1000 }, urgent: Vec::new(),
             params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit, home_slots: 20 }
     }
@@ -1172,7 +1206,7 @@ mod tests {
         let kit = [potions, phase];
         let mut inp = input(&kit);
         inp.limits.weight = 0;
-        let storing = |keep_min| Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min };
+        let storing = |keep_min| Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min, ..Storing::default() };
         // Off: nothing goes, the pack is within its allowance.
         let mut u = Utility::of(&st, &kit, false);
         assert_eq!(dispositions_by(&inp, &mut u, &st, Storing { only_overweight: true, ..Storing::default() }).0,
@@ -1190,6 +1224,28 @@ mod tests {
         assert_eq!((d[0], freed.pack_slots), (Disposition::Keep, 0), "the floor keeps it whole");
     }
 
+    /// #957 (review of #962): the step's entry point stores as the record's
+    /// settings say, not the process's: the same kit with the departure
+    /// room recorded stores the surplus, and with none recorded keeps it.
+    #[test]
+    fn the_recorded_storing_settings_decide_the_dispositions() {
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_ACLW as usize] = 12;
+        st.borg.trait_[BI_APHASE as usize] = 1;
+        let potions = KitItem { slot: 0, kind: 50, qty: 12, weight: 4, need: index(Need::Healing) as i8,
+            reduction: 20 * UNIT, ..recall(Place::Pack) };
+        let phase = KitItem { slot: 1, kind: 51, qty: 1, weight: 5, need: index(Need::Escape) as i8, ..recall(Place::Pack) };
+        let kit = [potions, phase];
+        let mut inp = input(&kit);
+        inp.limits.weight = 0;
+        inp.storing = Some(Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3, ..Storing::default() });
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store, Disposition::Keep]);
+        inp.storing = Some(Storing { only_overweight: true, ..Storing::default() });
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep, Disposition::Keep]);
+    }
+
     /// #859 (re-review of #864): the live path stores one copy per solve
     /// (#507). Solved again at every count, a stack of 12 with three kept
     /// goes down to three and stops there, freeing no slot; the minimum is a
@@ -1197,7 +1253,7 @@ mod tests {
     #[test]
     fn the_live_walk_stops_at_the_minimum() {
         let mut st = state(0, 1, 20);
-        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3 };
+        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3, ..Storing::default() };
         let mut stored_at = Vec::new();
         for qty in (1..=12).rev() {
             st.borg.trait_[BI_ACLW as usize] = qty;
@@ -1227,7 +1283,7 @@ mod tests {
         let kit = [armour];
         let mut inp = input(&kit);
         inp.limits.weight = -100;
-        let storing = |keep_min| Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min };
+        let storing = |keep_min| Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min, ..Storing::default() };
         let mut u = Utility::of(&st, &kit, false);
         let off = dispositions_by(&inp, &mut u, &st, storing(0)).0[0];
         let mut u = Utility::of(&st, &kit, false);
@@ -1245,7 +1301,7 @@ mod tests {
         let mut st = state(0, 1, 20);
         st.items.items.push(crate::borg_item::blank_item());
         st.items.items[0].tval = crate::headers::list_tvals_h::TV_FLASK as u8;
-        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3 };
+        let storing = Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min: 3, ..Storing::default() };
         let mut gone = Vec::new();
         for qty in (1..=12).rev() {
             st.items.items[0].iqty = qty as u8;
@@ -1276,7 +1332,7 @@ mod tests {
             let mut out = step(&inp);
             let mut u = Utility::of(&st, kit, false);
             let (d, _, copies) = dispositions_by(&inp, &mut u, &st,
-                Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min });
+                Storing { only_overweight: true, room: Room { weight: 30, slots: 0 }, keep_min, ..Storing::default() });
             out.dispositions = d;
             out.copies = copies;
             first_action(&inp.candidates, &[], &out, &[], kit)
@@ -1302,7 +1358,7 @@ mod tests {
         inp.limits.pack_slots = 0;
         let mut u = Utility::of(&st, &kit, false);
         let (_, freed, _) = dispositions_by(&inp, &mut u, &st,
-            Storing { only_overweight: true, room: Room { weight: 0, slots: 2 }, keep_min: 3 });
+            Storing { only_overweight: true, room: Room { weight: 0, slots: 2 }, keep_min: 3, ..Storing::default() });
         assert_eq!(freed.pack_slots, 2, "two stacks, not their surplus");
     }
 
@@ -1351,4 +1407,29 @@ mod tests {
         assert!(!recall_gate_reached(5, 0, 0), "no gate");
     }
 
+}
+
+/// borg-reborn-rs (#984): the trip depth from which `recall_urgent` makes the
+/// first Word of Recall urgent: `town_recall_urgent_depth`, or the dive gate
+/// (`prepared_recall_depth`, #859) when it is 0. The dive gate itself is not
+/// moved. 312081895 left town at 235 gold for a DL2 trip with none: above
+/// the dive gate, the floor (`buy_recall_from_gold`) left no copy to buy,
+/// and with the floor off the solve still spent the gold on other supplies.
+fn urgent_recall_gate(urgent_depth: i32, dive_gate: i32) -> i32 {
+    if urgent_depth > 0 { urgent_depth } else { dive_gate }
+}
+
+#[cfg(test)]
+mod urgent_recall_depth_tests {
+    use super::{recall_gate_reached, urgent_recall_gate};
+
+    #[test]
+    fn the_urgent_recall_depth_moves_only_the_urgent_gate() {
+        assert_eq!(urgent_recall_gate(0, 5), 5, "0: the dive gate, as #859");
+        assert_eq!(urgent_recall_gate(1, 5), 1);
+        assert!(!recall_gate_reached(2, urgent_recall_gate(0, 5), 0), "today: a DL2 trip stays above the gate");
+        assert!(recall_gate_reached(2, urgent_recall_gate(1, 5), 0), "from DL1: a DL2 trip with none carried (312081895)");
+        assert!(!recall_gate_reached(2, urgent_recall_gate(1, 5), 1), "one is carried");
+        assert!(!recall_gate_reached(0, urgent_recall_gate(1, 5), 0), "no trip into the dungeon");
+    }
 }
