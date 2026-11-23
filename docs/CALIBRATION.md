@@ -7155,74 +7155,99 @@ The owner (2026-11-23): "he should keep and buy whenever it finds on the black
 market up from a certain budget. All the things mentioned above are good to buy
 if found at the black market. And armor, rings and so on which have resistance
 of abilities not covered"; "flat 6000 starting with a level negative delta of
-100".
+100"; "let us not forget mushrooms, they should buy the ones he uses, such ones
+of curing of something. And potions to gain stats levels and so on."
 
 What the code did before (read, not measured). The town planner lists every
 ware of every shop, the Black Market included, and prices a ware by what it
 supplies on the capability rows (potions, scrolls, devices) or by the change
 in `borg_power` when it is tried on (armour, rings, amulets:
-`borg_town_shadow.rs`, `tryon`). The legacy `borg_good_buy` gate (20000, 15000
-and 10000 gold by level, `buy_black_market_*`) is on the old buying path only.
-The planner's only brake was the spending share: 60 percent of the gold above
-500 (`borg_black_market_max_percentage`, `borg_sum_excluded_from_black_market`).
-So a poor Borg could spend most of its purse there at twice the price.
+`borg_town_shadow.rs`, `tryon`; the net swap, so it can also lose a trait the
+worn piece gave). The legacy `borg_good_buy` gate (20000, 15000 and 10000 gold
+by level, `buy_black_market_*`) is on the old buying path only. The planner's
+only brake was the spending share: 60 percent of the gold above 500
+(`borg_black_market_max_percentage`, `borg_sum_excluded_from_black_market`).
+**The price** is 3 times the base: `price_item` (`store.c`) doubles the value
+and then applies the 150 percent Black Market adjustment. A Restore Life Levels
+potion (base 400) is 1200, a Brawn (1000) 3000, a Potion of Strength (8000)
+24000. Under the cap (60 percent of the gold above 500) the 24000 needs a
+purse of 40500; the PR has no purse distribution, so whether that is out of
+reach in play is open.
 
 Changed:
 
 - `town_black_market_min_gold` (compiled 0, **shipped 6000**) and
   `town_black_market_level_delta` (compiled 0, **shipped 100**): below
-  `max(0, min_gold - delta x level)` gold the Black Market's share is 0, so
-  nothing is bought there (the urgent needs included: they could only reach
-  it through the same share); above it the share is the configured 60 percent.
-  3000 at level 30, 1000 at level 50. `black_market_percentage` is the one place
-  that reads it: the planner's budget (and so the plan record), the solver's
-  cap and the live purchase all see the same share, so a replay sees what the
-  game saw.
+  `max(0, min_gold - delta x level)` gold the Black Market's share for ordinary
+  purchases is 0 (5900 at level 1, 3000 at level 30, 1000 at level 50); from it
+  the share is the configured 60 percent. `black_market_percentage` is the one
+  reader of the setting for the plan: the budget (and so the plan record) and
+  the solver's cap see the thresholded share, so a replay sees what the game
+  saw. **The urgent needs keep the configured cap** (review of #1112, F1): below
+  the threshold a poisoned Borg whose only cure is on offer there can still buy
+  it within the cap (`urgent_market_allows`); the live purchase reads the
+  configured share, since the plan it executes was made at this purse and is
+  rebuilt after every action.
+- A ware the planner values is then **eligible**: it is bought if it fits the
+  cap, the room, its marginal value against the other wares and the other
+  purchase rules (a Staff of Teleportation, for one, supplies nothing below
+  `town_device_escape_min_gold` after the urgent spending). Opening the market
+  does not buy a ware by itself: at level 30 with 3000 gold the cap is 1500 and
+  a Brawn is 3000.
 - `town_restore_life_reserve` (compiled 0, **shipped 1**, from maximum depth
-  12 without a repeatable restoration, #978): the potion found at the Black
-  Market is kept. Before, a Restore Life Levels potion carried undrained was
-  worth nothing (`curves[EXPERIENCE]` has weight 0 unless drained) and was
-  sold, to be bought again at 800 after the next drain.
-- Kept as they were: the potions (Healing, Star Healing, Life, Speed,
-  Berserk, Heroism, Restore Mana for a caster, resistances), the staves, rods
-  and wands the core uses, and Vigor and the stat potions all have value on
-  their rows already (a stat potion, at 16000 gold, is out of the cap); only
-  the threshold gates them. Wearables that raise `borg_power` (a resistance or
-  an ability not worn yet) are priced by the try-on and gated the same way.
+  12 without a repeatable restoration, #978): a Restore Life Levels potion is
+  kept as a reserve of one. Without it `curves[EXPERIENCE]` has weight 0 unless
+  the Borg is drained, so a potion carried undrained has no value on any row
+  and the kit loop can sell it (an unmeasured code path; the existing
+  retention test covers the keep, not the sale). The reserve also buys one at
+  the Alchemist (about 400) from that depth, where it competes with the other
+  non-urgent buys for the purse (not measured against Cure Light Wounds or
+  Phase Door).
+- `town_restore_stat_percent` (compiled 0, **shipped 20**, review of #1112,
+  F2): a Mushroom of Vigor (all five stats) or Purging (strength and
+  constitution), which the Borg eats when a stat is drained (`borg_use_things`;
+  `borg_caution` while fighting a unique), is worth 20 percent of its drained
+  value on each stat below 18/100 while nothing is drained, so one is bought,
+  kept and stored at the Home as a reserve of one. Before, the supply filter
+  kept a restoration only for a drained stat, so an undrained Vigor was worth 0
+  and could be sold. At full stats (18/100 or better in all five) it is still
+  worth 0.
+- **Buy only what the Borg drinks.** Brawn, Intellect, Contemplation,
+  Nimbleness and Toughness (base 1000; each gains one stat and loses another at
+  random) were priced for every class, but `borg_junk` drinks them only for some
+  (Brawn not a Mage, Druid or Necromancer; Intellect only a Mage or
+  Necromancer; Contemplation only a Priest or Druid; Nimbleness not a Mage,
+  Priest, Druid or Necromancer; Toughness any class; each below 18/100). A
+  Warrior would have been offered an Intellect at 3000 it never drinks.
+  `drinks_second_stat_potion` makes the others supply nothing.
 
-- Owner (2026-11-23, later): "let us not forget mushrooms, they should buy the
-  ones he uses, such ones of curing of something. And potions to gain stats
-  levels and so on." Read of the use sites against the planner's rows:
-  - Mushrooms the core eats on purpose: Clear Mind (cures confusion and
-    fear, restores mana), Fast Recovery (heals, cures stun, cuts, poison and
-    blindness), Vigor (restores all five stats), Purging (restores strength
-    and constitution, cures poison), Stoneskin. They are priced on those rows
-    through their effects, so the threshold is all they needed. The others
-    (Second Sight, Emergency, Terror, Debility, Sprinting, Turbulence, Shadows)
-    were already on the worthless list (#443), by the same audit.
-  - Stat potions: the five 8000-gold potions (Strength, Intelligence, Wisdom,
-    Dexterity, Constitution) and Augmentation are drunk at once by every class
-    (`borg_use_things`); they are priced on the stat rows, so also gated by the
-    threshold only (16000 gold at the Black Market: out of the cap for the
-    purses seen). **Fixed:** Brawn, Intellect, Contemplation, Nimbleness and
-    Toughness (1000 gold; each gains one stat and loses another at random) were
-    priced for every class, but `borg_junk` drinks them only for some (Brawn not
-    a Mage, Druid or Necromancer; Intellect only a Mage or Necromancer;
-    Contemplation only a Priest or Druid; Nimbleness not a Mage, Priest, Druid
-    or Necromancer; Toughness any class, each below 18/100). A Warrior would
-    have paid 2000 at the Black Market for an Intellect it never drinks.
-    `drinks_second_stat_potion` now makes the others supply nothing.
+Read, not changed (the use sites against the planner's rows):
+
+- Mushrooms with a use of their own in the core: Clear Mind (cures confusion
+  and fear, restores mana), Fast Recovery (heals, cures stun, cuts, poison and
+  blindness), Vigor, Purging, Stoneskin. They are priced on their effects. The
+  kinds the planner assigns no purchase value (Second Sight, Emergency, Terror,
+  Debility, Sprinting, Turbulence, Shadows: `WORTHLESS`, #443) are not bought,
+  but the junk-use switch (`borg_junk.rs`) can still eat one that is found.
+- The five 8000-gold stat potions and Augmentation are drunk at once by every
+  class (`borg_use_things`), and priced on the stat rows.
+- Armour, rings and amulets: `borg_power` scores confusion and fear protection
+  (an `OF_PROT_CONF` or `OF_PROT_FEAR` item sets `BI_RCONF` or `BI_RFEAR`) and
+  the elemental immunities (their own `BI_I*` weights beside the resists), so
+  the try-on can value them; whether an item with such a flag does is not
+  tested here.
 
 Not measured. At the owner's values the Black Market opens at 5900 gold for a
 level 1 Borg and 3000 at level 30; whether the Borg ever has that much, and what
 it buys, is the zoo's to measure (issue #1103, item 4). Hypotheses until then.
-Switch off with `town_black_market_min_gold` 0 (the cap alone, as before) and
-`town_restore_life_reserve` 0.
+Switch off with `town_black_market_min_gold` 0 (the cap alone, as before),
+`town_restore_life_reserve` 0 and `town_restore_stat_percent` 0.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
+| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:872` |
 
 ## Breadth-first exploration from the staircases (#1080, #1085)
 
