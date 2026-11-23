@@ -7871,7 +7871,7 @@ reach.
   spreads, and the goal was cancelled. Exploration then took the step back
   north, to a target it could not step onto.
 
-At `caution_brave_walk_commit = 1` (compiled 0, **shipped 1**), a stair walk
+At `flow_brave_walk_commit = 1` (compiled 0, **shipped 1**), a stair walk
 the brave think starts is committed (`Borg::brave_walk`):
 - **Continuation.** `borg_flow_old` continues it with the avoidance it was
   spread with. When the old step does not go, it spreads the route again in
@@ -7893,5 +7893,5 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `caution_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1803` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1803` |
 

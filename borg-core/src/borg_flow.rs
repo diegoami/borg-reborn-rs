@@ -1792,7 +1792,7 @@ const BRAVE_WALK_SLACK: i32 = 10;
 /// walk under boosted bravery took one step; the next think, at the normal
 /// avoidance, its step was refused (the goal cancelled) and exploration took
 /// the step back; the stuck think then boosted again. With
-/// `caution_brave_walk_commit`, the walk is committed: `borg_flow_old`
+/// `flow_brave_walk_commit`, the walk is committed: `borg_flow_old`
 /// continues it with the avoidance it was spread with, while it is recent, has
 /// steps left, is on its own level, and the Borg is in no danger above half
 /// its HP here (a monster that shows up is caution's).
@@ -1800,7 +1800,7 @@ pub(crate) fn brave_walk_avoidance(st: &BorgState, danger_here: i32) -> Option<i
     use crate::params::{value, Param};
     let w = st.borg.brave_walk?;
     brave_walk_live(
-        value(Param::caution_brave_walk_commit) != 0,
+        value(Param::flow_brave_walk_commit) != 0,
         w,
         st.borg.time.level,
         st.borg.time.now,
@@ -1820,7 +1820,7 @@ fn brave_walk_live(on: bool, w: BraveWalk, level: BorgTime, now: BorgTime, dange
 /// `BRAVE_WALK_SLACK`.
 pub(crate) fn commit_brave_walk(st: &mut BorgState, avoidance: i16) {
     use crate::params::{value, Param};
-    if value(Param::caution_brave_walk_commit) == 0 || i32::from(st.borg.goal.type_0) != GOAL_FLEE {
+    if value(Param::flow_brave_walk_commit) == 0 || i32::from(st.borg.goal.type_0) != GOAL_FLEE {
         return;
     }
     let cost = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
@@ -2513,7 +2513,7 @@ mod brave_walk_tests {
 
     #[test]
     fn the_switch_ships_off_in_the_code() {
-        assert_eq!(crate::params::value(crate::params::Param::caution_brave_walk_commit), 0);
+        assert_eq!(crate::params::value(crate::params::Param::flow_brave_walk_commit), 0);
     }
 }
 
