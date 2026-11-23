@@ -657,8 +657,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2120` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1881` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2220` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2315` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2308` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2466` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2459` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -812,11 +812,11 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
-| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
+| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1004` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2012` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2012` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:696` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
 
@@ -956,7 +956,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:883` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:914` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1221,7 +1221,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:562` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:583` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -1810,7 +1810,7 @@ same way are healing objects"; no reserve, only the curve.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:885` |
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:998` |
 | `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:722` |
 
 ## No rest while breeders are known (#644)
@@ -2854,9 +2854,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:622` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:467` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:613` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:643` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:500` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:634` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2984,11 +2984,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:496` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:571` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:592` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2268` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2193` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2421` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2309` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6092,7 +6092,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:884` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:915` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -6748,7 +6748,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:932` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:933` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:934` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2234` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2350` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -6838,7 +6838,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2259` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2412` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -6863,3 +6863,90 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1283` |
+
+## #895: devices as variety (town)
+
+Owner, 2026-11-21 (#863, #895): "we are going to need space for other devices
+so it is already a good list"; a found wand is kept, not sold; a Staff of
+Teleportation only with spare gold. Checked before changing anything: a wand,
+staff or rod was valued only by what it adds to the shared curves
+(`supplies_of_kind`: its effects times its charges, times
+`town_devices_percent`), so an attack wand competed with arrows and oil, whose
+curves a quiver saturates. In 36 games (9 classes, 4 seeds, 200,000 turns)
+the Borg sold 42 unidentified devices (by design since #470: an unaware device
+is never used, so it is sold to learn the flavour), and of the identified ones
+it sold only empty wands (0 charges: Slow Monster, Confuse Monster, Light,
+Magic Missile) and wands on the worthless list (Darkness, Wonder).
+
+- **`town_device_percent`** (compiled 0, **shipped 24**; per class with
+  `@<class>`), with **`town_device_attack`** 10, **`_escape`** 5, **`_detect`** 5
+  and **`_control`** 5 (charges). Above 0, `observe` adds one requirement row
+  per situation a learned device answers, counted in charges (`DEV_ATTACK`:
+  Magic Missile, Stinking Cloud, damage rods; `DEV_ESCAPE`: a Staff of
+  Teleportation; `DEV_DETECT`: Detect Evil, Mapping;
+  `DEV_CONTROL`: Slow, Hold, Confuse Monster, and Teleport Other, which keeps a
+  monster away and is counted with them). A Staff of Detect Invisible feeds the
+  prepared Detect Invisible row (#863), one copy a charge up to
+  `town_prepared_invisible`, and no device row: a second row would count it
+  twice (review of #898, F2). A Wand of Light's damage is `LIGHT_WEAK`, which
+  hurts light-sensitive monsters only, so it does not fill the attack row (F6);
+  the shared ATTACK curve counts it as before. The first N
+  charges together are worth `town_device_percent` of the trip weight (24
+  percent of 50,000 is 12,000, each of ten attack charges 1,200), nothing past
+  them. Charges are scaled by `town_devices_percent` (the device skill by class,
+  Warrior 75, Mage 150, ...), the same scale the shared curves use. A learned,
+  charged device is therefore kept and bought as variety; an empty one supplies
+  no charges and no value, a recharge being the next slice. Like the remedies
+  it starts with `town_variety_min_depth` (the first level buys the staples).
+- **`town_device_escape_min_gold`** (compiled 0, **shipped 3000**): below this
+  purse after the urgent needs, a **Staff of Teleportation on offer supplies
+  nothing**: neither its device row nor the shared `TELEPORT` escape curve (the
+  review of #898, F10, measured that closing the device row alone removed only
+  23 to 30 percent of a staff's value, and the staff was still bought if nothing
+  better fit). A staff already carried is never touched (its supplies come from
+  the kit), so it is never sold because the purse fell during a visit
+  (`escape_gated`, `without_escape`, `carried_escape_charges`). Other things that
+  fill the escape curve, a Scroll of Teleportation among them, are unchanged. The
+  threshold is on the purse, not on the price (a staff costs 2000 base): 3000
+  means "keeps about 300 after buying one", and a Borg with 2999 buys none though
+  it could afford it. What the Borg pays is the base cost plus `cost x charges /
+  20` (`obj-power.c`), so a Staff of Teleportation (5+d4 charges) is about 2700
+  gold and a Wand of Magic Missile (6+d10 charges) about 310. By value per gold
+  paid a staff (12,000 over 2700, about 4 a gold) comes far behind the cheapest
+  device that fills a row, a Wand of Magic Missile (about 39 a gold; a Wand of
+  Stinking Cloud is dearer, 400 base), so even above the floor it comes last.
+- **One device per row.** A row's demand caps its value, so a second device that
+  answers the same situation adds nothing on that row: a Staff of Detect Evil
+  already fills the five detection charges, and a Staff of Mapping then adds
+  next to nothing there. The variety is at most one device per situation, four
+  devices, not a long list.
+- **Two settings one character apart:** `town_device_percent` is the device
+  rows' weight (shipped 24, this section); `town_devices_percent` (#666) scales
+  every device's charges by the class's device skill (100, Warrior 75, Mage
+  150). Setting the second to 24 by mistake is accepted and means "every
+  device's charges count for a quarter", with the rows still off.
+- Unit check (`a_charged_device_is_kept_as_variety`): a ten-charge attack wand
+  is worth the target (12,000) against next to nothing on an ATTACK curve
+  saturated by shots and flasks; each charge up to ten is worth the same and an
+  eleventh nothing; the gate switches off below the floor, not at it, and not
+  with one carried.
+- Engine check, 36 games with the device rows on against off on the same
+  build: mean CL 8.33 and 8.33, max depth 3.44 and 3.44, 3 of 36 stopped early
+  in both; devices bought differ by one wand (a Wand of Stinking Cloud); the
+  devices sold are the same 42 unidentified flavours, the empty wands and the
+  worthless kinds. In games this short the Borg finds and affords few learned
+  devices, so the check shows the rows run without a panic and change little,
+  not what they are worth: the zoo pilot at 300,000 turns is the measurement.
+- **Not done:** an unidentified device is still sold to learn its flavour
+  (#470); keeping it would need the Borg to use it (aiming an unknown wand was
+  removed in #470), or to learn it from the Magic shop's stock. An empty device
+  is sold, not recharged (a Scroll of Recharging is 200 gold).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_device_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:991` |
+| `town_device_attack` | 10 | charges | 1–99 | `borg_town_capability.rs:992` |
+| `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:992` |
+| `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
+| `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:993` |
+| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:993` |
