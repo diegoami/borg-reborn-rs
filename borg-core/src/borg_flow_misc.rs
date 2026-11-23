@@ -44,9 +44,9 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL, RF_MULTIPLY, RF_NEVER_MOVE, RF_PASS_WALL};
 use crate::headers::list_player_flags_h::PF_COMBAT_REGEN;
 use crate::headers::list_terrain_h::{
-    FEAT_BROKEN, FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K,
-    FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K,
-    FEAT_RUBBLE, FEAT_SECRET,
+    FEAT_BROKEN, FEAT_CLOSED, FEAT_FLOOR, FEAT_GRANITE, FEAT_LAVA, FEAT_LESS, FEAT_MAGMA,
+    FEAT_MAGMA_K, FEAT_MORE, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM, FEAT_QUARTZ,
+    FEAT_QUARTZ_K, FEAT_RUBBLE, FEAT_SECRET,
 };
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
@@ -662,14 +662,21 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
     Some(v)
 }
 
-/// Count the staircase search when exploration immediately reverses it.
-pub(crate) fn notice_reversed_stair_search(st: &mut BorgState, next: loc) {
+/// Count a reached floor search when exploration takes over (#1131).
+/// At an up staircase, keep the immediate reversal check from #1106.
+pub(crate) fn notice_interrupted_spastic_search(st: &mut BorgState, next: loc) {
+    let here = (st.borg.c.y, st.borg.c.x);
+    let feat = u32::from(st.cave.grid(here.1, here.0).feat);
+    if feat == FEAT_FLOOR {
+        notice_spastic_arrival(st);
+        return;
+    }
+
     let trail = &st.flow.track_step;
     let n = trail.num as usize;
-    let here = (st.borg.c.y, st.borg.c.x);
-    if n >= 3 && trail.at(n - 1) == here && trail.at(n - 3) == here
+    if feat == FEAT_LESS && n >= 3
+        && trail.at(n - 1) == here && trail.at(n - 3) == here
         && trail.at(n - 2) == (next.y, next.x)
-        && u32::from(st.cave.grid(here.1, here.0).feat) == FEAT_LESS
     {
         notice_spastic_arrival(st);
     }

@@ -184,6 +184,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
     def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
         self.run_case("interrupted-search", 5)
 
+    def test_dark_exploration_cannot_keep_restarting_the_two_step_floor_search(self):
+        self.run_case("interrupted-floor-search", 5, player_class=5, depth=3)
+
     def test_breeder_rest_veto_prevents_new_and_continued_recovery_routes(self):
         self.run_case("breeder-recovery", 5, player_class=1, depth=1)
 
