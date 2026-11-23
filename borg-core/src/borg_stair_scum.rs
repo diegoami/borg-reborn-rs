@@ -15,43 +15,56 @@
 //! `DETECT_VISIBLE_MONSTERS`, `lib/gamedata/class.txt` and `object.txt`;
 //! Detect Invisible and Detect Life do not count).
 //!
-//! 1. **The safe radius.** A target grid *g* (an unknown grid, a door, an
-//!    item, a monster) is taken only if *s(g)* <= *R(g)*. *s(g)* is the walk,
-//!    in steps over known grids, from *g* to the nearest known staircase of
-//!    either kind (`Map`; an unknown grid counts one step past its nearest
-//!    known neighbour). *R(g)* = *D(g)* / (*r* - 1) + *HP* /
-//!    `stair_scum_contact_damage`: *D(g)* is how far off a monster coming at
-//!    *g* is first seen (the Borg's own light radius, or, on a lit room
-//!    floor, the shortest of the eight straight runs of lit floor from *g*,
-//!    if longer); *r* is `stair_scum_speed_ratio` (2: the +10 monsters of
-//!    DL1-2, `monster.txt` Grip, Fang, crow, wild cat `speed:120`). A torch
-//!    in a corridor at 12 HP: 2 / 1 + 12 / 8 = 3 steps.
-//! 2. **Radial exploration.** The dark flows keep only their candidates
-//!    nearest the staircase; a Borg outside its radius (its HP fell, a
-//!    fight moved it) walks back onto the staircase before anything but
-//!    caution.
+//! 1. **Safe grids** (`Map`). *s(g)* is the walk from *g* to the nearest
+//!    known staircase of either kind over known, trap-free floor and doors
+//!    (the walk a retreat can take: below 60 HP the flows treat a known trap
+//!    as a wall, `borg_flow.rs`). *g* is safe when a monster first seen
+//!    *D(g)* grids off, acting `stair_scum_speed_ratio` times per player
+//!    action, lands fewer than HP / `stair_scum_contact_damage` attacks on
+//!    the walk of *s(g)* steps and the stair command (`attacks_on_retreat`;
+//!    review of #1061, P1: the attacks on the way are counted, not a
+//!    formula). *D(g)* follows the engine's light (review, P1): the own
+//!    light lights `cur_light - 1` grids (`cave-view.c:658`), unlight
+//!    `1 + level / 6 - cur_light` (`cave-view.c:777-779`); on a lit room
+//!    floor it is one less than the distance to the nearest grid a monster
+//!    can come from unseen (an unknown or dark grid, or a door, next to the
+//!    lit floor), when that is longer; behind a closed door it is 1, and the
+//!    door costs one action more (the open). A torch in a dark corridor at
+//!    12 HP against the +10 monsters of DL1-2 (`monster.txt` Grip, Fang,
+//!    crow, wild cat `speed:120`, 4 HP per round of blows): 1 step.
+//! 2. **The safe area** is every safe grid joined to a staircase through
+//!    safe grids. The dark flows keep only candidates in it (or next to it),
+//!    nearest the staircase first; items and monster hunts outside it are
+//!    skipped; every voluntary flow step (`borg_flow_old`, a resumed flow
+//!    too) that leaves it and does not come nearer the staircase is refused
+//!    (review, P1); a Borg outside it walks back onto a staircase before
+//!    anything but caution.
 //! 3. **Doors.** A door the Borg opens is not walked through at once: the
-//!    Borg steps back toward the staircase (or stays, on it) and waits a turn.
-//!    "You hear a door burst open!", or a known closed door seen open that
-//!    the Borg did not open within its radius, sends it onto the staircase
-//!    for `stair_scum_alarm_turns` game turns.
-//! 4. **Stair scum.** Nothing left inside the radius: it takes a staircase,
+//!    Borg steps back toward the staircase (or stays, on it) and waits a
+//!    turn. A known closed door seen open that the Borg did not open sends
+//!    it onto the staircase for `stair_scum_alarm_turns` game turns when it
+//!    is inside the safe area's reach. "You hear a door burst open!" names
+//!    no grid (`mon-move.c:1269`): when no changed door explains it by the
+//!    next think, the Borg goes onto the staircase all the same (review, P2).
+//! 4. **Stair scum.** Nothing left inside the area: it takes a staircase,
 //!    up or down within the depth plan, preferring DL1-2.
 //! 5. **Fight from the staircase.** On a staircase, a threat it does not win
 //!    (`winning_fight` acts before caution) makes it take the stairs
 //!    (`borg_caution::leave_stairs_on_monster`); it rests on the staircase.
 //! 6. At max HP >= the threshold the mode ends; C's leash is always kept.
 //!
-//! With no staircase known, or none reachable from the Borg's grid over
-//! known grids, the mode does not restrict the targets (#1062's holes
-//! stay C's). Every value is a hypothesis until borg-zoo measures it
-//! (RULES 14); `stair_scum` ships 0, so play is unchanged.
+//! **No route** (review, P1): with no staircase known, or none the Borg can
+//! walk to over known trap-free grids, the dark flows keep the candidates
+//! nearest a known staircase (all of them when none is known), and no item
+//! or monster is chased until a route exists again (#1062, #1067 own the
+//! rest). Every value is a hypothesis until borg-zoo measures it (RULES
+//! 14); `stair_scum` ships 0, so play is unchanged.
 
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::borg_cave_floor_grid;
 use crate::borg_headers::borg_magic_h::{DETECTION, DETECT_MONSTERS, REVEAL_MONSTERS};
-use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CURHP, BI_MAXHP};
+use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP, BI_LIGHT, BI_MAXHP};
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
 use crate::headers::list_options_h::OPT_birth_force_descend;
@@ -69,9 +82,17 @@ const BORG_GLOW: u16 = 0x02;
 const GOAL_MISC: i32 = 3;
 /// `GOAL_BORE` (borg-flow.h): the walk to the staircase it leaves by.
 const GOAL_BORE: i32 = 6;
+/// `GOAL_FLEE` (borg-flow.h): flights are never refused a step.
+const GOAL_FLEE: i32 = 7;
+
+/// `class.txt`'s Necromancer (`cidx` 4), who sees by unlight.
+const CLASS_NECROMANCER: i32 = 4;
 
 /// No known route.
 const FAR: u16 = u16::MAX;
+
+/// The longest walk the safe-grid test counts (the flows' 250).
+const MAX_STEPS: i32 = 250;
 
 /// The mode's memory, for the current level only (`level` is the level's
 /// arrival time; a new level starts afresh).
@@ -82,18 +103,22 @@ pub struct StairScumState {
     returning: bool,
     /// A door the Borg opened and has not peeked through yet.
     peek: Option<Peek>,
-    /// Game turn of the last door heard or seen opened within the radius.
+    /// Game turn of the last door heard or seen opened within reach.
     alarm: Option<i32>,
+    /// Game turn of a "door burst open" not yet placed on a grid.
+    heard: Option<i32>,
+    /// Game turn the last changed door was seen (inside reach or not).
+    changed_door_seen: Option<i32>,
     /// Doors already peeked at on this level, `(y, x)`.
     peeked: Vec<(i32, i32)>,
-    /// Doors a monster opened that already raised the alarm, `(y, x)`
+    /// Doors a monster opened that were already judged, `(y, x)`
     /// (`track_closed` keeps them until the Borg opens a door itself).
-    alarmed: Vec<(i32, i32)>,
-    /// The widest *D* of a target admitted since the Borg last stood on a
-    /// staircase: the walk to a lit-room target may cross a dark corridor
-    /// whose own radius is smaller, and that walk is not a reason to turn
-    /// back (it would turn back and come again for ever).
-    sight_allowed: i32,
+    judged: Vec<(i32, i32)>,
+    /// The note for "no route" was written on this level.
+    noted_no_route: bool,
+    /// `leave` chose to leave this level: no more detours for items,
+    /// veins or monsters (they pulled the walk back, a vein by the stairs).
+    departing: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -110,7 +135,7 @@ enum PeekStage {
     Back,
 }
 
-/// The mode's switch and thresholds, in the order the issue gives them.
+/// The mode's switch.
 fn flag() -> bool {
     value(Param::stair_scum) != 0
 }
@@ -153,39 +178,84 @@ pub(crate) fn active(st: &BorgState) -> bool {
         && !detects_monsters(st)
 }
 
-/// R = D / (r - 1) + HP / contact damage (pure; `r` >= 2, contact >= 1 by
-/// their ranges).
-fn radius(sight: i32, ratio: i32, hp: i32, contact: i32) -> i32 {
-    sight.max(0) / (ratio - 1).max(1) + hp.max(0) / contact.max(1)
+/// The grids the own light shows, by the engine's rule (pure): a light of
+/// `cur_light` lights `cur_light - 1` grids (`cave-view.c:658`, `radius =
+/// ABS(light) - 1`), whatever `cave_light_engine_radius` says; a
+/// Necromancer's unlight at `cur_light <= 1` sees `d < 2 + level / 6 -
+/// cur_light` (`cave-view.c:777-779`).
+fn engine_sight(light: i32, class: i32, level: i32) -> i32 {
+    if class == CLASS_NECROMANCER && light <= 1 {
+        (1 + level / 6 - light).max(0)
+    } else {
+        (light - 1).max(0)
+    }
+}
+
+/// The attacks a monster first seen `seen_at` grids off lands while the
+/// Borg walks `steps` steps to a staircase and takes it (pure; review of
+/// #1061, P1). The monster acts `ratio` times per player action and may act
+/// `ratio - 1` times before the Borg's first (`game-world.c:1033-1067`:
+/// monsters with more energy than the player act before it, the rest after
+/// it). Each action closes one grid, or attacks when adjacent; each step
+/// opens one grid (the monster follows); after the stair command nothing
+/// acts (`cmd-cave.c:56-95`, the level is generated).
+fn attacks_on_retreat(steps: i32, seen_at: i32, ratio: i32) -> i32 {
+    let mut gap = seen_at.max(1);
+    let mut hits = 0;
+    let mut act = |gap: &mut i32| {
+        if *gap > 1 {
+            *gap -= 1;
+        } else {
+            hits += 1;
+        }
+    };
+    for _ in 0..ratio.max(1) - 1 {
+        act(&mut gap);
+    }
+    for _ in 0..steps.max(0) {
+        gap += 1;
+        for _ in 0..ratio.max(1) {
+            act(&mut gap);
+        }
+    }
+    hits
+}
+
+/// The Borg survives those attacks: fewer than HP / damage per attack
+/// round (pure).
+fn survives(steps: i32, seen_at: i32, ratio: i32, hp: i32, per_attack: i32) -> bool {
+    i64::from(attacks_on_retreat(steps, seen_at, ratio)) * i64::from(per_attack.max(1)) < i64::from(hp)
+}
+
+/// The longest walk that survives (pure; for the notes and the tests).
+fn radius(seen_at: i32, ratio: i32, hp: i32, per_attack: i32) -> i32 {
+    let mut r = 0;
+    while r < MAX_STEPS && survives(r + 1, seen_at, ratio, hp, per_attack) {
+        r += 1;
+    }
+    r
 }
 
 /// The eight directions, `(dy, dx)`.
 const DIRS: [(i32, i32); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
 
-/// The shortest of the eight straight runs of lit floor from `(y, x)`
-/// (pure: `lit_floor` says whether a grid is known, lit floor).
-fn lit_extent(y: i32, x: i32, lit_floor: impl Fn(i32, i32) -> bool) -> i32 {
-    DIRS.iter()
-        .map(|&(dy, dx)| {
-            let mut t = 0;
-            while t < AUTO_MAX_X && lit_floor(y + dy * (t + 1), x + dx * (t + 1)) {
-                t += 1;
-            }
-            t
-        })
-        .min()
-        .unwrap_or(0)
+fn index(y: i32, x: i32) -> usize {
+    (y * AUTO_MAX_X + x) as usize
 }
 
-/// Steps from every grid to the nearest of `sources` over grids
-/// `passable` says can be walked (pure; 8-connected, one step each;
-/// `FAR` where no route is known).
-fn stair_distances(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) -> Vec<u16> {
-    let index = |y: i32, x: i32| (y * AUTO_MAX_X + x) as usize;
+fn inside(y: i32, x: i32) -> bool {
+    (1..AUTO_MAX_Y - 1).contains(&y) && (1..AUTO_MAX_X - 1).contains(&x)
+}
+
+/// Steps from every grid to the nearest of `sources` over grids `passable`
+/// says can be walked (pure; 8-connected, one step each; `FAR` where no
+/// route is known). With every grid passable this is the Chebyshev
+/// distance.
+fn distances(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) -> Vec<u16> {
     let mut dist = vec![FAR; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
     let mut queue = std::collections::VecDeque::new();
     for &(y, x) in sources {
-        if (0..AUTO_MAX_Y).contains(&y) && (0..AUTO_MAX_X).contains(&x) && dist[index(y, x)] == FAR {
+        if inside(y, x) && dist[index(y, x)] == FAR {
             dist[index(y, x)] = 0;
             queue.push_back((y, x));
         }
@@ -194,10 +264,7 @@ fn stair_distances(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) 
         let next = dist[index(y, x)] + 1;
         for (dy, dx) in DIRS {
             let (ny, nx) = (y + dy, x + dx);
-            if !(1..AUTO_MAX_Y - 1).contains(&ny) || !(1..AUTO_MAX_X - 1).contains(&nx) {
-                continue;
-            }
-            if dist[index(ny, nx)] != FAR || !passable(ny, nx) {
+            if !inside(ny, nx) || dist[index(ny, nx)] != FAR || !passable(ny, nx) {
                 continue;
             }
             dist[index(ny, nx)] = next;
@@ -207,14 +274,69 @@ fn stair_distances(sources: &[(i32, i32)], passable: impl Fn(i32, i32) -> bool) 
     dist
 }
 
-/// What the mode measures on the current map: the stair distances and the
-/// numbers of the radius.
-pub(crate) struct Map {
-    dist: Vec<u16>,
-    light: i32,
-    ratio: i32,
-    hp: i32,
-    contact: i32,
+/// The grids where a monster can come at a lit floor unseen (pure): not lit
+/// floor, not a known wall, next to lit floor.
+fn entries(lit_floor: impl Fn(i32, i32) -> bool, wall: impl Fn(i32, i32) -> bool) -> Vec<(i32, i32)> {
+    let mut out = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            if lit_floor(y, x) || wall(y, x) {
+                continue;
+            }
+            if DIRS.iter().any(|&(dy, dx)| lit_floor(y + dy, x + dx)) {
+                out.push((y, x));
+            }
+        }
+    }
+    out
+}
+
+/// The connected safe area (pure): the grids reachable from the staircases
+/// (`dist` 0) through walkable grids for which `safe` holds.
+fn safe_area(dist: &[u16], walkable: impl Fn(i32, i32) -> bool, safe: impl Fn(i32, i32) -> bool) -> Vec<bool> {
+    let mut area = vec![false; dist.len()];
+    let mut queue = std::collections::VecDeque::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            if dist[index(y, x)] == 0 {
+                area[index(y, x)] = true;
+                queue.push_back((y, x));
+            }
+        }
+    }
+    while let Some((y, x)) = queue.pop_front() {
+        for (dy, dx) in DIRS {
+            let (ny, nx) = (y + dy, x + dx);
+            if !inside(ny, nx) || area[index(ny, nx)] || !walkable(ny, nx) || !safe(ny, nx) {
+                continue;
+            }
+            area[index(ny, nx)] = true;
+            queue.push_back((ny, nx));
+        }
+    }
+    area
+}
+
+/// A grid a retreat can cross: known, floor-like (not lava), or a closed
+/// door, and no known trap.
+fn walkable(st: &BorgState, y: i32, x: i32) -> bool {
+    let ag = st.cave.grid(x, y);
+    let feat = u32::from(ag.feat);
+    feat != FEAT_NONE && feat != FEAT_LAVA && !ag.trap && (borg_cave_floor_grid(ag) || feat == FEAT_CLOSED)
+}
+
+fn lit_floor(st: &BorgState, y: i32, x: i32) -> bool {
+    inside(y, x) && {
+        let ag = st.cave.grid(x, y);
+        u32::from(ag.feat) != FEAT_NONE && borg_cave_floor_grid(ag) && ag.info & BORG_GLOW != 0
+    }
+}
+
+/// A known grid no monster walks through (granite, rubble, ...).
+fn known_wall(st: &BorgState, y: i32, x: i32) -> bool {
+    let ag = st.cave.grid(x, y);
+    let feat = u32::from(ag.feat);
+    feat != FEAT_NONE && !borg_cave_floor_grid(ag) && feat != FEAT_CLOSED
 }
 
 /// Every known staircase of either kind, `(y, x)`.
@@ -228,55 +350,72 @@ fn stair_grids(st: &BorgState) -> Vec<(i32, i32)> {
     stairs
 }
 
-/// A grid the walk may cross: known, floor-like (not lava) or a closed door.
-fn walkable(st: &BorgState, y: i32, x: i32) -> bool {
-    let ag = st.cave.grid(x, y);
-    let feat = u32::from(ag.feat);
-    feat != FEAT_NONE && feat != FEAT_LAVA && (borg_cave_floor_grid(ag) || feat == FEAT_CLOSED)
+/// What the mode measures on the current map.
+pub(crate) struct Map {
+    /// *s*: steps to the nearest known staircase over walkable grids.
+    dist: Vec<u16>,
+    /// Chebyshev distance to the nearest unseen entry of a lit floor.
+    entry: Vec<u16>,
+    /// The safe area.
+    area: Vec<bool>,
+    /// The Borg's grid has a known route to a staircase.
+    routed: bool,
+    /// Chebyshev distance to the nearest known staircase (no route).
+    stair_cheb: Vec<u16>,
+    light: i32,
+    ratio: i32,
+    hp: i32,
+    per_attack: i32,
 }
 
 impl Map {
-    /// The map while the mode applies and a known staircase can be reached
-    /// from the Borg's grid; `None` otherwise (no restriction).
+    /// The map while the mode applies; `None` otherwise (no restriction).
     pub(crate) fn of(st: &BorgState) -> Option<Map> {
         if !active(st) {
             return None;
         }
-        Map::measure(st)
+        Some(Map::measure(st))
     }
 
-    fn measure(st: &BorgState) -> Option<Map> {
+    fn measure(st: &BorgState) -> Map {
         let stairs = stair_grids(st);
-        if stairs.is_empty() {
-            return None;
-        }
-        let dist = stair_distances(&stairs, |y, x| walkable(st, y, x));
-        let map = Map {
+        let dist = distances(&stairs, |y, x| walkable(st, y, x));
+        let lit_sources = entries(|y, x| lit_floor(st, y, x), |y, x| known_wall(st, y, x));
+        let entry = distances(&lit_sources, |_, _| true);
+        let stair_cheb = distances(&stairs, |_, _| true);
+        let mut map = Map {
             dist,
-            light: crate::borg_cave_light::own_light_radius(st),
+            entry,
+            area: Vec::new(),
+            routed: false,
+            stair_cheb,
+            light: engine_sight(st.borg.tr(BI_LIGHT), st.borg.tr(BI_CLASS), st.borg.tr(BI_CLEVEL)),
             ratio: value(Param::stair_scum_speed_ratio),
             hp: st.borg.tr(BI_CURHP),
-            contact: value(Param::stair_scum_contact_damage),
+            per_attack: value(Param::stair_scum_contact_damage),
         };
-        (map.steps(st, st.borg.c.y, st.borg.c.x) != i32::from(FAR)).then_some(map)
+        let area = safe_area(&map.dist, |y, x| walkable(st, y, x), |y, x| map.grid_safe(st, y, x));
+        map.area = area;
+        map.routed = !stairs.is_empty() && map.at(&map.dist, st.borg.c.y, st.borg.c.x) != FAR;
+        map
     }
 
-    fn at(&self, y: i32, x: i32) -> u16 {
+    fn at(&self, v: &[u16], y: i32, x: i32) -> u16 {
         if !(0..AUTO_MAX_Y).contains(&y) || !(0..AUTO_MAX_X).contains(&x) {
             return FAR;
         }
-        self.dist[(y * AUTO_MAX_X + x) as usize]
+        v[index(y, x)]
     }
 
     /// *s(g)*: the steps from `(y, x)` to the nearest known staircase; a grid
-    /// off the walk (unknown, rubble, a wall) one past its best neighbour.
+    /// off the walk (unknown, rubble, a trap) one past its best neighbour.
     pub(crate) fn steps(&self, st: &BorgState, y: i32, x: i32) -> i32 {
-        let here = self.at(y, x);
+        let here = self.at(&self.dist, y, x);
         if here != FAR && walkable(st, y, x) {
             return i32::from(here);
         }
         DIRS.iter()
-            .map(|&(dy, dx)| self.at(y + dy, x + dx))
+            .map(|&(dy, dx)| self.at(&self.dist, y + dy, x + dx))
             .filter(|&d| d != FAR)
             .min()
             .map_or(i32::from(FAR), |d| i32::from(d) + 1)
@@ -284,36 +423,48 @@ impl Map {
 
     /// *D(g)*: how far from `(y, x)` a monster coming at it is first seen.
     fn sight(&self, st: &BorgState, y: i32, x: i32) -> i32 {
-        let lit = |y: i32, x: i32| {
-            (0..AUTO_MAX_Y).contains(&y) && (0..AUTO_MAX_X).contains(&x) && {
-                let ag = st.cave.grid(x, y);
-                u32::from(ag.feat) != FEAT_NONE && borg_cave_floor_grid(ag) && ag.info & BORG_GLOW != 0
-            }
-        };
-        if lit(y, x) { self.light.max(lit_extent(y, x, lit)) } else { self.light }
+        if u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED {
+            return 1;
+        }
+        if !lit_floor(st, y, x) {
+            return self.light;
+        }
+        let e = self.at(&self.entry, y, x);
+        if e == FAR { self.light.max(MAX_STEPS) } else { self.light.max(i32::from(e) - 1) }
     }
 
-    /// *R(g)*.
-    pub(crate) fn radius(&self, st: &BorgState, y: i32, x: i32) -> i32 {
-        radius(self.sight(st, y, x), self.ratio, self.hp, self.contact)
+    /// The retreat from `(y, x)` survives a monster first seen there.
+    fn grid_safe(&self, st: &BorgState, y: i32, x: i32) -> bool {
+        let s = self.steps(st, y, x);
+        if s >= MAX_STEPS {
+            return false;
+        }
+        // A closed door: the open is one action more before the retreat.
+        let extra = i32::from(u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED);
+        survives(s + extra, self.sight(st, y, x), self.ratio, self.hp, self.per_attack)
     }
 
-    /// *s(g)* <= *R(g)*.
-    pub(crate) fn safe(&self, st: &BorgState, y: i32, x: i32) -> bool {
-        self.steps(st, y, x) <= self.radius(st, y, x)
+    fn in_area(&self, y: i32, x: i32) -> bool {
+        inside(y, x) && self.area[index(y, x)]
     }
-}
 
-/// A target grid of a flow (an item, a monster): inside the radius. An
-/// admitted target widens the walk's allowance (`sight_allowed`).
-pub(crate) fn admit(st: &mut BorgState, map: &Map, y: i32, x: i32) -> bool {
-    if !map.safe(st, y, x) {
-        return false;
+    /// A target grid: in the safe area; or, off the walk (unknown, rubble)
+    /// or a closed door, next to the area and safe itself.
+    pub(crate) fn target_safe(&self, st: &BorgState, y: i32, x: i32) -> bool {
+        if !inside(y, x) {
+            return false;
+        }
+        let door = u32::from(st.cave.grid(x, y).feat) == FEAT_CLOSED;
+        if walkable(st, y, x) && !door {
+            return self.in_area(y, x);
+        }
+        DIRS.iter().any(|&(dy, dx)| self.in_area(y + dy, x + dx)) && self.grid_safe(st, y, x)
     }
-    sync_level(st);
-    let sight = map.sight(st, y, x);
-    st.stair_scum.sight_allowed = st.stair_scum.sight_allowed.max(sight);
-    true
+
+    /// The radius at the Borg's grid, for the notes.
+    fn radius_here(&self, st: &BorgState) -> i32 {
+        radius(self.sight(st, st.borg.c.y, st.borg.c.x), self.ratio, self.hp, self.per_attack)
+    }
 }
 
 /// A new level forgets the last one's doors and walks.
@@ -323,24 +474,74 @@ fn sync_level(st: &mut BorgState) {
     }
 }
 
-/// The dark flows (`borg_flow_dark`): of the `borg_temp_*` candidates, keep
-/// those inside the radius and, of them, those nearest the staircase.
-pub(crate) fn filter_dark(st: &mut BorgState, map: &Map) {
+fn note_no_route(st: &mut BorgState) {
+    sync_level(st);
+    if !st.stair_scum.noted_no_route {
+        st.stair_scum.noted_no_route = true;
+        borg_note(st, "# Stair scum: no known route to a staircase; exploring toward one, no detours.");
+    }
+}
+
+/// Keep the candidates of `borg_temp_*` whose `key` is the smallest
+/// (`None`: dropped).
+fn keep_lowest(st: &mut BorgState, key: impl Fn(&BorgState, i32, i32) -> Option<i32>) {
     let n = usize::try_from(st.flow.temp_n).unwrap_or(0);
     let mut kept: Vec<(i32, (i32, i32))> = Vec::new();
     for k in 0..n {
         let (y, x) = st.flow.temp_at(k);
-        if admit(st, map, y, x) {
-            kept.push((map.steps(st, y, x), (y, x)));
+        if let Some(v) = key(st, y, x) {
+            kept.push((v, (y, x)));
         }
     }
-    let nearest = kept.iter().map(|k| k.0).min();
+    let lowest = kept.iter().map(|k| k.0).min();
     st.flow.temp_n = 0;
-    for (s, (y, x)) in kept {
-        if Some(s) == nearest {
+    for (v, (y, x)) in kept {
+        if Some(v) == lowest {
             st.flow.temp_push(y, x);
         }
     }
+}
+
+/// The dark flows (`borg_flow_dark`): of the `borg_temp_*` candidates, keep
+/// the safe ones nearest the staircase; with no route, those nearest a
+/// known staircase as the crow flies (all, when none is known).
+pub(crate) fn filter_dark(st: &mut BorgState, map: &Map) {
+    if map.routed {
+        keep_lowest(st, |st, y, x| map.target_safe(st, y, x).then(|| map.steps(st, y, x)));
+    } else {
+        note_no_route(st);
+        keep_lowest(st, |_, y, x| Some(i32::from(map.at(&map.stair_cheb, y, x))));
+    }
+}
+
+/// An item, vein or monster target: inside the safe area (none while there
+/// is no route, nor once the mode is leaving the level).
+pub(crate) fn admit(st: &mut BorgState, map: &Map, y: i32, x: i32) -> bool {
+    sync_level(st);
+    if st.stair_scum.departing {
+        return false;
+    }
+    if !map.routed {
+        note_no_route(st);
+        return false;
+    }
+    map.target_safe(st, y, x)
+}
+
+/// A voluntary step of a flow (`borg_flow_old`, `why` its goal) onto
+/// `(y, x)`: refused when it leaves the safe area and does not come nearer
+/// the staircase. Flights and the walk to the staircase it leaves by
+/// (`leave`, `GOAL_BORE`: the kind the depth plan allows may not be the
+/// nearest) are never refused; with no route nothing is.
+pub(crate) fn step_allowed(st: &BorgState, why: i32, y: i32, x: i32) -> bool {
+    if !flag() || why == GOAL_FLEE || why == GOAL_BORE {
+        return true;
+    }
+    let Some(map) = Map::of(st) else { return true };
+    if !map.routed {
+        return true;
+    }
+    map.steps(st, y, x) < map.steps(st, st.borg.c.y, st.borg.c.x) || map.target_safe(st, y, x)
 }
 
 /// `borg_flow_step`'s door: the Borg sends the open command toward `dir`.
@@ -357,31 +558,39 @@ pub(crate) fn opened_door(st: &mut BorgState, dir: i32) {
 }
 
 /// "You hear a door burst open!" (mon-move.c:1269, a monster bashed a
-/// door; the message gives no grid).
+/// door; the message gives no grid): placed on a changed door, or not, at
+/// the next think.
 pub(crate) fn heard_door(st: &mut BorgState) {
     if !active(st) {
         return;
     }
     sync_level(st);
-    borg_note(st, "# Stair scum: a door burst open; back onto the stairs.");
-    st.stair_scum.alarm = Some(engine::game_turn());
+    st.stair_scum.heard = Some(engine::game_turn());
 }
 
 /// A known closed door is open and the Borg did not open it
-/// (`borg_update.rs`, the `track_closed` scan): an alarm when it is inside
-/// the radius.
+/// (`borg_update.rs`, the `track_closed` scan): an alarm when a monster
+/// there could reach the Borg's retreat (the door next to the safe area).
 pub(crate) fn door_opened_by_monster(st: &mut BorgState, y: i32, x: i32) {
     sync_level(st);
-    if st.stair_scum.alarmed.contains(&(y, x)) {
+    if st.stair_scum.judged.contains(&(y, x)) {
         return;
     }
+    st.stair_scum.judged.push((y, x));
+    st.stair_scum.changed_door_seen = Some(engine::game_turn());
     let Some(map) = Map::of(st) else { return };
-    if map.steps(st, y, x) > map.radius(st, y, x) {
-        return;
+    let near = map.in_area(y, x) || DIRS.iter().any(|&(dy, dx)| map.in_area(y + dy, x + dx));
+    if near || !map.routed {
+        borg_note(st, &format!("# Stair scum: a monster opened the door at {y},{x}; back onto the stairs."));
+        st.stair_scum.alarm = Some(engine::game_turn());
     }
-    st.stair_scum.alarmed.push((y, x));
-    borg_note(st, &format!("# Stair scum: a monster opened the door at {y},{x}; back onto the stairs."));
-    st.stair_scum.alarm = Some(engine::game_turn());
+}
+
+/// What a door sound leads to (pure; review of #1061, P2): a changed door
+/// seen since the sound was judged by its grid; none seen, the Borg goes
+/// onto the staircase.
+fn sound_alarms(heard: i32, changed_door_seen: Option<i32>) -> bool {
+    !changed_door_seen.is_some_and(|seen| seen.wrapping_sub(heard) >= 0)
 }
 
 /// The alarm holds for `window` game turns from `since` (pure; 0 = never).
@@ -414,16 +623,15 @@ fn step_to_stairs(st: &mut BorgState, why: &str) -> bool {
         crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
     }
     crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
-    let who = format!("stairs ({why})");
-    let who = std::ffi::CString::new(who).unwrap_or_default();
+    let who = std::ffi::CString::new(format!("stairs ({why})")).unwrap_or_default();
     if !crate::borg_flow::borg_flow_commit(st, &who, GOAL_MISC) {
         return false;
     }
     crate::borg_flow::borg_flow_old(st, GOAL_MISC)
 }
 
-/// After caution (`borg_think_dungeon`): the alarm, the door peek and the
-/// walk back inside the radius. Returns true when it acted.
+/// After caution (`borg_think_dungeon`): the door sound, the alarm, the
+/// door peek and the walk back into the safe area. True when it acted.
 pub(crate) fn think(st: &mut BorgState) -> bool {
     if !flag() {
         return false;
@@ -433,14 +641,23 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
         st.stair_scum.returning = false;
         st.stair_scum.peek = None;
         st.stair_scum.alarm = None;
+        st.stair_scum.heard = None;
         return false;
     };
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     let here = map.steps(st, y, x);
 
-    // 3. A door heard or seen opening: onto the staircase, and wait there.
+    // 3. A door sound no changed door explains: onto the staircase.
+    if let Some(heard) = st.stair_scum.heard.take() {
+        if sound_alarms(heard, st.stair_scum.changed_door_seen) {
+            borg_note(st, "# Stair scum: a door burst open, no door to place it; back onto the stairs.");
+            st.stair_scum.alarm = Some(heard);
+        }
+    }
+
+    // 3. A door opened: onto the staircase, and wait there.
     if let Some(since) = st.stair_scum.alarm {
-        if alarm_holds(since, engine::game_turn(), value(Param::stair_scum_alarm_turns)) {
+        if map.routed && alarm_holds(since, engine::game_turn(), value(Param::stair_scum_alarm_turns)) {
             if here == 0 {
                 return hold(st, "holding on the stairs after a door opened");
             }
@@ -461,7 +678,7 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
             (FEAT_CLOSED, PeekStage::Opened) if adjacent => {}
             (FEAT_OPEN | FEAT_BROKEN, PeekStage::Opened) => {
                 st.stair_scum.peek = Some(Peek { stage: PeekStage::Back, ..peek });
-                if here > 0 && step_to_stairs(st, "stepping back from a door") {
+                if map.routed && here > 0 && step_to_stairs(st, "stepping back from a door") {
                     return true;
                 }
                 return hold(st, "waiting a turn by the door it opened");
@@ -479,17 +696,15 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
         }
     }
 
-    // 2. Outside the radius: back onto the staircase (all the way).
-    if here == 0 {
+    // 2. Outside the safe area: back onto the staircase (all the way).
+    if !map.routed || here == 0 {
         st.stair_scum.returning = false;
-        st.stair_scum.sight_allowed = 0;
         return false;
     }
-    let sight = map.sight(st, y, x).max(st.stair_scum.sight_allowed);
-    let r = radius(sight, map.ratio, map.hp, map.contact);
-    if st.stair_scum.returning || here > r {
+    if st.stair_scum.returning || !map.in_area(y, x) {
         if !st.stair_scum.returning {
-            borg_note(st, &format!("# Stair scum: {here} steps from the stairs, radius {r}: returning."));
+            let r = map.radius_here(st);
+            borg_note(st, &format!("# Stair scum: {here} steps from the stairs, outside the safe area (radius here {r}): returning."));
         }
         st.stair_scum.returning = step_to_stairs(st, "stair scum return");
         return st.stair_scum.returning;
@@ -521,15 +736,16 @@ fn leave_order(depth: i32, up_ok: bool, down_ok: bool) -> Vec<bool> {
     order
 }
 
-/// 4. Nothing left inside the radius (after the exploration flows): take a
-/// staircase to a new level.
+/// 4. Nothing left inside the safe area (after the exploration flows): take
+/// a staircase to a new level.
 pub(crate) fn leave(st: &mut BorgState) -> bool {
     if !flag() {
         return false;
     }
-    if Map::of(st).is_none() {
+    if !Map::of(st).is_some_and(|m| m.routed) {
         return false;
     }
+    sync_level(st);
     let depth = st.borg.tr(BI_CDEPTH);
     let up_ok = !engine::player_opt(OPT_birth_force_descend);
     let down_ok = !st.borg.goal.rising
@@ -538,7 +754,8 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
     for up in leave_order(depth, up_ok, down_ok) {
         let (here, k) = if up { (FEAT_LESS, b'<') } else { (FEAT_MORE, b'>') };
         if feat == here {
-            borg_note(st, &format!("# Stair scum: nothing left inside the radius; taking the stairs {}.", if up { "up" } else { "down" }));
+            borg_note(st, &format!("# Stair scum: nothing left inside the safe area; taking the stairs {}.", if up { "up" } else { "down" }));
+            st.stair_scum.departing = true;
             borg_keypress(st, keycode_t::from(k));
             return true;
         }
@@ -550,7 +767,8 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
             crate::borg_flow_stairs::borg_flow_stair_more(st, GOAL_BORE, false, false)
         };
         if walked {
-            borg_note(st, &format!("# Stair scum: nothing left inside the radius; to the stairs {}.", if up { "up" } else { "down" }));
+            st.stair_scum.departing = true;
+            borg_note(st, &format!("# Stair scum: nothing left inside the safe area; to the stairs {}.", if up { "up" } else { "down" }));
             return true;
         }
     }
@@ -579,15 +797,38 @@ pub(crate) fn leave_on_threat(st: &mut BorgState, pos_danger: i32, threshold: i3
 mod tests {
     use super::*;
 
-    /// The issue's two examples: a torch in a corridor at 12 HP, and a lit
-    /// room of radius 8.
+    /// Review of #1061, P1: Codex's case, a +10 monster first seen two grids
+    /// behind, 12 HP, 8 per attack. With the monster's spare action before
+    /// the Borg's first, the walk of 3 steps takes three attacks; even with
+    /// no spare action, two (16 HP, lethal before the stair command).
+    #[test]
+    fn the_attacks_on_the_way_are_counted() {
+        // First sight at 2: one spare action closes to 1.
+        assert_eq!(attacks_on_retreat(0, 2, 2), 0, "on the stairs: the stair command first");
+        assert_eq!(attacks_on_retreat(1, 2, 2), 1);
+        assert_eq!(attacks_on_retreat(3, 2, 2), 3);
+        assert!(!survives(3, 2, 2, 12, 8), "Codex: three steps are lethal");
+        assert!(survives(1, 2, 2, 12, 8));
+        // First sight at 1 (adjacent): it bites before the first step.
+        assert_eq!(attacks_on_retreat(0, 1, 2), 1);
+        assert_eq!(attacks_on_retreat(2, 1, 2), 3);
+        // A monster as fast as the Borg never catches up from 2.
+        assert_eq!(attacks_on_retreat(10, 2, 1), 0);
+    }
+
+    /// The radius: a torch in a dark corridor (the engine lights 1 grid) at
+    /// 12 HP and 4 per attack; a lit room's centre 8 from its entries.
     #[test]
     fn the_radius_follows_sight_speed_and_hp() {
-        assert_eq!(radius(2, 2, 12, 8), 3, "torch, corridor, 12 HP");
-        assert_eq!(radius(8, 2, 12, 8), 9, "lit room of radius 8");
-        assert_eq!(radius(2, 2, 7, 8), 2, "7 HP: no turn of contact");
-        assert_eq!(radius(2, 3, 16, 8), 3, "monsters at three times the speed");
-        assert_eq!(radius(0, 2, 0, 8), 0, "no light, no HP");
+        let torch = engine_sight(2, 0, 1);
+        assert_eq!(torch, 1, "LIGHT_2 lights distance 1 (cave-view.c:658)");
+        assert_eq!(radius(torch, 2, 12, 4), 1);
+        assert_eq!(radius(torch, 2, 7, 4), 0, "7 HP: not one step");
+        assert_eq!(radius(7, 2, 12, 4), 7, "seen 7 off in a lit room");
+        assert_eq!(radius(7, 3, 12, 4), 3, "monsters three times as fast");
+        // A Necromancer's unlight at CL1 with no light: 1 + 0 - 0.
+        assert_eq!(engine_sight(0, CLASS_NECROMANCER, 1), 1);
+        assert_eq!(engine_sight(0, CLASS_NECROMANCER, 12), 3);
     }
 
     #[test]
@@ -598,29 +839,51 @@ mod tests {
         assert!(!below_threshold(21, 25 - 5), "a half-troll's -5");
     }
 
-    /// A 12 x 1 corridor from a staircase at (5, 5): the steps grow along it,
-    /// and a wall breaks the walk.
+    /// Review, P1: a lit room with a dark side entrance. Its warning
+    /// distance is the entrance's, not the room's extent.
     #[test]
-    fn stair_distances_walk_known_grids() {
-        let floor = |y: i32, x: i32| y == 5 && (5..=16).contains(&x) && x != 12;
-        let d = stair_distances(&[(5, 5)], floor);
-        let at = |y: i32, x: i32| d[(y * AUTO_MAX_X + x) as usize];
-        assert_eq!(at(5, 5), 0);
-        assert_eq!(at(5, 8), 3);
-        assert_eq!(at(5, 11), 6);
-        assert_eq!(at(5, 13), FAR, "beyond the wall");
-        // Two staircases: the nearer counts.
-        let d = stair_distances(&[(5, 5), (5, 11)], floor);
-        assert_eq!(d[(5 * AUTO_MAX_X + 9) as usize], 2);
+    fn a_dark_side_entrance_shortens_the_lit_room() {
+        // Lit room rows 10..=26, cols 20..=36, walls around, a dark doorway
+        // in the west wall at (18, 19).
+        let lit = |y: i32, x: i32| (10..=26).contains(&y) && (20..=36).contains(&x);
+        let wall = |y: i32, x: i32| {
+            (9..=27).contains(&y) && (19..=37).contains(&x) && !lit(y, x) && (y, x) != (18, 19)
+        };
+        let e = entries(lit, wall);
+        assert_eq!(e, vec![(18, 19)], "only the doorway");
+        let d = distances(&e, |_, _| true);
+        assert_eq!(d[index(18, 28)], 9, "the centre is 9 from the doorway");
+        assert_eq!(d[index(18, 21)], 2, "a grid by the doorway");
+        // No entry at all: the room's walls are not entries.
+        assert!(entries(lit, |y, x| (9..=27).contains(&y) && (19..=37).contains(&x) && !lit(y, x)).is_empty());
     }
 
+    /// Review, P1: a frontier whose only route to the stairs crosses an
+    /// unknown grid is not reachable; loot beyond the area is not admitted.
     #[test]
-    fn lit_extent_is_the_shortest_run() {
-        // A lit room rows 10..=26, columns 20..=36: centre (18, 28) is 8 from
-        // every wall, a grid near the north wall 1.
-        let room = |y: i32, x: i32| (10..=26).contains(&y) && (20..=36).contains(&x);
-        assert_eq!(lit_extent(18, 28, room), 8);
-        assert_eq!(lit_extent(11, 28, room), 1);
+    fn the_safe_area_needs_a_known_route_of_safe_grids() {
+        // A corridor along row 5 from a staircase at x = 5; x = 9 unknown.
+        let walk = |y: i32, x: i32| y == 5 && (5..=16).contains(&x) && x != 9;
+        let dist = distances(&[(5, 5)], walk);
+        assert_eq!(dist[index(5, 8)], 3);
+        assert_eq!(dist[index(5, 10)], FAR, "past the unknown grid: no route");
+        // Safe while within 2 steps (say): the area stops there.
+        let area = safe_area(&dist, walk, |y, x| dist[index(y, x)] <= 2);
+        assert!(area[index(5, 7)]);
+        assert!(!area[index(5, 8)], "loot at 3 steps is outside");
+        assert!(!area[index(5, 12)]);
+        // A safe grid cut off by an unsafe one is not in the area.
+        let area = safe_area(&dist, walk, |y, x| dist[index(y, x)] != 2);
+        assert!(!area[index(5, 8)]);
+    }
+
+    /// Review, P2: a door sound is placed by a changed door seen at or after
+    /// it; none seen, the Borg goes onto the staircase.
+    #[test]
+    fn an_unplaced_door_sound_sends_it_to_the_stairs() {
+        assert!(sound_alarms(1000, None), "no changed door: retreat");
+        assert!(sound_alarms(1000, Some(900)), "a door seen before the sound does not place it");
+        assert!(!sound_alarms(1000, Some(1000)), "a changed door this turn: judged by its grid");
     }
 
     #[test]

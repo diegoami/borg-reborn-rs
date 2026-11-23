@@ -1652,6 +1652,13 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
+    // step, a resumed flow's too, against its safe area.
+    if next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x)) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+
     /* Try it */
     if let Some(loc { x, y }) = next {
         let here = st.borg.c;

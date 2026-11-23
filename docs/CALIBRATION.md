@@ -741,8 +741,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2016` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2016` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
@@ -1047,12 +1047,12 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2014` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2015` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2016` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2017` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2018` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2019` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2023` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2024` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2025` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2026` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2027` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2028` |
 | `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2020` |
 | `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2021` |
 | `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2022` |
@@ -6800,16 +6800,18 @@ character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
 **2421** parameters (6 added). `stair_scum` ships 0: play is byte-identical
 to before until it is 1. Every number is a hypothesis (RULES 14): borg-zoo
-measures arms at a threshold of 20, 25 and 30, then per class.
+measures arms at a threshold of 20, 25 and 30, then per class. The design
+follows Codex's review on #1061 (the attacks on the way counted, the
+engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:115` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:122` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:122` |
-| `stair_scum_speed_ratio` | 2 | ratio | 2–10 | `borg_stair_scum.rs:257` |
-| `stair_scum_contact_damage` | 8 | HP per turn | 1–1000 | `borg_stair_scum.rs:259` |
-| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:443` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:137` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:144` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:144` |
+| `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:390` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:392` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:651` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
 plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
@@ -6819,36 +6821,53 @@ Detect Monsters, Reveal Monsters or Detection spell the Borg can cast
 `object.txt`: the spells and the rod with `DETECT_VISIBLE_MONSTERS`; Detect
 Invisible and Detect Life do not count).
 
-**The radius** (`borg_stair_scum.rs`, `Map`). *s(g)* is the walk from *g* to
-the nearest known staircase of either kind over known floor, doors included
-(8-connected, one step each); an unknown grid, rubble or a wall counts one step
-past its nearest walkable neighbour. *R(g)* = *D(g)* / (*r* − 1) + *HP* /
-`stair_scum_contact_damage`, with *D(g)* the Borg's own light radius
-(`own_light_radius`), or, on a known lit (`BORG_GLOW`) floor grid, the
-shortest of the eight straight runs of lit floor from *g* when that is longer.
-A torch in a corridor at 12 HP: 2 + 1 = 3 steps; the centre of a lit room of
-radius 8: 9. *r* = `stair_scum_speed_ratio` (Grip, Fang, the crow and the wild
-cat are `speed:120` in `monster.txt`).
+**Safe grids** (`borg_stair_scum.rs`, `Map`). *s(g)* is the walk from *g* to
+the nearest known staircase of either kind over known floor and closed doors,
+no known trap (below 60 HP the flows treat a known trap as a wall), 8-connected;
+an unknown grid or rubble counts one step past its nearest walkable
+neighbour. *g* is safe when a monster first seen *D(g)* grids off survives
+being outrun: `attacks_on_retreat` lets it act `stair_scum_speed_ratio` times
+per player action, and `ratio - 1` times before the Borg's first action
+(`game-world.c:1033-1067`: monsters with more energy act before the player);
+each action closes a grid or attacks, each step opens one, and nothing acts
+after the stair command. The walk is safe while those attacks times
+`stair_scum_contact_damage` (per round of blows) stay below the current HP.
+*D(g)* follows the engine's light whatever `cave_light_engine_radius` says:
+`cur_light - 1` (`cave-view.c:658`), a Necromancer's unlight `1 + level / 6 -
+cur_light` (`cave-view.c:777-779`); on a known lit (`BORG_GLOW`) floor grid,
+one less than the Chebyshev distance to the nearest grid a monster can come
+from unseen (unknown, dark or a door, next to the lit floor), when longer;
+behind a closed door 1, and the open costs one action more. A Wooden Torch
+(`LIGHT_2`) in a dark corridor at 12 HP against a +10 monster at 4 per attack:
+1 step; a lit room grid 8 from its nearest dark entry: 7.
 
-**What it changes.** The dark flows (`borg_flow_dark_1..5`) keep only the
-candidates inside the radius and, of them, the nearest to the staircase; the
-item and monster flows (`take_select`, `borg_flow_kill`) skip targets outside
-it. After caution, a Borg outside its radius walks back all the way onto a
-staircase (the radius on the way is at least the widest *D* of a target it
-admitted since it last stood on one, so a lit-room target reached through a
-dark corridor is not abandoned and retried for ever). A door it opens: one
-step back toward the staircase (or a turn's wait, on it), then a turn's wait,
-then it goes on. "You hear a door burst open!" (`mon-move.c:1269`), or a known
-closed door seen open inside the radius that the Borg did not open: it walks
-onto a staircase and stands there for `stair_scum_alarm_turns` game turns.
-Nothing left inside the radius (after the exploration flows): it takes a
-staircase, on DL1 down first when prepared for DL2, deeper up first, down only
-when prepared for the next depth. On a staircase it rests there (no walk to a
-recovery grid), and a threat of `caution_stairs_leave_danger_percent` of its
-HP that the fight race (`fight_before_flight`, before caution) did not take is
-left by the staircase under it (`leave_stairs_on_monster`).
+**The safe area** is every safe walkable grid joined to a staircase through
+safe grids. The dark flows (`borg_flow_dark_1..5`) keep only the candidates in
+it (unknown grids and doors next to it, safe themselves), nearest the
+staircase first; the item and monster flows (`take_select`, `scum_select`,
+`borg_flow_kill`) skip targets outside it; `borg_flow_old` refuses any
+voluntary step (flights excepted, resumed flows included) that leaves it
+without coming nearer the staircase. After caution, a Borg outside it walks
+back all the way onto a staircase.
 
-**Not done here** (the handover lists them): the fight race on the damage
-quantile (the existing race, on the mean, decides); the holes of the C leash
-(#1062: with no staircase known, or none reachable over known grids from the
-Borg's grid, the mode does not restrict the targets).
+**Doors.** A door it opens: one step back toward the staircase (or a turn's
+wait, on it), then a turn's wait, then it goes on. A known closed door seen
+open next to the area, which the Borg did not open: it walks onto a staircase
+and stands there for `stair_scum_alarm_turns` game turns. "You hear a door
+burst open!" names no grid (`mon-move.c:1269`): if no changed door is seen by
+the next think, the same.
+
+**Leaving.** Nothing left in the area (after the exploration flows): it takes
+a staircase, on DL1 down first when prepared for DL2, deeper up first, down
+only when prepared for the next depth. On a staircase it rests there (no walk
+to a recovery grid), and a threat of `caution_stairs_leave_danger_percent` of
+its HP that the fight race (`fight_before_flight`, before caution) did not
+take is left by the staircase under it (`leave_stairs_on_monster`).
+
+**No route.** No staircase known, or none the Borg can walk to over known
+trap-free grids: the dark flows keep the candidates nearest a known staircase
+as the crow flies (all of them when none is known), nothing is chased, no
+step is refused, until a route exists (#1062, #1067).
+
+**Not done here:** the fight race on the damage quantile (#1077; the existing
+race, on the mean, decides).

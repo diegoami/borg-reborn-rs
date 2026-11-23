@@ -505,6 +505,9 @@ pub fn borg_flow_vein(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     /* Check distance away from stairs, used later */
     let b_stair = farthest_up_stair(st);
 
+    // borg-reborn-rs (#1061): stair_scum digs only veins inside its safe area.
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     /* Scan the vein list */
     let mut i = 0;
     while i < i32::from(st.flow_misc.track_vein.num) {
@@ -518,6 +521,11 @@ pub fn borg_flow_vein(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
         /* Require line of sight if requested */
         if viewable && ag.info & BORG_VIEW == 0 {
+            continue;
+        }
+
+        // borg-reborn-rs (#1061): outside stair_scum's safe area.
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
             continue;
         }
 
