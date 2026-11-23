@@ -591,16 +591,21 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             && home_counts.get(&whole.kind).copied().unwrap_or(0) >= limit;
         let capped_floor = if capped { (usable_floor(u, whole, held, keep_min) - (held - whole.qty)).max(0) } else { 0 };
         if capped && capped_floor >= whole.qty { continue; }
-        // borg-reborn-rs (#1151, plan schema 20): a fuel stack keeps the
-        // copies the light reserve needs and the rest can go; before, the
-        // whole stack was skipped when all of it would undercut the reserve.
-        let fuel_keep = if input.revision >= 20 {
-            u.capability.as_ref().map_or(0, |model| model.fuel_keep(whole))
+        // borg-reborn-rs (#1151, plan schema 20): a stack keeps the copies
+        // every weighted reserve it serves still needs (the light reserve,
+        // physical fuel counted; Phase Door, ranged, Restore Life, ...), and
+        // the rest can go, stored, sold or dropped; before, a fuel stack was
+        // skipped whole when all of it would undercut the light reserve.
+        // Review of #1155: the floor is set before the move is priced, so a
+        // six-scroll Phase Door reserve is neither stored nor sold down to
+        // `town_store_keep_min`.
+        let reserve = if input.revision >= 20 {
+            u.capability.as_ref().map_or(0, |model| model.reserve_keep(whole))
         } else { 0 };
-        if fuel_keep >= whole.qty { continue; }
-        let floor = capped_floor.max(restore_keep).max(fuel_keep).max(if surplus(whole) { keep_min } else { 0 });
+        if reserve >= whole.qty { continue; }
+        let floor = capped_floor.max(restore_keep).max(reserve).max(if surplus(whole) { keep_min } else { 0 });
         let qty = whole.qty - floor;
-        let proceeds = if restore_keep > 0 || capped || fuel_keep > 0 {
+        let proceeds = if restore_keep > 0 || capped || reserve > 0 {
             whole.proceeds * i64::from(qty) / i64::from(whole.qty)
         } else { whole.proceeds };
         let part = KitItem { qty, proceeds, ..*whole };
@@ -692,19 +697,30 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // light reserve, `town_store_keep_min`, the Restore Life reserve) are
         // excess: sold, or dropped when no shop buys them, the least
         // valuable per weight first until the pack is under its allowance.
-        // Only when the floor keeps every weighted reserve the stack serves
-        // (review of #1155: six Phase Door against a reserve of six were sold
-        // down to `town_store_keep_min`), and a drop only for a fuel stack,
-        // whose split the live executor carries out (`execute_outside`);
-        // it drops other stacks whole.
-        let reserves_kept = u.capability.as_ref().is_none_or(|model| model.reserve_keep(whole) <= floor);
-        let excess = input.revision >= 20 && partial && reserves_kept && (it.sell_shop >= 0 || it.fuel > 0)
+        // The floor keeps every weighted reserve. A drop applies only to a
+        // fuel stack, whose split the live executor carries out
+        // (`execute_outside`); it drops other stacks whole.
+        let excess = input.revision >= 20 && partial && (it.sell_shop >= 0 || it.fuel > 0)
             && input.limits.weight + freed.weight < 0;
+        let worthless = capped || loss <= cost && future <= home_cost;
         let action = if store { Disposition::Store }
-            else if !protected && (capped || excess || loss <= cost && future <= home_cost) {
+            else if !protected && (worthless || excess) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
             } else { Disposition::Keep };
         out[i] = action;
+        // Review of #1155: what goes only because the pack is over its
+        // allowance is the copies that cover the deficit, not all past the
+        // floor (one 2.2 lb torch for a 1 lb deficit, not thirty).
+        let trimmed;
+        let (it, weight) = if excess && !worthless && action != Disposition::Store && action != Disposition::Keep {
+            let deficit = -(input.limits.weight + freed.weight);
+            let one = i64::from(it.weight.max(1));
+            let need = i32::try_from(((deficit + one - 1) / one).max(1)).unwrap_or(i32::MAX);
+            if need < it.qty {
+                trimmed = KitItem { qty: need, proceeds: whole.proceeds * i64::from(need) / i64::from(whole.qty), ..*it };
+                (&trimmed, one * i64::from(need))
+            } else { (it, weight) }
+        } else { (it, weight) };
         if action != Disposition::Keep {
             u.change(it, -1);
             if let Some(held) = pack_counts.get_mut(&it.kind) { *held -= it.qty; }
@@ -823,7 +839,7 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
     let input = StepInput {
         revision: input.revision, capability: input.capability, utility: input.utility, candidates: candidates.to_vec(), facts: input.facts, tryon: input.tryon, limits: input.limits,
         black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried, storing: input.storing,
-        cure_spell: input.cure_spell, kit: input.kit, home_slots: input.home_slots };
+        cure_spell: input.cure_spell, reads_now: input.reads_now, kit: input.kit, home_slots: input.home_slots };
     let input = &input;
     for group in groups {
         let need = group.options.iter().skip(1).flat_map(|o| &o.picks).next()
@@ -974,7 +990,7 @@ mod tests {
     fn input<'a>(kit: &'a [KitItem]) -> StepInput<'a> {
         StepInput { storing: None, revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
             limits: Limits { gold: 300, pack_slots: 15, weight: 1000 }, urgent: Vec::new(),
-            params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit, home_slots: 20 }
+            params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, reads_now: false, kit, home_slots: 20 }
     }
 
     fn recall(place: Place) -> KitItem {
@@ -1998,8 +2014,37 @@ mod tests {
         let mut curves: Vec<[i64; 5]> = (0..NAMES.len()).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
         curves[light] = [light as i64, 100 * UNIT, -4 * torch_turns, 34 * torch_turns, 0];
         let m = Model { available: Vec::new(), packing: None, curves, supplies: vec![[PACK, 6, light as i64, torch_turns]] };
-        let (d, _, copies) = solve(&torches, m);
+        let (d, _, copies) = solve(&torches, m.clone());
         assert_eq!((d[0], copies[0]), (Disposition::Drop, 30));
+        // Re-review of #1155: 1 lb over the allowance, one 2.2 lb torch covers
+        // the deficit; the other 29 past the reserve stay.
+        let mut inp = input(&torches);
+        inp.revision = 20;
+        inp.home_slots = 0;
+        inp.limits.weight = -10;
+        let mut u = Utility::of(&st, &torches, false);
+        u.capability = Some(m);
+        let (d, freed, copies) = dispositions_by(&inp, &mut u, &st, shipped);
+        assert_eq!((d[0], copies[0], freed.weight), (Disposition::Drop, 1, 22));
+        // Re-review of #1155: the reserve is the floor before the move is
+        // priced. With room at Home, six Phase Door against a reserve of six
+        // are not stored down to `town_store_keep_min`.
+        let mut inp = input(&kit);
+        inp.revision = 20;
+        inp.home_slots = 5;
+        inp.limits.weight = -943;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(6 * UNIT));
+        let (d, freed, _) = dispositions_by(&inp, &mut u, &st, shipped);
+        assert_eq!((d[0], freed.weight), (Disposition::Keep, 0), "the reserve is not stored");
+        // Nine against a reserve of six, full Home: the three past it are
+        // true surplus, sold for weight.
+        let nine = [KitItem { qty: 9, ..scrolls }];
+        let mut nine_model = model(6 * UNIT);
+        nine_model.curves[reserve][3] = 9 * UNIT;
+        nine_model.curves[phase][3] = 9 * UNIT;
+        let (d, _, copies) = solve(&nine, nine_model);
+        assert_eq!((d[0], copies[0]), (Disposition::Sell, 3));
     }
 
     /// #859: the first Recall is urgent once the next trip reaches the dive

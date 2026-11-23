@@ -3275,8 +3275,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:659` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2678` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2549` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2680` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2551` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -7074,7 +7074,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1146` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1147` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1148` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2590` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2592` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7164,7 +7164,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2655` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2657` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7882,9 +7882,13 @@ annoyance already took their speed. The C Borg has the same defect (the
 **Plan schema 20** (no setting; a record keeps its schema, so older visits
 replay as they were):
 
-- *A fuel stack splits at the light reserve.* `Model::fuel_keep` counts the
-  copies of a fuel stack the light reserve still needs once the other carried
-  fuel is counted. The copies past it can go. It counts a copy's physical
+- *A stack keeps its reserves, and a fuel stack splits at the light
+  reserve.* `Model::reserve_keep` counts the copies of a stack that every
+  weighted reserve row it serves still needs once the other carried supply is
+  counted (the light, Phase Door, ranged and Restore Life reserves, a first
+  cure, a book). They are the stack's floor before any move is priced:
+  stored, sold or dropped, the copies past it can go, never those. For light
+  this is the light row (`fuel_keep` in the tests). It counts a copy's physical
   fuel (`KitItem::fuel`, a new kit column): the model spreads a flask stack's
   refuelling bottles over the whole stack, so six 7,500-turn flasks of which
   two refuel the lantern count 2,500 turns each. Before, the whole stack was
@@ -7896,11 +7900,10 @@ replay as they were):
   it.* The copies past a stack's floor (the light reserve,
   `town_store_keep_min`, the Restore Life reserve) are sold, or dropped
   without a buyer, the least valuable per weight first, until the pack is
-  under its weight allowance. This applies only when the floor keeps every
-  weighted reserve the stack serves (`Model::reserve_keep`: the Phase Door,
-  ranged and Restore Life reserves, a first cure, a book). A drop applies
-  only to a fuel stack, the one split the executor carries out. Short only of
-  the departure room, nothing is sold or dropped for weight.
+  under its weight allowance. Only the copies that cover the deficit go
+  this way (one 2.2 lb torch for a 1 lb deficit). A drop applies only to a
+  fuel stack, the one split the executor carries out. Short only of the
+  departure room, nothing is sold or dropped for weight.
 - *A known-cursed spare is not protected as unknown over the allowance.* A
   pack item with a known curse (`KitItem::cursed_spare`, kit flag 128) that
   adds no power goes like any worthless item while the pack is over its
@@ -7910,8 +7913,11 @@ replay as they were):
   weight.* While the CURSE row has weight (`BI_FIRST_CURSED`),
   `borg_enchanting` reads it in town (`borg_decurse_any`). Overweight, the
   solver's weight repair took away even this 0.5 lb scroll. The exemption
-  applies only while the Borg can read it (not blind, confused or amnesiac:
-  `borg_read_scroll`), and only to the copies the row still lacks
+  applies only while town enchanting would read it now
+  (`reads_scroll_in_town`: `borg_enchanting`'s gates, not blind or confused
+  and its town timer `enchant_town_max_turns` not run out, and
+  `borg_read_scroll`'s, light and not amnesiac; recorded as the plan's
+  `spells` bit 1), and only to the copies the row still lacks
   (`Model::decurse_copies`). Spares are bought by a later solve, at their
   carried weight.
 

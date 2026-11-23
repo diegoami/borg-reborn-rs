@@ -78,3 +78,21 @@ it measured first.
   `an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town`
   (blind, and one copy) and `a_remove_curse_ware_is_read_now_only_for_a_curse`.
 
+**Re-review of #1155 (Codex, `99741c93`).** All three findings are fixed.
+- *P1, reserves when storing:* the reserve is the stack's floor before the
+  move is priced (`reserve_keep` in place of `fuel_keep`), so six Phase Door
+  against a reserve of six are neither stored nor sold. Nine against six,
+  with a full Home, sell the three past it. Test:
+  `selling_for_weight_keeps_every_reserve`. It fails with the light floor
+  alone.
+- *P2, dropping the whole surplus:* a disposal that happens only because the
+  pack is over its allowance moves just the copies that cover the deficit.
+  At 1 lb over, one torch is dropped, not thirty. Same test.
+- *P2, Remove Curse after enchanting stops:* the plan reads the live
+  `reads_scroll_in_town`, which covers `borg_enchanting`'s town timer and
+  `borg_read_scroll`'s light. The plan record keeps it (`spells` bit 1,
+  schema 20). Test: `an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town`.
+- `track-p` (`85f8800b`, #1148) is merged in. The conflicts were the
+  parameter citations in `params.rs` and `docs/CALIBRATION.md`, which were
+  taken from `track-p` and regenerated with `check-param-citations.py --fix`.
+

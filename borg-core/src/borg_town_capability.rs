@@ -353,6 +353,8 @@ impl Model {
     /// same of the whole stack, on the modeled units. A CL17 Mage with 34
     /// torches and a 20,000-turn reserve kept all of them (four would do) at
     /// -12 speed.
+    /// The dispositions read `reserve_keep`, which includes this row.
+    #[cfg(test)]
     pub fn fuel_keep(&self, it: &KitItem) -> i32 {
         self.row_keep(LIGHT, it)
     }
@@ -1556,7 +1558,7 @@ mod tests {
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 4, weight: 100 },
                 urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
-                cure_spell: false, kit: &kit, home_slots: 10 };
+                cure_spell: false, reads_now: false, kit: &kit, home_slots: 10 };
             let output = step(&input);
             first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit)
         };
@@ -1934,7 +1936,7 @@ mod tests {
         let limits = Limits { gold: 100, pack_slots: 5, weight: 100 };
         let input = crate::borg_town_record::StepInput { storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
             black_market_percentage: -1, candidates: cs.clone(), facts: &[], tryon: &[], limits, urgent: vec![],
-            params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit: &[], home_slots: 10 };
+            params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 };
         shared_groups(groups, &input, &cs, &m, &limits, (0, 100, 0)).len()
     }
 
@@ -2201,18 +2203,17 @@ mod tests {
         use crate::borg_town_stock::Candidate;
         let scroll = Candidate { shop: 4, slot: 0, kind: 1, tval: crate::headers::list_tvals_h::TV_SCROLL as u8, sval: 1,
             price: 100, qty: 5, weight: 5, slots_cost: 1, stack_count: 0, class: 1 };
-        let decide_with = |revision: i64, weight: i64, curse: bool, blind: bool| {
+        let decide_with = |revision: i64, weight: i64, curse: bool, unreadable: bool| {
             let mut m = Model { available: vec![[4, 0, 5]], packing: None,
                 curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: vec![[4, 0, CURSE as i64, UNIT]] };
             m.curves[CURSE] = [CURSE as i64, if curse { 100 * UNIT } else { 0 }, -UNIT, 0, 0];
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            traits[crate::borg_headers::borg_trait_h::BI_ISBLIND as usize] = i32::from(blind);
             let input = StepInput { storing: None, revision, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates: vec![scroll.clone()],
                 facts: &[], tryon: &[], limits: Limits { gold: 89_159, pack_slots: 4, weight },
                 urgent: vec![], params: [0; PARAMS], traits: &traits, power: 0, carried: &[],
-                cure_spell: false, kit: &[], home_slots: 0 };
+                cure_spell: false, reads_now: !unreadable, kit: &[], home_slots: 0 };
             let output = step(&input);
             let (code, at, _, _) = first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit);
             (code, at[2])
@@ -2220,7 +2221,8 @@ mod tests {
         let decide = |revision: i64, weight: i64, curse: bool| decide_with(revision, weight, curse, false).0;
         assert_eq!(decide_with(20, -993, true, false), (action::BUY, 1), "overweight, read in town: the copy read now");
         assert_eq!(decide(20, -993, true), action::BUY);
-        assert_eq!(decide_with(20, -993, true, true).0, action::LEAVE, "blind: it cannot be read, so it is weighed");
+        assert_eq!(decide_with(20, -993, true, true).0, action::LEAVE,
+            "town enchanting would not read it (blind, confused, amnesiac, dark, or its town timer run out): weighed");
         assert_eq!(decide(19, -993, true), action::LEAVE, "the recorded visit's weight repair");
         assert_eq!(decide(20, 100, true), action::BUY);
         assert_eq!(decide(20, -993, false), action::LEAVE, "no curse to remove");
@@ -2368,7 +2370,7 @@ mod tests {
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
         let input=crate::borg_town_record::StepInput {storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
-            urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,kit:&[],home_slots:10};
+            urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,reads_now:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {
             assert!(option.picks.iter().filter(|&&(i,_)|i<2).count()<=1);

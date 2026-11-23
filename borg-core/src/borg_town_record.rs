@@ -26,7 +26,7 @@
 use std::collections::BTreeMap;
 
 use crate::borg_headers::borg_h::BORG_TOWN_PLAN;
-use crate::borg_headers::borg_trait_h::{BI_ISBLIND, BI_ISCONFUSED, BI_ISFORGET, BI_MAX};
+use crate::borg_headers::borg_trait_h::BI_MAX;
 use crate::borg_town_budget::{Budget, UrgentPurchase};
 use crate::borg_town_dispose::{dispose, Disposition, Freed, KitItem, Place};
 use crate::borg_town_solve::{groups, solve, Group, GroupKey, Limits, Solution};
@@ -675,6 +675,10 @@ pub struct StepInput<'a> {
     pub carried: &'a [(u8, i32)],
     /// A curing spell is usable (no trait counts it).
     pub cure_spell: bool,
+    /// borg-reborn-rs (#1151, schema 20): town enchanting would read a
+    /// scroll now (`borg_item_enchant::reads_scroll_in_town`); recorded as
+    /// `spells` bit 1.
+    pub reads_now: bool,
     /// The pack's and the Home's stacks, for the dispositions.
     pub kit: &'a [KitItem],
     /// The Home's free slots.
@@ -866,11 +870,10 @@ pub fn step(input: &StepInput) -> StepOutput {
             // allowance does not price it. Overweight, the solver's weight
             // repair dropped even this 0.5 lb scroll while a sickliness curse
             // took 5 STR off the allowance. Review of #1155: only while it can
-            // be read (`borg_read_scroll`: not blind, confused or amnesiac),
-            // and only the copies read now; spares are bought by a later
+            // be read in town (`reads_now`: `borg_enchanting`'s and
+            // `borg_read_scroll`'s gates), and only the copies read now; spares are bought by a later
             // solve, at their carried weight.
-            if input.revision >= 20 && u32::from(c.tval) == crate::headers::list_tvals_h::TV_SCROLL
-                && st.borg.tr(BI_ISBLIND) == 0 && st.borg.tr(BI_ISCONFUSED) == 0 && st.borg.tr(BI_ISFORGET) == 0 {
+            if input.revision >= 20 && input.reads_now && u32::from(c.tval) == crate::headers::list_tvals_h::TV_SCROLL {
                 let now = input.capability.map_or(0, |model| model.decurse_copies(c.shop, c.slot));
                 if now > 0 {
                     c.weight = 0;
@@ -880,7 +883,7 @@ pub fn step(input: &StepInput) -> StepOutput {
             if !tryon.contains_key(&(c.shop, c.slot)) && input.kit.iter().zip(&dispositions).enumerate().any(|(i, (it, d))|
                 it.place == Place::Pack && it.kind == c.kind && *d != Disposition::Keep
                     && !((input.capability.is_some_and(|model| model.restore_life_keep(it) > 0
-                            || input.revision >= 20 && model.fuel_keep(it) > 0)
+                            || input.revision >= 20 && model.reserve_keep(it) > 0)
                         || it.home_limited && input.storing.is_some_and(|storing| storing.home_stack_limit > 0))
                         && copies.get(i).is_some_and(|&qty| qty > 0 && qty < it.qty))) {
                 c.slots_cost = 1;
@@ -1200,6 +1203,7 @@ impl ReplayParts {
             power: self.power,
             carried: &self.carried,
             cure_spell: rec.spells & 1 != 0,
+            reads_now: rec.schema >= 20 && rec.spells & 2 != 0,
             kit: &rec.kit,
             home_slots: rec.limits[2] as i32,
             storing: rec.storing.map(crate::borg_town_utility::Storing::from_array),
@@ -1430,7 +1434,7 @@ mod tests {
             traits,
             power: 1000,
             carried: &carried(),
-            cure_spell: false,
+            cure_spell: false, reads_now: false,
             kit,
             home_slots: budget.home_slots,
         });

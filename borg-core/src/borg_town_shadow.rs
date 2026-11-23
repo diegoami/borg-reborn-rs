@@ -492,6 +492,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     );
     let mut trip = Trip::of(st);
     trip.cure_spell = cure_spell;
+    let reads_now = crate::borg_item_enchant::reads_scroll_in_town(st);
     let mut stock = Stock::of(st);
     // The wearables: their power gain, and their slot cost (the worn item
     // moves to the pack).
@@ -608,6 +609,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         power: i64::from(st.borg.power),
         carried: &carried,
         cure_spell,
+        reads_now,
         kit: &kit,
         home_slots: budget.home_slots,
     });
@@ -676,7 +678,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         step: step_no,
         gturn: i64::from(engine::game_turn()),
         power: i64::from(st.borg.power),
-        spells: u8::from(cure_spell),
+        spells: u8::from(cure_spell) | u8::from(reads_now) << 1,
         params,
         limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
         black_market_reserve: budget.black_market_reserve,
@@ -827,7 +829,7 @@ mod knowledge_only_purchase_tests {
         let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
-            traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
+            traits: &traits, power: 1000, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 });
         out.plan.iter().map(|e| e.copies).sum()
     }
 
