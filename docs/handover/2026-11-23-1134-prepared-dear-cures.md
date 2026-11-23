@@ -57,3 +57,14 @@ borg-cemetery#146 has the method):
 - Shipping changes the play and needs `smoke-borg-rs` re-recorded in that PR.
 - `town_variety_min_depth 1` (prepared rows from DL1) was being replayed when
   this note was written; see the PR.
+
+**Added 2026-11-23: poison worlds** (owner: "We need zoo experiments with high
+concentration of poisionous animals, and try different settings"; borg-zoo#741).
+`harness/worlds/poison-x4.txt` and `poison-x8.txt` favour the six DL1-3 races
+whose blows poison (white and clear worm masses, blubbering icky thing, white
+and yellow jellies, spotted mushroom patch). Data only, read by `harness/run.sh`
+when a profile sets `borg_world`; no play changes without it. Their share of
+the allocation weight at DL2 goes from 9.1 % to 28.6 % (x4) and 45.5 % (x8).
+`make-world.py` builds both (gamedata sha256 30355bf2... and 91494e15...).
+They sit on this PR's branch so that one zoo specimen carries both the worlds
+and the town rows of #1134 (shipped 0).
