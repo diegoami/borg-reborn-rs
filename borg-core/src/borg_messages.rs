@@ -636,6 +636,13 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
     }
+    // borg-reborn-rs (#981): "You are hit by something sharp!" is the
+    // engine's message for a bolt from a monster the Borg cannot see
+    // (`project-player.c:840-842, 887`); with `recover_unseen_shot` it is an
+    // unseen attack, read in `borg_update` where the Borg's grid is known.
+    if crate::borg_recover::unseen_shot_message(msg) {
+        borg_react(st, msg, b"SHOT_BY:Something");
+    }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
     let ag_feat = |st: &BorgState| i32::from(st.cave.grid(g.x, g.y).feat);
