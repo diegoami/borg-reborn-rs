@@ -239,7 +239,8 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     let bad_status = [BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISPOISONED, BI_ISCUT, BI_ISSTUN,
         BI_ISHEAVYSTUN, BI_ISIMAGE, BI_ISPARALYZED, BI_ISHUNGRY, BI_ISWEAK, BI_ISFORGET]
         .into_iter()
-        .any(|f| st.borg.tr(f) != 0);
+        .any(|f| st.borg.tr(f) != 0)
+        || untraited_bad_timer();
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     let turns = param(Param::item_test_unknown_danger_turns).max(1);
     let danger = crate::borg_danger::borg_danger(st, y, x, turns, true, false);
@@ -283,6 +284,93 @@ pub fn borg_quaff_unknown_when_safe(st: &mut BorgState) -> bool {
     borg_keypress(st, letter(n));
     clear_shop_goals(st);
     st.borg.trying_unknown = true;
+    // borg-reborn-rs (#1060): a bad potion's status is waited out here. The
+    // statuses count down once a world tick, every 10 game turns
+    // (game-world.c:1080), so the cap is in game turns, whatever the speed.
+    let hold = param(Param::item_test_unknown_hold_turns).max(0);
+    if hold > 0 {
+        st.borg.potion_test_hold_until = engine::game_turn().wrapping_add(hold * 10);
+        st.borg.potion_test_hold_x = st.borg.c.x;
+        st.borg.potion_test_hold_y = st.borg.c.y;
+        st.borg.potion_test_hold_depth = st.borg.tr(BI_CDEPTH);
+    }
+    true
+}
+
+/// borg-reborn-rs (#1060, reviews of #1071): the timed effects of a bad
+/// potion that have no Borg trait, read from their timers as `borg_trait`
+/// reads the haste timers: Slowness (`TIMED_INC:SLOW`, the status bar's
+/// "Slow") and Surprise's stat scramble (`TIMED_INC:SCRAMBLE` 20+1d20,
+/// object.txt; `SCRAMBLE_STATS` until it ends, player_timed.txt).
+fn untraited_bad_timer() -> bool {
+    use crate::headers::list_player_timed_h::{TMD_SCRAMBLE, TMD_SLOW};
+    engine::player_timed(TMD_SLOW) != 0 || engine::player_timed(TMD_SCRAMBLE) != 0
+}
+
+/// borg-reborn-rs (#1060): the statuses a bad unknown potion can leave
+/// (object.txt: Poison, Confusion, Blindness, Sleep, Salt Water's paralysis,
+/// Surprise's amnesia; fear and hallucination from others), waited out in
+/// place; and Slowness and Surprise's scramble (`untraited_bad_timer`, no trait).
+const POTION_TEST_HOLD_STATUSES: [crate::borg_headers::borg_trait_h::C2RustUnnamedH_8; 7] =
+    [BI_ISPOISONED, BI_ISCONFUSED, BI_ISBLIND, BI_ISAFRAID, BI_ISIMAGE, BI_ISPARALYZED, BI_ISFORGET];
+
+/// borg-reborn-rs (#1060): whether the hold after a potion test goes on: it
+/// started (`hold_until` set), its game-turn cap is not reached, the Borg is
+/// still on the grid and level it tested on (`same_place`: an escape or any
+/// move ends it), in the dungeon, nothing is dangerous here and, unless only
+/// validated (`bad_status` None), a harmful status is active.
+pub(crate) fn potion_test_hold_continues(now: i32, hold_until: i32, depth: i32, same_place: bool,
+    bad_status: Option<bool>, danger: i32) -> bool {
+    hold_until != 0 && now.wrapping_sub(hold_until) <= 0 && depth > 0 && same_place && danger == 0
+        && bad_status.unwrap_or(true)
+}
+
+fn potion_test_same_place(st: &BorgState) -> bool {
+    st.borg.c.x == st.borg.potion_test_hold_x && st.borg.c.y == st.borg.potion_test_hold_y
+        && st.borg.tr(BI_CDEPTH) == st.borg.potion_test_hold_depth
+}
+
+/// borg-reborn-rs (#1060, review of #1071): before `borg_caution` can act
+/// (an escape returns before the hold is looked at), end the hold on any
+/// danger, a move off the test grid, a new level or the cap.
+pub fn potion_test_hold_validate(st: &mut BorgState) {
+    if st.borg.potion_test_hold_until == 0 {
+        return;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    let same = potion_test_same_place(st);
+    if !potion_test_hold_continues(engine::game_turn(), st.borg.potion_test_hold_until, st.borg.tr(BI_CDEPTH), same, None, danger) {
+        st.borg.potion_test_hold_until = 0;
+    }
+}
+
+/// borg-reborn-rs (#1060, owner: "a character drank a potion of poison and
+/// then goes happily exploring"): after a potion test, while the status it
+/// caused lasts and nothing is dangerous, stay still (`,`) in the spot the
+/// test was judged safe in, instead of exploring or walking to stairs (a
+/// Poison costs 1 HP a turn for 12-24 turns, game-world.c:514-516). Called
+/// after `borg_caution`, so the heals and escapes still come first. Any
+/// danger, the status's end or the cap ends the hold.
+pub fn potion_test_hold(st: &mut BorgState) -> bool {
+    if st.borg.potion_test_hold_until == 0 {
+        return false;
+    }
+    let bad_status = POTION_TEST_HOLD_STATUSES.into_iter().any(|f| st.borg.tr(f) != 0) || untraited_bad_timer();
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    let same = potion_test_same_place(st);
+    if !potion_test_hold_continues(engine::game_turn(), st.borg.potion_test_hold_until, st.borg.tr(BI_CDEPTH), same, Some(bad_status), danger) {
+        st.borg.potion_test_hold_until = 0;
+        return false;
+    }
+    // Review of #1071: the ordinary in-place recovery (a known cure, a heal,
+    // a rest) comes first; only when it does nothing does the Borg stand.
+    if crate::borg_recover::borg_recover(st) {
+        return true;
+    }
+    crate::borg_io::borg_note(st, "# Waiting out a bad potion where it was tested (#1060)");
+    borg_keypress(st, key(b','));
     true
 }
 
@@ -380,6 +468,22 @@ mod unknown_potion_tests {
         assert!(!safe(1, 30, 28, 28, 50, 25, 0, true, 3), "a harmful status (paralysis included)");
         assert!(!safe(1, 30, 28, 28, 50, 25, 0, false, 0), "no food after a Salt Water");
         assert!(!safe(1, 30, 0, 0, 50, 25, 0, false, 3), "no max HP");
+    }
+
+    #[test]
+    fn a_bad_potion_is_waited_out_where_it_was_tested() {
+        use super::potion_test_hold_continues as holds;
+        // Game turns: a 30-tick cap from turn 1000 ends at 1300.
+        assert!(holds(1100, 1300, 1, true, Some(true), 0), "poisoned, safe, within the cap");
+        assert!(!holds(1100, 0, 1, true, Some(true), 0), "no test, no hold");
+        assert!(!holds(1301, 1300, 1, true, Some(true), 0), "the cap ends it");
+        assert!(holds(1300, 1300, 1, true, Some(true), 0), "the last game turn of the cap");
+        assert!(!holds(1100, 1300, 1, true, Some(false), 0), "the status ended (or the potion was harmless)");
+        assert!(!holds(1100, 1300, 1, true, Some(true), 3), "a danger ends it: the ordinary caution decides");
+        assert!(!holds(1100, 1300, 0, true, Some(true), 0), "not in town");
+        assert!(!holds(1100, 1300, 1, false, Some(true), 0), "moved off the test grid (a Phase Door): no hold at the landing");
+        assert!(holds(1100, 1300, 1, true, None, 0), "validation alone does not need the status");
+        assert!(!holds(1100, 1300, 1, true, None, 5), "validation ends it on danger, before caution acts");
     }
 
     #[test]

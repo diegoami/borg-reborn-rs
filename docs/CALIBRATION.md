@@ -10,6 +10,33 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Waiting out a bad test potion (#1060)
+
+The registry now holds **2445** parameters (2444 before; one added). Owner,
+2026-11-22: "a character drank a potion of poison and then goes happily
+exploring" (seed 1928291203: a Poison test, then a 76-step walk to the stairs
+at 1 HP a turn, 26 -> 18). The test's HP floor, `item_test_unknown_min_hp`,
+first added here, is #1063's section below (compiled 25, shipped 60, with the
+known-cure exemption).
+
+- **`item_test_unknown_hold_turns`** (compiled 180, **shipped 180**: Blindness, the longest supported potion, lasts up to 175 ticks): after a test,
+  for at most this many world ticks (10 game turns each, the clock the status
+  timers run on), on the test grid and level, while a harmful status it caused
+  lasts (a Slowness or Surprise's stat scramble included, read from their
+  timers) and the danger here is 0,
+  the Borg stays where it tested (`potion_test_hold`, right after
+  `borg_caution`): the ordinary in-place recovery (`borg_recover`) first, else
+  it stands still (`,`). `potion_test_hold_validate`, before the early fight
+  (`fight_before_flight`) and `borg_caution`, ends the hold on danger, a move
+  or a new level. 0 = no hold. The cap bounds when a hold decision can start:
+  a recovery rest (`R&`) that `borg_recover` starts inside the hold runs in the
+  engine until the status clears or something disturbs it, past the cap if
+  need be, as the same rest chosen by the ordinary order would.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `item_test_unknown_hold_turns` | 180 | turns | 0–1000 | `borg_item_use.rs:254` |
+
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
 The registry now holds **2442** parameters (2441 before; one added). From the death of the
@@ -7296,7 +7323,7 @@ The owner's proposal from the level-1 death review of `track-p` `206cf4e7`
 `studies/lvl1-deaths-trackp-206cf4e7`): an exploration **mode** for a
 character with few hit points, "they can go back to the stairs faster than
 any character can come at them". With this section the registry holds
-**2458** parameters (9 added to `track-p` `5f720dce`). `stair_scum` is compiled 0 and **shipped 1** in
+**2459** parameters (9 added to `track-p` `69a5ff40`). `stair_scum` is compiled 0 and **shipped 1** in
 `harness/borg.txt` (owner, 2026-11-23: "ok let us merge with those settings"),
 with the owner's `byclass` arm of borg-zoo#721: `stair_scum_max_hp = 20`, slack
 per class in `harness/borg_<class>.txt` (Druid and Necromancer 1, Mage and Priest
@@ -7309,9 +7336,9 @@ engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:149` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:156` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:156` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:152` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:159` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:159` |
 | `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:537` |
 | `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:539` |
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
