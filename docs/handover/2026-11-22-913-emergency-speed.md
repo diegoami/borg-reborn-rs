@@ -2,7 +2,7 @@
 
 **Issue:** diegoami/borg-reborn-rs#913 (ship-blocker). **Branch:** `task/T913-emergency-speed`
 (from `track-p` `86843a79`; `track-p` merged in at `d8416afe`, `497cd344` (#943), `f77bbe1f`
-(#890), `4f1bcae5` (#1146) and `224e5272` (#1158)). Track P, P8: this PR merges into `track-p` once
+(#890), `4f1bcae5` (#1146), `224e5272` (#1158) and `c6ed017b` (#944)). Track P, P8: this PR merges into `track-p` once
 the owner says its review is done (RULES 1a).
 
 Evidence: [borg-cemetery study](https://github.com/diegoami/borg-cemetery/blob/claude/happy-brahmagupta-2jcsa3/studies/fastfrag-cave-spiders-2008390085/README.md) (seed 2008390085, borg-zoo#596).
@@ -52,8 +52,12 @@ the radius and margin reads, the danger sum or any item or spell attempt.
   `4f1bcae5` (#1146): citation-only conflicts, `track-p`'s side taken, then `--fix`. `224e5272`
   (#1158, the loop detector): one `params.rs` block, line numbers only; `track-p`'s side taken,
   then `--fix` re-pointed `caution_flee_recall_danger_percent` to `borg_caution.rs:5054` and
-  `caution_scary_ranged_no_stairs` to `:5007` (both read their param there). The check after
-  each: 0 errors (2,509 parameters at the end).
+  `caution_scary_ranged_no_stairs` to `:5007` (both read their param there). `c6ed017b` (#944,
+  #916's retreat veto, which adds lines to `borg_caution.rs` but nothing between the healing paths
+  and this hook): `params.rs` citation lines and one block where this PR's three rows were re-added
+  to `track-p`'s side; `CALIBRATION.md` citation rows and the adjacent #913 and #916 sections, both
+  kept; `--fix` re-pointed 71 rows, this PR's to `borg_caution.rs:6675`, `:6681` and `:6682`
+  (each reads its param). The check after each: 0 errors (2,511 parameters at the end).
 - On the final head: `cargo fmt --check -p borg-reborn-rs`, clippy `-D warnings`,
   `cargo test --workspace --exclude borg-core`, `cargo test --release -p borg-core`,
   `check-param-citations.py`, `scripts/tests`, the engine build and `test_stair_handoff`
