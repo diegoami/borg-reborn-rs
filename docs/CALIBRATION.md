@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
-The registry now holds **2417** parameters (2416 before; one added). From the death of the
+The registry now holds **2420** parameters (2419 before; one added). From the death of the
 Half-Troll Ranger 829474344 (borg-zoo run 44950087466; Cemetery study
 `studies/fastfrag-white-jelly-829474344`): a strategic retreat from a white jelly
 and the next stair-flight step undid each other 74 times until poison killed it.
@@ -768,8 +768,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:891` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:893` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2007` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2007` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2012` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2012` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:675` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:906` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:911` |
@@ -1074,8 +1074,8 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2014` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2015` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2019` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2020` |
 | `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2016` |
 | `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2017` |
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2018` |
@@ -1812,7 +1812,7 @@ Before the fix (main `3ba17e2c`, the hunt stopped by the rule's own leave):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:679` |
+| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:685` |
 
 ## Kill breeders first; flee only what cannot be stopped (#556)
 
@@ -1871,7 +1871,7 @@ breeding cannot be stopped any more". This replaces the first design below
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_breeder_stoppable` | 0 | flag | 0–1 | `borg_caution.rs:4870` |
-| `caution_breeder_stoppable_births_percent` | 200 | percent | 1–10000 | `borg_caution.rs:4893` |
+| `caution_breeder_stoppable_births_percent` | 200 | percent | 1–10000 | `borg_caution.rs:4943` |
 
 ## Avoid breeder colonies (#556)
 
@@ -3440,22 +3440,22 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_one_blow_monster_age` | 2 | turns | 0–100000 | `borg_caution.rs:2377` |
 | `caution_nasty_light_timeout` | 250 | turns | 0–100000 | `borg_caution.rs:3274` |
 | `caution_questor_arrival_turns` | 10 | turns | 0–100000 | `borg_caution.rs:3288` |
-| `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:3282` |
-| `caution_escape_absolute_limit` | 55 | count | 0–1000 | `borg_caution.rs:3283` |
-| `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:3285` |
-| `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:3291` |
+| `caution_escape_limit` | 3 | count | 0–1000 | `borg_caution.rs:3322` |
+| `caution_escape_absolute_limit` | 55 | count | 0–1000 | `borg_caution.rs:3323` |
+| `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:3325` |
+| `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:3331` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:3376` |
-| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:3482` |
+| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:3522` |
 | `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:3423` |
-| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:3510` |
-| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:3511` |
-| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:3512` |
-| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:3513` |
+| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:3550` |
+| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:3551` |
+| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:3552` |
+| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:3553` |
 | `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:3150` |
-| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:3529` |
+| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:3569` |
 | `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:3583` |
-| `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:3575` |
-| `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:3576` |
+| `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:3615` |
+| `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:3616` |
 | `caution_breeder_flee_max_level` | 15 | level | 1–51 | `borg_caution.rs:3590` |
 | `caution_desperate_max_level` | 35 | level | 1–51 | `borg_caution.rs:3529` |
 | `caution_retreat_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:3570` |
@@ -4008,12 +4008,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1225` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1226` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1225` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1235` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1233` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1234` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1315` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1316` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1315` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1325` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1323` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1324` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
@@ -6306,7 +6306,7 @@ switches below are off by default, which reproduces today's play.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
-| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:8022` |
+| `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:8064` |
 
 ## The Borg's own light radius (#877)
 
