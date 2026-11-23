@@ -116,13 +116,19 @@ pub(crate) fn observe(st: &mut BorgState) {
     }
     let known = known_grids(st);
     let danger = borg_danger(st, here.y, here.x, 1, true, false);
-    if stale(st.loops.moves.back().map(|m| m.known), known, danger, st.borg.tr(BI_CURHP)) {
+    let stale_now = stale(st.loops.moves.back().map(|m| m.known), known, danger, st.borg.tr(BI_CURHP));
+    if stale_now {
         st.loops.moves.clear();
     }
     if st.loops.last == Some(here) {
         return;
     }
     st.loops.last = Some(here);
+    // A move under danger is not counted either (review of #1158): the
+    // window holds quiet moves only.
+    if danger > st.borg.tr(BI_CURHP) / 4 {
+        return;
+    }
     let moves = &mut st.loops.moves;
     moves.push_back(Move { at: here, known });
     while moves.len() > LOOP_MOVES {
@@ -151,13 +157,22 @@ fn is_staircase(feat: u32) -> bool {
     feat == FEAT_LESS || feat == FEAT_MORE
 }
 
-/// #1153 (review of #1158): may the Borg take up stairs (not under forced
-/// descent), and down stairs (fleeing, or prepared for the next depth, as
-/// `borg_caution` decides)?
+/// #1153 (reviews of #1158): may the Borg take up stairs, and down stairs,
+/// by the gates `borg_caution` applies before it takes them: up not under
+/// forced descent nor while a Recall hold keeps it (`recall_holds_up_stair`);
+/// down only fleeing or prepared for the next depth, and not while Recall
+/// restricts it, nor under the rising holds (`rising_holds_descent`,
+/// `rising_holds_flee_descent`).
 fn stairs_allowed(st: &mut BorgState) -> (bool, bool) {
-    let up = !crate::engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend);
+    use crate::borg_caution::{recall_holds_up_stair, recall_restricts, rising_holds_descent, rising_holds_flee_descent};
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    let up = !crate::engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend)
+        && !recall_holds_up_stair(st, here);
     let next = st.borg.tr(BI_CDEPTH) + 1;
-    let down = st.borg.goal.fleeing || crate::borg_prepared::prepared_c_for_decision(st, next).is_none();
+    let down = (st.borg.goal.fleeing || crate::borg_prepared::prepared_c_for_decision(st, next).is_none())
+        && !recall_restricts(st)
+        && !rising_holds_descent(st, here)
+        && !rising_holds_flee_descent(st);
     (up, down)
 }
 
@@ -292,6 +307,9 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
         let n = closed.len();
         st.loops.ban = closed;
         st.loops.ban_until = st.borg.time.now.saturating_add(LOOP_BAN_THINKS);
+        // A committed route was spread before the ban: drop it, so the next
+        // flow is spread around the closed grids (review of #1158).
+        st.borg.goal.type_0 = 0;
         borg_note(st, &format!("{head}; no stairs to take: closing its {n} other grids for {LOOP_BAN_THINKS} thinks (#1153)"));
         return false;
     }

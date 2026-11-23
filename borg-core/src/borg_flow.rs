@@ -1087,6 +1087,11 @@ pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
     if st.flow.retreat_blocks(loc { x, y }) {
         return;
     }
+    // borg-reborn-rs (#1153, review of #1158): no destination on a grid the
+    // loop breaker closed.
+    if crate::borg_loop::step_banned(st, y, x) {
+        return;
+    }
     // borg-reborn-rs (#1125, review of #1129, finding 1): a destination in a
     // known paralyser's reach is not seeded either (`spread_blocked` only
     // sees the grids the flow spreads to; a staircase next to a floating eye
@@ -2123,6 +2128,12 @@ fn select_step(st: &BorgState) -> i32 {
 
         /* Never backtrack */
         if c > b_c {
+            continue;
+        }
+
+        // borg-reborn-rs (#1153, review of #1158): a cached route never steps
+        // onto a grid the loop breaker closed.
+        if crate::borg_loop::step_banned(st, y, x) {
             continue;
         }
 
