@@ -988,9 +988,11 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* do not hangout on boring levels for *too* long */
-    // borg-reborn-rs (#1098, review of #1117): nor once the mixed walk has
-    // covered all it may of this level (`exhausted_this_think`): the stairs
-    // are taken as when the time is up, before the secret-door search.
+    // borg-reborn-rs (#1098, review of #1117): nor once the stair-anchored
+    // exploration (breadth-first or mixed) has covered all it may of this
+    // level (`exhausted_this_think`; owner, 2026-11-23: "once there is
+    // nothing to explore, take the stairs"): the stairs are taken as when
+    // the time is up, before the secret-door search.
     let exhausted = crate::borg_flow_dark::exhausted_this_think(st);
     // The direction chosen at random after the walk, when either is allowed
     // (re-review of #1117); `None` otherwise.
@@ -1001,7 +1003,7 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
             /* Note */
             let t = i64::from(borg_timer(st, st.borg.time.level));
             if exhausted {
-                borg_note(st, &format!("# Mixed exploration done ({t} on level), leaving (#1098)."));
+                borg_note(st, &format!("# Exploration from the stairs done ({t} on level), leaving (#1098)."));
             } else {
                 borg_note(st, &format!("# Spent too long ({t}) on level, leaving."));
             }
@@ -1012,8 +1014,9 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
             } else {
                 /* otherwise use random stairs */
                 g = if engine::randint0(100) < 50 { -1 } else { 1 };
-                // borg-reborn-rs (#1098, re-review of #1117): after the walk,
-                // either direction is allowed, so a failed one tries the other.
+                // borg-reborn-rs (#1098, re-review of #1117): after the
+                // stair-anchored exploration, either direction is allowed,
+                // so a failed one tries the other.
                 either_way = exhausted.then_some(g);
             }
         }
@@ -1130,9 +1133,9 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
     }
 
-    // borg-reborn-rs (#1098): the walk's area is done but no staircase can
-    // be taken, in any direction allowed: it stands down on this level, and
-    // C explores for one.
+    // borg-reborn-rs (#1098): the stair-anchored exploration's area is done
+    // but no staircase can be taken, in any direction allowed: it stands
+    // down on this level, and C explores for one.
     if exhausted {
         crate::borg_flow_dark::release_after_failed_exit(st);
     }

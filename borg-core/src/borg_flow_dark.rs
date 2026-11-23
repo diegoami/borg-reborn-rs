@@ -838,10 +838,12 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
 /// borg-reborn-rs (#1080, #1085; owner 2026-11-23: "a safer way would be
 /// breadth-first"): is exploration breadth-first from the staircases?
 /// `explore_breadth_first` on, in the dungeon, and the Borg's maximum HP
-/// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class).
+/// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class). Not on
+/// a level where leaving after it failed (`release_after_failed_exit`).
 pub(crate) fn breadth_first_active(st: &BorgState) -> bool {
     value(Param::explore_breadth_first) != 0
         && st.borg.tr(BI_CDEPTH) > 0
+        && !released(st)
         && st.borg.tr(BI_MAXHP)
             < bfs_hp_threshold(
                 value(Param::explore_bfs_max_hp),
@@ -1168,7 +1170,30 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
     let Plan::Rings(tries) = plan(&frame.cands, Some(frame.borg_ring), leash, slack, BREADTH_FIRST_MAX_RINGS) else {
         return None;
     };
-    Some(run_tries(st, &frame, tries, |t| format!("dark-bfs (ring {})", t.base)))
+    if run_tries(st, &frame, tries, |t| format!("dark-bfs (ring {})", t.base)) {
+        return Some(true);
+    }
+    // borg-reborn-rs (#1098; owner, 2026-11-23: "once there is nothing to
+    // explore, take the stairs"): nothing reachable within the leashes is
+    // not an ordinary miss either: `borg_leave_level` takes the stairs.
+    let left = frame.cands.len();
+    mark_exhausted(st, &format!("Breadth-first exploration: nothing reachable left within the leashes ({left} frontier grids known)"));
+    Some(false)
+}
+
+/// #1098 (reviews of #1117): the stair-anchored exploration of this think
+/// has nothing it may reach left (`exhausted_this_think`); noted once a think.
+fn mark_exhausted(st: &mut BorgState, what: &str) {
+    if st.borg.stair_explore_exhausted != Some(st.borg.time.now) {
+        crate::borg_io::borg_note(st, &format!("# {what}, leaving the level (#1098)"));
+    }
+    st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+}
+
+/// #1098: has a failed exit released this level from the stair-anchored
+/// modes (`release_after_failed_exit`)?
+fn released(st: &BorgState) -> bool {
+    st.borg.stair_explore_released == Some(st.borg.time.level)
 }
 
 /// #1098 (second piece of #1080): is exploration mixed? `explore_mixed` on,
@@ -1185,17 +1210,18 @@ pub(crate) fn mixed_active(st: &BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
         && c_leash_on(st)
-        && st.borg.mix_released != Some(st.borg.time.level)
+        && !released(st)
 }
 
-/// #1098: leaving after the walk was exhausted failed (`borg_leave_level`
-/// found no staircase it could take): the walk stands down on this level,
-/// so C's exploration can look for one.
+/// #1098: leaving after the stair-anchored exploration was exhausted failed
+/// in every allowed direction (`borg_leave_level` found no staircase it
+/// could take): breadth-first and mixed stand down on this level, so C's
+/// exploration can look for one.
 pub(crate) fn release_after_failed_exit(st: &mut BorgState) {
-    if st.borg.mix_released != Some(st.borg.time.level) {
-        crate::borg_io::borg_note(st, "# Mixed exploration: no staircase to leave by, exploring on (#1098)");
+    if !released(st) {
+        crate::borg_io::borg_note(st, "# Exploration from the stairs: no staircase to leave by, exploring on (#1098)");
     }
-    st.borg.mix_released = Some(st.borg.time.level);
+    st.borg.stair_explore_released = Some(st.borg.time.level);
 }
 
 /// #1098: the numbers of the escape model of #1061 that bound the radius.
@@ -1317,14 +1343,8 @@ fn borg_flow_dark_mixed(st: &mut BorgState) -> Option<bool> {
     // the walk may cover is done, so `borg_leave_level` takes the stairs
     // this think, before the secret-door search and the direct monster
     // flow (`exhausted_this_think`).
-    if st.borg.mix_exhausted != Some(st.borg.time.now) {
-        let left = frame.cands.len();
-        crate::borg_io::borg_note(
-            st,
-            &format!("# Mixed exploration: nothing reachable left within radius {limit} ({left} frontier grids known), leaving the level (#1098)"),
-        );
-    }
-    st.borg.mix_exhausted = Some(st.borg.time.now);
+    let left = frame.cands.len();
+    mark_exhausted(st, &format!("Mixed exploration: nothing reachable left within radius {limit} ({left} frontier grids known)"));
     Some(false)
 }
 
@@ -1348,11 +1368,11 @@ fn mix_result(stepped: bool) -> MixOutcome {
     }
 }
 
-/// #1098 (review of #1117): did the mixed walk find its area covered this
-/// think? Read by `borg_leave_level` as a reason to leave, like the level
-/// timer.
+/// #1098 (review of #1117): did the stair-anchored exploration (breadth-first
+/// or mixed) find its area covered this think? Read by `borg_leave_level` as
+/// a reason to leave, like the level timer.
 pub(crate) fn exhausted_this_think(st: &BorgState) -> bool {
-    st.borg.mix_exhausted == Some(st.borg.time.now) && mixed_active(st)
+    st.borg.stair_explore_exhausted == Some(st.borg.time.now) && (breadth_first_active(st) || mixed_active(st))
 }
 
 /// Prepare to "flow" towards "interesting" grids
@@ -1902,6 +1922,20 @@ mod breadth_first_tests {
         assert_eq!(mix_result(false), MixOutcome::Exhausted);
         assert_eq!(mix_result(true), MixOutcome::Stepped);
         assert_eq!(mixed_plan(&[(0, 0, 3)], None, 5, 2, 10, 16), Plan::Fallback, "no route to a staircase: C");
+    }
+
+    #[test]
+    fn a_failed_exit_releases_only_its_own_level() {
+        // #1098: the stand-down after a failed exit holds for the level it
+        // happened on (`time.level`), not the next one.
+        let mut st = BorgState::default();
+        st.borg.time.level = 1000;
+        st.borg.time.now = 1100;
+        assert!(!released(&st));
+        st.borg.stair_explore_released = Some(st.borg.time.level);
+        assert!(released(&st));
+        st.borg.time.level = 1200; // a new level
+        assert!(!released(&st));
     }
 
     #[test]

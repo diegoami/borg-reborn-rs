@@ -7373,10 +7373,10 @@ the seven below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1184` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1292` |
-| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1306` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1295` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1297` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1299` |
-| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1301` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1209` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1318` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1332` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1321` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1323` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1325` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1327` |
