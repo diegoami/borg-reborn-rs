@@ -496,7 +496,7 @@ fn spread_blocked(
 
     /* Avoid Traps if low level-- unless brave */
     // borg-reborn-rs (#1067): not for `trap_way_back`'s own spread.
-    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps {
+    if ag.trap && !ag.glyph && !twitchy && !st.flow.through_traps && !crate::borg_trap_way::trap_underfoot_open(st, x, y) {
         /* Do not disarm when you could end up dead */
         if b.tr(BI_CURHP) < 60 {
             return true;
@@ -1486,6 +1486,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* Disarm */
         borg_note(st, "# Disarming a trap");
+        crate::borg_trap_way::note_disarm(st, x, y); // borg-reborn-rs (#1067)
         borg_keypress(st, keycode_t::from(b'D'));
         borg_queue_direction(st, i2d(dir));
 

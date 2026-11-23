@@ -1127,7 +1127,7 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 | `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2028` |
 | `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2029` |
 | `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2030` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2021` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2032` |
 | `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2022` |
 | `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2023` |
 
@@ -6891,29 +6891,43 @@ for the level.
 1. **Recover at the stairs** (`trap_recover`). Below `trap_recover_max_hp`
    max HP, a trap that hurts (at the next think: HP below the maximum,
    poisoned, cut, blind, confused or stunned) stops exploration: the Borg
-   flows to the nearest known staircase (`borg_flow_stair_both`, refusing
-   traps as today), cures or rests there (`borg_recover`, else `R&`), takes it
-   at the first threat (danger above 0 on it; a down staircase only when not
-   rising and not refused, `more_refused`), and explores again whole. No
-   staircase in reach: it rests where it stands (danger 0, not hungry).
+   flows to the nearest staircase it may take (up unless descent is forced;
+   down only when not rising and not refused, `more_refused`; refusing traps
+   as today), cures or rests there (`borg_recover` first, else `R&`), takes
+   it at the first threat (danger above 0 on it), and explores again whole.
+   No such staircase in reach: it rests where it stands (danger 0, not
+   hungry), curing first. The hook runs after the attack and the wear
+   checks, before the item flows, so an item cannot pull a hurt Borg away
+   (review of #1086).
 2. **Reopen the way back** (`trap_way_back`). When a spread from every known
    staircase that refuses traps does not reach the Borg and one through them
    does, the first trap of that route is cleared before anything else: from
    the adjacent grid `D` (disarm) when the engine's chance (the skill less
    depth/5, at least 2; physical for pits and gas, the lower skill for an
-   unknown kind) is at least `trap_disarm_min_percent`; else `W` (walk onto
-   it, `CMD_JUMP`) when its kind is known and its worst cost (a pit 12 HP, a
+   unknown kind) is at least `trap_disarm_min_percent`; else, only while rule
+   1 or 3 wants the stairs now (a walk leaves the trap where it is, and the
+   Borg would cross it back and forth to explore), `W` (walk onto it,
+   `CMD_JUMP`) when its kind is known and its worst cost (a pit 12 HP, a
    spiked pit 48, a poison pit 84 counting cut and poison turns, gas 0) is
    below the current HP; else, hurt, it rests first and disarms whole. Not
    adjacent, it follows the flow through the traps (`GOAL_MISC`). Blind,
-   confused, hallucinating or without light it rests first. After
-   `trap_disarm_max_tries` attempts on one trap the rule gives up (play is
-   then as today).
-3. **Leave a trap-dense level** (`trap_leave_level_count`). Below
-   `trap_recover_max_hp`, the level's n-th trap set off, or the n-th within
-   `trap_leave_radius` of the Borg's first grid on the level, makes it leave
-   by the nearest staircase once it reaches one, whole first when rule 1 is
-   on (the owner: "the form of a cursed level").
+   confused or hallucinating it rests first; without light it leaves the
+   light check to act. After `trap_disarm_max_tries` attempts on one trap
+   the rule gives up (play is then as today). With the switch on, a flow may
+   leave a trap the Borg stands on (after a `W` onto a trap that stays) but
+   enters no other (`trap_underfoot_open` in `spread_blocked`). The probe
+   counts only the staircases rule 1 may take.
+3. **Leave a trap-dense level** (`trap_leave_level_count`,
+   `trap_leave_near_count`). Below `trap_recover_max_hp`, the level's n-th
+   distinct trap set off, or the m-th within `trap_leave_radius` of the
+   Borg's first grid on the level (a separate threshold: every trap near the
+   arrival is also one of the level), makes it leave by the nearest staircase
+   it may take once it reaches one, whole first when rule 1 is on (the owner:
+   "the form of a cursed level"). A trap is placed at its own grid: a `D` or
+   `W` at its target (this module's or `borg_play_step`'s disarm), a walk at
+   the step's grid (`goal.g`, one grid from the Borg when the message came),
+   so a teleport rune set off twice is one trap; a disarm message with no
+   target is not placed.
 
 `trap_recover_max_hp` is 60, the core's own line for a known trap and above
 every CL1-6 character; #1061's stair_scum threshold (25) would not cover this
@@ -6921,13 +6935,14 @@ Warrior (31, then 57 HP). Per class with `trap_recover_max_hp__<class>`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:267` |
-| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:298` |
-| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:267` |
-| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:442` |
-| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:443` |
-| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:267` |
-| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:325` |
+| `trap_recover` | 0 | flag | 0–1 | `borg_trap_way.rs:323` |
+| `trap_recover_max_hp` | 60 | max HP | 1–10000 | `borg_trap_way.rs:360` |
+| `trap_way_back` | 0 | flag | 0–1 | `borg_trap_way.rs:271` |
+| `trap_disarm_min_percent` | 50 | percent | 2–100 | `borg_trap_way.rs:573` |
+| `trap_disarm_max_tries` | 10 | attempts | 1–1000 | `borg_trap_way.rs:562` |
+| `trap_leave_level_count` | 0 | traps | 0–100 | `borg_trap_way.rs:325` |
+| `trap_leave_near_count` | 0 | traps | 0–100 | `borg_trap_way.rs:326` |
+| `trap_leave_radius` | 10 | grids | 0–250 | `borg_trap_way.rs:435` |
 
 ## #895: devices as variety (town)
 

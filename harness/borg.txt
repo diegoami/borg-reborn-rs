@@ -2021,3 +2021,4 @@ borg_param_escape_teleport_block = 1
 borg_param_trap_recover = 0
 borg_param_trap_way_back = 0
 borg_param_trap_leave_level_count = 0
+borg_param_trap_leave_near_count = 0

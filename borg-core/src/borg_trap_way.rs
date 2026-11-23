@@ -229,10 +229,67 @@ pub(crate) fn reopen(chance: i32, min_percent: i32, walk: bool, whole: bool) -> 
     }
 }
 
-/// Rule 3's count: the `count`-th trap of the level, or of those near the
-/// arrival grid.
-pub(crate) fn trap_dense(count: i32, set_off: i32, near: i32) -> bool {
-    count > 0 && (set_off >= count || near >= count)
+/// Rule 3's count: the `level_count`-th distinct trap of the level, or the
+/// `near_count`-th of those near the arrival grid (each 0 = off). Every trap
+/// near the arrival is also one of the level, so the near count matters only
+/// below the level count (review of #1086).
+pub(crate) fn trap_dense(level_count: i32, near_count: i32, set_off: i32, near: i32) -> bool {
+    (level_count > 0 && set_off >= level_count) || (near_count > 0 && near >= near_count)
+}
+
+fn chebyshev(a: loc, b: loc) -> i32 {
+    (a.x - b.x).abs().max((a.y - b.y).abs())
+}
+
+/// The grid of the trap a message reports (review of #1086). A `D` or `W`
+/// names its own grid (`target`, set by this module and by `borg_play_step`'s
+/// disarm, consumed at the next think). Otherwise a walk set it off: the step
+/// the Borg had just begun (`dest`, one grid from where it stood when the
+/// message arrived, `from`), so a teleport rune is its own grid and not the
+/// landing grid. With neither, a disarm message is not placed (`None`) and a
+/// walk is the Borg's grid now.
+pub(crate) fn trigger_grid(disarm: bool, target: Option<loc>, from: loc, dest: loc, here: loc) -> Option<loc> {
+    if target.is_some() {
+        target
+    } else if disarm {
+        None
+    } else if chebyshev(from, dest) == 1 {
+        Some(dest)
+    } else {
+        Some(here)
+    }
+}
+
+/// `spread_blocked`'s trap test lets a flow leave a trap the Borg stands on
+/// (after a `W`, or a pit) while `trap_way_back` is on; entering any other
+/// known trap is still refused (review of #1086).
+pub(crate) fn underfoot_open_with(on: bool, borg: loc, x: i32, y: i32) -> bool {
+    on && borg.x == x && borg.y == y
+}
+
+pub(crate) fn trap_underfoot_open(st: &BorgState, x: i32, y: i32) -> bool {
+    underfoot_open_with(param(Param::trap_way_back) != 0, st.borg.c, x, y)
+}
+
+/// Note `borg_play_step`'s own disarm (`D`), so its "You set off the %s!"
+/// is placed at that trap (review of #1086).
+pub(crate) fn note_disarm(st: &mut BorgState, x: i32, y: i32) {
+    if any_on() {
+        st.trap_way.target = Some(loc { x, y });
+    }
+}
+
+/// A trap message not yet placed: its kind, whether it is ambiguous,
+/// whether it came from a disarm, `time.now` when it arrived, and the Borg's
+/// grid and step destination (`goal.g`) then.
+#[derive(Clone, Copy, Debug)]
+struct Pending {
+    kind: Kind,
+    ambiguous: bool,
+    disarm: bool,
+    when: BorgTime,
+    from: loc,
+    dest: loc,
 }
 
 #[derive(Default, Debug)]
@@ -246,9 +303,8 @@ pub struct TrapWayState {
     counted: Vec<loc>,
     set_off: i32,
     set_off_near: i32,
-    /// A trap message not yet placed: its kind, whether it is ambiguous,
-    /// whether it came from a disarm, and `time.now` when it arrived.
-    pending: Option<(Kind, bool, bool, BorgTime)>,
+    /// A trap message not yet placed.
+    pending: Option<Pending>,
     /// The kinds learned on this level, by grid.
     kinds: Vec<(loc, Kind)>,
     /// Disarm and walk attempts on this level, by grid.
@@ -264,7 +320,10 @@ pub struct TrapWayState {
 }
 
 fn any_on() -> bool {
-    param(Param::trap_recover) != 0 || param(Param::trap_way_back) != 0 || param(Param::trap_leave_level_count) != 0
+    param(Param::trap_recover) != 0
+        || param(Param::trap_way_back) != 0
+        || param(Param::trap_leave_level_count) != 0
+        || param(Param::trap_leave_near_count) != 0
 }
 
 /// Read one game message (`borg_parse_aux`): a trap's activation.
@@ -277,10 +336,13 @@ pub(crate) fn note_message(st: &mut BorgState, msg: &[u8]) {
     let disarm = msg.starts_with(b"You set off the ");
     st.trap_way.pending = Some(match st.trap_way.pending {
         // The lines of one trap arrive together.
-        Some((old, old_ambiguous, old_disarm, when)) if when == now => {
-            (refine(old, kind), old_ambiguous && ambiguous, old_disarm || disarm, when)
-        }
-        _ => (kind, ambiguous, disarm, now),
+        Some(p) if p.when == now => Pending {
+            kind: refine(p.kind, kind),
+            ambiguous: p.ambiguous && ambiguous,
+            disarm: p.disarm || disarm,
+            ..p
+        },
+        _ => Pending { kind, ambiguous, disarm, when: now, from: st.borg.c, dest: st.borg.goal.g },
     });
 }
 
@@ -298,9 +360,37 @@ fn weak(st: &BorgState) -> bool {
     st.borg.tr(BI_MAXHP) < param(Param::trap_recover_max_hp)
 }
 
-fn on_stairs(st: &BorgState) -> Option<u32> {
+/// Whether the Borg may take a staircase of this kind now: up unless
+/// descent is forced; down unless rising or refused (`more_refused`, as the
+/// down-stairs flow). The approach, the cut-off probe and the exit use the
+/// same set (review of #1086).
+fn usable(st: &mut BorgState, feat: u32) -> bool {
+    if feat == FEAT_LESS {
+        !engine::player_opt(OPT_birth_force_descend)
+    } else {
+        !st.borg.goal.rising && !borg_flow_stairs::more_refused(st, false)
+    }
+}
+
+fn usable_stairs(st: &mut BorgState) -> Vec<loc> {
+    let mut out = Vec::new();
+    if st.stairs.less.num > 0 && usable(st, FEAT_LESS) {
+        for i in 0..st.stairs.less.num.max(0) as usize {
+            out.push(loc { x: st.stairs.less.x[i], y: st.stairs.less.y[i] });
+        }
+    }
+    if st.stairs.more.num > 0 && usable(st, FEAT_MORE) {
+        for i in 0..st.stairs.more.num.max(0) as usize {
+            out.push(loc { x: st.stairs.more.x[i], y: st.stairs.more.y[i] });
+        }
+    }
+    out
+}
+
+/// The usable staircase the Borg stands on, if any.
+fn on_stairs(st: &mut BorgState) -> Option<u32> {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
-    (feat == FEAT_LESS || feat == FEAT_MORE).then_some(feat)
+    ((feat == FEAT_LESS || feat == FEAT_MORE) && usable(st, feat)).then_some(feat)
 }
 
 fn danger_here(st: &mut BorgState) -> i32 {
@@ -323,10 +413,19 @@ fn sync_level(st: &mut BorgState) {
 /// Place the pending message: count it, remember the trap's kind, and
 /// switch rules 1 and 3 on.
 fn place_pending(st: &mut BorgState) {
-    let Some((kind, ambiguous, disarm, _)) = st.trap_way.pending.take() else { return };
-    let here = st.borg.c;
-    let grid = if disarm { st.trap_way.target.unwrap_or(here) } else { here };
-    if ambiguous && !st.cave.grid(grid.x, grid.y).trap {
+    // A D or W target is consumed by the next think, message or not.
+    let target = st.trap_way.target.take();
+    let Some(p) = st.trap_way.pending.take() else { return };
+    let kind = p.kind;
+    let Some(grid) = trigger_grid(p.disarm, target, p.from, p.dest, st.borg.c) else {
+        // A disarm of a trap the Borg did not name: still a trap that may hurt.
+        if weak(st) && param(Param::trap_recover) != 0 && !whole(st) && !st.trap_way.recovering {
+            st.trap_way.recovering = true;
+            borg_note(st, "# Trap: hurt by a trap, back to the stairs to recover");
+        }
+        return;
+    };
+    if p.ambiguous && !st.cave.grid(grid.x, grid.y).trap {
         return;
     }
     let w = &mut st.trap_way;
@@ -350,7 +449,9 @@ fn place_pending(st: &mut BorgState) {
         st.trap_way.recovering = true;
         borg_note(st, "# Trap: hurt by a trap, back to the stairs to recover");
     }
-    if trap_dense(param(Param::trap_leave_level_count), set_off, near) && !st.trap_way.leaving {
+    if trap_dense(param(Param::trap_leave_level_count), param(Param::trap_leave_near_count), set_off, near)
+        && !st.trap_way.leaving
+    {
         st.trap_way.leaving = true;
         borg_note(st, "# Trap: a trap-dense level, leaving");
     }
@@ -365,16 +466,14 @@ fn known_trap(st: &BorgState) -> bool {
     })
 }
 
-/// Spread from every known staircase; the Borg's flow cost.
-fn stair_cost(st: &mut BorgState, through_traps: bool) -> u8 {
+/// Spread from the usable staircases; the Borg's flow cost (255: none).
+fn stair_cost(st: &mut BorgState, stairs: &[loc], through_traps: bool) -> u8 {
     borg_flow::borg_flow_clear(st);
-    for i in 0..st.stairs.less.num.max(0) as usize {
-        let (y, x) = (st.stairs.less.y[i], st.stairs.less.x[i]);
-        borg_flow::borg_flow_enqueue_grid(st, y, x);
+    if stairs.is_empty() {
+        return 255;
     }
-    for i in 0..st.stairs.more.num.max(0) as usize {
-        let (y, x) = (st.stairs.more.y[i], st.stairs.more.x[i]);
-        borg_flow::borg_flow_enqueue_grid(st, y, x);
+    for g in stairs {
+        borg_flow::borg_flow_enqueue_grid(st, g.y, g.x);
     }
     let was = std::mem::replace(&mut st.flow.through_traps, through_traps);
     borg_flow::borg_flow_spread_stairs(st, 250, false, true, false, -1, false);
@@ -382,29 +481,32 @@ fn stair_cost(st: &mut BorgState, through_traps: bool) -> u8 {
     st.flow.cost_at(st.borg.c.y, st.borg.c.x)
 }
 
-/// The first known trap on the cheapest route of the spread flow from the
-/// Borg's grid to a staircase.
-fn first_trap(st: &BorgState) -> Option<loc> {
-    let mut p = st.borg.c;
+/// The eight neighbours, in `ddx_ddd`'s order (cave.c).
+const AROUND: [(i32, i32); 8] = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, 1), (1, -1), (-1, -1)];
+
+/// The first known trap on the cheapest route of a spread flow (`cost`)
+/// from `from` to a staircase; a trap under `from` itself is not one (the
+/// Borg is already on it).
+pub(crate) fn first_trap_by(from: loc, cost: impl Fn(loc) -> u8, trap: impl Fn(loc) -> bool) -> Option<loc> {
+    let mut p = from;
     for _ in 0..250 {
-        let cost = st.flow.cost_at(p.y, p.x);
-        if cost == 0 {
+        let here = cost(p);
+        if here == 0 {
             return None;
         }
         let mut best: Option<(u8, loc)> = None;
-        for d in 0..8 {
-            let q = loc { x: p.x + i32::from(engine::ddx_ddd(d)), y: p.y + i32::from(engine::ddy_ddd(d)) };
+        for (dx, dy) in AROUND {
+            let q = loc { x: p.x + dx, y: p.y + dy };
             if !(1..AUTO_MAX_X - 1).contains(&q.x) || !(1..AUTO_MAX_Y - 1).contains(&q.y) {
                 continue;
             }
-            let c = st.flow.cost_at(q.y, q.x);
-            if c < cost && best.is_none_or(|(b, _)| c < b) {
+            let c = cost(q);
+            if c < here && best.is_none_or(|(b, _)| c < b) {
                 best = Some((c, q));
             }
         }
         let (_, q) = best?;
-        let g = st.cave.grid(q.x, q.y);
-        if g.trap && !g.glyph {
+        if trap(q) {
             return Some(q);
         }
         p = q;
@@ -412,9 +514,22 @@ fn first_trap(st: &BorgState) -> Option<loc> {
     None
 }
 
+fn first_trap(st: &BorgState) -> Option<loc> {
+    first_trap_by(st.borg.c, |g| st.flow.cost_at(g.y, g.x), |g| {
+        let a = st.cave.grid(g.x, g.y);
+        a.trap && !a.glyph
+    })
+}
+
 fn rest_here(st: &mut BorgState, why: &str) -> bool {
     if whole(st) || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || danger_here(st) > 0 {
         return false;
+    }
+    // Cures and the recovery's own guards first: poison or a cut keeps
+    // ticking (game-world.c:513-538) and each tick breaks the rest
+    // (player-util.c:197-210; review of #1086).
+    if crate::borg_recover::borg_recover(st) {
+        return true;
     }
     borg_note(st, &format!("# Trap: resting {why}"));
     borg_keypress(st, keycode_t::from(b'R'));
@@ -437,7 +552,11 @@ fn count_try(st: &mut BorgState, t: loc) {
 /// Rule 2: the Borg is cut off from every staircase by the trap `t`.
 fn reopen_way(st: &mut BorgState, t: loc) -> bool {
     let b = &st.borg;
-    if b.tr(BI_ISBLIND) != 0 || b.tr(BI_ISCONFUSED) != 0 || b.tr(BI_ISIMAGE) != 0 || b.tr(BI_LIGHT) == 0 {
+    // Without light the light check (after this hook) acts first.
+    if b.tr(BI_LIGHT) == 0 {
+        return false;
+    }
+    if b.tr(BI_ISBLIND) != 0 || b.tr(BI_ISCONFUSED) != 0 || b.tr(BI_ISIMAGE) != 0 {
         return rest_here(st, "before reopening the way back");
     }
     if tries_at(st, t) >= param(Param::trap_disarm_max_tries) {
@@ -450,7 +569,11 @@ fn reopen_way(st: &mut BorgState, t: loc) -> bool {
         None => b.tr(BI_DISP).min(b.tr(BI_DISM)),
     };
     let chance = disarm_chance(skill, b.tr(BI_CDEPTH));
-    let walk = walk_safe(kind, b.tr(BI_CURHP));
+    // A walk leaves the trap in place: only to reach the stairs now (rule 1
+    // recovering, rule 3 leaving). To explore on, it is disarmed, or the
+    // Borg would cross it back and forth (seed 1868115537 on 09580159).
+    let wants_stairs = st.trap_way.recovering || st.trap_way.leaving;
+    let walk = wants_stairs && walk_safe(kind, b.tr(BI_CURHP));
     let verdict = reopen(chance, param(Param::trap_disarm_min_percent), walk, whole(st));
     if verdict == Reopen::Rest {
         return rest_here(st, &format!("before disarming the trap at ({},{}) (chance {chance}%)", t.y, t.x));
@@ -472,6 +595,8 @@ fn reopen_way(st: &mut BorgState, t: loc) -> bool {
     }
     count_try(st, t);
     st.trap_way.target = Some(t);
+    // As borg_play_step: the grid the Borg acts on.
+    st.borg.goal.g = t;
     let key = keycode_t::from(b'0' + dir as u8);
     if verdict == Reopen::Walk {
         borg_note(st, &format!("# Trap: walking onto the {kind:?} that cuts the way back (disarm {chance}%)"));
@@ -486,19 +611,9 @@ fn reopen_way(st: &mut BorgState, t: loc) -> bool {
     true
 }
 
-/// Take the staircase the Borg stands on, if it may.
+/// Take the usable staircase the Borg stands on (`on_stairs`).
 fn take_stairs(st: &mut BorgState, feat: u32, why: &str) -> bool {
-    let key = if feat == FEAT_LESS {
-        if engine::player_opt(OPT_birth_force_descend) {
-            return false;
-        }
-        b'<'
-    } else {
-        if st.borg.goal.rising || borg_flow_stairs::more_refused(st, false) {
-            return false;
-        }
-        b'>'
-    };
+    let key = if feat == FEAT_LESS { b'<' } else { b'>' };
     borg_note(st, &format!("# Trap: taking the stairs ({why})"));
     borg_keypress(st, keycode_t::from(key));
     true
@@ -517,9 +632,9 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
         borg_note(st, "# Trap: recovered, exploring again");
     }
 
-    let stairs = st.stairs.less.num > 0 || st.stairs.more.num > 0;
-    if param(Param::trap_way_back) != 0 && stairs && known_trap(st) {
-        if stair_cost(st, false) >= 250 && stair_cost(st, true) < 250 {
+    let stairs = usable_stairs(st);
+    if param(Param::trap_way_back) != 0 && !stairs.is_empty() && known_trap(st) {
+        if stair_cost(st, &stairs, false) >= 250 && stair_cost(st, &stairs, true) < 250 {
             if let Some(t) = first_trap(st) {
                 return reopen_way(st, t);
             }
@@ -540,13 +655,14 @@ pub(crate) fn think(st: &mut BorgState) -> bool {
             return true;
         }
         if recovering {
-            return crate::borg_recover::borg_recover(st) || rest_here(st, "on the stairs after a trap");
+            return rest_here(st, "on the stairs after a trap");
         }
-        return take_stairs(st, feat, "a trap-dense level")
-            || borg_flow_stairs::borg_flow_stair_less(st, GOAL_RECOVER, false);
+        return take_stairs(st, feat, "a trap-dense level");
     }
-    if borg_flow_stairs::borg_flow_stair_both(st, GOAL_RECOVER, false) {
-        borg_note(st, "# Trap: back to the stairs");
+    if stair_cost(st, &stairs, false) < 250
+        && borg_flow::flow_commit(st, Some(b"usable stairs after a trap"), GOAL_RECOVER)
+        && borg_flow::borg_flow_old(st, GOAL_RECOVER)
+    {
         return true;
     }
     recovering && rest_here(st, "where it stands (no staircase in reach)")
@@ -616,9 +732,52 @@ mod tests {
 
     #[test]
     fn trap_dense_counts_the_level_or_the_arrival() {
-        assert!(!trap_dense(0, 9, 9));
-        assert!(!trap_dense(2, 1, 1));
-        assert!(trap_dense(2, 2, 0));
-        assert!(trap_dense(2, 1, 2));
+        assert!(!trap_dense(0, 0, 9, 9));
+        assert!(!trap_dense(2, 0, 1, 1));
+        assert!(trap_dense(2, 0, 2, 0));
+        // The near count acts below the level count: one trap near the
+        // arrival, one level trap.
+        assert!(trap_dense(3, 1, 1, 1));
+        assert!(!trap_dense(3, 2, 2, 1));
+        assert!(!trap_dense(0, 2, 5, 1));
+    }
+
+    fn at(x: i32, y: i32) -> loc {
+        loc { x, y }
+    }
+
+    /// A teleport rune set off twice from the same step lands the Borg on
+    /// two grids; both activations are the rune's grid.
+    #[test]
+    fn a_teleport_rune_is_its_own_grid_not_the_landing() {
+        let (from, rune) = (at(10, 10), at(11, 10));
+        assert_eq!(trigger_grid(false, None, from, rune, at(40, 30)), Some(rune));
+        assert_eq!(trigger_grid(false, None, from, rune, at(5, 50)), Some(rune));
+    }
+
+    #[test]
+    fn a_disarm_is_placed_at_its_target_only() {
+        let t = at(11, 10);
+        assert_eq!(trigger_grid(true, Some(t), at(10, 10), at(30, 30), at(10, 10)), Some(t));
+        assert_eq!(trigger_grid(true, None, at(10, 10), at(11, 10), at(10, 10)), None);
+        // A walk with no step under way (a stale goal) is where the Borg is.
+        assert_eq!(trigger_grid(false, None, at(10, 10), at(30, 30), at(10, 10)), Some(at(10, 10)));
+    }
+
+    /// The turn after a `W` onto a trap that stays: the Borg stands on it in
+    /// the only corridor back. The spread may leave the grid underfoot (and
+    /// only that one), and the route ahead has no trap to clear.
+    #[test]
+    fn a_trap_that_survives_the_step_is_left_not_cleared() {
+        let borg = at(20, 10);
+        assert!(underfoot_open_with(true, borg, 20, 10));
+        assert!(!underfoot_open_with(true, borg, 19, 10));
+        assert!(!underfoot_open_with(false, borg, 20, 10));
+        // Corridor x = 15..=20 at y = 10, the staircase at x = 15.
+        let cost = |g: loc| if g.y == 10 && (15..=20).contains(&g.x) { (g.x - 15) as u8 } else { 255 };
+        let trap_under = |g: loc| g == borg;
+        assert_eq!(first_trap_by(borg, cost, trap_under), None);
+        let second = |g: loc| g == borg || g == at(17, 10);
+        assert_eq!(first_trap_by(borg, cost, second), Some(at(17, 10)));
     }
 }
