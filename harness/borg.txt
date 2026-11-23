@@ -1249,6 +1249,17 @@ borg_param_caution_stairs_immobile_reach = 0
 # #931: the reach-free route at most this many steps costlier than the
 # ordinary one (0 = any); read only with the switch on. 20 is a hypothesis.
 borg_param_caution_stairs_immobile_reach_extra_steps = 20
+# #1125 (owner: "from paralyzing monsters it is necessary to walk away"; a
+# floating eye's paralysis lock killed Necromancer 453254028 at DL1). Without
+# Free Action: next to an awake paralyser the Phase rule's fight is lost; the
+# first action next to a never-moving one is a step out of its reach; no flow
+# enters a known paralyser's reach (stair flights included); and a
+# never-moving monster's record survives the anti-bounce reset and the
+# 2000-turn expiry. Shipped 0 (today's play); 1 is the hypothesis.
+borg_param_escape_paralyser_fight_lost = 0
+borg_param_caution_paralyser_step_away = 0
+borg_param_caution_paralyser_no_reach = 0
+borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
