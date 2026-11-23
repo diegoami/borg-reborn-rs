@@ -12,6 +12,37 @@ Resolve provenance/parameter/native-shadow/tooling/archive conflicts without
 discarding either track. Historical R4 receivers and all original evidence
 stay fixed. The source carry is not a generic upstream re-vendor operation.
 
+The exact selected main now builds in an isolated clean checkout with its
+required right-to-left C argument evaluation. Native smoke passes 3/3 under
+the shipped settings; this is a receiving control, not R4.5 shadow parity.
+An initial smoke invocation completed all three games but failed in harness
+postprocessing: the selected Cemetery toolkit did not match main's pin and
+`bc` was absent from the invocation PATH. All original outputs and failed
+statuses are retained. The pinned toolkit was checked out separately,
+postprocessing recovered, and the complete suite repeated into a fresh output
+directory successfully. Neither invocation had a natural death. These repeats
+are the same three starts, not six independent games. Runtime evidence stays
+local; no new reports or dossiers have been published.
+
+`scripts/r45-receiving-surface.py` verifies R45-RECEIVING-SURFACE.json against
+the exact Git objects. It inventories 708 definitions in the 14 existing
+primary native modules, plus the seven new modules. These include private
+helpers, methods and conditional definitions, not 708 independent decisions.
+The receiving source interleaves test modules with later production policy;
+splitting at the first cfg(test) would silently omit that policy. The bounded
+extractor blanks complete test items while preserving offsets and subsequent
+production. Unsupported conditions mentioning test fail closed; other cfg arms
+remain visible, not evaluated. Regression tests cover this boundary.
+
+Eleven old native entry signatures need explicit reconciliation. Besides
+retired unknown-item actions, main retires borg_caution_phase and
+sell_one_selected, expands confirm_purchase with quantity and paid inputs,
+and changes item/home/quantity mutability or power visibility. The inventory
+does not approve replacement semantics or expand R ownership automatically.
+Next implement the receiving merge and owned policies, then update source
+proofs, dispatch, typed dependencies, fixtures and coverage for that epoch.
+Do not re-record historical seam manifests to bless a changed native source.
+
 R5 stays paused. This task and the eventual R4.5 milestone need their own
 review/CI gates. Do not confuse R4 acceptance, future receiving parity and
 review-baseline integration. The current R4 review checkpoint CI was still

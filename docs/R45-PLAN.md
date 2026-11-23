@@ -73,8 +73,18 @@ merge or validation result.
 
 ## Current state
 
-Preflight and plan reconciliation only. No receiving merge, policy carry,
-new engine build, new game or R4.5 parity claim is made. The carry branch is
+Preflight, production-surface inventory and isolated receiving control setup
+are complete. The exact main control builds and its native smoke passes 3/3
+under shipped settings. The first smoke invocation's postprocessing failure
+and successful repeat are retained separately (R856-HANDOVER.md). No receiving
+merge, owned-policy carry or R4.5 shadow parity claim is made. The carry branch is
 `task/T856-r45-main-carry`, based on accepted R4. Its PR stays draft until the
 implementation and required verification are complete. Owner R4 acceptance
 permits this catch-up work; it does not accept the unfinished R4.5 result.
+
+R45-RECEIVING-SURFACE.json pins complete production definitions in all 14
+primary native modules and the seven new modules, retaining production after
+interleaved test modules. Eleven existing native entry signatures differ or
+are retired. The inventory is not a dependency/ownership classification or
+semantic parity proof. Its generator fails closed on unsupported test cfg
+conditions instead of silently truncating receiving policy.

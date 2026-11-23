@@ -94,6 +94,79 @@ def functions(text):
     return found
 
 
+def without_test_items(text):
+    """Blank complete cfg(test) items, preserving offsets and later production.
+
+    This is a source inventory, not a cfg evaluator. Other cfg arms remain
+    visible. Unsupported conditions mentioning `test` fail closed so a new
+    receiving source cannot silently turn test code into an owned policy.
+    """
+    code = mask_non_code(text)
+    spans = []
+    for match in re.finditer(r'#!?\s*\[\s*cfg\s*\(', code):
+        start = match.start()
+        if any(a <= start < b for a, b in spans):
+            continue
+        end = _balanced_end(code, code.index('[', start), '[', ']')
+        attribute = code[start:end]
+        if not re.search(r'\btest\b', attribute):
+            continue
+        if not re.fullmatch(r'#\s*\[\s*cfg\s*\(\s*test\s*\)\s*\]', attribute):
+            raise ValueError('unsupported test cfg: ' + text[start:end])
+        pos = end
+        while True:
+            while pos < len(code) and code[pos].isspace():
+                pos += 1
+            if not code.startswith('#[', pos):
+                break
+            pos = _balanced_end(code, pos + 1, '[', ']')
+        item = re.match(r'(?:pub(?:\([^)]*\))?\s+)?(?:async\s+)?(fn|mod|const|static)\b', code[pos:])
+        if not item:
+            raise ValueError('unsupported cfg(test) item: ' + text[pos:pos + 80])
+        kind = item[1]
+        if kind == 'fn':
+            definitions = functions(text[pos:])
+            first = next(iter(definitions.values()), [])
+            if not first:
+                raise ValueError('missing cfg(test) function body')
+            finish = pos + len(first[0])
+        else:
+            cursor = pos + item.end()
+            while cursor < len(code):
+                c = code[cursor]
+                if c in '([{':
+                    close = {'(': ')', '[': ']', '{': '}'}[c]
+                    cursor = _balanced_end(code, cursor, c, close)
+                    if c == '{' and kind == 'mod':
+                        break
+                elif c == ';':
+                    cursor += 1
+                    break
+                else:
+                    cursor += 1
+            else:
+                raise ValueError('unfinished cfg(test) item')
+            finish = cursor
+        spans.append((start, finish))
+    out = list(text)
+    for start, end in spans:
+        for pos in range(start, end):
+            if text[pos] != '\n':
+                out[pos] = ' '
+    return ''.join(out)
+
+
+def _balanced_end(code, start, opening, closing):
+    depth = 1
+    pos = start + 1
+    while pos < len(code):
+        depth += (code[pos] == opening) - (code[pos] == closing)
+        pos += 1
+        if depth == 0:
+            return pos
+    raise ValueError('unbalanced Rust delimiter: ' + opening)
+
+
 def read(repo, ref, path):
     result = subprocess.run(['git', '-C', str(repo), 'show', f'{ref}:{path}'], capture_output=True, text=True)
     if result.returncode:
