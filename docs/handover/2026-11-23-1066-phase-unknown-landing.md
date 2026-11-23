@@ -126,9 +126,10 @@ The review's findings are in [#1075](https://github.com/diegoami/borg-reborn-rs/
    itself needs the engine's RNG and bounds, so no unit test runs it; the
    replays below do.
 
-Re-checked on the merged head: `cargo test --release -p borg-core` 721
-passed, plus fmt, clippy, the workspace tests, the citations and smoke
-(below). The replays on `206cf4e7` plus the updated patch:
+Re-checked before and after merging track-p `df84b81e` (#1074, which grew
+smoke to 4 runs and shipped the #926 bundle): `cargo test --release -p
+borg-core` 721 passed, fmt, clippy, the workspace tests and the citations
+pass, and smoke is 4/4 identical to `smoke-borg-rs`. The replays on `206cf4e7` plus the updated patch:
 
 | arm | Priest 694417276 | Blackguard 2025089708 |
 |---|---|---|
