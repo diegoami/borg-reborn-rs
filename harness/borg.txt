@@ -1757,6 +1757,19 @@ borg_param_fast_fragile_speed_margin = 5
 borg_param_fast_fragile_kill_turns = 2
 borg_param_fast_fragile_damage_percent = 25
 borg_param_fast_fragile_group_max = 2
+# #914: above 0, more than this many marked attackers in contact skip the
+# fast-fragile attack on every marked target (one out of contact too) and lift
+# the heal ban whether or not an escape is available (a group exception to
+# #842). No hand-off to caution is guaranteed: other attack-on-sight entries,
+# the lone-target attack and the winning fight can act first, and caution
+# heals before its Phase Door. At 0 nothing is counted: today's play.
+# Shipped 0 (owner, 2026-11-23: of the cave-spider switches only #941's speed
+# flag ships on); 1 is the value to try, a hypothesis (seed 2008390085, three
+# cave spiders: it changes that game, no survival effect is measured).
+# With fast_fragile_by_stats = 0 only crows and wild cats are marked, neither
+# declares friends, but independent spawns (a crow and a wild cat too) can
+# still be adjacent. The zoo has not measured it (borg-zoo#652).
+borg_param_fast_fragile_contact_max = 0
 # #926: the heal floor (percent of max HP), the quantile of "the next turn
 # kills" (0 = the mean, 100 = the maximum) and the Borg's own cut/poison in
 # it. 0 = the play before #1072. Shipped together (#1072, owner 2026-11-23:

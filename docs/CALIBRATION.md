@@ -5693,7 +5693,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6276` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6282` |
 
 ## C Borg dive gates (#768)
 
@@ -8300,3 +8300,50 @@ measurement (RULES 14). Margin 5, the HP cutoff and margin 15 are hypotheses.
 |---|---:|---|---|---|
 | `caution_retreat_from_faster` | 0 | flag | 0–1 | `borg_caution.rs:1174` |
 | `caution_retreat_faster_margin` | 5 | speed points | 0–40 | `borg_caution.rs:1176` |
+
+## Fast-fragile groups in contact (#914)
+
+The registry now holds **2506** parameters (`check-param-citations.py` on
+this branch merged with track-p `182ca8b2`; one added by #914).
+
+`fast_fragile_group_max` counts others of the race in view, so three cave
+spiders in contact passed as fast-fragile. The fast-fragile attack, before
+`borg_caution`, then took the turn the control spent on its emergency Phase
+Door (seed 2008390085, turn 64,454, borg-zoo#596). Above 0, more than this
+many marked attackers awake next to the Borg (`crowded`,
+`borg_fast_fragile.rs:674`) change two things:
+
+- the `continue` in `attack_on_sight`'s fast-fragile branch
+  (`borg_fight_attack.rs:6197`) skips the fast-fragile attack on every
+  marked target in that think, one outside contact included;
+- the early return in `heal_banned` (`borg_fast_fragile.rs:629-632`) allows
+  healing against the group whether or not an escape is available: a group
+  exception to #842's owner rule.
+
+No hand-off to caution is guaranteed. The other attack-on-sight entries still
+run, and `fight_before_flight` (`borg_caution.rs:4139-4156`) can then take a
+lone-target or winning-fight action before `borg_caution`. Once caution is
+reached, it tries `borg_heal` (`borg_caution.rs:4380-4401`) before
+`borg_escape` (`:4711`), so its Phase Door is conditional. No test covers the
+combined policy; the unit test checks only `crowded_by`'s strict "more than".
+At 0, `crowded` returns before counting, so both legacy paths are unchanged.
+
+Compiled 0, shipped 0 (owner, 2026-11-23: of the cave-spider switches only
+#941's speed flag ships on); 1 is the value to try, a hypothesis. On the
+zoo's own game (`7f8c6b80` plus the fix, stats-ban settings) 1 alone takes
+the control's Phase Door at 64,454 and lives to the cap (CL6, DL2): the switch
+can change that game; it does not establish a survival effect for crows or
+wild cats. With the shipped `fast_fragile_by_stats = 0` only the named
+entries are marked: the crow and the wild cat
+(`harness/scary_monsters.txt:130-131`), neither with `friends`
+(`lib/gamedata/monster.txt:1133-1164`), so the switch acts only when two of
+them are awake next to the Borg at once; independent spawns, a mixed crow and
+wild cat pair included, can still be adjacent. No named game replayed on the
+merged head met that (2008390085 shipped and stats-ban, seed 224, smoke: keys
+unchanged). In borg-zoo#652's pilot `stats-contact`, `stats` and `ctl` played
+identically in 18 of 18 games, and the small and medium series have no
+isolated contact arm (RULES 14).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `fast_fragile_contact_max` | 0 | monsters | 0–100 | `borg_fast_fragile.rs:675` |

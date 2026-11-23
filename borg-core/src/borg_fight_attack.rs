@@ -6190,6 +6190,12 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         if crate::borg_fast_fragile::policy() {
             if let Some((source, facts, attack)) = crate::borg_fast_fragile::classify(st, i) {
                 if !crate::borg_caution::category_attack_safe_with(st, i, false) { continue; }
+                // #914: a group in contact skips this attack, on a marked target in
+                // contact or not; later entries, then caution, decide (no hand-off).
+                if let Some(n) = crate::borg_fast_fragile::crowded(st) {
+                    borg_note(st, &format!("# Fast-fragile: {n} marked attackers in contact, caution decides (#914)"));
+                    continue;
+                }
                 let note = crate::borg_fast_fragile::describe(st, i, source, &facts);
                 borg_note(st, &note);
                 if crate::borg_fast_fragile::escape_instead(st, i, &facts) { return true; }
