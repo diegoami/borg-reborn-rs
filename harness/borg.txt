@@ -835,6 +835,12 @@ borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
 # explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
 borg_param_explore_bfs_hp_per_level = 0
+# #1110 (owner, 2026-11-23: "plan a little more food and light if we do
+# that"): while breadth-first exploration applies, the town planner's food
+# target (the five-ration floor included) and light goal (the light reserve
+# included) are this percent of today's. 150: 7.5 rations, 30,000 light turns.
+borg_param_explore_bfs_food_percent = 150
+borg_param_explore_bfs_light_percent = 150
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or
