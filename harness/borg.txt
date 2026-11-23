@@ -898,12 +898,22 @@ borg_param_explore_c_leave_when_done = 1
 # explore_mix_max_radius and C's leash. Shipped 1 (owner, 2026-11-23: "merge
 # it but with all settings on"), up to explore_mix_max_clevel per class.
 borg_param_explore_mixed = 1
-borg_param_explore_mix_radius = 5
-borg_param_explore_mix_step = 2
+borg_param_explore_mix_radius = 3
+borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-borg_param_explore_mix_max_radius = 30
+borg_param_explore_mix_max_radius = 10
+# #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
+# (and class)"): per mille a character level from CL1, linearly:
+# value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
+# Owner, 2026-11-23: "I would like the radius to start small and increase by
+# level", "make CL1 start from 10 maximum radius": the starting radius 3 at
+# CL1, 5 at CL3, 7 at CL5, 8 at CL7; the step 3, 4, 4, 5; the cap 10, 20, 30,
+# 40. The level caps stay as #1098 shipped them (the +1 added back-and-forth).
+borg_param_explore_mix_radius_dp = 300
+borg_param_explore_mix_step_dp = 100
+borg_param_explore_mix_max_radius_dp = 500
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50

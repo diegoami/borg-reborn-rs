@@ -1342,6 +1342,16 @@ struct MixModel {
     max: i32,
 }
 
+/// #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by
+/// level (and class)"): `base` grown by `dp` per mille a character level from
+/// CL1, linearly and rounded: base x (1000 + dp x (CL - 1)) / 1000. `dp` 0
+/// leaves it as it is.
+fn grow_by_level(base: i32, dp: i32, clevel: i32) -> i32 {
+    let levels = i64::from(clevel.max(1) - 1);
+    let scaled = i64::from(base) * (1000 + i64::from(dp) * levels);
+    i32::try_from((scaled + 500).div_euclid(1000)).unwrap_or(i32::MAX)
+}
+
 /// #1098: the depth band of the contact damage: 1 at DL1-5, 2 at DL6-10, ...
 fn depth_band(depth: i32) -> i32 {
     ((depth.max(1) + 4) / 5).max(1)
@@ -1411,7 +1421,10 @@ fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, ste
 /// known staircase.
 fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
     let frame = stair_frame(st, scum)?;
-    let start = value(Param::explore_mix_radius);
+    // #1160 (owner, 2026-11-23): the radius, the step and the cap grow by
+    // character level (per mille a level, per class).
+    let clevel = st.borg.tr(BI_CLEVEL);
+    let start = grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), clevel);
     let mut limit = mix_limit(MixModel {
         start,
         sight: value(Param::explore_mix_sight),
@@ -1420,12 +1433,12 @@ fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool>
         max_hp: st.borg.tr(BI_MAXHP),
         contact: value(Param::explore_mix_contact_damage),
         depth: st.borg.tr(BI_CDEPTH),
-        max: value(Param::explore_mix_max_radius),
+        max: grow_by_level(value(Param::explore_mix_max_radius), value(Param::explore_mix_max_radius_dp), clevel),
     });
     if c_leash_on(st) {
         limit = limit.min(borg_flow_misc::borg_get_leash(st, false));
     }
-    let step = value(Param::explore_mix_step);
+    let step = grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), clevel);
     let plan = mixed_plan(&frame.cands, Some(frame.borg_ring), start, step, limit, BREADTH_FIRST_MAX_RINGS);
     let stepped = match plan {
         Plan::Fallback => return None,
@@ -2132,6 +2145,24 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_mix_contact_damage), 5);
         assert_eq!(value(Param::explore_mix_max_radius), 30);
         assert_eq!(value(Param::explore_mix_max_clevel), 50, "compiled: no cap (C's leash ends at CL20)");
+        assert_eq!(value(Param::explore_mix_radius_dp), 0, "#1160: compiled, no growth");
+        assert_eq!(value(Param::explore_mix_step_dp), 0);
+        assert_eq!(value(Param::explore_mix_max_radius_dp), 0);
+    }
+
+    #[test]
+    fn the_radius_step_and_cap_grow_by_level() {
+        // #1160, the owner's shipped values.
+        assert_eq!(grow_by_level(5, 100, 1), 5, "CL1: the base");
+        assert_eq!(grow_by_level(5, 100, 3), 6, "radius: 5 x 1.2");
+        assert_eq!(grow_by_level(5, 100, 5), 7, "5 x 1.4");
+        assert_eq!(grow_by_level(5, 100, 7), 8, "5 x 1.6");
+        assert_eq!(grow_by_level(2, 100, 5), 3, "step: 2 x 1.4 = 2.8, rounded");
+        assert_eq!(grow_by_level(2, 100, 3), 2, "2 x 1.2 = 2.4");
+        assert_eq!(grow_by_level(20, 500, 3), 40, "cap: 20 x 2");
+        assert_eq!(grow_by_level(20, 500, 7), 80, "20 x 4");
+        assert_eq!(grow_by_level(30, 0, 9), 30, "dp 0: no growth");
+        assert_eq!(grow_by_level(5, 100, 0), 5, "CL below 1 counts as 1");
     }
 
     #[test]

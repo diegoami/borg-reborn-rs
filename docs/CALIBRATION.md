@@ -8007,7 +8007,28 @@ Compiled 50: no cap, and the walk ends with C's leash at CL20.
 | Blackguard | 0.67 / 0.63 / 0.11 / 0.14 / 0.23 | CL5 | 4 |
 
 The table pools every build, and recent runs are 5–10 times lower, so the cut
-at 0.25 is itself a hypothesis. borg-zoo#718's turns per (CL, DL) would turn
+at 0.25 is itself a hypothesis.
+
+**Growth by level** (#1160; owner, 2026-11-23: "the mixed search is a little
+spastic"; "all of them should grow in decpercentile by level (and class)";
+"I would like the radius to start small and increase by level"; "make CL1
+start from 10 maximum radius").
+- **The formula.** `explore_mix_radius`, `explore_mix_step` and
+  `explore_mix_max_radius` each grow by their `_dp`, per mille a character
+  level from CL1, linearly and rounded: value × (1000 + dp × (CL − 1)) / 1000
+  (`grow_by_level`).
+- **Per class.** Each `_dp` takes `__<class>`; compiled 0 means no growth.
+- **The level caps stay as #1098 shipped them.** Raising them by one, tried
+  first, added back-and-forth on the 20 starts (straight-back steps 7.7% →
+  9.2%) for no gain.
+
+Shipped:
+
+| | CL1 | CL3 | CL5 | CL7 |
+|---|---:|---:|---:|---:|
+| `explore_mix_radius` 3, `_dp` 300 (the radius it starts at) | 3 | 5 | 7 | 8 |
+| `explore_mix_step` 3, `_dp` 100 | 3 | 4 | 4 | 5 |
+| `explore_mix_max_radius` 10, `_dp` 500 (the cap) | 10 | 20 | 30 | 40 | borg-zoo#718's turns per (CL, DL) would turn
 these into rates per turn.
 
 **The walk.** It uses breadth-first's frame (`stair_frame`): each grid's ring
@@ -8081,15 +8102,18 @@ the ten below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1238` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1479` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1492` |
 | `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1291` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1414` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1427` |
 | `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1422` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1417` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1413` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1421` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1430` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1432` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1434` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1423` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1295` |
+| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1427` |
+| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1441` |
+| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1436` |
 
 ## An overweight Mage's torches, cursed spares and stat curse (#1151)
 
