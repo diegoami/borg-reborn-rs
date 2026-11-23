@@ -1,0 +1,94 @@
+{
+  "id": "CBUG-0153",
+  "source_groups": [],
+  "title": "borg_update_light() takes BI_LIGHT (the engine's cur_light) as the light radius, but the game lights ABS(cur_light) - 1, so the Borg marks one ring of dark grids as lit",
+  "site": "src/borg/borg-cave-light.c:borg_update_light",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-23",
+  "c": "present-at-pin (angband 574b618c, the engine borg-reborn-rs plays)",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reproduced-in-port",
+    "description": "In borg-reborn-rs's Rust port (borg-core, the same code) a monster two grids away in the dark with a torch is 'expected visible' (borg_follow_kill_aux), not seen, and deleted: borg_follow_kill deletes on every path that passes its checks (borg-rs's C bug 24, docs/c-borg/borg-rs-c-bugs.md group 24). Human Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets (borg-reborn-rs#877). Not reproduced on a native C game."
+  },
+  "notes": "Found by borg-reborn-rs (#877, #884; this record #886), not by borg-rs's discovery list (docs/c-borg/borg-rs-c-bugs.md, group 4 keeps the radius-2 shape 'as is') nor among better-borg-c's verified fixes (docs/c-borg/fixes/). Related, distinct defects in the same function: CBUG-0003 (west radius-2 shoulders omitted) and CBUG-0024 (duplicate light-list entries). Also: borg_check_light_only (src/borg/borg-light.c:109-237) tests BI_LIGHT == 1 / > 1 (:140, :181) as if they were radius 1 and 2, and borg_light_beam (:706-739) steps BI_LIGHT + 1 grids. The canonical tracker issue (diegoami/neo-angband-tracker, as every other finding) is not yet opened: this session cannot write there. Fixed in borg-reborn-rs behind cave_light_engine_radius (PRs #888, #894; shipped 1 on track-p, #1078/#1079).",
+  "tracker": null,
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "path": "src/borg/borg-cave-light.c",
+      "start": 96,
+      "end": 112,
+      "description": "radius 1 when BI_LIGHT >= 1, radius 2 when BI_LIGHT >= 2: BI_LIGHT taken as the radius"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "path": "src/borg/borg-cave-light.c",
+      "start": 69,
+      "end": 223,
+      "description": "borg_update_light: radius-2 shape lights (2,2) north and south (distance 3) and misses (2,1); radius-3 corners (3,3) are at distance 4"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "path": "src/cave-view.c",
+      "start": 654,
+      "end": 660,
+      "description": "calc_lighting: radius = ABS(cur_light) - 1 (add_light :616-646 lights distance() <= radius)"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "path": "lib/gamedata/object.txt",
+      "start": 241,
+      "end": 241,
+      "description": "Wooden Torch: LIGHT_2, so cur_light 2 lights distance 1"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "574b618c3bfec595f3503a58f8e488b1c4ae3a46",
+      "path": "src/borg/borg-light.c",
+      "start": 140,
+      "end": 181,
+      "description": "borg_check_light_only: BI_LIGHT == 1 / > 1 read as radius 1 / 2"
+    },
+    {
+      "role": "borg_reborn_rs",
+      "repository": "diegoami/borg-reborn-rs",
+      "issue": 877,
+      "description": "the light radius is one too large: unseen monsters two grids away deleted"
+    },
+    {
+      "role": "borg_reborn_rs",
+      "repository": "diegoami/borg-reborn-rs",
+      "issue": 884,
+      "description": "the dark flow, dark frontier, Light Beam and Call Light read the same radius"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-reborn-rs",
+      "repository": "diegoami/borg-reborn-rs",
+      "issues": [
+        877,
+        884,
+        886
+      ]
+    }
+  ],
+  "reported_sources": [],
+  "evidence_at_import": "port-reproduction",
+  "status_at_import": "fixed-in-port-behind-switch",
+  "proposals_at_import": [],
+  "next_at_import": "Open the canonical neo-angband-tracker issue, then a native C reproduction (a torch, a monster two grids away in the dark, borg_follow_kill deletes it) and a local proposal: radius = BI_LIGHT - 1 (necromancer unlight keeps C's radius), the engine's shape (distance() <= radius), and the same radius in borg_check_light_only and borg_light_beam.",
+  "record_kind": "local-finding"
+}

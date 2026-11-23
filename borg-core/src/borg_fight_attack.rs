@@ -79,6 +79,11 @@ pub struct FightAttackState {
     /// reused index starts again).
     pub unseen_shots: std::collections::BTreeMap<usize, (BorgTime, i32)>,
     pub(crate) pending_unseen: crate::borg_unseen_belief::PendingAttack,
+    /// borg-reborn-rs (#889): while a blast scores a grid, how many grids
+    /// its reach exceeds that grid's distance from the blast's centre (0
+    /// elsewhere): a believed monster that moved fewer grids is still hit
+    /// (`unseen_spread`).
+    pub(crate) unseen_blast_slack: i32,
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower
     /// is "do not shoot".
@@ -155,6 +160,7 @@ impl Default for FightAttackState {
             focused_kind: 0,
             unseen_shots: std::collections::BTreeMap::new(),
             pending_unseen: crate::borg_unseen_belief::PendingAttack::default(),
+            unseen_blast_slack: 0,
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
@@ -1780,8 +1786,9 @@ fn borg_launch_bolt_aux_hack(
     }
 
     /* Require current knowledge */
-    // borg-reborn-rs (#879): or a monster believed at its last grid.
-    let belief = crate::borg_unseen_belief::believed_weight(st, i as usize);
+    // borg-reborn-rs (#879): or a monster believed at its last grid; #889:
+    // with the blast's slack, when a blast scores the grid.
+    let belief = crate::borg_unseen_belief::believed_weight_with(st, i as usize, st.fight_attack.unseen_blast_slack);
     let age = borg_timer(st, kill.when);
     if belief.is_none()
         && (age > param(Param::attack_bolt_max_target_age)
@@ -2199,6 +2206,10 @@ fn borg_launch_bolt_at_location(
                 continue;
             }
 
+            // borg-reborn-rs (#889): the blast reaches rad - r grids beyond
+            // this one (read by the belief only under unseen_spread).
+            let slack = rad - r;
+
             /*  dispel spells should hurt the same no matter the rad: make r= y
              * and x */
             if rad == 10 {
@@ -2206,7 +2217,9 @@ fn borg_launch_bolt_at_location(
             }
 
             /* Collect damage, lowered by distance */
+            st.fight_attack.unseen_blast_slack = slack;
             n += borg_launch_bolt_aux_hack(st, i32::from(ag.kill), dam / (r + 1), typ, ammo_location, unseen);
+            st.fight_attack.unseen_blast_slack = 0;
 
             /* probable damage int was just changed by b_l_b_a_h*/
 

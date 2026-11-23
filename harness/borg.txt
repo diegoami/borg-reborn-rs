@@ -1680,6 +1680,19 @@ borg_param_unseen_belief = 1
 borg_param_unseen_max_age = 10
 borg_param_unseen_decay_percent = 5
 borg_param_unseen_max_shots = 3
+# #889: follow-ups of the belief, each shipped 0 until the zoo measures it.
+# unseen_death_clears 1 = "It dies." after a shot whose only believed target
+# was one record deletes it; unseen_light_reveal 1 = Light Room at a believed
+# HURT_LIGHT monster within two grids (2 = at any believed monster);
+# unseen_spread 1 = erratic movers and a blast's reach spread the belief.
+borg_param_unseen_death_clears = 0
+borg_param_unseen_light_reveal = 0
+borg_param_unseen_spread = 0
+# #885: 1 = a floor the engine shows dark loses a stale BORG_LIGHT (lit once
+# by a monster's light). #917: 1 = passable rubble stops the Borg's view, as
+# the engine's (terrain.txt: no LOS). Both shipped 0; no recorded case yet.
+borg_param_update_dark_clears_light = 0
+borg_param_view_rubble_blocks_sight = 0
 # #789: town hunt, ranged scoring bonus, and HP retreat floor.
 borg_param_town_hunt = 0
 borg_param_town_hunt_ranged_bonus_percent = 0

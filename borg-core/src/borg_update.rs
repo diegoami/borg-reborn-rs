@@ -327,6 +327,26 @@ fn borg_update_map(st: &mut BorgState) {
     }
 }
 
+/// A floor grid the engine shows neither glowing nor lit: `BORG_DARK`, and
+/// not `BORG_GLOW`. borg-reborn-rs (#885): with `clear_light`
+/// (`update_dark_clears_light` = 1) it also loses `BORG_LIGHT`. C keeps the
+/// mark, and `borg_update_light` clears only the grids of the Borg's own
+/// light list. So a grid the engine lit some other way (a monster's light)
+/// stays `BORG_LIGHT` after it goes dark, and `borg_follow_kill_aux` expects
+/// an unseen monster there to be visible: the record is deleted, and the
+/// position belief (#879) refuses it. A cleared mark asks for
+/// `borg_update_light`, which runs after the map scan (`borg_update`), so the
+/// Borg's own light grids are marked again in the same think (at
+/// `cave_light_engine_radius` 0 its list holds grids the engine leaves dark).
+fn dark_floor_info(info: u16, clear_light: bool) -> u16 {
+    let info = (info | BORG_DARK) & !BORG_GLOW;
+    if clear_light {
+        info & !BORG_LIGHT
+    } else {
+        info
+    }
+}
+
 /// One grid of `borg_update_map` (the body of its loop; a C `continue` is
 /// a `return`).
 fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
@@ -416,11 +436,17 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         // Handle "dark" floors
         let glow = engine::square_isglow(x, y);
         let lit = engine::square_islit(x, y);
+        let clear_light = param(Param::update_dark_clears_light) != 0;
         let ag = st.cave.grid_mut(x, y);
         if !glow && !lit {
             // Dark floor grid
-            ag.info |= BORG_DARK;
-            ag.info &= !BORG_GLOW;
+            let was_lit = ag.info & BORG_LIGHT != 0;
+            ag.info = dark_floor_info(ag.info, clear_light);
+            // borg-reborn-rs (#885): the own light set is re-marked this
+            // think, even when the Borg has not moved.
+            if clear_light && was_lit {
+                st.update.do_update_lite = true;
+            }
         } else if glow {
             // Perma Glowing Grid
             ag.info |= BORG_GLOW;
@@ -2694,5 +2720,22 @@ mod miss_wall_guess_tests {
         assert_eq!(in_view_target_age(fang, borg, &in_view, None), None);
         assert_eq!(in_view_target_age(fang, borg, &out_of_view, Some((54, 1))), None);
         assert_eq!(in_view_target_age(borg, borg, &in_view, Some((54, 1))), None);
+    }
+}
+
+#[cfg(test)]
+mod dark_floor_tests {
+    use super::*;
+
+    /// #885: a floor grid that goes dark loses a stale BORG_LIGHT under the
+    /// switch, and keeps C's marks without it. BORG_DARK is set and
+    /// BORG_GLOW cleared either way; other bits are untouched.
+    #[test]
+    fn a_dark_floor_loses_a_stale_light_mark_only_under_the_switch() {
+        let stale = BORG_LIGHT | BORG_GLOW | BORG_VIEW | BORG_OKAY;
+        assert_eq!(dark_floor_info(stale, false), BORG_LIGHT | BORG_VIEW | BORG_OKAY | BORG_DARK);
+        assert_eq!(dark_floor_info(stale, true), BORG_VIEW | BORG_OKAY | BORG_DARK);
+        assert_eq!(dark_floor_info(0, true), BORG_DARK);
+        assert_eq!(dark_floor_info(0, false), BORG_DARK);
     }
 }
