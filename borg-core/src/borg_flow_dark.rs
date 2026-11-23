@@ -862,10 +862,37 @@ fn bfs_hp_threshold(max_hp: i32, per_level: i32, clevel: i32) -> i32 {
 /// a committed exploration flow is dropped and the next think plans again
 /// (`borg_update`, when a staircase joins `st.stairs`).
 pub(crate) fn replan_on_new_stair(st: &mut BorgState) {
+    replan(st, "New staircase");
+}
+
+/// #1085 (re-review of #1088): a monster newly tracked, in view or not,
+/// drops a committed exploration flow too (`borg_flow_kill`; C clears the
+/// goal only for one in line of sight with a light).
+pub(crate) fn replan_on_new_monster(st: &mut BorgState) {
+    replan(st, "New monster");
+}
+
+fn replan(st: &mut BorgState, why: &str) {
     if breadth_first_active(st) && i32::from(st.borg.goal.type_0) == GOAL_DARK {
-        crate::borg_io::borg_note(st, "# New staircase: planning the breadth-first exploration again (#1085)");
+        crate::borg_io::borg_note(st, &format!("# {why}: planning the breadth-first exploration again (#1085)"));
         st.borg.goal.type_0 = 0;
     }
+}
+
+/// #1085 (re-review of #1088): while the Borg moves under boosted bravery
+/// (its avoidance above its HP: stuck recovery), the flow crosses unknown
+/// grids and known traps, so a Borg cut off from the staircases would look
+/// connected. Exploration is C's then.
+fn boosted_bravery(avoidance: i32, curhp: i32) -> bool {
+    avoidance > curhp
+}
+
+/// #1085 (re-review of #1088): the candidates the Borg can reach (`reach`,
+/// a spread from the Borg, read as `ring_of` reads the rings). The cap on
+/// rings applies after this, so rings the Borg cannot reach (another region
+/// with its own staircase) do not use up the tries.
+fn reachable_only<R: AsRef<[u8]>>(cands: &mut Vec<(i32, i32, i32)>, reach: &[R]) {
+    cands.retain(|&(y, x, _)| ring_of(reach, y, x).is_some());
 }
 
 /// No stair distance (`borg_data_hard`'s value, unreached by the spread).
@@ -971,6 +998,9 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
     if st.stairs.less.num == 0 && st.stairs.more.num == 0 {
         return None;
     }
+    if boosted_bravery(i32::from(st.borg.avoidance), st.borg.tr(BI_CURHP)) {
+        return None;
+    }
 
     /* Rings: one spread from every known staircase */
     wipe_and_clear(st);
@@ -1038,6 +1068,15 @@ fn borg_flow_dark_breadth_first(st: &mut BorgState) -> Option<bool> {
         for x in 1..=AUTO_MAX_X - 2 {
             consider(st, y, x, false);
         }
+    }
+
+    /* Only the candidates the Borg can reach (one spread from the Borg) */
+    crate::borg_flow::borg_flow_clear(st);
+    crate::borg_flow::borg_flow_enqueue_grid(st, st.borg.c.y, st.borg.c.x);
+    if st.flow.cost_at(st.borg.c.y, st.borg.c.x) == 0 {
+        crate::borg_flow::borg_flow_spread(st, 250, false, true, false, -1, false);
+        let reach = st.flow.data_cost.clone();
+        reachable_only(&mut cands, &reach);
     }
 
     let slack = value(Param::explore_bfs_slack);
@@ -1384,6 +1423,31 @@ mod breadth_first_tests {
         let m = Map::new(&["#######", "#?.@.?#", "#######"]);
         let rings = m.rings();
         assert_eq!(plan(&m.cands(&rings), ring_of(&rings, m.borg.0, m.borg.1), None, 0, 16), Plan::Fallback);
+    }
+
+    #[test]
+    fn rings_the_borg_cannot_reach_do_not_use_up_the_tries() {
+        // Re-review of #1088: two regions, each with its own staircase. The
+        // other region's candidates take rings 1-16; the only one the Borg
+        // can reach is in ring 17, next to it.
+        let mut cands: Vec<(i32, i32, i32)> = (1..=16).map(|r| (0, r, r)).collect();
+        cands.push((2, 0, 17));
+        let mut reach = vec![vec![NO_RING; 20]; 3];
+        reach[2][1] = 0; // the Borg, next to its candidate
+        let Plan::Rings(capped) = plan(&cands, Some(18), None, 0, 16) else { panic!("planned") };
+        assert!(capped.iter().all(|t| !t.goals.contains(&(2, 0))), "unfiltered, the cap drops it");
+        reachable_only(&mut cands, &reach);
+        assert_eq!(cands, vec![(2, 0, 17)]);
+        let Plan::Rings(tries) = plan(&cands, Some(18), None, 0, 16) else { panic!("planned") };
+        assert_eq!(tries[0].goals, vec![(2, 0)]);
+    }
+
+    #[test]
+    fn boosted_bravery_leaves_exploration_to_c() {
+        // Re-review of #1088: avoidance above HP, the flow crosses unknown
+        // grids and traps (`spread_blocked`'s twitchy), so no rings then.
+        assert!(boosted_bravery(30, 12));
+        assert!(!boosted_bravery(12, 12), "the avoidance is reset to the HP each think");
     }
 
     #[test]
