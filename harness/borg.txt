@@ -290,6 +290,19 @@ borg_param_town_prepared_curse = 2
 borg_param_town_prepared_confusion = 2
 borg_param_town_prepared_fear = 2
 
+# More Cure Critical Wounds and Neutralize Poison (#1138, owner: "more CCW and
+# cure poison potion, in a similar mechanism as Detect Invisible scrolls"): each
+# is a requirement row of its own like Detect Invisible's, the first N copies
+# worth a percent of the trip weight each, nothing past them, from
+# town_variety_min_depth. Detect Invisible (15 gold) is bought 2 to 15 times a
+# game, a Cure Critical Wounds (about 200 gold) 0 to 1.5 and a Neutralize Poison
+# (75) 0 to 1 (36 games, 200,000 turns, local), so the percents are above the
+# prepared 8. Hypotheses, not yet measured in the zoo. 0 = off.
+borg_param_town_prepared_ccw = 3
+borg_param_town_prepared_ccw_percent = 24
+borg_param_town_prepared_neutralize = 3
+borg_param_town_prepared_neutralize_percent = 16
+
 # Variety starts below the first level (#863, owner: "it is important that in
 # the first level we have the staples"): the staples' decay and the remedies
 # below only apply once the Borg has reached this depth, so its first visits

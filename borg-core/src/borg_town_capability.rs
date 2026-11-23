@@ -156,6 +156,12 @@ const DEV_CONTROL: usize = DEV_DETECT + 1;
 /// on the stat rows: a mushroom that restores a drain cannot raise a healthy
 /// stat, and a second copy adds nothing.
 const RESTORE_STAT_RESERVE: usize = DEV_CONTROL + 1;
+/// borg-reborn-rs (#1138, owner: "more CCW and cure poison potion, in a similar
+/// mechanism as Detect Invisible scrolls"): the first `town_prepared_ccw` Potions
+/// of Cure Critical Wounds and `town_prepared_neutralize` Potions of Neutralize
+/// Poison, one requirement row of their own each, from the variety depth.
+const PREP_CCW: usize = RESTORE_STAT_RESERVE + 1;
+const PREP_NEUTRALIZE: usize = PREP_CCW + 1;
 /// Situation capabilities a device supplies -> its device row. Invisible
 /// detection is not here: a Staff of Detect Invisible already fills the prepared
 /// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
@@ -243,8 +249,8 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-const _: () = assert!(RESTORE_STAT_RESERVE + 1 == NAMES.len());
-pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+const _: () = assert!(PREP_NEUTRALIZE + 1 == NAMES.len());
+pub const NAMES: [&str; 85] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -253,7 +259,7 @@ pub const NAMES: [&str; 83] = ["light turns", "nutrition", "healing HP", "poison
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
-    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges", "restore stat reserve"];
+    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges", "restore stat reserve", "prepared: Cure Critical Wounds", "prepared: Neutralize Poison"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -919,6 +925,15 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
             else if sval == st.item_val.sv_potion_cure_critical { Some(STAPLE_CCW) } else { None };
         if let Some(row) = row { out.push((row, UNIT)); }
     }
+    // borg-reborn-rs (#1138): a Cure Critical Wounds or a Neutralize Poison is one
+    // copy on its own prepared row.
+    if tval == TV_POTION && kind_prepared_on(st) {
+        let sval = i32::from(item.sval);
+        for (row, copies, percent) in kind_prepared_rows() {
+            let kind = if row == PREP_CCW { st.item_val.sv_potion_cure_critical } else { st.item_val.sv_potion_cure_poison };
+            if sval == kind && copies > 0 && percent > 0 { out.push((row, UNIT)); }
+        }
+    }
     // borg-reborn-rs (#987): a healing potion is one copy on the first-cure row.
     if first_cure_count() > 0 && tval == TV_POTION && out.iter().any(|&(id, _)| id == HEAL) {
         out.push((FIRST_CURE, UNIT));
@@ -1016,7 +1031,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let first_cure = first_cure_count();
     let mut curves = curves;
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
-    if first_cure > 0 || devices || restore_stat_on(st) { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
+    if first_cure > 0 || devices || restore_stat_on(st) || kind_prepared_on(st) { while curves.len() < COUNT { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); } }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
         packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
@@ -1149,6 +1164,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         }
     } else if count > DEV_CONTROL {
         for row in [DEV_ATTACK, DEV_ESCAPE, DEV_DETECT, DEV_CONTROL] { curve(row, 0, UNIT); }
+    }
+    // borg-reborn-rs (#1138): the Cure Critical Wounds and Neutralize Poison rows,
+    // as the prepared remedies' (a requirement of N copies, each worth a percent of
+    // the trip weight), a percent each.
+    {
+        let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
+        for (row, copies, percent) in kind_prepared_rows() {
+            if kind_prepared_on(st) && copies > 0 && percent > 0 {
+                let (weight, demand) = prepared_row(trip_weight, percent, copies);
+                curve(row, weight, demand);
+            } else if count > row {
+                curve(row, 0, UNIT);
+            }
+        }
     }
     // borg-reborn-rs (#1103; review of #1112, F1): the restore-stat reserve, one
     // copy worth `town_restore_stat_percent` of one stat's restore weight.
@@ -1660,6 +1689,26 @@ mod tests {
         assert_eq!(m.reserve(&vigor(Place::Home, 1), 1, UNIT), weight);
         m.curves[RESTORE_STAT_RESERVE][4] = UNIT;
         assert_eq!(m.reserve(&vigor(Place::Home, 1), 1, UNIT), 0);
+    }
+
+    /// #1138: the Cure Critical Wounds and Neutralize Poison rows are
+    /// requirements of their own: the first copies up to the target are worth
+    /// the same each, the next nothing, and one kind does not fill the other.
+    #[test]
+    fn the_ccw_and_neutralize_rows_are_requirements_of_their_own() {
+        let trip = 50 * UNIT;
+        let (w3, d3) = prepared_row(trip, 24, 3);
+        let (wn, dn) = prepared_row(trip, 16, 3);
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[PREP_CCW] = [PREP_CCW as i64, w3, d3, 0, 0];
+        m.curves[PREP_NEUTRALIZE] = [PREP_NEUTRALIZE as i64, wn, dn, 0, 0];
+        let one = scale_percent(trip, 24);
+        assert_eq!(m.gain(&[(PREP_CCW, UNIT)]), one, "the first copy");
+        assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]), 3 * one, "up to the target, the same each");
+        m.curves[PREP_CCW][3] = 3 * UNIT;
+        assert_eq!(m.gain(&[(PREP_CCW, UNIT)]), 0, "the fourth copy is worth nothing");
+        assert_eq!(m.gain(&[(PREP_NEUTRALIZE, UNIT)]), scale_percent(trip, 16), "the other kind is still wanted");
+        assert!(scale_percent(trip, 24) > scale_percent(trip, 8), "above Detect Invisible's percent");
     }
 
     #[test]
@@ -2485,6 +2534,17 @@ fn variety_started(st: &BorgState) -> bool {
 /// first levels and the model's shape before them are as they were. At 20 percent
 /// from the first level it displaced a 15-gold Detect Invisible in a recorded
 /// smoke game for a 60-gold Purging.
+/// (row, copies, percent) of the Cure Critical Wounds and Neutralize Poison rows.
+fn kind_prepared_rows() -> [(usize, i32, i32); 2] {
+    [(PREP_CCW, param(Param::town_prepared_ccw), param(Param::town_prepared_ccw_percent)),
+     (PREP_NEUTRALIZE, param(Param::town_prepared_neutralize), param(Param::town_prepared_neutralize_percent))]
+}
+
+/// The two kind rows exist from the variety depth when either is set (#1138).
+fn kind_prepared_on(st: &BorgState) -> bool {
+    variety_started(st) && kind_prepared_rows().iter().any(|&(_, copies, percent)| copies > 0 && percent > 0)
+}
+
 fn restore_stat_on(st: &BorgState) -> bool {
     variety_started(st) && param(Param::town_restore_stat_percent) > 0
         && st.borg.tr(BI_MAXDEPTH) >= param(Param::town_restore_stat_min_depth)

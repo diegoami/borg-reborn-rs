@@ -66,7 +66,7 @@ PINNED_TOWN_SETTINGS = [
     # #1103 shipped the Black Market threshold and the Restore Life Levels
     # reserve after these incidents.
     ("town_black_market_min_gold", 0), ("town_restore_life_reserve", 0),
-    ("town_restore_stat_percent", 0), ("town_restore_stat_min_depth", 0), ("town_restore_life_min_depth", 12), ("town_restore_life_min_gold", 0),
+    ("town_restore_stat_percent", 0), ("town_prepared_ccw", 0), ("town_prepared_neutralize", 0), ("town_restore_stat_min_depth", 0), ("town_restore_life_min_depth", 12), ("town_restore_life_min_gold", 0),
     # #1123 enabled the retreat guards after these incidents.
     ("caution_retreat_reentry_ticks", 0), ("caution_retreat_oscillation_limit", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
