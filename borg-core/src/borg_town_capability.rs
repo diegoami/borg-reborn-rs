@@ -2479,11 +2479,16 @@ fn variety_started(st: &BorgState) -> bool {
 
 /// borg-reborn-rs (#895): the device rows exist with `town_device_percent`
 /// above 0 once the variety has started (the first level buys the staples alone).
-/// The restoring-mushroom reserve row is on with the other variety rows: from
-/// `town_variety_min_depth`, so the first level and the model's shape before it
-/// are as they were (a model padded to every row from the first shop changed a
-/// recorded smoke game).
-fn restore_stat_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_restore_stat_percent) > 0 }
+/// The restoring-mushroom reserve row is on with the other variety rows (from
+/// `town_variety_min_depth`) and from `town_restore_stat_min_depth` (the first
+/// stat-draining monsters: a purple mushroom patch, depth 6, monster.txt), so the
+/// first levels and the model's shape before them are as they were. At 20 percent
+/// from the first level it displaced a 15-gold Detect Invisible in a recorded
+/// smoke game for a 60-gold Purging.
+fn restore_stat_on(st: &BorgState) -> bool {
+    variety_started(st) && param(Param::town_restore_stat_percent) > 0
+        && st.borg.tr(BI_MAXDEPTH) >= param(Param::town_restore_stat_min_depth)
+}
 
 fn device_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_device_percent) > 0 }
 

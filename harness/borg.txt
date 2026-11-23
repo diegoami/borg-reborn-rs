@@ -341,6 +341,9 @@ borg_param_town_black_market_level_delta = 100
 # (a second adds nothing; permanent stat gains are untouched). Bought at the
 # Black Market and kept. 0 = worth nothing until a stat is drained. Hypothesis.
 borg_param_town_restore_stat_percent = 50
+# From this maximum depth (levels): the first stat-draining monster is the purple
+# mushroom patch, depth 6 (monster.txt). 0 = with the variety rows.
+borg_param_town_restore_stat_min_depth = 6
 
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase

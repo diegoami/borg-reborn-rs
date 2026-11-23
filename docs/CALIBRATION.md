@@ -876,7 +876,7 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2258` |
 | `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2650` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2643` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2652` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -3215,7 +3215,7 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:641` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2564` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2573` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2436` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
@@ -7104,7 +7104,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2541` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2550` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -7278,7 +7278,11 @@ Changed:
 - `town_restore_stat_percent` (compiled 0, **shipped 50**, review of #1112,
   F2 and the re-review's F1): a Mushroom of Vigor (all five stats) or Purging
   (strength and constitution), which the Borg eats when a stat is drained
-  (`borg_use_things`; `borg_caution` while fighting a unique), is one copy on a
+  (`borg_use_things`; `borg_caution` while fighting a unique), from maximum depth
+  `town_restore_stat_min_depth` (shipped 6: the first monster that drains a stat
+  by touch is the purple mushroom patch, depth 6; at 20 percent from the first
+  level a Purging, 60 gold at the General Store, displaced a Detect Invisible in
+  a recorded smoke game), is one copy on a
   row of its own (`RESTORE_STAT_RESERVE`), worth 50 percent of one stat's
   restoration weight while nothing is drained, if it would restore a stat below
   18/100: a reserve of one, bought, kept and stored at the Home. A second copy
@@ -7323,7 +7327,8 @@ Switch off with `town_black_market_min_gold` 0 (the cap alone, as before),
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:884` |
+| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:2490` |
+| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1156` |
 
 ## Breadth-first exploration from the staircases (#1080, #1085)
 
