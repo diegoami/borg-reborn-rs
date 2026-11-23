@@ -7281,7 +7281,12 @@ map within the leash) find nothing, the think is marked exhausted.
 exploration, before the door-finding spell and the secret-door search. The
 exit is the same as above: the other direction if a random one is out of
 reach. If no staircase can be taken, the level is released and the search
-runs as before (a secret door can be the only way to an up staircase). The note is
+runs as before (a secret door can be the only way to an up staircase). The
+mark waits while the Borg is impaired: confused, blind or hallucinating,
+under boosted bravery, or in an invisible-attacker episode. Then exploration
+and the stairs fail for its state, not the map. In the replays, a confusion
+trap and an invisible attacker each released a whole level that way, and C
+then stayed stuck for thousands of turns. The note is
 `# Flowing toward dark-bfs (ring d) at cost n`.
 
 **The threshold by level and class** (owner, 2026-11-23): breadth-first
@@ -7422,11 +7427,11 @@ the nine below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1179` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1386` |
-| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1212` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1321` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1394` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1220` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1329` |
 | `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1332` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1321` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1323` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1325` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1332` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1334` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1336` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1327` |

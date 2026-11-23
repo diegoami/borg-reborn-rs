@@ -29,7 +29,7 @@ use crate::borg_danger::borg_danger;
 use crate::{borg_flow_misc, engine};
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DISM, BI_DISP, BI_FOOD, BI_GOLD, BI_IFIRE, BI_ISCONFUSED,
-    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
+    BI_ISBLIND, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP,
 };
 use crate::headers::list_terrain_h::{
     FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_NONE, FEAT_PERM,
@@ -1193,6 +1193,14 @@ fn mark_exhausted(st: &mut BorgState, what: &str) {
     st.borg.stair_explore_exhausted = Some(st.borg.time.now);
 }
 
+/// #1098 (replays of #1117): is the Borg in a state where its exploration
+/// and its stair flows fail for its own state, not the map? Confused, blind
+/// or hallucinating (`status`), moving under boosted bravery, or in an
+/// invisible-attacker episode (`unseen`). C's exhaustion is not marked then.
+fn impaired(status: bool, bravery: bool, unseen: bool) -> bool {
+    status || bravery || unseen
+}
+
 /// #1098: has a failed exit released this level from the stair-anchored
 /// modes (`release_after_failed_exit`)?
 fn released(st: &BorgState) -> bool {
@@ -1479,7 +1487,19 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
         // explore_c_leave_when_done the level is done: `borg_think_dungeon`
         // takes the stairs before the secret-door search. Not on a level
         // where that exit failed (`released`): the search may find the way.
-        if value(Param::explore_c_leave_when_done) != 0 && st.borg.tr(BI_CDEPTH) > 0 && !released(st) {
+        // Not while impaired (replays of #1117: a confusion trap, an
+        // invisible attacker): exploration and the stairs then fail for the
+        // Borg's state, not the map, and the failed exit would release the
+        // whole level.
+        if value(Param::explore_c_leave_when_done) != 0
+            && st.borg.tr(BI_CDEPTH) > 0
+            && !released(st)
+            && !impaired(
+                st.borg.tr(BI_ISCONFUSED) != 0 || st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISIMAGE) != 0,
+                boosted_bravery(i32::from(st.borg.avoidance), st.borg.tr(BI_CURHP)),
+                st.borg.unseen_mode,
+            )
+        {
             mark_exhausted(st, "C exploration: nothing reachable left within the leash");
         }
     }
@@ -1959,6 +1979,17 @@ mod breadth_first_tests {
         assert!(released(&st));
         st.borg.time.level = 1200; // a new level
         assert!(!released(&st));
+    }
+
+    #[test]
+    fn c_exhaustion_waits_while_impaired() {
+        // Replays of #1117: a confusion trap (Blackguard 312081895) and an
+        // invisible attacker (Druid 781905420) made the far exploration and
+        // both stair flows fail; the failed exit released the whole level.
+        assert!(!impaired(false, false, false));
+        assert!(impaired(true, false, false), "confused, blind or hallucinating");
+        assert!(impaired(false, true, false), "boosted bravery");
+        assert!(impaired(false, false, true), "an invisible attacker");
     }
 
     #[test]
