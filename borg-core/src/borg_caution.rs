@@ -235,13 +235,16 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
     ) {
         return false;
     }
-    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
-    if crate::borg_fast_fragile::heal_banned(st) {
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster;
+    // #1065: at the heal floor, each cure by its own heal.
+    let ban = crate::borg_fast_fragile::heal_ban(st);
+    if ban == crate::borg_fast_fragile::HealBan::Banned {
         return false;
     }
-    if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+    let [clw, csw, ccw] = crate::borg_fast_fragile::CURE_HEAL;
+    if (ban.allows(clw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
+        || (ban.allows(csw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
+        || (ban.allows(ccw) && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
     {
         borg_note(st, "# Healing (outmatched).");
         return true;
@@ -511,10 +514,16 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
-    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster.
-    if crate::borg_fast_fragile::heal_banned(st) {
+    // borg-reborn-rs (#842): no cure in contact with a fast-fragile monster;
+    // #1065 (review of #1076, P2): at the heal floor, each cure below asks
+    // the ban with its own heal (the larger heals further down reach the
+    // maximum, which the ban already found enough).
+    let ban = crate::borg_fast_fragile::heal_ban(st);
+    if ban == crate::borg_fast_fragile::HealBan::Banned {
         return false;
     }
+    let [clw_hp, csw_hp, ccw_hp] = crate::borg_fast_fragile::CURE_HEAL;
+    let minor_hp = crate::borg_fast_fragile::minor_healing_heal(st.borg.tr(BI_CLEVEL), hp_down);
 
     // Heal when wounded a percent of the time
     let mut chance = engine::randint0(100);
@@ -565,9 +574,10 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
         && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
-        && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_activate_item(st, st.act.cure_light))
+        && ((ban.allows(minor_hp) && borg_spell_fail(st, MINOR_HEALING, allow_fail))
+            || (ban.allows(clw_hp)
+                && (borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+                    || borg_activate_item(st, st.act.cure_light))))
     {
         borg_note(st, "# Healing Level 1.");
         return true;
@@ -577,6 +587,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
+        && ban.allows(csw_hp)
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_activate_item(st, st.act.cure_serious))
     {
@@ -588,6 +599,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
+        && ban.allows(ccw_hp)
         && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
     {
         borg_note(st, "# Healing Level 3.");
@@ -599,6 +611,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && danger < st.borg.tr(BI_MAXHP)
         && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
+        && ban.allows(ccw_hp)
         && borg_quaff_crit(st, true)
     {
         borg_note(st, "# Healing Level 5.");
@@ -610,6 +623,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
         && danger < p(Param::caution_deep_ccw_danger)
         && pct_down >= p(Param::caution_deep_ccw_loss)
+        && ban.allows(ccw_hp)
         && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
     {
         borg_note(st, "# Healing Level 5B.");
