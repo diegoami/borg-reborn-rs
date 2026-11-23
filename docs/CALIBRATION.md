@@ -657,8 +657,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2120` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:1889` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2220` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2625` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2618` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2671` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2664` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -826,7 +826,7 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1006` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2159` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2159` |
-| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:729` |
+| `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:750` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:996` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:977` |
 
@@ -966,7 +966,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:947` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:972` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1231,7 +1231,7 @@ The registry now holds **2214** parameters (2212 on main before it; two added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:616` |
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:637` |
 | `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:1104` |
 
 
@@ -2864,10 +2864,10 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:676` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:452` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:667` |
-| `town_heal_quaff_bonus_percent` | 0 (off) | percent | 0–300 | `borg_town_capability.rs:454` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:697` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:458` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:688` |
+| `town_heal_quaff_bonus_percent` | 0 (off) | percent | 0–300 | `borg_town_capability.rs:460` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -2908,7 +2908,11 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   partial bonus. Potion of Healing and `*Healing*` reach the same maximum
   bonus rate as Cure Critical Wounds when they restore at least 60 HP.
   Real HP, reserve units and status cure effects retain
-  their own valuation. Keep the shipped bonus at zero pending Zoo results.
+  their own valuation. Only potions earn it: a Staff or Rod of Healing, or
+  a mushroom, keeps the plain credit. Past a staple's free copies (#863)
+  the decay steps by the boosted credit, so a decayed copy loses its bonus
+  in the same proportion as its base. Keep the shipped bonus at zero
+  pending Zoo results.
 
 ## Rising to town explores for an up staircase (#483)
 
@@ -3004,13 +3008,13 @@ digger 500 gold.
 |---|---|---|---|---|
 | `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
-| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:453` |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:459` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1052` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:625` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:646` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:985` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:789` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2578` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2466` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:2624` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2512` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6114,7 +6118,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:948` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:973` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
 
 The reserve target is the larger of the configured amount and planned
@@ -6770,7 +6774,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1128` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1129` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1130` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2507` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2553` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -6860,7 +6864,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2569` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2615` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)

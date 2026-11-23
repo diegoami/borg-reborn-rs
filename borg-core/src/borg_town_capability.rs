@@ -413,7 +413,13 @@ fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Ve
 }
 
 fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
-    let healing = HealingValuation::from_params();
+    effect_supply_valued(effects, hp, service_turns, confusion, HealingValuation::from_params())
+}
+
+/// As `effect_supply_for_consumer`, with the healing valuation given (the
+/// live planner turns the quaff bonus off for anything but a potion, #848).
+fn effect_supply_valued(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool,
+                        healing: HealingValuation) -> Vec<(usize, i64)> {
     let mut sum = BTreeMap::<usize, i64>::new();
     let mut i = 0;
     while i < effects.len() {
@@ -454,6 +460,14 @@ impl HealingValuation {
             quaff_bonus_percent: i64::from(param(Param::town_heal_quaff_bonus_percent)),
         }
     }
+    /// The HEAL units one `amount`-HP use adds to the healing curve, quaff
+    /// bonus included: what `effect_supply_linear` credits a single HEAL_HP
+    /// effect. The staples' decay (#863) steps by these units, so a decayed
+    /// copy loses its bonus in the same proportion as its base (#848 review F1).
+    fn heal_credit(self, amount: i64, hp: i64) -> i64 {
+        let heal = heal_units(amount, hp, self.speed_percent);
+        heal + heal_quaff_bonus(heal, heal_units(amount, hp, 0), hp, self.quaff_bonus_percent)
+    }
 }
 
 /// borg-reborn-rs (#491, owner: "budget healing speed"): the healing units of
@@ -467,6 +481,13 @@ fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
     // The full-value heal in hundredths of an HP, so no rounding moves it.
     let full = hp.max(1) * speed_percent.clamp(0, 100);
     if full > heal * 100 { heal * heal * UNIT * 100 / full } else { heal * UNIT }
+}
+
+/// borg-reborn-rs (#863, #848 review F1): the HEAL units one copy of Cure
+/// Light, Serious and Critical Wounds adds (object.txt: HEAL_HP 20, 40, 60),
+/// quaff bonus included, as their staple rows decay them.
+fn staple_heal_credits(hp: i64, healing: HealingValuation) -> [i64; 3] {
+    [20, 40, 60].map(|amount| healing.heal_credit(amount, hp))
 }
 
 /// Extra value for restoring more HP in one action. The bonus starts when
@@ -853,7 +874,11 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         if u32::from(*e) == EF_RESTORE_MANA && *amount == 0 { *amount = i64::from(st.borg.tr(BI_MAXSP)); }
     }
     let confusion = tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster;
-    let mut out = effect_supply_for_consumer(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
+    // borg-reborn-rs (#848 review F2): the quaff bonus is a potion pilot. A
+    // staff or rod of healing, or a mushroom, keeps the plain healing credit.
+    let mut healing = HealingValuation::from_params();
+    if tval != TV_POTION { healing.quaff_bonus_percent = 0; }
+    let mut out = effect_supply_valued(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion, healing);
     // borg-reborn-rs (#863): a copy that answers a situation is also one
     // copy on that situation's prepared row (a device: one per charge).
     if prepared_on(st) {
@@ -1113,12 +1138,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // spare torches are not light, so the light row stays off.
     if staples {
         let decay = i64::from(param(Param::town_staple_decay_percent));
-        let speed = i64::from(param(Param::town_heal_speed_percent));
         let free = |p: Param| i64::from(param(p));
         let row = |copies: i64, units: i64| if copies > 0 { (knee_row(decay, units), -(copies * units).max(1)) } else { (0, UNIT) };
-        let kinds = [(STAPLE_CLW, free(Param::town_staple_clw), heal_units(20, journey.hp, speed)),
-            (STAPLE_CSW, free(Param::town_staple_csw), heal_units(40, journey.hp, speed)),
-            (STAPLE_CCW, free(Param::town_staple_ccw), heal_units(60, journey.hp, speed))];
+        let [clw, csw, ccw] = staple_heal_credits(journey.hp, HealingValuation::from_params());
+        let kinds = [(STAPLE_CLW, free(Param::town_staple_clw), clw),
+            (STAPLE_CSW, free(Param::town_staple_csw), csw),
+            (STAPLE_CCW, free(Param::town_staple_ccw), ccw)];
         for (id, copies, heal) in kinds {
             // The row counts potions (UNIT each); its knee is in those units.
             let (w, _) = row(copies, heal);
@@ -2251,6 +2276,27 @@ mod tests {
     const FASTER_QUAFFS: HealingValuation = HealingValuation {
         quaff_bonus_percent: 200, ..SHIPPED_HEALING
     };
+
+    /// #848 review F1: the staples' decay steps by the same HEAL units a
+    /// potion adds, bonus included, so a copy past the knee keeps exactly
+    /// `town_staple_decay_percent` of a free copy, with the bonus off and on.
+    #[test]
+    fn staple_decay_steps_by_the_boosted_healing_credit() {
+        for healing in [SHIPPED_HEALING, FASTER_QUAFFS] {
+            for hp in [30, 108] {
+                let credits = staple_heal_credits(hp, healing);
+                for (tier, &credit) in credits.iter().enumerate() {
+                    let heal = wound_potion(tier, hp, healing).into_iter().find(|&(id, _)| id == HEAL).unwrap().1;
+                    assert_eq!(credit, heal, "tier {tier} at {hp} max HP");
+                }
+                // The CCW row's knee: 2 free copies, then 80 percent.
+                let mut m = model();
+                m.curves[STAPLE_CCW] = [STAPLE_CCW as i64, knee_row(80, credits[2]), -2 * UNIT, 3 * UNIT, 0];
+                assert_eq!(m.heal_loss(None), credits[2] * 20 / 100, "the third copy keeps 80 percent of its credit");
+            }
+        }
+        assert!(staple_heal_credits(108, FASTER_QUAFFS)[2] > staple_heal_credits(108, SHIPPED_HEALING)[2]);
+    }
 
     #[test]
     fn quaff_bonus_preserves_reserve_and_secondary_cures() {

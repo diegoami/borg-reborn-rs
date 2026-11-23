@@ -32,8 +32,28 @@ before space and weight costs, and at speed 100 they add 3,784. Their
 combined slot and weight cost is 3,821. The candidate brings the same
 three CCW to 4,460 utility before those costs.
 
-[Zoo #597](https://github.com/diegoami/borg-zoo/issues/597) requests
-the native pilot at gameplay commit `bba5e4be`. It needs receipts for availability, prices,
+[Zoo #722](https://github.com/diegoami/borg-zoo/issues/722) requests
+the native pilot on current `track-p`; it supersedes
+[Zoo #597](https://github.com/diegoami/borg-zoo/issues/597), which ran at
+`bba5e4be`, before #863's staples. It needs receipts for availability, prices,
 pickups and purchases, departure healing and escapes, and quaffs during
 danger. The historical X11 run also needs a verified replay or its
 original plan records before attributing its stock imbalance to pricing.
+
+### 2026-11-23: synchronized with `track-p`, Codex review fixes
+
+`track-p` (`c687334c`, through main #937, #863's staples, #987's first
+cures, #895's device rows) is merged in; conflicts were citation rows only.
+The Codex review (PR #848) found:
+
+- F1: the staples' decay took off a copy's base healing units but not its
+  quaff bonus, so with the bonus on a third Cure Critical Wounds kept about
+  92 percent of a free copy's credit instead of 80. The staple rows now
+  step by `HealingValuation::heal_credit`, the units `effect_supply_linear`
+  credits, bonus included (`staple_decay_steps_by_the_boosted_healing_credit`
+  checks both settings). At the shipped bonus 0 the units are unchanged.
+- F2: Staff and Rod of Healing earned the bonus too. It is now potions
+  only (`supplies_of_kind` passes the bonus as 0 for any other tval).
+- F3: the pilot link is Zoo #722, re-pinned to the fixed head.
+
+The native pilot (#722) is still to run; the default stays 0.
