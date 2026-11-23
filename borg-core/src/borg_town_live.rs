@@ -342,7 +342,11 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             .copied();
         let gold = st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD);
         let reserve = st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET);
-        let percentage = crate::borg_town_budget::black_market_percentage(st, i64::from(gold)) as i32;
+        // The configured share, not the purse threshold (#1103): the plan this
+        // action comes from was made at this purse (it is rebuilt after every
+        // action) and has already closed the Black Market to ordinary purchases
+        // below the threshold; an urgent one keeps the cap (review of #1112, F1).
+        let percentage = st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE);
         let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && (reserve > 0 || percentage >= 0);
         let mut purchase_gold = if protects_gold {
             crate::borg_town_budget::black_market_budget(i64::from(gold), i64::from(reserve), i64::from(percentage), 0) as i32

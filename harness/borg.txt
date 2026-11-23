@@ -331,6 +331,13 @@ borg_param_town_device_escape_min_gold = 3000
 borg_param_town_black_market_min_gold = 6000
 borg_param_town_black_market_level_delta = 100
 
+# A restoring mushroom as a reserve (#1103, review of #1112 F2): a Mushroom of
+# Vigor (all five stats) or Purging (strength, constitution), which the Borg eats
+# when a stat is drained, is worth this percent of its drained value on each stat
+# below 18/100 while nothing is drained, so one is bought at the Black Market and
+# kept. 0 = worth nothing until a stat is drained. Hypothesis.
+borg_param_town_restore_stat_percent = 20
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class

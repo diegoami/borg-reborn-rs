@@ -200,6 +200,11 @@ const CLASS_DRUID: i32 = 2;
 const CLASS_PRIEST: i32 = 3;
 const CLASS_NECROMANCER: i32 = 4;
 
+/// #1103 (review of #1112, F2): whether an undrained stat of this value counts
+/// toward the reserve of a restoring mushroom (Vigor, Purging): the kind is one the
+/// Borg eats, and the stat is below 18/100 (the stat rows' own rule).
+pub(crate) fn restore_reserved(reserve_kind: bool, stat: i32) -> bool { reserve_kind && stat < 18 + 100 }
+
 /// borg-reborn-rs (#1103, owner: buy "the potions to gain stats" the Borg uses):
 /// whether this class drinks the Potion of Brawn, Intellect, Contemplation,
 /// Nimbleness or Toughness for `stat` (0 strength .. 4 constitution), which
@@ -863,9 +868,24 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     if effects.iter().any(|&(e, sub, _)| matches!(u32::from(e), EF_TIMED_INC | EF_TIMED_INC_NO_RES) && matches!(sub as u32, TMD_POISONED | TMD_CONFUSED | TMD_IMAGE | TMD_PARALYZED)) {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
     }
+    // borg-reborn-rs (#1103; review of #1112, F2): a Vigor or Purging mushroom
+    // the Borg eats when a stat is drained (`borg_use_things`, `borg_caution`)
+    // is worth a share of its restoration while nothing is drained: a reserve
+    // of one, `town_restore_stat_percent` of the drained value, for the stats
+    // it would restore. Without it a mushroom carried undrained was worth 0 and
+    // was sold.
+    let restore_percent = i64::from(param(Param::town_restore_stat_percent));
+    let sval = i32::from(item.sval);
+    let reserve_kind = restore_percent > 0 && tval == TV_MUSHROOM
+        && (sval == st.item_val.sv_mush_restoring || sval == st.item_val.sv_mush_purging);
+    let mut reserved_stats = Vec::new();
     effects.retain(|&(e, sub, _)| {
         if (0..5).contains(&sub) {
-            if u32::from(e) == EF_RESTORE_STAT { return st.borg.tr(BI_ISFIXSTR + sub as u32) > 0; }
+            if u32::from(e) == EF_RESTORE_STAT {
+                if st.borg.tr(BI_ISFIXSTR + sub as u32) > 0 { return true; }
+                if restore_reserved(reserve_kind, st.borg.tr(BI_CSTR + sub as u32)) { reserved_stats.push(STATS + sub as usize); return true; }
+                return false;
+            }
             if u32::from(e) == EF_GAIN_STAT { return st.borg.tr(BI_CSTR + sub as u32) < 18 + 100; }
         }
         true
@@ -880,6 +900,9 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     }
     let confusion = tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster;
     let mut out = effect_supply_for_consumer(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
+    for (cap, units) in &mut out {
+        if reserved_stats.contains(cap) { *units = scale_percent(*units, restore_percent as i32); }
+    }
     // borg-reborn-rs (#863): a copy that answers a situation is also one
     // copy on that situation's prepared row (a device: one per charge).
     if prepared_on(st) {
@@ -2486,6 +2509,14 @@ pub(crate) fn eligible_recall_reserve(gold: i64, minimum: i32, reserve: i32) -> 
 mod recall_value_tests {
     /// #1103: a Warrior buys Brawn and Toughness for the Borg to drink, not
     /// Intellect or Contemplation; a Mage the reverse (`borg_junk`).
+    #[test]
+    fn an_undrained_stat_below_the_cap_counts_toward_a_restoring_mushroom_reserve() {
+        use super::restore_reserved as r;
+        assert!(r(true, 17) && r(true, 117), "below 18/100");
+        assert!(!r(true, 118), "at 18/100 nothing is left to restore");
+        assert!(!r(false, 10), "a kind the Borg does not eat as a restoration");
+    }
+
     #[test]
     fn a_class_buys_only_the_second_stat_potions_it_drinks() {
         use super::drinks_second_stat_potion as d;
