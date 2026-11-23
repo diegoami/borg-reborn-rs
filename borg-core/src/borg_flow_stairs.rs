@@ -291,23 +291,88 @@ fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32
     }
 }
 
+/// #743: check the path in the spread being used to decide this flight.
+fn flight_path_blocker(st: &mut BorgState, why: i32) -> Option<usize> {
+    if !flee_check_applies(st, why) {
+        return None;
+    }
+    let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
+    path_blocker(st, percent)
+}
+
+/// #932: the guarded unweighted probe must not call a detour reachable
+/// when the flight would reject it. An unguarded probe keeps its old rule.
+pub(crate) fn unweighted_flight_reachable(st: &mut BorgState) -> bool {
+    let cost = st.flow.cost_at(st.borg.c.y, st.borg.c.x);
+    reachable_after_spread(cost, st.flow.has_retreat_exclusions(), || {
+        flight_path_blocker(st, GOAL_FLEE)
+    })
+}
+
+fn reachable_after_spread(cost: u8, guarded: bool, blocker: impl FnOnce() -> Option<usize>) -> bool {
+    cost < 250 && (!guarded || blocker().is_none())
+}
+
+/// The unweighted stair spread of `stair_less` / `stair_more`: clear the
+/// flow, enqueue the staircases of `which` and spread to them. The up flow
+/// optimizes without avoidance above CL35 or without light, and otherwise
+/// avoids unless desperate; the down flow optimizes.
+fn spread_unweighted_stairs(st: &mut BorgState, which: Which, depth: i32, sneak: bool) {
+    /* Clear the flow codes */
+    borg_flow::borg_flow_clear(st);
+
+    /* Enqueue useful grids */
+    enqueue_stairs(st, which);
+
+    /* Spread the flow */
+    let (optimize, avoid) = unweighted_spread_mode(which, st.borg.tr(BI_CLEVEL), st.borg.tr(BI_LIGHT), st.borg.status.desperate);
+    borg_flow::borg_flow_spread_stairs(st, depth, optimize, avoid, false, -1, sneak);
+}
+
+/// `(optimize, avoid)` of the unweighted stair spread.
+fn unweighted_spread_mode(which: Which, clevel: i32, light: i32, desperate: bool) -> (bool, bool) {
+    match which {
+        Which::More => (true, false),
+        Which::Less if clevel > 35 || light == 0 => (true, false),
+        Which::Less => (false, !desperate),
+    }
+}
+
+/// #932 (review of #964): with a retreat hold active, the unweighted probe
+/// spreads exactly as the flee walk it predicts (`borg_flow_stair_less` /
+/// `borg_flow_stair_more`, `GOAL_FLEE`, no sneak): the same staircases, the
+/// same stair spread and the flight danger rule of `fight_through`. A grid
+/// the probe marks icky is then one the walk would refuse too, and a detour
+/// the walk takes is one the probe reports. The caller holds the exclusions.
+pub(crate) fn guarded_unweighted_stair_reachable(st: &mut BorgState, up: bool) -> bool {
+    let which = if up { Which::Less } else { Which::More };
+    with_flight_danger_rule(st, GOAL_FLEE, |st| {
+        spread_unweighted_stairs(st, which, 250, false);
+        unweighted_flight_reachable(st)
+    })
+}
+
+/// #750: a flight's stair flow may ignore grid danger
+/// (`caution_stairs_flight_ignore_danger`), for the walk and its probe alike.
+fn with_flight_danger_rule<R>(st: &mut BorgState, why: i32, f: impl FnOnce(&mut BorgState) -> R) -> R {
+    let flight = crate::borg_caution::stairs_flight_ignores_danger(why, st.borg.goal.fleeing || st.borg.goal.leaving);
+    let was = std::mem::replace(&mut st.flow.flight_no_danger, flight);
+    let out = f(st);
+    st.flow.flight_no_danger = was;
+    out
+}
+
 /// Commit the flow and take one step (the common end of the three flows).
 fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
-    // borg-reborn-rs (#743, the follow-up of #736): a flight takes a
-    // staircase only by a clean path: the flow just spread is walked
-    // (`path_blocker`, no second spread) before it is committed.
-    if flee_check_applies(st, why) {
-        let percent = crate::params::value(crate::params::Param::caution_stairs_block_danger_percent);
-        if let Some(k) = path_blocker(st, percent) {
-            st.borg.flee_path_refused = true;
-            if !st.borg.flee_path_noted {
-                st.borg.flee_path_noted = true;
-                let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
-                let to = who.to_string_lossy();
-                borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
-            }
-            return false;
+    if let Some(k) = flight_path_blocker(st, why) {
+        st.borg.flee_path_refused = true;
+        if !st.borg.flee_path_noted {
+            st.borg.flee_path_noted = true;
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            let to = who.to_string_lossy();
+            borg_io::borg_note(st, &format!("# Stairs not reachable: {} in the way (flight to the {to})", String::from_utf8_lossy(&name)));
         }
+        return false;
     }
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, who, why) {
@@ -335,6 +400,75 @@ fn weighted_route(
     avoid: bool,
     sneak: bool,
     weight: i32,
+    note: bool,
+) -> Result<Option<borg_flow::StairPath>, usize> {
+    // borg-reborn-rs (#931, review of #965): with caution_stairs_immobile_reach,
+    // the whole route search (the clean-path check included) first keeps out
+    // of the reach of the known immobile attackers (the squares next to
+    // them); only when that finds no usable route does the ordinary search
+    // run. The danger weight charged their reach too little (a white jelly
+    // beside the route cost 2.9 steps at full HP, seed 829474344).
+    let on = crate::borg_caution::stairs_immobile_reach_on();
+    let plain = weighted_route_with(st, kinds, depth, avoid, sneak, weight, false);
+    if !on {
+        return plain;
+    }
+    let reach_free = weighted_route_with(st, kinds, depth, avoid, sneak, weight, true);
+    let budget = crate::borg_caution::stairs_immobile_reach_extra_steps();
+    let plain_grids = match (&plain, note) {
+        (Ok(Some(path)), true) => path.grids.clone(),
+        _ => Vec::new(),
+    };
+    let (route, avoided) = prefer_reach_free(reach_free, plain, budget, |r: &borg_flow::StairPath| r.cost, |a, b| a.grids == b.grids);
+    if note && avoided {
+        // Only a flight step that keeps out of a reach the ordinary route
+        // enters is noted (a probe passes note = false).
+        let taken = matches!(&route, Ok(Some(path)) if path.grids.len() >= 2);
+        let entered = plain_grids.iter().skip(1).find_map(|grid| crate::borg_caution::immobile_reach_of(st, grid.y, grid.x));
+        if let (true, Some(k)) = (taken, entered) {
+            let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
+            borg_io::borg_note(st, &format!("# Stair flight keeps out of the reach of the immobile {name} (#931)"));
+        }
+    }
+    route
+}
+
+/// borg-reborn-rs (#931, reviews of #965): the reach-free route when it is
+/// usable (`Ok(Some)`) and costs at most `budget_steps` more than the
+/// ordinary route (0: any cost; a cost is in hundredths of a step); else the
+/// ordinary route. The flag says the reach-free route was taken and differs
+/// from the ordinary one.
+fn prefer_reach_free<T>(
+    reach_free: Result<Option<T>, usize>,
+    plain: Result<Option<T>, usize>,
+    budget_steps: i32,
+    cost: impl Fn(&T) -> u64,
+    same: impl Fn(&T, &T) -> bool,
+) -> (Result<Option<T>, usize>, bool) {
+    let Ok(Some(free)) = reach_free else {
+        return (plain, false);
+    };
+    let Ok(Some(ordinary)) = &plain else {
+        return (Ok(Some(free)), false);
+    };
+    if budget_steps > 0 && cost(&free) > cost(ordinary).saturating_add(100 * budget_steps as u64) {
+        return (plain, false);
+    }
+    let differs = !same(&free, ordinary);
+    (Ok(Some(free)), differs)
+}
+
+/// `weighted_route`'s search; with `keep_out`, every square next to a known
+/// immobile attacker is refused, in the first search and the clean one.
+#[allow(clippy::too_many_arguments)]
+fn weighted_route_with(
+    st: &mut BorgState,
+    kinds: &[Which],
+    depth: i32,
+    avoid: bool,
+    sneak: bool,
+    weight: i32,
+    keep_out: bool,
 ) -> Result<Option<borg_flow::StairPath>, usize> {
     let search = kinds.iter().any(|which| matches!(which, Which::More))
         && continuing_up_stair_search(st);
@@ -351,7 +485,9 @@ fn weighted_route(
             }
         }
     }
-    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |_, _| true) else {
+    let Some(path) = borg_flow::weighted_stair_path(st, &stairs, depth, avoid, sneak, weight, |st, grid| {
+        !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
+    }) else {
         return Ok(None);
     };
     let Some(percent) = crate::borg_caution::weighted_stairs_blocker_percent(st) else {
@@ -375,6 +511,7 @@ fn weighted_route(
     let search = |check: &mut WeightedPathCheck, st: &mut BorgState, goals: &[loc], target| {
         borg_flow::weighted_stair_path(st, goals, depth, avoid, sneak, weight, |st, grid| {
             check.blocker_at(st, grid, target).is_none()
+                && !(keep_out && crate::borg_caution::in_immobile_reach(st, grid.y, grid.x))
         })
     };
     let clean = if mode == 3 {
@@ -439,7 +576,7 @@ fn weighted_flight(
         Some(Which::More) => (c"down-stairs", &[Which::More]),
         None => (c"stairs", &[Which::Less, Which::More]),
     };
-    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight) {
+    match weighted_route(st, kinds, options.depth, options.avoid, options.sneak, options.weight, true) {
         Ok(Some(path)) => {
             if options.ranged_reach > 0 {
                 let path_grids: Vec<_> = path.grids.iter().skip(1).map(|grid| (grid.y, grid.x)).collect();
@@ -470,8 +607,10 @@ fn weighted_flight(
 }
 
 pub(crate) fn weighted_down_flight(st: &mut BorgState, depth: i32, weight: i32) -> bool {
-    weighted_flight(st, GOAL_FLEE, Some(Which::More), WeightedFlightOptions {
-        depth, avoid: false, sneak: false, weight, ranged_reach: 0,
+    borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
+        weighted_flight(st, GOAL_FLEE, Some(Which::More), WeightedFlightOptions {
+            depth, avoid: false, sneak: false, weight, ranged_reach: 0,
+        })
     })
 }
 
@@ -489,7 +628,7 @@ pub(crate) fn bounded_desperate_flight(st: &mut BorgState, up: bool, max_moves: 
 
 pub(crate) fn weighted_stair_reachable(st: &mut BorgState, up: bool, avoid: bool, weight: i32) -> bool {
     let which = if up { Which::Less } else { Which::More };
-    matches!(weighted_route(st, &[which], 250, avoid, false, weight), Ok(Some(_)))
+    matches!(weighted_route(st, &[which], 250, avoid, false, weight, false), Ok(Some(_)))
 }
 
 /// Do a Stair-Flow. Look at how far away this grid is to my closest stair.
@@ -821,20 +960,7 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reac
         });
     }
 
-    /* Clear the flow codes */
-    borg_flow::borg_flow_clear(st);
-
-    /* Enqueue useful grids */
-    enqueue_stairs(st, Which::Less);
-
-    if st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0 {
-        /* Spread the flow */
-        borg_flow::borg_flow_spread_stairs(st, 250, true, false, false, -1, sneak);
-    } else {
-        /* Spread the flow, No Optimize, Avoid */
-        let avoid = !st.borg.status.desperate;
-        borg_flow::borg_flow_spread_stairs(st, 250, false, avoid, false, -1, sneak);
-    }
+    spread_unweighted_stairs(st, Which::Less, 250, sneak);
 
     commit_and_step(st, c"up-stairs", why)
 }
@@ -916,14 +1042,7 @@ fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool, depth: i32
         });
     }
 
-    /* Clear the flow codes */
-    borg_flow::borg_flow_clear(st);
-
-    /* Enqueue useful grids */
-    enqueue_stairs(st, Which::More);
-
-    /* Spread the flow */
-    borg_flow::borg_flow_spread_stairs(st, depth, true, false, false, -1, sneak);
+    spread_unweighted_stairs(st, Which::More, depth, sneak);
 
     commit_and_step(st, c"down-stairs", why)
 }
@@ -1225,11 +1344,9 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
 /// or any `GOAL_BORE` stair flow, up or down, while fleeing or leaving) refuses no grid for its
 /// danger; whether a monster stands in between is #751's path test.
 fn fight_through(st: &mut BorgState, why: i32, flow: impl FnMut(&mut BorgState) -> bool) -> bool {
-    let flight = crate::borg_caution::stairs_flight_ignores_danger(why, st.borg.goal.fleeing || st.borg.goal.leaving);
-    let was = std::mem::replace(&mut st.flow.flight_no_danger, flight);
-    let ok = fight_through_plain(st, why, flow);
-    st.flow.flight_no_danger = was;
-    ok
+    with_flight_danger_rule(st, why, |st| {
+        borg_flow::with_retreat_avoidance(st, why, |st| fight_through_plain(st, why, flow))
+    })
 }
 
 fn fight_through_plain(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
@@ -1268,6 +1385,39 @@ fn flee_check_applies_with(on: bool, why: i32, desperate: bool) -> bool {
 mod flee_clean_tests {
     use super::{flee_check_applies_with, GOAL_FLEE};
 
+    /// #932 (review of #964): the guarded probe and the walk share one
+    /// spread; its modes are the C flows' (up: optimize above CL35 or without
+    /// light, else avoid unless desperate; down: optimize).
+    #[test]
+    fn the_unweighted_spread_modes_match_the_stair_flows() {
+        use super::{unweighted_spread_mode, Which};
+        assert_eq!(unweighted_spread_mode(Which::Less, 10, 1, false), (false, true));
+        assert_eq!(unweighted_spread_mode(Which::Less, 10, 1, true), (false, false));
+        assert_eq!(unweighted_spread_mode(Which::Less, 36, 1, false), (true, false));
+        assert_eq!(unweighted_spread_mode(Which::Less, 10, 0, false), (true, false));
+        assert_eq!(unweighted_spread_mode(Which::More, 10, 1, false), (true, false));
+    }
+
+    #[test]
+    fn a_guarded_detour_with_a_blocker_does_not_suppress_fallbacks() {
+        use super::{blocker_reach, first_blocker, reachable_after_spread};
+
+        let origin = (4, 4);
+        let shortcut = [(4, 5), (4, 6), (4, 7), (4, 8)];
+        let detour = [(5, 4), (6, 5), (6, 6), (5, 7), (4, 8)];
+        // The hold at (4,5) rules out the clean shortcut. An awake monster
+        // on the longer path now blocks the only routed approach.
+        let blocker = |path: &[(i32, i32)], awake| {
+            first_blocker(&mut (6, 6), path, origin, 2, blocker_reach(2),
+                |monster, y, x| usize::from(*monster == (y, x)), |_, _| awake)
+        };
+        assert!(reachable_after_spread(4, true, || blocker(&shortcut, true)));
+        assert!(!reachable_after_spread(5, true, || blocker(&detour, true)));
+        assert!(reachable_after_spread(5, true, || blocker(&detour, false)));
+        assert!(reachable_after_spread(5, false, || panic!("unguarded probe")));
+        assert!(!reachable_after_spread(255, true, || panic!("no path")));
+    }
+
     /// #743: only a flight is checked, with the switch on, and not the
     /// desperate walk (which checks its own path, #736).
     #[test]
@@ -1298,6 +1448,40 @@ mod up_search_handoff_tests {
         assert!(departure.permits_deferral(10, 40));
         assert!(departure.permits_deferral(12, 40));
         assert!(!departure.permits_deferral(21, 40));
+    }
+}
+
+#[cfg(test)]
+mod reach_preference_tests {
+    use super::prefer_reach_free;
+
+    fn pick(free: Result<Option<u64>, usize>, plain: Result<Option<u64>, usize>, budget: i32) -> (Result<Option<u64>, usize>, bool) {
+        // A route is its cost here, in hundredths of a step.
+        prefer_reach_free(free, plain, budget, |c: &u64| *c, |a, b| a == b)
+    }
+
+    #[test]
+    fn a_usable_reach_free_route_wins() {
+        assert_eq!(pick(Ok(Some(4000)), Ok(Some(3600)), 0), (Ok(Some(4000)), true));
+        assert_eq!(pick(Ok(Some(3600)), Ok(Some(3600)), 0), (Ok(Some(3600)), false), "the same route: nothing avoided");
+    }
+
+    #[test]
+    fn a_blocked_reach_free_route_falls_back_to_the_clean_plain_one() {
+        // First review of #965: the only reach-free route is refused by the
+        // clean-path check; the ordinary clean route is used.
+        assert_eq!(pick(Err(7), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Ok(None), Ok(Some(3600)), 0), (Ok(Some(3600)), false));
+        assert_eq!(pick(Err(7), Err(9), 0), (Err(9), false), "the ordinary result, blocker and all");
+    }
+
+    #[test]
+    fn a_detour_past_the_budget_is_not_taken() {
+        // Second review of #965: a 180-step detour against a 2-step route.
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 20), (Ok(Some(200)), false));
+        assert_eq!(pick(Ok(Some(2_200)), Ok(Some(200)), 20), (Ok(Some(2_200)), true), "exactly 20 extra steps");
+        assert_eq!(pick(Ok(Some(18_000)), Ok(Some(200)), 0), (Ok(Some(18_000)), true), "0: no budget");
+        assert_eq!(pick(Ok(Some(18_000)), Err(3), 20), (Ok(Some(18_000)), false), "no ordinary route to compare");
     }
 }
 
