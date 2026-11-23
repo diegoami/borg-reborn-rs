@@ -808,6 +808,9 @@ borg_param_flow_leash_take_max_level = 20
 borg_param_explore_breadth_first = 0
 borg_param_explore_bfs_max_hp = 25
 borg_param_explore_bfs_slack = 0
+# The threshold by level (per class with __<class>): max HP below
+# explore_bfs_max_hp + explore_bfs_hp_per_level x CL.
+borg_param_explore_bfs_hp_per_level = 0
 
 # Phase Door off the floor (#761, owner 2026-11-20: "make sure it picks it
 # up"; case 425904011 at CL1 walked to a Cloak and left a Phase Door 12 or

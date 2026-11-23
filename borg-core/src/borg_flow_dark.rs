@@ -838,11 +838,24 @@ fn borg_flow_dark_5(st: &mut BorgState, b_stair: i32) -> bool {
 /// borg-reborn-rs (#1080, #1085; owner 2026-11-23: "a safer way would be
 /// breadth-first"): is exploration breadth-first from the staircases?
 /// `explore_breadth_first` on, in the dungeon, and the Borg's maximum HP
-/// below `explore_bfs_max_hp` (a value per class).
+/// below `bfs_hp_threshold` (owner, 2026-11-23: by level and class).
 pub(crate) fn breadth_first_active(st: &BorgState) -> bool {
     value(Param::explore_breadth_first) != 0
         && st.borg.tr(BI_CDEPTH) > 0
-        && st.borg.tr(BI_MAXHP) < value(Param::explore_bfs_max_hp)
+        && st.borg.tr(BI_MAXHP)
+            < bfs_hp_threshold(
+                value(Param::explore_bfs_max_hp),
+                value(Param::explore_bfs_hp_per_level),
+                st.borg.tr(BI_CLEVEL),
+            )
+}
+
+/// #1085: the maximum HP below which breadth-first applies at character
+/// level `clevel`: `explore_bfs_max_hp + explore_bfs_hp_per_level x CL`,
+/// both values per class. A level gains `randint1(hitdie)` HP
+/// (`player-birth.c:295`), so the delta sets how many levels it lasts.
+fn bfs_hp_threshold(max_hp: i32, per_level: i32, clevel: i32) -> i32 {
+    max_hp.saturating_add(per_level.saturating_mul(clevel))
 }
 
 /// #1085 (review of #1088): a staircase newly seen changes every ring, so
@@ -1374,9 +1387,20 @@ mod breadth_first_tests {
     }
 
     #[test]
+    fn the_threshold_grows_with_the_level() {
+        // A Human Mage (hit die 10: 10 HP at CL1, 5.5 more per level on
+        // average) at 25 + 1 x CL stays through CL4 (26.5 < 29), not CL5.
+        assert_eq!(bfs_hp_threshold(25, 0, 7), 25, "no delta: the class's value");
+        assert_eq!(bfs_hp_threshold(25, 1, 4), 29);
+        assert_eq!(bfs_hp_threshold(25, 1, 5), 30);
+        assert_eq!(bfs_hp_threshold(30, -2, 5), 20, "a negative delta shrinks it");
+    }
+
+    #[test]
     fn the_switch_ships_off() {
         assert_eq!(value(Param::explore_breadth_first), 0, "compiled 0: C's order");
         assert_eq!(value(Param::explore_bfs_max_hp), 25);
         assert_eq!(value(Param::explore_bfs_slack), 0, "strict rings");
+        assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
     }
 }

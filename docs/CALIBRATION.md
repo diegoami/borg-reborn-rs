@@ -6835,14 +6835,44 @@ leashes, neither call explores, so the level is left (`borg_leave_level`)
 once the area within them is done. The note is
 `# Flowing toward dark-bfs (ring d) at cost n`.
 
+**The threshold by level and class** (owner, 2026-11-23): breadth-first
+applies while max HP < `explore_bfs_max_hp` + `explore_bfs_hp_per_level` x CL,
+both values per class (`__<class>`). The engine gives a character its hit die
+(race + class, `player-birth.c:999`) at CL1 and `randint1(hitdie)` more per
+level (`:295`), so the delta sets how many levels the switch lasts. A delta
+near a quarter of the class's mean gain keeps a level or two more for the
+frail races (Hobbit, Kobold) than for the sturdy ones (Half-Troll). A delta
+of half the gain makes the threshold grow almost as fast as the HP of a small
+hit die: a Hobbit Mage would stay breadth-first to CL12.
+
+**A first list** (hypotheses for the zoo, not shipped). For each class, the
+target is the last CL with at least one DL1 death per 100 games that reached
+it, in #1080's pooled table. That table pools every build, and recent runs are
+5–10 times lower, so the cut at 1 per 100 is itself a hypothesis. The delta is
+a quarter of the Human mean gain, and the base puts the threshold halfway
+between the mean max HP at the target and the next CL (CON ignored):
+
+| class | hit die (Human) | target CL | `explore_bfs_max_hp` | `explore_bfs_hp_per_level` | Human through | all races through |
+|---|---:|---:|---:|---:|---:|---:|
+| warrior | 19 | 1 | 21 | 2 | CL1 | CL1–2 |
+| mage | 10 | 4 | 25 | 1 | CL4 | CL3–7 |
+| druid | 12 | 4 | 26 | 2 | CL4 | CL3–7 |
+| priest | 12 | 3 | 21 | 2 | CL3 | CL2–5 |
+| necromancer | 12 | 3 | 21 | 2 | CL3 | CL2–5 |
+| paladin | 16 | 2 | 24 | 2 | CL2 | CL2–3 |
+| rogue | 14 | 3 | 26 | 2 | CL3 | CL2–5 |
+| ranger | 15 | 4 | 34 | 2 | CL4 | CL3–6 |
+| blackguard | 18 | 1 | 20 | 2 | CL1 | CL1–2 |
+
 The race delta of #1061's threshold (`__<race>`) is not part of this change:
 the suffix is #1061's, and this threshold takes it when that lands. All
 values ship off; borg-zoo measures them alone, with `stair_scum` and for all
 characters (#1085's arms: `explore_bfs_max_hp` 20, 25 and 30). With this
-section the registry holds **2422** parameters (three added).
+section the registry holds **2423** parameters (four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:843` |
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:845` |
 | `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1030` |
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:848` |
