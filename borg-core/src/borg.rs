@@ -154,6 +154,16 @@ pub struct Borg {
     /// without a landing check reuses it in the same think and grid instead
     /// of drawing again.
     pub phase_unknown_seen: Option<(BorgTime, crate::headers::z_type_h::loc, i32)>,
+    /// borg-reborn-rs (#1098, review of #1117): the think (`time.now`) whose
+    /// mixed exploration found nothing left within its radius's limit: the
+    /// area the walk may cover is done, so `borg_leave_level` takes the
+    /// stairs then, before the secret-door search and the other fallbacks.
+    pub mix_exhausted: Option<BorgTime>,
+    /// borg-reborn-rs (#1098): the level (`time.level`) on which leaving
+    /// after the walk was exhausted failed (no usable staircase known, say
+    /// while rising with no up staircase): the walk stands down there and C
+    /// explores, so the Borg can find one.
+    pub mix_released: Option<BorgTime>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,

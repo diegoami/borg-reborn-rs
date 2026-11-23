@@ -988,12 +988,20 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* do not hangout on boring levels for *too* long */
-    if g == 0 && borg_timer(st, st.borg.time.level) > borg_time_to_stay_on_level(st, bored) {
+    // borg-reborn-rs (#1098, review of #1117): nor once the mixed walk has
+    // covered all it may of this level (`exhausted_this_think`): the stairs
+    // are taken as when the time is up, before the secret-door search.
+    let exhausted = crate::borg_flow_dark::exhausted_this_think(st);
+    if g == 0 && (exhausted || borg_timer(st, st.borg.time.level) > borg_time_to_stay_on_level(st, bored)) {
         /* don't get bored when hunting uniques */
         if st.borg.tr(BI_MAXDEPTH) < 99 || st.borg.mon.unique == 0 {
             /* Note */
             let t = i64::from(borg_timer(st, st.borg.time.level));
-            borg_note(st, &format!("# Spent too long ({t}) on level, leaving."));
+            if exhausted {
+                borg_note(st, &format!("# Mixed exploration done ({t} on level), leaving (#1098)."));
+            } else {
+                borg_note(st, &format!("# Spent too long ({t}) on level, leaving."));
+            }
 
             /* if we are trying not to go down, go up*/
             if try_not_to_descend {
@@ -1093,6 +1101,12 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         if borg_flow_stair_more(st, GOAL_BORE, false, false) {
             return true;
         }
+    }
+
+    // borg-reborn-rs (#1098): the walk's area is done but no staircase can
+    // be taken: it stands down on this level, and C explores for one.
+    if exhausted {
+        crate::borg_flow_dark::release_after_failed_exit(st);
     }
 
     /* Failure */
