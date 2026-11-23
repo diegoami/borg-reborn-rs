@@ -22,6 +22,7 @@ use crate::engine;
 /// knows, looked up by name at startup. Field names are the C globals'.
 #[derive(Clone, Copy, Default, Debug)]
 pub struct ItemValState {
+    pub sv_food_biscuit: i32,
     pub sv_food_apple: i32,
     pub sv_food_ration: i32,
     pub sv_food_slime_mold: i32,
@@ -244,6 +245,7 @@ fn borg_lookup_sval_fail(st: &mut BorgState, tval: i32, name: &str) -> i32 {
 /// `sv_potion_berserk` is still looked up twice (see `docs/c-bugs.md`).
 pub fn borg_init_item_val(st: &mut BorgState) {
     let mut tval = engine::tval_find_idx("food");
+    st.item_val.sv_food_biscuit = borg_lookup_sval_fail(st, tval, "Hard Biscuit");
     st.item_val.sv_food_apple = borg_lookup_sval_fail(st, tval, "Apple");
     st.item_val.sv_food_ration = borg_lookup_sval_fail(st, tval, "Ration of Food");
     st.item_val.sv_food_slime_mold = borg_lookup_sval_fail(st, tval, "Slime Mold");

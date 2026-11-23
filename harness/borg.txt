@@ -1131,6 +1131,24 @@ borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
 borg_param_caution_unseen_bump_phase_min_danger = 5
 
+# #1066 (owner, 2026-11-23: "I would put both of escape_phase at 1 and
+# merge"). From the level-1 deaths of track-p 206cf4e7: the Priest 694417276
+# read Phase Door at 41/55 HP into an unexplored room ("0 scary landing grids
+# of 100"), and the Blackguard 2025089708 phased away from its staircase.
+# - escape_phase_unknown_scary: a Phase Door landing grid never seen counts
+#   as scary (escape_phase_unknown_hp_percent 50: only at half HP or more;
+#   escape_phase_unknown_tolerance 75 for the sites with no landing check).
+# - escape_phase_newcomer_wait: a fight lost only because a monster appeared
+#   at range is fought on while the race against the adjacent monsters wins,
+#   HP is at least escape_phase_newcomer_hp_percent (50) of max, and the next
+#   turn cannot cost escape_phase_newcomer_turn_percent (100) of current HP.
+# The replays of the two deaths (on the specimen, one seed each) lived to the
+# cap; no zoo measurement yet (#1073). The unknown switch refuses most Phase
+# Doors in unexplored areas above half HP (71 of 83 in the Priest's replay).
+
+borg_param_escape_phase_unknown_scary = 1
+borg_param_escape_phase_newcomer_wait = 1
+
 # #980: the emergency attack spell (Magic Missile, the reserve spell) only
 # within the current mana (#1056, owner 2026-11-22: "let us change value of
 # attack_reserve_spell_overexert to 0"). At 1 (C) it is cast beyond the
