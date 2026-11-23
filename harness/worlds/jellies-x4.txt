@@ -1,0 +1,13 @@
+# A jelly world (borg-zoo#677 for #654, borg-reborn-rs #931 #933 #934 #1023):
+# every other race's rarity is multiplied by 4 (monster.txt; the four
+# jellies keep their depth and rarity 1), so each jelly's allocation weight
+# against a rarity-r race is about 4x (the engine truncates 100 / rarity,
+# mon-make.c:113, so the realised odds differ; the zoo measures the
+# encounters). The level's monster count is unchanged. All four are
+# NEVER_MOVE and attack only their eight neighbours (mon-move.c:1586,
+# 1621-1644): white jelly (DL2, TOUCH:POISON 1d2), yellow jelly (DL3,
+# TOUCH:POISON 1d3), blue jelly (DL4, TOUCH:COLD 1d6), green jelly (DL5,
+# TOUCH:ACID 1d2). The situation of the white-jelly death of seed 829474344:
+# an immobile toucher beside the route.
+favour = white jelly, yellow jelly, blue jelly, green jelly
+favour_weight = 4
