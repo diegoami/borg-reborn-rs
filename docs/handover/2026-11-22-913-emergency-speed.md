@@ -69,7 +69,7 @@ the radius and margin reads, the danger sum or any item or spell attempt.
 
 | game | #913 off | #913 on (50) |
 |---|---|---|
-| zoo game, all off / #913 only | keys `1ef124668f17`, dies at 64,483 (the zoo's) | same keys: the stuck flag stops it after an earlier Speed |
+| zoo game, all off / #913 only | keys `1ef124668f17`, dies at 64,483 (the zoo's) | same keys: the stuck flag stops it |
 | zoo game, #941 on | keys `37fba328d0e5`, alive at the cap, CL6, DL2 | keys `b571aea7bb47`, alive at the cap, CL6, DL2; fires once |
 | 2008390085, head + #947, shipped | keys `c6fdf3cfe07c`, alive, CL6, DL2 | same keys; never fires |
 | 2008390085, head + #947, stats-ban | keys `c6fdf3cfe07c` (the ban never acts) | same keys |
