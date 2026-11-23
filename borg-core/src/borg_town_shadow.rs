@@ -224,10 +224,34 @@ fn unknown_durable(it: &borg_item) -> bool {
         && !matches!(u32::from(it.tval), TV_FLASK | TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL)
 }
 
+/// borg-reborn-rs (#1151): the light turns one copy holds, in `UNIT`s: a
+/// torch's or lantern's turns, a flask's fuel (`object.txt`: pval 7500).
+fn fuel_per_copy(it: &borg_item) -> i64 {
+    use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT};
+    let unit = crate::borg_town_utility::UNIT;
+    match u32::from(it.tval) {
+        TV_LIGHT => i64::from(it.timeout).max(0) * unit,
+        TV_FLASK => i64::from(it.pval).max(0) * unit,
+        _ => 0,
+    }
+}
+
 fn apparently_saleable(it: &borg_item) -> bool {
     // The engine refuses apparently worthless goods. Unknown durable
     // rune exceptions under no-selling are protected, not disposal stock.
     it.value > 0
+}
+
+/// For a capped carried kind, the Home floor protects keeper withdrawals.
+/// Reserve the purchase-history shield for supplies bought from a shop.
+pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, home_at_limit: bool) -> bool {
+    let bought = &st.buy;
+    let count = usize::try_from(bought.bought_item_num).unwrap_or(0).min(10);
+    (0..count).any(|i| {
+        bought.bought_item_tval[i] == i32::from(item.tval)
+            && bought.bought_item_sval[i] == i32::from(item.sval)
+            && !(place == Place::Pack && home_at_limit && bought.bought_item_store[i] == BORG_HOME as i32)
+    })
 }
 
 /// The kit: the pack's and the Home's stacks, with what the dispositions
@@ -240,9 +264,12 @@ fn apparently_saleable(it: &borg_item) -> bool {
 /// (the Borg's own estimate, `borg_price_item`, without the Black Market's
 /// halving). The shop that buys it is the first that `borg_store_buys`
 /// names.
-fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
+fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     use crate::headers::list_options_h::OPT_birth_no_selling;
     let no_selling = engine::player_opt(OPT_birth_no_selling);
+    // borg-reborn-rs (#1140, `deal_with_poison`): no sale (it pays nothing)
+    // while the poison triage holds.
+    let triage_no_sale = crate::borg_poison::no_sale_now(st);
     let pack_end = inven_wield() as usize;
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
@@ -251,7 +278,7 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
         // is sold, like an unknown potion, scroll or mushroom, to learn it.
         let unknown_flavour = !it.aware && (consumable || unaware_device(it));
         if unknown_flavour { need = -1; reduction = 0; }
-        let sell_shop = (0..7i8).find(|&who| apparently_saleable(it)
+        let sell_shop = (0..7i8).find(|&who| !triage_no_sale && apparently_saleable(it)
             && !crate::borg_town_live::sale_rejected(st, i16::from(who), it)
             && crate::borg_store_sell::borg_store_buys(it, i32::from(who))).unwrap_or(-1);
         let proceeds = if no_selling || sell_shop < 0 { 0 } else {
@@ -262,14 +289,25 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
                     .map_or(0, |o| i64::from(o.sale_quote(sell_shop as usize, i32::from(it.iqty)))),
             }
         };
-        let bought = &st.buy;
-        let just_bought = (0..usize::try_from(bought.bought_item_num).unwrap_or(0).min(10))
-            .any(|i| bought.bought_item_tval[i] == i32::from(it.tval) && bought.bought_item_sval[i] == i32::from(it.sval));
+        let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
+        let just_bought = kit_just_bought(st, it, place, at_limit);
+        let home_room = if place == Place::Home {
+            engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
+                let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
+                    || crate::borg_town_live::home_moved(st, it.kind, true));
+                let carry = if blocked { 0 } else { offer.carry_capacity() };
+                let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
+                    else { i32::from(it.iqty) };
+                [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
+            })
+        } else { None };
         KitItem {
-            joins_pack: if place == Place::Home {
-                engine::store_stock(&st.access, BORG_HOME).get(slot)
-                    .is_some_and(|o| o.merge_capacity() >= i32::from(it.iqty))
-            } else { false },
+            home_room,
+            protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
+                && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
+            home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
+            home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
+            joins_pack: home_room.is_some_and(|[_, merge, _]| merge >= i32::from(it.iqty)),
             place,
             slot: slot as u8,
             kind: it.kind,
@@ -284,6 +322,9 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
             unknown: unknown_durable(it) || unknown_flavour,
             unknown_flavour,
             just_bought,
+            // borg-reborn-rs (#1151)
+            cursed_spare: place == Place::Pack && it.cursed,
+            fuel: fuel_per_copy(it),
         }
     };
 
@@ -392,10 +433,11 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
 /// the light emergency, then replan with the torch actually carried.
 fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
     let reserve = param(Param::town_light_reserve_turns);
+    // borg-reborn-rs (#1110): to the planner's goal, scaled while
+    // breadth-first exploration applies (review of #1113).
+    let goal = crate::borg_light::fuel_goal(st, crate::borg_town_utility::Journey::of(st));
     if reserve == 0 || !budget.urgent.is_empty()
-        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| {
-            i64::from(turns) >= crate::borg_town_utility::Journey::of(st).fuel_goal(i64::from(reserve))
-        })
+        || crate::borg_light::torch_fuel_turns(st).is_none_or(|turns| i64::from(turns) >= goal)
     {
         return;
     }
@@ -453,11 +495,12 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     );
     let mut trip = Trip::of(st);
     trip.cure_spell = cure_spell;
+    let reads_now = crate::borg_item_enchant::reads_scroll_in_town(st);
     let mut stock = Stock::of(st);
     // The wearables: their power gain, and their slot cost (the worn item
     // moves to the pack).
     let (tryon, wear_slots) = try_on(st, &stock);
-    let kit = kit_of(st);
+    let kit = kit_of(st, live);
     for &(i, cost) in &wear_slots {
         stock.candidates[i].slots_cost = cost;
     }
@@ -569,6 +612,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         power: i64::from(st.borg.power),
         carried: &carried,
         cure_spell,
+        reads_now,
         kit: &kit,
         home_slots: budget.home_slots,
     });
@@ -600,21 +644,31 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     } else { first_action(&stock.candidates, &budget.urgent, &out, &wares, &kit) };
 
     if live && paction != crate::borg_town_record::action::LEAVE && paction != crate::borg_town_record::action::DROP {
-        if matches!(paction, crate::borg_town_record::action::SELL | crate::borg_town_record::action::SELL_HOME) && act[2] > 0 {
-            // Charged devices need native splitting even for the one-copy
-            // action; a whole-stack average can differ from the first sale.
-            act[3] = if paction == crate::borg_town_record::action::SELL {
-                engine::inven_object(&st.access, act[1] as usize)
-                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, 1)))
+        use crate::borg_town_record::action;
+        // Use batches only for intentional Home cleanup. The existing
+        // one-copy actions still settle and re-solve as before.
+        let slot = act[1] as usize;
+        let selling = match paction {
+            action::SELL => st.items.items.get(slot),
+            action::SELL_HOME => st.store.shops[BORG_HOME].ware.get(slot),
+            _ => None,
+        };
+        let replenishing = paction == action::TAKE_HOME && !now
+            && kit.iter().enumerate().any(|(i, item)| item.place == Place::Home && usize::from(item.slot) == slot
+                && out.copies.get(i).is_some_and(|&qty| qty > 0));
+        if paction != action::DROP_HOME && !replenishing && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
+            act[2] = executed_copies(paction, act[2]);
+        }
+        if selling.is_some() && act[2] > 0 {
+            let qty = act[2] as i32;
+            act[3] = if paction == action::SELL {
+                engine::inven_object(&st.access, slot)
+                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, qty)))
             } else {
-                engine::store_stock(&st.access, BORG_HOME).get(act[1] as usize)
-                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, 1)))
+                engine::store_stock(&st.access, BORG_HOME).get(slot)
+                    .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, qty)))
             };
         }
-        // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
-        // types them at the quantity prompt, capped by the native offer.
-        // Every other action moves one copy and re-solves.
-        act[2] = executed_copies(paction, act[2]);
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }
@@ -627,7 +681,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         step: step_no,
         gturn: i64::from(engine::game_turn()),
         power: i64::from(st.borg.power),
-        spells: u8::from(cure_spell),
+        spells: u8::from(cure_spell) | u8::from(reads_now) << 1,
         params,
         limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
         black_market_reserve: budget.black_market_reserve,
@@ -778,7 +832,7 @@ mod knowledge_only_purchase_tests {
         let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
-            traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
+            traits: &traits, power: 1000, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 });
         out.plan.iter().map(|e| e.copies).sum()
     }
 

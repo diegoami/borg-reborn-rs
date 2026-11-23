@@ -31,7 +31,7 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_ABRAND, BI_AENCH_ARM, BI_AENCH_SARM, BI_AENCH_SWEP, BI_AENCH_TOD, BI_AENCH_TOH,
-    BI_AMMO_POWER, BI_AMMO_TVAL, BI_CDEPTH, BI_ISBLIND, BI_ISCONFUSED, BI_NEED_BRAND_WEAPON,
+    BI_AMMO_POWER, BI_AMMO_TVAL, BI_CDEPTH, BI_ISBLIND, BI_ISCONFUSED, BI_ISFORGET, BI_NEED_BRAND_WEAPON,
     BI_NEED_ENCHANT_TO_A, BI_NEED_ENCHANT_TO_D, BI_NEED_ENCHANT_TO_H,
 };
 use crate::headers::list_tvals_h::{
@@ -489,6 +489,18 @@ fn borg_brand_weapon(st: &mut BorgState) -> bool {
 
     /* Nothing to do */
     false
+}
+
+/// borg-reborn-rs (#1151, review of #1155): whether town enchanting would
+/// read a scroll now: `borg_enchanting`'s gates in town (not blind or
+/// confused, its town timer not run out) and `borg_read_scroll`'s (light,
+/// not amnesiac). The town plan waives a Remove Curse scroll's weight only
+/// then; the plan record keeps it (`spells` bit 1, schema 20).
+pub(crate) fn reads_scroll_in_town(st: &BorgState) -> bool {
+    let level = st.borg.time.level;
+    st.borg.tr(BI_ISBLIND) == 0 && st.borg.tr(BI_ISCONFUSED) == 0 && st.borg.tr(BI_ISFORGET) == 0
+        && !(st.borg.tr(BI_CDEPTH) == 0 && borg_timer(st, level) > param(Param::enchant_town_max_turns))
+        && !engine::no_light()
 }
 
 /// Enchant things

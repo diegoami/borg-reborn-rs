@@ -53,3 +53,18 @@ borg_param_town_staple_clw = 7
 borg_param_town_staple_csw = 4
 borg_param_town_staple_phase = 20
 borg_param_town_staple_oil = 6
+# #1085 (owner, 2026-11-23: "ship it like that"): breadth-first exploration
+# from the staircases while max HP < 41 + 2 x CL (docs/CALIBRATION.md: through
+# the last CL with 1 DL1 death per 100 games in #1080's table, for a Human,
+# then 10 more and 3 less: owner, 2026-11-23, "increase those
+# explore_bfs_max_hp by 10", then "reduce those numbers ... by 3").
+borg_param_explore_bfs_max_hp = 41
+borg_param_explore_bfs_hp_per_level = 2
+# #1061 (owner, 2026-11-23): stair_scum slack by class ("1 for druid and necromancers. 2 for mage and priest,
+# 3 for ranger, 4 for paladin and blackguard"; rogue 3, the owner's choice).
+borg_param_stair_scum_slack_steps = 3
+# #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): with
+# explore_mixed, the mixed walk applies up to this CL; above it C's order. The
+# level before the first CL whose DL1 death rate, and every later one, is at
+# most 0.25 per 100 games in #1080's pooled table (a hypothesis).
+borg_param_explore_mix_max_clevel = 5
