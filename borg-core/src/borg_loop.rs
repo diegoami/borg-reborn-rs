@@ -7,11 +7,11 @@
 //! `LOOP_GRIDS` grids while the map learned nothing, with no danger here above
 //! a quarter of the HP. `loop_breaker` then breaks it, the first that
 //! applies:
-//! 1. a walk to a staircase at the normal avoidance;
-//! 2. a brave walk to a staircase (the avoidance boosted);
+//! 1. a walk to a staircase at the normal avoidance (an up one first);
+//! 2. the same with the avoidance boosted to twice the HP;
 //!
-//! either committed (`commit_loop_walk`), so the next thinks continue it as
-//! #1130's brave walk is continued;
+//! either committed (`commit_loop_walk`) and continued here every think, the
+//! staircase taken on arrival (the leaving goal);
 //! 3. for `LOOP_BAN_THINKS` thinks, no step onto the loop's grids other than
 //!    a staircase (`step_banned`, read by `borg_play_step`), so whatever
 //!    undid the other decision cannot.
@@ -135,6 +135,14 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
     if value(Param::loop_breaker) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    // A walk the breaker started is continued here, before any other flow
+    // takes the think (replays: `borg_flow_kill_aim` took it back each time,
+    // since a GOAL_FLEE flow is otherwise continued only while fleeing).
+    if st.borg.brave_walk.is_some_and(|w| w.from_loop) && i32::from(st.borg.goal.type_0) == GOAL_FLEE {
+        if crate::borg_flow::borg_flow_old(st, GOAL_FLEE) {
+            return true;
+        }
+    }
     let moves: Vec<Move> = st.loops.moves.iter().copied().collect();
     if !is_loop(&moves) {
         return false;
@@ -157,30 +165,38 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
         grids.len()
     );
 
-    /* 1: a staircase at the normal avoidance */
-    if crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false) {
-        crate::borg_flow::commit_loop_walk(st, BraveStairs::Any);
-        borg_note(st, &format!("{head}; breaking it by a walk to the stairs (#1153)"));
-        st.loops.moves.clear();
-        return true;
-    }
-
-    /* 2: a committed brave walk to a staircase (#1130) */
+    /* 1, 2: a walk to a staircase (an up one first: a new level is always
+     * safe), at the normal avoidance, then boosted; committed, and taken on
+     * arrival (the leaving goal, up stairs) */
     let saved = st.borg.avoidance;
-    let to = st.borg.tr(BI_CURHP).saturating_mul(2);
-    if i32::from(saved) < to {
-        st.borg.avoidance = to as i16;
+    let boosted = st.borg.tr(BI_CURHP).saturating_mul(2);
+    for (avoid, how) in [(saved, "a walk to the stairs"), (boosted as i16, "a brave walk to the stairs")] {
+        if avoid < saved {
+            continue;
+        }
+        st.borg.avoidance = avoid;
         st.danger.wipe = true;
-        let stepped = crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false);
-        if stepped {
-            crate::borg_flow::commit_loop_walk(st, BraveStairs::Any);
+        let kind = if crate::borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false) {
+            Some(BraveStairs::Up)
+        } else if crate::borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false) {
+            Some(BraveStairs::Any)
+        } else {
+            None
+        };
+        if let Some(kind) = kind {
+            crate::borg_flow::commit_loop_walk(st, kind);
         }
         st.borg.avoidance = saved;
         st.danger.wipe = true;
-        if stepped {
-            borg_note(st, &format!("{head}; breaking it by a brave walk to the stairs (#1153)"));
+        if kind.is_some() {
+            st.borg.goal.leaving = true;
+            st.borg.stair_less = true;
+            borg_note(st, &format!("{head}; breaking it by {how} (#1153)"));
             st.loops.moves.clear();
             return true;
+        }
+        if avoid == boosted as i16 {
+            break;
         }
     }
 

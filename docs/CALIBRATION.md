@@ -7911,15 +7911,19 @@ pair of decisions (#1108, #1133, #1152, #932). `loop_breaker` (compiled 0,
   known grids unchanged, with no danger here above a quarter of the HP.
 - **Break**, before any flow continues (`borg_think_dungeon`, at the
   important goals), the first that applies:
-  1. a walk to a staircase of either kind at the normal avoidance;
-  2. a walk to one with the avoidance boosted to twice the HP;
+  1. a walk to a staircase at the normal avoidance, an up one first (a new
+     level is always safe), else either kind;
+  2. the same with the avoidance boosted to twice the HP;
   3. the loop's grids, staircases excepted, closed to every step for 20
      thinks (`step_banned`, read by `borg_play_step`), so whatever undid the
      other decision cannot.
 
-  The walks of 1 and 2 are committed (`commit_loop_walk`): the next thinks
-  continue them as #1130's brave walk is continued. Without that, the walk
-  took one step and the loop came back.
+  The walks of 1 and 2 are committed (`commit_loop_walk`) and continued by
+  the breaker itself every think, before any other flow. The staircase is
+  taken on arrival: the leaving goal is set, with up stairs. Without the
+  commitment, the walk took one step and the loop came back. Without the
+  continuation, `borg_flow_kill_aim` took the think back each time (one
+  Necromancer: 58 detections of the same loop).
 - **Note.** `# Loop detected: n moves among k grids since think t, the map
   unchanged; choices a / b / a / b; breaking it by ...`. The choices are the
   last decisions chosen (`core_trace::recent_choices`), so each new pair can
@@ -7931,6 +7935,15 @@ only the breaker acts:
 - off: the loop, 76 levels, "Spent too long" 3,177, CL3;
 - on: 6 loops detected (choices `borg_flow_dark / boost_bravery_1`), 210
   levels, "Spent too long" 873, CL4.
+
+At this head, the 20 level-1 death starts of borg-cemetery#138, off against
+on:
+- 17 of 20 identical;
+- 5 loops detected in 3 games, of pairs `borg_recover / borg_flow_dark` (2),
+  `borg_flow_stair_less / borg_flow_dark` and `borg_flow_kill_aim /
+  borg_flow_dark`;
+- deaths 0 against 0, summed CL 101 against 103, summed deepest DL 43
+  against 41.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
