@@ -9,10 +9,12 @@ pulls. Cure Critical Wounds also clears existing poison. The 20% wound
 threshold for sustained combat is a hypothesis. A lethal estimate can
 override it.
 
-A suitable potion can take the turn before a Phase refusal attack, an
-unchecked Phase Door after safer escape attempts, a pending Recall wait,
-or an early winning fight. Poison triage checks lethal combat exposure
-before spending an action on a poison-only cure. The switch defaults to 0.
+Ordinary healing uses the combat forecast for wound potions, including
+while Recall counts down. A suitable potion can also take the turn before
+a Phase refusal attack, an unchecked Phase Door after safer escape
+attempts, or an early winning fight. Poison triage checks lethal combat
+exposure before spending an action on a poison-only cure. The switch
+defaults to 0. [Tengu review](https://github.com/diegoami/borg-reborn-rs/issues/1194#issuecomment-7137413179)
 
 The native fixtures reconstruct the decisions using the game data and the
 published combat records. The original-command controls exercise the Phase
@@ -23,8 +25,16 @@ winning fight verdict. [Tengu](https://github.com/diegoami/borg-reborn-rs/issues
 · [Wormtongue](https://github.com/diegoami/borg-reborn-rs/issues/1186#issuecomment-7136040257)
 · [Zombified orc](https://github.com/diegoami/borg-reborn-rs/issues/992#issuecomment-7136017013)
 
-Flight Recall initiation belongs to the comparison in
-[#1144](https://github.com/diegoami/borg-reborn-rs/issues/1144).
+At the recorded 32 HP reply, a light cure brings 38 HP to 58 and covers
+the reply. At 9 HP it only reaches 29, so the regression expects a serious
+cure. The review's serious-cure result at 38 HP applies the original level
+and wound bands.
+
+The early Phase Door veto at full HP requires a retreat decision that
+accounts for pull exposure over time. Flight Recall initiation also needs
+to price the pull and the turns spent taking cures during the countdown.
+[Early escape replay](https://github.com/diegoami/borg-reborn-rs/issues/1194#issuecomment-7134454211)
+· [Flight Recall comparison](https://github.com/diegoami/borg-reborn-rs/issues/1144)
 
 Verification passed for all eight enabled native decision cases and four
 disabled controls. Rust formatting, Clippy, workspace tests, core tests,

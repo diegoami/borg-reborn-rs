@@ -89,11 +89,17 @@ fn covers_reply(hp: i32, max: i32, restored: i32, damage: i32, poison_hp: i32) -
 }
 
 pub(crate) fn quaff(st: &mut BorgState) -> bool {
+    quaff_in_combat(st).unwrap_or(false)
+}
+
+/// When the next reply includes damage, the combat policy owns the choice
+/// of wound potion. The legacy wound bands still apply outside this case.
+pub(crate) fn quaff_in_combat(st: &mut BorgState) -> Option<bool> {
     if !enabled(st) || st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) {
-        return false;
+        return None;
     }
     let damage = incoming(st);
-    quaff_for_reply(st, damage)
+    (damage > 0).then(|| quaff_for_reply(st, damage))
 }
 
 fn quaff_for_reply(st: &mut BorgState, damage: i32) -> bool {
@@ -306,8 +312,8 @@ pub(crate) mod fixture {
                 let position = st.borg.c;
                 assert_eq!(damage_only(|| damage_at(st, position, None)), 0);
                 assert!(incoming(st) > 0, "a pull can expose the Borg to damage");
-                st.borg.phase_rule = Some((st.borg.time.now, PhaseVerdict::Shoot, false));
-                assert!(phase_rule_act(st));
+                st.borg.goal.fleeing = true;
+                assert!(borg_caution(st));
                 b'a'
             }
             "tengu-phase-fight" => {
@@ -323,6 +329,10 @@ pub(crate) mod fixture {
                 assert!(incoming(st) >= hp + 20, "light cannot cover the reply");
                 if case == "tengu-recall" {
                     st.borg.goal.recalling = 10;
+                    st.borg.goal.fleeing = true;
+                    for row in &mut st.danger.fear_region {
+                        row.fill(500);
+                    }
                     assert!(borg_caution(st));
                     assert_eq!(st.borg.goal.recalling, 10);
                 } else {

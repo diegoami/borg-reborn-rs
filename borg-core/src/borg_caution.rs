@@ -493,6 +493,18 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // #1194: decide wound potions against the monster reply, including
+    // during Recall. Known pull exposure can matter even at a safe grid.
+    let legacy_wound_potions = if st.borg.near.unique < 10 {
+        match crate::borg_combat_heal::quaff_in_combat(st) {
+            Some(true) => return true,
+            Some(false) => false,
+            None => true,
+        }
+    } else {
+        true
+    };
+
     // Don't bother healing if not in danger
     if danger == 0 && st.borg.tr(BI_ISPOISONED) == 0 && st.borg.tr(BI_ISCUT) == 0 {
         return false;
@@ -522,7 +534,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, the
     // held Cure Light Wounds is drunk at the line.
-    if crate::borg_poison::late_drink(st, danger) {
+    if legacy_wound_potions && crate::borg_poison::late_drink(st, danger) {
         return true;
     }
 
@@ -578,7 +590,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CLW_HEAL)
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+            || (legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
             || borg_activate_item(st, st.act.cure_light))
     {
         borg_note(st, "# Healing Level 1.");
@@ -591,7 +603,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CSW_HEAL)
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        && ((legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
             || borg_activate_item(st, st.act.cure_serious))
     {
         borg_note(st, "# Healing Level 2.");
@@ -602,14 +614,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
-        && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
+        && (borg_activate_item(st, st.act.cure_critical)
+            || (legacy_wound_potions && borg_quaff_crit(st, false)))
     {
         borg_note(st, "# Healing Level 3.");
         return true;
     }
 
     // If in danger try  one more Cure Critical if it will help
-    if danger >= st.borg.tr(BI_CURHP)
+    if legacy_wound_potions && danger >= st.borg.tr(BI_CURHP)
         && danger < st.borg.tr(BI_MAXHP)
         && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
@@ -621,7 +634,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // if deep, and low on HP, but in a zero danger spot, drink some CCW to
     // add a few HP before resting
-    if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
+    if legacy_wound_potions && st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
         && danger < p(Param::caution_deep_ccw_danger)
         && pct_down >= p(Param::caution_deep_ccw_loss)
         && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
@@ -4471,9 +4484,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // borg-reborn-rs (#1140, `deal_with_poison`): a poison cure the Borg
     // has is used once the poison matters, at any danger and with no roll.
-    if crate::borg_poison::cure_carried(st)
-        || (st.borg.goal.recalling != 0 && crate::borg_combat_heal::quaff(st))
-    {
+    if crate::borg_poison::cure_carried(st) {
         return true;
     }
 
