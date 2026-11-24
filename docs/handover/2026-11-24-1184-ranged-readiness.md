@@ -61,6 +61,12 @@ The seven seeded runs reproduced keys, messages, state and the readiness
 trace. The earlier neutral build matched all four smoke references. Formatter,
 workspace Clippy, Rust tests and parameter citations passed.
 
+Enabling shopping exposed a same-turn loop on the #775 Druid regression.
+Voluntary stair scumming repeatedly went from DL1 to town and back while
+the character had 22 throwable flasks. A second voluntary ascent on the
+same game turn now waits on the stair if the grid is safe. The historical
+stair tests pin the two ranged policies off to reach their recorded grids.
+
 ### What is left
 
 [Zoo #778](https://github.com/diegoami/borg-zoo/issues/778) tracks the
