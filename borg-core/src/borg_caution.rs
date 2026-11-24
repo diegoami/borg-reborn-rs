@@ -227,6 +227,9 @@ fn outmatched_heal_applies(
 /// estimate is a pessimistic worst case; the potion buys a turn.
 /// Off (`caution_heal_when_outmatched` = 0) it does nothing.
 fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if crate::borg_combat_heal::enabled(st) {
+        return crate::borg_combat_heal::quaff(st);
+    }
     if !outmatched_heal_applies(
         p(Param::caution_heal_when_outmatched),
         st.borg.tr(BI_CURHP),
@@ -4007,7 +4010,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     // estimates can be checked on its original losing AND winning fights.
     if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    crate::borg_combat_heal::quaff(st) || crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
 
 /// #759's race, as computed (`None`: not certified, so never winning).
@@ -4468,7 +4471,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // borg-reborn-rs (#1140, `deal_with_poison`): a poison cure the Borg
     // has is used once the poison matters, at any danger and with no roll.
-    if crate::borg_poison::cure_carried(st) {
+    if crate::borg_poison::cure_carried(st)
+        || (st.borg.goal.recalling != 0 && crate::borg_combat_heal::quaff(st))
+    {
         return true;
     }
 
@@ -4846,8 +4851,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && poisoned_escape_first(st, pos_danger)
     {
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-        st.borg.goal.type_0 = 0;
         return true;
     }
     let from = st.borg.c;
@@ -4866,13 +4869,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Attempt to escape via spells
     if borg_escape(st, pos_danger) {
-        // increment the escapes this level counter
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-
-        // Clear any Flow queues
-        st.borg.goal.type_0 = 0;
-
-        // Success
         return true;
     }
 
