@@ -90,6 +90,7 @@
 #include "main.h"
 #include "main-borgh.h"
 #include "synthetic-build.h"
+#include "ui-input.h"
 #include "init.h"
 #include "obj-knowledge.h"
 #include "obj-gear.h"
@@ -885,6 +886,15 @@ static errr term_xtra_borgh(int n, int v)
 		 */
 		if (script_pos < script_len) {
 			if (!v) return 0;
+			/* Loading can trigger msg_flush() after the splash. Leave
+			 * the start marker queued while any such prompt is open. */
+			if (opt_load && script[script_pos] == SCRIPT_START_BORG
+					&& !inkey_flag && more_prompt_shown()) {
+				if (getenv("BORGH_DEBUG"))
+					fprintf(stderr, "borgh: acknowledging load -more- prompt\n");
+				Term_keypress(ESCAPE, 0);
+				return 0;
+			}
 			keycode_t k = script[script_pos++];
 			if (getenv("BORGH_DEBUG")) {
 				fprintf(stderr, "borgh: feeding script key %d (0x%lx)\n",

@@ -406,9 +406,13 @@ borg_param_town_fear_cure_count = 0
 # Ranged-only monsters (#838, owner 2026-11-21: "a list of monsters to never
 # melee ... and only attack from afar"): the scary list's `ranged` entries
 # (floating eye, grey mushroom patch, the jellies and eyes; harness/
-# scary_monsters.txt) are never melee targets, never hunted, and flows keep out
-# of their reach. 0 = the entries are not read. borg-zoo measures it against
-# shipped and against caution_ranged_vs_immobile 2.
+# scary_monsters.txt) are never melee targets, never hunted, and no flow steps
+# onto their grid. #852 (owner): the flows around them are not changed (path
+# finding is another concern), and an entry is kept at range only while one of
+# its blows is something the character is not protected from (Free Action for
+# paralysis; resist confusion, poison, blindness, fear; drains, theft and
+# disenchantment have none). 0 = the entries are not read. borg-zoo measures it
+# against shipped and against caution_ranged_vs_immobile 2.
 borg_param_caution_ranged_only = 0
 
 # Confusion cures to keep while not confused (#837, owner 2026-11-21: "carry
@@ -1284,6 +1288,9 @@ borg_param_escape_teleport_landing_either = 0
 # may pass, never onto its grid), always step away from it (while fleeing
 # too, up to three times); throws and shots kill it from afar.
 # 3 = as 2 for every immobile attacker. 0 = C (borg-cemetery#75, #79).
+# #852 (owner): in 1-3, an immobile attacker whose special blows the character
+# is all protected from (Free Action, resist confusion, poison, blindness,
+# fear) is not handled at all: a Free Action Borg fights a floating eye.
 # Change together: works with what the Borg carries to throw (#649, #652).
 # Off (owner, 2026-11-20): "stepaway flag is not a solution, I do not like
 # it". In borg-zoo#461 modes 2 and 3 lost games (22 -> 24 / 27 deaths; Druids
@@ -2426,3 +2433,12 @@ borg_param_trait_curse_stats = 1
 borg_param_deal_with_poison = 1
 borg_param_poison_late_drink_margin = 2
 borg_param_poison_cure_pending_percent = 50
+
+# The town planner keeps a class book it owns while a spell of it is
+# castable now. Above 0, also when a spell is learnt within this many levels
+# (#1004): a Ranger's Lesser Charms (first spell at CL3) and a Rogue's First
+# Spells (CL5) were sold at CL1 and bought back later. Purchases are
+# unchanged. 0 disables look-ahead.
+borg_param_town_book_lookahead_levels = 1
+# Keep the last owned copy of each class spellbook, including dungeon books.
+borg_param_town_keep_last_class_book = 1
