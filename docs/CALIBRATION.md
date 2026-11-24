@@ -8621,3 +8621,27 @@ The trace can run with either behavior off.
 | `ranged_readiness_target` | 6 | uses | 1–100 | `borg_ranged.rs:57` |
 | `ranged_readiness_damage_depth` | 2 | levels | 1–100 | `borg_ranged.rs:58` |
 | `ranged_readiness_trace` | 0 | flag | 0–1 | `borg_ranged.rs:400` |
+
+## The descent gates without a seen up staircase (#1177)
+
+From the #1173 investigation. `more_refused`'s four descent refusals — not
+prepared for the next depth unless `brave`, hungry or weak or low on food, a
+held sale, no light — sit behind C's wrapper *"if there are no down stairs,
+don't filter use of up stairs"* (`borg-flow-stairs.c:193`): when the Borg
+has seen **no up staircase**, all four are skipped and only the recall
+restriction remains. A character that has seen none dives past gates that
+would have stopped it; one that has seen any up staircase is gated by all
+four. The gates guard the descent, not the up-stair knowledge. The defect is
+C's and the Rust mirrors it; it is tracked upstream (better-borg-c #540,
+neo-angband-tracker #629), so here it is a decision, not a repair.
+
+The fixture (`more-refused-gates`, `MoreRefusedGatesTest`) drives the
+dungeon decision on a fabricated DL3 with a reachable down stair, no up
+staircase seen, and a pack without food: at the shipped 0 the dive takes
+the down stair exactly as C plays; at 1 the hunger gate refuses the descent
+and no stair is taken. The zoo measures the switch; its value is a
+hypothesis.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `stairs_descent_gates_without_upstair` | 0 | flag | 0–1 | `borg_flow_stairs.rs:982` |
