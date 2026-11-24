@@ -57,15 +57,11 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
   reads (finding 2), and the shipped value in `docs/CALIBRATION.md`
   (finding 3).
 
-### Shipped setting
+### Ranger follow-up (2026-11-24)
 
-The owner chose 1 level on 2026-11-24. A Ranger's CL3 first spell enters
-the look-ahead at CL2, so this setting can still allow the reported CL1
-sale. The zoo pilot measured 4 levels.
-
-### For the owner
-
-- Is 1 the final value or a first step towards the measured 4? At 1 the
-  reported CL1 Ranger sale still happens, so `Closes #1004` overstates what
-  merges.
-- Should a zoo run measure 1 (`ctl` against `la1`)?
+The shared setting remains 1. Rangers use 2 so that their CL3 first
+spell counts from CL1. A named replay of Gnome Ranger seed 1895660873
+on the default borg-rs core reproduced the Lesser Charms sale at
+turn 221 with 1. With 2, there was no sale of Lesser Charms through
+100,000 turns. All four smoke runs matched the existing reference.
+The population pilot at 4 remains documented in borg-zoo#693.
