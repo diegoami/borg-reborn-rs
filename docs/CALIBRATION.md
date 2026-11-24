@@ -8637,9 +8637,11 @@ borg-cemetery#132:
 
 ## Ranged readiness for the next trip (#1184)
 
-Both behaviors and the trace ship at 0. The six-use target and a minimum
-average damage of one point per two dungeon levels, with a floor of one,
-are pilot values. All five shipped values equal their compiled defaults.
+The owner enabled both behaviors and the trace in `harness/borg.txt` for
+Track P. The target is six uses and the minimum average damage is one point
+per two dungeon levels, with a floor of one. The table gives the compiled
+defaults. The Zoo comparison will measure the behavior across classes and
+depths.
 
 The shopping arm changes ranged valuation within the existing town budget.
 It keeps `town_ranged_reserve` as a lower bound and leaves the existing

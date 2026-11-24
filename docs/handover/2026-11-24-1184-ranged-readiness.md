@@ -18,8 +18,9 @@ from an exhausted kit.
   support it. The return uses an up stair underfoot before checking
   Recall, whose sources include a rod, activation, spell and scroll.
   Emergency movement retains priority.
-- Both behaviors and the optional trace ship off. The trace can record
-  readiness transitions for the controls as well.
+- The owner enabled both behaviors and the trace in Track P at a six-use
+  target and one point of average damage per two levels, with a floor of one.
+  The trace also records readiness transitions for the Zoo controls.
 
 ### What was found
 
@@ -57,7 +58,7 @@ start at DL45 also reached their respective Mage continuation caps.
 [DL45 save](https://github.com/diegoami/borg-cemetery/tree/9715e9569eed252fda7cb9f93fc46e1a57492802/scenarios/late-inventory-mage-10815143)
 
 The seven seeded runs reproduced keys, messages, state and the readiness
-trace. Shipped settings matched all four smoke references. Formatter,
+trace. The earlier neutral build matched all four smoke references. Formatter,
 workspace Clippy, Rust tests and parameter citations passed.
 
 ### What is left
@@ -70,6 +71,6 @@ population coverage for Recall-only routes or equipment swaps.
 
 ### Owner to decide
 
-Dispatch the pinned Zoo comparison under the repository's owner workflow
-after candidate CI passes. The pilot results will inform whether either
-policy should be enabled by default.
+Dispatch the pinned Zoo comparison under the repository's owner workflow.
+The pilot will measure how the enabled policies affect coverage, time in
+town, survival, and achieved depth across starts.
