@@ -603,7 +603,7 @@ and confused a swing reaches it 11/32 of the time (`player_confuse_dir`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:5992` |
+| `attack_kill_on_sight_min_hp_percent` | 0 | percent | 0–100 | `borg_fight_attack.rs:6088` |
 
 ## The cure the kill-on-sight floor counted (#1064)
 
@@ -632,7 +632,7 @@ confused until it died, two steps from the stairs.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:6009` |
+| `attack_kill_on_sight_floor_cure` | 0 | flag | 0–1 | `borg_fight_attack.rs:6105` |
 
 ## A lone slow monster, danger without fear, the reserve spell's faint (#878)
 
@@ -657,8 +657,8 @@ chose them (RULES 14).
 | `lone_slow_casts` | 2 | uses | 1–10 | `borg_lone_target.rs:130` |
 | `lone_slow_damage_percent` | 25 | percent of HP | 0–1000 | `borg_lone_target.rs:130` |
 | `escape_phase_lost_damage_only` | 0 | flag | 0–1 | `borg_escape.rs:1203` |
-| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3467` |
-| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3374` |
+| `attack_reserve_spell_damage_only` | 0 | flag | 0–1 | `borg_fight_attack.rs:3550` |
+| `attack_reserve_faint_percent` | 0 | percent of HP | 0–1000 | `borg_fight_attack.rs:3470` |
 | `caution_unseen_bump_phase_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:9049` |
 | `caution_unseen_bump_phase_min_danger` | 0 | danger | 0–100000 | `borg_caution.rs:9049` |
 
@@ -2021,6 +2021,11 @@ From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
 
+- **`attack_throw_surplus`** (flag, compiled and shipped 0 during P8, #1200).
+  At 1, add fully known, low-value plain throwing weapons from the pack
+  when the equipped weapon covers their combat role and they are not the
+  selected swap. Score each against native range and hit chance in the
+  existing attack comparison. The feature adds no acquisition preference.
 - **`attack_throw_as_melee`** (flag, 0 = C; **shipped 1**, owner 2026-11-20). With 1, `borg_attack_aux_object`
   rates a throw on melee's footing:
   - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
@@ -5739,7 +5744,7 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6282` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:6378` |
 
 ## C Borg dive gates (#768)
 
@@ -7268,7 +7273,7 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3456` |
+| `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3543` |
 
 1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
 Not shipped; the zoo measures it (a request issue). The four replays are

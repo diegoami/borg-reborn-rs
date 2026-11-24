@@ -854,6 +854,9 @@ borg_param_recover_rest_cure_distance = 20
 
 borg_param_attack_throw_as_melee = 1
 
+# #1200: allow known low-value spare throwing weapons as attacks.
+borg_param_attack_throw_surplus = 0
+
 # Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
 # throw rated with attack_throw_as_melee. 0 = inherit
 # attack_arrow_point_blank_divisor (5; Rogue 3, Ranger 2); 1 = no penalty, so

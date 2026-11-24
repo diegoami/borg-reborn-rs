@@ -61,7 +61,7 @@ use crate::headers::list_terrain_h::{
     FEAT_BROKEN, FEAT_FLOOR, FEAT_MAGMA, FEAT_NONE, FEAT_OPEN, FEAT_PASS_RUBBLE, FEAT_PERM,
 };
 use crate::headers::list_tvals_h::{
-    TV_BOOTS, TV_FLASK, TV_POTION, TV_RING, TV_ROD, TV_WAND,
+    TV_BOOTS, TV_FLASK, TV_HAFTED, TV_POLEARM, TV_POTION, TV_RING, TV_ROD, TV_SWORD, TV_WAND,
 };
 use crate::headers::list_object_flags_h::{OF_EXPLODE, OF_THROWING};
 use crate::headers::ui_event_h::keycode_t;
@@ -2964,21 +2964,109 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
-    let (b_k, b_d) = best_throw(st);
-
-    /* Nothing to use */
-    if b_k < 0 {
-        return 0;
-    }
-
-    /* No firing while blind, confused, or hallucinating */
-    // borg-reborn-rs (#867): confused, by direction at an adjacent monster.
+    let (slot, damage) = best_throw(st);
     if cant_use_item_attack(st) {
         return 0;
     }
+    if param(Param::attack_throw_surplus) != 0 {
+        mark_confused_aim(st);
+        return attack_throw_surplus(st, slot, damage);
+    }
+    if slot < 0 {
+        return 0;
+    }
     mark_confused_aim(st);
+    borg_attack_aux_object_fire(st, slot, damage)
+}
 
-    borg_attack_aux_object_fire(st, b_k, b_d)
+/// #1200: Only a fully known plain weapon dominated by the equipped weapon
+/// can be spent. Preserve combat bonuses, blows, protection and swap roles.
+fn surplus_weapon(st: &BorgState, slot: i32, item: &borg_item, worn: &borg_item) -> bool {
+    let tval = u32::from(item.tval);
+    let same_divine_role = tval != TV_HAFTED || u32::from(worn.tval) == TV_HAFTED;
+    matches!(tval, TV_SWORD | TV_POLEARM | TV_HAFTED)
+        && item.iqty > 0 && item.ident && !item.needs_ident && !item.cursed
+        && item.art_idx == 0 && item.ego_idx == 0 && item.activ_idx == 0 && item.note.is_none()
+        && (0..=param(Param::attack_throw_min_item_value)).contains(&item.value)
+        && engine::flag_has(&item.flags, OF_THROWING as i32)
+        && item.flags.iter().map(|byte| byte.count_ones()).sum::<u32>() == 1
+        && item.modifiers.iter().all(|&value| value == 0)
+        && item.el_info.iter().all(|element| element.res_level == 0)
+        && !item.brands.iter().any(|&brand| brand)
+        && !item.slays.iter().any(|&slay| slay != 0)
+        && st.trait_swap.weapon_swap != slot + 1
+        && worn.iqty > 0 && worn.ident && !worn.cursed && same_divine_role
+        && item.dd <= worn.dd && item.ds <= worn.ds
+        && item.to_h <= worn.to_h && item.to_d <= worn.to_d && item.to_a <= worn.to_a
+        && crate::borg_trait::borg_calc_blows(st, item) <= tr(st, BI_BLOWS)
+}
+
+/// Engine player-attack.c:do_cmd_throw at 574b618c, in tenths of a pound.
+fn native_throw_range(strength: i32, weight: i32) -> i32 {
+    ((strength + 20) * 10 / weight.max(10)).min(10)
+}
+
+fn attack_throw_surplus(st: &mut BorgState, legacy_slot: i32, legacy_damage: i32) -> i32 {
+    let mut slot = legacy_slot;
+    let mut range = 6 + 2 * tr(st, BI_AMMO_POWER);
+    let mut best = ProjectedAttack::default();
+    if legacy_slot >= 0 {
+        st.fight_attack.throwing = st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
+        best = choose_bolt(st, 0, legacy_damage, BORG_ATTACK_ARROW as i32, range, legacy_slot);
+    }
+    let mut damage = st.fight_attack.dmg_best;
+    let mut kills = st.fight_attack.kill_best;
+    let worn = st.items.items[inven_wield() as usize];
+    let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
+    let mut throwing_menu = false;
+    st.fight_attack.throwing = true;
+    for k in 0..inven_wield() {
+        let item = st.items.items[k as usize];
+        if !surplus_weapon(st, k, &item, &worn) {
+            continue;
+        }
+        throwing_menu = true;
+        let max = native_throw_range(strength, i32::from(item.weight));
+        let per_hit = thrown_damage(i32::from(item.dd), i32::from(item.ds),
+            i32::from(item.to_d), i32::from(item.weight), true, false);
+        if per_hit <= 0 {
+            continue;
+        }
+        let candidate = choose_bolt(st, 0, per_hit, BORG_ATTACK_ARROW as i32, max, k);
+        if candidate.score > best.score {
+            best = candidate;
+            slot = k;
+            range = max;
+            damage = st.fight_attack.dmg_best;
+            kills = st.fight_attack.kill_best;
+        }
+    }
+    st.fight_attack.throwing = false;
+    st.fight_attack.dmg_best = damage;
+    st.fight_attack.kill_best = kills;
+    if best.score <= 0 {
+        return best.score;
+    }
+    let item = st.items.items[slot as usize];
+    st.fight_attack.cost = Some(AttackCost { fail_pct: 0, uses: Some(i32::from(item.iqty)), spell: false });
+    let score = best.score;
+    if !simulating(st) {
+        if slot != legacy_slot {
+            if let Some(aim) = best.aim {
+                let distance = dist_to(st, aim.x, aim.y);
+                let target = grid(st, aim.x, aim.y).kill;
+                let hit = if target == 0 { 0 } else {
+                    let ac = engine::race(usize::from(st.kills.kills[usize::from(target)].r_idx)).ac;
+                    throw_hit_percent(tr(st, BI_THT), tr(st, BI_TOHIT) + i32::from(item.to_h), true, distance, ac)
+                };
+                borg_note(st, &format!("# Surplus throw: pack slot {slot}, distance {distance}/{range}, hit {hit}%, score {score}."));
+            }
+            crate::borg_object_log::log_use(st, "throw", &item);
+        }
+        best.target(st, false);
+        queue_object_throw(st, slot, throwing_menu);
+    }
+    score
 }
 
 /// borg-reborn-rs (#539): the pack scan of `borg_attack_aux_object`, the
@@ -3123,7 +3211,11 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
         return b_n;
     }
 
-    /* Do it */
+    queue_object_throw(st, b_k, false);
+    b_n
+}
+
+fn queue_object_throw(st: &mut BorgState, b_k: i32, throwing_menu: bool) {
     let mut m = b"# Throwing painful object '".to_vec();
     m.extend_from_slice(&desc(&st.items.items[b_k as usize]));
     m.push(b'\'');
@@ -3131,6 +3223,12 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
 
     /* Fire */
     borg_keypress(st, key(b'v'));
+
+    // ui-object.c:get_item_action switches SHOW_THROWING's compact list
+    // to the inventory, whose letters address the actual pack slots.
+    if throwing_menu {
+        borg_keypress(st, key(b'/'));
+    }
 
     /* Use the object */
     borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
@@ -3140,8 +3238,6 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     st.fight_attack.successful_target = aim_key(st, -2);
     st.fight_attack.pending_unseen.command_queued(true);
 
-    /* Value */
-    b_n
 }
 
 /// borg-reborn-rs (#568): the engine's average damage of an object thrown
@@ -5919,7 +6015,7 @@ fn focused_attack_ranked(
         let utility = confused_weight(st, utility, true);
         let damage = st.fight_attack.dmg_best;
         let mut cost = st.fight_attack.cost;
-        if kind == BF_OBJECT as i32 {
+        if kind == BF_OBJECT as i32 && param(Param::attack_throw_surplus) == 0 {
             let (slot, _) = best_throw(st);
             cost = Some(AttackCost { fail_pct: 0, uses: Some(if slot < 0 { 0 } else { i32::from(st.items.items[slot as usize].iqty) }), spell: false });
         } else if kind == BF_LAUNCH as i32 {
@@ -6697,6 +6793,14 @@ mod throw_tests {
 
     /// #568: `hit_chance` (`player-attack.c:196-219`): 12% always hits, 5%
     /// always misses, the rest scales with (to-hit - 2/3 AC) / to-hit.
+    #[test]
+    fn native_throw_range_uses_single_item_weight_and_caps_at_ten() {
+        assert_eq!(native_throw_range(9, 12), 10);
+        assert_eq!(native_throw_range(9, 50), 5);
+        assert_eq!(native_throw_range(9, 55), 5);
+        assert_eq!(native_throw_range(9, 0), 10);
+    }
+
     #[test]
     fn throw_hit_chance_is_the_engines() {
         assert_eq!(throw_hit_percent(30, 0, true, 0, 0), 95, "no armour: all but the 5% miss");
