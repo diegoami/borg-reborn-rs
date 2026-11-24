@@ -265,7 +265,8 @@ jobs:
           curl -fsSL --retry 3 https://raw.githubusercontent.com/diegoami/borg-cemetery/0cca725f4f59bd70f91467ba6af6c6fa8604a1e6/scenarios/mage-overweight-cursed-kit-9221204/start.save.gz -o "$fixture/start.save.gz"
           gzip -dc "$fixture/start.save.gz" > "$fixture/start.save"
           echo "236b0cf1c376a47788489e3acb92d5870c84ec8fde7af4c7721c2a7de66b2255  $fixture/start.save" | sha256sum --check
-          SAVE_ROOT="$fixture" RUN_TIMEOUT_SECONDS=30 harness/run.sh harness/out/load-more 1 4 1 9221304 save=start.save,keep-load-rng
+          SAVE_ROOT="$fixture" RUN_TIMEOUT_SECONDS=30 BORGH_DEBUG=1 harness/run.sh harness/out/load-more 1 4 1 9221304 save=start.save,keep-load-rng
+          grep -Fxq -- "borgh: acknowledging load -more- prompt" harness/out/load-more/stderr.log
           python3 - <<'PYLOAD'
           import json, pathlib
           run = json.loads(pathlib.Path('harness/out/load-more/summary.json').read_text())
@@ -323,7 +324,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/load-more harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and the dossiers carry their core's trace and parameters (T2.4):
       # the reborn core's trace-tail.jsonl and params.json, or the borg-rs
       # core's trace-core-tail.jsonl and params-core.json (#606). A borg-rs
