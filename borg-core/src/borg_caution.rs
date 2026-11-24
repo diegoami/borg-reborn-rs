@@ -3998,6 +3998,12 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if mode == 0 { return false; }
     let Some(race) = fight_race(st, false) else { return false };
     let FightRace { won, turns, incoming, hp, ref plans } = race;
+    let margin = p(Param::caution_winning_fight_margin_percent);
+    let margin_rejected = won && margin > 0 && !fight_margin_allows(turns, incoming, hp, margin);
+    if margin_rejected {
+        borg_note(st, &format!("# Fight race: expected HP left {:.3} is below or at the {margin}% reserve (#992)", f64::from(hp) - turns * incoming));
+    }
+    let won = won && !margin_rejected;
     let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
         String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
@@ -4008,6 +4014,23 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+}
+
+/// #992: reserve a share of current HP for the fight-before-flight verdict.
+fn fight_margin_allows(turns: f64, incoming: f64, hp: i32, margin_percent: i32) -> bool {
+    turns * incoming * 100.0 < f64::from(hp) * f64::from(100 - margin_percent)
+}
+
+#[cfg(test)]
+#[test]
+fn fang_fight_wins_need_room_for_variation() {
+    // Historical Elf Paladin 1194051723 and the shipped replay of Priest 1512540769.
+    for (turns, damage, hp) in [(2.0, 4.750, 10), (2.0, 4.750, 11), (6.0, 4.027, 27)] {
+        assert!(fight_margin_allows(turns, damage, hp, 0));
+        assert!(!fight_margin_allows(turns, damage, hp, 20));
+    }
+    assert!(fight_margin_allows(6.0, 4.027, 34, 20));
+    assert!(!fight_margin_allows(2.0, 4.0, 10, 20));
 }
 
 /// #759's race, as computed (`None`: not certified, so never winning).
