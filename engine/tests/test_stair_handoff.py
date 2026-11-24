@@ -531,10 +531,14 @@ class DarkVeinLoopTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # The switch under test, replaced in place (it ships 1), and the
-            # exploration mode the incident ran under, breadth-first
-            # (track-p #1201 shipped it 0; the recorded game predates that).
-            pins = [("borg_param_explore_stepable_goals", 1 if on else 0), ("borg_param_explore_breadth_first", 1)]
+            # Preserve the incident's exploration policy while varying only
+            # the switch under test. Track P later turned breadth-first off
+            # (#1201) and enabled stair scumming for Warriors (#1208).
+            pins = [
+                ("borg_param_explore_stepable_goals", 1 if on else 0),
+                ("borg_param_explore_breadth_first", 1),
+                ("borg_param_stair_scum", 0),
+            ]
             for name, value in pins:
                 config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
@@ -544,7 +548,7 @@ class DarkVeinLoopTest(unittest.TestCase):
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
             # The recorded character: a Half-Troll Warrior (race 7, class 0)
             # at DL1. Its birth kit feeds the think; the fixture pins the
-            # traits (23 max HP: breadth-first applies, stair_scum does not).
+            # traits (23 max HP, within the breadth-first threshold).
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
                  "--", "-seed", "101", "-race", "7", "-class", "0", "-menu-letters", "-start-depth", "1", "-keys", "250"],
