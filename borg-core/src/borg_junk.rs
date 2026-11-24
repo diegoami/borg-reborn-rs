@@ -572,6 +572,7 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
 
         /* Skip empty items */
         if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
+            || crate::borg_ranged::keep_stack(st, i as usize)
             || keeps_restore_life(st, i as usize, false, false) {
             continue;
         }
@@ -908,7 +909,8 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         let mut value_boost: i32 = 0;
 
         /* Skip empty items. A desperate pack clear can spend the reserve. */
-        if item.iqty == 0 || !desperate && crate::borg_light::keep_fuel_stack(st, i as usize)
+        if item.iqty == 0 || !desperate && (crate::borg_light::keep_fuel_stack(st, i as usize)
+            || crate::borg_ranged::keep_stack(st, i as usize))
             || keeps_restore_life(st, i as usize, true, desperate) {
             continue;
         }
@@ -1200,6 +1202,7 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
 
         /* Skip empty items */
         if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
+            || crate::borg_ranged::keep_stack(st, i as usize)
             || keeps_restore_life(st, i as usize, false, false) {
             continue;
         }

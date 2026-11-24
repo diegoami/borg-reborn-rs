@@ -48,6 +48,10 @@ pub const RECALL_MIN_DEPTH: i32 = 5;
 /// The deepest level.
 pub const MAX_DEPTH: i32 = 127;
 
+pub(crate) fn ranged_recovery() -> bool {
+    crate::params::value(crate::params::Param::trip_ranged_readiness) != 0
+}
+
 #[derive(Default)]
 pub struct TripState {
     town_seen: bool,

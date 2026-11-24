@@ -54,7 +54,7 @@ pub fn borg_wield_slot(item: &borg_item) -> i32 {
 /// Find the pack slot of an aware item with the given tval/sval, or -1
 /// (`borg_slot`). Prefers the smallest pile; the "largest pval" test is
 /// dead code in C (see docs/c-bugs.md) and kept.
-pub fn borg_slot(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
+pub fn borg_slot(st: &BorgState, tval: i32, sval: i32) -> i32 {
     let pack_size = usize::from(engine::z_info().pack_size);
     borg_slot_in_pack(&st.items.items[..pack_size], tval, sval)
 }
