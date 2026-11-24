@@ -258,6 +258,28 @@ jobs:
       - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
       # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
       - run: BORG_CORE=reborn BORG_IMPL=rust harness/check-extra-load.sh
+      - name: Resume saved Mages with pending message prompts
+        run: |
+          for case in \
+            "mage-overweight-cursed-kit-9221204|0cca725f4f59bd70f91467ba6af6c6fa8604a1e6|236b0cf1c376a47788489e3acb92d5870c84ec8fde7af4c7721c2a7de66b2255|9221204" \
+            "mage-rubble-10815143|66f46d20df273fd6c9b005c424d0079a3298c9d1|f2afdb7352d96106eff40534613fd06fa6a38e08b53a374627459ba424a3aeb1|10815143"; do
+            IFS='|' read -r name commit sha turn <<< "$case"
+            fixture="$RUNNER_TEMP/$name"
+            out="harness/out/load-more-$name"
+            mkdir -p "$fixture"
+            curl -fsSL --retry 3 "https://raw.githubusercontent.com/diegoami/borg-cemetery/$commit/scenarios/$name/start.save.gz" -o "$fixture/start.save.gz"
+            gzip -dc "$fixture/start.save.gz" > "$fixture/start.save"
+            echo "$sha  $fixture/start.save" | sha256sum --check
+            SAVE_ROOT="$fixture" RUN_TIMEOUT_SECONDS=30 BORGH_DEBUG=1 harness/run.sh "$out" 1 4 1 "$((turn + 100))" save=start.save,keep-load-rng
+            grep -Fxq -- "borgh: acknowledging load -more- prompt" "$out/stderr.log"
+            python3 - "$out" "$turn" <<'PYLOAD'
+          import json, pathlib, sys
+          out, turn = pathlib.Path(sys.argv[1]), int(sys.argv[2])
+          run = json.loads((out / 'summary.json').read_text())
+          assert run['loaded'] and run['loaded_turn'] == turn, run
+          assert run['stop_reason'] == 'turns' and run['game_turns'] >= turn + 100 and run['keys'] > 0, run
+          PYLOAD
+          done
       # Recorded observations round-trip through their log lines (T2.1);
       # replayed without the game they rebuild the live world model (T2.2);
       # the knowledge read from the game matches its data files, and the
@@ -270,6 +292,7 @@ jobs:
       # think writes its comparison to truth.jsonl (feature test-perception).
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
       - run: python3 engine/tests/test_immobile_decisions.py
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
@@ -310,7 +333,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/smoke-borg-rs-1 harness/out/smoke-borg-rs-2 harness/out/observations harness/out/check-extra-load harness/out/load-more-mage-overweight-cursed-kit-9221204 harness/out/load-more-mage-rubble-10815143 harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and the dossiers carry their core's trace and parameters (T2.4):
       # the reborn core's trace-tail.jsonl and params.json, or the borg-rs
       # core's trace-core-tail.jsonl and params-core.json (#606). A borg-rs
