@@ -94,6 +94,7 @@ pub struct ThinkDungeonState {
     pub(crate) lightless: crate::borg_lightless::Recovery,
     /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
     pub(crate) cursed: crate::borg_cursed::Removal,
+    pub(crate) healing_restock: crate::borg_healing_restock::Restock,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -678,6 +679,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    crate::borg_healing_restock::observe_dungeon(st);
     crate::borg_flow::observe_flight_retreats(st);
     crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;
@@ -953,6 +955,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
     if crate::borg_item_use::potion_test_hold(st) {
         return choice!("potion_test_hold");
+    }
+
+    if crate::borg_healing_restock::returning(st) && borg_leave_level(st, false) {
+        return choice!("healing_restock_return");
     }
 
     // borg-reborn-rs (#1061): stair_scum's door alarm, door peek and walk

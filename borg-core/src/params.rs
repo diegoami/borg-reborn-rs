@@ -142,6 +142,7 @@ parameters! {
     kit_weight_food => (1, "weight", 0, 100, "borg_kit.rs:195", "#840: the weight of the food share in the kit score."),
     kit_descent_min_percent => (0, "percent", 0, 100, "borg_kit.rs:202", "#840: no descent (to a depth below the current one and below DL1, from the dungeon) while the kit score, in percent, is below this. 0 = off, today's play."),
     kit_leave_danger_percent => (0, "percent of HP", 0, 1000, "borg_kit.rs:203", "#840: a Borg short of kit takes the stairs it stands on (up) at the first danger of at least this share of its current HP, instead of fighting, and starts fleeing to the stairs when the danger is that high and it is off them (the #614 rule's kit twin, borg_caution.rs). 0 = off, today's play."),
+    restock_empty_healing => (0, "flag", 0, 1, "borg_healing_restock.rs:63", "#1214: request town on exhausting the known healing potion reserve, even on shallow levels. Preserve the goal while ascending and defer a repeat after an unsuccessful visit until the last observed offer becomes affordable. 0 keeps the historical restock rules."),
     kit_restock => (0, "flag", 0, 1, "borg_kit.rs:204", "#840 remedy a: the kit is part of borg_restock at every depth, not only DL6+: a trip to town when the kit score is below kit_restock_below_percent and the purse has grown by kit_restock_min_gold since the Borg left town, and (with kit_restock_light_turns) when the light is short of turns with no spare. 0 = off, today's play."),
     kit_restock_below_percent => (75, "percent", 0, 100, "borg_kit.rs:385", "#840: with kit_restock (or kit_money_first), the kit score, in percent, below which the Borg goes to town if it can pay. A hypothesis."),
     kit_restock_min_gold => (50, "gold", 0, 100000, "borg_kit.rs:365", "#840: the gold gained since the Borg left town that makes a trip worth it (about two potions of Cure Light Wounds, 20 each, and a Phase Door, 15: object.txt). Leaving town short of kit because a store lacked stock does not bring the Borg back until it has found this much more."),
@@ -3468,6 +3469,7 @@ mod tests {
                 "stair" => "stair_scum",
                 "stairs" => "flow_stairs",
                 "deal" => "poison",
+                "restock" => "healing_restock",
                 "caution" if s.spec.name.starts_with("caution_combat_heal") => "combat_heal",
                 _ => prefix,
             };

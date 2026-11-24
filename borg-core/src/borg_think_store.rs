@@ -211,6 +211,13 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         return true;
     }
 
+    if let Some(a) = crate::borg_healing_restock::purchase(st) {
+        clear_shop_goal(st);
+        st.borg.goal.shop = a.at[0] as i16;
+        st.borg.goal.ware = a.at[1] as i16;
+        return true;
+    }
+
     /* If poisoned or bleeding -- flow to the Alchemy shop */
     if st.borg.tr(BI_ISCUT) != 0 || st.borg.tr(BI_ISPOISONED) != 0 {
         st.borg.goal.shop = 4;

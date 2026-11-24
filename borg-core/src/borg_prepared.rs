@@ -110,7 +110,7 @@ pub(crate) fn prepared_for_decision(st: &mut BorgState, depth: i32) -> Option<Re
 
 /// `borg_restock(depth)` as C returns it (as `borg_prepared_c`).
 pub fn borg_restock_c(st: &mut BorgState, depth: i32) -> Option<Vec<u8>> {
-    let r = borg_restock(st, depth);
+    let r = restock_for_return(st, depth);
     reason_c(st, r)
 }
 
@@ -875,7 +875,11 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
 /// Note that we ignore "restock" issues for the first several turns
 /// on each level, to prevent repeated "level bouncing".
 pub fn borg_restock(st: &mut BorgState, depth: i32) -> Option<Reason> {
-    if let Some(reason) = borg_restock_base(st, depth) {
+    restock(st, depth, true)
+}
+
+fn restock(st: &mut BorgState, depth: i32, check_healing: bool) -> Option<Reason> {
+    if let Some(reason) = borg_restock_base(st, depth, check_healing) {
         return Some(reason);
     }
     // borg-reborn-rs (#840, remedies a and c): the kit is part of the rule at
@@ -884,7 +888,7 @@ pub fn borg_restock(st: &mut BorgState, depth: i32) -> Option<Reason> {
 }
 
 /// `borg_restock` as C has it.
-fn borg_restock_base(st: &mut BorgState, depth: i32) -> Option<Reason> {
+fn borg_restock_base(st: &mut BorgState, depth: i32, check_healing: bool) -> Option<Reason> {
     // We are now looking at our preparedness
     if -1 == st.borg.ready_morgoth {
         st.borg.ready_morgoth = 0;
@@ -895,11 +899,11 @@ fn borg_restock_base(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return r.map(|r| Reason::new(ReasonMessage::Restock(line_index(&st.formulas.restock, r)), "dynamic_restock_formula", 0, 1, ">="));
     }
 
-    restock_static(st, depth)
+    restock_static(st, depth, check_healing)
 }
 
 /// The part of `borg_restock` without dynamic formulas.
-fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
+fn restock_static(st: &BorgState, depth: i32, check_healing: bool) -> Option<Reason> {
     let b = &st.borg;
 
     // *** Level 1 ***
@@ -953,7 +957,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     }
 
     // Potions of Cure Wounds
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 1 {
+    if check_healing && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 1 {
         return Some(Reason::fixed("restock clw+csw+ccw", "cures", b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW), 1));
     }
 
@@ -970,7 +974,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     }
 
     // Must have "cure"
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
+    if check_healing && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
         return Some(Reason::fixed("restock clw + csw + ccw ", "cures", b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW), 2));
     }
 
@@ -987,7 +991,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     // *** Level 20 - 35  ***
 
     // Must have "cure"
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACSW) + b.tr(BI_ACCW) < 4 {
+    if check_healing && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACSW) + b.tr(BI_ACCW) < 4 {
         return Some(Reason::fixed("restock csw + ccw < 4", "cure_serious_or_critical", b.tr(BI_ACSW) + b.tr(BI_ACCW), 4));
     }
 
@@ -1023,7 +1027,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     // *** Level 65 - 99  ***
 
     // Must have "Heal"
-    if b.tr(BI_AHEAL) + b.has[st.item_val.kv_rod_healing as usize] + b.tr(BI_AEZHEAL) < 1 {
+    if check_healing && b.tr(BI_AHEAL) + b.has[st.item_val.kv_rod_healing as usize] + b.tr(BI_AEZHEAL) < 1 {
         return Some(Reason::fixed("restock heal", "healing", b.tr(BI_AHEAL) + b.has[st.item_val.kv_rod_healing as usize] + b.tr(BI_AEZHEAL), 1));
     }
 
@@ -1036,7 +1040,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
 
     // Must have "Heal"
     // If I just got to dlevel 100 and low on heals, get out now.
-    if borg_timer(st, b.time.level) < 10 && b.tr(BI_AEZHEAL) < 15 {
+    if check_healing && borg_timer(st, b.time.level) < 10 && b.tr(BI_AEZHEAL) < 15 {
         return Some(Reason::fixed("restock *heal*", "star_heal", b.tr(BI_AEZHEAL), 15));
     }
 
@@ -1054,6 +1058,10 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
     // don't need to go to town if in town
     if st.borg.tr(BI_CDEPTH) == 0 {
         return None;
+    }
+
+    if crate::borg_healing_restock::returning(st) {
+        return Some(Reason::fixed("restock healing potions", "healing_potions", 0, 1));
     }
 
     // Always spend time on a level unless 100
@@ -1074,7 +1082,14 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
     }
 
     // need to return to town if restock is needed
-    borg_restock(st, st.borg.tr(BI_CDEPTH))
+    restock_for_return(st, st.borg.tr(BI_CDEPTH))
+}
+
+fn restock_for_return(st: &mut BorgState, depth: i32) -> Option<Reason> {
+    // A failed healing visit suppresses the older static potion triggers
+    // too. Preparedness and other supplies still use their ordinary checks.
+    let check_healing = !crate::borg_healing_restock::deferred(st);
+    restock(st, depth, check_healing)
 }
 
 /// borg-reborn-rs (#557): a descent to `depth` needs a Word of Recall from
@@ -1098,7 +1113,7 @@ mod recall_depth_tests {
         assert_eq!(fail(&st), Requirement { name: "light_radius", actual: 0, required: 1, relation: ">=" });
         st.borg.trait_[BI_LIGHT as usize] = 1;
         assert_eq!(fail(&st), Requirement { name: "food", actual: 0, required: 5, relation: ">=" });
-        assert_eq!(restock_static(&st, 5).unwrap().requirement,
+        assert_eq!(restock_static(&st, 5, true).unwrap().requirement,
             Requirement { name: "food", actual: 0, required: 3, relation: ">=" });
         st.borg.trait_[BI_FOOD as usize] = 5;
         assert_eq!(fail(&st), Requirement { name: "prepared_dl2_min_hp", actual: 0, required: 30, relation: ">=" });

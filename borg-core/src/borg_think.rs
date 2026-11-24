@@ -227,7 +227,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
 
     #[cfg(feature = "test-stair-handoff")]
     if let Ok(case) = std::env::var("BORG_TEST_STAIR_HANDOFF") {
-        crate::borg_flow_stairs::run_handoff_regression(st, &case);
+        match case.as_str() {
+            "healing-restock-dungeon" => crate::borg_healing_restock::fixture::dungeon(st),
+            "healing-restock-town" => crate::borg_healing_restock::fixture::town(st),
+            _ => crate::borg_flow_stairs::run_handoff_regression(st, &case),
+        }
     }
 
     #[cfg(feature = "test-combat-heal")]
@@ -238,6 +242,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);
+    crate::borg_healing_restock::observe_town(st);
     crate::borg_ranged::observe(st);
 
     /* Evaluate the current world */

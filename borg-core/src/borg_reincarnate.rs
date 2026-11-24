@@ -206,6 +206,7 @@ pub fn borg_reincarnate_end(st: &mut BorgState) {
     crate::borg_init::borg_prepare_race_class_info(st);
 
     crate::borg_trait::borg_notice_player(st);
+    st.think_dungeon.healing_restock = Default::default();
 
     // borg-reborn-rs (#447): reincarnation bypasses borg_init.
     crate::errands_plan::refresh();

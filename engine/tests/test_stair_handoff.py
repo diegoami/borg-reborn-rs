@@ -97,6 +97,8 @@ PINNED_TOWN_SETTINGS = [
     ("caution_combat_heal", 0),
     # #1159 changes the path to the incident. Keep the original route
     # selection for these exact-turn replays.
+    # #1214 adds a town return after using the last healing potion.
+    ("restock_empty_healing", 0),
     ("caution_rising_skip_held_stairs", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
@@ -243,6 +245,43 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)
+
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class HealingRestockTest(unittest.TestCase):
+    def run_case(self, case, depth, live=True):
+        with tempfile.TemporaryDirectory(prefix="healing-restock-") as directory:
+            paths = {name: Path(directory) / name for name in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            config = (ROOT / "harness/borg.txt").read_text()
+            if not live:
+                config = config.replace("borg_town_plan = 1", "borg_town_plan = 0")
+            (paths["user"] / "borg.txt").write_text(config)
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"healing-restock-{case}")
+            if case == "town":
+                # Isolate purchase execution from the unrelated town-monster flight.
+                env.update(BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
+                           BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
+                           BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0")
+            options = ["-start-depth", str(depth)] if depth else []
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
+                 "--", "-seed", "101", "-race", "3", "-class", "0", "-menu-letters", *options, "-keys", "300"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn(f"#1214 healing restock passed: {case}", result.stdout)
+
+    def test_shallow_depletion_blocked_route_and_retry_funding(self):
+        self.run_case("dungeon", 2)
+
+    def test_affordable_restock_uses_the_native_store(self):
+        for live in (True, False):
+            with self.subTest(live=live):
+                self.run_case("town", 0, live)
 
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
