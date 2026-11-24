@@ -142,16 +142,18 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(any(" 7446 0 # no up stairs found, exploring for them" in row for row in messages))
         self.assertEqual(state_at(states, 7446)[0][1], "41,48")
         self.assertEqual(state_at(states, 7456)[0][1], "41,47")
+        self.assertIn(["7446", "1", "38", "0"], keys)
         self.assertFalse(any(" 7456 0 # Flowing toward down-stairs at cost 1" in row for row in messages))
         self.assertTrue(any(" 7456 0 # Fleeing the level (recall)" in row for row in messages))
         self.assertEqual(state_at(states, 7466)[0][1], "41,47")
 
     def test_ordinary_fallback_does_not_restart_down_stair_loop(self):
-        messages, states, _ = self.run_case(204, 1, 119000)
+        messages, states, keys = self.run_case(204, 1, 119000)
         self.assertTrue(any(" 118839 0 # Standing on dn-stairs" in row for row in messages))
         self.assertTrue(any(" 118839 0 # Flowing toward dark-" in row for row in messages))
         self.assertEqual(state_at(states, 118839)[0][1], "129,22")
         self.assertEqual(state_at(states, 118849)[0][1], "129,21")
+        self.assertIn(["118839", "1", "38", "0"], keys)
         # The first patch reached (129,20), reversed twice, and started over.
         # Check the whole window so a three-square loop also fails the test.
         for turn in (118859, 118869, 118879):
@@ -159,15 +161,17 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(state_at(states, 118879))
 
     def test_known_up_route_continues_past_adjacent_down_stair(self):
-        messages, states, _ = self.run_case(224, 0, 144000)
+        messages, states, keys = self.run_case(224, 0, 144000)
         self.assertTrue(any(" 143021 0 # Standing on dn-stairs" in row for row in messages))
         self.assertTrue(any(" 143021 0 # Flowing toward up-stairs at cost 4" in row for row in messages))
         self.assertEqual(state_at(states, 143021)[0][1], "162,35")
         self.assertEqual(state_at(states, 143031)[0][1], "163,34")
+        self.assertIn(["143021", "1", "39", "0"], keys)
 
         later = state_at(states, 143041)
         self.assertTrue(later)
         self.assertNotIn("162,35", [state[1] for state in later])
+        self.assertTrue(any(int(turn) > 143041 and key == "3c" for turn, _, key, _ in keys))
         self.assertTrue(any(int(state[0]) > 143041 and state[2].startswith("d0/") for state in states))
 
 
