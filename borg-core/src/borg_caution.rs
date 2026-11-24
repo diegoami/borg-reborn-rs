@@ -945,10 +945,6 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
 /// The distance of the nearest stair of `track` without a monster on it,
 /// or -1.
 fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
-    nearest_free_stair_by(st, up, engine::distance)
-}
-
-fn nearest_free_stair_by(st: &BorgState, up: bool, distance: fn(loc, loc) -> i32) -> i32 {
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let mut best = -1;
     for i in 0..track.num.max(0) as usize {
@@ -956,7 +952,7 @@ fn nearest_free_stair_by(st: &BorgState, up: bool, distance: fn(loc, loc) -> i32
         let y = track.y[i];
 
         // How far is the nearest stair
-        let j = distance(st.borg.c, loc { x, y });
+        let j = engine::distance(st.borg.c, loc { x, y });
 
         // Skip stairs if a monster is on the stair
         if st.cave.grid(x, y).kill != 0 || unseen_bump_blocked(st, x, y) {
@@ -991,13 +987,19 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
-fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+fn desperate_flow(
+    st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str,
+    budget: Option<&mut DesperateWalkBudget>,
+) -> bool {
     crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
-        desperate_flow_with_route_guard(st, up, range, why)
+        desperate_flow_with_route_guard(st, up, range, why, budget)
     })
 }
 
-fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+fn desperate_flow_with_route_guard(
+    st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str,
+    budget: Option<&mut DesperateWalkBudget>,
+) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1031,10 +1033,10 @@ fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: Desperat
         }
     }
     st.borg.status.desperate = true;
-    let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) {
+    let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) || budget.is_some() {
         // A stair that is close across the map may be far away on foot.
         // Keep the proximity limit on the route, including any detour.
-        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach)
+        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach, budget)
     } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
@@ -1085,7 +1087,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     if b_j <= near_up
         && b_j != -1
         && pos_danger < st.borg.tr(BI_CURHP)
-        && desperate_flow(st, true, DesperateStairRange::Nearby(near_up), "# Desperate for Stairs (one)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(near_up), "# Desperate for Stairs (one)", None)
     {
         return true;
     }
@@ -1094,11 +1096,12 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_up = p(Param::caution_desperate_adjacent_up_distance);
     if b_j <= adjacent_up
         && b_j != -1
-        && desperate_flow(st, true, DesperateStairRange::Nearby(adjacent_up), "# Desperate for Stairs (two)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(adjacent_up), "# Desperate for Stairs (two)", None)
     {
         return true;
     }
 
+    let mut pursuit = None;
     // Low level guys tend to waste money reading the recall scrolls
     let scary_up = p(Param::caution_desperate_scary_distance) - 1;
     if b_j <= scary_up
@@ -1142,8 +1145,14 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             || !safe
         {
             // try to take them on, you cant outrun them
-        } else if !desperate_walk_refused(st) && desperate_flow(st, true, DesperateStairRange::Nearby(scary_up), "# Desperate for Stairs (three)") {
-            return true;
+        } else {
+            pursuit = DesperateWalkBudget::for_contact(st);
+            if desperate_flow(
+                st, true, DesperateStairRange::Nearby(scary_up),
+                "# Desperate for Stairs (three)", pursuit.as_mut(),
+            ) {
+                return true;
+            }
         }
     }
 
@@ -1151,7 +1160,9 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
     if b_m <= adjacent_down
         && b_m != -1
-        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)"))
+        && ((!pursuit.is_some_and(|budget| budget.refused)
+            && crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger))
+            || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)", None))
     {
         return true;
     }
@@ -3740,6 +3751,11 @@ pub(crate) struct IncomingDamage {
 /// persists during a future fight or the Recall delay.
 pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
+}
+
+/// Current speed for an immediate movement decision (mon-move.c:1928-1935).
+fn current_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    forecast_monster_speed(kill) - 2 * i32::from(kill.observed_slow_level)
 }
 
 // Recall is already pending during exposure: these non-damaging spells do
@@ -6980,61 +6996,156 @@ fn danger_share_reaches(danger: i32, hp: i32, percent: i32) -> bool {
     i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
 }
 
-/// #908: price a straight-line lower bound on the number of moves left
-/// in branch (three). In a corridor a pursuer spends one of its actions
-/// following each move. Price the excess as contact damage.
-fn desperate_walk_refused(st: &mut BorgState) -> bool {
-    let percent = p(Param::caution_desperate_walk_cost_percent);
-    if percent == 0 {
-        return false;
-    }
-
-    let steps = nearest_free_stair_by(st, true, king_moves);
-    if steps <= 0 {
-        return false;
-    }
-    let energy = |speed: i32| f64::from(engine::extract_energy(speed.clamp(0, 199) as usize)).max(1.0);
-    let player_energy = energy(engine::player_combat_speed());
-    let mut per_step = 0.0;
-    for i in 1..st.kills.nxt.max(0) as usize {
-        let kill = &st.kills.kills[i];
-        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1
-            || engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
-        {
-            continue;
-        }
-        let actions = energy(forecast_monster_speed(kill)) / player_energy;
-        if actions > 1.0 {
-            per_step += pursuit_damage(fight_incoming(st, i).hp_per_turn, actions);
-        }
-    }
-    let hp = st.borg.tr(BI_CURHP);
-    if !desperate_walk_over_budget(steps, per_step, hp, percent) {
-        return false;
-    }
-    let cost = f64::from(steps) * per_step;
-    borg_note(st, &format!("# Desperate walk refused: at least {steps} steps x {per_step:.2} HP/step = {cost:.1} >= {percent}% of HP {hp} (#908)"));
-    true
+/// #908: in a corridor a pursuer spends one action following each step.
+/// Charge the selected route for its excess contact actions.
+pub(crate) struct DesperateWalkBudget {
+    per_step: f64,
+    percent: i32,
+    refused: bool,
 }
 
-fn pursuit_damage(incoming_per_player_turn: f64, actions_per_player_turn: f64) -> f64 {
-    incoming_per_player_turn * (1.0 - actions_per_player_turn.recip()).max(0.0)
+impl DesperateWalkBudget {
+    fn for_contact(st: &BorgState) -> Option<Self> {
+        let percent = p(Param::caution_desperate_walk_cost_percent);
+        if percent == 0 {
+            return None;
+        }
+
+        let energy = |speed: i32| f64::from(engine::extract_energy(speed.clamp(0, 199) as usize)).max(1.0);
+        let player_energy = energy(engine::player_combat_speed());
+        let mut per_step = 0.0;
+        for i in 1..st.kills.nxt.max(0) as usize {
+            let kill = &st.kills.kills[i];
+            if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1
+                || engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+            {
+                continue;
+            }
+            let current_actions = energy(current_monster_speed(kill)) / player_energy;
+            if current_actions > 1.0 {
+                // Undo the action-rate multiplier used by the fight forecast,
+                // then price pursuit using the current net speed.
+                let forecast_actions = energy(forecast_monster_speed(kill)) / player_energy;
+                per_step += pursuit_damage(fight_incoming(st, i).hp_per_turn, forecast_actions, current_actions);
+            }
+        }
+        (per_step > 0.0).then_some(Self { per_step, percent, refused: false })
+    }
+
+    pub(crate) fn refuses(&mut self, st: &mut BorgState, steps: usize) -> bool {
+        let hp = st.borg.tr(BI_CURHP);
+        if !desperate_walk_over_budget(steps, self.per_step, hp, self.percent) {
+            return false;
+        }
+        let Self { per_step, percent, .. } = *self;
+        let cost = steps as f64 * per_step;
+        borg_note(st, &format!("# Desperate walk refused: {steps} route steps x {per_step:.2} HP/step = {cost:.1} >= {percent}% of HP {hp} (#908)"));
+        self.refused = true;
+        true
+    }
 }
 
-fn desperate_walk_over_budget(steps: i32, per_step: f64, hp: i32, percent: i32) -> bool {
-    percent > 0 && f64::from(steps) * per_step * 100.0 >= f64::from(hp.max(1)) * f64::from(percent)
+fn pursuit_damage(incoming_per_player_turn: f64, forecast_actions: f64, current_actions: f64) -> f64 {
+    incoming_per_player_turn / forecast_actions * (current_actions - 1.0).max(0.0)
+}
+
+fn desperate_walk_over_budget(steps: usize, per_step: f64, hp: i32, percent: i32) -> bool {
+    steps as f64 * per_step * 100.0 >= f64::from(hp.max(1)) * f64::from(percent)
 }
 
 #[cfg(test)]
 #[test]
 fn hasted_pursuer_makes_the_rogues_stair_walk_unaffordable() {
-    let per_step = pursuit_damage(9.5, 1.9);
+    let per_step = pursuit_damage(9.5, 1.9, 1.9);
     assert!((per_step - 4.5).abs() < 1e-9);
     assert!(desperate_walk_over_budget(13, per_step, 23, 100));
-    assert!(!desperate_walk_over_budget(2, per_step, 23, 100));
-    assert!(!desperate_walk_over_budget(13, per_step, 23, 0));
-    assert_eq!(pursuit_damage(4.5, 0.9), 0.0);
-    assert_eq!(pursuit_damage(5.0, 1.0), 0.0);
+    assert!(!desperate_walk_over_budget(3, per_step, 23, 100));
+    assert_eq!(pursuit_damage(9.5, 1.9, 0.9), 0.0);
+    assert_eq!(pursuit_damage(9.5, 1.9, 1.0), 0.0);
+    assert!((pursuit_damage(9.5, 1.9, 1.3) - 1.5).abs() < 1e-9);
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_desperate_walk_budget_regression(st: &mut BorgState, case: &str) -> ! {
+    use crate::borg_flow_kill::BorgKill;
+    use crate::borg_flow_stairs::UpSearchDeparture;
+    use crate::borg_headers::borg_trait_h::BI_ARMOR;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE};
+
+    assert!(engine::option_set(c"birth_force_descend", false));
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.avoidance = 23;
+    st.borg.mon.scary = true;
+    st.borg.stair_less = true;
+    st.borg.goal.fleeing = true;
+    for (index, value) in [
+        (BI_CLEVEL, 4), (BI_CURHP, 23), (BI_MAXHP, 35),
+        (BI_SPEED, 110), (BI_LIGHT, 1), (BI_ARMOR, 28),
+    ] {
+        st.borg.trait_[index as usize] = value;
+    }
+    assert_eq!(engine::player_combat_speed(), 110);
+    for y in 15..=24 {
+        for x in 25..=44 {
+            st.cave.grid_mut(x, y).feat = if y == 20 && (27..=41).contains(&x) {
+                FEAT_FLOOR as u8
+            } else {
+                FEAT_GRANITE as u8
+            };
+        }
+    }
+    for (i, (x, y)) in [(40, 17), (27, 20)].into_iter().enumerate() {
+        st.stairs.less.x[i] = x;
+        st.stairs.less.y[i] = y;
+        st.cave.grid_mut(x, y).feat = FEAT_LESS as u8;
+    }
+    st.stairs.less.num = 2;
+    st.stairs.more.num = 1;
+    st.stairs.more.x[0] = 40;
+    st.stairs.more.y[0] = 22;
+    st.cave.grid_mut(40, 22).feat = FEAT_MORE as u8;
+    st.stairs.up_search_departure = Some(UpSearchDeparture {
+        stair: loc { x: 40, y: 22 },
+        next: st.borg.c,
+        turn: st.borg.time.now.wrapping_sub(1),
+        level_started: st.borg.time.level,
+        expected_danger: 41,
+        known: true,
+    });
+
+    let soldier = (1..engine::r_max())
+        .find(|&i| engine::race_name(i) == b"soldier")
+        .expect("soldier race");
+    st.kills.cnt = 1;
+    st.kills.nxt = 2;
+    st.kills.kills[1] = BorgKill {
+        r_idx: soldier as u16,
+        pos: loc { x: 41, y: 20 },
+        awake: true,
+        speed: 109,
+        observed_fast: true,
+        observed_slow_level: if case == "pursuit-budget-slowed" { 5 } else { 0 },
+        ..BorgKill::default()
+    };
+    st.cave.grid_mut(41, 20).kill = 1;
+    st.danger = Default::default();
+
+    // Check that the existing handoff could take the same route on its own.
+    let walked = if case == "pursuit-budget-handoff" {
+        crate::borg_flow_stairs::resume_known_up_stair_flight(st, 41)
+    } else {
+        desperate_for_stairs(st, 41)
+    };
+    if case == "pursuit-budget" {
+        assert!(!walked, "the selected 13-step route was over budget, including the #871 handoff");
+        assert!(st.io.queued_keys().is_empty(), "caution can take the turn");
+    } else {
+        assert!(walked, "the 13-step corridor route was available");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'4')]);
+    }
+    println!("emergency stair handoff passed: {case}");
+    std::process::exit(0);
 }
 
 /// borg-reborn-rs (#749): enough HP lost for a Recall buy-time cure: at
@@ -9301,7 +9412,7 @@ fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
             return true;
         }
     } else if handoff.steps_left > 0
-        && desperate_flow(st, false, DesperateStairRange::Remaining(handoff.steps_left), "# Continuing emergency down-stair flight (#1052)")
+        && desperate_flow(st, false, DesperateStairRange::Remaining(handoff.steps_left), "# Continuing emergency down-stair flight (#1052)", None)
     {
         return true;
     }
