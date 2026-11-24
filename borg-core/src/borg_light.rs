@@ -303,14 +303,17 @@ impl RoomLighting {
     fn should_cast<I: Iterator<Item = GridPosition>>(
         &self,
         from: GridPosition,
+        standing_in_dark: bool,
         dark_floors: impl FnOnce() -> I,
     ) -> bool {
         // Both Light Room and Call Light flood the room through LIGHT_AREA
         // (lib/gamedata/class.txt; src/cave-map.c, light_room).
-        // A glowing patch is insufficient evidence on the first visit.
-        self.dark_after_cast.get(&from).is_none_or(|previous| {
-            dark_floors().any(|grid| !previous.contains(&grid))
-        })
+        // #1119: a new casting square in a lit room is not itself a reason
+        // to cast. A dark square can still reveal a room on one's first visit.
+        match self.dark_after_cast.get(&from) {
+            None => standing_in_dark || dark_floors().next().is_some(),
+            Some(previous) => dark_floors().any(|grid| !previous.contains(&grid)),
+        }
     }
 
     pub(crate) fn confirm_message(&mut self, msg: &[u8]) {
@@ -355,7 +358,9 @@ fn cast_room_lighting(
 ) -> bool {
     let here = (st.borg.c.y, st.borg.c.x);
     if uses_corner_test
-        && !st.light.room_lighting.should_cast(here, || observed_dark_floors(st, is_dark_on_panel))
+        && !st.light.room_lighting.should_cast(here, is_dark_on_panel(here.0, here.1), || {
+            observed_dark_floors(st, is_dark_on_panel)
+        })
     {
         return false;
     }
@@ -1202,8 +1207,9 @@ mod room_lighting_tests {
                 spell == learned_spell
             };
             let no_observed_dark_floor = |_, _| false;
+            let dark_casting_square = |y, x| (y, x) == CAST_FROM;
 
-            assert!(cast_room_lighting(&mut st, true, &mut cast, no_observed_dark_floor));
+            assert!(cast_room_lighting(&mut st, true, &mut cast, dark_casting_square));
             st.light.room_lighting.confirm_message(b"You are surrounded by a white light.");
             observe_room_lighting(&mut st, no_observed_dark_floor);
 
@@ -1212,6 +1218,8 @@ mod room_lighting_tests {
             st.borg.c.x -= 1;
             let unexpected_cast = |_: &mut BorgState, _, _| panic!("revisit tried a spell");
             assert!(!cast_room_lighting(&mut st, true, unexpected_cast, no_observed_dark_floor));
+            st.borg.c.x += 1;
+            assert!(!cast_room_lighting(&mut st, true, unexpected_cast, no_observed_dark_floor));
         }
     }
 
@@ -1219,16 +1227,16 @@ mod room_lighting_tests {
     fn first_cast_can_light_a_room_beyond_the_glowing_patch() {
         let mut lighting = RoomLighting::default();
         let dark_end_of_room = (44, 50);
-        assert!(lighting.should_cast(CAST_FROM, || [dark_end_of_room].into_iter()));
-        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+        assert!(lighting.should_cast(CAST_FROM, false, || [dark_end_of_room].into_iter()));
+        assert!(lighting.should_cast(CAST_FROM, true, std::iter::empty));
+        assert!(!lighting.should_cast(CAST_FROM, false, std::iter::empty));
 
         lighting.pending = Some((CAST_FROM, false));
         lighting.confirm_message(b"You are surrounded by a white light.");
         lighting.finish(CAST_FROM, BTreeSet::new);
 
-        assert!(!lighting.should_cast(CAST_FROM, std::iter::empty));
-        assert!(lighting.should_cast((44, 47), std::iter::empty));
-        assert!(!lighting.should_cast(CAST_FROM, std::iter::empty));
+        assert!(!lighting.should_cast(CAST_FROM, true, std::iter::empty));
+        assert!(!lighting.should_cast((44, 47), false, std::iter::empty));
     }
 
     #[test]
@@ -1239,8 +1247,8 @@ mod room_lighting_tests {
         lighting.confirm_message(b"You are surrounded by a white light.");
         lighting.finish(CAST_FROM, || BTreeSet::from([unchanged_dark_floor]));
 
-        assert!(!lighting.should_cast(CAST_FROM, || [unchanged_dark_floor].into_iter()));
-        assert!(lighting.should_cast(CAST_FROM, || [unchanged_dark_floor, (44, 53)].into_iter()));
+        assert!(!lighting.should_cast(CAST_FROM, false, || [unchanged_dark_floor].into_iter()));
+        assert!(lighting.should_cast(CAST_FROM, false, || [unchanged_dark_floor, (44, 53)].into_iter()));
     }
 
     #[test]
@@ -1249,12 +1257,12 @@ mod room_lighting_tests {
         lighting.pending = Some((CAST_FROM, false));
         lighting.confirm_message(b"You failed to concentrate hard enough!");
         lighting.finish(CAST_FROM, BTreeSet::new);
-        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+        assert!(lighting.should_cast(CAST_FROM, true, std::iter::empty));
 
         lighting.pending = Some((CAST_FROM, false));
         lighting.confirm_message(b"You are surrounded by a white light.");
         lighting.finish((44, 47), BTreeSet::new);
-        assert!(lighting.should_cast(CAST_FROM, std::iter::empty));
+        assert!(lighting.should_cast(CAST_FROM, true, std::iter::empty));
     }
 }
 
