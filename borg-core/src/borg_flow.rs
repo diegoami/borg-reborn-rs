@@ -294,6 +294,10 @@ pub(crate) fn with_retreat_avoidance<R>(st: &mut BorgState, why: i32, plan: impl
 }
 
 impl FlowState {
+    pub(crate) fn at_destination(&self, grid: loc) -> bool {
+        self.data_flow[grid.y as usize][grid.x as usize] == 0
+    }
+
     fn observe_retreats(&mut self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) {
         self.retreats.retain_mut(|retreat| {
             if !retreat.still_applies(here, depth, level_started, now, window) {
@@ -1989,6 +1993,19 @@ fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
     /* Continue */
     if i32::from(st.borg.goal.type_0) != why {
         /* Nothing to do */
+        return false;
+    }
+
+    // A cached stair flow can outlive a change in danger or the return policy.
+    // Replan if a down staircase that seeded this flow is now held (#1159).
+    if st.borg.flight_to_stairs && crate::borg_caution::rising_checks_stair_targets(st)
+        && (0..st.stairs.more.num.max(0) as usize).any(|i| {
+            let (y, x) = st.stairs.more.at(i);
+            st.flow.data_flow[y as usize][x as usize] == 0
+                && crate::borg_caution::rising_holds_stair_target(st, y, x)
+        })
+    {
+        st.borg.goal.type_0 = 0;
         return false;
     }
 
