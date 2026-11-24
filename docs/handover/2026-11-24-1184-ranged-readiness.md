@@ -30,7 +30,10 @@ empty bow in the dungeon.
 - In the constructed Short Bow case, the shopping arm bought six arrows
   for six gold before its oil purchase. The original pinned run with the
   same carried bow, purse and seed left with zero arrows. The Ranger
-  check bought arrows and kept a usable launcher.
+  check bought arrows and kept a usable launcher. The lantern case
+  verified that missiles the engine places in the quiver require a
+  compatible launcher. The lantern Paladin bought oil and left with 25
+  flasks, including three reserved for fuel.
 - On named Paladin seed 302, the four arms reached the 100,000-turn cap
   alive. Control, shopping, recovery, and both spent 49.8%, 78.1%, 41.4%,
   and 42.9% of sampled dungeon time without a usable attack. The control

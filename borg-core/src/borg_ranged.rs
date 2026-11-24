@@ -153,7 +153,13 @@ impl Need {
             TV_FLASK if Self::is_oil(st, item) && self.thrown(item) => {
                 copies - (self.fuel_units(st, item) - oil_before).clamp(0, copies)
             }
-            TV_ARROW | TV_BOLT | TV_SHOT if self.missile(st, item) || self.thrown(item) => copies,
+            // Newly acquired missiles go in the quiver. Combat only throws
+            // objects from the pack, so a missile offer needs a launcher.
+            TV_ARROW | TV_BOLT | TV_SHOT
+                if projectile_usable(self.missile(st, item), offer, || self.thrown(item)) =>
+            {
+                copies
+            }
             TV_WAND | TV_STAFF | TV_ROD if self.attack_device(st, item) => {
                 if offer && u32::from(item.tval) == TV_ROD {
                     1
@@ -279,6 +285,14 @@ impl Need {
         }
         total
     }
+}
+
+fn projectile_usable(
+    compatible_launcher: bool,
+    quivered: bool,
+    throwable: impl FnOnce() -> bool,
+) -> bool {
+    compatible_launcher || !quivered && throwable()
 }
 
 #[derive(Default)]
@@ -583,5 +597,31 @@ mod tests {
         };
         assert!(!worsens(launcher, device));
         assert!(worsens(launcher, Coverage::default()));
+    }
+
+    #[test]
+    fn an_arrow_offer_needs_a_compatible_launcher() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        let mut arrow = crate::borg_item::blank_item();
+        arrow.kind = 1;
+        arrow.iqty = 40;
+        arrow.tval = TV_ARROW as u8;
+        arrow.dd = 1;
+        arrow.ds = 4;
+        arrow.aware = true;
+        let need = Need {
+            target: 6,
+            min_damage: 1,
+            fuel_goal: 0,
+        };
+
+        assert!(!projectile_usable(need.missile(&st, &arrow), true, || true));
+        st.borg.trait_[BI_AMMO_TVAL as usize] = TV_SHOT as i32;
+        st.borg.trait_[BI_AMMO_POWER as usize] = 2;
+        assert!(!projectile_usable(need.missile(&st, &arrow), true, || true));
+        st.borg.trait_[BI_AMMO_TVAL as usize] = TV_ARROW as i32;
+        assert!(projectile_usable(need.missile(&st, &arrow), true, || false));
+        assert!(projectile_usable(false, false, || true));
     }
 }

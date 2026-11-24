@@ -787,7 +787,10 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
             crate::borg_ranged::Need::preceding_oil(ctx.st, end)
         } else { 0 };
         let offer = origin.0 < PACK;
-        let uses = readiness.item(ctx.st, item, oil, offer);
+        let quivered_without_launcher = origin.0 > HOME
+            && matches!(u32::from(item.tval), TV_ARROW | TV_BOLT | TV_SHOT)
+            && !readiness.missile(ctx.st, item);
+        let uses = if quivered_without_launcher { 0 } else { readiness.item(ctx.st, item, oil, offer) };
         if uses > 0 {
             let stack = if offer { 1 } else { i64::from(item.iqty) };
             out.push((RANGED_RESERVE, i64::from(uses) * UNIT / stack));
