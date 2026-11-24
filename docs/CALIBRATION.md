@@ -1141,8 +1141,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1120` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1122` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2412` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2412` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2417` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2417` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:815` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1079` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1124` |
