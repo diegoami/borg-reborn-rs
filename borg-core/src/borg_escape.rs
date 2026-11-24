@@ -103,7 +103,21 @@ pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
     // Match borg_recall's existing pending gate before forecasting: this
     // is not a new read and must not be logged as a blocked Recall.
     if st.borg.goal.recalling != 0 { return false; }
+    if !flight_recall_source_available(st) {
+        borg_note(st, "# Flight Recall unavailable: no usable source (#1142)");
+        return false;
+    }
     crate::borg_caution::flight_recall_survivable(st) && borg_recall(st)
+}
+
+/// The sources `borg_recall` can try in the current think. Recall is not
+/// subject to the anti-teleport checks for immediate escapes.
+fn flight_recall_source_available(st: &mut BorgState) -> bool {
+    use crate::borg_item_use::{borg_equips_item, readable_scroll_slot, zappable_rod_slot};
+    zappable_rod_slot(st, st.item_val.sv_rod_recall) >= 0
+        || borg_equips_item(st, st.act.recall, true)
+        || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
+        || readable_scroll_slot(st, st.item_val.sv_scroll_word_of_recall) >= 0
 }
 
 /// Ordinary Recall, including trips home; no flight-survival policy here.

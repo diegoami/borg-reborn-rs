@@ -500,30 +500,22 @@ mod unknown_potion_tests {
     }
 }
 
-/// Attempt to read the given scroll (by sval).
-pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    /* Dark */
-    if engine::no_light() {
-        return false;
-    }
-
-    /* Blind or Confused or Amnesia*/
-    if st.borg.tr(BI_ISBLIND) != 0
+/// The slot `borg_read_scroll` would use, or -1 if no scroll can be read.
+pub(crate) fn readable_scroll_slot(st: &mut BorgState, sval: i32) -> i32 {
+    if engine::no_light()
+        || st.borg.tr(BI_ISBLIND) != 0
         || st.borg.tr(BI_ISCONFUSED) != 0
         || st.borg.tr(BI_ISFORGET) != 0
+        || crate::borg_escape::teleport_scroll_blocked(st, sval)
     {
-        return false;
+        return -1;
     }
+    borg_slot(st, TV_SCROLL as i32, sval)
+}
 
-    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
-    if crate::borg_escape::teleport_scroll_blocked(st, sval) {
-        return false;
-    }
-
-    /* Look for that scroll */
-    let i = borg_slot(st, TV_SCROLL as i32, sval);
-
-    /* None available */
+/// Attempt to read the given scroll (by sval).
+pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
+    let i = readable_scroll_slot(st, sval);
     if i < 0 {
         return false;
     }
@@ -749,32 +741,24 @@ pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
+/// The slot `borg_zap_rod` would use, including Recall's failure-rate exception.
+pub(crate) fn zappable_rod_slot(st: &mut BorgState, sval: i32) -> i32 {
+    let i = borg_slot(st, TV_ROD as i32, sval);
+    if i < 0 || st.items.items[i as usize].pval == 0 {
+        return -1;
+    }
+    let lev = i32::from(st.items.items[i as usize].level);
+    let fail = device_fail(device_skill(st), lev);
+    if sval != st.item_val.sv_rod_recall && fail > param(Param::item_use_rod_use_max_failure) {
+        return -1;
+    }
+    i
+}
+
 /// Attempt to zap the given (charged) rod (by sval).
 pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
-    /* Look for that rod */
-    let i = borg_slot(st, TV_ROD as i32, sval);
-
-    /* None available */
+    let i = zappable_rod_slot(st, sval);
     if i < 0 {
-        return false;
-    }
-
-    /* Still charging */
-    if st.items.items[i as usize].pval == 0 {
-        return false;
-    }
-
-    /* Extract the item level */
-    let lev = i32::from(st.items.items[i as usize].level);
-
-    /* Base chance of success, confusion hurts skill */
-    let skill = device_skill(st);
-
-    /* High level objects are harder */
-    let fail = device_fail(skill, lev);
-
-    /* Roll for usage */
-    if sval != st.item_val.sv_rod_recall && fail > param(Param::item_use_rod_use_max_failure) {
         return false;
     }
 
