@@ -529,11 +529,13 @@ class DarkVeinLoopTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # The switch under test, replaced in place (it ships 1).
-            name = "borg_param_explore_stepable_goals"
-            value = 1 if on else 0
-            config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
-            assert changed, "the shipped file ships explore_stepable_goals"
+            # The switch under test, replaced in place (it ships 1), and the
+            # exploration mode the incident ran under, breadth-first
+            # (track-p #1201 shipped it 0; the recorded game predates that).
+            pins = [("borg_param_explore_stepable_goals", 1 if on else 0), ("borg_param_explore_breadth_first", 1)]
+            for name, value in pins:
+                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                assert changed, f"the shipped file ships {name}"
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -581,11 +583,13 @@ class DarkVeinLoopTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # The switch under test, replaced in place (it ships 1).
-            name = "borg_param_explore_stepable_goals"
-            value = 1 if on else 0
-            config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
-            assert changed, "the shipped file ships explore_stepable_goals"
+            # The switch under test, replaced in place (it ships 1), and the
+            # exploration mode the incident ran under, breadth-first
+            # (track-p #1201 shipped it 0; the recorded game predates that).
+            pins = [("borg_param_explore_stepable_goals", 1 if on else 0), ("borg_param_explore_breadth_first", 1)]
+            for name, value in pins:
+                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                assert changed, f"the shipped file ships {name}"
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
