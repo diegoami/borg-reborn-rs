@@ -6169,9 +6169,11 @@ new poison of reachable poisoners, capped at the delay.
 The running poison stays charged to Recall in full. #1136's proposal B left it
 out (every option pays it) and was dropped in review (#1143, P1): a Borg the
 poison kills during the delay dies after reading Recall. Comparing Recall with
-the fallback is #1144. Shipped before a zoo measure; in #1143's replays of zoo
-run 45121432449 it changed none of 25 deaths and 18 survivors. A hypothesis
-until borg-zoo measures it (RULES 14).
+the fallback is #1144. In #1143's replays of zoo run 45121432449 it changed
+none of 25 deaths and 18 survivors. A later named replay with the earlier
+route settings changed a refusal to a safe read. The current default route
+misses that decision. The effect across starts remains a hypothesis until
+borg-zoo measures it (RULES 14).
 
 Reachability uses the Borg's remembered terrain and race movement flags.
 Known permanent walls block every route; other known walls and closed doors
