@@ -2308,6 +2308,55 @@ pub(crate) fn run_stale_stair_more_regression(st: &mut BorgState) -> ! {
         while !st.io.queued_keys().is_empty() {
             crate::borg_io::borg_inkey(st, true);
         }
+
+        // --- Think 3b (re-review of #1185): the same emergency with the
+        // flag ALREADY set on entry (the failed dive's stale flag): the
+        // leave rule re-selects the staircase underfoot, and the selector's
+        // own decision — not the flag transition — keeps the escape
+        // eligible. ---
+        setup(st);
+        pack_kit(st);
+        // No cure to quaff (as in think 3): the recovery would otherwise
+        // drink it before the leave rule acts.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && u32::from(slot.tval) == TV_POTION as u32 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        st.borg.stair_more = true;
+        st.borg.trait_[BI_CURHP as usize] =
+            st.borg.tr(crate::borg_headers::borg_trait_h::BI_MAXHP) - 10;
+        st.danger.fear_monsters[down.y as usize][down.x as usize] = 15;
+        st.borg.time.now += 1;
+        crate::borg_flow::borg_flow_clear(st);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_caution::borg_caution(st),
+            "the re-selected emergency descent acts"
+        );
+        let after = engine::messages_num();
+        let _ = after;
+        // The message ring saturates (messages_num stops growing), so scan
+        // a fixed recent window rather than a before/after delta.
+        let leave_rule_selected = (0..60u16).any(|age| {
+            String::from_utf8_lossy(&engine::message_str(age))
+                .contains("a monster while recovering")
+        });
+        assert!(
+            leave_rule_selected,
+            "the leave rule selected the staircase anew"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the re-selected emergency intent takes the stair: {:?}",
+            st.io.queued_keys()
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
     }
 
     println!("stale-stair-more passed (#1178)");

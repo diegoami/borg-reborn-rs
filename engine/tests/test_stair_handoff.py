@@ -364,6 +364,7 @@ class StaleStairMoreTest(unittest.TestCase):
         self.run_case(1)
 
 
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class MoreRefusedGatesTest(unittest.TestCase):
     """#1177: the descent gates without a seen up staircase.
 

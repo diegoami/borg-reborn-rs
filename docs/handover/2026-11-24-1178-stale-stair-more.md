@@ -53,6 +53,19 @@ wiring overlapped, as the review noted).
   between the leave rule's threshold (a tenth of the HP) and the
   excessive-danger flee (twice the HP), and the pack carries no cure (the
   recovery would otherwise drink it first).
+- Re-review round (Codex re-review of `e346609a`): two P2s — the
+  fresh-intent inference from a false→true flag transition missed a
+  re-selection of an already-set flag (the threatened escape on top of
+  the stale flag), and the merge reconstruction had dropped
+  `MoreRefusedGatesTest`'s `skipUnless` decorator (the discovery jobs
+  failed on the missing test build). The selectors now report their own
+  down choice — `leave_stairs_on_monster` returns `Option<bool>`
+  (Some: which staircase it selected), `choose_stairs` returns whether
+  its fleeing arm selected down — and `fresh_emergency` is their
+  decision, not a flag transition. Think 3b repeats the emergency with
+  the flag already set on entry: the leave rule re-selects the
+  staircase (its note asserted) and the escape queues `>` under the
+  switch.
 - Fixture lessons folded into the recipe's base (#1173 pattern): think 1
   needs a **full** larder — the restock gate of `prepared()` fails on
   `BI_FOOD < 3` for every depth, so a food-less character can neither dive
@@ -65,7 +78,9 @@ wiring overlapped, as the review noted).
 - Teeth: with the gate disabled, arm 1 fails — `more_refused` refuses
   (food 0) but the take proceeds and `>` is queued. Restored: both cases
   pass. The fresh phase's teeth: without the fresh-intent exemption the
-  emergency escape is vetoed (no `>`); with it, it queues `>`.
+  emergency escape is vetoed (no `>`); with it, it queues `>`. The
+  re-selection phase (think 3b) is its own check: without the selectors'
+  decisions (the flag-transition inference) it fails on the note.
 - `EmergencyStairHandoffTest` 5/5, `LeaveLevelUpstairsTest` OK,
   `StaleStairMoreTest` 2/2, `MoreRefusedGatesTest` 2/2 (the #1177
   fixture, merged in — the combined-switch validation the review asked
