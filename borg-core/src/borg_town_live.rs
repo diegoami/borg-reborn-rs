@@ -317,7 +317,21 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    let a = crate::borg_town_shadow::live_action(st);
+    let mut a = crate::borg_town_shadow::live_action(st);
+    // The opt-in trial tests discarding surplus plain shots before the
+    // planner disposes of other kit. Poison triage and purchases go first.
+    if !st.borg.in_shop && !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        if reserve > 0 {
+            let allowance = crate::borg_town_budget::Facts::of(st).allowance();
+            if allowance < 0 {
+                let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
+                if let Some(slot) = crate::borg_junk::town_quiver_surplus(st, reserve, shortfall) {
+                    a = TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] };
+                }
+            }
+        }
+    }
     if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
 }
@@ -435,7 +449,15 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let slot = a.at[1] as usize;
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
     let qty = i64::from(item.iqty);
-    if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
+    if qty == 0 { clear(st); return false; }
+    if slot >= crate::borg_item::quiver_start() as usize {
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        if reserve == 0 || a.at[2] != qty { clear(st); return false; }
+        crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
+        clear(st);
+        return true;
+    }
+    if slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
     // borg-reborn-rs (#1151, review of #1155): so does a split fuel stack
     // (torches, flasks), whose floor is the light reserve. Other drops stay
