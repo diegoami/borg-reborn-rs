@@ -107,30 +107,8 @@ alone and 1+2 die (the step is undone by the next flow, which the closure of
 
 ## Waiting out a bad test potion (#1060)
 
-The registry now holds **2445** parameters (2444 before; one added). Owner,
-2026-11-22: "a character drank a potion of poison and then goes happily
-exploring" (seed 1928291203: a Poison test, then a 76-step walk to the stairs
-at 1 HP a turn, 26 -> 18). The test's HP floor, `item_test_unknown_min_hp`,
-first added here, is #1063's section below (compiled 25, shipped 60, with the
-known-cure exemption).
-
-- **`item_test_unknown_hold_turns`** (compiled 180, **shipped 180**: Blindness, the longest supported potion, lasts up to 175 ticks): after a test,
-  for at most this many world ticks (10 game turns each, the clock the status
-  timers run on), on the test grid and level, while a harmful status it caused
-  lasts (a Slowness or Surprise's stat scramble included, read from their
-  timers) and the danger here is 0,
-  the Borg stays where it tested (`potion_test_hold`, right after
-  `borg_caution`): the ordinary in-place recovery (`borg_recover`) first, else
-  it stands still (`,`). `potion_test_hold_validate`, before the early fight
-  (`fight_before_flight`) and `borg_caution`, ends the hold on danger, a move
-  or a new level. 0 = no hold. The cap bounds when a hold decision can start:
-  a recovery rest (`R&`) that `borg_recover` starts inside the hold runs in the
-  engine until the status clears or something disturbs it, past the cap if
-  need be, as the same rest chosen by the ordinary order would.
-
-| parameter | default | unit | range | source |
-|---|---|---|---|---|
-| `item_test_unknown_hold_turns` | 180 | turns | 0–1000 | `borg_item_use.rs:254` |
+Removed with experimental potion testing in #1213. See the
+[original implementation](handover/2026-11-22-1060-potion-test-hold.md).
 
 ## Poisoned without a cure: escapes before the one-grid retreat (#934)
 
@@ -249,46 +227,8 @@ The zoo measures the switch (borg-zoo#654); its values are hypotheses.
 
 ## The unknown-potion test's HP floor, and a known cure (#1063)
 
-Two parameters added; the registry now holds 2433. Human Ranger 142490685
-(CL2, 18/18 HP, no cure) drank its unknown "Cloudy Potions" as the #983 test on
-DL1's up staircase: a Potion of Poison (`TIMED_INC:POISONED` 10+2d7,
-object.txt), 1 HP a world tick with no regeneration (game-world.c:514-516,
-`player_regen_hp`), and it died 180 game turns later. The engine kills below
-0 HP (`player-util.c:228`, `chp < 0`), so without a cure a test at h HP kills
-with probability at most P(10 + 2d7 > h): 12: 48/49 (98%), 15: 39/49 (80%),
-18: 21/49 (43%), 20: 10/49 (20%), 24: 0. At most: a higher CON shortens the
-timer faster (`player_timed_decrement_effects`, game-world.c:280-321) and the
-fractional part of base regeneration is kept (`player_regen_hp`); review of
-#1097.
-
-- **`item_test_unknown_min_hp`** (compiled 25, **shipped 60**, owner
-  2026-11-23: "put minimum hp at 60"): the test needs at least this many
-  current HP, besides `item_test_unknown_min_hp_percent`. The compiled 25 is
-  Poison's worst case (24) plus 1, the same parameter and default as #1060's
-  PR #1071; 60 is the owner's margin, a hypothesis until borg-zoo measures it
-  (RULES 14). The cost is fewer tests: a low-level character learns its
-  potions later.
-- **`item_test_unknown_min_hp_cure_exempt`** (compiled 0, **shipped 1**): a
-  known potion of Neutralize Poison or Cure Critical Wounds in the pack
-  (`CURE:POISONED`, object.txt; `carries_poison_cure_potion`, `borg_slot`
-  skips unaware flavours) waives that floor, leaving only the percent floor
-  (50). These are the two cures `borg_caution`'s poison cure drinks without a
-  further gate (`borg_quaff_potion`, `borg_quaff_crit(st, true)`) once HP
-  falls below max HP / `caution_poison_cure_hp_divisor`. Not counted (review
-  of #1097): a poison-curing food such as Elvish Waybread (only `borg_recover`
-  eats it, behind a random roll) and a Cure Critical Wounds activation
-  (`borg_trait`'s +1000 does not check the charge). The engine's other cures
-  (Healing, *Healing*, Life, Resist Poison, Curing staves and rods) are not
-  counted either. 0 = the floor holds with a cure too.
-
-#1063's second point (a poisoned Borg with no cure that the poison can kill
-goes to the stairs or to town) cannot arise at the shipped values: without a
-cure the test needs 60 HP, and Poison costs at most 24.
-
-| parameter | default | unit | range | source |
-|---|---|---|---|---|
-| `item_test_unknown_min_hp` | 25 | hp | 0–10000 | `borg_item_use.rs:248` |
-| `item_test_unknown_min_hp_cure_exempt` | 0 | flag | 0–1 | `borg_item_use.rs:267` |
+Removed with experimental potion testing in #1213. See the
+[original implementation](handover/2026-11-23-1063-potion-test-floor.md).
 
 ## Phase Door into unexplored grids, and the newcomer at range (#1066)
 
@@ -560,29 +500,10 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 
 ## Testing unknown potions when safe (#983)
 
-Four parameters added (the registry now holds **2380**). #983's Priest
-(seed 17626119, zoo run 45028029063) died confused with four Cure Light
-Wounds it had never learned: a flavour found on the floor, which #470 forbids
-it to try. Owner, 2026-11-22: "test when safe".
-
-- **`item_test_unknown_potions`** (compiled 0, **shipped 1**):
-  `borg_quaff_unknown_when_safe`, right after `borg_test_stuff` in
-  `borg_think_dungeon`, drinks one unknown potion when in the dungeon down to
-  `item_test_unknown_max_depth` (shipped 30: Dragon Breath, DL40+, asks for
-  an aim), with danger 0 from every monster that could reach it within
-  `item_test_unknown_danger_turns` (10, `borg_danger`'s `c`: Sleep paralyses
-  for 5+1d5, object.txt), at least
-  `item_test_unknown_min_hp_percent` of max HP (50), no harmful status
-  (paralysis included) and food in the pack (Salt Water). A bad potion costs
-  turns or a stat; none kills by itself. #470 still forbids unknown scrolls,
-  mushrooms, devices and any unknown item in an emergency.
-
-| parameter | default | unit | range | source |
-|---|---|---|---|---|
-| `item_test_unknown_potions` | 0 | flag | 0–1 | `borg_item_use.rs:248` |
-| `item_test_unknown_min_hp_percent` | 50 | percent | 0–100 | `borg_item_use.rs:269` |
-| `item_test_unknown_danger_turns` | 10 | turns | 1–50 | `borg_item_use.rs:261` |
-| `item_test_unknown_max_depth` | 30 | level | 0–128 | `borg_item_use.rs:250` |
+#1213 removes experimental quaffing and the recovery hold after a test.
+The Borg sells unidentified potions and scrolls to shops that accept them.
+Old profiles and environment overrides may still contain the seven retired
+`item_test_unknown_*` settings. The parser ignores those settings.
 
 ## Kill-on-sight HP floor (#969)
 
