@@ -1050,7 +1050,7 @@ fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: Desperat
 /// `borg_caution`). If you are low level and near the stairs and you can
 /// hop onto them in very few steps, try to head to them out of
 /// desperation.
-fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
+pub(crate) fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // borg-reborn-rs (#837, owner): "while confused, don't start a Desperate
     // for Stairs walk": 75% of its steps go astray (`player_confuse_dir`,
     // `player-util.c:1353`; the walk into the wall of the Necromancer's last
@@ -5042,7 +5042,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
     }
     crate::borg_flow::borg_flow_clear(st);
     for (y, x) in stairs {
-        if st.cave.grid(x, y).kill == 0 {
+        if st.cave.grid(x, y).kill == 0 && (up || !rising_holds_stair_target(st, y, x)) {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
@@ -6856,12 +6856,32 @@ fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_
 /// `caution_rising_explore_ticks` Borg ticks on the level (one per think,
 /// `borg_think`; restarted on each new level) lets the descent through.
 pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
+    rising_descent_window(st)
+        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
+fn rising_descent_window(st: &BorgState) -> bool {
     let budget = p(Param::caution_rising_explore_ticks);
     st.borg.goal.rising
         && st.borg.tr(BI_CDEPTH) > 0
         && budget > 0
         && borg_timer(st, st.borg.time.level) < budget
-        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
+/// #1159: a stair walk that intends to depart should apply the rising
+/// hold at the destination, where caution will decide whether to use it.
+pub(crate) fn rising_checks_stair_targets(st: &BorgState) -> bool {
+    let return_only = st.borg.goal.less && !st.borg.goal.leaving
+        && !st.borg.goal.fleeing && !st.borg.status.desperate;
+    rising_descent_window(st) && !return_only
+}
+
+pub(crate) fn rising_holds_stair_target(st: &mut BorgState, y: i32, x: i32) -> bool {
+    if !rising_checks_stair_targets(st) {
+        return false;
+    }
+    let danger = borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false);
+    rising_holds_descent(st, danger)
 }
 
 /// borg-reborn-rs (#750): whether a stair flow for `why` skips the danger

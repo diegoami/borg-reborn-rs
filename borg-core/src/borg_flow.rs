@@ -1987,6 +1987,19 @@ fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
         return false;
     }
 
+    // A cached stair flow can outlive a change in danger or the return policy.
+    // Replan if a down staircase that seeded this flow is now held (#1159).
+    if st.borg.flight_to_stairs && crate::borg_caution::rising_checks_stair_targets(st)
+        && (0..st.stairs.more.num.max(0) as usize).any(|i| {
+            let (y, x) = st.stairs.more.at(i);
+            st.flow.data_flow[y as usize][x as usize] == 0
+                && crate::borg_caution::rising_holds_stair_target(st, y, x)
+        })
+    {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+
     let next = match st.flow.weighted_flight {
         WeightedFlight::None => {
             let i = select_step(st);

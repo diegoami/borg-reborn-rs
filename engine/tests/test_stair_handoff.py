@@ -170,26 +170,27 @@ class StairHandoffTest(unittest.TestCase):
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight, player_class=6, depth=5):
+    def run_case(self, case, weight=None, player_class=6, depth=5):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # #1061: the stair_scum mode (shipped after these cases) is not
-            # what they test; pin it off.
-            # #1098: nor the mixed walk and the C exploration's stair exit.
-            # #1140: nor the poison triage (deal_with_poison).
-            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
-                        "borg_param_deal_with_poison"):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
-                if changed == 0:
-                    config += f"\n{key} = 0\n"
-            for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
-                key = f"borg_param_caution_{name}"
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
-                if changed == 0:
-                    config += f"\n{key} = {value}\n"
+            if weight is not None:
+                # #1061: the stair_scum mode (shipped after these cases) is not
+                # what they test; pin it off.
+                # #1098: nor the mixed walk and the C exploration's stair exit.
+                # #1140: nor the poison triage (deal_with_poison).
+                for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
+                            "borg_param_deal_with_poison"):
+                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                    if changed == 0:
+                        config += f"\n{key} = 0\n"
+                for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
+                    key = f"borg_param_caution_{name}"
+                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                    if changed == 0:
+                        config += f"\n{key} = {value}\n"
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -208,8 +209,17 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
 
+    def test_stair_handoff_descends_with_shipped_settings(self):
+        self.run_case("one-step")
+
+    def test_rising_hold_filters_and_releases_down_stair_flight(self):
+        self.run_case("rising-hold", player_class=0, depth=2)
+
+    def test_rising_hold_cancels_an_unweighted_stair_flow(self):
+        self.run_case("rising-hold", 0, player_class=0, depth=2)
+
     def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
-        self.run_case("interrupted-search", 5)
+        self.run_case("interrupted-search")
 
     def test_dark_exploration_cannot_keep_restarting_the_two_step_floor_search(self):
         self.run_case("interrupted-floor-search", 5, player_class=5, depth=3)

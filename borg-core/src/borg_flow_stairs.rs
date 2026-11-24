@@ -262,10 +262,13 @@ fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i3
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
+        i += 1;
+        if matches!(which, Which::More) && crate::borg_caution::rising_holds_stair_target(st, y, x) {
+            continue;
+        }
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
             parked.push((y, x));
-            i += 1;
             continue;
         }
 
@@ -275,7 +278,6 @@ fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i3
         if st.flow.cost_at(y, x) == 0 {
             enqueued += 1;
         }
-        i += 1;
     }
     (enqueued, parked)
 }
@@ -477,10 +479,11 @@ fn weighted_route_with(
         if search && matches!(which, Which::More) {
             continue;
         }
-        let track = track(st, which);
-        for i in 0..track.num.max(0) as usize {
-            let (y, x) = track.at(i);
-            if st.cave.grid(x, y).kill == 0 {
+        for i in 0..track(st, which).num.max(0) as usize {
+            let (y, x) = track(st, which).at(i);
+            if st.cave.grid(x, y).kill == 0
+                && (!matches!(which, Which::More) || !crate::borg_caution::rising_holds_stair_target(st, y, x))
+            {
                 stairs.push(loc { x, y });
             }
         }
@@ -1607,6 +1610,99 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         assert!(borg_flow_recover(st, 50), "the ordinary route remains usable when resting is permitted");
         observe_move(st, b'6', halfway);
 
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
+    }
+
+    if case == "rising-hold" {
+        use crate::borg_caution::desperate_for_stairs;
+        use crate::params::{value, Param};
+
+        assert_eq!(value(Param::loop_breaker), 1);
+        assert_eq!(value(Param::caution_rising_explore_ticks), 500);
+        let up = loc { x: 35, y: 20 };
+        let start = loc { x: 40, y: 20 };
+        let approach = loc { x: 41, y: 20 };
+        let down = loc { x: 42, y: 20 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 19..=21 {
+            for x in 34..=43 {
+                st.cave.grid_mut(x, y).feat = if y == 20 && (35..=42).contains(&x) {
+                    FEAT_FLOOR as u8
+                } else {
+                    FEAT_GRANITE as u8
+                };
+            }
+        }
+        st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        st.borg.c = start;
+        st.borg.avoidance = 77;
+        for (index, amount) in [(BI_CLEVEL, 6), (BI_CURHP, 77), (BI_MAXHP, 77), (BI_LIGHT, 1)] {
+            st.borg.trait_[index as usize] = amount;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.borg.time.level = st.borg.time.now;
+        st.borg.goal.fleeing = true;
+        st.stairs.less.num = 0;
+        st.stairs.more.num = 1;
+        st.stairs.more.x[0] = down.x;
+        st.stairs.more.y[0] = down.y;
+
+        // Seed a walk before the hold, then change policy before its next step.
+        assert!(borg_flow_stair_more(st, GOAL_FLEE, false, false));
+        observe_move(st, b'6', approach);
+        st.borg.goal.rising = true;
+        assert!(!borg_flow::borg_flow_old(st, GOAL_FLEE));
+        assert_eq!(st.borg.goal.type_0, 0);
+        assert!(st.io.queued_keys().is_empty());
+
+        // Danger where we stand does not make the quiet destination usable.
+        st.borg.c = start;
+        st.borg.mon.scary = true;
+        st.danger.fear_monsters[start.y as usize][start.x as usize] = 115;
+        assert!(!desperate_for_stairs(st, 115), "caution must skip the held stair");
+        assert!(!borg_flow_stair_both(st, GOAL_FLEE, false));
+        assert!(st.io.queued_keys().is_empty());
+        st.danger = Default::default();
+
+        // The same destination becomes usable once the level timer expires.
+        let hold_start = st.borg.time.level;
+        st.borg.time.now = hold_start + value(Param::caution_rising_explore_ticks);
+        assert!(desperate_for_stairs(st, 0), "the hold has expired");
+        observe_move(st, b'6', approach);
+        assert!(desperate_for_stairs(st, 0));
+        observe_move(st, b'6', down);
+        assert!(borg_caution(st), "caution now takes the down stairs");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'>')]);
+        borg_io::borg_inkey(st, true);
+
+        // The synthetic start is one-way. This fixture needs an exit up and
+        // terminates before its queued keys can reach the engine.
+        assert!(engine::option_set(c"birth_force_descend", false));
+        st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = up.x;
+        st.stairs.less.y[0] = up.y;
+        st.borg.mon.scary = false;
+        st.borg.time.level = st.borg.time.now;
+        st.borg.c = approach;
+        crate::borg_loop::observe(st);
+        for i in 0..crate::borg_loop::LOOP_MOVES {
+            st.borg.c = if i % 2 == 0 { start } else { approach };
+            st.borg.time.now += 1;
+            crate::borg_loop::observe(st);
+        }
+        assert!(crate::borg_loop::break_loop(st), "the quiet loop should start an up-stair walk");
+        observe_move(st, b'4', start);
+        assert!(!desperate_for_stairs(st, 0), "caution must leave the up walk in control");
+        for x in (up.x..start.x).rev() {
+            assert!(crate::borg_loop::break_loop(st));
+            observe_move(st, b'4', loc { x, y: up.y });
+        }
+        assert!(crate::borg_loop::break_loop(st));
+        assert_eq!(st.io.queued_keys(), [u32::from(b'<')]);
         println!("emergency stair handoff passed: {case}");
         std::process::exit(0);
     }
