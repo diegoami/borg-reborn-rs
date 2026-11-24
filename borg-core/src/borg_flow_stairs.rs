@@ -1529,6 +1529,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "more-refused-gates" {
         crate::borg_think_dungeon_util::run_more_refused_regression(st);
     }
+    if case == "note-standing-flags" {
+        crate::borg_think_dungeon_util::run_note_standing_regression(st);
+    }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;
