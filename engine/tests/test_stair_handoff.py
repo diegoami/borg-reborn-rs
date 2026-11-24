@@ -93,6 +93,8 @@ PINNED_TOWN_SETTINGS = [
     ("trait_timed_sync", 0),
     # #1184 shipped ranged shopping and resupply after these incidents.
     ("town_ranged_readiness", 0), ("trip_ranged_readiness", 0),
+    # These recorded routes predate the #1194 combat-healing policy.
+    ("caution_combat_heal", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

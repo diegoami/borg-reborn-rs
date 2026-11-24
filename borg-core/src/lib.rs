@@ -29,6 +29,7 @@ pub(crate) mod borg;
 pub(crate) mod borg_buy_strategy;
 pub(crate) mod borg_cave;
 pub(crate) mod borg_caution;
+mod borg_combat_heal;
 pub(crate) mod borg_cave_light;
 pub(crate) mod borg_cave_view;
 pub(crate) mod borg_cave_util;
