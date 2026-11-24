@@ -904,6 +904,14 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 /// `(on_upstair, on_dnstair)`, which C sets to `false` when the Borg stands
 /// on such stairs (and leaves `false` otherwise).
 fn note_standing(st: &mut BorgState) -> (bool, bool) {
+    // borg-reborn-rs (#1176): C declares these `false` and only ever
+    // assigns `false` — even standing on the tracked staircase leaves them
+    // false (borg-caution.c:805, 983, 996), so the danger+standing-on-stair
+    // trigger and the `|| on_*stair` disjuncts of the standing stair takes
+    // are dead code. caution_note_standing_on_stairs restores the flags'
+    // evident intent (true when the Borg stands on the tracked staircase);
+    // 0 keeps C.
+    let standing_flag = p(Param::caution_note_standing_on_stairs) != 0;
     let mut on_upstair = false;
     let mut on_dnstair = false;
 
@@ -924,7 +932,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.less.y[iu] == st.borg.c.y && st.stairs.less.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on up-stairs");
-            on_upstair = false;
+            on_upstair = standing_flag;
         }
         i += 1;
     }
@@ -935,7 +943,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.more.y[iu] == st.borg.c.y && st.stairs.more.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on dn-stairs");
-            on_dnstair = false;
+            on_dnstair = standing_flag;
         }
         i += 1;
     }
