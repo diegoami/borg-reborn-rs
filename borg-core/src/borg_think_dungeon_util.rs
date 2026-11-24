@@ -2786,11 +2786,14 @@ pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
 /// flight turn by turn on a fabricated breeder level — walls everywhere,
 /// a carved corridor whose only passage is the flight path's closed door,
 /// an unrelated open door in a niche beside it, the down stairs beyond —
-/// driving `borg_play_step` with the flow's staged next grids and applying
-/// the door state after each action. The door on the path must open
-/// exactly once (never closed again — the #1206 suppression), the
-/// unrelated door must stay closed (the containment still works), and the
-/// Borg must walk past the door.
+/// driving `borg_play_step` with adjacent next grids, as the flows hand
+/// them, and applying the door state after each action along the
+/// direction the Borg actually queued (`borg_queue_direction`), advancing
+/// the turn for every action. During the flight the corridor door must
+/// open exactly once and never be closed again (the #1206 suppression)
+/// while the unrelated niche door stays closed; once the flight's escape
+/// context ends, or the undo window expires, a deliberate containment
+/// must be able to close that door again (the review of PR #1207).
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     use crate::borg_headers::borg_trait_h::BI_FOOD;
@@ -2837,8 +2840,9 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
         st.borg.stair_more = false;
         st.borg.goal.type_0 = 0;
         st.borg.goal.rising = false;
-        st.borg.goal.leaving = false;
-        st.borg.goal.fleeing = false;
+        // The recorded flight had both escape flags set (issue #1206).
+        st.borg.goal.leaving = true;
+        st.borg.goal.fleeing = true;
         st.borg.goal.fleeing_to_town = false;
         st.borg.goal.less = false;
         st.borg.near.breeder = true;
@@ -2868,27 +2872,98 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     let door_open = |st: &BorgState| u32::from(st.cave.grid(door.x, door.y).feat) == FEAT_OPEN;
     let side_open = |st: &BorgState| u32::from(st.cave.grid(side.x, side.y).feat) == FEAT_OPEN;
 
+    // One think of the game loop: the step toward the adjacent grid
+    // `next` ran, now apply the game's response to the queued action. A
+    // door action faces the direction `borg_queue_direction` remembered —
+    // the grid the Borg actually picked, not whichever open door is
+    // adjacent; a lone movement digit walks one grid; every action
+    // advances the turn. `flight` marks the escape flight itself: a close
+    // of the corridor door during it is the recorded alternation.
+    fn apply_action(
+        st: &mut BorgState,
+        door: loc,
+        side: loc,
+        flight: bool,
+        door_opened_yet: &mut bool,
+        side_closed_seen: &mut bool,
+        deliberate_closes: &mut usize,
+    ) {
+        use crate::headers::list_terrain_h::FEAT_CLOSED;
+
+        let keys = st.io.queued_keys().clone();
+        let faced = crate::borg_io::borg_get_queued_direction(st);
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+        let command = if keys.contains(&u32::from(b'c')) {
+            Some(false)
+        } else if keys.contains(&u32::from(b'o')) {
+            Some(true)
+        } else {
+            None
+        };
+        match command {
+            Some(open) => {
+                assert!(
+                    (u32::from(b'1')..=u32::from(b'9')).contains(&faced),
+                    "a door action queues a direction (got {faced})"
+                );
+                let d = (faced - u32::from(b'0')) as usize;
+                let at = loc {
+                    x: st.borg.c.x + i32::from(engine::ddx(d)),
+                    y: st.borg.c.y + i32::from(engine::ddy(d)),
+                };
+                assert!(at == door || at == side, "the door action faces a fabricated door (faced {at:?})");
+                let open_now = u32::from(st.cave.grid(at.x, at.y).feat) == FEAT_OPEN;
+                if open {
+                    assert!(!open_now, "the open faces a closed door");
+                    assert!(at == door, "the flight opens the corridor door");
+                    st.cave.grid_mut(at.x, at.y).feat = FEAT_OPEN as u8;
+                    *door_opened_yet = true;
+                } else {
+                    assert!(open_now, "the close faces an open door");
+                    st.cave.grid_mut(at.x, at.y).feat = FEAT_CLOSED as u8;
+                    if at == side {
+                        *side_closed_seen = true;
+                    } else if flight {
+                        panic!("the containment closed the flight's door again");
+                    } else {
+                        *deliberate_closes += 1;
+                    }
+                }
+            }
+            None => {
+                let digit = keys
+                    .iter()
+                    .find(|k| (u32::from(b'1')..=u32::from(b'9')).contains(k))
+                    .expect("the think queues a door action or a walk");
+                let d = (*digit - u32::from(b'0')) as usize;
+                st.borg.c = loc {
+                    x: st.borg.c.x + i32::from(engine::ddx(d)),
+                    y: st.borg.c.y + i32::from(engine::ddy(d)),
+                };
+            }
+        }
+        // Every action is a game turn.
+        st.borg.time.now += 1;
+    }
+
     setup(st);
     pack_kit(st);
     st.borg.trait_[BI_FOOD as usize] = 6;
-    #[cfg(feature = "test-stair-handoff")]
-    for y in 19..=22 {
-        let mut row = String::new();
-        for x in 41..=45 {
-            let f = u32::from(st.cave.grid(x, y).feat);
-            row.push_str(&format!("({x},{y})={f} "));
-        }
-        println!("PROBE {row}");
-    }
-    println!("PROBE breeder={} pos={:?}", st.borg.near.breeder, st.borg.c);
 
-    let mut door_was_closed_after_open = false;
+    let mut door_opened_yet = false;
     let mut side_closed_seen = false;
-    let mut turned = 0;
-    // The staged next grids of the stair flight: the containment may spend
-    // the first think closing the side door, the second opens the flight
-    // path's door, and the rest walk the corridor beyond it.
+    let mut deliberate_closes = 0usize;
+
+    // The flight: staged adjacent next grids, as the flows hand them. The
+    // first think closes the niche door, the second opens the corridor
+    // door, the third walks onto it, and the replanned walks past it —
+    // from the fifth think on the open door is a neighbour behind the
+    // Borg while the next grid is the corridor ahead: the shape that
+    // closed the recorded door 35 times.
     let path = [
+        door,
         door,
         door,
         loc { x: 44, y: 20 },
@@ -2899,57 +2974,78 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
         loc { x: 49, y: 20 },
     ];
     for next in path {
-        turned += 1;
-        let acted = crate::borg_flow::borg_play_step(st, next.y, next.x);
-        println!("PROBE t{turned} acted={acted} next={next:?}");
-        // The game's response to the action: an 'o' opens the closed door
-        // the Borg faces (the flight path's door is the only closed
-        // adjacent door), a 'c' closes the open door the containment
-        // picked (the side door while it is open, else the flight path's
-        // door — the same pick close_breeder_door made), a movement digit
-        // walks.
-        let keys = st.io.queued_keys().clone();
-        let close = keys.contains(&u32::from(b'c'));
-        let opened = keys.contains(&u32::from(b'o'));
-        while !st.io.queued_keys().is_empty() {
-            crate::borg_io::borg_inkey(st, true);
-        }
-        if close {
-            if side_open(st) {
-                st.cave.grid_mut(side.x, side.y).feat = FEAT_CLOSED as u8;
-                side_closed_seen = true;
-            } else if door_open(st) {
-                st.cave.grid_mut(door.x, door.y).feat = FEAT_CLOSED as u8;
-                if door_was_closed_after_open {
-                    panic!(
-                        "the containment closed the flight's door again (turn {turned})"
-                    );
-                }
-            }
-        }
-        if opened {
-            st.cave.grid_mut(door.x, door.y).feat = FEAT_OPEN as u8;
-        }
-        // A movement digit walks one step toward the target.
-        if let Some(&digit) = keys.iter().find(|k| (u32::from(b'1')..=u32::from(b'9')).contains(k)) {
-            let dir = (digit - u32::from(b'0')) as usize;
-            st.borg.c = loc {
-                x: st.borg.c.x + i32::from(engine::ddx(dir)),
-                y: st.borg.c.y + i32::from(engine::ddy(dir)),
-            };
-            st.borg.time.now += 1;
-        }
+        assert!(
+            engine::distance(st.borg.c, next) == 1,
+            "the flows hand adjacent next grids (at {:?} for {next:?})",
+            st.borg.c
+        );
+        let _ = crate::borg_flow::borg_play_step(st, next.y, next.x);
+        apply_action(
+            st,
+            door,
+            side,
+            true,
+            &mut door_opened_yet,
+            &mut side_closed_seen,
+            &mut deliberate_closes,
+        );
     }
 
     assert!(
         st.borg.c.x >= loc { x: 47, y: 20 }.x,
-        "the flight walks past the door (at {:?} after {turned} turns)",
+        "the flight walks past the door (at {:?})",
         st.borg.c
     );
     assert!(door_open(st), "the flight path's door stays open");
     assert!(!side_open(st), "the unrelated door stays closed");
     assert!(side_closed_seen, "the containment closed the side door");
-    assert!(!door_was_closed_after_open, "no open/close alternation");
+    assert!(door_opened_yet, "the flight opened the corridor door");
+
+    // A deliberate containment once the escape context ends: the
+    // exemption must lapse with it (review of PR #1207, [P2] — it is not
+    // a property of every open on the level). Stand next to the door
+    // again and pick a next grid that is not the door.
+    st.borg.c = loc { x: 44, y: 20 };
+    st.borg.goal.fleeing = false;
+    st.borg.goal.leaving = false;
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        false,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert_eq!(
+        deliberate_closes, 1,
+        "the containment closes the door once the flight's context ended"
+    );
+
+    // And once the undo window expires with the context armed again: the
+    // door is reopened without a new record (fabricated, no `o` ran) and
+    // `OPENED_DOOR_UNDO_TURNS + 1` turns later the containment closes it.
+    st.borg.goal.fleeing = true;
+    st.borg.goal.leaving = true;
+    st.cave.grid_mut(door.x, door.y).feat = FEAT_OPEN as u8;
+    st.borg.c = loc { x: 44, y: 20 };
+    st.borg.time.now += i32::from(crate::borg_flow::OPENED_DOOR_UNDO_TURNS) + 1;
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        false,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert_eq!(
+        deliberate_closes, 2,
+        "the containment closes the door once the undo window expired"
+    );
+    assert!(!door_open(st), "the deliberate containment closed the door");
 
     println!("breeder-door-loop passed (#1206)");
     // This test-only process owns a fabricated Borg observation. End before
