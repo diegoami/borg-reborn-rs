@@ -45,6 +45,10 @@ class ImmobileDecisionTest(unittest.TestCase):
         self.run_case("phase-shipped")
         self.run_case("phase-override", "escape_paralyser_fight_lost")
 
+    def test_cornered_without_phase(self):
+        self.run_case("phase-shipped-no-scroll")
+        self.run_case("phase-override-no-scroll", "escape_paralyser_fight_lost")
+
     def test_never_move_memory(self):
         self.run_case("memory-shipped")
         self.run_case("memory-override", "caution_remember_never_move")

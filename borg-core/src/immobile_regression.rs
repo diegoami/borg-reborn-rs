@@ -3,6 +3,7 @@
 use crate::borg_cave_view::BORG_VIEW;
 use crate::borg_caution::{borg_caution, in_walk_away_reach, walk_away_listed, walk_away_step};
 use crate::borg_escape::PhaseVerdict;
+use crate::borg_flow::{borg_flow_clear, borg_flow_enqueue_grid};
 use crate::borg_flow_kill::BorgKill;
 use crate::borg_flow_stairs::borg_flow_stair_more;
 use crate::borg_headers::borg_trait_h::{
@@ -93,7 +94,7 @@ fn check_keys(st: &mut BorgState, expected: &[u32]) {
 
 // Only the switch changes across runs. The real landing sampler and the
 // scroll selector both have to accept before the read keys are emitted.
-fn cornered_phase(st: &mut BorgState, with_phase_override: bool) {
+fn cornered_phase(st: &mut BorgState, with_phase_override: bool, has_scroll: bool) {
     cave(st, FEAT_FLOOR);
     for y in START.y - 1..=START.y + 1 {
         for x in START.x - 1..=START.x + 1 {
@@ -106,6 +107,19 @@ fn cornered_phase(st: &mut BorgState, with_phase_override: bool) {
     put(st, EAST, FEAT_MORE);
     assert!(in_walk_away_reach(st, EAST.x, EAST.y));
     assert!(!engine::no_light(), "the fixture must be able to read");
+
+    assert_eq!(value(Param::escape_paralyser_fight_lost), i32::from(with_phase_override));
+    assert_eq!(crate::borg_escape::paralyser_defers_early_fight(st), with_phase_override);
+    if !has_scroll {
+        // The override defers the early fight even without a Phase source.
+        // The cornered walk-away path then leaves the rest of the think to act.
+        assert!(!walk_away_step(st));
+        assert_eq!(st.borg.mon.walk_away_cornered, Some(st.borg.time.now));
+        assert!(st.borg.phase_rule.is_none());
+        check_keys(st, &[]);
+        return;
+    }
+
     let sval = st.item_val.sv_scroll_phase_door;
     assert!(sval > 0);
     let item = &mut st.items.items[0];
@@ -115,8 +129,6 @@ fn cornered_phase(st: &mut BorgState, with_phase_override: bool) {
     item.aware = true;
     st.borg.trait_[BI_APHASE as usize] = 1;
 
-    assert_eq!(value(Param::escape_paralyser_fight_lost), i32::from(with_phase_override));
-    assert_eq!(crate::borg_escape::paralyser_defers_early_fight(st), with_phase_override);
     assert_eq!(walk_away_step(st), with_phase_override);
     let verdict = if with_phase_override { PhaseVerdict::Phase } else { PhaseVerdict::Fight };
     assert_eq!(st.borg.phase_rule.map(|(_, verdict, _)| verdict), Some(verdict));
@@ -163,6 +175,17 @@ fn retention(st: &mut BorgState, remember_all: bool) {
         assert_eq!(st.kills.kills[mold].r_idx != 0, remember_all);
         assert_eq!(st.cave.grid(mold_at.x, mold_at.y).kill != 0, remember_all);
         assert_eq!(st.kills.kills[rat].r_idx, 0, "a mobile race still clears");
+
+        // Both arms preserve the listed eye's flow exclusion. The extra
+        // record for an unlisted mold does not extend that exclusion.
+        st.flow.flight_no_danger = true;
+        borg_flow_clear(st);
+        borg_flow_enqueue_grid(st, EAST.y, EAST.x);
+        assert_ne!(st.flow.cost_at(EAST.y, EAST.x), 0);
+        let beside_mold = loc { x: 42, y: 21 };
+        put(st, beside_mold, FEAT_FLOOR);
+        borg_flow_enqueue_grid(st, beside_mold.y, beside_mold.x);
+        assert_eq!(st.flow.cost_at(beside_mold.y, beside_mold.x), 0);
     }
 }
 
@@ -183,6 +206,17 @@ fn stair_inside_reach(st: &mut BorgState) {
     st.borg.time.now += 1;
     assert!(!borg_flow_stair_more(st, GOAL_FLEE, false, true), "the only stair stays blocked");
     check_keys(st, &[]);
+
+    let safe_stair = loc { x: WEST.x - 1, y: WEST.y };
+    assert!(!in_walk_away_reach(st, safe_stair.x, safe_stair.y));
+    put(st, safe_stair, FEAT_MORE);
+    st.stairs.more.x[1] = safe_stair.x;
+    st.stairs.more.y[1] = safe_stair.y;
+    st.stairs.more.num = 2;
+    assert!(borg_flow_stair_more(st, GOAL_FLEE, false, true));
+    check_keys(st, &[u32::from(b'4')]);
+    st.stairs.more.num = 1;
+    put(st, safe_stair, FEAT_GRANITE);
 
     // A visible shot from outside the eye's reach stays available even
     // though the flow will not enter its reach on foot.
@@ -239,6 +273,9 @@ fn strategic_retreat(st: &mut BorgState) {
     assert_eq!(value(Param::caution_retreat_oscillation_limit), 3);
     assert_eq!(value(Param::caution_retreat_oscillation_thinks), 3);
     assert_eq!(value(Param::caution_retreat_oscillation_backaway), 0);
+    // Advance the Borg clock by one for each simulated dungeon think.
+    // Actual game time does not advance while this fixture drains keys.
+    let game_turn = engine::game_turn();
     for attempt in 1..=3 {
         assert!(borg_caution(st), "strategic retreat {attempt} should act");
         check_keys(st, &[u32::from(b'4')]);
@@ -266,14 +303,17 @@ fn strategic_retreat(st: &mut BorgState) {
     assert!(borg_caution(st), "the expired window permits a new retreat");
     check_keys(st, &[u32::from(b'4')]);
     assert_eq!(st.borg.mon.retreat_run, 1);
+    assert_eq!(engine::game_turn(), game_turn);
 }
 
 pub(crate) fn run(st: &mut BorgState, case: &str) -> ! {
     assert!(st.borg.tr(BI_CDEPTH) > 0);
     assert_eq!(value(Param::caution_walk_away_immobile), 1);
     match case {
-        "phase-shipped" => cornered_phase(st, false),
-        "phase-override" => cornered_phase(st, true),
+        "phase-shipped" => cornered_phase(st, false, true),
+        "phase-override" => cornered_phase(st, true, true),
+        "phase-shipped-no-scroll" => cornered_phase(st, false, false),
+        "phase-override-no-scroll" => cornered_phase(st, true, false),
         "memory-shipped" => retention(st, false),
         "memory-override" => retention(st, true),
         "stair-in-reach" => stair_inside_reach(st),
