@@ -1124,7 +1124,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
             // only a faster monster that is also dangerous (a fruit bat
             // next to the Borg is not a reason to stay).
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+            if desperate_neighbour_faster(&st.kills.kills[usize::from(kill)], st.borg.tr(BI_SPEED), p(Param::caution_desperate_fast_haste) != 0)
                 && fast_neighbour_counts(st, usize::from(kill))
             {
                 safe = false;
@@ -6955,6 +6955,27 @@ pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
 /// also when it is next to it and ahead of the Borg.
 pub(crate) fn stairs_clean_path_mode() -> i32 {
     p(Param::caution_stairs_clean_path)
+}
+
+/// #907: visible monster haste contributes ten speed points in the engine.
+fn desperate_neighbour_faster(kill: &crate::borg_flow_kill::BorgKill, player_speed: i32, observed_haste: bool) -> bool {
+    let speed = if observed_haste { forecast_monster_speed(kill) } else { i32::from(kill.speed) };
+    speed > player_speed
+}
+
+#[cfg(test)]
+#[test]
+fn hasted_soldier_can_veto_the_desperate_stair_walk() {
+    let mut soldier = crate::borg_flow_kill::BorgKill::default();
+    soldier.speed = 109;
+    soldier.observed_fast = true;
+    assert!(!desperate_neighbour_faster(&soldier, 110, false));
+    assert!(desperate_neighbour_faster(&soldier, 110, true));
+    assert!(!desperate_neighbour_faster(&soldier, 119, true));
+    assert!(danger_share_reaches(41, 23, 50));
+    assert!(!danger_share_reaches(11, 23, 50));
+    soldier.observed_fast = false;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
 }
 
 /// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg
