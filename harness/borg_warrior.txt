@@ -45,8 +45,8 @@ borg_param_attack_throw_point_blank_divisor = 0
 # explore_bfs_max_hp by 10", then "reduce those numbers ... by 3").
 borg_param_explore_bfs_max_hp = 28
 borg_param_explore_bfs_hp_per_level = 2
-# #1208: the Warrior gets five base slack steps.
-borg_param_stair_scum_slack_steps = 5
+# #1208: the Warrior gets four base slack steps.
+borg_param_stair_scum_slack_steps = 4
 # #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): with
 # explore_mixed, the mixed walk applies up to this CL; above it C's order. The
 # level before the first CL whose DL1 death rate, and every later one, is at

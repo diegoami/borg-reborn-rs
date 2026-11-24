@@ -951,14 +951,16 @@ borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-borg_param_explore_mix_max_radius = 10
+# #1208: cap mixed targets at the stair itself. A zero base remains zero
+# with level growth, and the normal exhausted-exploration exit applies.
+borg_param_explore_mix_max_radius = 0
 # #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
 # (and class)"): per mille a character level from CL1, linearly:
 # value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
 # Owner, 2026-11-23: "I would like the radius to start small and increase by
 # level", "make CL1 start from 10 maximum radius": the starting radius 3 at
-# CL1, 5 at CL3, 7 at CL5, 8 at CL7; the step 3, 4, 4, 5; the cap 10, 20, 30,
-# 40. The level caps stay as #1098 shipped them (the +1 added back-and-forth).
+# CL1, 5 at CL3, 7 at CL5, 8 at CL7. The steps at those levels are 3, 4, 4, 5.
+# The current zero radius cap stays zero. The class level caps follow #1098.
 borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
 borg_param_explore_mix_max_radius_dp = 500
@@ -2017,7 +2019,8 @@ borg_param_kit_money_first = 0
 # take is left by the stairs. Every number is a hypothesis until the zoo
 # measures it (borg-zoo#721: arms at max HP 20, 25, 30, the slack dials).
 # #1208 (owner, 2026-11-24): every class uses stair scumming below 30
-# maximum HP. Warriors get 5 base slack steps; all other classes get 0.
+# maximum HP. Warriors get 4 base slack steps. Other classes retain their
+# configured class values.
 borg_param_stair_scum = 1
 borg_param_stair_scum_max_hp = 30
 borg_param_stair_scum_max_hp_race_delta = 0
@@ -2236,7 +2239,7 @@ borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
 borg_param_explore_bfs_max_hp__warrior = 28
 borg_param_explore_bfs_hp_per_level__warrior = 2
-borg_param_stair_scum_slack_steps__warrior = 5
+borg_param_stair_scum_slack_steps__warrior = 4
 borg_param_explore_mix_max_clevel__warrior = 3
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
@@ -2261,6 +2264,7 @@ borg_param_town_staple_phase__mage = 12
 borg_param_town_staple_oil__mage = 10
 borg_param_explore_bfs_max_hp__mage = 32
 borg_param_explore_bfs_hp_per_level__mage = 1
+borg_param_stair_scum_slack_steps__mage = 2
 borg_param_explore_mix_max_clevel__mage = 6
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
@@ -2284,6 +2288,7 @@ borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
 borg_param_explore_bfs_max_hp__druid = 33
 borg_param_explore_bfs_hp_per_level__druid = 2
+borg_param_stair_scum_slack_steps__druid = 1
 borg_param_explore_mix_max_clevel__druid = 5
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
@@ -2308,6 +2313,7 @@ borg_param_town_staple_oil__priest = 8
 borg_param_town_phase_reserve__priest = 8
 borg_param_explore_bfs_max_hp__priest = 28
 borg_param_explore_bfs_hp_per_level__priest = 2
+borg_param_stair_scum_slack_steps__priest = 2
 borg_param_explore_mix_max_clevel__priest = 7
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
@@ -2332,6 +2338,7 @@ borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
 borg_param_explore_bfs_max_hp__necromancer = 28
 borg_param_explore_bfs_hp_per_level__necromancer = 2
+borg_param_stair_scum_slack_steps__necromancer = 1
 borg_param_explore_mix_max_clevel__necromancer = 7
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
@@ -2358,6 +2365,7 @@ borg_param_town_staple_oil__paladin = 11
 borg_param_attack_throw_point_blank_divisor__paladin = 0
 borg_param_explore_bfs_max_hp__paladin = 31
 borg_param_explore_bfs_hp_per_level__paladin = 2
+borg_param_stair_scum_slack_steps__paladin = 4
 borg_param_explore_mix_max_clevel__paladin = 6
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
@@ -2384,6 +2392,7 @@ borg_param_town_staple_oil__rogue = 10
 borg_param_attack_throw_point_blank_divisor__rogue = 0
 borg_param_explore_bfs_max_hp__rogue = 33
 borg_param_explore_bfs_hp_per_level__rogue = 2
+borg_param_stair_scum_slack_steps__rogue = 3
 borg_param_explore_mix_max_clevel__rogue = 4
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
@@ -2413,6 +2422,7 @@ borg_param_town_staple_phase__ranger = 20
 borg_param_town_staple_oil__ranger = 6
 borg_param_explore_bfs_max_hp__ranger = 41
 borg_param_explore_bfs_hp_per_level__ranger = 2
+borg_param_stair_scum_slack_steps__ranger = 3
 borg_param_explore_mix_max_clevel__ranger = 5
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
@@ -2439,6 +2449,7 @@ borg_param_town_phase_reserve__blackguard = 10
 borg_param_attack_throw_point_blank_divisor__blackguard = 0
 borg_param_explore_bfs_max_hp__blackguard = 27
 borg_param_explore_bfs_hp_per_level__blackguard = 2
+borg_param_stair_scum_slack_steps__blackguard = 4
 borg_param_explore_mix_max_clevel__blackguard = 4
 # ---- END CLASS FILES ----
 

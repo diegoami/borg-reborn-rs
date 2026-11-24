@@ -1390,7 +1390,7 @@ fn depth_band(depth: i32) -> i32 {
 /// - *k* = ⌊HP / *c*⌋: the turns of contact it survives on the rest of the
 ///   way, with *c* = `contact` x the depth band.
 ///
-/// No lower than the start, no higher than the cap.
+/// The start is the floor unless the cap is smaller, including a zero cap.
 fn mix_limit(m: MixModel) -> i32 {
     let d = m.sight.max(m.light).max(0);
     let run = d / (m.ratio - 1).max(1);
@@ -2179,6 +2179,11 @@ mod breadth_first_tests {
         // left (borg_flow_dark returns false), not explored beyond.
         let cands = [(0, 0, 12)];
         assert_eq!(mixed_plan(&cands, Some(0), 5, 2, 10, 16), Plan::Rings(vec![]));
+
+        let next_to_stair = [(0, 1, 1)];
+        let cap = grow_by_level(0, 500, 2);
+        assert_eq!(cap, 0);
+        assert_eq!(mixed_plan(&next_to_stair, Some(0), 4, 3, cap, 16), Plan::Rings(vec![]));
         let Plan::Rings(tries) = mixed_plan(&cands, Some(0), 5, 2, 12, 16) else { panic!("planned") };
         assert_eq!(tries.len(), 1);
         assert_eq!(tries[0].base, 12, "the last step stops at the limit");

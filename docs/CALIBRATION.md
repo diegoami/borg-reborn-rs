@@ -8227,7 +8227,7 @@ the ten below).
 | `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1455` |
 | `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1457` |
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1459` |
-| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1461` |
+| `explore_mix_max_radius` | 30 | steps | 0–250 | `borg_flow_dark.rs:1461` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1320` |
 | `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1452` |
 | `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1466` |
