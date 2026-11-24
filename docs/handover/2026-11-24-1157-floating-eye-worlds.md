@@ -1,4 +1,4 @@
-## 2026-11-24 — Floating-eye worlds (#1157)
+## 2026-11-24: Floating-eye worlds (#1157)
 
 Added `eyes-x4` and `eyes-x8`. The generator keeps the floating eye at
 its original depth and rarity and multiplies the rarity of other races
