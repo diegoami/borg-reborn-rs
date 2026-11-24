@@ -42,13 +42,30 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
 
 ### Left
 - The zoo pilot in [borg-zoo#693](https://github.com/diegoami/borg-zoo/issues/693)
-  ran on `5ad50d96` with 20 Ranger and Rogue starts. Both arms had zero
-  deaths. Book sales across all books fell from 49 to 30 at 4. The report
-  leaves first-book sales before spell eligibility, buyback cost and the
-  Paladin arm open in that issue.
+  ran on `5ad50d96` with 20 Ranger and Rogue starts, at 0 and 4. The
+  re-pin to `af296c62` with a Paladin arm was requested but not run. Both
+  arms had zero deaths. Book sales across all books fell from 49 to 30 at 4.
+  The report leaves first-book sales before spell eligibility, buyback cost
+  and the Paladin arm open in that issue.
+- No measurement exists at the shipped value, 1 (second review, finding 1):
+  to file as an issue if the owner wants one.
+- The smoke suite (a Warrior, a Mage, a Priest and a Kobold Mage) has no
+  Ranger, Rogue or Paladin, so its identical play says nothing about this
+  change (second review, finding 5).
+- Fixed in this PR after the second review: nine parameter citations in
+  `borg_town_capability.rs` that the PR's own insertion moved off their
+  reads (finding 2), and the shipped value in `docs/CALIBRATION.md`
+  (finding 3).
 
 ### Shipped setting
 
 The owner chose 1 level on 2026-11-24. A Ranger's CL3 first spell enters
 the look-ahead at CL2, so this setting can still allow the reported CL1
 sale. The zoo pilot measured 4 levels.
+
+### For the owner
+
+- Is 1 the final value or a first step towards the measured 4? At 1 the
+  reported CL1 Ranger sale still happens, so `Closes #1004` overstates what
+  merges.
+- Should a zoo run measure 1 (`ctl` against `la1`)?
