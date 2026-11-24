@@ -224,6 +224,18 @@ fn unknown_durable(it: &borg_item) -> bool {
         && !matches!(u32::from(it.tval), TV_FLASK | TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL)
 }
 
+/// borg-reborn-rs (#1151): the light turns one copy holds, in `UNIT`s: a
+/// torch's or lantern's turns, a flask's fuel (`object.txt`: pval 7500).
+fn fuel_per_copy(it: &borg_item) -> i64 {
+    use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT};
+    let unit = crate::borg_town_utility::UNIT;
+    match u32::from(it.tval) {
+        TV_LIGHT => i64::from(it.timeout).max(0) * unit,
+        TV_FLASK => i64::from(it.pval).max(0) * unit,
+        _ => 0,
+    }
+}
+
 fn apparently_saleable(it: &borg_item) -> bool {
     // The engine refuses apparently worthless goods. Unknown durable
     // rune exceptions under no-selling are protected, not disposal stock.
@@ -255,6 +267,9 @@ pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, ho
 fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     use crate::headers::list_options_h::OPT_birth_no_selling;
     let no_selling = engine::player_opt(OPT_birth_no_selling);
+    // borg-reborn-rs (#1140, `deal_with_poison`): no sale (it pays nothing)
+    // while the poison triage holds.
+    let triage_no_sale = crate::borg_poison::no_sale_now(st);
     let pack_end = inven_wield() as usize;
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
@@ -263,7 +278,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         // is sold, like an unknown potion, scroll or mushroom, to learn it.
         let unknown_flavour = !it.aware && (consumable || unaware_device(it));
         if unknown_flavour { need = -1; reduction = 0; }
-        let sell_shop = (0..7i8).find(|&who| apparently_saleable(it)
+        let sell_shop = (0..7i8).find(|&who| !triage_no_sale && apparently_saleable(it)
             && !crate::borg_town_live::sale_rejected(st, i16::from(who), it)
             && crate::borg_store_sell::borg_store_buys(it, i32::from(who))).unwrap_or(-1);
         let proceeds = if no_selling || sell_shop < 0 { 0 } else {
@@ -288,6 +303,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } else { None };
         KitItem {
             home_room,
+            keep_last_book: protects_class_book(it),
             protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                 && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -307,6 +323,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             unknown: unknown_durable(it) || unknown_flavour,
             unknown_flavour,
             just_bought,
+            // borg-reborn-rs (#1151)
+            cursed_spare: place == Place::Pack && it.cursed,
+            fuel: fuel_per_copy(it),
         }
     };
 
@@ -370,6 +389,12 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } };
         crate::borg_trait::borg_notice(st, true);
         kit.push(fact(st, it, Place::Home, slot, gain));
+    }
+
+    // Reserve one stack per book kind, preferring a copy already safe at Home.
+    let mut reserved_books = std::collections::BTreeSet::new();
+    for stack in kit.iter_mut().rev().filter(|stack| stack.keep_last_book) {
+        stack.keep_last_book = reserved_books.insert(stack.kind);
     }
 
     st.borg = borg;
@@ -477,6 +502,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     );
     let mut trip = Trip::of(st);
     trip.cure_spell = cure_spell;
+    let reads_now = crate::borg_item_enchant::reads_scroll_in_town(st);
     let mut stock = Stock::of(st);
     // The wearables: their power gain, and their slot cost (the worn item
     // moves to the pack).
@@ -593,6 +619,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         power: i64::from(st.borg.power),
         carried: &carried,
         cure_spell,
+        reads_now,
         kit: &kit,
         home_slots: budget.home_slots,
     });
@@ -661,7 +688,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         step: step_no,
         gturn: i64::from(engine::game_turn()),
         power: i64::from(st.borg.power),
-        spells: u8::from(cure_spell),
+        spells: u8::from(cure_spell) | u8::from(reads_now) << 1,
         params,
         limits: [budget.gold, i64::from(budget.pack_slots), i64::from(budget.home_slots), budget.weight],
         black_market_reserve: budget.black_market_reserve,
@@ -812,7 +839,7 @@ mod knowledge_only_purchase_tests {
         let out = step(&StepInput { storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
-            traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
+            traits: &traits, power: 1000, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 });
         out.plan.iter().map(|e| e.copies).sum()
     }
 
@@ -833,6 +860,12 @@ mod knowledge_only_purchase_tests {
             assert_eq!(copies_bought(effective_params(configured()), utility), 0, "utility {utility}");
         }
     }
+}
+
+/// Match the engine's class book list independently of spell level and mana.
+pub(crate) fn protects_class_book(item: &borg_item) -> bool {
+    param(Param::town_keep_last_class_book) != 0 && item.kind != 0
+        && engine::obj_kind_can_browse(item.kind as usize)
 }
 
 #[cfg(test)]

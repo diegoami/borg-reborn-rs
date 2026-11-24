@@ -59,6 +59,7 @@ pub struct Borg {
     pub status: BorgStatus,
     pub time: BorgTimes,
     pub need_see_invis: BorgTime,
+    pub hallway_beams: crate::borg_light::HallwayBeams,
     pub see_inv: i16,
     pub need_shift_panel: bool,
     pub when_shift_panel: BorgTime,
@@ -168,6 +169,11 @@ pub struct Borg {
     /// when it was not). The twitchy think then still tries its longer-range
     /// teleports, which the gate does not judge.
     pub phase_gate_refused: Option<BorgTime>,
+    /// borg-reborn-rs (#1130): a stair walk started under boosted bravery
+    /// (`boost_bravery`, "Goal_less, brave"), committed so that the next
+    /// thinks continue it with the same avoidance instead of undoing its step
+    /// (`borg_flow::brave_walk_avoidance`).
+    pub brave_walk: Option<crate::borg_flow::BraveWalk>,
     /// borg-reborn-rs (#1098, review of #1117): the think (`time.now`) whose
     /// stair-anchored exploration (breadth-first or mixed) found nothing it
     /// may reach left: the area it may cover is done, so `borg_leave_level`
@@ -365,6 +371,11 @@ pub struct BorgMonInfo {
     /// so a flow that passes them again does not loop.
     pub immobile_stepped: [[u8; 4]; 16],
     pub immobile_stepped_level: BorgTime,
+    /// borg-reborn-rs (#1147, `caution_walk_away_immobile`): the think
+    /// (`time.now`) in which the Borg stood next to a walk-away monster with
+    /// no grid out of its reach to step to; in that think a blow at it is
+    /// allowed again (the last resort).
+    pub walk_away_cornered: Option<BorgTime>,
     /// borg-reborn-rs (#932): the last strategic retreat: the think it was
     /// taken (`time.now`), the level's arrival time, the grid it left, and
     /// how many retreats in a row left that place (each within

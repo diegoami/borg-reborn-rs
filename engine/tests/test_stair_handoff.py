@@ -57,16 +57,17 @@ PINNED_TOWN_SETTINGS = [
     # #1078 shipped the engine's light radius after these incidents. Without
     # this pin the games take another route and never reach the incident grids.
     ("cave_light_engine_radius", 0),
+    # #995 changed hallway lighting after the recorded stair incidents.
+    ("light_hallway_repeat_guard", 0),
     # #1094 shipped #1066's two Phase Door switches after these incidents.
     ("escape_phase_unknown_scary", 0), ("escape_phase_newcomer_wait", 0),
     # #1100 shipped the position belief (#879) at decay 5 after these incidents.
     ("unseen_belief", 0), ("unseen_decay_percent", 20),
+    # #1128 shipped #885's dark-floor light and #917's rubble sight after
+    # these incidents.
+    ("update_dark_clears_light", 0), ("view_rubble_blocks_sight", 0),
     # #1085 shipped breadth-first exploration after these incidents.
     ("explore_breadth_first", 0),
-    # #1103 shipped the Black Market threshold and the Restore Life Levels
-    # reserve after these incidents.
-    ("town_black_market_min_gold", 0), ("town_restore_life_reserve", 0),
-    ("town_restore_stat_percent", 0), ("town_restore_stat_min_depth", 0), ("town_restore_life_min_depth", 12), ("town_restore_life_min_gold", 0),
     # #1067 shipped the trap rules after these incidents.
     ("trap_recover", 0), ("trap_way_back", 0), ("trap_leave_level_count", 0),
     # #1123 enabled the retreat guards after these incidents.
@@ -74,11 +75,22 @@ PINNED_TOWN_SETTINGS = [
     # #1061 shipped stair_scum (an exploration mode under 20 max HP) after
     # these incidents; it keeps a CL1 Borg by the stairs and changes the route.
     ("stair_scum", 0),
+    # #1148 shipped the walk-away from immobile monsters after these incidents.
+    ("caution_walk_away_immobile", 0),
     # #1062 shipped the stair-leash switches after these incidents.
     ("flow_leash_any_stair", 0), ("flow_leash_unknown_stair_steps", 0), ("flow_leash_teleported_recall", 0),
     # #1098 shipped the mixed walk and the C exploration's stair exit after
     # these incidents (owner, 2026-11-23: "merge it but with all settings on").
     ("explore_mixed", 0), ("explore_c_leave_when_done", 0),
+    # #1130 shipped the committed brave stair walk after these incidents.
+    ("flow_brave_walk_commit", 0),
+    # #1140 shipped deal_with_poison (the poison triage) after these
+    # incidents (owner, 2026-11-23: "merge with deal_with_poison 1").
+    ("deal_with_poison", 0),
+    # #941: the speed flag synced to the engine timer, shipped after the
+    # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
+    # end, which the recorded turns depend on).
+    ("trait_timed_sync", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -167,7 +179,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             # #1061: the stair_scum mode (shipped after these cases) is not
             # what they test; pin it off.
             # #1098: nor the mixed walk and the C exploration's stair exit.
-            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done"):
+            # #1140: nor the poison triage (deal_with_poison).
+            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
+                        "borg_param_deal_with_poison"):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = 0\n"
@@ -205,6 +219,72 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)
+
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class LeaveLevelUpstairsTest(unittest.TestCase):
+    """#1173: the dungeon decision's leave entry point on an exhausted level.
+
+    The recorded Ranger (Borg261124105138, track-p c5501d3c) spent 521
+    decisions walking between secret-door search targets on DL3 with two
+    reachable up stairs and no down stair: the power dive set the direction
+    before the exhausted branch could allow the fallback to up stairs.
+    """
+
+    def run_case(self, case):
+        with tempfile.TemporaryDirectory(prefix="leave-level-upstairs-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            config = (ROOT / "harness/borg.txt").read_text()
+            # #1061's stair_scum, #1098's mixed walk and #1140's poison
+            # triage are not what the case tests. The prepared_* gates make
+            # a birth-level character dive-prone (the incident's CL8 Ranger
+            # was prepared for DL3 and for DL8); the breadth-first and
+            # mixed walks are pinned off so the level's exhaustion is C's
+            # ("nothing reachable left within the leash"), which needs
+            # explore_c_leave_when_done = 1.
+            pinned = [
+                ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
+                ("explore_breadth_first", 0),
+                ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
+                ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
+                ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
+                ("prepared_recall_depth", 0),
+                # the per-class values override the base setting
+                ("prepared_dl34_min_hp__warrior", 0), ("prepared_dl34_min_clevel__warrior", 0),
+                ("prepared_dl59_min_hp__warrior", 0), ("prepared_dl59_min_clevel__warrior", 0),
+                # a birth-level character passes the clevel gate only with the margin
+                ("prepared_clevel_depth_margin", 7),
+            ]
+            for key, value in pinned:
+                name = f"borg_param_{key}"
+                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{name} = {value}\n"
+            # the trip policy's own prepared estimate would ascend a birth
+            # character regardless of the case's decision state. Replaced in
+            # place: a line after the file's formula section is not read as
+            # a setting.
+            for key, value in (("borg_trip_policy", 0),):
+                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{key} = {value}\n"
+            (paths["user"] / "borg.txt").write_text(config)
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", "0", "-class", "0", "-menu-letters", "-start-depth", "3", "-keys", "250"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("leave-level-upstairs passed (#1173)", result.stdout)
+
+    def test_exhausted_dive_falls_back_to_a_reachable_up_stair(self):
+        self.run_case("leave-level-upstairs")
 
 
 if __name__ == "__main__":

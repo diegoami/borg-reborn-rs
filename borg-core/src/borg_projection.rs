@@ -52,6 +52,22 @@ pub fn borg_los(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     )
 }
 
+/// borg-reborn-rs (#917): `borg_los` for sight, the view's line of sight
+/// under `view_rubble_blocks_sight` = 1: C's walk test (`borg_cave_floor_bold`)
+/// without passable rubble, which has no `LOS` flag
+/// (lib/gamedata/terrain.txt:346-354), so the engine's `los()`
+/// (src/cave-view.c:85-248, `square_isprojectable`) stops at it.
+pub(crate) fn borg_los_sight(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+    los_with(
+        y1,
+        x1,
+        y2,
+        x2,
+        || engine::square_in_bounds_fully(x1, y1),
+        |y, x| borg_cave_floor_bold(st, y, x) && !feat_is(st.cave.grid(x, y), FEAT_PASS_RUBBLE),
+    )
+}
+
 /// Engine-style LOS on the Borg's known map. Both light and arc footprints
 /// use `los()` (src/cave-view.c:los:93-241, src/project.c:project:856-863).
 /// The terrain test is src/cave-square.c:square_isprojectable:671-674.
@@ -75,7 +91,7 @@ pub(crate) fn borg_los_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2
 }
 
 /// Whether a known grid allows a projection to pass through it.
-fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
+pub(crate) fn known_projectable(feat: u32, trap: bool, shop: bool) -> bool {
     trap || shop || [FEAT_FLOOR, FEAT_OPEN, FEAT_BROKEN, FEAT_LESS, FEAT_MORE, FEAT_LAVA].contains(&feat)
 }
 

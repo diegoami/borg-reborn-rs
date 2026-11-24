@@ -27,7 +27,7 @@ use crate::borg_io::{borg_keypress, borg_note, ESCAPE};
 use crate::borg_item_use::{
     borg_activate_item, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal_fail, borg_spell_okay_fail};
 use crate::borg_projection::{borg_distance, borg_los, borg_target};
 use crate::borg_update::Detect;
 use crate::borg_cave_view::BORG_VIEW;
@@ -833,6 +833,11 @@ pub(crate) enum PhaseSite {
     /// `kill-on-sight` entry and its cure does not outlive the next turn
     /// (`borg_fight_attack.rs` `floor_escape`).
     KillOnSightFloor,
+    /// #1147 (re-review of #1148, finding 2): `caution_walk_away_immobile`,
+    /// cornered next to a walk-away monster with no square out of its reach
+    /// and not confused; the last try before a blow (`borg_caution.rs`
+    /// `walk_away_phase`).
+    WalkAwayCornered,
 }
 
 impl PhaseSite {
@@ -858,6 +863,7 @@ impl PhaseSite {
             PhaseSite::TwitchyThink => "twitchy think",
             PhaseSite::FastFragile => "fast-fragile",
             PhaseSite::KillOnSightFloor => "kill-on-sight floor",
+            PhaseSite::WalkAwayCornered => "walk-away cornered",
         }
     }
 }
@@ -906,7 +912,7 @@ pub(crate) fn phase_door(
     // Shoot N Scoot's own check answers first (re-review of #612): it only
     // passes with a monster next to the Borg, so asking the rule before it
     // made two thirds of the rule's notes on turns with nothing adjacent.
-    let rule = site != PhaseSite::UnseenBump && param(Param::escape_phase_adjacent_rule) != 0 && st.borg.tr(BI_APHASE) > 0;
+    let rule = site != PhaseSite::UnseenBump && param(Param::escape_phase_adjacent_rule) != 0 && has_phase(st, site);
     let site_first = matches!(check, PhaseCheck::ShootScoot { .. });
     if rule && !site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
         return false;
@@ -1404,11 +1410,27 @@ fn nearest_awake(st: &BorgState) -> Option<i32> {
         .min()
 }
 
+/// The Borg has a Phase Door for `site`: `BI_APHASE` (a scroll, an
+/// activation, or the spell at 3% failure or less, `borg_trait.rs`), or,
+/// for #1147's cornered walk-away (re-review of #1148), the spell up to
+/// `caution_walk_away_phase_fail`, the ceiling that site casts with.
+fn has_phase(st: &BorgState, site: PhaseSite) -> bool {
+    phase_available(st.borg.tr(BI_APHASE), site, || {
+        borg_spell_legal_fail(st, PHASE_DOOR, param(Param::caution_walk_away_phase_fail))
+    })
+}
+
+/// `has_phase` with the spell test given: every site but the cornered
+/// walk-away asks `BI_APHASE` alone, as before.
+fn phase_available(aphase: i32, site: PhaseSite, walk_away_spell: impl FnOnce() -> bool) -> bool {
+    aphase > 0 || (site == PhaseSite::WalkAwayCornered && walk_away_spell())
+}
+
 /// Help determine if PHASE_DOOR seems like a good idea
 /// (`borg_caution_phase`; #584: with the asking site in its notes).
 fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32) -> bool {
     // must have the ability
-    if st.borg.tr(BI_APHASE) == 0 {
+    if !has_phase(st, site) {
         return false;
     }
 
@@ -2963,5 +2985,21 @@ mod paralyser_phase_tests {
         let body = &at[..at.find("\n}\n").unwrap()];
         let reach = body.find(concat!("in_paralyser_", "reach(st, x, y)")).expect("the seed check");
         assert!(reach < body.find(concat!("data_cost[y as usize][x as usize] = ", "0")).unwrap(), "checked before the seed");
+    }
+}
+
+#[cfg(test)]
+mod walk_away_phase_tests {
+    use super::{phase_available, PhaseSite};
+
+    #[test]
+    fn a_cornered_caster_counts_its_spell_up_to_the_sites_ceiling() {
+        // Re-review of #1148: a 20% Phase Door spell, no scroll, no
+        // activation (BI_APHASE 0): the cornered walk-away counts it (the
+        // spell test passes at its 30% ceiling); every other site does not.
+        assert!(phase_available(0, PhaseSite::WalkAwayCornered, || true));
+        assert!(!phase_available(0, PhaseSite::WalkAwayCornered, || false), "above the ceiling");
+        assert!(!phase_available(0, PhaseSite::Danger, || true), "other sites keep BI_APHASE");
+        assert!(phase_available(1000, PhaseSite::Danger, || false));
     }
 }
