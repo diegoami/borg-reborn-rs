@@ -2015,11 +2015,11 @@ borg_param_kit_money_first = 0
 # within the depth plan); on a staircase a threat the fight race does not
 # take is left by the stairs. Every number is a hypothesis until the zoo
 # measures it (borg-zoo#721: arms at max HP 20, 25, 30, the slack dials).
-# #1208 (owner, 2026-11-24): every class uses stair scumming below 30
+# #1208 (owner, 2026-11-24): every class uses stair scumming below 28
 # maximum HP. Warriors get 4 base slack steps. Other classes retain their
 # configured class values.
 borg_param_stair_scum = 1
-borg_param_stair_scum_max_hp = 30
+borg_param_stair_scum_max_hp = 28
 borg_param_stair_scum_max_hp_race_delta = 0
 borg_param_stair_scum_speed_ratio = 2
 borg_param_stair_scum_contact_damage = 4
