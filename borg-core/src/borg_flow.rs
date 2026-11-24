@@ -72,6 +72,15 @@ const GOAL_FLEE: i32 = 7;
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
 
+/// borg-reborn-rs (#1206): how long a door the flight itself opened stays
+/// exempt from the breeder containment's close. The recorded open/close
+/// cycle ran ten turns per toggle; thirty covers several cycles of the
+/// walk-through and stays far short of any deliberate later containment.
+const OPENED_DOOR_UNDO_TURNS: i32 = 30;
+
+/// borg-reborn-rs (#1206): how many recently opened doors are remembered.
+const OPENED_DOOR_KEEP: usize = 8;
+
 /// One `borg_data` grid map: `AUTO_MAX_Y` rows of `AUTO_MAX_X` bytes,
 /// indexed `[y][x]`. Empty = not allocated (C `NULL`).
 pub type BorgData = Vec<[u8; AUTO_MAX_X as usize]>;
@@ -153,6 +162,11 @@ pub struct FlowState {
     pub track_door: StairTrack,
     /// `track_closed`: doors that started closed
     pub track_closed: StairTrack,
+    /// borg-reborn-rs (#1206): doors the Borg opened recently, as
+    /// `(x, y, turn)` — the breeder containment must not close them again
+    /// while the flight that opened them is still walking through (at most
+    /// `OPENED_DOOR_UNDO_TURNS` turns old, at most 8 kept).
+    pub opened_doors: Vec<(i32, i32, i32)>,
 }
 
 impl Default for FlowState {
@@ -184,6 +198,7 @@ impl Default for FlowState {
             track_step: StairTrack::default(),
             track_door: StairTrack::default(),
             track_closed: StairTrack::default(),
+            opened_doors: Vec::new(),
         }
     }
 }
@@ -1266,6 +1281,20 @@ fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
                 continue;
             }
 
+            // borg-reborn-rs (#1206): skip a door this flight opened
+            // recently — the flow replans after each terrain change and its
+            // new next grid loses the goal-side skip above, which closed
+            // the just-opened door and re-opened it every ten turns
+            // (Borg261124194229: 35 open/close pairs from one square).
+            if st
+                .flow
+                .opened_doors
+                .iter()
+                .any(|(x, y, t)| *x == ox + cx && *y == oy + cy && st.borg.time.now - *t <= OPENED_DOOR_UNDO_TURNS)
+            {
+                continue;
+            }
+
             /* save this spot */
             o_y = oy;
             o_x = ox;
@@ -1515,11 +1544,28 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         st.flow.track_closed.num = 0;
     }
 
+    // borg-reborn-rs (#1206): remember the door this flight just opened so
+    // the breeder containment does not close it again while the flight
+    // walks through it.
+    let opened = (
+        st.borg.c.x + i32::from(engine::ddx(dir as usize)),
+        st.borg.c.y + i32::from(engine::ddy(dir as usize)),
+        st.borg.time.now,
+    );
+    st.flow.opened_doors.retain(|&(x, y, _)| !(x == opened.0 && y == opened.1));
+    st.flow.opened_doors.push(opened);
+    if st.flow.opened_doors.len() > OPENED_DOOR_KEEP {
+        let excess = st.flow.opened_doors.len() - OPENED_DOOR_KEEP;
+        st.flow.opened_doors.drain(0..excess);
+    }
+
     true
 }
 
 /// Take one "step" towards the given location, return true if possible.
-fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
+// borg-reborn-rs (#1206): `pub(crate)` so the decision fixture can drive
+// the step directly (the breeder-door loop is a per-step behavior).
+pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     /* Breeder levels, close all doors */
     if st.borg.near.breeder && close_breeder_door(st, y2, x2) {
         return true;
