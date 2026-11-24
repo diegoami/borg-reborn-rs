@@ -52,6 +52,18 @@ Track P, branch `task/T1173-powerdive-upstairs`, target `track-p`.
   counting counts an aware ration stack; the earlier draft's failure came
   from unaware fabricated stacks and a zero-value duplicate ration stack
   crushed as junk (#1179). `harness/borg.txt` is untouched.
+- Review round (Codex review of `c811d38f` vs `track-p` at `7bf58639`):
+  one P2 finding — standing on the very down stair the dive chose, the
+  dive's flow has no step to queue (cost 0) and fell into the new
+  fallback, walking the Borg off the staircase toward an up stair. Fixed
+  in `borg_leave_level`: after the failed flow, an exhausted think takes
+  the stair underfoot with the guards of caution's own stair take
+  (`recall_restricts`, `borg_prep_leave_level_spells`, then `>`) instead
+  of falling to the fallbacks. A new fixture phase fabricates the Borg on
+  a `FEAT_MORE` grid with `stair_more` clear and a reachable up stair and
+  expects `>`; it fails without the take (the fallback queues the walk
+  off, key `4`). The down stair's grid feat is now fabricated too (the
+  tracked stair's grid is that feat in a real game).
 
 ### How it was checked
 
@@ -62,7 +74,8 @@ Track P, branch `task/T1173-powerdive-upstairs`, target `track-p`.
   `python3 scripts/check-param-citations.py` (2522 parameters, 0 wrong).
 - `LeaveLevelUpstairsTest` passes on the test build and fails without the
   fix (checked by rebuilding with the fallback gate disabled: the incident
-  think queues no up-stair flow).
+  think queues no up-stair flow) and without the review fix (the new
+  standing-on-the-down-stair phase walks off toward the up stair, key `4`).
 - Smoke (default borg-rs core, shipped settings): 4/4 identical to
   `harness/reference/smoke-borg-rs` (keys, messages, states) — no
   re-record.

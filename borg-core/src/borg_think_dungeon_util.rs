@@ -25,7 +25,9 @@ use crate::borg::BorgTime;
 use crate::borg_escape::borg_recall;
 use crate::borg_flow::{borg_flow_old, AUTO_TEMP_MAX};
 use crate::borg_flow_misc::borg_flow_light;
-use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
+use crate::borg_flow_stairs::{
+    borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+};
 use crate::borg_flow_take::borg_flow_take_scum;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item_use::{
@@ -1125,6 +1127,23 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
             return true;
         }
 
+        // borg-reborn-rs (#1174, review): standing on the very down stair
+        // the dive chose, the flow has no step to queue (cost 0) and falls
+        // into the fallbacks below, which would walk the Borg off the
+        // staircase toward an up stair. Take the stair underfoot, with the
+        // guards of caution's own stair take (recall gates, prep spells).
+        if exhausted
+            && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE
+            && !crate::borg_caution::recall_restricts(st)
+        {
+            borg_note(st, "# Diving by the down stair underfoot (#1174)");
+            if borg_prep_leave_level_spells(st) {
+                return true;
+            }
+            borg_keypress(st, key(b'>'));
+            return true;
+        }
+
         // borg-reborn-rs (#1098, re-review of #1117): down was chosen at
         // random after the walk and cannot be reached: up is allowed too.
         if either_way == Some(1) && !engine::player_opt(OPT_birth_force_descend) {
@@ -1389,7 +1408,9 @@ fn screen_hgt_wid() -> (i32, i32) {
 /// reachable up staircases, and the C exploration's exhaustion of this think
 /// (`explore_c_leave_when_done`). The Borg must flow to an up staircase and
 /// take it, not stand down to the secret-door search. A reachable down
-/// staircase keeps the dive; forced descent still forbids the up staircase;
+/// staircase keeps the dive; standing on that down staircase the dive takes
+/// it underfoot instead of walking off toward an up staircase (#1174
+/// review); forced descent still forbids the up staircase;
 /// an explicit retreat (`goal.rising`) holds its descent; and an explicit
 /// leaving (`goal.leaving`, the restock decisions' way) still ends in the
 /// up-staircase flow. The driving test pins the `prepared_*` gates (base
@@ -1531,6 +1552,7 @@ pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
         if down_stair {
             st.stairs.more.x[0] = down.x;
             st.stairs.more.y[0] = down.y;
+            st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
         }
         crate::borg_flow::borg_flow_clear(st);
     };
@@ -1604,6 +1626,28 @@ pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
     let d0 = dist_to(st, down);
     take_step(st);
     assert!(dist_to(st, down) < d0, "the step goes toward the down stair");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- Standing on the down stair, the dive takes it underfoot
+    // (#1174 review). ---
+    setup(st, true);
+    pack_kit(st);
+    // On the staircase itself the dive's flow has no step to queue (cost
+    // 0); it must take the stair, not walk off toward an up stair.
+    st.borg.c = down;
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the dive takes the stair underfoot"
+    );
+    assert_eq!(
+        st.io.queued_keys(),
+        [u32::from(b'>')],
+        "the down stair is taken: {:?}",
+        st.io.queued_keys()
+    );
+    assert!(!st.borg.stair_less, "no up-stair fallback beside the stair underfoot");
     while !st.io.queued_keys().is_empty() {
         crate::borg_io::borg_inkey(st, true);
     }
