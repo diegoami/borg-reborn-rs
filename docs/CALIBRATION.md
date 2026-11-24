@@ -979,6 +979,12 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 
 The registry now holds **2275** parameters (2273 before; two added).
 
+- `light_first_cast_require_dark=1` (shipped, compiled default 0). The first
+  discretionary room-lighting cast under the radius-one check needs an
+  unglowing casting square or observed unglowing floor within the spell's
+  light sphere (one grid for Call Light and two for Light Room). At 0, the
+  first cast uses the previous behavior. Confirmed-cast suppression and the
+  newly observed floor rule apply at both settings (#1119).
 - `light_hallway_repeat_guard=1` (shipped, compiled default 0). At 1,
   defense and exploration yield when the first eligible ray has the same
   observed terrain as the last beam queued from that square. At 0, historical
