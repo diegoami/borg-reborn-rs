@@ -50,13 +50,13 @@ use crate::borg_headers::borg_trait_h::*;
 use crate::borg_io::borg_note;
 use crate::borg_headers::borg_magic_h::{CURE_POISON, HERBAL_CURING};
 use crate::engine;
-use crate::headers::list_player_timed_h::TMD_POISONED;
+use crate::headers::{list_player_timed_h::TMD_POISONED, list_stats_h::STAT_CON};
 use crate::headers::list_tvals_h::TV_POTION;
 use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
 /// `adj_con_fix[]` at 574b618c (`player-calcs.c:686-725`), by the CON index
-/// (`stat_ind[STAT_CON]`, `BI_CON_INDEX`): the extra amount the poison, cut
+/// (`state.stat_ind[STAT_CON]`): the extra amount the poison, cut
 /// and stun timers fall each world tick. Pinned to the engine by a test.
 const ADJ_CON_FIX: [i32; 38] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 5, 6, 6, 7, 7,
@@ -259,7 +259,7 @@ pub(crate) fn read(st: &mut BorgState) -> Option<Triage> {
     let cure_carried = usable_cure(st);
     Some(Triage {
         counter,
-        pending: pending_hp(counter, st.borg.tr(BI_CON_INDEX)),
+        pending: pending_hp(counter, engine::player_stat_ind(STAT_CON)),
         hp: st.borg.tr(BI_CURHP),
         maxhp,
         clw,
@@ -285,7 +285,7 @@ pub(crate) fn observe(st: &mut BorgState) {
     let key = (t.pending - t.hp, t.healing, t.maxhp, t.cure_carried);
     if st.poison.noted == Some(key) { return; }
     st.poison.noted = Some(key);
-    let d = decay(st.borg.tr(BI_CON_INDEX));
+    let d = decay(engine::player_stat_ind(STAT_CON));
     let verdict = if t.cure_carried { "a cure carried".to_owned() } else if t.unfixable() {
         format!("more than HP + healing by {}", t.pending - t.hp - t.healing + 1)
     } else { "covered".to_owned() };
@@ -527,7 +527,7 @@ pub(crate) fn fight_race(st: &mut BorgState) -> Option<(bool, bool)> {
         count += 1;
     }
     if count == 0 { return None; }
-    let d = decay(st.borg.tr(BI_CON_INDEX));
+    let d = decay(engine::player_stat_ind(STAT_CON));
     let lost = poison_race_lost(turns, damage, timer, d, t.pending, t.hp, t.healing);
     borg_note(st, &format!(
         "# Poison fight race: {count} poisoner(s), {turns:.1} turns to kill, {damage:.2} damage and {timer:.2} poison a turn, \

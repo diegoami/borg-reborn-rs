@@ -113,9 +113,9 @@ pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
 /// The sources `borg_recall` can try in the current think. Recall is not
 /// subject to the anti-teleport checks for immediate escapes.
 fn flight_recall_source_available(st: &mut BorgState) -> bool {
-    use crate::borg_item_use::{borg_equips_item, readable_scroll_slot, zappable_rod_slot};
+    use crate::borg_item_use::{charged_activation_slot, readable_scroll_slot, zappable_rod_slot};
     zappable_rod_slot(st, st.item_val.sv_rod_recall) >= 0
-        || borg_equips_item(st, st.act.recall, true)
+        || charged_activation_slot(st, st.act.recall).is_some()
         || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
         || readable_scroll_slot(st, st.item_val.sv_scroll_word_of_recall) >= 0
 }
@@ -1249,7 +1249,7 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         } else {
             hp
         };
-        fight_lost(st, here, fight_hp) && !newcomer_wait(st, hp)
+        fight_lost(st, here, fight_hp) && !newcomer_wait(st, fight_hp)
     });
     let verdict = if !adjacent {
         PhaseVerdict::Shoot

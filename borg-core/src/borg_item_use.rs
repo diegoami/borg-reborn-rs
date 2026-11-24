@@ -1185,55 +1185,30 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
     true
 }
 
+/// Find a charged, equipped item with the given activation.
+pub(crate) fn charged_activation_slot(st: &BorgState, activation: i32) -> Option<i32> {
+    if st.borg.activation[activation as usize] == 0 {
+        return None;
+    }
+    (inven_wield()..inven_total()).find(|&i| {
+        let item = &st.items.items[i as usize];
+        item.iqty != 0 && item.activ_idx == activation && item.timeout == 0
+    })
+}
+
 /// Attempt to use the given artifact.
 pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
-    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
     if crate::borg_escape::teleport_activation_blocked(st, activation) {
         return false;
     }
+    let Some(i) = charged_activation_slot(st, activation) else { return false };
 
-    /* a quick check of the array */
-    if st.borg.activation[activation as usize] == 0 {
-        return false;
-    }
-
-    /* Check the equipment */
-    for i in inven_wield()..inven_total() {
-        let item = &st.items.items[i as usize];
-
-        if item.iqty == 0 {
-            continue;
-        }
-
-        /* Skip wrong activation*/
-        if item.activ_idx != activation {
-            continue;
-        }
-
-        /* Check charge */
-        if item.timeout != 0 {
-            continue;
-        }
-
-        /* Log the message */
-        note_desc(st, b"# Activating item ", i as usize, b".");
-
-        /* The session object log: what the Borg uses. */
-        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
-
-        /* Perform the action */
-        borg_keypress(st, key(b'A'));
-        borg_keypress(st, letter(i - inven_wield()));
-
-        /* borg-reborn-rs (#1062): the cause of the next jump */
-        crate::borg_leash::own_activation(st, activation);
-
-        /* Success */
-        return true;
-    }
-
-    /* Oops */
-    false
+    note_desc(st, b"# Activating item ", i as usize, b".");
+    crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
+    borg_keypress(st, key(b'A'));
+    borg_keypress(st, letter(i - inven_wield()));
+    crate::borg_leash::own_activation(st, activation);
+    true
 }
 
 /// Check and see if borg is wielding an item with this activation.

@@ -3481,6 +3481,25 @@ fn poison_recall_charge(ticks: i32, pending: i32, new: f64) -> f64 {
     (f64::from(pending.max(0)).min(ticks) + new.max(0.0)).min(ticks)
 }
 
+/// Price ordinary flight and triage from their own running-poison inputs.
+fn recall_poison_forecast(
+    triage: Option<PoisonRecall>, ticks: i32, poisoned: bool,
+    fresh: (Option<f64>, f64), read_engine: bool, borg_rpois: bool,
+    engine: impl FnOnce() -> EnginePoison,
+) -> (f64, Option<f64>) {
+    let (strike, timer) = fresh;
+    let (remaining, new_from) = recall_poison_inputs(
+        read_engine && triage.is_none() && (poisoned || strike.is_some()), borg_rpois, engine,
+    );
+    if let Some(triage) = triage {
+        let fresh = recall_poison_hp(ticks, false, strike, timer, new_from, None);
+        (poison_recall_charge(ticks, triage.pending, fresh), None)
+    } else {
+        let charge = recall_poison_hp(ticks, poisoned, strike, timer, new_from, remaining);
+        (charge, if poisoned { remaining } else { None })
+    }
+}
+
 fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = poison.map_or_else(|| p(Param::caution_recall_survival_delay), |b| b.ticks);
@@ -3569,24 +3588,21 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
     // #1136: with caution_recall_poison_remaining, the HP the running poison
     // timer still takes (owner, 2026-11-23: read the engine's counter, as the
     // town planner does), instead of the whole delay.
-    let (remaining, new_from) = recall_poison_inputs(
-        poison.is_none() && blow_model && poisoned && p(Param::caution_recall_poison_remaining) != 0,
-        st.borg.tr(BI_RPOIS) != 0,
-        || EnginePoison {
-            timer: i32::from(engine::player_timed(TMD_POISONED)),
-            con_index: engine::player_stat_ind(STAT_CON),
-            res_level: engine::player_res_level(crate::headers::list_elements_h::ELEM_POIS),
-            opposition: i32::from(engine::player_timed(crate::headers::list_player_timed_h::TMD_OPP_POIS)),
-            con_drain: con_drainer && !engine::player_of_has(crate::headers::list_object_flags_h::OF_SUST_CON),
-        });
-    let poison_hp = if let Some(b) = poison {
-        let new = if blow_model {
-            recall_poison_hp(ticks, false, poison_strike, poison_timer, new_from, None)
-        } else { 0.0 };
-        poison_recall_charge(ticks, b.pending, new)
-    } else if blow_model {
-        recall_poison_hp(ticks, poisoned, poison_strike, poison_timer, new_from, remaining)
-    } else { 0.0 };
+    let (poison_hp, remaining) = if blow_model {
+        recall_poison_forecast(
+            poison, ticks, poisoned, (poison_strike, poison_timer),
+            p(Param::caution_recall_poison_remaining) != 0, st.borg.tr(BI_RPOIS) != 0,
+            || EnginePoison {
+                timer: i32::from(engine::player_timed(TMD_POISONED)),
+                con_index: engine::player_stat_ind(STAT_CON),
+                res_level: engine::player_res_level(crate::headers::list_elements_h::ELEM_POIS),
+                opposition: i32::from(engine::player_timed(crate::headers::list_player_timed_h::TMD_OPP_POIS)),
+                con_drain: con_drainer && !engine::player_of_has(crate::headers::list_object_flags_h::OF_SUST_CON),
+            },
+        )
+    } else {
+        (poison.map_or(0.0, |b| poison_recall_charge(ticks, b.pending, 0.0)), None)
+    };
     exposure += poison_hp;
     if poison_hp > 0.0 || breeders_waived > 0 || capped.is_some() || remaining.is_some() {
         let mut parts = Vec::new();
@@ -3614,6 +3630,28 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
 #[cfg(test)]
 mod recall_survival_tests {
     use super::*;
+
+    #[test]
+    fn triage_recall_preserves_its_pending_charge_with_either_switch_value() {
+        let triage = PoisonRecall { budget: 45, ticks: 34, pending: 5 };
+        for remaining in [false, true] {
+            let (hp, running) = recall_poison_forecast(
+                Some(triage), triage.ticks, true, (Some(4.0), 6.0), remaining, false,
+                || panic!("triage supplies its own pending poison"),
+            );
+            assert_eq!((hp, running), (11.0, None));
+        }
+    }
+
+    #[test]
+    fn flight_prices_a_first_poison_hit_using_engine_resistance() {
+        let (hp, running) = recall_poison_forecast(
+            None, 34, false, (Some(0.0), 99.0), true, true,
+            || EnginePoison { timer: 0, con_index: 0, res_level: 0, opposition: 0, con_drain: false },
+        );
+        assert_eq!((hp, running), (34.0, None));
+        assert!(!recall_forecast_allows(hp, 0, 20));
+    }
 
     #[test]
     fn poison_recall_charges_the_delay_against_hp_and_healing() {
