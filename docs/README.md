@@ -37,6 +37,7 @@ copies that a live tool still produces are in `reference/`. Which is which:
 | [architecture/](architecture/README.md) | The original C Borg, the borg-core we ship, the reborn plan (tracks P, R, Q), the layered design that is track R's target |
 | [ENGINE.md](ENGINE.md), [ENGINE-READS.md](ENGINE-READS.md) | The engine integration (upstream byte for byte, our patches, frontend, bindings), and every engine symbol the reborn core reads |
 | [CORE-TRACE.md](CORE-TRACE.md) | The shipped core's decision trace (`trace-core.jsonl`) |
+| [DECISION-FIXTURES.md](DECISION-FIXTURES.md) | The recipe for a decision fixture: driving `borg_think_dungeon` on a fabricated state (the #1173/#1174 traps) |
 | [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md), [M13-INVENTORY-PARAMETERS.md](M13-INVENTORY-PARAMETERS.md) (and its [JSON inventory](M13-INVENTORY-PARAMETERS.json)) | Two parameter contracts of track P |
 | [TOWN-PLAN.md](TOWN-PLAN.md) | The town plan's design and its record formats |
 | [QUERY-SURFACE.md](QUERY-SURFACE.md) | Track Q's design (draft) |
