@@ -50,6 +50,11 @@ for run in "$OUT"/*/; do
     mkdir "$TMP/$name"
     for log in keys messages state; do xz -9e -c "$run/$log.log" > "$TMP/$name/$log.log.xz"; done
     cp "$run/summary.json" "$TMP/$name/summary.json"
+    # A run with flags beyond menu (a built start: start-depth, start-monsters,
+    # a save) keeps its config.txt, which harness/diff checks those flags
+    # against (#1056).
+    flags=$(sed -n 's/^flags=//p' "$run/config.txt" 2>/dev/null | head -1)
+    case ",$flags," in ,,|,-,|,menu,) ;; *) cp "$run/config.txt" "$TMP/$name/config.txt";; esac
 done
 {
     echo "suite=$(m suite)"
