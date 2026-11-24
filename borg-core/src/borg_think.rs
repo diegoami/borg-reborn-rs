@@ -230,6 +230,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::borg_flow_stairs::run_handoff_regression(st, &case);
     }
 
+    #[cfg(feature = "test-stair-handoff")]
+    if let Ok(case) = std::env::var("BORG_TEST_IMMOBILE_DECISION") {
+        crate::immobile_regression::run(st, &case);
+    }
+
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);

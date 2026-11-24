@@ -502,7 +502,7 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
 /// First, reset goals.
 /// Second, clear all known monsters/takes
 /// Third, Flee the level
-fn borg_check_bounciness(st: &mut BorgState) -> bool {
+pub(crate) fn borg_check_bounciness(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) != 0 && (300..=303).contains(&st.borg.antibounce_count) {
         /* Clear Goals */
         st.borg.goal.type_0 = 0;
