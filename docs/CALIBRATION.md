@@ -650,8 +650,11 @@ worms.
 
 On 2026-11-22 the owner chose to ship six overrides from the `all` arm
 of [borg-zoo#626](https://github.com/diegoami/borg-zoo/issues/626#issuecomment-7083176441)
-in #1047. All three smoke games changed from the pre-bundle reference, which was
-re-recorded. The development comparison on `296adfbf` recorded 13 deaths
+in #1047. The three smoke games in the suite at the time
+(`smoke-warrior-1`, `smoke-mage-2` and `smoke-priest-3`) all changed from
+the pre-bundle reference, which #1047 re-recorded. The suite gained
+`smoke-mage-overexert-4` later in #1058. The development comparison on
+`296adfbf` recorded 13 deaths
 with the bundle and 25 in control over 900 starts (20 rescued, 8 newly
 killed, exact McNemar p = 0.036). The
 [fresh confirmation on that specimen](https://github.com/diegoami/borg-zoo/actions/runs/45079673617)
