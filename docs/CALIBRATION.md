@@ -1350,8 +1350,11 @@ stays shipped 1):
 - **`caution_desperate_fast_haste`** (#907): 1 compares the player's current
   engine speed with the monster's observed net speed in branch (three).
   Haste adds 10 and Slow subtracts 2 per level
-  (`engine/angband/src/mon-move.c:1929-1934`). The #747 danger threshold still
-  applies. Compiled and shipped 0 use the legacy comparison. In the
+  (`engine/angband/src/mon-move.c:1929-1934`). The speed uses the last
+  observed Haste flag and Slow level. The #747 gate prices danger from
+  the monster's base speed, so it can allow the walk even when observed
+  Haste makes the monster faster than the player. Compiled and shipped 0
+  use the legacy comparison. In the
   recorded Rogue 381988580 chase, the soldier's 109 became 119 versus
   the Rogue's 110.
 - **`caution_recall_cure_min_loss_percent`** (#749): C's buy-time cure while
