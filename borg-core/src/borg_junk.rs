@@ -1336,6 +1336,62 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
     false
 }
 
+/// Find a complete plain stack that can be dropped while keeping the reserve.
+/// Prefer the lightest stack that covers the shortfall, then the heaviest
+/// smaller stack. The town planner will recompute after each drop.
+fn surplus_quiver_stack(
+    quiver: &[borg_item],
+    ammo_tval: i32,
+    reserve: i32,
+    shortfall: i64,
+) -> Option<usize> {
+    if !matches!(ammo_tval as u32, TV_ARROW | TV_BOLT | TV_SHOT) {
+        return None;
+    }
+    let plain = quiver.iter().enumerate().filter(|(_, item)| {
+        i32::from(item.tval) == ammo_tval
+            && item.iqty > 0
+            && item.weight > 0
+            && item.ident
+            && !item.desc.contains(&(b'{' as core::ffi::c_char))
+            && !item.cursed
+            && item.ego_idx == 0
+            && item.art_idx == 0
+            && item.to_h == 0
+            && item.to_d == 0
+    });
+    let surplus = plain.clone().map(|(_, item)| i32::from(item.iqty)).sum::<i32>() - reserve;
+    plain
+        .filter(|(_, item)| i32::from(item.iqty) <= surplus)
+        .min_by_key(|(_, item)| {
+            let weight = i64::from(item.iqty) * i64::from(item.weight);
+            (weight < shortfall, weight.abs_diff(shortfall))
+        })
+        .map(|(slot, _)| slot)
+}
+
+pub(crate) fn town_quiver_surplus(st: &BorgState, reserve: i32, shortfall: i64) -> Option<usize> {
+    let start = quiver_start() as usize;
+    let quiver = st.items.items.get(start..quiver_end() as usize)?;
+    surplus_quiver_stack(quiver, st.borg.tr(BI_AMMO_TVAL), reserve, shortfall)
+        .map(|slot| start + slot)
+}
+
+pub(crate) fn town_drop_quiver_stack(st: &mut BorgState, slot: usize, qty: i64) {
+    let slot = slot as i32;
+    note_desc(st, "# Town headroom dropping ", slot, ".");
+    borg_keypress(st, key(b'{'));
+    slot_keys(st, slot);
+    borg_keypresses(st, b"borg ignore");
+    borg_keypress(st, KC_ENTER);
+    borg_keypress(st, key(b'd'));
+    slot_keys(st, slot);
+    if qty > 1 {
+        borg_keypress(st, key(b'*'));
+        borg_keypress(st, KC_ENTER);
+    }
+}
+
 /// Examine the quiver and dump any worthless items (`borg_dump_quiver`).
 ///
 /// Borg will scan the quiver slots for items which are cursed or have
@@ -1581,6 +1637,28 @@ mod tests {
     use crate::borg_headers::borg_item_h::{BORG_CURSE_AIR_SWING, BORG_CURSE_PARALYSIS};
     use crate::borg_item::blank_item;
     use crate::borg_light::light_slot;
+
+    #[test]
+    fn town_quiver_trim_protects_the_reserve_and_special_ammunition() {
+        let mut plain = blank_item();
+        plain.tval = TV_SHOT as u8;
+        plain.ident = true;
+        plain.iqty = 40;
+        plain.weight = 4;
+        let mut smaller = plain;
+        smaller.iqty = 12;
+        let mut enchanted = plain;
+        enchanted.to_d = 1;
+        let mut unknown = plain;
+        unknown.ident = false;
+        let mut wrong_type = plain;
+        wrong_type.tval = TV_ARROW as u8;
+        let quiver = [enchanted, plain, smaller, unknown, wrong_type];
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 20), Some(2));
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 90), Some(2));
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 41, 20), None);
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 12, 90), Some(1));
+    }
 
     #[test]
     fn restore_life_junking_counts_known_pack_stacks_and_the_copies_removed() {
