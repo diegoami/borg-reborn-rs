@@ -345,6 +345,21 @@ borg_param_town_device_detect = 5
 borg_param_town_device_control = 5
 borg_param_town_device_escape_min_gold = 3000
 
+# P9 candidate settings (#1103), all neutral during P8. Candidate market
+# threshold: 6000 less 100 gold per character level, with a minimum of zero.
+# Urgent needs keep access under the configured Black Market spending cap.
+borg_param_town_black_market_min_gold = 0
+borg_param_town_black_market_level_delta = 0
+
+# Candidate town reserve for one Mushroom of Vigor or Purging: 50 percent of
+# one stat's restoration weight from maximum depth 6 when no stat is drained.
+# Radiation eyes can drain Strength from depth 3; depth 6 is a candidate cutoff.
+borg_param_town_restore_stat_percent = 0
+borg_param_town_restore_stat_min_depth = 0
+
+# Candidate filter for paid offers of mixed gain/loss stat potions.
+borg_param_town_second_stat_potions_by_class = 0
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
@@ -423,9 +438,13 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
-# Restore Life Levels reserve for measurement (#978). Zero disables retention;
-# the healthy-character junk-quaff guard applies at every setting.
+# Restore Life Levels reserve (#978, #1103). P9 candidate: one copy from
+# maximum depth 12 without repeatable restoration, with 1000 gold for
+# preventive purchases. Owned stock and treatment of current drain are
+# independent of the purse floor. Zero copies disables the reserve.
 borg_param_town_restore_life_reserve = 0
+borg_param_town_restore_life_min_depth = 12
+borg_param_town_restore_life_min_gold = 0
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
@@ -1387,6 +1406,19 @@ borg_param_loop_breaker = 1
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
+
+# #1178 (C's own bookkeeping: stair_more outlives its failed flows until a
+# new level; upstream shape at borg-update.c:2172): 1 = caution's standing
+# "Take stairs down" applies more_refused's descent gates, so a stale flag
+# completes a descent only when the gates agree. Shipped 0 per the P9 rule:
+# C's play until the zoo measures the switch.
+borg_param_caution_standing_descent_gated = 0
+
+# #1177 (C's defect, borg-flow-stairs.c:193; upstream better-borg-c #540,
+# neo-angband-tracker #629): 1 = more_refused's descent gates (prepared,
+# hunger, sale hold, light) apply even when no up staircase has been seen.
+# Shipped 0 per the P9 rule: C's play until the zoo measures the switch.
+borg_param_stairs_descent_gates_without_upstair = 0
 
 # #916: no strategic retreat (the step to a happier grid) while an awake
 # adjacent monster record (no freshness or mobility check) has a haste
