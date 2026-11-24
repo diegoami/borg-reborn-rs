@@ -440,6 +440,11 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
+# #1162: prefer CSW after light, food, Phase Door and due Recall are covered.
+# A carried full confusion cure counts toward the reserve. One quarter of the
+# configured bonus applies to the second copy.
+borg_param_town_csw_reserve_percent = 100
+
 # Restore Life Levels reserve (#978, #1103). P9 candidate: one copy from
 # maximum depth 12 without repeatable restoration, with 1000 gold for
 # preventive purchases. Owned stock and treatment of current drain are
