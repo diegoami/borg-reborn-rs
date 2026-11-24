@@ -264,11 +264,10 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
                 if changed == 0:
                     config += f"\n{name} = {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
-            # character regardless of the case's decision state; the town
-            # plan's food counting skips a ration stack, which the case's
-            # prepared gates need. Both are replaced in place: a line after
-            # the file's formula section is not read as a setting.
-            for key, value in (("borg_trip_policy", 0), ("borg_town_plan", 0)):
+            # character regardless of the case's decision state. Replaced in
+            # place: a line after the file's formula section is not read as
+            # a setting.
+            for key, value in (("borg_trip_policy", 0),):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
