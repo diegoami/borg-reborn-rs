@@ -77,6 +77,15 @@ pub(crate) fn is_loop(moves: &[Move]) -> bool {
 
 /// #1190: `is_loop` with the window given, so the zoo arms can be reasoned
 /// about (and tested) without touching the registry.
+///
+/// The supported region is `loop_grids < loop_moves` (shipped 16/3, the
+/// #1190 arm 16/4). At `loop_grids >= loop_moves` the grid test is vacuous —
+/// distinct grids can never exceed the window's moves — and the detector
+/// degenerates to "`loop_moves` quiet moves with the map unchanged is a
+/// loop": a 1-move profile flags the first quiet move, a 16/16 one flags a
+/// walk over 16 different known squares. Nothing rejects such a profile at
+/// load (the registry checks each parameter's own range); the test below
+/// pins the degeneracy so it stays a documented choice, not a surprise.
 fn is_loop_with(moves: &[Move], loop_moves: usize, loop_grids: usize) -> bool {
     if moves.len() < loop_moves {
         return false;
@@ -373,6 +382,20 @@ mod tests {
         assert!(!is_loop_with(&four, 17, 4), "too few moves is no loop");
         let learning: Vec<Move> = (0..16).map(|i| mv(10, 5 + (i % 4) as i32, 500 + i as u32)).collect();
         assert!(!is_loop_with(&learning, 16, 4), "a walk that learns the map is no loop at 4 either");
+    }
+
+    #[test]
+    fn degenerate_windows_are_documented_not_rejected() {
+        // #1190 (review of #1205, finding P3): the registry checks each
+        // parameter's own range, so `loop_grids >= loop_moves` is loadable.
+        // There the grid test is vacuous and the detector degenerates to
+        // "loop_moves quiet moves with the map unchanged is a loop" — these
+        // assertions pin that as a documented choice; the supported region
+        // (loop_grids < loop_moves) is in is_loop_with's doc and CALIBRATION.
+        let one = [mv(10, 5, 500)];
+        assert!(is_loop_with(&one, 1, 3), "1 move x 3 grids: the first quiet move is a loop");
+        let spread: Vec<Move> = (0..16).map(|i| mv(10, i, 500)).collect();
+        assert!(is_loop_with(&spread, 16, 16), "16 moves x 16 grids: 16 known squares are a loop");
     }
 
     #[test]

@@ -8385,7 +8385,7 @@ only the breaker acts (an earlier version of the breaker):
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:110` |
+| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:119` |
 | `loop_moves` | 16 | moves | 1–250 | `borg_loop.rs:136` |
 | `loop_grids` | 3 | grids | 1–250 | `borg_loop.rs:75` |
 
@@ -8405,6 +8405,15 @@ returns, committed stair walks). Measured through the zoo
 (borg-zoo's request issue of #1190) before `loop_grids` moves: stuck games
 (borg-zoo#732's flag), loops detected per game, and the decision pairs the
 notes name.
+
+The window's two knobs have a **supported region**: `loop_grids <
+loop_moves` (the shipped 16/3, the arm 16/4). Distinct grids can never
+exceed the window's moves, so at `loop_grids >= loop_moves` the grid test is
+vacuous and the detector degenerates to "`loop_moves` quiet moves with the
+map unchanged is a loop" — a 1-move profile would flag the first quiet move.
+The registry checks each parameter's own range, so nothing rejects such a
+profile at load; `borg_loop.rs`'s `is_loop_with` and its unit test pin the
+degeneracy as a documented choice (review of #1205, finding P3).
 
 ## Emergency Speed (#913)
 
