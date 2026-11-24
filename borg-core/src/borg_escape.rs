@@ -1221,7 +1221,22 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
         borg_note(st, &format!("# Phase rule: next to the paralysing {name} without Free Action: the fight is lost (#1125)"));
     }
-    let lost = phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_wait(st, hp));
+    let lost = phase_lost(adjacent, paralyser.is_some(), || {
+        let fight_hp = if param(Param::escape_phase_lost_poison_pending) != 0
+            && st.borg.tr(BI_ISPOISONED) != 0
+        {
+            use crate::headers::{list_player_timed_h::TMD_POISONED, list_stats_h::STAT_CON};
+            let pending = crate::borg_poison::pending_hp(
+                i32::from(engine::player_timed(TMD_POISONED)),
+                engine::player_stat_ind(STAT_CON),
+            );
+            borg_note(st, &format!("# Phase rule: {pending} HP of running poison against HP {hp} (#1083)"));
+            hp - pending
+        } else {
+            hp
+        };
+        fight_lost(st, here, fight_hp) && !newcomer_wait(st, hp)
+    });
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {

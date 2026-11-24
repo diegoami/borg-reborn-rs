@@ -1472,6 +1472,14 @@ pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
 }
 
+/// borg-reborn-rs (#1136): `player->state.stat_ind[stat]`, the index the
+/// engine computes from the stat in use (player-calcs.c:2060-2091), curses
+/// and drains included; `decrease_timeouts` reads the CON one
+/// (game-world.c:282).
+pub fn player_stat_ind(stat: u32) -> i32 {
+    player_ref().state.stat_ind[stat as usize]
+}
+
 /// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
 /// `move_energy` an action and refilled by `turn_energy` each game turn
 /// (game-world.c:1092).
