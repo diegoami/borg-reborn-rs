@@ -945,6 +945,10 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
 /// The distance of the nearest stair of `track` without a monster on it,
 /// or -1.
 fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
+    nearest_free_stair_by(st, up, engine::distance)
+}
+
+fn nearest_free_stair_by(st: &BorgState, up: bool, distance: fn(loc, loc) -> i32) -> i32 {
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let mut best = -1;
     for i in 0..track.num.max(0) as usize {
@@ -952,7 +956,7 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
         let y = track.y[i];
 
         // How far is the nearest stair
-        let j = engine::distance(st.borg.c, loc { x, y });
+        let j = distance(st.borg.c, loc { x, y });
 
         // Skip stairs if a monster is on the stair
         if st.cave.grid(x, y).kill != 0 || unseen_bump_blocked(st, x, y) {
@@ -1138,7 +1142,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             || !safe
         {
             // try to take them on, you cant outrun them
-        } else if desperate_flow(st, true, DesperateStairRange::Nearby(scary_up), "# Desperate for Stairs (three)") {
+        } else if !desperate_walk_refused(st) && desperate_flow(st, true, DesperateStairRange::Nearby(scary_up), "# Desperate for Stairs (three)") {
             return true;
         }
     }
@@ -6974,6 +6978,63 @@ fn fast_neighbour_counts(st: &mut BorgState, kill: usize) -> bool {
 
 fn danger_share_reaches(danger: i32, hp: i32, percent: i32) -> bool {
     i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// #908: price a straight-line lower bound on the number of moves left
+/// in branch (three). In a corridor a pursuer spends one of its actions
+/// following each move. Price the excess as contact damage.
+fn desperate_walk_refused(st: &mut BorgState) -> bool {
+    let percent = p(Param::caution_desperate_walk_cost_percent);
+    if percent == 0 {
+        return false;
+    }
+
+    let steps = nearest_free_stair_by(st, true, king_moves);
+    if steps <= 0 {
+        return false;
+    }
+    let energy = |speed: i32| f64::from(engine::extract_energy(speed.clamp(0, 199) as usize)).max(1.0);
+    let player_energy = energy(engine::player_combat_speed());
+    let mut per_step = 0.0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1
+            || engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+        {
+            continue;
+        }
+        let actions = energy(forecast_monster_speed(kill)) / player_energy;
+        if actions > 1.0 {
+            per_step += pursuit_damage(fight_incoming(st, i).hp_per_turn, actions);
+        }
+    }
+    let hp = st.borg.tr(BI_CURHP);
+    if !desperate_walk_over_budget(steps, per_step, hp, percent) {
+        return false;
+    }
+    let cost = f64::from(steps) * per_step;
+    borg_note(st, &format!("# Desperate walk refused: at least {steps} steps x {per_step:.2} HP/step = {cost:.1} >= {percent}% of HP {hp} (#908)"));
+    true
+}
+
+fn pursuit_damage(incoming_per_player_turn: f64, actions_per_player_turn: f64) -> f64 {
+    incoming_per_player_turn * (1.0 - actions_per_player_turn.recip()).max(0.0)
+}
+
+fn desperate_walk_over_budget(steps: i32, per_step: f64, hp: i32, percent: i32) -> bool {
+    percent > 0 && f64::from(steps) * per_step * 100.0 >= f64::from(hp.max(1)) * f64::from(percent)
+}
+
+#[cfg(test)]
+#[test]
+fn hasted_pursuer_makes_the_rogues_stair_walk_unaffordable() {
+    let per_step = pursuit_damage(9.5, 1.9);
+    assert!((per_step - 4.5).abs() < 1e-9);
+    assert!(desperate_walk_over_budget(13, per_step, 23, 100));
+    assert!(!desperate_walk_over_budget(2, per_step, 23, 100));
+    assert!(!desperate_walk_over_budget(13, per_step, 23, 0));
+    assert_eq!(pursuit_damage(4.5, 0.9), 0.0);
+    assert_eq!(pursuit_damage(5.0, 1.0), 0.0);
 }
 
 /// borg-reborn-rs (#749): enough HP lost for a Recall buy-time cure: at
