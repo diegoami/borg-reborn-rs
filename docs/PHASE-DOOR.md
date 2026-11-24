@@ -108,7 +108,7 @@ unchanged except `escape_phase_adjacent_only = 1`.
 | **fast-fragile** (`borg_fast_fragile.rs`, #842) | `fast_fragile_policy = 1`: a marked monster, the expected damage of the marked monsters within two grids reaches `fast_fragile_escape_percent` of the HP and the kill needs more than one more turn of the best attack, no staircase underfoot; the owner's rule above also applies (an awake enemy adjacent, the fight lost) | landing at most 75 of 100 only with `fast_fragile_phase_landing = 1` (shipped 0: none; it refuses every Phase Door at HP 3–6 against a crow), anti-summon | `fast_fragile_phase_landing`, `escape_emergency_phase_tolerance` 75, `_horizon` 2, `escape_phase_antisummon_delay`, `escape_last_ditch_phase_fail` (the spell), `fast_fragile_escape_percent` |
 | **kill-on-sight floor** (`borg_fight_attack.rs` `floor_escape`, #1064) | `attack_kill_on_sight_floor_cure = 1`: #969's floor declined the attack on a `kill-on-sight` entry, and its cure potion does not outlive the next turn (damage-only danger at or above HP plus the heal); no staircase underfoot; the owner's rule above also applies | **none** (as the fast-fragile site ships), anti-summon | `escape_phase_antisummon_delay`, `escape_last_ditch_phase_fail` (the spell) |
 | **walk-away cornered** (`borg_caution.rs` `walk_away_phase`, #1147) | `caution_walk_away_immobile = 1`: next to a walk-away monster (the scary list's `ranged` entries that never move, paralysers without Free Action), no square out of its reach, not confused; the first action of the dungeon think; a blow is allowed only after it declines; the owner's rule above also applies | landing, 25 (the danger site's), never-seen landings; its Phase Door counts the spell up to `caution_walk_away_phase_fail`, not only `BI_APHASE`'s 3% (`has_phase`) | `escape_phase_tolerance` 25, `escape_phase_horizon` 2, `caution_walk_away_phase_fail` 30 (the spell) |
-| **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns`, `_response`, `_throw_tries`, `_phase_turns` and `_phase_min_danger` (#878), `escape_emergency_phase_tolerance`, `_horizon` |
+| **unseen bump** (`borg_caution`) | confirmed adjacent unseen occupancy, bump at most 20 game turns old and danger at least 5; after detection and the oil budget; after ordinary healing/defence/Recall, before stair walking | emergency landing test; bump supplies adjacency; counts as an escape | `caution_unseen_bump_turns` 200, `_response` 1, `_throw_tries` 3, `_phase_turns` 20 and `_phase_min_danger` 5 (#878), `escape_emergency_phase_tolerance`, `_horizon` |
 
 Spell fail rates: `escape_normal_fail` 25%, `escape_healthy_fail` 10% when HP
 is above `escape_healthy_hp_percent` (70%); the emergency levels have their
@@ -159,11 +159,10 @@ comparisons behind a setting):
 | **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
 
-**Danger without fear** (`escape_phase_lost_damage_only`, compiled and
-shipped 0; #878). With 1, every test above reads the danger here without its
-fear prices (`borg_danger_damage_only`: the `danger_*_fear` terms, the
-breeder and friends bonuses and the fear maps at 0), and the site's own
-danger is not used. One white worm mass next to the CL3 Mage 461220874 was
+**Danger without fear** (`escape_phase_lost_damage_only`, compiled 0,
+shipped 1 since #1047). The lost-fight verdict uses
+`borg_danger_damage_only` for the danger here. It zeroes the
+`danger_*_fear` prices, the breeder and friends bonuses and the fear maps. One white worm mass next to the CL3 Mage 461220874 was
 danger 32 with fear and 2 without.
 
 **Mana and fail rates** (`escape_phase_lost_mana`, compiled 1; #625, owner).
@@ -222,8 +221,9 @@ Whether the rule saves or costs games is the zoo pilot's question
 (borg-zoo#334, RULES 14): the 100 % threshold is a hypothesis.
 
 
-#781 adds the off-by-default `unseen bump` site in the table. It bypasses
-known-race fight and adjacency tests, since the observed bump supplies the
-adjacent occupied grid. It retains the emergency landing test and counts
-successful phases toward the level's ordinary escape accounting. Both
-`caution_unseen_bump_turns` and `_response` must be enabled.
+The #781 unseen-bump response ships enabled. The observed bump supplies
+the adjacent occupied grid, so this site bypasses the known-race fight and
+adjacency tests. The grid stays marked for up to 200 game turns. The Phase
+Door response requires a bump at most 20 game turns old and danger of at
+least 5. It uses the emergency landing test and counts successful phases
+toward the level's ordinary escape accounting.
