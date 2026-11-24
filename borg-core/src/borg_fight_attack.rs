@@ -2986,7 +2986,7 @@ fn surplus_weapon(st: &BorgState, slot: i32, item: &borg_item, worn: &borg_item)
     let same_divine_role = tval != TV_HAFTED || u32::from(worn.tval) == TV_HAFTED;
     matches!(tval, TV_SWORD | TV_POLEARM | TV_HAFTED)
         && item.iqty > 0 && item.ident && !item.needs_ident && !item.cursed
-        && item.art_idx == 0 && item.ego_idx == 0 && item.activ_idx == 0 && item.note.is_none()
+        && item.art_idx == 0 && item.ego_idx == 0 && item.activ_idx == 0 && crate::borg_item::item_note(st, item).is_empty()
         && (0..=param(Param::attack_throw_min_item_value)).contains(&item.value)
         && engine::flag_has(&item.flags, OF_THROWING as i32)
         && item.flags.iter().map(|byte| byte.count_ones()).sum::<u32>() == 1
