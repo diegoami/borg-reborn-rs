@@ -8400,7 +8400,35 @@ only the breaker acts (an earlier version of the breaker):
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:108` |
+| `loop_breaker` | 0 | flag | 0–1 | `borg_loop.rs:119` |
+| `loop_moves` | 16 | moves | 1–250 | `borg_loop.rs:136` |
+| `loop_grids` | 3 | grids | 1–250 | `borg_loop.rs:75` |
+
+**The window, named (#1190).** The 16 moves and 3 grids were #1153's
+guesses; they are now `loop_moves` and `loop_grids`, shipped at those values
+(`harness/borg.txt`), so the zoo can measure a wider net without a code
+change. The question (#1190): a four-grid aim-fail-return cycle — #1189's
+`444666` walk, ring 10 the vein at (109,44), ring 11 the vein at (114,45) —
+passes the shipped window untouched (four grids > 3) and had to be fixed at
+the source (`explore_stepable_goals`, above). At `loop_grids = 4` the same
+window sees it after 16 moves. The guards that keep the net quiet (the map
+learning anything, danger above a quarter of the HP, a rest) clear the
+window regardless of its width, so the wider net mostly admits the
+aim-fail-return paces it exists for; the replays must still rule out the
+legitimate walks that learn nothing en route (the mixed walk's branch
+returns, committed stair walks). Measured through the zoo
+(borg-zoo's request issue of #1190) before `loop_grids` moves: stuck games
+(borg-zoo#732's flag), loops detected per game, and the decision pairs the
+notes name.
+
+The window's two knobs have a **supported region**: `loop_grids <
+loop_moves` (the shipped 16/3, the arm 16/4). Distinct grids can never
+exceed the window's moves, so at `loop_grids >= loop_moves` the grid test is
+vacuous and the detector degenerates to "`loop_moves` quiet moves with the
+map unchanged is a loop" — a 1-move profile would flag the first quiet move.
+The registry checks each parameter's own range, so nothing rejects such a
+profile at load; `borg_loop.rs`'s `is_loop_with` and its unit test pin the
+degeneracy as a documented choice (review of #1205, finding P3).
 
 ## Emergency Speed (#913)
 
