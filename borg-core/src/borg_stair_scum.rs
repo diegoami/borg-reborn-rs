@@ -106,8 +106,7 @@ const FAR: u16 = u16::MAX;
 /// The longest walk the safe-grid test counts (the flows' 250).
 const MAX_STEPS: i32 = 250;
 
-/// The mode's memory, for the current level only (`level` is the level's
-/// arrival time; a new level starts afresh).
+/// The mode's memory. `level` is the level's arrival time.
 #[derive(Default)]
 pub struct StairScumState {
     level: BorgTime,
@@ -131,6 +130,8 @@ pub struct StairScumState {
     /// `leave` chose to leave this level: no more detours for items,
     /// veins or monsters (they pulled the walk back, a vein by the stairs).
     departing: bool,
+    /// The last voluntary DL1 ascent, kept across immediate re-entry.
+    last_town_ascent: Option<i32>,
 }
 
 #[derive(Clone, Copy)]
@@ -682,7 +683,11 @@ impl Map {
 /// A new level forgets the last one's doors and walks.
 fn sync_level(st: &mut BorgState) {
     if st.stair_scum.level != st.borg.time.level {
-        st.stair_scum = StairScumState { level: st.borg.time.level, ..StairScumState::default() };
+        st.stair_scum = StairScumState {
+            level: st.borg.time.level,
+            last_town_ascent: st.stair_scum.last_town_ascent,
+            ..StairScumState::default()
+        };
     }
 }
 
@@ -1036,6 +1041,20 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
     for up in leave_order(depth, up_ok, down_ok) {
         let (here, k) = if up { (FEAT_LESS, b'<') } else { (FEAT_MORE, b'>') };
         if feat == here {
+            if up && depth == 1 {
+                // Angband cmd-cave.c:56–95 generates the new level without
+                // an ordinary move. Break same-turn town rerolls with a
+                // hold (cmd-cave.c:1580), when there is no threat here.
+                let turn = engine::game_turn();
+                let pos = st.borg.c;
+                if st.stair_scum.last_town_ascent == Some(turn)
+                    && !st.borg.goal.fleeing
+                    && crate::borg_danger::borg_danger(st, pos.y, pos.x, 1, true, false) <= 0
+                {
+                    return hold(st, "waiting before another same-turn return to town");
+                }
+                st.stair_scum.last_town_ascent = Some(turn);
+            }
             borg_note(st, &format!("# Stair scum: nothing left inside the safe area; taking the stairs {}.", if up { "up" } else { "down" }));
             st.stair_scum.departing = true;
             borg_keypress(st, keycode_t::from(k));

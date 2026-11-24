@@ -269,11 +269,15 @@ impl Budget {
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
         );
         let black_market_reserve = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET)).max(0);
-        let percentage = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
-        let market_gold = black_market_budget(facts.gold, black_market_reserve, percentage, 0);
+        // The purse threshold (#1103) closes the Black Market to ordinary
+        // purchases: the share the solver reads. The urgent needs keep the
+        // configured share (review of #1112, F1): a poisoned Borg whose only cure
+        // is on offer there is not shut out by a purse below the threshold.
+        let configured = i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE));
+        let percentage = black_market_percentage(st, facts.gold);
         let recall_urgent = crate::borg_town_utility::recall_urgent(st);
         let mut budget = Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
-            if (black_market_reserve > 0 || percentage >= 0) && c.is_black_market() && i64::from(c.price) > market_gold {
+            if !urgent_market_allows(c, facts.gold, black_market_reserve, configured) {
                 return Vec::new();
             }
             let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
@@ -291,6 +295,49 @@ impl Budget {
 pub(crate) fn is_recall_scroll(st: &BorgState, tval: u8, sval: u8) -> bool {
     u32::from(tval) == crate::headers::list_tvals_h::TV_SCROLL
         && i32::from(sval) == st.item_val.sv_scroll_word_of_recall
+}
+
+/// Whether a candidate may serve an urgent need under the configured Black
+/// Market cap (the cap and the reserve, not the purse threshold: #1103, review
+/// of #1112 F1): any ware outside the Black Market, and a Black Market ware
+/// within what the cap leaves (all of them when the cap is unconfigured).
+pub(crate) fn urgent_market_allows(c: &Candidate, gold: i64, reserve: i64, configured_percentage: i64) -> bool {
+    !((reserve > 0 || configured_percentage >= 0) && c.is_black_market()
+        && i64::from(c.price) > black_market_budget(gold, reserve, configured_percentage, 0))
+}
+
+/// borg-reborn-rs (#1103, owner: "keep and buy whenever it finds on the black
+/// market up from a certain budget"; "flat 6000 starting with a level negative
+/// delta of 100"): the purse the Black Market opens at for a character level,
+/// `max(0, town_black_market_min_gold - town_black_market_level_delta x level)`.
+/// 0 when `town_black_market_min_gold` is 0 (no threshold).
+pub(crate) fn black_market_threshold(min_gold: i64, delta: i64, level: i64) -> i64 {
+    if min_gold <= 0 { return 0; }
+    (min_gold - delta.max(0) * level.max(0)).max(0)
+}
+
+/// The Black Market's spending share (`borg_black_market_max_percentage`) for
+/// ordinary purchases at this purse: 0 below the threshold, the configured share
+/// above it. The budget (so the plan record) and through it the solver read it
+/// here, so a replay sees what the game saw. The urgent needs do not: they keep
+/// the configured cap (`urgent_market_allows`), and the live checkout reads the
+/// configured share too, the plan it executes having been made at this purse.
+pub(crate) fn black_market_percentage(st: &BorgState, gold: i64) -> i64 {
+    use crate::params::{value, Param};
+    black_market_percentage_with(st, gold, i64::from(value(Param::town_black_market_min_gold)),
+        i64::from(value(Param::town_black_market_level_delta)))
+}
+
+/// [`black_market_percentage`] with the two parameters given (the unit tests
+/// set no parameters).
+pub(crate) fn black_market_percentage_with(st: &BorgState, gold: i64, min_gold: i64, delta: i64) -> i64 {
+    black_market_share(
+        i64::from(st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE)), gold,
+        i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLEVEL)), min_gold, delta)
+}
+
+pub(crate) fn black_market_share(percentage: i64, gold: i64, level: i64, min_gold: i64, delta: i64) -> i64 {
+    if gold < black_market_threshold(min_gold, delta, level) { 0 } else { percentage }
 }
 
 pub(crate) fn black_market_budget(gold: i64, reserve: i64, percentage: i64, legacy_share: i64) -> i64 {
@@ -521,6 +568,68 @@ mod tests {
         let b = Budget::build(&facts(10_000), &s, &[Need::Light, Need::Healing], serves);
         assert_eq!(b.urgent.len(), 1);
         assert_eq!(b.unmet, [Need::Healing]);
+    }
+
+    /// #1103 (owner: flat 6000, a level negative delta of 100): the purse the
+    /// Black Market opens at.
+    #[test]
+    fn the_black_market_opens_at_a_threshold_that_falls_with_level() {
+        assert_eq!(black_market_threshold(6000, 100, 1), 5900);
+        assert_eq!(black_market_threshold(6000, 100, 30), 3000);
+        assert_eq!(black_market_threshold(6000, 100, 50), 1000);
+        assert_eq!(black_market_threshold(6000, 100, 80), 0, "never below zero");
+        assert_eq!(black_market_threshold(6000, 0, 50), 6000, "delta 0: flat");
+        assert_eq!(black_market_threshold(0, 100, 10), 0, "min_gold 0: no threshold");
+        assert_eq!(black_market_threshold(6000, -5, 10), 6000, "a negative delta is none");
+        // The share: nothing below the purse, the configured one from it.
+        assert_eq!(black_market_share(60, 5999, 1, 6000, 0), 0);
+        assert_eq!(black_market_share(60, 6000, 1, 6000, 0), 60);
+        assert_eq!(black_market_share(60, 2999, 30, 6000, 100), 0, "level 30 opens at 3000");
+        assert_eq!(black_market_share(60, 3000, 30, 6000, 100), 60);
+        assert_eq!(black_market_share(-1, 100, 30, 0, 100), -1, "no threshold: the legacy share, unconfigured");
+        assert_eq!(black_market_share(-1, 100, 30, 6000, 100), 0, "below it even an unconfigured share is closed");
+        assert_eq!(black_market_share(-1, 9000, 30, 6000, 100), -1);
+    }
+
+    /// #1103 through the production reader: the configured share read from the
+    /// settings, the level from the traits, the purse given (review of #1112,
+    /// F5).
+    #[test]
+    fn the_share_reads_the_settings_at_the_purse_and_level() {
+        let mut st = BorgState::default();
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.core.cfg[crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE as usize] = 60;
+        let level = crate::borg_headers::borg_trait_h::BI_CLEVEL as usize;
+        st.borg.trait_[level] = 30;
+        assert_eq!(black_market_percentage_with(&st, 2999, 6000, 100), 0);
+        assert_eq!(black_market_percentage_with(&st, 3000, 6000, 100), 60, "level 30 opens at 3000");
+        st.borg.trait_[level] = 12;
+        assert_eq!(black_market_percentage_with(&st, 4799, 6000, 100), 0);
+        assert_eq!(black_market_percentage_with(&st, 4800, 6000, 100), 60);
+        assert_eq!(black_market_percentage(&st, 0), 60, "no threshold by default");
+    }
+
+    /// Review of #1112, F1: a poisoned level-12 Borg with 1000 gold and a
+    /// Neutralize Poison (225) only at the Black Market: the threshold (4800)
+    /// closes the Black Market to ordinary purchases, not to the urgent cure.
+    #[test]
+    fn the_urgent_cure_is_bought_at_the_black_market_below_the_purse_threshold() {
+        let t = town([&[], &[], &[], &[], &[], &[], &[item(CURE_POISON, 1, 225)], &[]]);
+        let s = build(&t, &[]);
+        let poison = |c: &Candidate| if s.candidates.iter().any(|x| std::ptr::eq(x, c)) { vec![Need::Poison] } else { Vec::new() };
+        let b = Budget::build_with_reserve(&facts(1000), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 1000, 500, 60) { poison(c) } else { Vec::new() });
+        assert_eq!(b.urgent.len(), 1, "the 300 gold the cap leaves pays for it");
+        assert!(b.unmet.is_empty());
+        // Over what the cap leaves, it is still refused.
+        let b = Budget::build_with_reserve(&facts(700), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 700, 500, 60) { poison(c) } else { Vec::new() });
+        assert_eq!(b.unmet, [Need::Poison]);
+        // An unconfigured cap leaves the Black Market open to the urgent needs.
+        let b = Budget::build_with_reserve(&facts(300), &s, &[Need::Poison], 0,
+            |c| if urgent_market_allows(c, 300, 0, -1) { poison(c) } else { Vec::new() });
+        assert_eq!(b.urgent.len(), 1);
     }
 
     /// The urgent needs take the cheapest source, Black Market included - they

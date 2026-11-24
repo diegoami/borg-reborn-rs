@@ -765,6 +765,7 @@ fn borg_danger_spell(
     x: i32,
     d: i32,
     average: bool,
+    reply: bool,
 ) -> i32 {
     let mut n: i32 = 0;
     let mut glyph = false;
@@ -1938,8 +1939,8 @@ fn borg_danger_spell(
         }
 
         // A bolt spell cannot jump monsters to hit the borg.
-        if bolt && !borg_projectable_pure(st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x)
-        {
+        let (target_y, target_x) = if reply { (y, x) } else { (st.borg.c.y, st.borg.c.x) };
+        if bolt && !borg_projectable_pure(st, kill.pos.y, kill.pos.x, target_y, target_x) {
             z = 0;
         }
 
@@ -2107,6 +2108,23 @@ pub(crate) fn danger_one_kill(
     average: bool,
     full_damage: bool,
 ) -> i32 {
+    danger_one_kill_with(st, kill, y, x, c, i, average, full_damage, false, false)
+}
+
+/// #1194: price the first ranged attack in reach and the melee reply.
+/// The grid-danger forecast scales ranged damage twice for a fast caster.
+/// At contact a caster can melee instead. Account for its cast frequency
+/// and for an action already spent on TELE_TO.
+pub(crate) fn combat_reply(
+    st: &mut BorgState, kill: &BorgKill, y: i32, x: i32, i: i32, pulled: bool,
+) -> i32 {
+    danger_one_kill_with(st, kill, y, x, 1, i, true, true, true, pulled)
+}
+
+fn danger_one_kill_with(
+    st: &mut BorgState, kill: &BorgKill, y: i32, x: i32, c: i32, i: i32,
+    average: bool, full_damage: bool, reply: bool, pulled: bool,
+) -> i32 {
     let x9 = kill.pos.x;
     let y9 = kill.pos.y;
 
@@ -2216,6 +2234,13 @@ pub(crate) fn danger_one_kill(
     // But the monster is allowed to be faster than us.
     if q <= param(Param::danger_minimum_monster_energy) {
         q = param(Param::danger_minimum_monster_energy);
+    }
+
+    if pulled {
+        q -= 10; // The caster spends one action pulling.
+        if q <= 0 {
+            return 0;
+        }
     }
 
     // Danger from physical attacks
@@ -2393,7 +2418,7 @@ pub(crate) fn danger_one_kill(
     }
 
     // Ranged Attacks
-    v2 = borg_danger_spell(st, kill, flags, y, x, d, average);
+    v2 = borg_danger_spell(st, kill, flags, y, x, d, average, reply);
 
     // Never cast spells
     if r_ptr.freq_innate == 0 && r_ptr.freq_spell == 0 {
@@ -2429,8 +2454,8 @@ pub(crate) fn danger_one_kill(
     // ##############   moves and the D will be able to use a ranged attack
     //                  to grids 1, all in the same round. The borg should
     //                  not consider grid 1 as safe.
-    if q >= 20 {
-        let b_q = q;
+    if q >= 20 && (!reply || (!borg_projectable(st, y9, x9, y, x) && !borg_projectable(st, y, x, y9, x9))) {
+        let b_q = if reply { 10 } else { q };
         let mut b_v2 = 0;
 
         // Maximal speed check
@@ -2561,7 +2586,7 @@ pub(crate) fn danger_one_kill(
     v2 = spell_frequency_discount(v2, (r_ptr.freq_innate + r_ptr.freq_spell) / 2, full_damage);
 
     // Danger
-    if v2 != 0 {
+    if v2 != 0 && !reply {
         // Full power
         let r = q;
 
@@ -2569,8 +2594,14 @@ pub(crate) fn danger_one_kill(
         v2 = v2 * r / 10;
     }
 
-    // Maximal danger
-    let p = v1.max(v2);
+    // mon-spell.c:91 (574b618c) gates casting by the race's frequency.
+    // In contact, mix the excess spell damage into the melee reply. From
+    // range a single damaging cast is the threat even for a slow caster.
+    let p = if reply && d == 1 && v1 > 0 && v2 > v1 {
+        v1 + (v2 - v1) * r_ptr.freq_innate.max(r_ptr.freq_spell) / 100
+    } else {
+        v1.max(v2)
+    };
     if p > param(Param::danger_maximum) {
         param(Param::danger_maximum)
     } else {
