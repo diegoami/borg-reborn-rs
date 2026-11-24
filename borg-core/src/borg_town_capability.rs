@@ -162,6 +162,8 @@ const PREP_CCW: usize = DEV_CONTROL + 1;
 /// not every poison cure on the shared poison row (Resist Poison, Mushroom of
 /// Purging, CCW). Held, as the CCW row, only while a dear row is on.
 const PREP_NEUTRALIZE: usize = PREP_CCW + 1;
+/// #1162: up to two full confusion cures, with extra purchase value only for CSW.
+const CSW_RESERVE: usize = PREP_NEUTRALIZE + 1;
 /// Situation capabilities a device supplies -> its device row. Invisible
 /// detection is not here: a Staff of Detect Invisible already fills the prepared
 /// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
@@ -221,8 +223,8 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-const _: () = assert!(PREP_NEUTRALIZE + 1 == NAMES.len());
-pub const NAMES: [&str; 84] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+const _: () = assert!(CSW_RESERVE + 1 == NAMES.len());
+pub const NAMES: [&str; 85] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -232,7 +234,7 @@ pub const NAMES: [&str; 84] = ["light turns", "nutrition", "healing HP", "poison
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
     "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
-    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison"];
+    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison", "CSW reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -258,6 +260,11 @@ fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
     if amount <= 0 || row[1] <= 0 { return 0; }
+    if row[0] == CSW_RESERVE as i64 {
+        let first = amount.min(UNIT);
+        let second = (amount - first).min(UNIT);
+        return row[1] * first / UNIT + (row[1] / 4) * second / UNIT;
+    }
     if row[2] < 0 {
         let target = -row[2];
         let reserved = row[1] * amount.min(target) / target;
@@ -1048,7 +1055,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
     // borg-reborn-rs (#1134, #1137): the CCW and Neutralize Poison rows, past
     // the device rows, only while one of them is on.
-    let full = if prepared_ccw_on(st) || prepared_neutralize_on(st) { COUNT } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
+    let full = if prepared_ccw_on(st) || prepared_neutralize_on(st) { PREP_NEUTRALIZE + 1 } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
     while curves.len() < full { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
@@ -1410,8 +1417,51 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // conflate different effects (treasure sensing is not mapping, Detect
     // Monsters misses invisible races). Scrolls, devices and potions keep
     // their supply value next to the spells.
+    let csw_weight = scale_percent(cfg(BORG_TOWN_W_RESTORE) * UNIT, param(Param::town_csw_reserve_percent));
+    if csw_weight > 0 && t(BI_ISCONFUSED) == 0 {
+        let food_floor = scale_percent(READY_FOOD * RATION_NUTRITION * UNIT, food_percent);
+        // An urgent Recall or a Recall that can be bought within its normal
+        // budget comes before this optional purchase.
+        let recall_due = crate::borg_town_utility::recall_urgent(st)
+            || recall_on && t(BI_RECALL) < recall_reserve && stock.candidates.iter().any(|c| {
+                c.qty > 0 && c.price > 0
+                    && crate::borg_town_budget::is_recall_scroll(st, c.tval, c.sval)
+            });
+        if csw_staples_covered(&model, light_goal, food_floor, phase_reserve) && !recall_due {
+            add_csw_reserve(&mut model, stock, st.item_val.sv_potion_cure_serious, csw_weight);
+        }
+    }
     debug_assert!(model.valid());
     model
+}
+
+fn csw_staples_covered(model: &Model, light_goal: i64, food_floor: i64, phase_reserve: i64) -> bool {
+    let light = model.curves[LIGHT];
+    (light[1] == 0 || light[3] >= light_goal * UNIT)
+        && model.curves[FOOD][3] >= food_floor
+        && model.curves[PHASE][3] >= phase_reserve.max(1) * UNIT
+}
+
+/// Credit full cures in the pack, and give a shopping bonus to CSW alone.
+fn add_csw_reserve(model: &mut Model, stock: &Stock, csw_sval: i32, weight: i64) {
+    let carried: i64 = model.curves[CONFUSION][3];
+    while model.curves.len() < CSW_RESERVE {
+        model.curves.push([model.curves.len() as i64, 0, UNIT, 0, 0]);
+    }
+    model.curves.push([CSW_RESERVE as i64, weight, -2 * UNIT, carried, 0]);
+    let pack_cures: Vec<_> = model.supplies.iter()
+        .filter(|row| row[0] == PACK && row[2] == CONFUSION as i64)
+        .map(|row| [PACK, row[1], CSW_RESERVE as i64, row[3]])
+        .collect();
+    model.supplies.extend(pack_cures);
+    for c in &stock.candidates {
+        if c.qty > 0 && c.price > 0 && u32::from(c.tval) == TV_POTION && i32::from(c.sval) == csw_sval {
+            let units = model.units(i64::from(c.shop), i64::from(c.slot), 1);
+            if let Some((_, supply)) = units.into_iter().find(|&(cap, _)| cap == CONFUSION) {
+                model.supplies.push([i64::from(c.shop), i64::from(c.slot), CSW_RESERVE as i64, supply]);
+            }
+        }
+    }
 }
 
 /// Optional engine-backed coverage diagnostic. These are hypothetical KNOWN
@@ -1563,6 +1613,58 @@ mod tests {
         KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
+    #[test]
+    fn csw_preference_waits_for_staples() {
+        let mut m = model();
+        let light_goal = 20_000;
+        let food_floor = 150 * UNIT;
+        let phase_reserve = 6;
+        m.curves[LIGHT][3] = light_goal * UNIT;
+        m.curves[FOOD][3] = food_floor;
+        m.curves[PHASE][3] = phase_reserve * UNIT;
+        assert!(csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        for row in [LIGHT, FOOD, PHASE] {
+            m.curves[row][3] -= UNIT;
+            assert!(!csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+            m.curves[row][3] += UNIT;
+        }
+        m.curves[LIGHT][1] = 0;
+        m.curves[LIGHT][3] = 0;
+        assert!(csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        m.curves[PHASE][3] = 0;
+        assert!(!csw_staples_covered(&m, light_goal, food_floor, 0));
+    }
+
+    #[test]
+    fn csw_preference_counts_carried_full_cures_and_caps_the_bonus() {
+        use crate::borg_town_stock::Candidate;
+
+        let mut m = model();
+        m.curves.truncate(PHASE_RESERVE + 1);
+        m.curves[CONFUSION][1] = 0;
+        m.supplies = vec![[4, 0, CONFUSION as i64, UNIT], [4, 1, CONFUSION as i64, UNIT]];
+        let csw = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 20,
+            price: 70, qty: 3, weight: 4, slots_cost: 1, stack_count: 0, class: 1 };
+        let ccw = Candidate { slot: 1, kind: 2, sval: 21, price: 200, class: 2, ..csw };
+        let stock = Stock { candidates: vec![csw, ccw], ..Stock::default() };
+        let weight = 100 * UNIT;
+
+        let mut empty = m.clone();
+        add_csw_reserve(&mut empty, &stock, 20, weight);
+        assert!(empty.valid());
+        assert_eq!(empty.ware(4, 0, 1), weight);
+        assert_eq!(empty.ware(4, 0, 2), weight + weight / 4);
+        assert_eq!(empty.ware(4, 0, 3), empty.ware(4, 0, 2));
+        assert_eq!(empty.ware(4, 1, 1), 0);
+
+        m.curves[CONFUSION][3] = UNIT;
+        m.supplies.push([PACK, 0, CONFUSION as i64, UNIT]);
+        add_csw_reserve(&mut m, &stock, 20, weight);
+        assert_eq!(m.ware(4, 0, 1), weight / 4);
+        assert_eq!(m.ware(4, 0, 2), weight / 4);
+        assert_eq!(m.gain(&m.units(PACK, 0, -1)), -weight);
+    }
+
     #[test]
     fn alchemist_restore_life_purchase_and_retention_follow_need_and_stock() {
         use crate::borg_town_record::{action, first_action, step, StepInput, PARAMS};
@@ -1874,8 +1976,7 @@ mod tests {
         let ccw = first(&mut m, PREP_CCW, 8 * 14, 2);
         assert!(ccw * 15 >= detect * 200, "fourteen times: CCW {ccw}/200 at least Detect Invisible {detect}/15");
         assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]) - m.gain(&[(PREP_CCW, 2 * UNIT)]), 0, "the 3rd CCW past 2 copies is worth nothing");
-        assert_eq!(PREP_NEUTRALIZE, COUNT - 1, "the dear rows are the last, so the model keeps its shape with them off");
-        assert_eq!(PREP_CCW, COUNT - 2);
+        assert_eq!(PREP_CCW + 1, PREP_NEUTRALIZE);
         assert_eq!(NAMES[PREP_CCW], "prepared: Cure Critical Wounds");
         assert_eq!(NAMES[PREP_NEUTRALIZE], "prepared: Neutralize Poison");
         let neutralize = first(&mut m, PREP_NEUTRALIZE, 40, 2);

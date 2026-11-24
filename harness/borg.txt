@@ -423,6 +423,11 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
+# #1162: prefer CSW after light, food, Phase Door and due Recall are covered.
+# A carried full confusion cure counts toward the reserve. One quarter of the
+# configured bonus applies to the second copy. Off pending Zoo measurement.
+borg_param_town_csw_reserve_percent = 0
+
 # Restore Life Levels reserve for measurement (#978). Zero disables retention;
 # the healthy-character junk-quaff guard applies at every setting.
 borg_param_town_restore_life_reserve = 0
