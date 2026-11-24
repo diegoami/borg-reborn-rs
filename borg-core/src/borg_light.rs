@@ -1211,8 +1211,10 @@ fn try_hallway_beam(
 
 #[cfg(test)]
 mod room_lighting_tests {
-    use super::{cast_room_lighting, observe_room_lighting, try_room_lighting, GridPosition, RoomLighting};
+    use super::{cast_room_lighting, observe_room_lighting, GridPosition, RoomLighting};
+    use crate::borg_cave::CaveState;
     use crate::borg_headers::borg_magic_h::{CALL_LIGHT, LIGHT_ROOM};
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
     use crate::state::BorgState;
     use std::collections::BTreeSet;
 
@@ -1247,20 +1249,35 @@ mod room_lighting_tests {
     #[test]
     fn first_cast_from_glow_respects_the_learned_spells_radius() {
         let (y, x) = CAST_FROM;
-        let lighting = RoomLighting::default();
 
-        for (dy, dx, call_light_casts, light_room_casts) in [
-            (1, 1, true, true),
-            (1, 2, false, true),
-            (2, 2, false, false),
+        for (dy, dx, learned_spell, expected_attempts) in [
+            (1, 1, CALL_LIGHT, &[LIGHT_ROOM, CALL_LIGHT][..]),
+            (1, 1, LIGHT_ROOM, &[LIGHT_ROOM][..]),
+            (1, 2, CALL_LIGHT, &[LIGHT_ROOM][..]),
+            (1, 2, LIGHT_ROOM, &[LIGHT_ROOM][..]),
+            (2, 2, CALL_LIGHT, &[][..]),
+            (2, 2, LIGHT_ROOM, &[][..]),
         ] {
-            let radius = lighting.minimum_radius(CAST_FROM, || true, || [(y + dy, x + dx)].into_iter());
-            for (learned_spell, expected) in [(CALL_LIGHT, call_light_casts), (LIGHT_ROOM, light_room_casts)] {
-                let cast = radius.is_some_and(|minimum_radius| {
-                    try_room_lighting(minimum_radius, |spell| spell == learned_spell)
-                });
-                assert_eq!(cast, expected, "spell {learned_spell:?}, offset ({dy}, {dx})");
+            let dark_floor = (y + dy, x + dx);
+            let mut st = BorgState { cave: CaveState::empty_for_test(), ..Default::default() };
+            (st.borg.c.y, st.borg.c.x) = CAST_FROM;
+            st.view.view_n = 2;
+            for (i, (gy, gx)) in [CAST_FROM, dark_floor].into_iter().enumerate() {
+                st.view.view_y[i] = gy as u8;
+                st.view.view_x[i] = gx as u8;
+                st.cave.grid_mut(gx, gy).feat = FEAT_FLOOR as u8;
             }
+
+            let mut attempted = Vec::new();
+            let cast = cast_room_lighting(&mut st, true, true, |_, spell, max_failure| {
+                assert_eq!(max_failure, 40);
+                attempted.push(spell);
+                spell == learned_spell
+            }, |y, x| (y, x) == dark_floor);
+
+            assert_eq!(attempted, expected_attempts, "spell {learned_spell:?}, offset ({dy}, {dx})");
+            assert_eq!(cast, expected_attempts.contains(&learned_spell));
+            assert_eq!(st.light.room_lighting.pending, cast.then_some((CAST_FROM, false)));
         }
     }
 
