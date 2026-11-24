@@ -306,13 +306,13 @@ class MoreRefusedGatesTest(unittest.TestCase):
             config = (ROOT / "harness/borg.txt").read_text()
             # The prepared_* gates make a birth-level character dive-prone,
             # as in LeaveLevelUpstairsTest. The exploration modes and the
-            # poison triage are not what the case tests; with
-            # explore_c_leave_when_done 0 the level's exhaustion never
-            # marks, so the case exercises the ordinary dive, not the
-            # exhausted one.
+            # poison triage are not what the case tests;
+            # explore_c_leave_when_done = 1 lets the underfoot phases mark
+            # the level exhausted for the leave decision's own exhausted
+            # branch.
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
-                ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("explore_breadth_first", 0), ("explore_c_leave_when_done", 1),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -331,10 +331,12 @@ class MoreRefusedGatesTest(unittest.TestCase):
                 if changed == 0:
                     config += f"\n{name} = {value}\n"
             # the trip policy's own prepared estimate would ascend a birth
-            # character regardless of the case's decision state. Replaced in
-            # place: a line after the file's formula section is not read as
-            # a setting.
-            for key, value in (("borg_trip_policy", 0),):
+            # character regardless of the case's decision state, and with
+            # the town plan's capability mode the notice does not count
+            # plain rations as food (the descent gates would then have no
+            # food lever at all). Both replaced in place: a line after the
+            # file's formula section is not read as a setting.
+            for key, value in (("borg_trip_policy", 0), ("borg_town_plan", 0)):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
