@@ -1507,6 +1507,12 @@ pub fn player_timed(idx: u32) -> i16 {
     unsafe { *player_ref().timed.add(idx as usize) }
 }
 
+#[cfg(feature = "test-combat-heal")]
+pub(crate) fn set_test_poison(duration: i16) {
+    // SAFETY: the live test player owns a TMD_MAX-element timer array.
+    unsafe { *player_ref().timed.add(crate::headers::list_player_timed_h::TMD_POISONED as usize) = duration; }
+}
+
 /// `player_of_has(player, flag)`: an object flag on the player.
 pub fn player_of_has(flag: u32) -> bool {
     // C: `of_has(p->state.flags, flag)`, i.e. `flag_has` on OF_SIZE bytes.

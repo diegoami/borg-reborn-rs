@@ -856,6 +856,7 @@ borg_param_attack_throw_as_melee = 1
 
 # #1200: allow known low-value spare throwing weapons as attacks.
 borg_param_attack_throw_surplus = 0
+borg_param_attack_throw_surplus_max_value = 100
 
 # Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
 # throw rated with attack_throw_as_melee. 0 = inherit
@@ -909,10 +910,9 @@ borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
 # #1080, #1085: breadth-first exploration from the staircases below a
-# maximum HP (the ring nearest the stairs is explored first). Shipped 1
-# (owner, 2026-11-23: "ship it like that ... turn it on by default"), with
-# the per-class thresholds of the class files; 0 = C's depth-first order.
-borg_param_explore_breadth_first = 1
+# class-specific maximum HP threshold. Off for P8 (#1201, owner 2026-11-24,
+# borg-zoo#754). Mixed can apply as soon as its own conditions are met.
+borg_param_explore_breadth_first = 0
 borg_param_explore_bfs_max_hp = 25
 borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
@@ -932,8 +932,16 @@ borg_param_explore_bfs_leave_when_done = 1
 # too once it finds nothing it may reach, before the secret-door search.
 # Shipped 1 (owner, 2026-11-23: "merge it but with all settings on").
 borg_param_explore_c_leave_when_done = 1
-# #1098 (second piece of #1080): mixed exploration above the breadth-first
-# threshold, until prepared for the depth (for now: where C's leash applies).
+# #1189: the stair-anchored exploration aims only at grids its flow can
+# enter (the unknown grid, rubble, a closed door). borg_play_step refuses to
+# dig walls and seams while exploring, so a treasure vein as a goal had the
+# flow commit beside it and give no step, and the next ring sent the Borg
+# back the way it came (a Warrior walked 444666 between two corridor ends on
+# DL1 for 4,000 turns, ring 10 and ring 11 both veins). Shipped 1 (a bug,
+# like loop_breaker); 0 = the veins stay goals.
+borg_param_explore_stepable_goals = 1
+# #1098 (second piece of #1080): mixed exploration when breadth-first is
+# inactive and the Borg is unprepared for the depth (where C's leash applies).
 # Depth-first inside a radius R from the nearest staircase; R starts at
 # explore_mix_radius and grows by explore_mix_step only when nothing the Borg
 # can reach is left inside it, up to floor(D / (r - 1)) + floor(max HP / c)
@@ -1009,6 +1017,12 @@ borg_param_defend_bless_fail = 25
 
 
 ### Healing ###
+
+# #1194: choose the least wound cure that covers the projected monster reply.
+# Start routine combat healing after 30% HP loss. A lethal reply can trigger
+# healing sooner if a carried cure covers it.
+borg_param_caution_combat_heal = 1
+borg_param_caution_combat_heal_min_loss = 30
 
 # Hurt and outmatched, after every escape was declined, drink a Cure Light,
 # Serious or Critical Wounds potion instead of attacking (#457), once at

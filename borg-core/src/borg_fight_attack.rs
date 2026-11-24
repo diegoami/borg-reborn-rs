@@ -2964,14 +2964,14 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
-    let (slot, damage) = best_throw(st);
     if cant_use_item_attack(st) {
         return 0;
     }
     if param(Param::attack_throw_surplus) != 0 {
         mark_confused_aim(st);
-        return attack_throw_surplus(st, slot, damage);
+        return attack_throw_surplus(st);
     }
+    let (slot, damage) = best_throw(st);
     if slot < 0 {
         return 0;
     }
@@ -2987,7 +2987,7 @@ fn surplus_weapon(st: &BorgState, slot: i32, item: &borg_item, worn: &borg_item)
     matches!(tval, TV_SWORD | TV_POLEARM | TV_HAFTED)
         && item.iqty > 0 && item.ident && !item.needs_ident && !item.cursed
         && item.art_idx == 0 && item.ego_idx == 0 && item.activ_idx == 0 && crate::borg_item::item_note(st, item).is_empty()
-        && (0..=param(Param::attack_throw_min_item_value)).contains(&item.value)
+        && (0..=param(Param::attack_throw_surplus_max_value)).contains(&item.value)
         && engine::flag_has(&item.flags, OF_THROWING as i32)
         && item.flags.iter().map(|byte| byte.count_ones()).sum::<u32>() == 1
         && item.modifiers.iter().all(|&value| value == 0)
@@ -3007,19 +3007,22 @@ fn native_throw_range(strength: i32, weight: i32) -> i32 {
     ((strength + 20) * 10 / weight.max(10)).min(10)
 }
 
-fn attack_throw_surplus(st: &mut BorgState, legacy_slot: i32, legacy_damage: i32) -> i32 {
+fn attack_throw_surplus(st: &mut BorgState) -> i32 {
+    // Both families use the engine-based throw rating when compared.
+    let (legacy_slot, legacy_damage) = best_throw_of(st, false, true);
+    let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
     let mut slot = legacy_slot;
-    let mut range = 6 + 2 * tr(st, BI_AMMO_POWER);
+    let mut range = 0;
     let mut best = ProjectedAttack::default();
+    st.fight_attack.throwing = true;
     if legacy_slot >= 0 {
-        st.fight_attack.throwing = st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
+        let weight = st.items.items[legacy_slot as usize].weight;
+        range = native_throw_range(strength, i32::from(weight));
         best = choose_bolt(st, 0, legacy_damage, BORG_ATTACK_ARROW as i32, range, legacy_slot);
     }
     let mut damage = st.fight_attack.dmg_best;
     let mut kills = st.fight_attack.kill_best;
     let worn = st.items.items[inven_wield() as usize];
-    let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
-    st.fight_attack.throwing = true;
     for k in 0..inven_wield() {
         let item = st.items.items[k as usize];
         if !surplus_weapon(st, k, &item, &worn) {
@@ -3072,11 +3075,15 @@ fn attack_throw_surplus(st: &mut BorgState, legacy_slot: i32, legacy_damage: i32
 /// object it would throw and its average damage, as `(slot, damage)`
 /// (`(-1, -1)`: nothing). `ranged_means` asks it too.
 fn best_throw(st: &BorgState) -> (i32, i32) {
-    best_throw_of(st, false)
+    best_throw_of(st, false, native_throw_rating(st))
+}
+
+fn native_throw_rating(st: &BorgState) -> bool {
+    st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0
 }
 
 // borg-reborn-rs (#781): same fuel reserves, restricted to oil for a bump.
-fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
+fn best_throw_of(st: &BorgState, flasks_only: bool, native_rating: bool) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
@@ -3151,7 +3158,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
         // borg-reborn-rs (#568): with `attack_throw_as_melee`, the engine's
         // damage of the throw ranks the objects and is the attack's damage
         // (the gates above keep the dice average).
-        let d = if st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0 {
+        let d = if native_rating {
             thrown_damage(
                 i32::from(item.dd),
                 i32::from(item.ds),
@@ -3184,7 +3191,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
 /// direction can hit an unseen monster; a monster target cannot be set.
 /// Uses the normal chooser's fuel reservation; never throws an unknown item.
 pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
-    let (slot, _) = best_throw_of(st, true);
+    let (slot, _) = best_throw_of(st, true, native_throw_rating(st));
     if slot < 0 || !st.items.items[slot as usize].aware { return false; }
     let dir = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
     borg_note(st, &format!("# Throwing oil at unseen bump ({},{})", grid.y, grid.x));
@@ -3201,7 +3208,7 @@ pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
 fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
     let power = 6 + 2 * tr(st, BI_AMMO_POWER);
-    st.fight_attack.throwing = st.fight_attack.focused_target.is_some() || param(Param::attack_throw_as_melee) != 0;
+    st.fight_attack.throwing = native_throw_rating(st);
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
     st.fight_attack.throwing = false;
 

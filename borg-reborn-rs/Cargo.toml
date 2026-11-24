@@ -24,6 +24,7 @@ test-hallucinate = []
 # report goes to BORG_RUN_DIR/truth.jsonl.
 test-perception = []
 test-stair-handoff = ["borg-core/test-stair-handoff"]
+test-combat-heal = ["borg-core/test-combat-heal"]
 
 [dependencies]
 libc = "0.2"
