@@ -1631,7 +1631,7 @@ pub fn borg_update(st: &mut BorgState) {
 /// Scan the monsters: clear their flags and expire the ones not seen for
 /// a long time (kept while hallucinating and afraid, so the Borg does not
 /// get trapped by monsters it is afraid to attack).
-fn expire_kills(st: &mut BorgState) {
+pub(crate) fn expire_kills(st: &mut BorgState) {
     let mut i = 1;
     while i < i32::from(st.kills.nxt) {
         let k = idx(i);

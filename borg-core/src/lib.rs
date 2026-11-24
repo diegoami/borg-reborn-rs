@@ -112,6 +112,8 @@ pub mod shell;
 pub(crate) mod params;
 // borg-reborn-rs (#222): observational decision tracing.
 pub(crate) mod core_trace;
+#[cfg(feature = "test-stair-handoff")]
+mod immobile_regression;
 // borg-reborn-rs (#403): pure class/family attack ranking.
 pub(crate) mod attack_preference;
 
