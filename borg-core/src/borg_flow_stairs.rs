@@ -1526,6 +1526,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "leave-level-upstairs" {
         crate::borg_think_dungeon_util::run_leave_level_regression(st);
     }
+    if case == "stale-stair-more" {
+        crate::borg_think_dungeon_util::run_stale_stair_more_regression(st);
+    }
     if case == "more-refused-gates" {
         crate::borg_think_dungeon_util::run_more_refused_regression(st);
     }
