@@ -951,16 +951,16 @@ borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-# #1208: the cap starts at five steps from the nearest staircase.
-borg_param_explore_mix_max_radius = 5
+# #1208: the cap starts at six steps from the nearest staircase.
+borg_param_explore_mix_max_radius = 6
 # #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
 # (and class)"): per mille a character level from CL1, linearly:
 # value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
-# #1208: a cap of 5 growing at 500 gives 5, 8, 10, 13 and 15 steps at CL1–5.
+# #1208: a cap of 6 growing at 1000 gives 6, 12, 18, 24 and 30 steps at CL1–5.
 # Mixed exploration can stop sooner when the escape model or leash is tighter.
 borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
-borg_param_explore_mix_max_radius_dp = 500
+borg_param_explore_mix_max_radius_dp = 1000
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50
