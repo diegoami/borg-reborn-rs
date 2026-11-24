@@ -33,11 +33,12 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
-    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
-    BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
-    BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_RPOIS, BI_SPEED,
+    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES,
+    BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP,
+    BI_CURSP, BI_ESP, BI_FOOD, BI_FRACT, BI_GOLD, BI_IFIRE, BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED,
+    BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN,
+    BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN, BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL,
+    BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RBLIND, BI_RCONF, BI_RECALL, BI_RFEAR, BI_RPOIS, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -1873,21 +1874,82 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     // borg-reborn-rs (#726): the blows are read only for an immobile
     // attacker (it has a blow array); a race without one, such as the
     // placeholder one past the last race, aborted in race_blow_effect_name.
-    mode >= 2
-        && st.borg.tr(BI_CDEPTH) > 0
-        && immobile_attacker(r_idx)
-        && immobile_annoying(
-            mode,
-            true,
-            (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
-        )
+    if mode < 2 || st.borg.tr(BI_CDEPTH) <= 0 || !immobile_handled(st, r_idx) {
+        return false;
+    }
+    // borg-reborn-rs (#852, owner): a blow the character is protected from is
+    // not annoying.
+    let annoying = unprotected_annoying(&race_blow_effects(r_idx), |bi| protected(st, bi));
+    immobile_annoying(mode, true, annoying)
+}
+
+/// borg-reborn-rs (#852, owner: "if it is protected this mode needs not to
+/// apply"): race `r_idx` is an immobile attacker (`immobile_attacker`) that
+/// `caution_ranged_vs_immobile` (1-3) handles. Not one whose blows include
+/// an annoying effect and whose annoying effects the character is all
+/// protected from (`protected`): a floating eye for a Free Action Borg, a
+/// grey mushroom patch for one resisting confusion. It is neither kept at
+/// range nor stepped away from, the confusion cure is not held next to it,
+/// and the step does not avoid it. A plain-damage one (a grey mold) is
+/// handled as before.
+fn immobile_handled(st: &BorgState, r_idx: usize) -> bool {
+    immobile_attacker(r_idx) && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
+}
+
+/// borg-reborn-rs (#852): the trait that protects the character from a blow
+/// effect, as `borg_danger_one_kill` reads it (`borg_danger.rs`, the
+/// `MONBLOW_POISON`, `BLIND`, `CONFUSE`, `TERRIFY` and `PARALYZE` branches;
+/// `blow_effects.txt`, `mon-blow-effects.c`). Any other effect (drains, theft,
+/// disenchantment, elements, ...) has none here.
+fn effect_protection(name: &[u8]) -> Option<u32> {
+    match name {
+        b"PARALYZE" => Some(BI_FRACT),
+        b"CONFUSE" => Some(BI_RCONF),
+        b"POISON" => Some(BI_RPOIS),
+        b"BLIND" => Some(BI_RBLIND),
+        b"TERRIFY" => Some(BI_RFEAR),
+        _ => None,
+    }
+}
+
+/// borg-reborn-rs (#852): one of `effects` is annoying (`annoying_effect`)
+/// and the character (`has`: the trait is set) is not protected from it.
+fn unprotected_annoying(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    effects.iter().any(|e| annoying_effect(e) && !effect_protection(e).is_some_and(|bi| has(bi)))
+}
+
+/// borg-reborn-rs (#852): a monster with `effects` still concerns the
+/// caution rules (a `ranged` entry of the scary list, an immobile attacker for
+/// `caution_ranged_vs_immobile`): one of its blows has an effect the character
+/// is not protected from. Plain damage (`HURT`, `NONE`) does not count when it
+/// has another blow; one with only plain-damage blows (or none) still does.
+fn not_protected_from_all(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    !effects.iter().any(|e| annoying_effect(e)) || unprotected_annoying(effects, has)
+}
+
+/// borg-reborn-rs (#852, review of #1126): the character has protection
+/// `bi`, as `borg_danger_one_kill` reads it: the trait, or for poison also the
+/// temporary resistance (`MONBLOW_POISON` checks `BI_RPOIS`, then
+/// `temp.res_pois`; the engine blocks poisoning while `TMD_OPP_POIS` runs).
+fn protected(st: &BorgState, bi: u32) -> bool {
+    st.borg.tr(bi) != 0 || (bi == BI_RPOIS && st.borg.temp.res_pois)
+}
+
+/// The effect names of race `r_idx`'s blows. Every race has its blow array
+/// (`mon-init.c:1826`, `finish_parse_monster`); the caller skips race 0 and
+/// the placeholder race past the last one (#726).
+fn race_blow_effects(r_idx: usize) -> Vec<&'static [u8]> {
+    (0..usize::from(engine::z_info().mon_blows_max)).filter_map(|k| engine::race_blow_effect_name(r_idx, k)).collect()
 }
 
 /// borg-reborn-rs (#838, owner: "a list of monsters to never melee ... and
 /// only attack from afar"): race `r_idx` is on the scary list's `ranged`
-/// entries for this character (`caution_ranged_only`). Off: no lookup.
+/// entries for this character (`caution_ranged_only`), and the character is
+/// not protected from all its blows (#852, `not_protected_from_all`). Off: no lookup.
 pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
-    p(Param::caution_ranged_only) != 0 && scary_ranged_entry(st, r_idx)
+    p(Param::caution_ranged_only) != 0
+        && scary_ranged_entry(st, r_idx)
+        && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
 }
 
 /// The lookup of `listed_ranged`, whatever `caution_ranged_only` says
@@ -1909,8 +1971,9 @@ fn scary_ranged_entry(st: &BorgState, r_idx: usize) -> bool {
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
 /// attacker (`caution_ranged_vs_immobile` 2, 3) or a `ranged` entry of the
-/// scary list (`caution_ranged_only`): never a melee target, no walk to it,
-/// flows keep out of its reach.
+/// scary list (`caution_ranged_only`): never a melee target, no walk to it
+/// or onto its grid. Only the immobile ones keep the flows out of their reach
+/// (`in_reach_of_kept`; #852: the list leaves path finding alone).
 pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     immobile_kept_at_range(st, r_idx)
         || listed_ranged(st, r_idx)
@@ -1919,10 +1982,12 @@ pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
         || (walk_away_listed(st, r_idx) && st.borg.mon.walk_away_cornered != Some(st.borg.time.now))
 }
 
-/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of a
-/// creature kept at range (its reach). Off: no scan.
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
+/// immobile creature kept at range (its reach; `caution_ranged_vs_immobile`
+/// 2, 3). Off: no scan. #852 (owner): not the scary list's `ranged` entries,
+/// whose flows are a path-finding concern of their own.
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0) || st.flow.to_stairs {
+    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -1930,7 +1995,7 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
             let (gx, gy) = (x + dx, y + dy);
             engine::square_in_bounds_fully(gx, gy) && {
                 let k = st.cave.grid(gx, gy).kill;
-                k != 0 && kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
         })
     })
@@ -1961,7 +2026,7 @@ pub(crate) fn in_reach_of_stepped_from(st: &BorgState, x: i32, y: i32) -> bool {
             && engine::square_in_bounds_fully(ex, ey)
             && {
                 let k = st.cave.grid(ex, ey).kill;
-                k != 0 && immobile_attacker(usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_handled(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
     })
 }
@@ -1984,11 +2049,17 @@ fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     })
 }
 
-/// The first known immobile attacker next to grid (`y`, `x`), by kill index.
-fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+/// The first known immobile attacker next to grid (`y`, `x`) that matches
+/// the caller's policy, by kill index.
+fn immobile_attacker_next_to(
+    st: &BorgState,
+    y: i32,
+    x: i32,
+    matches: impl Fn(usize) -> bool,
+) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
         let kill = &st.kills.kills[i];
-        immobile_attacker(usize::from(kill.r_idx))
+        matches(usize::from(kill.r_idx))
             && (i32::from(kill.pos.y) - y).abs() <= 1
             && (i32::from(kill.pos.x) - x).abs() <= 1
     })
@@ -2209,7 +2280,7 @@ fn cure_held_for_step(st: &mut BorgState) -> bool {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx, |race| immobile_handled(st, race))) else {
         return false;
     };
     if mobile_danger(st) >= st.borg.tr(BI_CURHP) {
@@ -2268,7 +2339,7 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     // Review of #717: a kept attacker first, so a plain-damage one beside
     // it does not take its place.
-    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx, |race| immobile_handled(st, race))) else {
         return false;
     };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
@@ -2335,7 +2406,7 @@ fn best_step_away_from(st: &mut BorgState, paralyser: bool) -> Option<usize> {
         if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) || (!paralyser && bouncing(st, y, x)) {
             continue;
         }
-        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() {
+        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x, |race| immobile_handled(st, race)).is_some() {
             continue;
         }
         let k = borg_danger(st, y, x, 1, true, false);
@@ -2701,7 +2772,7 @@ pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
 /// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
 /// 1621-1644).
 pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
-    immobile_attacker_next_to(st, y, x).is_some()
+    immobile_attacker_next_to(st, y, x, immobile_attacker).is_some()
 }
 
 /// borg-reborn-rs (#931, review of #965): the known immobile attacker whose
@@ -2711,7 +2782,7 @@ pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
 /// usual bookkeeping drops it; a route the refusal makes impossible falls back
 /// to the ordinary search.
 pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
-    immobile_attacker_next_to(st, y, x)
+    immobile_attacker_next_to(st, y, x, immobile_attacker)
 }
 
 /// borg-reborn-rs (#1125): race `r_idx` has a `PARALYZE` blow (27 races in
@@ -3066,7 +3137,7 @@ fn walk_away_best_step(st: &mut BorgState) -> Option<(usize, String)> {
         if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) {
             continue;
         }
-        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() || walk_away_next_to(st, y, x).is_some() {
+        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x, immobile_attacker).is_some() || walk_away_next_to(st, y, x).is_some() {
             continue;
         }
         let danger = borg_danger(st, y, x, 1, true, false);
@@ -8892,6 +8963,85 @@ mod immobile_range_tests {
         assert!(!immobile_annoying(3, false, true), "a monster that moves");
         assert!(!immobile_annoying(1, true, true), "1 is #646: none kept at range");
         assert!(!immobile_annoying(0, true, true), "0 is C");
+    }
+
+    /// #852: the protection for each blow effect, as `borg_danger_one_kill`.
+    #[test]
+    fn effect_protections() {
+        use super::effect_protection;
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        assert_eq!(effect_protection(b"PARALYZE"), Some(BI_FRACT));
+        assert_eq!(effect_protection(b"CONFUSE"), Some(BI_RCONF));
+        assert_eq!(effect_protection(b"POISON"), Some(BI_RPOIS));
+        assert_eq!(effect_protection(b"BLIND"), Some(BI_RBLIND));
+        assert_eq!(effect_protection(b"TERRIFY"), Some(BI_RFEAR));
+        for e in [&b"LOSE_STR"[..], b"LOSE_CON", b"LOSE_WIS", b"EAT_LIGHT", b"EAT_FOOD", b"EXP_10", b"DISENCHANT", b"ACID", b"HALLU", b"HURT"] {
+            assert_eq!(effect_protection(e), None, "{}", String::from_utf8_lossy(e));
+        }
+    }
+
+    /// #852: the scary list's ranged entries, with and without each protection
+    /// (monster.txt's blows for the shipped entries).
+    #[test]
+    fn listed_with_resists() {
+        use super::{not_protected_from_all, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        let none = |_: u32| false;
+        let with = |t: u32| move |bi: u32| bi == t;
+        let cases: [(&str, &[&[u8]], Option<u32>); 6] = [
+            ("floating eye", &[b"PARALYZE"], Some(BI_FRACT)),
+            ("grey mushroom patch", &[b"CONFUSE"], Some(BI_RCONF)),
+            ("yellow mushroom patch", &[b"TERRIFY"], Some(BI_RFEAR)),
+            ("spotted mushroom patch", &[b"POISON"], Some(BI_RPOIS)),
+            ("bloodshot eye", &[b"BLIND"], Some(BI_RBLIND)),
+            ("rot jelly", &[b"EAT_FOOD", b"LOSE_WIS"], None),
+        ];
+        for (name, blows, prot) in cases {
+            assert!(not_protected_from_all(blows, none), "{name}: kept without protection");
+            match prot {
+                Some(t) => {
+                    assert!(!not_protected_from_all(blows, with(t)), "{name}: protected, fought");
+                    for other in [BI_FRACT, BI_RCONF, BI_RPOIS, BI_RBLIND, BI_RFEAR].into_iter().filter(|&o| o != t) {
+                        assert!(not_protected_from_all(blows, with(other)), "{name}: another protection does not help");
+                    }
+                }
+                None => assert!(not_protected_from_all(blows, |_| true), "{name}: no protection exists"),
+            }
+        }
+        // A blow protected and one not: still kept.
+        assert!(not_protected_from_all(&[b"POISON", b"CONFUSE"], with(BI_RPOIS)));
+        assert!(!not_protected_from_all(&[b"POISON", b"CONFUSE"], |bi| bi == BI_RPOIS || bi == BI_RCONF));
+        // Plain damage beside a protected blow does not keep it; alone it does.
+        assert!(!not_protected_from_all(&[b"HURT", b"PARALYZE"], with(BI_FRACT)));
+        assert!(not_protected_from_all(&[b"HURT"], |_| true), "only plain damage: kept, as listed");
+        assert!(not_protected_from_all(&[], |_| true), "no blows: kept, as listed");
+        // Mode 2's check: plain damage is never annoying.
+        assert!(!unprotected_annoying(&[b"HURT"], none));
+        assert!(unprotected_annoying(&[b"CONFUSE"], none));
+        assert!(!unprotected_annoying(&[b"CONFUSE"], with(BI_RCONF)));
+        assert!(unprotected_annoying(&[b"LOSE_STR"], |_| true));
+    }
+
+    /// Review of #1126: temporary poison resistance protects, as in
+    /// `borg_danger_one_kill`; it protects from nothing else.
+    #[test]
+    fn temporary_poison_resistance() {
+        use super::{not_protected_from_all, protected, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_MAX, BI_RCONF, BI_RPOIS};
+        let mut st = crate::state::BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        let spotted: &[&[u8]] = &[b"POISON"];
+        assert!(!protected(&st, BI_RPOIS));
+        assert!(not_protected_from_all(spotted, |bi| protected(&st, bi)), "no resistance: kept");
+        st.borg.temp.res_pois = true;
+        assert!(protected(&st, BI_RPOIS), "temporary only");
+        assert!(!protected(&st, BI_RCONF), "poison only");
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the spotted mushroom patch is fought");
+        assert!(!unprotected_annoying(spotted, |bi| protected(&st, bi)), "mode 2's check too");
+        assert!(not_protected_from_all(&[b"CONFUSE"], |bi| protected(&st, bi)), "a grey mushroom patch still kept");
+        st.borg.temp.res_pois = false;
+        st.borg.trait_[BI_RPOIS as usize] = 1;
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the permanent one");
     }
 }
 

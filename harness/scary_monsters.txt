@@ -107,8 +107,9 @@ mean-looking mercenary | 50 | | attack | town-melee-only
 
 # Ranged only (#838): monster | up to CL | classes | ranged | reason. With
 # caution_ranged_only=1 (shipped 0, so these lines are inert) the Borg never
-# melees one of these, never walks to it, and keeps its flows out of its grid
-# and the eight around it; missiles, spells and throws reach it, or it is left
+# melees one of these, never walks to it and never flows onto its grid, unless
+# it is protected from every blow (#852: Free Action, resist confusion, poison,
+# blindness, fear); missiles, spells and throws reach it, or it is left
 # alone. Not a scare. Never-moving monsters to DL12 whose blows do more than
 # damage (monster.txt). CL50 for every class is a hypothesis, as above.
 floating eye | 50 | | ranged | paralysing-gaze
