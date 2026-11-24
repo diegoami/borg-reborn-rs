@@ -516,20 +516,16 @@ mod unknown_potion_tests {
     }
 }
 
+pub(crate) fn can_read_now(st: &BorgState) -> bool {
+    !engine::no_light()
+        && st.borg.tr(BI_ISBLIND) == 0
+        && st.borg.tr(BI_ISCONFUSED) == 0
+        && st.borg.tr(BI_ISFORGET) == 0
+}
+
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    /* Dark */
-    if engine::no_light() {
-        return false;
-    }
-
-    /* Blind or Confused or Amnesia*/
-    if st.borg.tr(BI_ISBLIND) != 0
-        || st.borg.tr(BI_ISCONFUSED) != 0
-        || st.borg.tr(BI_ISFORGET) != 0
-    {
-        return false;
-    }
+    if !can_read_now(st) { return false; }
 
     /* borg-reborn-rs (#829): not a teleport under a teleport curse */
     if crate::borg_escape::teleport_scroll_blocked(st, sval) {
@@ -1269,7 +1265,7 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;

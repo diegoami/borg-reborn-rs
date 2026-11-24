@@ -970,8 +970,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2288` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:2013` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2399` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2880` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2873` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:2894` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:2887` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
 
@@ -1283,7 +1283,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1041` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1056` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -1936,7 +1936,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:320` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:312` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -3314,7 +3314,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1263` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:967` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1114` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2686` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2697` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6635,10 +6635,10 @@ Word of Recall, weight 5).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:292` |
-| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:293` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:322` |
-| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:264` |
+| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
+| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:314` |
+| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:994` |
 
 ## Word of Recall on shallow trips (#984)
@@ -6677,7 +6677,7 @@ switches below are off by default, which reproduces today's play.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:263` |
+| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9320` |
 
 ## The Borg's own light radius (#877)
@@ -7219,7 +7219,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1146` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1147` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1148` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2727` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2738` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7309,7 +7309,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2813` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:2824` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1062` |
 
 ## Grouped monster messages (#915)
@@ -8600,3 +8600,24 @@ borg-cemetery#132:
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:874` |
 | `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:867` |
+
+## Ranged readiness for the next trip (#1184)
+
+Both behaviors and the trace ship at 0. The six-use target and a minimum
+average damage of one point per two dungeon levels, with a floor of one,
+are pilot values. All five shipped values equal their compiled defaults.
+
+The shopping arm changes ranged valuation within the existing town budget.
+It keeps `town_ranged_reserve` as a lower bound and leaves the existing
+urgent cure and Phase Door rules in control of urgent purchases. Dungeon
+recovery favors floor supplies and protects a small reserve. It can route
+to town when observed ordinary-store stock and the purse support a restock.
+The trace can run with either behavior off.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_ranged_readiness` | 0 | flag | 0–1 | `borg_town_capability.rs:463` |
+| `trip_ranged_readiness` | 0 | flag | 0–1 | `borg_trip.rs:52` |
+| `ranged_readiness_target` | 6 | uses | 1–100 | `borg_ranged.rs:57` |
+| `ranged_readiness_damage_depth` | 2 | levels | 1–100 | `borg_ranged.rs:58` |
+| `ranged_readiness_trace` | 0 | flag | 0–1 | `borg_ranged.rs:400` |

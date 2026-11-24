@@ -656,10 +656,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
-        let priority = if phase_first && is_phase { 2 }
-            else if ranged.is_some_and(|need| need.floor_item(st, take.kidx)) { 1 }
-            else { 0 };
-        priorities.push(priority);
+        priorities.push(take_priority(phase_first && is_phase,
+            || ranged.is_some_and(|need| need.floor_item(st, take.kidx))));
     }
 
     if let Some(best) = priorities.iter().copied().max() {
@@ -678,6 +676,10 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut
 
     /* Nothing to take */
     st.flow.temp_n != 0
+}
+
+fn take_priority(phase_first: bool, ranged: impl FnOnce() -> bool) -> u8 {
+    if phase_first { 2 } else { u8::from(ranged()) }
 }
 
 /// borg-reborn-rs (#761): the Borg holds fewer Phase Doors than the switch asks (0 = off).
@@ -847,6 +849,11 @@ pub fn borg_free_flow_take(st: &mut BorgState) {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn needed_range_outranks_loot_but_phase_door_still_comes_first() {
+        assert!(super::take_priority(true, || unreachable!()) > super::take_priority(false, || true));
+        assert!(super::take_priority(false, || true) > super::take_priority(false, || false));
+    }
     use super::*;
     use crate::borg_item::blank_item;
 

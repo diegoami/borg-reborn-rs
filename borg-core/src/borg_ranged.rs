@@ -55,7 +55,7 @@ impl Need {
     pub fn for_depth(st: &BorgState, depth: i64, journey: Journey) -> Self {
         Self {
             target: value(Param::ranged_readiness_target),
-            min_damage: (depth as i32 / value(Param::ranged_readiness_damage_depth)).max(1),
+            min_damage: damage_floor(depth, value(Param::ranged_readiness_damage_depth)),
             fuel_goal: crate::borg_light::fuel_goal(st, journey),
         }
     }
@@ -99,12 +99,10 @@ impl Need {
 
     pub fn missile(self, st: &BorgState, item: &borg_item) -> bool {
         let power = st.borg.tr(BI_AMMO_POWER);
-        let damage = (i32::from(item.dd) * (i32::from(item.ds) + 1)
-            + 2 * (i32::from(item.to_d) + st.borg.tr(BI_BTODAM)))
-            * power;
+        let damage = missile_damage_twice(item, st.borg.tr(BI_BTODAM)) * i64::from(power);
         i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL)
             && power > 0
-            && damage >= 2 * self.min_damage
+            && damage >= 2 * i64::from(self.min_damage)
     }
 
     fn thrown(self, item: &borg_item) -> bool {
@@ -196,6 +194,12 @@ impl Need {
             can_aim,
             ..Coverage::default()
         };
+        self.scan_items(st, skip, &mut total);
+        self.scan_spells(st, &mut total);
+        total
+    }
+
+    fn scan_items(self, st: &BorgState, skip: Option<usize>, total: &mut Coverage) {
         let pack = inven_wield() as usize;
         let quiver = quiver_start() as usize;
         let mut previous_oil = 0;
@@ -241,6 +245,9 @@ impl Need {
                 _ => {}
             }
         }
+    }
+
+    fn scan_spells(self, st: &BorgState, total: &mut Coverage) {
         let fail = value(Param::attack_spell_fail);
         for spell in [
             MAGIC_MISSILE,
@@ -280,11 +287,21 @@ impl Need {
                 &engine::spell_effect_values(index, st.borg.tr(BI_CLEVEL)),
             ) {
                 total.spell_recoverable = true;
-                total.spell_ready |= can_aim && borg_spell_okay_fail(st, spell, fail);
+                total.spell_ready |= total.can_aim && borg_spell_okay_fail(st, spell, fail);
             }
         }
-        total
     }
+}
+
+fn damage_floor(depth: i64, levels_per_damage: i32) -> i32 {
+    (depth as i32 / levels_per_damage).max(1)
+}
+
+/// Twice the average base damage, before the launcher multiplier and critical
+/// hits. Angband `src/player-attack.c`, `ranged_damage` (lines 554–582).
+pub(crate) fn missile_damage_twice(item: &borg_item, launcher_to_d: i32) -> i64 {
+    i64::from(item.dd) * (i64::from(item.ds) + 1)
+        + 2 * (i64::from(item.to_d) + i64::from(launcher_to_d))
 }
 
 fn projectile_usable(
@@ -308,7 +325,8 @@ pub(crate) struct Trip {
 
 fn here(st: &BorgState) -> Need {
     let journey = Journey::of(st);
-    Need::for_depth(st, i64::from(st.borg.tr(BI_CDEPTH)).max(1), journey)
+    let depth = i64::from(st.borg.tr(BI_CDEPTH));
+    Need::for_depth(st, if depth == 0 { journey.depth } else { depth }, journey)
 }
 
 pub(crate) fn pickup_need(st: &BorgState) -> Option<Need> {
@@ -341,8 +359,14 @@ pub(crate) fn keep_stack(st: &BorgState, slot: usize) -> bool {
     {
         return false;
     }
-    let before = need.coverage(st, None);
-    let after = need.coverage(st, Some(slot));
+    let before = st.ranged.coverage;
+    let mut after = Coverage {
+        spell_ready: before.spell_ready,
+        spell_recoverable: before.spell_recoverable,
+        can_aim: before.can_aim,
+        ..Coverage::default()
+    };
+    need.scan_items(st, Some(slot), &mut after);
     (before.finite() > after.finite() || before.recoverable() && !after.recoverable())
         && after.finite() < need.backup_target(after.recoverable())
 }
@@ -360,7 +384,7 @@ pub(crate) fn wear_coverage(st: &BorgState, slot: usize, new: &borg_item) -> Opt
     let wield = inven_wield() as usize;
     let old = &st.items.items[slot];
     (slot == wield + 1 || slot == wield + 5 || old.activ_idx > 0 || new.activ_idx > 0)
-        .then(|| here(st).coverage(st, None))
+        .then_some(st.ranged.coverage)
 }
 
 pub(crate) fn coverage_here(st: &BorgState) -> Coverage {
@@ -396,16 +420,7 @@ pub(crate) fn observe(st: &mut BorgState) {
         return;
     }
     let depth = st.borg.tr(BI_CDEPTH);
-    let journey = Journey::of(st);
-    let needs = Need::for_depth(
-        st,
-        if depth == 0 {
-            journey.depth
-        } else {
-            i64::from(depth)
-        },
-        journey,
-    );
+    let needs = here(st);
     let coverage = needs.coverage(st, None);
     if let Some(file) = record.filter(|_| st.ranged.last_record != Some((depth, coverage))) {
         let row = serde_json::json!({
@@ -433,9 +448,9 @@ pub(crate) fn observe(st: &mut BorgState) {
     st.ranged.in_town = true;
     st.ranged.offers.clear();
     for (shop, stock) in st.store.shops.iter().enumerate() {
-        // Ordinary stores and known Home stock. The Black Market's gold
-        // reserve greatly reduces the part of its stock we can buy.
-        if shop == crate::borg_town_stock::BORG_BLACK_MARKET {
+        // Home withdrawals do not use the purchase budget. The Black
+        // Market has a separate gold reserve that this estimate omits.
+        if matches!(shop, crate::borg_store::BORG_HOME | crate::borg_town_stock::BORG_BLACK_MARKET) {
             continue;
         }
         let native = engine::store_stock(&st.access, shop);
@@ -451,12 +466,7 @@ pub(crate) fn observe(st: &mut BorgState) {
             let Some(offer) = native.get(slot) else {
                 continue;
             };
-            let price = if shop == crate::borg_store::BORG_HOME {
-                0
-            } else {
-                offer.purchase_quote(shop)
-            };
-            st.ranged.offers.push((price, *item));
+            st.ranged.offers.push((offer.purchase_quote(shop), *item));
         }
     }
 }
@@ -515,9 +525,10 @@ pub(crate) fn return_to_town(st: &mut BorgState) -> bool {
     let depth = st.borg.tr(BI_CDEPTH);
     let up = st.borg.c;
     let on_stair = u32::from(st.cave.grid(up.x, up.y).feat) == FEAT_LESS;
-    let recall = depth >= crate::borg_trip::RECALL_MIN_DEPTH
+    let recall = !on_stair
+        && depth >= crate::borg_trip::RECALL_MIN_DEPTH
         && !engine::player_opt(OPT_birth_no_recall)
-        && st.borg.tr(BI_RECALL) > 0
+        && crate::borg_escape::recall_ready(st)
         && crate::borg_escape::borg_recall(st);
     if recall
         || on_stair
@@ -546,6 +557,14 @@ pub(crate) fn return_to_town(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn deeper_levels_require_more_damage() {
+        assert_eq!(damage_floor(0, 2), 1);
+        assert_eq!(damage_floor(7, 2), 3);
+        assert_eq!(damage_floor(45, 2), 22);
+        assert_eq!(damage_floor(45, 4), 11);
+    }
 
     #[test]
     fn a_missing_or_exhausted_attack_starts_ranged_recovery() {
