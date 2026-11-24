@@ -1014,6 +1014,12 @@ borg_param_defend_bless_fail = 25
 
 ### Healing ###
 
+# #1194: choose the least wound cure that covers the projected monster reply.
+# Start routine combat healing after 30% HP loss. A lethal reply can trigger
+# healing sooner if a carried cure covers it.
+borg_param_caution_combat_heal = 1
+borg_param_caution_combat_heal_min_loss = 30
+
 # Hurt and outmatched, after every escape was declined, drink a Cure Light,
 # Serious or Critical Wounds potion instead of attacking (#457), once at
 # least this percent of max HP is lost. Lower drinks sooner and uses more
