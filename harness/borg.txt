@@ -2433,3 +2433,5 @@ borg_param_poison_cure_pending_percent = 50
 # Spells (CL5) were sold at CL1 and bought back later. Purchases are
 # unchanged. 0 disables look-ahead.
 borg_param_town_book_lookahead_levels = 1
+# Keep the last owned copy of each class spellbook, including dungeon books.
+borg_param_town_keep_last_class_book = 1
