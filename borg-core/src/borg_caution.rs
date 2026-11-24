@@ -6873,7 +6873,7 @@ fn rising_descent_window(st: &BorgState) -> bool {
 pub(crate) fn rising_checks_stair_targets(st: &BorgState) -> bool {
     let return_only = st.borg.goal.less && !st.borg.goal.leaving
         && !st.borg.goal.fleeing && !st.borg.status.desperate;
-    rising_descent_window(st) && !return_only
+    p(Param::caution_rising_skip_held_stairs) != 0 && rising_descent_window(st) && !return_only
 }
 
 pub(crate) fn rising_holds_stair_target(st: &mut BorgState, y: i32, x: i32) -> bool {

@@ -669,6 +669,10 @@ borg_param_caution_rising_explore_ticks = 500
 
 borg_param_caution_rising_descend_danger_tenths = 10
 
+# During the rising window, skip down-stair destinations that caution
+# would refuse on arrival (#1159). 0 preserves historical route selection.
+borg_param_caution_rising_skip_held_stairs = 1
+
 
 ### Combat ###
 

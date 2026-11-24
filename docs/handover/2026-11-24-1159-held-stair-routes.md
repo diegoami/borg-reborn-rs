@@ -6,13 +6,14 @@ searches and the Recall reachability probe skip a held destination. A
 committed stair flow that seeded a newly held destination is cancelled so
 the caller can plan again. The existing departure check still evaluates
 the hold on arrival. A return to stairs with no intent to leave can still
-walk to a down staircase.
+walk to a down staircase. The route change ships on as
+`caution_rising_skip_held_stairs`. The exact historical replays pin it off
+to reach the recorded turns and grids.
 
 The new native fixture covers selection, cancellation, the end of the
-hold, and an up-stair walk started by the loop breaker. The #1101 handoff
-fixture asserts that caution reverses a dangerous exploration step, the
-handoff continues, and the Borg queues descent with the shipped profile.
-The historical tests retain their incident profiles. The inventory of
+hold, and an up-stair walk started by the loop breaker. The unpinned #1101 fixtures assert that the known up-stair route retains
+the handoff while a down stair is nearby, and that a separate emergency
+handoff continues to descent. The inventory of
 the individual pinned parameters is still open in #1101.
 
 The DL5 and DL9 recordings remain needed for #1106 and #1121. Further

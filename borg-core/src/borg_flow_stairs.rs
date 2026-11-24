@@ -1614,12 +1614,10 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         std::process::exit(0);
     }
 
-    if case == "rising-hold" {
+    if matches!(case, "rising-hold" | "known-up-handoff") {
         use crate::borg_caution::desperate_for_stairs;
         use crate::params::{value, Param};
 
-        assert_eq!(value(Param::loop_breaker), 1);
-        assert_eq!(value(Param::caution_rising_explore_ticks), 500);
         let up = loc { x: 35, y: 20 };
         let start = loc { x: 40, y: 20 };
         let approach = loc { x: 41, y: 20 };
@@ -1649,6 +1647,37 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.stairs.more.num = 1;
         st.stairs.more.x[0] = down.x;
         st.stairs.more.y[0] = down.y;
+
+        if case == "known-up-handoff" {
+            // The synthetic start is one-way. The native test operates on a
+            // fabricated Borg cave and exits before the engine sees its keys.
+            assert!(engine::option_set(c"birth_force_descend", false));
+            st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+            st.stairs.less.num = 1;
+            st.stairs.less.x[0] = up.x;
+            st.stairs.less.y[0] = up.y;
+            st.borg.c = down;
+            st.borg.stair_less = true;
+            assert!(borg_flow_stair_less(st, GOAL_FLEE, false));
+            observe_move(st, b'4', approach);
+            assert!(st.stairs.up_search_departure.is_some_and(|departure| departure.known));
+            assert!(desperate_for_stairs(st, 0), "the known up route gets the handoff");
+            observe_move(st, b'4', start);
+            assert!(desperate_for_stairs(st, 0), "the handoff continues within down-stair range");
+            observe_move(st, b'4', loc { x: start.x - 1, y: up.y });
+            for x in (up.x..start.x - 1).rev() {
+                assert!(borg_flow_stair_less(st, GOAL_FLEE, false));
+                observe_move(st, b'4', loc { x, y: up.y });
+            }
+            assert!(borg_caution(st), "caution takes the up stairs");
+            assert_eq!(st.io.queued_keys(), [u32::from(b'<')]);
+            println!("emergency stair handoff passed: {case}");
+            std::process::exit(0);
+        }
+
+        assert_eq!(value(Param::loop_breaker), 1);
+        assert_eq!(value(Param::caution_rising_explore_ticks), 500);
+        assert_eq!(value(Param::caution_rising_skip_held_stairs), 1);
 
         // Seed a walk before the hold, then change policy before its next step.
         assert!(borg_flow_stair_more(st, GOAL_FLEE, false, false));

@@ -91,6 +91,9 @@ PINNED_TOWN_SETTINGS = [
     # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
     # end, which the recorded turns depend on).
     ("trait_timed_sync", 0),
+    # #1159 changes the path to the incident. Keep the original route
+    # selection for these exact-turn replays.
+    ("caution_rising_skip_held_stairs", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -208,6 +211,9 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for case in ("one-step", "two-steps"):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
+
+    def test_known_up_handoff_with_shipped_settings(self):
+        self.run_case("known-up-handoff", player_class=0, depth=2)
 
     def test_stair_handoff_descends_with_shipped_settings(self):
         self.run_case("one-step")

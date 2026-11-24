@@ -3199,6 +3199,7 @@ up staircase on one level.
 |---|---|---|---|---|
 | `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:6864` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:6860` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_skip_held_stairs` | 0 | flag | 0–1 | `borg_caution.rs:6876` (1, shipped: exclude down-stair targets held by #483 and cancel a stale route, #1159) |
 
 ## Cornered mode (#504)
 
