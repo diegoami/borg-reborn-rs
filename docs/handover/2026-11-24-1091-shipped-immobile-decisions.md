@@ -1,4 +1,4 @@
-## 2026-11-24 — Shipped immobile decisions (#1091)
+## 2026-11-24: Shipped immobile decisions (#1091)
 
 The test build runs the real caution, walk-away, stair flow, Phase gate,
 bounce reset and expiry with the shipped profile. The harness fabricates
