@@ -1754,7 +1754,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.borg.time.level = st.borg.time.now;
         st.borg.c = approach;
         crate::borg_loop::observe(st);
-        for i in 0..crate::borg_loop::LOOP_MOVES {
+        // Fill the configured window and finish on the stair approach.
+        let moves = value(Param::loop_moves);
+        for i in 0..moves + moves % 2 {
             st.borg.c = if i % 2 == 0 { start } else { approach };
             st.borg.time.now += 1;
             crate::borg_loop::observe(st);
