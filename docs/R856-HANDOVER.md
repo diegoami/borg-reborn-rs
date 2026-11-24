@@ -47,3 +47,20 @@ R5 stays paused. This task and the eventual R4.5 milestone need their own
 review/CI gates. Do not confuse R4 acceptance, future receiving parity and
 review-baseline integration. The current R4 review checkpoint CI was still
 running when acceptance was recorded; preserve that distinction in metadata.
+
+## Source-audit follow-up from the published preflight
+
+Draft #1095 records a later local carry checkpoint at `334fce3e`. That
+commit is absent from this checkout and GitHub did not serve it. This follow-up
+starts from the published preflight `c61c0704`; apply it to the carry checkout
+and rerun the audits there once the checkpoint is available.
+
+The attack and defence audits now exclude complete test items and retain
+production definitions that follow them. Defence excludes its named,
+feature-gated harness fixture without dropping later policy. Regression
+controls verify that both audits accept matching late production and reject
+an omitted or changed body. At the selected main pin the old attack cutoff
+omitted seven production functions, including `attack_on_sight` and
+`borg_fight_speed`. The preflight, receiving inventory, both source audits
+and all 67 source-script tests passed on the published preflight checkout.
+These checks do not validate the unpublished receiving source or its gameplay.
