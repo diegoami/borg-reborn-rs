@@ -327,6 +327,10 @@ class StaleStairMoreTest(unittest.TestCase):
                 ("prepared_clevel_depth_margin", 7),
                 # the switch under test
                 ("caution_standing_descent_gated", gated),
+                # #1178 review: the fresh-emergency phase needs the leave
+                # rule on (a recovering Borg on the staircase a monster
+                # threatens takes the stairs); it ships 0.
+                ("caution_stairs_leave_on_monster", 1),
             ]
             for key, value in pinned:
                 name = f"borg_param_{key}"
@@ -360,10 +364,6 @@ class StaleStairMoreTest(unittest.TestCase):
         self.run_case(1)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class MoreRefusedGatesTest(unittest.TestCase):
     """#1177: the descent gates without a seen up staircase.
 
@@ -435,6 +435,6 @@ class MoreRefusedGatesTest(unittest.TestCase):
         self.run_case(1)
 
 
+
 if __name__ == "__main__":
     unittest.main()
-

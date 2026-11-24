@@ -2262,6 +2262,54 @@ pub(crate) fn run_stale_stair_more_regression(st: &mut BorgState) -> ! {
         crate::borg_io::borg_inkey(st, true);
     }
 
+    // --- Think 3 (#1178 review): the fresh emergency intent stays
+    // eligible. A recovering Borg (HP below the maximum) stands on the
+    // down staircase a monster threatens (the fabricated fear map at the
+    // Borg's square): the selection machinery — leave_stairs_on_monster,
+    // driver-pinned on — sets the flag during this call, and the switch
+    // must not veto that fresh escape the way it vetoes the stale flag.
+    // Gated arm only: at the shipped 0 this is C's play either way. ---
+    if gated {
+        setup(st);
+        pack_kit(st);
+        // No cure to quaff: the recovery would otherwise drink it before
+        // the leave rule acts.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && u32::from(slot.tval) == TV_POTION as u32 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        st.borg.trait_[BI_CURHP as usize] =
+            st.borg.tr(crate::borg_headers::borg_trait_h::BI_MAXHP) - 10;
+        // The threat: above the leave rule's threshold (a tenth of the
+        // current HP, so 1 here) but below the excessive-danger flee
+        // (twice the current HP, so 20) — the selection machinery's own
+        // escape must choose the stair, not the level flee.
+        st.danger.fear_monsters[down.y as usize][down.x as usize] = 15;
+        st.borg.time.now += 1;
+        crate::borg_flow::borg_flow_clear(st);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_caution::borg_caution(st),
+            "the emergency descent acts"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the fresh emergency intent takes the stair: {:?}",
+            st.io.queued_keys()
+        );
+        assert!(
+            st.borg.stair_more,
+            "the selection machinery flagged the descent"
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+    }
+
     println!("stale-stair-more passed (#1178)");
     // This test-only process owns a fabricated Borg observation. End before
     // its queued keys can be applied to the live engine's unrelated cave.

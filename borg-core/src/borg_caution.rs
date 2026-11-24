@@ -4653,6 +4653,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
     // is skipped then, so nothing cancels a departure the rule has noted
     // (review of #616, N1).
+    // borg-reborn-rs (#1178, review): a descent the selection machinery
+    // itself just chose — leave_stairs_on_monster (a recovering Borg on a
+    // staircase a monster threatens) or choose_stairs — is fresh intent,
+    // not the stale flag the gate below exists for; it stays eligible.
+    let fresh_descent_before = st.borg.stair_more;
     let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
         && leave_stairs_on_monster(st, pos_danger);
     if !by_stairs_rule
@@ -4667,6 +4672,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     {
         choose_stairs(st, pos_danger);
     }
+    // Fresh intent from either selector (leave_stairs_on_monster above, or
+    // choose_stairs here): the flag turned set during this call.
+    let fresh_emergency = !fresh_descent_before && st.borg.stair_more;
 
     // Take stairs up
     if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) && !recall_holds_up_stair(st, pos_danger) {
@@ -4699,8 +4707,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
             // standing on a down staircase then takes it here on a stale
             // flag, past the descent gates the dive itself would have
             // applied. caution_standing_descent_gated applies those gates
-            // (more_refused) to this take; 0 keeps C.
+            // (more_refused) to this take; a fresh selection of this very
+            // call (leave_stairs_on_monster, choose_stairs — the recovering
+            // Borg's escape) stays eligible. 0 keeps C.
             let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+                && !fresh_emergency
                 && more_refused(st, false);
             if !gated_refuses {
                 if borg_prep_leave_level_spells(st) {

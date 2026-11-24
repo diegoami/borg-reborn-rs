@@ -1,7 +1,9 @@
 ## 2026-11-24: Caution's standing descent and the stale stair flag (#1178)
 
 Track P (P9), branch `task/T1178-stale-stair-more`, target `track-p`.
-Based on `track-p` at `3c46575d`.
+Based on `track-p` at `3c46575d`; now carries the #1177 branch merged in
+(review fix `cab65e94` — the two PRs' fixture dispatcher, driver and CI
+wiring overlapped, as the review noted).
 
 ### What was done
 
@@ -39,6 +41,18 @@ Based on `track-p` at `3c46575d`.
   (spastic searches, bravery boosts, the twitchy recall read) would only
   bury it. At the shipped 0 the stale flag takes the descent (`>`); at 1
   the gates refuse it.
+- Review round (Codex review of `802323c2`): one P2 — the gate vetoed
+  also the selection machinery's own **fresh** escape (a recovering Borg
+  on a staircase a monster threatens: `leave_stairs_on_monster` sets the
+  flag during the same call, and the prepared gate refused a next depth
+  the rule does not care about). The gate now exempts fresh intent
+  (`fresh_emergency`: the flag turned set during this call's selection),
+  and the fixture gains think 3: a recovering, threatened Borg on the
+  staircase takes it under the switch (`>`), while the stale ordinary
+  dive is still refused. The threat is a fabricated fear-map entry
+  between the leave rule's threshold (a tenth of the HP) and the
+  excessive-danger flee (twice the HP), and the pack carries no cure (the
+  recovery would otherwise drink it first).
 - Fixture lessons folded into the recipe's base (#1173 pattern): think 1
   needs a **full** larder — the restock gate of `prepared()` fails on
   `BI_FOOD < 3` for every depth, so a food-less character can neither dive
@@ -50,9 +64,13 @@ Based on `track-p` at `3c46575d`.
 
 - Teeth: with the gate disabled, arm 1 fails — `more_refused` refuses
   (food 0) but the take proceeds and `>` is queued. Restored: both cases
-  pass.
+  pass. The fresh phase's teeth: without the fresh-intent exemption the
+  emergency escape is vetoed (no `>`); with it, it queues `>`.
 - `EmergencyStairHandoffTest` 5/5, `LeaveLevelUpstairsTest` OK,
-  `StaleStairMoreTest` 2/2.
+  `StaleStairMoreTest` 2/2, `MoreRefusedGatesTest` 2/2 (the #1177
+  fixture, merged in — the combined-switch validation the review asked
+  for: the known-up staircase case (#1178) and the no-known-up case
+  (#1177) both hold with both switches present).
 - CI's commands green: `cargo fmt --check -p borg-reborn-rs`,
   `cargo clippy --workspace --all-targets -- -D warnings`,
   `cargo test --workspace --exclude borg-core`,
