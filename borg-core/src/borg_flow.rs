@@ -162,10 +162,13 @@ pub struct FlowState {
     pub track_door: StairTrack,
     /// `track_closed`: doors that started closed
     pub track_closed: StairTrack,
-    /// borg-reborn-rs (#1206): doors the Borg opened recently, as
+    /// borg-reborn-rs (#1206): doors the Borg's escape opened recently, as
     /// `(x, y, turn)` — the breeder containment must not close them again
-    /// while the flight that opened them is still walking through (at most
-    /// `OPENED_DOOR_UNDO_TURNS` turns old, at most 8 kept).
+    /// while that escape is still walking through. Entries exist only
+    /// while their escape stays armed: an ordinary open records nothing,
+    /// and the record is dropped as soon as the containment runs with no
+    /// escape armed (at most `OPENED_DOOR_UNDO_TURNS` turns old, at most
+    /// 8 kept, cleared on a new level).
     pub opened_doors: Vec<(i32, i32, i32)>,
 }
 
@@ -1250,6 +1253,15 @@ fn note_at(st: &mut BorgState, prefix: &str, name: &[u8], y: i32, x: i32) {
 /// Breeder levels: close an open door next to the Borg (not the goal
 /// grid). `true` if a door was found (and a close queued).
 fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
+    // borg-reborn-rs (#1206, review 2): the remembered openings belong to
+    // the escape that opened them. With no escape armed, every entry is
+    // stale — kept, a new flight arming within the window would inherit
+    // a dead flight's exemption over a door ordinary play reopened — so
+    // drop the record. This is the record's only reader, and it runs on
+    // every step of a breeder level.
+    if !(st.borg.goal.fleeing || st.borg.goal.leaving) && !st.flow.opened_doors.is_empty() {
+        st.flow.opened_doors.clear();
+    }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     let mut o_y = 0;
     let mut o_x = 0;
