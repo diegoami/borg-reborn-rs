@@ -1232,6 +1232,8 @@ borg_param_escape_phase_lost_mana = 1
 
 borg_param_lone_slow_attack = 1
 borg_param_escape_phase_lost_damage_only = 1
+# #1083: experimental, count the running poison in the adjacent Phase verdict.
+borg_param_escape_phase_lost_poison_pending = 0
 borg_param_attack_reserve_spell_damage_only = 1
 borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
