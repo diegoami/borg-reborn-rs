@@ -25,6 +25,8 @@ class UnknownConsumablesTest(unittest.TestCase):
             # with the Light Purple Potion at full HP and zero danger.
             env.update(
                 BORG_CORE="borg-rs",
+                # Match the route to the confusion encounter used by this replay.
+                BORG_PARAM_CAUTION_RISING_SKIP_HELD_STAIRS="0",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_POTIONS="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP_PERCENT="1",
@@ -39,7 +41,7 @@ class UnknownConsumablesTest(unittest.TestCase):
         self.assertNotIn("# Testing unknown potion", messages)
         self.assertNotIn("# Quaffing Light Purple Potion", messages)
         self.assertNotIn("# Quaffing Orange Speckled Potion", messages)
-        self.assertNotIn('# Reading Scrolls titled "co pro eleas"', messages)
+        self.assertNotRegex(messages, r'# Reading Scrolls? titled "co pro eleas"')
         events = [
             "You have a Light Purple Potion",
             "You have 4 Orange Speckled Potions",
