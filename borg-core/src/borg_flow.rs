@@ -294,6 +294,10 @@ pub(crate) fn with_retreat_avoidance<R>(st: &mut BorgState, why: i32, plan: impl
 }
 
 impl FlowState {
+    pub(crate) fn at_destination(&self, grid: loc) -> bool {
+        self.data_flow[grid.y as usize][grid.x as usize] == 0
+    }
+
     fn observe_retreats(&mut self, here: loc, depth: i32, level_started: i32, now: i32, window: i32) {
         self.retreats.retain_mut(|retreat| {
             if !retreat.still_applies(here, depth, level_started, now, window) {

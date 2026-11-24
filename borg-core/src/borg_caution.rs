@@ -7048,6 +7048,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         let arrival = (st.borg.time.level, st.borg.flight_time);
         if st.borg.stair_more && !recall_restricts(st)
             && st.borg.flight_to_stairs && st.borg.flight_steps == 1
+            && st.flow.at_destination(st.borg.c)
             && st.borg.flight_depth == engine::player_depth()
             && borg_timer(st, st.borg.flight_time) == 1
             && u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE
