@@ -487,8 +487,8 @@ fn spread_to_temp(st: &mut BorgState, nearness: i32, optimize: bool, viewable: b
 ///
 /// Note that objects under the player are always deleted
 pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    let mut phase_pruned: Vec<(i32, i32)> = Vec::new();
-    if !take_select(st, viewable, nearness, &mut phase_pruned) {
+    let mut deferred: Vec<(i32, i32)> = Vec::new();
+    if !take_select(st, viewable, nearness, &mut deferred) {
         return false;
     }
     if take_flow(st, viewable, nearness) {
@@ -498,19 +498,19 @@ pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // fail where the full list would not — a Phase Door past the flow's
     // depth (`borg_flow_spread`'s limit) or behind danger suppresses the
     // reachable loot. Restore what the rule dropped and flow once more.
-    if phase_pruned.is_empty() {
+    if deferred.is_empty() {
         return false;
     }
-    for &(y, x) in &phase_pruned {
+    for &(y, x) in &deferred {
         st.flow.temp_push(y, x);
     }
     take_flow(st, viewable, nearness)
 }
 
 /// The object selection of `borg_flow_take`: fills `borg_temp_*`; false when
-/// there is nothing to take. `phase_pruned` gets the candidates the
-/// Phase-first rule dropped, for the retry in `borg_flow_take`.
-fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: &mut Vec<(i32, i32)>) -> bool {
+/// there is nothing to take. `deferred` gets ordinary loot for the retry
+/// if the currently needed supplies turn out to be out of reach.
+fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut Vec<(i32, i32)>) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, true);
     // borg-reborn-rs (#840): a short kit puts both leash checks on at any level.
     let kit_leash = crate::borg_kit::leash_active(st);
@@ -564,7 +564,8 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
     // PhaseDoor spell carefully"), which are not scrolls and hide a short
     // stock.
     let phase_short = short_of_phase(phase_short_below, carried_phase_scrolls(st));
-    let mut phase_pushed: Vec<bool> = Vec::new();
+    let ranged = crate::borg_ranged::pickup_need(st);
+    let mut priorities = Vec::new();
 
     /* Scan the object list */
     let mut i: i32 = 1;
@@ -655,21 +656,24 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, phase_pruned: 
 
         /* Careful -- Remember it */
         st.flow.temp_push(y, x);
-        phase_pushed.push(is_phase);
+        let priority = if phase_first && is_phase { 2 }
+            else if ranged.is_some_and(|need| need.floor_item(st, take.kidx)) { 1 }
+            else { 0 };
+        priorities.push(priority);
     }
 
-    /* borg-reborn-rs (#761): short of Phase Doors, only they, when one is in reach */
-    if phase_first && phase_pushed.iter().any(|&p| p) && phase_pushed.iter().any(|&p| !p) {
-        let n = st.flow.temp_n as usize;
-        let kept: Vec<(i32, i32)> = (0..n).filter(|&k| phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
-        // borg-reborn-rs (#761, review of #778): remembered for the retry in
-        // `borg_flow_take`, when the Phase-only flow finds nothing in reach.
-        let dropped: Vec<(i32, i32)> = (0..n).filter(|&k| !phase_pushed[k]).map(|k| st.flow.temp_at(k)).collect();
-        st.flow.temp_n = 0;
-        for (y, x) in kept {
-            st.flow.temp_push(y, x);
+    if let Some(best) = priorities.iter().copied().max() {
+        if best > 0 && priorities.iter().any(|&p| p < best) {
+            let mut kept = Vec::new();
+            for (index, priority) in priorities.into_iter().enumerate() {
+                let grid = st.flow.temp_at(index);
+                if priority == best { kept.push(grid); } else { deferred.push(grid); }
+            }
+            st.flow.temp_n = 0;
+            for (y, x) in kept {
+                st.flow.temp_push(y, x);
+            }
         }
-        *phase_pruned = dropped;
     }
 
     /* Nothing to take */

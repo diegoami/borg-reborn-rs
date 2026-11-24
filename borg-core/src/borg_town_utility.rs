@@ -244,6 +244,14 @@ pub fn urgent_needs(st: &BorgState, trip: &crate::borg_town_usefulness::Trip) ->
     let mut out: Vec<Need> = crate::borg_town_usefulness::urgent_needs(st, trip).into_iter()
         .filter(|n| !advanced_cure || !matches!(n, Need::Healing | Need::Poison)).collect();
     if recall_urgent(st) { out.push(Need::Trip); }
+    if crate::borg_town_capability::ranged_shopping() {
+        if st.borg.tr(BI_APHASE) < 1 { out.push(Need::Escape); }
+        if !advanced_cure && [BI_ACLW, BI_ACSW, BI_ACCW].iter().all(|&id| st.borg.tr(id) < 1)
+            && !out.contains(&Need::Healing)
+        {
+            out.push(Need::Healing);
+        }
+    }
     out
 }
 

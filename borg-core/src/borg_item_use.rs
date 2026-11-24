@@ -101,6 +101,22 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
+/// Failure gates used by known attack devices, without rolling or using a charge.
+pub(crate) fn ranged_device_reliable(st: &BorgState, item: &borg_item) -> bool {
+    let limit = match u32::from(item.tval) {
+        TV_WAND => param(Param::attack_unknown_wand_max_failure),
+        TV_ROD => param(Param::attack_rod_max_failure)
+            .min(param(Param::item_use_rod_equip_max_failure))
+            .min(param(Param::item_use_rod_use_max_failure)),
+        TV_STAFF => param(Param::item_use_staff_equip_max_failure),
+        _ => return false,
+    };
+    let skill = device_skill(st);
+    let level = i32::from(item.level);
+    // Outside the usable domain of the inherited device approximation.
+    level - skill < 90 && device_fail(skill, level) <= limit
+}
+
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us

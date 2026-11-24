@@ -4692,6 +4692,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
+            if pos_danger <= 0 && crate::borg_ranged::return_to_town(st) {
+                return true;
+            }
             if borg_prep_leave_level_spells(st) {
                 return true;
             }

@@ -396,6 +396,9 @@ pub fn needs_served(st: &BorgState, item: &borg_item) -> Vec<Need> {
     if tval == TV_SCROLL && sval == v.sv_scroll_satisfy_hunger {
         out.push(Need::Food);
     }
+    if crate::borg_town_capability::ranged_shopping() && tval == TV_SCROLL && sval == v.sv_scroll_phase_door {
+        out.push(Need::Escape);
+    }
     if tval == TV_LIGHT && (item.timeout > 0 || crate::engine::flag_has(&item.flags,
         crate::headers::list_object_flags_h::OF_NO_FUEL as i32)) {
         out.push(Need::Light);

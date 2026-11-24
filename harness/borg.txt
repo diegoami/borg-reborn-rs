@@ -1110,6 +1110,13 @@ borg_param_town_first_cure_percent = 200
 # #789: reserve of oil available to throw and missiles for the equipped
 # launcher, counted together. Use __<class> for a class override.
 borg_param_town_ranged_reserve = 0
+# #1184 pilot. Buy a usable ranged reserve for the next trip and recover it
+# in the dungeon. Stage shopping and recovery independently in the Zoo.
+borg_param_town_ranged_readiness = 0
+borg_param_trip_ranged_readiness = 0
+borg_param_ranged_readiness_target = 6
+borg_param_ranged_readiness_damage_depth = 2
+borg_param_ranged_readiness_trace = 0
 
 # Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
 # town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
