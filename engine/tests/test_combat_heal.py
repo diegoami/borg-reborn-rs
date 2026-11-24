@@ -39,6 +39,9 @@ class CombatHealTest(unittest.TestCase):
                 BORG_PARAM_CAUTION_COMBAT_HEAL=str(int(enabled)),
                 BORG_PARAM_ATTACK_UNKNOWN_DEVICE_PARANOIA_CHANCE="0",
             )
+            if case == "tengu-early":
+                # Reproduce the early-healing arm at 175/225 HP.
+                env["BORG_PARAM_CAUTION_COMBAT_HEAL_MIN_LOSS"] = "20"
             run = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
                  "--", "-seed", "101", "-race", str(race), "-class", str(player_class),
