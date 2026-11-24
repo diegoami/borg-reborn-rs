@@ -491,7 +491,11 @@ struct Context<'a> {
     restore_life_reserve: i64,
     restore_stat: bool,
     ranged_reserve: i64,
+    readiness: Option<crate::borg_ranged::Need>,
+    launcher_reserve: i64,
 }
+
+pub(crate) fn ranged_shopping() -> bool { param(Param::town_ranged_readiness) != 0 }
 
 fn timed_cap(timed: u32) -> Option<usize> {
     match timed {
@@ -811,7 +815,27 @@ pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
 /// seen) scaled by `town_unseen_percent`. Phase Door has its own
 /// coefficients (`town_phase_*`) and is not scaled. 100 = today.
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
-    let out = supplies_of_kind(item, ctx, origin);
+    let mut out = supplies_of_kind(item, ctx, origin);
+    if let Some(readiness) = ctx.readiness {
+        let end = if origin.0 == PACK { origin.1 } else { crate::borg_item::inven_wield() as usize };
+        let oil = if crate::borg_ranged::Need::is_oil(ctx.st, item) {
+            crate::borg_ranged::Need::preceding_oil(ctx.st, end)
+        } else { 0 };
+        let offer = origin.0 < PACK;
+        let quivered_without_launcher = origin.0 > HOME
+            && matches!(u32::from(item.tval), TV_ARROW | TV_BOLT | TV_SHOT)
+            && !readiness.missile(ctx.st, item);
+        let uses = if quivered_without_launcher { 0 } else { readiness.item(ctx.st, item, oil, offer) };
+        if uses > 0 {
+            let stack = if offer { 1 } else { i64::from(item.iqty) };
+            out.push((RANGED_RESERVE, i64::from(uses) * UNIT / stack));
+            if ctx.launcher_reserve > 0 && matches!(u32::from(item.tval), TV_ARROW | TV_BOLT | TV_SHOT)
+                && readiness.missile(ctx.st, item)
+            {
+                out.push((RANGER_MISSILES, UNIT));
+            }
+        }
+    }
     let percent = param(Param::town_unseen_percent);
     if percent == 100 || item.flavour_aware || origin.0 >= 7 { return out; }
     unseen_scaled(out, percent)
@@ -878,7 +902,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         let damage = damage * i64::from(param(Param::town_oil_curve_scale_percent)) / 100;
         let fuel_bottles = (needed - prior).clamp(0, quantity);
         let mut supply = oil_supply(quantity, fuel_bottles, damage, fuel);
-        if ctx.ranged_reserve > 0 && i32::from(item.sval) == st.item_val.sv_flask_oil
+        if ctx.readiness.is_none() && ctx.ranged_reserve > 0 && i32::from(item.sval) == st.item_val.sv_flask_oil
             && !item.cursed && fuel_bottles < quantity
         {
             supply.push((RANGED_RESERVE, (quantity - fuel_bottles) * UNIT / quantity));
@@ -887,11 +911,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
         if st.borg.tr(BI_AMMO_TVAL) != i32::from(item.tval) || item.cursed { return Vec::new(); }
-        let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2
-            + (i64::from(item.to_d) + i64::from(st.borg.tr(BI_BTODAM))) * UNIT).max(UNIT)
+        let damage = (crate::borg_ranged::missile_damage_twice(item, st.borg.tr(BI_BTODAM)) * UNIT / 2).max(UNIT)
             * i64::from(st.borg.tr(BI_AMMO_POWER)).max(1);
         let mut supply = missile_supply(st.borg.tr(BI_CLASS), damage);
-        if ctx.ranged_reserve > 0 { supply.push((RANGED_RESERVE, UNIT)); }
+        if ctx.readiness.is_none() && ctx.ranged_reserve > 0 { supply.push((RANGED_RESERVE, UNIT)); }
         return supply;
     }
     if tval == TV_LIGHT {
@@ -1072,6 +1095,11 @@ fn initial_curves(
     curves
 }
 
+fn ranged_reserves(configured: i64, readiness: i64, launcher_needs_reserve: bool) -> (i64, i64) {
+    let launcher = if launcher_needs_reserve { (readiness + 1) / 2 } else { 0 };
+    (configured.max(readiness), launcher)
+}
+
 /// Physical supply curves use the same forecast, gold opportunity cost and
 /// capacity constraints as the core town model. No consumable calls borg_power.
 pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey, gold_after_urgent: i64) -> Model {
@@ -1085,13 +1113,24 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let lantern = light.iqty > 0 && u32::from(light.tval) == TV_LIGHT && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
-    let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
+    let readiness = ranged_shopping()
+        .then(|| crate::borg_ranged::Need::for_depth(st, journey.depth, journey));
+    let base_ranged_reserve = i64::from(param(Param::town_ranged_reserve));
+    let readiness_target = readiness.map_or(0, |need| {
+        i64::from(need.backup_target(need.coverage(st, None).recoverable()))
+    });
+    let missile_percent = missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent));
+    // In classes without a missile reserve, finish equipping a working
+    // launcher with a small stack. The rest of the ranged budget can go
+    // to any useful damage source.
+    let (ranged_reserve, launcher_reserve) = ranged_reserves(base_ranged_reserve, readiness_target,
+        missile_percent == 0 && t(BI_AMMO_POWER) > 0);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
     // borg-reborn-rs (#1110): more light while breadth-first exploration applies.
     let light_goal = crate::borg_light::fuel_goal(st, journey);
     let restore_life_reserve = i64::from(restore_life_reserve(st));
     let restore_stat = restore_stat_on(st);
-    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve, restore_stat };
+    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve, restore_stat, readiness, launcher_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
@@ -1328,7 +1367,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // and spells supply damage but cannot replenish usable missile shots.
     // borg-reborn-rs (#666): every class by its own percent (shooting skill),
     // less when it carries flasks or attack-wand charges.
-    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
+    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missile_percent as i32);
     let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
     // borg-reborn-rs (#716, owner: "they do not need that many arrows"): with
     // `town_ranger_arrows_max` the reserve is a requirement, as Recall's: each
@@ -1344,7 +1383,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
     let arrows_scale = i64::from(param(Param::town_ranger_arrows_curve_scale_percent));
     let c_demand = (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT);
-    if arrows_max > 0 {
+    if launcher_reserve > 0 {
+        curve(RANGER_MISSILES, risk(BORG_TOWN_W_RANGER_MISSILES) * launcher_reserve,
+            -(launcher_reserve * UNIT));
+    } else if arrows_max > 0 {
         curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
     } else {
         curve(RANGER_MISSILES, missiles_weight, c_demand);
@@ -1496,7 +1538,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), restore_stat: restore_stat_on(st), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), restore_stat: restore_stat_on(st), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)), readiness: None, launcher_reserve: 0,
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1624,6 +1666,13 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn readiness_keeps_the_configured_reserve_floor_and_helps_empty_launchers() {
+        assert_eq!(super::ranged_reserves(8, 0, true), (8, 0));
+        assert_eq!(super::ranged_reserves(8, 6, true), (8, 3));
+        assert_eq!(super::ranged_reserves(0, 6, false), (6, 0));
+        assert_eq!(super::ranged_reserves(0, 3, true), (3, 2));
+    }
     use super::*;
     fn model() -> Model {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
@@ -2824,6 +2873,17 @@ fn device_attack(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confu
     use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
     let kept: Vec<(u16, i32, i64)> = effects.iter().filter(|&&(_, subtype, _)| subtype as u32 != PROJ_LIGHT_WEAK).copied().collect();
     effect_supply_for_consumer(&kept, hp, service_turns, confusion).iter().any(|&(id, units)| id == ATTACK && units > 0)
+}
+
+/// Damage that can cover general threats, leaving niche light or dispels
+/// to the existing attack scorer's monster-specific evaluation.
+pub(crate) fn ranged_effect_damage(effects: &[(u16, i32, i64)], hp: i64) -> i64 {
+    use crate::headers::list_projections_h::{PROJ_DISP_EVIL, PROJ_DISP_UNDEAD, PROJ_LIGHT_WEAK};
+    let general: Vec<_> = effects.iter().copied().filter(|&(_, projection, _)| {
+        !matches!(projection as u32, PROJ_LIGHT_WEAK | PROJ_DISP_EVIL | PROJ_DISP_UNDEAD)
+    }).collect();
+    effect_supply_for_consumer(&general, hp, 1, false).into_iter()
+        .find_map(|(id, damage)| (id == ATTACK).then_some(damage / UNIT)).unwrap_or(0)
 }
 
 /// borg-reborn-rs (#895): a ware's supplies without what an escape staff gives:

@@ -233,6 +233,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);
+    crate::borg_ranged::observe(st);
 
     /* Evaluate the current world */
     st.borg.power = crate::borg_power::borg_power(st);
