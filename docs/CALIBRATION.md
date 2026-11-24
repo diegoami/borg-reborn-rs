@@ -7728,7 +7728,7 @@ engine's light, every step checked, the unplaced door sound).
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
 | `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:542` |
 | `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:544` |
-| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:905` |
+| `stair_scum_alarm_turns` | 100 | game turns | 0–10000 | `borg_stair_scum.rs:931` |
 
 **When.** In the dungeon, max HP below `stair_scum_max_hp` (the class's value)
 plus `stair_scum_max_hp_race_delta` (the race's: the race suffix `__<race>`
