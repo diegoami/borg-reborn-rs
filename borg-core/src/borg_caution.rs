@@ -4003,15 +4003,17 @@ fn winning_fight(st: &mut BorgState) -> bool {
     if margin_rejected {
         borg_note(st, &format!("# Fight race: expected HP left {:.3} is below or at the {margin}% reserve (#992)", f64::from(hp) - turns * incoming));
     }
-    let won = won && !margin_rejected;
+    // The separate reserve note reports the trial veto. Keep the original
+    // race verdict in diagnostic mode so both results remain visible.
+    let reported_win = won && (mode == 2 || !margin_rejected);
     let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
         String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.hp_per_turn_milli) / 1000.0)).collect();
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
-        plans.len(), if won { "winning" } else { "not winning" }));
+        plans.len(), if reported_win { "winning" } else { "not winning" }));
     borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
     // Mode 2 is a diagnostic: retain the unchanged control's actions so
     // estimates can be checked on its original losing AND winning fights.
-    if !won || mode == 2 { return false; }
+    if mode == 2 || !won || margin_rejected { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
