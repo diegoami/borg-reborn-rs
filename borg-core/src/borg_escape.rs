@@ -2912,7 +2912,10 @@ mod unknown_landing_tests {
         let src = include_str!("borg_escape.rs");
         // #1125: the fight's test sits in `phase_lost`, asked only with an
         // awake enemy adjacent (and no paralyser, which loses it anyway).
-        assert!(src.contains(concat!("phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_", "wait(st, hp))")));
+        assert!(src.contains(concat!("phase_lost(adjacent, ", "paralyser.is_some(), || {")));
+        assert!(src.contains(concat!("fight_lost(st, here, fight_hp) && !newcomer_", "wait(st, fight_hp)")));
+        assert!(super::unknown_counts_scary(45, 60, 50));
+        assert!(!super::unknown_counts_scary(45 - 40, 60, 50));
         assert!(src.contains(concat!("adjacent && (paralyser || ", "fight())")));
         let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
         let wait = &at[..at.find("\n}\n").unwrap()];
