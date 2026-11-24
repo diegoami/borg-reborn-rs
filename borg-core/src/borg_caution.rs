@@ -1103,6 +1103,8 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_scary_level)
     {
         let mut safe = true;
+        let current_speed = p(Param::caution_desperate_fast_haste) != 0;
+        let player_speed = if current_speed { engine::player_combat_speed() } else { st.borg.tr(BI_SPEED) };
 
         // do not attempt it if an adjacent monster is faster than me
         for i in 0..8 {
@@ -1124,7 +1126,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
             // only a faster monster that is also dangerous (a fruit bat
             // next to the Borg is not a reason to stay).
-            if desperate_neighbour_faster(&st.kills.kills[usize::from(kill)], st.borg.tr(BI_SPEED), p(Param::caution_desperate_fast_haste) != 0)
+            if desperate_neighbour_faster(&st.kills.kills[usize::from(kill)], player_speed, current_speed)
                 && fast_neighbour_counts(st, usize::from(kill))
             {
                 safe = false;
@@ -3736,6 +3738,11 @@ pub(crate) struct IncomingDamage {
 /// persists during a future fight or the Recall delay.
 pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
+}
+
+/// Current speed for an immediate movement decision (mon-move.c:1928-1935).
+fn current_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    forecast_monster_speed(kill) - 2 * i32::from(kill.observed_slow_level)
 }
 
 // Recall is already pending during exposure: these non-damaging spells do
@@ -6957,9 +6964,9 @@ pub(crate) fn stairs_clean_path_mode() -> i32 {
     p(Param::caution_stairs_clean_path)
 }
 
-/// #907: visible monster haste contributes ten speed points in the engine.
-fn desperate_neighbour_faster(kill: &crate::borg_flow_kill::BorgKill, player_speed: i32, observed_haste: bool) -> bool {
-    let speed = if observed_haste { forecast_monster_speed(kill) } else { i32::from(kill.speed) };
+/// #907: compare current monster speed when the opt-in veto is active.
+fn desperate_neighbour_faster(kill: &crate::borg_flow_kill::BorgKill, player_speed: i32, current_speed: bool) -> bool {
+    let speed = if current_speed { current_monster_speed(kill) } else { i32::from(kill.speed) };
     speed > player_speed
 }
 
@@ -6972,6 +6979,10 @@ fn hasted_soldier_can_veto_the_desperate_stair_walk() {
     assert!(!desperate_neighbour_faster(&soldier, 110, false));
     assert!(desperate_neighbour_faster(&soldier, 110, true));
     assert!(!desperate_neighbour_faster(&soldier, 119, true));
+    soldier.observed_slow_level = 5;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
+    assert!(desperate_neighbour_faster(&soldier, 100, true));
+    soldier.observed_slow_level = 0;
     assert!(danger_share_reaches(41, 23, 50));
     assert!(!danger_share_reaches(11, 23, 50));
     soldier.observed_fast = false;

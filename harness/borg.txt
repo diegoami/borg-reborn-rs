@@ -1359,7 +1359,7 @@ borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
-# #907: add observed monster haste to the faster-neighbour veto. 0 uses base speed.
+# #907: compare current player and observed monster speeds in the faster-neighbour veto.
 borg_param_caution_desperate_fast_haste = 0
 # #1123: avoid a recently retreated-from grid on a stair route while it
 # is still dangerous. The hold lasts at most 128 Borg thinks.
