@@ -1380,6 +1380,13 @@ borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
 
+# #1178 (C's own bookkeeping: stair_more outlives its failed flows until a
+# new level; upstream shape at borg-update.c:2172): 1 = caution's standing
+# "Take stairs down" applies more_refused's descent gates, so a stale flag
+# completes a descent only when the gates agree. Shipped 0 per the P9 rule:
+# C's play until the zoo measures the switch.
+borg_param_caution_standing_descent_gated = 0
+
 # #1177 (C's defect, borg-flow-stairs.c:193; upstream better-borg-c #540,
 # neo-angband-tracker #629): 1 = more_refused's descent gates (prepared,
 # hunger, sale hold, light) apply even when no up staircase has been seen.
