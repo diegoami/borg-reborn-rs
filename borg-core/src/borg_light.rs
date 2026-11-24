@@ -377,18 +377,21 @@ fn cast_room_lighting(
     } else {
         0
     };
-    // class.txt, Light Room and Call Light: LIGHT_AREA floods the room
-    // (cave-map.c:light_room), and SPHERE:LIGHT_WEAK lights grids up to 2
-    // and 1 away respectively (project-feat.c:project_feature_handler_LIGHT_WEAK).
-    if !(minimum_radius <= 2 && cast(st, LIGHT_ROOM, 40))
-        && !(minimum_radius <= 1 && cast(st, CALL_LIGHT, 40))
-    {
+    if !room_lighting_spells(minimum_radius).any(|spell| cast(st, spell, 40)) {
         return false;
     }
     if uses_corner_test {
         st.light.room_lighting.pending = Some((here, false));
     }
     true
+}
+
+fn room_lighting_spells(minimum_radius: i32) -> impl Iterator<Item = borg_spells> {
+    // class.txt, Light Room and Call Light: LIGHT_AREA floods the room
+    // (cave-map.c:light_room), and SPHERE:LIGHT_WEAK lights grids up to 2
+    // and 1 away respectively (project-feat.c:project_feature_handler_LIGHT_WEAK).
+    [(LIGHT_ROOM, 2), (CALL_LIGHT, 1)].into_iter()
+        .filter_map(move |(spell, radius)| (radius >= minimum_radius).then_some(spell))
 }
 
 /// Resolve the attempt after the map and view have observed the spell's effect.
@@ -1208,9 +1211,8 @@ fn try_hallway_beam(
 
 #[cfg(test)]
 mod room_lighting_tests {
-    use super::{cast_room_lighting, observe_room_lighting, GridPosition, RoomLighting};
+    use super::{cast_room_lighting, observe_room_lighting, room_lighting_spells, GridPosition, RoomLighting};
     use crate::borg_headers::borg_magic_h::{CALL_LIGHT, LIGHT_ROOM};
-    use crate::headers::list_terrain_h::FEAT_FLOOR;
     use crate::state::BorgState;
     use std::collections::BTreeSet;
 
@@ -1245,27 +1247,16 @@ mod room_lighting_tests {
     #[test]
     fn first_cast_from_glow_only_tries_spells_that_can_reach_observed_dark_floor() {
         let (y, x) = CAST_FROM;
-        let mut st = BorgState::default();
-        (st.borg.c.y, st.borg.c.x) = CAST_FROM;
-        st.view.view_n = 1;
+        let lighting = RoomLighting::default();
 
         for (dy, dx, expected_spells) in [
             (1, 1, &[LIGHT_ROOM, CALL_LIGHT][..]),
             (1, 2, &[LIGHT_ROOM][..]),
             (2, 2, &[][..]),
         ] {
-            let floor = (y + dy, x + dx);
-            st.view.view_y[0] = floor.0 as u8;
-            st.view.view_x[0] = floor.1 as u8;
-            st.cave.grid_mut(floor.1, floor.0).feat = FEAT_FLOOR as u8;
-            let mut attempted = Vec::new();
-            let mut cast = |_: &mut BorgState, spell, _| {
-                attempted.push(spell);
-                false
-            };
-
-            assert!(!cast_room_lighting(&mut st, true, true, &mut cast, |y, x| (y, x) == floor));
-            assert_eq!(attempted, expected_spells);
+            let radius = lighting.minimum_radius(CAST_FROM, || true, || [(y + dy, x + dx)].into_iter());
+            let candidates: Vec<_> = radius.into_iter().flat_map(room_lighting_spells).collect();
+            assert_eq!(candidates, expected_spells);
         }
     }
 
