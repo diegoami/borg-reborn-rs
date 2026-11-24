@@ -8601,6 +8601,20 @@ borg-cemetery#132:
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:874` |
 | `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:867` |
 
+## Plain quiver surplus at town departure (#1168)
+
+At zero, the compiled and shipped default, quiver trimming is off.
+When enabled, the live planner can discard whole stacks while over its
+carry allowance to keep at least this many eligible plain shots for the
+worn launcher. It excludes unidentified, annotated, cursed, enchanted,
+ego and artifact stacks. A planned sale or Home deposit can give way to
+the discard. The named case used 40, one native full quiver slot. The
+reserve and the action order need measurement before activation.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:324` |
+
 ## The descent gates without a seen up staircase (#1177)
 
 From the #1173 investigation. `more_refused`'s four descent refusals — not
