@@ -8169,10 +8169,11 @@ interesting grids the Borg can reach, and the grids past the return leash.
      ⌊max HP / *c*⌋ is the turns of contact the Borg survives on the rest of
      the way.
 
-   The start is the floor before applying the radius cap and C's leash
-   (`borg_get_leash`). With the original escape-model inputs, the uncapped
-   radius is 8 steps at 17 HP, 10 at 26 HP and 17 at 60 HP. A zero radius
-   cap (#1208) limits mixed exploration targets to staircase squares.
+   The limit is never below the start, never above `explore_mix_max_radius`,
+   and never above C's leash (`borg_get_leash`) where that applies, so the
+   walk never goes farther than today's. The shipped numbers give 8 steps at
+   17 HP, 10 at 26 HP and 17 at 60 HP, against C's leash of 21 at CL4 and 27
+   at CL6.
 2. **Depth-first inside the radius** (`mixed_plan`). Every candidate within
    *R* is a goal of one spread, so the flow leads to the one nearest the Borg
    (C's choice). A path may not cross a ring beyond *R* or the Borg's own
@@ -8226,7 +8227,7 @@ the ten below).
 | `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1455` |
 | `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1457` |
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1459` |
-| `explore_mix_max_radius` | 30 | steps | 0–250 | `borg_flow_dark.rs:1461` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1461` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1320` |
 | `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1452` |
 | `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1466` |
