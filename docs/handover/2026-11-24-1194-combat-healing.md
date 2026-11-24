@@ -1,6 +1,6 @@
 # 2026-11-24: Combat healing before an exposed turn (#1194)
 
-Track P, based on `track-p` at `37b50104`.
+Track P, updated to `track-p` at `11214501` after the rereview.
 
 With `caution_combat_heal = 1`, the Borg picks the weakest carried wound cure
 that leaves it above the next monster damage estimate. It uses reachable
@@ -40,3 +40,13 @@ Verification passed for all eight enabled native decision cases and four
 disabled controls. Rust formatting, Clippy, workspace tests, core tests,
 parameter citations, and the vendor check passed. All four shipped
 borg-rs smoke runs matched the reference keys, messages, and state.
+
+
+The latest-base run repeated the fixtures and smoke comparison. A local
+paired check loaded the archived Tengu save at turn 278,453 with the saved
+game RNG and recording settings. Both arms initialized fresh Borg memory.
+At their first differing decision (278,736, 180/225 HP), the enabled arm
+drank Cure Light Wounds and the control attacked. At the common stop turn
+279,657 on DL5, the enabled arm had 202 HP and had used 23 light cures. The
+control had 41 HP and had used five. [Tengu case](https://github.com/diegoami/borg-cemetery/tree/23d1497a5fc2ccb8fad4a09ce9d18829524434fc/incidents/2026-11-24-watch-half-troll-warrior-tengu-279663)
+· [Rereview](https://github.com/diegoami/borg-reborn-rs/issues/1194#issuecomment-7139017399)

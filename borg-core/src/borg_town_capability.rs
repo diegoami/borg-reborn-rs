@@ -168,6 +168,8 @@ const PREP_NEUTRALIZE: usize = PREP_CCW + 1;
 /// on the stat rows: a mushroom that restores a drain cannot raise a healthy
 /// stat, and a second copy adds nothing.
 const RESTORE_STAT_RESERVE: usize = PREP_NEUTRALIZE + 1;
+/// #1162: up to two full confusion cures, with extra purchase value only for CSW.
+const CSW_RESERVE: usize = RESTORE_STAT_RESERVE + 1;
 /// Situation capabilities a device supplies -> its device row. Invisible
 /// detection is not here: a Staff of Detect Invisible already fills the prepared
 /// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
@@ -255,8 +257,8 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-const _: () = assert!(RESTORE_STAT_RESERVE + 1 == NAMES.len());
-pub const NAMES: [&str; 85] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+const _: () = assert!(CSW_RESERVE + 1 == NAMES.len());
+pub const NAMES: [&str; 86] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -266,7 +268,7 @@ pub const NAMES: [&str; 85] = ["light turns", "nutrition", "healing HP", "poison
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
     "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
     "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
-    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison", "restore stat reserve"];
+    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison", "restore stat reserve", "CSW reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -292,6 +294,11 @@ fn extra_gain(m: &Model, r: &[i64; 5], n: i64) -> i64 {
 
 fn coverage(row: &[i64; 5], amount: i64) -> i64 {
     if amount <= 0 || row[1] <= 0 { return 0; }
+    if row[0] == CSW_RESERVE as i64 {
+        let first = amount.min(UNIT);
+        let second = (amount - first).min(UNIT);
+        return row[1] * first / UNIT + (row[1] / 4) * second / UNIT;
+    }
     if row[2] < 0 {
         let target = -row[2];
         let reserved = row[1] * amount.min(target) / target;
@@ -491,7 +498,11 @@ struct Context<'a> {
     restore_life_reserve: i64,
     restore_stat: bool,
     ranged_reserve: i64,
+    readiness: Option<crate::borg_ranged::Need>,
+    launcher_reserve: i64,
 }
+
+pub(crate) fn ranged_shopping() -> bool { param(Param::town_ranged_readiness) != 0 }
 
 fn timed_cap(timed: u32) -> Option<usize> {
     match timed {
@@ -811,7 +822,27 @@ pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
 /// seen) scaled by `town_unseen_percent`. Phase Door has its own
 /// coefficients (`town_phase_*`) and is not scaled. 100 = today.
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
-    let out = supplies_of_kind(item, ctx, origin);
+    let mut out = supplies_of_kind(item, ctx, origin);
+    if let Some(readiness) = ctx.readiness {
+        let end = if origin.0 == PACK { origin.1 } else { crate::borg_item::inven_wield() as usize };
+        let oil = if crate::borg_ranged::Need::is_oil(ctx.st, item) {
+            crate::borg_ranged::Need::preceding_oil(ctx.st, end)
+        } else { 0 };
+        let offer = origin.0 < PACK;
+        let quivered_without_launcher = origin.0 > HOME
+            && matches!(u32::from(item.tval), TV_ARROW | TV_BOLT | TV_SHOT)
+            && !readiness.missile(ctx.st, item);
+        let uses = if quivered_without_launcher { 0 } else { readiness.item(ctx.st, item, oil, offer) };
+        if uses > 0 {
+            let stack = if offer { 1 } else { i64::from(item.iqty) };
+            out.push((RANGED_RESERVE, i64::from(uses) * UNIT / stack));
+            if ctx.launcher_reserve > 0 && matches!(u32::from(item.tval), TV_ARROW | TV_BOLT | TV_SHOT)
+                && readiness.missile(ctx.st, item)
+            {
+                out.push((RANGER_MISSILES, UNIT));
+            }
+        }
+    }
     let percent = param(Param::town_unseen_percent);
     if percent == 100 || item.flavour_aware || origin.0 >= 7 { return out; }
     unseen_scaled(out, percent)
@@ -878,7 +909,7 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         let damage = damage * i64::from(param(Param::town_oil_curve_scale_percent)) / 100;
         let fuel_bottles = (needed - prior).clamp(0, quantity);
         let mut supply = oil_supply(quantity, fuel_bottles, damage, fuel);
-        if ctx.ranged_reserve > 0 && i32::from(item.sval) == st.item_val.sv_flask_oil
+        if ctx.readiness.is_none() && ctx.ranged_reserve > 0 && i32::from(item.sval) == st.item_val.sv_flask_oil
             && !item.cursed && fuel_bottles < quantity
         {
             supply.push((RANGED_RESERVE, (quantity - fuel_bottles) * UNIT / quantity));
@@ -887,11 +918,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
         if st.borg.tr(BI_AMMO_TVAL) != i32::from(item.tval) || item.cursed { return Vec::new(); }
-        let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2
-            + (i64::from(item.to_d) + i64::from(st.borg.tr(BI_BTODAM))) * UNIT).max(UNIT)
+        let damage = (crate::borg_ranged::missile_damage_twice(item, st.borg.tr(BI_BTODAM)) * UNIT / 2).max(UNIT)
             * i64::from(st.borg.tr(BI_AMMO_POWER)).max(1);
         let mut supply = missile_supply(st.borg.tr(BI_CLASS), damage);
-        if ctx.ranged_reserve > 0 { supply.push((RANGED_RESERVE, UNIT)); }
+        if ctx.readiness.is_none() && ctx.ranged_reserve > 0 { supply.push((RANGED_RESERVE, UNIT)); }
         return supply;
     }
     if tval == TV_LIGHT {
@@ -1072,6 +1102,11 @@ fn initial_curves(
     curves
 }
 
+fn ranged_reserves(configured: i64, readiness: i64, launcher_needs_reserve: bool) -> (i64, i64) {
+    let launcher = if launcher_needs_reserve { (readiness + 1) / 2 } else { 0 };
+    (configured.max(readiness), launcher)
+}
+
 /// Physical supply curves use the same forecast, gold opportunity cost and
 /// capacity constraints as the core town model. No consumable calls borg_power.
 pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey, gold_after_urgent: i64) -> Model {
@@ -1085,13 +1120,24 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let lantern = light.iqty > 0 && u32::from(light.tval) == TV_LIGHT && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
-    let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
+    let readiness = ranged_shopping()
+        .then(|| crate::borg_ranged::Need::for_depth(st, journey.depth, journey));
+    let base_ranged_reserve = i64::from(param(Param::town_ranged_reserve));
+    let readiness_target = readiness.map_or(0, |need| {
+        i64::from(need.backup_target(need.coverage(st, None).recoverable()))
+    });
+    let missile_percent = missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent));
+    // In classes without a missile reserve, finish equipping a working
+    // launcher with a small stack. The rest of the ranged budget can go
+    // to any useful damage source.
+    let (ranged_reserve, launcher_reserve) = ranged_reserves(base_ranged_reserve, readiness_target,
+        missile_percent == 0 && t(BI_AMMO_POWER) > 0);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
     // borg-reborn-rs (#1110): more light while breadth-first exploration applies.
     let light_goal = crate::borg_light::fuel_goal(st, journey);
     let restore_life_reserve = i64::from(restore_life_reserve(st));
     let restore_stat = restore_stat_on(st);
-    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve, restore_stat };
+    let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve, restore_stat, readiness, launcher_reserve };
     // Keep the historical facts shape when the reserve is disabled.
     // #859: the Recall reserve's row only exists with the Recall curve on.
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
@@ -1110,7 +1156,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let mut curves = curves;
     // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
     // Preserve the existing row counts when the restore-stat reserve is off.
-    let full = if restore_stat { COUNT }
+    let full = if restore_stat { RESTORE_STAT_RESERVE + 1 }
         else if prepared_ccw_on(st) || prepared_neutralize_on(st) { PREP_NEUTRALIZE + 1 }
         else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
     while curves.len() < full { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); }
@@ -1328,7 +1374,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // and spells supply damage but cannot replenish usable missile shots.
     // borg-reborn-rs (#666): every class by its own percent (shooting skill),
     // less when it carries flasks or attack-wand charges.
-    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
+    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missile_percent as i32);
     let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
     // borg-reborn-rs (#716, owner: "they do not need that many arrows"): with
     // `town_ranger_arrows_max` the reserve is a requirement, as Recall's: each
@@ -1344,7 +1390,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let arrows_max = i64::from(param(Param::town_ranger_arrows_max));
     let arrows_scale = i64::from(param(Param::town_ranger_arrows_curve_scale_percent));
     let c_demand = (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT);
-    if arrows_max > 0 {
+    if launcher_reserve > 0 {
+        curve(RANGER_MISSILES, risk(BORG_TOWN_W_RANGER_MISSILES) * launcher_reserve,
+            -(launcher_reserve * UNIT));
+    } else if arrows_max > 0 {
         curve(RANGER_MISSILES, missiles_weight, -(arrows_max * UNIT));
     } else {
         curve(RANGER_MISSILES, missiles_weight, c_demand);
@@ -1470,7 +1519,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         for (cap, n) in supplies(item, &ctx, (10, 0)) { model.curves[cap][3] += n * i64::from(item.iqty); }
     }
     use crate::headers::list_object_flags_h::OF_NO_FUEL;
-    if engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32) || t(BI_LIGHT) > 0 && light.iqty == 0 {
+    let fuel_free = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+        || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32)
+        || t(BI_LIGHT) > 0 && light.iqty == 0;
+    if fuel_free {
         model.curves[LIGHT][1] = 0;
     }
     // borg-reborn-rs (#380, #400): a learned spell never zeroes a physical
@@ -1479,8 +1531,51 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // conflate different effects (treasure sensing is not mapping, Detect
     // Monsters misses invisible races). Scrolls, devices and potions keep
     // their supply value next to the spells.
+    let csw_weight = scale_percent(cfg(BORG_TOWN_W_RESTORE) * UNIT, param(Param::town_csw_reserve_percent));
+    if csw_weight > 0 && t(BI_ISCONFUSED) == 0 {
+        let food_floor = scale_percent(READY_FOOD * RATION_NUTRITION * UNIT, food_percent);
+        // An urgent Recall or a Recall that can be bought within its normal
+        // budget comes before this optional purchase.
+        let recall_due = crate::borg_town_utility::recall_urgent(st)
+            || recall_on && t(BI_RECALL) < recall_reserve && stock.candidates.iter().any(|c| {
+                c.qty > 0 && c.price > 0
+                    && crate::borg_town_budget::is_recall_scroll(st, c.tval, c.sval)
+            });
+        let required_fuel = if fuel_free { 0 } else { light_goal };
+        if csw_staples_covered(&model, required_fuel, food_floor, phase_reserve) && !recall_due {
+            add_csw_reserve(&mut model, stock, st.item_val.sv_potion_cure_serious, csw_weight);
+        }
+    }
     debug_assert!(model.valid());
     model
+}
+
+fn csw_staples_covered(model: &Model, light_goal: i64, food_floor: i64, phase_reserve: i64) -> bool {
+    model.curves[LIGHT][3] >= light_goal * UNIT
+        && model.curves[FOOD][3] >= food_floor
+        && model.curves[PHASE][3] >= phase_reserve.max(1) * UNIT
+}
+
+/// Credit full cures in the pack, and give a shopping bonus to CSW alone.
+fn add_csw_reserve(model: &mut Model, stock: &Stock, csw_sval: i32, weight: i64) {
+    let carried: i64 = model.curves[CONFUSION][3];
+    while model.curves.len() < CSW_RESERVE {
+        model.curves.push([model.curves.len() as i64, 0, UNIT, 0, 0]);
+    }
+    model.curves.push([CSW_RESERVE as i64, weight, -2 * UNIT, carried, 0]);
+    let pack_cures: Vec<_> = model.supplies.iter()
+        .filter(|row| row[0] == PACK && row[2] == CONFUSION as i64)
+        .map(|row| [PACK, row[1], CSW_RESERVE as i64, row[3]])
+        .collect();
+    model.supplies.extend(pack_cures);
+    for c in &stock.candidates {
+        if c.qty > 0 && c.price > 0 && u32::from(c.tval) == TV_POTION && i32::from(c.sval) == csw_sval {
+            let units = model.units(i64::from(c.shop), i64::from(c.slot), 1);
+            if let Some((_, supply)) = units.into_iter().find(|&(cap, _)| cap == CONFUSION) {
+                model.supplies.push([i64::from(c.shop), i64::from(c.slot), CSW_RESERVE as i64, supply]);
+            }
+        }
+    }
 }
 
 /// Optional engine-backed coverage diagnostic. These are hypothetical KNOWN
@@ -1496,7 +1591,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), restore_stat: restore_stat_on(st), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), restore_stat: restore_stat_on(st), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)), readiness: None, launcher_reserve: 0,
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1624,6 +1719,13 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn readiness_keeps_the_configured_reserve_floor_and_helps_empty_launchers() {
+        assert_eq!(super::ranged_reserves(8, 0, true), (8, 0));
+        assert_eq!(super::ranged_reserves(8, 6, true), (8, 3));
+        assert_eq!(super::ranged_reserves(0, 6, false), (6, 0));
+        assert_eq!(super::ranged_reserves(0, 3, true), (3, 2));
+    }
     use super::*;
     fn model() -> Model {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
@@ -1632,6 +1734,59 @@ mod tests {
         KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
+    #[test]
+    fn csw_preference_waits_for_staples() {
+        let mut m = model();
+        let light_goal = 20_000;
+        let food_floor = 150 * UNIT;
+        let phase_reserve = 6;
+        m.curves[LIGHT][3] = light_goal * UNIT;
+        m.curves[FOOD][3] = food_floor;
+        m.curves[PHASE][3] = phase_reserve * UNIT;
+        assert!(csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        for row in [LIGHT, FOOD, PHASE] {
+            m.curves[row][3] -= UNIT;
+            assert!(!csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+            m.curves[row][3] += UNIT;
+        }
+        m.curves[LIGHT][1] = 0;
+        m.curves[LIGHT][3] = 0;
+        assert!(!csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        assert!(csw_staples_covered(&m, 0, food_floor, phase_reserve));
+        m.curves[PHASE][3] = 0;
+        assert!(!csw_staples_covered(&m, 0, food_floor, 0));
+    }
+
+    #[test]
+    fn csw_preference_counts_carried_full_cures_and_caps_the_bonus() {
+        use crate::borg_town_stock::Candidate;
+
+        let mut m = model();
+        m.curves.truncate(PHASE_RESERVE + 1);
+        m.curves[CONFUSION][1] = 0;
+        m.supplies = vec![[4, 0, CONFUSION as i64, UNIT], [4, 1, CONFUSION as i64, UNIT]];
+        let csw = Candidate { shop: 4, slot: 0, kind: 1, tval: TV_POTION as u8, sval: 20,
+            price: 70, qty: 3, weight: 4, slots_cost: 1, stack_count: 0, class: 1 };
+        let ccw = Candidate { slot: 1, kind: 2, sval: 21, price: 200, class: 2, ..csw };
+        let stock = Stock { candidates: vec![csw, ccw], ..Stock::default() };
+        let weight = 100 * UNIT;
+
+        let mut empty = m.clone();
+        add_csw_reserve(&mut empty, &stock, 20, weight);
+        assert!(empty.valid());
+        assert_eq!(empty.ware(4, 0, 1), weight);
+        assert_eq!(empty.ware(4, 0, 2), weight + weight / 4);
+        assert_eq!(empty.ware(4, 0, 3), empty.ware(4, 0, 2));
+        assert_eq!(empty.ware(4, 1, 1), 0);
+
+        m.curves[CONFUSION][3] = UNIT;
+        m.supplies.push([PACK, 0, CONFUSION as i64, UNIT]);
+        add_csw_reserve(&mut m, &stock, 20, weight);
+        assert_eq!(m.ware(4, 0, 1), weight / 4);
+        assert_eq!(m.ware(4, 0, 2), weight / 4);
+        assert_eq!(m.gain(&m.units(PACK, 0, -1)), -weight);
+    }
+
     #[test]
     fn alchemist_restore_life_purchase_and_retention_follow_need_and_stock() {
         use crate::borg_town_record::{action, first_action, step, StepInput, PARAMS};
@@ -1984,7 +2139,7 @@ mod tests {
         assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]) - m.gain(&[(PREP_CCW, 2 * UNIT)]), 0, "the 3rd CCW past 2 copies is worth nothing");
         assert_eq!(PREP_CCW, DEV_CONTROL + 1);
         assert_eq!(PREP_NEUTRALIZE, PREP_CCW + 1);
-        assert_eq!(RESTORE_STAT_RESERVE, COUNT - 1);
+        assert_eq!(RESTORE_STAT_RESERVE, PREP_NEUTRALIZE + 1);
         assert_eq!(NAMES[PREP_CCW], "prepared: Cure Critical Wounds");
         assert_eq!(NAMES[PREP_NEUTRALIZE], "prepared: Neutralize Poison");
         let neutralize = first(&mut m, PREP_NEUTRALIZE, 40, 2);
@@ -2824,6 +2979,17 @@ fn device_attack(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confu
     use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
     let kept: Vec<(u16, i32, i64)> = effects.iter().filter(|&&(_, subtype, _)| subtype as u32 != PROJ_LIGHT_WEAK).copied().collect();
     effect_supply_for_consumer(&kept, hp, service_turns, confusion).iter().any(|&(id, units)| id == ATTACK && units > 0)
+}
+
+/// Damage that can cover general threats, leaving niche light or dispels
+/// to the existing attack scorer's monster-specific evaluation.
+pub(crate) fn ranged_effect_damage(effects: &[(u16, i32, i64)], hp: i64) -> i64 {
+    use crate::headers::list_projections_h::{PROJ_DISP_EVIL, PROJ_DISP_UNDEAD, PROJ_LIGHT_WEAK};
+    let general: Vec<_> = effects.iter().copied().filter(|&(_, projection, _)| {
+        !matches!(projection as u32, PROJ_LIGHT_WEAK | PROJ_DISP_EVIL | PROJ_DISP_UNDEAD)
+    }).collect();
+    effect_supply_for_consumer(&general, hp, 1, false).into_iter()
+        .find_map(|(id, damage)| (id == ATTACK).then_some(damage / UNIT)).unwrap_or(0)
 }
 
 /// borg-reborn-rs (#895): a ware's supplies without what an escape staff gives:

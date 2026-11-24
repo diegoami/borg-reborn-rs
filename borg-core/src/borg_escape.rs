@@ -3036,3 +3036,16 @@ mod walk_away_phase_tests {
         assert!(phase_available(1000, PhaseSite::Danger, || false));
     }
 }
+
+/// Availability of the same four sources as `borg_recall`, before issuing keys.
+pub(crate) fn recall_ready(st: &BorgState) -> bool {
+    use crate::borg_inventory::borg_slot;
+    use crate::borg_item_use::{borg_equips_item, can_read_now};
+    use crate::headers::list_tvals_h::{TV_ROD, TV_SCROLL};
+
+    let rod = borg_slot(st, TV_ROD as i32, st.item_val.sv_rod_recall);
+    (rod >= 0 && st.items.items[rod as usize].pval != 0)
+        || borg_equips_item(st, st.act.recall, true)
+        || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
+        || (can_read_now(st) && borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_word_of_recall) >= 0)
+}
