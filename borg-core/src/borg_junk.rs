@@ -1651,13 +1651,48 @@ mod tests {
         enchanted.to_d = 1;
         let mut unknown = plain;
         unknown.ident = false;
+        let mut inscribed = plain;
+        inscribed.desc[0] = b'{' as core::ffi::c_char;
+        let mut cursed = plain;
+        cursed.cursed = true;
+        let mut ego = plain;
+        ego.ego_idx = 1;
+        let mut artifact = plain;
+        artifact.art_idx = 1;
         let mut wrong_type = plain;
         wrong_type.tval = TV_ARROW as u8;
-        let quiver = [enchanted, plain, smaller, unknown, wrong_type];
+        let mut quiver = [enchanted, plain, smaller, unknown, wrong_type, inscribed, cursed, ego, artifact];
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 20), Some(2));
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 90), Some(2));
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 41, 20), None);
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 12, 90), Some(1));
+        quiver[2] = blank_item();
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 90), None);
+    }
+
+    #[test]
+    fn the_recorded_quiver_keeps_forty_plain_shots_and_all_enchanted_shots() {
+        let mut quiver = [(22, 3, 1), (40, 0, 0), (40, 0, 0), (40, 0, 0),
+            (40, 2, 2), (18, 1, 6), (10, 2, 3), (40, 0, 0), (40, 0, 0), (10, 0, 0)]
+            .map(|(count, to_h, to_d)| {
+                let mut stack = blank_item();
+                stack.tval = TV_SHOT as u8;
+                stack.ident = true;
+                stack.iqty = count;
+                stack.weight = 4;
+                stack.to_h = to_h;
+                stack.to_d = to_d;
+                stack
+            });
+        let mut shortfall = 1362;
+        for expected in [40, 40, 40, 40, 10] {
+            let slot = surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, shortfall).unwrap();
+            assert_eq!(quiver[slot].iqty, expected);
+            shortfall -= i64::from(expected) * 4;
+            quiver[slot] = blank_item();
+        }
+        assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, shortfall), None);
+        assert_eq!(quiver.iter().map(|stack| u16::from(stack.iqty)).sum::<u16>(), 130);
     }
 
     #[test]

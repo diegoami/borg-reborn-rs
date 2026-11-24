@@ -318,8 +318,8 @@ pub fn choose(st: &mut BorgState) -> bool {
         return true;
     }
     let mut a = crate::borg_town_shadow::live_action(st);
-    // When an encumbered kit would otherwise give up pack stock or leave,
-    // try the ordinary ammunition that is outside the pack dispositions.
+    // The opt-in trial tests discarding surplus plain shots before the
+    // planner disposes of other kit. Poison triage and purchases go first.
     if !st.borg.in_shop && !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve > 0 {
@@ -447,7 +447,8 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let qty = i64::from(item.iqty);
     if qty == 0 { clear(st); return false; }
     if slot >= crate::borg_item::quiver_start() as usize {
-        if a.at[2] != qty { clear(st); return false; }
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        if reserve == 0 || a.at[2] != qty { clear(st); return false; }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
         clear(st);
         return true;
