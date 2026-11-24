@@ -294,6 +294,7 @@ jobs:
       - run: python3 engine/tests/test_combat_heal.py
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
       - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
+      - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
       - run: python3 engine/tests/test_stair_handoff.py StaleStairMoreTest
       - run: python3 engine/tests/test_stair_handoff.py MoreRefusedGatesTest
       - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
