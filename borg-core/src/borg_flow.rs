@@ -1704,6 +1704,11 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     if (FEAT_SECRET..=FEAT_GRANITE).contains(&feat) {
         /* Don't dig walls and seams when exploring (do dig rubble) */
         if feat != FEAT_RUBBLE && i32::from(st.borg.goal.type_0) == GOAL_DARK {
+            // borg-reborn-rs (#1189): say why the committed flow produces no
+            // step: the goal grid is a wall or seam, and exploring does not
+            // dig. Without the note, a loop like #1189's shows commits
+            // ("dark-bfs (ring 10) at cost 1") with no reason behind them.
+            borg_note(st, &format!("# Exploring: the goal at ({y},{x}) needs a dig; no step"));
             return false;
         }
 

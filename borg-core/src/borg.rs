@@ -132,6 +132,8 @@ pub struct Borg {
     /// The kill index of the monster that last set `recall_watch_turn`; its
     /// death clears the clock (review of #645). 0 = none.
     pub recall_watch_kill: i32,
+    /// #1142: the last flight Recall source check found none and logged it.
+    pub(crate) flight_recall_unavailable_noted: bool,
     /// borg-reborn-rs (#615 rule a): the same for every rest
     /// (`recover_rest_monster_distance`), and the think that last noted a
     /// held rest.

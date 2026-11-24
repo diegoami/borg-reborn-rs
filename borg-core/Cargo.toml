@@ -22,6 +22,7 @@ test-force-nested = []
 test-town-review = []
 # Native fixture for the emergency stair handoff. Inactive in regular builds.
 test-stair-handoff = []
+test-combat-heal = []
 
 [dependencies]
 libc = "0.2"
