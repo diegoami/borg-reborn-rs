@@ -25,7 +25,7 @@ use crate::borg_escape::{
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
-    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells, more_refused,
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -4661,9 +4661,20 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
     // is skipped then, so nothing cancels a departure the rule has noted
     // (review of #616, N1).
-    let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
-        && leave_stairs_on_monster(st, pos_danger);
-    if !by_stairs_rule
+    // borg-reborn-rs (#1178, review): a descent the selection machinery
+    // itself just chose — leave_stairs_on_monster (a recovering Borg on a
+    // staircase a monster threatens) or choose_stairs — is fresh intent,
+    // not the stale flag the gate below exists for; it stays eligible.
+    // The selectors report their own down choice: a flag that was already
+    // set on entry (the failed dive's stale flag) must not hide a fresh
+    // selection of the same staircase (re-review of #1185).
+    let leave_selection = if !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary) {
+        leave_stairs_on_monster(st, pos_danger)
+    } else {
+        None
+    };
+    let mut choose_selected_down = false;
+    if leave_selection.is_none()
         && (st.borg.goal.leaving
             || st.borg.goal.fleeing
             || st.borg.mon.scary
@@ -4673,8 +4684,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
                 && on_upstair))
     // danger and standing on stair
     {
-        choose_stairs(st, pos_danger);
+        choose_selected_down = choose_stairs(st, pos_danger);
     }
+    // Fresh intent from either selector's own decision.
+    let fresh_emergency = leave_selection == Some(false) || choose_selected_down;
 
     // Take stairs up
     if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) && !recall_holds_up_stair(st, pos_danger) {
@@ -4700,15 +4713,30 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
-            if borg_prep_leave_level_spells(st) {
+            // borg-reborn-rs (#1178): `stair_more` is set before the descent
+            // flows it belongs to (the leaving block, the power dive,
+            // borg_leave_level's dive) and survives their failure until a
+            // new level clears it — C's own bookkeeping. A later think
+            // standing on a down staircase then takes it here on a stale
+            // flag, past the descent gates the dive itself would have
+            // applied. caution_standing_descent_gated applies those gates
+            // (more_refused) to this take; a fresh selection of this very
+            // call (leave_stairs_on_monster, choose_stairs — the recovering
+            // Borg's escape) stays eligible. 0 keeps C.
+            let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+                && !fresh_emergency
+                && more_refused(st, false);
+            if !gated_refuses {
+                if borg_prep_leave_level_spells(st) {
+                    return true;
+                }
+
+                // Take the stairs
+                borg_keypress(st, key(b'>'));
+
+                // Success
                 return true;
             }
-
-            // Take the stairs
-            borg_keypress(st, key(b'>'));
-
-            // Success
-            return true;
         }
     }
 
@@ -7001,7 +7029,7 @@ fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
 /// `caution_stairs_leave_danger_percent` of the HP), instead of fighting or
 /// reading an escape. The staircase under the Borg is the way; while rising,
 /// a down staircase is held as in `choose_stairs`.
-fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> Option<bool> {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
     // Review of #616: a real threat (a share of the HP), not any danger; and
@@ -7025,7 +7053,7 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     // caution) did not take, recovering or not.
     let scum = if kit { None } else { crate::borg_stair_scum::leave_on_threat(st, pos_danger, threshold) };
     if !(kit || scum.is_some() || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
-        return false;
+        return None;
     }
     // The staircase under the Borg decides the way: choose_stairs alone may
     // not set it for a Borg that is recovering, not fleeing.
@@ -7037,14 +7065,16 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     }
     let why = if kit { "short of kit" } else if scum.is_some() { "in stair scum" } else { "while recovering" };
     borg_note(st, &format!("# Leaving by the stairs: a monster {why} (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
-    true
+    // The selection itself (the #1178 review): which staircase the rule
+    // chose, so a fresh down selection stays eligible under the switch.
+    Some(up)
 }
 
 fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
     on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
 }
 
-fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
+fn choose_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
         st.borg.stair_less = true;
@@ -7064,8 +7094,13 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     }
 
     // Only go down if fleeing or prepared
+    // borg-reborn-rs (#1178, review): the fleeing arm is the selector's
+    // explicit emergency down choice; the caller exempts it from the
+    // standing-descent gate.
+    let mut selected_down = false;
     if st.borg.goal.fleeing {
         st.borg.stair_more = true;
+        selected_down = true;
     }
 
     if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
@@ -7110,7 +7145,9 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     // borg-reborn-rs (#557): no descent while rising, unless in real danger.
     if st.borg.stair_more && rising_holds_flee_descent(st) {
         st.borg.stair_more = false;
+        selected_down = false;
     }
+    selected_down
 }
 
 /// borg-reborn-rs (#567): with `caution_recall_rest_monster_turns`, record

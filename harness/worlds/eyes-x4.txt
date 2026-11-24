@@ -1,0 +1,5 @@
+# Stress the paralyser decision (#1157). Keep the floating eye at DL1
+# with rarity 1. Multiply the other races' rarity by 4 without changing
+# the level's monster count. The engine uses integer allocation weights.
+favour = floating eye
+favour_weight = 4
