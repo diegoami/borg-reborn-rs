@@ -3,8 +3,8 @@
 //! #1152, #932).
 //!
 //! Every dungeon think records the Borg's grid when it moved, with how many
-//! grids of the map it knows. A loop is `LOOP_MOVES` moves among at most
-//! `LOOP_GRIDS` grids while the map learned nothing, with no danger here above
+//! grids of the map it knows. A loop is `loop_moves` moves among at most
+//! `loop_grids` grids while the map learned nothing, with no danger here above
 //! a quarter of the HP. `loop_breaker` then breaks it, the first that
 //! applies:
 //! 0. the staircase underfoot, when the Borg may take it;
@@ -40,10 +40,6 @@ use crate::state::BorgState;
 /// The flee goal (`borg_flow.rs`: GOAL_FLEE).
 const GOAL_FLEE: i32 = 7;
 
-/// Moves of the window a loop is judged on.
-pub(crate) const LOOP_MOVES: usize = 16;
-/// The most distinct grids a loop's moves visit.
-pub(crate) const LOOP_GRIDS: usize = 3;
 /// Thinks the loop's grids stay closed after the third remedy.
 const LOOP_BAN_THINKS: BorgTime = 20;
 
@@ -73,17 +69,23 @@ pub struct LoopState {
     exiting: Option<BraveStairs>,
 }
 
-/// #1153: do these moves make a loop? `LOOP_MOVES` of them, among at most
-/// `LOOP_GRIDS` grids, the map unchanged from the first to the last.
+/// #1153: do these moves make a loop? `loop_moves` of them, among at most
+/// `loop_grids` grids, the map unchanged from the first to the last.
 pub(crate) fn is_loop(moves: &[Move]) -> bool {
-    if moves.len() < LOOP_MOVES {
+    is_loop_with(moves, value(Param::loop_moves) as usize, value(Param::loop_grids) as usize)
+}
+
+/// #1190: `is_loop` with the window given, so the zoo arms can be reasoned
+/// about (and tested) without touching the registry.
+fn is_loop_with(moves: &[Move], loop_moves: usize, loop_grids: usize) -> bool {
+    if moves.len() < loop_moves {
         return false;
     }
-    let window = &moves[moves.len() - LOOP_MOVES..];
+    let window = &moves[moves.len() - loop_moves..];
     let mut grids: Vec<(i32, i32)> = window.iter().map(|m| (m.at.y, m.at.x)).collect();
     grids.sort_unstable();
     grids.dedup();
-    grids.len() <= LOOP_GRIDS && window.first().map(|m| m.known) == window.last().map(|m| m.known)
+    grids.len() <= loop_grids && window.first().map(|m| m.known) == window.last().map(|m| m.known)
 }
 
 /// The grids of the map the Borg knows (any feature but `FEAT_NONE`).
@@ -131,7 +133,8 @@ pub(crate) fn observe(st: &mut BorgState) {
     }
     let moves = &mut st.loops.moves;
     moves.push_back(Move { at: here, known });
-    while moves.len() > LOOP_MOVES {
+    let loop_moves = value(Param::loop_moves) as usize;
+    while moves.len() > loop_moves {
         moves.pop_front();
     }
     if moves.len() == 1 {
@@ -360,6 +363,19 @@ mod tests {
     }
 
     #[test]
+    fn the_window_is_named_and_the_four_grid_cycle_is_seen_at_four() {
+        // #1190: the window is `loop_moves` x `loop_grids`, named so the zoo
+        // can measure the arm at 4 grids. The recorded cycle of #1189 walked
+        // 444666 among four grids: invisible at the shipped 3, a loop at 4.
+        let four: Vec<Move> = (0..16).map(|i| mv(10, 5 + (i % 4) as i32, 500)).collect();
+        assert!(!is_loop_with(&four, 16, 3), "the shipped window does not see it");
+        assert!(is_loop_with(&four, 16, 4), "#1190's arm does");
+        assert!(!is_loop_with(&four, 17, 4), "too few moves is no loop");
+        let learning: Vec<Move> = (0..16).map(|i| mv(10, 5 + (i % 4) as i32, 500 + i as u32)).collect();
+        assert!(!is_loop_with(&learning, 16, 4), "a walk that learns the map is no loop at 4 either");
+    }
+
+    #[test]
     fn only_the_last_window_counts() {
         // An exploring walk, then a two-grid loop.
         let mut moves: Vec<Move> = (0..10).map(|i| mv(10, i, 400 + i as u32)).collect();
@@ -379,5 +395,7 @@ mod tests {
     #[test]
     fn the_switch_ships_off_in_the_code() {
         assert_eq!(value(Param::loop_breaker), 0, "compiled 0; harness/borg.txt ships 1");
+        assert_eq!(value(Param::loop_moves), 16, "#1190: the window's moves, #1153's guess");
+        assert_eq!(value(Param::loop_grids), 3, "#1190: the window's grids, #1153's guess");
     }
 }
