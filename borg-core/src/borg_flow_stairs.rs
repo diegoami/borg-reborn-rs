@@ -971,8 +971,15 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reac
 /// light; and recalling), shared with #544's flight down a known staircase
 /// so the two agree. True: no descent.
 pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
+    use crate::params::{value as p, Param};
+
     /* if there are no down stairs, don't filter use of up stairs */
-    if st.stairs.less.num != 0 {
+    // borg-reborn-rs (#1177, from the #1173 investigation; C's defect,
+    // borg-flow-stairs.c:193, tracked upstream as better-borg-c #540 and
+    // neo-angband-tracker #629): the four gates below guard the descent
+    // itself, but C applies them only when an up staircase has been seen.
+    // stairs_descent_gates_without_upstair applies them always; 0 keeps C.
+    if st.stairs.less.num != 0 || p(Param::stairs_descent_gates_without_upstair) != 0 {
         /* not unless safe or brave */
         if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;
@@ -1521,6 +1528,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     }
     if case == "stale-stair-more" {
         crate::borg_think_dungeon_util::run_stale_stair_more_regression(st);
+    }
+    if case == "more-refused-gates" {
+        crate::borg_think_dungeon_util::run_more_refused_regression(st);
     }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
