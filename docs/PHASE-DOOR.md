@@ -160,10 +160,11 @@ comparisons behind a setting):
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
 
 **Danger without fear** (`escape_phase_lost_damage_only`, compiled 0,
-shipped 1 since #1047). The lost-fight verdict uses
-`borg_danger_damage_only` for the danger here. It zeroes the
-`danger_*_fear` prices, the breeder and friends bonuses and the fear maps. One white worm mass next to the CL3 Mage 461220874 was
-danger 32 with fear and 2 without.
+shipped 1 since #1047). The lost-fight verdict replaces the site's
+danger value, which includes fear prices, with a fresh calculation from
+`borg_danger_damage_only`. It zeroes the `danger_*_fear` prices, the breeder
+and friends bonuses and the fear maps. One white worm mass next to the CL3
+Mage 461220874 was danger 32 with fear and 2 without.
 
 **Mana and fail rates** (`escape_phase_lost_mana`, compiled 1; #625, owner).
 With tests 1 and 2, the chosen attack counts at its true damage times its

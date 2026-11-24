@@ -603,9 +603,11 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             u.capability.as_ref().map_or(0, |model| model.reserve_keep(whole))
         } else { 0 };
         if reserve >= whole.qty { continue; }
-        let floor = capped_floor.max(restore_keep).max(reserve).max(if surplus(whole) { keep_min } else { 0 });
+        let book_floor = i32::from(whole.keep_last_book && whole.qty > 1);
+        let floor = capped_floor.max(restore_keep).max(reserve).max(book_floor)
+            .max(if surplus(whole) { keep_min } else { 0 });
         let qty = whole.qty - floor;
-        let proceeds = if restore_keep > 0 || capped || reserve > 0 {
+        let proceeds = if restore_keep > 0 || capped || reserve > 0 || book_floor > 0 {
             whole.proceeds * i64::from(qty) / i64::from(whole.qty)
         } else { whole.proceeds };
         let part = KitItem { qty, proceeds, ..*whole };
@@ -638,7 +640,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             && !(input.revision >= 9 && input.urgent.iter().any(|f| {
                 let c = &input.candidates[f.candidate]; c.shop == 7 && c.slot == k.slot
             })) && !k.unknown && !k.just_bought && k.sell_shop >= 0
-            && (input.revision < 19 || !k.protect_disposal)
+            && !k.keep_last_book && (input.revision < 19 || !k.protect_disposal)
             && u.power(k.power) == 0 && (if let Some(m) = &u.capability {
                 m.take(k) == 0 && m.reserve(k, -1, u.home_discount) == 0
             } else { k.unknown_flavour ||
@@ -673,7 +675,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // known curse stays protected.
         let cursed_spare = input.revision >= 20 && it.cursed_spare && it.place == Place::Pack
             && u.power(it.power) == 0 && input.limits.weight + freed.weight < 0;
-        let protected = (it.unknown && !cursed_spare) || it.just_bought || urgent_loss || potion_or_scroll_protected;
+        let protected = (it.unknown && !cursed_spare) || it.just_bought || urgent_loss || potion_or_scroll_protected
+            || (whole.keep_last_book && !partial);
         // borg-reborn-rs (#651, plan schema 12): what this visit bought is
         // carried, not stored: a Cure Light Wounds bought to carry went to
         // the Home and was bought again (borg-cemetery#75).
@@ -712,7 +715,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // Restore Life Levels, a kind at its Home limit: `execute_outside`).
         // It drops any other stack whole, so seven Phase Door with a reserve
         // of six and no buyer would all go: kept instead.
-        let unsplittable = action == Disposition::Drop && partial && reserve > 0
+        let unsplittable = action == Disposition::Drop && partial && (reserve > 0 || book_floor > 0)
             && it.fuel <= 0 && restore_keep <= 0 && !capped;
         let action = if unsplittable { Disposition::Keep } else { action };
         out[i] = action;
@@ -822,7 +825,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             freed.home_slots += i32::from(whole);
             freed.weight -= weight;
         } else if whole && value == 0 && future_loss == 0 && !it.unknown && (input.revision < 6 || !it.just_bought)
-            && (input.revision < 19 || !it.protect_disposal) && it.proceeds > 0 && it.sell_shop >= 0 {
+            && !it.keep_last_book && (input.revision < 19 || !it.protect_disposal) && it.proceeds > 0 && it.sell_shop >= 0 {
             out[i] = Disposition::Sell;
             if input.revision >= 9 {
                 if let Some(m) = &mut u.capability { m.change_home(it, -1); }
@@ -1002,7 +1005,7 @@ mod tests {
     }
 
     fn recall(place: Place) -> KitItem {
-        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
+        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
             reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }
     }
 
@@ -1971,6 +1974,28 @@ mod tests {
         let (d, _, copies) = dispositions_by(&inp, &mut u, &st, shipped);
         assert_eq!((d[0], copies[0]), (Disposition::Store, 30));
         assert_eq!(d[1], Disposition::Drop);
+    }
+
+    #[test]
+    fn class_book_reserve_keeps_one_copy_and_allows_spares_to_be_sold() {
+        let st = state(5, 17, 105);
+        let book = KitItem { keep_last_book: true, need: -1, reduction: 0,
+            proceeds: 100, ..recall(Place::Pack) };
+        let solve = |kit: &[KitItem]| {
+            let mut inp = input(kit);
+            inp.home_slots = 0;
+            let mut u = Utility::of(&st, kit, false);
+            dispositions_with(&inp, &mut u, &st, true)
+        };
+        assert_eq!(solve(&[book]).0, [Disposition::Keep]);
+        let (dispositions, freed, copies) = solve(&[KitItem { qty: 2, ..book }]);
+        assert_eq!(dispositions, [Disposition::Sell]);
+        assert_eq!(copies, [1]);
+        assert_eq!(freed.gold, 50);
+        let home = KitItem { place: Place::Home, ..book };
+        let spare = KitItem { keep_last_book: false, ..book };
+        assert_eq!(solve(&[spare, home]).0, [Disposition::Sell, Disposition::Keep]);
+        assert_eq!(solve(&[KitItem { qty: 2, sell_shop: -1, ..book }]).0, [Disposition::Keep]);
     }
 
     /// #1151 (review of #1155): selling for weight keeps every reserve. An

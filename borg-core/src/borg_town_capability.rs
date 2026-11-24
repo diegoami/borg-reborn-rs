@@ -791,6 +791,22 @@ fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
     out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE | RESTORE_LIFE_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
+/// borg-reborn-rs (#1004): the look-ahead for a book in scope `scope`: the
+/// parameter for an owned book (the pack, `PACK`, or the home, `HOME`), 0 for
+/// a shop's (scopes 0..=7), so purchases are valued as before.
+fn book_lookahead(scope: i64, levels: i32) -> i32 {
+    if matches!(scope, PACK | HOME) { levels } else { 0 }
+}
+
+/// borg-reborn-rs (#1004): does a class spell make its book worth keeping?
+/// Castable now (its level reached, its mana within the max SP), as before;
+/// or, with `ahead` > 0, learnt within `ahead` levels, on the level alone:
+/// the mana is not compared, so a wide window can keep a book whose spell
+/// costs more than the class's SP when it is learnt. Ranger and Rogue first spells arrive at CL3 and CL5.
+fn book_spell_counts(slevel: i32, smana: i32, level: i32, maxsp: i32, ahead: i32) -> bool {
+    (slevel <= level && smana <= maxsp) || (ahead > 0 && slevel <= level.saturating_add(ahead))
+}
+
 fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
@@ -853,8 +869,11 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         for b in 0..engine::class_num_books().min(9) {
             let book = engine::class_book(b);
             if book.tval != i32::from(item.tval) || book.sval != i32::from(item.sval) { continue; }
+            // borg-reborn-rs (#1004): an owned book (pack or home) also counts
+            // when a spell of it is learnt within town_book_lookahead_levels.
+            let ahead = book_lookahead(origin.0, param(Param::town_book_lookahead_levels));
             let usable = (0..book.num_spells).map(|s| engine::class_book_spell(b, s))
-                .filter(|s| s.slevel <= ctx.journey.level as i32 && s.smana <= st.borg.tr(BI_MAXSP)).count();
+                .filter(|s| book_spell_counts(s.slevel, s.smana, ctx.journey.level as i32, st.borg.tr(BI_MAXSP), ahead)).count();
             if usable > 0 { return vec![(BOOKS + b as usize, UNIT)]; }
         }
         return Vec::new();
@@ -1541,7 +1560,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
     #[test]
@@ -2299,6 +2318,39 @@ mod tests {
         m.change(&item(Place::Pack, 0, 1), -1);
         assert_eq!(m.gain(&[(RECHARGE, UNIT)]), 0);
     }
+    /// #1004: the look-ahead keeps a first book whose spell comes in a few
+    /// levels; 0 is today's test (castable now).
+    #[test]
+    fn book_look_ahead_counts_spells_a_few_levels_away() {
+        let spec = crate::params::SPECS.iter().find(|s| s.name == "town_book_lookahead_levels").unwrap();
+        assert_eq!((spec.default, spec.min, spec.max), (0, 0, 50));
+        // today's test: castable now only
+        assert!(book_spell_counts(1, 1, 1, 1, 0));
+        assert!(!book_spell_counts(1, 2, 1, 1, 0), "mana above the max SP");
+        // Ranger, Remove Hunger L3, at CL1 with 0 SP
+        assert!(!book_spell_counts(3, 1, 1, 0, 0));
+        assert!(book_spell_counts(3, 1, 1, 0, 2));
+        assert!(!book_spell_counts(3, 1, 1, 0, 1));
+        // Rogue, Detect Monsters L5, at CL1
+        assert!(book_spell_counts(5, 1, 1, 0, 4));
+        assert!(!book_spell_counts(5, 1, 1, 0, 3));
+        // Paladin, Bless L1 2 SP, at CL1 with 1 SP (Half-Elf, Elf, Half-Troll)
+        assert!(!book_spell_counts(1, 2, 1, 1, 0));
+        assert!(book_spell_counts(1, 2, 1, 1, 4));
+    }
+
+    /// #1004: the look-ahead applies to owned books only, never to a shop's,
+    /// so purchases are unchanged (review of #1019, finding 3).
+    #[test]
+    fn book_look_ahead_is_for_owned_books_only() {
+        assert_eq!(book_lookahead(PACK, 4), 4);
+        assert_eq!(book_lookahead(HOME, 4), 4);
+        for shop in 0..=7 {
+            assert_eq!(book_lookahead(shop, 4), 0, "shop scope {shop}");
+        }
+        assert_eq!(book_lookahead(PACK, 0), 0);
+    }
+
     #[test]
     fn owning_a_usable_class_book_closes_access_without_a_duplicate_stock_target() {
         let mut m = model();
