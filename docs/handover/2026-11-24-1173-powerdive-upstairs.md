@@ -47,9 +47,11 @@ Track P, branch `task/T1173-powerdive-upstairs`, target `track-p`.
   like the incident's CL8 Ranger, pins `explore_breadth_first`,
   `explore_mixed`, `stair_scum`, `deal_with_poison` off and
   `explore_c_leave_when_done` on so the exhaustion is C's leashed walk, and
-  turns `borg_trip_policy` and `borg_town_plan` off (the trip's own
-  preparedness estimate would ascend, and the town plan's food counting
-  skips a ration stack). `harness/borg.txt` is untouched.
+  turns `borg_trip_policy` off (the trip's own preparedness estimate would
+  ascend a birth character) and keeps the shipped town plan: its food
+  counting counts an aware ration stack; the earlier draft's failure came
+  from unaware fabricated stacks and a zero-value duplicate ration stack
+  crushed as junk (#1179). `harness/borg.txt` is untouched.
 
 ### How it was checked
 
@@ -78,8 +80,13 @@ Track P, branch `task/T1173-powerdive-upstairs`, target `track-p`.
 
 ### What is left
 
-- None known. The zoo comparison of the fix's play effect is not requested
-  by the issue; if the owner wants it, it is a separate borg-zoo request.
+- The zoo comparison of the fix's play effect is not requested by the
+  issue; filed as a request: #1175.
+- Findings from the same investigation recorded as P9 follow-ups: #1177
+  (`more_refused` skips the descent gates when no up staircase is seen),
+  #1178 (stale `stair_more` set before its flows), #1176
+  (`note_standing`'s on-up/dn-stair flags are never true) and #1179
+  (the decision-fixture cookbook).
 
 ### For the owner to decide
 
