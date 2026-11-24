@@ -34,9 +34,11 @@ with the existing engine test build.
 
 ### What is left
 
-[#1091](https://github.com/diegoami/borg-reborn-rs/issues/1091) tracks any
-remaining engine-backed coverage for the optional Phase hold, lightless
-docile-monster and unaware-detail rules from the closed #1104.
+[#1091](https://github.com/diegoami/borg-reborn-rs/issues/1091) keeps the
+four-rule coverage request open. The remaining cases cover the older
+immobile-route bias (#931), the retreat guard's back-away and reset cases
+(#1023), the immobile-neighbour fight veto (#933), and poison cure choice
+(#934). The proposed tests in #1104 were closed before integration.
 The historical aim loop fixture for #1132 is tracked in
 [borg-cemetery #150](https://github.com/diegoami/borg-cemetery/pull/150).
 
