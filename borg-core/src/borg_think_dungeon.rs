@@ -107,7 +107,7 @@ const GOAL_DARK: i32 = 4;
 /// `GOAL_XTRA` (borg-flow.h)
 const GOAL_XTRA: i32 = 5;
 /// `GOAL_BORE` (borg-flow.h)
-const GOAL_BORE: i32 = 6;
+pub(crate) const GOAL_BORE: i32 = 6;
 /// `GOAL_FLEE` (borg-flow.h)
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
@@ -1445,6 +1445,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Leave the level XXX XXX XXX ***/
+
+    if crate::borg_ranged::return_to_town(st) {
+        return choice!("ranged_restock");
+    }
 
     /* Leave the level */
     if (st.borg.goal.leaving && !crate::borg_caution::recall_restricts(st) && st.borg.mon.unique == 0)

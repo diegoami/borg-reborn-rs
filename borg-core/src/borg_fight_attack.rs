@@ -3150,7 +3150,7 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
 /// average plus to-dam, times `2 + weight / 12` for a THROWING object
 /// (weight in tenths of a pound), and three times that for EXPLODE. A flask
 /// of oil (1d4, weight 20, `EXPLODE | THROWING`) does 22.
-fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explode: bool) -> i32 {
+pub(crate) fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explode: bool) -> i32 {
     let mut dam10 = dd * (ds + 1) * 5 + to_d * 10;
     if throwing {
         dam10 *= 2 + weight.max(0) / 12;

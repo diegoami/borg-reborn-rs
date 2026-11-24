@@ -259,6 +259,8 @@ borg_param_town_store_only_overweight = 1
 
 borg_param_town_departure_free_weight = 50
 borg_param_town_departure_free_slots = 2
+# #1168: optional plain quiver reserve when unloading for departure weight.
+borg_param_town_quiver_trim_reserve = 0
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
@@ -437,6 +439,11 @@ borg_param_caution_ranged_only = 0
 # stored at the Home).
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
+
+# #1162: prefer CSW after light, food, Phase Door and due Recall are covered.
+# A carried full confusion cure counts toward the reserve. One quarter of the
+# configured bonus applies to the second copy.
+borg_param_town_csw_reserve_percent = 100
 
 # Restore Life Levels reserve (#978, #1103). P9 candidate: one copy from
 # maximum depth 12 without repeatable restoration, with 1000 gold for
@@ -1137,6 +1144,13 @@ borg_param_town_first_cure_percent = 200
 # #789: reserve of oil available to throw and missiles for the equipped
 # launcher, counted together. Use __<class> for a class override.
 borg_param_town_ranged_reserve = 0
+# #1184: buy a usable ranged reserve for the next trip and recover it
+# in the dungeon. The trace records readiness for watched runs and the Zoo.
+borg_param_town_ranged_readiness = 1
+borg_param_trip_ranged_readiness = 1
+borg_param_ranged_readiness_target = 6
+borg_param_ranged_readiness_damage_depth = 2
+borg_param_ranged_readiness_trace = 1
 
 # Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
 # town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
