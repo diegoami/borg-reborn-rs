@@ -29,3 +29,24 @@ green CI and owner acceptance.
 
 The separate #1169 investigation and proposal are in the
 [Cemetery rune backlog case](https://github.com/diegoami/borg-cemetery/tree/c59ef17b7d6453cd827fd1a2a968b55af4d54439/scenarios/caster-rune-backlog-1169).
+
+### Review follow-up
+
+The branch incorporates Track P `20ac7d1903b9a018d0c81fe67d5441a36b483062`.
+The enabled path uses native range and the same damage and hit model for
+both ordinary and surplus throws. `attack_throw_surplus_max_value`
+sets the separate 100-gold cap. The original model remains in use
+when the new flag is off.
+
+The synced build `31ca4dfc4d633d091141505d13436fe750c37f37` matched all
+four current smoke references. All 15 named replays reproduced keys,
+messages, state and decision traces. In the added launcherless Mage
+control at nine tiles, the enabled arm threw oil with
+`attack_throw_as_melee=0`, and the disabled arm retained its historical
+six-tile aim limit. The formatter, Clippy, both Rust test suites and
+parameter citations passed.
+[Pinned evidence](https://github.com/diegoami/borg-cemetery/tree/cd36af16fa5b6660a073cf2aeb541da0941ddb2c/scenarios/surplus-throwing-1200/review-followup)
+
+Zoo #782 uses eligible-start and encounter counts as the pilot endpoints.
+Survival remains a guardrail. Dispatch and any activation decision belong
+to the owner.
