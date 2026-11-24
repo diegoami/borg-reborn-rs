@@ -65,3 +65,10 @@ current class can browse, regardless of spell level or mana. The town
 planner prefers an existing Home copy for the reserve. It can store
 books at Home, sell spare carried copies, and sell books for other classes
 under its usual rules.
+
+The named Gnome Ranger replay (seed 1895660873) sold Lesser Charms at
+turn 221 with protection disabled. With protection enabled, it still
+had the book when its first spell became available, and no sale was
+logged through 20,000 turns. All four default-core smoke games matched
+the existing reference. The planner test exercises a reserved copy,
+a spare in the same stack, and a spare when a copy is at Home.

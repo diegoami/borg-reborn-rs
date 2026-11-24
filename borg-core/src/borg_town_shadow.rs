@@ -303,7 +303,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } else { None };
         KitItem {
             home_room,
-            keep_last_book: crate::borg_store_sell::protects_class_book(it),
+            keep_last_book: protects_class_book(it),
             protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                 && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -860,6 +860,12 @@ mod knowledge_only_purchase_tests {
             assert_eq!(copies_bought(effective_params(configured()), utility), 0, "utility {utility}");
         }
     }
+}
+
+/// Match the engine's class book list independently of spell level and mana.
+pub(crate) fn protects_class_book(item: &borg_item) -> bool {
+    param(Param::town_keep_last_class_book) != 0 && item.kind != 0
+        && engine::obj_kind_can_browse(item.kind as usize)
 }
 
 #[cfg(test)]

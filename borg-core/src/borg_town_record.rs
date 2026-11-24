@@ -220,6 +220,7 @@ fn entry(e: &PlanEntry) -> [i64; 7] {
 /// A kit stack as the record writes it: `[place, slot, kind, qty, weight,
 /// need, reduction, power, proceeds, sell_shop, flags]`, `place` 0 pack 1
 /// Home, `flags` bit 0 unknown, bit 1 unknown flavour, bit 2 just bought.
+/// Bit 8 marks the stack reserved for a class book; older records leave it clear.
 fn kit_row(k: &KitItem) -> [i64; 12] {
     [
         i64::from(k.place == Place::Home),

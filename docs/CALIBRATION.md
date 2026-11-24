@@ -8561,3 +8561,4 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:874` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:867` |

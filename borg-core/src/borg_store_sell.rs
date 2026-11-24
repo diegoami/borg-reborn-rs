@@ -977,14 +977,8 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     true
 }
 
-/// The engine recognizes class books independently of spell level and mana.
-pub(crate) fn protects_class_book(item: &borg_item) -> bool {
-    param(Param::town_keep_last_class_book) != 0 && item.kind != 0
-        && engine::obj_kind_can_browse(item.kind as usize)
-}
-
 pub(crate) fn disposable_book_quantity(st: &BorgState, item: &borg_item, quantity: i32) -> i32 {
-    if !protects_class_book(item) {
+    if !crate::borg_town_shadow::protects_class_book(item) {
         return quantity;
     }
     let owned: i32 = st.items.items.iter().take(pack_size() as usize)

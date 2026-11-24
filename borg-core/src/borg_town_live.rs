@@ -113,6 +113,8 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
                 || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
+            let excess = if shop == BORG_HOME { excess }
+                else { crate::borg_store_sell::disposable_book_quantity(st, item, excess) };
             let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
             let Some(quantity) = (1..=excess).rev().find(|&n| native.store_accepts_quantity(shop, n)) else { continue; };
             let code = if shop == BORG_HOME { action::STORE } else { action::SELL };
