@@ -259,6 +259,8 @@ borg_param_town_store_only_overweight = 1
 
 borg_param_town_departure_free_weight = 50
 borg_param_town_departure_free_slots = 2
+# #1168: optional plain quiver reserve when unloading for departure weight.
+borg_param_town_quiver_trim_reserve = 0
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
