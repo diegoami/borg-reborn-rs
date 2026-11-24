@@ -634,7 +634,14 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Hack to recharge mana if a low level mage or priest
     if mana_rest_sp_floor(st).is_some_and(|floor| st.borg.tr(BI_CURSP) < floor)
-        && p < i32::from(st.borg.avoidance) / param(Param::recover_mana_rest_danger_divisor)
+        && p < mana_rest_danger_gate(
+            param(Param::recover_mana_rest_full_hp) != 0,
+            st.borg.tr(BI_CURHP),
+            st.borg.tr(BI_MAXHP),
+            i32::from(st.borg.avoidance),
+            param(Param::recover_danger_divisor),
+            param(Param::recover_mana_rest_danger_divisor),
+        )
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && st.borg.tr(BI_ISWEAK) == 0
         && st.borg.tr(BI_ISCUT) == 0
@@ -1320,6 +1327,24 @@ fn rest_sp_floor(st: &BorgState) -> i32 {
     st.borg.tr(BI_MAXSP) * tenths / 10
 }
 
+/// #1211: the danger gate of the "Resting to gain Mana" branch. At full HP
+/// the only missing resource is mana, and the general recovery veto at the
+/// top of `borg_recover` has already passed at this danger
+/// (`recover_danger_divisor`) — so the stricter mana-only gate
+/// (`recover_mana_rest_danger_divisor`) refuses exactly the state the
+/// recovery walk was armed for: the recorded Priest (Borg261124230918) paced
+/// between recovery grids forever because its corridor sat at danger 20-25,
+/// above the mana gate's 17 but inside the recovery gate's 42. The rest
+/// itself is not more exposing than the cures and preps the same danger
+/// allows: it ends at the first monster seen or the first blow. 0 = C.
+fn mana_rest_danger_gate(full_hp: bool, curhp: i32, maxhp: i32, avoidance: i32, general_div: i32, mana_div: i32) -> i32 {
+    if full_hp && curhp >= maxhp {
+        avoidance / general_div
+    } else {
+        avoidance / mana_div
+    }
+}
+
 fn mana_rest_sp_floor(st: &BorgState) -> Option<i32> {
     let sp = st.borg.tr(BI_MAXSP);
     (sp != 0 && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level)
@@ -1413,6 +1438,21 @@ mod rest_at_stairs_tests {
     fn only_a_flight_to_stairs_commits_the_rest() {
         assert_eq!(super::flee_flow_flight(false, 11), (false, 0), "the breeder exit");
         assert_eq!(super::flee_flow_flight(true, 11), (true, 11), "a stair flow, 11 steps to go");
+    }
+}
+
+#[cfg(test)]
+mod mana_rest_gate_tests {
+    use super::mana_rest_danger_gate;
+
+    /// #1211: at full HP the general recovery gate governs; C's stricter
+    /// mana gate stays for everything else and at the off switch.
+    #[test]
+    fn full_hp_reads_the_general_recovery_gate() {
+        // avoidance 170, general divisor 4 (42), mana divisor 10 (17).
+        assert_eq!(mana_rest_danger_gate(true, 170, 170, 170, 4, 10), 42, "full HP: the recovery gate");
+        assert_eq!(mana_rest_danger_gate(true, 169, 170, 170, 4, 10), 17, "hurt: C's mana gate");
+        assert_eq!(mana_rest_danger_gate(false, 170, 170, 170, 4, 10), 17, "0 retains C's gate");
     }
 }
 
