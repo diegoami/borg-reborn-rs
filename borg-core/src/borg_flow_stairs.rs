@@ -1516,6 +1516,9 @@ mod off_stair_handoff_tests {
 /// engine. Feed the queued movement keys back as the next Borg observations.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
+    if case == "leave-level-upstairs" {
+        crate::borg_think_dungeon_util::run_leave_level_regression(st);
+    }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;

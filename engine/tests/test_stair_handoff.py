@@ -221,5 +221,71 @@ class EmergencyStairHandoffTest(unittest.TestCase):
         self.run_case("blocked", 0)
 
 
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class LeaveLevelUpstairsTest(unittest.TestCase):
+    """#1173: the dungeon decision's leave entry point on an exhausted level.
+
+    The recorded Ranger (Borg261124105138, track-p c5501d3c) spent 521
+    decisions walking between secret-door search targets on DL3 with two
+    reachable up stairs and no down stair: the power dive set the direction
+    before the exhausted branch could allow the fallback to up stairs.
+    """
+
+    def run_case(self, case):
+        with tempfile.TemporaryDirectory(prefix="leave-level-upstairs-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            config = (ROOT / "harness/borg.txt").read_text()
+            # #1061's stair_scum, #1098's mixed walk and #1140's poison
+            # triage are not what the case tests. The prepared_* gates make
+            # a birth-level character dive-prone (the incident's CL8 Ranger
+            # was prepared for DL3 and for DL8); the breadth-first and
+            # mixed walks are pinned off so the level's exhaustion is C's
+            # ("nothing reachable left within the leash"), which needs
+            # explore_c_leave_when_done = 1.
+            pinned = [
+                ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
+                ("explore_breadth_first", 0),
+                ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
+                ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
+                ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
+                ("prepared_recall_depth", 0),
+                # the per-class values override the base setting
+                ("prepared_dl34_min_hp__warrior", 0), ("prepared_dl34_min_clevel__warrior", 0),
+                ("prepared_dl59_min_hp__warrior", 0), ("prepared_dl59_min_clevel__warrior", 0),
+                # a birth-level character passes the clevel gate only with the margin
+                ("prepared_clevel_depth_margin", 7),
+            ]
+            for key, value in pinned:
+                name = f"borg_param_{key}"
+                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{name} = {value}\n"
+            # the trip policy's own prepared estimate would ascend a birth
+            # character regardless of the case's decision state. Replaced in
+            # place: a line after the file's formula section is not read as
+            # a setting.
+            for key, value in (("borg_trip_policy", 0),):
+                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                if changed == 0:
+                    config += f"\n{key} = {value}\n"
+            (paths["user"] / "borg.txt").write_text(config)
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", "0", "-class", "0", "-menu-letters", "-start-depth", "3", "-keys", "250"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("leave-level-upstairs passed (#1173)", result.stdout)
+
+    def test_exhausted_dive_falls_back_to_a_reachable_up_stair(self):
+        self.run_case("leave-level-upstairs")
+
+
 if __name__ == "__main__":
     unittest.main()

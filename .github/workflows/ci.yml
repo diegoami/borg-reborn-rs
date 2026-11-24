@@ -292,6 +292,7 @@ jobs:
       # think writes its comparison to truth.jsonl (feature test-perception).
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff harness/build.sh
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # Full too: smoke has too few monsters to meet every case (T2.5 found
