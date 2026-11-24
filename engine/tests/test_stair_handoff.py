@@ -91,6 +91,8 @@ PINNED_TOWN_SETTINGS = [
     # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
     # end, which the recorded turns depend on).
     ("trait_timed_sync", 0),
+    # #1184 shipped ranged shopping and resupply after these incidents.
+    ("town_ranged_readiness", 0), ("trip_ranged_readiness", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
