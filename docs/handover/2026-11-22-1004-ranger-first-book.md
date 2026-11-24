@@ -57,11 +57,11 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
   reads (finding 2), and the shipped value in `docs/CALIBRATION.md`
   (finding 3).
 
-### Ranger follow-up (2026-11-24)
+### Protecting the last class book (2026-11-24)
 
-The shared setting remains 1. Rangers use 2 so that their CL3 first
-spell counts from CL1. A named replay of Gnome Ranger seed 1895660873
-on the default borg-rs core reproduced the Lesser Charms sale at
-turn 221 with 1. With 2, there was no sale of Lesser Charms through
-100,000 turns. All four smoke runs matched the existing reference.
-The population pilot at 4 remains documented in borg-zoo#693.
+The shared look-ahead remains 1. The new shipped
+`town_keep_last_class_book = 1` reserves one owned copy of every book the
+current class can browse, regardless of spell level or mana. The town
+planner prefers an existing Home copy for the reserve. It can store
+books at Home, sell spare carried copies, and sell books for other classes
+under its usual rules.

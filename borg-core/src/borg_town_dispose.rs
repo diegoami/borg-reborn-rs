@@ -63,6 +63,8 @@ pub struct KitItem {
     pub home_room: Option<[i32; 3]>,
     /// A known detection scroll with an explicit protection against disposal.
     pub protect_disposal: bool,
+    /// This stack holds the reserved copy of an owned class spellbook.
+    pub keep_last_book: bool,
     /// A known kind the capability planner deliberately declines.
     pub home_unwanted: bool,
     /// A known repeatable consumable subject to the per-kind Home limit.
@@ -292,7 +294,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false,
+        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
             joins_pack: false,
             place,
             slot,

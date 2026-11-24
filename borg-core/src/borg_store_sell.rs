@@ -977,6 +977,24 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     true
 }
 
+/// The engine recognizes class books independently of spell level and mana.
+pub(crate) fn protects_class_book(item: &borg_item) -> bool {
+    param(Param::town_keep_last_class_book) != 0 && item.kind != 0
+        && engine::obj_kind_can_browse(item.kind as usize)
+}
+
+pub(crate) fn disposable_book_quantity(st: &BorgState, item: &borg_item, quantity: i32) -> i32 {
+    if !protects_class_book(item) {
+        return quantity;
+    }
+    let owned: i32 = st.items.items.iter().take(pack_size() as usize)
+        .chain(st.store.shops.get(BORG_HOME).into_iter().flat_map(|home| &home.ware))
+        .filter(|stack| stack.kind == item.kind)
+        .map(|stack| i32::from(stack.iqty))
+        .sum();
+    quantity.min(i32::from(item.iqty)).min((owned - 1).max(0))
+}
+
 /// Step 2 -- sell "useless" items to a shop (for cash)
 pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
     let icky = (store_inven_max() - 1) as usize;
@@ -1050,12 +1068,14 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
             let (ku, iu) = (k as usize, i as usize);
 
+            let qty = borg_min_item_quantity(st, &item);
+            let qty = disposable_book_quantity(st, &item, qty);
+            if qty <= 0 {
+                continue;
+            }
+
             // Give the item to the shop
             st.store.shops[ku].ware[icky] = st.items.safe_items[iu];
-
-            // get the quantity
-            let copy = st.items.items[iu];
-            let qty = borg_min_item_quantity(st, &copy);
 
             // Give "qty" items
             st.store.shops[ku].ware[icky].iqty = qty as u8;
@@ -1148,7 +1168,13 @@ fn sell_selected(st: &mut BorgState, quantity: Option<i32>) -> bool {
         let idx = st.borg.goal.item as usize;
         let item = st.items.items[idx];
 
-        let qty = quantity.unwrap_or_else(|| borg_min_item_quantity(st, &item));
+        let mut qty = quantity.unwrap_or_else(|| borg_min_item_quantity(st, &item));
+        if st.borg.goal.shop != BORG_HOME as i16 {
+            qty = disposable_book_quantity(st, &item, qty);
+            if qty <= 0 {
+                return false;
+            }
+        }
 
         // Log
         let mut note = b"# Selling ".to_vec();

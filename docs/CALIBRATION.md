@@ -8521,12 +8521,12 @@ messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
 
 ## #1004: keeping a first spellbook before its first spell
 
-The registry holds **2522** parameters with this addition. The shared
-shipped look-ahead is 1 level, and `harness/borg.txt` sets it to 2 for
-Rangers so their CL3 spell counts from CL1. The compiled fallback is 0.
-At the shared setting, a Half-Elf, Elf or Half-Troll Paladin can keep
-its book from CL1, and a Rogue from CL4. The population pilot used 4
-levels (borg-zoo#693).
+The shared shipped look-ahead is 1 level, with a compiled fallback of 0.
+The shipped `town_keep_last_class_book = 1` protects one owned copy of
+each book the current class can browse, including dungeon books and books
+whose spells are beyond the character's current level or mana. The town
+planner can store the reserved copy at Home and sell spare carried copies.
+The population look-ahead pilot used 4 levels (borg-zoo#693).
 
 The town planner (`borg_town_capability.rs`) supplies a class book only
 while one of its spells is castable now: `slevel` at most the level and

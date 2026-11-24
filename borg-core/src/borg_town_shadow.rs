@@ -303,6 +303,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } else { None };
         KitItem {
             home_room,
+            keep_last_book: crate::borg_store_sell::protects_class_book(it),
             protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                 && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -388,6 +389,12 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } };
         crate::borg_trait::borg_notice(st, true);
         kit.push(fact(st, it, Place::Home, slot, gain));
+    }
+
+    // Reserve one stack per book kind, preferring a copy already safe at Home.
+    let mut reserved_books = std::collections::BTreeSet::new();
+    for stack in kit.iter_mut().rev().filter(|stack| stack.keep_last_book) {
+        stack.keep_last_book = reserved_books.insert(stack.kind);
     }
 
     st.borg = borg;

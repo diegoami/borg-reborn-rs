@@ -398,8 +398,11 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
         action::SELL_HOME | action::DROP_HOME => crate::borg_store_buy::take_selected_for_disposal(st),
         action::SELL | action::STORE => {
-            st.think.town_live.pending_sale = Some(SaleStamp::of(st.think.shop_num, a.at[1] as usize, &st.items.items[a.at[1] as usize]));
-            crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32)
+            let slot = a.at[1] as usize;
+            let stamp = SaleStamp::of(st.think.shop_num, slot, &st.items.items[slot]);
+            let sold = crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32);
+            if sold { st.think.town_live.pending_sale = Some(stamp); }
+            sold
         }
         _ => false,
     };
@@ -436,6 +439,10 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let splits = (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
         && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel;
     let drop_qty = drop_quantity(a.at[2], qty, splits);
+    if i64::from(crate::borg_store_sell::disposable_book_quantity(st, item, drop_qty as i32)) < drop_qty {
+        clear(st);
+        return false;
+    }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
