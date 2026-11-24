@@ -7045,6 +7045,17 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
 
     // borg-reborn-rs (#483): not while rising, unless in real danger.
     if rising_holds_descent(st, pos_danger) {
+        let arrival = (st.borg.time.level, st.borg.flight_time);
+        if st.borg.stair_more && !recall_restricts(st)
+            && st.borg.flight_to_stairs && st.borg.flight_steps == 1
+            && st.borg.flight_depth == engine::player_depth()
+            && borg_timer(st, st.borg.flight_time) == 1
+            && u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE
+            && st.stairs.rising_refusal_noted != Some(arrival)
+        {
+            st.stairs.rising_refusal_noted = Some(arrival);
+            borg_note(st, "# Down-stair flight arrival held while rising (#1159)");
+        }
         st.borg.stair_more = false;
     }
 

@@ -82,6 +82,8 @@ pub struct StairsState {
     /// Down stair left while exploring for or following a route to an up stair.
     pub(crate) up_search_departure: Option<UpSearchDeparture>,
     pub(crate) off_stair_handoff: OffStairHandoff,
+    /// Last stair-flight arrival reported as held, by level and flight think.
+    pub(crate) rising_refusal_noted: Option<(i32, i32)>,
 }
 
 /// Let the up-stair route take a second step before a fallback can undo
@@ -1703,6 +1705,18 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         observe_move(st, b'6', approach);
         assert!(desperate_for_stairs(st, 0));
         observe_move(st, b'6', down);
+
+        // Model a hold that applies on arrival after the last flight step.
+        st.borg.time.level = st.borg.time.now - 2;
+        let arrival = (st.borg.time.level, st.borg.flight_time);
+        borg_caution(st);
+        assert_eq!(st.stairs.rising_refusal_noted, Some(arrival));
+        assert!(!st.io.queued_keys().contains(&u32::from(b'>')));
+        while !st.io.queued_keys().is_empty() {
+            borg_io::borg_inkey(st, true);
+        }
+
+        st.borg.time.level = hold_start;
         assert!(borg_caution(st), "caution now takes the down stairs");
         assert_eq!(st.io.queued_keys(), [u32::from(b'>')]);
         borg_io::borg_inkey(st, true);

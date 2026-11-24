@@ -18,3 +18,10 @@ the individual pinned parameters is still open in #1101.
 
 The DL5 and DL9 recordings remain needed for #1106 and #1121. Further
 search-accounting policy is tracked in #1141.
+
+The flight-arrival note counts one event per observed final flight step
+that reaches a down staircase and is refused by the ordinary rising
+hold. It runs in both comparison arms. Pair the same candidate at
+`caution_rising_skip_held_stairs=0` and `=1`, and record refusal events,
+loop detections, exits, deaths, and depth at the cap. The candidate
+retains caution's priority over the breaker, as established in #1158.
