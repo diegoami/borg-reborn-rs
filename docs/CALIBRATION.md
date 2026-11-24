@@ -8169,11 +8169,10 @@ interesting grids the Borg can reach, and the grids past the return leash.
      ⌊max HP / *c*⌋ is the turns of contact the Borg survives on the rest of
      the way.
 
-   The limit is never below the start, never above `explore_mix_max_radius`,
-   and never above C's leash (`borg_get_leash`) where that applies, so the
-   walk never goes farther than today's. The shipped numbers give 8 steps at
-   17 HP, 10 at 26 HP and 17 at 60 HP, against C's leash of 21 at CL4 and 27
-   at CL6.
+   The start is the floor before applying the radius cap and C's leash
+   (`borg_get_leash`). With the original escape-model inputs, the uncapped
+   radius is 8 steps at 17 HP, 10 at 26 HP and 17 at 60 HP. A zero radius
+   cap (#1208) limits mixed exploration targets to staircase squares.
 2. **Depth-first inside the radius** (`mixed_plan`). Every candidate within
    *R* is a goal of one spread, so the flow leads to the one nearest the Borg
    (C's choice). A path may not cross a ring beyond *R* or the Borg's own
