@@ -1720,3 +1720,185 @@ pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
     // its queued keys can be applied to the live engine's unrelated cave.
     std::process::exit(0);
 }
+
+/// #1177 (`more-refused-gates`): the dungeon decision with no up staircase
+/// seen and a reachable down staircase, on a birth-level Warrior whose pack
+/// carries no food. At the shipped `stairs_descent_gates_without_upstair` 0,
+/// C's wrapper ("if there are no down stairs, don't filter use of up
+/// stairs") skips the descent gates and the dive takes the down staircase;
+/// at 1 the hunger gate refuses the descent and no staircase is taken. One
+/// arm runs per driver case: the setting is fixed for the whole process.
+/// The driving test pins the `prepared_*` gates (base and `__warrior`) to 0
+/// and `prepared_clevel_depth_margin` to 7, so the character is dive-prone
+/// as in the #1173 fixture; `explore_c_leave_when_done` stays 0, since the
+/// case's exhaustion is not what it tests.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_more_refused_regression(st: &mut BorgState) -> ! {
+    use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL};
+
+    let start = loc { x: 40, y: 20 };
+    let down = loc { x: 46, y: 20 };
+
+    // The pack: the real birth kit with every food stack blanked, so the
+    // notice's food count is 0 and `more_refused`'s hunger gate has
+    // grounds. The Phase Door and the Cure Light Wounds keep the static
+    // `prepared()`/`restock()` gates light, as in the #1173 fixture; the
+    // items carry their real kinds and are aware, and the power sentinel
+    // keeps the item decisions out of the way.
+    let pack_kit = |st: &mut BorgState| {
+        let kind_of = |tval: u32, sval: i32| -> u32 {
+            for k in 0..engine::k_max() {
+                let kind = engine::kind(k);
+                if kind.tval as u32 == tval && i32::from(kind.sval) == sval {
+                    return k as u32;
+                }
+            }
+            panic!("no object kind for tval {tval} sval {sval}");
+        };
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        // The spare wearable would be wielded; every food stack would feed
+        // the hunger gate's `BI_FOOD` count. Blank both.
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty == 0 {
+                continue;
+            }
+            let wearable = crate::borg_inventory::borg_wield_slot(slot) >= 0;
+            let food = u32::from(slot.tval) == TV_FOOD as u32;
+            if wearable || food {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        let mut free: Option<usize> = None;
+        for (i, slot) in st.items.items[..pack].iter().enumerate() {
+            if slot.iqty == 0 {
+                free = Some(i);
+                break;
+            }
+        }
+        for (tval, sval) in [(TV_SCROLL as u32, st.item_val.sv_scroll_phase_door), (TV_POTION as u32, st.item_val.sv_potion_cure_light)] {
+            let mut item = crate::borg_item::blank_item();
+            item.aware = true;
+            item.ident = true;
+            item.kind = kind_of(tval, sval);
+            item.tval = tval as u8;
+            item.sval = sval as u8;
+            item.iqty = 1;
+            item.value = engine::kind_cost_of(item.kind as usize);
+            st.items.items[free.expect("a free pack slot")] = item;
+            free = Some(free.expect("a free pack slot") + 1);
+        }
+        st.borg.power = i32::MAX / 2;
+    };
+
+    // The fabricated level: a known floor sea, one down staircase within
+    // the leash (12 steps at CL1), and no up staircase anywhere — not in
+    // the cave, and none in the track (`less.num = 0`), which is the
+    // wrapper's condition under test.
+    let setup = |st: &mut BorgState| {
+        assert!(
+            engine::option_set(c"birth_force_descend", false),
+            "the birth option exists"
+        );
+        let wid = i32::from(engine::z_info().dungeon_wid);
+        let hgt = i32::from(engine::z_info().dungeon_hgt);
+        crate::borg_cave::borg_init_cave(st);
+        for y in 0..hgt {
+            for x in 0..wid {
+                st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+            }
+        }
+        st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        st.borg.c = start;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // The tail's twitchy phase would read the pack's Phase Door; two
+        // twitches are already spent, so a failing think stops before it.
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        st.stairs.less.num = 0;
+        st.stairs.more.num = 1;
+        st.stairs.more.x[0] = down.x;
+        st.stairs.more.y[0] = down.y;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // The two arms run one per driver case: the setting is fixed for the
+    // whole process, and each arm asserts the decision its setting must
+    // produce.
+    if crate::params::value(crate::params::Param::stairs_descent_gates_without_upstair) == 0 {
+        // --- The shipped gate (0): C's wrapper skips the descent gates
+        // and the dive takes the reachable down staircase. ---
+        setup(st);
+        pack_kit(st);
+        assert!(
+            crate::borg_think_dungeon::borg_think_dungeon(st),
+            "the dive takes the reachable down stair"
+        );
+        assert_eq!(i32::from(st.borg.goal.type_0), GOAL_BORE, "the dive's flow");
+        assert!(
+            !st.io.queued_keys().contains(&u32::from(b'<')),
+            "no up staircase is taken: none is known"
+        );
+        assert_eq!(
+            st.io.queued_keys().len(),
+            1,
+            "one step toward the down stair: {:?}",
+            st.io.queued_keys()
+        );
+        let d0 = (st.borg.c.x - down.x).abs().max((st.borg.c.y - down.y).abs());
+        let dir = (crate::borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;
+        st.borg.c = loc {
+            x: st.borg.c.x + i32::from(engine::ddx(dir)),
+            y: st.borg.c.y + i32::from(engine::ddy(dir)),
+        };
+        let d1 = (st.borg.c.x - down.x).abs().max((st.borg.c.y - down.y).abs());
+        assert!(d1 < d0, "the step goes toward the down stair");
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+    } else {
+        // --- The gate applied (1): the hunger gate refuses the descent;
+        // no descent flow is committed and no staircase is taken in any
+        // think. ---
+        setup(st);
+        pack_kit(st);
+        for _ in 0..2 {
+            let _ = crate::borg_think_dungeon::borg_think_dungeon(st);
+            assert_eq!(
+                i32::from(st.borg.goal.type_0),
+                0,
+                "no descent flow is committed"
+            );
+            assert!(
+                !st.io.queued_keys().contains(&u32::from(b'>')),
+                "the refused descent takes no stair: {:?}",
+                st.io.queued_keys()
+            );
+            while !st.io.queued_keys().is_empty() {
+                crate::borg_io::borg_inkey(st, true);
+            }
+        }
+    }
+
+    println!("more-refused-gates passed (#1177)");
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
