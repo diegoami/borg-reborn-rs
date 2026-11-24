@@ -25,7 +25,7 @@ use crate::borg_escape::{
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
-    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells, more_refused,
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -4692,15 +4692,27 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
-            if borg_prep_leave_level_spells(st) {
+            // borg-reborn-rs (#1178): `stair_more` is set before the descent
+            // flows it belongs to (the leaving block, the power dive,
+            // borg_leave_level's dive) and survives their failure until a
+            // new level clears it — C's own bookkeeping. A later think
+            // standing on a down staircase then takes it here on a stale
+            // flag, past the descent gates the dive itself would have
+            // applied. caution_standing_descent_gated applies those gates
+            // (more_refused) to this take; 0 keeps C.
+            let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+                && more_refused(st, false);
+            if !gated_refuses {
+                if borg_prep_leave_level_spells(st) {
+                    return true;
+                }
+
+                // Take the stairs
+                borg_keypress(st, key(b'>'));
+
+                // Success
                 return true;
             }
-
-            // Take the stairs
-            borg_keypress(st, key(b'>'));
-
-            // Success
-            return true;
         }
     }
 
