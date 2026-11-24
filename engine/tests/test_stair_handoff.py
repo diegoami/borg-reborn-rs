@@ -437,9 +437,6 @@ class MoreRefusedGatesTest(unittest.TestCase):
 
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class NoteStandingFlagsTest(unittest.TestCase):
     """#1176: caution's danger + standing-on-up-stair trigger.
@@ -506,6 +503,10 @@ class NoteStandingFlagsTest(unittest.TestCase):
 
     def test_flags_on_the_danger_standing_trigger_takes_the_up_stair(self):
         self.run_case(1)
+
+
+if __name__ == "__main__":
+    unittest.main()
 
 
 if __name__ == "__main__":
