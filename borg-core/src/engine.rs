@@ -2178,6 +2178,10 @@ impl<'a> From<CarriedObject<'a>> for GameObject<'a> {
     }
 }
 
+fn known_element_level(level: i16, rune_level: i16) -> i16 {
+    if level == 1 && rune_level == 0 { 0 } else { level }
+}
+
 impl<'a> GameObject<'a> {
 
     fn obj(&self) -> &object {
@@ -2251,9 +2255,24 @@ impl<'a> GameObject<'a> {
     pub fn modifiers(self) -> [i16; 16] {
         self.obj().modifiers
     }
-    /// `obj->el_info`
-    pub fn el_info(self) -> [element_info; 25] {
-        self.obj().el_info
+    /// The item's known element properties. For a partially identified
+    /// object, `equip_learn_element` can use a known resistance level of
+    /// 1 as an exposure marker while the corresponding rune is still
+    /// unknown (obj-knowledge.c:2131–2160).
+    pub fn known_element_info(self, fully_known: bool) -> [element_info; 25] {
+        if fully_known {
+            return self.obj().el_info;
+        }
+        let Some(known) = self.known() else { return self.obj().el_info };
+        let p = player_ref();
+        assert!(!p.obj_k.is_null(), "player not set up");
+        // SAFETY: obj_k is allocated with the player (checked above).
+        let runes = unsafe { &(*p.obj_k).el_info };
+        let mut elements = known.obj().el_info;
+        for (element, rune) in elements.iter_mut().zip(runes) {
+            element.res_level = known_element_level(element.res_level, rune.res_level);
+        }
+        elements
     }
 
     /// `obj->known`, if not NULL.
@@ -3537,6 +3556,17 @@ pub extern "C" fn borg_rs_test_home_attempt(stored: bool, success: bool, kind: u
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exposure_marker_does_not_grant_resistance() {
+        // #1145: a poison hit left level 1 in the shield's known shadow
+        // while the poison rune was unknown.
+        assert_eq!(known_element_level(1, 0), 0);
+        assert_eq!(known_element_level(1, 1), 1);
+        assert_eq!(known_element_level(0, 1), 0);
+        assert_eq!(known_element_level(-1, 1), -1);
+        assert_eq!(known_element_level(3, 1), 3);
+    }
 
     // `flag_has`/`flag_next` need no engine: these are the boundaries of
     // review finding 2 (docs/SELF-REVIEW.md F2).
