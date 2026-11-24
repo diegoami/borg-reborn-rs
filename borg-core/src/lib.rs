@@ -62,6 +62,7 @@ pub(crate) mod borg_item_use;
 pub(crate) mod borg_item_val;
 pub(crate) mod borg_item_wear;
 pub(crate) mod borg_kit;
+pub(crate) mod borg_ranged;
 pub(crate) mod borg_junk;
 pub(crate) mod borg_light;
 mod borg_cursed;

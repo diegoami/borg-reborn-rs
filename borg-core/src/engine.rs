@@ -2517,9 +2517,21 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
-#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
+}
+
+pub(crate) fn activation_effect_values(index: i32, kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
+    // SAFETY: the loaded activation array is a linked catalogue. The index
+    // being looked up is from known equipment, and each effect is read only.
+    unsafe {
+        let mut act = crate::headers::object_h::activations.add(1);
+        while !act.is_null() {
+            if (*act).index == index { return effect_values((*act).effect, level); }
+            act = (*act).next;
+        }
+    }
+    kind_effect_values(kind, level)
 }
 
 fn effect_values(mut e: *const crate::headers::object_h::effect, level: i32) -> Vec<(u16, i32, i64)> {
