@@ -670,7 +670,8 @@ fn spastic_value(st: &BorgState, nb: &[BorgGrid; 8], xtra: u8, cost: i32, bored:
 }
 
 /// Count a reached floor search when exploration doubles back (#1131).
-/// At an up staircase, keep the immediate reversal check from #1106.
+/// At an up staircase, count the observed arrival when a dark action targets
+/// the previous grid. The queued action can take a turn in place (#1106).
 pub(crate) fn notice_interrupted_spastic_search(st: &mut BorgState, next: loc) {
     let here = (st.borg.c.y, st.borg.c.x);
     let feat = u32::from(st.cave.grid(here.1, here.0).feat);
