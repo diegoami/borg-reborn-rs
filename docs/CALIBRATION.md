@@ -954,13 +954,13 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
   Necromancer 2074919561 buying 9 CLW and no CSW is not explained by the
   reserve). 0 keeps the saturating curve, under which Cure
   Serious Wounds were bought, then stored at the Home (#710, #711).
-- **`town_csw_reserve_percent`** (percent, 0, #1162). After light, food,
+- **`town_csw_reserve_percent`** (percent, default 0, shipped 100, #1162). After light, food,
   and the Phase Door reserve are covered, an affordable shop CSW can receive
   a bonus on the restore weight. Due Recall takes precedence. Carried full
   confusion cures count toward the first copy. The second copy gets one
   quarter of the bonus. The normal healing curve and budget still apply.
-  Try 100 in a paired Zoo pilot. The weight and the second-copy fraction are
-  hypotheses.
+  The shipped weight and the second-copy fraction are hypotheses for a
+  paired Zoo pilot.
 - **The kobold shaman** (`monster.txt:1450`, DL3, 11 HP, speed +0, `WOUND |
   CONF | HEAL | MISSILE` 1 in 5): no setting, only two lines a zoo arm
   appends to the scary list (borg-zoo#228; `attack_on_sight` ships 1, so
