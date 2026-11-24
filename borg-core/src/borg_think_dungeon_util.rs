@@ -1392,8 +1392,10 @@ fn screen_hgt_wid() -> (i32, i32) {
 /// staircase keeps the dive; forced descent still forbids the up staircase;
 /// an explicit retreat (`goal.rising`) holds its descent; and an explicit
 /// leaving (`goal.leaving`, the restock decisions' way) still ends in the
-/// up-staircase flow. The driving test pins the `prepared_*` gates to 0, so
-/// a birth-level Warrior dives.
+/// up-staircase flow. The driving test pins the `prepared_*` gates (base
+/// and `__warrior`) to 0 and `prepared_clevel_depth_margin` to 7, so a
+/// birth-level Warrior is prepared for this depth and for five deeper and
+/// dives.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
     use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL};
