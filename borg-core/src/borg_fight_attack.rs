@@ -3018,14 +3018,12 @@ fn attack_throw_surplus(st: &mut BorgState, legacy_slot: i32, legacy_damage: i32
     let mut kills = st.fight_attack.kill_best;
     let worn = st.items.items[inven_wield() as usize];
     let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
-    let mut throwing_menu = false;
     st.fight_attack.throwing = true;
     for k in 0..inven_wield() {
         let item = st.items.items[k as usize];
         if !surplus_weapon(st, k, &item, &worn) {
             continue;
         }
-        throwing_menu = true;
         let max = native_throw_range(strength, i32::from(item.weight));
         let per_hit = thrown_damage(i32::from(item.dd), i32::from(item.ds),
             i32::from(item.to_d), i32::from(item.weight), true, false);
@@ -3064,7 +3062,7 @@ fn attack_throw_surplus(st: &mut BorgState, legacy_slot: i32, legacy_damage: i32
             crate::borg_object_log::log_use(st, "throw", &item);
         }
         best.target(st, false);
-        queue_object_throw(st, slot, throwing_menu);
+        queue_object_throw(st, slot);
     }
     score
 }
@@ -3211,11 +3209,11 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
         return b_n;
     }
 
-    queue_object_throw(st, b_k, false);
+    queue_object_throw(st, b_k);
     b_n
 }
 
-fn queue_object_throw(st: &mut BorgState, b_k: i32, throwing_menu: bool) {
+fn queue_object_throw(st: &mut BorgState, b_k: i32) {
     let mut m = b"# Throwing painful object '".to_vec();
     m.extend_from_slice(&desc(&st.items.items[b_k as usize]));
     m.push(b'\'');
@@ -3224,12 +3222,8 @@ fn queue_object_throw(st: &mut BorgState, b_k: i32, throwing_menu: bool) {
     /* Fire */
     borg_keypress(st, key(b'v'));
 
-    // ui-object.c:get_item_action switches SHOW_THROWING's compact list
-    // to the inventory, whose letters address the actual pack slots.
-    if throwing_menu {
-        borg_keypress(st, key(b'/'));
-    }
-
+    // borg_messages_react switches the native compact throw list to the
+    // pack before the queued slot letter is read.
     /* Use the object */
     borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_k)));
 
