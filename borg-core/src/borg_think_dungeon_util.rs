@@ -1720,3 +1720,210 @@ pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
     // its queued keys can be applied to the live engine's unrelated cave.
     std::process::exit(0);
 }
+
+/// #1189 (review of PR #1191, finding 2): the recorded DL1 geometry driven
+/// through the production exploration — `borg_think_dungeon` on the
+/// fabricated cave, not a test copy of the candidate filter. The region is
+/// Borg261124143216's memory map at the pause (x = 104..126, y = 27..47;
+/// the corridor rows are `borg_flow_dark.rs`'s `DL1_VEIN_LOOP`, extended
+/// north to the memory's edge, where a cut would fabricate a frontier the
+/// recording did not have). The corridor at y = 44 runs between (113,44)
+/// and (110,44); the treasure vein west of it is at (109,44), the one
+/// south-east at (114,45); the up staircase is at (112,36).
+///
+/// With `explore_stepable_goals = 1` the veins are no goals: the first
+/// think commits one flow (to the unknown grids of ring 11, east and
+/// north) and the Borg walks out of the corridor. With 0 the first think
+/// commits twice — the recorded "dark-bfs (ring 10) at cost 1" beside the
+/// vein, whose step never comes, then "ring 11 at cost 4" back east — and
+/// the Borg walks 444666 inside the corridor still.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
+    use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_FOOD, BI_LIGHT, BI_MAXHP};
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA_K, FEAT_NONE, FEAT_OPEN};
+
+    assert_eq!(st.borg.tr(BI_CDEPTH), 1, "the fabricated level is DL1");
+
+    const ROWS: [&str; 21] = [
+        "?????????#.#???????????",
+        "?????????#.##.#????????",
+        "?????????#.##.##???????",
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.#...#???????",
+        "?????????#.#.#.####????",
+        "???????###...#.....????",
+        "???????#<....'..###????",
+        "?????######.###.###?##?",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????*...@.............",
+        "?????.####*############",
+        "???????????????????????",
+        "???????????????????????",
+    ];
+
+    let setup = |st: &mut BorgState, at: loc| {
+        // The synthetic start's one-way contract sets this; the case's
+        // geometry decides its own ways (the recipe, step 4).
+        assert!(engine::option_set(c"birth_force_descend", false), "the birth option exists");
+        crate::borg_cave::borg_init_cave(st);
+        for (row, y) in ROWS.iter().zip(27..) {
+            for (ch, x) in row.bytes().zip(104..) {
+                let feat = match ch {
+                    b'?' => FEAT_NONE,
+                    b'#' => FEAT_GRANITE,
+                    b'.' | b'@' => FEAT_FLOOR,
+                    b'<' => FEAT_LESS,
+                    b'*' => FEAT_MAGMA_K,
+                    b'\'' => FEAT_OPEN,
+                    other => panic!("unexpected region char {other}"),
+                };
+                st.cave.grid_mut(x, y).feat = feat as u8;
+            }
+        }
+        // A staircase exists twice (the recipe): the grid above and the
+        // track the flows search.
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = 112;
+        st.stairs.less.y[0] = 36;
+        st.stairs.more.num = 0;
+        st.borg.c = at;
+        // The recorded Half-Troll Warrior at CL1: 23 HP, so breadth-first
+        // applies (below the threshold) and stair_scum does not (at it).
+        st.borg.avoidance = 23;
+        for (index, value) in [(BI_CDEPTH, 1), (BI_CLEVEL, 1), (BI_CURHP, 23), (BI_MAXHP, 23), (BI_LIGHT, 1), (BI_FOOD, 4)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.borg.status.vault = false;
+        st.borg.near.breeder = false;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // A failing think stops before the twitchy tail (the recipe).
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        // The birth kit's spare wearable would be wielded before the
+        // exploration (the recipe); the sentinel power keeps every item
+        // decision out of the exploration think.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && crate::borg_inventory::borg_wield_slot(slot) >= 0 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.power = i32::MAX / 2;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // One queued movement key per think, consumed as the next observation
+    // (the Borg's own map is the fabricated cave, so the step always
+    // lands; a grid stepped onto unknown is revealed as the floor it is,
+    // as the engine's screen would).
+    let take_step = |st: &mut BorgState| {
+        assert_eq!(st.io.queued_keys().len(), 1, "one movement key per think");
+        let dir = (crate::borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;
+        st.borg.c = loc {
+            x: st.borg.c.x + i32::from(engine::ddx(dir)),
+            y: st.borg.c.y + i32::from(engine::ddy(dir)),
+        };
+        let here = st.cave.grid_mut(st.borg.c.x, st.borg.c.y);
+        if u32::from(here.feat) == FEAT_NONE {
+            here.feat = FEAT_FLOOR as u8;
+        }
+        st.borg.time.now += 1;
+    };
+    // The loop's four grids, y = 44, x = 110..113.
+    let in_corridor = |st: &BorgState| st.borg.c.y == 44 && (110..=113).contains(&st.borg.c.x);
+
+    let think = |st: &mut BorgState, label: &str| {
+        let before = st.flow.commit_seq;
+        assert!(
+            crate::borg_think_dungeon::borg_think_dungeon(st),
+            "{label}: the dungeon thinker acts"
+        );
+        st.flow.commit_seq - before
+    };
+
+    // --- The recorded decision at the west end (110,44). ---
+    setup(st, loc { x: 110, y: 44 });
+    let commits = think(st, if on { "on" } else { "off" });
+    if on {
+        // One commit: the flow to the usable frontier (the unknown grids
+        // of ring 11); no vein goal, so no second commit beside the
+        // refused vein step. The step itself is the route's first one
+        // (east or north, a tie of the spread): the walk below judges it.
+        assert_eq!(commits, 1, "on: one flow, straight to the frontier");
+        assert_eq!(i32::from(st.borg.goal.type_0), crate::borg_flow::GOAL_DARK);
+    } else {
+        // Two commits: the recorded "ring 10 at cost 1" beside the west
+        // vein (no step follows) and "ring 11 at cost 4" back east.
+        assert_eq!(commits, 2, "off: the vein aim, refused, then the aim back east");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')], "the recorded stroke goes east");
+    }
+    take_step(st);
+
+    // --- The walk. ---
+    if on {
+        // The Borg leaves the recorded corridor for the frontier: no
+        // 444666. (It may cross the corridor's west end again later, on
+        // its way to the south-west pocket, so the walk is judged by its
+        // leaving, and the level's end either way: explored away, or the
+        // exhaustion mark and the stairs, #1098's exit.)
+        let mut left = false;
+        let mut left_level = false;
+        for think_n in 1..=48 {
+            let commits = think(st, &format!("on walk {think_n}"));
+            assert!(commits <= 1, "on: at most one committed flow per think");
+            if st.io.queued_keys().contains(&u32::from(b'<')) {
+                left_level = true;
+                break;
+            }
+            take_step(st);
+            left |= !in_corridor(st);
+            if think_n == 24 {
+                assert!(left, "on: out of the recorded corridor within 24 thinks");
+            }
+        }
+        assert!(left || left_level, "on: the corridor loop is gone (explored away, or the level left)");
+    } else {
+        // The recorded loop: the Borg walks 444666 inside the corridor,
+        // learning nothing, for as long as the game runs (the recording:
+        // 4,000 turns, 23 cycles from turn 4,472).
+        for _ in 0..48 {
+            think(st, "off walk");
+            take_step(st);
+            assert!(in_corridor(st), "off: the recorded loop stays in the corridor");
+            assert!(
+                st.borg.stair_explore_exhausted.is_none(),
+                "off: no exhaustion while the veins are goals"
+            );
+        }
+    }
+
+    println!("dark vein loop passed: {}", if on { "on" } else { "off" });
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
