@@ -297,7 +297,7 @@ pub(crate) fn observe(st: &mut BorgState) {
 /// The world ticks one Borg turn takes: 10 game turns a tick, the Borg
 /// gaining `extract_energy[speed]` energy a game turn and spending 100 a
 /// turn (at normal speed one tick a turn).
-fn ticks_per_turn() -> i32 {
+pub(crate) fn ticks_per_turn() -> i32 {
     let energy = i32::from(engine::extract_energy(engine::player_combat_speed().clamp(0, 199) as usize)).max(1);
     (10 + energy - 1) / energy
 }
@@ -389,6 +389,9 @@ pub(crate) fn cure_carried(st: &mut BorgState) -> bool {
     // blubbering icky thing, poisoned again the next blow, dead 20 turns
     // sooner). E and the escapes act there; the cure follows.
     if poisoner_adjacent(st) { return false; }
+    if let Some(acted) = crate::borg_combat_heal::before_poison_cure(st) {
+        return acted;
+    }
     let fail = param(Param::caution_heal_spell_fail);
     let v = &st.item_val;
     let (rod, staff, np, ccw) = (v.sv_rod_curing, v.sv_staff_curing, v.sv_potion_cure_poison, v.sv_potion_cure_critical);

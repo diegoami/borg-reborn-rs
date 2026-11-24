@@ -57,15 +57,18 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
   reads (finding 2), and the shipped value in `docs/CALIBRATION.md`
   (finding 3).
 
-### Shipped setting
+### Protecting the last class book (2026-11-24)
 
-The owner chose 1 level on 2026-11-24. A Ranger's CL3 first spell enters
-the look-ahead at CL2, so this setting can still allow the reported CL1
-sale. The zoo pilot measured 4 levels.
+The shared look-ahead remains 1. The new shipped
+`town_keep_last_class_book = 1` reserves one owned copy of every book the
+current class can browse, regardless of spell level or mana. The town
+planner prefers an existing Home copy for the reserve. It can store
+books at Home, sell spare carried copies, and sell books for other classes
+under its usual rules.
 
-### For the owner
-
-- Is 1 the final value or a first step towards the measured 4? At 1 the
-  reported CL1 Ranger sale still happens, so `Closes #1004` overstates what
-  merges.
-- Should a zoo run measure 1 (`ctl` against `la1`)?
+The named Gnome Ranger replay (seed 1895660873) sold Lesser Charms at
+turn 221 with protection disabled. With protection enabled, it still
+had the book when its first spell became available, and no sale was
+logged through 20,000 turns. All four default-core smoke games matched
+the existing reference. The planner test exercises a reserved copy,
+a spare in the same stack, and a spare when a copy is at Home.

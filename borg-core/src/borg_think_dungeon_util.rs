@@ -25,7 +25,9 @@ use crate::borg::BorgTime;
 use crate::borg_escape::borg_recall;
 use crate::borg_flow::{borg_flow_old, AUTO_TEMP_MAX};
 use crate::borg_flow_misc::borg_flow_light;
-use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
+use crate::borg_flow_stairs::{
+    borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+};
 use crate::borg_flow_take::borg_flow_take_scum;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item_use::{
@@ -1045,11 +1047,15 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         return r;
     }
 
+    // borg-reborn-rs (#1173): did this call already try the up stairs? The
+    // exhausted-dive fallback below must not repeat a failed one.
+    let mut up_tried = false;
     if g < 0 {
         if !engine::player_opt(OPT_birth_force_descend) {
             /* Take next stairs */
             borg_note(st, "# Looking for up stairs.  Going up.");
             st.borg.stair_less = true;
+            up_tried = true;
         }
 
         /* don't recall to town from 100 if we are prepared for 99 */
@@ -1121,10 +1127,52 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
             return true;
         }
 
+        // borg-reborn-rs (#1174, review): standing on the very down stair
+        // the dive chose, the flow has no step to queue (cost 0) and falls
+        // into the fallbacks below, which would walk the Borg off the
+        // staircase toward an up stair. Take the stair underfoot, with the
+        // guards of caution's own stair take (recall gates, prep spells).
+        // borg-reborn-rs (#1177, review): with
+        // stairs_descent_gates_without_upstair, a descent the gates refuse
+        // is not completed underfoot either — the refusal above is then a
+        // policy, not a missed step; 0 keeps the take as the #1174 review
+        // left it.
+        let gates_refuse = crate::params::value(
+            crate::params::Param::stairs_descent_gates_without_upstair,
+        ) != 0 && crate::borg_flow_stairs::more_refused(st, false);
+        if exhausted
+            && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE
+            && !crate::borg_caution::recall_restricts(st)
+            && !gates_refuse
+        {
+            borg_note(st, "# Diving by the down stair underfoot (#1174)");
+            if borg_prep_leave_level_spells(st) {
+                return true;
+            }
+            borg_keypress(st, key(b'>'));
+            return true;
+        }
+
         // borg-reborn-rs (#1098, re-review of #1117): down was chosen at
         // random after the walk and cannot be reached: up is allowed too.
         if either_way == Some(1) && !engine::player_opt(OPT_birth_force_descend) {
             borg_note(st, "# Down stairs out of reach; trying up stairs (#1098)");
+            st.borg.stair_less = true;
+            if borg_flow_stair_less(st, GOAL_BORE, false) {
+                borg_note(st, "# Going to stairs up. I'm bored.");
+                return true;
+            }
+        } else if exhausted && !up_tried && !engine::player_opt(OPT_birth_force_descend) {
+            // borg-reborn-rs (#1173): the exploration of this think is done,
+            // the dive chose down, and no down stair can be reached (none
+            // known, or its flow failed): take a known up stair instead of
+            // standing down to the secret-door search. The recorded Ranger
+            // Borg261124105138 spent 521 decisions walking between search
+            // targets on DL3 with two reachable up stairs. A reachable down
+            // stair keeps the dive above, an explicit retreat holds the
+            // descent before this, and forced descent forbids the up stair.
+            // The up flow failing leaves the stand-down of #1098 in place.
+            borg_note(st, "# No down stair to dive by; trying the up stairs (#1173)");
             st.borg.stair_less = true;
             if borg_flow_stair_less(st, GOAL_BORE, false) {
                 borg_note(st, "# Going to stairs up. I'm bored.");
@@ -1360,4 +1408,1371 @@ fn screen_hgt_wid() -> (i32, i32) {
         (t.hgt - t.row_top_map - t.row_bottom_map) / t.tile_height,
         (t.wid - t.col_map - 1) / t.tile_width,
     )
+}
+
+/// #1173 (`leave-level-upstairs`): the dungeon decision on a fully explored,
+/// fabricated level, with the recorded incident's decision state
+/// (`Borg261124105138`, turn 177,047): a power-dive preference (the Borg is
+/// prepared for this depth and for five deeper), no down staircase, two
+/// reachable up staircases, and the C exploration's exhaustion of this think
+/// (`explore_c_leave_when_done`). The Borg must flow to an up staircase and
+/// take it, not stand down to the secret-door search. A reachable down
+/// staircase keeps the dive; standing on that down staircase the dive takes
+/// it underfoot instead of walking off toward an up staircase (#1174
+/// review); forced descent still forbids the up staircase;
+/// an explicit retreat (`goal.rising`) holds its descent; and an explicit
+/// leaving (`goal.leaving`, the restock decisions' way) still ends in the
+/// up-staircase flow. The driving test pins the `prepared_*` gates (base
+/// and `__warrior`) to 0 and `prepared_clevel_depth_margin` to 7, so a
+/// birth-level Warrior is prepared for this depth and for five deeper and
+/// dives.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_leave_level_regression(st: &mut BorgState) -> ! {
+    use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL};
+
+    let start = loc { x: 40, y: 20 };
+    let up_near = loc { x: 43, y: 20 };
+    let up_far = loc { x: 33, y: 20 };
+    let down = loc { x: 46, y: 20 };
+
+    // The pack: the real birth kit (its power bookkeeping stays consistent)
+    // plus rations, a Phase Door and a Cure Light Wounds, so the static
+    // `prepared()`/`restock()` gates read light (the equipped torch), food,
+    // phase and cures, and nothing stands between the Borg and its power
+    // dive (the `prepared_*` gates themselves are pinned by the test). The
+    // items carry their real kinds and are aware: the notice counts only
+    // aware items.
+    let pack_kit = |st: &mut BorgState| {
+        let kind_of = |tval: u32, sval: i32| -> u32 {
+            for k in 0..engine::k_max() {
+                let kind = engine::kind(k);
+                if kind.tval as u32 == tval && i32::from(kind.sval) == sval {
+                    return k as u32;
+                }
+            }
+            panic!("no object kind for tval {tval} sval {sval}");
+        };
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        // The birth kit's spare wearable would be wielded before the leave
+        // decision; blank it, keep everything else (the power bookkeeping
+        // stays on the real kit).
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && crate::borg_inventory::borg_wield_slot(slot) >= 0 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        // The rations merge into the kit's own stack: a second zero-value
+        // stack would be crushed as junk before the leave decision.
+        let mut ration: Option<usize> = None;
+        let mut free: Option<usize> = None;
+        for (i, slot) in st.items.items[..pack].iter().enumerate() {
+            if slot.iqty != 0 {
+                if u32::from(slot.tval) == TV_FOOD as u32
+                    && i32::from(slot.sval) == st.item_val.sv_food_ration
+                {
+                    ration = Some(i);
+                }
+            } else if free.is_none() {
+                free = Some(i);
+            }
+        }
+        match ration {
+            Some(i) => st.items.items[i].iqty += 6,
+            None => {
+                let mut item = crate::borg_item::blank_item();
+                item.aware = true;
+                item.ident = true;
+                item.kind = kind_of(TV_FOOD as u32, st.item_val.sv_food_ration);
+                item.tval = TV_FOOD as u8;
+                item.sval = st.item_val.sv_food_ration as u8;
+                item.iqty = 6;
+                item.value = engine::kind_cost_of(item.kind as usize);
+                st.items.items[free.expect("a free pack slot")] = item;
+            }
+        }
+        for (tval, sval) in [(TV_SCROLL as u32, st.item_val.sv_scroll_phase_door), (TV_POTION as u32, st.item_val.sv_potion_cure_light)] {
+            let mut item = crate::borg_item::blank_item();
+            item.aware = true;
+            item.ident = true;
+            item.kind = kind_of(tval, sval);
+            item.tval = tval as u8;
+            item.sval = sval as u8;
+            item.iqty = 1;
+            item.value = engine::kind_cost_of(item.kind as usize);
+            st.items.items[free.expect("a free pack slot")] = item;
+            free = Some(free.expect("a free pack slot") + 1);
+        }
+        // A sentinel power: no take-off decision can score above it, and the
+        // wear decisions are out (the wearable pack slots are blank). The
+        // leave decision below must not be hijacked by an item decision.
+        st.borg.power = i32::MAX / 2;
+    };
+
+    // The fabricated level: a known floor sea, two up stairs within the
+    // leash (12 steps at CL1), optionally a down stair, and no interesting
+    // grid anywhere, so C's far exploration finds nothing.
+    let setup = |st: &mut BorgState, down_stair: bool| {
+        // The synthetic start's one-way contract sets this; the case's
+        // phases decide their own ways (the forced-descent one sets it).
+        assert!(
+            engine::option_set(c"birth_force_descend", false),
+            "the birth option exists"
+        );
+        let wid = i32::from(engine::z_info().dungeon_wid);
+        let hgt = i32::from(engine::z_info().dungeon_hgt);
+        crate::borg_cave::borg_init_cave(st);
+        for y in 0..hgt {
+            for x in 0..wid {
+                st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+            }
+        }
+        st.cave.grid_mut(up_near.x, up_near.y).feat = FEAT_LESS as u8;
+        st.cave.grid_mut(up_far.x, up_far.y).feat = FEAT_LESS as u8;
+        st.borg.c = start;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // The tail's twitchy phase would read the pack's Phase Door; two
+        // twitches are already spent, so a failing think stops before it.
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        st.stairs.less.num = 2;
+        st.stairs.less.x[0] = up_near.x;
+        st.stairs.less.y[0] = up_near.y;
+        st.stairs.less.x[1] = up_far.x;
+        st.stairs.less.y[1] = up_far.y;
+        st.stairs.more.num = i16::from(down_stair);
+        if down_stair {
+            st.stairs.more.x[0] = down.x;
+            st.stairs.more.y[0] = down.y;
+            st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        }
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // One queued movement key: consume it as the next observation (the
+    // Borg's own map is the fabricated cave, so the step always lands).
+    let take_step = |st: &mut BorgState| {
+        assert_eq!(st.io.queued_keys().len(), 1, "one movement key per think");
+        let dir = (crate::borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;
+        st.borg.c = loc {
+            x: st.borg.c.x + i32::from(engine::ddx(dir)),
+            y: st.borg.c.y + i32::from(engine::ddy(dir)),
+        };
+        st.borg.time.now += 1;
+    };
+    let dist_to = |st: &BorgState, to: loc| {
+        (st.borg.c.x - to.x).abs().max((st.borg.c.y - to.y).abs())
+    };
+
+    // --- The incident: exhausted exploration, the dive, no down stair. ---
+    setup(st, false);
+    pack_kit(st);
+    // The first think takes the fallback: the way out is flagged, the flow
+    // to the nearer up stair is committed and its first step queued.
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the exhausted dive flows to an up stair (#1173)"
+    );
+    assert_eq!(i32::from(st.borg.goal.type_0), GOAL_BORE, "the flow is the leave decision's");
+    assert!(st.borg.stair_less, "the way out is flagged for the caution stair take");
+    assert!(
+        st.borg.stair_explore_released.is_none(),
+        "a taken exit must not stand the level down"
+    );
+    take_step(st);
+    let mut steps = 1;
+    while st.borg.c != up_near && st.borg.c != up_far {
+        steps += 1;
+        assert!(steps < 10, "the walk reaches the up stair");
+        assert!(crate::borg_think_dungeon::borg_think_dungeon(st), "the walk continues");
+        take_step(st);
+    }
+    assert_eq!(st.io.queued_keys(), Vec::<u32>::new(), "nothing queued on arrival");
+    // On the staircase the way out is already flagged (`stair_less`), so
+    // the arrival think's caution takes the stairs. The exhausted leave
+    // decision itself would flow at cost 0 and fail, and its stand-down
+    // stays out: the exit is the staircase underfoot.
+    assert!(st.borg.stair_less, "the way out is flagged on the stair");
+    assert!(
+        st.borg.stair_explore_released.is_none(),
+        "standing on the exit, the level is not stood down"
+    );
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the Borg takes the up stair from its square"
+    );
+    assert_eq!(st.io.queued_keys(), [u32::from(b'<')], "the up stair is taken");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- A reachable down stair keeps the dive. ---
+    setup(st, true);
+    pack_kit(st);
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the dive takes the reachable down stair"
+    );
+    assert_eq!(i32::from(st.borg.goal.type_0), GOAL_BORE, "the dive's flow");
+    assert!(!st.borg.stair_less, "no up-stair fallback beside a working dive");
+    let d0 = dist_to(st, down);
+    take_step(st);
+    assert!(dist_to(st, down) < d0, "the step goes toward the down stair");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- Standing on the down stair, the dive takes it underfoot
+    // (#1174 review). ---
+    setup(st, true);
+    pack_kit(st);
+    // On the staircase itself the dive's flow has no step to queue (cost
+    // 0); it must take the stair, not walk off toward an up stair.
+    st.borg.c = down;
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the dive takes the stair underfoot"
+    );
+    assert_eq!(
+        st.io.queued_keys(),
+        [u32::from(b'>')],
+        "the down stair is taken: {:?}",
+        st.io.queued_keys()
+    );
+    assert!(!st.borg.stair_less, "no up-stair fallback beside the stair underfoot");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- Forced descent still forbids the up stair. ---
+    setup(st, false);
+    pack_kit(st);
+    assert!(
+        engine::option_set(c"birth_force_descend", true),
+        "the birth option exists"
+    );
+    // The think may end in a twitchy move (the tail), but the way out is
+    // never flagged and the level stands down: no up stair was tried.
+    let _ = crate::borg_think_dungeon::borg_think_dungeon(st);
+    assert!(
+        !st.io.queued_keys().contains(&u32::from(b'<')),
+        "the up stair is not taken: {:?}",
+        st.io.queued_keys()
+    );
+    assert!(!st.borg.stair_less, "forced descent flags no up stair");
+    assert_eq!(
+        st.borg.stair_explore_released,
+        Some(st.borg.time.level),
+        "the exit failed in the only allowed direction: the stand-down"
+    );
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+    assert!(
+        engine::option_set(c"birth_force_descend", false),
+        "the birth option resets"
+    );
+
+    // --- An explicit retreat holds its descent. ---
+    setup(st, false);
+    pack_kit(st);
+    st.borg.goal.rising = true;
+    // The hold keeps the descent (and the new fallback) out; the think may
+    // end in a twitchy move, but never a stair take or flag.
+    let _ = crate::borg_think_dungeon::borg_think_dungeon(st);
+    assert!(
+        !st.io.queued_keys().contains(&u32::from(b'<')),
+        "the retreat is not turned into a stair take: {:?}",
+        st.io.queued_keys()
+    );
+    assert!(!st.borg.stair_less, "the retreat's hold is not turned into an ascent");
+    assert!(st.borg.goal.rising, "the retreat stands");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- An explicit leaving (the restock decisions' way) flows up. ---
+    setup(st, false);
+    pack_kit(st);
+    st.borg.goal.leaving = true;
+    assert!(
+        crate::borg_think_dungeon::borg_think_dungeon(st),
+        "the leaving decision flows to an up stair"
+    );
+    assert!(st.borg.stair_less, "the leaving decision flags the way out");
+    let d0 = dist_to(st, up_near);
+    take_step(st);
+    assert!(dist_to(st, up_near) < d0, "the step goes toward the up stair");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    println!("leave-level-upstairs passed (#1173)");
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
+
+/// #1177 (`more-refused-gates`): the dungeon decision with no up staircase
+/// seen and a reachable down staircase, on a birth-level Warrior whose pack
+/// carries no food. At the shipped `stairs_descent_gates_without_upstair` 0,
+/// C's wrapper ("if there are no down stairs, don't filter use of up
+/// stairs") skips the descent gates and the dive takes the down staircase;
+/// at 1 the hunger gate refuses the descent and no staircase is taken. One
+/// arm runs per driver case: the setting is fixed for the whole process.
+/// The driving test pins the `prepared_*` gates (base and `__warrior`) to 0
+/// and `prepared_clevel_depth_margin` to 7, so the character is dive-prone
+/// as in the #1173 fixture; `explore_c_leave_when_done` = 1 lets the
+/// underfoot phases mark the level exhausted for the leave decision's own
+/// exhausted branch, and `borg_town_plan` = 0 (the driver pins it in
+/// place) lets the notice count plain rations. The arm with the switch on
+/// runs a food-less pack: the notice reads an empty larder, which is what
+/// the descent gates refuse on.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_more_refused_regression(st: &mut BorgState) -> ! {
+    use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL};
+
+    let start = loc { x: 40, y: 20 };
+    let down = loc { x: 46, y: 20 };
+
+    // The pack: the real birth kit with the spare wearables blanked, and
+    // the rations merged into the kit's own ration stack (a second
+    // zero-value stack would be crushed as junk) when `food` — the arm
+    // without food leaves the larder empty, so the notice's food count is
+    // 0 and `more_refused`'s hunger gate has grounds. The Phase Door and
+    // the Cure Light Wounds keep the static `prepared()`/`restock()` gates
+    // light, as in the #1173 fixture; the items carry their real kinds and
+    // are aware, and the power sentinel keeps the item decisions out of
+    // the way.
+    let pack_kit = |st: &mut BorgState, food: bool| {
+        let kind_of = |tval: u32, sval: i32| -> u32 {
+            for k in 0..engine::k_max() {
+                let kind = engine::kind(k);
+                if kind.tval as u32 == tval && i32::from(kind.sval) == sval {
+                    return k as u32;
+                }
+            }
+            panic!("no object kind for tval {tval} sval {sval}");
+        };
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        // The spare wearable would be wielded; blank it. Without `food`
+        // the kit's own rations go too, and the notice (which
+        // `borg_leave_level` re-runs from `st.items`) reads an empty
+        // larder.
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty == 0 {
+                continue;
+            }
+            let wearable = crate::borg_inventory::borg_wield_slot(slot) >= 0;
+            let food_stack = !food && u32::from(slot.tval) == TV_FOOD as u32;
+            if wearable || food_stack {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        // The rations merge into the kit's own ration stack (a second
+        // zero-value stack would be crushed as junk); without `food` the
+        // stacks stay blank, and the notice reads an empty larder.
+        let mut ration: Option<usize> = None;
+        let mut free: Option<usize> = None;
+        for (i, slot) in st.items.items[..pack].iter().enumerate() {
+            if slot.iqty != 0 {
+                if u32::from(slot.tval) == TV_FOOD as u32
+                    && i32::from(slot.sval) == st.item_val.sv_food_ration
+                    && ration.is_none()
+                {
+                    ration = Some(i);
+                }
+            } else if free.is_none() {
+                free = Some(i);
+            }
+        }
+        if food {
+            match ration {
+                Some(i) => st.items.items[i].iqty += 6,
+                None => {
+                    let mut item = crate::borg_item::blank_item();
+                    item.aware = true;
+                    item.ident = true;
+                    item.kind = kind_of(TV_FOOD as u32, st.item_val.sv_food_ration);
+                    item.tval = TV_FOOD as u8;
+                    item.sval = st.item_val.sv_food_ration as u8;
+                    item.iqty = 6;
+                    item.value = engine::kind_cost_of(item.kind as usize);
+                    let slot = free.expect("a free pack slot");
+                    st.items.items[slot] = item;
+                    free = Some(slot + 1);
+                }
+            }
+        }
+        for (tval, sval) in [(TV_SCROLL as u32, st.item_val.sv_scroll_phase_door), (TV_POTION as u32, st.item_val.sv_potion_cure_light)] {
+            let mut item = crate::borg_item::blank_item();
+            item.aware = true;
+            item.ident = true;
+            item.kind = kind_of(tval, sval);
+            item.tval = tval as u8;
+            item.sval = sval as u8;
+            item.iqty = 1;
+            item.value = engine::kind_cost_of(item.kind as usize);
+            st.items.items[free.expect("a free pack slot")] = item;
+            free = Some(free.expect("a free pack slot") + 1);
+        }
+        st.borg.power = i32::MAX / 2;
+    };
+
+    // The fabricated level: a known floor sea, one down staircase within
+    // the leash (12 steps at CL1), and no up staircase anywhere — not in
+    // the cave, and none in the track (`less.num = 0`), which is the
+    // wrapper's condition under test.
+    let setup = |st: &mut BorgState| {
+        assert!(
+            engine::option_set(c"birth_force_descend", false),
+            "the birth option exists"
+        );
+        let wid = i32::from(engine::z_info().dungeon_wid);
+        let hgt = i32::from(engine::z_info().dungeon_hgt);
+        crate::borg_cave::borg_init_cave(st);
+        for y in 0..hgt {
+            for x in 0..wid {
+                st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+            }
+        }
+        st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        st.borg.c = start;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // The tail's twitchy phase would read the pack's Phase Door; two
+        // twitches are already spent, so a failing think stops before it.
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        st.stairs.less.num = 0;
+        st.stairs.more.num = 1;
+        st.stairs.more.x[0] = down.x;
+        st.stairs.more.y[0] = down.y;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // The note the #1174-review underfoot take emits; the underfoot phases
+    // scan the messages a think added for it.
+    let underfoot_note = "# Diving by the down stair underfoot (#1174)";
+    let notes_added = |st: &mut BorgState, before: u16| -> Vec<String> {
+        let after = engine::messages_num();
+        (0..after.saturating_sub(before))
+            .map(|age| String::from_utf8_lossy(&engine::message_str(age)).to_string())
+            .collect()
+    };
+
+    // The two arms run one per driver case: the setting is fixed for the
+    // whole process, and each arm asserts the decision its setting must
+    // produce.
+    if crate::params::value(crate::params::Param::stairs_descent_gates_without_upstair) == 0 {
+        // --- The shipped gate (0): C's wrapper skips the descent gates
+        // and the dive takes the reachable down staircase. ---
+        setup(st);
+        pack_kit(st, true);
+        assert!(
+            crate::borg_think_dungeon::borg_think_dungeon(st),
+            "the dive takes the reachable down stair"
+        );
+        assert_eq!(i32::from(st.borg.goal.type_0), GOAL_BORE, "the dive's flow");
+        assert!(
+            !st.io.queued_keys().contains(&u32::from(b'<')),
+            "no up staircase is taken: none is known"
+        );
+        assert_eq!(
+            st.io.queued_keys().len(),
+            1,
+            "one step toward the down stair: {:?}",
+            st.io.queued_keys()
+        );
+        let d0 = (st.borg.c.x - down.x).abs().max((st.borg.c.y - down.y).abs());
+        let dir = (crate::borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;
+        st.borg.c = loc {
+            x: st.borg.c.x + i32::from(engine::ddx(dir)),
+            y: st.borg.c.y + i32::from(engine::ddy(dir)),
+        };
+        let d1 = (st.borg.c.x - down.x).abs().max((st.borg.c.y - down.y).abs());
+        assert!(d1 < d0, "the step goes toward the down stair");
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+
+        // --- Underfoot (#1177 review): standing on the down staircase on
+        // an exhausted level, the take the #1174 review added completes
+        // the dive. Driven through `borg_leave_level` directly: the
+        // decision under test is the standing take, and the exhausted
+        // mark is set by hand (the mode flag comes from the driver's
+        // explore_c_leave_when_done pin). ---
+        setup(st);
+        pack_kit(st, true);
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_think_dungeon_util::borg_leave_level(st, true),
+            "the leave decision acts on the exhausted level"
+        );
+        assert!(
+            notes_added(st, before)
+                .iter()
+                .any(|m| m.contains(underfoot_note)),
+            "the underfoot take fires at the shipped 0"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the down staircase is taken: {:?}",
+            st.io.queued_keys()
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+    } else {
+        // --- The gate applied (1): the hunger gate refuses the descent;
+        // no descent flow is committed and no staircase is taken in any
+        // think. ---
+        setup(st);
+        pack_kit(st, false);
+        for _ in 0..2 {
+            let _ = crate::borg_think_dungeon::borg_think_dungeon(st);
+            assert_eq!(
+                i32::from(st.borg.goal.type_0),
+                0,
+                "no descent flow is committed"
+            );
+            assert!(
+                !st.io.queued_keys().contains(&u32::from(b'>')),
+                "the refused descent takes no stair: {:?}",
+                st.io.queued_keys()
+            );
+            while !st.io.queued_keys().is_empty() {
+                crate::borg_io::borg_inkey(st, true);
+            }
+        }
+
+        // --- Underfoot (#1177 review): standing on the down staircase on
+        // an exhausted level, the #1174 take honors the refusal. Two
+        // variants, driven through `borg_leave_level` directly (the mark
+        // as above; the notice does not run inside the call, so the
+        // fabricated `BI_FOOD` is what `more_refused` reads): with the
+        // larder noticed full the gates pass and the take fires; with it
+        // noticed empty the hunger gate refuses and the note stays out —
+        // the descent is not completed underfoot. ---
+        setup(st);
+        pack_kit(st, true);
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_think_dungeon_util::borg_leave_level(st, true),
+            "with a full larder the leave decision acts"
+        );
+        assert!(
+            notes_added(st, before)
+                .iter()
+                .any(|m| m.contains(underfoot_note)),
+            "the gates passing, the underfoot take fires"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the down staircase is taken: {:?}",
+            st.io.queued_keys()
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+
+        setup(st);
+        pack_kit(st, false);
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        let before = engine::messages_num();
+        // The direction is random once the dive is refused (the exhausted
+        // branch), but both directions leave the underfoot note out: the
+        // gated take skips, and the up-stair flows fail on none known.
+        let _ = crate::borg_think_dungeon_util::borg_leave_level(st, true);
+        assert!(
+            !notes_added(st, before)
+                .iter()
+                .any(|m| m.contains(underfoot_note)),
+            "the refused descent is not completed underfoot"
+        );
+        assert!(
+            !st.io.queued_keys().contains(&u32::from(b'>')),
+            "the refused descent takes no stair: {:?}",
+            st.io.queued_keys()
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+    }
+
+    println!("more-refused-gates passed (#1177)");
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
+
+/// #1178 (`stale-stair-more`): the stale `stair_more` and caution's standing
+/// "Take stairs down". Two thinks on one fabricated DL3 — an up staircase
+/// known nearby (so `more_refused`'s wrapper applies its gates), no down
+/// staircase in the track, and a birth Warrior with the driving test's
+/// `prepared_*` pins (prepared for its depth and for five deeper, which
+/// keeps the stair leashes out and is the power dive's own trigger). Think
+/// 1 carries a full larder: its dive fails on no known down staircase and
+/// the flag survives (C clears it only on a new level). The food is then
+/// taken away — the notice inside the next `borg_think_dungeon` reads an
+/// empty larder — and the Borg is placed on a `FEAT_MORE` grid. At the
+/// shipped `caution_standing_descent_gated` 0, think 2's caution takes the
+/// stair on the stale flag (`>`, C's defect); at 1 the descent gates
+/// (hunger, and the failed restock gate of `prepared()`) refuse it. One
+/// arm runs per driver case: the setting is fixed for the whole process.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_stale_stair_more_regression(st: &mut BorgState) -> ! {
+    use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL};
+
+    let start = loc { x: 40, y: 20 };
+    let up = loc { x: 43, y: 20 };
+    let down = loc { x: 46, y: 20 };
+
+    // The pack: the real birth kit with its rations topped up to six, the
+    // spare wearables blanked, and a Phase Door and a Cure Light Wounds
+    // with real kinds, aware, as in the #1173 fixture; the power sentinel
+    // keeps the item decisions away. Think 1 carries the food (the
+    // character is fully prepared, so the power dive fires and the stair
+    // leashes stay out); before think 2 the food is taken away and the
+    // notice reads an empty larder, which is what the descent gates
+    // refuse on.
+    let pack_kit = |st: &mut BorgState| {
+        let kind_of = |tval: u32, sval: i32| -> u32 {
+            for k in 0..engine::k_max() {
+                let kind = engine::kind(k);
+                if kind.tval as u32 == tval && i32::from(kind.sval) == sval {
+                    return k as u32;
+                }
+            }
+            panic!("no object kind for tval {tval} sval {sval}");
+        };
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        // The spare wearable would be wielded before the decision; blank
+        // it. The rations merge into the kit's own ration stack (a second
+        // zero-value stack would be crushed as junk), and six of them keep
+        // the restock gate of `prepared()` fed for think 1.
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && crate::borg_inventory::borg_wield_slot(slot) >= 0 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        let mut ration: Option<usize> = None;
+        let mut free: Option<usize> = None;
+        for (i, slot) in st.items.items[..pack].iter().enumerate() {
+            if slot.iqty != 0 {
+                if u32::from(slot.tval) == TV_FOOD as u32
+                    && i32::from(slot.sval) == st.item_val.sv_food_ration
+                    && ration.is_none()
+                {
+                    ration = Some(i);
+                }
+            } else if free.is_none() {
+                free = Some(i);
+            }
+        }
+        match ration {
+            Some(i) => st.items.items[i].iqty += 6,
+            None => {
+                let mut item = crate::borg_item::blank_item();
+                item.aware = true;
+                item.ident = true;
+                item.kind = kind_of(TV_FOOD as u32, st.item_val.sv_food_ration);
+                item.tval = TV_FOOD as u8;
+                item.sval = st.item_val.sv_food_ration as u8;
+                item.iqty = 6;
+                item.value = engine::kind_cost_of(item.kind as usize);
+                st.items.items[free.expect("a free pack slot")] = item;
+            }
+        }
+        for (tval, sval) in [(TV_SCROLL as u32, st.item_val.sv_scroll_phase_door), (TV_POTION as u32, st.item_val.sv_potion_cure_light)] {
+            let mut item = crate::borg_item::blank_item();
+            item.aware = true;
+            item.ident = true;
+            item.kind = kind_of(tval, sval);
+            item.tval = tval as u8;
+            item.sval = sval as u8;
+            item.iqty = 1;
+            item.value = engine::kind_cost_of(item.kind as usize);
+            st.items.items[free.expect("a free pack slot")] = item;
+            free = Some(free.expect("a free pack slot") + 1);
+        }
+        st.borg.power = i32::MAX / 2;
+    };
+
+    // Between the thinks: every food stack is emptied, so think 2's notice
+    // (which runs inside `borg_think_dungeon`) reads an empty larder —
+    // `BI_FOOD` 0 — and the descent gates refuse on it.
+    let take_the_food = |st: &mut BorgState| {
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && u32::from(slot.tval) == TV_FOOD as u32 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+    };
+
+    // The fabricated level: a known floor sea, one up staircase known
+    // nearby (the wrapper's condition), one FEAT_MORE grid with no down
+    // staircase in the track (the flows fail on nothing known, and
+    // caution's standing take reads the grid's feat).
+    let setup = |st: &mut BorgState| {
+        assert!(
+            engine::option_set(c"birth_force_descend", false),
+            "the birth option exists"
+        );
+        let wid = i32::from(engine::z_info().dungeon_wid);
+        let hgt = i32::from(engine::z_info().dungeon_hgt);
+        crate::borg_cave::borg_init_cave(st);
+        for y in 0..hgt {
+            for x in 0..wid {
+                st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+            }
+        }
+        st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+        st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        st.borg.c = start;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // The tail's twitchy phase would read the pack's Phase Door; two
+        // twitches are already spent, so a failing think stops before it.
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = up.x;
+        st.stairs.less.y[0] = up.y;
+        st.stairs.more.num = 0;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    let gated = crate::params::value(crate::params::Param::caution_standing_descent_gated) != 0;
+
+    // --- Think 1: the dive fires (the character is fully prepared with a
+    // full larder) and fails on no known down staircase; the flag survives
+    // (C clears it only on a new level). ---
+    setup(st);
+    pack_kit(st);
+    let _ = crate::borg_think_dungeon::borg_think_dungeon(st);
+    assert!(
+        !st.io.queued_keys().contains(&u32::from(b'>')),
+        "think 1 stands off no stair: {:?}",
+        st.io.queued_keys()
+    );
+    assert!(st.borg.stair_more, "the failed dive leaves the flag set");
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- Think 2: the larder is empty and the Borg stands on the
+    // FEAT_MORE grid with the stale flag. Think 2 drives caution directly
+    // (as EmergencyStairHandoffTest does): the decision under test is
+    // caution's standing take, and the barren level's full dungeon tail
+    // (spastic searches, the twitchy recall) would only bury it.
+    // `borg_caution` does not re-notice, so the traits are set as the
+    // notice would have left them for an empty larder. ---
+    take_the_food(st);
+    st.borg.trait_[BI_FOOD as usize] = 0;
+    st.borg.c = down;
+    // Think 1's notices rebuild the staircase track from the cave's marks,
+    // which these fabricated grids do not carry; re-assert the fabricated
+    // knowledge that `more_refused`'s wrapper reads.
+    st.stairs.less.num = 1;
+    st.stairs.less.x[0] = up.x;
+    st.stairs.less.y[0] = up.y;
+    st.borg.time.now += 1;
+    st.borg.goal.type_0 = 0;
+    crate::borg_flow::borg_flow_clear(st);
+    let _ = crate::borg_caution::borg_caution(st);
+    if !gated {
+        // C: the stale flag takes the stair.
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the stale flag takes the standing descent: {:?}",
+            st.io.queued_keys()
+        );
+    } else {
+        // Gated: the hunger gate refuses the stale flag's descent.
+        assert!(
+            !st.io.queued_keys().contains(&u32::from(b'>')),
+            "the gated stale flag takes no stair: {:?}",
+            st.io.queued_keys()
+        );
+        assert_eq!(
+            i32::from(st.borg.goal.type_0),
+            0,
+            "no descent flow commits under the gates"
+        );
+    }
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    // --- Think 3 (#1178 review): the fresh emergency intent stays
+    // eligible. A recovering Borg (HP below the maximum) stands on the
+    // down staircase a monster threatens (the fabricated fear map at the
+    // Borg's square): the selection machinery — leave_stairs_on_monster,
+    // driver-pinned on — sets the flag during this call, and the switch
+    // must not veto that fresh escape the way it vetoes the stale flag.
+    // Gated arm only: at the shipped 0 this is C's play either way. ---
+    if gated {
+        setup(st);
+        pack_kit(st);
+        // No cure to quaff: the recovery would otherwise drink it before
+        // the leave rule acts.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && u32::from(slot.tval) == TV_POTION as u32 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        st.borg.trait_[BI_CURHP as usize] =
+            st.borg.tr(crate::borg_headers::borg_trait_h::BI_MAXHP) - 10;
+        // The threat: above the leave rule's threshold (a tenth of the
+        // current HP, so 1 here) but below the excessive-danger flee
+        // (twice the current HP, so 20) — the selection machinery's own
+        // escape must choose the stair, not the level flee.
+        st.danger.fear_monsters[down.y as usize][down.x as usize] = 15;
+        st.borg.time.now += 1;
+        crate::borg_flow::borg_flow_clear(st);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_caution::borg_caution(st),
+            "the emergency descent acts"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the fresh emergency intent takes the stair: {:?}",
+            st.io.queued_keys()
+        );
+        assert!(
+            st.borg.stair_more,
+            "the selection machinery flagged the descent"
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+
+        // --- Think 3b (re-review of #1185): the same emergency with the
+        // flag ALREADY set on entry (the failed dive's stale flag): the
+        // leave rule re-selects the staircase underfoot, and the selector's
+        // own decision — not the flag transition — keeps the escape
+        // eligible. ---
+        setup(st);
+        pack_kit(st);
+        // No cure to quaff (as in think 3): the recovery would otherwise
+        // drink it before the leave rule acts.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && u32::from(slot.tval) == TV_POTION as u32 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.c = down;
+        st.borg.stair_explore_exhausted = Some(st.borg.time.now);
+        st.borg.stair_more = true;
+        st.borg.trait_[BI_CURHP as usize] =
+            st.borg.tr(crate::borg_headers::borg_trait_h::BI_MAXHP) - 10;
+        st.danger.fear_monsters[down.y as usize][down.x as usize] = 15;
+        st.borg.time.now += 1;
+        crate::borg_flow::borg_flow_clear(st);
+        let before = engine::messages_num();
+        assert!(
+            crate::borg_caution::borg_caution(st),
+            "the re-selected emergency descent acts"
+        );
+        let after = engine::messages_num();
+        let _ = after;
+        // The message ring saturates (messages_num stops growing), so scan
+        // a fixed recent window rather than a before/after delta.
+        let leave_rule_selected = (0..60u16).any(|age| {
+            String::from_utf8_lossy(&engine::message_str(age))
+                .contains("a monster while recovering")
+        });
+        assert!(
+            leave_rule_selected,
+            "the leave rule selected the staircase anew"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'>')),
+            "the re-selected emergency intent takes the stair: {:?}",
+            st.io.queued_keys()
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+    }
+
+    println!("stale-stair-more passed (#1178)");
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
+
+/// #1176 (`note-standing-flags`): caution's danger + standing-on-up-stair
+/// trigger on a fabricated DL3. A birth Warrior with the driving test's
+/// `prepared_*` pins stands on a tracked up staircase (the track and the
+/// grid feat agree), with a fabricated fear map at its square sized between
+/// the trigger's threshold (`pos_danger > avoidance /
+/// caution_stair_danger_divisor`, and `avoidance = CURHP`) and the
+/// excessive-danger flee (`pos_danger > CURHP *
+/// caution_flee_danger_hp_multiplier`), and the traits noticed as a full
+/// larder reads (`BI_FOOD` 6). Think 2 drives `borg_caution` directly (the
+/// `EmergencyStairHandoffTest` pattern: the decision under test is the
+/// standing take's trigger, and `borg_caution` does not re-notice, so the
+/// fabricated traits hold). At the shipped `caution_note_standing_on_stairs`
+/// 0, C's dead flags leave the trigger's arm dead: no staircase is flagged
+/// or taken. At 1 the flags mean their intent, `choose_stairs` flags the
+/// way out, and caution takes the stairs up (`<`). One arm runs per driver
+/// case: the setting is fixed for the whole process.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_note_standing_regression(st: &mut BorgState) -> ! {
+    use crate::borg_headers::borg_trait_h::{BI_CLEVEL, BI_CURHP, BI_FOOD};
+
+    let up = loc { x: 43, y: 20 };
+
+    // The pack: the real birth kit with the spare wearables blanked, the
+    // rations merged into the kit's own ration stack, a Phase Door and a
+    // Cure Light Wounds with real kinds, aware; the power sentinel keeps
+    // the item decisions away.
+    let pack_kit = |st: &mut BorgState| {
+        let kind_of = |tval: u32, sval: i32| -> u32 {
+            for k in 0..engine::k_max() {
+                let kind = engine::kind(k);
+                if kind.tval as u32 == tval && i32::from(kind.sval) == sval {
+                    return k as u32;
+                }
+            }
+            panic!("no object kind for tval {tval} sval {sval}");
+        };
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && crate::borg_inventory::borg_wield_slot(slot) >= 0 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        let mut ration: Option<usize> = None;
+        let mut free: Option<usize> = None;
+        for (i, slot) in st.items.items[..pack].iter().enumerate() {
+            if slot.iqty != 0 {
+                if u32::from(slot.tval) == crate::headers::list_tvals_h::TV_FOOD as u32
+                    && i32::from(slot.sval) == st.item_val.sv_food_ration
+                    && ration.is_none()
+                {
+                    ration = Some(i);
+                }
+            } else if free.is_none() {
+                free = Some(i);
+            }
+        }
+        match ration {
+            Some(i) => st.items.items[i].iqty += 6,
+            None => {
+                let mut item = crate::borg_item::blank_item();
+                item.aware = true;
+                item.ident = true;
+                item.kind = kind_of(crate::headers::list_tvals_h::TV_FOOD as u32, st.item_val.sv_food_ration);
+                item.tval = crate::headers::list_tvals_h::TV_FOOD as u8;
+                item.sval = st.item_val.sv_food_ration as u8;
+                item.iqty = 6;
+                item.value = engine::kind_cost_of(item.kind as usize);
+                let slot = free.expect("a free pack slot");
+                st.items.items[slot] = item;
+                free = Some(slot + 1);
+            }
+        }
+        for (tval, sval) in [(
+            crate::headers::list_tvals_h::TV_SCROLL as u32,
+            st.item_val.sv_scroll_phase_door,
+        ), (
+            crate::headers::list_tvals_h::TV_POTION as u32,
+            st.item_val.sv_potion_cure_light,
+        )] {
+            let mut item = crate::borg_item::blank_item();
+            item.aware = true;
+            item.ident = true;
+            item.kind = kind_of(tval, sval);
+            item.tval = tval as u8;
+            item.sval = sval as u8;
+            item.iqty = 1;
+            item.value = engine::kind_cost_of(item.kind as usize);
+            let slot = free.expect("a free pack slot");
+            st.items.items[slot] = item;
+            free = Some(slot + 1);
+        }
+        st.borg.power = i32::MAX / 2;
+    };
+
+    // The fabricated level: a known floor sea and one up staircase — the
+    // track and the grid feat agree, and the Borg stands on it.
+    let setup = |st: &mut BorgState| {
+        assert!(
+            engine::option_set(c"birth_force_descend", false),
+            "the birth option exists"
+        );
+        let wid = i32::from(engine::z_info().dungeon_wid);
+        let hgt = i32::from(engine::z_info().dungeon_hgt);
+        crate::borg_cave::borg_init_cave(st);
+        for y in 0..hgt {
+            for x in 0..wid {
+                st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+            }
+        }
+        st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+        st.borg.c = up;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        // The threat, at the Borg's own square: above the trigger's
+        // threshold (avoidance / caution_stair_danger_divisor = 20 / 2) and
+        // below the excessive-danger flee (CURHP * 2 = 40).
+        st.danger.fear_monsters[up.y as usize][up.x as usize] = 15;
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = up.x;
+        st.stairs.less.y[0] = up.y;
+        st.stairs.more.num = 0;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // The traits a notice leaves for a full larder: food in the pack and
+    // the character's own level (the trigger's low-level gate).
+    let noticed = |st: &mut BorgState| {
+        st.borg.trait_[BI_FOOD as usize] = 6;
+        st.borg.trait_[BI_CLEVEL as usize] = 1;
+    };
+
+    let gated = crate::params::value(crate::params::Param::caution_note_standing_on_stairs) != 0;
+
+    setup(st);
+    pack_kit(st);
+    noticed(st);
+    if !gated {
+        // --- The shipped 0: C's dead flags leave the trigger's arm dead,
+        // and the case is handled by the escape decision instead (which
+        // spends the escapes counter and clears the flows) — not by
+        // caution's own stair take. ---
+        assert!(!st.borg.stair_less, "no staircase is flagged on entry");
+        let _ = crate::borg_caution::borg_caution(st);
+        let notes = (0..60u16).map(|age| String::from_utf8_lossy(&engine::message_str(age)).to_string()).collect::<Vec<_>>();
+        assert!(
+            notes.iter().any(|m| m.contains("# Escaping level via stairs.")),
+            "the escape decision handles the case at the shipped 0"
+        );
+        assert!(
+            !notes.iter().any(|m| m.contains("# Leaving via up stairs.")),
+            "caution's own stair take stays out at the shipped 0"
+        );
+    } else {
+        // --- The flags' intent (1): the danger arm fires, choose_stairs
+        // flags the way out, caution takes the stairs up — before the
+        // escape decision would. ---
+        assert!(!st.borg.stair_less, "no staircase is flagged on entry");
+        assert!(
+            crate::borg_caution::borg_caution(st),
+            "the danger + standing-on-stair trigger acts"
+        );
+        let notes = (0..60u16).map(|age| String::from_utf8_lossy(&engine::message_str(age)).to_string()).collect::<Vec<_>>();
+        assert!(
+            notes.iter().any(|m| m.contains("# Leaving via up stairs.")),
+            "caution's own stair take fires"
+        );
+        assert!(
+            !notes.iter().any(|m| m.contains("# Escaping level via stairs.")),
+            "the escape decision stays out"
+        );
+        assert!(
+            st.io.queued_keys().contains(&u32::from(b'<')),
+            "the up staircase is taken: {:?}",
+            st.io.queued_keys()
+        );
+    }
+    while !st.io.queued_keys().is_empty() {
+        crate::borg_io::borg_inkey(st, true);
+    }
+
+    println!("note-standing-flags passed (#1176)");
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
+}
+
+/// #1189 (review of PR #1191, finding 2): the recorded DL1 geometry driven
+/// through the production exploration — `borg_think_dungeon` on the
+/// fabricated cave, not a test copy of the candidate filter. The region is
+/// Borg261124143216's memory map at the pause (x = 104..126, y = 27..47;
+/// the corridor rows are `borg_flow_dark.rs`'s `DL1_VEIN_LOOP`, extended
+/// north to the memory's edge, where a cut would fabricate a frontier the
+/// recording did not have). The corridor at y = 44 runs between (113,44)
+/// and (110,44); the treasure vein west of it is at (109,44), the one
+/// south-east at (114,45); the up staircase is at (112,36).
+///
+/// With `explore_stepable_goals = 1` the veins are no goals: the first
+/// think commits one flow (to the unknown grids of ring 11, east and
+/// north) and the Borg walks out of the corridor. With 0 the first think
+/// commits twice — the recorded "dark-bfs (ring 10) at cost 1" beside the
+/// vein, whose step never comes, then "ring 11 at cost 4" back east — and
+/// the Borg walks 444666 inside the corridor still.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
+    use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_FOOD, BI_LIGHT, BI_MAXHP};
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA_K, FEAT_NONE, FEAT_OPEN};
+
+    assert_eq!(st.borg.tr(BI_CDEPTH), 1, "the fabricated level is DL1");
+
+    const ROWS: [&str; 21] = [
+        "?????????#.#???????????",
+        "?????????#.##.#????????",
+        "?????????#.##.##???????",
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.#...#???????",
+        "?????????#.#.#.####????",
+        "???????###...#.....????",
+        "???????#<....'..###????",
+        "?????######.###.###?##?",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????*...@.............",
+        "?????.####*############",
+        "???????????????????????",
+        "???????????????????????",
+    ];
+
+    let setup = |st: &mut BorgState, at: loc| {
+        // The synthetic start's one-way contract sets this; the case's
+        // geometry decides its own ways (the recipe, step 4).
+        assert!(engine::option_set(c"birth_force_descend", false), "the birth option exists");
+        crate::borg_cave::borg_init_cave(st);
+        for (row, y) in ROWS.iter().zip(27..) {
+            for (ch, x) in row.bytes().zip(104..) {
+                let feat = match ch {
+                    b'?' => FEAT_NONE,
+                    b'#' => FEAT_GRANITE,
+                    b'.' | b'@' => FEAT_FLOOR,
+                    b'<' => FEAT_LESS,
+                    b'*' => FEAT_MAGMA_K,
+                    b'\'' => FEAT_OPEN,
+                    other => panic!("unexpected region char {other}"),
+                };
+                st.cave.grid_mut(x, y).feat = feat as u8;
+            }
+        }
+        // A staircase exists twice (the recipe): the grid above and the
+        // track the flows search.
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = 112;
+        st.stairs.less.y[0] = 36;
+        st.stairs.more.num = 0;
+        st.borg.c = at;
+        // The recorded Half-Troll Warrior at CL1 has 23 max HP, below the
+        // breadth-first threshold. The fixture disables stair scumming.
+        st.borg.avoidance = 23;
+        for (index, value) in [(BI_CDEPTH, 1), (BI_CLEVEL, 1), (BI_CURHP, 23), (BI_MAXHP, 23), (BI_LIGHT, 1), (BI_FOOD, 4)] {
+            st.borg.trait_[index as usize] = value;
+        }
+        st.borg.status.vault = false;
+        st.borg.near.breeder = false;
+        st.borg.stair_less = false;
+        st.borg.stair_more = false;
+        st.borg.goal.type_0 = 0;
+        st.borg.goal.rising = false;
+        st.borg.goal.leaving = false;
+        st.borg.goal.fleeing = false;
+        st.borg.goal.fleeing_to_town = false;
+        st.borg.goal.less = false;
+        st.leash.return_any = false;
+        st.borg.stair_explore_exhausted = None;
+        st.borg.stair_explore_released = None;
+        // A failing think stops before the twitchy tail (the recipe).
+        st.borg.times_twitch = 2;
+        st.borg.no_retreat = 0;
+        st.borg.time.now += 1;
+        st.borg.time.level = st.borg.time.now;
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.takes.cnt = 0;
+        st.takes.nxt = 1;
+        st.flow_misc.track_vein.num = 0;
+        st.danger = Default::default();
+        // The birth kit's spare wearable would be wielded before the
+        // exploration (the recipe); the sentinel power keeps every item
+        // decision out of the exploration think.
+        let pack = i32::from(engine::z_info().pack_size) as usize;
+        for slot in &mut st.items.items[..pack] {
+            if slot.iqty != 0 && crate::borg_inventory::borg_wield_slot(slot) >= 0 {
+                *slot = crate::borg_item::blank_item();
+            }
+        }
+        st.borg.power = i32::MAX / 2;
+        crate::borg_flow::borg_flow_clear(st);
+    };
+
+    // One queued movement key per think, consumed as the next observation
+    // (the Borg's own map is the fabricated cave, so the step always
+    // lands; a grid stepped onto unknown is revealed as the floor it is,
+    // as the engine's screen would).
+    let take_step = |st: &mut BorgState| {
+        assert_eq!(st.io.queued_keys().len(), 1, "one movement key per think");
+        let dir = (crate::borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;
+        st.borg.c = loc {
+            x: st.borg.c.x + i32::from(engine::ddx(dir)),
+            y: st.borg.c.y + i32::from(engine::ddy(dir)),
+        };
+        let here = st.cave.grid_mut(st.borg.c.x, st.borg.c.y);
+        if u32::from(here.feat) == FEAT_NONE {
+            here.feat = FEAT_FLOOR as u8;
+        }
+        st.borg.time.now += 1;
+    };
+    // The loop's four grids, y = 44, x = 110..113.
+    let in_corridor = |st: &BorgState| st.borg.c.y == 44 && (110..=113).contains(&st.borg.c.x);
+
+    let think = |st: &mut BorgState, label: &str| {
+        let before = st.flow.commit_seq;
+        assert!(
+            crate::borg_think_dungeon::borg_think_dungeon(st),
+            "{label}: the dungeon thinker acts"
+        );
+        st.flow.commit_seq - before
+    };
+
+    // --- The recorded decision at the west end (110,44). ---
+    setup(st, loc { x: 110, y: 44 });
+    let commits = think(st, if on { "on" } else { "off" });
+    if on {
+        // One commit: the flow to the usable frontier (the unknown grids
+        // of ring 11); no vein goal, so no second commit beside the
+        // refused vein step. The step itself is the route's first one
+        // (east or north, a tie of the spread): the walk below judges it.
+        assert_eq!(commits, 1, "on: one flow, straight to the frontier");
+        assert_eq!(i32::from(st.borg.goal.type_0), crate::borg_flow::GOAL_DARK);
+    } else {
+        // Two commits: the recorded "ring 10 at cost 1" beside the west
+        // vein (no step follows) and "ring 11 at cost 4" back east.
+        assert_eq!(commits, 2, "off: the vein aim, refused, then the aim back east");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'6')], "the recorded stroke goes east");
+    }
+    take_step(st);
+
+    // --- The walk. ---
+    if on {
+        // The Borg leaves the recorded corridor for the frontier: no
+        // 444666. (It may cross the corridor's west end again later, on
+        // its way to the south-west pocket, so the walk is judged by its
+        // leaving, and the level's end either way: explored away, or the
+        // exhaustion mark and the stairs, #1098's exit.)
+        let mut left = false;
+        let mut left_level = false;
+        for think_n in 1..=48 {
+            let commits = think(st, &format!("on walk {think_n}"));
+            assert!(commits <= 1, "on: at most one committed flow per think");
+            if st.io.queued_keys().contains(&u32::from(b'<')) {
+                left_level = true;
+                break;
+            }
+            take_step(st);
+            left |= !in_corridor(st);
+            if think_n == 24 {
+                assert!(left, "on: out of the recorded corridor within 24 thinks");
+            }
+        }
+        assert!(left || left_level, "on: the corridor loop is gone (explored away, or the level left)");
+    } else {
+        // The recorded loop: the Borg walks 444666 inside the corridor,
+        // learning nothing, for as long as the game runs (the recording:
+        // 4,000 turns, 23 cycles from turn 4,472).
+        for _ in 0..48 {
+            think(st, "off walk");
+            take_step(st);
+            assert!(in_corridor(st), "off: the recorded loop stays in the corridor");
+            assert!(
+                st.borg.stair_explore_exhausted.is_none(),
+                "off: no exhaustion while the veins are goals"
+            );
+        }
+    }
+
+    println!("dark vein loop passed: {}", if on { "on" } else { "off" });
+    // This test-only process owns a fabricated Borg observation. End before
+    // its queued keys can be applied to the live engine's unrelated cave.
+    std::process::exit(0);
 }

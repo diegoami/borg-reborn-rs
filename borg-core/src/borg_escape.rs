@@ -1360,6 +1360,9 @@ pub(crate) fn phase_rule_act(st: &mut BorgState) -> bool {
         return false;
     }
     st.borg.phase_rule = Some((t, verdict, true));
+    if crate::borg_combat_heal::quaff(st) {
+        return true;
+    }
     if crate::borg_fight_attack::borg_attack(st, false) {
         borg_note(st, "# Phase rule: attacked instead of a Phase Door");
         return true;
@@ -1923,10 +1926,26 @@ fn near_unique_1_8(st: &BorgState) -> bool {
 }
 
 /// Try to phase door or teleport
-/// b_q is the danger where the Borg stands (`borg_caution`'s `pos_danger`;
-/// C's comment said "of the least dangerous square around us", but C passes
-/// the same `pos_danger`, borg-caution.c).
-pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
+enum EscapeAction {
+    Escaped,
+    Healed,
+}
+
+/// `danger` is the danger where the Borg stands. A potion can take the turn
+/// after the safer escapes decline, leaving the escape count and flow intact.
+pub fn borg_escape(st: &mut BorgState, danger: i32) -> bool {
+    match try_escape(st, danger) {
+        Some(EscapeAction::Escaped) => {
+            st.borg.escapes = st.borg.escapes.wrapping_add(1);
+            st.borg.goal.type_0 = 0;
+            true
+        }
+        Some(EscapeAction::Healed) => true,
+        None => false,
+    }
+}
+
+fn try_escape(st: &mut BorgState, b_q: i32) -> Option<EscapeAction> {
     let mut risky_boost = 0;
 
     // only escape with spell if fail is low
@@ -1955,7 +1974,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             || st.borg.tr(BI_ISWEAK) != 0
             || st.borg.tr(BI_ISCUT) != 0)
     {
-        return false;
+        return None;
     }
 
     // Borgs who are in a sea of runes or trying to build one
@@ -1963,7 +1982,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     if st.borg.tr(BI_CDEPTH) == 100 && st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) * param(Param::escape_morgoth_hold_hp_tenths) / 10 {
         // In a sea of runes
         if st.borg.morgoth_position {
-            return false;
+            return None;
         }
 
         // Scan neighbors
@@ -1979,7 +1998,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         }
         // Touching at least 3 glyphs
         if glyphs >= param(Param::escape_morgoth_hold_glyph_count) {
-            return false;
+            return None;
         }
     }
 
@@ -1991,7 +2010,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         && borg_teleport_off_level(st)
     {
         borg_note(st, "# Attempting to leave via teleport level");
-        return true;
+        return Some(EscapeAction::Escaped);
     }
 
     // Risky borgs are more likely to stay in a fight
@@ -2053,7 +2072,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             // Flee!
             borg_note(st, "# Danger Level 1.");
             reset_antisummon(st);
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Pretend to have full mana for the last-ditch casts (C bug 35:
@@ -2072,12 +2091,28 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             // Flee!
             borg_note(st, "# Danger Level 1.1  Critical Attempt");
             reset_antisummon(st);
-            return true;
+            return Some(EscapeAction::Escaped);
+        }
+
+        let critical_phase = st.borg.tr(BI_CDEPTH) != 0
+            && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_critical_phase_hp_divisor)
+                || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb));
+        let last_ditch_phase = st.borg.tr(BI_CDEPTH) != 0
+            && st.borg.tr(BI_CLEVEL) < param(Param::escape_last_ditch_phase_max_level)
+            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_last_ditch_phase_hp_divisor);
+
+        // The checked Phase Door and the stronger escapes declined. Buy a
+        // turn with healing before attempting a Phase Door without a landing check.
+        if (critical_phase || last_ditch_phase)
+            && has_phase(st, PhaseSite::Emergency)
+            && crate::borg_combat_heal::quaff(st)
+        {
+            st.borg.trait_[BI_CURSP as usize] = sv_mana;
+            return Some(EscapeAction::Healed);
         }
 
         // emergency phase activation no concern for safety of landing zone.
-        if st.borg.tr(BI_CDEPTH) != 0
-            && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_critical_phase_hp_divisor) || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb))
+        if critical_phase
             && phase_door(st, PhaseSite::Critical, PhaseCheck::MonsterNear, Some(b_q), |st| {
                 borg_activate_item(st, st.act.tele_phase) || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
             })
@@ -2086,13 +2121,11 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             phase_not_escape(st);
             borg_note(st, "# Danger Level 1.2  Critical Phase");
             reset_antisummon(st);
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // emergency phase spell
-        if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < param(Param::escape_last_ditch_phase_max_level)
-            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_last_ditch_phase_hp_divisor)
+        if last_ditch_phase
             && phase_door(st, PhaseSite::LastDitch, PhaseCheck::MonsterNear, Some(b_q), |st| {
                 borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)) || borg_spell(st, PORTAL)
             })
@@ -2100,7 +2133,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             // Flee!
             borg_note(st, "# Danger Level 1.3  Critical Attempt");
             reset_antisummon(st);
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Restore the real mana level
@@ -2114,7 +2147,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         && i32::from(st.borg.near.unique) <= param(Param::escape_endgame_stay_unique_count)
         && st.borg.tr(BI_CDEPTH) >= param(Param::escape_endgame_stay_min_depth)
     {
-        return false;
+        return None;
     }
 
     // 2 - a bit more scary/
@@ -2149,7 +2182,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
             // Success
             reset_antisummon(st);
-            return true;
+            return Some(EscapeAction::Escaped);
         }
         // Phase door, if useful
         if phase_door(st, PhaseSite::AfterTeleport, PhaseCheck::Landing { tolerance: param(Param::escape_teleport_phase_tolerance), horizon: param(Param::escape_teleport_phase_horizon) }, Some(b_q), |st| {
@@ -2163,7 +2196,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             borg_note(st, "# Danger Level 2.2");
             reset_antisummon(st);
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
     }
 
@@ -2191,7 +2224,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Teleport via spell
@@ -2210,7 +2243,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
         // Phase door, if useful
         if phase_door(st, PhaseSite::DangerFallback, PhaseCheck::Landing { tolerance: param(Param::escape_fallback_phase_tolerance), horizon: param(Param::escape_fallback_phase_horizon) }, Some(b_q), |st| {
@@ -2227,7 +2260,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Use Tport Level after the above attempts failed.
@@ -2237,7 +2270,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // if we got this far we tried to escape but couldn't...
@@ -2291,7 +2324,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Teleport via spell
@@ -2309,7 +2342,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // if we got this far we tried to escape but couldn't...
@@ -2350,7 +2383,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
     }
 
@@ -2373,7 +2406,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Teleport via spell
@@ -2391,7 +2424,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // if we got this far we tried to escape but couldn't...
@@ -2428,7 +2461,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
     }
 
@@ -2453,7 +2486,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Teleport via spell
@@ -2470,7 +2503,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             reset_antisummon(st);
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
     }
 
@@ -2492,7 +2525,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         reset_antisummon(st);
 
         // Success
-        return true;
+        return Some(EscapeAction::Escaped);
     }
 
     // 8- not too scary but twitching
@@ -2514,7 +2547,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             st.borg.times_twitch = 0;
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
 
         // Teleport via spell
@@ -2535,11 +2568,11 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             st.borg.times_twitch = 0;
 
             // Success
-            return true;
+            return Some(EscapeAction::Escaped);
         }
     }
 
-    false
+    None
 }
 
 #[cfg(test)]
@@ -3002,4 +3035,17 @@ mod walk_away_phase_tests {
         assert!(!phase_available(0, PhaseSite::Danger, || true), "other sites keep BI_APHASE");
         assert!(phase_available(1000, PhaseSite::Danger, || false));
     }
+}
+
+/// Availability of the same four sources as `borg_recall`, before issuing keys.
+pub(crate) fn recall_ready(st: &BorgState) -> bool {
+    use crate::borg_inventory::borg_slot;
+    use crate::borg_item_use::{borg_equips_item, can_read_now};
+    use crate::headers::list_tvals_h::{TV_ROD, TV_SCROLL};
+
+    let rod = borg_slot(st, TV_ROD as i32, st.item_val.sv_rod_recall);
+    (rod >= 0 && st.items.items[rod as usize].pval != 0)
+        || borg_equips_item(st, st.act.recall, true)
+        || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
+        || (can_read_now(st) && borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_word_of_recall) >= 0)
 }

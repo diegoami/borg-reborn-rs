@@ -25,7 +25,7 @@ use crate::borg_escape::{
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
-    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells, more_refused,
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -33,11 +33,12 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
-    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
-    BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
-    BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_RPOIS, BI_SPEED,
+    BI_ACCW, BI_ACUREPOIS, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES,
+    BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP,
+    BI_CURSP, BI_ESP, BI_FOOD, BI_FRACT, BI_GOLD, BI_IFIRE, BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED,
+    BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN,
+    BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN, BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL,
+    BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RBLIND, BI_RCONF, BI_RECALL, BI_RFEAR, BI_RPOIS, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -226,6 +227,9 @@ fn outmatched_heal_applies(
 /// estimate is a pessimistic worst case; the potion buys a turn.
 /// Off (`caution_heal_when_outmatched` = 0) it does nothing.
 fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if crate::borg_combat_heal::enabled(st) {
+        return crate::borg_combat_heal::quaff(st);
+    }
     if !outmatched_heal_applies(
         p(Param::caution_heal_when_outmatched),
         st.borg.tr(BI_CURHP),
@@ -489,6 +493,18 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // #1194: decide wound potions against the monster reply, including
+    // during Recall. Known pull exposure can matter even at a safe grid.
+    let legacy_wound_potions = if st.borg.near.unique < 10 {
+        match crate::borg_combat_heal::quaff_in_combat(st) {
+            Some(true) => return true,
+            Some(false) => false,
+            None => true,
+        }
+    } else {
+        true
+    };
+
     // Don't bother healing if not in danger
     if danger == 0 && st.borg.tr(BI_ISPOISONED) == 0 && st.borg.tr(BI_ISCUT) == 0 {
         return false;
@@ -518,7 +534,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, the
     // held Cure Light Wounds is drunk at the line.
-    if crate::borg_poison::late_drink(st, danger) {
+    if legacy_wound_potions && crate::borg_poison::late_drink(st, danger) {
         return true;
     }
 
@@ -574,7 +590,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CLW_HEAL)
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+            || (legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
             || borg_activate_item(st, st.act.cure_light))
     {
         borg_note(st, "# Healing Level 1.");
@@ -587,7 +603,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CSW_HEAL)
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        && ((legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
             || borg_activate_item(st, st.act.cure_serious))
     {
         borg_note(st, "# Healing Level 2.");
@@ -598,14 +614,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
-        && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
+        && (borg_activate_item(st, st.act.cure_critical)
+            || (legacy_wound_potions && borg_quaff_crit(st, false)))
     {
         borg_note(st, "# Healing Level 3.");
         return true;
     }
 
     // If in danger try  one more Cure Critical if it will help
-    if danger >= st.borg.tr(BI_CURHP)
+    if legacy_wound_potions && danger >= st.borg.tr(BI_CURHP)
         && danger < st.borg.tr(BI_MAXHP)
         && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
@@ -617,7 +634,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // if deep, and low on HP, but in a zero danger spot, drink some CCW to
     // add a few HP before resting
-    if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
+    if legacy_wound_potions && st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
         && danger < p(Param::caution_deep_ccw_danger)
         && pct_down >= p(Param::caution_deep_ccw_loss)
         && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
@@ -903,6 +920,14 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 /// `(on_upstair, on_dnstair)`, which C sets to `false` when the Borg stands
 /// on such stairs (and leaves `false` otherwise).
 fn note_standing(st: &mut BorgState) -> (bool, bool) {
+    // borg-reborn-rs (#1176): C declares these `false` and only ever
+    // assigns `false` — even standing on the tracked staircase leaves them
+    // false (borg-caution.c:805, 983, 996), so the danger+standing-on-stair
+    // trigger and the `|| on_*stair` disjuncts of the standing stair takes
+    // are dead code. caution_note_standing_on_stairs restores the flags'
+    // evident intent (true when the Borg stands on the tracked staircase);
+    // 0 keeps C.
+    let standing_flag = p(Param::caution_note_standing_on_stairs) != 0;
     let mut on_upstair = false;
     let mut on_dnstair = false;
 
@@ -923,7 +948,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.less.y[iu] == st.borg.c.y && st.stairs.less.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on up-stairs");
-            on_upstair = false;
+            on_upstair = standing_flag;
         }
         i += 1;
     }
@@ -934,7 +959,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.more.y[iu] == st.borg.c.y && st.stairs.more.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on dn-stairs");
-            on_dnstair = false;
+            on_dnstair = standing_flag;
         }
         i += 1;
     }
@@ -1872,21 +1897,82 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     // borg-reborn-rs (#726): the blows are read only for an immobile
     // attacker (it has a blow array); a race without one, such as the
     // placeholder one past the last race, aborted in race_blow_effect_name.
-    mode >= 2
-        && st.borg.tr(BI_CDEPTH) > 0
-        && immobile_attacker(r_idx)
-        && immobile_annoying(
-            mode,
-            true,
-            (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
-        )
+    if mode < 2 || st.borg.tr(BI_CDEPTH) <= 0 || !immobile_handled(st, r_idx) {
+        return false;
+    }
+    // borg-reborn-rs (#852, owner): a blow the character is protected from is
+    // not annoying.
+    let annoying = unprotected_annoying(&race_blow_effects(r_idx), |bi| protected(st, bi));
+    immobile_annoying(mode, true, annoying)
+}
+
+/// borg-reborn-rs (#852, owner: "if it is protected this mode needs not to
+/// apply"): race `r_idx` is an immobile attacker (`immobile_attacker`) that
+/// `caution_ranged_vs_immobile` (1-3) handles. Not one whose blows include
+/// an annoying effect and whose annoying effects the character is all
+/// protected from (`protected`): a floating eye for a Free Action Borg, a
+/// grey mushroom patch for one resisting confusion. It is neither kept at
+/// range nor stepped away from, the confusion cure is not held next to it,
+/// and the step does not avoid it. A plain-damage one (a grey mold) is
+/// handled as before.
+fn immobile_handled(st: &BorgState, r_idx: usize) -> bool {
+    immobile_attacker(r_idx) && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
+}
+
+/// borg-reborn-rs (#852): the trait that protects the character from a blow
+/// effect, as `borg_danger_one_kill` reads it (`borg_danger.rs`, the
+/// `MONBLOW_POISON`, `BLIND`, `CONFUSE`, `TERRIFY` and `PARALYZE` branches;
+/// `blow_effects.txt`, `mon-blow-effects.c`). Any other effect (drains, theft,
+/// disenchantment, elements, ...) has none here.
+fn effect_protection(name: &[u8]) -> Option<u32> {
+    match name {
+        b"PARALYZE" => Some(BI_FRACT),
+        b"CONFUSE" => Some(BI_RCONF),
+        b"POISON" => Some(BI_RPOIS),
+        b"BLIND" => Some(BI_RBLIND),
+        b"TERRIFY" => Some(BI_RFEAR),
+        _ => None,
+    }
+}
+
+/// borg-reborn-rs (#852): one of `effects` is annoying (`annoying_effect`)
+/// and the character (`has`: the trait is set) is not protected from it.
+fn unprotected_annoying(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    effects.iter().any(|e| annoying_effect(e) && !effect_protection(e).is_some_and(|bi| has(bi)))
+}
+
+/// borg-reborn-rs (#852): a monster with `effects` still concerns the
+/// caution rules (a `ranged` entry of the scary list, an immobile attacker for
+/// `caution_ranged_vs_immobile`): one of its blows has an effect the character
+/// is not protected from. Plain damage (`HURT`, `NONE`) does not count when it
+/// has another blow; one with only plain-damage blows (or none) still does.
+fn not_protected_from_all(effects: &[&[u8]], has: impl Fn(u32) -> bool) -> bool {
+    !effects.iter().any(|e| annoying_effect(e)) || unprotected_annoying(effects, has)
+}
+
+/// borg-reborn-rs (#852, review of #1126): the character has protection
+/// `bi`, as `borg_danger_one_kill` reads it: the trait, or for poison also the
+/// temporary resistance (`MONBLOW_POISON` checks `BI_RPOIS`, then
+/// `temp.res_pois`; the engine blocks poisoning while `TMD_OPP_POIS` runs).
+fn protected(st: &BorgState, bi: u32) -> bool {
+    st.borg.tr(bi) != 0 || (bi == BI_RPOIS && st.borg.temp.res_pois)
+}
+
+/// The effect names of race `r_idx`'s blows. Every race has its blow array
+/// (`mon-init.c:1826`, `finish_parse_monster`); the caller skips race 0 and
+/// the placeholder race past the last one (#726).
+fn race_blow_effects(r_idx: usize) -> Vec<&'static [u8]> {
+    (0..usize::from(engine::z_info().mon_blows_max)).filter_map(|k| engine::race_blow_effect_name(r_idx, k)).collect()
 }
 
 /// borg-reborn-rs (#838, owner: "a list of monsters to never melee ... and
 /// only attack from afar"): race `r_idx` is on the scary list's `ranged`
-/// entries for this character (`caution_ranged_only`). Off: no lookup.
+/// entries for this character (`caution_ranged_only`), and the character is
+/// not protected from all its blows (#852, `not_protected_from_all`). Off: no lookup.
 pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
-    p(Param::caution_ranged_only) != 0 && scary_ranged_entry(st, r_idx)
+    p(Param::caution_ranged_only) != 0
+        && scary_ranged_entry(st, r_idx)
+        && not_protected_from_all(&race_blow_effects(r_idx), |bi| protected(st, bi))
 }
 
 /// The lookup of `listed_ranged`, whatever `caution_ranged_only` says
@@ -1908,8 +1994,9 @@ fn scary_ranged_entry(st: &BorgState, r_idx: usize) -> bool {
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
 /// attacker (`caution_ranged_vs_immobile` 2, 3) or a `ranged` entry of the
-/// scary list (`caution_ranged_only`): never a melee target, no walk to it,
-/// flows keep out of its reach.
+/// scary list (`caution_ranged_only`): never a melee target, no walk to it
+/// or onto its grid. Only the immobile ones keep the flows out of their reach
+/// (`in_reach_of_kept`; #852: the list leaves path finding alone).
 pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
     immobile_kept_at_range(st, r_idx)
         || listed_ranged(st, r_idx)
@@ -1918,10 +2005,12 @@ pub(crate) fn kept_at_range(st: &BorgState, r_idx: usize) -> bool {
         || (walk_away_listed(st, r_idx) && st.borg.mon.walk_away_cornered != Some(st.borg.time.now))
 }
 
-/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of a
-/// creature kept at range (its reach). Off: no scan.
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
+/// immobile creature kept at range (its reach; `caution_ranged_vs_immobile`
+/// 2, 3). Off: no scan. #852 (owner): not the scary list's `ranged` entries,
+/// whose flows are a path-finding concern of their own.
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if (p(Param::caution_ranged_vs_immobile) < 2 && p(Param::caution_ranged_only) == 0) || st.flow.to_stairs {
+    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -1929,7 +2018,7 @@ pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
             let (gx, gy) = (x + dx, y + dy);
             engine::square_in_bounds_fully(gx, gy) && {
                 let k = st.cave.grid(gx, gy).kill;
-                k != 0 && kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
         })
     })
@@ -1960,7 +2049,7 @@ pub(crate) fn in_reach_of_stepped_from(st: &BorgState, x: i32, y: i32) -> bool {
             && engine::square_in_bounds_fully(ex, ey)
             && {
                 let k = st.cave.grid(ex, ey).kill;
-                k != 0 && immobile_attacker(usize::from(st.kills.kills[usize::from(k)].r_idx))
+                k != 0 && immobile_handled(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
             }
     })
 }
@@ -1983,11 +2072,17 @@ fn kept_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     })
 }
 
-/// The first known immobile attacker next to grid (`y`, `x`), by kill index.
-fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+/// The first known immobile attacker next to grid (`y`, `x`) that matches
+/// the caller's policy, by kill index.
+fn immobile_attacker_next_to(
+    st: &BorgState,
+    y: i32,
+    x: i32,
+    matches: impl Fn(usize) -> bool,
+) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
         let kill = &st.kills.kills[i];
-        immobile_attacker(usize::from(kill.r_idx))
+        matches(usize::from(kill.r_idx))
             && (i32::from(kill.pos.y) - y).abs() <= 1
             && (i32::from(kill.pos.x) - x).abs() <= 1
     })
@@ -2208,7 +2303,7 @@ fn cure_held_for_step(st: &mut BorgState) -> bool {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
-    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx, |race| immobile_handled(st, race))) else {
         return false;
     };
     if mobile_danger(st) >= st.borg.tr(BI_CURHP) {
@@ -2267,7 +2362,7 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     // Review of #717: a kept attacker first, so a plain-damage one beside
     // it does not take its place.
-    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx)) else {
+    let Some(who) = kept_attacker_next_to(st, cy, cx).or_else(|| immobile_attacker_next_to(st, cy, cx, |race| immobile_handled(st, race))) else {
         return false;
     };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
@@ -2334,7 +2429,7 @@ fn best_step_away_from(st: &mut BorgState, paralyser: bool) -> Option<usize> {
         if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) || (!paralyser && bouncing(st, y, x)) {
             continue;
         }
-        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() {
+        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x, |race| immobile_handled(st, race)).is_some() {
             continue;
         }
         let k = borg_danger(st, y, x, 1, true, false);
@@ -2700,7 +2795,7 @@ pub(crate) fn stairs_immobile_reach_extra_steps() -> i32 {
 /// attacker (its reach: it hits only its eight neighbours, mon-move.c:1586,
 /// 1621-1644).
 pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
-    immobile_attacker_next_to(st, y, x).is_some()
+    immobile_attacker_next_to(st, y, x, immobile_attacker).is_some()
 }
 
 /// borg-reborn-rs (#931, review of #965): the known immobile attacker whose
@@ -2710,7 +2805,7 @@ pub(crate) fn in_immobile_reach(st: &BorgState, y: i32, x: i32) -> bool {
 /// usual bookkeeping drops it; a route the refusal makes impossible falls back
 /// to the ordinary search.
 pub(crate) fn immobile_reach_of(st: &BorgState, y: i32, x: i32) -> Option<usize> {
-    immobile_attacker_next_to(st, y, x)
+    immobile_attacker_next_to(st, y, x, immobile_attacker)
 }
 
 /// borg-reborn-rs (#1125): race `r_idx` has a `PARALYZE` blow (27 races in
@@ -3065,7 +3160,7 @@ fn walk_away_best_step(st: &mut BorgState) -> Option<(usize, String)> {
         if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) {
             continue;
         }
-        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() || walk_away_next_to(st, y, x).is_some() {
+        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x, immobile_attacker).is_some() || walk_away_next_to(st, y, x).is_some() {
             continue;
         }
         let danger = borg_danger(st, y, x, 1, true, false);
@@ -3936,7 +4031,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     // estimates can be checked on its original losing AND winning fights.
     if !won || mode == 2 { return false; }
     let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    crate::borg_combat_heal::quaff(st) || crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
 
 /// #759's race, as computed (`None`: not certified, so never winning).
@@ -4582,9 +4677,20 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
     // is skipped then, so nothing cancels a departure the rule has noted
     // (review of #616, N1).
-    let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
-        && leave_stairs_on_monster(st, pos_danger);
-    if !by_stairs_rule
+    // borg-reborn-rs (#1178, review): a descent the selection machinery
+    // itself just chose — leave_stairs_on_monster (a recovering Borg on a
+    // staircase a monster threatens) or choose_stairs — is fresh intent,
+    // not the stale flag the gate below exists for; it stays eligible.
+    // The selectors report their own down choice: a flag that was already
+    // set on entry (the failed dive's stale flag) must not hide a fresh
+    // selection of the same staircase (re-review of #1185).
+    let leave_selection = if !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary) {
+        leave_stairs_on_monster(st, pos_danger)
+    } else {
+        None
+    };
+    let mut choose_selected_down = false;
+    if leave_selection.is_none()
         && (st.borg.goal.leaving
             || st.borg.goal.fleeing
             || st.borg.mon.scary
@@ -4594,8 +4700,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
                 && on_upstair))
     // danger and standing on stair
     {
-        choose_stairs(st, pos_danger);
+        choose_selected_down = choose_stairs(st, pos_danger);
     }
+    // Fresh intent from either selector's own decision.
+    let fresh_emergency = leave_selection == Some(false) || choose_selected_down;
 
     // Take stairs up
     if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) && !recall_holds_up_stair(st, pos_danger) {
@@ -4621,15 +4729,33 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
-            if borg_prep_leave_level_spells(st) {
+            if !fresh_emergency && pos_danger <= 0 && crate::borg_ranged::return_to_town(st) {
                 return true;
             }
+            // borg-reborn-rs (#1178): `stair_more` is set before the descent
+            // flows it belongs to (the leaving block, the power dive,
+            // borg_leave_level's dive) and survives their failure until a
+            // new level clears it — C's own bookkeeping. A later think
+            // standing on a down staircase then takes it here on a stale
+            // flag, past the descent gates the dive itself would have
+            // applied. caution_standing_descent_gated applies those gates
+            // (more_refused) to this take; a fresh selection of this very
+            // call (leave_stairs_on_monster, choose_stairs — the recovering
+            // Borg's escape) stays eligible. 0 keeps C.
+            let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+                && !fresh_emergency
+                && more_refused(st, false);
+            if !gated_refuses {
+                if borg_prep_leave_level_spells(st) {
+                    return true;
+                }
 
-            // Take the stairs
-            borg_keypress(st, key(b'>'));
+                // Take the stairs
+                borg_keypress(st, key(b'>'));
 
-            // Success
-            return true;
+                // Success
+                return true;
+            }
         }
     }
 
@@ -4747,8 +4873,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && poisoned_escape_first(st, pos_danger)
     {
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-        st.borg.goal.type_0 = 0;
         return true;
     }
     let from = st.borg.c;
@@ -4767,13 +4891,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Attempt to escape via spells
     if borg_escape(st, pos_danger) {
-        // increment the escapes this level counter
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-
-        // Clear any Flow queues
-        st.borg.goal.type_0 = 0;
-
-        // Success
         return true;
     }
 
@@ -6942,7 +7059,7 @@ fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
 /// `caution_stairs_leave_danger_percent` of the HP), instead of fighting or
 /// reading an escape. The staircase under the Borg is the way; while rising,
 /// a down staircase is held as in `choose_stairs`.
-fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> Option<bool> {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
     // Review of #616: a real threat (a share of the HP), not any danger; and
@@ -6966,7 +7083,7 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     // caution) did not take, recovering or not.
     let scum = if kit { None } else { crate::borg_stair_scum::leave_on_threat(st, pos_danger, threshold) };
     if !(kit || scum.is_some() || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
-        return false;
+        return None;
     }
     // The staircase under the Borg decides the way: choose_stairs alone may
     // not set it for a Borg that is recovering, not fleeing.
@@ -6978,14 +7095,16 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     }
     let why = if kit { "short of kit" } else if scum.is_some() { "in stair scum" } else { "while recovering" };
     borg_note(st, &format!("# Leaving by the stairs: a monster {why} (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
-    true
+    // The selection itself (the #1178 review): which staircase the rule
+    // chose, so a fresh down selection stays eligible under the switch.
+    Some(up)
 }
 
 fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
     on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
 }
 
-fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
+fn choose_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
         st.borg.stair_less = true;
@@ -7005,8 +7124,13 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     }
 
     // Only go down if fleeing or prepared
+    // borg-reborn-rs (#1178, review): the fleeing arm is the selector's
+    // explicit emergency down choice; the caller exempts it from the
+    // standing-descent gate.
+    let mut selected_down = false;
     if st.borg.goal.fleeing {
         st.borg.stair_more = true;
+        selected_down = true;
     }
 
     if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
@@ -7063,7 +7187,9 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     // borg-reborn-rs (#557): no descent while rising, unless in real danger.
     if st.borg.stair_more && rising_holds_flee_descent(st) {
         st.borg.stair_more = false;
+        selected_down = false;
     }
+    selected_down
 }
 
 /// borg-reborn-rs (#567): with `caution_recall_rest_monster_turns`, record
@@ -8666,6 +8792,85 @@ mod immobile_range_tests {
         assert!(!immobile_annoying(3, false, true), "a monster that moves");
         assert!(!immobile_annoying(1, true, true), "1 is #646: none kept at range");
         assert!(!immobile_annoying(0, true, true), "0 is C");
+    }
+
+    /// #852: the protection for each blow effect, as `borg_danger_one_kill`.
+    #[test]
+    fn effect_protections() {
+        use super::effect_protection;
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        assert_eq!(effect_protection(b"PARALYZE"), Some(BI_FRACT));
+        assert_eq!(effect_protection(b"CONFUSE"), Some(BI_RCONF));
+        assert_eq!(effect_protection(b"POISON"), Some(BI_RPOIS));
+        assert_eq!(effect_protection(b"BLIND"), Some(BI_RBLIND));
+        assert_eq!(effect_protection(b"TERRIFY"), Some(BI_RFEAR));
+        for e in [&b"LOSE_STR"[..], b"LOSE_CON", b"LOSE_WIS", b"EAT_LIGHT", b"EAT_FOOD", b"EXP_10", b"DISENCHANT", b"ACID", b"HALLU", b"HURT"] {
+            assert_eq!(effect_protection(e), None, "{}", String::from_utf8_lossy(e));
+        }
+    }
+
+    /// #852: the scary list's ranged entries, with and without each protection
+    /// (monster.txt's blows for the shipped entries).
+    #[test]
+    fn listed_with_resists() {
+        use super::{not_protected_from_all, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_FRACT, BI_RBLIND, BI_RCONF, BI_RFEAR, BI_RPOIS};
+        let none = |_: u32| false;
+        let with = |t: u32| move |bi: u32| bi == t;
+        let cases: [(&str, &[&[u8]], Option<u32>); 6] = [
+            ("floating eye", &[b"PARALYZE"], Some(BI_FRACT)),
+            ("grey mushroom patch", &[b"CONFUSE"], Some(BI_RCONF)),
+            ("yellow mushroom patch", &[b"TERRIFY"], Some(BI_RFEAR)),
+            ("spotted mushroom patch", &[b"POISON"], Some(BI_RPOIS)),
+            ("bloodshot eye", &[b"BLIND"], Some(BI_RBLIND)),
+            ("rot jelly", &[b"EAT_FOOD", b"LOSE_WIS"], None),
+        ];
+        for (name, blows, prot) in cases {
+            assert!(not_protected_from_all(blows, none), "{name}: kept without protection");
+            match prot {
+                Some(t) => {
+                    assert!(!not_protected_from_all(blows, with(t)), "{name}: protected, fought");
+                    for other in [BI_FRACT, BI_RCONF, BI_RPOIS, BI_RBLIND, BI_RFEAR].into_iter().filter(|&o| o != t) {
+                        assert!(not_protected_from_all(blows, with(other)), "{name}: another protection does not help");
+                    }
+                }
+                None => assert!(not_protected_from_all(blows, |_| true), "{name}: no protection exists"),
+            }
+        }
+        // A blow protected and one not: still kept.
+        assert!(not_protected_from_all(&[b"POISON", b"CONFUSE"], with(BI_RPOIS)));
+        assert!(!not_protected_from_all(&[b"POISON", b"CONFUSE"], |bi| bi == BI_RPOIS || bi == BI_RCONF));
+        // Plain damage beside a protected blow does not keep it; alone it does.
+        assert!(!not_protected_from_all(&[b"HURT", b"PARALYZE"], with(BI_FRACT)));
+        assert!(not_protected_from_all(&[b"HURT"], |_| true), "only plain damage: kept, as listed");
+        assert!(not_protected_from_all(&[], |_| true), "no blows: kept, as listed");
+        // Mode 2's check: plain damage is never annoying.
+        assert!(!unprotected_annoying(&[b"HURT"], none));
+        assert!(unprotected_annoying(&[b"CONFUSE"], none));
+        assert!(!unprotected_annoying(&[b"CONFUSE"], with(BI_RCONF)));
+        assert!(unprotected_annoying(&[b"LOSE_STR"], |_| true));
+    }
+
+    /// Review of #1126: temporary poison resistance protects, as in
+    /// `borg_danger_one_kill`; it protects from nothing else.
+    #[test]
+    fn temporary_poison_resistance() {
+        use super::{not_protected_from_all, protected, unprotected_annoying};
+        use crate::borg_headers::borg_trait_h::{BI_MAX, BI_RCONF, BI_RPOIS};
+        let mut st = crate::state::BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        let spotted: &[&[u8]] = &[b"POISON"];
+        assert!(!protected(&st, BI_RPOIS));
+        assert!(not_protected_from_all(spotted, |bi| protected(&st, bi)), "no resistance: kept");
+        st.borg.temp.res_pois = true;
+        assert!(protected(&st, BI_RPOIS), "temporary only");
+        assert!(!protected(&st, BI_RCONF), "poison only");
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the spotted mushroom patch is fought");
+        assert!(!unprotected_annoying(spotted, |bi| protected(&st, bi)), "mode 2's check too");
+        assert!(not_protected_from_all(&[b"CONFUSE"], |bi| protected(&st, bi)), "a grey mushroom patch still kept");
+        st.borg.temp.res_pois = false;
+        st.borg.trait_[BI_RPOIS as usize] = 1;
+        assert!(!not_protected_from_all(spotted, |bi| protected(&st, bi)), "the permanent one");
     }
 }
 

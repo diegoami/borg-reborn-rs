@@ -812,6 +812,8 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
 /// Wear `safe_items[i]` in `slot` (the old item goes to `hole`), evaluate
 /// power and danger, then restore (`borg_wear_stuff`'s trial block).
 fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
+    let ranged = crate::borg_ranged::wear_coverage(st, slot as usize, &st.items.items[i as usize]);
+    let previous_danger = ranged.map(|_| danger_here(st));
     /* Take off old item */
     from_safe(st, hole, slot);
 
@@ -828,10 +830,15 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
     crate::borg_trait::borg_notice(st, true);
 
     /* Evaluate the inventory */
-    let p = borg_power(st);
+    let mut p = borg_power(st);
 
     /* Evaluate local danger */
     let d = danger_here(st);
+    if previous_danger.is_some_and(|old| d >= old)
+        && ranged.is_some_and(|old| crate::borg_ranged::worsens(old, crate::borg_ranged::coverage_here(st)))
+    {
+        p = i32::MIN / 2;
+    }
 
     /* Restore the old item */
     from_safe(st, slot, slot);

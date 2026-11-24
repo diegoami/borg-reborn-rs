@@ -113,6 +113,8 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
                 || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
+            let excess = if shop == BORG_HOME { excess }
+                else { crate::borg_store_sell::disposable_book_quantity(st, item, excess) };
             let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
             let Some(quantity) = (1..=excess).rev().find(|&n| native.store_accepts_quantity(shop, n)) else { continue; };
             let code = if shop == BORG_HOME { action::STORE } else { action::SELL };
@@ -315,7 +317,21 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    let a = crate::borg_town_shadow::live_action(st);
+    let mut a = crate::borg_town_shadow::live_action(st);
+    // The opt-in trial tests discarding surplus plain shots before the
+    // planner disposes of other kit. Poison triage and purchases go first.
+    if !st.borg.in_shop && !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        if reserve > 0 {
+            let allowance = crate::borg_town_budget::Facts::of(st).allowance();
+            if allowance < 0 {
+                let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
+                if let Some(slot) = crate::borg_junk::town_quiver_surplus(st, reserve, shortfall) {
+                    a = TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] };
+                }
+            }
+        }
+    }
     if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
 }
@@ -348,6 +364,10 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             .copied();
         let gold = st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD);
         let reserve = st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET);
+        // The configured share, not the purse threshold (#1103): the plan this
+        // action comes from was made at this purse (it is rebuilt after every
+        // action) and has already closed the Black Market to ordinary purchases
+        // below the threshold; an urgent one keeps the cap (review of #1112, F1).
         let percentage = st.cfg(crate::borg_headers::borg_h::BORG_BLACK_MARKET_MAX_PERCENTAGE);
         let protects_gold = shop == crate::borg_town_stock::BORG_BLACK_MARKET && (reserve > 0 || percentage >= 0);
         let mut purchase_gold = if protects_gold {
@@ -398,8 +418,11 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
         action::SELL_HOME | action::DROP_HOME => crate::borg_store_buy::take_selected_for_disposal(st),
         action::SELL | action::STORE => {
-            st.think.town_live.pending_sale = Some(SaleStamp::of(st.think.shop_num, a.at[1] as usize, &st.items.items[a.at[1] as usize]));
-            crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32)
+            let slot = a.at[1] as usize;
+            let stamp = SaleStamp::of(st.think.shop_num, slot, &st.items.items[slot]);
+            let sold = crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32);
+            if sold { st.think.town_live.pending_sale = Some(stamp); }
+            sold
         }
         _ => false,
     };
@@ -426,7 +449,15 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let slot = a.at[1] as usize;
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
     let qty = i64::from(item.iqty);
-    if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
+    if qty == 0 { clear(st); return false; }
+    if slot >= crate::borg_item::quiver_start() as usize {
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        if reserve == 0 || a.at[2] != qty { clear(st); return false; }
+        crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
+        clear(st);
+        return true;
+    }
+    if slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
     // borg-reborn-rs (#1151, review of #1155): so does a split fuel stack
     // (torches, flasks), whose floor is the light reserve. Other drops stay
@@ -436,6 +467,10 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let splits = (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
         && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel;
     let drop_qty = drop_quantity(a.at[2], qty, splits);
+    if i64::from(crate::borg_store_sell::disposable_book_quantity(st, item, drop_qty as i32)) < drop_qty {
+        clear(st);
+        return false;
+    }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
