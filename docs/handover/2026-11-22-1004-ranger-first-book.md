@@ -14,7 +14,7 @@
 - `town_book_lookahead_levels`, compiled and shipped 0 (today's play):
   - a book the Borg carries or keeps at home also counts when a spell of it is learnt within this many
     levels;
-  - its mana is not asked, since the SP grow with the level;
+  - the look-ahead uses the spell level alone, so it can keep books with spells above current max SP;
   - shop books are valued as before.
 - A unit test.
 - Results:
@@ -27,7 +27,7 @@
 ### Review
 MiniMax MCode reviewed `0de39a27`: pass with findings.
 - **Fixed:**
-  - F2: the citation is the exact read, line 759;
+  - F2: the citation points to the parameter read;
   - F3: `book_lookahead` is unit-tested, shop scopes 0..=7 get no look-ahead;
   - F4: Paladins of three races have 1 SP at CL1, below Bless's 2, and are
     affected too;
@@ -41,8 +41,11 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
   removing them means rewriting the branch) and F9 (the branch name).
 
 ### Left
-- The zoo pilot, borg-zoo#693 (Rogues, Rangers and Paladins), re-pinned to
-  the head.
+- The zoo pilot in [borg-zoo#693](https://github.com/diegoami/borg-zoo/issues/693)
+  ran on `5ad50d96` with 20 Ranger and Rogue starts. Both arms had zero
+  deaths. Book sales across all books fell from 49 to 30 at 4. The report
+  leaves first-book sales before spell eligibility, buyback cost and the
+  Paladin arm open in that issue.
 
 ### For the owner
 Should the switch ship as 4 after the zoo reads it? 4 is the largest gap between a class's first level

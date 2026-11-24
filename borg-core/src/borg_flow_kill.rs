@@ -614,7 +614,7 @@ pub fn borg_sleep_kill(st: &mut BorgState, i: i32) {
 }
 
 /// Determine if a monster should be "viewable" (`borg_follow_kill_aux`)
-fn borg_follow_kill_aux(st: &BorgState, i: usize, y: i32, x: i32) -> bool {
+pub(crate) fn borg_follow_kill_aux(st: &BorgState, i: usize, y: i32, x: i32) -> bool {
     let r_idx = st.kills.kills[i].r_idx;
 
     // Distance to player
@@ -997,6 +997,8 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
     {
         st.borg.goal.type_0 = 0;
     }
+    // borg-reborn-rs (#1085): breadth-first exploration re-plans for any.
+    crate::borg_flow_dark::replan_on_new_monster(st);
 
     // Count up out list of Nasties
     let d_char = engine::race(usize::from(kill.r_idx)).d_char as i32; // borg-reborn-rs (#823): wchar_t is 16 bits on Windows
@@ -1277,7 +1279,11 @@ fn borg_guess_race_name(st: &mut BorgState, who: &[u8]) -> u32 {
     let ghost = u32::from(engine::z_info().r_max) - 1;
     let cdepth = st.borg.tr(BI_CDEPTH);
     let score = |i: u32| 1000 - (engine::race(i as usize).level - cdepth).abs();
-    let (r_idx, notes) = guess_race_name(&st.kills, who, ghost, &score);
+    // borg-reborn-rs (#915): `kill_grouped_names` reads the engine's grouped
+    // subjects ("3 cave spiders", mon-msg.c:333-345) instead of guessing the
+    // player ghost (in 4.2 the last race, Morgoth).
+    let grouped = crate::params::value(crate::params::Param::kill_grouped_names) != 0;
+    let (r_idx, notes) = guess_race_name(&st.kills, who, ghost, &score, grouped);
     for n in notes {
         borg_note_bytes(st, &n);
     }
@@ -1287,11 +1293,13 @@ fn borg_guess_race_name(st: &mut BorgState, who: &[u8]) -> u32 {
 /// The search of `borg_guess_race_name`, without side effects: returns the
 /// race and the notes to show. `ghost` is the player ghost race
 /// (`r_max - 1`); `score(i)` is `1000 - ABS(r_info[i].level - depth)`.
+/// `grouped` (#915) also reads a grouped subject, "N <plural>".
 pub fn guess_race_name(
     kills: &KillState,
     who_in: &[u8],
     ghost: u32,
     score: &dyn Fn(u32) -> i32,
+    grouped: bool,
 ) -> (u32, Vec<Vec<u8>>) {
     let mut notes = Vec::new();
     let mut who: &[u8] = who_in;
@@ -1319,6 +1327,19 @@ pub fn guess_race_name(
         notes.push([b"# Handling offscreen monster (", who, b")"].concat());
     }
 
+    // borg-reborn-rs (#915): a grouped subject, "N <plural>" (mon-msg.c:333-345):
+    // the race's own plural (`race->plural`, in the table) or the engine's
+    // plural_aux form, name + "s" or + "es" after an 's' (mon-desc.c:27-36).
+    if grouped {
+        if let Some(name) = grouped_name(who) {
+            if let Some(r) = grouped_race(kills, name, score) {
+                return (r, notes);
+            }
+            notes.push([b"# Grouped monster not known (", who, b") (#915)"].concat());
+            return (ghost, notes);
+        }
+    }
+
     // Assume player ghost
     if !prefix(who, b"The ") && !prefix(who, b"the ") {
         // Message
@@ -1331,6 +1352,24 @@ pub fn guess_race_name(
     // Skip the prefix
     let who = &who[4..];
 
+    // Success
+    let b_i = best_normal(kills, who, score);
+    if b_i != 0 {
+        return (b_i as u32, notes);
+    }
+
+    // No match found
+    notes.push([b"# Assuming player ghost (", who, b")(b)"].concat());
+
+    // Oops
+    (ghost, notes)
+}
+
+/// The best "normal" race named `who` (0: none), the scan of
+/// `borg_guess_race_name`: the binary search finds the last matching entry,
+/// the scan runs backwards, the depth score breaks ties (the earlier entry
+/// wins equal scores).
+fn best_normal(kills: &KillState, who: &[u8], score: &dyn Fn(u32) -> i32) -> i32 {
     // Binary search over the normal names
     let m = search_last_le(&kills.normal_text, who);
 
@@ -1359,17 +1398,61 @@ pub fn guess_race_name(
         b_i = i;
         b_s = s;
     }
+    b_i
+}
 
-    // Success
-    if b_i != 0 {
-        return (b_i as u32, notes);
+/// borg-reborn-rs (#915): the name of a grouped subject, "3 cave spiders" →
+/// "cave spiders" (a count of one or more digits, a space, a name).
+pub(crate) fn grouped_name(who: &[u8]) -> Option<&[u8]> {
+    let digits = who.iter().take_while(|b| b.is_ascii_digit()).count();
+    if digits == 0 || who.get(digits) != Some(&b' ') || who.len() <= digits + 1 {
+        return None;
     }
+    Some(&who[digits + 1..])
+}
 
-    // No match found
-    notes.push([b"# Assuming player ghost (", who, b")(b)"].concat());
+/// borg-reborn-rs (#915): how many monsters a message's subject names: N
+/// for a grouped subject "N <plural>" (mon-msg.c:339-344) with
+/// `kill_grouped_names` on, else 1. A death or a blink is then applied to
+/// up to N known monsters of the race (borg_update.rs).
+pub fn grouped_count(who: &[u8]) -> i32 {
+    if crate::params::value(crate::params::Param::kill_grouped_names) == 0 {
+        return 1;
+    }
+    group_size(who)
+}
 
-    // Oops
-    (ghost, notes)
+/// The N of "N <plural>" (1 for any other subject), capped at `i16::MAX`.
+fn group_size(who: &[u8]) -> i32 {
+    if grouped_name(who).is_none() {
+        return 1;
+    }
+    let digits = who.iter().take_while(|b| b.is_ascii_digit()).count();
+    std::str::from_utf8(&who[..digits])
+        .ok()
+        .and_then(|n| n.parse::<i32>().ok())
+        .map_or(i32::from(i16::MAX), |n| n.clamp(1, i32::from(i16::MAX)))
+}
+
+/// borg-reborn-rs (#915): the race of a grouped name: the name as it stands
+/// (a `plural:` of monster.txt is in the normal table), else the engine's
+/// `plural_aux` undone: "-ses" → "-s", then "-s" → "" (mon-desc.c:27-36).
+/// A plural ending in "ses" is ambiguous: `plural_aux` makes it from a name
+/// ending in 's' ("mass" → "masses", the "-es" rule) or in "se" ("horse" →
+/// "horses", the "-s" rule), so both stems are tried, in this order, and the
+/// first one in the table wins. The order matters only if one stem names
+/// one race and the other another; no two races of 574b618c's monster.txt
+/// do (`grouped_subjects_of_every_engine_race` checks every race).
+fn grouped_race(kills: &KillState, name: &[u8], score: &dyn Fn(u32) -> i32) -> Option<u32> {
+    let mut forms: Vec<&[u8]> = vec![name];
+    if name.ends_with(b"ses") {
+        forms.push(&name[..name.len() - 2]);
+    }
+    if name.ends_with(b"s") {
+        // also a name ending in "se" ("horse" → "horses")
+        forms.push(&name[..name.len() - 1]);
+    }
+    forms.into_iter().map(|f| best_normal(kills, f, score)).find(|&r| r != 0).map(|r| r as u32)
 }
 
 /// Attempt to locate a monster which could explain a message involving
@@ -1381,8 +1464,12 @@ pub fn guess_race_name(
 /// monster, then we attempt to match an existing monster, and finally, we
 /// give up.
 pub fn borg_locate_kill(st: &mut BorgState, who: &[u8], mut c: loc, r: i32) -> i32 {
-    // Handle invisible monsters
-    if strnieq(who, b"Something", 9) || strnieq(who, b"It", 3) {
+    // Handle invisible monsters (#915: "N monsters" is the engine's grouped
+    // subject for unseen ones, mon-msg.c:326-331)
+    if strnieq(who, b"Something", 9)
+        || strnieq(who, b"It", 3)
+        || (crate::params::value(crate::params::Param::kill_grouped_names) != 0 && grouped_name(who) == Some(&b"monsters"[..]))
+    {
         // Note
         note(st, &[b"# Invisible monster nearby."]);
         // if I can, cast detect inviso--time stamp it
@@ -1999,6 +2086,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         b_stair = i;
     }
 
+    // borg-reborn-rs (#1061): stair_scum's map (None: off).
+    let scum = crate::borg_stair_scum::Map::of(st);
+
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
@@ -2099,8 +2189,21 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             continue;
         }
 
+        // borg-reborn-rs (#1061): outside stair_scum's radius (the monster
+        // comes to the staircase or not at all).
+        if scum.as_ref().is_some_and(|m| !crate::borg_stair_scum::admit(st, m, y, x)) {
+            continue;
+        }
+
         // Skip ones that make me wander too far
-        if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
+        // borg-reborn-rs (#1062): with `flow_leash_any_stair`, the nearest
+        // staircase of either kind in walking steps (`borg_leash::far_while_near`).
+        let kill_leash = st.borg.tr(BI_CLEVEL) * 5 + 9;
+        if let Some(skip) = crate::borg_leash::far_while_near(st, y, x, kill_leash) {
+            if st.borg.tr(BI_CLEVEL) < 10 && skip {
+                continue;
+            }
+        } else if b_stair != -1 && st.borg.tr(BI_CLEVEL) < 10 {
             // Check the distance of this monster to the stair
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
             let j = borg_distance(sy, sx, y, x);
@@ -3210,11 +3313,16 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
         return false;
     }
 
+    // borg-reborn-rs (#1066, review of #1075): under the never-seen policy
+    // an unknown landing grid is scary here too.
+    let unknown_scary = crate::borg_escape::phase_unknown_policy(st);
+
     // Simulate 100 attempts
     let mut n = 0;
     for _k in 0..100 {
         let mut x = 0;
         let mut y = 0;
+        let mut never_seen = false;
 
         // Pick a location
         let mut i = 0;
@@ -3244,6 +3352,11 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
 
             // Skip unknown grids
             if u32::from(ag.feat) == FEAT_NONE {
+                // borg-reborn-rs (#1066): or count them as scary.
+                if unknown_scary {
+                    never_seen = true;
+                    break;
+                }
                 i += 1;
                 continue;
             }
@@ -3262,6 +3375,12 @@ pub fn borg_shoot_scoot_safe(st: &mut BorgState, emergency: i32, turns: i32, b_p
 
             // Stop looking.
             break;
+        }
+
+        // borg-reborn-rs (#1066): a landing never seen is scary.
+        if never_seen {
+            n += 1;
+            continue;
         }
 
         // No location: assume that there are unknown spots that you would
@@ -3644,6 +3763,119 @@ mod tests {
         (text, what)
     }
 
+    fn guess_race_name_c(k: &KillState, who: &[u8], ghost: u32, score: &dyn Fn(u32) -> i32) -> (u32, Vec<Vec<u8>>) {
+        guess_race_name(k, who, ghost, score, false)
+    }
+
+    #[test]
+    fn grouped_subjects_are_read_with_the_switch_only() {
+        let mut k = KillState::default();
+        (k.unique_text, k.unique_what) = table(&[("Grip", 4)]);
+        (k.normal_text, k.normal_what) = table(&[
+            ("cave spider", 9),
+            ("jackal", 11),
+            ("mean-looking mercenaries", 20),
+            ("mean-looking mercenary", 20),
+            ("wild dog", 12),
+            ("wolf", 13),
+            ("wolves", 13),
+            ("worm mass", 14),
+        ]);
+        let ghost = 99;
+        let flat = |_: u32| 1000;
+        // the zoo death 2008390085 (#915): "3 cave spiders start moving faster."
+        let (r, notes) = guess_race_name(&k, b"3 cave spiders", ghost, &flat, false);
+        assert_eq!((r, notes), (99, vec![b"# Assuming player ghost (3 cave spiders) (a)".to_vec()]));
+        assert_eq!(guess_race_name(&k, b"3 cave spiders", ghost, &flat, true), (9, vec![]));
+        assert_eq!(guess_race_name(&k, b"12 jackals", ghost, &flat, true).0, 11, "two digits");
+        assert_eq!(guess_race_name(&k, b"2 wolves", ghost, &flat, true).0, 13, "a monster.txt plural");
+        assert_eq!(guess_race_name(&k, b"4 mean-looking mercenaries", ghost, &flat, true).0, 20);
+        assert_eq!(guess_race_name(&k, b"2 worm masses", ghost, &flat, true).0, 14, "plural_aux's -es");
+        let (r, notes) = guess_race_name(&k, b"3 orcs", ghost, &flat, true);
+        assert_eq!((r, notes), (99, vec![b"# Grouped monster not known (3 orcs) (#915)".to_vec()]));
+        assert_eq!(guess_race_name(&k, b"The cave spider", ghost, &flat, true).0, 9, "singular unchanged");
+        assert_eq!(guess_race_name(&k, b"Grip", ghost, &flat, true).0, 4, "uniques unchanged");
+        assert_eq!(grouped_name(b"3 monsters"), Some(&b"monsters"[..]));
+        assert_eq!(grouped_name(b"3"), None);
+        assert_eq!(grouped_name(b"3x spiders"), None);
+        assert_eq!(grouped_name(b"cave spiders"), None);
+        // borg_locate_kill's invisible test compares "It" with its NUL
+        // (strnieq, 3 bytes): "It (offscreen)" goes to the offscreen branch,
+        // and so does "3 monsters (offscreen)" (#915 review, finding 1)
+        assert_eq!((group_size(b"3 cave spiders"), group_size(b"15 jackals")), (3, 15));
+        assert_eq!((group_size(b"The cave spider"), group_size(b"Grip"), group_size(b"2-headed hydra")), (1, 1, 1));
+        assert_eq!(group_size(b"99999999999 rats"), i32::from(i16::MAX));
+        assert_eq!(grouped_count(b"3 cave spiders"), 1, "compiled 0: one monster, as before");
+        assert!(strnieq(b"It", b"It", 3));
+        assert!(!strnieq(b"It (offscreen)", b"It", 3));
+        assert_ne!(grouped_name(b"3 monsters (offscreen)"), Some(&b"monsters"[..]));
+    }
+
+    /// #915: every non-unique race of the engine's monster.txt, as the engine
+    /// writes it for a group (get_subject, mon-msg.c:338-345: its `plural:`,
+    /// else plural_aux, mon-desc.c:27-36), is read back as a race of that
+    /// name; and the singular "The <name>" still is.
+    #[test]
+    fn grouped_subjects_of_every_engine_race() {
+        let txt = include_str!("../../engine/angband/lib/gamedata/monster.txt");
+        // (name, plural, unique) per race, the race index its position + 1
+        let mut races: Vec<(String, Option<String>, bool)> = Vec::new();
+        for line in txt.lines() {
+            if let Some(n) = line.strip_prefix("name:") {
+                races.push((n.to_string(), None, false));
+            } else if let Some(r) = races.last_mut() {
+                if let Some(p) = line.strip_prefix("plural:") {
+                    r.1 = Some(p.to_string());
+                } else if line.starts_with("flags:") && line.contains("UNIQUE") {
+                    r.2 = true;
+                }
+            }
+        }
+        let mut names: Vec<(Vec<u8>, u32)> = Vec::new();
+        let mut uniques: Vec<(Vec<u8>, u32)> = Vec::new();
+        for (i, (name, plural, unique)) in races.iter().enumerate() {
+            if *unique {
+                uniques.push((name.as_bytes().to_vec(), i as u32 + 1));
+            } else {
+                names.push((name.as_bytes().to_vec(), i as u32 + 1));
+                if let Some(p) = plural {
+                    names.push((p.as_bytes().to_vec(), i as u32 + 1));
+                }
+            }
+        }
+        names.sort();
+        uniques.sort();
+        let mut k = KillState::default();
+        k.unique_text = uniques.iter().map(|(n, _)| n.clone()).collect();
+        k.unique_what = uniques.iter().map(|&(_, w)| w).collect();
+        k.normal_text = names.iter().map(|(n, _)| n.clone()).collect();
+        k.normal_what = names.iter().map(|&(_, w)| w).collect();
+        let ghost = races.len() as u32;
+        let flat = |_: u32| 1000;
+        let name_of = |r: u32| races[r as usize - 1].0.as_str();
+        let mut checked = 0;
+        for (name, plural, unique) in &races {
+            if *unique {
+                continue;
+            }
+            for count in [2, 15] {
+                let who = match plural {
+                    Some(p) => format!("{count} {p}"),
+                    None if name.ends_with('s') => format!("{count} {name}es"),
+                    None => format!("{count} {name}s"),
+                };
+                let (r, notes) = guess_race_name(&k, who.as_bytes(), ghost, &flat, true);
+                assert_eq!((name_of(r), notes.len()), (name.as_str(), 0), "{who}");
+                let off = format!("{who} (offscreen)");
+                assert_eq!(name_of(guess_race_name(&k, off.as_bytes(), ghost, &flat, true).0), name, "{off}");
+            }
+            let the = format!("The {name}");
+            assert_eq!(name_of(guess_race_name(&k, the.as_bytes(), ghost, &flat, true).0), name, "{the}");
+            checked += 1;
+        }
+        assert!(checked > 500, "{checked} races");
+    }
+
     #[test]
     fn guess_race_name_matches_c_search() {
         let mut k = KillState::default();
@@ -3655,20 +3887,20 @@ mod tests {
         // race 3 is level 2, race 7 level 10; depth 8
         let score = |i: u32| 1000 - (if i == 7 { 10 } else { 2 } - 8i32).abs();
 
-        assert_eq!(guess_race_name(&k, b"Grip", ghost, &score), (4, vec![]));
-        assert_eq!(guess_race_name(&k, b"The kobold", ghost, &score).0, 7);
-        assert_eq!(guess_race_name(&k, b"the kobolds", ghost, &score).0, 3);
-        assert_eq!(guess_race_name(&k, b"The cave spiders", ghost, &score).0, 9);
-        let (r, notes) = guess_race_name(&k, b"kobold", ghost, &score);
+        assert_eq!(guess_race_name_c(&k, b"Grip", ghost, &score), (4, vec![]));
+        assert_eq!(guess_race_name_c(&k, b"The kobold", ghost, &score).0, 7);
+        assert_eq!(guess_race_name_c(&k, b"the kobolds", ghost, &score).0, 3);
+        assert_eq!(guess_race_name_c(&k, b"The cave spiders", ghost, &score).0, 9);
+        let (r, notes) = guess_race_name_c(&k, b"kobold", ghost, &score);
         assert_eq!((r, notes), (99, vec![b"# Assuming player ghost (kobold) (a)".to_vec()]));
-        let (r, notes) = guess_race_name(&k, b"The kobold (offscreen)", ghost, &score);
+        let (r, notes) = guess_race_name_c(&k, b"The kobold (offscreen)", ghost, &score);
         assert_eq!(r, 7);
         assert_eq!(notes, vec![b"# Handling offscreen monster (The kobold)".to_vec()]);
-        let (r, notes) = guess_race_name(&k, b"The orc", ghost, &score);
+        let (r, notes) = guess_race_name_c(&k, b"The orc", ghost, &score);
         assert_eq!((r, notes), (99, vec![b"# Assuming player ghost (orc)(b)".to_vec()]));
         // equal scores: the scan runs backwards, the earlier entry wins ties
         let flat = |_: u32| 1000;
-        assert_eq!(guess_race_name(&k, b"The kobold", ghost, &flat).0, 3);
+        assert_eq!(guess_race_name_c(&k, b"The kobold", ghost, &flat).0, 3);
     }
 
     #[test]

@@ -85,6 +85,18 @@ pub fn acquisition_room(st: &BorgState, tval: u8, kind: u32) -> i32 {
         .map_or(i32::MAX, |limit| limit.saturating_sub(carried_kind(st, kind)) as i32)
 }
 
+pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+    let limit = crate::borg_town_utility::home_stack_limit();
+    limit > 0 && item.aware && crate::borg_town_utility::home_limited_kind(item.tval)
+        && st.store.shops[BORG_HOME].ware.iter()
+            .filter(|ware| ware.iqty > 0 && ware.kind == item.kind).count() >= limit
+}
+
+/// Known excess can be cleared in a single native transaction.
+pub(crate) fn batch_home_disposal(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+    home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
+}
+
 fn overflow_action(st: &BorgState) -> Option<TownAction> {
     let limit = configured_limit(st);
     if limit <= 0 { return None; }
@@ -97,6 +109,8 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     // may still take some or all of the excess.
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
+            if shop == BORG_HOME && (home_at_limit(st, item)
+                || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
@@ -112,7 +126,7 @@ impl HomeMove {
     fn pending(st: &BorgState, a: TownAction) -> Option<Self> {
         let (item, stored) = match a.code {
             action::STORE => (st.items.items.get(a.at[1] as usize)?, true),
-            action::TAKE_HOME => (st.store.shops[BORG_HOME].ware.get(a.at[1] as usize)?, false),
+            action::TAKE_HOME | action::DROP_HOME => (st.store.shops[BORG_HOME].ware.get(a.at[1] as usize)?, false),
             _ => return None,
         };
         Some(Self { kind: item.kind, stored, carried: carried_kind(st, item.kind) })
@@ -236,8 +250,8 @@ fn clear(st: &mut BorgState) {
     st.think.town_action = None;
 }
 
-/// Map model actions to shop goals. A Home sale first withdraws from Home;
-/// the next solve then sees an ordinary carried stack eligible for sale.
+/// Map model actions to shop goals. Home disposal withdraws the stack
+/// first so the next solve can sell or drop it from the pack.
 fn goal(a: TownAction) -> Option<(i16, i16, i16)> {
     let slot = i16::try_from(a.at[1]).ok()?;
     if slot < 0 || a.at[2] <= 0 { return None; }
@@ -245,7 +259,7 @@ fn goal(a: TownAction) -> Option<(i16, i16, i16)> {
         action::BUY if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, slot, -1)),
         action::SELL if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, -1, slot)),
         action::STORE => Some((7, -1, slot)),
-        action::TAKE_HOME | action::SELL_HOME => Some((7, slot, -1)),
+        action::TAKE_HOME | action::SELL_HOME | action::DROP_HOME => Some((7, slot, -1)),
         action::DROP => Some((-1, -1, slot)),
         _ => None,
     }
@@ -273,7 +287,9 @@ fn set_action(st: &mut BorgState, a: TownAction) -> bool {
 
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) != 0 || !active(st) || configured_limit(st) <= 0
-        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some() {
+        || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some()
+        // borg-reborn-rs (#1140): the poison triage goes first.
+        || crate::borg_poison::town_triage_holds(st) {
         return false;
     }
     let Some(action) = overflow_action(st) else { return false; };
@@ -287,7 +303,11 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
-    if let Some(a) = overflow_action(st) { return set_action(st, a); }
+    // borg-reborn-rs (#1140, `deal_with_poison`): the poison first, and no
+    // sale or excess trip while selling pays nothing during it.
+    if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
+    let no_sale = crate::borg_poison::no_sale_now(st);
+    if let Some(a) = overflow_action(st).filter(|_| !no_sale) { return set_action(st, a); }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
         || st.borg.antibounce_count > 1350 { clear(st); return false; }
     // While walking, retain only the destination. On entering a store the
@@ -319,7 +339,8 @@ fn note_departure_room(st: &mut BorgState) {
 pub fn execute_store(st: &mut BorgState) -> bool {
     let Some(a) = st.think.town_action else { return false; };
     if st.borg.goal.shop != st.think.shop_num || st.think.shop_num < 0 { return false; }
-    if matches!(a.code, action::BUY | action::TAKE_HOME | action::SELL_HOME) {
+    let home_disposal = matches!(a.code, action::SELL_HOME | action::DROP_HOME);
+    if home_disposal || matches!(a.code, action::BUY | action::TAKE_HOME) {
         let shop = st.think.shop_num as usize;
         let slot = a.at[1] as usize;
         let Some(item) = st.store.shops[shop].ware.get(slot).copied().filter(|i| i.iqty > 0) else { clear(st); return false; };
@@ -340,10 +361,13 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         if protects_recall {
             purchase_gold = purchase_gold.min(crate::borg_store_buy::recall_purchase_budget(i64::from(gold), recall_floor) as i32);
         }
-        let room_under_cap = if a.code == action::SELL_HOME { i32::MAX }
+        let room_under_cap = if home_disposal { i32::MAX }
             else { acquisition_room(st, item.tval, item.kind) };
         let mut fits = room_under_cap > 0 && offer.is_some_and(|o| o.carry_capacity() > 0);
         let mut qty = 1;
+        if let Some(offer) = offer.filter(|_| fits && a.code == action::TAKE_HOME) {
+            qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap), 0, 0);
+        }
         if let Some(offer) = offer.filter(|_| fits && a.code == action::BUY) {
             qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap),
                 offer.purchase_quote(shop), purchase_gold);
@@ -353,8 +377,13 @@ pub fn execute_store(st: &mut BorgState) -> bool {
                 qty = priced.unwrap_or(1);
             }
         }
+        if let Some(offer) = offer.filter(|_| home_disposal) {
+            if a.code == action::DROP_HOME || batch_home_disposal(st, &item) {
+                qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity(), 0, 0);
+            }
+        }
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
-            context: CarryContext::of(st), item, keep: a.code != action::SELL_HOME, qty };
+            context: CarryContext::of(st), item, keep: !home_disposal, qty };
         if !fits {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: native carrying preflight rejected purchase");
@@ -367,7 +396,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     let moved = HomeMove::pending(st, a);
     let executed = match a.code {
         action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
-        action::SELL_HOME => crate::borg_store_buy::take_selected_for_sale(st),
+        action::SELL_HOME | action::DROP_HOME => crate::borg_store_buy::take_selected_for_disposal(st),
         action::SELL | action::STORE => {
             st.think.town_live.pending_sale = Some(SaleStamp::of(st.think.shop_num, a.at[1] as usize, &st.items.items[a.at[1] as usize]));
             crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32)
@@ -382,6 +411,13 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     executed
 }
 
+/// The copies a planned drop types: the plan's split when the stack may be
+/// split (it is one of `splits`' kinds) and the split leaves some carried,
+/// else the whole stack.
+fn drop_quantity(planned: i64, qty: i64, splits: bool) -> i64 {
+    if splits && (1..qty).contains(&planned) { planned } else { qty }
+}
+
 /// A drop is an outside action, not a request to route to shop -1.
 pub fn execute_outside(st: &mut BorgState) -> bool {
     if !active(st) || st.borg.in_shop { return false; }
@@ -392,14 +428,14 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let qty = i64::from(item.iqty);
     if qty == 0 || slot >= crate::borg_item::inven_wield() as usize { clear(st); return false; }
     // A split Restore Life Levels stack leaves the protected copies carried.
-    let drop_qty = if (1..qty).contains(&a.at[2])
-        && crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
-        && crate::borg_town_capability::restore_life_reserve(st) > 0
-    {
-        a.at[2]
-    } else {
-        qty
-    };
+    // borg-reborn-rs (#1151, review of #1155): so does a split fuel stack
+    // (torches, flasks), whose floor is the light reserve. Other drops stay
+    // whole: a split applied to every drop moved a smoke game (review of #989).
+    let fuel = matches!(u32::from(item.tval),
+        crate::headers::list_tvals_h::TV_LIGHT | crate::headers::list_tvals_h::TV_FLASK);
+    let splits = (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel;
+    let drop_qty = drop_quantity(a.at[2], qty, splits);
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     borg_note(st, "# Town plan dropping worthless stack");
     borg_keypress(st, u32::from(b'{'));
@@ -490,6 +526,18 @@ mod tests {
         assert_eq!(purchase_quantity(5, 99, 0, 1, 200), 1);
         assert_eq!(purchase_quantity(5, 99, 80, 0, 0), 5, "a free ware is capped by the stack only");
     }
+    /// #1151 (review of #1155): a split drop of a fuel stack no shop buys
+    /// leaves the light reserve carried: 30 of 34 torches, not all 34.
+    /// Kinds that may not split, and a plan for the whole stack or more, drop
+    /// the whole stack.
+    #[test]
+    fn a_split_drop_keeps_the_reserved_copies() {
+        assert_eq!(drop_quantity(30, 34, true), 30);
+        assert_eq!(drop_quantity(30, 34, false), 34, "a kind that may not split");
+        assert_eq!(drop_quantity(34, 34, true), 34);
+        assert_eq!(drop_quantity(0, 34, true), 34);
+        assert_eq!(drop_quantity(1, 1, true), 1);
+    }
     #[test]
     fn a_purchase_logs_the_gold_it_took() {
         // 8 wands with uneven charges: one is 52 gold, not 70 (review F2).
@@ -540,6 +588,7 @@ mod tests {
         assert_eq!(goal(a(action::STORE, 7, 3)), Some((7, -1, 3)));
         assert_eq!(goal(a(action::TAKE_HOME, 7, 5)), Some((7, 5, -1)));
         assert_eq!(goal(a(action::SELL_HOME, 4, 5)), Some((7, 5, -1)));
+        assert_eq!(goal(a(action::DROP_HOME, 7, 5)), Some((7, 5, -1)));
         assert_eq!(goal(a(action::DROP, -1, 3)), Some((-1, -1, 3)));
         assert_eq!(goal(a(action::LEAVE, -1, -1)), None);
         assert_eq!(goal(a(action::BUY, 99, 2)), None);
@@ -568,7 +617,8 @@ mod tests {
     }
     #[test]
     fn home_history_waits_for_successful_store_and_take() {
-        for (code, stored, after) in [(action::STORE, true, 2), (action::TAKE_HOME, false, 4)] {
+        for (code, stored, after) in [(action::STORE, true, 2), (action::TAKE_HOME, false, 4),
+            (action::DROP_HOME, false, 6)] {
             let mut st = home_state();
             st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code, at: [7, 0, 1, 0] });
             assert!(!home_moved(&st, 42, stored), "queuing is not confirmation");
@@ -585,7 +635,7 @@ mod tests {
     }
     #[test]
     fn canceled_home_moves_do_not_constrain_the_visit() {
-        for code in [action::STORE, action::TAKE_HOME] {
+        for code in [action::STORE, action::TAKE_HOME, action::DROP_HOME] {
             let mut st = home_state();
             st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code, at: [7, 0, 1, 0] });
             st.items.items.swap(0, 1);

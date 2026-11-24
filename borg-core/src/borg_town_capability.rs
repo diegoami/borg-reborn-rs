@@ -122,9 +122,53 @@ const STAPLE_OIL: usize = 73;
 const STAPLE_FOOD: usize = 74;
 const STAPLE_LIGHT: usize = 75;
 const RESTORE_LIFE_RESERVE: usize = STAPLE_LIGHT + 1;
-const _: () = assert!(RESTORE_LIFE_RESERVE + 1 == NAMES.len());
+/// borg-reborn-rs (#987): the first `town_first_cure` healing potions as a
+/// requirement, each worth `town_first_cure_percent` of the trip's escape
+/// weight, nothing past them. With the Phase Door reserve at 150 percent of
+/// that weight a scroll, the first Cure Light Wounds (at most the healing
+/// curve's first HP plus a full heal on the healing reserve) is worth less
+/// than every reserved Phase Door, so a low-gold start bought no cure. Above
+/// the reserve's percent, the first cures come before it. The row only exists
+/// with `town_first_cure` above 0.
+const FIRST_CURE: usize = RESTORE_LIFE_RESERVE + 1;
+// The first-cure row must stay the last of the rows the model holds without the
+// device rows: the model without it stops before it (`observe`), so a row appended
+// after it would drop out of the off model. The device rows (#895) follow it and
+// exist only with `town_device_percent`, padded like the first-cure row.
+
 /// The healing potions' rows.
 const HEAL_KINDS: [usize; 3] = [STAPLE_CLW, STAPLE_CSW, STAPLE_CCW];
+/// borg-reborn-rs (#895, owner: "we are going to need space for other
+/// devices"): with `town_device_percent` on, one requirement row per situation a
+/// wand, staff or rod answers, counted in charges (`UNIT` each): a ranged attack,
+/// an escape (a Staff of Teleportation), detection (Detect Invisible, Detect
+/// Evil, Mapping) and monster control (Slow, Hold, Confuse Monster). The first N
+/// charges together are worth `town_device_percent` of the trip weight, so a
+/// learned, charged device is kept and bought as variety, not only as one more
+/// source on a shared curve (an attack wand competes with arrows and oil).
+const DEV_ATTACK: usize = FIRST_CURE + 1;
+const DEV_ESCAPE: usize = DEV_ATTACK + 1;
+const DEV_DETECT: usize = DEV_ESCAPE + 1;
+const DEV_CONTROL: usize = DEV_DETECT + 1;
+/// borg-reborn-rs (#1134, owner: "make the town planner start buying CCW and
+/// cure poison in the same way that they buy detect invisible"): with
+/// `town_prepared_ccw` above 0, a prepared row of its own fed one copy per
+/// Potion of Cure Critical Wounds. The last row, held only while it is on, so
+/// the model keeps its shape (and the play) with it off.
+const PREP_CCW: usize = DEV_CONTROL + 1;
+/// borg-reborn-rs (#1137, owner: "40 just Neutralize Poison"): with
+/// `town_prepared_neutralize` above 0, a prepared row of its own fed one copy
+/// per Potion of Neutralize Poison, so its percent raises that potion alone,
+/// not every poison cure on the shared poison row (Resist Poison, Mushroom of
+/// Purging, CCW). Held, as the CCW row, only while a dear row is on.
+const PREP_NEUTRALIZE: usize = PREP_CCW + 1;
+/// Situation capabilities a device supplies -> its device row. Invisible
+/// detection is not here: a Staff of Detect Invisible already fills the prepared
+/// Detect Invisible row, one copy a charge (`town_prepared_invisible`), so a
+/// second row would count it twice (review of #898, F2). Teleport Other
+/// (`OTHER`) is grouped with the control devices: it keeps a monster away.
+const DEVICE_ROWS: [(usize, usize); 6] = [(ATTACK, DEV_ATTACK), (TELEPORT, DEV_ESCAPE),
+    (MONSTERS, DEV_DETECT), (MAP, DEV_DETECT), (CONTROL, DEV_CONTROL), (OTHER, DEV_CONTROL)];
 /// A capability with a knee of its own -> its row.
 const STAPLES: [(usize, usize); 4] = [(PHASE, STAPLE_PHASE), (THROWN_OIL, STAPLE_OIL),
     (FOOD, STAPLE_FOOD), (LIGHT, STAPLE_LIGHT)];
@@ -177,7 +221,8 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+const _: () = assert!(PREP_NEUTRALIZE + 1 == NAMES.len());
+pub const NAMES: [&str; 84] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
@@ -185,7 +230,9 @@ pub const NAMES: [&str; 77] = ["light turns", "nutrition", "healing HP", "poison
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
     "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "thrown oil", "extra shots", "phase reserve", "ranged reserve", "recall reserve",
-    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve"];
+    "prepared: poison cure", "prepared: remove curse", "prepared: detect invisible", "prepared: confusion cure", "prepared: fear cure", "staple: Cure Light Wounds", "staple: Cure Serious Wounds", "staple: Cure Critical Wounds", "staple: Phase Door", "staple: oil", "staple: food", "staple: light", "restore life reserve", "first cure",
+    "device: attack charges", "device: escape charges", "device: detection charges", "device: control charges",
+    "prepared: Cure Critical Wounds", "prepared: Neutralize Poison"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -290,6 +337,53 @@ impl Model {
         self.units(Self::scope(it), i64::from(it.slot), i64::from(it.qty)).iter()
             .any(|&(id, turns)| id == LIGHT && turns > 0 && row[3] - turns < -row[2])
     }
+    /// borg-reborn-rs (#1151): the copies of this stack one weighted reserve
+    /// row (negative demand) still needs once the other carried supply is
+    /// counted. The copy's own units come from the model, except for light:
+    /// the model spreads a flask stack's refuelling bottles over the whole
+    /// stack, so the floor counts the physical fuel of a copy
+    /// (`KitItem::fuel`), when it is known and the stack supplies light.
+    fn row_keep(&self, id: usize, it: &KitItem) -> i32 {
+        let Some(row) = self.curves.get(id) else { return 0; };
+        if row[1] <= 0 || row[2] >= 0 { return 0; }
+        let modeled: i64 = self.units(Self::scope(it), i64::from(it.slot), 1).iter()
+            .filter(|&&(cap, _)| cap == id).map(|&(_, n)| n).sum();
+        if modeled <= 0 { return 0; }
+        let per_copy = if id == LIGHT && it.fuel > 0 { it.fuel } else { modeled };
+        let other = row[3] - modeled * i64::from(it.qty);
+        let missing = (-row[2] - other).max(0);
+        ((missing + per_copy - 1) / per_copy).clamp(0, i64::from(it.qty)) as i32
+    }
+    /// borg-reborn-rs (#1151): the copies of a fuel stack the light reserve
+    /// still needs; the copies past them can go. `protects_fuel` asks the
+    /// same of the whole stack, on the modeled units. A CL17 Mage with 34
+    /// torches and a 20,000-turn reserve kept all of them (four would do) at
+    /// -12 speed.
+    /// The dispositions read `reserve_keep`, which includes this row.
+    #[cfg(test)]
+    pub fn fuel_keep(&self, it: &KitItem) -> i32 {
+        self.row_keep(LIGHT, it)
+    }
+    /// borg-reborn-rs (#1151, review of #1155): the copies of this stack
+    /// every weighted reserve row still needs (the light, Phase Door, Restore
+    /// Life and ranged reserves, a first cure, a spell book): what may never
+    /// be treated as excess.
+    pub fn reserve_keep(&self, it: &KitItem) -> i32 {
+        (0..self.curves.len()).map(|id| self.row_keep(id, it)).max().unwrap_or(0)
+    }
+    /// borg-reborn-rs (#1151): the copies of a curse-removing ware the Borg
+    /// would read now, while it has a curse it wants removed (the CURSE row
+    /// has weight: `BI_FIRST_CURSED`): what the row still lacks, in copies.
+    /// Zero when there is no curse or the ware does not remove one.
+    pub fn decurse_copies(&self, shop: u8, slot: u8) -> i32 {
+        let Some(row) = self.curves.get(CURSE) else { return 0; };
+        if row[1] <= 0 || row[2] >= 0 { return 0; }
+        let per_copy: i64 = self.units(i64::from(shop), i64::from(slot), 1).iter()
+            .filter(|&&(id, _)| id == CURSE).map(|&(_, n)| n).sum();
+        if per_copy <= 0 { return 0; }
+        let missing = (-row[2] - row[3]).max(0);
+        ((missing + per_copy - 1) / per_copy).min(i64::from(i32::MAX)) as i32
+    }
     /// Copies this pack stack must retain after counting other carried stacks.
     pub fn restore_life_keep(&self, item: &KitItem) -> i32 {
         let Some(row) = self.curves.get(RESTORE_LIFE_RESERVE) else { return 0; };
@@ -298,6 +392,19 @@ impl Model {
             return 0;
         }
         ((-row[2] - row[3]) / UNIT + i64::from(item.qty)).clamp(0, i64::from(item.qty)) as i32
+    }
+
+    /// Copies of one kind needed to meet the live kit's explicit reserve
+    /// rows, after crediting the other carried ways to meet each reserve.
+    pub(crate) fn home_stock_floor(&self, item: &KitItem, held: i32) -> i32 {
+        self.units(Self::scope(item), i64::from(item.slot), 1).into_iter()
+            .filter_map(|(id, per_copy)| {
+                let row = self.curves.get(id)?;
+                if row[1] == 0 || row[2] >= 0 { return None; }
+                let other = (row[3] - i64::from(held) * per_copy).max(0);
+                let missing = (-row[2] - other).max(0);
+                Some(((missing + per_copy - 1) / per_copy).min(i64::from(i32::MAX)) as i32)
+            }).max().unwrap_or(0)
     }
 
     pub fn keep(&self, it: &KitItem) -> i64 {
@@ -655,6 +762,15 @@ fn worthless(tval: u32, sval: i32) -> bool {
             && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
 }
 
+/// #1049: apply the purchase model's deliberate exclusions to known
+/// items in the pack and Home as well. A temporary lack of demand for a
+/// useful effect does not make it an unwanted kind.
+pub(crate) fn unwanted_home_item(item: &borg_item) -> bool {
+    param(Param::town_home_reject_unwanted) != 0
+        && item.kind != 0 && item.aware && item.flavour_aware
+        && worthless(u32::from(item.tval), i32::from(item.sval))
+}
+
 /// borg-reborn-rs (#761, owner): what a ware supplies, with the flavour-unseen
 /// shop wares (`{unseen}`: a Potion or Scroll whose flavour the player has not
 /// seen) scaled by `town_unseen_percent`. Phase Door has its own
@@ -675,12 +791,6 @@ fn unseen_scaled(out: Vec<(usize, i64)>, percent: i32) -> Vec<(usize, i64)> {
     out.into_iter().map(|(cap, n)| if matches!(cap, PHASE | PHASE_RESERVE | RANGED_RESERVE | RESTORE_LIFE_RESERVE) { (cap, n) } else { (cap, scale_percent(n, percent)) }).filter(|&(_, n)| n > 0).collect()
 }
 
-/// borg-reborn-rs (#1004): does a class spell make its book worth keeping?
-/// Castable now (its level reached, its mana within the max SP), as before;
-/// or, with `ahead` > 0, learnt within `ahead` levels, on the level alone:
-/// the mana is not compared, so a wide window can keep a book whose spell
-/// costs more than the class's SP when it is learnt (review of #1019). A Ranger's Lesser Charms (Remove Hunger at
-/// CL3) and a Rogue's First Spells (Detect Monsters at CL5) were sold at CL1.
 /// borg-reborn-rs (#1004): the look-ahead for a book in scope `scope`: the
 /// parameter for an owned book (the pack, `PACK`, or the home, `HOME`), 0 for
 /// a shop's (scopes 0..=7), so purchases are valued as before.
@@ -688,6 +798,11 @@ fn book_lookahead(scope: i64, levels: i32) -> i32 {
     if matches!(scope, PACK | HOME) { levels } else { 0 }
 }
 
+/// borg-reborn-rs (#1004): does a class spell make its book worth keeping?
+/// Castable now (its level reached, its mana within the max SP), as before;
+/// or, with `ahead` > 0, learnt within `ahead` levels, on the level alone:
+/// the mana is not compared, so a wide window can keep a book whose spell
+/// costs more than the class's SP when it is learnt. Ranger and Rogue first spells arrive at CL3 and CL5.
 fn book_spell_counts(slevel: i32, smana: i32, level: i32, maxsp: i32, ahead: i32) -> bool {
     (slevel <= level && smana <= maxsp) || (ahead > 0 && slevel <= level.saturating_add(ahead))
 }
@@ -815,6 +930,15 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
         for (cap, row) in PREPARED {
             if out.iter().any(|&(id, _)| id == cap) { out.push((row, UNIT)); }
         }
+        // borg-reborn-rs (#1134): a Cure Critical Wounds is one copy on its own row.
+        if prepared_ccw_on(st) && tval == TV_POTION && i32::from(item.sval) == st.item_val.sv_potion_cure_critical {
+            out.push((PREP_CCW, UNIT));
+        }
+        // borg-reborn-rs (#1137): a Neutralize Poison is one copy on its own row
+        // (and still one on the shared poison row, as a CCW is).
+        if prepared_neutralize_on(st) && tval == TV_POTION && i32::from(item.sval) == st.item_val.sv_potion_cure_poison {
+            out.push((PREP_NEUTRALIZE, UNIT));
+        }
     }
     // borg-reborn-rs (#863): each healing potion is one copy on its own
     // staple row, whose knee and decay are the kind's (the three share the
@@ -825,6 +949,10 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
             else if sval == st.item_val.sv_potion_cure_serious { Some(STAPLE_CSW) }
             else if sval == st.item_val.sv_potion_cure_critical { Some(STAPLE_CCW) } else { None };
         if let Some(row) = row { out.push((row, UNIT)); }
+    }
+    // borg-reborn-rs (#987): a healing potion is one copy on the first-cure row.
+    if first_cure_count() > 0 && tval == TV_POTION && out.iter().any(|&(id, _)| id == HEAL) {
+        out.push((FIRST_CURE, UNIT));
     }
     let uses = if tval == TV_WAND || tval == TV_STAFF { i64::from(item.pval).max(0) * UNIT / qty }
         else if tval == TV_ROD {
@@ -837,6 +965,16 @@ fn supplies_of_kind(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Ve
     // of what it supplies (per class, by device skill; 100 = as computed).
     if matches!(tval, TV_WAND | TV_ROD | TV_STAFF) {
         for (_, units) in &mut out { *units = scale_percent(*units, param(Param::town_devices_percent)); }
+        // borg-reborn-rs (#895): a learned device's charges, once per situation
+        // it answers, on that situation's device row.
+        if device_on(st) {
+            let charges = scale_percent(uses, param(Param::town_devices_percent));
+            let attack = device_attack(&effects, ctx.journey.hp, i64::from(st.cfg(BORG_TOWN_SUPPORT_TURNS)).max(1), confusion);
+            let mut rows: Vec<usize> = DEVICE_ROWS.iter().filter(|&&(cap, row)| out.iter().any(|&(id, units)| id == cap && units > 0)
+                && (row != DEV_ATTACK || attack)).map(|&(_, row)| row).collect();
+            rows.sort_unstable(); rows.dedup();
+            for row in rows { out.push((row, charges)); }
+        }
     }
     out.retain(|&(_, units)| units > 0);
     // borg-reborn-rs (#859): a Recall supply also counts toward the reserve.
@@ -859,7 +997,9 @@ fn restore_life_supply(item: &borg_item, sval: i32, reserve: i64) -> Option<(usi
 fn initial_curves(
     previous_count: usize, ordinary: i64, demand: i64, drained: bool, reserve: i64, restore_weight: i64,
 ) -> Vec<[i64; 5]> {
-    let count = if reserve > 0 { COUNT } else { previous_count };
+    // #987: the Restore Life row, not COUNT: the first-cure row after it
+    // exists only with `town_first_cure` (`observe`).
+    let count = if reserve > 0 { RESTORE_LIFE_RESERVE + 1 } else { previous_count };
     let mut curves: Vec<_> = (0..count).map(|id| [id as i64, ordinary, demand, 0, 0]).collect();
     curves[EXPERIENCE] = [EXPERIENCE as i64, if drained { restore_weight } else { 0 }, -UNIT, 0, 0];
     if reserve > 0 {
@@ -885,7 +1025,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
     let ranged_reserve = i64::from(param(Param::town_ranged_reserve));
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let light_goal = journey.fuel_goal(light_reserve);
+    // borg-reborn-rs (#1110): more light while breadth-first exploration applies.
+    let light_goal = crate::borg_light::fuel_goal(st, journey);
     let restore_life_reserve = i64::from(restore_life_reserve(st));
     let ctx = Context { st, journey, lantern, light_goal, light_reserve, ranged_reserve, restore_life_reserve };
     // Keep the historical facts shape when the reserve is disabled.
@@ -893,11 +1034,22 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     let recall_on = param(Param::town_recall_curve_scale_percent) > 0;
     let prepared = prepared_on(st);
     let staples = staple_on(st);
+    let devices = device_on(st);
     let previous_count = if prepared || staples { STAPLE_LIGHT + 1 } else if recall_on {
         RECALL_RESERVE + 1
     } else if ranged_reserve > 0 { RECALL_RESERVE } else { RANGED_RESERVE };
     let curves = initial_curves(previous_count, ordinary, support_demand,
         t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0, restore_life_reserve, cfg(BORG_TOWN_W_RESTORE) * UNIT);
+    // borg-reborn-rs (#987): with `town_first_cure` the model holds every row;
+    // the rows the model would not hold without it carry no weight, so on is
+    // off plus the first-cure row.
+    let first_cure = first_cure_count();
+    let mut curves = curves;
+    // borg-reborn-rs (#895): the same with the device rows (`town_device_percent`).
+    // borg-reborn-rs (#1134, #1137): the CCW and Neutralize Poison rows, past
+    // the device rows, only while one of them is on.
+    let full = if prepared_ccw_on(st) || prepared_neutralize_on(st) { COUNT } else if first_cure > 0 || devices { DEV_CONTROL + 1 } else { 0 };
+    while curves.len() < full { curves.push([curves.len() as i64, 0, UNIT, 0, 0]); }
     let count = curves.len();
     let mut model = Model { available: stock.candidates.iter().map(|c| [i64::from(c.shop), i64::from(c.slot), i64::from(c.qty)]).collect(),
         packing: Some(crate::borg_town_packing::Packing::of(st, stock)), curves, supplies: Vec::new() };
@@ -925,12 +1077,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     // borg-reborn-rs (#761, owner): a class's own food weight, in percent of
     // borg_town_w_food (100 = today).
     let w_food = scale_percent(cfg(BORG_TOWN_W_FOOD), param(Param::town_food_percent));
-    let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
-    if rations < READY_FOOD * UNIT {
-        curve(FOOD, w_food * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
-    } else {
-        curve(FOOD, w_food * rations, RATION_NUTRITION * rations);
-    }
+    // borg-reborn-rs (#1110): more food while breadth-first exploration
+    // applies: the trip's rations and the five-ration floor alike.
+    let food_percent = crate::borg_flow_dark::bfs_supply_percent(st, false);
+    let (food_weight, food_demand) =
+        food_curve(w_food, journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1), food_percent);
+    curve(FOOD, food_weight, food_demand);
     // borg-reborn-rs (#491, owner: "we can never have enough healing").
     // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
     // weight and demand scale together, so its first HP is worth the same
@@ -1010,12 +1162,54 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         // detect invisible and 2 remove curse"): each remedy's own copies.
         let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
         let percent = param(Param::town_prepared_percent);
-        for (row, copies) in [(PREP_POISON, Param::town_prepared_poison), (PREP_CURSE, Param::town_prepared_curse),
-            (PREP_INVISIBLE, Param::town_prepared_invisible), (PREP_CONFUSION, Param::town_prepared_confusion),
-            (PREP_FEAR, Param::town_prepared_fear)] {
-            let (weight, demand) = prepared_row(trip_weight, percent, param(copies));
+        // borg-reborn-rs (#1134): the poison remedy and the CCW row may have a
+        // percent of their own (0 = the shared one): a row prices a copy, not
+        // a gold piece, so at the shared percent a 15 gold scroll beats a 75
+        // gold Neutralize Poison and a 200 gold Cure Critical Wounds.
+        // borg-reborn-rs (#1137, owner: "when he is rich enough to get a WoR he
+        // starts buying antipoison and CCW"): with `town_prepared_dear_after_recall`
+        // the dear rows count only once the purse (after the urgent needs)
+        // reaches the Recall floor (`buy_recall_from_gold`) and the Recall
+        // reserve (`town_recall_reserve`, at least one) is carried; before,
+        // they are worth nothing and an own percent falls back to the shared
+        // one, so the gold goes to Recall and the staples first. Recall's own
+        // gate, so a CCW at 112 percent of the trip weight never outbids a
+        // missing reserve scroll (100 percent). 0 = no gate.
+        let dear = dear_rows_paid(param(Param::town_prepared_dear_after_recall) > 0,
+            gold_after_urgent, i64::from(crate::borg_store_buy::recall_purchase_floor()),
+            t(BI_RECALL), i64::from(param(Param::town_recall_reserve)));
+        let own = |p: Param| { let v = param(p); if v > 0 && dear { v } else { percent } };
+        for (row, copies, row_percent) in [(PREP_POISON, Param::town_prepared_poison, own(Param::town_prepared_poison_percent)),
+            (PREP_CURSE, Param::town_prepared_curse, percent),
+            (PREP_INVISIBLE, Param::town_prepared_invisible, percent), (PREP_CONFUSION, Param::town_prepared_confusion, percent),
+            (PREP_FEAR, Param::town_prepared_fear, percent)] {
+            let (weight, demand) = prepared_row(trip_weight, row_percent, param(copies));
             curve(row, weight, demand);
         }
+        if count > PREP_NEUTRALIZE {
+            for (row, copies, row_percent) in [(PREP_CCW, Param::town_prepared_ccw, Param::town_prepared_ccw_percent),
+                (PREP_NEUTRALIZE, Param::town_prepared_neutralize, Param::town_prepared_neutralize_percent)] {
+                let copies = param(copies);
+                let (weight, demand) = if copies > 0 && dear {
+                    prepared_row(trip_weight, own(row_percent), copies)
+                } else { (0, UNIT) };
+                curve(row, weight, demand);
+            }
+        }
+    }
+    // borg-reborn-rs (#895, owner: "we are going to need space for other
+    // devices"): the device rows, in charges, as requirements on the trip weight.
+    let device_floor = i64::from(param(Param::town_device_escape_min_gold));
+    if devices {
+        let trip_weight = cfg(BORG_TOWN_W_TRIP) * exposure.max(UNIT);
+        let percent = param(Param::town_device_percent);
+        for (row, charges) in [(DEV_ATTACK, Param::town_device_attack), (DEV_ESCAPE, Param::town_device_escape),
+            (DEV_DETECT, Param::town_device_detect), (DEV_CONTROL, Param::town_device_control)] {
+            let (weight, demand) = device_row(trip_weight, percent, param(charges));
+            curve(row, weight, demand);
+        }
+    } else if count > DEV_CONTROL {
+        for row in [DEV_ATTACK, DEV_ESCAPE, DEV_DETECT, DEV_CONTROL] { curve(row, 0, UNIT); }
     }
     // borg-reborn-rs (#863, owner: "make staple objects start losing value
     // from [a few] copies, compared to the objects that are not in the
@@ -1051,6 +1245,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     } else if count > STAPLE_LIGHT {
         // Unset rows hold the default weight and demand: a knee must be off.
         for id in HEAL_KINDS.into_iter().chain(STAPLES.iter().map(|&(_, row)| row)) { curve(id, 0, UNIT); }
+    }
+    // borg-reborn-rs (#987): the first `town_first_cure` healing potions, each
+    // worth `town_first_cure_percent` of the trip's escape weight (the Phase
+    // Door reserve's unit), nothing past them.
+    if first_cure > 0 {
+        curve(FIRST_CURE, scale_percent(risk(BORG_TOWN_W_ESCAPE), param(Param::town_first_cure_percent)) * first_cure,
+            -(first_cure * UNIT));
     }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
@@ -1170,9 +1371,19 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
     }
     for cap in BOOKS..BOOKS + 9 { curve(cap, cfg(BORG_TOWN_W_MAGIC) * UNIT, -UNIT); }
     // Per-item physical supply facts are independent of the quantities held.
+    // borg-reborn-rs (#895, owner: a Staff of Teleportation only with spare gold;
+    // review of #898, F10): below the gold floor a Staff of Teleportation on offer
+    // supplies nothing, neither its device row nor the shared TELEPORT curve, so a
+    // poor Borg does not buy one at all; one already carried is never touched
+    // (its supplies come from the kit below), so it is never sold for a small purse.
+    let staff_gated = devices && escape_gated(device_floor, gold_after_urgent, carried_escape_charges(st));
     for c in &stock.candidates {
         let item = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
-        for (cap, n) in supplies(item, &ctx, (i64::from(c.shop), usize::from(c.slot))) {
+        let mut supply = supplies(item, &ctx, (i64::from(c.shop), usize::from(c.slot)));
+        if staff_gated && u32::from(item.tval) == TV_STAFF && i32::from(item.sval) == st.item_val.sv_staff_teleportation {
+            supply = without_escape(supply);
+        }
+        for (cap, n) in supply {
             model.supplies.push([i64::from(c.shop), i64::from(c.slot), cap as i64, n]);
         }
     }
@@ -1216,7 +1427,7 @@ pub fn audit(st: &BorgState, journey: Journey, model: &Model) {
     let light_slot = crate::borg_item::inven_wield() as usize + 5;
     let light = st.items.items.get(light_slot).copied().unwrap_or_else(crate::borg_item::blank_item);
     let light_reserve = i64::from(param(Param::town_light_reserve_turns));
-    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: journey.fuel_goal(light_reserve), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
+    let ctx = Context { st, journey, restore_life_reserve: i64::from(restore_life_reserve(st)), light_goal: crate::borg_light::fuel_goal(st, journey), light_reserve, ranged_reserve: i64::from(param(Param::town_ranged_reserve)),
         lantern: light.iqty > 0 && i32::from(light.sval) == st.item_val.sv_light_lantern
         && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32) };
     let _ = writeln!(file, "{{\"hypothetical_known_items\":1,\"class\":{},\"level\":{},\"curves\":{:?}}}", st.borg.tr(BI_CLASS), journey.level, model.curves);
@@ -1349,8 +1560,8 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
-            power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
+        KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+            power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
     #[test]
     fn alchemist_restore_life_purchase_and_retention_follow_need_and_stock() {
@@ -1393,7 +1604,7 @@ mod tests {
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold, pack_slots: 4, weight: 100 },
                 urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
-                cure_spell: false, kit: &kit, home_slots: 10 };
+                cure_spell: false, reads_now: false, kit: &kit, home_slots: 10 };
             let output = step(&input);
             first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit)
         };
@@ -1468,6 +1679,43 @@ mod tests {
         assert_eq!(m.gain(&[(PHASE, UNIT), (PHASE_RESERVE, UNIT)]), curve_only + w, "a reserved scroll adds its share");
         assert_eq!(m.gain(&[(PHASE, 2 * UNIT), (PHASE_RESERVE, 2 * UNIT)]) - m.gain(&[(PHASE, 2 * UNIT)]), 2 * w);
         assert_eq!(m.gain(&[(PHASE_RESERVE, 3 * UNIT)]), 2 * w, "a third adds nothing to the reserve");
+    }
+
+    /// #987: the curves of seed 681096527's plan record at game turn 541
+    /// (Elf Ranger, 14 HP, 109 gold in the Alchemist, 4b2c2fcf at the shipped
+    /// settings). Each reserved Phase Door (180,000 on the reserve, 150 percent
+    /// of the 120,000 escape weight) outbids the first Cure Light Wounds
+    /// (70,588 on the healing curve and 100,000 on the healing reserve), the
+    /// sixth scroll as well as the first. With the first-cure row the first
+    /// cure outbids every reserved scroll; the second cure does not.
+    #[test]
+    fn the_first_cure_comes_before_the_phase_door_reserve() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        m.curves[HEAL] = [HEAL as i64, 240_000, 33_600, 0, 0];
+        m.curves[HEAL_RESERVE] = [HEAL_RESERVE as i64, 200_000, -28_000, 0, 0];
+        m.curves[PHASE] = [PHASE as i64, 180_000, 3_600, 0, 0];
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, 1_800_000, -10 * UNIT, 0, 0];
+        let clw = |n: i64| vec![(HEAL, 14_000 * n), (HEAL_RESERVE, 14_000 * n), (FIRST_CURE, n * UNIT)];
+        let phase = |n: i64| vec![(PHASE, n * UNIT), (PHASE_RESERVE, n * UNIT)];
+        let first_clw = m.gain(&clw(1));
+        assert_eq!(first_clw, 70_588 + 100_000);
+        let sixth_phase = m.gain(&phase(6)) - m.gain(&phase(5));
+        assert!(sixth_phase > first_clw, "today: the sixth Phase Door ({sixth_phase}) outbids the first cure ({first_clw})");
+        assert!(m.gain(&phase(1)) > first_clw);
+        // town_first_cure = 1 at 200 percent of the escape weight.
+        m.curves[FIRST_CURE] = [FIRST_CURE as i64, 240_000, -UNIT, 0, 0];
+        let first_clw = m.gain(&clw(1));
+        assert_eq!(first_clw, 70_588 + 100_000 + 240_000);
+        assert!(first_clw > m.gain(&phase(1)), "the first cure outbids the first reserved Phase Door");
+        let second_clw = m.gain(&clw(2)) - first_clw;
+        assert!(second_clw < sixth_phase, "the second cure ({second_clw}) still waits for the reserve");
+        // town_first_cure = 2: each of the first two copies adds 240,000 on the
+        // row, a third nothing.
+        m.curves[FIRST_CURE] = [FIRST_CURE as i64, 480_000, -2 * UNIT, 0, 0];
+        let row = |m: &Model, n: i64| m.gain(&[(FIRST_CURE, n * UNIT)]);
+        assert_eq!(row(&m, 1), 240_000);
+        assert_eq!(row(&m, 2) - row(&m, 1), 240_000);
+        assert_eq!(row(&m, 3), row(&m, 2), "a third cure adds nothing on the row");
     }
 
     /// #859 (owner: "make it be 110 by default, so that they buy a few"):
@@ -1604,6 +1852,50 @@ mod tests {
         assert_eq!(m.gain(&[(PREP_INVISIBLE, 5 * UNIT)]) - m.gain(&[(PREP_INVISIBLE, 4 * UNIT)]), 0, "the 5th is worth nothing");
     }
 
+    /// #1134 (owner: "make the town planner start buying CCW and cure poison in
+    /// the same way that they buy detect invisible"): a prepared row prices a
+    /// copy, not a gold piece. At the shared percent the first Neutralize
+    /// Poison (75 gold) is worth less per gold than the first Detect Invisible
+    /// (15 gold); at five times the percent the same; the CCW row (200 gold)
+    /// needs fourteen times (200/15 = 13.3). Past its copies a row is worth nothing.
+    #[test]
+    fn a_remedy_of_its_own_percent_buys_dear_cures_with_spare_gold() {
+        let mut m = Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: Vec::new() };
+        let first = |m: &mut Model, row: usize, percent: i32, copies: i32| {
+            let (w, d) = prepared_row(50 * 1000, percent, copies);
+            m.curves[row] = [row as i64, w, d, 0, 0];
+            m.gain(&[(row, UNIT)])
+        };
+        let detect = first(&mut m, PREP_INVISIBLE, 8, 4);
+        let shared = first(&mut m, PREP_POISON, 8, 3);
+        assert!(shared * 15 < detect * 75, "shared percent: Neutralize Poison {shared}/75 below Detect Invisible {detect}/15");
+        let own = first(&mut m, PREP_POISON, 40, 3);
+        assert!(own * 15 >= detect * 75, "five times: Neutralize Poison {own}/75 at least Detect Invisible {detect}/15");
+        let ccw = first(&mut m, PREP_CCW, 8 * 14, 2);
+        assert!(ccw * 15 >= detect * 200, "fourteen times: CCW {ccw}/200 at least Detect Invisible {detect}/15");
+        assert_eq!(m.gain(&[(PREP_CCW, 3 * UNIT)]) - m.gain(&[(PREP_CCW, 2 * UNIT)]), 0, "the 3rd CCW past 2 copies is worth nothing");
+        assert_eq!(PREP_NEUTRALIZE, COUNT - 1, "the dear rows are the last, so the model keeps its shape with them off");
+        assert_eq!(PREP_CCW, COUNT - 2);
+        assert_eq!(NAMES[PREP_CCW], "prepared: Cure Critical Wounds");
+        assert_eq!(NAMES[PREP_NEUTRALIZE], "prepared: Neutralize Poison");
+        let neutralize = first(&mut m, PREP_NEUTRALIZE, 40, 2);
+        assert!(neutralize * 15 >= detect * 75, "its own row at five times: Neutralize Poison {neutralize}/75 at least Detect Invisible {detect}/15");
+        assert_eq!(m.gain(&[(PREP_NEUTRALIZE, 3 * UNIT)]) - m.gain(&[(PREP_NEUTRALIZE, 2 * UNIT)]), 0, "the 3rd past 2 copies is worth nothing");
+    }
+
+    /// #1137 (owner: "when he is rich enough to get a WoR he starts buying
+    /// antipoison and CCW"): the dear rows wait for Recall's purse floor and
+    /// the Recall reserve in the pack; off, they always count.
+    #[test]
+    fn the_dear_rows_wait_for_recall() {
+        assert!(dear_rows_paid(false, 0, 200, 0, 2), "no gate: always");
+        assert!(!dear_rows_paid(true, 10_000, 200, 1, 2), "rich, but a reserve scroll is missing: Recall first");
+        assert!(!dear_rows_paid(true, 199, 200, 2, 2), "the reserve carried, but below Recall's purse floor");
+        assert!(dear_rows_paid(true, 200, 200, 2, 2), "the reserve carried and the purse at the floor");
+        assert!(!dear_rows_paid(true, 500, 200, 0, 0), "no reserve set: still one scroll first");
+        assert!(dear_rows_paid(true, 500, 200, 1, 0));
+    }
+
     /// #863 (review F2): a healing row's knee counts potions and prices them in
     /// the HEAL units one potion adds: 40 Cure Light Wounds with 7 free are worth
     /// about 11 potions; and `value`, which reads only `STAPLES` rows, never
@@ -1620,6 +1912,63 @@ mod tests {
         assert_eq!(m.heal_loss(None), 0, "the free copies lose nothing");
         let plain = coverage(&m.curves[HEAL], 40 * clw);
         assert_eq!(m.value(HEAL, &m.curves[HEAL], 40 * clw), plain, "`value` leaves the healing curve to `gain`");
+    }
+
+    /// #895 (review of #898, F2 and F6): a Staff of Detect Invisible feeds the
+    /// prepared Detect Invisible row and no device row; a Wand of Light's damage
+    /// is light only and does not fill the attack row, where a Wand of Magic
+    /// Missile's does.
+    #[test]
+    fn device_rows_do_not_double_count_or_count_light() {
+        use crate::headers::list_effects_h::{EF_BOLT_OR_BEAM, EF_LINE};
+        use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
+        assert!(DEVICE_ROWS.iter().all(|&(cap, _)| cap != INVISIBLE), "invisible detection is the prepared row's");
+        assert!(DEVICE_ROWS.iter().any(|&(cap, row)| cap == MONSTERS && row == DEV_DETECT));
+        let light = [(EF_LINE as u16, PROJ_LIGHT_WEAK as i32, 27)];
+        let missile = [(EF_BOLT_OR_BEAM as u16, 0, 18)]; // subtype 0 is PROJ_ARROW, native damage 0..=24
+        assert!(!device_attack(&light, 100, 1000, false), "a Wand of Light is not an attack device");
+        assert!(device_attack(&missile, 100, 1000, false), "a Wand of Magic Missile is");
+        assert!(device_attack(&[light[0], missile[0]], 100, 1000, false), "one real attack effect is enough");
+    }
+
+    /// #895 (owner: "we are going to need space for other devices"): a learned,
+    /// charged device is worth keeping on its situation's row (each charge an Nth
+    /// of the target, nothing past it), where on the shared ATTACK curve, saturated
+    /// by arrows and oil, it is worth next to nothing; an empty one has no charges
+    /// and no value; the Staff of Teleportation is gated by the gold floor unless
+    /// one is carried.
+    #[test]
+    fn a_charged_device_is_kept_as_variety() {
+        let trip = 50 * 1000;
+        let (weight, demand) = device_row(trip, 24, 10);
+        assert_eq!((weight, demand), (12_000, -10 * UNIT), "the target together is the percent of the trip weight");
+        let mut m = staple_model();
+        // ATTACK saturated by 100 shots and flasks already carried.
+        m.curves[ATTACK] = [ATTACK as i64, 100 * UNIT, 100 * UNIT, 500 * UNIT, 0];
+        m.supplies = vec![[PACK, 0, ATTACK as i64, 10 * UNIT], [PACK, 0, DEV_ATTACK as i64, 10 * UNIT]];
+        let wand = item(Place::Pack, 0, 1);
+        let plain = m.keep(&wand);
+        m.curves[DEV_ATTACK] = [DEV_ATTACK as i64, weight, demand, 10 * UNIT, 0];
+        let kept = m.keep(&wand);
+        assert!(kept >= weight, "the wand's ten charges are worth the target: {kept} against {plain} on the shared curve");
+        assert!(kept > 5 * plain.max(1), "far more than on the saturated curve");
+        // Nothing past the target: an eleventh charge adds nothing.
+        assert_eq!(m.gain(&[(DEV_ATTACK, UNIT)]), 0);
+        // Each charge up to it is worth the same.
+        m.curves[DEV_ATTACK][3] = 0;
+        assert_eq!(m.gain(&[(DEV_ATTACK, UNIT)]), weight / 10);
+        assert_eq!(m.gain(&[(DEV_ATTACK, 4 * UNIT)]), 4 * (weight / 10));
+        // An empty device supplies no row at all (units > 0 only).
+        assert_eq!(m.gain(&[]), 0);
+        // The Staff of Teleportation: gated below the floor unless carried.
+        assert!(escape_gated(3000, 2999, 0));
+        assert!(!escape_gated(3000, 3000, 0), "at the floor");
+        assert!(!escape_gated(3000, 100, 5 * UNIT), "one carried is never sold for a small purse");
+        assert!(!escape_gated(0, 0, 0), "no floor");
+        // Gated, a staff on offer supplies neither the device row nor the shared escape curve (F10),
+        // and keeps what else it supplies.
+        let staff = vec![(TELEPORT, 5 * UNIT), (DEV_ESCAPE, 5 * UNIT), (RECHARGE_TARGET, UNIT)];
+        assert_eq!(without_escape(staff), vec![(RECHARGE_TARGET, UNIT)]);
     }
 
     /// #863 (review F1): every capability id has a mask bit of its own, ids
@@ -1651,7 +2000,7 @@ mod tests {
         let limits = Limits { gold: 100, pack_slots: 5, weight: 100 };
         let input = crate::borg_town_record::StepInput { storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
             black_market_percentage: -1, candidates: cs.clone(), facts: &[], tryon: &[], limits, urgent: vec![],
-            params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit: &[], home_slots: 10 };
+            params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 };
         shared_groups(groups, &input, &cs, &m, &limits, (0, 100, 0)).len()
     }
 
@@ -1759,6 +2108,17 @@ mod tests {
         assert!(units.contains(&(SPEED, UNIT)) && units.contains(&(FIRE, 20 * UNIT)));
     }
     #[test]
+    fn breadth_first_food_scales_the_trip_and_the_floor() {
+        // #1110: at 100 the curve is today's; at 150 a short trip's floor is
+        // 7.5 rations instead of 5, and a long trip's rations grow alike.
+        assert_eq!(food_curve(3, 2 * UNIT, 100), (3 * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT)));
+        assert_eq!(food_curve(3, 8 * UNIT, 100), (3 * 8 * UNIT, RATION_NUTRITION * 8 * UNIT));
+        let ready = READY_FOOD * UNIT * 3 / 2;
+        assert_eq!(food_curve(3, 2 * UNIT, 150), (3 * ready, -(RATION_NUTRITION * ready)));
+        assert_eq!(food_curve(3, 8 * UNIT, 150), (3 * 12 * UNIT, RATION_NUTRITION * 12 * UNIT));
+        assert_eq!(scale_percent(20_000, 150), 30_000, "the light goal: 20,000 reserve turns become 30,000");
+    }
+    #[test]
     fn food_uses_actual_nutrition_and_crunch_is_only_a_message() {
         let biscuit = effect_supply(&[(EF_NOURISH as u16, 0, 10), (EF_CRUNCH as u16, 0, 0)], 20, 1000);
         assert_eq!(biscuit, [(FOOD, 10 * UNIT)]);
@@ -1821,6 +2181,115 @@ mod tests {
         m.curves[LIGHT][2] = torch_turns;
         m.curves[LIGHT][3] = 2 * torch_turns;
         assert!(!m.protects_fuel(&spare));
+    }
+
+    /// #1151: the copies of a fuel stack the light reserve still needs. 34
+    /// torches of 5,000 turns against 20,000: four, the rest can go. Other
+    /// carried fuel lowers it; a reserve met elsewhere needs none; the whole
+    /// stack short of the reserve keeps all of it (what `protects_fuel` says).
+    #[test]
+    fn the_fuel_reserve_keeps_only_the_copies_it_needs() {
+        let mut m = model();
+        let torch_turns = 5000 * UNIT;
+        m.supplies.push([PACK, 0, LIGHT as i64, torch_turns]);
+        let stack = item(Place::Pack, 0, 34);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -4 * torch_turns, 34 * torch_turns, 0];
+        assert_eq!(m.fuel_keep(&stack), 4);
+        assert!(m.protects_fuel(&stack), "the whole stack would undercut the reserve");
+        m.curves[LIGHT][3] = 34 * torch_turns + 3 * torch_turns / 2; // a flask's worth carried elsewhere
+        assert_eq!(m.fuel_keep(&stack), 3);
+        m.curves[LIGHT][3] = 38 * torch_turns;
+        assert_eq!(m.fuel_keep(&stack), 0);
+        assert!(!m.protects_fuel(&stack));
+        let few = item(Place::Pack, 0, 3);
+        m.curves[LIGHT][3] = 3 * torch_turns;
+        assert_eq!(m.fuel_keep(&few), 3, "short of the reserve: all of it stays");
+        m.curves[LIGHT][2] = torch_turns; // no reserve row
+        assert_eq!(m.fuel_keep(&stack), 0);
+    }
+
+    /// #1151: the copies of a Remove Curse ware read now: what the CURSE row
+    /// lacks while it has weight (`BI_FIRST_CURSED`); none without a curse,
+    /// none once a carried scroll covers it.
+    #[test]
+    fn a_remove_curse_ware_is_read_now_only_for_a_curse() {
+        let mut m = model();
+        m.supplies.push([5, 2, CURSE as i64, UNIT]);
+        m.curves[CURSE] = [CURSE as i64, 100 * UNIT, -UNIT, 0, 0];
+        assert_eq!(m.decurse_copies(5, 2), 1);
+        assert_eq!(m.decurse_copies(5, 3), 0, "another ware");
+        m.curves[CURSE][3] = UNIT;
+        assert_eq!(m.decurse_copies(5, 2), 0, "a carried scroll covers it");
+        m.curves[CURSE] = [CURSE as i64, 0, -UNIT, 0, 0];
+        assert_eq!(m.decurse_copies(5, 2), 0, "no curse to remove");
+    }
+
+    /// #1151 (review of #1155): a lantern at 5,000 turns and six 7,500-turn
+    /// flasks against a 20,000-turn reserve. The model gives two bottles to
+    /// refuelling and spreads their fuel over the six (2,500 a copy); the
+    /// floor counts the physical fuel, so two flasks stay, not six.
+    #[test]
+    fn the_light_floor_counts_physical_flasks() {
+        let mut m = model();
+        let flask = 7500 * UNIT;
+        m.supplies.push([PACK, 0, LIGHT as i64, 2 * flask / 6]);
+        m.curves[LIGHT] = [LIGHT as i64, 100 * UNIT, -20_000 * UNIT, 5000 * UNIT + 2 * flask, 0];
+        let stack = KitItem { fuel: flask, ..item(Place::Pack, 0, 6) };
+        assert_eq!(m.fuel_keep(&stack), 2);
+        assert_eq!(m.fuel_keep(&KitItem { fuel: 0, ..stack }), 6, "the modeled units alone");
+    }
+
+    /// #1151 (review of #1155): every weighted reserve row counts. Six Phase
+    /// Door against a reserve of six keep all six; a seventh carried
+    /// elsewhere frees one.
+    #[test]
+    fn the_reserve_floor_keeps_the_phase_door_reserve() {
+        let mut m = model();
+        m.supplies.push([PACK, 0, PHASE as i64, UNIT]);
+        m.supplies.push([PACK, 0, PHASE_RESERVE as i64, UNIT]);
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, 100 * UNIT, -6 * UNIT, 6 * UNIT, 0];
+        let stack = item(Place::Pack, 0, 6);
+        assert_eq!(m.reserve_keep(&stack), 6);
+        assert_eq!(m.fuel_keep(&stack), 0, "no light row");
+        m.curves[PHASE_RESERVE][3] = 7 * UNIT;
+        assert_eq!(m.reserve_keep(&stack), 5);
+        m.curves[PHASE_RESERVE][1] = 0;
+        assert_eq!(m.reserve_keep(&stack), 0, "an unweighted row reserves nothing");
+    }
+
+    /// #1151: an overweight Borg with a curse to remove still buys a Remove
+    /// Curse scroll (schema 20): it is read in town, so the weight repair
+    /// does not take it away. Schema 19 left without it.
+    #[test]
+    fn an_overweight_borg_still_buys_the_remove_curse_it_reads_in_town() {
+        use crate::borg_town_record::{action, first_action, step, StepInput, PARAMS};
+        use crate::borg_town_solve::Limits;
+        use crate::borg_town_stock::Candidate;
+        let scroll = Candidate { shop: 4, slot: 0, kind: 1, tval: crate::headers::list_tvals_h::TV_SCROLL as u8, sval: 1,
+            price: 100, qty: 5, weight: 5, slots_cost: 1, stack_count: 0, class: 1 };
+        let decide_with = |revision: i64, weight: i64, curse: bool, unreadable: bool| {
+            let mut m = Model { available: vec![[4, 0, 5]], packing: None,
+                curves: (0..COUNT).map(|i| [i as i64, 0, UNIT, 0, 0]).collect(), supplies: vec![[4, 0, CURSE as i64, UNIT]] };
+            m.curves[CURSE] = [CURSE as i64, if curse { 100 * UNIT } else { 0 }, -UNIT, 0, 0];
+            let mut traits = [0; BI_MAX as usize];
+            traits[BI_CARRY as usize] = 100;
+            let input = StepInput { storing: None, revision, capability: Some(&m), utility: true,
+                black_market_reserve: 0, black_market_percentage: -1, candidates: vec![scroll.clone()],
+                facts: &[], tryon: &[], limits: Limits { gold: 89_159, pack_slots: 4, weight },
+                urgent: vec![], params: [0; PARAMS], traits: &traits, power: 0, carried: &[],
+                cure_spell: false, reads_now: !unreadable, kit: &[], home_slots: 0 };
+            let output = step(&input);
+            let (code, at, _, _) = first_action(&input.candidates, &input.urgent, &output, input.facts, input.kit);
+            (code, at[2])
+        };
+        let decide = |revision: i64, weight: i64, curse: bool| decide_with(revision, weight, curse, false).0;
+        assert_eq!(decide_with(20, -993, true, false), (action::BUY, 1), "overweight, read in town: the copy read now");
+        assert_eq!(decide(20, -993, true), action::BUY);
+        assert_eq!(decide_with(20, -993, true, true).0, action::LEAVE,
+            "town enchanting would not read it (blind, confused, amnesiac, dark, or its town timer run out): weighed");
+        assert_eq!(decide(19, -993, true), action::LEAVE, "the recorded visit's weight repair");
+        assert_eq!(decide(20, 100, true), action::BUY);
+        assert_eq!(decide(20, -993, false), action::LEAVE, "no curse to remove");
     }
 
     #[test]
@@ -1998,7 +2467,7 @@ mod tests {
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
         let input=crate::borg_town_record::StepInput {storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
-            urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,kit:&[],home_slots:10};
+            urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,reads_now:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {
             assert!(option.picks.iter().filter(|&&(i,_)|i<2).count()<=1);
@@ -2220,6 +2689,43 @@ fn variety_started(st: &BorgState) -> bool {
     st.borg.tr(BI_MAXDEPTH) >= param(Param::town_variety_min_depth)
 }
 
+/// borg-reborn-rs (#895): the device rows exist with `town_device_percent`
+/// above 0 once the variety has started (the first level buys the staples alone).
+fn device_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_device_percent) > 0 }
+
+/// borg-reborn-rs (#895): a device row's weight and demand: a requirement of
+/// `charges` charges worth `percent` of the trip weight together, each an Nth.
+fn device_row(trip_weight: i64, percent: i32, charges: i32) -> (i64, i64) {
+    (scale_percent(trip_weight, percent), -i64::from(charges.max(1)) * UNIT)
+}
+
+/// borg-reborn-rs (#895, review of #898 F6): whether a device does damage
+/// beyond light. A Wand of Light's `LINE:LIGHT_WEAK` hurts light-sensitive
+/// monsters only, so its charges do not fill the ranged attack row; the shared
+/// ATTACK curve still counts them as before.
+fn device_attack(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> bool {
+    use crate::headers::list_projections_h::PROJ_LIGHT_WEAK;
+    let kept: Vec<(u16, i32, i64)> = effects.iter().filter(|&&(_, subtype, _)| subtype as u32 != PROJ_LIGHT_WEAK).copied().collect();
+    effect_supply_for_consumer(&kept, hp, service_turns, confusion).iter().any(|&(id, units)| id == ATTACK && units > 0)
+}
+
+/// borg-reborn-rs (#895): a ware's supplies without what an escape staff gives:
+/// the shared TELEPORT capability and the device row.
+fn without_escape(supply: Vec<(usize, i64)>) -> Vec<(usize, i64)> {
+    supply.into_iter().filter(|&(id, _)| id != TELEPORT && id != DEV_ESCAPE).collect()
+}
+
+/// borg-reborn-rs (#895): the charges of Staffs of Teleportation in the pack, in `UNIT`s.
+fn carried_escape_charges(st: &BorgState) -> i64 {
+    st.items.items.iter()
+        .filter(|i| i.iqty > 0 && i.aware && u32::from(i.tval) == TV_STAFF && i32::from(i.sval) == st.item_val.sv_staff_teleportation)
+        .map(|i| i64::from(i.pval).max(0) * UNIT).sum()
+}
+
+/// borg-reborn-rs (#895): whether a Staff of Teleportation on offer is switched off for a
+/// small purse: below the `floor` (on the purse, not the price) and with none carried (`carried` charges).
+fn escape_gated(floor: i64, gold: i64, carried: i64) -> bool { floor > 0 && gold < floor && carried == 0 }
+
 /// borg-reborn-rs (#863): the staple rows exist when any staple has a knee.
 fn staple_on(st: &BorgState) -> bool {
     variety_started(st) && [Param::town_staple_clw, Param::town_staple_csw, Param::town_staple_ccw, Param::town_staple_phase,
@@ -2230,6 +2736,19 @@ fn staple_on(st: &BorgState) -> bool {
 /// above 0, the variety started); off, the model has the shape it had before.
 fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::town_prepared_percent) > 0 }
 
+/// borg-reborn-rs (#1134): whether the Cure Critical Wounds row exists.
+fn prepared_ccw_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_ccw) > 0 }
+
+/// borg-reborn-rs (#1137): whether the Neutralize Poison row exists.
+fn prepared_neutralize_on(st: &BorgState) -> bool { prepared_on(st) && param(Param::town_prepared_neutralize) > 0 }
+
+/// borg-reborn-rs (#1137): whether the dear rows count at this decision: no
+/// gate, or `gold` (after the urgent needs) at the Recall floor and the
+/// Recall reserve (at least one scroll) already `carried`.
+fn dear_rows_paid(after_recall: bool, gold: i64, recall_floor: i64, carried: i64, reserve: i64) -> bool {
+    !after_recall || (gold >= recall_floor && carried >= reserve.max(1))
+}
+
 /// borg-reborn-rs (#863): a prepared row's weight and demand. A requirement
 /// (negative demand, as Phase Door's reserve): each of the first `copies`
 /// copies is worth `percent` of the trip weight, a copy past them nothing, so
@@ -2238,6 +2757,24 @@ fn prepared_on(st: &BorgState) -> bool { variety_started(st) && param(Param::tow
 fn prepared_row(trip_weight: i64, percent: i32, copies: i32) -> (i64, i64) {
     let copies = i64::from(copies.max(1));
     (scale_percent(trip_weight, percent) * copies, -copies * UNIT)
+}
+
+/// borg-reborn-rs (#987): the healing potions the first-cure row reserves
+/// (`town_first_cure`, 0 = off).
+fn first_cure_count() -> i64 { i64::from(param(Param::town_first_cure)).max(0) }
+
+/// The food row's (weight, demand): the trip's rations (in UNITs), never
+/// below the five-ration floor, both scaled by `percent` (#1110: more while
+/// breadth-first exploration applies; 100 = today). Below the floor, food is
+/// a requirement (negative demand).
+fn food_curve(w_food: i64, rations: i64, percent: i32) -> (i64, i64) {
+    let rations = scale_percent(rations, percent);
+    let ready = scale_percent(READY_FOOD * UNIT, percent);
+    if rations < ready {
+        (w_food * ready, -(RATION_NUTRITION * ready))
+    } else {
+        (w_food * rations, RATION_NUTRITION * rations)
+    }
 }
 
 fn scale_percent(value: i64, percent: i32) -> i64 {

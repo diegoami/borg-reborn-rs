@@ -25,7 +25,7 @@
 //! buffer with `strnfmt` the same truncation is applied (`strnfmt_s`).
 
 use crate::borg::BorgTemp;
-use crate::borg_io::{borg_flush, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
+use crate::borg_io::{borg_flush, borg_flush_keys, borg_keypress, borg_note, borg_note_bytes, borg_what_text, ESCAPE};
 use crate::borg_messages_react::{borg_react, borg_react_prompted};
 use crate::borg_util::borg_trim;
 use crate::borg_headers::borg_h::BORG_VERBOSE;
@@ -389,6 +389,8 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         let answer = crate::borg_escape::change_back_answer(st);
         if answer == b'y' {
             borg_note(st, "# Fox Form: reverting for an item or a spell");
+        } else {
+            st.fight_attack.pending_unseen.clear();
         }
         key.code = u32::from(answer);
         return true;
@@ -398,6 +400,9 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
         if let Some(code) = borg_react_prompted(st, &text, cursor) {
+            if code == ESCAPE || code == u32::from(b'n') {
+                st.fight_attack.pending_unseen.clear();
+            }
             key.code = code;
             return true;
         }
@@ -622,13 +627,26 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    st.light.room_lighting.confirm_message(msg);
+    crate::borg_unseen_belief::reject_attack(st, msg);
+    // borg-reborn-rs (#889): "It dies." after a shot at a believed monster.
+    crate::borg_unseen_belief::death_message(st, msg);
     // borg-reborn-rs (#781): associate melee feedback only with a queued step.
     crate::borg_caution::unseen_bump_message(st, msg);
     // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
     crate::borg_escape::teleport_block_message(st, msg);
+    // borg-reborn-rs (#1067): a trap was set off (`trap_recover` and friends).
+    crate::borg_trap_way::note_message(st, msg);
     // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
     if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
         borg_note(st, note);
+    }
+    // borg-reborn-rs (#981): "You are hit by something sharp!" is the
+    // engine's message for a bolt from a monster the Borg cannot see
+    // (`project-player.c:840-842, 887`); with `recover_unseen_shot` it is an
+    // unseen attack, read in `borg_update` where the Borg's grid is known.
+    if crate::borg_recover::unseen_shot_message(msg) {
+        borg_react(st, msg, b"SHOT_BY:Something");
     }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
@@ -674,11 +692,15 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         // Store the keypress
         borg_note(st, "# Normal failure.");
 
+        // borg-reborn-rs (#1062): the failed action moved nothing
+        crate::borg_leash::action_failed(st);
+
         // Set the failure flag
         st.update.failure = true;
 
-        // Flush our key-buffer
-        borg_flush(st);
+        // Flush our key-buffer. reject_attack above already handled any
+        // message that rejected the pending unseen shot.
+        borg_flush_keys(st);
 
         // If we were casting a targetted spell and failed
         // it does not mean we can't target that location
@@ -706,6 +728,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Ignore teleport trap
     if prefix(msg, b"You hit a teleport") {
+        // borg-reborn-rs (#1062): the cause of the next jump
+        crate::borg_leash::teleport_trap(st);
         return;
     }
 
@@ -1188,6 +1212,8 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
             st.borg.mon.scary = true;
             st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
+        // borg-reborn-rs (#1061): stair_scum goes back onto the stairs.
+        crate::borg_stair_scum::heard_door(st);
     }
 
     // Some spells move the borg from his grid
@@ -1219,6 +1245,40 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     }
 }
 
+/// borg-reborn-rs (#941): a message about the player's own state.
+fn player_feels(msg: &[u8]) -> bool {
+    prefix(msg, b"You feel ")
+}
+
+/// borg-reborn-rs (#1032): a message whose subject is the player, other than
+/// the "You feel ..." ones `trait_timed_sync` governs (#941), so that the two
+/// switches stay separate.
+fn player_subject(msg: &[u8]) -> bool {
+    prefix(msg, b"You ") && !player_feels(msg)
+}
+
+#[cfg(test)]
+mod player_feels_tests {
+    #[test]
+    fn the_end_of_haste_is_the_players_own() {
+        assert!(super::player_feels(b"You feel yourself slow down."));
+        assert!(super::player_feels(b"You feel yourself speed up."));
+        assert!(!super::player_feels(b"The cave spider slows down."));
+        assert!(!super::player_feels(b"3 cave spiders start moving faster."));
+    }
+
+    #[test]
+    fn the_end_of_confusion_stun_and_paralysis_is_the_players_own() {
+        assert!(super::player_subject(b"You are no longer confused."));
+        assert!(super::player_subject(b"You are no longer stunned."));
+        assert!(super::player_subject(b"You can move again."));
+        assert!(!super::player_subject(b"You feel yourself slow down."), "#941's");
+        assert!(!super::player_subject(b"The kobold is no longer confused."));
+        assert!(!super::player_subject(b"Your mystic shield crumbles away."));
+        assert!(!super::player_subject(b"Young blue dragons are no longer stunned."));
+    }
+}
+
 /// The monster messages of `borg_parse_aux` (pain, kills, deaths, blinks,
 /// misses, hits, spells, states), for messages that do not start with
 /// "Your ". Returns true where C returns.
@@ -1230,8 +1290,16 @@ fn parse_monster_message(st: &mut BorgState, msg: &[u8], len: i32) -> bool {
     let who_after = |tmp: usize| who_text(size_of_int(1 + len - (tmp as i32 + 1)), &msg[tmp..]);
 
     // "It screams in pain." (etc)
+    // borg-reborn-rs (#941): the player's own "You feel yourself slow down." /
+    // "... speed up." (player_timed.txt:197, 203) are not monster pain.
+    let own = player_feels(msg)
+        && crate::borg_trait::timed_sync(crate::params::value(crate::params::Param::trait_timed_sync));
+    // borg-reborn-rs (#1032): no monster message has "You" as its subject; the
+    // player's "You are no longer confused.", "... stunned." and "You can move
+    // again." (player_timed.txt:227, 283, 219) are not monster pain either.
+    let own = own || (player_subject(msg) && crate::params::value(crate::params::Param::messages_player_not_pain) != 0);
     let pain = st.messages.suffix_pain.as_ref().expect("pain messages not initialised");
-    if let Some(p) = pain.iter().find(|p| suffix(msg, p)) {
+    if let Some(p) = pain.iter().find(|p| !own && suffix(msg, p)) {
         let who = who_before(p.len());
         borg_react(st, msg, &tagged(b"PAIN:", &who));
         return true;
