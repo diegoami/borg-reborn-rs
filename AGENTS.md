@@ -152,8 +152,9 @@ PRs. Keep promotion unmerged until the owner accepts the milestone review
 and CI passes. The owner merges the promotion or explicitly delegates that
 reviewed merge. Then the next milestone may start. Keep the reviewed head
 fixed while the review is active; record a new exact pin after fixes.
-Synchronize needed `main` changes through a CI-checked PR into `track-p`,
-preserving the other track's work. Do not force-push the integration branch.
+Keep `track-p` current with `main` through CI-checked sync PRs. Check branch
+ancestry before merging P work or pinning a promotion or Zoo release
+candidate (RULES 1b). Do not force-push the integration branch.
 This P-specific rule overrides the generic merge instructions below; other
 tracks keep their own authorized workflow.
 

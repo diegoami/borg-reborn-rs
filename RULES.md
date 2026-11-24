@@ -34,6 +34,25 @@ whatever the model.
    an earlier "set it in a PR" are not that. When CI is green, the session
    says so and asks; it does not merge. A PR the owner said is under review
    is never merged by a session.
+1b. **Keep `track-p` current with `main`.** After merging a PR into
+   `main`, the session that merged it checks whether its new tip is already
+   in `track-p` and owns the sync PR if needed. Check again before merging P
+   work, pinning a P promotion review, or pinning a Track P Zoo release
+   candidate:
+
+   ```sh
+   git fetch origin main track-p
+   git merge-base --is-ancestor origin/main origin/track-p
+   ```
+
+   If the ancestry check fails, merge `main` into a branch based on
+   `track-p` and open a dedicated PR targeting `track-p`. Preserve both
+   branches' changes, wait for CI and the owner's approval under rule 1a,
+   and merge with a merge commit so that `main` stays in the ancestry.
+   Finish the sync before merging more P work or pinning a new candidate.
+   If a milestone review is already pinned, keep its reviewed commit fixed
+   and tell the owner about the drift before promotion. Retain rule 1's
+   promotion gate.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
