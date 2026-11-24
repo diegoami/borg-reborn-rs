@@ -7289,13 +7289,15 @@ registry holds **2398** parameters (`track-p` `72651d25` plus
 `kill_grouped_names`). Compiled 0. #943 shipped it at 1. The owner moved
 #915 to **P9** on 2026-11-22, so `harness/borg.txt` ships 0 through P8.
 Revisit activation in P9 after a zoo comparison of the merged parser.
-The earlier borg-zoo#652 `grouped` pilot used specimen `67a0c69d` and changed
-3 of 18 key streams, with the same death in both arms. Every non-unique
-race of `monster.txt` (523)
-reads back from its grouped subject, with a count of 2 or 15 and with
-" (offscreen)" (`grouped_subjects_of_every_engine_race`), and seed 2008390085
-plays the same keys, state and core trace (danger at every think) with the
-switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
+The earlier borg-zoo#652 `grouped` pilot used prototype specimen `67a0c69d`
+and changed 3 of 18 key streams, with the same death in both arms.
+
+The merged parser has separate evidence from #943. Its
+`grouped_subjects_of_every_engine_race` test reads all 523 non-unique races
+in `monster.txt` from grouped subjects with a count of 2 or 15 and with
+" (offscreen)". The reported seed 2008390085 replays had identical keys,
+state and core trace with the switch off and on, both with the parser on
+the zoo's game (`7f8c6b80`) and on `track-p`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
