@@ -2431,5 +2431,5 @@ borg_param_poison_cure_pending_percent = 50
 # castable now. Above 0, also when a spell is learnt within this many levels
 # (#1004): a Ranger's Lesser Charms (first spell at CL3) and a Rogue's First
 # Spells (CL5) were sold at CL1 and bought back later. Purchases are
-# unchanged. 0 = off, today's play. A hypothesis for the zoo.
-borg_param_town_book_lookahead_levels = 0
+# unchanged. 0 disables look-ahead.
+borg_param_town_book_lookahead_levels = 1

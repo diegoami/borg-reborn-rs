@@ -11,7 +11,7 @@
   times, as did the #985 Ranger 1895660873. The other seven classes sold it 0 of 21 times.
 
 ### Done
-- `town_book_lookahead_levels`, compiled and shipped 0 (today's play):
+- `town_book_lookahead_levels`, compiled fallback 0, shipped at 1 level:
   - a book the Borg carries or keeps at home also counts when a spell of it is learnt within this many
     levels;
   - the look-ahead uses the spell level alone, so it can keep books with spells above current max SP;
@@ -47,6 +47,8 @@ MiniMax MCode reviewed `0de39a27`: pass with findings.
   leaves first-book sales before spell eligibility, buyback cost and the
   Paladin arm open in that issue.
 
-### For the owner
-Should the switch ship as 4 after the zoo reads it? 4 is the largest gap between a class's first level
-and its first spell (Rogue: CL5 − CL1).
+### Shipped setting
+
+The owner chose 1 level on 2026-11-24. A Ranger's CL3 first spell enters
+the look-ahead at CL2, so this setting can still allow the reported CL1
+sale. The zoo pilot measured 4 levels.

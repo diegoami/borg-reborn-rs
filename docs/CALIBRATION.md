@@ -8521,8 +8521,7 @@ messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
 
 ## #1004: keeping a first spellbook before its first spell
 
-The registry holds **2522** parameters with this addition. The new setting
-is compiled and shipped at 0.
+The registry holds **2522** parameters with this addition. The setting ships at 1 level. Its compiled fallback is 0.
 
 The town planner (`borg_town_capability.rs`) supplies a class book only
 while one of its spells is castable now: `slevel` at most the level and
