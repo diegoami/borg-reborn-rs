@@ -7296,8 +7296,8 @@ The merged parser has separate evidence from #943. Its
 `grouped_subjects_of_every_engine_race` test reads all 523 non-unique races
 in `monster.txt` from grouped subjects with a count of 2 or 15 and with
 " (offscreen)". The reported seed 2008390085 replays had identical keys,
-state and core trace with the switch off and on, both with the parser on
-the zoo's game (`7f8c6b80`) and on `track-p`.
+state and core trace (danger at every think) with the switch off and on,
+both with the parser on the zoo's game (`7f8c6b80`) and on `track-p`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
