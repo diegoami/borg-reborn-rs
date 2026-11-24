@@ -2263,7 +2263,9 @@ impl<'a> GameObject<'a> {
         if fully_known {
             return self.obj().el_info;
         }
-        let Some(known) = self.known() else { return self.obj().el_info };
+        let Some(known) = self.known() else {
+            return [element_info { res_level: 0, flags: 0 }; 25];
+        };
         let p = player_ref();
         assert!(!p.obj_k.is_null(), "player not set up");
         // SAFETY: obj_k is allocated with the player (checked above).
