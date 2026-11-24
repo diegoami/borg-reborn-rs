@@ -1408,7 +1408,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
         for (cap, n) in supplies(item, &ctx, (10, 0)) { model.curves[cap][3] += n * i64::from(item.iqty); }
     }
     use crate::headers::list_object_flags_h::OF_NO_FUEL;
-    if engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32) || t(BI_LIGHT) > 0 && light.iqty == 0 {
+    let fuel_free = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+        || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32)
+        || t(BI_LIGHT) > 0 && light.iqty == 0;
+    if fuel_free {
         model.curves[LIGHT][1] = 0;
     }
     // borg-reborn-rs (#380, #400): a learned spell never zeroes a physical
@@ -1427,7 +1430,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
                 c.qty > 0 && c.price > 0
                     && crate::borg_town_budget::is_recall_scroll(st, c.tval, c.sval)
             });
-        if csw_staples_covered(&model, light_goal, food_floor, phase_reserve) && !recall_due {
+        let required_fuel = if fuel_free { 0 } else { light_goal };
+        if csw_staples_covered(&model, required_fuel, food_floor, phase_reserve) && !recall_due {
             add_csw_reserve(&mut model, stock, st.item_val.sv_potion_cure_serious, csw_weight);
         }
     }
@@ -1436,8 +1440,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
 }
 
 fn csw_staples_covered(model: &Model, light_goal: i64, food_floor: i64, phase_reserve: i64) -> bool {
-    let light = model.curves[LIGHT];
-    (light[1] == 0 || light[3] >= light_goal * UNIT)
+    model.curves[LIGHT][3] >= light_goal * UNIT
         && model.curves[FOOD][3] >= food_floor
         && model.curves[PHASE][3] >= phase_reserve.max(1) * UNIT
 }
@@ -1630,9 +1633,10 @@ mod tests {
         }
         m.curves[LIGHT][1] = 0;
         m.curves[LIGHT][3] = 0;
-        assert!(csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        assert!(!csw_staples_covered(&m, light_goal, food_floor, phase_reserve));
+        assert!(csw_staples_covered(&m, 0, food_floor, phase_reserve));
         m.curves[PHASE][3] = 0;
-        assert!(!csw_staples_covered(&m, light_goal, food_floor, 0));
+        assert!(!csw_staples_covered(&m, 0, food_floor, 0));
     }
 
     #[test]
