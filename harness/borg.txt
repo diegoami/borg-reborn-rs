@@ -1421,6 +1421,11 @@ borg_param_flow_brave_walk_commit = 1
 # at most 3 grids with the map unchanged and no danger: walk to a staircase,
 # else a committed brave walk to one, else close the loop's grids for 20 thinks.
 borg_param_loop_breaker = 1
+# #1190: the detector's window, named so the zoo can measure a wider one
+# (the arm at loop_grids = 4, the question of #1190). These are #1153's
+# guesses (16 moves, 3 grids); a four-grid cycle like #1189's needs 4.
+borg_param_loop_moves = 16
+borg_param_loop_grids = 3
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
