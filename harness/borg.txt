@@ -956,11 +956,11 @@ borg_param_explore_mix_max_radius = 5
 # #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
 # (and class)"): per mille a character level from CL1, linearly:
 # value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
-# #1208: a cap of 5 growing at 250 gives 5, 6, 8, 9 and 10 steps at CL1–5.
+# #1208: a cap of 5 growing at 500 gives 5, 8, 10, 13 and 15 steps at CL1–5.
 # Mixed exploration can stop sooner when the escape model or leash is tighter.
 borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
-borg_param_explore_mix_max_radius_dp = 250
+borg_param_explore_mix_max_radius_dp = 500
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50
