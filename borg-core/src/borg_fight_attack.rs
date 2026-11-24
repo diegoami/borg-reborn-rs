@@ -2996,6 +2996,7 @@ fn surplus_weapon(st: &BorgState, slot: i32, item: &borg_item, worn: &borg_item)
         && !item.slays.iter().any(|&slay| slay != 0)
         && st.trait_swap.weapon_swap != slot + 1
         && worn.iqty > 0 && worn.ident && !worn.cursed && same_divine_role
+        && i32::from(worn.weight) / 10 <= engine::adj_str_hold(tr(st, BI_STR_INDEX) as usize)
         && item.dd <= worn.dd && item.ds <= worn.ds
         && item.to_h <= worn.to_h && item.to_d <= worn.to_d && item.to_a <= worn.to_a
         && crate::borg_trait::borg_calc_blows(st, item) <= tr(st, BI_BLOWS)
@@ -6753,7 +6754,7 @@ mod fallback_tests {
 
 #[cfg(test)]
 mod throw_tests {
-    use super::{throw_hit_percent, thrown_damage};
+    use super::{native_throw_range, throw_hit_percent, thrown_damage};
 
     /// #568: the engine's throw damage (`player-attack.c:554-582`, `:1296`).
     #[test]
