@@ -2795,11 +2795,14 @@ pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
 /// Off (the parameters at C's 0): the think casts Heroism out of the
 /// regenerated mana at full HP ("some danger": 17 < 25 < 85 — the recorded
 /// keys m,a,f, defense type 12), then paces between recovery grids — each
-/// `borg_flow_recover` picks the first happy grid at least 7 away (the walk
-/// 66 to 59 to 52 and back), the walk there ends, `borg_recover` refuses the
-/// mana rest at danger 25 (its gate 17) and the next think starts the walk
-/// back. On (both shipped 1): the cast is declined and the Borg rests where
-/// it stands ("Resting to gain Mana"), the recovery completes.
+/// `borg_flow_recover` picks the nearest happy grid at least 7 away (the
+/// walk 66 to 59 and back; at (59,55) four orcs still price 20), the walk
+/// there ends, `borg_recover` refuses the mana rest at danger 20-25 (its
+/// gate 17) and the next route starts back: the pendulum. On (both shipped
+/// 1): the cast is declined, the Borg rests where it stands ("Resting to
+/// gain Mana"), and — with a route live, in the think's own decision order
+/// (continue_recovery first, recover where the route ends) — the endpoint
+/// queues the rest command instead of the next route (review of #1215, P3).
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_recovery_mana_loop_regression(st: &mut BorgState, on: bool) -> ! {
     use crate::borg_flow::borg_flow_clear;
@@ -2901,6 +2904,7 @@ pub(crate) fn run_recovery_mana_loop_regression(st: &mut BorgState, on: bool) ->
         }
         st.borg.power = i32::MAX / 2;
         borg_flow_clear(st);
+        crate::borg_io::borg_note(st, "#1211 scenario marker");
     };
 
     // One queued movement key per think, consumed as the next observation
@@ -2916,8 +2920,19 @@ pub(crate) fn run_recovery_mana_loop_regression(st: &mut BorgState, on: bool) ->
         assert!(floor(st.borg.c.y, st.borg.c.x), "the step stays on the carved floor");
     };
     let notes = |age: u16| String::from_utf8_lossy(&engine::message_str(age)).to_string();
+    // Notes since this scenario's marker only: the message ring keeps older
+    // scenarios' notes, and the negative asserts must not read them.
     let had_note = |want: &str| {
-        (0..60u16).any(|age| notes(age).contains(want))
+        for age in 0..60u16 {
+            let note = notes(age);
+            if note.contains("#1211 scenario marker") {
+                return false;
+            }
+            if note.contains(want) {
+                return true;
+            }
+        }
+        false
     };
 
     // The production decision points, driven in the recorded order (the
@@ -2971,6 +2986,44 @@ pub(crate) fn run_recovery_mana_loop_regression(st: &mut BorgState, on: bool) ->
         assert!(
             had_note("# Resting to gain Mana"),
             "the empty-mana rest is the recovery decision"
+        );
+        while !st.io.queued_keys().is_empty() {
+            crate::borg_io::borg_inkey(st, true);
+        }
+
+        // The production handoff with a route live (review of #1215, P3):
+        // the walk runs in the think's own order — borg_continue_recovery
+        // first, borg_recover only where the route ends — and at the
+        // endpoint the mana rest queues instead of the next route. The
+        // recorded pendulum's destination is the nearest eligible grid,
+        // 7 west (at (59,55) four orcs are still within max_range and the
+        // corridor prices 20): the general gate is exactly what turns this
+        // arrival into the rest.
+        setup(st, 0);
+        assert!(borg_flow_recover(st, 50), "a route commits");
+        take_step(st);
+        let mut walked = 0;
+        while borg_continue_recovery(st) {
+            assert!(
+                !had_note("# Resting to gain Mana"),
+                "no rest mid-route: the walk continues"
+            );
+            take_step(st);
+            walked += 1;
+        }
+        assert!(walked >= 6, "the route walks to its destination: {walked}");
+        assert!(
+            borg_recover(st),
+            "the endpoint rests instead of reversing (the general gate)"
+        );
+        assert!(
+            had_note("# Resting to gain Mana"),
+            "the mana rest is the endpoint's decision"
+        );
+        assert!(
+            st.io.queued_keys() == vec![u32::from(b'R'), u32::from(b'*'), u32::from(KC_ENTER)],
+            "the rest command is queued and no movement is: the route is not restarted, keys {:?}",
+            st.io.queued_keys()
         );
         while !st.io.queued_keys().is_empty() {
             crate::borg_io::borg_inkey(st, true);
