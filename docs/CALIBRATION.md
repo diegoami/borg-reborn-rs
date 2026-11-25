@@ -1937,7 +1937,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:312` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:313` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -6454,7 +6454,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1128` |
-| `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:180` |
+| `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:185` |
 
 The reserve target is the larger of the configured amount and planned
 journey length. The Borg counts the equipped light and usable pack fuel.
@@ -6670,10 +6670,10 @@ Word of Recall, weight 5).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
-| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:313` |
-| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:285` |
+| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:286` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:315` |
+| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:257` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1040` |
 
 ## Word of Recall on shallow trips (#984)
@@ -6712,7 +6712,7 @@ switches below are off by default, which reproduces today's play.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
+| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:256` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9648` |
 
 ## The Borg's own light radius (#877)
@@ -8345,6 +8345,31 @@ replay as they were):
 |---|---:|---|---|---|
 | `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
 
+## Home stock and town plan schemas 21–24 (#1241)
+
+Plan replay uses the schema recorded in `v`.
+
+- **Schema 21** from the Home reserve branch encodes `home_role` in bits 9–11 of the kit row's `flags`
+  field. The values are 0 ordinary, 1 common, 2 renewable, 3 reject, 4 gear,
+  and 5 device. The tenth field of each `wares` row is `home_value`. A
+  positive value prices the offer as a reserve. Zero means no reserve value,
+  and −1 suppresses optional purchases of a kind cleared as surplus during
+  the visit. The schema 21 from #1239 instead has nine fields per ware
+  and uses soft purchase weight.
+- **Schema 22** uses the schema 21 layout and also applies the capability
+  model's explicit reserve floor to renewable Home stacks. A weighted
+  capability with negative demand supplies a floor. Renewable convenience
+  stock can be cleared once its requirements are covered. Schema 21 replays
+  use the original cleanup rule, which applies this floor to common stock.
+  Schemas 4–20 keep their original layouts and planner rules.
+- **Schema 23** uses the same layout. Role 1 represents useful intermittent
+  normal-shop stock. Role 6 represents scarce consumables, and role 7 marks
+  lighter gear when carrying capacity is tight. A positive `home_value`
+  sorts first by priority, encoded in multiples of 2^40, then by the offer's
+  capped marginal utility. Older records retain their original decisions.
+- **Schema 24** uses the schema 23 layout when the Home priority rule and
+  shopping while overloaded are both enabled.
+
 ## Committing to a brave stair walk (#1130)
 
 The owner (2026-11-23), on a two-grid loop of the #1117 replays: "it must
@@ -8752,7 +8777,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:907` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:975` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8766,7 +8791,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:450` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:539` |
 
 ## Shopping while overloaded and departure loadout (#1239)
 
@@ -8782,13 +8807,13 @@ reserves. A confirmed trim prevents reacquiring the same ammunition until
 the next town visit. Urgent resupply remains available during the pass. If the Borg
 cannot remove the remaining overload safely, it logs the reason and leaves.
 
-Setting `town_shop_overloaded` to 0 records and uses schema 20 with the
+With the Home reserve policy off, setting `town_shop_overloaded` to 0 records and uses schema 20 with the
 previous acquisition weight limits. Exact incident fixtures and the Zoo
 control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:339` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:425` |
 
 ### Recall-first trial
 
@@ -9024,5 +9049,5 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1882` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1883` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1884` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1885` |

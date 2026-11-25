@@ -95,6 +95,22 @@ fn expendable_rank(
     if !known(item) || item.art_idx != 0 || item.ego_idx != 0 {
         return None;
     }
+    let value = item.value.saturating_mul(i32::from(item.iqty));
+    if crate::borg_town_home::enabled(st) {
+        use crate::borg_town_home::Role;
+        if unwanted {
+            return Some((0, value));
+        }
+        let role = crate::borg_town_home::classify(st, item, false, 0);
+        if role.reserve() || (u32::from(item.tval) == TV_SCROLL
+            && i32::from(item.sval) == st.item_val.sv_scroll_detect_invis)
+        {
+            return None;
+        }
+        if matches!(role, Role::Reject | Role::Renewable | Role::Common) {
+            return Some((role.rank(), value));
+        }
+    }
     let sv = i32::from(item.sval);
     let v = &st.item_val;
     // #1241: clear rejected stock and readily replaced, low-utility buffs
@@ -114,7 +130,7 @@ fn expendable_rank(
     } else {
         return None;
     };
-    Some((rank, item.value.saturating_mul(i32::from(item.iqty))))
+    Some((rank, value))
 }
 
 fn eviction(st: &BorgState) -> Option<borg_item> {

@@ -1,0 +1,360 @@
+//! #1241: classify Home stock using facts already known to the player.
+use crate::borg_headers::borg_item_h::borg_item;
+use crate::borg_headers::borg_magic_h::{BLESS, HEROISM};
+use crate::borg_headers::borg_trait_h::{BI_CARRY, BI_CDEPTH, BI_CLEVEL, BI_WEIGHT};
+use crate::engine::{self, NormalStock};
+use crate::headers::list_tvals_h::*;
+use crate::params::{value as param, Param};
+use crate::state::BorgState;
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[repr(u8)]
+pub enum Role {
+    #[default]
+    Ordinary,
+    // From schema 23, an intermittently stocked regular-shop spare.
+    Common,
+    // Regular staples and supplies the Borg can readily replace.
+    Renewable,
+    Reject,
+    Gear,
+    Device,
+    Scarce,
+    LightGear,
+}
+
+// Leave low bits for utility and stay inside the integer range of JSON
+// readers that represent all numbers as doubles.
+const OFFER_TIER: i64 = 1 << 40;
+
+impl Role {
+    pub(crate) fn from_code(code: i64) -> Self {
+        match code {
+            1 => Self::Common,
+            2 => Self::Renewable,
+            3 => Self::Reject,
+            4 => Self::Gear,
+            5 => Self::Device,
+            6 => Self::Scarce,
+            7 => Self::LightGear,
+            _ => Self::Ordinary,
+        }
+    }
+
+    pub(crate) fn common(self) -> bool {
+        matches!(self, Self::Common | Self::Renewable)
+    }
+
+    pub(crate) fn reserve(self) -> bool {
+        self.gear() || matches!(self, Self::Device | Self::Scarce)
+    }
+
+    pub(crate) fn gear(self) -> bool {
+        matches!(self, Self::Gear | Self::LightGear)
+    }
+
+    pub(crate) fn rank(self) -> u8 {
+        match self {
+            Self::LightGear => 4,
+            Self::Gear => 3,
+            Self::Scarce | Self::Device => 2,
+            Self::Common => 1,
+            _ => 0,
+        }
+    }
+
+    pub(crate) fn offer_value(self, value: i64) -> i64 {
+        if value <= 0 { return 0; }
+        i64::from(self.rank()) * OFFER_TIER + value.min(OFFER_TIER - 1)
+    }
+
+    pub(crate) fn offer_rank(value: i64) -> u8 {
+        u8::try_from(value / OFFER_TIER).unwrap_or(0)
+    }
+}
+
+pub(crate) fn enabled(st: &BorgState) -> bool {
+    param(Param::town_home_reserve) != 0 && crate::borg_town_live::active(st)
+}
+
+fn consumable(st: &BorgState, item: &borg_item) -> Role {
+    if !item.aware || !item.flavour_aware {
+        return Role::Ordinary;
+    }
+    let v = &st.item_val;
+    let sval = i32::from(item.sval);
+    let tval = u32::from(item.tval);
+    let supply = match tval {
+        // The Magic Shop can roll this staff, but it is an escape reserve.
+        TV_STAFF if sval == v.sv_staff_teleportation => NormalStock::Unlisted,
+        // The Alchemist normally restocks this. A useful spare is expendable.
+        TV_SCROLL if sval == v.sv_scroll_remove_curse => NormalStock::Intermittent,
+        _ => engine::normal_store_stock(&st.access, item.kind),
+    };
+    let repeatable = match tval {
+        TV_SCROLL if sval == v.sv_scroll_light => return Role::Renewable,
+        TV_SCROLL if sval == v.sv_scroll_blessing => Some(BLESS),
+        TV_POTION if sval == v.sv_potion_boldness => Some(HEROISM),
+        _ => None,
+    };
+    if repeatable.is_some_and(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, 40)) {
+        return Role::Renewable;
+    }
+    if supply == NormalStock::Staple {
+        return Role::Renewable;
+    }
+    if !matches!(tval, TV_ROD | TV_WAND | TV_STAFF | TV_POTION | TV_SCROLL | TV_MUSHROOM) {
+        return Role::Ordinary;
+    }
+    let is_device = matches!(tval, TV_ROD | TV_WAND | TV_STAFF);
+    let useful = if is_device {
+        if !device(st, item) {
+            return Role::Ordinary;
+        }
+        true
+    } else if matches!(tval, TV_POTION | TV_SCROLL | TV_MUSHROOM) && !item.cursed {
+        let effects = engine::kind_effect_values(item.kind as usize, st.borg.tr(BI_CLEVEL));
+        crate::borg_town_capability::home_consumable_effect(&effects, st)
+    } else {
+        false
+    };
+    supply_role(supply, useful, is_device)
+}
+
+fn supply_role(supply: NormalStock, useful: bool, is_device: bool) -> Role {
+    match (supply, useful, is_device) {
+        (NormalStock::Staple, _, _) | (_, false, _) => Role::Renewable,
+        (NormalStock::Intermittent, true, _) => Role::Common,
+        (NormalStock::Unlisted, true, true) => Role::Device,
+        (NormalStock::Unlisted, true, false) => Role::Scarce,
+    }
+}
+
+fn device(st: &BorgState, item: &borg_item) -> bool {
+    let tval = u32::from(item.tval);
+    if item.kind == 0 || item.iqty == 0 || !item.aware || item.cursed {
+        return false;
+    }
+
+    let usable = match tval {
+        // Rods track recharge in timeout (obj-util.c:number_charging).
+        // A cooling rod can serve as a reserve if it will recharge on the trip.
+        TV_ROD => {
+            item.timeout <= 0
+                || crate::borg_town_capability::rod_ready_after(
+                    i64::from(item.iqty),
+                    i64::from(item.timeout),
+                    i64::from(crate::engine::kind_recharge_average(item.kind as usize)),
+                ) < crate::borg_town_utility::Journey::of(st).turns
+        }
+        TV_WAND | TV_STAFF => item.pval > 0,
+        _ => false,
+    };
+    if !usable || !crate::borg_item_use::ranged_device_reliable(st, item) {
+        return false;
+    }
+    let effects = crate::engine::kind_effect_values(item.kind as usize, st.borg.tr(BI_CLEVEL));
+    !crate::borg_town_capability::effect_supply_for_consumer(
+        &effects,
+        100,
+        1000,
+        tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster,
+    )
+    .is_empty()
+}
+
+pub(crate) fn gear_slot(item: &borg_item) -> Option<usize> {
+    use crate::borg_inventory::borg_wield_slot;
+    if !item.aware || matches!(u32::from(item.tval), TV_LIGHT | TV_DIGGING) && !known_special(item) {
+        return None;
+    }
+    usize::try_from(borg_wield_slot(item)).ok()
+}
+
+pub(crate) fn known_special(item: &borg_item) -> bool {
+    item.art_idx != 0
+        || item.ego_idx != 0
+        || item.activ_idx != 0
+        || item.modifiers.iter().any(|&m| m > 0)
+        || item.el_info.iter().any(|element| element.res_level > 0)
+        || item.brands.iter().any(|&brand| brand)
+        || item.slays.iter().any(|&slay| slay > 0)
+}
+
+fn damage(item: &borg_item) -> i32 {
+    i32::from(item.dd) * (i32::from(item.ds) + 1) + 2 * i32::from(item.to_d)
+}
+
+fn armor(item: &borg_item) -> i32 {
+    i32::from(item.ac) + i32::from(item.to_a)
+}
+
+fn dominates(worn: &borg_item, spare: &borg_item) -> bool {
+    worn.iqty > 0
+        && !worn.cursed
+        && spare.tval == worn.tval
+        && (spare.sval == worn.sval || u32::from(spare.tval) != TV_BOW)
+        && worn.weight <= spare.weight
+        && armor(worn) >= armor(spare)
+        && damage(worn) >= damage(spare)
+        && worn.to_h >= spare.to_h
+        && worn
+            .flags
+            .iter()
+            .zip(spare.flags)
+            .all(|(&have, need)| have & need == need)
+}
+
+fn gear(item: &borg_item, worn: &borg_item, can_decurse: bool, gain: i64, tight_carry: bool) -> Role {
+    let special = known_special(item);
+    if item.cursed {
+        let promising = special
+            || gain > 0
+            || worn.iqty > 0
+                && (armor(item) > armor(worn)
+                    || damage(item) > damage(worn)
+                    || item.to_h > worn.to_h);
+        if item.uncursable && promising && can_decurse {
+            return Role::Gear;
+        }
+        // A known inferior curse needs no rune identification to reject it.
+        // Keep unidentified gear where known bonuses still suggest an upgrade.
+        if !promising && (item.ident || worn.iqty > 0 || item.value <= 0) {
+            return Role::Reject;
+        }
+        return Role::Ordinary;
+    }
+
+    if !special && item.ident && gain <= 0 && dominates(worn, item) {
+        return Role::Reject;
+    }
+    let lighter = worn.iqty > 0
+        && item.weight < worn.weight
+        && match u32::from(item.tval) {
+            TV_SWORD | TV_HAFTED | TV_POLEARM | TV_BOW => damage(item) > 0 || item.to_h > 0,
+            _ => armor(item) > 0,
+        };
+    if lighter && tight_carry && (item.ident || gain > 0) {
+        return Role::LightGear;
+    }
+    if gain > 0 || item.ident && (special || lighter) {
+        return Role::Gear;
+    }
+    Role::Ordinary
+}
+
+pub(crate) fn classify(st: &BorgState, item: &borg_item, can_decurse: bool, gain: i64) -> Role {
+    if let Some(worn) = gear_slot(item).and_then(|slot| st.items.items.get(slot)) {
+        let allowance = st.borg.tr(BI_CARRY) / 2;
+        let tight_carry = allowance > 0 && st.borg.tr(BI_WEIGHT) >= allowance;
+        let role = gear(item, worn, can_decurse, gain, tight_carry);
+        return if role == Role::Ordinary && item.ident && !item.cursed {
+            Role::Renewable
+        } else {
+            role
+        };
+    }
+    consumable(st, item)
+}
+
+/// Withdrawal can reorder the pack or merge copies. Use the known
+/// equipment variant rather than the former Home or pack index.
+pub(crate) fn same_variant(a: &borg_item, b: &borg_item) -> bool {
+    a.kind == b.kind
+        && a.art_idx == b.art_idx
+        && a.ego_idx == b.ego_idx
+        && a.to_h == b.to_h
+        && a.to_d == b.to_d
+        && a.to_a == b.to_a
+        && a.pval == b.pval
+        && a.flags == b.flags
+        && a.modifiers == b.modifiers
+        && a.cursed == b.cursed
+        && a.curses == b.curses
+}
+
+/// Ordinary dungeon pack cleanup can wait until town for one useful spare
+/// of a kind. Emergency slot/weight relief can still use its normal fallback.
+pub(crate) fn keep_in_dungeon(st: &BorgState, slot: usize) -> bool {
+    if !enabled(st) || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let item = &st.items.items[slot];
+    if item.iqty == 0 || item.cursed || !item.aware {
+        return false;
+    }
+    let role = classify(st, item, false, 0);
+    if !role.reserve() {
+        return false;
+    }
+    let different = |other: &borg_item| {
+        other.iqty == 0 || other.kind != item.kind || role.gear() && !same_variant(item, other)
+    };
+    let first_of_kind = st.items.items[..slot]
+        .iter()
+        .all(different);
+    let not_stashed = st
+        .store
+        .shops
+        .get(crate::borg_store::BORG_HOME)
+        .is_none_or(|home| {
+            home.ware.iter().all(different)
+        });
+    first_of_kind && not_stashed
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_item::blank_item;
+
+    #[test]
+    fn shops_and_usefulness_set_the_supply_tier() {
+        assert_eq!(supply_role(NormalStock::Staple, true, false), Role::Renewable);
+        assert_eq!(supply_role(NormalStock::Intermittent, true, false), Role::Common);
+        assert_eq!(supply_role(NormalStock::Intermittent, true, true), Role::Common);
+        assert_eq!(supply_role(NormalStock::Unlisted, true, false), Role::Scarce);
+        assert_eq!(supply_role(NormalStock::Unlisted, true, true), Role::Device);
+        assert_eq!(supply_role(NormalStock::Unlisted, false, false), Role::Renewable);
+        assert!(Role::Gear.offer_value(1) > Role::Device.offer_value(100_000));
+        assert!(Role::Device.offer_value(20) > Role::Scarce.offer_value(10));
+    }
+
+    #[test]
+    fn known_curse_with_unknown_runes_does_not_make_a_plain_spare_worth_stashing() {
+        let mut sling = blank_item();
+        sling.iqty = 1;
+        sling.aware = true;
+        sling.cursed = true;
+        sling.uncursable = true;
+        sling.tval = TV_BOW as u8;
+        let mut worn = sling;
+        worn.cursed = false;
+        worn.to_d = 5;
+        assert_eq!(gear(&sling, &worn, true, -100, false), Role::Reject);
+        sling.to_d = 8;
+        assert_eq!(gear(&sling, &worn, true, -100, false), Role::Gear);
+        sling.to_d = 0;
+        sling.ego_idx = 1;
+        assert_eq!(gear(&sling, &worn, true, -100, false), Role::Gear);
+        assert_eq!(gear(&sling, &worn, false, -100, false), Role::Ordinary);
+    }
+
+    #[test]
+    fn keep_a_lighter_usable_alternative_and_discard_a_dominated_plain_spare() {
+        let mut spare = blank_item();
+        spare.iqty = 1;
+        spare.ident = true;
+        spare.tval = TV_HAFTED as u8;
+        spare.weight = 30;
+        spare.dd = 1;
+        spare.ds = 4;
+        let mut worn = spare;
+        worn.weight = 80;
+        worn.dd = 2;
+        assert_eq!(gear(&spare, &worn, false, -100, false), Role::Gear);
+        assert_eq!(gear(&spare, &worn, false, -100, true), Role::LightGear);
+        worn.weight = spare.weight;
+        assert_eq!(gear(&spare, &worn, false, -100, true), Role::Reject);
+    }
+}
