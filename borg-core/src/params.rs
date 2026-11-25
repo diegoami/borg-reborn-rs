@@ -4,7 +4,7 @@
 //! parameter, or inside the function that does (scripts/check-param-citations.py, #601).
 //! Defaults retain the original integer operations and RNG calls.
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
 // One row generates both the lookup index and its metadata: additions cannot
@@ -65,13 +65,6 @@ parameters! {
     deal_with_poison => (0, "flag", 0, 1, "borg_poison.rs:197", "#1140 (owner, 2026-11-23: \"just one switch\"): 1 = poison triage, all parts at once, from the HP the poison still takes, ceil(counter / (adj_con_fix[CON] + 1)) (the engine counter, game-world.c:282, 317-320, 513-519), against the HP and the Cure Light/Serious Wounds carried (each at most what it restores drunk at B's line, max HP - line); a cure counts only when usable now (spell mana and fail rate, a charged rod, staff or activation, the potion or food carried). A: a note while poisoned. B: poisoned, not cut, at danger 0, CLW/CSW are held unless the whole heal fits under the max HP, and one is drunk at HP <= the next turn's poison + poison_late_drink_margin. C: in the dungeon, when the poison takes at least HP + healing and no cure is carried, leave for town at once (leaving, fleeing, rising; Recall below DL1 or with no known up staircase, only when HP + healing outlast its 34-tick delay, or its 15 with no stairs known). While poisoned the early fights (fight_before_flight) wait next to a poisoner, when a cure is due or past HP + healing. D: in town with the poison at least the HP, the Alchemist first: Neutralize Poison, else CCW, if affordable, else the CLW that outlast it; no sale while birth_no_selling pays nothing; a bought cure drunk outside the store. E: next to awake poisoners, turns to kill x (damage + new poison) + the pending poison against HP + healing; a lost race leaves, stepping out of reach of one that never moves. F: a poison cure the Borg has (spells, rod, activation, food, Neutralize Poison, staff, CCW; Healing, *Healing* or Life only when the CLW/CSW cannot outlast it) is used once the poison is poison_cure_pending_percent of the HP, at any danger, no roll; never next to an awake poisoner (it poisons again at once). Rogue 626789725, Druid 799968561, Ranger 956247604 (borg-cemetery#146), Paladin 1200156945 (#1134). 0 = today."),
     poison_late_drink_margin => (2, "HP", 0, 100, "borg_poison.rs:243", "#1140: with deal_with_poison (part B), the HP above the next turn's poison at or below which a held CLW or CSW is drunk. Hypothesis: no measurement chose 2."),
     poison_cure_pending_percent => (50, "percent of current HP", 0, 1000, "borg_poison.rs:384", "#1140: with deal_with_poison (part F), the poison still to come, as a percent of the current HP, from which a carried cure is used (0 = any poison). Hypothesis: no measurement chose 50."),
-    item_test_unknown_potions => (0, "flag", 0, 1, "borg_item_use.rs:248", "#983 (owner, 2026-11-22: \"test when safe\"): 1 = drink one unknown potion (an unlearned flavour) at a safe moment in the dungeon: down to item_test_unknown_max_depth, danger 0 over item_test_unknown_danger_turns, at least item_test_unknown_min_hp_percent of max HP, no harmful status (paralysis included), food in the pack; as a player learns flavours. A bad potion costs turns (Sleep 5+1d5 paralysed, Poison stops regeneration); only Poison kills by itself, at low HP (#1063: item_test_unknown_min_hp). #470 still forbids unknown scrolls, mushrooms and devices, and every unknown item in an emergency. 0 = #470 for potions too (a found Cure Light Wounds stays unknown until sold in town)."),
-    item_test_unknown_min_hp_percent => (50, "percent", 0, 100, "borg_item_use.rs:269", "#983: the least HP, in percent of max HP, at which item_test_unknown_potions drinks an unknown potion (Poison and Salt Water are the harmful kinds a Borg can survive below full HP; seed 17626119 was at 75% when it could have tested its CLW)."),
-    item_test_unknown_danger_turns => (10, "turns", 1, 50, "borg_item_use.rs:261", "#983 (review of #1001): the turns item_test_unknown_potions covers before it drinks an unknown potion: passed as borg_danger's c, which multiplies each monster's movement energy, so every monster that could reach the Borg within this many turns counts (a bad potion can cost several: Sleep paralyses for 5+1d5, object.txt)."),
-    item_test_unknown_max_depth => (30, "level", 0, 128, "borg_item_use.rs:250", "#983 (review of #1001): item_test_unknown_potions tests only down to this dungeon level: Dragon Breath (DL40+, object.txt) asks for an aim, and the harmful kinds a Borg meets above it are listed at unknown_potion_test_safe."),
-    item_test_unknown_min_hp => (25, "hp", 0, 10000, "borg_item_use.rs:248", "#1060 (owner: \"a character drank a potion of poison and then goes happily exploring\"): item_test_unknown_potions drinks an unknown potion only with at least this many HP, besides item_test_unknown_min_hp_percent: a Potion of Poison costs 1 HP a turn for 10+2d7 turns (object.txt, game-world.c:514-516), up to 24."),
-    item_test_unknown_min_hp_cure_exempt => (0, "flag", 0, 1, "borg_item_use.rs:267", "#1063 (Ranger 142490685: tested at 18/18 HP with no cure, died of the Poison): 1 = a known potion of Neutralize Poison or Cure Critical Wounds in the pack (CURE:POISONED, object.txt; the two borg_caution's poison cure drinks without a further gate; not a food or a device activation, review of #1097) waives item_test_unknown_min_hp, so only item_test_unknown_min_hp_percent stays; borg_caution drinks the cure. 0 = the HP floor holds with a cure too."),
-    item_test_unknown_hold_turns => (180, "turns", 0, 1000, "borg_item_use.rs:254", "#1060: after an unknown potion test, for at most this many world ticks (10 game turns each, the clock the status timers run on, game-world.c:1080; review of #1071), on the grid and level of the test, while a harmful status it caused lasts (poisoned, confused, blind, afraid, hallucinating, paralysed, amnesiac), slowed or scrambled (Surprise, 20+1d20; review of #1071), and the danger here is 0, the Borg stays in the spot it tested in instead of exploring or walking to stairs: the ordinary in-place recovery (borg_recover: a known cure, a heal, a rest) first, else it stands still; the heals and escapes of borg_caution come first, and any danger, a move or a new level ends it (checked before borg_caution acts). 180 covers the longest supported potion, Blindness (75+4d25, up to 175 ticks; Slowness up to 40, Confusion 30, Poison 24, Sleep 10: object.txt; review of #1071). 0 = no hold."),
     fast_fragile_policy => (0, "flag", 0, 1, "borg_fast_fragile.rs:47", "#842 (owner, 2026-11-21): a fast-fragile monster (a `fast-fragile` entry of the scary list, or by stats with fast_fragile_by_stats) is attacked with the best attack at hand every turn, without attack-on-sight's `target damage < HP` gate; the only alternatives are Phase Door or a staircase underfoot, when the next turn kills the Borg and the kill needs more than one more turn. Needs attack_on_sight = 1. 0 retains today's play."),
     fast_fragile_by_stats => (0, "flag", 0, 1, "borg_fast_fragile.rs:340", "#842: besides the named entries, mark a monster fast-fragile by its stats for this character: faster than the Borg, killed in fast_fragile_kill_turns of its best attack, at least fast_fragile_damage_percent of the current HP per Borg turn, mobile, not unique, not a breeder, at most fast_fragile_group_max others of its race in view. A named attack entry (any reason) decides its monster over the stats. Acts with fast_fragile_policy and fast_fragile_no_heal. 0 = the names only."),
     fast_fragile_no_heal => (0, "flag", 0, 2, "borg_fast_fragile.rs:536", "#842: 1 = no healing potion (borg_heal, the outmatched heal) while a fast-fragile attacker is awake next to the Borg: the cure buys a turn and loses the race (owner: a death sentence); the attack, the escapes and the flight decide instead. 2 = the same, except when cornered (the next turn kills, the kill needs more than one more turn, and neither Phase Door nor a staircase underfoot is at hand): then a cure comes before the attack. Needs attack_on_sight = 1. 0 retains today\'s play."),
@@ -1488,22 +1481,22 @@ parameters! {
     item_use_ccw_recent_window => (4, "turns", 1, 10, "borg_item_use.rs:139", "Item_Use ccw recent window: existing policy turns."),
     item_use_ccw_recent_skip_chance => (75, "percent", 0, 100, "borg_item_use.rs:139", "Item_Use ccw recent skip chance: existing policy percent."),
     item_use_ccw_min_stock => (2, "count", 0, 255, "borg_item_use.rs:144", "Item_Use ccw min stock: existing policy count."),
-    item_use_food_heal_critical_hp => (4, "hp", 0, 10000, "borg_item_use.rs:703", "Item_Use food heal critical hp: existing policy hp."),
-    item_use_rod_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:741", "Item_Use rod equip max failure: existing policy permille."),
-    item_use_rod_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:774", "Item_Use rod use max failure: existing policy permille."),
-    item_use_staff_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:822", "Item_Use staff use max failure: existing policy permille."),
+    item_use_food_heal_critical_hp => (4, "hp", 0, 10000, "borg_item_use.rs:379", "Item_Use food heal critical hp: existing policy hp."),
+    item_use_rod_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:107", "Item_Use rod equip max failure: existing policy permille."),
+    item_use_rod_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:108", "Item_Use rod use max failure: existing policy permille."),
+    item_use_staff_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:483", "Item_Use staff use max failure: existing policy permille."),
     item_use_staff_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:111", "Item_Use staff equip max failure: existing policy permille."),
-    item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:967", "Item_Use staff teleport max failure: existing policy permille."),
-    item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:1068", "Item_Use ring equip max failure: existing policy permille."),
-    item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:1190", "Item_Use dragon equip max failure: existing policy permille."),
-    item_use_unholy_min_hp => (90, "hp", 0, 10000, "borg_item_use.rs:1352", "Item_Use unholy min hp: existing policy hp."),
-    item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1544", "Item_Use recharge wand max charges: existing policy count."),
-    item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1515", "Item_Use recharge staff max charges: existing policy count."),
-    item_use_recharge_stacked_min_charges => (1, "count", 0, 255, "borg_item_use.rs:1527", "Item_Use recharge stacked min charges: existing policy count."),
-    item_use_recharge_low_charges => (2, "count", 0, 255, "borg_item_use.rs:1553", "Item_Use recharge low charges: existing policy count."),
-    item_use_recharge_fail => (96, "percent", 0, 100, "borg_item_use.rs:1554", "Item_Use recharge fail: existing policy percent."),
-    item_use_teleport_staff_min_charges => (3, "count", 0, 255, "borg_item_use.rs:1520", "Item_Use teleport staff min charges: existing policy count."),
-    item_use_recharge_min_total_stock => (4, "count", 0, 255, "borg_item_use.rs:1527", "Item_Use recharge min total stock: existing policy count."),
+    item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:624", "Item_Use staff teleport max failure: existing policy permille."),
+    item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:725", "Item_Use ring equip max failure: existing policy permille."),
+    item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:847", "Item_Use dragon equip max failure: existing policy permille."),
+    item_use_unholy_min_hp => (90, "hp", 0, 10000, "borg_item_use.rs:1009", "Item_Use unholy min hp: existing policy hp."),
+    item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1201", "Item_Use recharge wand max charges: existing policy count."),
+    item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1218", "Item_Use recharge staff max charges: existing policy count."),
+    item_use_recharge_stacked_min_charges => (1, "count", 0, 255, "borg_item_use.rs:1230", "Item_Use recharge stacked min charges: existing policy count."),
+    item_use_recharge_low_charges => (2, "count", 0, 255, "borg_item_use.rs:1210", "Item_Use recharge low charges: existing policy count."),
+    item_use_recharge_fail => (96, "percent", 0, 100, "borg_item_use.rs:1211", "Item_Use recharge fail: existing policy percent."),
+    item_use_teleport_staff_min_charges => (3, "count", 0, 255, "borg_item_use.rs:1223", "Item_Use teleport staff min charges: existing policy count."),
+    item_use_recharge_min_total_stock => (4, "count", 0, 255, "borg_item_use.rs:1230", "Item_Use recharge min total stock: existing policy count."),
 
     // borg-reborn-rs (#243): power source at 5d9abb8f.
     power_activation_tele_other_mage_base => (500, "score", 0, 100000, "borg_power.rs:111", "Power activation tele other mage base: existing policy score."),
@@ -2886,14 +2879,23 @@ fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i3
     split_name(&lower)
 }
 
-/// #768: allow an existing profile to load after the errands cap was removed.
-fn retired_depth_cap(name: &str) -> bool {
+/// Allow old profiles and environment overrides to load after settings are removed.
+fn retired_parameter_notice(name: &str) -> Option<&'static str> {
     let base = match name.rsplit_once("__").or_else(|| name.rsplit_once('@')) {
         Some((base, class)) if suffix_scope(class).is_some() => base,
         _ => name,
     };
-    matches!(base, "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
-        | "prepared_depth_early_until_level" | "prepared_depth_late_levels_below")
+    match base {
+        "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
+        | "prepared_depth_early_until_level" | "prepared_depth_late_levels_below" =>
+            Some("ignoring retired preparedness depth cap settings (#768)"),
+        "item_test_unknown_potions" | "item_test_unknown_min_hp_percent"
+        | "item_test_unknown_danger_turns" | "item_test_unknown_max_depth"
+        | "item_test_unknown_min_hp" | "item_test_unknown_min_hp_cure_exempt"
+        | "item_test_unknown_hold_turns" =>
+            Some("ignoring retired unknown-potion test settings (#1213)"),
+        _ => None,
+    }
 }
 
 type Key = (&'static str, Option<usize>);
@@ -2903,7 +2905,7 @@ fn parse<'a>(
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
-    let mut had_depth_cap = false;
+    let mut retired_notices = BTreeSet::new();
     // (parameter, class) -> (raw value, alias sentinel)
     let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
@@ -2915,8 +2917,8 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
-        if retired_depth_cap(name) {
-            had_depth_cap = true;
+        if let Some(notice) = retired_parameter_notice(name) {
+            retired_notices.insert(notice);
             continue;
         }
         let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
@@ -2926,17 +2928,19 @@ fn parse<'a>(
     }
     let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (name, value) in env {
-        if *name == name.to_ascii_uppercase() && retired_depth_cap(&name.to_ascii_lowercase()) {
-            had_depth_cap = true;
-            continue;
+        if *name == name.to_ascii_uppercase() {
+            if let Some(notice) = retired_parameter_notice(&name.to_ascii_lowercase()) {
+                retired_notices.insert(notice);
+                continue;
+            }
         }
         let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
         if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
             return Err(format!("duplicate BORG_PARAM_{name}"));
         }
     }
-    if had_depth_cap {
-        eprintln!("borg-reborn-rs: ignoring retired preparedness depth cap settings (#768)");
+    for notice in retired_notices {
+        eprintln!("borg-reborn-rs: {notice}");
     }
     let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
         let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
@@ -3410,6 +3414,25 @@ mod tests {
         let settings = parse(text, &env, SPECS).unwrap();
         assert_eq!(settings[Param::prepared_clevel_depth_margin as usize].value, 0);
         assert!(parse("borg_param_prepared_depth_plan__typo = 1", &env, SPECS).is_err());
+    }
+
+    #[test]
+    fn retired_potion_test_settings_can_load_but_are_not_registered() {
+        let text = "\
+borg_param_item_test_unknown_potions = 1
+borg_param_item_test_unknown_min_hp_percent@ranger = 50
+borg_param_item_test_unknown_danger_turns = 10
+borg_param_item_test_unknown_max_depth__half_orc = 30
+borg_param_item_test_unknown_min_hp = 60
+borg_param_item_test_unknown_min_hp_cure_exempt = 1
+borg_param_item_test_unknown_hold_turns = 180
+borg_param_attack_on_sight = 1";
+        let env = BTreeMap::from([("ITEM_TEST_UNKNOWN_POTIONS__RANGER".into(), "1".into())]);
+        let settings = parse(text, &env, SPECS).unwrap();
+        assert!(!settings.iter().any(|s| s.spec.name.starts_with("item_test_unknown_")));
+        assert_eq!(settings[Param::attack_on_sight as usize].value, 1);
+        assert!(parse("borg_param_item_test_unknown_potions__typo = 1", &env, SPECS).is_err());
+        assert!(parse("borg_param_item_test_unknown_scrolls = 1", &env, SPECS).is_err());
     }
 
     /// #878: what `damage_only` zeroes, and only inside the scope.
