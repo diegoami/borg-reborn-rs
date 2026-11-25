@@ -1472,6 +1472,21 @@ pub fn player_combat_speed() -> i32 {
     player_ref().state.speed
 }
 
+/// borg-reborn-rs (#1136): `player->state.stat_ind[stat]`, the index the
+/// engine computes from the stat in use (player-calcs.c:2060-2091), curses
+/// and drains included; `decrease_timeouts` reads the CON one
+/// (game-world.c:282).
+pub fn player_stat_ind(stat: u32) -> i32 {
+    player_ref().state.stat_ind[stat as usize]
+}
+
+/// borg-reborn-rs (#1136): `player->state.el_info[elem].res_level`, the
+/// resistance `player_inc_check` reads (player-timed.c:960-971). A running
+/// temporary resistance is folded in: +1, at most 2 (player-calcs.c:2188-2193).
+pub fn player_res_level(elem: u32) -> i16 {
+    player_ref().state.el_info[elem as usize].res_level
+}
+
 /// borg-reborn-rs (#1028): the player's energy (`player->energy`), spent
 /// `move_energy` an action and refilled by `turn_energy` each game turn
 /// (game-world.c:1092).
@@ -2169,6 +2184,10 @@ impl<'a> From<CarriedObject<'a>> for GameObject<'a> {
     }
 }
 
+fn known_element_level(known_level: i16, actual_level: i16) -> i16 {
+    if known_level == 1 && actual_level == 0 { 0 } else { known_level }
+}
+
 impl<'a> GameObject<'a> {
 
     fn obj(&self) -> &object {
@@ -2242,9 +2261,23 @@ impl<'a> GameObject<'a> {
     pub fn modifiers(self) -> [i16; 16] {
         self.obj().modifiers
     }
-    /// `obj->el_info`
-    pub fn el_info(self) -> [element_info; 25] {
-        self.obj().el_info
+    /// The item's known element properties. For a partially identified
+    /// object, `equip_learn_element` can use a known resistance level of
+    /// 1 as an exposure marker for an element with no actual resistance
+    /// (obj-knowledge.c:2131–2160). The same pass can write this marker
+    /// after learning the rune from an earlier slot.
+    pub fn known_element_info(self, fully_known: bool) -> [element_info; 25] {
+        if fully_known {
+            return self.obj().el_info;
+        }
+        let Some(known) = self.known() else {
+            return [element_info { res_level: 0, flags: 0 }; 25];
+        };
+        let mut elements = known.obj().el_info;
+        for (element, actual) in elements.iter_mut().zip(&self.obj().el_info) {
+            element.res_level = known_element_level(element.res_level, actual.res_level);
+        }
+        elements
     }
 
     /// `obj->known`, if not NULL.
@@ -3540,6 +3573,18 @@ pub extern "C" fn borg_rs_test_home_attempt(stored: bool, success: bool, kind: u
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exposure_marker_does_not_grant_resistance() {
+        // #1145: a poison hit left level 1 in the shadow of a shield with
+        // no poison resistance. Learning the rune from an earlier slot
+        // in the same pass can still leave the marker here.
+        assert_eq!(known_element_level(1, 0), 0);
+        assert_eq!(known_element_level(1, 1), 1);
+        assert_eq!(known_element_level(0, 1), 0);
+        assert_eq!(known_element_level(-1, -1), -1);
+        assert_eq!(known_element_level(3, 3), 3);
+    }
 
     // `flag_has`/`flag_next` need no engine: these are the boundaries of
     // review finding 2 (docs/SELF-REVIEW.md F2).

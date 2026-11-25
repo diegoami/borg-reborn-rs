@@ -436,7 +436,7 @@ pub fn borg_item_analyze(
     let mods = o.modifiers();
     item.modifiers[..OBJ_MOD_MAX as usize].copy_from_slice(&mods[..OBJ_MOD_MAX as usize]);
 
-    let el = o.el_info();
+    let el = real_item.known_element_info(item.ident);
     for (d, s) in item.el_info.iter_mut().zip(&el).take(ELEM_MAX as usize) {
         d.res_level = s.res_level;
         d.flags = s.flags;

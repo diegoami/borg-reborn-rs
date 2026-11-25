@@ -54,7 +54,8 @@ use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
-use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
+use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID, TMD_POISONED};
+use crate::headers::list_stats_h::STAT_CON;
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
@@ -3575,6 +3576,25 @@ fn poison_recall_charge(ticks: i32, pending: i32, new: f64) -> f64 {
     (f64::from(pending.max(0)).min(ticks) + new.max(0.0)).min(ticks)
 }
 
+/// Price ordinary flight and triage from their own running-poison inputs.
+fn recall_poison_forecast(
+    triage: Option<PoisonRecall>, ticks: i32, poisoned: bool,
+    fresh: (Option<f64>, f64), read_engine: bool, borg_rpois: bool,
+    engine: impl FnOnce() -> EnginePoison,
+) -> (f64, Option<f64>) {
+    let (strike, timer) = fresh;
+    let (remaining, new_from) = recall_poison_inputs(
+        read_engine && triage.is_none() && (poisoned || strike.is_some()), borg_rpois, engine,
+    );
+    if let Some(triage) = triage {
+        let fresh = recall_poison_hp(ticks, false, strike, timer, new_from, None);
+        (poison_recall_charge(ticks, triage.pending, fresh), None)
+    } else {
+        let charge = recall_poison_hp(ticks, poisoned, strike, timer, new_from, remaining);
+        (charge, if poisoned { remaining } else { None })
+    }
+}
+
 fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> bool {
     if p(Param::caution_recall_survival) == 0 { return true; }
     let ticks = poison.map_or_else(|| p(Param::caution_recall_survival_delay), |b| b.ticks);
@@ -3584,6 +3604,7 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
     let blow_model = p(Param::caution_recall_blow_model) != 0;
     let mut poison_strike: Option<f64> = None;
     let mut poison_timer = 0.0;
+    let mut con_drainer = false;
     let mut breeders_waived = 0;
     let mut contact_rates: Vec<f64> = Vec::new();
     let mut through_walls = false;
@@ -3638,6 +3659,7 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
                 contact_rates.push(rate);
                 through_walls |= pass_wall;
             }
+            con_drainer |= forecast.drains_con && recall_travel_ticks(contact_steps, monster_energy) < f64::from(ticks);
             if blow_model && forecast.poisons {
                 let at = recall_travel_ticks(contact_steps, monster_energy);
                 if at < f64::from(ticks) {
@@ -3657,19 +3679,31 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
         let cap = recall_contact_cap(&contact_rates, open, player_energy, ticks);
         if cap < exposure { capped = Some((exposure, open)); exposure = cap; }
     }
-    let poison_hp = if let Some(b) = poison {
-        let new = if blow_model {
-            recall_poison_hp(ticks, false, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
-        } else { 0.0 };
-        poison_recall_charge(ticks, b.pending, new)
-    } else if blow_model {
-        recall_poison_hp(ticks, st.borg.tr(BI_ISPOISONED) != 0, poison_strike, poison_timer, st.borg.tr(BI_RPOIS) != 0)
-    } else { 0.0 };
+    let poisoned = st.borg.tr(BI_ISPOISONED) != 0;
+    // #1136: with caution_recall_poison_remaining, the HP the running poison
+    // timer still takes (owner, 2026-11-23: read the engine's counter, as the
+    // town planner does), instead of the whole delay.
+    let (poison_hp, remaining) = if blow_model {
+        recall_poison_forecast(
+            poison, ticks, poisoned, (poison_strike, poison_timer),
+            p(Param::caution_recall_poison_remaining) != 0, st.borg.tr(BI_RPOIS) != 0,
+            || EnginePoison {
+                timer: i32::from(engine::player_timed(TMD_POISONED)),
+                con_index: engine::player_stat_ind(STAT_CON),
+                res_level: engine::player_res_level(crate::headers::list_elements_h::ELEM_POIS),
+                opposition: i32::from(engine::player_timed(crate::headers::list_player_timed_h::TMD_OPP_POIS)),
+                con_drain: con_drainer && !engine::player_of_has(crate::headers::list_object_flags_h::OF_SUST_CON),
+            },
+        )
+    } else {
+        (poison.map_or(0.0, |b| poison_recall_charge(ticks, b.pending, 0.0)), None)
+    };
     exposure += poison_hp;
-    if poison_hp > 0.0 || breeders_waived > 0 || capped.is_some() {
+    if poison_hp > 0.0 || breeders_waived > 0 || capped.is_some() || remaining.is_some() {
         let mut parts = Vec::new();
         if let Some((sum, open)) = capped { parts.push(format!("contact HP {sum:.2} capped at {open} adjacent attackers")); }
         if poison_hp > 0.0 { parts.push(format!("{poison_hp:.0} poison HP included")); }
+        if let Some(r) = remaining { parts.push(format!("the running poison takes {r:.0} more HP (#1136)")); }
         if breeders_waived > 0 { parts.push(format!("{breeders_waived} breeders' unmodelled risk waived")); }
         borg_note(st, &format!("# Flight Recall forecast: {} (#880)", parts.join("; ")));
     }
@@ -3691,6 +3725,28 @@ fn recall_survivable_with(st: &mut BorgState, poison: Option<PoisonRecall>) -> b
 #[cfg(test)]
 mod recall_survival_tests {
     use super::*;
+
+    #[test]
+    fn triage_recall_preserves_its_pending_charge_with_either_switch_value() {
+        let triage = PoisonRecall { budget: 45, ticks: 34, pending: 5 };
+        for remaining in [false, true] {
+            let (hp, running) = recall_poison_forecast(
+                Some(triage), triage.ticks, true, (Some(4.0), 6.0), remaining, false,
+                || panic!("triage supplies its own pending poison"),
+            );
+            assert_eq!((hp, running), (11.0, None));
+        }
+    }
+
+    #[test]
+    fn flight_prices_a_first_poison_hit_using_engine_resistance() {
+        let (hp, running) = recall_poison_forecast(
+            None, 34, false, (Some(0.0), 99.0), true, true,
+            || EnginePoison { timer: 0, con_index: 0, res_level: 0, opposition: 0, con_drain: false },
+        );
+        assert_eq!((hp, running), (34.0, None));
+        assert!(!recall_forecast_allows(hp, 0, 20));
+    }
 
     #[test]
     fn poison_recall_charges_the_delay_against_hp_and_healing() {
@@ -3749,6 +3805,9 @@ pub(crate) struct IncomingDamage {
     pub recall_unknown_blow: bool,
     /// #880: a POISON blow, which also sets the poison timer.
     pub poisons: bool,
+    /// #1136: a LOSE_CON or LOSE_ALL blow, which can lower CON and so slow
+    /// the poison timer's decay (mon-blows.c:1062-1080).
+    pub drains_con: bool,
     /// #1010: unknown damage once the blows that hurt without stopping the
     /// fight are priced (`status_blow_priced`): a blow that can stop the
     /// Borg acting (PARALYZE, CONFUSE, BLIND, TERRIFY, HALLU), SHATTER and
@@ -3833,12 +3892,210 @@ fn recall_blow_unmodelled(effect: &[u8]) -> bool {
 /// `fail:2:POIS`, checked by player_inc_check when the timer would grow,
 /// player-timed.c:926-967), while a running timer keeps costing HP
 /// (game-world.c:513-515; #954, P7 review). Damage reduction is ignored.
-fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, timer_ticks: f64, resists: bool) -> f64 {
+///
+/// #1136: `remaining` (with `caution_recall_poison_remaining`) is the HP the
+/// running timer still takes (`borg_poison::pending_hp`): already
+/// poisoned, the charge is that plus the new poison, at most the delay. The
+/// running poison is charged to Recall in full: leaving it out (it falls the
+/// same whatever the Borg does) is sound only against a modelled fallback,
+/// since a Borg the poison kills during the delay dies after reading Recall
+/// (owner review of #1143, P1; #1144).
+///
+/// `new_from` is the world tick from which new poison takes hold: 0 with no
+/// resistance, `f64::INFINITY` with a resistance that lasts the delay, and
+/// with only Opposition to Poison the tick it runs out (#1136,
+/// `recall_poison_inputs`).
+fn recall_poison_hp(ticks: i32, already_poisoned: bool, earliest_strike_tick: Option<f64>, timer_ticks: f64,
+    new_from: f64, remaining: Option<f64>) -> f64 {
     if ticks <= 0 { return 0.0; }
     let ticks = f64::from(ticks);
-    if already_poisoned { return ticks; }
-    if resists { return 0.0; }
-    earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(0.0)).max(0.0).min(timer_ticks.max(0.0)))
+    let new = earliest_strike_tick.map_or(0.0, |t| (ticks - t.max(new_from).max(0.0)).max(0.0).min(timer_ticks.max(0.0)));
+    if !already_poisoned { return new; }
+    remaining.map_or(ticks, |r| (r.max(0.0) + new).min(ticks))
+}
+
+/// #1136: what the engine holds for the poison: the timer, the CON index it
+/// decays by (`state.stat_ind[STAT_CON]`), the resistance and Opposition that
+/// can block a new poisoning, and whether CON can be drained meanwhile.
+struct EnginePoison {
+    timer: i32,
+    con_index: i32,
+    /// `state.el_info[ELEM_POIS].res_level`, a running Opposition included.
+    res_level: i16,
+    /// `timed[TMD_OPP_POIS]`: world ticks of Opposition to Poison left.
+    opposition: i32,
+    /// A reachable monster can drain CON during the delay, and CON is not
+    /// sustained.
+    con_drain: bool,
+}
+
+/// #1136: the forecast's poison inputs, the HP the running timer still takes
+/// and whether new poison is blocked. With `caution_recall_poison_remaining`
+/// (`read`) both come from the engine (owner, 2026-11-23: read the counter;
+/// owner review of #1143 at dad5b699):
+/// - the CON index is the engine's, not `BI_CON_INDEX`, which rebuilds it
+///   from the base stat and the equipment and so misses sickliness's -5 CON
+///   (curse.txt), recorded only in `BI_CCON`;
+/// - resistance is what `player_inc_check` reads, not `BI_RPOIS`, which can
+///   be 1 while the engine keeps poisoning the Borg (#1145);
+/// - Opposition to Poison blocks new poison only while it runs (Codex review
+///   of #1143 at 06033566): it falls by 1 a world tick (`decrease_timeouts`,
+///   game-world.c:284-332), and its +1 in `res_level` (player-calcs.c:
+///   2188-2193) is not a lasting resistance. New poison takes hold one tick
+///   before it runs out, to stay on the safe side of the turn order;
+/// - a reachable, unsustained CON drain (LOSE_CON, LOSE_ALL: mon-blows.c:
+///   1062-1080; a sustain stops it, effect-handler-general.c:814-823) can
+///   lower CON before a world tick and slow the decay (Codex review of #1143),
+///   so the timer is priced at the slowest decay, 1 a tick.
+/// Returns the HP the running timer still takes and the tick from which new
+/// poison takes hold (`recall_poison_hp`'s `new_from`). Off, nothing is read
+/// and #880's inputs stand (`BI_RPOIS`).
+fn recall_poison_inputs(read: bool, borg_rpois: bool, engine: impl FnOnce() -> EnginePoison) -> (Option<f64>, f64) {
+    if !read { return (None, if borg_rpois { f64::INFINITY } else { 0.0 }); }
+    let e = engine();
+    let con_index = if e.con_drain { 0 } else { e.con_index };
+    let new_from = if lasting_poison_resistance(e.res_level, e.opposition) { f64::INFINITY }
+        else { f64::from(e.opposition.max(1) - 1) };
+    (Some(f64::from(crate::borg_poison::pending_hp(e.timer, con_index))), new_from)
+}
+
+/// #1136: a poison resistance that outlasts Opposition to Poison. A running
+/// Opposition adds 1 to `res_level`, at most 2 (player-calcs.c:2188-2193):
+/// with it running, a lasting resistance shows as 2 or more.
+fn lasting_poison_resistance(res_level: i16, opposition: i32) -> bool {
+    if opposition > 0 { res_level >= 2 } else { res_level > 0 }
+}
+
+#[cfg(test)]
+mod tests_1136 {
+    use super::{lasting_poison_resistance, recall_poison_hp, recall_poison_inputs, EnginePoison};
+
+    const NONE: f64 = 0.0;
+    const LASTING: f64 = f64::INFINITY;
+
+    fn poisoned(timer: i32, con_index: i32) -> EnginePoison {
+        EnginePoison { timer, con_index, res_level: 0, opposition: 0, con_drain: false }
+    }
+
+    #[test]
+    fn the_engines_con_index_prices_a_sickly_borg() {
+        // Owner review of #1143 (dad5b699): CON 14 before sickliness's -5 is
+        // index 11 to BI_CON_INDEX, 6 (CON 9) to the engine. Timer 15, HP 10,
+        // nothing in reach: the engine takes 15 HP (dead on tick 11, before
+        // the earliest Recall at tick 15).
+        let (remaining, _) = recall_poison_inputs(true, false, || poisoned(15, 6));
+        assert_eq!(remaining, Some(15.0));
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, NONE, remaining), 0, 10));
+        // BI_CON_INDEX's 11 would have charged 8 and allowed it.
+        assert!(super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, NONE, recall_poison_inputs(true, false, || poisoned(15, 11)).0), 0, 10));
+    }
+
+    #[test]
+    fn a_false_resistance_flag_does_not_hide_new_poison() {
+        // #1145: BI_RPOIS 1 while the engine keeps poisoning (a white jelly in
+        // contact, 1d2 POISON). The engine's check decides.
+        let (remaining, new_from) = recall_poison_inputs(true, true, || poisoned(8, 0));
+        assert_eq!(new_from, NONE);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 34.0, "the jelly keeps the timer running");
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 0, 20));
+        // A real resistance still blocks it.
+        let resisting = || EnginePoison { res_level: 1, ..poisoned(8, 0) };
+        let (remaining, new_from) = recall_poison_inputs(true, false, resisting);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 8.0);
+    }
+
+    #[test]
+    fn opposition_to_poison_blocks_new_poison_only_while_it_runs() {
+        // Codex review of #1143 (06033566): eight ticks of poison left, one
+        // tick of Opposition (its +1 is the whole res_level), a white jelly in
+        // contact. The Opposition ends on the next world tick; the jelly then
+        // keeps the timer running through the delay.
+        let (remaining, new_from) = recall_poison_inputs(true, false, || EnginePoison { res_level: 1, opposition: 1, ..poisoned(8, 0) });
+        assert_eq!(new_from, 0.0);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 34.0);
+        // Ten ticks of Opposition: new poison from tick 9 at the latest.
+        let (remaining, new_from) = recall_poison_inputs(true, false, || EnginePoison { res_level: 1, opposition: 10, ..poisoned(8, 0) });
+        assert_eq!(new_from, 9.0);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 33.0, "8 + (34 - 9), at most the delay");
+        // A lasting resistance under the Opposition (2 = 1 + 1) still blocks it all.
+        let (remaining, new_from) = recall_poison_inputs(true, false, || EnginePoison { res_level: 2, opposition: 1, ..poisoned(8, 0) });
+        assert_eq!(new_from, LASTING);
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, new_from, remaining), 8.0);
+        assert!(lasting_poison_resistance(1, 0));
+        assert!(!lasting_poison_resistance(1, 5), "only the Opposition's +1");
+        assert!(!lasting_poison_resistance(0, 0));
+    }
+
+    #[test]
+    fn a_reachable_con_drain_prices_the_slowest_decay() {
+        // Codex review of #1143 (06033566): CON 14 (index 11) and a timer of
+        // 15 cost 8 HP; a purple mushroom patch (LOSE_CON) can drain CON to
+        // 13 (index 10) before the first world tick, and the same timer then
+        // costs 15.
+        let (remaining, _) = recall_poison_inputs(true, false, || poisoned(15, 11));
+        assert_eq!(remaining, Some(8.0));
+        let (remaining, _) = recall_poison_inputs(true, false, || EnginePoison { con_drain: true, ..poisoned(15, 11) });
+        assert_eq!(remaining, Some(15.0));
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, NONE, remaining), 0, 10));
+    }
+
+    #[test]
+    fn switch_off_reads_nothing_from_the_engine() {
+        let (remaining, new_from) = recall_poison_inputs(false, true, || panic!("read with the switch off"));
+        assert_eq!((remaining, new_from), (None, LASTING), "#880's BI_RPOIS stands");
+        let (remaining, new_from) = recall_poison_inputs(false, false, || panic!("read with the switch off"));
+        assert_eq!((remaining, new_from), (None, NONE));
+    }
+
+    #[test]
+    fn short_running_poison_allows_the_recorded_safe_recall() {
+        // Druid 220674435 at t71908 on c5501d3c: scroll, 33 HP, counter 8,
+        // decay 3, and no other modelled exposure.
+        let (remaining, new_from) = recall_poison_inputs(true, false, || poisoned(8, 15));
+        let exposure = recall_poison_hp(34, true, None, 0.0, new_from, remaining);
+        assert_eq!(exposure, 3.0);
+        assert!(super::recall_forecast_allows(exposure, 0, 33));
+    }
+
+    #[test]
+    fn recall_is_charged_the_poison_left_not_the_delay() {
+        // Already poisoned, no poisoner in reach.
+        assert_eq!(recall_poison_hp(34, true, None, 0.0, 0.0, None), 34.0, "both off: #880's whole delay");
+        assert_eq!(recall_poison_hp(34, true, None, 0.0, 0.0, Some(14.0)), 14.0);
+        assert_eq!(recall_poison_hp(34, true, None, 0.0, 0.0, Some(110.0)), 34.0, "capped at the delay");
+        assert_eq!(recall_poison_hp(34, true, None, 0.0, f64::INFINITY, Some(14.0)), 14.0, "a running timer ticks under resistance (#954)");
+        // A poisoner strikes at tick 4 and can add 6 ticks.
+        assert_eq!(recall_poison_hp(34, true, Some(4.0), 6.0, 0.0, Some(14.0)), 20.0);
+        assert_eq!(recall_poison_hp(34, true, Some(4.0), 6.0, f64::INFINITY, Some(14.0)), 14.0, "resistance blocks the new poison");
+        assert_eq!(recall_poison_hp(34, true, Some(4.0), 99.0, 0.0, Some(14.0)), 34.0);
+    }
+
+    #[test]
+    fn poison_that_kills_during_the_delay_refuses_recall() {
+        // Owner review of #1143, P1: 3 HP and 10 ticks of poison, nothing in
+        // reach. The poison kills on the fourth tick, before the earliest
+        // Recall (15 ticks): the running poison stays charged, so Recall is
+        // refused with or without the counter read.
+        let poison = recall_poison_hp(34, true, None, 0.0, NONE, recall_poison_inputs(true, false, || poisoned(10, 0)).0);
+        assert_eq!(poison, 10.0);
+        assert!(!super::recall_forecast_allows(poison, 0, 3));
+        assert!(!super::recall_forecast_allows(recall_poison_hp(34, true, None, 0.0, 0.0, None), 0, 3));
+        // The same timer at 11 HP is outlived.
+        assert!(super::recall_forecast_allows(poison, 0, 11));
+    }
+
+    #[test]
+    fn resistance_gained_after_poisoning_keeps_the_running_timer() {
+        // Poisoned first, resistance after (a potion or a swap): the
+        // running timer keeps costing HP (game-world.c:513-515), and only
+        // new poison is blocked (player_inc_check, player-timed.c:926-967; #954).
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, LASTING, Some(8.0)), 8.0,
+            "a poisoner in contact adds nothing; the eight ticks left still count");
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, LASTING, None), 34.0,
+            "counter not read: the whole delay, as #954");
+        assert_eq!(recall_poison_hp(34, true, Some(0.0), 99.0, NONE, Some(8.0)), 34.0,
+            "without resistance the same poisoner can keep the timer running all the delay");
+    }
 }
 
 /// #880: the most poison timer one monster can add in `window` world ticks:
@@ -3929,6 +4186,7 @@ pub(crate) fn fight_incoming_with(st: &BorgState, i: usize, wake: bool) -> Incom
         out.unpriced_damage |= !modelled_blow(effect) && !status_blow_priced(effect);
         out.recall_unknown_blow |= recall_blow_unmodelled(effect);
         out.poisons |= effect == b"POISON";
+        out.drains_con |= matches!(effect, b"LOSE_CON" | b"LOSE_ALL");
         let vulnerable = match effect {
             b"ACID" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VACID) != 0,
             b"ELEC" => st.borg.tr(crate::borg_headers::borg_trait_h::BI_VELEC) != 0,
@@ -3975,14 +4233,14 @@ mod incoming_units_tests {
         assert!(!super::recall_blow_unmodelled(b"EXP_10"));
         assert!(super::recall_blow_unmodelled(b"SHATTER"), "an earthquake's HP is not its dice");
         // One timer, 1 HP per world tick, bounded by the delay and by the timer the hits can add.
-        assert_eq!(super::recall_poison_hp(34, false, Some(4.0), 99.0, false), 30.0);
-        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, false), 34.0);
-        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 6.0, false), 6.0, "one white worm hit: 5 + randint1(1)");
-        assert_eq!(super::recall_poison_hp(34, false, Some(40.0), 99.0, false), 0.0, "arrives after Recall");
-        assert_eq!(super::recall_poison_hp(34, false, None, 0.0, false), 0.0);
-        assert_eq!(super::recall_poison_hp(34, true, None, 0.0, false), 34.0, "an existing timer still ticks");
-        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, true), 34.0, "a running timer ticks under resistance (#954)");
-        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, true), 0.0, "resist poison blocks new poison");
+        assert_eq!(super::recall_poison_hp(34, false, Some(4.0), 99.0, 0.0, None), 30.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, 0.0, None), 34.0);
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 6.0, 0.0, None), 6.0, "one white worm hit: 5 + randint1(1)");
+        assert_eq!(super::recall_poison_hp(34, false, Some(40.0), 99.0, 0.0, None), 0.0, "arrives after Recall");
+        assert_eq!(super::recall_poison_hp(34, false, None, 0.0, 0.0, None), 0.0);
+        assert_eq!(super::recall_poison_hp(34, true, None, 0.0, 0.0, None), 34.0, "an existing timer still ticks");
+        assert_eq!(super::recall_poison_hp(34, true, Some(0.0), 99.0, f64::INFINITY, None), 34.0, "a running timer ticks under resistance (#954)");
+        assert_eq!(super::recall_poison_hp(34, false, Some(0.0), 99.0, f64::INFINITY, None), 0.0, "resist poison blocks new poison");
         // White worm mass: speed 100 = energy 5, DL1. One action per two
         // ticks, each hit at most 6 ticks of timer: stacking keeps it going.
         assert_eq!(super::recall_poison_timer_ticks(2.0, 5.0, 1), 6.0);

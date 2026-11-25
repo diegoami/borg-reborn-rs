@@ -103,7 +103,25 @@ pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
     // Match borg_recall's existing pending gate before forecasting: this
     // is not a new read and must not be logged as a blocked Recall.
     if st.borg.goal.recalling != 0 { return false; }
+    let source_available = flight_recall_source_available(st);
+    let already_noted = std::mem::replace(&mut st.borg.flight_recall_unavailable_noted, !source_available);
+    if !source_available {
+        if !already_noted {
+            borg_note(st, "# Flight Recall unavailable: no usable source (#1142)");
+        }
+        return false;
+    }
     crate::borg_caution::flight_recall_survivable(st) && borg_recall(st)
+}
+
+/// The sources `borg_recall` can try in the current think. Recall is not
+/// subject to the anti-teleport checks for immediate escapes.
+fn flight_recall_source_available(st: &mut BorgState) -> bool {
+    use crate::borg_item_use::{charged_activation_slot, readable_scroll_slot, zappable_rod_slot};
+    zappable_rod_slot(st, st.item_val.sv_rod_recall) >= 0
+        || charged_activation_slot(st, st.act.recall).is_some()
+        || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
+        || readable_scroll_slot(st, st.item_val.sv_scroll_word_of_recall) >= 0
 }
 
 /// Ordinary Recall, including trips home; no flight-survival policy here.
@@ -116,6 +134,7 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
             || borg_spell_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
             || borg_read_scroll(st, st.item_val.sv_scroll_word_of_recall)
         {
+            st.borg.flight_recall_unavailable_noted = false;
             // do we need to answer "Set recall depth to current depth? [y/n]"
             if st.borg.tr(BI_CDEPTH) < st.borg.tr(BI_MAXDEPTH) && st.borg.tr(BI_CDEPTH) != 0 {
                 let diff_max_from_desired_depth =
@@ -1221,7 +1240,22 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
         borg_note(st, &format!("# Phase rule: next to the paralysing {name} without Free Action: the fight is lost (#1125)"));
     }
-    let lost = phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_wait(st, hp));
+    let lost = phase_lost(adjacent, paralyser.is_some(), || {
+        let fight_hp = if param(Param::escape_phase_lost_poison_pending) != 0
+            && st.borg.tr(BI_ISPOISONED) != 0
+        {
+            use crate::headers::{list_player_timed_h::TMD_POISONED, list_stats_h::STAT_CON};
+            let pending = crate::borg_poison::pending_hp(
+                i32::from(engine::player_timed(TMD_POISONED)),
+                engine::player_stat_ind(STAT_CON),
+            );
+            borg_note(st, &format!("# Phase rule: {pending} HP of running poison against HP {hp} (#1083)"));
+            hp - pending
+        } else {
+            hp
+        };
+        fight_lost(st, here, fight_hp) && !newcomer_wait(st, fight_hp)
+    });
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {
@@ -2916,7 +2950,10 @@ mod unknown_landing_tests {
         let src = include_str!("borg_escape.rs");
         // #1125: the fight's test sits in `phase_lost`, asked only with an
         // awake enemy adjacent (and no paralyser, which loses it anyway).
-        assert!(src.contains(concat!("phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_", "wait(st, hp))")));
+        assert!(src.contains(concat!("phase_lost(adjacent, ", "paralyser.is_some(), || {")));
+        assert!(src.contains(concat!("fight_lost(st, here, fight_hp) && !newcomer_", "wait(st, fight_hp)")));
+        assert!(super::unknown_counts_scary(45, 60, 50));
+        assert!(!super::unknown_counts_scary(45 - 40, 60, 50));
         assert!(src.contains(concat!("adjacent && (paralyser || ", "fight())")));
         let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
         let wait = &at[..at.find("\n}\n").unwrap()];

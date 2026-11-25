@@ -523,19 +523,17 @@ pub(crate) fn can_read_now(st: &BorgState) -> bool {
         && st.borg.tr(BI_ISFORGET) == 0
 }
 
+/// The slot `borg_read_scroll` would use, or -1 if no scroll can be read.
+pub(crate) fn readable_scroll_slot(st: &mut BorgState, sval: i32) -> i32 {
+    if !can_read_now(st) || crate::borg_escape::teleport_scroll_blocked(st, sval) {
+        return -1;
+    }
+    borg_slot(st, TV_SCROLL as i32, sval)
+}
+
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    if !can_read_now(st) { return false; }
-
-    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
-    if crate::borg_escape::teleport_scroll_blocked(st, sval) {
-        return false;
-    }
-
-    /* Look for that scroll */
-    let i = borg_slot(st, TV_SCROLL as i32, sval);
-
-    /* None available */
+    let i = readable_scroll_slot(st, sval);
     if i < 0 {
         return false;
     }
@@ -761,32 +759,24 @@ pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
+/// The slot `borg_zap_rod` would use, including Recall's failure-rate exception.
+pub(crate) fn zappable_rod_slot(st: &mut BorgState, sval: i32) -> i32 {
+    let i = borg_slot(st, TV_ROD as i32, sval);
+    if i < 0 || st.items.items[i as usize].pval == 0 {
+        return -1;
+    }
+    let lev = i32::from(st.items.items[i as usize].level);
+    let fail = device_fail(device_skill(st), lev);
+    if sval != st.item_val.sv_rod_recall && fail > param(Param::item_use_rod_use_max_failure) {
+        return -1;
+    }
+    i
+}
+
 /// Attempt to zap the given (charged) rod (by sval).
 pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
-    /* Look for that rod */
-    let i = borg_slot(st, TV_ROD as i32, sval);
-
-    /* None available */
+    let i = zappable_rod_slot(st, sval);
     if i < 0 {
-        return false;
-    }
-
-    /* Still charging */
-    if st.items.items[i as usize].pval == 0 {
-        return false;
-    }
-
-    /* Extract the item level */
-    let lev = i32::from(st.items.items[i as usize].level);
-
-    /* Base chance of success, confusion hurts skill */
-    let skill = device_skill(st);
-
-    /* High level objects are harder */
-    let fail = device_fail(skill, lev);
-
-    /* Roll for usage */
-    if sval != st.item_val.sv_rod_recall && fail > param(Param::item_use_rod_use_max_failure) {
         return false;
     }
 
@@ -1213,55 +1203,30 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
     true
 }
 
+/// Find a charged, equipped item with the given activation.
+pub(crate) fn charged_activation_slot(st: &BorgState, activation: i32) -> Option<i32> {
+    if st.borg.activation[activation as usize] == 0 {
+        return None;
+    }
+    (inven_wield()..inven_total()).find(|&i| {
+        let item = &st.items.items[i as usize];
+        item.iqty != 0 && item.activ_idx == activation && item.timeout == 0
+    })
+}
+
 /// Attempt to use the given artifact.
 pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
-    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
     if crate::borg_escape::teleport_activation_blocked(st, activation) {
         return false;
     }
+    let Some(i) = charged_activation_slot(st, activation) else { return false };
 
-    /* a quick check of the array */
-    if st.borg.activation[activation as usize] == 0 {
-        return false;
-    }
-
-    /* Check the equipment */
-    for i in inven_wield()..inven_total() {
-        let item = &st.items.items[i as usize];
-
-        if item.iqty == 0 {
-            continue;
-        }
-
-        /* Skip wrong activation*/
-        if item.activ_idx != activation {
-            continue;
-        }
-
-        /* Check charge */
-        if item.timeout != 0 {
-            continue;
-        }
-
-        /* Log the message */
-        note_desc(st, b"# Activating item ", i as usize, b".");
-
-        /* The session object log: what the Borg uses. */
-        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
-
-        /* Perform the action */
-        borg_keypress(st, key(b'A'));
-        borg_keypress(st, letter(i - inven_wield()));
-
-        /* borg-reborn-rs (#1062): the cause of the next jump */
-        crate::borg_leash::own_activation(st, activation);
-
-        /* Success */
-        return true;
-    }
-
-    /* Oops */
-    false
+    note_desc(st, b"# Activating item ", i as usize, b".");
+    crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
+    borg_keypress(st, key(b'A'));
+    borg_keypress(st, letter(i - inven_wield()));
+    crate::borg_leash::own_activation(st, activation);
+    true
 }
 
 /// Check and see if borg is wielding an item with this activation.

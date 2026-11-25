@@ -107,7 +107,7 @@ Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 | `loc` | B | grid coordinates |
 | `object` | B | items: gear, floor, stock |
 | `object_kind` | K | an item's kind |
-| `element_info` | B | resistances of items and races |
+| `element_info` | B | resistances of items and races; #1145 checks the item's actual level only to distinguish a known exposure marker from a resistance. It leaves unknown properties unknown. |
 | `random_value` | K | dice of the static data |
 | `keypress` | S | the key the hook returns |
 | `ui_event` | S | `Term_inkey`'s result |

@@ -1288,6 +1288,8 @@ borg_param_escape_phase_lost_mana = 1
 
 borg_param_lone_slow_attack = 1
 borg_param_escape_phase_lost_damage_only = 1
+# #1083: experimental, count the running poison in the adjacent Phase verdict.
+borg_param_escape_phase_lost_poison_pending = 0
 borg_param_attack_reserve_spell_damage_only = 1
 borg_param_attack_reserve_faint_percent = 25
 borg_param_caution_unseen_bump_phase_turns = 20
@@ -2055,6 +2057,10 @@ borg_param_caution_recall_survival_delay = 34
 # #880: the forecast prices POISON (dice + timer) and status blows as HP and
 # never vetoes on a breeder; compiled 0, shipped 1 (owner, 2026-11-22).
 borg_param_caution_recall_blow_model = 1
+# #1136: already poisoned, charge the HP the running poison timer still takes
+# (read from the engine, owner 2026-11-23) instead of the whole delay; compiled
+# 0, shipped 1 (owner, 2026-11-23: "ship with the new switch").
+borg_param_caution_recall_poison_remaining = 1
 
 # The world (#704): game data with some monsters more common, for stress tests
 # (scripts/make-world.py, harness/worlds/NAME.txt). harness/run.sh reads this

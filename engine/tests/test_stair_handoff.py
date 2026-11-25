@@ -91,6 +91,9 @@ PINNED_TOWN_SETTINGS = [
     # incident (seed 224 drinks Speed at 24,213; at 0 the flag stays set to the
     # end, which the recorded turns depend on).
     ("trait_timed_sync", 0),
+    # #1136 shipped the poison still to come in the flight Recall forecast
+    # after these incidents.
+    ("caution_recall_poison_remaining", 0),
     # #1184 shipped ranged shopping and resupply after these incidents.
     ("town_ranged_readiness", 0), ("trip_ranged_readiness", 0),
     # These recorded routes predate the #1194 combat-healing policy.
