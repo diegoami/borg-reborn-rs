@@ -23,6 +23,15 @@ def state_at(states, turn):
     return [state for state in states if int(state[0]) == turn]
 
 
+def has_stair_handoff_build():
+    build_id = TEST_GAME.parent.parent / "BUILD_ID"
+    if not TEST_GAME.is_file() or not build_id.is_file():
+        return False
+    features = next((line.removeprefix("test_features=") for line in build_id.read_text().splitlines()
+                     if line.startswith("test_features=")), "")
+    return "test-stair-handoff" in features.split(",")
+
+
 @unittest.skipUnless(GAME.is_file(), "harness/build.sh required")
 class StairHandoffTest(unittest.TestCase):
     def run_case(self, seed, player_class, stop_turn):
@@ -86,7 +95,7 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(any(int(state[0]) > 143041 and state[2].startswith("d0/") for state in states))
 
 
-@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+@unittest.skipUnless(has_stair_handoff_build(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
     def run_case(self, case, weight):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:

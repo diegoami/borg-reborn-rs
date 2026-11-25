@@ -168,14 +168,20 @@ class CoreProfileContractTest(unittest.TestCase):
         return out, {'outcome': outcome, 'error': None, 'summary': summary, 'scary_list': scary}
 
     def test_zoo_clears_ambient_core_errand_and_parameter_overrides(self):
-        out, record = self.cell('ambient-isolation', {'borg_reborn_core': 1}, ambient={
+        profile = {'borg_reborn_core': 1}
+        clean, control = self.cell('ambient-isolation-control', profile)
+        self.assertEqual(control['outcome'], 'turn_cap', control)
+        out, record = self.cell('ambient-isolation', profile, ambient={
             'BORG_CORE': 'invalid', 'BORG_ERRAND': 'dvie 2',
             'BORG_STOPSCARED': 'bogus', 'BORG_ERRAND_BUDGET': '-1',
             'BORG_PARAM_RECOVER_REST_SP_TENTHS': 'invalid',
         })
         self.assertEqual(record['outcome'], 'turn_cap', record)
+        # Shipped borg.txt carries overrides. Compare with the identical
+        # profile in a process without ambient settings.
         settings = json.loads((out / 'params-core.json').read_text())
-        self.assertTrue(settings and all(p['origin'] == 'default' for p in settings))
+        self.assertTrue(settings)
+        self.assertEqual(settings, json.loads((clean / 'params-core.json').read_text()))
         self.assertFalse((out / 'errand-outcomes.jsonl').exists())
 
     def test_integer_profile_selects_core_and_resolves_parameters(self):
