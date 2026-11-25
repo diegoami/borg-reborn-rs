@@ -970,6 +970,18 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
     }
 
+    // Finish a verified loadout exchange before ordinary wear or departure
+    // can undo it. Town threat handling above still takes precedence.
+    if st.borg.tr(BI_CDEPTH) == 0 && crate::borg_town_loadout::pending(st)
+        && borg_choose_shop(st)
+    {
+        if crate::borg_town_live::execute_outside(st) { return true; }
+        let shop = i32::from(st.borg.goal.shop);
+        if shop >= 0 && borg_flow_shop_entry(st, shop) {
+            return choice!("town_loadout_to_shop");
+        }
+    }
+
     if crate::borg_town_live::choose_overflow(st)
         && borg_flow_shop_entry(st, i32::from(st.borg.goal.shop))
     {

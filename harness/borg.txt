@@ -263,6 +263,9 @@ borg_param_town_departure_free_slots = 2
 # The class files set the reserve for each playable class. The fallback
 # is 0, which disables trimming when there is no class override.
 borg_param_town_quiver_trim_reserve = 0
+# After trimming, allow a safe lighter exchange to free room for urgent kit.
+# A positive value is the trial's maximum equipment power loss.
+borg_param_town_loadout_power_loss = 0
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want

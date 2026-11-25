@@ -243,6 +243,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::borg_combat_heal::fixture::run(st, &case);
     }
 
+    #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_TOWN_LOADOUT") {
+        crate::borg_town_loadout::fixture(st, &case);
+    }
+
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);

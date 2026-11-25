@@ -1304,6 +1304,12 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
                 &st.store.shops[BORG_HOME].ware[(i - pack_size) as usize]
             };
 
+            // borg-reborn-rs (#1239): a stashed heavy upgrade needs the
+            // live town planner's post-exchange carrying check.
+            if !in_pack && crate::borg_town_loadout::retained(st, item) {
+                continue;
+            }
+
             /* Skip empty items */
             if item.iqty == 0 {
                 continue;

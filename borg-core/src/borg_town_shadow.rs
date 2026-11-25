@@ -304,8 +304,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         KitItem {
             home_room,
             keep_last_book: protects_class_book(it),
-            protect_disposal: it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
-                && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
+            protect_disposal: crate::borg_town_loadout::retained(st, it)
+                || it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
+                    && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
             home_limited: crate::borg_town_utility::home_limited_kind(it.tval) && it.aware,
             joins_pack: home_room.is_some_and(|[_, merge, _]| merge >= i32::from(it.iqty)),
@@ -431,7 +432,14 @@ pub struct TownAction {
     pub at: [i64; 4],
 }
 
-pub fn live_action(st: &mut BorgState) -> TownAction {
+pub(crate) struct LivePlan {
+    pub action: TownAction,
+    pub urgent: crate::borg_town_utility::Room,
+    pub urgent_action: bool,
+    pub gold: i64,
+}
+
+pub fn live_action(st: &mut BorgState) -> LivePlan {
     evaluate(st, true)
 }
 
@@ -481,7 +489,7 @@ fn executed_copies(code: i64, planned: i64) -> i64 {
     if code != crate::borg_town_record::action::BUY { 1 } else { planned.max(1) }
 }
 
-fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
+fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     let file = crate::borg_town_dump::plan_record_file();
 
     // A new visit when the level clock moved (new_level restarts it on
@@ -528,7 +536,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         if item.iqty == 0 { continue; }
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
             && item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
-            && !(live && crate::borg_town_live::home_moved(st, item.kind, true));
+            && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
+                || crate::borg_town_loadout::retained(st, item)));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
         stock.candidates.push(crate::borg_town_stock::Candidate { shop:7,slot:slot as u8,
@@ -630,7 +639,11 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         for (k, d) in kit.iter().zip(chosen_from.dispositions.iter_mut()) {
             let reverses = match (k.place, *d) {
                 (Place::Pack, Disposition::Store) => crate::borg_town_live::home_moved(st, k.kind, false),
-                (Place::Home, Disposition::Take) => crate::borg_town_live::home_moved(st, k.kind, true),
+                (Place::Pack, Disposition::Sell | Disposition::Drop) =>
+                    crate::borg_town_loadout::retained(st, &st.items.items[usize::from(k.slot)]),
+                (Place::Home, Disposition::Take | Disposition::Sell | Disposition::Drop) =>
+                    crate::borg_town_loadout::retained(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)])
+                    || *d == Disposition::Take && crate::borg_town_live::home_moved(st, k.kind, true),
                 _ => false,
             };
             if reverses { *d = Disposition::Keep; }
@@ -677,7 +690,15 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             };
         }
     }
-    let chosen = TownAction { code: paction, at: act };
+    let chosen = LivePlan {
+        action: TownAction { code: paction, at: act },
+        urgent_action: now,
+        urgent: crate::borg_town_utility::Room {
+            weight: budget.urgent.iter().map(|p| i64::from(stock.candidates[p.candidate].weight)).sum(),
+            slots: crate::borg_town_budget::Facts::of(st).pack_capacity - stock.pack_slots_used() - budget.pack_slots,
+        },
+        gold: budget.gold,
+    };
     if file.is_none() { return chosen; }
     let rec = PlanRecord {
         storing: Some(storing.to_array()),

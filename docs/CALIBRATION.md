@@ -8752,7 +8752,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:867` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:888` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8767,6 +8767,23 @@ reserve and the action order need measurement before activation.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:324` |
+
+## Lighter town loadouts (#1239)
+
+With a positive `town_loadout_power_loss`, the planner can exchange one
+known worn weapon or armor piece after quiver trimming. It models the
+weight after the displaced piece reaches Home. The exchange must make
+room for urgent supplies and preserve effective speed, existing
+resistances, casting ability and usable attacks. It prefers room for the
+configured departure reserve when otherwise comparable. A later visit
+can restore the retained gear if the resulting kit fits with the reserve.
+
+The compiled and shipped defaults are zero. The constructed Priest
+regression uses 3,000 equipment power as a trial loss allowance.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_loadout_power_loss` | 0 | equipment power | 0–100,000 | `borg_town_loadout.rs:57` |
 
 ## Ranged readiness for the next trip (#1184)
 

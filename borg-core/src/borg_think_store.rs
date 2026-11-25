@@ -440,7 +440,7 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* Wear "optimal" equipment */
-    if borg_best_stuff(st) {
+    if !crate::borg_town_loadout::pending(st) && borg_best_stuff(st) {
         return true;
     }
 
@@ -449,7 +449,8 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * it as a normal weapon
      */
     let wield = &st.items.items[inven_wield() as usize];
-    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0 && borg_wear_stuff(st) {
+    if !crate::borg_town_loadout::pending(st)
+        && i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0 && borg_wear_stuff(st) {
         return true;
     }
 
