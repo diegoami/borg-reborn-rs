@@ -95,6 +95,9 @@ PINNED_TOWN_SETTINGS = [
     ("town_ranged_readiness", 0), ("trip_ranged_readiness", 0),
     # These recorded routes predate the #1194 combat-healing policy.
     ("caution_combat_heal", 0),
+    # #1159 changes the path to the incident. Keep the original route
+    # selection for these exact-turn replays.
+    ("caution_rising_skip_held_stairs", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -143,16 +146,18 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(any(" 7446 0 # no up stairs found, exploring for them" in row for row in messages))
         self.assertEqual(state_at(states, 7446)[0][1], "41,48")
         self.assertEqual(state_at(states, 7456)[0][1], "41,47")
+        self.assertIn(["7446", "1", "38", "0"], keys)
         self.assertFalse(any(" 7456 0 # Flowing toward down-stairs at cost 1" in row for row in messages))
         self.assertTrue(any(" 7456 0 # Fleeing the level (recall)" in row for row in messages))
         self.assertEqual(state_at(states, 7466)[0][1], "41,47")
 
     def test_ordinary_fallback_does_not_restart_down_stair_loop(self):
-        messages, states, _ = self.run_case(204, 1, 119000)
+        messages, states, keys = self.run_case(204, 1, 119000)
         self.assertTrue(any(" 118839 0 # Standing on dn-stairs" in row for row in messages))
         self.assertTrue(any(" 118839 0 # Flowing toward dark-" in row for row in messages))
         self.assertEqual(state_at(states, 118839)[0][1], "129,22")
         self.assertEqual(state_at(states, 118849)[0][1], "129,21")
+        self.assertIn(["118839", "1", "38", "0"], keys)
         # The first patch reached (129,20), reversed twice, and started over.
         # Check the whole window so a three-square loop also fails the test.
         for turn in (118859, 118869, 118879):
@@ -160,40 +165,43 @@ class StairHandoffTest(unittest.TestCase):
         self.assertTrue(state_at(states, 118879))
 
     def test_known_up_route_continues_past_adjacent_down_stair(self):
-        messages, states, _ = self.run_case(224, 0, 144000)
+        messages, states, keys = self.run_case(224, 0, 144000)
         self.assertTrue(any(" 143021 0 # Standing on dn-stairs" in row for row in messages))
         self.assertTrue(any(" 143021 0 # Flowing toward up-stairs at cost 4" in row for row in messages))
         self.assertEqual(state_at(states, 143021)[0][1], "162,35")
         self.assertEqual(state_at(states, 143031)[0][1], "163,34")
+        self.assertIn(["143021", "1", "39", "0"], keys)
 
         later = state_at(states, 143041)
         self.assertTrue(later)
         self.assertNotIn("162,35", [state[1] for state in later])
+        self.assertTrue(any(int(turn) > 143041 and key == "3c" for turn, _, key, _ in keys))
         self.assertTrue(any(int(state[0]) > 143041 and state[2].startswith("d0/") for state in states))
 
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight, player_class=6, depth=5):
+    def run_case(self, case, weight=None, player_class=6, depth=5):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # #1061: the stair_scum mode (shipped after these cases) is not
-            # what they test; pin it off.
-            # #1098: nor the mixed walk and the C exploration's stair exit.
-            # #1140: nor the poison triage (deal_with_poison).
-            for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
-                        "borg_param_deal_with_poison"):
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
-                if changed == 0:
-                    config += f"\n{key} = 0\n"
-            for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
-                key = f"borg_param_caution_{name}"
-                config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
-                if changed == 0:
-                    config += f"\n{key} = {value}\n"
+            if weight is not None:
+                # #1061: the stair_scum mode (shipped after these cases) is not
+                # what they test; pin it off.
+                # #1098: nor the mixed walk and the C exploration's stair exit.
+                # #1140: nor the poison triage (deal_with_poison).
+                for key in ("borg_param_stair_scum", "borg_param_explore_mixed", "borg_param_explore_c_leave_when_done",
+                            "borg_param_deal_with_poison"):
+                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
+                    if changed == 0:
+                        config += f"\n{key} = 0\n"
+                for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
+                    key = f"borg_param_caution_{name}"
+                    config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
+                    if changed == 0:
+                        config += f"\n{key} = {value}\n"
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
@@ -212,8 +220,20 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
 
+    def test_known_up_handoff_with_shipped_settings(self):
+        self.run_case("known-up-handoff", player_class=0, depth=2)
+
+    def test_stair_handoff_descends_with_shipped_settings(self):
+        self.run_case("one-step")
+
+    def test_rising_hold_filters_and_releases_down_stair_flight(self):
+        self.run_case("rising-hold", player_class=0, depth=2)
+
+    def test_rising_hold_cancels_an_unweighted_stair_flow(self):
+        self.run_case("rising-hold", 0, player_class=0, depth=2)
+
     def test_dark_exploration_cannot_keep_restarting_the_same_stair_search(self):
-        self.run_case("interrupted-search", 5)
+        self.run_case("interrupted-search")
 
     def test_dark_exploration_cannot_keep_restarting_the_two_step_floor_search(self):
         self.run_case("interrupted-floor-search", 5, player_class=5, depth=3)
@@ -531,10 +551,14 @@ class DarkVeinLoopTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # The switch under test, replaced in place (it ships 1), and the
-            # exploration mode the incident ran under, breadth-first
-            # (track-p #1201 shipped it 0; the recorded game predates that).
-            pins = [("borg_param_explore_stepable_goals", 1 if on else 0), ("borg_param_explore_breadth_first", 1)]
+            # Preserve the incident's exploration policy while varying only
+            # the switch under test. Track P later turned breadth-first off
+            # (#1201) and enabled stair scumming for Warriors (#1208).
+            pins = [
+                ("borg_param_explore_stepable_goals", 1 if on else 0),
+                ("borg_param_explore_breadth_first", 1),
+                ("borg_param_stair_scum", 0),
+            ]
             for name, value in pins:
                 config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
@@ -544,7 +568,7 @@ class DarkVeinLoopTest(unittest.TestCase):
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
             # The recorded character: a Half-Troll Warrior (race 7, class 0)
             # at DL1. Its birth kit feeds the think; the fixture pins the
-            # traits (23 max HP: breadth-first applies, stair_scum does not).
+            # traits (23 max HP, within the breadth-first threshold).
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
                  "--", "-seed", "101", "-race", "7", "-class", "0", "-menu-letters", "-start-depth", "1", "-keys", "250"],

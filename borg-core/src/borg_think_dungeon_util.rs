@@ -2643,8 +2643,8 @@ pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
         st.stairs.less.y[0] = 36;
         st.stairs.more.num = 0;
         st.borg.c = at;
-        // The recorded Half-Troll Warrior at CL1: 23 HP, so breadth-first
-        // applies (below the threshold) and stair_scum does not (at it).
+        // The recorded Half-Troll Warrior at CL1 has 23 max HP, below the
+        // breadth-first threshold. The fixture disables stair scumming.
         st.borg.avoidance = 23;
         for (index, value) in [(BI_CDEPTH, 1), (BI_CLEVEL, 1), (BI_CURHP, 23), (BI_MAXHP, 23), (BI_LIGHT, 1), (BI_FOOD, 4)] {
             st.borg.trait_[index as usize] = value;
