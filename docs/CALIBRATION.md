@@ -8120,19 +8120,19 @@ longer covers (its maximum HP at or above the class's threshold, or
 `explore_breadth_first = 0`) and that is not yet prepared for its depth.
 Both exploration calls (near and far) use it.
 
-**Not prepared, for now.** #1080's readiness model is not written. Until it
-is, the mixed walk applies where C's own exploring leash applies
-(`c_leash_on`: the depth at least the character level less
-`flow_leash_depth_margin`, below `flow_leash_stairs_max_level`, or the kit
-short, #840). Elsewhere exploration stays C's depth-first order, as today.
+**Leash requirement.** The mixed walk requires C's exploring leash
+(`c_leash_on`). It applies when the depth is at least the character level
+less `flow_leash_depth_margin` and the character is below
+`flow_leash_stairs_max_level`, or when the short-kit leash applies (#840).
 
 **A cap by class** (owner, 2026-11-23: "explore_mix_max_clevel by class").
-The walk applies only up to `explore_mix_max_clevel`; above it the class
-counts as prepared. The per-class values are a hypothesis from #1080's pooled
-table of DL1 deaths per 100 games that reached each CL: the level before the
-first CL whose rate, and every later one, is at most 0.25. Priest and
-Necromancer never get there within the table's CL1–7, so they take 7.
-Compiled 50: no cap, and the walk ends with C's leash at CL20.
+The mixed exploration level must be at or below `explore_mix_max_clevel`.
+The table shows the original #1098 caps, based on #1080's pooled rates of
+DL1 deaths per 100 games that reached each CL. Each cap is the level before
+the first CL whose rate, and every later one, is at most 0.25. Priest and
+Necromancer originally took 7 because their rates stayed above that threshold
+through CL7. #1208 raised the shipped class caps by two levels. The compiled
+value of 50 allows the full character-level range.
 
 | class | DL1 deaths per 100 at CL3 / 4 / 5 / 6 / 7 | depth-first from | `explore_mix_max_clevel` |
 |---|---|---:|---:|
@@ -8170,7 +8170,13 @@ the current depth if the other gates pass. The existing leash still gates
 mixed exploration, and the escape model still prices contact damage using
 actual dungeon depth.
 
-Shipped:
+#1217 ships a separate DL2 readiness threshold, `prepared_dl2_min_clevel`,
+at one level above each class's mixed cap and measures it in actual CL.
+At DL2 with depth adjustment enabled, the two level checks overlap at
+`CL = cap + 1`. At that level a character can pass both checks if the other
+conditions hold. For a Priest, the mixed cap is 9 and that overlap is CL10.
+
+**Settings shipped by #1160**
 
 | | CL1 | CL3 | CL5 | CL7 |
 |---|---:|---:|---:|---:|
