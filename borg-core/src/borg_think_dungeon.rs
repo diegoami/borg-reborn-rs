@@ -94,6 +94,7 @@ pub struct ThinkDungeonState {
     pub(crate) lightless: crate::borg_lightless::Recovery,
     /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
     pub(crate) cursed: crate::borg_cursed::Removal,
+    pub(crate) healing_restock: crate::borg_healing_restock::Restock,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -678,10 +679,10 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
-    // borg-reborn-rs (#1206, review 3): observe the escape context at
-    // every dungeon think, before the goals are re-planned — the
-    // remembered door openings belong to one continuous escape.
+    // borg-reborn-rs (#1206, review 3): capture the escape context before
+    // re-planning goals, so opened doors belong to one continuous escape.
     crate::borg_flow::escape_context_tick(st);
+    crate::borg_healing_restock::observe_dungeon(st);
     crate::borg_flow::observe_flight_retreats(st);
     crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;
@@ -945,6 +946,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // its exit continued, before any other flow.
     if crate::borg_loop::break_loop(st) {
         return choice!("break_loop");
+    }
+
+    if crate::borg_healing_restock::returning(st) && borg_leave_level(st, false) {
+        return choice!("healing_restock_return");
     }
 
     // borg-reborn-rs (#1061): handle the door alarm, peek and return to the

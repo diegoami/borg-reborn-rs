@@ -755,7 +755,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         let mut unfit = None;
         // A core going home (`rising`) is on its way to town: neither a
         // level left early nor a rise counts (re-review #227, 3).
-        let homeward = st.borg.goal.rising;
+        let homeward = st.rising_to_town();
         if r.watch.is_none_or(|w| w.depth != depth) {
             if let Some(w) = r.watch.filter(|_| !homeward) {
                 // To town, the level stays in the plan: the core went to
@@ -1143,7 +1143,7 @@ enum Home {
 
 fn scared_home(st: &mut BorgState) -> Home {
     let depth = st.borg.tr(BI_CDEPTH);
-    if depth == 0 || !(st.borg.goal.fleeing_to_town || st.borg.goal.rising) {
+    if depth == 0 || !(st.borg.goal.fleeing_to_town || st.rising_to_town()) {
         return Home::No;
     }
     if !st.borg.goal.fleeing_to_town && crate::borg_prepared::prepared_for_decision(st, depth).is_none() {

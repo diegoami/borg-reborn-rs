@@ -123,6 +123,16 @@ fn clear_shop_goal(st: &mut BorgState) {
     st.borg.goal.shop = st.borg.goal.ware;
 }
 
+fn choose_shop_sale(st: &mut BorgState) -> bool {
+    if !borg_think_shop_sell_useless(st) {
+        return false;
+    }
+    let desc = goal_item_desc(st);
+    let name = goal_shop_name(st);
+    note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
+    true
+}
+
 /// Four `ESCAPE`s: clear possible errors and leave the store.
 fn leave(st: &mut BorgState) {
     borg_keypress(st, ESCAPE);
@@ -208,6 +218,17 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 
     /* Already flowing to a store to sell something */
     if st.borg.goal.shop != -1 && st.borg.goal.ware != -1 {
+        return true;
+    }
+
+    if let Some(a) = crate::borg_healing_restock::purchase(st) {
+        clear_shop_goal(st);
+        // Buying can identify a carried potion before the normal sale.
+        if crate::borg_healing_restock::carries_unknown_potion(st) && choose_shop_sale(st) {
+            return true;
+        }
+        st.borg.goal.shop = a.at[0] as i16;
+        st.borg.goal.ware = a.at[1] as i16;
         return true;
     }
 
@@ -306,13 +327,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* Step 2 -- Sell items to the shops */
-    if borg_think_shop_sell_useless(st) {
-        /* Message */
-        let desc = goal_item_desc(st);
-        let name = goal_shop_name(st);
-        note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
-
-        /* Success */
+    if choose_shop_sale(st) {
         return true;
     }
 

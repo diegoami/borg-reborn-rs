@@ -1926,6 +1926,35 @@ pub fn inven_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {
     CarriedObject::with_kind(access, unsafe { *(*player_ref().upkeep).inven.add(i) })
 }
 
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
+    use crate::headers::list_tvals_h::TV_POTION;
+    use crate::headers::object_h::{object, object_kind};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+    }
+
+    // SAFETY: the native fixture runs on the engine thread in town after
+    // birth. The kind comes from the live table and the engine owns both
+    // allocations after inven_carry. Lend state for any inventory events.
+    lend(st, || unsafe {
+        let kind = lookup_kind(TV_POTION as i32, sval);
+        assert!(!kind.is_null() && !(*kind).aware, "fixture potion must be unknown");
+        let obj = object_new();
+        object_prep(obj, kind, 0, MINIMISE);
+        (*obj).known = object_new();
+        object_set_base_known(player, obj);
+        inven_carry(player, obj, false, false);
+    });
+}
+
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
 /// kind.
 pub fn equip_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {

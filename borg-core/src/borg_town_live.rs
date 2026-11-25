@@ -332,6 +332,15 @@ pub fn choose(st: &mut BorgState) -> bool {
             }
         }
     }
+    // Finish shopping normally while carrying unidentified potions. A
+    // purchase may identify the stack before the planner can sell it.
+    if matches!(a.code, action::BUY | action::TAKE_HOME | action::LEAVE) {
+        if let Some(refill) = crate::borg_healing_restock::purchase(st).filter(|_| {
+            a.code == action::LEAVE || !crate::borg_healing_restock::carries_unknown_potion(st)
+        }) {
+            return set_action(st, refill);
+        }
+    }
     if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
 }

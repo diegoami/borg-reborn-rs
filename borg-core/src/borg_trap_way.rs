@@ -397,7 +397,7 @@ fn usable(st: &mut BorgState, feat: u32) -> bool {
     if feat == FEAT_LESS {
         !engine::player_opt(OPT_birth_force_descend)
     } else {
-        !st.borg.goal.rising
+        !st.rising_to_town()
             && !borg_flow_stairs::continuing_up_stair_search(st)
             && !borg_flow_stairs::more_refused(st, false)
     }

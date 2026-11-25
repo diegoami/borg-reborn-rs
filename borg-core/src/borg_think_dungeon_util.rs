@@ -731,6 +731,9 @@ fn note_with(st: &mut BorgState, prefix: &[u8], text: &[u8], suffix: &[u8]) {
 /// Leave the level if necessary (or bored)
 /// Scumming defined in borg_prepared.
 pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
+    if crate::borg_healing_restock::returning(st) {
+        return crate::borg_healing_restock::follow_return(st);
+    }
     // borg-reborn-rs (#208): in town, an errand's trip starts by the stairs.
     if let Some(r) = crate::shell::on_leave_level(st, bored) {
         return r;

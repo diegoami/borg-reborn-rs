@@ -110,7 +110,7 @@ pub(crate) fn prepared_for_decision(st: &mut BorgState, depth: i32) -> Option<Re
 
 /// `borg_restock(depth)` as C returns it (as `borg_prepared_c`).
 pub fn borg_restock_c(st: &mut BorgState, depth: i32) -> Option<Vec<u8>> {
-    let r = borg_restock(st, depth);
+    let r = restock_for_return(st, depth);
     reason_c(st, r)
 }
 
@@ -885,7 +885,11 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
 /// Note that we ignore "restock" issues for the first several turns
 /// on each level, to prevent repeated "level bouncing".
 pub fn borg_restock(st: &mut BorgState, depth: i32) -> Option<Reason> {
-    if let Some(reason) = borg_restock_base(st, depth) {
+    restock(st, depth, true)
+}
+
+fn restock(st: &mut BorgState, depth: i32, check_cures: bool) -> Option<Reason> {
+    if let Some(reason) = borg_restock_base(st, depth, check_cures) {
         return Some(reason);
     }
     // borg-reborn-rs (#840, remedies a and c): the kit is part of the rule at
@@ -894,7 +898,7 @@ pub fn borg_restock(st: &mut BorgState, depth: i32) -> Option<Reason> {
 }
 
 /// `borg_restock` as C has it.
-fn borg_restock_base(st: &mut BorgState, depth: i32) -> Option<Reason> {
+fn borg_restock_base(st: &mut BorgState, depth: i32, check_cures: bool) -> Option<Reason> {
     // We are now looking at our preparedness
     if -1 == st.borg.ready_morgoth {
         st.borg.ready_morgoth = 0;
@@ -905,11 +909,11 @@ fn borg_restock_base(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return r.map(|r| Reason::new(ReasonMessage::Restock(line_index(&st.formulas.restock, r)), "dynamic_restock_formula", 0, 1, ">="));
     }
 
-    restock_static(st, depth)
+    restock_static(st, depth, check_cures)
 }
 
 /// The part of `borg_restock` without dynamic formulas.
-fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
+fn restock_static(st: &BorgState, depth: i32, check_cures: bool) -> Option<Reason> {
     let b = &st.borg;
 
     // *** Level 1 ***
@@ -963,7 +967,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     }
 
     // Potions of Cure Wounds
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 1 {
+    if check_cures && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 1 {
         return Some(Reason::fixed("restock clw+csw+ccw", "cures", b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW), 1));
     }
 
@@ -980,7 +984,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     }
 
     // Must have "cure"
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
+    if check_cures && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
         return Some(Reason::fixed("restock clw + csw + ccw ", "cures", b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW), 2));
     }
 
@@ -997,7 +1001,7 @@ fn restock_static(st: &BorgState, depth: i32) -> Option<Reason> {
     // *** Level 20 - 35  ***
 
     // Must have "cure"
-    if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACSW) + b.tr(BI_ACCW) < 4 {
+    if check_cures && b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACSW) + b.tr(BI_ACCW) < 4 {
         return Some(Reason::fixed("restock csw + ccw < 4", "cure_serious_or_critical", b.tr(BI_ACSW) + b.tr(BI_ACCW), 4));
     }
 
@@ -1066,6 +1070,10 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
         return None;
     }
 
+    if let Some((held, required)) = crate::borg_healing_restock::return_requirement(st) {
+        return Some(Reason::fixed("restock healing potions", "healing_potions", held, required));
+    }
+
     // Always spend time on a level unless 100
     if borg_timer(st, st.borg.time.level) < 100 && st.borg.tr(BI_CDEPTH) != 100 {
         return None;
@@ -1084,7 +1092,14 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
     }
 
     // need to return to town if restock is needed
-    borg_restock(st, st.borg.tr(BI_CDEPTH))
+    restock_for_return(st, st.borg.tr(BI_CDEPTH))
+}
+
+fn restock_for_return(st: &mut BorgState, depth: i32) -> Option<Reason> {
+    // A failed potion trip defers the ordinary cure checks through DL35.
+    // Preparedness and the deeper Heal and *Healing* checks still apply.
+    let check_cures = !crate::borg_healing_restock::deferred(st);
+    restock(st, depth, check_cures)
 }
 
 /// borg-reborn-rs (#557): a descent to `depth` needs a Word of Recall from
@@ -1098,6 +1113,24 @@ mod recall_depth_tests {
     use super::needs_recall;
 
     #[test]
+    fn deferring_cures_keeps_the_deep_healing_requirements() {
+        use super::*;
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.borg.has = vec![0];
+        for (index, value) in [
+            (BI_LIGHT, 2), (BI_FOOD, 3), (BI_APHASE, 1),
+            (BI_ATELEPORT, 4), (BI_ATELEPORTLVL, 1),
+        ] {
+            st.borg.trait_[index as usize] = value;
+        }
+        assert!(restock_static(&st, 6, false).is_none());
+        assert_eq!(restock_static(&st, 65, false).unwrap().requirement.name, "healing");
+        st.borg.trait_[BI_AHEAL as usize] = 1;
+        assert_eq!(restock_static(&st, 100, false).unwrap().requirement.name, "star_heal");
+    }
+
+    #[test]
     fn shallow_gates_keep_first_failure_and_report_the_compared_operands() {
         use super::*;
         let mut st = BorgState::default();
@@ -1108,7 +1141,7 @@ mod recall_depth_tests {
         assert_eq!(fail(&st), Requirement { name: "light_radius", actual: 0, required: 1, relation: ">=" });
         st.borg.trait_[BI_LIGHT as usize] = 1;
         assert_eq!(fail(&st), Requirement { name: "food", actual: 0, required: 5, relation: ">=" });
-        assert_eq!(restock_static(&st, 5).unwrap().requirement,
+        assert_eq!(restock_static(&st, 5, true).unwrap().requirement,
             Requirement { name: "food", actual: 0, required: 3, relation: ">=" });
         st.borg.trait_[BI_FOOD as usize] = 5;
         assert_eq!(fail(&st), Requirement { name: "prepared_dl2_min_hp", actual: 0, required: 30, relation: ">=" });

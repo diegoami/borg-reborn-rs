@@ -449,7 +449,7 @@ fn known_wall(st: &BorgState, y: i32, x: i32) -> bool {
 /// prepared for the next depth and not rising.
 fn usable_kinds(st: &mut BorgState) -> (bool, bool) {
     let up = !engine::player_opt(OPT_birth_force_descend);
-    let down = !st.borg.goal.rising
+    let down = !st.rising_to_town()
         && crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none();
     (up, down)
 }

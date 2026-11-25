@@ -14,6 +14,7 @@ use std::sync::{Mutex, OnceLock};
 
 #[derive(Debug, Default)]
 struct Selection {
+    healing_potions: Option<i32>,
     name: Option<&'static str>,
     source: Option<&'static str>,
     errand: Option<(String, Option<i32>)>,
@@ -205,6 +206,8 @@ struct Line {
     depth: i32,
     hp: i32,
     max_hp: i32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    healing_potions: Option<i32>,
     sp: i32,
     max_sp: i32,
     danger: i32,
@@ -294,6 +297,14 @@ macro_rules! choice {
 }
 pub(crate) use choice;
 
+pub(crate) fn observe_healing_potions(st: &BorgState) {
+    FRAMES.with(|frames| {
+        if let Some(frame) = frames.borrow_mut().last_mut() {
+            frame.healing_potions = Some(crate::borg_healing_restock::carried_potions(st));
+        }
+    });
+}
+
 pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
     if !active {
         return;
@@ -329,6 +340,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         depth,
         hp: st.borg.tr(BI_CURHP),
         max_hp: st.borg.tr(BI_MAXHP),
+        healing_potions: frame.healing_potions,
         sp: st.borg.tr(BI_CURSP),
         max_sp: st.borg.tr(BI_MAXSP),
         danger,
@@ -339,7 +351,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
             leaving: st.borg.goal.leaving,
             fleeing: st.borg.goal.fleeing,
             fleeing_to_town: st.borg.goal.fleeing_to_town,
-            rising: st.borg.goal.rising,
+            rising: st.rising_to_town(),
         },
         errand,
         keys: st.io.queued_keys(),
@@ -448,6 +460,7 @@ mod tests {
             depth: 3,
             hp: 12,
             max_hp: 40,
+            healing_potions: Some(1),
             sp: 2,
             max_sp: 9,
             danger: 15,
@@ -474,5 +487,9 @@ mod tests {
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));
         assert_eq!(serde_json::from_str::<Line>(&text).unwrap(), line);
+
+        let mut old: serde_json::Value = serde_json::from_str(&text).unwrap();
+        old.as_object_mut().unwrap().remove("healing_potions");
+        assert_eq!(serde_json::from_value::<Line>(old).unwrap().healing_potions, None);
     }
 }

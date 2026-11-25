@@ -1,0 +1,63 @@
+## 2026-11-25: Return to restock healing potions (#1214)
+
+### What was done
+
+Track P proposes a minimum of two known healing potions. Below it, the Borg
+can return when the stock it last saw in town and its current gold can
+cover the deficit. This covers an empty pack after a never-stocked
+departure when the refill becomes affordable. Free Home stock can justify
+one visit. Paid retries after a short departure require new funding.
+Depleting a previously stocked reserve still requests a return. The funded
+check follows the flask resupply rule. [#1184](https://github.com/diegoami/borg-reborn-rs/issues/1184)
+
+The return survives level changes while the reserve is short. Picking up
+enough healing ends the restock objective and its stair walk. A separate
+town objective and any Recall already underway remain active. The return
+tries a reachable up stair first and uses Recall when the exposure check
+permits it. Both town shoppers can refill the reserve. The live planner
+executes planned disposal first and follows its normal plan while it
+carries an unidentified potion. The legacy shopper gives its seller a
+chance to identify carried unknown potions when a refill is ready. A failed
+trip defers ordinary cure checks through DL35. The deeper Heal and
+star-healing checks remain independent.
+[#1212 stair routing](https://github.com/diegoami/borg-reborn-rs/pull/1212)
+
+### What was found
+
+The native cases cover one potion remaining, depletion, a blocked stair,
+insufficient gold, and shopping through both strategies. The review added
+unit coverage of first funding, free Home offers, failed visits, and the
+deep-level restock checks. The core trace records the last observed known
+potion count in both arms of the comparison. The re-review added a
+replenishment test that also checks the independent town objective and
+its stair flow. The third review reproduced the purchase that identified
+the carried Orange Speckled stack before sale. The enabled replay now
+verifies the return, sale, and identification. The historical confusion
+replay retains all ten assertions, with Track P's #1204 preparedness pins
+and restock off.
+On the same synced build (`7cbdf0ab`), the Warrior seed 101 restock arm
+requested town at turn 8,074 and bought two cure potions at 8,639. The
+first key difference was at turn 8,104. Both arms survived to the cap
+and reached maximum DL1, with CL4 on and CL2 off. All four smoke runs
+match the refreshed reference.
+[Round 3 review](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7149467518)
+[Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
+
+The fourth review confirmed green CI. A native regression now starts the
+legacy shopper with an unidentified Cure Light Wounds potion and verifies
+the game records its sale before the first potion purchase and the refill
+reaches the reserve. Three unchanged smoke summaries retain their original
+wall-clock timings. All four cases still match.
+[Round 4 review](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7150393556)
+[Legacy test finding](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7150442170)
+
+### What is left
+
+The paired population comparison awaits dispatch. [Zoo #791](https://github.com/diegoami/borg-zoo/issues/791)
+
+### Owner decisions
+
+The draft keeps the switch enabled with a two-potion minimum. The owner
+can confirm that value after the Zoo results and decide when review is
+complete. The paid retry guard and preservation of the deeper healing
+checks are part of the proposed behavior.

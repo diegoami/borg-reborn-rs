@@ -158,3 +158,10 @@ pub struct BorgState {
     /// `borg_game_ratio`
     pub traits: TraitState,
 }
+
+impl BorgState {
+    /// The current town objective, including a healing restock with its own lifetime.
+    pub(crate) fn rising_to_town(&self) -> bool {
+        self.borg.goal.rising || crate::borg_healing_restock::returning(self)
+    }
+}

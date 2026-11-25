@@ -293,6 +293,7 @@ jobs:
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal harness/build.sh
       - run: python3 engine/tests/test_combat_heal.py
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
       - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
       - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
       - run: python3 engine/tests/test_stair_handoff.py StaleStairMoreTest
