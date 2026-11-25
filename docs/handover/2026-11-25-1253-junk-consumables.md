@@ -49,3 +49,5 @@ inventory commands. The test build positions an awake monster at the
 requested range or puts the stocked character on town stairs.
 `BORG_TEST_FEATURES=test-junk-consumables harness/build.sh` builds the
 fixture and `python3 engine/tests/test_junk_consumables.py` runs it.
+The three exact-turn stair replays pin both settings off to preserve
+their recorded inventory actions and incident turns.
