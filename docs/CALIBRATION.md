@@ -9074,18 +9074,19 @@ dungeon the same-kind priority drop is limited to stacks worth at most 15 gold,
 the first positive threshold in the ordinary junk policy. It runs after
 urgent travel and recovery.
 
-The unknown-rune exception compares Leather Sandals visibly at `[1,+0]`
-before max DL5 and requires a seven-point advantage in the worn pair's
-enchantment. The six-item fixture frees one slot with the margin disabled
-and two when it is seven, preserving the possible ego, nexus and speed
-swaps, and the +8 upgrade. The native test exercises the actual
-description and ignore inscription. The depth and margin are hypotheses
-pending a sized Zoo comparison (RULES 14).
+The priority comparison requires a fully identified spare and equipped
+item. It keeps spares whose descriptions include an inscription block.
+#1265 retired the former Leather Sandals exception. The native regressions
+cover an unidentified spare that stays in the pack and the sale of
+identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2187` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2188` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2158` |
+
+The removal establishes the control for the paired pilot of the #1264
+redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
+[Zoo pilot #804](https://github.com/diegoami/borg-zoo/issues/804)
 
 ## Exploration reserves and full packs (#1264)
 
