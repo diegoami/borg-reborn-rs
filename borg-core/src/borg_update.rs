@@ -672,6 +672,7 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
         wank.is_take = g.first_kind.is_some() || is_mimic;
         wank.is_kill = g.m_idx != 0 && !is_mimic;
+        // A sleeping mimic still appears to the Borg as an object.
         st.update.monster_in_sight |= wank.is_kill;
         st.update.wanks[idx(n)] = wank;
     }

@@ -1428,14 +1428,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_recharging");
     }
 
-    // Use expendable supplies before throwing things away (#1250).
-    if borg_use_idle(st) {
-        return choice!("borg_use_idle");
-    }
-
     /* Drop junk */
     if borg_drop_junk(st) {
         return choice!("borg_drop_junk");
+    }
+
+    // Prefer ordinary junk disposal, then use expendable supplies before a forced drop (#1250).
+    if borg_use_idle(st) {
+        return choice!("borg_use_idle");
     }
 
     /* Drop items to make space */

@@ -29,6 +29,8 @@ def state_at(states, turn):
 # two attack settings). The
 # incident classes are Warrior (0) and Mage (1), so only their class lines exist.
 PINNED_TOWN_SETTINGS = [
+    # #1250: keep the original use and timing of Magic Mapping.
+    ("item_use_idle", 0),
     ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
     ("town_store_keep_min", 0), ("town_recall_curve_scale_percent", 0),
     ("town_recall_urgent", 0),
