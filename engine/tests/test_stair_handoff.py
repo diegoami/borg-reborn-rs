@@ -278,19 +278,22 @@ class HealingRestockTest(unittest.TestCase):
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"healing-restock-{case}")
-            if case == "town":
+            if case.startswith("town"):
                 # Isolate purchase execution from the unrelated town-monster flight.
                 env.update(BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                            BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                            BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0")
             options = ["-start-depth", str(depth)] if depth else []
+            messages = Path(directory) / "messages.log"
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
-                 "--", "-seed", "101", "-race", "3", "-class", "0", "-menu-letters", *options, "-keys", "300"],
+                 "--", "-seed", "101", "-race", "3", "-class", "0", "-menu-letters", *options,
+                 "-msglog", str(messages), "-keys", "300"],
                 cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn(f"#1214 healing restock passed: {case}", result.stdout)
+            return messages.read_text()
 
     def test_shallow_depletion_blocked_route_and_retry_funding(self):
         self.run_case("dungeon", 2)
@@ -302,6 +305,14 @@ class HealingRestockTest(unittest.TestCase):
         for live in (True, False):
             with self.subTest(live=live):
                 self.run_case("town", 0, live)
+
+    def test_legacy_restock_sells_the_unknown_potion_before_buying(self):
+        messages = self.run_case("town-legacy-unknown", 0, live=False)
+        sale = re.search(r"You had a Potion of Cure Light Wounds", messages)
+        purchase = re.search(r"You bought [^\n]*\bPotion\b", messages)
+        self.assertIsNotNone(sale)
+        self.assertIsNotNone(purchase)
+        self.assertLess(sale.start(), purchase.start())
 
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")

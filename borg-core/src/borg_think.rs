@@ -231,7 +231,9 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         match case.as_str() {
             "healing-restock-dungeon" => crate::borg_healing_restock::fixture::dungeon(st, false),
             "healing-restock-short" => crate::borg_healing_restock::fixture::dungeon(st, true),
-            "healing-restock-town" => crate::borg_healing_restock::fixture::town(st),
+            "healing-restock-town" | "healing-restock-town-legacy-unknown" => {
+                crate::borg_healing_restock::fixture::town(st, &case);
+            }
             _ => crate::borg_flow_stairs::run_handoff_regression(st, &case),
         }
     }

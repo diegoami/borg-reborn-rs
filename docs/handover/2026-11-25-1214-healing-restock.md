@@ -43,6 +43,14 @@ match the refreshed reference.
 [Round 3 review](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7149467518)
 [Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
 
+The fourth review confirmed green CI. A native regression now starts the
+legacy shopper with an unidentified Cure Light Wounds potion and verifies
+the game records its sale before the first potion purchase and the refill
+reaches the reserve. Three unchanged smoke summaries retain their original
+wall-clock timings. All four cases still match.
+[Round 4 review](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7150393556)
+[Legacy test finding](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7150442170)
+
 ### What is left
 
 The paired population comparison awaits dispatch. [Zoo #791](https://github.com/diegoami/borg-zoo/issues/791)

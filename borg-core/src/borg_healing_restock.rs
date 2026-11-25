@@ -616,7 +616,7 @@ pub(crate) mod fixture {
 
     // Use the native town and the production shop chooser and purchase UI.
     // The hook returns until a subsequent inventory read observes the potion.
-    pub(crate) fn town(st: &mut BorgState) {
+    pub(crate) fn town(st: &mut BorgState, case: &str) {
         assert_eq!(
             st.borg.tr(BI_CDEPTH),
             0,
@@ -625,9 +625,18 @@ pub(crate) mod fixture {
         assert!(enabled(st));
         if st.think_dungeon.healing_restock.phase == Phase::NoReserve {
             assert_eq!(carried_potions(st), 0);
+            if case == "healing-restock-town-legacy-unknown" {
+                assert!(!crate::borg_town_live::active(st));
+                engine::carry_test_potion(st, st.item_val.sv_potion_cure_light);
+                crate::borg_item::borg_find_all_items(st);
+                crate::borg_trait::borg_notice(st, true);
+                assert!(carries_unknown_potion(st));
+                assert_eq!(carried_potions(st), 0);
+            }
             st.think_dungeon.healing_restock.phase = Phase::Returning { started_with: 0 };
         } else if carried_potions(st) >= minimum() {
-            println!("#1214 healing restock passed: town");
+            let case = case.strip_prefix("healing-restock-").unwrap();
+            println!("#1214 healing restock passed: {case}");
             std::process::exit(0);
         }
     }
