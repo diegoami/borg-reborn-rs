@@ -49,3 +49,8 @@ Stopping torch purchases at the fuel target is tracked in
 The first-town Ranger Phase Door fixture uses the historical shopping
 order and weight policy. Its original purchase and first-contact
 assertions passed for both the zero-scroll and two-scroll reserves.
+
+The departure weight buffer is set per class in tenths of a pound.
+The agreed range is 30 for Mage through 150 for Warrior. The provisional
+intermediate values are Necromancer 40, Druid 50, Priest 60, Rogue 75,
+Ranger 90, Paladin 110, and Blackguard 130.

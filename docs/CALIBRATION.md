@@ -6618,7 +6618,8 @@ over its allowance (`BI_CARRY / 2`) and stopped as soon as it was under, so
 a pack at the allowance had no room for a 0.5 lb scroll (`object.txt`,
 Word of Recall, weight 5).
 
-- **`town_departure_free_weight`** (compiled 0, **shipped 50**: 5 lb) and
+- **`town_departure_free_weight`** (compiled 0, common profile 50: 5 lb,
+  with class overrides in [#1256](#town-arrival-unloading-and-weight-limited-shopping-1256)) and
   **`town_departure_free_slots`** (compiled 0, **shipped 2**). The planner
   (`dispositions`, `borg_town_utility.rs`) stores at the Home until this
   room is free under the allowance, plus the room the Recall reserve still
@@ -6627,7 +6628,7 @@ Word of Recall, weight 5).
   carried). The purchases (`step`, `borg_town_record.rs`) and the Home
   withdrawals leave the departure room free, so the scroll fits on top of
   it. Short of slots, whole stacks go, lowest keep value per weight first.
-  Each departure notes "# Town departure room: weight W free (keep 50),
+  Each departure notes "# Town departure room: weight W free (keep T),
   slots S free (keep 2)" once a visit.
 - **`town_store_keep_min`** (compiled 0, **shipped 3**; owner: "prefer
   objects that they have an abundance of, typically healing potions and
@@ -8816,6 +8817,11 @@ inventory after each useful copy and aims for the configured free carry
 weight. If surplus runs out, it can exchange equipment for a lighter
 piece and deposit the displaced gear at Home. Ordinary purchases and Home
 withdrawals fit within the current carry allowance.
+
+The departure weight buffer comes from each class's `borg_<class>.txt`.
+In tenths of a pound, it is 30 for Mage, 40 for Necromancer, 50 for
+Druid, 60 for Priest, 75 for Rogue, 90 for Ranger, 110 for Paladin, 130
+for Blackguard, and 150 for Warrior. These values are provisional.
 
 `town_shop_overloaded = 1` keeps the shopping-first control (#1239,
 plan schema 21 with the Home reserve policy off).
