@@ -5,7 +5,8 @@ items that can improve a combat stat or contribute a property, lighter
 gear, and designated swaps. In the dungeon, drop the inferior stack on a
 safe floor before ordinary pack clearing. The existing `borg ignore`
 inscription keeps it out of pickup. In town, prefer an available buyer
-and preserve urgent purchases.
+and preserve urgent purchases. The historical stair replays set
+`borg_param_junk_inferior_spares = 0` to keep their recorded routes.
 
 The unknown-rune case is limited to Leather Sandals with visible
 `[1,+0] {??}` before max DL5. The shipped

@@ -1682,13 +1682,14 @@ fn inferior_spare(
 pub(crate) fn inferior_spares(st: &BorgState) -> impl Iterator<Item = (usize, &borg_item)> {
     use crate::params::{value, Param};
     let max_depth = st.borg.tr(BI_MAXDEPTH);
+    let pack_end = if value(Param::junk_inferior_spares) == 0 { 0 } else { pack_size() as usize };
     let sandal_ac_margin = value(Param::junk_inferior_sandal_ac_margin);
-    let sandal_sval = if sandal_ac_margin > 0 && max_depth < 5 {
+    let sandal_sval = if pack_end > 0 && sandal_ac_margin > 0 && max_depth < 5 {
         engine::lookup_sval(TV_BOOTS as i32, "Pair of Leather Sandals")
     } else {
         -1
     };
-    st.items.items.iter().take(pack_size() as usize).enumerate().filter(move |&(slot, item)| {
+    st.items.items.iter().take(pack_end).enumerate().filter(move |&(slot, item)| {
         if item.iqty == 0 || is_swap(st, slot as i32) {
             return false;
         }
