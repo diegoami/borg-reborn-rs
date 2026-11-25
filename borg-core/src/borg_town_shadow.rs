@@ -292,6 +292,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     let pack_end = inven_wield() as usize;
     let home_policy = borg_town_home::enabled(st);
     let can_decurse = home_policy && crate::borg_item_decurse::can_decurse(st);
+    let preferred_dagger = home_policy.then(|| borg_town_home::preferred_elemental_dagger(st)).flatten();
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64, worn_gain: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
@@ -328,7 +329,10 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                 [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
             })
         } else { None };
-        let mut home_role = if home_policy {
+        let redundant_dagger = borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
+        let mut home_role = if redundant_dagger {
+            Role::Reject
+        } else if home_policy {
             borg_town_home::classify(st, it, can_decurse, worn_gain)
         } else { Role::Ordinary };
         if home_role == Role::LatePotion {
@@ -344,7 +348,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             keep_last_book: protects_class_book(it),
             protect_disposal: protected_supply
                 || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
-                    || home_policy && it.art_idx != 0))
+                    || home_policy && it.art_idx != 0 && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),

@@ -27,10 +27,9 @@ DROPPED = (
 KEPT = (
     "Dagger of Slay Dragon (1d6) (+4,+1)",
     "Spear of *Slay Troll* (1d6) (+1,+1) <+2>",
-    "Dagger 'Narthanc' (1d4) (+9,+12) [+10]",
-    "Dagger 'Nimthanc' (1d4) (+9,+12) [+10]",
     "Sling of Power (x2) (+12,+15)",
 )
+ELEMENTAL_DAGGERS = tuple(f"Dagger '{name}' (1d4) (+9,+12) [+10]" for name in ("Dethanc", "Nimthanc", "Narthanc"))
 TULWAR = "Tulwar of *Slay Dragon* (2d4) (+2,+4) <+2>"
 SHOVEL = "Shovel of Digging (1d2) (+4,+3) <+4>"
 
@@ -79,22 +78,20 @@ def check_warrior(decisions, log):
     assert TULWAR in last_home and TULWAR not in last, (last, last_home)
     assert {"Main Gauche of Lightning (1d5) (+4,+3)", "Rapier of Slay Orc (1d6) (+2,+4)",
             "Tulwar of Flame (2d4) (+6,+8)"}.isdisjoint(last_home), last_home
-    assert "Dagger 'Dethanc' (1d4) (+9,+12) [+10]" in last_home, last_home
+    assert (last | last_home).intersection(ELEMENTAL_DAGGERS) == {ELEMENTAL_DAGGERS[0]}, (last, last_home)
     print("A1 dropped four redundant carried weapons, brought three devices to town, and cleared three duplicate Home weapons.")
 
 
 def check_mage(decisions, _log):
-    daggers = {"Dagger 'Dethanc' (1d4) (+9,+12) [+10]", "Dagger 'Nimthanc' (1d4) (+9,+12) [+10]"}
     first = {item["desc"] for item in decisions[0]["pack"]}
-    assert daggers <= first and len(decisions[0]["home"]) == 24, decisions[0]
+    assert set(ELEMENTAL_DAGGERS[:2]) <= first and len(decisions[0]["home"]) == 24, decisions[0]
     for decision in decisions[1:]:
         pack = {item["desc"] for item in decision["pack"]}
         home = {item["desc"] for item in decision["home"]}
-        if home >= daggers and pack.isdisjoint(daggers):
-            assert "Dagger 'Narthanc' (1d4) (+9,+12) [+10]" in home, home
-            print("A2 stored Dethanc and Nimthanc independently at Home alongside Narthanc.")
+        if home.intersection(ELEMENTAL_DAGGERS) == {ELEMENTAL_DAGGERS[2]} and pack.isdisjoint(ELEMENTAL_DAGGERS):
+            print("A2 cleared Dethanc and Nimthanc and kept Narthanc as the single elemental backup.")
             return
-    raise AssertionError("A2 did not store both carried daggers at Home")
+    raise AssertionError("A2 kept redundant elemental daggers beyond the first town visit")
 
 
 if __name__ == "__main__":

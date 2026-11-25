@@ -202,6 +202,43 @@ fn device(st: &BorgState, item: &borg_item) -> bool {
     .is_empty()
 }
 
+/// The original elemental daggers share melee stats and each supplies a
+/// single basic resistance, its brand and a bolt activation (artifact.txt).
+fn elemental_dagger(item: &borg_item) -> Option<u32> {
+    use crate::borg_headers::borg_trait_h::{BI_RCOLD, BI_RELEC, BI_RFIRE};
+    if item.iqty == 0 || !item.aware || !item.ident || item.cursed || item.art_idx == 0
+        || u32::from(item.tval) != TV_SWORD
+    {
+        return None;
+    }
+    match engine::artifact_name_or_empty(usize::from(item.art_idx)) {
+        b"'Narthanc'" => Some(BI_RFIRE),
+        b"'Nimthanc'" => Some(BI_RCOLD),
+        b"'Dethanc'" => Some(BI_RELEC),
+        _ => None,
+    }
+}
+
+pub(crate) fn preferred_elemental_dagger(st: &BorgState) -> Option<u8> {
+    let wield = crate::borg_item::inven_wield() as usize;
+    let worn = &st.items.items[wield];
+    if elemental_dagger(worn).is_some() { return Some(worn.art_idx); }
+    let home = &st.store.shops[crate::borg_store::BORG_HOME].ware;
+    home.iter().map(|item| (true, item)).chain(st.items.items[..wield].iter().map(|item| (false, item)))
+        .filter_map(|(at_home, item)| {
+            let resist = elemental_dagger(item)?;
+            let fills_gap = st.borg.tr(resist) == 0;
+            Some(((fills_gap, at_home, item.to_h, item.to_d, item.value, item.art_idx), item.art_idx))
+        })
+        .max_by_key(|(score, _)| *score).map(|(_, artifact)| artifact)
+}
+
+pub(crate) fn redundant_elemental_dagger(st: &BorgState, item: &borg_item, preferred: Option<u8>) -> bool {
+    preferred.is_some_and(|artifact| artifact != item.art_idx)
+        && elemental_dagger(item).is_some_and(|resist| st.borg.tr(resist) > 0)
+        && !crate::borg_town_live::retained_gear(st, item)
+}
+
 pub(crate) fn gear_slot(item: &borg_item) -> Option<usize> {
     use crate::borg_inventory::borg_wield_slot;
     if !item.aware || matches!(u32::from(item.tval), TV_LIGHT | TV_DIGGING) && !known_special(item) {
