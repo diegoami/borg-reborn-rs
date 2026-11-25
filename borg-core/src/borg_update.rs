@@ -115,6 +115,8 @@ pub struct UpdateState {
     pub wanks: Vec<BorgWank>,
     /// `borg_failure`: the last command failed (set by borg-messages.c)
     pub failure: bool,
+    /// The door targeted by the previous flow's melee Alter, if any.
+    alter_door_attack: Option<AlterDoorAttack>,
     /// `borg_detect_wall`: panels where walls were detected
     pub detect_wall: Vec<Vec<bool>>,
     /// `borg_detect_trap`
@@ -145,6 +147,7 @@ impl Default for UpdateState {
             wank_num: 0,
             wanks: Vec::new(),
             failure: false,
+            alter_door_attack: None,
             detect_wall: Vec::new(),
             detect_trap: Vec::new(),
             detect_door: Vec::new(),
@@ -156,6 +159,72 @@ impl Default for UpdateState {
             o_w_x: -1,
             o_w_y: -1,
             old_c: loc { x: -1, y: -1 },
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct AlterDoorAttack {
+    target: loc,
+    kill: u8,
+    before: u32,
+    lock_failed: bool,
+}
+
+/// #1229: the monster memory can make a doorway look like floor to a flow.
+/// Use the player-visible map to remember what Alter is actually aimed at.
+pub(crate) fn note_alter_door_attack(st: &mut BorgState, target: loc, kill: u8) {
+    if st.borg.tr(BI_ISCONFUSED) != 0 || st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISIMAGE) != 0 {
+        return;
+    }
+    let grid = engine::map_info(target.x, target.y);
+    if grid.in_view && grid.m_idx == 0 && matches!(grid.f_idx, FEAT_CLOSED | FEAT_OPEN) {
+        st.update.alter_door_attack = Some(AlterDoorAttack { target, kill, before: grid.f_idx, lock_failed: false });
+    }
+}
+
+pub(crate) fn note_alter_lock_failure(st: &mut BorgState) {
+    if let Some(attack) = &mut st.update.alter_door_attack {
+        attack.lock_failed = true;
+    }
+}
+
+/// #1229: `do_cmd_alter_aux` attacks an occupant before touching the terrain
+/// (`cmd-cave.c:950-994` at 574b618c). A door toggle or failed pick means
+/// the Alter reached the door. Reconcile it before the stale kill can
+/// overwrite the observed terrain with floor.
+fn observe_alter_door(st: &mut BorgState, at: loc, grid: engine::MapGrid) {
+    let Some(attack) = st.update.alter_door_attack.filter(|attack| attack.target == at) else {
+        return;
+    };
+    st.update.alter_door_attack = None;
+    let toggled = matches!((attack.before, grid.f_idx), (FEAT_CLOSED, FEAT_OPEN) | (FEAT_OPEN, FEAT_CLOSED));
+    let lock_failed = attack.lock_failed && attack.before == FEAT_CLOSED && grid.f_idx == FEAT_CLOSED;
+    if grid.m_idx != 0 || !(toggled || lock_failed) {
+        return;
+    }
+
+    if st.cave.grid(at.x, at.y).kill == attack.kill {
+        let kill = st.kills.kills[usize::from(attack.kill)];
+        if kill.r_idx != 0 && kill.pos == at {
+            borg_delete_kill(st, i32::from(attack.kill));
+        } else {
+            // The slot was cleared or reused after a reset. Remove the old
+            // grid link while preserving any monster at the slot's new grid.
+            st.cave.grid_mut(at.x, at.y).kill = 0;
+            st.danger.wipe = true;
+        }
+    }
+
+    if grid.f_idx == FEAT_OPEN && !attack.lock_failed {
+        // Remove just our opening. Other doors may have been opened by a
+        // monster on this same turn, and a later close can re-add this door.
+        let track = &mut st.flow.track_closed;
+        let len = track.num as usize;
+        if let Some(i) = (0..len).find(|&i| track.at(i) == (at.y, at.x)) {
+            track.x.copy_within(i + 1..len, i);
+            track.y.copy_within(i + 1..len, i);
+            track.num -= 1;
         }
     }
 }
@@ -339,6 +408,7 @@ fn borg_update_map(st: &mut BorgState) {
         }
         dy += 1;
     }
+    st.update.alter_door_attack = None;
 }
 
 /// A floor grid the engine shows neither glowing nor lit: `BORG_DARK`, and
@@ -380,6 +450,7 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
 
     // Cheat the exact information from the screen
     let g = engine::map_info(x, y);
+    observe_alter_door(st, loc { x, y }, g);
 
     let ag = st.cave.grid_mut(x, y);
 
@@ -1271,6 +1342,69 @@ fn track_wanks(
     }
 }
 
+fn mark_monster_terrain(st: &mut BorgState) {
+    // make sure features that have monsters on them that can't passwall
+    // are marked FEAT_FLOOR
+    let mut i = 1;
+    while i < i32::from(st.kills.nxt) {
+        let kill = st.kills.kills[idx(i)];
+        i += 1;
+
+        // Skip dead monsters
+        if kill.r_idx == 0 {
+            continue;
+        }
+
+        // Ignore monsters who can pass through walls
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL) {
+            continue;
+        }
+
+        // Make sure this grid keeps Floor grid
+        st.cave.grid_mut(kill.pos.x, kill.pos.y).feat = FEAT_FLOOR as u8;
+    }
+}
+
+fn check_opened_doors(st: &mut BorgState) {
+    // Examine changing doors while shallow
+    // borg-reborn-rs (#503): only with caution_scary_named_monsters
+    if st.borg.tr(BI_CLEVEL) <= 5
+        && st.borg.tr(BI_CDEPTH) != 0
+        && st.flow.track_closed.num != 0
+        && crate::borg_caution::scary_named_monsters()
+    {
+        // Scan all known closed doors
+        let mut i = 0;
+        while i < i32::from(st.flow.track_closed.num) {
+            let x = st.flow.track_closed.x[idx(i)];
+            let y = st.flow.track_closed.y[idx(i)];
+            i += 1;
+
+            let feat = u32::from(st.cave.grid(x, y).feat);
+            if feat == FEAT_OPEN || feat == FEAT_BROKEN {
+                // This door was not opened by me
+                borg_note(
+                    st,
+                    &format!("# Monster opened door at {y},{x}.  That's scary."),
+                );
+                st.borg.mon.scary = true;
+                st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
+            }
+        }
+    }
+
+    // borg-reborn-rs (#1061): stair_scum, a known closed door now open that
+    // the Borg did not open (its own opening clears the list).
+    if crate::borg_stair_scum::active(st) {
+        for i in 0..usize::try_from(st.flow.track_closed.num).unwrap_or(0) {
+            let (x, y) = (st.flow.track_closed.x[i], st.flow.track_closed.y[i]);
+            if matches!(u32::from(st.cave.grid(x, y).feat), FEAT_OPEN | FEAT_BROKEN) {
+                crate::borg_stair_scum::door_opened_by_monster(st, y, x);
+            }
+        }
+    }
+}
+
 /// Look at the screen and update the borg (`borg_update`).
 ///
 /// Uses the "panel" info (`w_x`, `w_y`) cheated from the game. All the
@@ -1390,26 +1524,7 @@ pub fn borg_update(st: &mut BorgState) {
         st.update.do_update_lite = false;
     }
 
-    // make sure features that have monsters on them that can't passwall
-    // are marked FEAT_FLOOR
-    let mut i = 1;
-    while i < i32::from(st.kills.nxt) {
-        let kill = st.kills.kills[idx(i)];
-        i += 1;
-
-        // Skip dead monsters
-        if kill.r_idx == 0 {
-            continue;
-        }
-
-        // Ignore monsters who can pass through walls
-        if engine::race_flag_has(usize::from(kill.r_idx), RF_PASS_WALL) {
-            continue;
-        }
-
-        // Make sure this grid keeps Floor grid
-        st.cave.grid_mut(kill.pos.x, kill.pos.y).feat = FEAT_FLOOR as u8;
-    }
+    mark_monster_terrain(st);
 
     // Let me know if I am correctly positioned for special Morgoth
     // routines; sea of runes (the 24 grids around me hold glyphs)
@@ -1460,43 +1575,7 @@ pub fn borg_update(st: &mut BorgState) {
     // Number of perfect grids
     st.borg.status.anti_summon = floor_grid == 1;
 
-    // Examine changing doors while shallow
-    // borg-reborn-rs (#503): only with caution_scary_named_monsters
-    if st.borg.tr(BI_CLEVEL) <= 5
-        && st.borg.tr(BI_CDEPTH) != 0
-        && st.flow.track_closed.num != 0
-        && crate::borg_caution::scary_named_monsters()
-    {
-        // Scan all known closed doors
-        let mut i = 0;
-        while i < i32::from(st.flow.track_closed.num) {
-            let x = st.flow.track_closed.x[idx(i)];
-            let y = st.flow.track_closed.y[idx(i)];
-            i += 1;
-
-            let feat = u32::from(st.cave.grid(x, y).feat);
-            if feat == FEAT_OPEN || feat == FEAT_BROKEN {
-                // This door was not opened by me
-                borg_note(
-                    st,
-                    &format!("# Monster opened door at {y},{x}.  That's scary."),
-                );
-                st.borg.mon.scary = true;
-                st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
-            }
-        }
-    }
-
-    // borg-reborn-rs (#1061): stair_scum, a known closed door now open that
-    // the Borg did not open (its own opening clears the list).
-    if crate::borg_stair_scum::active(st) {
-        for i in 0..usize::try_from(st.flow.track_closed.num).unwrap_or(0) {
-            let (x, y) = (st.flow.track_closed.x[i], st.flow.track_closed.y[i]);
-            if matches!(u32::from(st.cave.grid(x, y).feat), FEAT_OPEN | FEAT_BROKEN) {
-                crate::borg_stair_scum::door_opened_by_monster(st, y, x);
-            }
-        }
-    }
+    check_opened_doors(st);
 
     // *** Track objects and monsters ***
     let y = |w: BorgWank| i32::from(w.y);
@@ -1711,8 +1790,16 @@ fn handle_messages(st: &mut BorgState) -> i32 {
     // Process messages: note them
     let mut i = 0;
     while i < i32::from(st.msgs.num) {
+        let msg = msg_text(st, i);
+        // If Alter attacked an unseen occupant, a subsequent opening was
+        // not its terrain action (`do_cmd_alter_aux` chooses only one).
+        if st.update.alter_door_attack.is_some()
+            && (msg.starts_with(b"HIT:") || msg.starts_with(b"MISS:") || msg.starts_with(b"KILL:"))
+        {
+            st.update.alter_door_attack = None;
+        }
         let mut note = b"# ".to_vec();
-        note.extend_from_slice(pct_s(&msg_text(st, i)));
+        note.extend_from_slice(pct_s(&msg));
         note.extend_from_slice(b" (+)");
         borg_note_bytes(st, &note);
         i += 1;
@@ -2025,6 +2112,7 @@ fn created_traps_here(st: &mut BorgState) {
 
 /// The level changed: reset the clocks, goals, lists and the map.
 fn new_level(st: &mut BorgState) {
+    st.update.alter_door_attack = None;
     st.light.detected_entries.clear();
     st.light.room_lighting = Default::default();
     let b = &mut st.borg;
@@ -2796,5 +2884,209 @@ mod dark_floor_tests {
         assert!(view_needs_update(sight(&unknown, true), sight(&rubble, true), BORG_VIEW));
         assert!(!view_needs_update(sight(&unknown, false), sight(&rubble, false), BORG_VIEW), "switch off: C");
         assert!(!view_needs_update(sight(&unknown, true), sight(&rubble, true), 0), "not in view");
+    }
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) mod stale_kobold_door_fixture {
+    use super::*;
+    use crate::borg_flow::{borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_spread_stairs, borg_play_step};
+    use crate::borg_flow_stairs::GOAL_FLEE;
+    use crate::borg_headers::borg_trait_h::{BI_FOOD, BI_MAXCLEVEL, BI_MAXHP};
+    use crate::borg_io::{borg_get_queued_direction, borg_inkey};
+    use crate::borg_messages_react::borg_react;
+    use crate::borg_think_dungeon::borg_think_dungeon;
+
+    fn set_door(st: &mut BorgState, at: loc, feat: u32) {
+        engine::set_test_terrain(st, at, feat);
+        update_map_grid(st, at.x, at.y);
+    }
+
+    fn expect_think(st: &mut BorgState, expected: &[u8]) {
+        assert!(borg_think_dungeon(st), "the stair route should act");
+        let keys: Vec<_> = st.io.queued_keys().into_iter().map(|key| key as u8).collect();
+        assert_eq!(keys, expected);
+        while !st.io.queued_keys().is_empty() {
+            borg_inkey(st, true);
+        }
+        st.borg.time.now += 1;
+    }
+
+    fn watch_doors(st: &mut BorgState) {
+        // Keep the production order. An active record can mask the door
+        // restored by map_info before the watcher examines its terrain.
+        mark_monster_terrain(st);
+        check_opened_doors(st);
+    }
+
+    /// Feed both possible door transitions through the real map observer,
+    /// then drive the dungeon decision until the Borg is past the doorway.
+    pub(crate) fn run(st: &mut BorgState) -> ! {
+        let start = engine::player_grid();
+        let door = loc { x: start.x - 1, y: start.y };
+        let side = loc { x: start.x, y: start.y - 1 };
+        let stairs = loc { x: start.x - 3, y: start.y };
+        for at in [door, side, stairs] {
+            assert!(engine::square_in_bounds_fully(at.x, at.y));
+        }
+        let race = (1..usize::from(engine::r_max()))
+            .find(|&race| engine::race_name(race) == b"small kobold")
+            .expect("the small kobold race");
+
+        assert!(engine::option_set(c"birth_force_descend", false));
+        let (width, height) = engine::cave_size();
+        for (before, after, active) in [
+            (FEAT_CLOSED, FEAT_OPEN, true),
+            (FEAT_OPEN, FEAT_CLOSED, true),
+            (FEAT_CLOSED, FEAT_OPEN, false),
+        ] {
+            crate::borg_cave::borg_init_cave(st);
+            for y in 0..height {
+                for x in 0..width {
+                    st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+                }
+            }
+            for x in stairs.x..=start.x {
+                st.cave.grid_mut(x, start.y).feat = FEAT_FLOOR as u8;
+            }
+            st.cave.grid_mut(stairs.x, stairs.y).feat = FEAT_LESS as u8;
+            st.borg.c = start;
+            st.borg.goal.leaving = true;
+            st.borg.goal.fleeing = true;
+            st.borg.goal.less = false;
+            st.borg.mon.scary = false;
+            st.borg.mon.scary_door = false;
+            st.borg.time.level = st.borg.time.now;
+            st.borg.avoidance = 39;
+            st.borg.power = i32::MAX / 2;
+            for (index, value) in [(BI_CLEVEL, 5), (BI_MAXCLEVEL, 5), (BI_CURHP, 39), (BI_MAXHP, 39), (BI_LIGHT, 2), (BI_FOOD, 6)] {
+                st.borg.trait_[index as usize] = value;
+            }
+            st.danger = Default::default();
+            st.kills.cnt = i16::from(active);
+            st.kills.nxt = st.kills.cnt + 1;
+            st.takes.nxt = 1;
+            st.takes.cnt = 0;
+            st.stairs.less.num = 0;
+            track_add(&mut st.stairs.less, stairs.x, stairs.y);
+            st.stairs.more.num = 0;
+            st.flow.track_closed.num = 0;
+            st.flow_misc.track_vein.num = 0;
+            set_door(st, side, FEAT_CLOSED);
+            set_door(st, door, before);
+            let actual = engine::map_info(door.x, door.y);
+            assert!(actual.in_view && actual.m_idx == 0 && actual.f_idx == before, "the engine shows the empty doorway: {actual:?}");
+            st.kills.kills[1] = BorgKill { r_idx: race as u16, pos: door, ..BorgKill::BLANK };
+            st.cave.grid_mut(door.x, door.y).kill = 1;
+
+            // Before a queued Alter, show what the legacy map and door watch
+            // do with this record. Only the out-of-range slot leaves the open
+            // door visible to the watch while the grid still points to it.
+            if before == FEAT_CLOSED {
+                set_door(st, door, FEAT_OPEN);
+                watch_doors(st);
+                assert_eq!(st.borg.mon.scary_door, !active);
+                assert_eq!(st.cave.grid(door.x, door.y).kill, 1);
+                set_door(st, door, before);
+                crate::borg_caution::forget_scary(&mut st.borg.mon);
+            }
+            mark_monster_terrain(st);
+            borg_flow_clear(st);
+            borg_flow_enqueue_grid(st, stairs.y, stairs.x);
+            borg_flow_spread_stairs(st, 20, true, false, false, -1, false);
+            assert!(borg_flow_commit(st, c"up-stairs", GOAL_FLEE));
+
+            expect_think(st, b"+4");
+            assert_eq!(st.update.alter_door_attack.map(|attack| attack.target), Some(door));
+            set_door(st, door, after);
+            watch_doors(st);
+            assert_eq!(st.cave.grid(door.x, door.y).kill, 0, "the door action disproves the kobold target");
+            assert_eq!(st.kills.cnt, 0, "forgetting the target preserves the active count");
+            assert!(!st.borg.mon.scary_door, "opening our own door must not set a scare");
+            assert_eq!(st.flow.track_closed.at(0), (side.y, side.x), "an unrelated closed door stays tracked");
+
+            if after == FEAT_CLOSED {
+                expect_think(st, b"o");
+                assert_eq!(borg_get_queued_direction(st), u32::from(b'4'));
+                set_door(st, door, FEAT_OPEN);
+                check_opened_doors(st);
+                assert!(!st.borg.mon.scary_door);
+            }
+            expect_think(st, b"4");
+            st.borg.c = door;
+            expect_think(st, b"4");
+            st.borg.c.x -= 1;
+
+            if before == FEAT_CLOSED && active {
+                set_door(st, side, FEAT_OPEN);
+                check_opened_doors(st);
+                assert!(st.borg.mon.scary_door, "a monster opening another tracked door still sets the scare");
+            }
+        }
+
+        st.borg.c = start;
+        for (after, failed_lockpick) in [(FEAT_OPEN, false), (FEAT_CLOSED, true), (FEAT_OPEN, true)] {
+            // A reset left the doorway link in place and the slot now
+            // contains a different monster at the side grid.
+            crate::borg_caution::forget_scary(&mut st.borg.mon);
+            st.kills.nxt = 2;
+            st.kills.cnt = 1;
+            st.kills.kills[1] = BorgKill { r_idx: race as u16, pos: side, ..BorgKill::BLANK };
+            st.cave.grid_mut(side.x, side.y).kill = 1;
+            st.cave.grid_mut(door.x, door.y).kill = 1;
+            set_door(st, door, FEAT_CLOSED);
+            assert!(borg_play_step(st, door.y, door.x));
+            assert_eq!(borg_inkey(st, true), u32::from(b'+'));
+            assert_eq!(borg_inkey(st, true), u32::from(b'4'));
+            if failed_lockpick {
+                crate::borg_messages::borg_parse(st, Some(b"You failed to pick the lock."));
+                crate::borg_messages::borg_parse(st, None);
+            }
+            set_door(st, door, after);
+            watch_doors(st);
+            assert_eq!(st.cave.grid(door.x, door.y).kill, 0);
+            assert_eq!(st.cave.grid(side.x, side.y).kill, 1);
+            assert_eq!(st.kills.kills[1].pos, side);
+            assert_eq!(st.kills.cnt, 1);
+            assert_eq!(st.borg.mon.scary_door, failed_lockpick && after == FEAT_OPEN);
+        }
+
+        st.kills.nxt = 2;
+        st.kills.cnt = 1;
+        st.kills.kills[1] = BorgKill { r_idx: race as u16, pos: door, ..BorgKill::BLANK };
+        st.cave.grid_mut(side.x, side.y).kill = 0;
+        st.cave.grid_mut(door.x, door.y).kill = 1;
+
+        // A hit takes precedence over a simultaneous door observation.
+        set_door(st, door, FEAT_CLOSED);
+        assert!(borg_play_step(st, door.y, door.x));
+        assert_eq!(borg_inkey(st, true), u32::from(b'+'));
+        assert_eq!(borg_inkey(st, true), u32::from(b'4'));
+        assert!(st.update.alter_door_attack.is_some());
+        borg_react(st, b"You hit the small kobold.", b"HIT:the small kobold");
+        handle_messages(st);
+        assert!(st.update.alter_door_attack.is_none(), "combat feedback cancels the door attribution");
+        set_door(st, door, FEAT_OPEN);
+        assert_eq!(st.cave.grid(door.x, door.y).kill, 1, "a hit leaves the monster record in place");
+
+        // The empty-door step armed attribution above. The same step on
+        // a visible occupant must still queue melee and leave it unarmed.
+        engine::place_test_monster(st, door, race);
+        let m_idx = engine::map_info(door.x, door.y).m_idx;
+        assert_ne!(m_idx, 0);
+        let hp = engine::cave_monster(m_idx as i32).hp;
+        assert!(borg_play_step(st, door.y, door.x));
+        assert_eq!(borg_inkey(st, true), u32::from(b'+'));
+        let direction = borg_inkey(st, true);
+        assert_eq!(direction, u32::from(b'4'));
+        assert!(st.update.alter_door_attack.is_none());
+        engine::alter_test_grid(st, (direction - u32::from(b'0')) as i32);
+        let after = engine::map_info(door.x, door.y);
+        assert_eq!(after.f_idx, FEAT_OPEN, "the native attack leaves the occupied door open");
+        assert!(after.m_idx == 0 || engine::cave_monster(m_idx as i32).hp < hp ||
+            engine::message_str(0).starts_with(b"You miss"), "Alter attacks a live occupant");
+
+        println!("stale-kobold-door passed (#1229)");
+        std::process::exit(0);
     }
 }

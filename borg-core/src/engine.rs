@@ -1955,6 +1955,115 @@ pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
     });
 }
 
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn set_test_terrain(st: &mut BorgState, at: loc, feat: u32) {
+    use crate::headers::cave_h::{cave, chunk};
+    extern "C" {
+        fn square_set_feat(c: *mut chunk, grid: loc, feat: i32);
+        fn square_memorize(c: *mut chunk, grid: loc);
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!(matches!(feat, headers::list_terrain_h::FEAT_CLOSED | headers::list_terrain_h::FEAT_OPEN));
+    // SAFETY: the initialized native fixture owns the engine thread. The
+    // grid and feature are valid, and redraw events may re-enter the Borg.
+    lend(st, || unsafe {
+        square_set_feat(cave, at, feat as i32);
+        square_memorize(cave, at);
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn place_test_monster(st: &mut BorgState, at: loc, race: usize) {
+    use crate::headers::cave_h::{cave, chunk};
+    use crate::headers::monster_h::{monster_group_info, monster_race, r_info, MON_GROUP_LEADER};
+    extern "C" {
+        fn place_new_monster(c: *mut chunk, grid: loc, race: *mut monster_race,
+            sleep: bool, group_ok: bool, group: monster_group_info, origin: u8) -> bool;
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!((1..usize::from(r_max()) - 1).contains(&race));
+    // SAFETY: the initialized native fixture has a live level and race
+    // table. Both indices are in bounds and UI events may re-enter.
+    lend(st, || unsafe {
+        assert!(place_new_monster(cave, at, r_info.add(race), false, false,
+            monster_group_info { index: 0, role: MON_GROUP_LEADER }, 0));
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn alter_test_grid(st: &mut BorgState, direction: i32) {
+    use crate::headers::cmd_core_h::{command, CMD_ALTER, CTX_GAME};
+    extern "C" {
+        fn cmd_set_arg_direction(cmd: *mut command, name: *const c_char, direction: i32);
+        fn do_cmd_alter(cmd: *mut command);
+    }
+    assert!((1..=9).contains(&direction) && direction != 5);
+    // SAFETY: the initialized fixture owns the engine thread. A zeroed
+    // command has empty argument slots. The engine may re-enter on UI events.
+    lend(st, || unsafe {
+        let mut cmd: command = std::mem::zeroed();
+        cmd.context = CTX_GAME;
+        cmd.code = CMD_ALTER;
+        cmd_set_arg_direction(&mut cmd, c"direction".as_ptr(), direction);
+        do_cmd_alter(&mut cmd);
+    });
+}
+
+#[cfg(feature = "test-cursed-spares")]
+pub(crate) fn carry_test_lanterns(st: &mut BorgState) {
+    use crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH;
+    use crate::headers::list_tvals_h::TV_LIGHT;
+    use crate::headers::obj_curse_h::curses;
+    use crate::headers::object_h::{curse, object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn lookup_curse(name: *const c_char) -> i32;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn append_object_curse(obj: *mut object, pick: i32, power: i32) -> bool;
+        fn player_learn_curse(p: *mut player, curse: *mut curse);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+    }
+
+    let (torch, lantern) = (st.item_val.sv_light_torch, st.item_val.sv_light_lantern);
+    // SAFETY: the fixture runs on the engine thread after birth. Native
+    // gear and kind/curse tables are live, and the pack owns the new objects
+    // and their known copies after inven_carry. Lend state for engine events.
+    lend(st, || unsafe {
+        // Leave the birth torches in place but remove them as usable spares.
+        let mut obj = (*player).gear;
+        while !obj.is_null() {
+            if u32::from((*obj).tval) == TV_LIGHT && i32::from((*obj).sval) == torch {
+                (*obj).timeout = 3;
+            }
+            obj = (*obj).next;
+        }
+
+        let kind = lookup_kind(TV_LIGHT as i32, lantern);
+        let paralysis = lookup_curse(c"paralysis".as_ptr());
+        assert!(!kind.is_null() && paralysis > 0);
+        for (fuel, cursed) in [(1200, false), (7500, true)] {
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).timeout = fuel;
+            if cursed {
+                // Leave one unidentified rune alongside the known curse.
+                (*obj).modifiers[OBJ_MOD_STEALTH as usize] = 1;
+                assert!(append_object_curse(obj, paralysis, 20));
+            }
+            (*obj).known = object_new();
+            object_set_base_known(player, obj);
+            (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            inven_carry(player, obj, false, false);
+        }
+        player_learn_curse(player, curses.add(paralysis as usize));
+    });
+}
+
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
 /// kind.
 pub fn equip_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {
