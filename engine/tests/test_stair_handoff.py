@@ -98,6 +98,9 @@ PINNED_TOWN_SETTINGS = [
     # #1214 adds a town return when healing potions run low.
     ("restock_healing", 0),
     ("caution_rising_skip_held_stairs", 0),
+    # #1200 shipped surplus throwing after these incidents. Use the
+    # original throw range and scoring to reach the recorded stair grids.
+    ("attack_throw_surplus", 0),
     # #1217 changed shallow preparedness after these recorded routes.
     ("prepared_dl2_min_hp", 30),
     ("prepared_dl2_min_clevel__warrior", 0), ("prepared_dl2_min_clevel__mage", 0),
