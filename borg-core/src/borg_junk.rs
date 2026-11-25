@@ -545,31 +545,37 @@ fn protects_restore_life(pack: &[borg_item], slot: usize, sval: i32, reserve: i3
 fn cursed_spare_slot(pack: &[borg_item], clean_light_available: impl Fn() -> bool) -> Option<usize> {
     pack.iter().position(|item| {
         item.iqty > 0
-            && item.cursed
+            && item.curses.iter().any(|&known| known)
             && !item.one_ring
             && crate::borg_inventory::borg_wield_slot(item) >= 0
             && (u32::from(item.tval) != TV_LIGHT || clean_light_available())
     })
 }
 
-/// #1231: discard cursed spares at a safe opportunity. Unlearned runes
-/// must not protect a known cursed item ahead of usable supplies.
-pub(crate) fn borg_drop_cursed_spare(st: &mut BorgState) -> bool {
+pub(crate) enum CursedSpareAction {
+    Refuel,
+    Drop,
+}
+
+/// #1231: discard known cursed spares at a safe opportunity, including gear
+/// that would otherwise be a swap or a candidate for Remove Curse.
+pub(crate) fn borg_dispose_cursed_spare(st: &mut BorgState) -> Option<CursedSpareAction> {
     if st.borg.goal.recalling != 0 || off_floor(st) {
-        return false;
+        return None;
     }
     let pack = &st.items.items[..pack_size() as usize];
-    let Some(slot) = cursed_spare_slot(pack, || crate::borg_light::has_clean_light(st, pack)) else {
-        return false;
-    };
+    let slot = cursed_spare_slot(pack, || crate::borg_light::has_clean_light(st, pack))?;
     if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
-        return false;
+        return None;
+    }
+    if crate::borg_light::borg_refuel_from_cursed_spare(st, slot) {
+        return Some(CursedSpareAction::Refuel);
     }
 
     let slot = slot as i32;
     note_desc(st, "# Dropping cursed spare ", slot, ".");
     drop_ignored_pack_stack(st, slot);
-    true
+    Some(CursedSpareAction::Drop)
 }
 
 fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
@@ -1758,6 +1764,7 @@ mod tests {
         cursed.iqty = 1;
         cursed.needs_ident = true;
         cursed.cursed = true;
+        cursed.curses[BORG_CURSE_PARALYSIS as usize] = true;
         let mut unknown = crate::borg_item::blank_item();
         unknown.tval = TV_SWORD as u8;
         unknown.iqty = 1;
@@ -1765,8 +1772,17 @@ mod tests {
 
         assert_eq!(cursed_spare_slot(&[clean, unknown, cursed], || true), Some(2));
         assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), None);
+        // Intrinsic drawbacks set the broad cursed flag during analysis.
         unknown.cursed = true;
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || true), Some(1));
+        unknown.curses[BORG_CURSE_AIR_SWING as usize] = true;
+        unknown.uncursable = true;
+        unknown.art_idx = 1;
         assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), Some(0));
+        unknown.one_ring = true;
+        let mut consumable = cursed;
+        consumable.tval = TV_POTION as u8;
+        assert_eq!(cursed_spare_slot(&[unknown, consumable, cursed], || true), Some(2));
     }
 
     #[test]

@@ -6,4 +6,6 @@ The watched Mage kept two cursed torches despite having clean light and six clea
 
 The core regression, release core suite, workspace tests, formatting, Clippy, and parameter citations passed. All four default borg-rs smoke runs matched their key, message, and state references. The watched session was not replayed key for key.
 
-Ready for independent review on Track P. No new calibration setting is required.
+After review of #1232, the owner confirmed that prompt disposal takes priority over keeping a potentially valuable cursed swap or waiting to remove a pack item's curse. The early disposal check requires an actual known curse. An intrinsic drawback such as Aggravation is insufficient. A working clean light takes priority, and town still replenishes its normal light reserve. In the dungeon, if a cursed lantern supplies the only reserve fuel, the Borg can transfer that fuel to its clean equipped lantern before dropping the empty donor.
+
+The updated regression checks the recorded torch mix, an intrinsic drawback, an otherwise valuable removable curse, the One Ring, and a consumable. A second regression checks the only-fuel case and the alternatives that allow immediate disposal. The watched Mage run above used the first PR revision. The smoke cases check existing play against the retained references. No new calibration setting is required.

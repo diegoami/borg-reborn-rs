@@ -879,21 +879,25 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
     i64::from(remaining) < goal
 }
 
+// cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
+fn refillable_lantern(item: &BorgItem) -> bool {
+    item.iqty != 0
+        && u32::from(item.tval) == TV_LIGHT
+        && has_flag(item, OF_TAKES_FUEL)
+        && !has_flag(item, OF_NO_FUEL)
+}
+
+fn is_oil_flask(item: &BorgItem, oil: i32) -> bool {
+    item.iqty != 0
+        && u32::from(item.tval) == TV_FLASK
+        && i32::from(item.sval) == oil
+        && !has_flag(item, OF_NO_FUEL)
+}
+
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
-    // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
-    let refillable = |item: &BorgItem| {
-        item.iqty != 0
-            && u32::from(item.tval) == TV_LIGHT
-            && has_flag(item, OF_TAKES_FUEL)
-            && !has_flag(item, OF_NO_FUEL)
-    };
-    let fuel_slot = pack.iter().position(|item| {
-        item.iqty != 0
-            && u32::from(item.tval) == TV_FLASK
-            && i32::from(item.sval) == oil
-            && !has_flag(item, OF_NO_FUEL)
-    }).or_else(|| pack.iter().position(|item| refillable(item) && item.timeout > 0));
-    if refillable(equipped) && equipped.timeout == 0 {
+    let fuel_slot = pack.iter().position(|item| is_oil_flask(item, oil))
+        .or_else(|| pack.iter().position(|item| refillable_lantern(item) && item.timeout > 0));
+    if refillable_lantern(equipped) && equipped.timeout == 0 {
         if let Some(slot) = fuel_slot {
             return Some(LightAction::Refuel(slot));
         }
@@ -908,7 +912,7 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
     } else {
         0
     };
-    best_light(pack, radius - current, |item| refillable(item) && fuel_slot.is_some())
+    best_light(pack, radius - current, |item| refillable_lantern(item) && fuel_slot.is_some())
         .map(LightAction::Wear)
 }
 
@@ -960,6 +964,40 @@ pub(crate) fn has_clean_light(st: &BorgState, pack: &[BorgItem]) -> bool {
     let radius = st.borg.tr(BI_LIGHT);
     (equipped.iqty != 0 && !equipped.cursed && light_powered(equipped) && radius > 0)
         || uncursed_light_replacement(equipped, pack, radius).is_some()
+}
+
+fn can_use_cursed_lantern_fuel(
+    equipped: &BorgItem, pack: &[BorgItem], slot: usize, oil: i32, radius: i32, capacity: i32,
+) -> bool {
+    let donor = &pack[slot];
+    !equipped.cursed
+        && refillable_lantern(equipped)
+        && i32::from(equipped.timeout) < capacity
+        && refillable_lantern(donor)
+        && donor.timeout > 0
+        && uncursed_light_replacement(equipped, pack, radius).is_none()
+        && !pack.iter().any(|item| {
+            !item.cursed && (is_oil_flask(item, oil) || (refillable_lantern(item) && item.timeout > 0))
+        })
+}
+
+/// #1231: use an otherwise disposable lantern's fuel if it is the only
+/// reserve. Refilling transfers fuel without wearing the donor. The next
+/// disposal decision sees the emptied lantern (cmd-obj.c:refill_lamp).
+pub(crate) fn borg_refuel_from_cursed_spare(st: &mut BorgState, slot: usize) -> bool {
+    if st.borg.tr(BI_CDEPTH) == 0
+        || engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
+    {
+        return false;
+    }
+    if !can_use_cursed_lantern_fuel(
+        &st.items.items[inven_light() as usize], &st.items.items[..inven_wield() as usize],
+        slot, st.item_val.sv_flask_oil, st.borg.tr(BI_LIGHT), i32::from(engine::z_info().fuel_lamp),
+    ) {
+        return false;
+    }
+    refuel_with(st, slot as i32);
+    true
 }
 
 /// Restore carried light without relying on ordinary equipment power or wear cooldowns.
@@ -1441,6 +1479,31 @@ mod lightless_tests {
             Some(LightAction::Wear(0)),
         );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
+    }
+
+    #[test]
+    fn only_reserve_fuel_is_used_before_discarding_a_cursed_lantern() {
+        let mut equipped = light(&[OF_TAKES_FUEL, OF_LIGHT_3], 1200);
+        let mut donor = light(&[OF_TAKES_FUEL, OF_LIGHT_3], 7500);
+        donor.cursed = true;
+        let clean = light(&[OF_LIGHT_2], 5000);
+        let mut flask = blank_item();
+        flask.iqty = 1;
+        flask.tval = TV_FLASK as u8;
+        flask.sval = 1;
+        flask.pval = 7500;
+        let uses_donor = |equipped: &BorgItem, pack: &[BorgItem]| {
+            can_use_cursed_lantern_fuel(equipped, pack, 0, 1, 3, 15000)
+        };
+
+        assert!(uses_donor(&equipped, &[donor]));
+        assert!(!uses_donor(&equipped, &[donor, clean]));
+        assert!(!uses_donor(&equipped, &[donor, flask]));
+        equipped.timeout = 15000;
+        assert!(!uses_donor(&equipped, &[donor]));
+        equipped.timeout = 8700;
+        donor.timeout = 0;
+        assert!(!uses_donor(&equipped, &[donor]));
     }
     #[test]
     fn cursed_light_swap_counts_light_from_other_gear() {
