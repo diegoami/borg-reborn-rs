@@ -317,9 +317,6 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    if let Some(a) = crate::borg_healing_restock::purchase(st) {
-        return set_action(st, a);
-    }
     let mut a = crate::borg_town_shadow::live_action(st);
     // The opt-in trial tests discarding surplus plain shots before the
     // planner disposes of other kit. Poison triage and purchases go first.
@@ -335,7 +332,12 @@ pub fn choose(st: &mut BorgState) -> bool {
             }
         }
     }
-    if a.code == action::LEAVE { note_departure_room(st); }
+    if a.code == action::LEAVE {
+        if let Some(refill) = crate::borg_healing_restock::purchase(st) {
+            return set_action(st, refill);
+        }
+        note_departure_room(st);
+    }
     set_action(st, a)
 }
 
