@@ -503,7 +503,7 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 #1213 removes experimental quaffing and the recovery hold after a test.
 The existing town planner selects a sale for an unknown flavour when a shop
 accepts it (`unknown_flavour` and `Disposition::Sell` in
-`borg_town_utility.rs:620`). The engine's sale marks the kind as flavour-aware
+`borg_town_utility.rs:622`). The engine's sale marks the kind as flavour-aware
 (`engine/angband/src/store.c:1948` and `obj-knowledge.c:2284–2292`), so selling
 one copy identifies the remaining copies of that kind. The
 [native regression](../engine/tests/test_unknown_consumables.py) covers the
@@ -8752,7 +8752,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:884` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:890` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8766,7 +8766,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:406` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:412` |
 
 ## Shopping while overloaded and departure loadout (#1239)
 
@@ -8788,7 +8788,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:330` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:334` |
 
 ## Ranged readiness for the next trip (#1184)
 

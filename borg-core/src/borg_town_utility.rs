@@ -485,6 +485,7 @@ fn storing_target(input: &StepInput, u: &Utility, room: Room) -> Room {
     if room == Room::default() { return room; }
     let (weight, slots) = u.capability.as_ref()
         .map_or((0, 0), |m| crate::borg_town_capability::recall_room(m, u.recall_reserve, &input.candidates));
+    // borg-reborn-rs (#1239): keep Recall's slot reserve under schema 21.
     Room {
         weight: room.weight + if input.revision < 21 { weight } else { 0 },
         slots: room.slots + slots,
@@ -552,6 +553,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     let carry = i64::from(st.borg.tr(BI_CARRY)).max(2) / 2;
     let limit = home_stack_limit.max(0) as usize;
     let (mut pack_counts, mut home_counts) = if limit > 0 { home_stock(input.kit) } else { Default::default() };
+    // borg-reborn-rs (#1239): let the loadout pass make room at Home.
     if !input.departure && (limit > 0 || input.kit.iter().any(|item| item.home_unwanted)) {
         prune_home(input, u, limit, keep_min, &pack_counts, &mut home_counts, (&mut out, &mut copies, &mut freed));
     }
@@ -637,6 +639,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             |m| m.reserve(it, 1, u.home_discount)) + u.power(it.power) * u.home_discount / UNIT;
         // A worthless Home stack can pay for room even under no-selling.
         // Unknown durable items and this visit's purchases stay protected.
+        // borg-reborn-rs (#1239): skip this exchange once shopping ends.
         let spare = input.kit.iter().enumerate().find(|(j, k)| !input.departure && k.place == Place::Home
             && out[*j] == Disposition::Keep
             && !u.capability.as_ref().is_some_and(|m| m.available.iter().any(|r| r[0] == 7 && r[1] == i64::from(k.slot) && r[2] == 0))
@@ -669,7 +672,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // Detect Invisible is carried, or stored while overweight, never
         // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
         // still sends the copies past it away.
-        // The departure pass uses the observed kit flag. The replay's
+        // borg-reborn-rs (#1239): use the observed kit flag for departure. The replay's
         // compact list of types and quantities has no real slot or sval
         // data, which could otherwise protect an unrelated scroll.
         let potion_or_scroll_protected = if input.departure || capped {
@@ -683,7 +686,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // known curse stays protected.
         let cursed_spare = input.revision >= 20 && it.cursed_spare && it.place == Place::Pack
             && u.power(it.power) == 0 && input.limits.weight + freed.weight < 0;
-        // A completed shopping pass may shed recently acquired surplus.
+        // borg-reborn-rs (#1239): departure may shed recently acquired surplus.
         // The same physical and modeled floors still protect the trip kit.
         let bought_surplus = input.departure && input.limits.weight + freed.weight < 0
             && partial && whole.home_limited && (whole.need >= 0 || whole.serves != 0 || reserve > 0);
@@ -736,6 +739,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // allowance is the copies that cover the deficit, not all past the
         // floor (one 2.2 lb torch for a 1 lb deficit, not thirty).
         let trimmed;
+        // borg-reborn-rs (#1239): remove enough surplus to cover the deficit.
         let trim_to_deficit = bought_surplus && action != Disposition::Keep
             || excess && !worthless && matches!(action, Disposition::Sell | Disposition::Drop);
         let (it, weight) = if trim_to_deficit {
@@ -797,6 +801,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             let c = &input.candidates[f.candidate]; c.shop == 7 && c.slot == it.slot
         }) { continue; }
         let slots = input.limits.pack_slots + freed.pack_slots;
+        // borg-reborn-rs (#1239): screen Home withdrawals for slots during shopping.
         let weight_room = if input.revision >= 21 { i64::MAX } else { input.limits.weight + freed.weight - room.weight };
         let short = if limit > 0 && it.home_limited { usable_floor(u, it, held, keep_min) - held } else { 0 };
         let withdrawal = it.home_room.filter(|_| short > 0)

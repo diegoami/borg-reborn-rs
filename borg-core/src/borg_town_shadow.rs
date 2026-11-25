@@ -291,6 +291,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         };
         let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
         let just_bought = kit_just_bought(st, it, place, at_limit);
+        // borg-reborn-rs (#1239): protect retained gear from ordinary Home moves.
         let home_room = if place == Place::Home {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
                 let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
@@ -440,6 +441,7 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
 /// Refill the torch reserve after immediate needs and before other shopping.
 /// Spend the ordinary shopping budget and use the same one-copy action as
 /// the light emergency, then replan with the torch actually carried.
+/// borg-reborn-rs (#1239): apply the current policy's carry limit.
 fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget, overloaded_shopping: bool) {
     let reserve = param(Param::town_light_reserve_turns);
     // borg-reborn-rs (#1110): to the planner's goal, scaled while
@@ -485,6 +487,7 @@ fn executed_copies(code: i64, planned: i64) -> i64 {
 
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let file = crate::borg_town_dump::plan_record_file();
+    // borg-reborn-rs (#1239): select the schema and record the departure pass.
     let overloaded_shopping = crate::borg_town_live::shop_overloaded();
     let revision = if overloaded_shopping { crate::borg_town_record::PLAN_SCHEMA } else { 20 };
     let departure = live && overloaded_shopping && crate::borg_town_live::departure_preparing(st);
@@ -531,6 +534,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let mut class = stock.candidates.iter().map(|c| c.class).max().unwrap_or(0).saturating_add(1);
     for (slot, item) in st.store.shops[BORG_HOME].ware.iter().enumerate() {
         if item.iqty == 0 { continue; }
+        // borg-reborn-rs (#1239): reserve saved gear for the loadout pass.
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
             && item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
@@ -645,6 +649,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             let facts = crate::borg_town_budget::Facts::of(st);
             // #939 re-review: an urgent ware that cannot be carried must not
             // hide an affordable urgent ware that can.
+            // borg-reborn-rs (#1239): shop before disposing for weight.
             let pack_slots = facts.pack_capacity - stock.pack_slots_used();
             let acquire = if overloaded_shopping && facts.allowance() < 0 {
                 crate::borg_town_record::acquisition_before_disposal(
@@ -676,6 +681,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         let replenishing = paction == action::TAKE_HOME && !now
             && kit.iter().enumerate().any(|(i, item)| item.place == Place::Home && usize::from(item.slot) == slot
                 && out.copies.get(i).is_some_and(|&qty| qty > 0));
+        // borg-reborn-rs (#1239): unload the solver's full surplus quantity.
         let unloading = departure && matches!(paction, action::STORE | action::SELL)
             && kit.iter().enumerate().any(|(i, item)| item.place == Place::Pack && usize::from(item.slot) == slot
                 && out.copies.get(i).is_some_and(|&qty| qty > 0));
