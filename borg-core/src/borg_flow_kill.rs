@@ -592,8 +592,11 @@ pub fn borg_delete_kill(st: &mut BorgState, i: i32) {
     // Kill the monster
     st.kills.kills[i] = BorgKill::BLANK;
 
-    // One less monster
-    st.kills.cnt = st.kills.cnt.wrapping_sub(1);
+    // A grid may still reference an inactive slot after a reset (#1229).
+    // Only records in the active range contribute to the monster count.
+    if i < st.kills.nxt as usize {
+        st.kills.cnt = st.kills.cnt.wrapping_sub(1);
+    }
 
     // Recalculate danger
     st.danger.wipe = true;
@@ -904,7 +907,7 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
         note(st, &[b"# Too many monsters"]);
 
         // Pick a random monster
-        n = engine::randint0((i32::from(st.kills.nxt) - 1) as u32) + 1 + 1;
+        n = engine::randint0((i32::from(st.kills.nxt) - 1) as u32) + 1;
 
         // Kill it
         borg_delete_kill(st, n);

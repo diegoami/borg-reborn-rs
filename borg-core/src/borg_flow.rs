@@ -1706,6 +1706,7 @@ pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
             borg_keypress(st, keycode_t::from(b';'));
             st.borg.status.no_alter = false;
         } else {
+            crate::borg_update::note_alter_door_attack(st, loc { x, y }, ag.kill);
             borg_keypress(st, keycode_t::from(b'+'));
         }
         borg_keypress(st, i2d(dir));

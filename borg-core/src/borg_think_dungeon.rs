@@ -51,8 +51,8 @@ use crate::borg_item_wear::{
     borg_swap_rings, borg_test_stuff, borg_wear_recharge, borg_wear_rings, borg_wear_stuff,
 };
 use crate::borg_junk::{
-    borg_destroy_floor, borg_drop_hole, borg_drop_junk, borg_drop_slow, borg_dump_quiver,
-    borg_remove_stuff,
+    borg_destroy_floor, borg_dispose_cursed_spare, borg_drop_hole, borg_drop_junk, borg_drop_slow,
+    borg_dump_quiver, borg_remove_stuff, CursedSpareAction,
 };
 use crate::borg_light::{borg_check_light, borg_light_beam, borg_maintain_light, BorgNeed};
 use crate::borg_magic::borg_spell;
@@ -946,6 +946,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     // its exit continued, before any other flow.
     if crate::borg_loop::break_loop(st) {
         return choice!("break_loop");
+    }
+
+    // #1231: free cursed pack slots before ordinary shopping or item flows.
+    match borg_dispose_cursed_spare(st) {
+        Some(CursedSpareAction::Refuel) => return choice!("borg_refuel_from_cursed_spare"),
+        Some(CursedSpareAction::Drop) => return choice!("borg_drop_cursed_spare"),
+        None => {}
     }
 
     if crate::borg_healing_restock::returning(st) && borg_leave_level(st, false) {

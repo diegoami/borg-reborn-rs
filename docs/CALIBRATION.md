@@ -1124,8 +1124,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1120` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1122` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2522` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2522` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2523` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2523` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1182` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1124` |
@@ -1448,16 +1448,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2529` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2530` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2531` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2532` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2533` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2534` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2535` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2536` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2537` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2538` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2530` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2531` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2532` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2533` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2534` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2535` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2536` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2537` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2538` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2539` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -3431,7 +3431,7 @@ scare set (`unlatch_scare`), with the note
 `# Scary guy gone: the level is no longer scary.` Door scares stay latched.
 The unlatch also ends a stand, so the next stand prints its note again.
 "Gone" includes forgotten: a monster not seen for 2000 game turns leaves the
-known monsters (`expire_kills`, `borg_update.rs:1566`), so with latch 0
+known monsters (`expire_kills`, `borg_update.rs:1726`), so with latch 0
 walking away from a scary monster ends its scare too, not only killing it.
 Read an arm's results with that in mind (review of #562).
 
@@ -6770,7 +6770,7 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
 After a ranged attack with no hit message the C Borg takes the first unknown
 grid of the path for a wall (`borg_target_unknown_wall`,
 borg-core/src/borg_projection.rs; C src/borg/borg-projection.c:739-830,
-called from `borg_update`, borg-core/src/borg_update.rs:1735). Its walk starts
+called from `borg_update`, borg-core/src/borg_update.rs:1907). Its walk starts
 at the Borg's own grid (C :753-754), and with no unknown grid it writes the
 step back from the target (C :821-826): for an adjacent target that step is
 the Borg's grid. A thrown or fired miss prints nothing (`make_ranged_throw`,
@@ -6806,7 +6806,7 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1740` |
+| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1901` |
 
 ## Shooting at a monster believed in the dark (#879)
 
@@ -6975,7 +6975,7 @@ to be visible both deletes an unseen record and refuses it a belief
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:439` |
+| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:537` |
 | `view_rubble_blocks_sight` | 0 (shipped 1) | flag | 0–1 | `borg_cave_view.rs:258` |
 | `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
 | `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
@@ -7365,7 +7365,7 @@ switch off or on, both on the zoo's game (`7f8c6b80`) and on `track-p`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1301` |
+| `kill_grouped_names` | 0 | flag | 0–1 | `borg_flow_kill.rs:1304` |
 
 ## Traps that cut the way back (#1067)
 
@@ -7985,12 +7985,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2558` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2559` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2560` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2561` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2562` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2563` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2559` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2560` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2561` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2562` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2563` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2564` |
 
 ## Deal with poison (#1140)
 
@@ -8380,7 +8380,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1955` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1956` |
 
 ## A general movement-loop detector (#1153)
 
@@ -8707,7 +8707,7 @@ messages lose the false "PAIN:You" notes. Neither is measured (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1300` |
+| `messages_player_not_pain` | 0 | flag | 0–1 | `borg_messages.rs:1304` |
 | `trait_speed_timed` | 0 | flag | 0–1 | `borg_trait.rs:885` |
 
 ## #1004: keeping a first spellbook before its first spell
@@ -8951,6 +8951,27 @@ sit before the rest's own interrupts stop protecting it.
 | `defend_prep_mana_starved` | 0 | flag | 0–1 | `borg_fight_defend.rs:220` |
 | `recover_mana_rest_full_hp` | 0 | flag | 0–1 | `borg_recover.rs:638` |
 
+## A stale monster at a doorway (#1229)
+
+A flow could repeatedly issue melee Alter into a doorway whose grid still
+pointed to a stale monster record. Angband checks for an occupant before
+opening or closing the door. A failed lockpick also establishes that the
+action reached a closed door. [`cmd-cave.c:170–216`](../engine/angband/src/cmd-cave.c#L170-L216) · [`cmd-cave.c:950–1003`](../engine/angband/src/cmd-cave.c#L950-L1003)
+
+The Borg records the visible door when it queues the directed attack. On
+the next map scan it checks for a toggle or a failed pick, before inferred
+monster terrain and the door watch run. A visible occupant or combat
+feedback preserves the ordinary attack handling. If the kill slot has
+been reused, only the doorway's stale link is cleared. The count covers
+live entries within the active range, including after deletion of an
+inactive entry. The watch skips the Borg's own opening and still reports
+other openings, including one after the Borg's failed pick.
+
+The recovery is unconditional. The native fixture covers a live target,
+active and inactive stale records, slot reuse, lockpick failure, and route
+progress. A comparison of pinned builds can measure effects in seeded
+play. [Handover](handover/2026-11-25-1229-stale-kobold-door.md)
+
 ## Inferior spare equipment (#1236)
 
 The shipped policy sells inferior same-kind equipment in town. In the
@@ -8968,5 +8989,5 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1690` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1691` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1882` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1883` |
