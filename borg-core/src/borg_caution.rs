@@ -6384,7 +6384,7 @@ fn stair_scum_threat(scary: bool, danger: i32, hp: i32, max_hp: i32, danger_limi
 /// a down staircase again, and the walk home restarts: priest-1055640847
 /// bounced DL2-DL3 eight times in 30,000 turns without reaching town.
 pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
-    if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
+    if p(Param::caution_rising_hold_flee_descent) == 0 || !st.rising_to_town() || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     // borg-reborn-rs (#753): not for a fleeing Borg at low HP (214960633:
@@ -7006,7 +7006,7 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 
 fn rising_descent_window(st: &BorgState) -> bool {
     let budget = p(Param::caution_rising_explore_ticks);
-    st.borg.goal.rising
+    st.rising_to_town()
         && st.borg.tr(BI_CDEPTH) > 0
         && budget > 0
         && borg_timer(st, st.borg.time.level) < budget

@@ -30,6 +30,7 @@ enum Phase {
 pub(crate) struct Restock {
     phase: Phase,
     route_attempt: Option<(i32, i32)>,
+    stair_commit: Option<u32>,
     town: TownSupply,
 }
 
@@ -74,9 +75,9 @@ impl Restock {
     fn observe_reserve(&mut self, held: i32, minimum: i32, gold: i32) {
         let old = self.phase;
         self.phase = match old {
-            // Keep a committed return through dungeon level changes.
-            Phase::Returning { .. } => old,
             _ if held >= minimum => Phase::Stocked,
+            // Keep a committed return across levels while still short.
+            Phase::Returning { .. } => old,
             Phase::Shopping => Phase::Deferred,
             // A reserve that ran out calls for one visit even when town's
             // offers or the Borg's ability to fund them are uncertain.
@@ -144,20 +145,28 @@ pub(crate) fn observe_dungeon(st: &mut BorgState) {
     let restock = &mut st.think_dungeon.healing_restock;
     let old = restock.phase;
     restock.observe_reserve(held, minimum(), gold);
-    if returning(st) {
-        if !matches!(old, Phase::Returning { .. }) {
-            crate::borg_io::borg_note(
-                st,
-                &format!(
-                    "# Returning to town: low on healing potions ({held}/{} carried)",
-                    minimum()
-                ),
-            );
-            if st.borg.goal.type_0 == GOAL_BORE as i16 {
-                st.borg.goal.type_0 = 0;
-            }
+    if matches!(old, Phase::Returning { .. }) && restock.phase == Phase::Stocked {
+        clear_stair_route(st);
+    } else if !matches!(old, Phase::Returning { .. }) && returning(st) {
+        crate::borg_io::borg_note(
+            st,
+            &format!(
+                "# Returning to town: low on healing potions ({held}/{} carried)",
+                minimum()
+            ),
+        );
+        if st.borg.goal.type_0 == GOAL_BORE as i16 {
+            st.borg.goal.type_0 = 0;
         }
-        st.borg.goal.rising = true;
+    }
+}
+
+fn clear_stair_route(st: &mut BorgState) {
+    if st.think_dungeon.healing_restock.stair_commit.take() == Some(st.flow.commit_seq)
+        && st.borg.goal.type_0 == GOAL_BORE as i16
+    {
+        st.borg.goal.type_0 = 0;
+        st.borg.flight_to_stairs = false;
     }
 }
 
@@ -199,13 +208,16 @@ pub(crate) fn follow_return(st: &mut BorgState) -> bool {
             crate::borg_io::borg_keypress(st, u32::from(b'<'));
             return true;
         }
-        if crate::borg_flow_stairs::borg_flow_stair_less(st, GOAL_BORE, false) {
+        let previous_commit = st.flow.commit_seq;
+        let stepped = crate::borg_flow_stairs::borg_flow_stair_less(st, GOAL_BORE, false);
+        if st.flow.commit_seq != previous_commit {
+            st.think_dungeon.healing_restock.stair_commit = Some(st.flow.commit_seq);
+        }
+        if stepped {
             return true;
         }
-        // Commit can succeed before the first step is found to be unusable.
-        if st.borg.goal.type_0 == GOAL_BORE as i16 {
-            st.borg.goal.type_0 = 0;
-        }
+        // Committing a flow can succeed before a usable first step is found.
+        clear_stair_route(st);
     }
 
     // With no usable up-stair route, Recall may be worthwhile even on a
@@ -231,6 +243,7 @@ pub(crate) fn observe_town(st: &mut BorgState) {
         .collect();
     offers.sort_unstable_by_key(|&(price, _)| price);
     let restock = &mut st.think_dungeon.healing_restock;
+    restock.stair_commit = None;
     restock.town = TownSupply {
         offers,
         departure_gold: gold,
@@ -384,6 +397,18 @@ mod tests {
         restock.observe_reserve(1, 2, 0);
         assert!(restock.phase == Phase::Returning { started_with: 0 });
     }
+
+    #[test]
+    fn replenishing_the_reserve_ends_a_committed_return() {
+        let mut restock = Restock {
+            phase: Phase::Returning { started_with: 0 },
+            ..Default::default()
+        };
+        restock.observe_reserve(1, 2, 0);
+        assert!(restock.phase == Phase::Returning { started_with: 0 });
+        restock.observe_reserve(2, 2, 0);
+        assert!(restock.phase == Phase::Stocked);
+    }
 }
 
 #[cfg(feature = "test-stair-handoff")]
@@ -466,7 +491,7 @@ pub(crate) mod fixture {
         }
         observe_dungeon(st);
         assert_eq!(return_requirement(st), Some((i32::from(low), 2)));
-        assert!(st.borg.goal.rising);
+        assert!(st.rising_to_town());
         assert!(crate::borg_prepared::borg_must_return_to_town(st).is_some());
         assert!(
             !borg_leave_level(st, false),
@@ -489,6 +514,33 @@ pub(crate) mod fixture {
         );
         assert_eq!(st.io.queued_keys(), [u32::from(b'6')]);
         borg_inkey(st, true);
+        if low {
+            let restock = &st.think_dungeon.healing_restock;
+            let returning_phase = restock.phase;
+            let stairs = restock
+                .stair_commit
+                .expect("the healing walk owns its stairs");
+            st.items.items[0].iqty = 2;
+            observe_dungeon(st);
+            assert!(!st.rising_to_town());
+            assert_eq!(st.borg.goal.type_0, 0, "the healing stair walk was cleared");
+
+            // A separate town objective may already have replaced the flow.
+            st.think_dungeon.healing_restock.phase = returning_phase;
+            st.think_dungeon.healing_restock.stair_commit = Some(stairs);
+            st.flow.commit_seq = stairs.wrapping_add(1);
+            st.borg.goal.rising = true;
+            st.borg.goal.type_0 = GOAL_BORE as i16;
+            observe_dungeon(st);
+            assert!(!returning(st));
+            assert!(st.rising_to_town(), "the other return survives");
+            assert_eq!(st.borg.goal.type_0, GOAL_BORE as i16, "so does its walk");
+
+            st.borg.goal.rising = false;
+            st.items.items[0].iqty = 1;
+            observe_dungeon(st);
+            assert!(returning(st));
+        }
         st.borg.c = up;
         st.borg.time.now += 1;
         assert!(borg_leave_level(st, false));
@@ -523,7 +575,7 @@ pub(crate) mod fixture {
             observe_dungeon(st);
             assert!(!returning(st));
             assert!(
-                !st.borg.goal.rising,
+                !st.rising_to_town(),
                 "an unchanged funding gap does not bounce back"
             );
         }

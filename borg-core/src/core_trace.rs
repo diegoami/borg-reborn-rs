@@ -351,7 +351,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
             leaving: st.borg.goal.leaving,
             fleeing: st.borg.goal.fleeing,
             fleeing_to_town: st.borg.goal.fleeing_to_town,
-            rising: st.borg.goal.rising,
+            rising: st.rising_to_town(),
         },
         errand,
         keys: st.io.queued_keys(),
