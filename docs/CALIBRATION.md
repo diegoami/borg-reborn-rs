@@ -4855,7 +4855,7 @@ not asserted to be accurate engine models.
 | --- | ---: | --- | --- | --- |
 | `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1307` |
 
-The shipped setting is 0. With the policy enabled, the Borg uses one item
+The owner set the shipped value to 1. The Borg uses one item
 from the smallest eligible known stack during a quiet dungeon turn. Each
 entry owns its minimum depth. The initial eight entries use depth 1.
 
