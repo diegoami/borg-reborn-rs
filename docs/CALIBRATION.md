@@ -573,9 +573,42 @@ rule read Phase Door at "danger 32". Danger 32 is mostly fear: 1d2 gives 2,
 `danger_monblow_poison_fear` adds 10, the breeder bonus
 (`danger_breeder_melee_extra_tenths` 15, below CL20) +150%, the fear maps 2.
 Later, at SP 0, the reserve spell fainted the Mage 11 times next to biting
-worms. Every switch is compiled and shipped **off**: shipped play is
-unchanged (smoke 3/3 identical). The values are hypotheses: no measurement
-chose them (RULES 14).
+worms.
+
+On 2026-11-22 the owner chose to ship six overrides from the `all` arm
+of [borg-zoo#626](https://github.com/diegoami/borg-zoo/issues/626#issuecomment-7083176441)
+in #1047. The three smoke games in the suite at the time
+(`smoke-warrior-1`, `smoke-mage-2` and `smoke-priest-3`) all changed from
+the pre-bundle reference, which #1047 re-recorded. The suite gained
+`smoke-mage-overexert-4` later in #1058. The development comparison on
+`296adfbf` recorded 13 deaths
+with the bundle and 25 in control over 900 starts (20 rescued, 8 newly
+killed, exact McNemar p = 0.036). The
+[fresh confirmation on that specimen](https://github.com/diegoami/borg-zoo/actions/runs/45079673617)
+recorded 48 deaths with the bundle and 38 in control over 1,800 starts per
+arm, with one control timeout. The lead did not confirm.
+[borg-zoo#699](https://github.com/diegoami/borg-zoo/issues/699#issuecomment-7088624021)
+tested the bundle and its parts on `206cf4e7`: 9 deaths with the bundle
+and 8 in control over 540 starts. The bundle remains shipped by the owner's
+decision. The contribution of each setting remains uncertain.
+
+The shipped profile sets these six overrides in `harness/borg.txt`.
+
+| parameter | shipped |
+|---|---:|
+| `lone_slow_attack` | 1 |
+| `escape_phase_lost_damage_only` | 1 |
+| `attack_reserve_spell_damage_only` | 1 |
+| `attack_reserve_faint_percent` | 25 |
+| `caution_unseen_bump_phase_turns` | 20 |
+| `caution_unseen_bump_phase_min_danger` | 5 |
+
+The other three settings use their compiled defaults. The radius is 3,
+the cast limit is 2 and the damage threshold is 25 percent.
+
+#1057 subsequently shipped `attack_reserve_spell_overexert = 0`. The
+reserve-spell danger and faint guards still have the values above. The
+over-mana cast is blocked before either guard can affect it.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
@@ -7237,9 +7270,10 @@ flag should be turned on"); borg-zoo#670 measures it.
 
 ## The emergency attack spell beyond the current mana (#980)
 
-`borg_attack_aux_spell_bolt_reserve` (`borg_fight_attack.rs:3196`, the C
-Borg's `borg-fight-attack.c:2520`) casts Magic Missile **only** when the Borg
-lacks the mana for it, with its mana faked to the maximum for the fail check.
+With overexertion enabled, `borg_attack_aux_spell_bolt_reserve`
+(`borg_fight_attack.rs:3418`, the C Borg's `borg-fight-attack.c:2520`)
+can cast Magic Missile with insufficient mana. It uses maximum mana
+for the final availability check.
 The engine always faints the caster of such a spell (`player-spell.c:540-553`:
 `player_over_exert(PY_EXERT_FAINT, 100, 5 * oops + 1)`, a paralysis that free
 action does not stop) and adds 5% fail per missing point (`player-spell.c:404-406`),
@@ -7254,31 +7288,27 @@ crows (592754909 on track-p, 1378676237 on main f57499d0).
 |---|---:|---|---|---|
 | `attack_reserve_spell_overexert` | 1 | flag | 0–1 | `borg_fight_attack.rs:3456` |
 
-1 is the C Borg's play (today's). 0 never casts the spell beyond the current SP.
-Not shipped; the zoo measures it (a request issue). The four replays are
-listed in PR #991; the games are the zoo report's (borg-zoo#668), not yet in
-borg-cemetery. The `= 0` arm is the shipped `harness/borg.txt` plus the line
-`borg_param_attack_reserve_spell_overexert = 0` in the run's `user/borg.txt`
-(the key is not in the shipped file, so `BORG_TXT_SET` cannot reach it, and the
-added line changes the run's `borg_txt_sha256`).
+Since #1057, the shipped value of 0 blocks the cast
+when the spell costs more than the current SP. The setting is present in
+`harness/borg.txt`. PR #991 lists the original case replays.
+[borg-zoo#675](https://github.com/diegoami/borg-zoo/issues/675) tracks the
+comparison.
 
 The registry now holds **2394** parameters (2393 on track-p `e26cb7b0` before
 it; one added).
 
 **With #878's guards** (`attack_reserve_faint_percent`,
 `attack_reserve_spell_damage_only`, both compiled 0 and read only inside this
-function). The #980 gate comes first, so at `attack_reserve_spell_overexert = 0`
-the cast never happens and both #878 settings are inert. At 1 they work as
-before. The two answer the same question differently. `= 0` removes the cast
-outright. #878's percent keeps it when the damage expected during the faint is
-small. That estimate weights the target by the spell's fail chance alone, so it
+function, shipped at 25 and 1 respectively). The #980 gate comes first,
+so the shipped setting blocks the over-mana cast before either guard can
+affect it. With overexertion enabled, #878's faint guard allows an over-mana
+cast when the expected damage during the faint is small. That estimate weights the target by the spell's fail chance alone, so it
 assumes a successful cast kills, and the doubled kill test makes a survivor
 likely. On 592754909, `attack_reserve_faint_percent = 50` and `= 100` both
 refuse the cast ("3.0 damage expected over a 3.5-turn faint, HP 3") and play
 the same keys as `= 0` (`f115048321c12344`). At 100% that refusal is at the
 margin: from 4 HP up, the same cast is allowed and the crow survives it.
-Which one ships, and whether #878's settings retire with `= 0`, is the owner's
-decision after the zoo (borg-zoo#675).
+The earlier replays used overexertion arms to exercise these guards.
 
 ## #987: first cures before the Phase Door reserve
 
