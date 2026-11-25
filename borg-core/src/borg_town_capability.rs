@@ -586,11 +586,11 @@ fn reduction_cap(subtype: u32) -> Option<usize> {
 fn rod_uses(quantity: i64, timeout: i64, cooldown: i64, horizon: i64) -> i64 {
     let q = quantity.clamp(1, 255);
     let cool = cooldown.max(1);
-    let mut timeout = timeout.max(0);
+    let first_ready = rod_ready_after(q, timeout, cool);
+    let mut timeout = timeout.saturating_sub(first_ready.saturating_mul(q)).max(0);
     let mut uses = 0;
-    // Match number_charging/recharge_timeout, using the native average
-    // cooldown as an explicit forecast (actual recharge rolls may differ).
-    for _ in 0..horizon.max(0) {
+    // Forecast subsequent charges with the native average cooldown.
+    for _ in first_ready..horizon {
         let charging = (timeout as u64).div_ceil(cool as u64).min(q as u64) as i64;
         if charging < q { uses += 1; timeout += cool; }
         let charging = (timeout as u64).div_ceil(cool as u64).min(q as u64) as i64;
@@ -3150,4 +3150,23 @@ impl Model {
                 self.value(id, row, row[4] + n) - self.value(id, row, row[4])
             }).sum()
     }
+}
+
+/// World ticks before at least one rod is ready. While all rods are cooling,
+/// the engine subtracts the full stack size from its aggregate timeout.
+pub(crate) fn rod_ready_after(quantity: i64, timeout: i64, cooldown: i64) -> i64 {
+    let quantity = quantity.clamp(1, 255);
+    let threshold = (quantity - 1).saturating_mul(cooldown.max(1));
+    let remaining = timeout.saturating_sub(threshold).max(0) as u64;
+    remaining.div_ceil(quantity as u64) as i64
+}
+
+#[test]
+fn a_fully_cooling_stack_supplies_a_charge_only_after_its_first_ready_tick() {
+    assert_eq!(rod_uses(1, 40, 40, 40), 0);
+    assert_eq!(rod_uses(1, 40, 40, 41), 1);
+    assert_eq!(rod_ready_after(2, 40, 40), 0);
+    assert_eq!(rod_ready_after(2, 80, 40), 20);
+    assert_eq!(rod_uses(2, 80, 40, 20), 0);
+    assert_eq!(rod_uses(2, 80, 40, 21), 1);
 }

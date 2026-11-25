@@ -466,10 +466,14 @@ fn prune_low_priority_home(
             continue;
         }
         let held: i32 = pack.map(|p| p.qty).sum();
-        let needed = if item.home_role == Role::Common {
+        // Keep explicit kit reserves even when a spell supplies the same effect.
+        // A replaceable convenience alone does not justify a Home slot.
+        let needed = if item.home_role == Role::Common
+            || input.revision >= 22 && item.home_role == Role::Renewable
+        {
             u.capability.as_ref().map_or(0, |m| {
                 let one = KitItem { qty: 1, ..*item };
-                let first_useful = held == 0 && m.take(&one) > 0;
+                let first_useful = item.home_role == Role::Common && held == 0 && m.take(&one) > 0;
                 i32::from(first_useful).max(m.home_stock_floor(item, held) - held)
             })
         } else { 0 };
@@ -1150,6 +1154,39 @@ mod tests {
         let (out, freed, _) = dispositions_by(&inp, &mut u, &st, Storing::default());
         assert_eq!(out, [Disposition::Take]);
         assert_eq!(freed.home_slots, 1);
+    }
+
+    #[test]
+    fn renewable_home_stock_respects_the_explicit_reserve() {
+        use crate::borg_town_capability::{Model, HOME};
+        let st = state(9, 20, 160);
+        let kit = [KitItem { home_role: Role::Renewable, qty: 3, need: -1, reduction: 0,
+            home_room: Some([3, 0, 3]), ..recall(Place::Home) }];
+        let mut inp = input(&kit);
+        inp.revision = crate::borg_town_record::PLAN_SCHEMA;
+        inp.limits.weight = 0;
+
+        let solve = |inp: &StepInput, demand| {
+            let mut u = Utility::of(&st, &kit, false);
+            u.capability = Some(Model { available: Vec::new(), packing: None,
+                curves: vec![[0, 100 * UNIT, demand, 0, 3 * UNIT]],
+                supplies: vec![[HOME, 0, 0, UNIT]],
+            });
+            dispositions_by(inp, &mut u, &st, Storing::default())
+        };
+
+        let (out, freed, copies) = solve(&inp, -UNIT);
+        assert_eq!(out, [Disposition::Sell]);
+        assert_eq!(copies, [2]);
+        assert_eq!(freed.home_slots, 0);
+
+        let (_, freed, copies) = solve(&inp, UNIT);
+        assert_eq!(copies, [3], "convenience value without a floor yields the slot");
+        assert_eq!(freed.home_slots, 1);
+
+        inp.revision = 21;
+        let (_, _, copies) = solve(&inp, -UNIT);
+        assert_eq!(copies, [3], "schema 21 keeps its original decisions");
     }
 
     #[test]

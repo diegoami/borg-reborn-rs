@@ -68,13 +68,26 @@ fn consumable(st: &BorgState, item: &borg_item) -> Role {
 }
 
 pub(crate) fn device(st: &BorgState, item: &borg_item) -> bool {
-    if item.kind == 0
-        || !item.aware
-        || item.cursed
-        || !matches!(u32::from(item.tval), TV_ROD | TV_WAND | TV_STAFF)
-        || u32::from(item.tval) != TV_ROD && item.pval <= 0
-        || !crate::borg_item_use::ranged_device_reliable(st, item)
-    {
+    let tval = u32::from(item.tval);
+    if item.kind == 0 || item.iqty == 0 || !item.aware || item.cursed {
+        return false;
+    }
+
+    let usable = match tval {
+        // Rods track recharge in timeout (obj-util.c:number_charging).
+        // A cooling rod can serve as a reserve if it will recharge on the trip.
+        TV_ROD => {
+            item.timeout <= 0
+                || crate::borg_town_capability::rod_ready_after(
+                    i64::from(item.iqty),
+                    i64::from(item.timeout),
+                    i64::from(crate::engine::kind_recharge_average(item.kind as usize)),
+                ) < crate::borg_town_utility::Journey::of(st).turns
+        }
+        TV_WAND | TV_STAFF => item.pval > 0,
+        _ => false,
+    };
+    if !usable || !crate::borg_item_use::ranged_device_reliable(st, item) {
         return false;
     }
     let effects = crate::engine::kind_effect_values(item.kind as usize, st.borg.tr(BI_CLEVEL));
@@ -82,8 +95,7 @@ pub(crate) fn device(st: &BorgState, item: &borg_item) -> bool {
         &effects,
         100,
         1000,
-        u32::from(item.tval) == TV_WAND
-            && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster,
+        tval == TV_WAND && i32::from(item.sval) == st.item_val.sv_wand_confuse_monster,
     )
     .is_empty()
 }

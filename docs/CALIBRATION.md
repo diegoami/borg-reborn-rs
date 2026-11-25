@@ -1937,7 +1937,7 @@ object with less value at home, untile they are not overcarrying again".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:312` |
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:313` |
 
 ## No detection prayer by panel at low level (#685)
 
@@ -6670,10 +6670,10 @@ Word of Recall, weight 5).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:284` |
-| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:285` |
+| `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:285` |
+| `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:286` |
 | `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:313` |
-| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+| `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:257` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1040` |
 
 ## Word of Recall on shallow trips (#984)
@@ -6712,7 +6712,7 @@ switches below are off by default, which reproduces today's play.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:255` |
+| `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:256` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9648` |
 
 ## The Borg's own light radius (#877)
@@ -8766,7 +8766,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:406` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:413` |
 
 ## Ranged readiness for the next trip (#1184)
 

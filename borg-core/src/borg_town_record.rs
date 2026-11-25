@@ -50,8 +50,9 @@ use crate::state::BorgState;
 /// V20 (#1151) splits a fuel stack at the light reserve, lets a known-cursed
 /// spare that adds no power go while the pack is over its allowance, and
 /// does not charge the weight of a Remove Curse read in town.
-/// Schema 21 records Home roles and the reserve value of shop offers.
-pub const PLAN_SCHEMA: i64 = 21;
+/// Schema 21 records Home roles and reserve offer values. Schema 22
+/// also preserves explicit kit reserves for renewable Home stock.
+pub const PLAN_SCHEMA: i64 = 22;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -533,7 +534,9 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != 16 && schema != 17 && schema != 18 && schema != 19 && schema != 20 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if !(4..=PLAN_SCHEMA).contains(&schema) {
+            return Err("not a supported plan record".into());
+        }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
