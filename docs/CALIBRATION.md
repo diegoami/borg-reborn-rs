@@ -5752,11 +5752,14 @@ Positive values let the Borg qualify for deeper levels. The check follows
 restock and applies even with `borg_plays_risky` on. At CL50 it stops
 applying. `borg-prepared.c:borg_prepared:560-562` at `574b618c`.
 
-The class gates skip their checks in risky play. DL2 starts a maximum-HP
-requirement. DL3 adds class HP and CL requirements, plus a combined minimum of
-two CLW, CSW and CCW potions below CL30, including in risky play. DL5 adds
-class HP and CL requirements when the Borg is already in the dungeon.
+The shipped DL2 minimum is one character level above the class's mixed
+exploration cap. DL3 adds a class-specific increase, and DL5 adds one more
+level while the Borg is already in the dungeon (#1217). The shipped DL2,
+DL3 and DL5 maximum-HP minimums are zero. The CL and HP checks skip risky
+play. From DL3 the Borg also needs two CLW, CSW or CCW potions in total
+below CL30, including in risky play. Recall is required from DL5.
 These checks still apply at later depths that reach their code.
+The inherited shallow checks are from
 `borg-prepared.c:borg_prepared_aux:82-200` at `574b618c`.
 
 The offset check starts at DL10, after the light and escape checks. For
@@ -5767,25 +5770,33 @@ bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 38) through CL44.
 DL34 adds a minimum of CL40. `borg-prepared.c:borg_prepared_aux:221-253`
 and `304-377` at `574b618c`.
 
-| Class | DL3 HP / CL | DL5 HP / CL | DL10 offset | DL21 offset / min CL / max CL |
-|---|---:|---:|---:|---:|
-| Warrior, Blackguard | 50 / 4 | 60 / 6 | −4 | +5 / 0 / 38 |
-| Mage, Necromancer | 60 / 11 | 80 / 15 | +5 | +8 / 0 / 38 |
-| Druid, Priest | 40 / 9 | 60 / 15 | 0 | +13 / 0 / 46 |
-| Paladin | 50 / 4 | 60 / 6 | 0 | +7 / 0 / 40 |
-| Rogue | 50 / 8 | 60 / 10 | 0 | +10 / 0 / 43 |
-| Ranger | 50 / 4 | 60 / 6 | 0 | +8 / 29 / 41 |
+| Class | Mixed exploration cap | DL2 min CL | DL3–4 min CL | DL5–9 min CL | DL10 offset | DL21 offset / min CL / max CL |
+|---|---:|---:|---:|---:|---:|---:|
+| Warrior | 5 | 6 | 7 | 8 | −4 | +5 / 0 / 38 |
+| Mage | 8 | 9 | 12 | 13 | +5 | +8 / 0 / 38 |
+| Druid | 7 | 8 | 11 | 12 | 0 | +13 / 0 / 46 |
+| Priest | 9 | 10 | 13 | 14 | 0 | +13 / 0 / 46 |
+| Necromancer | 9 | 10 | 13 | 14 | +5 | +8 / 0 / 38 |
+| Paladin | 8 | 9 | 11 | 12 | 0 | +7 / 0 / 40 |
+| Rogue | 6 | 7 | 9 | 10 | 0 | +10 / 0 / 43 |
+| Ranger | 7 | 8 | 10 | 11 | 0 | +8 / 29 / 41 |
+| Blackguard | 6 | 7 | 9 | 10 | −4 | +5 / 0 / 38 |
 
-Compiled and shipped values match the C checks. The files
-`harness/borg_<class>.txt` supply the class values folded as
-`borg_param_<name>__<class>` in `harness/borg.txt`. Set that class-specific
-key to sweep an offset in the zoo. The optional `borg_plan` overlay and
+The compiled defaults preserve older profiles, including an off-by-default
+DL2 CL gate. The shipped cure and Recall requirements, depth margin, and
+mid- and deep-depth settings retain the existing values while the shallow
+policy is measured. The files `harness/borg_<class>.txt` supply the class
+values folded as `borg_param_<name>__<class>` in `harness/borg.txt`.
+Set that class-specific key to sweep a threshold in the zoo.
+The optional `borg_plan` overlay and
 `borg_no_deeper` still provide explicit depth limits. Profiles with the
 retired #693 settings load with a warning and use these checks.
 
-| Parameter | Default | Unit | Range | Source |
+| Parameter | Compiled default | Unit | Range | Source |
 |---|---|---|---|---|
-| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:718` |
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:747` |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` |
+| `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:262` |
 | `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:257` |
 | `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:271` |
 | `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:275` |
