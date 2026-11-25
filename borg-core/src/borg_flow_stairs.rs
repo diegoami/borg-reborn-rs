@@ -30,7 +30,7 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
-const GOAL_FLEE: i32 = 7;
+pub(crate) const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
@@ -1568,6 +1568,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     }
     if case == "breeder-door-loop" {
         crate::borg_think_dungeon_util::run_breeder_door_regression(st);
+    }
+    if case == "stale-kobold-door" {
+        crate::borg_update::stale_kobold_door_fixture::run(st);
     }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
