@@ -48,8 +48,8 @@ PINNED_TOWN_SETTINGS = [
     # #1211 shipped the recovery-loop switches after these incidents: the
     # prep-buff hold and the full-HP mana rest move the long runs' turns.
     ("defend_prep_mana_starved", 0), ("recover_mana_rest_full_hp", 0),
-    # The incidents also predate the Home stock and known-unwanted policies.
-    ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0),
+    # The incidents predate the Home stock, known-unwanted and reserve policies.
+    ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0), ("town_home_reserve", 0),
     # #1046 shipped the lone-slow bundle (#878) after these incidents.
     ("lone_slow_attack", 0), ("escape_phase_lost_damage_only", 0),
     ("attack_reserve_spell_damage_only", 0), ("attack_reserve_faint_percent", 0),
