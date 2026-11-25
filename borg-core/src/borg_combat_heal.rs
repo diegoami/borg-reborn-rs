@@ -189,7 +189,9 @@ mod tests {
 pub(crate) mod fixture {
     use super::*;
     use crate::borg_caution::{borg_caution, fight_before_flight, fight_race};
-    use crate::borg_escape::{borg_escape, phase_rule_act, PhaseVerdict};
+    use crate::borg_escape::{
+        borg_escape, phase_door, phase_rule_act, phase_unknown_policy, PhaseCheck, PhaseSite, PhaseVerdict,
+    };
     use crate::borg_flow_kill::BorgKill;
     use crate::borg_headers::borg_trait_h::{
         BI_APHASE, BI_ARMOR, BI_CLEVEL, BI_CON_INDEX, BI_DEV, BI_MAXCLEVEL, BI_SPEED, BI_THN,
@@ -258,6 +260,7 @@ pub(crate) mod fixture {
     /// Run the production decisions with real game kinds, blows and spells.
     pub(crate) fn run(st: &mut BorgState, case: &str) -> ! {
         let (depth, level, hp, max) = match case {
+            "phase-pending-poison" => (2, 8, 23, 40),
             "tengu-early" => (5, 15, 175, 225),
             "tengu-light" => (5, 15, 89, 237),
             "tengu-phase-fight" => (5, 15, 38, 237),
@@ -318,6 +321,30 @@ pub(crate) mod fixture {
         add_item(st, 4, TV_SCROLL, phase);
 
         let expected = match case {
+            "phase-pending-poison" => {
+                add_monster(st, b"white jelly", 41, 1, 20);
+                st.borg.trait_[BI_ISPOISONED as usize] = 1;
+                // Keep the Borg's reconstructed CON different from the live engine's.
+                st.borg.trait_[BI_CON_INDEX as usize] = 37;
+                let decay = crate::borg_poison::decay(engine::player_con_index());
+                engine::set_test_poison((15 * decay) as i16);
+                let enabled = param(Param::escape_phase_lost_poison_pending) != 0;
+                assert_eq!(phase_unknown_policy(st), !enabled);
+                let phased = phase_door(st, PhaseSite::Compromised, PhaseCheck::None, Some(8), |st| {
+                    crate::borg_item_use::borg_read_scroll(st, phase)
+                });
+                assert_eq!(phased, enabled);
+                let verdict = st.borg.phase_rule.expect("the Phase rule was asked").1;
+                assert_eq!(verdict, if enabled { PhaseVerdict::Phase } else { PhaseVerdict::Fight });
+                let keys = st.io.queued_keys();
+                if enabled {
+                    assert!(keys.ends_with(&[u32::from(b'r'), u32::from(b'e')]), "{keys:?}");
+                } else {
+                    assert!(keys.is_empty(), "{keys:?}");
+                }
+                println!("#1083 Phase verdict passed: {case}");
+                std::process::exit(0);
+            }
             "tengu-early" | "tengu-light" => {
                 // Both enemies are outside immediate melee reach. One can
                 // pull the Borg into range of both, so its potion has a job.

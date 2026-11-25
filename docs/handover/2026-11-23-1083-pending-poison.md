@@ -18,3 +18,10 @@ measured on a historical build with the escape-first override set to 75.
 That result is specific to those inputs. The switch remains a hypothesis
 for a paired Zoo comparison in the jelly worlds of
 [borg-zoo#712](https://github.com/diegoami/borg-zoo/issues/712).
+
+The native fixture in `engine/tests/test_combat_heal.py` checks the live
+engine timer with the switch off and on. At 23 HP, danger 8, and 15 HP of
+pending poison, the off arm stays to fight and the on arm reads Phase Door.
+The shipped smoke matches the reference in all four games. Current Track P
+replays of the Ranger and Elf Druid 799968561 (in poison-x8) reach the cap
+with identical keys in both arms and without being poisoned.
