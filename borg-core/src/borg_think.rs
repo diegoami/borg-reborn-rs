@@ -228,7 +228,8 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     #[cfg(feature = "test-stair-handoff")]
     if let Ok(case) = std::env::var("BORG_TEST_STAIR_HANDOFF") {
         match case.as_str() {
-            "healing-restock-dungeon" => crate::borg_healing_restock::fixture::dungeon(st),
+            "healing-restock-dungeon" => crate::borg_healing_restock::fixture::dungeon(st, false),
+            "healing-restock-short" => crate::borg_healing_restock::fixture::dungeon(st, true),
             "healing-restock-town" => crate::borg_healing_restock::fixture::town(st),
             _ => crate::borg_flow_stairs::run_handoff_regression(st, &case),
         }

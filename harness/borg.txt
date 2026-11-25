@@ -2001,8 +2001,9 @@ borg_param_town_hunt_min_hp_percent = 0
 borg_param_kit_leash = 0
 borg_param_kit_descent_min_percent = 0
 borg_param_kit_leave_danger_percent = 0
-# #1214: return to town when the last usable healing potion is gone.
-borg_param_restock_empty_healing = 1
+# #1214: return for a short healing reserve when town can cover the deficit.
+borg_param_restock_healing = 1
+borg_param_restock_healing_min_potions = 2
 borg_param_kit_restock = 0
 borg_param_kit_start_reserve = 0
 borg_param_kit_money_first = 0

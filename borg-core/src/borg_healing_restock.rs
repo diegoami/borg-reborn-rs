@@ -1,4 +1,4 @@
-//! Town restocking after the last known healing potion is used (#1214).
+//! Town restocking when the known healing potion reserve runs low (#1214).
 use crate::borg_headers::borg_h::BORG_TOWN_NO_STORES;
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
@@ -19,19 +19,50 @@ enum Phase {
     #[default]
     NoReserve,
     Stocked,
-    Returning,
-    Shopping {
-        retry_price: Option<i32>,
+    Returning {
+        started_with: i32,
     },
-    Deferred {
-        retry_price: Option<i32>,
-    },
+    Shopping,
+    Deferred,
 }
 
 #[derive(Default)]
 pub(crate) struct Restock {
     phase: Phase,
     route_attempt: Option<(i32, i32)>,
+    town: TownSupply,
+}
+
+#[derive(Default)]
+struct TownSupply {
+    offers: Vec<(i32, i32)>,
+    departure_gold: i32,
+    departure_stock: i32,
+}
+
+impl TownSupply {
+    fn refill_cost(&self, mut missing: i32) -> Option<i32> {
+        let mut cost: i32 = 0;
+        for &(price, available) in &self.offers {
+            let count = missing.min(available);
+            cost = cost.saturating_add(price.saturating_mul(count));
+            missing -= count;
+            if missing == 0 {
+                return Some(cost);
+            }
+        }
+        None
+    }
+
+    fn can_refill(&self, missing: i32, gold: i32, adequate_departure: bool) -> bool {
+        let Some(cost) = self.refill_cost(missing) else {
+            return false;
+        };
+        gold >= cost
+            && (adequate_departure
+                || self.departure_gold < cost
+                || gold.saturating_sub(self.departure_gold) >= cost.max(1))
+    }
 }
 
 fn healing_potion(st: &BorgState, item: &borg_item) -> bool {
@@ -49,44 +80,67 @@ fn healing_potion(st: &BorgState, item: &borg_item) -> bool {
         .contains(&i32::from(item.sval))
 }
 
-fn has_reserve(st: &BorgState) -> bool {
+fn carried_potions(st: &BorgState) -> i32 {
     // The quaff command uses known pack items. The healing traits can also
     // count spells and device charges, which cannot replace a potion here.
     st.items
         .items
         .iter()
         .take(crate::borg_item::inven_wield() as usize)
-        .any(|item| item.aware && healing_potion(st, item))
+        .filter(|item| item.aware && healing_potion(st, item))
+        .map(|item| i32::from(item.iqty))
+        .sum()
 }
 
 fn enabled(st: &BorgState) -> bool {
-    value(Param::restock_empty_healing) != 0 && st.cfg(BORG_TOWN_NO_STORES) == 0
+    value(Param::restock_healing) != 0 && st.cfg(BORG_TOWN_NO_STORES) == 0
+}
+
+fn minimum() -> i32 {
+    value(Param::restock_healing_min_potions)
 }
 
 pub(crate) fn observe_dungeon(st: &mut BorgState) {
     if st.borg.tr(BI_CDEPTH) == 0 || !enabled(st) {
         return;
     }
-    let gold = st.borg.tr(BI_GOLD);
-    let old = st.think_dungeon.healing_restock.phase;
-    let phase = match (old, has_reserve(st)) {
-        // Once committed, continue the trip through dungeon level changes.
-        (Phase::Returning, _) => Phase::Returning,
-        (_, true) => Phase::Stocked,
-        (Phase::Stocked, false) => Phase::Returning,
-        (Phase::Shopping { retry_price }, false) => Phase::Deferred { retry_price },
-        (
-            Phase::Deferred {
-                retry_price: Some(price),
-            },
-            false,
-        ) if gold >= price => Phase::Returning,
+    let held = carried_potions(st);
+    let restock = &mut st.think_dungeon.healing_restock;
+    let old = restock.phase;
+    restock.phase = match old {
+        // Keep a committed return through dungeon level changes.
+        Phase::Returning { .. } => old,
+        _ if held >= minimum() => Phase::Stocked,
+        Phase::Shopping => Phase::Deferred,
+        // Losing the last potion still calls for one visit when town's
+        // offers or the Borg's ability to fund them are uncertain.
+        Phase::Stocked if held == 0 => Phase::Returning { started_with: held },
+        _ if held > 0 || old == Phase::Deferred => {
+            let missing = if held == 0 { 1 } else { minimum() - held };
+            let adequate_departure =
+                old != Phase::Deferred && restock.town.departure_stock >= minimum();
+            if restock
+                .town
+                .can_refill(missing, st.borg.tr(BI_GOLD), adequate_departure)
+            {
+                Phase::Returning { started_with: held }
+            } else if old == Phase::NoReserve {
+                Phase::Stocked
+            } else {
+                old
+            }
+        }
         _ => old,
     };
-    st.think_dungeon.healing_restock.phase = phase;
     if returning(st) {
-        if old != Phase::Returning {
-            crate::borg_io::borg_note(st, "# Returning to town: out of healing potions");
+        if !matches!(old, Phase::Returning { .. }) {
+            crate::borg_io::borg_note(
+                st,
+                &format!(
+                    "# Returning to town: low on healing potions ({held}/{} carried)",
+                    minimum()
+                ),
+            );
             if st.borg.goal.type_0 == GOAL_BORE as i16 {
                 st.borg.goal.type_0 = 0;
             }
@@ -96,19 +150,23 @@ pub(crate) fn observe_dungeon(st: &mut BorgState) {
 }
 
 pub(crate) fn returning(st: &BorgState) -> bool {
-    st.borg.tr(BI_CDEPTH) != 0
-        && st.think_dungeon.healing_restock.phase == Phase::Returning
+    return_requirement(st).is_some()
+}
+
+pub(crate) fn return_requirement(st: &BorgState) -> Option<(i32, i32)> {
+    let Phase::Returning { started_with } = st.think_dungeon.healing_restock.phase else {
+        return None;
+    };
+    (st.borg.tr(BI_CDEPTH) != 0
         && enabled(st)
         && (!engine::player_opt(OPT_birth_force_descend)
             || st.borg.goal.recalling != 0
-            || can_try_recall(st))
+            || can_try_recall(st)))
+    .then(|| (started_with, minimum()))
 }
 
 pub(crate) fn deferred(st: &BorgState) -> bool {
-    matches!(
-        st.think_dungeon.healing_restock.phase,
-        Phase::Deferred { .. }
-    )
+    st.think_dungeon.healing_restock.phase == Phase::Deferred
 }
 
 pub(crate) fn follow_return(st: &mut BorgState) -> bool {
@@ -151,94 +209,92 @@ pub(crate) fn observe_town(st: &mut BorgState) {
     if st.borg.tr(BI_CDEPTH) != 0 || !enabled(st) {
         return;
     }
-    match st.think_dungeon.healing_restock.phase {
-        Phase::Returning | Phase::Shopping { .. } | Phase::Deferred { .. } => {
-            // Cache only prices observed in town. If the visit fails, a
-            // later increase that pays for a known offer can justify a retry.
-            let gold = st.borg.tr(BI_GOLD);
-            let retry_price = cheapest_offer(st, false)
-                .map(|(_, price)| price)
-                .filter(|&price| price > gold);
-            st.think_dungeon.healing_restock.phase = Phase::Shopping { retry_price };
-        }
-        _ => {
-            st.think_dungeon.healing_restock.phase = if has_reserve(st) {
-                Phase::Stocked
-            } else {
-                Phase::NoReserve
-            };
-        }
-    }
+    let held = carried_potions(st);
+    let gold = st.borg.tr(BI_GOLD);
+    // Refresh only from town observations. Dungeon decisions never see
+    // offscreen restocks, and an unaffordable or fruitless visit is not
+    // repeated with the same resources.
+    let mut offers: Vec<_> = town_offers(st, false)
+        .map(|(_, _, price, count)| (price, count))
+        .collect();
+    offers.sort_unstable_by_key(|&(price, _)| price);
+    let restock = &mut st.think_dungeon.healing_restock;
+    restock.town = TownSupply {
+        offers,
+        departure_gold: gold,
+        departure_stock: held,
+    };
+    restock.phase = match restock.phase {
+        Phase::Returning { .. } | Phase::Shopping | Phase::Deferred => Phase::Shopping,
+        _ if held > 0 => Phase::Stocked,
+        _ => Phase::NoReserve,
+    };
 }
 
 pub(crate) fn purchase(st: &BorgState) -> Option<TownAction> {
     if st.borg.tr(BI_CDEPTH) != 0
         || !enabled(st)
-        || !matches!(
-            st.think_dungeon.healing_restock.phase,
-            Phase::Shopping { .. }
-        )
+        || st.think_dungeon.healing_restock.phase != Phase::Shopping
         || st.borg.tr(BI_LIGHT) == 0
         || st.borg.tr(BI_FOOD) == 0
         || st.borg.tr(BI_ISCUT) != 0
         || st.borg.tr(BI_ISPOISONED) != 0
-        || has_reserve(st)
+        || carried_potions(st) >= minimum()
     {
         return None;
     }
-    cheapest_offer(st, true).map(|(action, _)| action)
-}
-
-fn cheapest_offer(st: &BorgState, buying: bool) -> Option<(TownAction, i32)> {
     let gold = st.borg.tr(BI_GOLD);
-    let mut best = None;
-    for (shop, stock) in st.store.shops.iter().enumerate() {
-        // Leave Black Market spending to the normal planner and its budget.
-        if shop == crate::borg_town_stock::BORG_BLACK_MARKET {
-            continue;
-        }
-        let native = engine::store_stock(&st.access, shop);
-        for (slot, item) in stock.ware.iter().enumerate() {
-            if !healing_potion(st, item) || (shop == BORG_HOME && !item.aware) {
-                continue;
-            }
-            let Some(offer) = native.get(slot) else {
-                continue;
-            };
-            let price = if shop == BORG_HOME {
-                0
-            } else {
-                offer.purchase_quote(shop)
-            };
-            if buying
-                && (price > gold
-                    || offer.carry_capacity() == 0
-                    || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) == 0
-                    || crate::borg_town_live::buy_rejected(st, shop as i16, slot))
-            {
-                continue;
-            }
-
-            let code = if shop == BORG_HOME {
+    town_offers(st, true)
+        .filter(|&(_, _, price, _)| price <= gold)
+        .min_by_key(|&(_, _, price, _)| price)
+        .map(|(shop, slot, _, _)| TownAction {
+            code: if shop == BORG_HOME {
                 action::TAKE_HOME
             } else {
                 action::BUY
-            };
-            if best
-                .as_ref()
-                .is_none_or(|&(_, best_price)| price < best_price)
-            {
-                best = Some((
-                    TownAction {
-                        code,
-                        at: [shop as i64, slot as i64, 1, 0],
-                    },
-                    price,
-                ));
-            }
-        }
-    }
-    best
+            },
+            at: [shop as i64, slot as i64, 1, 0],
+        })
+}
+
+/// Quotes of known healing potions from ordinary stores and Home. The
+/// Black Market remains subject to the normal planner's separate budget.
+fn town_offers(
+    st: &BorgState,
+    buying: bool,
+) -> impl Iterator<Item = (usize, usize, i32, i32)> + '_ {
+    st.store
+        .shops
+        .iter()
+        .enumerate()
+        .filter(|&(shop, _)| shop != crate::borg_town_stock::BORG_BLACK_MARKET)
+        .flat_map(move |(shop, stock)| {
+            let native = engine::store_stock(&st.access, shop);
+            stock
+                .ware
+                .iter()
+                .enumerate()
+                .filter_map(move |(slot, item)| {
+                    if !healing_potion(st, item) || (shop == BORG_HOME && !item.aware) {
+                        return None;
+                    }
+                    let offer = native.get(slot)?;
+                    if buying
+                        && (offer.carry_capacity() == 0
+                            || crate::borg_town_live::acquisition_room(st, item.tval, item.kind)
+                                == 0
+                            || crate::borg_town_live::buy_rejected(st, shop as i16, slot))
+                    {
+                        return None;
+                    }
+                    let price = if shop == BORG_HOME {
+                        0
+                    } else {
+                        offer.purchase_quote(shop)
+                    };
+                    Some((shop, slot, price, i32::from(item.iqty)))
+                })
+        })
 }
 
 #[cfg(feature = "test-stair-handoff")]
@@ -251,7 +307,7 @@ pub(crate) mod fixture {
     use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE};
     use crate::headers::z_type_h::loc;
 
-    pub(crate) fn dungeon(st: &mut BorgState) -> ! {
+    pub(crate) fn dungeon(st: &mut BorgState, low: bool) -> ! {
         assert_eq!(st.borg.tr(BI_CDEPTH), 2);
         assert!(engine::option_set(c"birth_force_descend", false));
         let start = loc { x: 40, y: 20 };
@@ -262,7 +318,13 @@ pub(crate) mod fixture {
         potion.aware = true;
         potion.tval = TV_POTION as u8;
         potion.sval = st.item_val.sv_potion_cure_light as u8;
-        potion.iqty = 1;
+        potion.iqty = if low { 2 } else { 1 };
+        if low {
+            st.borg.trait_[BI_CDEPTH as usize] = 0;
+            st.borg.trait_[BI_GOLD as usize] = 0;
+            observe_town(st);
+            st.borg.trait_[BI_CDEPTH as usize] = 2;
+        }
         observe_dungeon(st);
         assert!(!returning(st));
         assert!(crate::borg_item_use::borg_quaff_potion(
@@ -271,7 +333,7 @@ pub(crate) mod fixture {
         ));
         assert_eq!(borg_inkey(st, true), u32::from(b'q'));
         borg_inkey(st, true);
-        st.items.items[0].iqty = 0;
+        st.items.items[0].iqty -= 1;
         st.borg.trait_[BI_AHEAL as usize] = 1000; // A healing spell is no potion.
         st.borg.trait_[BI_RECALL as usize] = 0;
         st.borg.goal.type_0 = 0;
@@ -298,7 +360,23 @@ pub(crate) mod fixture {
             crate::borg_flow::borg_flow_clear(st);
         };
         arrive(st, start, loc { x: 42, y: 20 });
+        if low {
+            observe_dungeon(st);
+            assert_eq!(carried_potions(st), 1);
+            assert!(
+                !returning(st),
+                "one potion remains and the refill is unaffordable"
+            );
+            let price = st
+                .think_dungeon
+                .healing_restock
+                .town
+                .refill_cost(1)
+                .unwrap();
+            st.borg.trait_[BI_GOLD as usize] = price;
+        }
         observe_dungeon(st);
+        assert_eq!(return_requirement(st), Some((i32::from(low), 2)));
         assert!(st.borg.goal.rising);
         assert!(crate::borg_prepared::borg_must_return_to_town(st).is_some());
         assert!(
@@ -340,12 +418,12 @@ pub(crate) mod fixture {
         st.borg.trait_[BI_GOLD as usize] = 0;
         st.borg.goal.rising = false;
         observe_town(st);
-        let Phase::Shopping {
-            retry_price: Some(price),
-        } = st.think_dungeon.healing_restock.phase
-        else {
-            panic!("fixture needs a regular shop with healing for sale");
-        };
+        let price = st
+            .think_dungeon
+            .healing_restock
+            .town
+            .refill_cost(1)
+            .expect("a regular shop has healing for sale");
         assert!(
             purchase(st).is_none(),
             "a potion the Borg cannot afford is never selected"
@@ -382,7 +460,8 @@ pub(crate) mod fixture {
             "dungeon gold now covers the last quoted price"
         );
 
-        println!("#1214 healing restock passed: dungeon");
+        let case = if low { "short" } else { "dungeon" };
+        println!("#1214 healing restock passed: {case}");
         std::process::exit(0);
     }
 
@@ -396,9 +475,9 @@ pub(crate) mod fixture {
         );
         assert!(enabled(st));
         if st.think_dungeon.healing_restock.phase == Phase::NoReserve {
-            assert!(!has_reserve(st));
-            st.think_dungeon.healing_restock.phase = Phase::Returning;
-        } else if has_reserve(st) {
+            assert_eq!(carried_potions(st), 0);
+            st.think_dungeon.healing_restock.phase = Phase::Returning { started_with: 0 };
+        } else if carried_potions(st) >= minimum() {
             println!("#1214 healing restock passed: town");
             std::process::exit(0);
         }

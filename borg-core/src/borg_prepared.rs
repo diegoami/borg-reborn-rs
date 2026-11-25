@@ -1060,8 +1060,8 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
         return None;
     }
 
-    if crate::borg_healing_restock::returning(st) {
-        return Some(Reason::fixed("restock healing potions", "healing_potions", 0, 1));
+    if let Some((held, required)) = crate::borg_healing_restock::return_requirement(st) {
+        return Some(Reason::fixed("restock healing potions", "healing_potions", held, required));
     }
 
     // Always spend time on a level unless 100

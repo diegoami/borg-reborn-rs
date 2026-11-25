@@ -97,8 +97,8 @@ PINNED_TOWN_SETTINGS = [
     ("caution_combat_heal", 0),
     # #1159 changes the path to the incident. Keep the original route
     # selection for these exact-turn replays.
-    # #1214 adds a town return after using the last healing potion.
-    ("restock_empty_healing", 0),
+    # #1214 adds a town return when healing potions run low.
+    ("restock_healing", 0),
     ("caution_rising_skip_held_stairs", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
@@ -277,6 +277,9 @@ class HealingRestockTest(unittest.TestCase):
 
     def test_shallow_depletion_blocked_route_and_retry_funding(self):
         self.run_case("dungeon", 2)
+
+    def test_short_reserve_returns_while_one_potion_remains(self):
+        self.run_case("short", 2)
 
     def test_affordable_restock_uses_the_native_store(self):
         for live in (True, False):
