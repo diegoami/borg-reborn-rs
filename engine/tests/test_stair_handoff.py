@@ -34,7 +34,7 @@ PINNED_TOWN_SETTINGS = [
     ("town_recall_urgent", 0),
     # #1239 lets Town acquisitions exceed the old weight allowance. Keep
     # the shopping rules that lead to the recorded stair incident grids.
-    ("town_shop_overloaded", 0),
+    ("town_shop_overloaded", 0), ("town_loadout_power_loss", 0),
     ("town_prepared_percent", 0), ("town_variety_min_depth", 0),
     ("town_recall_reserve", 1), ("buy_recall_from_gold", 400),
     ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),
@@ -50,6 +50,10 @@ PINNED_TOWN_SETTINGS = [
     ("defend_prep_mana_starved", 0), ("recover_mana_rest_full_hp", 0),
     # The incidents predate the Home stock, known-unwanted and reserve policies.
     ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0), ("town_home_reserve", 0),
+    # The incident paths predate the three standing and descent fixes.
+    ("caution_note_standing_on_stairs", 0),
+    ("stairs_descent_gates_without_upstair", 0),
+    ("caution_standing_descent_gated", 0),
     # #1046 shipped the lone-slow bundle (#878) after these incidents.
     ("lone_slow_attack", 0), ("escape_phase_lost_damage_only", 0),
     ("attack_reserve_spell_damage_only", 0), ("attack_reserve_faint_percent", 0),
@@ -396,7 +400,7 @@ class StaleStairMoreTest(unittest.TestCase):
 
     stair_more is set before the descent flows it belongs to and survives
     their failure until a new level. A later think standing on a FEAT_MORE
-    grid then takes the stair on the stale flag at the shipped 0 (C's
+    grid then takes the stair on the stale flag at 0 (C's
     defect); at 1 caution's standing take applies more_refused's descent
     gates and the hungry character refuses it.
     """
@@ -475,7 +479,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
     more_refused's four descent refusals sit behind C's wrapper "if there
     are no down stairs, don't filter use of up stairs": with no up staircase
     seen, a hungry birth-level Warrior dives past the hunger gate and takes
-    a reachable down staircase at the shipped 0; at 1 the gates apply and
+    a reachable down staircase at 0; at 1 the gates apply and
     the descent is refused.
     """
 
@@ -549,9 +553,8 @@ class NoteStandingFlagsTest(unittest.TestCase):
     note_standing's on_upstair/on_dnstair are dead in C (declared false,
     only ever assigned false), which mutes the danger arm of the
     choose_stairs trigger: a low-level character in real danger standing on
-    a tracked up staircase takes no stairs at the shipped 0; at 1 the flags
-    mean their intent and caution flags the way out and takes the stairs
-    up.
+    a tracked up staircase uses the escape path at 0. At 1 the standing
+    flags let caution take the up stairs first.
     """
 
     def run_case(self, flags_on):
