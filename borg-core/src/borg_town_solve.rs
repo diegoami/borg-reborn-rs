@@ -1007,6 +1007,32 @@ mod tests {
         move |_, n| per * i64::from(n.min(cap))
     }
 
+    /// #1103 (review of #1112, F2): the purse threshold across the urgent and
+    /// the ordinary path in one stock. A level-12 Borg (threshold 4800) whose only
+    /// poison cure is at the Black Market, beside an ordinary Black Market ware:
+    /// at 1000 gold the urgent cure is bought and the ordinary ware is not in the
+    /// solver's tables; at 5000 both are.
+    #[test]
+    fn the_threshold_closes_the_ordinary_black_market_buy_and_not_the_urgent_one() {
+        use crate::borg_town_budget::{black_market_share, urgent_market_allows};
+        use crate::borg_town_usefulness::Need;
+        let t = town([&[], &[], &[], &[], &[], &[], &[item(4, 1, 225), item(1, 2, 60)], &[]]);
+        let s = build(&t, &[]);
+        let plan = |gold: i64| {
+            let f = Facts { gold, pack_capacity: 23, home_capacity: 24, carry: 2000, weight: 0 };
+            let mut b = Budget::build_with_reserve(&f, &s, &[Need::Poison], 0, |c| {
+                if urgent_market_allows(c, gold, 500, 60) && c.kind == 4 { vec![Need::Poison] } else { Vec::new() }
+            });
+            b.black_market_reserve = 500;
+            b.black_market_percentage = black_market_share(60, gold, 12, 6000, 100);
+            let ordinary = groups(&s, &b, 10, |_| None, capped(4, 50)).iter().flat_map(|g| &g.options)
+                .flat_map(|o| &o.picks).any(|&(i, _)| s.candidates[i].kind == 1);
+            (b.urgent.len(), b.unmet.len(), ordinary)
+        };
+        assert_eq!(plan(1000), (1, 0, false), "the urgent cure is bought, the ordinary ware is not offered");
+        assert_eq!(plan(5000), (1, 0, true), "above the threshold both are");
+    }
+
     /// The cap closes before the 1x copies run out: the 3x price is
     /// never in a table.
     #[test]

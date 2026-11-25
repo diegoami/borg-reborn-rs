@@ -25,7 +25,7 @@ use crate::borg_escape::{
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
-    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+    borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells, more_refused,
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -227,6 +227,9 @@ fn outmatched_heal_applies(
 /// estimate is a pessimistic worst case; the potion buys a turn.
 /// Off (`caution_heal_when_outmatched` = 0) it does nothing.
 fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if crate::borg_combat_heal::enabled(st) {
+        return crate::borg_combat_heal::quaff(st);
+    }
     if !outmatched_heal_applies(
         p(Param::caution_heal_when_outmatched),
         st.borg.tr(BI_CURHP),
@@ -490,6 +493,18 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // #1194: decide wound potions against the monster reply, including
+    // during Recall. Known pull exposure can matter even at a safe grid.
+    let legacy_wound_potions = if st.borg.near.unique < 10 {
+        match crate::borg_combat_heal::quaff_in_combat(st) {
+            Some(true) => return true,
+            Some(false) => false,
+            None => true,
+        }
+    } else {
+        true
+    };
+
     // Don't bother healing if not in danger
     if danger == 0 && st.borg.tr(BI_ISPOISONED) == 0 && st.borg.tr(BI_ISCUT) == 0 {
         return false;
@@ -519,7 +534,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, the
     // held Cure Light Wounds is drunk at the line.
-    if crate::borg_poison::late_drink(st, danger) {
+    if legacy_wound_potions && crate::borg_poison::late_drink(st, danger) {
         return true;
     }
 
@@ -575,7 +590,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CLW_HEAL)
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
-            || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+            || (legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
             || borg_activate_item(st, st.act.cure_light))
     {
         borg_note(st, "# Healing Level 1.");
@@ -588,7 +603,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
         // borg-reborn-rs (#1140, `deal_with_poison`): poisoned and safe, late.
         && !crate::borg_poison::late_drink_holds(st, danger, crate::borg_poison::CSW_HEAL)
-        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        && ((legacy_wound_potions && borg_quaff_potion(st, st.item_val.sv_potion_cure_serious))
             || borg_activate_item(st, st.act.cure_serious))
     {
         borg_note(st, "# Healing Level 2.");
@@ -599,14 +614,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
-        && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
+        && (borg_activate_item(st, st.act.cure_critical)
+            || (legacy_wound_potions && borg_quaff_crit(st, false)))
     {
         borg_note(st, "# Healing Level 3.");
         return true;
     }
 
     // If in danger try  one more Cure Critical if it will help
-    if danger >= st.borg.tr(BI_CURHP)
+    if legacy_wound_potions && danger >= st.borg.tr(BI_CURHP)
         && danger < st.borg.tr(BI_MAXHP)
         && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
@@ -618,7 +634,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // if deep, and low on HP, but in a zero danger spot, drink some CCW to
     // add a few HP before resting
-    if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
+    if legacy_wound_potions && st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
         && danger < p(Param::caution_deep_ccw_danger)
         && pct_down >= p(Param::caution_deep_ccw_loss)
         && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
@@ -904,6 +920,14 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 /// `(on_upstair, on_dnstair)`, which C sets to `false` when the Borg stands
 /// on such stairs (and leaves `false` otherwise).
 fn note_standing(st: &mut BorgState) -> (bool, bool) {
+    // borg-reborn-rs (#1176): C declares these `false` and only ever
+    // assigns `false` — even standing on the tracked staircase leaves them
+    // false (borg-caution.c:805, 983, 996), so the danger+standing-on-stair
+    // trigger and the `|| on_*stair` disjuncts of the standing stair takes
+    // are dead code. caution_note_standing_on_stairs restores the flags'
+    // evident intent (true when the Borg stands on the tracked staircase);
+    // 0 keeps C.
+    let standing_flag = p(Param::caution_note_standing_on_stairs) != 0;
     let mut on_upstair = false;
     let mut on_dnstair = false;
 
@@ -924,7 +948,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.less.y[iu] == st.borg.c.y && st.stairs.less.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on up-stairs");
-            on_upstair = false;
+            on_upstair = standing_flag;
         }
         i += 1;
     }
@@ -935,7 +959,7 @@ fn note_standing(st: &mut BorgState) -> (bool, bool) {
         if st.stairs.more.y[iu] == st.borg.c.y && st.stairs.more.x[iu] == st.borg.c.x {
             // if standing on one
             borg_note(st, "# Standing on dn-stairs");
-            on_dnstair = false;
+            on_dnstair = standing_flag;
         }
         i += 1;
     }
@@ -987,13 +1011,19 @@ fn awake_monster_adjacent(st: &BorgState) -> bool {
 
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
-fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+fn desperate_flow(
+    st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str,
+    budget: Option<&mut DesperateWalkBudget>,
+) -> bool {
     crate::borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
-        desperate_flow_with_route_guard(st, up, range, why)
+        desperate_flow_with_route_guard(st, up, range, why, budget)
     })
 }
 
-fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str) -> bool {
+fn desperate_flow_with_route_guard(
+    st: &mut BorgState, up: bool, range: DesperateStairRange, why: &str,
+    budget: Option<&mut DesperateWalkBudget>,
+) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
     // on, or next to, are not reachable: the escapes and the attack decide
@@ -1027,10 +1057,10 @@ fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: Desperat
         }
     }
     st.borg.status.desperate = true;
-    let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) {
+    let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) || budget.is_some() {
         // A stair that is close across the map may be far away on foot.
         // Keep the proximity limit on the route, including any detour.
-        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach)
+        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach, budget)
     } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
@@ -1051,7 +1081,7 @@ fn desperate_flow_with_route_guard(st: &mut BorgState, up: bool, range: Desperat
 /// `borg_caution`). If you are low level and near the stairs and you can
 /// hop onto them in very few steps, try to head to them out of
 /// desperation.
-fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
+pub(crate) fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // borg-reborn-rs (#837, owner): "while confused, don't start a Desperate
     // for Stairs walk": 75% of its steps go astray (`player_confuse_dir`,
     // `player-util.c:1353`; the walk into the wall of the Necromancer's last
@@ -1081,7 +1111,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     if b_j <= near_up
         && b_j != -1
         && pos_danger < st.borg.tr(BI_CURHP)
-        && desperate_flow(st, true, DesperateStairRange::Nearby(near_up), "# Desperate for Stairs (one)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(near_up), "# Desperate for Stairs (one)", None)
     {
         return true;
     }
@@ -1090,11 +1120,12 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_up = p(Param::caution_desperate_adjacent_up_distance);
     if b_j <= adjacent_up
         && b_j != -1
-        && desperate_flow(st, true, DesperateStairRange::Nearby(adjacent_up), "# Desperate for Stairs (two)")
+        && desperate_flow(st, true, DesperateStairRange::Nearby(adjacent_up), "# Desperate for Stairs (two)", None)
     {
         return true;
     }
 
+    let mut pursuit = None;
     // Low level guys tend to waste money reading the recall scrolls
     let scary_up = p(Param::caution_desperate_scary_distance) - 1;
     if b_j <= scary_up
@@ -1103,6 +1134,8 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_scary_level)
     {
         let mut safe = true;
+        let current_speed = p(Param::caution_desperate_fast_haste) != 0;
+        let player_speed = if current_speed { engine::player_combat_speed() } else { st.borg.tr(BI_SPEED) };
 
         // do not attempt it if an adjacent monster is faster than me
         for i in 0..8 {
@@ -1124,7 +1157,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
             // only a faster monster that is also dangerous (a fruit bat
             // next to the Borg is not a reason to stay).
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+            if desperate_neighbour_faster(&st.kills.kills[usize::from(kill)], player_speed, current_speed)
                 && fast_neighbour_counts(st, usize::from(kill))
             {
                 safe = false;
@@ -1138,8 +1171,14 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
             || !safe
         {
             // try to take them on, you cant outrun them
-        } else if desperate_flow(st, true, DesperateStairRange::Nearby(scary_up), "# Desperate for Stairs (three)") {
-            return true;
+        } else {
+            pursuit = DesperateWalkBudget::for_contact(st);
+            if desperate_flow(
+                st, true, DesperateStairRange::Nearby(scary_up),
+                "# Desperate for Stairs (three)", pursuit.as_mut(),
+            ) {
+                return true;
+            }
         }
     }
 
@@ -1147,7 +1186,9 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
     if b_m <= adjacent_down
         && b_m != -1
-        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)"))
+        && ((!pursuit.is_some_and(|budget| budget.refused)
+            && crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger))
+            || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)", None))
     {
         return true;
     }
@@ -3738,6 +3779,11 @@ pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> 
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
 }
 
+/// Current speed for an immediate movement decision (mon-move.c:1928-1935).
+fn current_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    forecast_monster_speed(kill) - 2 * i32::from(kill.observed_slow_level)
+}
+
 // Recall is already pending during exposure: these non-damaging spells do
 // not stop its countdown. They CAN change the ability to execute attacks,
 // so a winning fight with spells still remains uncertified. monster_spell.txt
@@ -4015,7 +4061,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     // estimates can be checked on its original losing AND winning fights.
     if mode == 2 || !won || margin_rejected { return false; }
     let (i, _, attack) = plans[0];
-    crate::borg_fight_attack::perform_focused_attack(st, i, attack)
+    crate::borg_combat_heal::quaff(st) || crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
 
 /// #992: reserve a share of current HP for the fight-before-flight verdict.
@@ -4678,9 +4724,20 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
     // is skipped then, so nothing cancels a departure the rule has noted
     // (review of #616, N1).
-    let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
-        && leave_stairs_on_monster(st, pos_danger);
-    if !by_stairs_rule
+    // borg-reborn-rs (#1178, review): a descent the selection machinery
+    // itself just chose — leave_stairs_on_monster (a recovering Borg on a
+    // staircase a monster threatens) or choose_stairs — is fresh intent,
+    // not the stale flag the gate below exists for; it stays eligible.
+    // The selectors report their own down choice: a flag that was already
+    // set on entry (the failed dive's stale flag) must not hide a fresh
+    // selection of the same staircase (re-review of #1185).
+    let leave_selection = if !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary) {
+        leave_stairs_on_monster(st, pos_danger)
+    } else {
+        None
+    };
+    let mut choose_selected_down = false;
+    if leave_selection.is_none()
         && (st.borg.goal.leaving
             || st.borg.goal.fleeing
             || st.borg.mon.scary
@@ -4690,8 +4747,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
                 && on_upstair))
     // danger and standing on stair
     {
-        choose_stairs(st, pos_danger);
+        choose_selected_down = choose_stairs(st, pos_danger);
     }
+    // Fresh intent from either selector's own decision.
+    let fresh_emergency = leave_selection == Some(false) || choose_selected_down;
 
     // Take stairs up
     if st.borg.stair_less && !engine::player_opt(OPT_birth_force_descend) && !recall_holds_up_stair(st, pos_danger) {
@@ -4717,15 +4776,33 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
-            if borg_prep_leave_level_spells(st) {
+            if !fresh_emergency && pos_danger <= 0 && crate::borg_ranged::return_to_town(st) {
                 return true;
             }
+            // borg-reborn-rs (#1178): `stair_more` is set before the descent
+            // flows it belongs to (the leaving block, the power dive,
+            // borg_leave_level's dive) and survives their failure until a
+            // new level clears it — C's own bookkeeping. A later think
+            // standing on a down staircase then takes it here on a stale
+            // flag, past the descent gates the dive itself would have
+            // applied. caution_standing_descent_gated applies those gates
+            // (more_refused) to this take; a fresh selection of this very
+            // call (leave_stairs_on_monster, choose_stairs — the recovering
+            // Borg's escape) stays eligible. 0 keeps C.
+            let gated_refuses = p(Param::caution_standing_descent_gated) != 0
+                && !fresh_emergency
+                && more_refused(st, false);
+            if !gated_refuses {
+                if borg_prep_leave_level_spells(st) {
+                    return true;
+                }
 
-            // Take the stairs
-            borg_keypress(st, key(b'>'));
+                // Take the stairs
+                borg_keypress(st, key(b'>'));
 
-            // Success
-            return true;
+                // Success
+                return true;
+            }
         }
     }
 
@@ -4843,8 +4920,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && poisoned_escape_first(st, pos_danger)
     {
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-        st.borg.goal.type_0 = 0;
         return true;
     }
     let from = st.borg.c;
@@ -4863,13 +4938,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Attempt to escape via spells
     if borg_escape(st, pos_danger) {
-        // increment the escapes this level counter
-        st.borg.escapes = st.borg.escapes.wrapping_add(1);
-
-        // Clear any Flow queues
-        st.borg.goal.type_0 = 0;
-
-        // Success
         return true;
     }
 
@@ -5138,7 +5206,7 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
     }
     crate::borg_flow::borg_flow_clear(st);
     for (y, x) in stairs {
-        if st.cave.grid(x, y).kill == 0 {
+        if st.cave.grid(x, y).kill == 0 && (up || !rising_holds_stair_target(st, y, x)) {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
@@ -6952,12 +7020,32 @@ fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_
 /// `caution_rising_explore_ticks` Borg ticks on the level (one per think,
 /// `borg_think`; restarted on each new level) lets the descent through.
 pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
+    rising_descent_window(st)
+        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
+fn rising_descent_window(st: &BorgState) -> bool {
     let budget = p(Param::caution_rising_explore_ticks);
     st.borg.goal.rising
         && st.borg.tr(BI_CDEPTH) > 0
         && budget > 0
         && borg_timer(st, st.borg.time.level) < budget
-        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
+/// #1159: a stair walk that intends to depart should apply the rising
+/// hold at the destination, where caution will decide whether to use it.
+pub(crate) fn rising_checks_stair_targets(st: &BorgState) -> bool {
+    let return_only = st.borg.goal.less && !st.borg.goal.leaving
+        && !st.borg.goal.fleeing && !st.borg.status.desperate;
+    p(Param::caution_rising_skip_held_stairs) != 0 && rising_descent_window(st) && !return_only
+}
+
+pub(crate) fn rising_holds_stair_target(st: &mut BorgState, y: i32, x: i32) -> bool {
+    if !rising_checks_stair_targets(st) {
+        return false;
+    }
+    let danger = borg_danger(st, y, x, p(Param::caution_danger_horizon), true, false);
+    rising_holds_descent(st, danger)
 }
 
 /// borg-reborn-rs (#750): whether a stair flow for `why` skips the danger
@@ -6982,6 +7070,31 @@ pub(crate) fn stairs_clean_path_mode() -> i32 {
     p(Param::caution_stairs_clean_path)
 }
 
+/// #907: compare current monster speed when the opt-in veto is active.
+fn desperate_neighbour_faster(kill: &crate::borg_flow_kill::BorgKill, player_speed: i32, current_speed: bool) -> bool {
+    let speed = if current_speed { current_monster_speed(kill) } else { i32::from(kill.speed) };
+    speed > player_speed
+}
+
+#[cfg(test)]
+#[test]
+fn hasted_soldier_can_veto_the_desperate_stair_walk() {
+    let mut soldier = crate::borg_flow_kill::BorgKill::default();
+    soldier.speed = 109;
+    soldier.observed_fast = true;
+    assert!(!desperate_neighbour_faster(&soldier, 110, false));
+    assert!(desperate_neighbour_faster(&soldier, 110, true));
+    assert!(!desperate_neighbour_faster(&soldier, 119, true));
+    soldier.observed_slow_level = 5;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
+    assert!(desperate_neighbour_faster(&soldier, 100, true));
+    soldier.observed_slow_level = 0;
+    assert!(danger_share_reaches(41, 23, 50));
+    assert!(!danger_share_reaches(11, 23, 50));
+    soldier.observed_fast = false;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
+}
+
 /// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg
 /// cancelled its walk to stairs 6 steps away). With
 /// `caution_desperate_fast_danger_percent` above 0, a faster adjacent
@@ -7001,6 +7114,158 @@ fn danger_share_reaches(danger: i32, hp: i32, percent: i32) -> bool {
     i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
 }
 
+/// #908: in a corridor a pursuer spends one action following each step.
+/// Charge the selected route for its excess contact actions.
+pub(crate) struct DesperateWalkBudget {
+    per_step: f64,
+    percent: i32,
+    refused: bool,
+}
+
+impl DesperateWalkBudget {
+    fn for_contact(st: &BorgState) -> Option<Self> {
+        let percent = p(Param::caution_desperate_walk_cost_percent);
+        if percent == 0 {
+            return None;
+        }
+
+        let energy = |speed: i32| f64::from(engine::extract_energy(speed.clamp(0, 199) as usize)).max(1.0);
+        let player_energy = energy(engine::player_combat_speed());
+        let mut per_step = 0.0;
+        for i in 1..st.kills.nxt.max(0) as usize {
+            let kill = &st.kills.kills[i];
+            if kill.r_idx == 0 || !kill.awake || engine::distance(st.borg.c, kill.pos) != 1
+                || engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+            {
+                continue;
+            }
+            let current_actions = energy(current_monster_speed(kill)) / player_energy;
+            if current_actions > 1.0 {
+                // Undo the action-rate multiplier used by the fight forecast,
+                // then price pursuit using the current net speed.
+                let forecast_actions = energy(forecast_monster_speed(kill)) / player_energy;
+                per_step += pursuit_damage(fight_incoming(st, i).hp_per_turn, forecast_actions, current_actions);
+            }
+        }
+        (per_step > 0.0).then_some(Self { per_step, percent, refused: false })
+    }
+
+    pub(crate) fn refuses(&mut self, st: &mut BorgState, steps: usize) -> bool {
+        let hp = st.borg.tr(BI_CURHP);
+        if !desperate_walk_over_budget(steps, self.per_step, hp, self.percent) {
+            return false;
+        }
+        let Self { per_step, percent, .. } = *self;
+        let cost = steps as f64 * per_step;
+        borg_note(st, &format!("# Desperate walk refused: {steps} route steps x {per_step:.2} HP/step = {cost:.1} >= {percent}% of HP {hp} (#908)"));
+        self.refused = true;
+        true
+    }
+}
+
+fn pursuit_damage(incoming_per_player_turn: f64, forecast_actions: f64, current_actions: f64) -> f64 {
+    incoming_per_player_turn / forecast_actions * (current_actions - 1.0).max(0.0)
+}
+
+fn desperate_walk_over_budget(steps: usize, per_step: f64, hp: i32, percent: i32) -> bool {
+    steps as f64 * per_step * 100.0 >= f64::from(hp.max(1)) * f64::from(percent)
+}
+
+#[cfg(test)]
+#[test]
+fn hasted_pursuer_makes_the_rogues_stair_walk_unaffordable() {
+    let per_step = pursuit_damage(9.5, 1.9, 1.9);
+    assert!((per_step - 4.5).abs() < 1e-9);
+    assert!(desperate_walk_over_budget(13, per_step, 23, 100));
+    assert!(!desperate_walk_over_budget(3, per_step, 23, 100));
+    assert_eq!(pursuit_damage(9.5, 1.9, 0.9), 0.0);
+    assert_eq!(pursuit_damage(9.5, 1.9, 1.0), 0.0);
+    assert!((pursuit_damage(9.5, 1.9, 1.3) - 1.5).abs() < 1e-9);
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_desperate_walk_budget_regression(st: &mut BorgState, case: &str) -> ! {
+    use crate::borg_flow_kill::BorgKill;
+    use crate::borg_flow_stairs::UpSearchDeparture;
+    use crate::borg_headers::borg_trait_h::BI_ARMOR;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE};
+
+    assert!(engine::option_set(c"birth_force_descend", false));
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    st.borg.avoidance = 23;
+    st.borg.mon.scary = true;
+    st.borg.stair_less = true;
+    st.borg.goal.fleeing = true;
+    for (index, value) in [
+        (BI_CLEVEL, 4), (BI_CURHP, 23), (BI_MAXHP, 35),
+        (BI_SPEED, 110), (BI_LIGHT, 1), (BI_ARMOR, 28),
+    ] {
+        st.borg.trait_[index as usize] = value;
+    }
+    assert_eq!(engine::player_combat_speed(), 110);
+    for y in 15..=24 {
+        for x in 25..=44 {
+            st.cave.grid_mut(x, y).feat = if y == 20 && (27..=41).contains(&x) {
+                FEAT_FLOOR as u8
+            } else {
+                FEAT_GRANITE as u8
+            };
+        }
+    }
+    for (i, (x, y)) in [(40, 17), (27, 20)].into_iter().enumerate() {
+        st.stairs.less.x[i] = x;
+        st.stairs.less.y[i] = y;
+        st.cave.grid_mut(x, y).feat = FEAT_LESS as u8;
+    }
+    st.stairs.less.num = 2;
+    st.stairs.more.num = 1;
+    st.stairs.more.x[0] = 40;
+    st.stairs.more.y[0] = 22;
+    st.cave.grid_mut(40, 22).feat = FEAT_MORE as u8;
+    st.stairs.up_search_departure = Some(UpSearchDeparture {
+        stair: loc { x: 40, y: 22 },
+        next: st.borg.c,
+        turn: st.borg.time.now.wrapping_sub(1),
+        level_started: st.borg.time.level,
+        expected_danger: 41,
+        known: true,
+    });
+
+    let soldier = (1..engine::r_max())
+        .find(|&i| engine::race_name(i) == b"soldier")
+        .expect("soldier race");
+    st.kills.cnt = 1;
+    st.kills.nxt = 2;
+    st.kills.kills[1] = BorgKill {
+        r_idx: soldier as u16,
+        pos: loc { x: 41, y: 20 },
+        awake: true,
+        speed: 109,
+        observed_fast: true,
+        observed_slow_level: if case == "pursuit-budget-slowed" { 5 } else { 0 },
+        ..BorgKill::default()
+    };
+    st.cave.grid_mut(41, 20).kill = 1;
+    st.danger = Default::default();
+
+    // Check that the existing handoff could take the same route on its own.
+    let walked = if case == "pursuit-budget-handoff" {
+        crate::borg_flow_stairs::resume_known_up_stair_flight(st, 41)
+    } else {
+        desperate_for_stairs(st, 41)
+    };
+    if case == "pursuit-budget" {
+        assert!(!walked, "the selected 13-step route was over budget, including the #871 handoff");
+        assert!(st.io.queued_keys().is_empty(), "caution can take the turn");
+    } else {
+        assert!(walked, "the 13-step corridor route was available");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'4')]);
+    }
+    println!("emergency stair handoff passed: {case}");
+    std::process::exit(0);
+}
+
 /// borg-reborn-rs (#749): enough HP lost for a Recall buy-time cure: at
 /// least `min_percent` of the max HP (0 = C: any loss, even none).
 fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
@@ -7018,7 +7283,7 @@ fn recall_cure_hurt_enough(lost: i32, max_hp: i32, min_percent: i32) -> bool {
 /// `caution_stairs_leave_danger_percent` of the HP), instead of fighting or
 /// reading an escape. The staircase under the Borg is the way; while rising,
 /// a down staircase is held as in `choose_stairs`.
-fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> Option<bool> {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
     // Review of #616: a real threat (a share of the HP), not any danger; and
@@ -7042,7 +7307,7 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     // caution) did not take, recovering or not.
     let scum = if kit { None } else { crate::borg_stair_scum::leave_on_threat(st, pos_danger, threshold) };
     if !(kit || scum.is_some() || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
-        return false;
+        return None;
     }
     // The staircase under the Borg decides the way: choose_stairs alone may
     // not set it for a Borg that is recovering, not fleeing.
@@ -7054,14 +7319,16 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     }
     let why = if kit { "short of kit" } else if scum.is_some() { "in stair scum" } else { "while recovering" };
     borg_note(st, &format!("# Leaving by the stairs: a monster {why} (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
-    true
+    // The selection itself (the #1178 review): which staircase the rule
+    // chose, so a fresh down selection stays eligible under the switch.
+    Some(up)
 }
 
 fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
     on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
 }
 
-fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
+fn choose_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
         st.borg.stair_less = true;
@@ -7081,8 +7348,13 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     }
 
     // Only go down if fleeing or prepared
+    // borg-reborn-rs (#1178, review): the fleeing arm is the selector's
+    // explicit emergency down choice; the caller exempts it from the
+    // standing-descent gate.
+    let mut selected_down = false;
     if st.borg.goal.fleeing {
         st.borg.stair_more = true;
+        selected_down = true;
     }
 
     if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
@@ -7121,13 +7393,27 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
 
     // borg-reborn-rs (#483): not while rising, unless in real danger.
     if rising_holds_descent(st, pos_danger) {
+        let arrival = (st.borg.time.level, st.borg.flight_time);
+        if st.borg.stair_more && !recall_restricts(st)
+            && st.borg.flight_to_stairs && st.borg.flight_steps == 1
+            && st.flow.at_destination(st.borg.c)
+            && st.borg.flight_depth == engine::player_depth()
+            && borg_timer(st, st.borg.flight_time) == 1
+            && u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE
+            && st.stairs.rising_refusal_noted != Some(arrival)
+        {
+            st.stairs.rising_refusal_noted = Some(arrival);
+            borg_note(st, "# Down-stair flight arrival held while rising (#1159)");
+        }
         st.borg.stair_more = false;
     }
 
     // borg-reborn-rs (#557): no descent while rising, unless in real danger.
     if st.borg.stair_more && rising_holds_flee_descent(st) {
         st.borg.stair_more = false;
+        selected_down = false;
     }
+    selected_down
 }
 
 /// borg-reborn-rs (#567): with `caution_recall_rest_monster_turns`, record
@@ -7843,12 +8129,12 @@ mod scary_stand_tests {
 
     #[test]
     fn every_switched_site_asks_recall_restricts() {
-        // The seven sites of #603 (review of #627): a site put back to
-        // `goal.recalling != 0` would ignore the switch and still pass the
-        // helper's test, so count the calls in each file. borg_caution.rs:
-        // the three of #603 and #1147's walk-away staircase.
+        // Count the callers so a raw Recall check cannot silently bypass
+        // the switch. In caution this covers the three #603 checks, the
+        // #1147 walk-away staircase, and the #1159 refusal note that
+        // distinguishes a rising hold from a pending Recall.
         for (file, src, calls) in [
-            ("borg_caution.rs", include_str!("borg_caution.rs"), 4),
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 5),
             ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
             ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
             ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
@@ -9265,7 +9551,7 @@ fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
             return true;
         }
     } else if handoff.steps_left > 0
-        && desperate_flow(st, false, DesperateStairRange::Remaining(handoff.steps_left), "# Continuing emergency down-stair flight (#1052)")
+        && desperate_flow(st, false, DesperateStairRange::Remaining(handoff.steps_left), "# Continuing emergency down-stair flight (#1052)", None)
     {
         return true;
     }
