@@ -46,6 +46,12 @@ pub struct CaveState {
 }
 
 impl CaveState {
+    /// Allocate empty knowledge without starting the engine (#1119).
+    #[cfg(test)]
+    pub(crate) fn empty_for_test() -> Self {
+        Self { grids: vec![BorgGrid::default(); (AUTO_MAX_X * AUTO_MAX_Y) as usize] }
+    }
+
     fn index(x: i32, y: i32) -> usize {
         assert!((0..AUTO_MAX_X).contains(&x) && (0..AUTO_MAX_Y).contains(&y));
         (y * AUTO_MAX_X + x) as usize
