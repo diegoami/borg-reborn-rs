@@ -116,11 +116,12 @@ fn note_ware(st: &mut BorgState, what: &str, after: &str) {
     note(st, &[what.as_bytes(), b" '", &desc, b"'", after.as_bytes()]);
 }
 
-/// `borg.goal.shop = borg.goal.ware = borg.goal.item = -1`
+/// Clear the legacy shop goal and any action attached to it.
 fn clear_shop_goal(st: &mut BorgState) {
     st.borg.goal.item = -1;
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
+    st.think.town_action = None;
 }
 
 fn choose_shop_sale(st: &mut BorgState) -> bool {
@@ -196,14 +197,14 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     if null_arm_gate(st) {
         return false;
     }
+    crate::borg_town_live::settle_sale(st);
 
     /* A shop the human asked for in the Borg's command menu ("1" .. "8",
      * "+", "-"): it overrides the strategy's own choice and holds until
      * the Borg has been to that shop. */
     if let Some(shop) = st.borg.shop_override {
+        clear_shop_goal(st);
         st.borg.goal.shop = shop;
-        st.borg.goal.ware = -1;
-        st.borg.goal.item = -1;
         return true;
     }
 
@@ -309,6 +310,13 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
             return true;
         } else {
             return false;
+        }
+    }
+
+    // Give a clearly inferior spare to a buyer before considering Home.
+    if !crate::borg_poison::no_sale_now(st) {
+        if let Some(sale) = crate::borg_town_live::inferior_spare_sale(st) {
+            return crate::borg_town_live::set_action(st, sale);
         }
     }
 
@@ -488,8 +496,14 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
             borg_note_bytes(st, s.as_bytes());
         }
 
-        /* Try to sell stuff */
-        if borg_think_shop_sell(st) {
+        /* The inferior-spare chooser preflights a full stack. Use the same
+         * transaction as the live planner and keep legacy quantities for
+         * every other sale. */
+        if st.think.town_action.is_some() {
+            if crate::borg_town_live::execute_store(st) {
+                return true;
+            }
+        } else if borg_think_shop_sell(st) {
             return true;
         }
 

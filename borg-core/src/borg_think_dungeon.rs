@@ -1050,6 +1050,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_leave_level");
     }
 
+    if crate::borg_junk::borg_drop_inferior_spare(st) {
+        return choice!("borg_drop_inferior_spare");
+    }
+
     /* Learn useful spells immediately */
     if borg_play_magic(st, false) {
         return choice!("borg_play_magic");
