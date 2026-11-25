@@ -4849,6 +4849,16 @@ and `lib/gamedata/class.txt`/`activation.txt` (effects and durations).
 Legacy predicted effects/durations and redundant branch order are retained,
 not asserted to be accurate engine models.
 
+## Idle consumable use (#1250)
+
+| Name | Default | Unit | Bounds | Source |
+| --- | ---: | --- | --- | --- |
+| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1308` |
+
+The owner set the shipped value to 1. The Borg uses one item
+from the smallest eligible known stack during a quiet dungeon turn. Each
+entry owns its minimum depth. The nine initial entries use depth 1.
+
 ## Item use (P2.3) (#242)
 
 19 named parameters. Source locations and validated input ranges

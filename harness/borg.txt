@@ -36,7 +36,7 @@
 
 borg_reborn_core = borg-rs
 
-# An errand over the core (borg-core/src/shell.rs): "none", "/town",
+# An errand over the core (borg-core/src/shell.rs): "none", "/town", "/level-up N",
 # "/walk-back", "/explore-back", "/dive N", "/dive-exploring N",
 # "/explore-level", "/ladder" (the class's ladder in borg-core/ladders.txt)
 # or a plan ("/trips 1*/1,2,1*@3/..."). BORG_ERRAND overrides it; in the
@@ -1227,6 +1227,9 @@ borg_param_junk_inferior_spares = 1
 # Keep unknown sandals unless [1,+0] is visible before max DL5 and
 # the worn pair has at least this many more points of armor enchantment.
 borg_param_junk_inferior_sandal_ac_margin = 7
+
+# #1250: idle use of expendable consumables from DL1.
+borg_param_item_use_idle = 1
 
 # #810 pilot. Total usable fuel turns in equipment and pack, including oil
 # when using a lantern. While using a torch, top up from Home or the General

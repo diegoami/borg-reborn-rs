@@ -364,8 +364,7 @@ fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<Stri
         Some(value) => {
             let invalid =
                 |reason: &str| format!("{source}: invalid errand selector {value:?}: {reason}");
-            let commands = borg_rs::shell::parse_line(value)
-                .map_err(|command| invalid(&format!("unknown command {command:?}")))?;
+            let commands = borg_rs::shell::parse_line(value).map_err(|error| invalid(&error))?;
             if commands.is_empty() {
                 return Err(invalid("empty command line; use none to disable errands"));
             }
@@ -790,6 +789,7 @@ mod tests {
         }
         for value in [
             "/town",
+            "/level-up 10",
             "/shopping",
             "dive:2",
             "trips:1*/1,2,1*@3",
@@ -808,6 +808,9 @@ mod tests {
                 assert!(error.contains(source));
                 assert!(error.contains(&format!("{value:?}")));
             }
+            let error = parse_errand_setting(Some("/level-up 51"), source).unwrap_err();
+            assert!(error.contains(source));
+            assert!(error.contains("requires a character level from 1 to 50"));
         }
     }
 

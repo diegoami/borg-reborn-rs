@@ -764,13 +764,13 @@ pub(crate) fn heal_reserve_hp_percent(_class: i32) -> i32 {
     param(Param::town_heal_reserve_hp_percent)
 }
 
-/// borg-reborn-rs (#443, owner 2026-11-16): consumables the core never uses
-/// on purpose, from a source audit of every kind in object.txt against the
+/// borg-reborn-rs (#443, owner 2026-11-16): consumables the Borg avoids
+/// stocking, from a source audit of every kind in object.txt against the
 /// core's use sites (not bookkeeping: counting, home notice, buy lists).
 /// Excluded: foods (any known food is eaten, borg_eat_food_any) and potions
 /// whose use-up is their benefit (stat gain, Experience, Infravision,
-/// borg_junk). Harmful kinds are here too. Remove a kind when the core
-/// learns to use it.
+/// borg_junk). Harmful kinds are here too. Idle use of Treasure Detection
+/// spends carried copies without assigning them stock value (#1250).
 const WORTHLESS: &[(u32, &str)] = &[
     (TV_SCROLL, "Door Destruction"), (TV_SCROLL, "Dispel Undead"),
     (TV_SCROLL, "Treasure Detection"), (TV_SCROLL, "Summon Monster"), (TV_SCROLL, "Summon Undead"),

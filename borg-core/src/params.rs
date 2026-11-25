@@ -1506,6 +1506,7 @@ parameters! {
     item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:624", "Item_Use staff teleport max failure: existing policy permille."),
     item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:725", "Item_Use ring equip max failure: existing policy permille."),
     item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:847", "Item_Use dragon equip max failure: existing policy permille."),
+    item_use_idle => (0, "flag", 0, 1, "borg_item_use.rs:1308", "#1250: use known expendable consumables from the smallest eligible stack on a quiet dungeon turn. 0 retains ordinary inventory-use timing."),
     item_use_unholy_min_hp => (90, "hp", 0, 10000, "borg_item_use.rs:1009", "Item_Use unholy min hp: existing policy hp."),
     item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1201", "Item_Use recharge wand max charges: existing policy count."),
     item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1218", "Item_Use recharge staff max charges: existing policy count."),
