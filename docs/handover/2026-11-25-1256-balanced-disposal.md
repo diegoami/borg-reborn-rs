@@ -1,8 +1,10 @@
 ## Balance the kit on town arrival (#1256)
 
 Track P now unloads at the start of a town visit. The Borg ignores known
-harmful potion kinds using their effects, including Sleep, Blindness,
-Confusion, Poison, Slowness, Surprise and Salt Water. It then discards
+harmful consumables and devices using their effects. The rule covers
+harmful potions, scrolls that summon enemies or curse equipment, mushrooms
+that drain stats or cause terror, and devices that strengthen monsters.
+It then discards
 cursed weapons and armour and plain or low-value spares outclassed by
 worn gear, including spares with unknown runes. Viable lighter swaps and
 known special equipment remain available. The Borg compares surplus relative
@@ -22,7 +24,7 @@ without acquiring additional stock.
 
 Angband scatters manual drops made from stairs and those made next to
 piles. The Borg uses a clear floor tile and marks these drops through
-the native item-specific ignore command. Ignoring a potion kind also
+the native item-specific ignore command. Ignoring a harmful kind also
 blocks later automatic pickups of that kind. Unknown flavours retain the
 existing identification and sale rules.
 

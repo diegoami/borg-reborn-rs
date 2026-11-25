@@ -600,33 +600,40 @@ pub(crate) struct SurplusDrop {
     pub quantity: u8,
 }
 
-fn harmful_potion(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>) -> bool {
-    use crate::headers::list_effects_h::{EF_DRAIN_STAT, EF_TIMED_INC, EF_TIMED_INC_NO_RES};
+fn harmful_item(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>) -> bool {
+    use crate::headers::list_effects_h::*;
     use crate::headers::list_player_timed_h::*;
-    // object.txt: Salt Water always inflicts paralysis, and Surprise can
-    // scramble or drain stats. Intentional stat trades use LOSE_RANDOM_STAT.
+    use crate::headers::list_projections_h::{PROJ_MAKE_TRAP, PROJ_MON_CLONE, PROJ_MON_HEAL, PROJ_MON_SPEED};
+    // ui-options.c:sval_dependent supports kind-ignore for these item types.
     item.iqty > 0 && item.aware && item.flavour_aware && item.kind != 0
-        && u32::from(item.tval) == TV_POTION
-        && effects(item.kind as usize).into_iter().any(|(effect, subtype)| {
-            u32::from(effect) == EF_DRAIN_STAT
-                || matches!(u32::from(effect), EF_TIMED_INC | EF_TIMED_INC_NO_RES)
-                && matches!(subtype as u32, TMD_SLOW | TMD_BLIND | TMD_PARALYZED
+        && item.art_idx == 0
+        && matches!(u32::from(item.tval), TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_FOOD | TV_WAND | TV_STAFF | TV_ROD)
+        && effects(item.kind as usize).into_iter().any(|(effect, subtype)| match u32::from(effect) {
+            // object.txt: Salt Water always inflicts paralysis, and Surprise
+            // can scramble or drain stats. Stat trades use LOSE_RANDOM_STAT.
+            EF_TIMED_INC | EF_TIMED_INC_NO_RES | EF_TIMED_SET =>
+                matches!(subtype as u32, TMD_SLOW | TMD_BLIND | TMD_PARALYZED
                     | TMD_CONFUSED | TMD_AFRAID | TMD_IMAGE | TMD_POISONED | TMD_CUT
-                    | TMD_STUN | TMD_AMNESIA | TMD_SCRAMBLE)
+                    | TMD_STUN | TMD_AMNESIA | TMD_SCRAMBLE | TMD_TERROR),
+            EF_DRAIN_STAT | EF_CURSE_WEAPON | EF_CURSE_ARMOR | EF_SUMMON | EF_DARKEN_AREA => true,
+            EF_TOUCH => subtype == PROJ_MAKE_TRAP as i32,
+            EF_BOLT_STATUS | EF_PROJECT_LOS =>
+                matches!(subtype as u32, PROJ_MON_CLONE | PROJ_MON_HEAL | PROJ_MON_SPEED),
+            _ => false,
         })
 }
 
-fn harmful_potion_drop(st: &BorgState) -> Option<SurplusDrop> {
+fn harmful_item_drop(st: &BorgState) -> Option<SurplusDrop> {
     let slot = st.items.items[..pack_size() as usize].iter()
-        .position(|item| harmful_potion(item, engine::kind_effects))?;
+        .position(|item| harmful_item(item, engine::kind_effects))?;
     Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
 }
 
-pub(crate) fn borg_discard_harmful_potion(st: &mut BorgState) -> bool {
+pub(crate) fn borg_discard_harmful_item(st: &mut BorgState) -> bool {
     if st.borg.goal.recalling != 0 {
         return false;
     }
-    if let Some(drop) = harmful_potion_drop(st) {
+    if let Some(drop) = harmful_item_drop(st) {
         if danger_here(st) <= st.borg.tr(BI_CURHP) / 20 {
             return drop_surplus(st, drop);
         }
@@ -669,7 +676,7 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
     if st.borg.goal.recalling != 0 {
         return None;
     }
-    if let Some(drop) = harmful_potion_drop(st) {
+    if let Some(drop) = harmful_item_drop(st) {
         return Some(drop);
     }
     if st.borg.tr(BI_CDEPTH) == 0 {
@@ -704,11 +711,11 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
 
 pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
     let item = &st.items.items[drop.slot];
-    if harmful_potion(item, engine::kind_effects)
+    if harmful_item(item, engine::kind_effects)
         && engine::kind(item.kind as usize).ignore == 0
     {
         let slot = drop.slot as i32;
-        note_desc(st, "# Discarding known harmful potion stack ", slot, ".");
+        note_desc(st, "# Discarding known harmful stack ", slot, ".");
         borg_keypress(st, key(b'k'));
         slot_keys(st, slot);
         // ui-object.c:textui_cmd_ignore_menu offers the individual
@@ -2232,7 +2239,7 @@ mod tests {
         let mut torch = blank_item();
         torch.tval = TV_LIGHT as u8;
         torch.iqty = 26;
-        let harmful = |item: &borg_item| harmful_potion(item, |kind| {
+        let harmful = |item: &borg_item| harmful_item(item, |kind| {
             let (effect, status) = match kind {
                 1 => (EF_TIMED_INC, TMD_PARALYZED),
                 3 => (EF_TIMED_INC, TMD_CONFUSED),
@@ -2256,24 +2263,34 @@ mod tests {
     }
 
     #[test]
-    fn adverse_potion_effects_are_distinguished_from_cures_buffs_and_trades() {
+    fn adverse_item_effects_are_distinguished_from_cures_buffs_and_trades() {
         use crate::headers::list_effects_h::*;
         use crate::headers::list_player_timed_h::*;
-        let known = borg_item {
-            tval: TV_POTION as u8, kind: 1, iqty: 1, aware: true, flavour_aware: true,
-            ..blank_item()
+        use crate::headers::list_projections_h::{PROJ_MAKE_TRAP, PROJ_MON_CONF, PROJ_MON_HEAL, PROJ_MON_SPEED};
+        let classify = |tval: u32, effect: u32, subtype: u32| {
+            let known = borg_item {
+                tval: tval as u8, kind: 1, iqty: 1, aware: true, flavour_aware: true,
+                ..blank_item()
+            };
+            harmful_item(&known, |_| vec![(effect as u16, subtype as i32)])
         };
-        let classify = |effect: u32, subtype: u32| {
-            harmful_potion(&known, |_| vec![(effect as u16, subtype as i32)])
-        };
-        assert!(classify(EF_TIMED_INC, TMD_BLIND));
-        assert!(classify(EF_TIMED_INC, TMD_POISONED));
-        assert!(classify(EF_TIMED_INC_NO_RES, TMD_PARALYZED));
-        assert!(classify(EF_TIMED_INC, TMD_SCRAMBLE));
-        assert!(classify(EF_DRAIN_STAT, 0));
-        assert!(!classify(EF_CURE, TMD_POISONED));
-        assert!(!classify(EF_TIMED_INC, TMD_HERO));
-        assert!(!classify(EF_LOSE_RANDOM_STAT, 0));
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_BLIND));
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_POISONED));
+        assert!(classify(TV_POTION, EF_TIMED_INC_NO_RES, TMD_PARALYZED));
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_SCRAMBLE));
+        assert!(classify(TV_MUSHROOM, EF_DRAIN_STAT, 0));
+        assert!(classify(TV_MUSHROOM, EF_TIMED_SET, TMD_TERROR));
+        assert!(classify(TV_FOOD, EF_TIMED_INC, TMD_CONFUSED));
+        assert!(classify(TV_SCROLL, EF_CURSE_ARMOR, 0));
+        assert!(classify(TV_SCROLL, EF_TOUCH, PROJ_MAKE_TRAP));
+        assert!(classify(TV_WAND, EF_BOLT_STATUS, PROJ_MON_HEAL));
+        assert!(classify(TV_STAFF, EF_SUMMON, 0));
+        assert!(classify(TV_STAFF, EF_PROJECT_LOS, PROJ_MON_SPEED));
+        assert!(!classify(TV_WAND, EF_BOLT_STATUS, PROJ_MON_CONF));
+        assert!(!classify(TV_MUSHROOM, EF_CURE, TMD_POISONED));
+        assert!(!classify(TV_POTION, EF_TIMED_INC, TMD_HERO));
+        assert!(!classify(TV_POTION, EF_LOSE_RANDOM_STAT, 0));
+        assert!(!classify(TV_SCROLL, EF_TELEPORT, 0));
     }
 
     #[test]
