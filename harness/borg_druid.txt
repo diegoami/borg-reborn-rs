@@ -43,9 +43,10 @@ borg_param_town_staple_oil = 9
 # explore_bfs_max_hp by 10", then "reduce those numbers ... by 3").
 borg_param_explore_bfs_max_hp = 33
 borg_param_explore_bfs_hp_per_level = 2
-# #1061 (owner, 2026-11-23): stair_scum slack by class ("1 for druid and necromancers. 2 for mage and priest,
-# 3 for ranger, 4 for paladin and blackguard"; rogue 3, the owner's choice).
-borg_param_stair_scum_slack_steps = 1
+# Match the Mage and Priest base stair-scum slack.
+borg_param_stair_scum_slack_steps = 2
 # #1208: mixed exploration eligibility lasts two CLs longer than the
 # original class cap in #1098. This is the last eligible CL.
 borg_param_explore_mix_max_clevel = 7
+# #1199: plain shots to keep when trimming the quiver in town.
+borg_param_town_quiver_trim_reserve = 40
