@@ -43,3 +43,7 @@ deposit before the Recall acquisition.
 
 Stopping torch purchases at the fuel target is tracked in
 [#1257](https://github.com/diegoami/borg-reborn-rs/issues/1257).
+
+The first-town Ranger Phase Door fixture uses the historical shopping
+order and weight policy. Its original purchase and first-contact
+assertions passed for both the zero-scroll and two-scroll reserves.
