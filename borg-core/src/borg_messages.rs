@@ -689,6 +689,10 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     // Notice "failure"
     if prefix(msg, b"You failed ") {
+        // #1229: a melee Alter can fail while picking the door's lock.
+        if prefix(msg, b"You failed to pick the lock.") {
+            crate::borg_update::note_alter_lock_failure(st);
+        }
         // Store the keypress
         borg_note(st, "# Normal failure.");
 

@@ -168,6 +168,7 @@ struct AlterDoorAttack {
     target: loc,
     kill: u8,
     before: u32,
+    lock_failed: bool,
 }
 
 /// #1229: the monster memory can make a doorway look like floor to a flow.
@@ -178,36 +179,44 @@ pub(crate) fn note_alter_door_attack(st: &mut BorgState, target: loc, kill: u8) 
     }
     let grid = engine::map_info(target.x, target.y);
     if grid.in_view && grid.m_idx == 0 && matches!(grid.f_idx, FEAT_CLOSED | FEAT_OPEN) {
-        st.update.alter_door_attack = Some(AlterDoorAttack { target, kill, before: grid.f_idx });
+        st.update.alter_door_attack = Some(AlterDoorAttack { target, kill, before: grid.f_idx, lock_failed: false });
+    }
+}
+
+pub(crate) fn note_alter_lock_failure(st: &mut BorgState) {
+    if let Some(attack) = &mut st.update.alter_door_attack {
+        attack.lock_failed = true;
     }
 }
 
 /// #1229: `do_cmd_alter_aux` attacks an occupant before touching the terrain
-/// (`cmd-cave.c:950-994` at 574b618c). A door that toggled after a directed
-/// Alter is evidence that the remembered target was absent. Reconcile it
-/// before a stale kill can overwrite the observed terrain with floor.
+/// (`cmd-cave.c:950-994` at 574b618c). A door toggle or failed pick means
+/// the Alter reached the door. Reconcile it before the stale kill can
+/// overwrite the observed terrain with floor.
 fn observe_alter_door(st: &mut BorgState, at: loc, grid: engine::MapGrid) {
     let Some(attack) = st.update.alter_door_attack.filter(|attack| attack.target == at) else {
         return;
     };
     st.update.alter_door_attack = None;
-    if grid.m_idx != 0 || !matches!((attack.before, grid.f_idx), (FEAT_CLOSED, FEAT_OPEN) | (FEAT_OPEN, FEAT_CLOSED)) {
+    let toggled = matches!((attack.before, grid.f_idx), (FEAT_CLOSED, FEAT_OPEN) | (FEAT_OPEN, FEAT_CLOSED));
+    let lock_failed = attack.lock_failed && attack.before == FEAT_CLOSED && grid.f_idx == FEAT_CLOSED;
+    if grid.m_idx != 0 || !(toggled || lock_failed) {
         return;
     }
 
-    if st.cave.grid(at.x, at.y).kill == attack.kill
-        && st.kills.kills[usize::from(attack.kill)].pos == at
-    {
-        borg_delete_kill(st, i32::from(attack.kill));
-        // A grid can still reference a slot outside the active range after
-        // the twitch reset. That slot was not part of the active count.
-        if i16::from(attack.kill) >= st.kills.nxt {
-            st.kills.cnt = st.kills.kills.iter().take(st.kills.nxt as usize).skip(1)
-                .filter(|kill| kill.r_idx != 0).count() as i16;
+    if st.cave.grid(at.x, at.y).kill == attack.kill {
+        let kill = st.kills.kills[usize::from(attack.kill)];
+        if kill.r_idx != 0 && kill.pos == at {
+            borg_delete_kill(st, i32::from(attack.kill));
+        } else {
+            // The slot was cleared or reused after a reset. Remove the old
+            // grid link while preserving any monster at the slot's new grid.
+            st.cave.grid_mut(at.x, at.y).kill = 0;
+            st.danger.wipe = true;
         }
     }
 
-    if grid.f_idx == FEAT_OPEN {
+    if grid.f_idx == FEAT_OPEN && !attack.lock_failed {
         // Remove just our opening. Other doors may have been opened by a
         // monster on this same turn, and a later close can re-add this door.
         let track = &mut st.flow.track_closed;
@@ -2881,7 +2890,8 @@ mod dark_floor_tests {
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) mod stale_kobold_door_fixture {
     use super::*;
-    use crate::borg_flow::{borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_spread_stairs, borg_play_step, GOAL_FLEE};
+    use crate::borg_flow::{borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_spread_stairs, borg_play_step};
+    use crate::borg_flow_stairs::GOAL_FLEE;
     use crate::borg_headers::borg_trait_h::{BI_FOOD, BI_MAXCLEVEL, BI_MAXHP};
     use crate::borg_io::{borg_get_queued_direction, borg_inkey};
     use crate::borg_messages_react::borg_react;
@@ -3015,9 +3025,36 @@ pub(crate) mod stale_kobold_door_fixture {
         }
 
         st.borg.c = start;
+        for (after, failed_lockpick) in [(FEAT_OPEN, false), (FEAT_CLOSED, true), (FEAT_OPEN, true)] {
+            // A reset left the doorway link in place and the slot now
+            // contains a different monster at the side grid.
+            crate::borg_caution::forget_scary(&mut st.borg.mon);
+            st.kills.nxt = 2;
+            st.kills.cnt = 1;
+            st.kills.kills[1] = BorgKill { r_idx: race as u16, pos: side, ..BorgKill::BLANK };
+            st.cave.grid_mut(side.x, side.y).kill = 1;
+            st.cave.grid_mut(door.x, door.y).kill = 1;
+            set_door(st, door, FEAT_CLOSED);
+            assert!(borg_play_step(st, door.y, door.x));
+            assert_eq!(borg_inkey(st, true), u32::from(b'+'));
+            assert_eq!(borg_inkey(st, true), u32::from(b'4'));
+            if failed_lockpick {
+                crate::borg_messages::borg_parse(st, Some(b"You failed to pick the lock."));
+                crate::borg_messages::borg_parse(st, None);
+            }
+            set_door(st, door, after);
+            watch_doors(st);
+            assert_eq!(st.cave.grid(door.x, door.y).kill, 0);
+            assert_eq!(st.cave.grid(side.x, side.y).kill, 1);
+            assert_eq!(st.kills.kills[1].pos, side);
+            assert_eq!(st.kills.cnt, 1);
+            assert_eq!(st.borg.mon.scary_door, failed_lockpick && after == FEAT_OPEN);
+        }
+
         st.kills.nxt = 2;
         st.kills.cnt = 1;
         st.kills.kills[1] = BorgKill { r_idx: race as u16, pos: door, ..BorgKill::BLANK };
+        st.cave.grid_mut(side.x, side.y).kill = 0;
         st.cave.grid_mut(door.x, door.y).kill = 1;
 
         // A hit takes precedence over a simultaneous door observation.
@@ -3035,10 +3072,19 @@ pub(crate) mod stale_kobold_door_fixture {
         // The empty-door step armed attribution above. The same step on
         // a visible occupant must still queue melee and leave it unarmed.
         engine::place_test_monster(st, door, race);
-        assert_ne!(engine::map_info(door.x, door.y).m_idx, 0);
+        let m_idx = engine::map_info(door.x, door.y).m_idx;
+        assert_ne!(m_idx, 0);
+        let hp = engine::cave_monster(m_idx as i32).hp;
         assert!(borg_play_step(st, door.y, door.x));
-        assert_eq!(st.io.queued_keys(), [u32::from(b'+'), u32::from(b'4')]);
+        assert_eq!(borg_inkey(st, true), u32::from(b'+'));
+        let direction = borg_inkey(st, true);
+        assert_eq!(direction, u32::from(b'4'));
         assert!(st.update.alter_door_attack.is_none());
+        engine::alter_test_grid(st, (direction - u32::from(b'0')) as i32);
+        let after = engine::map_info(door.x, door.y);
+        assert_eq!(after.f_idx, FEAT_OPEN, "the native attack leaves the occupied door open");
+        assert!(after.m_idx == 0 || engine::cave_monster(m_idx as i32).hp < hp ||
+            engine::message_str(0).starts_with(b"You miss"), "Alter attacks a live occupant");
 
         println!("stale-kobold-door passed (#1229)");
         std::process::exit(0);

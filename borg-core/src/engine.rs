@@ -1990,6 +1990,25 @@ pub(crate) fn place_test_monster(st: &mut BorgState, at: loc, race: usize) {
     });
 }
 
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn alter_test_grid(st: &mut BorgState, direction: i32) {
+    use crate::headers::cmd_core_h::{command, CMD_ALTER, CTX_GAME};
+    extern "C" {
+        fn cmd_set_arg_direction(cmd: *mut command, name: *const c_char, direction: i32);
+        fn do_cmd_alter(cmd: *mut command);
+    }
+    assert!((1..=9).contains(&direction) && direction != 5);
+    // SAFETY: the initialized fixture owns the engine thread. A zeroed
+    // command has empty argument slots. The engine may re-enter on UI events.
+    lend(st, || unsafe {
+        let mut cmd: command = std::mem::zeroed();
+        cmd.context = CTX_GAME;
+        cmd.code = CMD_ALTER;
+        cmd_set_arg_direction(&mut cmd, c"direction".as_ptr(), direction);
+        do_cmd_alter(&mut cmd);
+    });
+}
+
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
 /// kind.
 pub fn equip_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {

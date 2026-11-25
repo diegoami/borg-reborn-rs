@@ -30,7 +30,7 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
-const GOAL_FLEE: i32 = 7;
+pub(crate) const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
