@@ -666,10 +666,10 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // Detect Invisible is carried, or stored while overweight, never
         // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
         // still sends the copies past it away.
-        // V21 uses the observed kit flag. The replay's reconstructed items
-        // are only a compact list of types and quantities, without real slot
-        // or sval data. Using that list can protect an unrelated scroll.
-        let potion_or_scroll_protected = if input.revision >= 21 || capped {
+        // The departure pass uses the observed kit flag. The replay's
+        // compact list of types and quantities has no real slot or sval
+        // data, which could otherwise protect an unrelated scroll.
+        let potion_or_scroll_protected = if input.departure || capped {
             it.protect_disposal
         } else { keeps_detect_invisible(st, it) };
         // borg-reborn-rs (#1151, plan schema 20): an unknown pack item is
