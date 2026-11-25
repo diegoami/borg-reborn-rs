@@ -3547,6 +3547,7 @@ borg_param_attack_on_sight = 1";
                 "stair" => "stair_scum",
                 "stairs" => "flow_stairs",
                 "deal" => "poison",
+                "escape" if s.spec.name == "escape_phase_lost_poison_pending" => "poison",
                 "restock" => "healing_restock",
                 "caution" if s.spec.name.starts_with("caution_combat_heal") => "combat_heal",
                 _ => prefix,
