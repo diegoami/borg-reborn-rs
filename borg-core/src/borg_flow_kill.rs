@@ -58,7 +58,7 @@ use crate::headers::list_mon_spells_h::{
     RSF_S_HI_DEMON, RSF_S_HI_DRAGON, RSF_S_HI_UNDEAD, RSF_S_HOUND, RSF_S_HYDRA, RSF_S_KIN,
     RSF_S_MONSTER, RSF_S_MONSTERS, RSF_S_SPIDER, RSF_S_UNDEAD, RSF_S_UNIQUE, RSF_S_WRAITH,
 };
-use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FAST, MON_TMD_FEAR, MON_TMD_STUN};
+use crate::headers::list_mon_timed_h::{MON_TMD_CONF, MON_TMD_FAST, MON_TMD_FEAR, MON_TMD_SLOW, MON_TMD_STUN};
 use crate::headers::list_terrain_h::{
     FEAT_FLOOR, FEAT_GRANITE, FEAT_MAGMA, FEAT_MORE, FEAT_NONE, FEAT_PERM, FEAT_QUARTZ_K,
 };
@@ -120,6 +120,8 @@ pub struct BorgKill {
     /// #759/#758: Haste observed in the same permitted timer snapshot.
     /// Legacy speed remains the base mspeed so off behavior is unchanged.
     pub observed_fast: bool,
+    /// Current Slow level from the same timer snapshot as Haste.
+    pub observed_slow_level: u8,
     /// Estimates moves
     pub moves: u8,
     /// qty of ranged attacks
@@ -164,6 +166,7 @@ impl BorgKill {
         oy: 0,
         speed: 0,
         observed_fast: false,
+        observed_slow_level: 0,
         moves: 0,
         ranged_attack: 0,
         spell: [0; RSF_MAX as usize],
@@ -358,6 +361,7 @@ fn race_name(r_idx: impl Into<i32>) -> &'static [u8] {
 /// after the hit points.
 fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
     kill.observed_fast = m.m_timed[MON_TMD_FAST as usize] != 0;
+    kill.observed_slow_level = monster_slow_level(m.m_timed[MON_TMD_SLOW as usize]);
     // Is it sleeping
     kill.awake = m.m_timed[MON_TMD_SLEEP] == 0;
 
@@ -369,6 +373,18 @@ fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
 
     // Is it stunned
     kill.stunned = m.m_timed[MON_TMD_STUN as usize] != 0;
+}
+
+/// mon-timed.c:324-328 and list-mon-timed.h:21 at 574b618c:
+/// the 50-turn Slow timer has five levels, increasing every ten turns.
+fn monster_slow_level(timer: i16) -> u8 {
+    (timer.max(0) as u16).div_ceil(10).min(5) as u8
+}
+
+#[cfg(test)]
+#[test]
+fn observed_slow_uses_the_engine_tiers() {
+    assert_eq!([0, 1, 10, 11, 40, 41, 50].map(monster_slow_level), [0, 1, 1, 2, 4, 5, 5]);
 }
 
 /// Cheat the health (`pct`, `power`, `injury`) from the game monster.
