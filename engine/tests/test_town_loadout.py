@@ -60,6 +60,11 @@ class TownLoadoutTest(unittest.TestCase):
     def test_full_home_without_a_replacement_slot_falls_back(self):
         self.run_case("no-storage")
 
+    def test_rejected_deposit_leaves_the_mace_unprotected(self):
+        log = self.run_case("deposit-failed")
+        self.assertIn("# Town loadout: gear move failed to make progress", log)
+        self.assertNotIn("# Town loadout: confirmed displaced gear", log)
+
     def test_heavy_upgrade_returns_when_a_later_visit_has_capacity(self):
         self.run_case("restore")
 

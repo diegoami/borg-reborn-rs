@@ -8752,7 +8752,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:888` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:886` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8766,7 +8766,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:324` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:350` |
 
 ## Lighter town loadouts (#1239)
 
@@ -8783,7 +8783,7 @@ regression uses 3,000 equipment power as a trial loss allowance.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_loadout_power_loss` | 0 | equipment power | 0–100,000 | `borg_town_loadout.rs:57` |
+| `town_loadout_power_loss` | 0 | equipment power | 0–100,000 | `borg_town_loadout.rs:58` |
 
 ## Ranged readiness for the next trip (#1184)
 

@@ -112,7 +112,6 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
         for &(slot, item, excess) in &excess {
             if shop == BORG_HOME && (home_at_limit(st, item)
                 || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
-            if shop != BORG_HOME && loadout::retained(st, item) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let excess = if shop == BORG_HOME { excess }
@@ -369,8 +368,8 @@ pub fn choose(st: &mut BorgState) -> bool {
             return set_action(st, refill);
         }
     }
-    // Feasible urgent purchases come first. On a return when the upgrade
-    // fits, consider it before discretionary shopping spends the room.
+    // Urgent purchases and healing restock take priority. Compare a
+    // loadout exchange with the remaining ordinary town plan.
     if loadout_enabled && !no_sale && !plan.urgent_action
         && (!st.borg.in_shop || (st.think.shop_num == BORG_HOME as i16
             && crate::borg_town_budget::Facts::of(st).allowance() >= plan.urgent.weight))

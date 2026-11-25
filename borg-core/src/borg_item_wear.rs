@@ -1306,7 +1306,7 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
 
             // borg-reborn-rs (#1239): a stashed heavy upgrade needs the
             // live town planner's post-exchange carrying check.
-            if !in_pack && crate::borg_town_loadout::retained(st, item) {
+            if !in_pack && crate::borg_town_loadout::retained_at_home(st, item) {
                 continue;
             }
 

@@ -62,7 +62,7 @@ pub(crate) fn pending(st: &BorgState) -> bool {
     enabled(st) && st.think.town_live.loadout.pending.is_some()
 }
 
-pub(crate) fn retained(st: &BorgState, item: &BorgItem) -> bool {
+pub(crate) fn retained_at_home(st: &BorgState, item: &BorgItem) -> bool {
     enabled(st) && st.think.town_live.loadout.retained.iter().any(|saved| same_gear(saved, item))
 }
 
@@ -136,9 +136,9 @@ impl Assessment {
     fn fits(self, before: Self, required: Room, free_slots: i32, restore: bool, power_loss: i32) -> bool {
         self.room >= required.weight && free_slots >= required.slots
             && self.speed >= before.speed && self.mana_penalty <= before.mana_penalty
-            && self.armor >= before.armor / 2 && self.damage >= before.damage / 2
-            && (before.damage == 0 || self.damage > 0)
-            && (before.hit <= 0 || self.hit >= before.hit / 2)
+            && 2 * i64::from(self.armor) >= i64::from(before.armor)
+            && 2 * i64::from(self.damage) >= i64::from(before.damage)
+            && (before.hit <= 0 || 2 * i64::from(self.hit) >= i64::from(before.hit))
             && if restore { self.power > before.power }
                 else { self.room > before.room && i64::from(self.power) + i64::from(power_loss) >= i64::from(before.power) }
     }
@@ -204,7 +204,7 @@ pub(crate) fn start(st: &mut BorgState, urgent: Room, gold: i64) -> Option<TownA
 
     let mut best = None;
     for (source, index, item) in offers {
-        if !eligible(&item) || restore && !retained(st, &item) { continue; }
+        if !eligible(&item) || restore && !retained_at_home(st, &item) { continue; }
         let slot = borg_wield_slot(&item) as usize;
         let old = st.items.items[slot];
         if !eligible(&old) || old.iqty != 1 || same_gear(&old, &item)
@@ -246,7 +246,9 @@ pub(crate) fn start(st: &mut BorgState, urgent: Room, gold: i64) -> Option<TownA
             best = Some((score, Swap { source, slot, replacement: item, displaced: old, stage, queued: false, home_copies: 0 }));
         }
     }
-    let (_, swap) = best?;
+    let ((_, _, power, _, _), swap) = best?;
+    let delta = i64::from(power) - i64::from(before.power);
+    borg_note(st, &format!("# Town loadout: projected equipment power {} -> {power} ({delta:+})", before.power));
     crate::borg_item_wear::borg_clear_best(st);
     st.think.town_live.loadout.attempted = true;
     st.think.town_live.loadout.pending = Some(swap);
@@ -264,19 +266,20 @@ pub(crate) fn advance(st: &mut BorgState) -> Option<TownAction> {
     if swap.queued {
         swap.queued = false;
         swap.stage = match swap.stage {
-            Stage::Acquire if pack(st).iter().any(|it| same_gear(&swap.replacement, it)) => Stage::Wear,
-            Stage::Wear if same_gear(&swap.replacement, &st.items.items[swap.slot]) => {
+            Stage::Acquire if pack(st).iter().any(|it| same_gear(&swap.replacement, it)) => {
+                if matches!(swap.source, Source::Shop(BORG_HOME)) && home_copies(st, &swap.replacement) == 0 {
+                    st.think.town_live.loadout.retained.retain(|it| !same_gear(it, &swap.replacement));
+                }
+                Stage::Wear
+            }
+            Stage::Wear if same_gear(&swap.replacement, &st.items.items[swap.slot]) => Stage::Store,
+            Stage::Store if home_copies(st, &swap.displaced) > swap.home_copies => {
                 let saved = &mut st.think.town_live.loadout.retained;
                 if swap.displaced.weight > swap.replacement.weight
                     && !saved.iter().any(|it| same_gear(it, &swap.displaced))
                 {
                     saved.push(swap.displaced);
                 }
-                Stage::Store
-            }
-            Stage::Store if home_copies(st, &swap.displaced) > swap.home_copies => {
-                let saved = &mut st.think.town_live.loadout.retained;
-                saved.retain(|it| !same_gear(it, &swap.replacement));
                 borg_note(st, "# Town loadout: confirmed displaced gear at Home");
                 return None;
             }
@@ -343,7 +346,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     // Native messaging may ask for keys while the synthetic kit is installed.
     if SETUP.load(Relaxed) == 1 { return; }
     let excess = match case {
-        "full-home" | "full-pack" | "no-storage" | "restore" => 104,
+        "full-home" | "full-pack" | "no-storage" | "restore" | "deposit-failed" => 104,
         "trim" => 188,
         _ => panic!("unknown town loadout fixture {case}"),
     };
@@ -382,6 +385,24 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             std::process::exit(0);
         }
     }
+    if case == "deposit-failed" && st.think.town_live.loadout.pending.as_ref().is_some_and(|swap|
+        swap.queued && swap.stage == Stage::Wear && same_gear(&swap.replacement, &st.items.items[swap.slot]))
+    {
+        let act = advance(st).expect("wearing the replacement should lead to a deposit");
+        assert_eq!(act.code, action::STORE);
+        let displaced = pack(st)[act.at[1] as usize];
+        assert_eq!(displaced.weight, 180);
+        // Simulate a rejected store command by leaving the observed pack and
+        // Home stock unchanged after the command was queued.
+        observe_command(st, true);
+        assert!(advance(st).is_none());
+        assert!(!pending(st));
+        assert_eq!(home_copies(st, &displaced), 0);
+        assert!(pack(st).iter().any(|it| same_gear(&displaced, it)));
+        assert!(st.think.town_live.loadout.retained.is_empty());
+        println!("#1239 town loadout passed: {case}");
+        std::process::exit(0);
+    }
     if SETUP.load(Relaxed) == 3 {
         if st.items.items[inven_wield() as usize].weight == 180
             && !pending(st) && home(st).iter().any(|it| it.tval == TV_HAFTED as u8 && it.weight == 30)
@@ -394,7 +415,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     }
     if st.borg.tr(BI_RECALL) > 0 {
         assert_eq!(st.items.items[inven_wield() as usize].weight, 30);
-        assert!(home(st).iter().any(|it| it.weight == 180 && retained(st, it)));
+        assert!(home(st).iter().any(|it| it.weight == 180 && retained_at_home(st, it)));
         assert!(Facts::of(st).allowance() >= 0);
         assert_eq!(st.borg.tr(BI_AMISSILES), if case == "trim" { 20 } else { 57 });
         if case == "restore" {
@@ -413,5 +434,21 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         }
         println!("#1239 town loadout passed: {case}");
         std::process::exit(0);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requires_at_least_half_of_odd_combat_values() {
+        let before = Assessment { room: -1, speed: 110, power: 0, armor: 3, damage: 3, hit: 1, mana_penalty: 0 };
+        let viable = Assessment { room: 0, armor: 2, damage: 2, hit: 1, ..before };
+        let fits = |kit: Assessment| kit.fits(before, Room::default(), 0, false, 1);
+        assert!(fits(viable));
+        assert!(!fits(Assessment { armor: 1, ..viable }));
+        assert!(!fits(Assessment { damage: 1, ..viable }));
+        assert!(!fits(Assessment { hit: 0, ..viable }));
     }
 }

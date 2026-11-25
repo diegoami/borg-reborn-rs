@@ -304,7 +304,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         KitItem {
             home_room,
             keep_last_book: protects_class_book(it),
-            protect_disposal: crate::borg_town_loadout::retained(st, it)
+            protect_disposal: place == Place::Home && crate::borg_town_loadout::retained_at_home(st, it)
                 || it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis,
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -537,7 +537,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
             && item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
-                || crate::borg_town_loadout::retained(st, item)));
+                || crate::borg_town_loadout::retained_at_home(st, item)));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
         stock.candidates.push(crate::borg_town_stock::Candidate { shop:7,slot:slot as u8,
@@ -639,10 +639,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         for (k, d) in kit.iter().zip(chosen_from.dispositions.iter_mut()) {
             let reverses = match (k.place, *d) {
                 (Place::Pack, Disposition::Store) => crate::borg_town_live::home_moved(st, k.kind, false),
-                (Place::Pack, Disposition::Sell | Disposition::Drop) =>
-                    crate::borg_town_loadout::retained(st, &st.items.items[usize::from(k.slot)]),
                 (Place::Home, Disposition::Take | Disposition::Sell | Disposition::Drop) =>
-                    crate::borg_town_loadout::retained(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)])
+                    crate::borg_town_loadout::retained_at_home(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)])
                     || *d == Disposition::Take && crate::borg_town_live::home_moved(st, k.kind, true),
                 _ => false,
             };

@@ -25,3 +25,25 @@ captured save was unavailable in the workspace.
 reserves follow [#1171](https://github.com/diegoami/borg-reborn-rs/issues/1171).
 The [class and level calibration](https://github.com/diegoami/borg-reborn-rs/issues/1199)
 continues to own the reserve policy.
+
+### Review follow-up
+
+The planner protects displaced gear only after it observes the matching
+quantity increase at Home. A rejected deposit leaves the gear in the pack
+and available to the normal disposition rules. The armor, damage, and
+positive hit floors compare against half of the original value without
+rounding the threshold down.
+
+Restoring an upgrade from Home requires one free pack slot at checkout.
+A full pack defers restoration until ordinary inventory handling opens a
+slot.
+
+The full-Home, trim, full-pack, and restoration setups each changed
+equipment power from 436,786 to 436,486 on the lighter swap. Restoration
+after a strength gain went from 436,950 to 437,250. The no-storage case
+proposed no exchange. The rejected-deposit regression proposed the same
+300-point loss but confirmed no deposit. The successful light swaps used
+one tenth of the 3,000-point trial allowance. These fixtures exercise an
+acceptable loss and do not calibrate the upper bound.
+
+[Review on PR #1242](https://github.com/diegoami/borg-reborn-rs/pull/1242#issuecomment-7154421823)
