@@ -14,11 +14,13 @@ borg_param_town_phase_curve_scale_percent = 75
 borg_param_town_oil_curve_scale_percent = 100
 # Owner, 2026-11-20: breeders hunted while at most this many are known (common 4).
 borg_param_caution_breeder_hunt_max_count = 7
-# #768: C Borg preparedness gates for this class.
-borg_param_prepared_dl34_min_hp = 50
-borg_param_prepared_dl34_min_clevel = 4
-borg_param_prepared_dl59_min_hp = 60
-borg_param_prepared_dl59_min_clevel = 6
+# #1217: shallow dive levels follow the mixed exploration cap.
+borg_param_prepared_dl2_min_clevel = 6
+borg_param_prepared_dl34_min_hp = 0
+borg_param_prepared_dl34_min_clevel = 7
+borg_param_prepared_dl59_min_hp = 0
+borg_param_prepared_dl59_min_clevel = 8
+# #768: class offsets and bounds for mid-depth and deep preparedness.
 borg_param_prepared_mid_clevel_offset = -4
 borg_param_prepared_deep_clevel_offset = 5
 borg_param_prepared_deep_min_clevel = 0

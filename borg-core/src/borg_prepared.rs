@@ -208,7 +208,7 @@ fn line_index(lines: &[DepthLine], r: *const CStr) -> usize {
 }
 
 /// The original DL1–9 gates, in check order.
-fn shallow_requirements(st: &BorgState, depth: i32) -> Option<Reason> {
+fn shallow_requirements(st: &BorgState, depth: i32, value: impl Fn(Param) -> i32) -> Option<Reason> {
     let b = &st.borg;
     let risky = st.cfg(BORG_PLAYS_RISKY) != 0;
     let class = b.tr(BI_CLASS);
@@ -259,8 +259,18 @@ fn shallow_requirements(st: &BorgState, depth: i32) -> Option<Reason> {
         return Some(Reason::threshold(format!("{min_hp} hp"), "prepared_dl2_min_hp", hp, min_hp));
     }
 
-    // Usually ready for level 2
+    // The DL2 level gate is specific to DL2. Deeper proposals use their
+    // own character-level checks.
     if depth <= 2 {
+        let min_clevel = value(Param::prepared_dl2_min_clevel);
+        if !risky && clevel < min_clevel {
+            return Some(Reason::threshold(
+                format!("{min_clevel} clevel"),
+                "prepared_dl2_min_clevel",
+                clevel,
+                min_clevel,
+            ));
+        }
         return None;
     }
 
@@ -336,7 +346,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return None;
     }
 
-    let shallow = shallow_requirements(st, depth);
+    let shallow = shallow_requirements(st, depth, value);
     if shallow.is_some() || depth <= 9 {
         return shallow;
     }
@@ -1127,7 +1137,7 @@ mod recall_depth_tests {
         st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
         st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
         st.borg.trait_[BI_CDEPTH as usize] = 4;
-        let fail = |st: &BorgState| shallow_requirements(st, 5).unwrap().requirement;
+        let fail = |st: &BorgState| shallow_requirements(st, 5, value).unwrap().requirement;
         assert_eq!(fail(&st), Requirement { name: "light_radius", actual: 0, required: 1, relation: ">=" });
         st.borg.trait_[BI_LIGHT as usize] = 1;
         assert_eq!(fail(&st), Requirement { name: "food", actual: 0, required: 5, relation: ">=" });
@@ -1159,7 +1169,55 @@ mod recall_depth_tests {
         st.borg.trait_[BI_MAXHP as usize] = 100;
         assert_eq!(fail(&st), Requirement { name: "recall", actual: 0, required: 1, relation: ">=" });
         st.borg.trait_[BI_RECALL as usize] = 1;
-        assert!(shallow_requirements(&st, 5).is_none());
+        assert!(shallow_requirements(&st, 5, value).is_none());
+    }
+
+    #[test]
+    fn shallow_ranger_level_gates_report_the_boundary_even_at_low_hp() {
+        const CLASS_RANGER: i32 = 7;
+        use super::*;
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.borg.trait_[BI_CLASS as usize] = CLASS_RANGER;
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_LIGHT as usize] = 1;
+        st.borg.trait_[BI_FOOD as usize] = 5;
+        st.borg.trait_[BI_MAXHP as usize] = 37;
+        st.borg.trait_[BI_ACLW as usize] = 2;
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        let ranger = |param| match param {
+            Param::prepared_dl2_min_hp | Param::prepared_dl34_min_hp | Param::prepared_dl59_min_hp => 0,
+            Param::prepared_dl2_min_clevel => 8,
+            Param::prepared_dl34_min_clevel => 9,
+            Param::prepared_dl59_min_clevel => 11,
+            _ => value(param),
+        };
+
+        st.borg.trait_[BI_MAXCLEVEL as usize] = 4;
+        assert!(shallow_requirements(&st, 1, ranger).is_none());
+        assert_eq!(shallow_requirements(&st, 2, ranger).unwrap().requirement,
+            Requirement { name: "prepared_dl2_min_clevel", actual: 4, required: 8, relation: ">=" });
+        assert_eq!(shallow_requirements(&st, 3, ranger).unwrap().requirement,
+            Requirement { name: "prepared_dl34_min_clevel", actual: 4, required: 9, relation: ">=" });
+
+        for (depth, name, required) in [
+            (2, "prepared_dl2_min_clevel", 8),
+            (3, "prepared_dl34_min_clevel", 9),
+            (4, "prepared_dl34_min_clevel", 9),
+            (5, "prepared_dl59_min_clevel", 11),
+        ] {
+            st.borg.trait_[BI_CDEPTH as usize] = depth - 1;
+            st.borg.trait_[BI_MAXCLEVEL as usize] = required - 1;
+            assert_eq!(shallow_requirements(&st, depth, ranger).unwrap().requirement,
+                Requirement { name, actual: required - 1, required, relation: ">=" });
+            st.borg.trait_[BI_MAXCLEVEL as usize] = required;
+            assert!(shallow_requirements(&st, depth, ranger).is_none(), "DL{depth}");
+        }
+
+        st.borg.trait_[BI_MAXCLEVEL as usize] = 4;
+        st.core.cfg[BORG_PLAYS_RISKY as usize] = 1;
+        assert!(shallow_requirements(&st, 5, ranger).is_none());
     }
 
     #[test]
