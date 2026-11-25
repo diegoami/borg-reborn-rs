@@ -660,6 +660,7 @@ pub(crate) fn borg_discard_town_consumable(st: &mut BorgState) -> bool {
 pub(crate) struct SurplusDrop {
     pub slot: usize,
     pub quantity: u8,
+    pub sell_first: bool,
 }
 
 fn harmful_item(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>) -> bool {
@@ -690,7 +691,7 @@ fn harmful_item_drop(st: &BorgState, make_room: bool) -> Option<SurplusDrop> {
     let slot = st.items.items[..pack_size() as usize].iter().position(|item| {
         harmful_item(item, engine::kind_effects) && (!keep_throwables || !retain_for_throwing(st, item))
     })?;
-    Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
+    Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty, sell_first: false })
 }
 
 pub(crate) fn borg_discard_harmful_item(st: &mut BorgState, make_room: bool) -> bool {
@@ -719,24 +720,30 @@ fn expendable_town_spare(item: &borg_item, worn: &borg_item) -> bool {
 }
 
 fn town_spare_drop(st: &mut BorgState) -> Option<SurplusDrop> {
-    if exploration_first() {
-        let slot = (0..pack_size() as usize).find(|&slot| crate::borg_spare_gear::inferior(st, slot))?;
-        return Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty });
-    }
-
+    let shared = exploration_first();
     let pack = &st.items.items[..pack_size() as usize];
-    pack.iter().enumerate().filter(|&(slot, item)| {
+    let legacy_drop = pack.iter().enumerate().filter(|&(slot, item)| {
+        let cursed = item.curses.contains(&true);
+        if shared && !cursed {
+            return false;
+        }
         if !matches!(u32::from(item.tval), TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW
             | TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_DRAG_ARMOR | TV_CLOAK | TV_SHIELD
             | TV_HELM | TV_CROWN | TV_GLOVES | TV_BOOTS) {
             return false;
         }
         let worn = crate::borg_inventory::borg_wield_slot(item) as usize;
-        (item.curses.contains(&true) || !is_swap(st, slot as i32))
+        (cursed || !is_swap(st, slot as i32))
             && expendable_town_spare(item, &st.items.items[worn])
     }).min_by_key(|&(_, item)| {
         (!item.curses.contains(&true), item.value, std::cmp::Reverse(item.weight))
-    }).map(|(slot, item)| SurplusDrop { slot, quantity: item.iqty })
+    }).map(|(slot, item)| SurplusDrop { slot, quantity: item.iqty, sell_first: false });
+    if !shared || legacy_drop.is_some() {
+        return legacy_drop;
+    }
+    find_inferior_spare(st, |_, slot, item| {
+        Some(SurplusDrop { slot, quantity: item.iqty, sell_first: true })
+    })
 }
 
 /// Compare the fractional surplus above each target. Recheck the actual
@@ -778,7 +785,7 @@ pub(crate) fn surplus_drop(st: &mut BorgState, lighten: bool) -> Option<SurplusD
             }).then_with(|| second.weight.cmp(&first.weight));
             if order.is_gt() { b } else { a }
         })
-        .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1 })
+        .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1, sell_first: false })
 }
 
 pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
@@ -903,6 +910,13 @@ pub(crate) fn check_cursed_spares(st: &mut BorgState) -> ! {
     let mut drop = b"{aborg ignore".iter().copied().map(u32::from).collect::<Vec<_>>();
     drop.extend([KC_ENTER, u32::from(b'd'), u32::from(b'a'), u32::from(b'*'), KC_ENTER]);
     assert_eq!(st.io.queued_keys(), drop);
+    // Town arrival retains its separate cleanup for learned curses.
+    assert!(exploration_first());
+    st.borg.trait_[BI_CDEPTH as usize] = 0;
+    st.items.items[0] = curse(borg_item { tval: TV_SWORD as u8, iqty: 1, aware: true,
+        ..crate::borg_item::blank_item() });
+    let arrival = surplus_drop(st, false).expect("town arrival should clear the cursed weapon");
+    assert_eq!((arrival.slot, arrival.quantity, arrival.sell_first), (0, 1, false));
     println!("#1231 cursed spare actions passed");
     std::process::exit(0);
 }
@@ -2187,8 +2201,8 @@ fn inferior_spares(st: &BorgState) -> impl Iterator<Item = (usize, &borg_item)> 
     })
 }
 
-/// Let the town caller choose a usable outlet for a whole inferior stack.
-pub(crate) fn find_town_inferior_spare<T>(
+/// Find a whole inferior stack that meets the caller's disposal constraints.
+pub(crate) fn find_inferior_spare<T>(
     st: &mut BorgState,
     mut outlet: impl FnMut(&BorgState, usize, &borg_item) -> Option<T>,
 ) -> Option<T> {
@@ -2208,8 +2222,8 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) == 0 || st.borg.goal.recalling != 0 || st.borg.goal.fleeing || off_floor(st) {
         return false;
     }
-    let Some((slot, _)) = inferior_spares(st).find(|(_, item)| {
-        i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
+    let Some(slot) = find_inferior_spare(st, |_, slot, item| {
+        (i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)).then_some(slot)
     }) else {
         return false;
     };

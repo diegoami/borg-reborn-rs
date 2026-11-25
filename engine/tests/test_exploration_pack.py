@@ -16,7 +16,7 @@ FIXTURES = ROOT / "engine/tests/fixtures"
 
 
 class ExplorationPackTest(unittest.TestCase):
-    def run_case(self, harmful, *, fixture=None, enabled=True):
+    def run_case(self, harmful, *, fixture=None, enabled=True, full_pack=True):
         game = FEATURE_GAME if fixture else GAME
         if not game.is_file():
             self.skipTest(f"native build required for {game.parent.parent.name}")
@@ -28,7 +28,8 @@ class ExplorationPackTest(unittest.TestCase):
             for name in ("borg.txt", "scary_monsters.txt"):
                 shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
             build = root / "full.build"
-            kit = (FIXTURES / "exploration-full-pack.build").read_text()
+            kit_name = "exploration-full-pack.build" if full_pack else "exploration-town-spares.build"
+            kit = (FIXTURES / kit_name).read_text()
             if not harmful:
                 kit = kit.replace("item:26:34:4:", "item:26:30:4:")
             if fixture == "gear":
@@ -74,6 +75,11 @@ class ExplorationPackTest(unittest.TestCase):
         self.assertIn("# Dropping inferior spare to make pack room Trident", log)
         self.assertRegex(log, r"You drop [^\n]*Trident[^\n]*\{borg ignore")
 
+    def test_cheap_dungeon_drop_uses_the_shared_rule_without_pack_pressure(self):
+        log = self.run_case(harmful=False, full_pack=False)
+        self.assertIn("# Dropping inferior spare Chain Mail", log)
+        self.assertRegex(log, r"You drop [^\n]*Chain Mail[^\n]*\{borg ignore")
+
 
 @unittest.skipUnless(FEATURE_GAME.is_file(), "test-junk-consumables build required")
 class TownSpareGearTest(unittest.TestCase):
@@ -100,29 +106,32 @@ class TownSpareGearTest(unittest.TestCase):
             messages = root / "messages.log"
             result = subprocess.run(
                 [str(FEATURE_GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
-                 "--", "-seed", "101", "-race", "0", "-class", "0", "-menu-letters",
+                 "--", "-seed", "101" if arrival else "102", "-race", "0", "-class", "0", "-menu-letters",
                  "-start-build", str(FIXTURES / "exploration-town-spares.build"),
-                 "-keys", "80" if arrival else "300", "-msglog", str(messages)],
+                 "-keys", "130" if arrival else "300", "-msglog", str(messages)],
                 env=env, cwd=FEATURE_GAME.parent, capture_output=True, text=True, timeout=30,
             )
             log = messages.read_text()
             self.assertEqual(result.returncode, 0, result.stderr + log[-4000:])
             return log
 
-    def test_town_arrival_drops_inferior_gear_and_keeps_its_kit_and_reserves(self):
+    def test_town_arrival_sells_or_drops_inferior_gear_and_keeps_upgrades_and_recall(self):
         log = self.run_town(planner=1, arrival=True)
         self.assertRegex(log, r"You drop [^\n]*Chain Mail[^\n]*\{borg ignore surplus")
-        self.assertRegex(log, r"You drop 2 Tridents[^\n]*\{borg ignore surplus")
-        self.assertNotRegex(log, r"You have (?!no more )[^\n]*(?:Chain Mail|Trident)[^\n]*borg ignore")
+        self.assertRegex(log, r"You (?:sold|had) 2 Tridents")
+        self.assertNotRegex(log, r"You drop [^\n]*Trident")
+        self.assertNotRegex(log, r"You have (?!no more )[^\n]*Chain Mail[^\n]*borg ignore")
         self.assertNotRegex(log, r"You (?:drop|sold|had|have no more) [^\n]*Word of Recall")
         # The extra armour and the more accurate Rapier are still available
         # when normal gearing resumes after arrival unloading.
-        self.assertLess(log.index("You drop 2 Tridents"), log.index("You are wearing a Pair of Leather Boots"))
-        self.assertLess(log.index("You drop 2 Tridents"), log.index("You are wielding a Rapier"))
+        self.assertLess(log.index("You drop Chain Mail"), log.index("You are wearing a Pair of Leather Boots"))
+        self.assertLess(log.index("You had 2 Tridents"), log.index("You are wielding a Rapier"))
 
     def test_arrival_uses_the_legacy_comparison_with_flag_off(self):
         log = self.run_town(planner=1, arrival=True, enabled=False)
-        self.assertNotRegex(log, r"You drop [^\n]*(?:Chain Mail|Trident)")
+        self.assertNotRegex(log, r"You drop [^\n]*Trident")
+        self.assertNotIn("borg ignore surplus", log)
+        self.assertLess(log.index("You are wielding a Rapier"), log.index("You had 2 Tridents"))
 
     def test_both_town_choosers_sell_the_whole_inferior_stack(self):
         for planner in (0, 1):

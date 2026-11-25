@@ -208,6 +208,7 @@ pub struct LiveState {
     departure_slots: [bool; 12],
     departure_failure: Option<&'static str>,
     arrival_unloaded: bool,
+    arrival_sale_planned: bool,
     retained_gear: Vec<crate::borg_headers::borg_item_h::borg_item>,
     pub(crate) recall_loadout: recall_loadout::Loadout,
 }
@@ -489,6 +490,12 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
     let lighten = allowance < crate::borg_town_utility::departure_room().weight;
     let drop = crate::borg_junk::surplus_drop(st, lighten);
     if lighten || drop.is_some() {
+        if let Some(drop) = drop.filter(|drop| drop.sell_first) {
+            if let Some(sale) = spare_sale(st, drop.slot, &st.items.items[drop.slot]) {
+                st.think.town_live.arrival_sale_planned = true;
+                return Some(set_action(st, sale));
+            }
+        }
         if st.borg.in_shop {
             clear(st);
             return Some(false);
@@ -513,6 +520,12 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
         }
     }
     st.think.town_live.arrival_unloaded = true;
+    // After an arrival sale, resume the usual wear and swap checks outside
+    // before the general town planner can offer any of the retained kit.
+    if st.think.town_live.arrival_sale_planned {
+        clear(st);
+        return Some(false);
+    }
     None
 }
 
@@ -660,7 +673,7 @@ pub fn choose(st: &mut BorgState) -> bool {
         }
         if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
             let code = if crate::borg_junk::exploration_first() { DROP_SURPLUS } else { action::DROP };
-            let drop = crate::borg_junk::find_town_inferior_spare(st, |_, slot, item| {
+            let drop = crate::borg_junk::find_inferior_spare(st, |_, slot, item| {
                 Some(TownAction { code, at: [-1, slot as i64, i64::from(item.iqty), 0] })
             });
             if let Some(drop) = drop {
@@ -903,7 +916,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     }
     if a.code == DROP_SURPLUS {
         let acted = crate::borg_junk::drop_surplus(st, crate::borg_junk::SurplusDrop {
-            slot, quantity: a.at[2] as u8,
+            slot, quantity: a.at[2] as u8, sell_first: false,
         });
         clear(st);
         return acted;
@@ -973,19 +986,21 @@ fn settle_quiver_trim(st: &mut BorgState) {
 
 /// Use a shop with room for the whole inferior spare stack.
 pub(crate) fn inferior_spare_sale(st: &mut BorgState) -> Option<TownAction> {
-    crate::borg_junk::find_town_inferior_spare(st, |st, slot, item| {
-        if item.value <= 0 {
-            return None;
-        }
-        let native = crate::engine::inven_object(&st.access, slot)?;
-        let quantity = i32::from(item.iqty);
-        let shop = (0..BORG_HOME).find(|&shop| {
-            !sale_rejected(st, shop as i16, item)
-                && crate::borg_store_sell::borg_store_buys(item, shop as i32)
-                && native.store_accepts_quantity(shop, quantity)
-        })?;
-        Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
-    })
+    crate::borg_junk::find_inferior_spare(st, spare_sale)
+}
+
+fn spare_sale(st: &BorgState, slot: usize, item: &crate::borg_headers::borg_item_h::borg_item) -> Option<TownAction> {
+    if item.value <= 0 {
+        return None;
+    }
+    let native = crate::engine::inven_object(&st.access, slot)?;
+    let quantity = i32::from(item.iqty);
+    let shop = (0..BORG_HOME).find(|&shop| {
+        !sale_rejected(st, shop as i16, item)
+            && crate::borg_store_sell::borg_store_buys(item, shop as i32)
+            && native.store_accepts_quantity(shop, quantity)
+    })?;
+    Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }
 
 /// Controlled refreshed-inventory observations for the native regression fixture.

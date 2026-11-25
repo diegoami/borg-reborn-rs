@@ -9078,8 +9078,8 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2173` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2170` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2187` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2188` |
 
 ## Exploration reserves and full packs (#1264)
 
@@ -9090,7 +9090,9 @@ with each item equipped in turn. It preserves an accuracy, damage, speed,
 casting or departure headroom tradeoff, planned swaps, and visible special
 gear. A remaining rune keeps the item eligible for identification while the
 Borg has an Identify Rune scroll or a usable learned Identify Rune spell.
-The same comparison selects spares for town sales and arrival unloading.
+The same comparison serves the cheap dungeon drop, town sales and arrival
+unloading. On arrival, offer a whole inferior stack to a shop before
+dropping it.
 
 A separate gate protects the remaining trip targets for light and fuel,
 nutrition, healing, Phase Door, Recall and ranged combat supplies. It

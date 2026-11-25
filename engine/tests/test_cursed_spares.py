@@ -28,7 +28,8 @@ class CursedSparesTest(unittest.TestCase):
             for name in ("borg.txt", "scary_monsters.txt"):
                 shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-            env.update(BORG_CORE="borg-rs", BORG_TEST_CURSED_SPARES=case)
+            env.update(BORG_CORE="borg-rs", BORG_TEST_CURSED_SPARES=case,
+                       BORG_PARAM_JUNK_EXPLORATION_FIRST="1")
             run = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{key}={value}" for key, value in paths.items()),
                  "--", "-seed", "101", "-race", "1", "-class", "1", "-menu-letters", "-start-depth", "5", "-keys", "250"],
