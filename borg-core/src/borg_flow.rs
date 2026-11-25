@@ -72,6 +72,15 @@ const GOAL_FLEE: i32 = 7;
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
 
+/// borg-reborn-rs (#1206): how long a door the flight itself opened stays
+/// exempt from the breeder containment's close. The recorded open/close
+/// cycle ran ten turns per toggle; thirty covers several cycles of the
+/// walk-through and stays far short of any deliberate later containment.
+pub(crate) const OPENED_DOOR_UNDO_TURNS: i32 = 30;
+
+/// borg-reborn-rs (#1206): how many recently opened doors are remembered.
+const OPENED_DOOR_KEEP: usize = 8;
+
 /// One `borg_data` grid map: `AUTO_MAX_Y` rows of `AUTO_MAX_X` bytes,
 /// indexed `[y][x]`. Empty = not allocated (C `NULL`).
 pub type BorgData = Vec<[u8; AUTO_MAX_X as usize]>;
@@ -153,6 +162,22 @@ pub struct FlowState {
     pub track_door: StairTrack,
     /// `track_closed`: doors that started closed
     pub track_closed: StairTrack,
+    /// borg-reborn-rs (#1206): doors the Borg's escape opened recently, as
+    /// `(x, y, turn)` — the breeder containment must not close them again
+    /// while that escape is still walking through. An entry survives only
+    /// inside the continuous armed run that opened it (see
+    /// `escape_last_disarm`); an ordinary open records nothing (at most
+    /// `OPENED_DOOR_UNDO_TURNS` turns old, at most 8 kept, cleared on a
+    /// new level).
+    pub opened_doors: Vec<(i32, i32, i32)>,
+    /// borg-reborn-rs (#1206, review 3): the `time.now` when the escape
+    /// context was last observed disarmed on this level — at a think with
+    /// neither `fleeing` nor `leaving` set, or at a mid-think scare
+    /// withdrawal. `0` = none observed. An opened-door entry is exempt
+    /// only while no disarm has been observed since its open, so the
+    /// exemption dies with the escape that opened it even when the
+    /// containment never gets a turn in between.
+    pub escape_last_disarm: i32,
 }
 
 impl Default for FlowState {
@@ -184,6 +209,8 @@ impl Default for FlowState {
             track_step: StairTrack::default(),
             track_door: StairTrack::default(),
             track_closed: StairTrack::default(),
+            opened_doors: Vec::new(),
+            escape_last_disarm: 0,
         }
     }
 }
@@ -1236,6 +1263,21 @@ fn note_at(st: &mut BorgState, prefix: &str, name: &[u8], y: i32, x: i32) {
     borg_note_bytes(st, &msg);
 }
 
+/// borg-reborn-rs (#1206, review 3): the escape context's own record of
+/// itself. `borg_think_dungeon` observes it at the start of every dungeon
+/// think, before the goals are re-planned; the scare-goal withdrawal
+/// observes it too (through `borg_caution`'s
+/// `withdraw_scare_and_observe`), because a scare can be withdrawn and
+/// re-armed within one think and the flags never read off across a think
+/// boundary. The remembered door openings die with the escape that
+/// opened them: a disarm ends that escape even when the breeder
+/// containment never gets a turn in between.
+pub(crate) fn escape_context_tick(st: &mut BorgState) {
+    if !(st.borg.goal.fleeing || st.borg.goal.leaving) {
+        st.flow.escape_last_disarm = st.borg.time.now;
+    }
+}
+
 /// Breeder levels: close an open door next to the Borg (not the goal
 /// grid). `true` if a door was found (and a close queued).
 fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
@@ -1267,6 +1309,31 @@ fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
             /* skip our original goal */
             if oy + cy == y2 && ox + cx == x2 {
+                continue;
+            }
+
+            // borg-reborn-rs (#1206): skip a door the active escape flight
+            // opened recently — the flow replans after each terrain change
+            // and its new next grid loses the goal-side skip above, which
+            // closed the just-opened door and re-opened it every ten turns
+            // (Borg261124194229: 35 open/close pairs from one square). The
+            // exemption lives only inside the continuous armed run that
+            // opened the door: the armed flags must be set now, no disarm
+            // may have been observed since the open (the escape never
+            // ended — `escape_last_disarm`), and the undo window must not
+            // have expired.
+            if (st.borg.goal.fleeing || st.borg.goal.leaving)
+                && st
+                    .flow
+                    .opened_doors
+                    .iter()
+                    .any(|(x, y, t)| {
+                        *x == ox + cx
+                            && *y == oy + cy
+                            && st.borg.time.now - *t <= OPENED_DOOR_UNDO_TURNS
+                            && st.flow.escape_last_disarm <= *t
+                    })
+            {
                 continue;
             }
 
@@ -1519,11 +1586,32 @@ fn step_closed_door(st: &mut BorgState, dir: i32) -> bool {
         st.flow.track_closed.num = 0;
     }
 
+    // borg-reborn-rs (#1206): remember the door this flight just opened so
+    // the breeder containment does not close it again while the flight
+    // walks through it. Only the escape context records: a door opened by
+    // ordinary play (exploration, an unrelated flow) must stay closable by
+    // a later deliberate containment.
+    if st.borg.goal.fleeing || st.borg.goal.leaving {
+        let opened = (
+            st.borg.c.x + i32::from(engine::ddx(dir as usize)),
+            st.borg.c.y + i32::from(engine::ddy(dir as usize)),
+            st.borg.time.now,
+        );
+        st.flow.opened_doors.retain(|&(x, y, _)| !(x == opened.0 && y == opened.1));
+        st.flow.opened_doors.push(opened);
+        if st.flow.opened_doors.len() > OPENED_DOOR_KEEP {
+            let excess = st.flow.opened_doors.len() - OPENED_DOOR_KEEP;
+            st.flow.opened_doors.drain(0..excess);
+        }
+    }
+
     true
 }
 
 /// Take one "step" towards the given location, return true if possible.
-fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
+// borg-reborn-rs (#1206): `pub(crate)` so the decision fixture can drive
+// the step directly (the breeder-door loop is a per-step behavior).
+pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     /* Breeder levels, close all doors */
     if st.borg.near.breeder && close_breeder_door(st, y2, x2) {
         return true;

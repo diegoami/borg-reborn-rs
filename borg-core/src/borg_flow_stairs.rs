@@ -575,6 +575,7 @@ fn weighted_flight(
     why: i32,
     direction: Option<Which>,
     options: WeightedFlightOptions,
+    budget: Option<&mut crate::borg_caution::DesperateWalkBudget>,
 ) -> bool {
     let (who, kinds): (_, &[_]) = match direction {
         Some(Which::Less) => (c"up-stairs", &[Which::Less]),
@@ -592,6 +593,9 @@ fn weighted_flight(
                     borg_io::borg_note(st, &format!("# Stairs not reachable: {} ahead, fighting at range (flight to the {to})", String::from_utf8_lossy(&name)));
                     return false;
                 }
+            }
+            if budget.is_some_and(|budget| budget.refuses(st, path.grids.len().saturating_sub(1))) {
+                return false;
             }
             borg_flow::commit_weighted_stair_path(st, who, why, &path.grids)
         }
@@ -615,16 +619,19 @@ pub(crate) fn weighted_down_flight(st: &mut BorgState, depth: i32, weight: i32) 
     borg_flow::with_retreat_avoidance(st, GOAL_FLEE, |st| {
         weighted_flight(st, GOAL_FLEE, Some(Which::More), WeightedFlightOptions {
             depth, avoid: false, sneak: false, weight, ranged_reach: 0,
-        })
+        }, None)
     })
 }
 
 /// Keep the desperate walk within its move limit, including clean detours.
 /// Ranged-first still checks the route that would actually be committed.
-pub(crate) fn bounded_desperate_flight(st: &mut BorgState, up: bool, max_moves: i32, ranged_reach: i32) -> bool {
+pub(crate) fn bounded_desperate_flight(
+    st: &mut BorgState, up: bool, max_moves: i32, ranged_reach: i32,
+    mut budget: Option<&mut crate::borg_caution::DesperateWalkBudget>,
+) -> bool {
     fight_through(st, GOAL_FLEE, |st| {
         if up {
-            stair_less(st, GOAL_FLEE, false, max_moves, ranged_reach)
+            stair_less(st, GOAL_FLEE, false, max_moves, ranged_reach, budget.as_deref_mut())
         } else {
             stair_more(st, GOAL_FLEE, false, false, max_moves, ranged_reach)
         }
@@ -709,7 +716,7 @@ fn stair_kinds(st: &mut BorgState, why: i32, sneak: bool, only: Option<Which>) -
         };
         return weighted_flight(st, why, direction, WeightedFlightOptions {
             depth: 250, avoid: false, sneak, weight, ranged_reach: 0,
-        });
+        }, None);
     }
 
     /* Clear the flow codes */
@@ -946,7 +953,10 @@ fn beside_blocks(mode: i32, monster_far: i32, borg_far: i32) -> bool {
 }
 
 /// Prepare to flow towards "up" stairs.
-fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reach: i32) -> bool {
+fn stair_less(
+    st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reach: i32,
+    budget: Option<&mut crate::borg_caution::DesperateWalkBudget>,
+) -> bool {
     /* forced to go up */
     if engine::player_opt(OPT_birth_force_descend) {
         return false;
@@ -962,10 +972,14 @@ fn stair_less(st: &mut BorgState, why: i32, sneak: bool, depth: i32, ranged_reac
         let avoid = st.borg.tr(BI_CLEVEL) <= 35 && st.borg.tr(BI_LIGHT) != 0 && !st.borg.status.desperate;
         return weighted_flight(st, why, Some(Which::Less), WeightedFlightOptions {
             depth, avoid, sneak, weight, ranged_reach,
-        });
+        }, budget);
     }
 
     spread_unweighted_stairs(st, Which::Less, 250, sneak);
+    let steps = st.flow.cost_at(st.borg.c.y, st.borg.c.x);
+    if steps < 250 && budget.is_some_and(|budget| budget.refuses(st, usize::from(steps))) {
+        return false;
+    }
 
     commit_and_step(st, c"up-stairs", why)
 }
@@ -1051,7 +1065,7 @@ fn stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool, depth: i32
     if weight > 0 {
         return weighted_flight(st, why, Some(Which::More), WeightedFlightOptions {
             depth, avoid: false, sneak, weight, ranged_reach,
-        });
+        }, None);
     }
 
     spread_unweighted_stairs(st, Which::More, depth, sneak);
@@ -1334,7 +1348,7 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 /// Prepare to flow towards "up" stairs (`stair_less`, with #556's
 /// fight-through fallback).
 pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_less(st, why, sneak, 250, 0))
+    fight_through(st, why, |st| stair_less(st, why, sneak, 250, 0, None))
 }
 
 /// Prepare to flow towards "down" stairs (`stair_more`, with #556's
@@ -1528,6 +1542,9 @@ mod off_stair_handoff_tests {
 /// engine. Feed the queued movement keys back as the next Borg observations.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
+    if case.starts_with("pursuit-budget") {
+        crate::borg_caution::run_desperate_walk_budget_regression(st, case);
+    }
     if case == "leave-level-upstairs" {
         crate::borg_think_dungeon_util::run_leave_level_regression(st);
     }
@@ -1542,6 +1559,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     }
     if case == "note-standing-flags" {
         crate::borg_think_dungeon_util::run_note_standing_regression(st);
+    }
+    if case == "breeder-door-loop" {
+        crate::borg_think_dungeon_util::run_breeder_door_regression(st);
     }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;

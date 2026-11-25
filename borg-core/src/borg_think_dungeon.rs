@@ -678,6 +678,10 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1206, review 3): observe the escape context at
+    // every dungeon think, before the goals are re-planned — the
+    // remembered door openings belong to one continuous escape.
+    crate::borg_flow::escape_context_tick(st);
     crate::borg_flow::observe_flight_retreats(st);
     crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;
@@ -709,9 +713,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         st.borg.time.now = 1;
         crate::borg_io::borg_warning(st, "*****WARNING***** Borg Clock Overflow");
     }
-
-    /* no longer trying an unknown object */
-    st.borg.trying_unknown = false;
 
     /* if standing on something valueless, destroy it */
     /* this can be done first because it takes no "turns" */
@@ -865,10 +866,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let town_retreat = crate::borg_town_hunt::enabled(st)
         && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
 
-    // borg-reborn-rs (#1060, reviews of #1071): end the potion-test hold on
-    // danger or a move before an early fight or caution can act and return.
-    crate::borg_item_use::potion_test_hold_validate(st);
-
     // #760/#759/#878: an attack-on-sight target, a lone slow monster (with
     // lone_slow_attack) or a winning fight owns the action before even an
     // out-of-light wait or a depth-return flight.
@@ -950,14 +947,8 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("break_loop");
     }
 
-    // borg-reborn-rs (#1060): wait out a bad potion where it was tested.
-    if crate::borg_item_use::potion_test_hold(st) {
-        return choice!("potion_test_hold");
-    }
-
-    // borg-reborn-rs (#1061): stair_scum's door alarm, door peek and walk
-    // back inside its radius come before anything but caution (and the
-    // potion-test wait above).
+    // borg-reborn-rs (#1061): handle the door alarm, peek and return to the
+    // stair-scumming radius before continuing with the ordinary flows.
     if crate::borg_stair_scum::think(st) {
         return choice!("stair_scum");
     }
@@ -1396,12 +1387,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Identify unknown things */
     if borg_test_stuff(st) {
         return choice!("borg_test_stuff");
-    }
-
-    // borg-reborn-rs (#983, owner): learn an unknown potion flavour by
-    // drinking it at a safe moment (item_test_unknown_potions).
-    if crate::borg_item_use::borg_quaff_unknown_when_safe(st) {
-        return choice!("borg_quaff_unknown_when_safe");
     }
 
     /* Enchant things */
