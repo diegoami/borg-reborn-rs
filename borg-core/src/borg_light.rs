@@ -18,7 +18,7 @@ use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_light::{engine_distance, engine_light_shape, own_light_radius, BORG_LIGHT};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
-use crate::borg_inventory::borg_slot;
+use crate::borg_inventory::{borg_slot, borg_slot_in_pack};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
 use crate::borg_item::{inven_wield, BorgItem};
 use crate::borg_item_use::{
@@ -41,7 +41,7 @@ use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
     BI_CURSP, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
-use crate::headers::list_object_flags_h::{OF_LIGHT_2, OF_LIGHT_3, OF_NO_FUEL, OF_STICKY, OF_TAKES_FUEL};
+use crate::headers::list_object_flags_h::{OF_BURNS_OUT, OF_LIGHT_2, OF_LIGHT_3, OF_NO_FUEL, OF_STICKY, OF_TAKES_FUEL};
 use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
 use crate::headers::list_terrain_h::FEAT_NONE;
 use crate::headers::list_tvals_h::{TV_FLASK, TV_LIGHT, TV_WAND};
@@ -879,8 +879,9 @@ pub(crate) fn keep_fuel_stack(st: &BorgState, slot: usize) -> bool {
     i64::from(remaining) < goal
 }
 
-// cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
+// borg-reborn-rs (#1235): share the refuel check when choosing a lantern to wear.
 fn refillable_lantern(item: &BorgItem) -> bool {
+    // cmd-obj.c:1071 (do_cmd_refill); obj-util.c:743 (obj_can_refill).
     item.iqty != 0
         && u32::from(item.tval) == TV_LIGHT
         && has_flag(item, OF_TAKES_FUEL)
@@ -894,9 +895,13 @@ fn is_oil_flask(item: &BorgItem, oil: i32) -> bool {
         && !has_flag(item, OF_NO_FUEL)
 }
 
+fn lantern_fuel_slot(pack: &[BorgItem], oil: i32) -> Option<usize> {
+    pack.iter().position(|item| is_oil_flask(item, oil))
+        .or_else(|| pack.iter().position(|item| refillable_lantern(item) && item.timeout > 0))
+}
+
 fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -> Option<LightAction> {
-    let fuel_slot = pack.iter().position(|item| is_oil_flask(item, oil))
-        .or_else(|| pack.iter().position(|item| refillable_lantern(item) && item.timeout > 0));
+    let fuel_slot = lantern_fuel_slot(pack, oil);
     if refillable_lantern(equipped) && equipped.timeout == 0 {
         if let Some(slot) = fuel_slot {
             return Some(LightAction::Refuel(slot));
@@ -912,9 +917,10 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
     } else {
         0
     };
-    best_light(pack.iter().enumerate(), radius - current, |item| {
-        refillable_lantern(item) && fuel_slot.is_some()
-    }).map(LightAction::Wear)
+    best_light(pack, radius - current, |item| {
+        light_powered(item) || (refillable_lantern(item) && fuel_slot.is_some())
+    })
+    .map(LightAction::Wear)
 }
 
 fn light_powered(item: &BorgItem) -> bool {
@@ -927,7 +933,7 @@ pub(crate) fn light_running_out(item: &BorgItem) -> bool {
 }
 
 // Innate radius plus the light modifier (player-calcs.c:calc_light).
-fn light_contribution(item: &BorgItem) -> i32 {
+pub(crate) fn light_contribution(item: &BorgItem) -> i32 {
     let innate = if has_flag(item, OF_LIGHT_2) {
         2
     } else if has_flag(item, OF_LIGHT_3) {
@@ -938,21 +944,52 @@ fn light_contribution(item: &BorgItem) -> i32 {
     innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
 }
 
-fn best_light<'a>(
-    pack: impl Iterator<Item = (usize, &'a BorgItem)>,
+/// borg-reborn-rs (#1235): a clean torch that will be consumed when its fuel runs out.
+/// See engine/angband/src/player-util.c:719 (player_update_light).
+pub(crate) fn burning_torch(item: &BorgItem) -> bool {
+    item.iqty != 0
+        && u32::from(item.tval) == TV_LIGHT
+        && !item.cursed
+        && item.timeout > 0
+        && has_flag(item, OF_BURNS_OUT)
+        && !has_flag(item, OF_NO_FUEL)
+}
+
+pub(crate) fn shorter_torch(candidate: &BorgItem, incumbent: &BorgItem) -> bool {
+    candidate.timeout < incumbent.timeout
+        && burning_torch(candidate)
+        && burning_torch(incumbent)
+        && light_contribution(candidate) == light_contribution(incumbent)
+}
+
+fn best_light(
+    pack: &[BorgItem],
     other_radius: i32,
-    can_refuel: impl Fn(&BorgItem) -> bool,
+    usable: impl Fn(&BorgItem) -> bool,
 ) -> Option<usize> {
-    pack
+    let candidates = pack.iter()
+        .enumerate()
         .filter(|(_, item)| {
             item.iqty != 0
                 && u32::from(item.tval) == TV_LIGHT
                 && !item.cursed
-                && (light_powered(item) || can_refuel(item))
+                && usable(item)
                 && other_radius + light_contribution(item) > 0
-        })
-        .max_by_key(|(slot, item)| (light_powered(item), light_contribution(item), std::cmp::Reverse(*slot)))
+        });
+    let (slot, best) = candidates.clone().max_by_key(|(slot, item)| {
+        (light_powered(item), light_contribution(item), std::cmp::Reverse(*slot))
+    })?;
+    if !burning_torch(best) {
+        return Some(slot);
+    }
+
+    // borg-reborn-rs (#1235): compare one copy's timeout after choosing
+    // the kind of light (engine/angband/src/obj-pile.c:784, object_split).
+    candidates
+        .filter(|(_, item)| shorter_torch(item, best))
+        .min_by_key(|(slot, item)| (item.timeout, *slot))
         .map(|(slot, _)| slot)
+        .or(Some(slot))
 }
 
 /// Replace a harmful light in one wield command. The spare must already
@@ -960,13 +997,12 @@ fn best_light<'a>(
 /// leave a positive radius (as in `light_action`).
 pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> Option<usize> {
     let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
-    best_light(pack.iter().enumerate(), radius - current, |_| false)
+    best_light(pack, radius - current, light_powered)
 }
 
 fn has_clean_spare(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> bool {
     let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
-    let candidates = pack.iter().enumerate().filter(|(_, item)| !light_running_out(item));
-    best_light(candidates, radius - current, |_| false).is_some()
+    best_light(pack, radius - current, |item| light_powered(item) && !light_running_out(item)).is_some()
 }
 
 /// #1231: keep a cursed light available through an imminent loss of light.
@@ -1032,55 +1068,78 @@ pub(crate) fn borg_restore_light(st: &mut BorgState) -> bool {
     true
 }
 
-/// Refuel the light if it is needed (`borg_maintain_light`).
-pub fn borg_maintain_light(st: &mut BorgState) -> BorgNeed {
-    let light = &st.items.items[inven_light() as usize];
+// borg-reborn-rs (#1235): choose a replacement only when the light slot is empty.
+#[derive(Debug, PartialEq, Eq)]
+enum LightMaintenance {
+    NoNeed,
+    UnmetNeed,
+    RefuelLantern,
+    Wear(usize),
+}
 
-    if engine::flag_has(&light.flags, OF_NO_FUEL as i32) {
-        return BorgNeed::NoNeed;
-    }
-
-    /* necromancers like the dark */
-    if st.borg.tr(BI_CLASS) == CLASS_NECROMANCER {
-        return BorgNeed::NoNeed;
-    }
-
-    /* current torch */
+fn light_maintenance(light: &BorgItem, pack: &[BorgItem], torch: i32, lantern: i32, oil: i32) -> LightMaintenance {
+    use LightMaintenance::*;
     if u32::from(light.tval) == TV_LIGHT {
-        if i32::from(light.sval) == st.item_val.sv_light_torch {
-            if light.timeout > 250 {
-                return BorgNeed::NoNeed;
-            }
-            /* Look for another torch */
-            if borg_slot(st, TV_LIGHT as i32, st.item_val.sv_light_torch) < 0 {
-                return BorgNeed::UnmetNeed;
+        if i32::from(light.sval) == torch {
+            // Keep the existing departure check while the current torch burns.
+            if light.timeout <= 250 && borg_slot_in_pack(pack, TV_LIGHT as i32, torch) < 0 {
+                return UnmetNeed;
             }
 
             /* Torches automatically disappear when they get to 0 turns
              * so we don't need to actively swap them out */
-            return BorgNeed::NoNeed;
+            return NoNeed;
         }
 
         /* Refuel current lantern if needed */
-        if i32::from(light.sval) == st.item_val.sv_light_lantern && light.timeout < 1000 {
-            if borg_refuel_lantern(st) {
-                return BorgNeed::MetNeed;
-            }
-
-            return BorgNeed::UnmetNeed;
+        if i32::from(light.sval) == lantern && light.timeout < 1000 {
+            return RefuelLantern;
         }
-        BorgNeed::NoNeed
+        NoNeed
     } else {
-        let mut i = borg_slot(st, TV_LIGHT as i32, st.item_val.sv_light_lantern);
-        if i < 0 {
-            i = borg_slot(st, TV_LIGHT as i32, st.item_val.sv_light_torch);
-        }
+        let known_lantern = |item: &BorgItem| item.aware && i32::from(item.sval) == lantern;
+        best_light(pack, 0, |item| known_lantern(item) && light_powered(item))
+            .or_else(|| best_light(pack, 0, |item| {
+                item.aware && i32::from(item.sval) == torch && burning_torch(item)
+            }))
+            .or_else(|| {
+                lantern_fuel_slot(pack, oil)?;
+                best_light(pack, 0, |item| {
+                    known_lantern(item) && item.timeout == 0 && refillable_lantern(item)
+                })
+            })
+            .map_or(UnmetNeed, Wear)
+    }
+}
 
-        if i < 0 {
-            BorgNeed::UnmetNeed
-        } else {
+/// Refuel the light if it is needed (`borg_maintain_light`).
+pub fn borg_maintain_light(st: &mut BorgState) -> BorgNeed {
+    let light = &st.items.items[inven_light() as usize];
+
+    /* necromancers like the dark */
+    if has_flag(light, OF_NO_FUEL) || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER {
+        return BorgNeed::NoNeed;
+    }
+
+    match light_maintenance(
+        light,
+        &st.items.items[..inven_wield() as usize],
+        st.item_val.sv_light_torch,
+        st.item_val.sv_light_lantern,
+        st.item_val.sv_flask_oil,
+    ) {
+        LightMaintenance::NoNeed => BorgNeed::NoNeed,
+        LightMaintenance::UnmetNeed => BorgNeed::UnmetNeed,
+        LightMaintenance::RefuelLantern => {
+            if borg_refuel_lantern(st) {
+                BorgNeed::MetNeed
+            } else {
+                BorgNeed::UnmetNeed
+            }
+        }
+        LightMaintenance::Wear(slot) => {
             borg_keypress(st, key(b'w'));
-            borg_keypress(st, letter(i));
+            borg_keypress(st, letter(slot as i32));
             BorgNeed::MetNeed
         }
     }
@@ -1452,6 +1511,10 @@ mod lightless_tests {
     use super::*;
     use crate::borg_item::blank_item;
 
+    const TORCH: i32 = 1;
+    const LANTERN: i32 = 2;
+    const OIL: i32 = 1;
+
     fn light(flags: &[u32], timeout: i16) -> BorgItem {
         let mut item = blank_item();
         item.iqty = 1;
@@ -1462,6 +1525,114 @@ mod lightless_tests {
             item.flags[offset / 8] |= 1 << (offset % 8);
         }
         item
+    }
+
+    fn torch(timeout: i16) -> BorgItem {
+        let mut item = light(&[OF_LIGHT_2, OF_BURNS_OUT], timeout);
+        item.sval = TORCH as u8;
+        item.aware = true;
+        item
+    }
+
+    #[test]
+    fn replacements_use_the_shortest_burning_torch_in_either_pack_order() {
+        let empty = blank_item();
+        let mut equipped = torch(5000);
+        let mut full = torch(5000);
+        full.iqty = 4;
+        let short = torch(73);
+        let medium = torch(3000);
+        for (mut pack, first, second) in [([full, short, medium], 1, 2), ([medium, full, short], 2, 0)] {
+            assert_eq!(light_maintenance(&empty, &pack, TORCH, LANTERN, OIL), LightMaintenance::Wear(first));
+            assert_eq!(light_action(&empty, &pack, 1, 0), Some(LightAction::Wear(first)));
+
+            equipped.cursed = true;
+            assert_eq!(uncursed_light_replacement(&equipped, &pack, 2), Some(first));
+            pack[first] = empty;
+            assert_eq!(light_maintenance(&empty, &pack, TORCH, LANTERN, OIL), LightMaintenance::Wear(second));
+            assert_eq!(light_action(&empty, &pack, 1, 0), Some(LightAction::Wear(second)));
+            assert_eq!(uncursed_light_replacement(&equipped, &pack, 2), Some(second));
+        }
+    }
+
+    #[test]
+    fn replacement_prefers_brightness_and_requires_clean_usable_torches() {
+        let empty = blank_item();
+        let mut bright = torch(5000);
+        bright.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        let mut burnt = bright;
+        burnt.timeout = 0;
+        let mut cursed = bright;
+        cursed.timeout = 1;
+        cursed.cursed = true;
+        let pack = [torch(73), burnt, cursed, bright];
+        assert_eq!(light_maintenance(&empty, &pack, TORCH, LANTERN, OIL), LightMaintenance::Wear(3));
+        assert_eq!(light_action(&empty, &pack, 1, 0), Some(LightAction::Wear(3)));
+        assert_eq!(light_maintenance(&empty, &pack[1..3], TORCH, LANTERN, OIL), LightMaintenance::UnmetNeed);
+    }
+
+    #[test]
+    fn maintenance_leaves_a_working_torch_equipped() {
+        for timeout in [1, 73, 250, 251, 5000] {
+            let equipped = torch(timeout);
+            let pack = [torch(1), torch(5000)];
+            assert_eq!(light_maintenance(&equipped, &pack, TORCH, LANTERN, OIL), LightMaintenance::NoNeed);
+        }
+        assert_eq!(light_maintenance(&torch(250), &[], TORCH, LANTERN, OIL), LightMaintenance::UnmetNeed);
+        assert_eq!(light_maintenance(&torch(251), &[], TORCH, LANTERN, OIL), LightMaintenance::NoNeed);
+    }
+
+    #[test]
+    fn maintenance_keeps_the_departure_check_separate_from_replacement() {
+        let equipped = torch(250);
+        let spent = torch(0);
+        let cursed = BorgItem { cursed: true, ..torch(73) };
+        for spare in [spent, cursed] {
+            let pack = [spare];
+            assert_eq!(
+                light_maintenance(&equipped, &pack, TORCH, LANTERN, OIL),
+                LightMaintenance::NoNeed,
+            );
+            assert_eq!(
+                light_maintenance(&blank_item(), &pack, TORCH, LANTERN, OIL),
+                LightMaintenance::UnmetNeed,
+            );
+        }
+    }
+
+    #[test]
+    fn maintenance_prefers_working_lights_to_an_empty_lantern() {
+        let empty = blank_item();
+        let mut lantern = light(&[OF_TAKES_FUEL, OF_LIGHT_3], 15000);
+        lantern.sval = LANTERN as u8;
+        lantern.aware = true;
+        let drained = BorgItem { timeout: 0, ..lantern };
+        let cursed = BorgItem { cursed: true, ..lantern };
+        let mut oil = blank_item();
+        oil.iqty = 1;
+        oil.tval = TV_FLASK as u8;
+        oil.sval = OIL as u8;
+
+        assert_eq!(
+            light_maintenance(&empty, &[drained, torch(73), cursed, oil], TORCH, LANTERN, OIL),
+            LightMaintenance::Wear(1),
+        );
+        assert_eq!(
+            light_maintenance(&empty, &[lantern, torch(73), drained], TORCH, LANTERN, OIL),
+            LightMaintenance::Wear(0),
+        );
+        assert_eq!(
+            light_maintenance(&empty, &[drained, oil], TORCH, LANTERN, OIL),
+            LightMaintenance::Wear(0),
+        );
+        assert_eq!(
+            light_maintenance(&empty, &[cursed, drained], TORCH, LANTERN, OIL),
+            LightMaintenance::Wear(1),
+        );
+        assert_eq!(
+            light_maintenance(&empty, &[drained], TORCH, LANTERN, OIL),
+            LightMaintenance::UnmetNeed,
+        );
     }
 
     #[test]
@@ -1492,7 +1663,6 @@ mod lightless_tests {
         );
         assert_eq!(light_action(&equipped, &[equipped], 1, 0), None);
     }
-
     #[test]
     fn only_reserve_fuel_is_used_before_discarding_a_cursed_lantern() {
         let mut equipped = light(&[OF_TAKES_FUEL, OF_LIGHT_3], 1200);
@@ -1517,6 +1687,7 @@ mod lightless_tests {
         donor.timeout = 0;
         assert!(!uses_donor(&equipped, &[donor]));
     }
+
     #[test]
     fn cursed_light_swap_counts_light_from_other_gear() {
         let mut cursed_torch = light(&[OF_LIGHT_2], 100);
