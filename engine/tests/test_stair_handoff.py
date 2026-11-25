@@ -5,6 +5,7 @@ turn 7,446. This test runs the engine and checks the outcome independently
 of the reference files.
 """
 
+import json
 import os
 from pathlib import Path
 import re
@@ -99,19 +100,24 @@ class StairHandoffTest(unittest.TestCase):
 class EmergencyStairHandoffTest(unittest.TestCase):
     def run_case(self, case, weight):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
-            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            root = Path(directory)
+            paths = {kind: root / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
-                key = f"borg_param_caution_{name}"
+            overrides = {
+                "caution_stairs_flight_threat_weight": weight,
+                "caution_desperate_adjacent_down_distance": 3,
+            }
+            for name, value in overrides.items():
+                key = f"borg_param_{name}"
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case)
+            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case, BORG_RUN_DIR=str(root))
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
                  "--", "-seed", "101", "-race", "3", "-class", "6", "-menu-letters", "-start-depth", "5", "-keys", "250"],
@@ -119,6 +125,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             self.assertIn(f"emergency stair handoff passed: {case}", result.stdout)
+            settings = {row["name"]: row for row in json.loads((root / "params-core.json").read_text())}
+            resolved = json.loads((root / "settings-resolved.json").read_text())
+            self.assertEqual((resolved["class_index"], resolved["class_name"]), (6, "rogue"))
+            for name, value in overrides.items():
+                self.assertEqual((settings[name]["value"], settings[name]["origin"]), (value, "borg.txt"))
+                self.assertEqual(resolved["effective_settings"].get(name, settings[name]["default"]), value)
 
     def test_flight_moves_past_the_two_floor_squares_and_descends(self):
         for weight in (0, 5):

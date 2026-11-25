@@ -32,6 +32,11 @@ AVAILABLE = (GAME / 'angband').is_file() and (ZOO / '.git').exists()
 # harness failure, or a configuration error on a specimen that pins a scary
 # list or plan (borg-zoo#233).
 REFUSED = ('harness_failure', 'config_error')
+INVALID_AMBIENT = {
+    'BORG_CORE': 'invalid', 'BORG_ERRAND': 'dvie 2',
+    'BORG_STOPSCARED': 'bogus', 'BORG_ERRAND_BUDGET': '-1',
+    'BORG_PARAM_RECOVER_REST_SP_TENTHS': 'invalid',
+}
 if os.environ.get('BORG_ZOO_CONTRACT_REQUIRED') == '1' and not AVAILABLE:
     raise RuntimeError('core profile contract requires the build and pinned vendor/borg-zoo')
 
@@ -80,7 +85,8 @@ class CoreProfileContractTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def cell(self, name, settings, overrides=None, *, ambient=None):
+    def cell(self, name, settings, overrides=None, *, ambient=None, build=None):
+        build = self.build if build is None else build
         profile = {'description': 'core parameter contract', 'settings': settings}
         cat = {
             'profiles': {name: profile},
@@ -112,7 +118,7 @@ class CoreProfileContractTest(unittest.TestCase):
 
         with patch.dict(os.environ, env, clear=True):
             with patch.object(self.adapter.subprocess, 'run', process_probe):
-                record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
+                record = self.adapter.run_cell(cell, build, self.root / 'cells', cat)
         if overrides is not None:
             self.assertEqual(injected, [overrides], 'native overrides must reach exactly one process')
         self.assertEqual(record['profile_sha256'], self.catalogue.profile_sha256(profile))
@@ -168,19 +174,32 @@ class CoreProfileContractTest(unittest.TestCase):
         return out, {'outcome': outcome, 'error': None, 'summary': summary, 'scary_list': scary}
 
     def test_zoo_clears_ambient_core_errand_and_parameter_overrides(self):
+        # Use the same pristine borg.txt as BORG_CORE_OVERRIDES=off so the
+        # expected source of every parameter is its compiled default.
+        build = self.root / 'defaults-build'
+        build.mkdir()
+        for name in ('game', 'scary_lists', 'build.json'):
+            (build / name).symlink_to(self.build / name)
+        (build / 'borg.txt').write_bytes((ROOT / 'borg-core/borg.txt').read_bytes())
+        out, record = self.cell('ambient-defaults', {'borg_reborn_core': 1},
+                                ambient=INVALID_AMBIENT, build=build)
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        settings = json.loads((out / 'params-core.json').read_text())
+        self.assertTrue(settings and all(p['origin'] == 'default' for p in settings))
+        classes = [value for p in settings for value in p.get('class_values', {}).values()]
+        self.assertTrue(classes and all(value['origin'] == 'default' for value in classes))
+        self.assertFalse((out / 'errand-outcomes.jsonl').exists())
+
+    def test_zoo_preserves_shipped_parameter_origins_after_clearing_ambient(self):
         profile = {'borg_reborn_core': 1}
         clean, control = self.cell('ambient-isolation-control', profile)
         self.assertEqual(control['outcome'], 'turn_cap', control)
-        out, record = self.cell('ambient-isolation', profile, ambient={
-            'BORG_CORE': 'invalid', 'BORG_ERRAND': 'dvie 2',
-            'BORG_STOPSCARED': 'bogus', 'BORG_ERRAND_BUDGET': '-1',
-            'BORG_PARAM_RECOVER_REST_SP_TENTHS': 'invalid',
-        })
+        out, record = self.cell('ambient-isolation', profile, ambient=INVALID_AMBIENT)
         self.assertEqual(record['outcome'], 'turn_cap', record)
         # Shipped borg.txt carries overrides. Compare with the identical
         # profile in a process without ambient settings.
         settings = json.loads((out / 'params-core.json').read_text())
-        self.assertTrue(settings)
+        self.assertTrue(any(p['origin'] == 'borg.txt' for p in settings))
         self.assertEqual(settings, json.loads((clean / 'params-core.json').read_text()))
         self.assertFalse((out / 'errand-outcomes.jsonl').exists())
 
