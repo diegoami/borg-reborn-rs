@@ -35,3 +35,9 @@ Teleportation. At the town stairs, the first five actions cleared two
 potion kinds, Summon Monster scrolls, a Haste Monster wand, and a Summoning
 staff before shopping. The dropped stacks stayed out of the pack during
 the observed town run.
+
+CI now runs these native cases through the shipped Borg and Angband's
+inventory commands. The test build positions an awake monster at the
+requested range or puts the stocked character on town stairs.
+`BORG_TEST_FEATURES=test-junk-consumables harness/build.sh` builds the
+fixture and `python3 engine/tests/test_junk_consumables.py` runs it.
