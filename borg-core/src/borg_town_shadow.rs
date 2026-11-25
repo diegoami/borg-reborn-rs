@@ -509,6 +509,15 @@ fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
     unlight && u32::from(tval) == crate::headers::list_tvals_h::TV_LIGHT && i32::from(sval) == torch
 }
 
+/// Reserve fuel is a turn count. Allow the last torch to round up the
+/// shortfall. A zero quantity leaves the candidate index stable for replay.
+fn torch_offer_quantity(shortfall: i64, torch: &borg_item, qty: i32) -> i32 {
+    if torch.cursed || torch.timeout <= 0 {
+        return 0;
+    }
+    qty.min((shortfall.max(0) as u64).div_ceil(torch.timeout as u64) as i32)
+}
+
 /// The copies the live executor moves for a planned action (#507): a
 /// purchase keeps the copies the plan picked, every other action moves one
 /// copy and the plan is solved again. A planned quantity larger than one
@@ -561,10 +570,29 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     // Rejections apply only while the observed carrying/purse context is
     // unchanged. Keep zero-quantity rows to preserve recorded candidate order.
     let unlight = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT);
+    let torch = st.item_val.sv_light_torch;
+    // The zero mode is the historical shopping policy used by exact replays.
+    let torch_shortfall = if live && param(Param::town_shop_overloaded) > 0
+        && param(Param::town_torch_purchase_limit) != 0 && param(Param::town_light_reserve_turns) > 0 {
+        crate::borg_light::torch_fuel_turns(st).map(|turns| {
+            crate::borg_light::fuel_goal(st, crate::borg_town_utility::Journey::of(st)) - i64::from(turns)
+        })
+    } else {
+        None
+    };
+    let cap_torch = |item: &borg_item, qty| {
+        if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == torch
+            && item.ego_idx == 0 && item.art_idx == 0 {
+            torch_shortfall.map_or(qty, |shortfall| torch_offer_quantity(shortfall, item, qty))
+        } else {
+            qty
+        }
+    };
     for c in &mut stock.candidates {
         // Unlight supplies sight without a carried torch. Keep this physical
         // suitability gate ahead of fuel, gear try-on and learning bonuses.
-        if unusable_torch(unlight, c.tval, c.sval, st.item_val.sv_light_torch) { c.qty = 0; }
+        if unusable_torch(unlight, c.tval, c.sval, torch) { c.qty = 0; }
+        c.qty = cap_torch(&st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)], c.qty);
         if live {
             c.qty = c.qty.min(crate::borg_town_live::acquisition_room(st, c.tval, c.kind));
             if crate::borg_town_live::buy_rejected(st, c.shop as i16, c.slot as usize) { c.qty = 0; }
@@ -575,13 +603,13 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         if item.iqty == 0 { continue; }
         // borg-reborn-rs (#1239): reserve saved gear for the loadout pass.
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
-            && item.aware && !unusable_torch(unlight, item.tval, item.sval, st.item_val.sv_light_torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
+            && item.aware && !unusable_torch(unlight, item.tval, item.sval, torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
                 || crate::borg_town_live::retained_gear(st, item)));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
         stock.candidates.push(crate::borg_town_stock::Candidate { shop:7,slot:slot as u8,
-            kind:item.kind,tval:item.tval,sval:item.sval,price:0,qty:i32::from(available),weight:i32::from(item.weight),
+            kind:item.kind,tval:item.tval,sval:item.sval,price:0,qty:cap_torch(item, i32::from(available)),weight:i32::from(item.weight),
             slots_cost:i32::from(!joins),stack_count:0,class });
         class = class.saturating_add(1);
     }
@@ -917,6 +945,26 @@ mod missile_and_light_tests {
         assert!(!super::unusable_torch(false, TV_LIGHT as u8, 1, 1));
         assert!(!super::unusable_torch(true, TV_LIGHT as u8, 2, 1));
         assert!(!super::unusable_torch(true, TV_FLASK as u8, 1, 1));
+    }
+
+    #[test]
+    fn torch_offer_is_bounded_by_the_current_fuel_shortfall() {
+        let mut torch = crate::borg_item::blank_item();
+        torch.timeout = 5000;
+        let available = 8;
+        // Four full spares cover the Priest's 20,000-turn reserve. The
+        // following two visits with 11 and 18 also need no torches.
+        for copies in [4, 11, 18] {
+            assert_eq!(super::torch_offer_quantity(20_000 - copies * 5000, &torch, available), 0);
+        }
+        // Four partly used spares at 3,000 turns plus 2,003 worn.
+        let carried = 4 * 3000 + 2003;
+        let bought = super::torch_offer_quantity(20_000 - carried, &torch, available);
+        assert_eq!(bought, 2);
+        assert_eq!(super::torch_offer_quantity(20_000 - carried - i64::from(bought) * 5000, &torch, available), 0);
+        assert_eq!(super::torch_offer_quantity(40_000 - 20_000, &torch, available), 4);
+        torch.cursed = true;
+        assert_eq!(super::torch_offer_quantity(20_000, &torch, available), 0);
     }
 }
 
