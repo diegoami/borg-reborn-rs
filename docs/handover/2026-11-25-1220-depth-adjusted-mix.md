@@ -1,9 +1,9 @@
 ## 2026-11-25: Depth-adjusted mixed exploration (#1220)
 
-The optional `borg_param_explore_mix_depth_adjusted_level` uses
+`borg_param_explore_mix_depth_adjusted_level` uses
 `max(1, CL - DL + 1)` for the per-class eligibility cap and the growth of
-the starting radius, expansion step and maximum radius. The compiled and
-shipped values are both 0. The existing stair leash still gates eligibility,
+the starting radius, expansion step and maximum radius. The owner set the
+shipped value to 1. The compiled default is 0. The stair leash still gates eligibility,
 and the contact-damage model still uses actual dungeon depth.
 
 The regression test exercises the mixed-mode gate with the standard stair
@@ -16,9 +16,8 @@ mixed planner chose for the same level and stair-flow frame. The planner
 already applies `explore_mix_depth_adjusted_level` to growth.
 See the [Phase Door policy notes](../PHASE-DOOR.md) and the [note on #1116][phase-note].
 
-Before enabling the flag, the owner decides whether to compare the shipped
-profile with the opt-in profile in Zoo. The class caps came from DL1 tuning.
-Their use as depth-relative caps on deeper floors is the hypothesis to measure.
+The class caps came from DL1 tuning. A paired Zoo comparison with the flag
+at 0 and 1 would measure their use as depth-relative caps on deeper floors.
 When retuning a class's `explore_mix_max_clevel`, update its shipped
 `prepared_dl2_min_clevel` to the cap plus one. The profile ships both values
 explicitly and the registry test enforces the pair. The readiness threshold

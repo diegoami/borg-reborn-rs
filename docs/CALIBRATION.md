@@ -8156,13 +8156,14 @@ start from 10 maximum radius").
 - **The formula.** `explore_mix_radius`, `explore_mix_step` and
   `explore_mix_max_radius` each grow by their `_dp` per mille per mixed
   exploration level above 1, linearly and rounded. `grow_by_level` computes
-  value × (1000 + dp × (level − 1)) / 1000. The default level is CL.
+  value × (1000 + dp × (level − 1)) / 1000. With depth adjustment off,
+  the level is CL.
 - **Per class.** Each `_dp` takes `__<class>`; compiled 0 means no growth.
 - **The level caps stay as #1098 shipped them.** Raising them by one, tried
   first, added back-and-forth on the 20 starts (straight-back steps 7.7% →
   9.2%) for no gain.
 
-**Depth-adjusted level** (#1220, compiled and shipped 0). With
+**Depth-adjusted level** (#1220, compiled 0, shipped 1). With
 `explore_mix_depth_adjusted_level = 1`, the class cap and all three growth
 values use `max(1, CL - DL + 1)` in place of CL. At DL1 the level is CL.
 On deeper floors, a cap of 9 allows a character up to eight levels above
