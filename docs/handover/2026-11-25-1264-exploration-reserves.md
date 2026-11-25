@@ -18,7 +18,8 @@ and the carried trip reserves cover readily replaced supplies. The ranked
 town planner already uses this order when a new reserve needs space.
 [#1241](https://github.com/diegoami/borg-reborn-rs/issues/1241)
 
-During a lighter town swap, the Borg needs a slot for the displaced gear.
+The existing lighter town swap from #1239 and #1256 needs a slot for the
+displaced gear.
 It can use a free slot, the slot vacated by the replacement, a compatible
 stack, or a slot cleared of expendable stock. If it cannot make room that
 way, it skips the swap. The exploration reserve gate can still let it
@@ -31,10 +32,19 @@ time. The travel weight target still guides optional purchases. The
 reserve quantities come from the class's existing town settings and trip
 forecast. [Calibration](../CALIBRATION.md#exploration-reserves-and-full-packs-1264)
 
-Native fixtures exercise the harmful-potion and outclassed-weapon decisions
-in a full pack, preserve the Recall stack, and replenish Recall from Home
-while the Priest stays above the ordinary weight limit.
+Native fixtures exercise the harmful-potion and outclassed-weapon
+decisions, compare different kinds of gear, and check what happens when
+Recall is the only candidate with the flag on and off. The town fixtures
+cover a Priest departing overweight with Recall from Home and from a shop.
 
-The flag defaults to zero pending the paired Zoo evaluation. The comparison
-request calls for the control to include the separate #1265 change.
-[#804](https://github.com/diegoami/borg-zoo/issues/804)
+### Remaining work
+
+- #1264 still tracks a shared rule for selling inferior spares and
+  choosing them during town-arrival unloading. This change follows the
+  request to focus on full-pack disposal and has no closing reference.
+- #1263 still tracks sustainable backup light and returning before a
+  repeated action can run down the final fuel.
+- The flag defaults to zero. The owner decides whether to enable it after
+  the paired Zoo evaluation. The comparison request calls for the control
+  to include the separate #1265 change.
+  [#804](https://github.com/diegoami/borg-zoo/issues/804)
