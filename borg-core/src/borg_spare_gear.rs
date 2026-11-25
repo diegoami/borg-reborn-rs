@@ -20,6 +20,10 @@ pub(crate) fn equipment_slot(item: &borg_item) -> Option<usize> {
 }
 
 fn other_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
+    properties_cover(worn, spare, &[])
+}
+
+fn properties_cover(worn: &borg_item, spare: &borg_item, other_slots: &[&borg_item]) -> bool {
     // Keep a visible situational advantage even when another slot supplies it today.
     // A different brand, slay, resistance, or modifier can matter after another swap.
     let mut benefits = spare.flags;
@@ -32,11 +36,18 @@ fn other_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
     }
     worn.flags.iter().zip(benefits).all(|(have, need)| have & need == need)
         && worn.modifiers.iter().zip(&spare.modifiers).all(|(have, need)| have >= need)
-        && worn.el_info.iter().zip(&spare.el_info).all(|(have, need)| have.res_level >= need.res_level)
+        && worn.el_info.iter().zip(&spare.el_info).enumerate().all(|(index, (have, need))| {
+            have.res_level >= need.res_level || (have.res_level >= 0 && other_slots.iter()
+                .any(|item| item.el_info[index].res_level >= need.res_level))
+        })
 }
 
 fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
-    other_properties_cover(worn, spare)
+    properties_and_attack_cover(worn, spare, &[])
+}
+
+fn properties_and_attack_cover(worn: &borg_item, spare: &borg_item, other_slots: &[&borg_item]) -> bool {
+    properties_cover(worn, spare, other_slots)
         && worn.brands.iter().zip(&spare.brands).all(|(have, need)| *have || !*need)
         && worn.slays.iter().zip(&spare.slays).all(|(have, need)| have >= need)
 }
@@ -134,8 +145,12 @@ pub(crate) fn melee_weapon(item: &borg_item) -> bool {
     item.iqty > 0 && matches!(u32::from(item.tval), TV_HAFTED | TV_POLEARM | TV_SWORD)
 }
 
+fn known_gear(item: &borg_item) -> bool {
+    item.iqty > 0 && item.aware && item.ident && !item.cursed && !item.curses.contains(&true)
+}
+
 fn known_melee(item: &borg_item) -> bool {
-    melee_weapon(item) && item.aware && item.ident && !item.cursed && !item.curses.contains(&true)
+    melee_weapon(item) && known_gear(item)
 }
 
 /// Compare worn gear and alternatives that will still be available after
@@ -226,10 +241,61 @@ fn redundant_melee(st: &mut BorgState, spare_slot: usize, at_home: bool) -> bool
     redundant
 }
 
-pub(crate) fn redundant_home_weapon(st: &mut BorgState, slot: usize) -> bool {
-    crate::borg_junk::exploration_first()
-        && !crate::borg_town_live::retained_gear(st, &st.store.shops[crate::borg_store::BORG_HOME].ware[slot])
-        && redundant_melee(st, slot, true)
+fn armour(item: &borg_item) -> bool {
+    matches!(u32::from(item.tval), TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_DRAG_ARMOR
+        | TV_CLOAK | TV_SHIELD | TV_HELM | TV_CROWN | TV_GLOVES | TV_BOOTS)
+}
+
+// A matched launcher subtype has the same ammunition and base firing
+// mechanism. For armour, weight also covers the caster's mana burden.
+fn static_gear_covers(candidate: &borg_item, spare: &borg_item, other_slots: &[&borg_item], preferred_on_tie: bool) -> bool {
+    let defence = |item: &borg_item| i32::from(item.ac) + i32::from(item.to_a);
+    let launcher = u32::from(spare.tval) == TV_BOW;
+    known_gear(candidate) && (!launcher || candidate.sval == spare.sval && candidate.pval >= spare.pval)
+        && candidate.weight <= spare.weight && defence(candidate) >= defence(spare)
+        && candidate.to_h >= spare.to_h && candidate.to_d >= spare.to_d
+        && properties_and_attack_cover(candidate, spare, other_slots)
+        && (preferred_on_tie || candidate.weight < spare.weight || defence(candidate) > defence(spare)
+            || candidate.to_h > spare.to_h || candidate.to_d > spare.to_d
+            || launcher && candidate.pval > spare.pval)
+}
+
+fn redundant_static_gear(st: &BorgState, spare: &borg_item, spare_slot: usize, at_home: bool) -> bool {
+    if !known_gear(spare) || spare.art_idx != 0 || spare.activ_idx != 0 {
+        return false;
+    }
+    let Some(slot) = equipment_slot(spare) else { return false; };
+    let wield = inven_wield() as usize;
+    let other_slots: Vec<_> = if at_home && armour(spare) {
+        st.items.items[wield..quiver_start() as usize].iter().enumerate()
+            .filter(|(index, item)| wield + index != slot && item.iqty > 0 && !item.cursed)
+            .map(|(_, item)| item).collect()
+    } else { Vec::new() };
+    let beats = |candidate: &borg_item, preferred| {
+        candidate.iqty > 0 && equipment_slot(candidate) == Some(slot)
+            && static_gear_covers(candidate, spare, &other_slots, preferred)
+    };
+    beats(&st.items.items[slot], true)
+        || st.items.items[..wield].iter().enumerate().any(|(index, item)| {
+            (at_home || index != spare_slot) && beats(item, at_home || index < spare_slot)
+        })
+        || (at_home && st.store.shops[crate::borg_store::BORG_HOME].ware.iter().enumerate().any(|(index, item)| {
+            index != spare_slot && beats(item, index < spare_slot)
+        }))
+}
+
+pub(crate) fn redundant_carried_launcher(st: &BorgState, slot: usize) -> bool {
+    let spare = &st.items.items[slot];
+    u32::from(spare.tval) == TV_BOW && !crate::borg_junk::is_swap(st, slot as i32)
+        && !crate::borg_town_live::retained_gear(st, spare)
+        && redundant_static_gear(st, spare, slot, false)
+}
+
+pub(crate) fn redundant_home_gear(st: &mut BorgState, slot: usize) -> bool {
+    let spare = st.store.shops[crate::borg_store::BORG_HOME].ware[slot];
+    crate::borg_junk::exploration_first() && !crate::borg_town_live::retained_gear(st, &spare)
+        && if melee_weapon(&spare) { redundant_melee(st, slot, true) }
+            else { redundant_static_gear(st, &spare, slot, true) }
 }
 
 /// Assess the kit after leaving the entire spare stack or the displaced
@@ -243,7 +309,7 @@ pub(crate) fn inferior(st: &mut BorgState, pack_slot: usize) -> bool {
     {
         return false;
     }
-    if redundant_melee(st, pack_slot, false) { return true; }
+    if redundant_carried_launcher(st, pack_slot) || redundant_melee(st, pack_slot, false) { return true; }
     if crate::borg_town_home::known_special(&spare) { return false; }
     let Some(slot) = equipment_slot(&spare) else { return false; };
     let worn = st.items.items[slot];
@@ -385,6 +451,34 @@ mod tests {
         spare.el_info[0].res_level = 0;
         spare.slays[1] = 3;
         assert!(!known_properties_cover(&worn, &spare));
+    }
+
+    #[test]
+    fn home_armour_keeps_uncovered_resistance_and_lighter_kits() {
+        let mut spare = borg_item { iqty: 1, ident: true, aware: true, weight: 60,
+            tval: TV_SOFT_ARMOR as u8, ac: 12, to_a: 1, ..crate::borg_item::blank_item() };
+        let better = borg_item { to_a: 7, ..spare };
+        spare.el_info[0].res_level = 1;
+        let shield = spare;
+        assert!(!static_gear_covers(&better, &spare, &[], true));
+        assert!(static_gear_covers(&better, &spare, &[&shield], true));
+        spare.weight -= 1;
+        assert!(!static_gear_covers(&better, &spare, &[&shield], true));
+        assert!(!static_gear_covers(&spare, &spare, &[], false));
+        assert!(static_gear_covers(&spare, &spare, &[], true));
+    }
+
+    #[test]
+    fn launcher_comparison_keeps_ammunition_and_accuracy_tradeoffs() {
+        let sling = borg_item { iqty: 1, ident: true, aware: true, tval: TV_BOW as u8,
+            sval: 1, pval: 2, weight: 5, to_h: 17, to_d: 6, ..crate::borg_item::blank_item() };
+        let plain = borg_item { to_h: 5, to_d: 4, ..sling };
+        let damage_sling = borg_item { to_h: 15, to_d: 8, ..sling };
+        let bow = borg_item { sval: 2, ..plain };
+        assert!(static_gear_covers(&sling, &plain, &[], false));
+        assert!(!static_gear_covers(&sling, &damage_sling, &[], true));
+        assert!(!static_gear_covers(&damage_sling, &sling, &[], true));
+        assert!(!static_gear_covers(&sling, &bow, &[], true));
     }
 
     #[test]

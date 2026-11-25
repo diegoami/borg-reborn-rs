@@ -11,8 +11,9 @@ import tempfile
 
 
 SAVES = {
-    "A1": ("b3023d3e11aac0f5548cb48d0ae4ee6e490c40aecbd260b4c81d03643021e4b4", 0, 1905934, 1955934),
-    "A2": ("cd19e65fde08faf726c18d6f00e3b42f61ef779e21a3772bf8ad2c3e9ec4e5cb", 1, 4087306, 4177306),
+    "A1": ("b3023d3e11aac0f5548cb48d0ae4ee6e490c40aecbd260b4c81d03643021e4b4", (0, 0), 1905934, 1955934),
+    "A2": ("cd19e65fde08faf726c18d6f00e3b42f61ef779e21a3772bf8ad2c3e9ec4e5cb", (1, 1), 4087306, 4177306),
+    "A3": ("ddefc96911524bf7284b06fc17d33ec5392f1d17c67ab279c55d1acb1bbd2031", (3, 7), 1617717, 1647717),
 }
 SETTINGS_HASHES = {
     "borg.txt": "7b4a889d2aea8881be958950bb2881756cd160e640079502d8ef6359694a0096",
@@ -36,7 +37,7 @@ SHOVEL = "Shovel of Digging (1d2) (+4,+3) <+4>"
 
 def replay(binary, fixture, run, character):
     save = f"{character}.save"
-    digest, race_class, loaded_turn, stop_turn = SAVES[character]
+    digest, (race, player_class), loaded_turn, stop_turn = SAVES[character]
     hashes = {save: digest, **SETTINGS_HASHES}
     for name, expected in hashes.items():
         digest = hashlib.sha256((fixture / name).read_bytes()).hexdigest()
@@ -54,7 +55,7 @@ def replay(binary, fixture, run, character):
     env.update(BORG_TOWN_DUMP=str(town), BORG_CORE="borg-rs", TZ="UTC", LC_ALL="C.UTF-8")
     subprocess.run(
         [str(binary), "-mborgh", *(f"-d{name}={path}" for name, path in paths.items()),
-         "--", "-seed", "1", "-race", str(race_class), "-class", str(race_class), "-load", str(paths["save"] / save),
+         "--", "-seed", "1", "-race", str(race), "-class", str(player_class), "-load", str(paths["save"] / save),
          "-keep-load-rng", "-exact-turns", "-turns", str(stop_turn), "-msglog", str(messages),
          "-summary", str(summary)],
         cwd=binary.parent, env=env, check=True, timeout=120,
@@ -85,13 +86,31 @@ def check_warrior(decisions, log):
 def check_mage(decisions, _log):
     first = {item["desc"] for item in decisions[0]["pack"]}
     assert set(ELEMENTAL_DAGGERS[:2]) <= first and len(decisions[0]["home"]) == 24, decisions[0]
-    for decision in decisions[1:]:
-        pack = {item["desc"] for item in decision["pack"]}
-        home = {item["desc"] for item in decision["home"]}
-        if home.intersection(ELEMENTAL_DAGGERS) == {ELEMENTAL_DAGGERS[2]} and pack.isdisjoint(ELEMENTAL_DAGGERS):
-            print("A2 cleared Dethanc and Nimthanc and kept Narthanc as the single elemental backup.")
-            return
-    raise AssertionError("A2 kept redundant elemental daggers beyond the first town visit")
+    unwanted = {
+        "Studded Leather Armour (-1) [12,+2]", "Studded Leather Armour of Resist Fire (-1) [12,+1]",
+        "Pair of Iron Shod Boots of Slow Descent [4,+3]", "Pair of Iron Shod Boots [4,+2]",
+        "Pair of Iron Shod Boots [4,-1]", "Sling of Accuracy (x2) (+15,+8)",
+    }
+    last = decisions[-1]
+    pack = {item["desc"] for item in last["pack"]}
+    home = {item["desc"] for item in last["home"]}
+    worn = {item["desc"] for item in last["equipment"]}
+    assert home.intersection(ELEMENTAL_DAGGERS) == {ELEMENTAL_DAGGERS[2]}, home
+    assert pack.isdisjoint(ELEMENTAL_DAGGERS) and (pack | home).isdisjoint(unwanted), (pack, home)
+    assert len(home) <= 18 and "Pair of Iron Shod Boots of Slow Descent [4,+4]" in home | worn, (worn, home)
+    assert "Potion of Healing" in home | pack, (home, pack)
+    print(f"A2 reduced Home from 24 to {len(home)} stacks and kept the Healing potion and stronger boots available.")
+
+
+def check_ranger(decisions, log):
+    first = {item["desc"] for item in decisions[0]["pack"]}
+    accuracy = {"Sling of Accuracy (x2) (+17,+6)", "Sling of Accuracy (x2) (+15,+8)"}
+    assert {name for name in first if name.startswith("Sling")} == accuracy, first
+    assert log.count("# Dropping inferior spare Sling (x2)") >= 8
+    last = decisions[-1]
+    kit = {item["desc"] for place in ("pack", "home", "equipment") for item in last[place]}
+    assert {name for name in kit if name.startswith("Sling")} == accuracy, kit
+    print("A3 dropped eight inferior slings and cleared the weaker Home sling. The two accuracy/damage options survived.")
 
 
 if __name__ == "__main__":
@@ -102,4 +121,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="borg-weapon-hoard-") as directory:
         run = replay(args.binary.resolve(), args.fixture.resolve(), Path(directory), args.character)
-        (check_warrior if args.character == "A1" else check_mage)(*run)
+        {"A1": check_warrior, "A2": check_mage, "A3": check_ranger}[args.character](*run)

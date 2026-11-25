@@ -2232,11 +2232,15 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
         let pack_end = pack_size() as usize;
         let first = (0..pack_end).find(|&slot| {
             let item = &st.items.items[slot];
-            cheap_stack(item) && crate::borg_spare_gear::equipment_slot(item).is_some()
+            item.iqty > 0 && u32::from(item.tval) == TV_BOW && item.ego_idx == 0
+                || cheap_stack(item) && crate::borg_spare_gear::equipment_slot(item).is_some()
         });
         first.filter(|_| safe_to_drop(st)).and_then(|first| {
-            (first..pack_end).find(|&slot| cheap_stack(&st.items.items[slot])
-                && crate::borg_spare_gear::inferior(st, slot))
+            (first..pack_end).find(|&slot| {
+                let item = &st.items.items[slot];
+                item.ego_idx == 0 && crate::borg_spare_gear::redundant_carried_launcher(st, slot)
+                    || cheap_stack(item) && crate::borg_spare_gear::inferior(st, slot)
+            })
         })
     } else {
         let legacy = inferior_spares(st).find_map(|(slot, item)| cheap_stack(item).then_some(slot));

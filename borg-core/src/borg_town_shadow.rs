@@ -293,6 +293,10 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     let home_policy = borg_town_home::enabled(st);
     let can_decurse = home_policy && crate::borg_item_decurse::can_decurse(st);
     let preferred_dagger = home_policy.then(|| borg_town_home::preferred_elemental_dagger(st)).flatten();
+    let redundant_at_home: Vec<bool> = if home_policy {
+        (0..st.store.shops[BORG_HOME].ware.len())
+            .map(|slot| crate::borg_spare_gear::redundant_home_gear(st, slot)).collect()
+    } else { Vec::new() };
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64, worn_gain: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
@@ -311,15 +315,18 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                     .map_or(0, |o| i64::from(o.sale_quote(sell_shop as usize, i32::from(it.iqty)))),
             }
         };
+        let redundant_dagger = borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
+        let redundant_home_gear = place == Place::Home
+            && (redundant_dagger || redundant_at_home.get(slot) == Some(&true));
         let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
-        let just_bought = kit_just_bought(st, it, place, at_limit);
+        let just_bought = !redundant_home_gear && kit_just_bought(st, it, place, at_limit);
         let protected_supply = live && place == Place::Pack
             && crate::borg_town_live::unload_on_arrival(st) && protects_arrival_supply(st, it);
         // borg-reborn-rs (#1239): protect retained gear from ordinary Home moves.
         let home_room = if place == Place::Home {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
                 let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
-                    || crate::borg_town_live::home_moved(st, it, true)
+                    || (!redundant_home_gear && crate::borg_town_live::home_moved(st, it, true))
                     || crate::borg_town_live::retained_gear(st, it));
                 let carry = if blocked { 0 } else { offer.carry_capacity() };
                 let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
@@ -329,8 +336,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                 [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
             })
         } else { None };
-        let redundant_dagger = borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
-        let mut home_role = if redundant_dagger {
+        let mut home_role = if redundant_dagger || redundant_home_gear {
             Role::Reject
         } else if home_policy {
             borg_town_home::classify(st, it, can_decurse, worn_gain)
@@ -453,11 +459,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         crate::borg_trait::borg_notice(st, true);
         let equipped_gain = worn_gain(st, it);
         let gear = home_policy && borg_town_home::gear_slot(it).is_some();
-        let mut stack = fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain);
-        if gear && crate::borg_spare_gear::redundant_home_weapon(st, slot) {
-            stack.home_role = Role::Reject;
-        }
-        kit.push(stack);
+        kit.push(fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain));
     }
 
     // Reserve one stack per book kind, preferring a copy already safe at Home.
