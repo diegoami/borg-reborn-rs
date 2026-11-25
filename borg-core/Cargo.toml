@@ -24,6 +24,8 @@ test-town-review = []
 test-stair-handoff = []
 test-combat-heal = []
 test-town-loadout = []
+# Native regressions for disposing of known cursed spares.
+test-cursed-spares = []
 
 [dependencies]
 libc = "0.2"
