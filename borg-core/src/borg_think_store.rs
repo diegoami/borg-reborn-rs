@@ -65,7 +65,7 @@ use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_T
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_FOOD, BI_GOLD, BI_ISCUT, BI_ISPOISONED, BI_LIGHT,
 };
-use crate::headers::list_tvals_h::{TV_DIGGING, TV_POTION};
+use crate::headers::list_tvals_h::TV_DIGGING;
 use crate::state::BorgState;
 
 /// `borg_timer(t)` (borg-think-dungeon-util.h): game turns since `t`.
@@ -224,9 +224,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     if let Some(a) = crate::borg_healing_restock::purchase(st) {
         clear_shop_goal(st);
         // Buying can identify a carried potion before the normal sale.
-        let has_unknown_potion = st.items.items.iter().take(inven_wield() as usize)
-            .any(|item| item.iqty > 0 && u32::from(item.tval) == TV_POTION && !item.aware);
-        if has_unknown_potion && choose_shop_sale(st) {
+        if crate::borg_healing_restock::carries_unknown_potion(st) && choose_shop_sale(st) {
             return true;
         }
         st.borg.goal.shop = a.at[0] as i16;

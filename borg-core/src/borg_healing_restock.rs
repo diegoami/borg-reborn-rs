@@ -136,6 +136,14 @@ fn minimum() -> i32 {
     value(Param::restock_healing_min_potions)
 }
 
+pub(crate) fn carries_unknown_potion(st: &BorgState) -> bool {
+    st.items
+        .items
+        .iter()
+        .take(crate::borg_item::inven_wield() as usize)
+        .any(|item| item.iqty > 0 && u32::from(item.tval) == TV_POTION && !item.aware)
+}
+
 pub(crate) fn observe_dungeon(st: &mut BorgState) {
     if st.borg.tr(BI_CDEPTH) == 0 || !enabled(st) {
         return;
