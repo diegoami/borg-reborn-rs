@@ -265,8 +265,8 @@ extern "C" fn do_cmd_borg() {
         if let Some(line) = crate::borg::configured_errand() {
             let budget = crate::borg::configured_errand_budget();
             // Configuration errors must not silently change the measured arm.
-            if let Err(c) = borg_rs::shell::apply_line(&line, budget) {
-                eprintln!("borg-reborn-rs: invalid configured errand command {c:?}");
+            if let Err(error) = borg_rs::shell::apply_line(&line, budget) {
+                eprintln!("borg-reborn-rs: invalid configured errand: {error}");
                 std::process::exit(2);
             }
         }
