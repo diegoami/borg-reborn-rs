@@ -25,6 +25,12 @@ disabled explicitly. The common and Warrior settings are both pinned in
 those fixtures. DL2 proposals report their own CL failure, and deeper
 proposals follow the inherited check order.
 
-The Warrior smoke run reaches DL1 by the cap with the proposed settings
-and DL3 with the control. Adoption and closing #1217 depend on the
+The [re-review](https://github.com/diegoami/borg-reborn-rs/pull/1219#issuecomment-7148970465)
+identified a duplicate vein-loop test class. The retained fixture pins the
+incident's breadth-first exploration and stair-scumming settings. The
+seven older deep-gate citations now point at the parameter reads.
+
+The Warrior smoke run reaches maximum DL1 by the cap with the proposed
+settings and DL3 with the control. The owner approved integration into
+Track P. Issue #1217 tracks the full policy decision and the
 [Zoo comparison](https://github.com/diegoami/borg-zoo/issues/788).

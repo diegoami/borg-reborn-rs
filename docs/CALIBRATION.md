@@ -5834,13 +5834,13 @@ retired #693 settings load with a warning and use these checks.
 | `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:382` |
 | `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:380` |
 | `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:378` |
-| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:386` |
-| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:387` |
-| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:385` |
-| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:393` |
-| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:394` |
-| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:395` |
-| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:438` |
+| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:450` |
+| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:451` |
+| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:449` |
+| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:457` |
+| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:458` |
+| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:459` |
+| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:503` |
 
 ## Fox Form's study rating (#694)
 
