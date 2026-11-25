@@ -521,7 +521,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     if SETUP.load(Relaxed) == 0 {
         SETUP.store(1, Relaxed);
         let excess = if case == "trim" { 188 } else { 104 };
-        engine::setup_test_town_loadout(st, excess, case != "no-storage", false);
+        engine::setup_test_town_loadout(st, excess, case != "no-storage", false, 0);
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
         assert_eq!(st.borg.tr(BI_CLEVEL), 20);

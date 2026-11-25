@@ -8777,7 +8777,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:958` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:975` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8791,7 +8791,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:517` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:539` |
 
 ## Shopping while overloaded and departure loadout (#1239)
 
@@ -8813,7 +8813,20 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:420` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:425` |
+
+### Recall-first trial
+
+Set `town_shop_overloaded = 0` and a positive
+`town_loadout_power_loss` to try making room for urgent supplies before
+purchasing them. The planner trims excess quiver ammo first and evaluates
+the kit after depositing the displaced gear. The positive value caps the
+equipment power loss and defaults to zero. Shop-first remains the shipped
+policy and takes precedence when enabled.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_loadout_power_loss` | 0 | equipment power | 0–100000 | `borg_town_recall_loadout.rs:59` |
 
 ## Ranged readiness for the next trip (#1184)
 

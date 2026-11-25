@@ -265,6 +265,9 @@ borg_param_town_departure_free_slots = 2
 # #1239: shop before lightening the departing kit.
 borg_param_town_shop_overloaded = 1
 borg_param_town_quiver_trim_reserve = 0
+# Recall-first trial when town_shop_overloaded is 0. A positive value allows
+# a safe lighter exchange with up to this much equipment power loss.
+borg_param_town_loadout_power_loss = 0
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
