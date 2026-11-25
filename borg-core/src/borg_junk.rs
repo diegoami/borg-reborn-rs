@@ -1848,10 +1848,10 @@ fn inferior_spare(
         // learning the AC rune. Leather Sandals start at [1,+0] (object.txt).
         // Their egos add no flat AC penalty (ego_item.txt), and obj-make.c:
         // apply_magic/armour adds at least +1 when creating ego armour.
-        // This is a shallow-game heuristic. Elemental inventory damage can
-        // lower the enchantment of carried armor (project-obj.c:inven_damage),
-        // and disenchantment can affect a pair worn earlier. Keep unknowns
-        // once the Borg has reached DL5 to limit the heuristic's exposure.
+        // Inventory damage can erode carried armor at any depth
+        // (project-obj.c:inven_damage). The shallow-game heuristic accepts
+        // that risk. Max DL5 is the native depth of the disenchanter eye
+        // (monster.txt), which can erode a pair while it is worn.
         if tval != TV_BOOTS || i32::from(spare.sval) != sandal_sval || max_depth >= 5
             || spare.ego_idx != 0 || spare.ac != 1 || spare.to_a != 0
             || !description.ends_with(b" [1,+0] {??}")
