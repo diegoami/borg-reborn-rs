@@ -7696,9 +7696,9 @@ below).
 | `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:894` |
 | `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:897` |
 | `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1259` |
-| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:898` |
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:894` |
 
-## Only goals the exploration flow can enter (#1189)
+## Only goals the exploration flow can enter (#1189, #1227)
 
 A treasure vein is "interesting" to `borg_flow_dark_interesting` (dig the
 gold) and `borg_flow_dark_reachable` accepts it once known floor lies next
@@ -7714,15 +7714,19 @@ nothing learned): ring 10 was the vein at (109,44), west of the corridor,
 ring 11 the vein at (114,45), south-east of it. The loop breaker (#1153)
 saw nothing: the cycle needs four grids, and its window counts three.
 
-At `explore_stepable_goals = 1` (compiled 0, **shipped 1**; a bug fix, like
-`loop_breaker`), `stair_frame` keeps only the candidates an exploration flow
-can enter (`dark_goal_cannot_enter`): the unknown grid, rubble and the
-closed door, the steps a `GOAL_DARK` flow can take. The veins and a vault
-wall stay unknown to the plan; when nothing else is left within the leashes
-the think is exhausted and the Borg leaves (#1098). The veins keep their
-gold undug, as under C's rule; deliberately digging a frontier vein would be
-a capability of its own, not part of this fix. At 0 the veins stay goals,
-C's play.
+At `explore_stepable_goals = 1` (compiled 0, **shipped 1**), the shared
+candidate check admits only unknown grids, rubble and closed doors. Both
+the stair-anchored and legacy `GOAL_DARK` flows use that check. When the
+legacy scans find no reachable goal, `explore_c_leave_when_done` can hand
+off to the stair policy (#1098). Intentional vein digging uses its own flow.
+At 0, eligible veins and vault walls remain exploration goals.
+
+In #1227, a CL22 Half-Elf Paladin on DL4 had outgrown mixed exploration.
+With the original stair-anchored filter enabled, legacy exploration still
+routed back to the vein at (189,34) after each five-step spastic search.
+The regression follows the legacy flow from (186,30) to a reachable
+unknown grid on the recorded map with the filter enabled. At 0 it follows
+the five steps back to the vein approach (189,33) and observes the refusal.
 
 The refusal itself is no longer silent, in either setting: a flow whose step
 would have to dig notes `# Exploring: the goal at (y,x) needs a dig; no
@@ -7732,7 +7736,7 @@ registry now holds **2524** parameters, 2523 on track-p `0e43d00f`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_stepable_goals` | 0 | flag | 0–1 | `borg_flow_dark.rs:1136` |
+| `explore_stepable_goals` | 0 | flag | 0–1 | `borg_flow_dark.rs:120` |
 
 ## More food and light while breadth-first exploration applies (#1110)
 
@@ -7765,8 +7769,8 @@ stay planned.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:912` |
-| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:912` |
+| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:908` |
+| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:908` |
 
 ## stair_scum (#1061)
 
@@ -7901,10 +7905,10 @@ two thresholds are separate (`explore_bfs_max_hp` and `stair_scum_max_hp`).
 **Not done here:** the fight race on the damage quantile (#1077; the existing
 race, on the mean, decides).
 
-| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:912` |
-| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:912` |
+| `explore_bfs_food_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:908` |
+| `explore_bfs_light_percent` | 100 | percent | 100–10000 | `borg_flow_dark.rs:908` |
 
-| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:898` |
+| `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:894` |
 
 ## The holes in C's stair leash (#1062)
 
@@ -8256,20 +8260,20 @@ the ten below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1269` |
+| `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1258` |
 | `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1540` |
-| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1323` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1401` |
-| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1402` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1309` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1387` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1388` |
 | `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1479` |
 | `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1481` |
 | `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1483` |
-| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1403` |
-| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1327` |
-| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1334` |
-| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1401` |
-| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1402` |
-| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1403` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1389` |
+| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1313` |
+| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1320` |
+| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1387` |
+| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1388` |
+| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1389` |
 
 ## An overweight Mage's torches, cursed spares and stat curse (#1151)
 
