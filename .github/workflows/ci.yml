@@ -173,15 +173,24 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             validation/borg-reborn-rs/class-attack-preferences/deaths
+      # Keep the Track R receipts and the receiving pin's native control
+      # evidence in the same read-only reconciliation index.
       - run: |
           python3 - <<'PYREGISTRY'
           import os, pathlib
           known = pathlib.Path(os.environ['RUNNER_TEMP']) / 'known-deaths'
           known.mkdir()
-          for root in [pathlib.Path('docs/deaths'), pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths'), pathlib.Path('vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths')]:
+          sources = [
+              pathlib.Path(os.environ['BORG_VALIDATION_ARCHIVE']),
+              pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths'),
+              pathlib.Path('vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths'),
+          ]
+          for root in sources:
               for case in sorted(root.glob('D*')):
                   if case.is_dir() and (case / 'record.json').is_file():
                       (known / case.name).symlink_to(case.resolve(), target_is_directory=True)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_VALIDATION_ARCHIVE=' + str(known) + '\n')
           PYREGISTRY
       - uses: ./.github/actions/apt-install
         with:
