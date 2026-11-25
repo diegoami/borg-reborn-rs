@@ -4,7 +4,7 @@ Track P, P9. Branch `task/T1200-surplus-throwing` targets `track-p`.
 The named build is `9c8024ea4e7e82d9683609a62bacef43a4cd5a67`, based on
 `e34d04b788a5f6a9b600268231cfe6c4e260e820`. It runs the shipped borg-rs core.
 
-- `attack_throw_surplus` is compiled and shipped at 0. The enabled arm
+- `attack_throw_surplus` is compiled at 0. The enabled arm
   considers known plain low-value throwing weapons from the pack.
   It excludes inscribed gear, selected swaps, unknown runes, curses,
   egos, artifacts, abilities and upgrades. A heavy equipped weapon
@@ -22,10 +22,9 @@ The named build is `9c8024ea4e7e82d9683609a62bacef43a4cd5a67`, based on
   parameter citation check and vendor check passed. Four shipped
   smoke runs matched their references.
 
-[Zoo #782](https://github.com/diegoami/borg-zoo/issues/782) is ready for
-owner dispatch. Keep the flag off until the population evidence and P9
-gate support an activation decision. The implementation PR requires
-green CI and owner acceptance.
+[Zoo #782](https://github.com/diegoami/borg-zoo/issues/782) tracks the
+population comparison. The implementation PR requires green CI and owner
+acceptance.
 
 The separate #1169 investigation and proposal are in the
 [Cemetery rune backlog case](https://github.com/diegoami/borg-cemetery/tree/c59ef17b7d6453cd827fd1a2a968b55af4d54439/scenarios/caster-rune-backlog-1169).
@@ -48,5 +47,9 @@ parameter citations passed.
 [Pinned evidence](https://github.com/diegoami/borg-cemetery/tree/cd36af16fa5b6660a073cf2aeb541da0941ddb2c/scenarios/surplus-throwing-1200/review-followup)
 
 Zoo #782 uses eligible-start and encounter counts as the pilot endpoints.
-Survival remains a guardrail. Dispatch and any activation decision belong
-to the owner.
+Survival remains a guardrail. The owner dispatches the pilot.
+
+### Shipped value
+
+The owner chose `attack_throw_surplus=1` for all classes in the shared
+profile. The cap is 100 gold. Keep `0` available as the Zoo control.

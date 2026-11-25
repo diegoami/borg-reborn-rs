@@ -2021,11 +2021,16 @@ From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
 
-- **`attack_throw_surplus`** (flag, compiled and shipped 0 during P8, #1200).
-  At 1, add fully known, low-value plain throwing weapons from the pack
-  when the equipped weapon covers their combat role and they are not the
-  selected swap. Score each against native range and hit chance in the
-  existing attack comparison. The feature adds no acquisition preference.
+- **`attack_throw_surplus`** (flag, compiled 0, shipped 1 for all classes,
+  #1200). At 1, consider fully known plain throwing weapons from the pack
+  up to `attack_throw_surplus_max_value` when the equipped weapon covers
+  their combat role. Preserve the selected swap. Use the engine's range,
+  damage and hit scoring for both ordinary and spare-weapon throws.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `attack_throw_surplus_max_value` | 100 | gold | 0–100000 | `borg_fight_attack.rs:2990` |
+
 - **`attack_throw_as_melee`** (flag, 0 = C; **shipped 1**, owner 2026-11-20). With 1, `borg_attack_aux_object`
   rates a throw on melee's footing:
   - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`

@@ -858,8 +858,8 @@ borg_param_recover_rest_cure_distance = 20
 
 borg_param_attack_throw_as_melee = 1
 
-# #1200: allow known low-value spare throwing weapons as attacks.
-borg_param_attack_throw_surplus = 0
+# #1200: consider known low-value spare throwing weapons for all classes.
+borg_param_attack_throw_surplus = 1
 borg_param_attack_throw_surplus_max_value = 100
 
 # Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
