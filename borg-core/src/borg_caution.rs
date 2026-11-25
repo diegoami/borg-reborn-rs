@@ -127,6 +127,11 @@ pub(crate) fn start_leaving(st: &mut BorgState, why: &str) {
     }
 }
 
+/// Poison alone is handled by poison triage. This test needs local danger.
+fn excessive_danger(danger: i32, hp: i32, pending: i32, multiplier: i32) -> bool {
+    danger > (hp - pending).max(0) * multiplier
+}
+
 /// `borg.goal.fleeing = true` with its note, if not fleeing yet.
 fn start_fleeing(st: &mut BorgState, why: &str) {
     if !st.borg.goal.fleeing {
@@ -203,20 +208,20 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
 /// borg-reborn-rs (#457): the outmatched-healing test, apart from the
 /// engine so it can be unit tested. True when the flag is on, the Borg is
 /// hurt by at least `min_loss` percent of its maximum HP, and the danger
-/// estimate reaches its current HP (so the ordinary `borg_heal` tiers, which
-/// need `danger < curhp + heal`, cannot have fired).
+/// estimate plus any charged poison reaches its current HP.
 fn outmatched_heal_applies(
     enabled: i32,
     curhp: i32,
     maxhp: i32,
     danger: i32,
     min_loss: i32,
+    pending: i32,
 ) -> bool {
     enabled != 0
         && maxhp > 0
         && curhp < maxhp
         && (maxhp - curhp) * 100 / maxhp >= min_loss
-        && danger >= curhp
+        && danger + pending >= curhp
 }
 
 /// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
@@ -236,6 +241,7 @@ fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
         st.borg.tr(BI_MAXHP),
         danger,
         p(Param::caution_heal_outmatched_min_loss),
+        crate::borg_poison::decision_pending_hp(st),
     ) {
         return false;
     }
@@ -4680,7 +4686,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
     }
     // Excessive danger
-    else if pos_danger > st.borg.tr(BI_CURHP) * p(Param::caution_flee_danger_hp_multiplier) {
+    else if excessive_danger(
+        pos_danger,
+        st.borg.tr(BI_CURHP),
+        crate::borg_poison::decision_pending_hp(st),
+        p(Param::caution_flee_danger_hp_multiplier),
+    ) {
         // Start fleeing
         // do not flee level if going after Morgoth or fighting a unique
         if !st.borg.goal.fleeing
@@ -4698,7 +4709,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
     // Potential danger (near death) in town
     else if st.borg.tr(BI_CDEPTH) == 0
-        && pos_danger > st.borg.tr(BI_CURHP)
+        && excessive_danger(pos_danger, st.borg.tr(BI_CURHP), crate::borg_poison::decision_pending_hp(st), 1)
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_town_flee_max_level)
     {
         // Flee now
@@ -7773,22 +7784,33 @@ mod outmatched_tests {
     #[test]
     fn outmatched_heal_needs_the_flag() {
         // 29 max HP, 10 HP left, danger 40: the Gnome Druid of #457.
-        assert!(!outmatched_heal_applies(0, 10, 29, 40, 50));
-        assert!(outmatched_heal_applies(1, 10, 29, 40, 50));
+        assert!(!outmatched_heal_applies(0, 10, 29, 40, 50, 0));
+        assert!(outmatched_heal_applies(1, 10, 29, 40, 50, 0));
     }
 
     #[test]
     fn outmatched_heal_needs_a_hurt_borg_in_lethal_danger() {
         // not hurt enough: 15/29 is 48% down, below the 50% threshold
-        assert!(!outmatched_heal_applies(1, 15, 29, 40, 50));
+        assert!(!outmatched_heal_applies(1, 15, 29, 40, 50, 0));
         // 14/29 is 51% down
-        assert!(outmatched_heal_applies(1, 14, 29, 40, 50));
+        assert!(outmatched_heal_applies(1, 14, 29, 40, 50, 0));
         // danger below current HP: the ordinary tiers decide
-        assert!(!outmatched_heal_applies(1, 10, 29, 9, 50));
-        assert!(outmatched_heal_applies(1, 10, 29, 10, 50));
+        assert!(!outmatched_heal_applies(1, 10, 29, 9, 50, 0));
+        assert!(outmatched_heal_applies(1, 10, 29, 10, 50, 0));
         // unhurt (even with a zero threshold) and a degenerate maximum
-        assert!(!outmatched_heal_applies(1, 29, 29, 40, 0));
-        assert!(!outmatched_heal_applies(1, 0, 0, 40, 0));
+        assert!(!outmatched_heal_applies(1, 29, 29, 40, 0, 0));
+        assert!(!outmatched_heal_applies(1, 0, 0, 40, 0, 0));
+    }
+
+    #[test]
+    fn pending_poison_changes_outmatched_cure_and_flight() {
+        assert!(!outmatched_heal_applies(1, 14, 29, 9, 50, 0));
+        assert!(outmatched_heal_applies(1, 14, 29, 9, 50, 5));
+
+        assert!(!excessive_danger(19, 14, 0, 2));
+        assert!(!excessive_danger(18, 14, 5, 2));
+        assert!(excessive_danger(19, 14, 5, 2));
+        assert!(!excessive_danger(0, 14, 15, 2));
     }
 
     #[test]

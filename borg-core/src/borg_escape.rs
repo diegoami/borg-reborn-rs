@@ -1221,7 +1221,15 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
         let name = String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[k].r_idx))).into_owned();
         borg_note(st, &format!("# Phase rule: next to the paralysing {name} without Free Action: the fight is lost (#1125)"));
     }
-    let lost = phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_wait(st, hp));
+    let mut fight_hp = hp;
+    let lost = phase_lost(adjacent, paralyser.is_some(), || {
+        let pending = crate::borg_poison::decision_pending_hp(st);
+        fight_hp = hp - pending;
+        if pending > 0 {
+            borg_note(st, &format!("# Phase rule: {pending} HP of running poison against HP {hp} (#1083)"));
+        }
+        fight_lost(st, here, fight_hp) && !newcomer_wait(st, fight_hp)
+    });
     let verdict = if !adjacent {
         PhaseVerdict::Shoot
     } else if lost {
@@ -1231,8 +1239,8 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
     };
     let label = site.label();
     let why = match verdict {
-        PhaseVerdict::Phase => format!("enemy adjacent and the fight looks lost (danger {here}, HP {hp}): the rule allows a Phase Door"),
-        PhaseVerdict::Fight => format!("enemy adjacent but the fight is not lost (danger {here}, HP {hp}): no Phase Door; other escapes, else fight"),
+        PhaseVerdict::Phase => format!("enemy adjacent and the fight looks lost (danger {here}, HP {fight_hp}): the rule allows a Phase Door"),
+        PhaseVerdict::Fight => format!("enemy adjacent but the fight is not lost (danger {here}, HP {fight_hp}): no Phase Door; other escapes, else fight"),
         PhaseVerdict::Shoot => "no enemy on an adjacent square: no Phase Door; other escapes, else attack at range or boost".to_string(),
     };
     borg_note(st, &format!("# Phase rule (from {label}): {why}"));
@@ -1478,7 +1486,11 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
 /// check, the gate of the sites without one, and Shoot N Scoot's sampler.
 pub(crate) fn phase_unknown_policy(st: &BorgState) -> bool {
     param(Param::escape_phase_unknown_scary) != 0
-        && unknown_counts_scary(st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::escape_phase_unknown_hp_percent))
+        && unknown_counts_scary(
+            st.borg.tr(BI_CURHP) - crate::borg_poison::decision_pending_hp(st),
+            st.borg.tr(BI_MAXHP),
+            param(Param::escape_phase_unknown_hp_percent),
+        )
 }
 
 /// Review of #1075 (finding 2): the never-seen gate of a Phase Door site.
@@ -2909,6 +2921,25 @@ mod unknown_landing_tests {
         assert!(!newcomer_turn_safe(f64::INFINITY, 0, 41, 100));
     }
 
+    #[test]
+    fn running_poison_can_flip_the_phase_verdict_and_emergency_thresholds() {
+        use super::{newcomer_turn_safe, phase_verdict, unknown_counts_scary, PhaseVerdict};
+        use crate::borg_poison::pending_hp;
+
+        // CON 14 with sickliness (-5 CON) recovers one timer unit per tick.
+        let pending = pending_hp(15, 6);
+        assert_eq!(pending, 15);
+        assert_eq!(pending_hp(15, 11), 8);
+        assert_eq!(phase_verdict(true, 8, 23, 100), PhaseVerdict::Fight);
+        assert_eq!(phase_verdict(true, 8, 23 - pending, 100), PhaseVerdict::Phase);
+        assert_eq!(phase_verdict(false, 8, 23 - pending, 100), PhaseVerdict::Shoot);
+
+        assert!(unknown_counts_scary(30, 60, 50));
+        assert!(!unknown_counts_scary(30 - pending, 60, 50));
+        assert!(newcomer_turn_safe(6.0, 3, 23, 100));
+        assert!(!newcomer_turn_safe(6.0, 3, 23 - pending, 100));
+    }
+
     /// #1066: the newcomer wait is asked only after the rule judged the
     /// fight lost, and it races the adjacent monsters alone.
     #[test]
@@ -2916,7 +2947,8 @@ mod unknown_landing_tests {
         let src = include_str!("borg_escape.rs");
         // #1125: the fight's test sits in `phase_lost`, asked only with an
         // awake enemy adjacent (and no paralyser, which loses it anyway).
-        assert!(src.contains(concat!("phase_lost(adjacent, paralyser.is_some(), || fight_lost(st, here, hp) && !newcomer_", "wait(st, hp))")));
+        assert!(src.contains(concat!("phase_lost(adjacent, paralyser.is_some(), ", "|| {")));
+        assert!(src.contains(concat!("fight_lost(st, here, fight_hp) && !newcomer_", "wait(st, fight_hp)")));
         assert!(src.contains(concat!("adjacent && (paralyser || ", "fight())")));
         let at = &src[src.find(concat!("fn newcomer_", "wait(")).unwrap()..];
         let wait = &at[..at.find("\n}\n").unwrap()];

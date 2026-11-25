@@ -80,8 +80,8 @@ pub(crate) fn before_poison_cure(st: &mut BorgState) -> Option<bool> {
     (damage > 0 && damage >= st.borg.tr(BI_CURHP)).then(|| quaff_for_reply(st, damage))
 }
 
-fn heal_due(hp: i32, max: i32, damage: i32, min_loss: i32) -> bool {
-    damage > 0 && hp < max && (damage >= hp || (max - hp) * 100 >= max * min_loss)
+fn heal_due(hp: i32, max: i32, damage: i32, min_loss: i32, pending: i32) -> bool {
+    damage > 0 && hp < max && (damage + pending >= hp || (max - hp) * 100 >= max * min_loss)
 }
 
 fn covers_reply(hp: i32, max: i32, restored: i32, damage: i32, poison_hp: i32) -> bool {
@@ -105,7 +105,13 @@ pub(crate) fn quaff_in_combat(st: &mut BorgState) -> Option<bool> {
 fn quaff_for_reply(st: &mut BorgState, damage: i32) -> bool {
     let hp = st.borg.tr(BI_CURHP);
     let max = st.borg.tr(BI_MAXHP);
-    if !heal_due(hp, max, damage, param(Param::caution_combat_heal_min_loss))
+    if !heal_due(
+        hp,
+        max,
+        damage,
+        param(Param::caution_combat_heal_min_loss),
+        crate::borg_poison::decision_pending_hp(st),
+    )
         || crate::borg_fast_fragile::heal_banned(st)
     {
         return false;
@@ -150,10 +156,18 @@ mod tests {
     use super::{covers_reply, heal_due};
 
     #[test]
+    fn pending_poison_can_make_the_combat_reply_outmatch_the_borg() {
+        assert!(!heal_due(45, 60, 12, 30, 0));
+        assert!(!heal_due(45, 60, 12, 30, 32));
+        assert!(heal_due(45, 60, 12, 30, 33));
+        assert!(!heal_due(45, 60, 0, 30, 45));
+    }
+
+    #[test]
     fn tengu_light_cure_can_cover_the_reply_except_at_nine_hp() {
-        assert!(heal_due(175, 225, 16, 20));
-        assert!(!heal_due(185, 225, 16, 20));
-        assert!(!heal_due(175, 225, 0, 20));
+        assert!(heal_due(175, 225, 16, 20, 0));
+        assert!(!heal_due(185, 225, 16, 20, 0));
+        assert!(!heal_due(175, 225, 0, 20, 0));
         assert!(covers_reply(89, 237, 20, 32, 0));
         assert!(covers_reply(38, 237, 20, 32, 0));
         assert!(!covers_reply(9, 237, 20, 32, 0));
@@ -162,7 +176,7 @@ mod tests {
 
     #[test]
     fn potion_is_due_for_a_lethal_reply_even_below_the_wound_threshold() {
-        assert!(heal_due(4, 91, 7, 100));
+        assert!(heal_due(4, 91, 7, 100, 0));
         assert!(covers_reply(4, 91, 20, 7, 0));
         assert!(!covers_reply(3, 131, 0, 7, 0));
         assert!(covers_reply(3, 131, 40, 7, 1));
