@@ -9078,5 +9078,4 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2064` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2065` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2035` |

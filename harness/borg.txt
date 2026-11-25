@@ -1221,9 +1221,6 @@ borg_param_town_light_percent = 100
 # #1236: Prefer selling inferior same-kind spares and drop cheap stacks
 # before ordinary dungeon pack disposal.
 borg_param_junk_inferior_spares = 1
-# Keep unknown sandals unless [1,+0] is visible before max DL5 and
-# the worn pair has at least this many more points of armor enchantment.
-borg_param_junk_inferior_sandal_ac_margin = 7
 
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle = 1
