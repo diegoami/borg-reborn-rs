@@ -27,6 +27,7 @@ class UnknownConsumablesTest(unittest.TestCase):
                 BORG_CORE="borg-rs",
                 # Match the route to the confusion encounter used by this replay.
                 BORG_PARAM_CAUTION_RISING_SKIP_HELD_STAIRS="0",
+                BORG_PARAM_ATTACK_THROW_SURPLUS="0",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_POTIONS="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP_PERCENT="1",
