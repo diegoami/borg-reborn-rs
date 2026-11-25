@@ -47,3 +47,7 @@ one tenth of the 3,000-point trial allowance. These fixtures exercise an
 acceptable loss and do not calibrate the upper bound.
 
 [Review on PR #1242](https://github.com/diegoami/borg-reborn-rs/pull/1242#issuecomment-7154421823)
+
+The re-review found a plan could select gear already rejected by Home.
+The candidate check now consults the same recorded rejections as the
+deposit step. [Re-review](https://github.com/diegoami/borg-reborn-rs/pull/1242#issuecomment-7157287113)

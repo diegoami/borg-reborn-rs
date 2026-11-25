@@ -230,8 +230,9 @@ pub(crate) fn start(st: &mut BorgState, urgent: Room, gold: i64) -> Option<TownA
                 (None, price, shop == BORG_HOME && item.iqty == 1)
             }
         };
-        if !opens_home && !engine::equip_object(&st.access, slot - wield)
-            .is_some_and(|it| it.store_accepts_quantity(BORG_HOME, 1))
+        if crate::borg_town_live::sale_rejected(st, BORG_HOME as i16, &old)
+            || (!opens_home && !engine::equip_object(&st.access, slot - wield)
+                .is_some_and(|it| it.store_accepts_quantity(BORG_HOME, 1)))
         {
             continue;
         }
