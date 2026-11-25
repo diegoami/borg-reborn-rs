@@ -1,4 +1,4 @@
-//! #1264: compare two known equipment loadouts before disposing of ordinary spares.
+//! Compare known loadouts and melee swap roles before disposing of spares.
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::*;
 use crate::borg_item::{inven_wield, quiver_start};
@@ -19,7 +19,7 @@ pub(crate) fn equipment_slot(item: &borg_item) -> Option<usize> {
     }
 }
 
-fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
+fn other_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
     // Keep a visible situational advantage even when another slot supplies it today.
     // A different brand, slay, resistance, or modifier can matter after another swap.
     let mut benefits = spare.flags;
@@ -33,6 +33,10 @@ fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
     worn.flags.iter().zip(benefits).all(|(have, need)| have & need == need)
         && worn.modifiers.iter().zip(&spare.modifiers).all(|(have, need)| have >= need)
         && worn.el_info.iter().zip(&spare.el_info).all(|(have, need)| have.res_level >= need.res_level)
+}
+
+fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
+    other_properties_cover(worn, spare)
         && worn.brands.iter().zip(&spare.brands).all(|(have, need)| *have || !*need)
         && worn.slays.iter().zip(&spare.slays).all(|(have, need)| have >= need)
 }
@@ -47,16 +51,12 @@ impl Kit {
     fn observe(st: &BorgState) -> Self {
         let tr = |trait_| st.borg.tr(trait_);
         let wield = inven_wield() as usize;
-        let weapon = &st.items.items[wield];
         let bow = &st.items.items[wield + 1];
-        let blows = if weapon.iqty == 0 || tr(BI_HEAVYWEPON) != 0 { 100 }
-            else { crate::borg_trait::borg_calc_blows_hundredths(st, weapon) };
+        let melee = Melee::observe(st);
         // player-attack.c:chance_of_melee_hit_base, chance_of_missile_hit_base,
         // hit_chance (89–142, 196–219). At any fixed target AC, hit probability
         // is monotone in the attack rating. Compare rating and damage
         // independently so a low-AC/high-AC tradeoff always survives.
-        let melee = tr(BI_WDD) * (tr(BI_WDS) + 1) + 2 * (tr(BI_TODAM) + tr(BI_WTODAM));
-        let melee_hit = tr(BI_THN) + 3 * (tr(BI_TOHIT) + tr(BI_WTOHIT));
         let launcher_hit = tr(BI_THB) + 3 * (tr(BI_TOHIT) + tr(BI_BTOHIT));
         let shots = if bow.iqty == 0 { 0 } else if tr(BI_HEAVYBOW) != 0 { 10 } else {
             // player-calcs.c:2264–2287, shots per turn in tenths.
@@ -80,7 +80,7 @@ impl Kit {
             ammunition,
             measures: [
                 i64::from(tr(BI_ARMOR)), i64::from(tr(BI_SPEED)), -shortfall,
-                i64::from(melee.max(0)) * i64::from(blows), i64::from(melee_hit),
+                melee.damage(1), i64::from(melee.hit),
                 launcher_damage, launcher_rate, i64::from(launcher_hit),
                 -i64::from(mana_penalty),
             ],
@@ -94,18 +94,157 @@ impl Kit {
     }
 }
 
+struct Melee {
+    dice: i32,
+    bonus: i32,
+    blows: i32,
+    hit: i32,
+    armor: i32,
+    speed: i32,
+}
+
+impl Melee {
+    fn observe(st: &BorgState) -> Self {
+        let tr = |trait_| st.borg.tr(trait_);
+        let weapon = &st.items.items[inven_wield() as usize];
+        Self {
+            dice: tr(BI_WDD) * (tr(BI_WDS) + 1),
+            bonus: 2 * (tr(BI_TODAM) + tr(BI_WTODAM)),
+            blows: if weapon.iqty == 0 || tr(BI_HEAVYWEPON) != 0 { 100 }
+                else { crate::borg_trait::borg_calc_blows_hundredths(st, weapon) },
+            hit: tr(BI_THN) + 3 * (tr(BI_TOHIT) + tr(BI_WTOHIT)),
+            armor: tr(BI_ARMOR),
+            speed: tr(BI_SPEED),
+        }
+    }
+
+    // player-attack.c:melee_damage and py_attack_real (480–495, 786–828).
+    // Standard combat multiplies the dice, then adds flat damage. Use twice
+    // the mean per blow to keep half points, before criticals and accuracy.
+    fn per_blow(&self, multiplier: i32) -> i32 {
+        (self.dice * multiplier + self.bonus).max(0)
+    }
+
+    fn damage(&self, multiplier: i32) -> i64 {
+        i64::from(self.per_blow(multiplier)) * i64::from(self.blows)
+    }
+}
+
+pub(crate) fn melee_weapon(item: &borg_item) -> bool {
+    item.iqty > 0 && matches!(u32::from(item.tval), TV_HAFTED | TV_POLEARM | TV_SWORD)
+}
+
+fn known_melee(item: &borg_item) -> bool {
+    melee_weapon(item) && item.aware && item.ident && !item.cursed && !item.curses.contains(&true)
+}
+
+/// Compare worn gear and alternatives that will still be available after
+/// disposal. For Home cleanup, also consider durable alternatives in Home.
+fn redundant_melee(st: &mut BorgState, spare_slot: usize, at_home: bool) -> bool {
+    use crate::headers::list_options_h::OPT_birth_percent_damage;
+    let wield = inven_wield() as usize;
+    let worn = st.items.items[wield];
+    let spare = if at_home { st.store.shops[crate::borg_store::BORG_HOME].ware[spare_slot] }
+        else { st.items.items[spare_slot] };
+    if !known_melee(&spare) || spare.art_idx != 0 || spare.activ_idx != 0
+        || !known_melee(&worn) || engine::player_opt(OPT_birth_percent_damage)
+    {
+        return false;
+    }
+    use crate::headers::object_h::EL_INFO_IGNORE;
+    let covers = |candidate: &borg_item| {
+        known_melee(candidate) && candidate.weight <= spare.weight
+            && other_properties_cover(candidate, &spare)
+            && candidate.el_info.iter().zip(&spare.el_info)
+                .all(|(have, need)| u32::from(need.flags & !have.flags) & EL_INFO_IGNORE == 0)
+            && candidate.brands.iter().zip(&spare.brands).all(|(have, need)| *have || !*need)
+            && candidate.slays.iter().zip(&spare.slays).all(|(&have, &need)| need <= 1 || have > 1)
+    };
+    let candidates: Vec<_> = st.items.items[..wield].iter().enumerate()
+        .filter(|(slot, item)| (at_home || *slot != spare_slot) && covers(item))
+        .map(|(slot, item)| (Some(slot), *item, at_home || slot < spare_slot))
+        .chain(at_home.then(|| &st.store.shops[crate::borg_store::BORG_HOME].ware)
+            .into_iter().flatten().enumerate()
+            .filter(|(slot, item)| *slot != spare_slot && covers(item))
+            .map(|(slot, item)| (None, *item, slot < spare_slot)))
+        .chain(covers(&worn).then_some((None, worn, true)))
+        .collect();
+    if candidates.is_empty() { return false; }
+
+    let borg = st.borg.clone();
+    let traits = st.traits.clone();
+    let home = st.home.clone();
+    let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+    let equip = |st: &mut BorgState, item: borg_item| {
+        st.items.items[wield] = borg_item { iqty: 1, ..item };
+        crate::borg_trait::borg_notice(st, false);
+        Melee::observe(st)
+    };
+    if !at_home { st.items.items[spare_slot].iqty = 0; }
+    let redundant = candidates.into_iter().any(|(slot, candidate, preferred_on_tie)| {
+        let saved = slot.map(|slot| {
+            let item = st.items.items[slot];
+            st.items.items[slot].iqty = 0;
+            item
+        });
+        let baseline = equip(st, worn);
+        let alternative = equip(st, spare);
+        let better = equip(st, candidate);
+        if let Some((slot, saved)) = slot.zip(saved) { st.items.items[slot] = saved; }
+
+        // A general-purpose role matters if the primary weapon cannot fill
+        // it. Otherwise compare the spare's actual slay and brand roles.
+        let general_role = baseline.hit < alternative.hit || baseline.damage(1) < alternative.damage(1);
+        let damage_covers = |have, need| better.damage(have) >= alternative.damage(need)
+            && (!at_home || better.per_blow(have) >= alternative.per_blow(need));
+        let slays_covered = candidate.slays.iter().zip(&spare.slays)
+            .all(|(&have, &need)| need <= 1 || damage_covers(have, need));
+        let brands_covered = spare.brands.iter().enumerate().all(|(index, &needed)| {
+            if !needed { return true; }
+            // obj-slays.c:get_monster_brand_multiplier, 323–340.
+            let (_, vulnerable, multiplier) = engine::brand_resist_vuln_multiplier(index);
+            damage_covers(multiplier, multiplier)
+                && (vulnerable == 0 || damage_covers(2 * multiplier, 2 * multiplier))
+        });
+        // Compare accuracy independently. A low-AC hit rate can hide an
+        // accuracy advantage against the tougher members of the same race.
+        better.hit >= alternative.hit && better.armor >= alternative.armor
+            && better.speed >= alternative.speed && (!general_role || damage_covers(1, 1))
+            && slays_covered && brands_covered
+            && (candidate.weight < spare.weight || better.hit > alternative.hit
+                || better.armor > alternative.armor || better.speed > alternative.speed
+                || candidate.slays.iter().zip(&spare.slays).any(|(&have, &need)|
+                    need > 1 && better.damage(have) > alternative.damage(need))
+                || (better.damage(1), preferred_on_tie) > (alternative.damage(1), false))
+    });
+    st.items.items[wield] = worn;
+    if !at_home { st.items.items[spare_slot] = spare; }
+    st.borg = borg;
+    st.traits = traits;
+    st.home = home;
+    st.think.do_spell = do_spell;
+    redundant
+}
+
+pub(crate) fn redundant_home_weapon(st: &mut BorgState, slot: usize) -> bool {
+    crate::borg_junk::exploration_first()
+        && !crate::borg_town_live::retained_gear(st, &st.store.shops[crate::borg_store::BORG_HOME].ware[slot])
+        && redundant_melee(st, slot, true)
+}
+
 /// Assess the kit after leaving the entire spare stack or the displaced
 /// piece behind. borg_notice reads only the Borg's known item copies.
 pub(crate) fn inferior(st: &mut BorgState, pack_slot: usize) -> bool {
     let spare = st.items.items[pack_slot];
     if spare.iqty == 0 || !spare.aware || spare.curses.contains(&true)
         || crate::borg_junk::is_swap(st, pack_slot as i32)
-        || crate::borg_town_home::known_special(&spare)
         || crate::borg_town_live::retained_gear(st, &spare)
         || inspection_pending(st, &spare)
     {
         return false;
     }
+    if redundant_melee(st, pack_slot, false) { return true; }
+    if crate::borg_town_home::known_special(&spare) { return false; }
     let Some(slot) = equipment_slot(&spare) else { return false; };
     let worn = st.items.items[slot];
     // A digger in the weapon slot may only be equipped for tunnelling.
@@ -166,6 +305,26 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         st.items.items[wield].tval = TV_DIGGING as u8;
         assert!(!inferior(st, slot), "a digger does not replace the combat weapon");
         st.items.items[wield] = dagger;
+
+        let peer_slot = st.items.items[..wield].iter().position(|item| u32::from(item.tval) == TV_FOOD)
+            .expect("replace the fixture food while comparing two melee alternatives");
+        let peer_before = st.items.items[peer_slot];
+        let mut slayer = borg_item { ident: true, needs_ident: false, ..trident };
+        let dragon = crate::headers::list_mon_race_flags_h::RF_DRAGON as usize;
+        slayer.slays[dragon] = 3;
+        slayer.ego_idx = 1;
+        st.items.items[slot] = slayer;
+        assert!(!inferior(st, slot), "keep the only dragon swap");
+        st.items.items[peer_slot] = borg_item { to_h: slayer.to_h + 1, to_d: slayer.to_d + 1, ..slayer };
+        assert!(inferior(st, slot), "the better carried slayer fills the same role");
+        assert!(!inferior(st, peer_slot), "keep the better slayer");
+        st.items.items[slot].activ_idx = 1;
+        assert!(!inferior(st, slot), "the slayer has its own activation");
+        st.items.items[slot] = slayer;
+        st.items.items[slot].slays[dragon] = 5;
+        assert!(!inferior(st, slot), "the weaker slay cannot cover higher dragon damage");
+        st.items.items[slot] = trident;
+        st.items.items[peer_slot] = peer_before;
 
         let body = wield + 6;
         let slot = st.items.items[..wield].iter()

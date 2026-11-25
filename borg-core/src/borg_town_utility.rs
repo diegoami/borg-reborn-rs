@@ -504,12 +504,32 @@ fn prune_low_priority_home(
     }
 }
 
+/// Aim for a third of Home slots in scarce supplies. This only affects
+/// priorities when choosing what to store or replace, never slot capacity.
+pub(crate) fn home_supply_balance(input: &StepInput, out: &[Disposition]) -> Option<(i32, i32)> {
+    if input.revision < crate::borg_town_record::HOME_BALANCE_SCHEMA { return None; }
+    let mut capacity = input.home_slots;
+    let mut supplies = 0;
+    for (i, item) in input.kit.iter().enumerate() {
+        let disposition = out.get(i).copied().unwrap_or(Disposition::Keep);
+        capacity += i32::from(item.place == Place::Home);
+        let remains = match item.place {
+            Place::Home => disposition == Disposition::Keep,
+            Place::Pack => disposition == Disposition::Store,
+        };
+        supplies += i32::from(remains && item.home_role.reserve_supply());
+    }
+    Some((supplies, capacity / 3))
+}
+
 /// Prefer a lower-priority stack that can leave in one withdrawal. Within
 /// scarce supplies, a more valuable reserve can replace a weaker one.
 pub(crate) fn home_replacement(input: &StepInput, u: &Utility, out: &[Disposition], kind: u32, priority: u8, future: i64) -> Option<usize> {
+    let balance = home_supply_balance(input, out);
+    let incoming_supply = Role::supply_rank(priority);
     input.kit.iter().enumerate().filter_map(|(i, item)| {
         let rank = item.home_role.rank();
-        if item.place != Place::Home || out[i] != Disposition::Keep || rank > priority
+        if item.place != Place::Home || out[i] != Disposition::Keep
             || item.kind == kind || item.just_bought || item.keep_last_book || item.protect_disposal
             || item.unknown && item.home_role != Role::Reject
             || input.kit.iter().any(|pack| pack.place == Place::Pack && pack.kind == item.kind
@@ -521,8 +541,20 @@ pub(crate) fn home_replacement(input: &StepInput, u: &Utility, out: &[Dispositio
         let value = u.power(item.power) + u.capability.as_ref().map_or(0, |model| {
             model.take(item) - model.reserve(item, -1, u.home_discount)
         });
-        (rank < priority || rank == Role::Scarce.rank() && future > value)
-            .then_some(((rank, value, item.qty, item.slot), i))
+        let mut promotes_supply = false;
+        if let Some((supplies, goal)) = balance {
+            let gear = item.home_role.gear();
+            if !incoming_supply && item.home_role.reserve_supply() && supplies <= goal
+                || incoming_supply && gear && item.power > 0
+                || priority == Role::Scarce.rank() && gear && supplies >= goal && future <= value
+            {
+                return None;
+            }
+            promotes_supply = incoming_supply && supplies < goal && gear && item.power <= 0;
+        }
+        let gear_gain = if balance.is_some() && item.home_role.gear() { item.power } else { 0 };
+        (promotes_supply || rank < priority || rank == priority && rank == Role::Scarce.rank() && future > value)
+            .then_some(((rank, value, gear_gain, item.qty, item.slot), i))
     }).min_by_key(|(score, _)| *score).map(|(_, i)| i)
 }
 
@@ -579,15 +611,19 @@ fn storing_target(input: &StepInput, u: &Utility, room: Room) -> Room {
 /// to have variety in the backpack"), stacks with copies past the minimum come
 /// first, priced by one copy: on a diminishing curve the tenth Cure Light
 /// Wounds is worth little, the only Detect Invisible a lot.
-fn store_order(input: &StepInput, u: &Utility, surplus: impl Fn(&KitItem) -> bool) -> Vec<usize> {
+fn store_order(input: &StepInput, u: &Utility, out: &[Disposition], surplus: impl Fn(&KitItem) -> bool) -> Vec<usize> {
     let mut pack: Vec<usize> = (0..input.kit.len()).filter(|&i| input.kit[i].place == Place::Pack).collect();
     let priced = |k: &KitItem| if surplus(k) { KitItem { qty: 1, ..*k } } else { *k };
     let spare = |k: &KitItem| k.home_role.reserve() && !k.just_bought && u.keep(k) == 0;
+    let below_supply_goal = home_supply_balance(input, out).is_some_and(|(supply, goal)| supply < goal);
     pack.sort_by(|&a, &b| {
         let (ka, kb) = (priced(&input.kit[a]), priced(&input.kit[b]));
         let wa = (i64::from(ka.weight) * i64::from(ka.qty)).max(1);
         let wb = (i64::from(kb.weight) * i64::from(kb.qty)).max(1);
-        let priority = |it: &KitItem| if input.revision >= 23 { it.home_role.rank() } else { 0 };
+        let priority = |it: &KitItem| {
+            if input.revision < 23 { return (false, 0); }
+            (below_supply_goal && it.home_role.reserve_supply(), it.home_role.rank())
+        };
         priority(&kb).cmp(&priority(&ka))
             .then_with(|| spare(&kb).cmp(&spare(&ka)))
             .then_with(|| surplus(&input.kit[b]).cmp(&surplus(&input.kit[a])))
@@ -663,7 +699,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     // slots, whole stacks go.
     let floored = |k: &KitItem| surplus_first && k.qty <= keep_min && !k.unknown_flavour
         && (k.need >= 0 || k.serves != 0 || is_flask(st, k));
-    for i in store_order(input, u, surplus) {
+    for i in store_order(input, u, &out, surplus) {
         let whole = &input.kit[i];
         if whole.home_role == Role::Reject && !whole.just_bought
             || whole.home_unwanted && !whole.unknown && !whole.unknown_flavour
@@ -803,12 +839,16 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let overweight = input.limits.weight + freed.weight < target.weight
             || (target.slots > 0 && input.limits.pack_slots + freed.pack_slots < target.slots);
         let worth_more_at_home = !only_overweight && future - home_cost > loss - cost;
-        let spare_is_unique = it.home_role.reserve() && !input.kit.iter().enumerate().any(|(j, k)| {
-            k.kind == it.kind && (k.place == Place::Home && out[j] == Disposition::Keep
-                || ranked_home && out[j] == Disposition::Store)
-        });
+        // Different artifacts can share the same base kind (e.g. the
+        // elemental daggers), but each artifact is already unique.
+        let spare_is_unique = it.home_role.reserve() && (it.home_role == Role::Artifact
+            || !input.kit.iter().enumerate().any(|(j, k)| {
+                k.kind == it.kind && (k.place == Place::Home && out[j] == Disposition::Keep
+                    || ranked_home && out[j] == Disposition::Store)
+            }));
         let stash_for_later = spare_is_unique && loss <= cost
-            && (it.home_role.gear() || future > if ranked_home { 0 } else { home_cost });
+            && (it.home_role.gear() || it.home_role == Role::LatePotion
+                || future > (if ranked_home { 0 } else { home_cost }));
         let low_priority = if ranked_home { it.home_role == Role::Renewable } else { it.home_role.common() };
         let optional_stock = ranked_home && it.home_role == Role::Common;
         let useful_spare = !optional_stock || (future > home_cost && home_free > 0
@@ -1298,6 +1338,45 @@ mod tests {
         assert_eq!(out.dispositions, [Disposition::Keep, Disposition::Sell, Disposition::Keep, Disposition::Store]);
         let chosen = first_executable_action(&[], &[], &out, &[], &kit, 0, 15, 1000);
         assert_eq!((chosen.0, chosen.1), (action::SELL_HOME, [4, 1, 7, 0]));
+    }
+
+    #[test]
+    fn full_home_trades_the_worst_spare_for_a_priority_potion() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let gear = KitItem { home_role: Role::SpareWeapon, need: -1, reduction: 0, ..recall(Place::Home) };
+        let kit = [
+            KitItem { kind: 1, slot: 0, power: -100, ..gear },
+            KitItem { kind: 2, slot: 1, power: -200, ..gear },
+            KitItem { kind: 3, slot: 2, home_role: Role::Artifact, protect_disposal: true, ..gear },
+            KitItem { kind: 4, slot: 0, place: Place::Pack, home_role: Role::LatePotion, ..gear },
+        ];
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.home_slots = 0;
+        let mut u = Utility::of(&st, &kit, false);
+        let (actions, _, _) = dispositions(&inp, &mut u, &st);
+        assert_eq!(actions, [Disposition::Keep, Disposition::Sell, Disposition::Keep, Disposition::Store]);
+    }
+
+    #[test]
+    fn the_supply_share_guides_replacement_without_limiting_storage() {
+        use crate::borg_town_record::PLAN_SCHEMA;
+        let st = state(10, 23, 160);
+        let stock = KitItem { need: -1, reduction: 0, ..recall(Place::Home) };
+        let gear = KitItem { home_role: Role::Gear, power: -10, ..stock };
+        let mut kit: Vec<_> = (0..24).map(|slot| KitItem { kind: u32::from(slot), slot, ..gear }).collect();
+        let out = vec![Disposition::Keep; kit.len()];
+        for (stocked, expected) in [(7, Some(7)), (8, None), (9, None)] {
+            for item in &mut kit[..stocked] { item.home_role = Role::Device; }
+            let mut inp = input(&kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = 0;
+            let u = Utility::of(&st, &kit, false);
+            assert_eq!(home_supply_balance(&inp, &out), Some((stocked as i32, 8)));
+            assert_eq!(home_replacement(&inp, &u, &out, 100, Role::Device.rank(), 0), expected);
+            assert!(home_replacement(&inp, &u, &out, 100, Role::LatePotion.rank(), 1).is_some());
+        }
     }
 
     #[test]

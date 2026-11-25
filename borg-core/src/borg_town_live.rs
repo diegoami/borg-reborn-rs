@@ -71,8 +71,24 @@ struct HomeDisposal {
     kind_before: u32,
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum HomeStock {
+    Kind(u32),
+    Artifact(u8),
+}
+
+impl HomeStock {
+    fn of(item: &borg_item) -> Self {
+        if item.art_idx != 0 { Self::Artifact(item.art_idx) } else { Self::Kind(item.kind) }
+    }
+
+    fn carried(self, st: &BorgState) -> u32 {
+        st.items.items.iter().filter(|item| Self::of(item) == self).map(|item| u32::from(item.iqty)).sum()
+    }
+}
+
 struct HomeMove {
-    kind: u32,
+    stock: HomeStock,
     stored: bool,
     carried: u32,
 }
@@ -168,7 +184,8 @@ impl HomeMove {
             action::TAKE_HOME | action::DROP_HOME => (st.store.shops[BORG_HOME].ware.get(a.at[1] as usize)?, false),
             _ => return None,
         };
-        Some(Self { kind: item.kind, stored, carried: carried_kind(st, item.kind) })
+        let stock = HomeStock::of(item);
+        Some(Self { stock, stored, carried: stock.carried(st) })
     }
 }
 
@@ -189,7 +206,7 @@ pub struct LiveState {
     /// false = taken out). The planner re-solves after every action and one
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
-    home_moves: Vec<(u32, bool)>,
+    home_moves: Vec<(HomeStock, bool)>,
     reserve_bought: bool,
     stash: Option<u32>,
     disposal: Option<HomeDisposal>,
@@ -213,21 +230,22 @@ pub struct LiveState {
     pub(crate) recall_loadout: recall_loadout::Loadout,
 }
 
-/// Consume one queued Home attempt after refreshing inventory. Count the kind
-/// across all slots, so stack merging/reordering cannot confirm a canceled move.
+/// Confirm a queued Home move against the refreshed inventory, even if
+/// stacks were reordered or merged.
 fn settle_home(st: &mut BorgState) {
     if let Some(attempt) = st.think.town_live.pending_home.take() {
-        let carried = carried_kind(st, attempt.kind);
+        let carried = attempt.stock.carried(st);
         let confirmed = if attempt.stored { carried < attempt.carried } else { carried > attempt.carried };
         if confirmed {
-            st.think.town_live.home_moves.push((attempt.kind, attempt.stored));
+            st.think.town_live.home_moves.push((attempt.stock, attempt.stored));
         }
     }
 }
 
-/// Whether this visit already moved `kind` into (`stored`) or out of the Home.
-pub fn home_moved(st: &BorgState, kind: u32, stored: bool) -> bool {
-    st.think.town_live.home_moves.iter().any(|&(k, s)| k == kind && s == stored)
+/// Whether this visit moved the item into (`stored`) or out of Home.
+pub(crate) fn home_moved(st: &BorgState, item: &borg_item, stored: bool) -> bool {
+    let stock = HomeStock::of(item);
+    st.think.town_live.home_moves.contains(&(stock, stored))
 }
 
 /// The native store may reject an otherwise plausible offer (for example,
@@ -569,7 +587,7 @@ fn exploration_restock(st: &BorgState) -> Option<TownAction> {
         if !item.aware || item.cursed
             || acquisition_room(st, item.tval, item.kind) == 0
             || buy_rejected(st, c.shop as i16, slot)
-            || shop == BORG_HOME && home_moved(st, item.kind, true)
+            || shop == BORG_HOME && home_moved(st, item, true)
             || !model.supplies_shortfall(c.shop, c.slot)
         {
             return None;
@@ -1030,18 +1048,18 @@ pub(crate) fn test_home_attempt(st: &mut BorgState, stored: bool, success: bool,
     });
     crate::borg_io::borg_init_io(st);
     let queued = execute_store(st);
-    let before = home_moved(st, kind, stored);
+    let before = home_moved(st, &item, stored);
     if success {
         item.iqty = 1;
         st.items.items[0] = item;
     }
     settle_sale(st);
-    let after = home_moved(st, kind, stored);
+    let after = home_moved(st, &item, stored);
     let rejected = !stored && buy_rejected(st, 7, 0);
     // The new visit must clear both confirmed and pending history.
     st.borg.time.level += 1;
     settle_sale(st);
-    let reset = !home_moved(st, kind, stored) && st.think.town_live.pending_home.is_none();
+    let reset = !home_moved(st, &item, stored) && st.think.town_live.pending_home.is_none();
     crate::borg_io::borg_free_io(st);
     u32::from(queued) | (u32::from(before) << 1) | (u32::from(after) << 2)
         | (u32::from(rejected) << 3) | (u32::from(reset) << 4)
@@ -1148,14 +1166,28 @@ mod tests {
     #[test]
     fn home_moves_are_remembered_per_direction() {
         let mut st = state();
-        st.think.town_live.home_moves.push((42, true));
-        assert!(home_moved(&st, 42, true));
-        assert!(!home_moved(&st, 42, false), "only the executed direction is recorded");
-        assert!(!home_moved(&st, 43, true));
+        let item = borg_item { kind: 42, ..crate::borg_item::blank_item() };
+        st.think.town_live.home_moves.push((HomeStock::of(&item), true));
+        assert!(home_moved(&st, &item, true));
+        assert!(!home_moved(&st, &item, false), "only the executed direction is recorded");
+        assert!(!home_moved(&st, &borg_item { kind: 43, ..item }, true));
         // A new visit rebuilds LiveState (settle_sale), dropping the moves.
         st.think.town_live = LiveState::default();
-        assert!(!home_moved(&st, 42, true));
+        assert!(!home_moved(&st, &item, true));
     }
+    #[test]
+    fn same_kind_artifacts_have_independent_home_moves() {
+        let mut st = home_state();
+        let dagger = borg_item { art_idx: 1, ..st.items.items[0] };
+        let other = borg_item { art_idx: 2, ..dagger };
+        st.items.items[0] = dagger;
+        st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code: action::STORE, at: [7, 0, 1, 0] });
+        st.items.items[0] = other;
+        settle_home(&mut st);
+        assert!(home_moved(&st, &dagger, true));
+        assert!(!home_moved(&st, &other, true));
+    }
+
     fn home_state() -> BorgState {
         let mut st = state();
         let mut item = crate::borg_item::blank_item();
@@ -1188,14 +1220,15 @@ mod tests {
         for (code, stored, after) in [(action::STORE, true, 2), (action::TAKE_HOME, false, 4),
             (action::DROP_HOME, false, 6)] {
             let mut st = home_state();
+            let item = st.items.items[0];
             st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code, at: [7, 0, 1, 0] });
-            assert!(!home_moved(&st, 42, stored), "queuing is not confirmation");
+            assert!(!home_moved(&st, &item, stored), "queuing is not confirmation");
             st.items.items[0].iqty = after;
             // A refreshed inventory may put the stack in another slot.
             st.items.items.swap(0, 1);
             settle_home(&mut st);
-            assert!(home_moved(&st, 42, stored));
-            assert!(!home_moved(&st, 42, !stored));
+            assert!(home_moved(&st, &item, stored));
+            assert!(!home_moved(&st, &item, !stored));
             assert!(st.think.town_live.pending_home.is_none());
             settle_home(&mut st);
             assert_eq!(st.think.town_live.home_moves.len(), 1);

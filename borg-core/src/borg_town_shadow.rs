@@ -318,7 +318,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         let home_room = if place == Place::Home {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
                 let blocked = live && (crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, slot)
-                    || crate::borg_town_live::home_moved(st, it.kind, true)
+                    || crate::borg_town_live::home_moved(st, it, true)
                     || crate::borg_town_live::retained_gear(st, it));
                 let carry = if blocked { 0 } else { offer.carry_capacity() };
                 let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
@@ -328,14 +328,23 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                 [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
             })
         } else { None };
+        let mut home_role = if home_policy {
+            borg_town_home::classify(st, it, can_decurse, worn_gain)
+        } else { Role::Ordinary };
+        if home_role == Role::LatePotion {
+            let home = &st.store.shops[BORG_HOME].ware;
+            let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
+            if earlier.iter().any(|other| other.iqty > 0 && other.kind == it.kind) {
+                home_role = Role::Scarce;
+            }
+        }
         KitItem {
-            home_role: if home_policy { // borg-reborn-rs (#1241)
-                borg_town_home::classify(st, it, can_decurse, worn_gain)
-            } else { Role::Ordinary },
+            home_role,
             home_room,
             keep_last_book: protects_class_book(it),
             protect_disposal: protected_supply
-                || (place == Place::Home && crate::borg_town_live::retained_gear(st, it))
+                || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
+                    || home_policy && it.art_idx != 0))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -440,7 +449,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         crate::borg_trait::borg_notice(st, true);
         let equipped_gain = worn_gain(st, it);
         let gear = home_policy && borg_town_home::gear_slot(it).is_some();
-        kit.push(fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain));
+        let mut stack = fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain);
+        if gear && crate::borg_spare_gear::redundant_home_weapon(st, slot) {
+            stack.home_role = Role::Reject;
+        }
+        kit.push(stack);
     }
 
     // Reserve one stack per book kind, preferring a copy already safe at Home.
@@ -558,7 +571,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     let revision = match (overloaded_shopping, reserve_on) {
         (true, true) => crate::borg_town_record::PLAN_SCHEMA,
         (true, false) => 21,
-        (false, true) => 23,
+        (false, true) => crate::borg_town_record::HOME_BALANCE_SCHEMA,
         (false, false) => 20,
     };
     let departure = live && overloaded_shopping && crate::borg_town_live::departure_preparing(st);
@@ -630,7 +643,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0
                 && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0)
             && item.aware && !unusable_torch(unlight, item.tval, item.sval, torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
-            && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
+            && !(live && (crate::borg_town_live::home_moved(st, item, true)
                 || crate::borg_town_live::retained_gear(st, item)));
         let native = engine::store_stock(&st.access, BORG_HOME);
         let joins = native.get(slot).is_some_and(|o| o.merge_capacity() >= 1);
@@ -677,6 +690,11 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         let gain = tryon.iter().find(|t| t.shop == c.shop && t.slot == c.slot)
             .map_or(0, |t| t.value);
         let role = borg_town_home::classify(st, item, false, gain);
+        if role == Role::LatePotion {
+            // Healing is budgeted against the trip separately. Even a potion
+            // with no current coverage gain can start a future Home reserve.
+            return role.offer_value(capability.home_offer(c.shop, c.slot).max(1));
+        }
         if matches!(role, Role::Device | Role::Scarce) {
             return role.offer_value(capability.home_offer(c.shop, c.slot));
         }
@@ -765,10 +783,10 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         let mut chosen_from = out.clone();
         for (k, d) in kit.iter().zip(chosen_from.dispositions.iter_mut()) {
             let reverses = match (k.place, *d) {
-                (Place::Pack, Disposition::Store) => crate::borg_town_live::home_moved(st, k.kind, false),
+                (Place::Pack, Disposition::Store) => crate::borg_town_live::home_moved(st, &st.items.items[usize::from(k.slot)], false),
                 (Place::Home, Disposition::Take | Disposition::Sell | Disposition::Drop) =>
                     crate::borg_town_recall_loadout::retained_at_home(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)])
-                    || *d == Disposition::Take && crate::borg_town_live::home_moved(st, k.kind, true),
+                    || *d == Disposition::Take && crate::borg_town_live::home_moved(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)], true),
                 _ => false,
             };
             if reverses { *d = Disposition::Keep; }

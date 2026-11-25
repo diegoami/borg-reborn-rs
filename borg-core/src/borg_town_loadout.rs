@@ -278,7 +278,7 @@ pub(crate) fn propose(st: &mut BorgState, tried: &[bool; 12], restoring: bool) -
                 || pack_slot(st, item).is_some()
                 || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) == 0
                 || crate::borg_town_live::buy_rejected(st, shop as i16, slot)
-                || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item.kind, true)
+                || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item, true)
                 || restoring && !crate::borg_town_live::retained_gear(st, item)
             {
                 continue;
