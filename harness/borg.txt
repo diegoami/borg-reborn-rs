@@ -965,13 +965,10 @@ borg_param_explore_bfs_leave_when_done = 1
 # too once it finds nothing it may reach, before the secret-door search.
 # Shipped 1 (owner, 2026-11-23: "merge it but with all settings on").
 borg_param_explore_c_leave_when_done = 1
-# #1189: the stair-anchored exploration aims only at grids its flow can
-# enter (the unknown grid, rubble, a closed door). borg_play_step refuses to
-# dig walls and seams while exploring, so a treasure vein as a goal had the
-# flow commit beside it and give no step, and the next ring sent the Borg
-# back the way it came (a Warrior walked 444666 between two corridor ends on
-# DL1 for 4,000 turns, ring 10 and ring 11 both veins). Shipped 1 (a bug,
-# like loop_breaker); 0 = the veins stay goals.
+# #1189, #1227: stair-anchored and legacy exploration aim only at unknown
+# grids, rubble and closed doors. GOAL_DARK refuses to dig walls and seams,
+# and repeatedly routing to them can trap the Borg in a loop. Shipped 1.
+# At 0, veins remain exploration goals. Intentional vein digging is separate.
 borg_param_explore_stepable_goals = 1
 # #1098 (second piece of #1080): mixed exploration when breadth-first is
 # inactive and the Borg is unprepared for the depth (where C's leash applies).
