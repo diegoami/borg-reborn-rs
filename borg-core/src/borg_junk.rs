@@ -123,7 +123,7 @@ fn off_floor(st: &BorgState) -> bool {
 
 /// `i == weapon_swap - 1` or `i == armour_swap - 1` (each swap is the
 /// slot + 1, 0 = none; both read now, as C reads the globals).
-fn is_swap(st: &mut BorgState, i: i32) -> bool {
+fn is_swap(st: &BorgState, i: i32) -> bool {
     let w = st.trait_swap.weapon_swap;
     if w != 0 && i == w - 1 {
         return true;
@@ -459,6 +459,9 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
     false
 }
 
+// The first positive value threshold in the ordinary dungeon junk policy.
+const EARLY_JUNK_VALUE: i32 = 15;
+
 /// `borg_drop_junk`: the items worth keeping by value at this depth.
 fn junk_worth_keeping(st: &BorgState, value: i32) -> bool {
     /* up to level 5, keep anything of any value */
@@ -473,7 +476,7 @@ fn junk_worth_keeping(st: &BorgState, value: i32) -> bool {
     /* below level 127, keep anything of value 2000 or better */
     const TIERS: [(i32, i32); 10] = [
         (5, 0),
-        (10, 15),
+        (10, EARLY_JUNK_VALUE),
         (15, 100),
         (30, 500),
         (40, 1000),
@@ -1814,12 +1817,170 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
     false
 }
 
+/// borg-reborn-rs (#1236): compare each spare to the item it replaces.
+fn inferior_spare(
+    spare: &borg_item,
+    worn: &borg_item,
+    sandal_sval: i32,
+    max_depth: i32,
+    sandal_ac_margin: i32,
+) -> bool {
+    let tval = u32::from(spare.tval);
+    if !matches!(tval, TV_BOOTS | TV_GLOVES | TV_HELM | TV_CROWN | TV_SHIELD | TV_CLOAK
+        | TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW)
+        || !spare.aware || spare.iqty == 0 || spare.cursed || spare.art_idx != 0
+        || !worn.ident || worn.needs_ident || worn.iqty == 0 || worn.cursed
+        || spare.tval != worn.tval || spare.sval != worn.sval
+        || spare.weight < worn.weight || spare.activ_idx != 0
+        || spare.pval > worn.pval
+        || spare.ac > worn.ac || spare.to_a > worn.to_a
+        || spare.to_h > worn.to_h || spare.to_d > worn.to_d
+        || spare.dd > worn.dd || spare.ds > worn.ds
+    {
+        return false;
+    }
+
+    let description = desc(spare);
+    if spare.ident && !spare.needs_ident {
+        if description.contains(&b'{') {
+            return false;
+        }
+    } else {
+        // obj-desc.c:obj_desc_combat displays +0 only after assessment and
+        // learning the AC rune. Leather Sandals start at [1,+0] (object.txt).
+        // Their egos add no flat AC penalty (ego_item.txt), and obj-make.c:
+        // apply_magic/armour adds at least +1 when creating ego armour.
+        // Inventory damage can erode carried armor at any depth
+        // (project-obj.c:inven_damage). The shallow-game heuristic accepts
+        // that risk. Max DL5 is the native depth of the disenchanter eye
+        // (monster.txt), which can erode a pair while it is worn.
+        if tval != TV_BOOTS || i32::from(spare.sval) != sandal_sval || max_depth >= 5
+            || spare.ego_idx != 0 || spare.ac != 1 || spare.to_a != 0
+            || !description.ends_with(b" [1,+0] {??}")
+            || sandal_ac_margin <= 0 || i32::from(worn.to_a) < sandal_ac_margin
+        {
+            return false;
+        }
+    }
+
+    // A known property, lighter weight or a distinct activation can make a
+    // useful swap even when the Borg's overall power falls on wearing it.
+    use crate::headers::object_h::EL_INFO_IGNORE;
+    spare.flags.iter().zip(&worn.flags).all(|(&s, &w)| s & !w == 0)
+        && spare.modifiers.iter().zip(&worn.modifiers).all(|(&s, &w)| s <= w)
+        && spare.el_info.iter().zip(&worn.el_info).all(|(s, w)| {
+            s.res_level <= w.res_level && u32::from(s.flags & !w.flags) & EL_INFO_IGNORE == 0
+        })
+        && spare.brands.iter().zip(&worn.brands).all(|(&s, &w)| !s || w)
+        && spare.slays.iter().zip(&worn.slays).all(|(&s, &w)| s <= w)
+        && (spare.ac < worn.ac || spare.to_a < worn.to_a
+            || spare.to_h < worn.to_h || spare.to_d < worn.to_d
+            || spare.dd < worn.dd || spare.ds < worn.ds)
+}
+
+pub(crate) fn inferior_spares(st: &BorgState) -> impl Iterator<Item = (usize, &borg_item)> {
+    use crate::params::{value, Param};
+    let max_depth = st.borg.tr(BI_MAXDEPTH);
+    let pack_end = if value(Param::junk_inferior_spares) == 0 { 0 } else { pack_size() as usize };
+    let sandal_ac_margin = value(Param::junk_inferior_sandal_ac_margin);
+    let sandal_sval = if pack_end > 0 && sandal_ac_margin > 0 && max_depth < 5 {
+        engine::lookup_sval(TV_BOOTS as i32, "Pair of Leather Sandals")
+    } else {
+        -1
+    };
+    st.items.items.iter().take(pack_end).enumerate().filter(move |&(slot, item)| {
+        if item.iqty == 0 || is_swap(st, slot as i32) {
+            return false;
+        }
+        let worn_slot = crate::borg_inventory::borg_wield_slot(item);
+        usize::try_from(worn_slot).ok().and_then(|i| st.items.items.get(i))
+            .is_some_and(|worn| inferior_spare(item, worn, sandal_sval, max_depth, sandal_ac_margin))
+    })
+}
+
+pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
+    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.goal.recalling != 0 || st.borg.goal.fleeing || off_floor(st) {
+        return false;
+    }
+    let Some((slot, _)) = inferior_spares(st).find(|(_, item)| {
+        i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
+    }) else {
+        return false;
+    };
+    if engine::player_is_shapechanged() || danger_here(st) != 0 {
+        return false;
+    }
+    note_desc(st, "# Dropping inferior spare ", slot as i32, ".");
+    drop_ignored_pack_stack(st, slot as i32);
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::borg_headers::borg_item_h::{BORG_CURSE_AIR_SWING, BORG_CURSE_PARALYSIS};
     use crate::borg_item::blank_item;
     use crate::borg_light::light_slot;
+
+    fn sandals(to_a: i16, description: &[u8]) -> borg_item {
+        let mut item = blank_item();
+        item.tval = TV_BOOTS as u8;
+        item.sval = 1;
+        item.aware = true;
+        item.iqty = 1;
+        item.ident = !description.ends_with(b"{??}");
+        item.needs_ident = !item.ident;
+        item.ac = 1;
+        item.to_a = to_a;
+        item.weight = 15;
+        for (dest, &src) in item.desc.iter_mut().zip(description) {
+            *dest = src as core::ffi::c_char;
+        }
+        item
+    }
+
+    #[test]
+    fn recorded_sandals_free_one_unknown_slot_and_keep_useful_spares() {
+        use crate::headers::list_elements_h::ELEM_NEXUS;
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_SPEED;
+
+        let mut worn = sandals(7, b"a Pair of Leather Sandals of Slow Descent [1,+7]");
+        worn.ego_idx = 1;
+        let recorded = sandals(0, b"a Pair of Leather Sandals [1,+0] {??}");
+        let identified = sandals(0, b"a Pair of Leather Sandals [1,+0]");
+        let possible_ego = sandals(2, b"a Pair of Leather Sandals [1,+2] {??}");
+        let mut resist_swap = sandals(3, b"a Pair of Leather Sandals of Stability [1,+3]");
+        resist_swap.el_info[ELEM_NEXUS as usize].res_level = 1;
+        let mut speed_swap = sandals(2, b"a Pair of Leather Sandals of Speed [1,+2]");
+        speed_swap.modifiers[OBJ_MOD_SPEED as usize] = 3;
+        let upgrade = sandals(8, b"a Pair of Leather Sandals [1,+8]");
+        let pack = [recorded, identified, possible_ego, resist_swap, speed_swap, upgrade];
+
+        let discarded = |margin| pack.iter().enumerate()
+            .filter_map(|(slot, item)| inferior_spare(item, &worn, 1, 3, margin).then_some(slot))
+            .collect::<Vec<_>>();
+        assert_eq!(discarded(0), [1], "unknown policy disabled: one slot freed");
+        assert_eq!(discarded(7), [0, 1], "two slots freed, all four upgrade or swap options retained");
+    }
+
+    #[test]
+    fn unsafe_inferences_about_a_zero_ac_spare_keep_the_item() {
+        let worn = sandals(7, b"a Pair of Leather Sandals of Slow Descent [1,+7]");
+        let spare = sandals(0, b"a Pair of Leather Sandals [1,+0] {??}");
+        assert!(!inferior_spare(&spare, &worn, 1, 5, 7), "unknown-rune heuristic ends at max DL5");
+        assert!(!inferior_spare(&spare, &worn, 1, 3, 8), "insufficient enchantment margin");
+
+        let hidden_ac = sandals(0, b"a Pair of Leather Sandals [1] {??}");
+        let reserved = sandals(0, b"a Pair of Leather Sandals [1,+0] {keep, ??}");
+        let possible_ego = borg_item { ego_idx: 1, ..spare };
+        let artifact = borg_item { art_idx: 1, ..spare };
+        let lighter = borg_item { weight: 10, ..spare };
+        for keep in [hidden_ac, reserved, possible_ego, artifact, lighter] {
+            assert!(!inferior_spare(&keep, &worn, 1, 3, 7));
+        }
+        assert!(!inferior_spare(&spare, &blank_item(), 1, 3, 7));
+        assert!(!inferior_spare(&spare, &worn, 2, 3, 7), "different kind");
+    }
 
     #[test]
     fn town_quiver_trim_protects_the_reserve_and_special_ammunition() {

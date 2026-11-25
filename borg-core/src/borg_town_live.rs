@@ -213,7 +213,7 @@ pub fn home_moved(st: &BorgState, kind: u32, stored: bool) -> bool {
 
 /// The native store may reject an otherwise plausible offer (for example,
 /// its stock is full). A queued command is not proof of a transaction.
-fn settle_sale(st: &mut BorgState) {
+pub(crate) fn settle_sale(st: &mut BorgState) {
     if st.think.town_live.clock != Some(st.borg.time.level) {
         st.think.town_live = LiveState { clock: Some(st.borg.time.level), ..LiveState::default() };
     }
@@ -332,7 +332,7 @@ fn visit_gate(st: &mut BorgState) -> Option<bool> {
     None
 }
 
-fn set_action(st: &mut BorgState, a: TownAction) -> bool {
+pub(crate) fn set_action(st: &mut BorgState, a: TownAction) -> bool {
     let Some((shop, ware, item)) = goal(a) else { clear(st); return false; };
     st.borg.goal.shop = shop;
     st.borg.goal.ware = ware;
@@ -407,6 +407,21 @@ pub fn choose(st: &mut BorgState) -> bool {
         return true;
     }
     let mut a = crate::borg_town_shadow::live_action(st);
+    if !no_sale && matches!(a.code,
+        action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
+    {
+        if let Some(sale) = inferior_spare_sale(st) {
+            return set_action(st, sale);
+        }
+        if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
+            let drop = crate::borg_junk::inferior_spares(st).next().map(|(slot, item)| {
+                TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(item.iqty), 0] }
+            });
+            if let Some(drop) = drop {
+                return set_action(st, drop);
+            }
+        }
+    }
     // The opt-in trial tests discarding surplus plain shots before the
     // planner disposes of other kit. Poison triage and purchases go first.
     if !st.borg.in_shop && !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
@@ -612,6 +627,25 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     }
     clear(st);
     true
+}
+
+/// borg-reborn-rs (#1236): use a shop with room for the whole spare stack.
+pub(crate) fn inferior_spare_sale(st: &BorgState) -> Option<TownAction> {
+    for (slot, item) in crate::borg_junk::inferior_spares(st) {
+        if item.value <= 0 {
+            continue;
+        }
+        let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
+        let quantity = i32::from(item.iqty);
+        if let Some(shop) = (0..BORG_HOME).find(|&shop| {
+            !sale_rejected(st, shop as i16, item)
+                && crate::borg_store_sell::borg_store_buys(item, shop as i32)
+                && native.store_accepts_quantity(shop, quantity)
+        }) {
+            return Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] });
+        }
+    }
+    None
 }
 
 /// Controlled refreshed-inventory observations for the native regression fixture.
