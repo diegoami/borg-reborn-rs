@@ -1072,6 +1072,9 @@ borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
 
+# #1119: first discretionary radius-one room-lighting cast needs evidence of darkness.
+borg_param_light_first_cast_require_dark = 1
+
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
 borg_param_light_hallway_repeat_guard = 1
 borg_param_light_detect_dark_entry = 0
