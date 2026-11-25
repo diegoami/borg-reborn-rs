@@ -42,7 +42,7 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 HOOKED = {
     'src/borg_inventory.rs', 'src/borg_item_val.rs',  # #1109: known Hard Biscuit fallback when Hungry
     'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
-    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',  # #1235: torch wear ties use remaining fuel
     'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
     'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
@@ -69,12 +69,12 @@ HOOKED = {
     'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters; #929: a miss in view is not a wall
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
-    'src/borg.rs',  # #530: scary goals and stand flags. #1213: removed potion-testing state.
+    'src/borg.rs',  # #530: scary goals and stand flags. #1213: removed potion-testing state. #1235: remember planned torch radius.
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
     'src/borg_cave.rs',  # #1119: allocate the map in standalone lighting tests
-    'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius
+    'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius; #1235: shortest-burning replacement torch at equal radius
     'src/borg_cave_view.rs',  # #917: passable rubble stops sight behind view_rubble_blocks_sight
     'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius
     'src/borg_projection.rs',  # #884: borg_los_light, line of sight through projectable grids only; #929: no wall guess on the Borg's grid

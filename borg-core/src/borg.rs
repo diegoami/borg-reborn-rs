@@ -230,12 +230,13 @@ pub struct Borg {
 }
 
 #[derive(Copy, Clone, Default)]
-#[repr(C)]
 pub struct BorgBest {
     pub home: bool,
     pub tval: u8,
     pub sval: u8,
     pub pval: i16,
+    /// borg-reborn-rs (#1235): keep the chosen brightness when finding the torch again.
+    pub torch_radius: Option<i32>,
 }
 
 #[derive(Copy, Clone, Default)]
