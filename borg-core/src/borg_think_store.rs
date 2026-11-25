@@ -65,7 +65,7 @@ use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_T
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_FOOD, BI_GOLD, BI_ISCUT, BI_ISPOISONED, BI_LIGHT,
 };
-use crate::headers::list_tvals_h::TV_DIGGING;
+use crate::headers::list_tvals_h::{TV_DIGGING, TV_POTION};
 use crate::state::BorgState;
 
 /// `borg_timer(t)` (borg-think-dungeon-util.h): game turns since `t`.
@@ -121,6 +121,16 @@ fn clear_shop_goal(st: &mut BorgState) {
     st.borg.goal.item = -1;
     st.borg.goal.ware = st.borg.goal.item;
     st.borg.goal.shop = st.borg.goal.ware;
+}
+
+fn choose_shop_sale(st: &mut BorgState) -> bool {
+    if !borg_think_shop_sell_useless(st) {
+        return false;
+    }
+    let desc = goal_item_desc(st);
+    let name = goal_shop_name(st);
+    note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
+    true
 }
 
 /// Four `ESCAPE`s: clear possible errors and leave the store.
@@ -208,6 +218,19 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 
     /* Already flowing to a store to sell something */
     if st.borg.goal.shop != -1 && st.borg.goal.ware != -1 {
+        return true;
+    }
+
+    if let Some(a) = crate::borg_healing_restock::purchase(st) {
+        clear_shop_goal(st);
+        // Buying can identify a carried potion before the normal sale.
+        let has_unknown_potion = st.items.items.iter().take(inven_wield() as usize)
+            .any(|item| item.iqty > 0 && u32::from(item.tval) == TV_POTION && !item.aware);
+        if has_unknown_potion && choose_shop_sale(st) {
+            return true;
+        }
+        st.borg.goal.shop = a.at[0] as i16;
+        st.borg.goal.ware = a.at[1] as i16;
         return true;
     }
 
@@ -306,21 +329,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* Step 2 -- Sell items to the shops */
-    if borg_think_shop_sell_useless(st) {
-        /* Message */
-        let desc = goal_item_desc(st);
-        let name = goal_shop_name(st);
-        note(st, &[b"# Selling '", &desc, b"' at '", &name, b"'"]);
-
-        /* Success */
-        return true;
-    }
-
-    // Let planned sales identify unknown stock and fund the refill first.
-    if let Some(a) = crate::borg_healing_restock::purchase(st) {
-        clear_shop_goal(st);
-        st.borg.goal.shop = a.at[0] as i16;
-        st.borg.goal.ware = a.at[1] as i16;
+    if choose_shop_sale(st) {
         return true;
     }
 

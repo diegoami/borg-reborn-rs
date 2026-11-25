@@ -13,7 +13,7 @@ GAME = ROOT / "build/rust/game/angband"
 
 @unittest.skipUnless(GAME.is_file(), "native build required")
 class UnknownConsumablesTest(unittest.TestCase):
-    def test_unknown_potions_and_scrolls_reach_town_and_known_items_are_usable(self):
+    def replay_messages(self, healing_restock):
         with tempfile.TemporaryDirectory(prefix="unknown-consumables-") as directory:
             output = Path(directory) / "run"
             env = {
@@ -25,6 +25,8 @@ class UnknownConsumablesTest(unittest.TestCase):
             # with the Light Purple Potion at full HP and zero danger.
             env.update(
                 BORG_CORE="borg-rs",
+                # The historical confusion encounter uses the original route.
+                BORG_PARAM_RESTOCK_HEALING=healing_restock,
                 # Match the route to the confusion encounter used by this replay.
                 BORG_PARAM_CAUTION_RISING_SKIP_HELD_STAIRS="0",
                 BORG_PARAM_ATTACK_THROW_SURPLUS="0",
@@ -49,7 +51,18 @@ class UnknownConsumablesTest(unittest.TestCase):
         self.assertNotIn("# Quaffing Light Purple Potion", messages)
         self.assertNotIn("# Quaffing Orange Speckled Potion", messages)
         self.assertNotRegex(messages, r'# Reading Scrolls? titled "co pro eleas"')
-        events = [
+        return messages
+
+    def assert_events_in_order(self, messages, events):
+        offset = 0
+        for event in events:
+            position = messages.find(event, offset)
+            self.assertGreaterEqual(position, offset, event)
+            offset = position + len(event)
+
+    def test_unknown_potions_and_scrolls_reach_town_and_known_items_are_usable(self):
+        messages = self.replay_messages("0")
+        self.assert_events_in_order(messages, [
             "You have a Light Purple Potion",
             "You have 4 Orange Speckled Potions",
             "# Selling Light Purple Potion",
@@ -60,12 +73,16 @@ class UnknownConsumablesTest(unittest.TestCase):
             "# Reading Scroll of Blessing.",
             "# Quaffing Potion of Cure Serious Wounds.",
             "You are no longer confused.",
-        ]
-        offset = 0
-        for event in events:
-            position = messages.find(event, offset)
-            self.assertGreaterEqual(position, offset, event)
-            offset = position + len(event)
+        ])
+
+    def test_healing_restock_preserves_the_planned_unknown_potion_sale(self):
+        messages = self.replay_messages("1")
+        self.assert_events_in_order(messages, [
+            "You have 4 Orange Speckled Potions",
+            "# Returning to town: low on healing potions",
+            "# Selling Orange Speckled Potions",
+            "You had a Potion of Cure Light Wounds",
+        ])
 
 
 if __name__ == "__main__":
