@@ -3395,22 +3395,18 @@ mod tests {
         assert_eq!((shipped[dl2_hp].value, shipped[dl2_hp].origin), (0, "borg.txt"));
         assert_eq!(compiled[Param::prepared_dl2_min_clevel as usize].value, 0);
 
-        for class in CLASSES {
+        let dl34_levels = [7, 11, 10, 12, 13, 10, 8, 9, 9];
+        let dl59_levels = [8, 13, 12, 14, 14, 12, 10, 11, 10];
+        for (index, class) in CLASSES.into_iter().enumerate() {
             for param in [Param::prepared_dl34_min_hp, Param::prepared_dl59_min_hp] {
                 assert_eq!(class_value(&shipped, param, class), Some((0, "borg.txt")), "{class}");
             }
 
             let (mix, _) = class_value(&shipped, Param::explore_mix_max_clevel, class).unwrap();
-            let dl2 = mix + 1;
-            let dl34 = dl2 + match class {
-                "warrior" => 1,
-                "ranger" | "paladin" | "rogue" | "blackguard" => 2,
-                _ => 3,
-            };
             for (param, expected) in [
-                (Param::prepared_dl2_min_clevel, dl2),
-                (Param::prepared_dl34_min_clevel, dl34),
-                (Param::prepared_dl59_min_clevel, dl34 + 1),
+                (Param::prepared_dl2_min_clevel, mix + 1),
+                (Param::prepared_dl34_min_clevel, dl34_levels[index]),
+                (Param::prepared_dl59_min_clevel, dl59_levels[index]),
             ] {
                 assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")), "{class}");
             }

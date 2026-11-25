@@ -98,6 +98,13 @@ PINNED_TOWN_SETTINGS = [
     # #1159 changes the path to the incident. Keep the original route
     # selection for these exact-turn replays.
     ("caution_rising_skip_held_stairs", 0),
+    # #1217 changed shallow preparedness after these recorded routes.
+    ("prepared_dl2_min_hp", 30),
+    ("prepared_dl2_min_clevel__warrior", 0), ("prepared_dl2_min_clevel__mage", 0),
+    ("prepared_dl34_min_hp__warrior", 50), ("prepared_dl34_min_clevel__warrior", 4),
+    ("prepared_dl34_min_hp__mage", 60), ("prepared_dl34_min_clevel__mage", 11),
+    ("prepared_dl59_min_hp__warrior", 60), ("prepared_dl59_min_clevel__warrior", 6),
+    ("prepared_dl59_min_hp__mage", 80), ("prepared_dl59_min_clevel__mage", 15),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]

@@ -1156,7 +1156,7 @@ mod recall_depth_tests {
         let ranger = |param| match param {
             Param::prepared_dl2_min_hp | Param::prepared_dl34_min_hp | Param::prepared_dl59_min_hp => 0,
             Param::prepared_dl2_min_clevel => 8,
-            Param::prepared_dl34_min_clevel => 10,
+            Param::prepared_dl34_min_clevel => 9,
             Param::prepared_dl59_min_clevel => 11,
             _ => value(param),
         };
@@ -1168,8 +1168,8 @@ mod recall_depth_tests {
 
         for (depth, name, required) in [
             (2, "prepared_dl2_min_clevel", 8),
-            (3, "prepared_dl34_min_clevel", 10),
-            (4, "prepared_dl34_min_clevel", 10),
+            (3, "prepared_dl34_min_clevel", 9),
+            (4, "prepared_dl34_min_clevel", 9),
             (5, "prepared_dl59_min_clevel", 11),
         ] {
             st.borg.trait_[BI_CDEPTH as usize] = depth - 1;

@@ -5753,10 +5753,10 @@ restock and applies even with `borg_plays_risky` on. At CL50 it stops
 applying. `borg-prepared.c:borg_prepared:560-562` at `574b618c`.
 
 The shipped DL2 minimum is one character level above the class's mixed
-exploration cap. DL3 adds a class-specific increase, and DL5 adds one more
-level while the Borg is already in the dungeon (#1217). The shipped DL2,
-DL3 and DL5 maximum-HP minimums are zero. The CL and HP checks skip risky
-play. From DL3 the Borg also needs two CLW, CSW or CCW potions in total
+exploration cap. DL3 and DL5 have separate class-specific minimums. The
+DL5 minimum applies while the Borg is already in the dungeon (#1217).
+The shipped DL2, DL3 and DL5 maximum-HP minimums are zero. The CL and HP
+checks skip risky play. From DL3 the Borg also needs two CLW, CSW or CCW potions in total
 below CL30, including in risky play. Recall is required from DL5.
 These checks still apply at later depths that reach their code.
 The inherited shallow checks are from
@@ -5773,13 +5773,13 @@ and `304-377` at `574b618c`.
 | Class | Mixed exploration cap | DL2 min CL | DL3–4 min CL | DL5–9 min CL | DL10 offset | DL21 offset / min CL / max CL |
 |---|---:|---:|---:|---:|---:|---:|
 | Warrior | 5 | 6 | 7 | 8 | −4 | +5 / 0 / 38 |
-| Mage | 8 | 9 | 12 | 13 | +5 | +8 / 0 / 38 |
-| Druid | 7 | 8 | 11 | 12 | 0 | +13 / 0 / 46 |
-| Priest | 9 | 10 | 13 | 14 | 0 | +13 / 0 / 46 |
+| Mage | 8 | 9 | 11 | 13 | +5 | +8 / 0 / 38 |
+| Druid | 7 | 8 | 10 | 12 | 0 | +13 / 0 / 46 |
+| Priest | 9 | 10 | 12 | 14 | 0 | +13 / 0 / 46 |
 | Necromancer | 9 | 10 | 13 | 14 | +5 | +8 / 0 / 38 |
-| Paladin | 8 | 9 | 11 | 12 | 0 | +7 / 0 / 40 |
-| Rogue | 6 | 7 | 9 | 10 | 0 | +10 / 0 / 43 |
-| Ranger | 7 | 8 | 10 | 11 | 0 | +8 / 29 / 41 |
+| Paladin | 8 | 9 | 10 | 12 | 0 | +7 / 0 / 40 |
+| Rogue | 6 | 7 | 8 | 10 | 0 | +10 / 0 / 43 |
+| Ranger | 7 | 8 | 9 | 11 | 0 | +8 / 29 / 41 |
 | Blackguard | 6 | 7 | 9 | 10 | −4 | +5 / 0 / 38 |
 
 The compiled defaults preserve older profiles, including an off-by-default

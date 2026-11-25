@@ -1,9 +1,9 @@
 ## #1217 · Shallow preparedness by class
 
 The folded `harness/borg.txt` sets DL2 one level above each class's mixed
-exploration cap. The minimum rises at DL3 by one level for Warrior, two
-for Ranger, Paladin, Rogue and Blackguard, and three for the other classes.
-It rises by one again at DL5 during a dungeon trip. The three shipped
+exploration cap. The owner set the DL3 minimum to 11 for Mage, 10 for
+Druid, 12 for Priest, 10 for Paladin, 8 for Rogue and 9 for Ranger. DL5
+uses its own class minimum during a dungeon trip. The three shipped
 shallow max-HP minimums are zero. The new DL2 minimum defaults to zero in
 older profiles, and their compiled HP and CL defaults are preserved.
 
