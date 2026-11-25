@@ -4853,11 +4853,11 @@ not asserted to be accurate engine models.
 
 | Name | Default | Unit | Bounds | Source |
 | --- | ---: | --- | --- | --- |
-| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1307` |
+| `item_use_idle` | 0 | flag | 0–1 | `borg_item_use.rs:1308` |
 
 The owner set the shipped value to 1. The Borg uses one item
 from the smallest eligible known stack during a quiet dungeon turn. Each
-entry owns its minimum depth. The initial eight entries use depth 1.
+entry owns its minimum depth. The nine initial entries use depth 1.
 
 ## Item use (P2.3) (#242)
 

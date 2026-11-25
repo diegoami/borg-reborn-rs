@@ -13,6 +13,7 @@ GAME = ROOT / "build/rust/game/angband"
 WARRIOR = ROOT / "engine/tests/fixtures/warrior-level5.build"
 
 # Angband's kind numbers for the pinned engine in lib/gamedata/object.txt.
+TREASURE_DETECTION = (25, 5)
 HOLY_CHANT = (25, 29)
 HEROISM = (26, 25)
 SLIME_MOLD_JUICE = (26, 33)
@@ -69,6 +70,17 @@ class IdleUseTest(unittest.TestCase):
                     f"You have no more {item}" in line and int(line.split()[1]) == idle[0]["turn"]
                     for line in messages.splitlines()
                 ), messages)
+
+    def test_treasure_detection_uses_the_last_scroll_at_depth_one(self):
+        trace, messages = self.run_case([(HEROISM, 5), (TREASURE_DETECTION, 1)])
+        idle = next(row for row in trace if row["check"] == "borg_use_idle")
+        self.assertEqual(idle["depth"], 1)
+        self.assertIn(ord("r"), idle["keys"])
+        self.assertTrue(any(
+            "You have no more Scrolls of Treasure Detection" in line
+            and int(line.split()[1]) == idle["turn"]
+            for line in messages.splitlines()
+        ), messages)
 
     def test_visible_monster_and_combat_precede_idle_use(self):
         trace, messages = self.run_case([(SLIME_MOLD_JUICE, 1)], starter_monster=True)

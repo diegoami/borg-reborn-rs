@@ -1282,6 +1282,7 @@ const IDLE_USE: &[IdleUse] = &[
     IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_mapping, min_depth: 1 },
     IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_blessing, min_depth: 1 },
     IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_slime_mold, min_depth: 1 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_treasure_detection, min_depth: 1 },
 ];
 
 fn idle_use_slot(
