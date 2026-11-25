@@ -35,7 +35,7 @@ use crate::borg_item_use::{
     borg_zap_rod,
 };
 use crate::borg_item_wear::borg_wear_stuff;
-use crate::borg_light::{borg_light_beam, borg_maintain_light, BorgNeed};
+use crate::borg_light::{borg_light_beam, borg_maintain_light, light_running_out, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_legal, borg_spell_okay, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
 use crate::borg_prepared::{borg_must_return_to_town, borg_restock};
@@ -56,7 +56,6 @@ use crate::borg_headers::borg_trait_h::{
     BI_MAXDEPTH, BI_MAXSP, BI_PREP_BIG_FIGHT, BI_QUIVER_SLOTS, BI_RECALL, BI_REG,
     BI_SAURON_DEAD,
 };
-use crate::headers::list_object_flags_h::OF_NO_FUEL;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
     FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_MORE,
@@ -201,7 +200,7 @@ pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
     }
 
     let light = &st.items.items[inven_light()];
-    let dying = light.iqty != 0 && light.timeout <= 3 && !engine::flag_has(&light.flags, OF_NO_FUEL as i32);
+    let dying = light_running_out(light);
     if !lightless && !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
         /* Nothing to do */
         return false;

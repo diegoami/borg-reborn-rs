@@ -25,6 +25,7 @@ test-hallucinate = []
 test-perception = []
 test-stair-handoff = ["borg-core/test-stair-handoff"]
 test-combat-heal = ["borg-core/test-combat-heal"]
+test-cursed-spares = ["borg-core/test-cursed-spares"]
 
 [dependencies]
 libc = "0.2"

@@ -912,12 +912,18 @@ fn light_action(equipped: &BorgItem, pack: &[BorgItem], oil: i32, radius: i32) -
     } else {
         0
     };
-    best_light(pack, radius - current, |item| refillable_lantern(item) && fuel_slot.is_some())
-        .map(LightAction::Wear)
+    best_light(pack.iter().enumerate(), radius - current, |item| {
+        refillable_lantern(item) && fuel_slot.is_some()
+    }).map(LightAction::Wear)
 }
 
 fn light_powered(item: &BorgItem) -> bool {
     item.timeout > 0 || has_flag(item, OF_NO_FUEL)
+}
+
+/// The point at which dungeon light recovery treats a light as running out.
+pub(crate) fn light_running_out(item: &BorgItem) -> bool {
+    item.iqty != 0 && item.timeout <= 3 && !has_flag(item, OF_NO_FUEL)
 }
 
 // Innate radius plus the light modifier (player-calcs.c:calc_light).
@@ -932,13 +938,12 @@ fn light_contribution(item: &BorgItem) -> i32 {
     innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
 }
 
-fn best_light(
-    pack: &[BorgItem],
+fn best_light<'a>(
+    pack: impl Iterator<Item = (usize, &'a BorgItem)>,
     other_radius: i32,
     can_refuel: impl Fn(&BorgItem) -> bool,
 ) -> Option<usize> {
-    pack.iter()
-        .enumerate()
+    pack
         .filter(|(_, item)| {
             item.iqty != 0
                 && u32::from(item.tval) == TV_LIGHT
@@ -955,15 +960,22 @@ fn best_light(
 /// leave a positive radius (as in `light_action`).
 pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> Option<usize> {
     let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
-    best_light(pack, radius - current, |_| false)
+    best_light(pack.iter().enumerate(), radius - current, |_| false)
 }
 
-/// #1231: a spare cursed light is dispensable once a clean light works.
+fn has_clean_spare(equipped: &BorgItem, pack: &[BorgItem], radius: i32) -> bool {
+    let current = if light_powered(equipped) { light_contribution(equipped) } else { 0 };
+    let candidates = pack.iter().enumerate().filter(|(_, item)| !light_running_out(item));
+    best_light(candidates, radius - current, |_| false).is_some()
+}
+
+/// #1231: keep a cursed light available through an imminent loss of light.
 pub(crate) fn has_clean_light(st: &BorgState, pack: &[BorgItem]) -> bool {
     let equipped = &st.items.items[inven_light() as usize];
     let radius = st.borg.tr(BI_LIGHT);
-    (equipped.iqty != 0 && !equipped.cursed && light_powered(equipped) && radius > 0)
-        || uncursed_light_replacement(equipped, pack, radius).is_some()
+    (equipped.iqty != 0 && !equipped.cursed && light_powered(equipped)
+        && !light_running_out(equipped) && radius > 0)
+        || has_clean_spare(equipped, pack, radius)
 }
 
 fn can_use_cursed_lantern_fuel(
@@ -975,7 +987,7 @@ fn can_use_cursed_lantern_fuel(
         && i32::from(equipped.timeout) < capacity
         && refillable_lantern(donor)
         && donor.timeout > 0
-        && uncursed_light_replacement(equipped, pack, radius).is_none()
+        && !has_clean_spare(equipped, pack, radius)
         && !pack.iter().any(|item| {
             !item.cursed && (is_oil_flask(item, oil) || (refillable_lantern(item) && item.timeout > 0))
         })
