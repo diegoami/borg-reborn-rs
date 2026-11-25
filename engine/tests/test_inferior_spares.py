@@ -29,7 +29,7 @@ class InferiorSparesTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_PARAM_JUNK_INFERIOR_SPARES="1",
-                BORG_PARAM_JUNK_INFERIOR_SANDAL_AC_MARGIN=str(margin),
+                BORG_PARAM_JUNK_INFERIOR_SANDAL_AC_MARGIN__WARRIOR=str(margin),
             )
             messages = root / "messages.log"
             build = root / "sandals.build"
