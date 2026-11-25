@@ -1,0 +1,576 @@
+//! #1239: evaluate and execute a town swap with the displaced gear at Home.
+use crate::borg_headers::borg_item_h::borg_item;
+use crate::borg_headers::borg_trait_h::*;
+use crate::borg_item::inven_wield;
+use crate::borg_store::BORG_HOME;
+use crate::borg_town_record::action;
+use crate::borg_town_shadow::TownAction;
+use crate::headers::list_tvals_h::*;
+use crate::{engine, state::BorgState};
+
+#[derive(Clone, Copy)]
+enum Source {
+    Pack(usize),
+    Store(usize, usize),
+}
+
+#[derive(Clone, Copy)]
+enum Phase {
+    ClearHome(borg_item),
+    DropEviction(borg_item),
+    Acquire,
+    Wear,
+    Deposit,
+    VerifyDeposit(u32),
+}
+
+pub(crate) struct Swap {
+    slot: usize,
+    old: borg_item,
+    new: borg_item,
+    source: Source,
+    phase: Phase,
+}
+
+pub(crate) enum Next {
+    Town(TownAction),
+    Wear(usize),
+    Done,
+    Failed,
+}
+
+fn known(item: &borg_item) -> bool {
+    item.iqty > 0 && item.aware && item.ident && !item.needs_ident
+}
+
+pub(crate) fn same_item(a: &borg_item, b: &borg_item) -> bool {
+    a.iqty > 0
+        && a.kind == b.kind
+        && a.art_idx == b.art_idx
+        && a.ego_idx == b.ego_idx
+        && a.weight == b.weight
+        && a.to_a == b.to_a
+        && a.to_h == b.to_h
+        && a.to_d == b.to_d
+        && a.flags == b.flags
+        && a.modifiers == b.modifiers
+        && a.curses == b.curses
+}
+
+fn equipment_slot(item: &borg_item) -> Option<usize> {
+    match u32::from(item.tval) {
+        TV_HAFTED | TV_POLEARM | TV_SWORD | TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_DRAG_ARMOR
+        | TV_CLOAK | TV_SHIELD | TV_HELM | TV_CROWN | TV_GLOVES | TV_BOOTS => {
+            usize::try_from(crate::borg_inventory::borg_wield_slot(item)).ok()
+        }
+        _ => None,
+    }
+}
+
+fn pack_slot(st: &BorgState, item: &borg_item) -> Option<usize> {
+    st.items.items[..inven_wield() as usize]
+        .iter()
+        .position(|i| same_item(i, item))
+}
+
+fn home_quantity(st: &BorgState, item: &borg_item) -> u32 {
+    st.store.shops[BORG_HOME]
+        .ware
+        .iter()
+        .filter(|i| same_item(i, item))
+        .map(|i| u32::from(i.iqty))
+        .sum()
+}
+
+fn home_space(st: &BorgState) -> bool {
+    st.store.shops[BORG_HOME].ware.iter().any(|i| i.iqty == 0)
+}
+
+fn expendable_rank(
+    item: &borg_item,
+    st: &BorgState,
+    unwanted: bool,
+    redundant_gear: bool,
+) -> Option<(u8, i32)> {
+    if !known(item) || item.art_idx != 0 || item.ego_idx != 0 {
+        return None;
+    }
+    let sv = i32::from(item.sval);
+    let v = &st.item_val;
+    // #1241: clear rejected stock and readily replaced, low-utility buffs
+    // before scarce consumables, charged devices or alternative equipment.
+    let rank = if unwanted {
+        0
+    } else if u32::from(item.tval) == TV_SCROLL
+        && [v.sv_scroll_light, v.sv_scroll_blessing].contains(&sv)
+    {
+        1
+    } else if u32::from(item.tval) == TV_POTION
+        && [v.sv_potion_boldness, v.sv_potion_heroism].contains(&sv)
+    {
+        2
+    } else if redundant_gear {
+        3
+    } else {
+        return None;
+    };
+    Some((rank, item.value.saturating_mul(i32::from(item.iqty))))
+}
+
+fn eviction(st: &BorgState) -> Option<borg_item> {
+    let stock = engine::store_stock(&st.access, BORG_HOME);
+    st.store.shops[BORG_HOME]
+        .ware
+        .iter()
+        .zip(stock)
+        .enumerate()
+        .filter(|(slot, (item, native))| {
+            native.merge_capacity() == 0
+                && native.carry_capacity() >= i32::from(item.iqty)
+                && !crate::borg_town_live::buy_rejected(st, BORG_HOME as i16, *slot)
+                && pack_slot(st, item).is_none()
+                && !crate::borg_town_live::retained_gear(st, item)
+        })
+        .filter_map(|(_, (item, _))| {
+            let wield = crate::borg_inventory::borg_wield_slot(item);
+            let redundant_gear = usize::try_from(wield)
+                .ok()
+                .and_then(|slot| st.items.items.get(slot))
+                .is_some_and(|worn| same_item(worn, item) || item.cursed && !item.uncursable);
+            let rank = expendable_rank(
+                item,
+                st,
+                crate::borg_town_capability::unwanted_home_item(item),
+                redundant_gear,
+            )?;
+            Some((rank, *item))
+        })
+        .min_by_key(|(rank, _)| *rank)
+        .map(|(_, item)| item)
+}
+
+fn affordable(st: &BorgState, shop: usize, price: i32) -> bool {
+    use crate::borg_town_budget::{black_market_budget, black_market_percentage, gold_reserve};
+    use crate::params::{value, Param};
+    let gold = i64::from(st.borg.tr(BI_GOLD));
+    let reserve = gold_reserve(
+        gold,
+        i64::from(value(Param::town_gold_reserve)),
+        i64::from(value(Param::town_gold_reserve_percent)),
+    );
+    i64::from(price) <= gold - reserve
+        && (shop != crate::borg_town_stock::BORG_BLACK_MARKET
+            || i64::from(price)
+                <= black_market_budget(
+                    gold,
+                    i64::from(
+                        st.cfg(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET),
+                    ),
+                    black_market_percentage(st, gold),
+                    1,
+                ))
+}
+
+fn keeps_capabilities(before: &[i32], after: &[i32]) -> bool {
+    let get = |traits: &[i32], i: u32| traits[i as usize];
+    let protected = [
+        BI_FRACT,
+        BI_SFRACT,
+        BI_HLIFE,
+        BI_SHLIFE,
+        BI_ESP,
+        BI_SINV,
+        BI_LIGHT,
+        BI_FOOD,
+        BI_RECALL,
+        BI_APHASE,
+        BI_ATELEPORT,
+        BI_ATELEPORTLVL,
+        BI_AESCAPE,
+        BI_AHEAL,
+        BI_AEZHEAL,
+        BI_ALIFE,
+        BI_AMISSILES,
+        BI_SP_ADJ,
+        BI_HP_ADJ,
+    ];
+    if (BI_IFIRE..=BI_RDIS)
+        .chain(BI_SRFIRE..=BI_SRDIS)
+        .chain(protected)
+        .any(|i| get(after, i) < get(before, i))
+    {
+        return false;
+    }
+    // Keep a viable melee attack when the current kit has one. The usual
+    // equipment power accounts for its damage, accuracy and slays when ranking.
+    let melee = |t: &[i32]| {
+        get(t, BI_WDD) > 0
+            && get(t, BI_WDS) > 0
+            && get(t, BI_HEAVYWEPON) == 0
+            && get(t, BI_WDD) * (get(t, BI_WDS) + 1) + 2 * (get(t, BI_TODAM) + get(t, BI_WTODAM))
+                > 0
+    };
+    (!melee(before) || melee(after))
+        && (get(before, BI_HEAVYBOW) != 0 || get(after, BI_HEAVYBOW) == 0)
+}
+
+fn improves(current: (i32, i32), trial: (i32, i32)) -> bool {
+    let (current_speed, current_room) = current;
+    let (speed, room) = trial;
+    room > current_room && speed >= current_speed
+}
+
+fn initial_phase(source: Source, can_deposit: bool, spare: Option<borg_item>) -> Option<Phase> {
+    if can_deposit {
+        Some(match source {
+            Source::Pack(_) => Phase::Wear,
+            Source::Store(_, _) => Phase::Acquire,
+        })
+    } else {
+        spare.map(Phase::ClearHome)
+    }
+}
+
+pub(crate) fn propose(st: &mut BorgState, tried: &[bool; 12], restoring: bool) -> Option<Swap> {
+    let pack = inven_wield() as usize;
+    let has_home_space = home_space(st);
+    let spare = (!has_home_space).then(|| eviction(st)).flatten();
+    let full_pack = crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0;
+    let mut candidates = Vec::new();
+    if !restoring {
+        candidates.extend(
+            st.items.items[..pack]
+                .iter()
+                .copied()
+                .enumerate()
+                .filter(|(_, item)| !full_pack || item.iqty == 1)
+                .map(|(slot, item)| (Source::Pack(slot), item, 0)),
+        );
+    }
+    for shop in (if restoring { BORG_HOME } else { 0 }..=BORG_HOME).rev() {
+        let stock = engine::store_stock(&st.access, shop);
+        for (slot, (item, native)) in st.store.shops[shop].ware.iter().zip(stock).enumerate() {
+            if !known(item)
+                || equipment_slot(item).is_none()
+                || native.carry_capacity() < 1
+                || pack_slot(st, item).is_some()
+                || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) == 0
+                || crate::borg_town_live::buy_rejected(st, shop as i16, slot)
+                || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item.kind, true)
+                || restoring && !crate::borg_town_live::retained_gear(st, item)
+            {
+                continue;
+            }
+            let price = if shop == BORG_HOME {
+                0
+            } else {
+                native.purchase_quote(shop)
+            };
+            if shop == BORG_HOME || affordable(st, shop, price) {
+                candidates.push((Source::Store(shop, slot), *item, price));
+            }
+        }
+    }
+
+    let borg = st.borg.clone();
+    let traits = st.traits.clone();
+    let swap = st.trait_swap.clone();
+    let items = st.items.items.clone();
+    let buffer = st.prepared.buffer.clone();
+    let home = st.home.clone();
+    let do_spell = st.think.do_spell;
+    // player-calcs.c:weight_limit, calc_bonuses (1741–1750, 2222–2229).
+    // The Borg's notice recomputes this from the replacement's actual STR
+    // and carried weight, including the ammo and the replacement itself.
+    let current = (
+        borg.tr(BI_SPEED),
+        borg.tr(BI_CARRY) / 2 - borg.tr(BI_WEIGHT),
+    );
+    let current_power = restoring.then(|| crate::borg_power::borg_power(st));
+    let mut best = None;
+    for (source, item, price) in candidates {
+        let Some(slot) = equipment_slot(&item) else {
+            continue;
+        };
+        let old = items[slot];
+        if tried[slot - pack]
+            || !known(&item)
+            || item.cursed
+            || old.iqty == 0
+            || (if restoring {
+                item.weight <= old.weight
+            } else {
+                item.weight >= old.weight
+            })
+            || engine::flag_has(
+                &old.flags,
+                crate::headers::list_object_flags_h::OF_STICKY as i32,
+            )
+        {
+            continue;
+        }
+        let opens_home = matches!(source, Source::Store(BORG_HOME, _)) && item.iqty == 1;
+        let can_deposit = has_home_space
+            || opens_home
+            || engine::equip_object(&st.access, slot - pack)
+                .is_some_and(|i| i.store_accepts_quantity(BORG_HOME, 1));
+        let Some(phase) = initial_phase(source, can_deposit, spare.filter(|_| !restoring)) else {
+            continue;
+        };
+
+        st.borg.clone_from(&borg);
+        st.items.items.clone_from(&items);
+        st.think.do_spell = false;
+        if let Source::Pack(index) = source {
+            st.items.items[index].iqty -= 1;
+        }
+        st.items.items[slot] = borg_item { iqty: 1, ..item };
+        crate::borg_trait::borg_notice(st, true);
+        let speed = st.borg.tr(BI_SPEED);
+        let room = st.borg.tr(BI_CARRY) / 2 - st.borg.tr(BI_WEIGHT);
+        let fits = if restoring {
+            room >= 0 && speed >= current.0
+        } else {
+            improves(current, (speed, room))
+        };
+        if !fits || !keeps_capabilities(&borg.trait_, &st.borg.trait_) {
+            continue;
+        }
+        let power = crate::borg_power::borg_power(st);
+        if current_power.is_some_and(|base| power <= base) {
+            continue;
+        }
+        let rank = (room >= 0, speed, power, room, -price);
+        if best.as_ref().is_none_or(|(r, _)| rank > *r) {
+            best = Some((
+                rank,
+                Swap {
+                    slot,
+                    old,
+                    new: item,
+                    source,
+                    phase,
+                },
+            ));
+        }
+    }
+    st.borg = borg;
+    st.traits = traits;
+    st.trait_swap = swap;
+    st.items.items = items;
+    st.prepared.buffer = buffer;
+    st.home = home;
+    st.think.do_spell = do_spell;
+    best.map(|(_, swap)| swap)
+}
+
+impl Swap {
+    pub(crate) fn equipment_index(&self) -> usize {
+        self.slot - inven_wield() as usize
+    }
+
+    pub(crate) fn retained(&self) -> Option<borg_item> {
+        (self.old.weight > self.new.weight).then_some(self.old)
+    }
+
+    pub(crate) fn next(&mut self, st: &mut BorgState) -> Next {
+        let town = |code, shop, slot: usize, qty, price| {
+            Next::Town(TownAction {
+                code,
+                at: [shop, slot as i64, qty, price],
+            })
+        };
+        match self.phase {
+            Phase::ClearHome(item) => {
+                let Some(slot) = st.store.shops[BORG_HOME]
+                    .ware
+                    .iter()
+                    .position(|i| same_item(i, &item) && i.iqty == item.iqty)
+                else {
+                    return Next::Failed;
+                };
+                if st.borg.in_shop && st.think.shop_num == BORG_HOME as i16 {
+                    self.phase = Phase::DropEviction(item);
+                }
+                town(
+                    action::DROP_HOME,
+                    BORG_HOME as i64,
+                    slot,
+                    i64::from(item.iqty),
+                    0,
+                )
+            }
+            Phase::DropEviction(item) => {
+                let Some(slot) =
+                    pack_slot(st, &item).filter(|&i| st.items.items[i].iqty == item.iqty)
+                else {
+                    return Next::Failed;
+                };
+                self.phase = match self.source {
+                    Source::Pack(_) => Phase::Wear,
+                    Source::Store(_, _) => Phase::Acquire,
+                };
+                town(action::DROP, -1, slot, i64::from(item.iqty), 0)
+            }
+            Phase::Acquire => {
+                let Source::Store(shop, original) = self.source else {
+                    return Next::Failed;
+                };
+                let ware = &st.store.shops[shop].ware;
+                let slot = if ware.get(original).is_some_and(|i| same_item(i, &self.new)) {
+                    Some(original)
+                } else {
+                    ware.iter().position(|i| same_item(i, &self.new))
+                };
+                let Some(slot) = slot else {
+                    return Next::Failed;
+                };
+                if st.borg.in_shop && st.think.shop_num == shop as i16 {
+                    self.phase = Phase::Wear;
+                }
+                town(
+                    if shop == BORG_HOME {
+                        action::TAKE_HOME
+                    } else {
+                        action::BUY
+                    },
+                    shop as i64,
+                    slot,
+                    1,
+                    if shop == BORG_HOME {
+                        0
+                    } else {
+                        i64::from(ware[slot].cost)
+                    },
+                )
+            }
+            Phase::Wear => {
+                if st.borg.in_shop {
+                    return Next::Town(TownAction {
+                        code: action::LEAVE,
+                        at: [-1; 4],
+                    });
+                }
+                let Some(slot) = pack_slot(st, &self.new) else {
+                    return Next::Failed;
+                };
+                let can_deposit = engine::equip_object(&st.access, self.equipment_index())
+                    .is_some_and(|i| i.store_accepts_quantity(BORG_HOME, 1));
+                if !can_deposit
+                    || !same_item(&st.items.items[self.slot], &self.old)
+                    || st.items.items[slot].iqty > 1
+                        && crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0
+                {
+                    return Next::Failed;
+                }
+                self.phase = Phase::Deposit;
+                Next::Wear(slot)
+            }
+            Phase::Deposit => {
+                if !same_item(&st.items.items[self.slot], &self.new) {
+                    return Next::Failed;
+                }
+                let Some(slot) = pack_slot(st, &self.old) else {
+                    return Next::Failed;
+                };
+                if !engine::inven_object(&st.access, slot)
+                    .is_some_and(|i| i.store_accepts_quantity(BORG_HOME, 1))
+                {
+                    return Next::Failed;
+                }
+                if st.borg.in_shop && st.think.shop_num == BORG_HOME as i16 {
+                    self.phase = Phase::VerifyDeposit(home_quantity(st, &self.old));
+                }
+                town(action::STORE, BORG_HOME as i64, slot, 1, 0)
+            }
+            Phase::VerifyDeposit(before) => {
+                if home_quantity(st, &self.old) > before {
+                    Next::Done
+                } else {
+                    Next::Failed
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_item::blank_item;
+
+    #[test]
+    fn priest_can_finish_lightening_after_a_partial_quiver_trim() {
+        // 10.4 lb over, plus a 0.5 lb Recall. A constructed quiver split
+        // can yield a 4 lb whole stack and still leave the Borg overweight.
+        let before = (110, -104 - 5 + 40);
+        assert!(before.1 < 0);
+
+        // Home holds a 3 lb whip. Wielding alone still carries the 18 lb mace;
+        // depositing the mace brings the true weight inside the allowance.
+        assert!(!improves(before, (110, before.1 - 30)));
+        assert!(improves(before, (110, before.1 - 30 + 180)));
+        assert!(
+            !improves(before, (109, before.1 - 30 + 180)),
+            "the lighter piece cannot make the actual speed worse"
+        );
+
+        let mut traits = vec![0; BI_MAX as usize];
+        traits[BI_RECALL as usize] = 1;
+        traits[BI_SP_ADJ as usize] = 12;
+        traits[BI_WDD as usize] = 2;
+        traits[BI_WDS as usize] = 4;
+        traits[BI_RCONF as usize] = 1;
+        let mut whip = traits.clone();
+        whip[BI_WDD as usize] = 1;
+        assert!(keeps_capabilities(&traits, &whip));
+        for lost in [BI_RECALL, BI_SP_ADJ, BI_WDD, BI_RCONF] {
+            let mut unusable = whip.clone();
+            unusable[lost as usize] = 0;
+            assert!(!keeps_capabilities(&traits, &unusable), "lost trait {lost}");
+        }
+    }
+
+    #[test]
+    fn full_home_prefers_the_withdrawal_or_clears_expendable_stock() {
+        let mut st = BorgState::default();
+        st.item_val.sv_scroll_blessing = 8;
+        let common = borg_item {
+            tval: TV_SCROLL as u8,
+            sval: 8,
+            kind: 2,
+            aware: true,
+            ident: true,
+            iqty: 27,
+            ..blank_item()
+        };
+        let scarce = borg_item {
+            sval: 10,
+            kind: 3,
+            ..common
+        };
+        assert!(expendable_rank(&common, &st, false, false).is_some());
+        assert!(expendable_rank(&scarce, &st, false, false).is_none());
+
+        let home_whip = Source::Store(BORG_HOME, 4);
+        assert!(matches!(
+            initial_phase(home_whip, true, Some(common)),
+            Some(Phase::Acquire)
+        ));
+        let shop_robes = Source::Store(1, 3);
+        assert!(
+            matches!(initial_phase(shop_robes, false, Some(common)), Some(Phase::ClearHome(i)) if i.kind == common.kind)
+        );
+        assert!(
+            initial_phase(shop_robes, false, None).is_none(),
+            "keep the worn kit when Home has no safe vacancy"
+        );
+        assert!(
+            matches!(
+                initial_phase(Source::Pack(0), true, None),
+                Some(Phase::Wear)
+            ),
+            "a one-item pack slot can be reused by the displaced gear"
+        );
+    }
+}

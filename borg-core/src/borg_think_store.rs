@@ -440,7 +440,9 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* Wear "optimal" equipment */
-    if borg_best_stuff(st) {
+    let overloaded = crate::borg_town_live::active(st)
+        && st.borg.tr(crate::borg_headers::borg_trait_h::BI_WEIGHT) > st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY) / 2;
+    if !overloaded && !crate::borg_town_live::preparing_loadout(st) && borg_best_stuff(st) {
         return true;
     }
 
@@ -449,7 +451,8 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * it as a normal weapon
      */
     let wield = &st.items.items[inven_wield() as usize];
-    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0 && borg_wear_stuff(st) {
+    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0
+        && !crate::borg_town_live::preparing_loadout(st) && borg_wear_stuff(st) {
         return true;
     }
 
