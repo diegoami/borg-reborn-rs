@@ -291,11 +291,7 @@ pub fn borg_react_prompted(st: &mut BorgState, buf: &[u8], cursor: loc) -> Optio
 
         // Word of Recall -- cancel
         if buf.starts_with(b"Word of Recall is already") {
-            // this shouldn't happen but can if the borg is "playing with"
-            // and unknown rod
-            if !st.borg.trying_unknown {
-                crate::borg_think::borg_oops(st, "unexpected double Word of Recall");
-            }
+            crate::borg_think::borg_oops(st, "unexpected double Word of Recall");
 
             // no canceling it
             return Some(b'n'.into());
