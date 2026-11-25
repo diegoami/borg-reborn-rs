@@ -501,9 +501,15 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 ## Testing unknown potions when safe (#983)
 
 #1213 removes experimental quaffing and the recovery hold after a test.
-The Borg sells unidentified potions and scrolls to shops that accept them.
-Old profiles and environment overrides may still contain the seven retired
-`item_test_unknown_*` settings. The parser ignores those settings.
+The existing town planner selects a sale for an unknown flavour when a shop
+accepts it (`unknown_flavour` and `Disposition::Sell` in
+`borg_town_utility.rs:620`). The engine's sale marks the kind as flavour-aware
+(`engine/angband/src/store.c:1948` and `obj-knowledge.c:2284–2292`), so selling
+one copy identifies the remaining copies of that kind. The
+[native regression](../engine/tests/test_unknown_consumables.py) covers the
+sale and use of known items. Old profiles and environment overrides may
+still contain the seven retired `item_test_unknown_*` settings. The parser
+ignores those settings.
 
 ## Kill-on-sight HP floor (#969)
 
