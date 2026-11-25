@@ -32,7 +32,7 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_CDEPTH, BI_CURHP, BI_DEV, BI_FRACT, BI_ISBLIND, BI_ISCONFUSED, BI_ISFIXCON,
     BI_ISFIXDEX, BI_ISFIXEXP, BI_ISFIXINT, BI_ISFIXSTR, BI_ISFIXWIS, BI_ISFORGET, BI_ISHUNGRY,
-    BI_MAXHP, BI_RBLIND, BI_RCONF,
+    BI_ISIMAGE, BI_MAXHP, BI_RBLIND, BI_RCONF,
 };
 use crate::headers::list_effects_h::EF_NOURISH;
 use crate::headers::list_tvals_h::{
@@ -1000,6 +1000,69 @@ pub(crate) fn is_restore_life(item: &crate::borg_headers::borg_item_h::borg_item
     item.iqty > 0 && item.aware && u32::from(item.tval) == TV_POTION && i32::from(item.sval) == sval
 }
 
+#[derive(Clone, Copy)]
+struct IdleUse {
+    tval: u32,
+    sval: fn(&ItemValState) -> i32,
+    min_depth: i32,
+}
+
+/// The first eligible dungeon level is set independently for each item (#1250).
+const IDLE_USE: &[IdleUse] = &[
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_holy_chant, min_depth: 3 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_heroism, min_depth: 3 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_berserk, min_depth: 3 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_monster_confusion, min_depth: 3 },
+    IdleUse { tval: TV_POTION, sval: |v| v.sv_potion_boldness, min_depth: 3 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_mapping, min_depth: 3 },
+    IdleUse { tval: TV_SCROLL, sval: |v| v.sv_scroll_blessing, min_depth: 3 },
+];
+
+fn idle_use_slot(
+    policy: &[IdleUse],
+    pack: &[borg_item],
+    values: &ItemValState,
+    depth: i32,
+    can_read: bool,
+) -> Option<usize> {
+    policy.iter()
+        .filter(|entry| depth >= entry.min_depth && (entry.tval != TV_SCROLL || can_read))
+        .filter_map(|entry| {
+            let sval = (entry.sval)(values);
+            if sval <= 0 {
+                return None;
+            }
+            usize::try_from(borg_slot_in_pack(pack, entry.tval as i32, sval)).ok()
+        })
+        .min_by_key(|&slot| pack[slot].iqty)
+}
+
+/// Use one cheap consumable, picking the stack closest to freeing a slot.
+pub(crate) fn borg_use_idle(st: &mut BorgState) -> bool {
+    if st.update.monster_in_sight
+        || st.borg.tr(BI_ISIMAGE) != 0
+        || st.borg.unseen_mode
+        || st.borg.goal.fleeing
+        || st.borg.goal.leaving
+        || st.borg.goal.recalling != 0
+        || engine::player_is_shapechanged()
+    {
+        return false;
+    }
+
+    let pack = &st.items.items[..usize::from(engine::z_info().pack_size)];
+    let Some(slot) = idle_use_slot(IDLE_USE, pack, &st.item_val, st.borg.tr(BI_CDEPTH), can_read_now(st)) else {
+        return false;
+    };
+    let item = &pack[slot];
+    let sval = i32::from(item.sval);
+    if u32::from(item.tval) == TV_SCROLL {
+        borg_read_scroll(st, sval)
+    } else {
+        borg_quaff_potion(st, sval)
+    }
+}
+
 /// Use things in a useful, but non-essential, manner.
 pub fn borg_use_things(st: &mut BorgState) -> bool {
     /* Quaff experience restoration potion */
@@ -1097,8 +1160,7 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
                 /* XXX XXX XXX Dark */
 
                 /* Check the scroll */
-                if sval == st.item_val.sv_scroll_mapping
-                    || sval == st.item_val.sv_scroll_acquirement
+                if sval == st.item_val.sv_scroll_acquirement
                     || sval == st.item_val.sv_scroll_star_acquirement
                 {
                     /* Never read these in town */
@@ -1270,6 +1332,42 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
 mod tests {
     use super::*;
     use crate::borg_item::blank_item;
+
+    #[test]
+    fn idle_use_starts_at_depth_three_and_picks_the_smallest_usable_stack() {
+        let values = ItemValState {
+            sv_scroll_holy_chant: 7,
+            sv_scroll_mapping: 9,
+            sv_potion_heroism: 7,
+            ..ItemValState::default()
+        };
+        let item = |tval, sval, iqty, aware| borg_item {
+            tval, sval, iqty, aware, ..blank_item()
+        };
+        let mut pack = [
+            item(TV_POTION as u8, 7, 5, true),
+            item(TV_SCROLL as u8, 7, 2, true),
+            item(TV_SCROLL as u8, 9, 1, true),
+            item(TV_POTION as u8, 7, 1, false),
+        ];
+
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 2, true), None);
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 3, true), Some(2));
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 4, false), Some(0));
+
+        pack[2].iqty = 0;
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 3, true), Some(1));
+
+        pack[3].aware = true;
+        assert_eq!(idle_use_slot(IDLE_USE, &pack, &values, 3, true), Some(3));
+
+        let later_heroism = [
+            IdleUse { min_depth: 5, ..IDLE_USE[1] },
+            IDLE_USE[0],
+        ];
+        assert_eq!(idle_use_slot(&later_heroism, &pack, &values, 4, true), Some(1));
+        assert_eq!(idle_use_slot(&later_heroism, &pack, &values, 5, true), Some(3));
+    }
 
     #[test]
     fn eating_from_a_full_pack_in_fox_form_queues_nothing() {

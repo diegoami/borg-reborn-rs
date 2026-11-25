@@ -45,7 +45,8 @@ use crate::borg_flow_take::{borg_delete_take, borg_flow_take};
 use crate::borg_io::{borg_keypress, borg_note, ESCAPE, KC_ENTER};
 use crate::borg_item_enchant::borg_enchanting;
 use crate::borg_item_use::{
-    borg_activate_item, borg_read_scroll, borg_recharging, borg_use_staff, borg_use_things,
+    borg_activate_item, borg_read_scroll, borg_recharging, borg_use_idle, borg_use_staff,
+    borg_use_things,
 };
 use crate::borg_item_wear::{
     borg_swap_rings, borg_test_stuff, borg_wear_recharge, borg_wear_rings, borg_wear_stuff,
@@ -1425,6 +1426,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Recharge things */
     if borg_recharging(st) {
         return choice!("borg_recharging");
+    }
+
+    // Use expendable supplies before throwing things away (#1250).
+    if borg_use_idle(st) {
+        return choice!("borg_use_idle");
     }
 
     /* Drop junk */

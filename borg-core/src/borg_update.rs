@@ -113,6 +113,8 @@ pub struct UpdateState {
     pub wank_num: i32,
     /// `borg_wanks` (`AUTO_VIEW_MAX` entries; empty = NULL)
     pub wanks: Vec<BorgWank>,
+    /// The current panel shows a monster rather than a remembered position.
+    pub monster_in_sight: bool,
     /// `borg_failure`: the last command failed (set by borg-messages.c)
     pub failure: bool,
     /// The door targeted by the previous flow's melee Alter, if any.
@@ -146,6 +148,7 @@ impl Default for UpdateState {
         UpdateState {
             wank_num: 0,
             wanks: Vec::new(),
+            monster_in_sight: false,
             failure: false,
             alter_door_attack: None,
             detect_wall: Vec::new(),
@@ -397,6 +400,7 @@ fn borg_forget_map(st: &mut BorgState) {
 /// current panel. When a grid changes between blocking and not blocking
 /// motion it is removed from any flow, and the view/light are redone.
 fn borg_update_map(st: &mut BorgState) {
+    st.update.monster_in_sight = false;
     // Analyze the current map panel
     let mut dy = 0;
     while dy < screen_hgt() {
@@ -668,6 +672,7 @@ fn update_map_grid(st: &mut BorgState, x: i32, y: i32) {
         }
         wank.is_take = g.first_kind.is_some() || is_mimic;
         wank.is_kill = g.m_idx != 0 && !is_mimic;
+        st.update.monster_in_sight |= wank.is_kill;
         st.update.wanks[idx(n)] = wank;
     }
 
