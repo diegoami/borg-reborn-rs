@@ -234,12 +234,14 @@ jobs:
               assert {r['case'] for r in parity}==set(contract['parity_controls'])
               values=[r for r in store if r['expected'] is not None]
               assert len(values)==36 and all(r['value']==r['expected'] for r in values)
-              lightless = pathlib.Path(f'harness/out/item-use-fixture-{mode}/r45-constructed.jsonl')
-              assert [json.loads(line) for line in lightless.read_text().splitlines()] == [{
-                  'schema': 'borg-reborn-rs/r45-constructed@1',
-                  'case': 'lightless-cures-poison', 'mode': mode, 'synthetic': True,
-                  'engine_consumption': False, 'value': {'Acted': True}, 'queued': [113, 97],
-              }]
+              receiving = pathlib.Path(f'harness/out/item-use-fixture-{mode}/r45-constructed.jsonl')
+              rows = [json.loads(line) for line in receiving.read_text().splitlines()]
+              assert all(r['schema']=='borg-reborn-rs/r45-constructed@1' and r['mode']==mode
+                         and r['synthetic'] and not r['engine_consumption'] for r in rows)
+              assert [(r['case'], r['value'], r['queued']) for r in rows] == [
+                  ('teleport-missing-escape-supply', {'Acted': False}, []),
+                  ('lightless-cures-poison', {'Acted': True}, [113, 97]),
+              ]
           PYITEM
           if strings build/rust/game/angband | grep -E 'R4 (item-use|power|equipment|store) constructed fixture' > /dev/null; then
             echo 'R4 constructed fixtures leaked into the normal binary'; exit 1
@@ -342,8 +344,8 @@ jobs:
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --r45 --require-all-entries --expect-mode check harness/out/stateful-entries-check harness/out/item-use-fixture-check --constructed-root harness/out/item-use-fixture-check --report harness/out/shadow-coverage-check.json
-          harness/check-shadow.py --r45 --require-all-entries --expect-mode switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch --constructed-root harness/out/item-use-fixture-switch --report harness/out/shadow-coverage-switch.json
+          harness/check-shadow.py --r45 --require-all-entries --expect-mode check harness/out/shadow-check harness/out/stateful-entries-check harness/out/item-use-fixture-check --constructed-root harness/out/item-use-fixture-check --report harness/out/shadow-coverage-check.json
+          harness/check-shadow.py --r45 --require-all-entries --expect-mode switch harness/out/shadow-switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch --constructed-root harness/out/item-use-fixture-switch --report harness/out/shadow-coverage-switch.json
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       - name: Retain declared natural and constructed run coverage

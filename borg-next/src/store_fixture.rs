@@ -639,12 +639,43 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             );
             out.flush().unwrap();
             eprintln!("R4 store constructed fixture complete");
-            lightless_self_care(&base, mode, provider);
+            receiving_controls(&base, mode, provider);
         })
     });
 }
 
-fn lightless_self_care(base: &BorgState, mode: Mode, provider: &impl Shadow) {
+fn receiving_controls(base: &BorgState, mode: Mode, provider: &impl Shadow) {
+    let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR").unwrap())
+        .join("r45-constructed.jsonl");
+    let mut out = File::create(path).unwrap();
+    let mut record = |case, value, queued: &[u32]| {
+        let row = serde_json::json!({
+            "schema": "borg-reborn-rs/r45-constructed@1",
+            "case": case,
+            "mode": mode,
+            "synthetic": true,
+            "engine_consumption": false,
+            "value": value,
+            "queued": queued,
+        });
+        writeln!(out, "{row}").unwrap();
+    };
+
+    let mut state = base.clone();
+    state.borg.trait_[BI_ATELEPORT as usize] = 0;
+    state.borg.trait_[BI_AESCAPE as usize] = 0;
+    let before = queued_keys(&state);
+    let value = provider.decision(
+        &mut state,
+        Decision::CautionTeleport {
+            emergency: 0,
+            turns: 1,
+        },
+    );
+    assert_eq!(value, Value::Acted(false));
+    assert_eq!(queued_keys(&state), before);
+    record("teleport-missing-escape-supply", value, &[]);
+
     let mut state = base.clone();
     state.borg.trait_[BI_LIGHT as usize] = 0;
     state.borg.trait_[BI_ISPOISONED as usize] = 1;
@@ -662,19 +693,7 @@ fn lightless_self_care(base: &BorgState, mode: Mode, provider: &impl Shadow) {
     assert!(after.starts_with(&before));
     assert_eq!(&after[before.len()..], &[u32::from(b'q'), u32::from(b'a')]);
     assert_eq!(state.items.items[0].iqty, 1);
-    let row = serde_json::json!({
-        "schema": "borg-reborn-rs/r45-constructed@1",
-        "case": "lightless-cures-poison",
-        "mode": mode,
-        "synthetic": true,
-        "engine_consumption": false,
-        "value": value,
-        "queued": &after[before.len()..],
-    });
-    let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR").unwrap())
-        .join("r45-constructed.jsonl");
-    let mut out = File::create(path).unwrap();
-    writeln!(out, "{row}").unwrap();
+    record("lightless-cures-poison", value, &after[before.len()..]);
 }
 
 #[allow(clippy::too_many_arguments)]
