@@ -267,7 +267,7 @@ borg_param_town_shop_overloaded = 1
 borg_param_town_quiver_trim_reserve = 0
 # Recall-first trial when town_shop_overloaded is 0. A positive value allows
 # a safe lighter exchange with up to this much equipment power loss.
-borg_param_town_loadout_power_loss = 0
+borg_param_town_loadout_power_loss = 1
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
@@ -281,6 +281,7 @@ borg_param_town_home_stack_limit = 2
 # #1049: clear known kinds the town planner deliberately excludes from purchases.
 borg_param_town_home_reject_unwanted = 1
 # #1241: prioritize useful reserves, spare equipment and devices at Home.
+# Enabled by owner during early alpha (#1247).
 borg_param_town_home_reserve = 1
 
 # Variety in the backpack (#863, owner: "being prepared to a variety of
@@ -1492,22 +1493,20 @@ borg_param_caution_retreat_oscillation_backaway = 0
 # #1178 (C's own bookkeeping: stair_more outlives its failed flows until a
 # new level; upstream shape at borg-update.c:2172): 1 = caution's standing
 # "Take stairs down" applies more_refused's descent gates, so a stale flag
-# completes a descent only when the gates agree. Shipped 0 per the P9 rule:
-# C's play until the zoo measures the switch.
-borg_param_caution_standing_descent_gated = 0
+# completes a descent only when the gates agree. Enabled by owner (#1247).
+borg_param_caution_standing_descent_gated = 1
 
 # #1176 (C's defect, borg-caution.c:805/983/996): 1 = note_standing's
 # on_upstair/on_dnstair mean their evident intent (true on the tracked
 # staircase), which makes the danger+standing-on-stair trigger of
-# choose_stairs live. Shipped 0 per the P9 rule: C's play until the zoo
-# measures the switch.
-borg_param_caution_note_standing_on_stairs = 0
+# choose_stairs live. Enabled by owner (#1247).
+borg_param_caution_note_standing_on_stairs = 1
 
 # #1177 (C's defect, borg-flow-stairs.c:193; upstream better-borg-c #540,
 # neo-angband-tracker #629): 1 = more_refused's descent gates (prepared,
 # hunger, sale hold, light) apply even when no up staircase has been seen.
-# Shipped 0 per the P9 rule: C's play until the zoo measures the switch.
-borg_param_stairs_descent_gates_without_upstair = 0
+# Enabled by owner (#1247).
+borg_param_stairs_descent_gates_without_upstair = 1
 
 # #916: no strategic retreat (the step to a happier grid) while an awake
 # adjacent monster record (no freshness or mobility check) has a haste
