@@ -42,6 +42,9 @@ PINNED_TOWN_SETTINGS = [
     ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
     # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
     ("kill_live_zero_hp", 0),
+    # #1211 shipped the recovery-loop switches after these incidents: the
+    # prep-buff hold and the full-HP mana rest move the long runs' turns.
+    ("defend_prep_mana_starved", 0), ("recover_mana_rest_full_hp", 0),
     # The incidents also predate the Home stock and known-unwanted policies.
     ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0),
     # #1046 shipped the lone-slow bundle (#878) after these incidents.
