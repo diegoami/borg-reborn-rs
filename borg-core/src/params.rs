@@ -414,24 +414,25 @@ parameters! {
     town_recall_curve_scale_percent => (0, "percent", 0, 10_000, "borg_town_capability.rs:1040", "#859 (owner: \"a curve for word of recall starting from 1 and make it be 110 by default, so that they buy a few\"; \"use the trip weight\"): above 0, the live town planner values every Word of Recall on a diminishing curve on the trip weight (borg_town_w_trip), weight and demand scaled by this percent as town_heal_curve_scale_percent scales healing's: each scroll is worth less than the last and never nothing, so a Borg with gold and room carries spares. The town_recall_reserve requirement stays on top (its own row, as town_phase_reserve's); town_recall_value_percent (the walk a scroll saves) is then not read. 0 = #557 (the reserve alone, nothing past it; below the gold floor, the walk a scroll saves)."),
     prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:236", "#557 (owner): a descent to this depth or deeper needs one Word of Recall carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
     // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
-    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:718", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:747", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_dl2_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:265", "#1217: Minimum maximum character level for a DL2 proposal, skipped in risky play. 0 disables this gate. Shipped class values are one level above explore_mix_max_clevel."),
     prepared_dl2_min_hp => (30, "hp", 0, 10000, "borg_prepared.rs:257", "Minimum maximum HP from DL2, skipped in risky play."),
-    prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:271", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
-    prepared_dl34_min_clevel => (4, "level", 0, 50, "borg_prepared.rs:275", "Minimum maximum character level from DL3, skipped in risky play.", [4, 11, 9, 9, 11, 4, 8, 4, 4]),
-    prepared_cure_min => (2, "potions", 0, 99, "borg_prepared.rs:283", "Minimum sum of CLW, CSW and CCW from DL3 while below prepared_cure_until_clevel."),
-    prepared_cure_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:284", "Maximum character level at which the early combined-cure requirement stops applying."),
-    prepared_dl59_min_hp => (60, "hp", 0, 10000, "borg_prepared.rs:299", "Minimum maximum HP from DL5 while already in the dungeon, skipped in risky play.", [60, 80, 60, 60, 80, 60, 60, 60, 60]),
-    prepared_dl59_min_clevel => (6, "level", 0, 50, "borg_prepared.rs:303", "Minimum maximum character level from DL5 while already in the dungeon, skipped in risky play.", [6, 15, 15, 15, 15, 6, 10, 6, 6]),
-    prepared_mid_clevel_offset => (0, "levels", -50, 50, "borg_prepared.rs:372", "From DL10, require maximum character level to reach depth plus this offset when the mid-depth class gate applies.", [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
-    prepared_mid_max_depth => (19, "depth", 0, 127, "borg_prepared.rs:370", "Last depth at which the mid-depth offset applies for classes other than Mage and Necromancer."),
-    prepared_mid_caster_max_clevel => (28, "level", 0, 50, "borg_prepared.rs:368", "Last maximum character level at which the mid-depth offset applies for Mage and Necromancer."),
-    prepared_deep_clevel_offset => (5, "levels", -50, 50, "borg_prepared.rs:386", "From DL21, require maximum character level to reach depth plus this offset within the deep character-level range.", [5, 8, 13, 13, 8, 7, 10, 8, 5]),
-    prepared_deep_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:387", "First maximum character level at which the deep offset applies (C: 29 for Ranger).", [0, 0, 0, 0, 0, 0, 0, 29, 0]),
-    prepared_deep_max_clevel => (38, "level", 0, 50, "borg_prepared.rs:385", "Last maximum character level at which the deep offset applies. The Mage and Necromancer depth ramp starts above this level.", [38, 38, 46, 46, 38, 40, 43, 41, 38]),
-    prepared_deep_caster_ramp_max_clevel => (44, "level", 0, 50, "borg_prepared.rs:393", "Last maximum character level at which the Mage and Necromancer depth ramp applies."),
-    prepared_deep_caster_ramp_base_depth => (30, "depth", 0, 127, "borg_prepared.rs:394", "Base depth of the Mage and Necromancer ramp from DL21."),
-    prepared_deep_caster_ramp_depth_per_level => (2, "levels", 0, 127, "borg_prepared.rs:395", "Extra depth per character level above prepared_deep_max_clevel on the Mage and Necromancer ramp."),
-    prepared_dl34_plus_min_clevel => (40, "level", 0, 50, "borg_prepared.rs:438", "Minimum maximum character level from DL34, skipped in risky play."),
+    prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:281", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+    prepared_dl34_min_clevel => (4, "level", 0, 50, "borg_prepared.rs:285", "Minimum maximum character level from DL3, skipped in risky play.", [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+    prepared_cure_min => (2, "potions", 0, 99, "borg_prepared.rs:293", "Minimum sum of CLW, CSW and CCW from DL3 while below prepared_cure_until_clevel."),
+    prepared_cure_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:294", "Maximum character level at which the early combined-cure requirement stops applying."),
+    prepared_dl59_min_hp => (60, "hp", 0, 10000, "borg_prepared.rs:309", "Minimum maximum HP from DL5 while already in the dungeon, skipped in risky play.", [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+    prepared_dl59_min_clevel => (6, "level", 0, 50, "borg_prepared.rs:313", "Minimum maximum character level from DL5 while already in the dungeon, skipped in risky play.", [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+    prepared_mid_clevel_offset => (0, "levels", -50, 50, "borg_prepared.rs:382", "From DL10, require maximum character level to reach depth plus this offset when the mid-depth class gate applies.", [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+    prepared_mid_max_depth => (19, "depth", 0, 127, "borg_prepared.rs:380", "Last depth at which the mid-depth offset applies for classes other than Mage and Necromancer."),
+    prepared_mid_caster_max_clevel => (28, "level", 0, 50, "borg_prepared.rs:378", "Last maximum character level at which the mid-depth offset applies for Mage and Necromancer."),
+    prepared_deep_clevel_offset => (5, "levels", -50, 50, "borg_prepared.rs:450", "From DL21, require maximum character level to reach depth plus this offset within the deep character-level range.", [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+    prepared_deep_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:451", "First maximum character level at which the deep offset applies (C: 29 for Ranger).", [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+    prepared_deep_max_clevel => (38, "level", 0, 50, "borg_prepared.rs:449", "Last maximum character level at which the deep offset applies. The Mage and Necromancer depth ramp starts above this level.", [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+    prepared_deep_caster_ramp_max_clevel => (44, "level", 0, 50, "borg_prepared.rs:457", "Last maximum character level at which the Mage and Necromancer depth ramp applies."),
+    prepared_deep_caster_ramp_base_depth => (30, "depth", 0, 127, "borg_prepared.rs:458", "Base depth of the Mage and Necromancer ramp from DL21."),
+    prepared_deep_caster_ramp_depth_per_level => (2, "levels", 0, 127, "borg_prepared.rs:459", "Extra depth per character level above prepared_deep_max_clevel on the Mage and Necromancer ramp."),
+    prepared_dl34_plus_min_clevel => (40, "level", 0, 50, "borg_prepared.rs:503", "Minimum maximum character level from DL34, skipped in risky play."),
     town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:268", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
     town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:264", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
     town_fear_cure_count => (0, "count", 0, 100, "borg_town_capability.rs:1457", "#516: while the character is not afraid, fear cures (Potion of Boldness, CURE:AFRAID) are valued linearly up to this many in the pack and not beyond (each of the first ones is worth more than on the curve, a further one nothing); 0 = the diminishing curve (the planner kept buying Boldness: 35 bought, 7 drunk on 18 games)."),
@@ -3361,12 +3362,13 @@ mod tests {
     }
 
     #[test]
-    fn dive_gates_ship_compiled_class_defaults_and_accept_overrides() {
+    fn dive_gates_ship_explicit_values_and_accept_overrides() {
         let compiled = parse("", &BTreeMap::new(), SPECS).unwrap();
         let shipped = parse(include_str!("../../harness/borg.txt"), &BTreeMap::new(), SPECS).unwrap();
         for (param, expected) in [
             (Param::prepared_clevel_depth_margin, 0),
-            (Param::prepared_dl2_min_hp, 30),
+            (Param::prepared_dl2_min_clevel, 0),
+            (Param::prepared_recall_depth, 5),
             (Param::prepared_cure_min, 2),
             (Param::prepared_cure_until_clevel, 30),
             (Param::prepared_mid_max_depth, 19),
@@ -3380,22 +3382,52 @@ mod tests {
             assert_eq!(shipped[param as usize].value, expected);
             assert_eq!(shipped[param as usize].origin, "borg.txt");
         }
-        let gate_values = [
-            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50]),
-            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4]),
-            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60]),
-            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6]),
-            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
-            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5]),
-            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0]),
-            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38]),
-        ];
-        for (param, values) in gate_values {
-            for (class, expected) in CLASSES.into_iter().zip(values) {
-                assert_eq!(class_value(&compiled, param, class), Some((expected, "default")));
-                assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")));
+        for (param, compiled_values, retained) in [
+            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50], false),
+            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60], false),
+            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4], false),
+            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6], false),
+            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4], true),
+            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5], true),
+            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0], true),
+            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38], true),
+        ] {
+            for (i, class) in CLASSES.into_iter().enumerate() {
+                assert_eq!(class_value(&compiled, param, class), Some((compiled_values[i], "default")));
+                if retained {
+                    assert_eq!(class_value(&shipped, param, class), Some((compiled_values[i], "borg.txt")));
+                }
             }
         }
+        let dl2_hp = Param::prepared_dl2_min_hp as usize;
+        assert_eq!(compiled[dl2_hp].value, 30);
+        assert_eq!((shipped[dl2_hp].value, shipped[dl2_hp].origin), (0, "borg.txt"));
+
+        let dl34_levels = [7, 11, 10, 12, 13, 10, 8, 9, 9];
+        let dl59_levels = [8, 13, 12, 14, 14, 12, 10, 11, 10];
+        for (index, class) in CLASSES.into_iter().enumerate() {
+            for param in [Param::prepared_dl34_min_hp, Param::prepared_dl59_min_hp] {
+                assert_eq!(class_value(&shipped, param, class), Some((0, "borg.txt")), "{class}");
+            }
+
+            let (mix, _) = class_value(&shipped, Param::explore_mix_max_clevel, class).unwrap();
+            for (param, expected) in [
+                (Param::prepared_dl2_min_clevel, mix + 1),
+                (Param::prepared_dl34_min_clevel, dl34_levels[index]),
+                (Param::prepared_dl59_min_clevel, dl59_levels[index]),
+            ] {
+                assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")), "{class}");
+            }
+        }
+
+        let effective = resolve(&shipped);
+        for (index, spec) in SPECS.iter().enumerate().filter(|(_, spec)| spec.name.starts_with("prepared_")) {
+            for (class, name) in CLASSES.into_iter().enumerate() {
+                assert_eq!(pick_for(&effective[index], Some(class), None).1, "borg.txt",
+                    "{} for {name}", spec.name);
+            }
+        }
+
         let param = Param::prepared_mid_clevel_offset;
         let overrides = parse(
             "borg_param_prepared_mid_clevel_offset = -2\nborg_param_prepared_mid_clevel_offset__mage = 2",
