@@ -57,6 +57,10 @@ const CLASS_PRIEST: i32 = 3;
 const CLASS_NECROMANCER: i32 = 4;
 const CLASS_RANGER: i32 = 7;
 
+pub(crate) fn exploration_first() -> bool {
+    crate::params::value(crate::params::Param::junk_exploration_first) != 0
+}
+
 /// `PACK_SLOTS`: the pack slots not taken by the quiver.
 fn pack_slots(st: &BorgState) -> i32 {
     i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS)
@@ -681,19 +685,19 @@ fn harmful_item(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>
         })
 }
 
-fn harmful_item_drop(st: &BorgState) -> Option<SurplusDrop> {
-    let town = st.borg.tr(BI_CDEPTH) == 0;
+fn harmful_item_drop(st: &BorgState, make_room: bool) -> Option<SurplusDrop> {
+    let keep_throwables = !make_room && st.borg.tr(BI_CDEPTH) != 0;
     let slot = st.items.items[..pack_size() as usize].iter().position(|item| {
-        harmful_item(item, engine::kind_effects) && (town || !retain_for_throwing(st, item))
+        harmful_item(item, engine::kind_effects) && (!keep_throwables || !retain_for_throwing(st, item))
     })?;
     Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
 }
 
-pub(crate) fn borg_discard_harmful_item(st: &mut BorgState) -> bool {
+pub(crate) fn borg_discard_harmful_item(st: &mut BorgState, make_room: bool) -> bool {
     if st.borg.goal.recalling != 0 {
         return false;
     }
-    if let Some(drop) = harmful_item_drop(st) {
+    if let Some(drop) = harmful_item_drop(st, make_room) {
         if danger_here(st) <= st.borg.tr(BI_CURHP) / 20 {
             return drop_surplus(st, drop);
         }
@@ -736,7 +740,7 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
     if st.borg.goal.recalling != 0 {
         return None;
     }
-    if let Some(drop) = harmful_item_drop(st) {
+    if let Some(drop) = harmful_item_drop(st, false) {
         return Some(drop);
     }
     if st.borg.tr(BI_CDEPTH) == 0 {
@@ -750,6 +754,9 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
     let supplies = crate::borg_town_capability::carried_supplies(st);
     (0..pack_size() as usize).chain(quiver_start() as usize..quiver_end() as usize)
         .filter_map(|slot| {
+            if exploration_first() && supplies.keeps_exploration_supply(slot, 1) {
+                return None;
+            }
             let (excess, target) = supplies.discard_surplus(st, slot)?;
             Some((slot, excess, target))
         })
@@ -990,6 +997,8 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         return false;
     }
 
+    let reserves = exploration_first().then(|| crate::borg_town_capability::carried_supplies(st));
+
     /* Destroy actual "junk" items */
     for i in 0..pack_size() {
         let item = st.items.items[i as usize];
@@ -1000,6 +1009,10 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
             || crate::borg_ranged::keep_stack(st, i as usize)
             || keeps_restore_life(st, i as usize, false, false)
             || crate::borg_town_home::keep_in_dungeon(st, i as usize) { // borg-reborn-rs (#1241): retain useful Home candidates until town.
+            continue;
+        }
+
+        if reserves.as_ref().is_some_and(|m| m.keeps_exploration_supply(i as usize, item.iqty)) {
             continue;
         }
 
@@ -1327,6 +1340,24 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         return false;
     }
 
+    let protect_supplies = exploration_first();
+    if protect_supplies && !desperate && st.borg.goal.recalling == 0
+        && !engine::player_is_shapechanged()
+        && danger_here(st) <= st.borg.tr(BI_CURHP) / 20
+    {
+        if borg_discard_harmful_item(st, true) {
+            return true;
+        }
+        if let Some(slot) = (0..pack_size()).find(|&slot| !is_swap(st, slot)
+            && crate::borg_spare_gear::inferior(st, slot as usize))
+        {
+            note_desc(st, "# Dropping inferior spare to make pack room ", slot, ".");
+            drop_ignored_pack_stack(st, slot);
+            return true;
+        }
+    }
+    let reserves = protect_supplies.then(|| crate::borg_town_capability::carried_supplies(st));
+
     /* Scan the inventory */
     for i in 0..pack_size() {
         let item = st.items.items[i as usize];
@@ -1334,7 +1365,14 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
 
         let mut value_boost: i32 = 0;
 
-        /* Skip empty items. A desperate pack clear can spend the reserve. */
+        if reserves.as_ref().is_some_and(|m| m.keeps_exploration_supply(i as usize, item.iqty)) {
+            continue;
+        }
+        if protect_supplies && crate::borg_spare_gear::inspection_pending(st, &item) {
+            continue;
+        }
+
+        /* Skip empty items and legacy keepers. */
         if item.iqty == 0 || !desperate && (crate::borg_light::keep_fuel_stack(st, i as usize)
             || crate::borg_ranged::keep_stack(st, i as usize)
             || crate::borg_town_home::keep_in_dungeon(st, i as usize))
@@ -1619,11 +1657,16 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
         greed = 0;
     }
 
+    let reserves = exploration_first().then(|| crate::borg_town_capability::carried_supplies(st));
     /* Scan for junk */
     for i in 0..quiver_end() {
         let item = st.items.items[i as usize];
         let tval = u32::from(item.tval);
         let sval = i32::from(item.sval);
+
+        if reserves.as_ref().is_some_and(|m| m.keeps_exploration_supply(i as usize, 1)) {
+            continue;
+        }
 
         /* Skip empty items */
         if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)

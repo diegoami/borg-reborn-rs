@@ -1116,10 +1116,48 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
 /// Reuse the town reserve curves without reading shop or Home stock. Index
 /// the quiver by slot as well, so its copies can compete with pack surplus.
 pub(crate) fn carried_supplies(st: &BorgState) -> Model {
-    observe_supplies(st, &Stock::default(), None, Journey::of(st), i64::from(st.borg.tr(BI_GOLD)))
+    resupply_model(st, &Stock::default())
+}
+
+pub(crate) fn resupply_model(st: &BorgState, stock: &Stock) -> Model {
+    observe_supplies(st, stock, None, Journey::of(st), i64::from(st.borg.tr(BI_GOLD)))
 }
 
 impl Model {
+    fn exploration_target(&self, cap: usize) -> Option<i64> {
+        // A low purse can rule out a purchase without making carried
+        // Recall or a free copy from Home expendable.
+        if cap == RECALL {
+            let target = i64::from(param(Param::town_recall_reserve)) * UNIT;
+            return (target > 0).then_some(target);
+        }
+        let row = self.curves.get(cap)?;
+        if row[1] <= 0 { return None; }
+        match cap {
+            LIGHT | FOOD => Some(row[2].abs()),
+            HEAL_RESERVE | PHASE_RESERVE | RANGED_RESERVE | RANGER_MISSILES if row[2] < 0 => Some(-row[2]),
+            TELEPORT | LEVEL => Some(UNIT),
+            _ => None,
+        }
+    }
+
+    /// A whole-stack drop or a weight trim cannot spend the trip's reserves.
+    pub(crate) fn keeps_exploration_supply(&self, slot: usize, copies: u8) -> bool {
+        copies > 0 && self.units(PACK, slot as i64, i64::from(copies)).into_iter().any(|(cap, units)| {
+            units > 0 && self.exploration_target(cap)
+                .is_some_and(|target| self.curves[cap][3] - units < target)
+        })
+    }
+
+    /// This ware can cover one of the missing supplies. The caller moves
+    /// one unit and observes the new kit before relaxing the limit again.
+    pub(crate) fn supplies_shortfall(&self, shop: u8, slot: u8) -> bool {
+        self.units(i64::from(shop), i64::from(slot), 1).into_iter().any(|(cap, units)| {
+            units > 0 && self.exploration_target(cap)
+                .is_some_and(|target| self.curves[cap][3] < target)
+        })
+    }
+
     /// Stock and target in the same units, for one safely removable copy.
     /// Use an independent target for staples that have one, then check the
     /// shared reserves for any other effect the copy would take with it.
@@ -2540,6 +2578,19 @@ mod tests {
         m.curves[LIGHT][2] = torch_turns;
         m.curves[LIGHT][3] = 2 * torch_turns;
         assert!(!m.protects_fuel(&spare));
+    }
+
+    #[test]
+    fn exploration_resupply_and_disposal_read_the_same_reserve() {
+        let mut m = model();
+        m.supplies = vec![[PACK, 1, PHASE_RESERVE as i64, UNIT], [4, 0, PHASE_RESERVE as i64, UNIT]];
+        m.curves[PHASE_RESERVE] = [PHASE_RESERVE as i64, UNIT, -2 * UNIT, UNIT, 0];
+        assert!(m.keeps_exploration_supply(1, 1));
+        assert!(m.supplies_shortfall(4, 0));
+        m.curves[PHASE_RESERVE][3] = 3 * UNIT;
+        assert!(!m.keeps_exploration_supply(1, 1));
+        assert!(m.keeps_exploration_supply(1, 2));
+        assert!(!m.supplies_shortfall(4, 0));
     }
 
     /// #1151: the copies of a fuel stack the light reserve still needs. 34
