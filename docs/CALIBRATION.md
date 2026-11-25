@@ -6672,7 +6672,7 @@ Word of Recall, weight 5).
 |---|---|---|---|---|
 | `town_departure_free_weight` | 0 | tenths of a pound | 0–10000 | `borg_town_utility.rs:285` |
 | `town_departure_free_slots` | 0 | slots | 0–23 | `borg_town_utility.rs:286` |
-| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:313` |
+| `town_store_keep_min` | 0 | copies | 0–99 | `borg_town_utility.rs:315` |
 | `town_recall_urgent` | 0 | flag | 0–1 | `borg_town_utility.rs:257` |
 | `town_recall_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1040` |
 
@@ -8344,6 +8344,23 @@ replay as they were):
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
+
+## Home stock and town plan schemas 21–22 (#1241)
+
+Plan replay uses the schema recorded in `v`.
+
+- **Schema 21** encodes `home_role` in bits 9–11 of the kit row's `flags`
+  field. The values are 0 ordinary, 1 common, 2 renewable, 3 reject, 4 gear,
+  and 5 device. The tenth field of each `wares` row is `home_value`. A
+  positive value prices the offer as a reserve. Zero means no reserve value,
+  and −1 suppresses optional purchases of a kind cleared as surplus during
+  the visit. These fields are present at shipped settings.
+- **Schema 22** uses the schema 21 layout and also applies the capability
+  model's explicit reserve floor to renewable Home stacks. A weighted
+  capability with negative demand supplies a floor. Renewable convenience
+  stock can be cleared once its requirements are covered. Schema 21 replays
+  use the original cleanup rule, which applies this floor to common stock.
+  Schemas 4–20 keep their original layouts and planner rules.
 
 ## Committing to a brave stair walk (#1130)
 
