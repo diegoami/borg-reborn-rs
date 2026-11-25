@@ -256,14 +256,15 @@ borg_param_town_store_only_overweight = 1
 # room free. Before, storing stopped at the bare allowance, and a Borg with
 # 20,000 gold could not take a 0.5 lb Recall. 0 = off. Hypotheses, to be
 # measured in the zoo.
+# The class files set the weight buffer for each class in tenths of a pound.
 
 borg_param_town_departure_free_weight = 50
 borg_param_town_departure_free_slots = 2
 # #1168, #1199: plain shots to keep when trimming the quiver in town.
 # The class files set the reserve for each playable class. The fallback
 # is 0, which disables trimming when there is no class override.
-# #1239: shop before lightening the departing kit.
-borg_param_town_shop_overloaded = 1
+# #1256: unload on arrival, try a lighter loadout, then shop within the allowance.
+borg_param_town_shop_overloaded = 2
 borg_param_town_quiver_trim_reserve = 0
 # Recall-first trial when town_shop_overloaded is 0. A positive value allows
 # a safe lighter exchange with up to this much equipment power loss.
@@ -2290,6 +2291,7 @@ borg_param_explore_bfs_hp_per_level__warrior = 2
 borg_param_stair_scum_slack_steps__warrior = 4
 borg_param_explore_mix_max_clevel__warrior = 5
 borg_param_town_quiver_trim_reserve__warrior = 55
+borg_param_town_departure_free_weight__warrior = 150
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -2317,6 +2319,7 @@ borg_param_explore_bfs_hp_per_level__mage = 1
 borg_param_stair_scum_slack_steps__mage = 2
 borg_param_explore_mix_max_clevel__mage = 8
 borg_param_town_quiver_trim_reserve__mage = 30
+borg_param_town_departure_free_weight__mage = 60
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -2343,6 +2346,7 @@ borg_param_explore_bfs_hp_per_level__druid = 2
 borg_param_stair_scum_slack_steps__druid = 2
 borg_param_explore_mix_max_clevel__druid = 7
 borg_param_town_quiver_trim_reserve__druid = 40
+borg_param_town_departure_free_weight__druid = 80
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -2370,6 +2374,7 @@ borg_param_explore_bfs_hp_per_level__priest = 2
 borg_param_stair_scum_slack_steps__priest = 2
 borg_param_explore_mix_max_clevel__priest = 9
 borg_param_town_quiver_trim_reserve__priest = 45
+borg_param_town_departure_free_weight__priest = 90
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -2397,6 +2402,7 @@ borg_param_explore_bfs_hp_per_level__necromancer = 2
 borg_param_stair_scum_slack_steps__necromancer = 2
 borg_param_explore_mix_max_clevel__necromancer = 9
 borg_param_town_quiver_trim_reserve__necromancer = 35
+borg_param_town_departure_free_weight__necromancer = 70
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -2426,6 +2432,7 @@ borg_param_explore_bfs_hp_per_level__paladin = 2
 borg_param_stair_scum_slack_steps__paladin = 4
 borg_param_explore_mix_max_clevel__paladin = 8
 borg_param_town_quiver_trim_reserve__paladin = 50
+borg_param_town_departure_free_weight__paladin = 120
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -2455,6 +2462,7 @@ borg_param_explore_bfs_hp_per_level__rogue = 2
 borg_param_stair_scum_slack_steps__rogue = 3
 borg_param_explore_mix_max_clevel__rogue = 6
 borg_param_town_quiver_trim_reserve__rogue = 60
+borg_param_town_departure_free_weight__rogue = 100
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2487,6 +2495,7 @@ borg_param_explore_bfs_hp_per_level__ranger = 2
 borg_param_stair_scum_slack_steps__ranger = 3
 borg_param_explore_mix_max_clevel__ranger = 7
 borg_param_town_quiver_trim_reserve__ranger = 70
+borg_param_town_departure_free_weight__ranger = 110
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2516,6 +2525,7 @@ borg_param_explore_bfs_hp_per_level__blackguard = 2
 borg_param_stair_scum_slack_steps__blackguard = 4
 borg_param_explore_mix_max_clevel__blackguard = 6
 borg_param_town_quiver_trim_reserve__blackguard = 40
+borg_param_town_departure_free_weight__blackguard = 135
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.

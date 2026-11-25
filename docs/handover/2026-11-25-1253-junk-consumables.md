@@ -13,9 +13,8 @@ Healing, buffs, and other useful supplies stay in the pack.
 Town cleanup follows caution and precedes shopping. It uses Angband's
 individual ignore command to drop each known harmful stack. Native
 auto-pickup then leaves that stack on the floor, and newly found copies
-of the same kind remain eligible in the dungeon. The list follows
-[the strategy manual's bad items](../strategy/07-consumables-and-devices.md#13-bad-items-do-not-use-ignore-on-sight)
-and [the engine kind data](../../engine/angband/lib/gamedata/object.txt).
+of the same kind remain eligible in the dungeon. The town decision
+shares the effect-based classification shipped in #1259.
 
 The owner expanded #1253 in chat to all known junk potions and asked
 for immediate town cleanup of harmful items. The owner then approved
@@ -24,11 +23,10 @@ the named harmful potions and expendable Slime Mold Juice. It stays
 independent of any broader effect classification. Population effects
 remain unmeasured.
 
-[#1256](https://github.com/diegoami/borg-reborn-rs/issues/1256) also needs
-town cleanup as part of its carry-reserve work. Its
-[draft PR](https://github.com/diegoami/borg-reborn-rs/pull/1259) should
-incorporate this town path and use the current Track P smoke reference
-before integration.
+Track P merged [#1259](https://github.com/diegoami/borg-reborn-rs/pull/1259)
+before this PR. Its dungeon unloading policy leaves throwable potions in
+the pack when throwing is enabled. Its town unloading policy ignores those
+potions by stack so future copies stay available.
 
 Rust format, workspace Clippy, both Rust test suites, and parameter
 citations passed. All four shipped smoke runs matched the reference keys,

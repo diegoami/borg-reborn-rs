@@ -88,7 +88,9 @@ class TownSpareSaleTest(unittest.TestCase):
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-            env.update(BORG_CORE="borg-rs", BORG_TEST_INFERIOR_SPARE_SALE="1")
+            # Exercise the two selling choosers with the original town order.
+            env.update(BORG_CORE="borg-rs", BORG_TEST_INFERIOR_SPARE_SALE="1",
+                       BORG_PARAM_TOWN_SHOP_OVERLOADED="1")
             messages = root / "messages.log"
             run = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),

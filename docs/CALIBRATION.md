@@ -937,10 +937,10 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2329` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:2054` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2440` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3139` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3132` |
-| `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1131` |
-| `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1134` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3232` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3225` |
+| `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1557` |
+| `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1560` |
 | `town_csw_reserve_percent` | 0 | percent | 0–1000 | `borg_town_capability.rs:1420` |
 
 ## Dark-entry detection exception (#796)
@@ -1122,13 +1122,13 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1120` |
-| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1122` |
+| `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
+| `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
 | `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2523` |
 | `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2523` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
-| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1182` |
-| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1124` |
+| `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
+| `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
 
 - **Phase Door in town:** a capability row, "phase" (`PHASE`), on its own curve
   (weight `borg_town_w_escape` times exposure, scaled by
@@ -1266,7 +1266,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1118` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1211` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -2148,7 +2148,7 @@ same way are healing objects"; no reserve, only the curve.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:1114` |
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:1310` |
 | `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:878` |
 
 ## No rest while breeders are known (#644)
@@ -3325,8 +3325,8 @@ digger 500 gold.
 | `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:713` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1263` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:967` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1114` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:2912` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1175` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3007` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6463,7 +6463,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1128` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1221` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:185` |
 
 The reserve target is the larger of the configured amount and planned
@@ -6618,7 +6618,8 @@ over its allowance (`BI_CARRY / 2`) and stopped as soon as it was under, so
 a pack at the allowance had no room for a 0.5 lb scroll (`object.txt`,
 Word of Recall, weight 5).
 
-- **`town_departure_free_weight`** (compiled 0, **shipped 50**: 5 lb) and
+- **`town_departure_free_weight`** (compiled 0, common profile 50: 5 lb,
+  with class overrides in [#1256](#town-arrival-unloading-and-weight-limited-shopping-1256)) and
   **`town_departure_free_slots`** (compiled 0, **shipped 2**). The planner
   (`dispositions`, `borg_town_utility.rs`) stores at the Home until this
   room is free under the allowance, plus the room the Recall reserve still
@@ -6627,7 +6628,7 @@ Word of Recall, weight 5).
   carried). The purchases (`step`, `borg_town_record.rs`) and the Home
   withdrawals leave the departure room free, so the scroll fits on top of
   it. Short of slots, whole stacks go, lowest keep value per weight first.
-  Each departure notes "# Town departure room: weight W free (keep 50),
+  Each departure notes "# Town departure room: weight W free (keep T),
   slots S free (keep 2)" once a visit.
 - **`town_store_keep_min`** (compiled 0, **shipped 3**; owner: "prefer
   objects that they have an abundance of, typically healing potions and
@@ -7259,12 +7260,12 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_decay_percent` | 80 | percent | 0–100 | `borg_town_capability.rs:1341` |
 | `town_staple_clw` | 0 | copies | 0–99 | `borg_town_capability.rs:1345` |
 | `town_staple_csw` | 0 | copies | 0–99 | `borg_town_capability.rs:1346` |
-| `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:1112` |
-| `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:1153` |
+| `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:1433` |
+| `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:1439` |
 | `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1154` |
-| `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1155` |
-| `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1156` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:2953` |
+| `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1441` |
+| `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1442` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3048` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7351,7 +7352,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3047` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3142` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1361` |
 
 ## Grouped monster messages (#915)
@@ -7580,10 +7581,10 @@ These are P9 candidates. The shipped settings are neutral during P8.
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3133` |
+| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3226` |
 | `town_restore_life_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1044` |
-| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:2961` |
-| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1156` |
+| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3054` |
+| `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1413` |
 | `town_second_stat_potions_by_class` | 0 | flag | 0–1 | `borg_town_capability.rs:924` |
 
 ## Breadth-first exploration from the staircases (#1080, #1085)
@@ -8790,7 +8791,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1023` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1049` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8806,9 +8807,24 @@ reserve and the action order need measurement before activation.
 |---|---|---|---|---|
 | `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:539` |
 
-## Shopping while overloaded and departure loadout (#1239)
+## Town-arrival unloading and weight-limited shopping (#1256)
 
-**Plan schema 21.** The Track P profile enables `town_shop_overloaded`.
+Track P ships `town_shop_overloaded = 2`. On arrival the Borg ignores the
+known harmful potions, discards expendable weapons and armour based on
+observed properties, and compares the surplus above the targets
+for fuel, food, healing, escapes, oil and ammunition. It rechecks the
+inventory after each useful copy and aims for the configured free carry
+weight. If surplus runs out, it can exchange equipment for a lighter
+piece and deposit the displaced gear at Home. Ordinary purchases and Home
+withdrawals fit within the current carry allowance.
+
+The departure weight buffer comes from each class's `borg_<class>.txt`.
+In tenths of a pound, it is 60 for Mage, 70 for Necromancer, 80 for
+Druid, 90 for Priest, 100 for Rogue, 110 for Ranger, 120 for Paladin, 135
+for Blackguard, and 150 for Warrior. These values are provisional.
+
+`town_shop_overloaded = 1` keeps the shopping-first control (#1239,
+plan schema 21 with the Home reserve policy off).
 The town planner uses value, gold, and pack slots for ordinary and urgent
 purchases and Home withdrawals. Weight remains a soft cost and a departure
 objective. The Recall reserve keeps its pack-slot allowance and no longer
@@ -8826,7 +8842,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:425` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:427` |
 
 ### Recall-first trial
 
@@ -9062,5 +9078,5 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1971` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1968` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2126` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2127` |

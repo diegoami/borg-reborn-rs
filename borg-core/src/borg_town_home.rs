@@ -190,9 +190,13 @@ fn armor(item: &borg_item) -> i32 {
 }
 
 fn dominates(worn: &borg_item, spare: &borg_item) -> bool {
+    spare.tval == worn.tval && outclasses_spare(worn, spare)
+}
+
+/// Compare observed properties when both items use the same equipment slot.
+pub(crate) fn outclasses_spare(worn: &borg_item, spare: &borg_item) -> bool {
     worn.iqty > 0
         && !worn.cursed
-        && spare.tval == worn.tval
         && (spare.sval == worn.sval || u32::from(spare.tval) != TV_BOW)
         && worn.weight <= spare.weight
         && armor(worn) >= armor(spare)

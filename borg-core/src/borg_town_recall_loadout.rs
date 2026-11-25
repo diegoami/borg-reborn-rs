@@ -56,6 +56,7 @@ impl Loadout {
 
 pub(crate) fn enabled(st: &BorgState) -> bool {
     crate::borg_town_live::active(st) && !crate::borg_town_live::shop_overloaded()
+        && !crate::borg_town_live::unload_on_arrival(st)
         && param(Param::town_loadout_power_loss) > 0
 }
 

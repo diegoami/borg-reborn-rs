@@ -56,6 +56,7 @@ class JunkConsumablesTest(unittest.TestCase):
                 BORG_RUN_DIR=str(out),
                 BORG_PARAM_ATTACK_THROW_JUNK_POTIONS="1",
                 BORG_PARAM_JUNK_DISCARD_HARMFUL_IN_TOWN="1",
+                BORG_PARAM_TOWN_SHOP_OVERLOADED="2",
                 BORGH_TEST_JUNK_CONSUMABLES="town" if distance is None else "throw",
             )
             messages = out / "messages.log"
@@ -85,6 +86,7 @@ class JunkConsumablesTest(unittest.TestCase):
 
         messages, frames = self.launch(kit, distance=11)
         self.assertNotIn(ord("v"), frames[0]["keys"])
+        self.assertNotIn("Discarding known harmful stack", messages)
         self.assertTrue(any(ord("v") in frame["keys"] for frame in frames[1:]))
         self.assertIn("You have no more Potions of Blindness", messages)
 

@@ -517,14 +517,20 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "restore" | "no-storage" | "reserve-overlap"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap"));
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
         SETUP.store(1, Relaxed);
-        let excess = if case == "trim" { 188 } else { 104 };
+        let shop = case == "arrival-shop";
+        let excess = match case {
+            "trim" | "arrival" => 188,
+            "arrival-shop" => 80,
+            _ => 104,
+        };
         engine::setup_test_town_loadout(
-            st, excess, case != "no-storage", false, 0, case == "reserve-overlap",
+            st, excess, !shop && case != "no-storage", false,
+            if shop { 500 } else { 0 }, shop || case == "reserve-overlap",
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
@@ -553,19 +559,41 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);
         }
-        let swap = plan.expect("the overweight Priest should be offered a lighter Home weapon");
+        let swap = plan.expect("the overweight Priest should be offered lighter equipment");
+        if shop {
+            assert!(matches!(swap.source, Source::Store(store, _) if store != BORG_HOME));
+            SETUP.store(2, Relaxed);
+            return;
+        }
         assert!(matches!(swap.source, Source::Store(BORG_HOME, _)));
         assert_eq!((swap.old.weight, swap.new.weight), (180, 30));
         SETUP.store(2, Relaxed);
     }
     assert_eq!(st.borg.tr(BI_CDEPTH), 0, "left town before the fixture observed the exchange");
+    if case == "arrival-shop" {
+        let stored = st.store.shops[BORG_HOME].ware.iter().any(|item| {
+            item.iqty > 0 && equipment_slot(item).is_some()
+                && crate::borg_town_live::retained_gear(st, item)
+        });
+        if stored && st.borg.tr(BI_RECALL) > 0
+            && crate::borg_town_budget::Facts::of(st).allowance() >= 0
+        {
+            println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
+        }
+        return;
+    }
     if SETUP.load(Relaxed) == 2 && st.items.items[wield].weight == 30 {
         let heavy = st.store.shops[BORG_HOME].ware.iter()
             .find(|item| item.weight == 180 && crate::borg_town_live::retained_gear(st, item));
         if heavy.is_some() && st.borg.tr(BI_RECALL) > 0 {
             assert!(crate::borg_town_budget::Facts::of(st).allowance() >= 0);
-            if case == "trim" {
-                assert_eq!(st.borg.tr(BI_AMISSILES), 20);
+            if matches!(case, "trim" | "arrival") {
+                if case == "trim" {
+                    assert_eq!(st.borg.tr(BI_AMISSILES), 20);
+                } else {
+                    assert!((20..57).contains(&st.borg.tr(BI_AMISSILES)));
+                }
                 println!("#1239 town loadout passed: {case}");
                 std::process::exit(0);
             }
