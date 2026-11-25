@@ -1124,8 +1124,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1120` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1122` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2522` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2522` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2523` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2523` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1182` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1124` |
@@ -1448,16 +1448,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2529` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2530` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2531` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2532` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2533` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2534` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2535` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2536` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2537` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2538` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2530` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2531` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2532` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2533` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2534` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2535` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2536` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2537` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2538` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2539` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -3431,7 +3431,7 @@ scare set (`unlatch_scare`), with the note
 `# Scary guy gone: the level is no longer scary.` Door scares stay latched.
 The unlatch also ends a stand, so the next stand prints its note again.
 "Gone" includes forgotten: a monster not seen for 2000 game turns leaves the
-known monsters (`expire_kills`, `borg_update.rs:1566`), so with latch 0
+known monsters (`expire_kills`, `borg_update.rs:1717`), so with latch 0
 walking away from a scary monster ends its scare too, not only killing it.
 Read an arm's results with that in mind (review of #562).
 
@@ -6770,7 +6770,7 @@ Mage 461220874, borg-zoo run 44936494812: 44 of 50 worm forgets).
 After a ranged attack with no hit message the C Borg takes the first unknown
 grid of the path for a wall (`borg_target_unknown_wall`,
 borg-core/src/borg_projection.rs; C src/borg/borg-projection.c:739-830,
-called from `borg_update`, borg-core/src/borg_update.rs:1735). Its walk starts
+called from `borg_update`, borg-core/src/borg_update.rs:1898). Its walk starts
 at the Borg's own grid (C :753-754), and with no unknown grid it writes the
 step back from the target (C :821-826): for an adjacent target that step is
 the Borg's grid. A thrown or fired miss prints nothing (`make_ranged_throw`,
@@ -6806,7 +6806,7 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1874` |
+| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1892` |
 
 ## Shooting at a monster believed in the dark (#879)
 
@@ -6975,7 +6975,7 @@ to be visible both deletes an unseen record and refuses it a belief
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:439` |
+| `update_dark_clears_light` | 0 (shipped 1) | flag | 0–1 | `borg_update.rs:528` |
 | `view_rubble_blocks_sight` | 0 (shipped 1) | flag | 0–1 | `borg_cave_view.rs:258` |
 | `unseen_death_stops_shots` | 0 | flag | 0–1 | `borg_unseen_belief.rs:209` |
 | `unseen_light_reveal` | 0 | mode | 0–2 | `borg_unseen_belief.rs:318` |
@@ -7978,12 +7978,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2558` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2559` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2560` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2561` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2562` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2563` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2559` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2560` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2561` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2562` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2563` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2564` |
 
 ## Deal with poison (#1140)
 
@@ -8373,7 +8373,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1955` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1956` |
 
 ## A general movement-loop detector (#1153)
 
