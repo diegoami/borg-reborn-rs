@@ -1551,6 +1551,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "dark-vein-loop-on" || case == "dark-vein-loop-off" {
         crate::borg_think_dungeon_util::run_dark_vein_loop_regression(st, case.ends_with("-on"));
     }
+    if case == "recovery-mana-loop-on" || case == "recovery-mana-loop-off" {
+        crate::borg_think_dungeon_util::run_recovery_mana_loop_regression(st, case.ends_with("-on"));
+    }
     if case == "stale-stair-more" {
         crate::borg_think_dungeon_util::run_stale_stair_more_regression(st);
     }

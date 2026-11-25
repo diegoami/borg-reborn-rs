@@ -42,6 +42,9 @@ PINNED_TOWN_SETTINGS = [
     ("attack_confused_by_direction", 0), ("attack_throw_point_blank_divisor", 0),
     # #1034 enabled the HP floor at 0 HP after these incidents were recorded.
     ("kill_live_zero_hp", 0),
+    # #1211 shipped the recovery-loop switches after these incidents: the
+    # prep-buff hold and the full-HP mana rest move the long runs' turns.
+    ("defend_prep_mana_starved", 0), ("recover_mana_rest_full_hp", 0),
     # The incidents also predate the Home stock and known-unwanted policies.
     ("town_home_stack_limit", 0), ("town_home_reject_unwanted", 0),
     # #1046 shipped the lone-slow bundle (#878) after these incidents.
@@ -708,6 +711,61 @@ class BreederDoorLoopTest(unittest.TestCase):
     def test_the_containment_never_closes_the_flight_door_again(self):
         self.run_case()
 
+
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class RecoveryManaLoopTest(unittest.TestCase):
+    """#1211: the Priest pacing between recovery grids on DL19, spending the
+    regenerated mana on Heroism.
+
+    The recorded Priest (Borg261124230918, CL26, full HP, SP 0-2/47, five
+    remembered orc archers pricing the corridor at danger 20-25) cast every
+    regenerated point into Heroism (defense type 12, "some danger") and paced
+    between recovery grids for 438 decisions: the mana rest's own danger gate
+    (17) refused every grid the walk arrived at. defend_prep_mana_starved
+    holds the prep casts while the mana is what the walk is for;
+    recover_mana_rest_full_hp lets the full-HP mana rest read the general
+    recovery gate the Borg's other recovery decisions already trust. The
+    stale duplicate DarkVeinLoopTest from the #1197 sync is removed here.
+    """
+
+    def run_case(self, on):
+        with tempfile.TemporaryDirectory(prefix="recovery-mana-loop-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            config = (ROOT / "harness/borg.txt").read_text()
+            # The switches under test, replaced in place (they ship 1), and
+            # the modes that are not what the case tests.
+            pinned = [
+                ("borg_param_defend_prep_mana_starved", 1 if on else 0),
+                ("borg_param_recover_mana_rest_full_hp", 1 if on else 0),
+                ("borg_param_stair_scum", 0), ("borg_param_explore_mixed", 0),
+                ("borg_param_deal_with_poison", 0), ("borg_param_explore_c_leave_when_done", 0),
+            ]
+            for name, value in pinned:
+                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
+                assert changed, f"the shipped file ships {name}"
+            (paths["user"] / "borg.txt").write_text(config)
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"recovery-mana-loop-{'on' if on else 'off'}")
+            # The recorded character: a Human Priest (class 3) at DL19. Its
+            # birth kit feeds the think; the fixture pins the traits, the
+            # spell and the five remembered orcs.
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", "0", "-class", "3", "-menu-letters", "-start-depth", "1", "-keys", "250"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=60,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn(f"recovery mana loop passed: {'on' if on else 'off'}", result.stdout)
+
+    def test_the_recorded_loop_reproduces_with_the_parameters_off(self):
+        self.run_case(False)
+
+    def test_the_cast_is_declined_and_the_borg_rests_with_the_parameters_on(self):
+        self.run_case(True)
 
 if __name__ == "__main__":
     unittest.main()
