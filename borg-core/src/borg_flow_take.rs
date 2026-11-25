@@ -602,7 +602,7 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32, deferred: &mut
         }
 
         /* skip worthless items */
-        if take.value <= 0 {
+        if take.value <= 0 || unwanted_light_scroll(st, &take) {
             continue;
         }
 
@@ -713,6 +713,16 @@ fn carried_phase_scrolls_in(st: &BorgState, pack_end: i32) -> i32 {
 }
 
 /// borg-reborn-rs (#761): the object kind is a Scroll of Phase Door.
+fn unwanted_light_scroll(st: &BorgState, take: &BorgTake) -> bool {
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLASS) != crate::borg_light::CLASS_NECROMANCER
+        || take.tval != TV_SCROLL as i32
+    {
+        return false;
+    }
+    let kind = engine::kind(take.kidx as usize);
+    kind.aware && kind.sval == st.item_val.sv_scroll_light
+}
+
 fn take_is_phase(st: &BorgState, kidx: u32) -> bool {
     let k = engine::kind(kidx as usize);
     i64::from(k.tval) == i64::from(crate::headers::list_tvals_h::TV_SCROLL) && i32::from(k.sval) == st.item_val.sv_scroll_phase_door
@@ -783,7 +793,7 @@ fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
         let y = i32::from(take.y);
 
         /* skip worthless items */
-        if take.value <= 0 {
+        if take.value <= 0 || unwanted_light_scroll(st, &take) {
             continue;
         }
 

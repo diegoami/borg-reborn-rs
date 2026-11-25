@@ -1308,7 +1308,7 @@ fn idle_use_enabled() -> bool {
     param(Param::item_use_idle) != 0
 }
 
-fn idle_use_safe(st: &BorgState) -> bool {
+pub(crate) fn idle_use_safe(st: &BorgState) -> bool {
     !st.update.monster_in_sight
         && st.borg.tr(BI_ISIMAGE) == 0
         && !st.borg.unseen_mode
