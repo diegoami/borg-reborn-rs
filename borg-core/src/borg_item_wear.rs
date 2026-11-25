@@ -31,6 +31,7 @@ use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER
 use crate::borg_item::{inven_wield, quiver_end, quiver_start};
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_item_id::borg_item_note_needs_id;
+use crate::borg_light::{burning_torch, light_contribution, shorter_torch};
 use crate::borg_magic::{borg_spell, borg_spell_legal};
 use crate::borg_power::borg_power;
 use crate::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
@@ -917,6 +918,12 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
             continue;
         }
 
+        if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
+            && !burning_torch(item)
+        {
+            continue;
+        }
+
         /* Do not consider wearing this item if I worn it already this level,
          * I might be stuck in a loop.
          */
@@ -989,8 +996,10 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
             /* XXX XXX XXX Consider if slot is empty */
 
-            /* Ignore "essentially equal" swaps */
-            if p <= b_p + param(Param::wear_min_power_gain) {
+            /* Break a tie between upgrades without making an equal swap. */
+            let prefer_torch = p == b_p && b_i >= 0
+                && shorter_torch(&st.items.items[i as usize], &st.items.items[b_i as usize]);
+            if p <= b_p + param(Param::wear_min_power_gain) && !prefer_torch {
                 continue;
             }
 
@@ -1119,6 +1128,20 @@ fn equip_slots_max() -> usize {
     usize::from(engine::z_info().equip_slots_max)
 }
 
+fn planned_wear_slot(want: BorgBest, items: &[borg_item]) -> Option<usize> {
+    let matches = |item: &borg_item| {
+        item.pval == want.pval && item.tval == want.tval && item.sval == want.sval
+    };
+    if let Some(radius) = want.torch_radius {
+        items.iter().enumerate()
+            .filter(|(_, item)| matches(item) && burning_torch(item) && light_contribution(item) == radius)
+            .min_by_key(|(_, item)| item.timeout)
+            .map(|(slot, _)| slot)
+    } else {
+        items.iter().position(matches)
+    }
+}
+
 /// Take one step in wearing the optimized equipment
 /// (`borg_one_step_wearing_best`). The `skipping` counter is set once,
 /// before the loop (better-borg-c milestone7 patch 0075).
@@ -1170,9 +1193,6 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
     /* Extract the slot */
     let slot = i32::from(borg_best_stuff_order(item_num as i32));
     let want = st.borg.goal.best_item[item_num];
-    let matches = |item: &borg_item| {
-        item.pval == want.pval && item.tval == want.tval && item.sval == want.sval
-    };
 
     /* if the item is a home item to be worn, */
     /*  * drop any item you already have in the slot */
@@ -1204,17 +1224,13 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
             return borg_one_step_wearing_best(st, skip + 1);
         }
 
-        let n = usize::from(engine::z_info().store_inven_max);
-        for (i, &menu) in SHOP_MENU_ITEMS.iter().enumerate().take(n) {
-            let item = &st.store.shops[BORG_HOME].ware[i];
-
-            if !matches(item) {
-                continue;
-            }
-            let qty = item.iqty;
+        let n = usize::from(engine::z_info().store_inven_max).min(SHOP_MENU_ITEMS.len());
+        let home = &st.store.shops[BORG_HOME].ware[..n];
+        if let Some(i) = planned_wear_slot(want, home) {
+            let qty = home[i].iqty;
 
             /* "Buy" the desired item from the home */
-            borg_keypress(st, menu as i8 as keycode_t);
+            borg_keypress(st, SHOP_MENU_ITEMS[i] as i8 as keycode_t);
             borg_keypress(st, keycode_t::from(b'p'));
             if qty > 1 {
                 borg_keypress(st, KC_ENTER);
@@ -1236,13 +1252,10 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
             borg_keypress(st, letter(slot - inven_wield()));
             return true;
         }
-        /* (INVEN_TOTAL: the pack and the equipment) */
-        for i in 0..quiver_start() {
-            if !matches(&st.items.items[i as usize]) {
-                continue;
-            }
+        let end = if want.torch_radius.is_some() { inven_wield() } else { quiver_start() };
+        if let Some(i) = planned_wear_slot(want, &st.items.items[..end as usize]) {
             borg_keypress(st, keycode_t::from(b'w'));
-            borg_keypress(st, letter(i));
+            borg_keypress(st, letter(i as i32));
 
             st.borg.goal.best_item[item_num] = BorgBest::default();
             return true;
@@ -1316,6 +1329,12 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
 
             /* Ignore "worthless" items */
             if item.value == 0 {
+                continue;
+            }
+
+            if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
+                && !burning_torch(item)
+            {
                 continue;
             }
 
@@ -1432,6 +1451,7 @@ pub fn borg_best_stuff(st: &mut BorgState) -> bool {
         b.tval = tval;
         b.pval = pval;
         b.sval = sval;
+        b.torch_radius = burning_torch(item).then(|| light_contribution(item));
     }
     /* if we didn't change anything, clear out the changes */
     if !found {
@@ -1601,6 +1621,33 @@ pub fn borg_free_item_wear(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn equipment_plan_finds_the_shortest_torch_at_the_chosen_brightness() {
+        use crate::headers::list_object_flags_h::{OF_BURNS_OUT, OF_LIGHT_2};
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
+
+        let mut full = crate::borg_item::blank_item();
+        full.tval = TV_LIGHT as u8;
+        full.sval = 1;
+        full.iqty = 4;
+        full.timeout = 5000;
+        for flag in [OF_BURNS_OUT, OF_LIGHT_2] {
+            let offset = (flag as i32 - engine::FLAG_START) as usize;
+            full.flags[offset / 8] |= 1 << (offset % 8);
+        }
+        let short = borg_item { iqty: 1, timeout: 73, ..full };
+        let spent = borg_item { timeout: 0, ..short };
+        let cursed = borg_item { timeout: 1, cursed: true, ..short };
+        let mut bright = full;
+        bright.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        let items = [full, bright, spent, cursed, short];
+        let mut want = BorgBest { tval: full.tval, sval: full.sval, ..BorgBest::default() };
+        want.torch_radius = Some(light_contribution(&full));
+        assert_eq!(planned_wear_slot(want, &items), Some(4));
+        want.torch_radius = Some(light_contribution(&bright));
+        assert_eq!(planned_wear_slot(want, &items), Some(1));
+    }
 
     #[test]
     fn ammo_tvals() {

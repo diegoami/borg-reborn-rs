@@ -236,6 +236,8 @@ pub struct BorgBest {
     pub tval: u8,
     pub sval: u8,
     pub pval: i16,
+    /// Keep the chosen brightness when finding the torch again after a pack change.
+    pub torch_radius: Option<i32>,
 }
 
 #[derive(Copy, Clone, Default)]
