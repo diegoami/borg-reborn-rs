@@ -209,6 +209,12 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
+            if case in ("one-step", "two-steps", "blocked", "rising-hold"):
+                # These flight maps model the original descent policy. The
+                # synthetic characters lack supplies for the next depth.
+                # MoreRefusedGatesTest covers the gate with both values.
+                key = "borg_param_stairs_descent_gates_without_upstair"
+                config = re.sub(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
             if weight is not None:
                 # #1061: the stair_scum mode (shipped after these cases) is not
                 # what they test; pin it off.
@@ -254,7 +260,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
     def test_known_up_handoff_with_shipped_settings(self):
         self.run_case("known-up-handoff", player_class=0, depth=2)
 
-    def test_stair_handoff_descends_with_shipped_settings(self):
+    def test_stair_handoff_descends_with_original_descent_policy(self):
         self.run_case("one-step")
 
     def test_rising_hold_filters_and_releases_down_stair_flight(self):
