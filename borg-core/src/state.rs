@@ -45,6 +45,7 @@ use crate::borg_update::UpdateState;
 #[derive(Default)]
 pub struct BorgState {
     pub trip: crate::borg_trip::TripState,
+    pub(crate) ranged: crate::borg_ranged::Trip,
     /// borg-reborn-rs (#840): the basic kit's notes and the purse at the last town think.
     pub kit: crate::borg_kit::KitState,
     /// borg-reborn-rs (#1153): the movement-loop detector.

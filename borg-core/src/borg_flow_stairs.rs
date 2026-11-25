@@ -82,6 +82,8 @@ pub struct StairsState {
     /// Down stair left while exploring for or following a route to an up stair.
     pub(crate) up_search_departure: Option<UpSearchDeparture>,
     pub(crate) off_stair_handoff: OffStairHandoff,
+    /// Last stair-flight arrival reported as held, by level and flight think.
+    pub(crate) rising_refusal_noted: Option<(i32, i32)>,
 }
 
 /// Let the up-stair route take a second step before a fallback can undo
@@ -262,10 +264,13 @@ fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i3
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
+        i += 1;
+        if matches!(which, Which::More) && crate::borg_caution::rising_holds_stair_target(st, y, x) {
+            continue;
+        }
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
             parked.push((y, x));
-            i += 1;
             continue;
         }
 
@@ -275,7 +280,6 @@ fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i3
         if st.flow.cost_at(y, x) == 0 {
             enqueued += 1;
         }
-        i += 1;
     }
     (enqueued, parked)
 }
@@ -477,10 +481,11 @@ fn weighted_route_with(
         if search && matches!(which, Which::More) {
             continue;
         }
-        let track = track(st, which);
-        for i in 0..track.num.max(0) as usize {
-            let (y, x) = track.at(i);
-            if st.cave.grid(x, y).kill == 0 {
+        for i in 0..track(st, which).num.max(0) as usize {
+            let (y, x) = track(st, which).at(i);
+            if st.cave.grid(x, y).kill == 0
+                && (!matches!(which, Which::More) || !crate::borg_caution::rising_holds_stair_target(st, y, x))
+            {
                 stairs.push(loc { x, y });
             }
         }
@@ -985,8 +990,15 @@ fn stair_less(
 /// light; and recalling), shared with #544's flight down a known staircase
 /// so the two agree. True: no descent.
 pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
+    use crate::params::{value as p, Param};
+
     /* if there are no down stairs, don't filter use of up stairs */
-    if st.stairs.less.num != 0 {
+    // borg-reborn-rs (#1177, from the #1173 investigation; C's defect,
+    // borg-flow-stairs.c:193, tracked upstream as better-borg-c #540 and
+    // neo-angband-tracker #629): the four gates below guard the descent
+    // itself, but C applies them only when an up staircase has been seen.
+    // stairs_descent_gates_without_upstair applies them always; 0 keeps C.
+    if st.stairs.less.num != 0 || p(Param::stairs_descent_gates_without_upstair) != 0 {
         /* not unless safe or brave */
         if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;
@@ -1536,6 +1548,18 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "leave-level-upstairs" {
         crate::borg_think_dungeon_util::run_leave_level_regression(st);
     }
+    if case == "dark-vein-loop-on" || case == "dark-vein-loop-off" {
+        crate::borg_think_dungeon_util::run_dark_vein_loop_regression(st, case.ends_with("-on"));
+    }
+    if case == "stale-stair-more" {
+        crate::borg_think_dungeon_util::run_stale_stair_more_regression(st);
+    }
+    if case == "more-refused-gates" {
+        crate::borg_think_dungeon_util::run_more_refused_regression(st);
+    }
+    if case == "note-standing-flags" {
+        crate::borg_think_dungeon_util::run_note_standing_regression(st);
+    }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;
@@ -1631,8 +1655,145 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         std::process::exit(0);
     }
 
+    if matches!(case, "rising-hold" | "known-up-handoff") {
+        use crate::borg_caution::desperate_for_stairs;
+        use crate::params::{value, Param};
+
+        let up = loc { x: 35, y: 20 };
+        let start = loc { x: 40, y: 20 };
+        let approach = loc { x: 41, y: 20 };
+        let down = loc { x: 42, y: 20 };
+        crate::borg_cave::borg_init_cave(st);
+        for y in 19..=21 {
+            for x in 34..=43 {
+                st.cave.grid_mut(x, y).feat = if y == 20 && (35..=42).contains(&x) {
+                    FEAT_FLOOR as u8
+                } else {
+                    FEAT_GRANITE as u8
+                };
+            }
+        }
+        st.cave.grid_mut(down.x, down.y).feat = FEAT_MORE as u8;
+        st.borg.c = start;
+        st.borg.avoidance = 77;
+        for (index, amount) in [(BI_CLEVEL, 6), (BI_CURHP, 77), (BI_MAXHP, 77), (BI_LIGHT, 1)] {
+            st.borg.trait_[index as usize] = amount;
+        }
+        st.kills.cnt = 0;
+        st.kills.nxt = 1;
+        st.danger = Default::default();
+        st.borg.time.level = st.borg.time.now;
+        st.borg.goal.fleeing = true;
+        st.stairs.less.num = 0;
+        st.stairs.more.num = 1;
+        st.stairs.more.x[0] = down.x;
+        st.stairs.more.y[0] = down.y;
+
+        if case == "known-up-handoff" {
+            // The synthetic start is one-way. The native test operates on a
+            // fabricated Borg cave and exits before the engine sees its keys.
+            assert!(engine::option_set(c"birth_force_descend", false));
+            st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+            st.stairs.less.num = 1;
+            st.stairs.less.x[0] = up.x;
+            st.stairs.less.y[0] = up.y;
+            st.borg.c = down;
+            st.borg.stair_less = true;
+            assert!(borg_flow_stair_less(st, GOAL_FLEE, false));
+            observe_move(st, b'4', approach);
+            assert!(st.stairs.up_search_departure.is_some_and(|departure| departure.known));
+            assert!(desperate_for_stairs(st, 0), "the known up route gets the handoff");
+            observe_move(st, b'4', start);
+            assert!(desperate_for_stairs(st, 0), "the handoff continues within down-stair range");
+            observe_move(st, b'4', loc { x: start.x - 1, y: up.y });
+            for x in (up.x..start.x - 1).rev() {
+                assert!(borg_flow_stair_less(st, GOAL_FLEE, false));
+                observe_move(st, b'4', loc { x, y: up.y });
+            }
+            assert!(borg_caution(st), "caution takes the up stairs");
+            assert_eq!(st.io.queued_keys(), [u32::from(b'<')]);
+            println!("emergency stair handoff passed: {case}");
+            std::process::exit(0);
+        }
+
+        assert_eq!(value(Param::loop_breaker), 1);
+        assert_eq!(value(Param::caution_rising_explore_ticks), 500);
+        assert_eq!(value(Param::caution_rising_skip_held_stairs), 1);
+
+        // Seed a walk before the hold, then change policy before its next step.
+        assert!(borg_flow_stair_more(st, GOAL_FLEE, false, false));
+        observe_move(st, b'6', approach);
+        st.borg.goal.rising = true;
+        assert!(!borg_flow::borg_flow_old(st, GOAL_FLEE));
+        assert_eq!(st.borg.goal.type_0, 0);
+        assert!(st.io.queued_keys().is_empty());
+
+        // Danger where we stand does not make the quiet destination usable.
+        st.borg.c = start;
+        st.borg.mon.scary = true;
+        st.danger.fear_monsters[start.y as usize][start.x as usize] = 115;
+        assert!(!desperate_for_stairs(st, 115), "caution must skip the held stair");
+        assert!(!borg_flow_stair_both(st, GOAL_FLEE, false));
+        assert!(st.io.queued_keys().is_empty());
+        st.danger = Default::default();
+
+        // The same destination becomes usable once the level timer expires.
+        let hold_start = st.borg.time.level;
+        st.borg.time.now = hold_start + value(Param::caution_rising_explore_ticks);
+        assert!(desperate_for_stairs(st, 0), "the hold has expired");
+        observe_move(st, b'6', approach);
+        assert!(desperate_for_stairs(st, 0));
+        observe_move(st, b'6', down);
+
+        // Model a hold that applies on arrival after the last flight step.
+        st.borg.time.level = st.borg.time.now - 2;
+        let arrival = (st.borg.time.level, st.borg.flight_time);
+        borg_caution(st);
+        assert_eq!(st.stairs.rising_refusal_noted, Some(arrival));
+        assert!(!st.io.queued_keys().contains(&u32::from(b'>')));
+        while !st.io.queued_keys().is_empty() {
+            borg_io::borg_inkey(st, true);
+        }
+
+        st.borg.time.level = hold_start;
+        assert!(borg_caution(st), "caution now takes the down stairs");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'>')]);
+        borg_io::borg_inkey(st, true);
+
+        // The synthetic start is one-way. This fixture needs an exit up and
+        // terminates before its queued keys can reach the engine.
+        assert!(engine::option_set(c"birth_force_descend", false));
+        st.cave.grid_mut(up.x, up.y).feat = FEAT_LESS as u8;
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = up.x;
+        st.stairs.less.y[0] = up.y;
+        st.borg.mon.scary = false;
+        st.borg.time.level = st.borg.time.now;
+        st.borg.c = approach;
+        crate::borg_loop::observe(st);
+        // Fill the configured window and finish on the stair approach.
+        let moves = value(Param::loop_moves);
+        for i in 0..moves + moves % 2 {
+            st.borg.c = if i % 2 == 0 { start } else { approach };
+            st.borg.time.now += 1;
+            crate::borg_loop::observe(st);
+        }
+        assert!(crate::borg_loop::break_loop(st), "the quiet loop should start an up-stair walk");
+        observe_move(st, b'4', start);
+        assert!(!desperate_for_stairs(st, 0), "caution must leave the up walk in control");
+        for x in (up.x..start.x).rev() {
+            assert!(crate::borg_loop::break_loop(st));
+            observe_move(st, b'4', loc { x, y: up.y });
+        }
+        assert!(crate::borg_loop::break_loop(st));
+        assert_eq!(st.io.queued_keys(), [u32::from(b'<')]);
+        println!("emergency stair handoff passed: {case}");
+        std::process::exit(0);
+    }
+
     if case == "interrupted-search" {
         use crate::borg_flow_misc::borg_flow_spastic;
+        use crate::borg_update::record_step;
 
         let stair = loc { x: 51, y: 19 };
         let floor = loc { x: 51, y: 20 };
@@ -1657,7 +1818,12 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         st.kills.nxt = 1;
         st.danger = Default::default();
         st.stairs.less.num = 0;
-        st.flow.track_step.num = 3;
+        st.flow.track_step.num = 0;
+        // The first search arrival is observation 75, at the history limit.
+        for _ in 0..37 {
+            record_step(&mut st.flow.track_step, stair);
+            record_step(&mut st.flow.track_step, floor);
+        }
 
         // A cost-one search returns to the stair, then dark exploration
         // wins the next move. The observed stair-floor-stair trail lets
@@ -1665,10 +1831,11 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
         for searches in 1..=5 {
             assert!(borg_flow_spastic(st, true));
             observe_move(st, b'8', stair);
-            for (i, grid) in [stair, floor, stair].into_iter().enumerate() {
-                st.flow.track_step.x[i] = grid.x;
-                st.flow.track_step.y[i] = grid.y;
-            }
+            record_step(&mut st.flow.track_step, st.borg.c);
+            let trail = &st.flow.track_step;
+            assert_eq!(trail.num, 75);
+            assert_eq!([trail.at(72), trail.at(73), trail.at(74)],
+                [(stair.y, stair.x), (floor.y, floor.x), (stair.y, stair.x)]);
             assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * (searches - 1));
 
             borg_flow::borg_flow_clear(st);
@@ -1678,6 +1845,7 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
             assert!(borg_flow::borg_flow_old(st, GOAL_DARK));
             assert_eq!(st.cave.grid(stair.x, stair.y).xtra, 5 * searches);
             observe_move(st, b'2', floor);
+            record_step(&mut st.flow.track_step, st.borg.c);
             assert!(!borg_flow::borg_flow_old(st, GOAL_DARK));
         }
         assert!(!borg_flow_spastic(st, true), "the same staircase search is exhausted");
