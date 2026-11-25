@@ -853,6 +853,19 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
     (p, d)
 }
 
+// borg-reborn-rs (#1235): fuel can break a tie between eligible pack
+// upgrades. With no accepted upgrade, the usual power gain is required.
+fn prefer_wear_candidate(
+    power: i32,
+    best_power: i32,
+    min_gain: i32,
+    candidate: &borg_item,
+    best: Option<&borg_item>,
+) -> bool {
+    power > best_power + min_gain
+        || (power == best_power && best.is_some_and(|item| shorter_torch(candidate, item)))
+}
+
 /// Wear useful equipment (`borg_wear_stuff`).
 ///
 /// Look through the inventory for equipment that is better than the
@@ -918,6 +931,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#1235): a replacement torch must be clean and fueled.
         if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
             && !burning_torch(item)
         {
@@ -996,10 +1010,10 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
             /* XXX XXX XXX Consider if slot is empty */
 
-            /* Break a tie between upgrades without making an equal swap. */
-            let prefer_torch = p == b_p && b_i >= 0
-                && shorter_torch(&st.items.items[i as usize], &st.items.items[b_i as usize]);
-            if p <= b_p + param(Param::wear_min_power_gain) && !prefer_torch {
+            let best = usize::try_from(b_i).ok().map(|slot| &st.items.items[slot]);
+            if !prefer_wear_candidate(
+                p, b_p, param(Param::wear_min_power_gain), &st.items.items[i as usize], best,
+            ) {
                 continue;
             }
 
@@ -1128,6 +1142,7 @@ fn equip_slots_max() -> usize {
     usize::from(engine::z_info().equip_slots_max)
 }
 
+// borg-reborn-rs (#1235): recover the original radius and pick the shortest clean match.
 fn planned_wear_slot(want: BorgBest, items: &[borg_item]) -> Option<usize> {
     let matches = |item: &borg_item| {
         item.pval == want.pval && item.tval == want.tval && item.sval == want.sval
@@ -1135,7 +1150,7 @@ fn planned_wear_slot(want: BorgBest, items: &[borg_item]) -> Option<usize> {
     if let Some(radius) = want.torch_radius {
         items.iter().enumerate()
             .filter(|(_, item)| matches(item) && burning_torch(item) && light_contribution(item) == radius)
-            .min_by_key(|(_, item)| item.timeout)
+            .min_by_key(|(slot, item)| (item.timeout, *slot))
             .map(|(slot, _)| slot)
     } else {
         items.iter().position(matches)
@@ -1252,6 +1267,7 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
             borg_keypress(st, letter(slot - inven_wield()));
             return true;
         }
+        // borg-reborn-rs (#1235): the torch must be in the pack to wield it.
         let end = if want.torch_radius.is_some() { inven_wield() } else { quiver_start() };
         if let Some(i) = planned_wear_slot(want, &st.items.items[..end as usize]) {
             borg_keypress(st, keycode_t::from(b'w'));
@@ -1332,6 +1348,8 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
                 continue;
             }
 
+            // borg-reborn-rs (#1235): torch upgrades require clean fuel even
+            // when the town plan can decurse other equipment.
             if u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == st.item_val.sv_light_torch
                 && !burning_torch(item)
             {
@@ -1622,10 +1640,8 @@ pub fn borg_free_item_wear(st: &mut BorgState) {
 mod tests {
     use super::*;
 
-    #[test]
-    fn equipment_plan_finds_the_shortest_torch_at_the_chosen_brightness() {
+    fn full_torch_stack() -> borg_item {
         use crate::headers::list_object_flags_h::{OF_BURNS_OUT, OF_LIGHT_2};
-        use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
 
         let mut full = crate::borg_item::blank_item();
         full.tval = TV_LIGHT as u8;
@@ -1636,6 +1652,14 @@ mod tests {
             let offset = (flag as i32 - engine::FLAG_START) as usize;
             full.flags[offset / 8] |= 1 << (offset % 8);
         }
+        full
+    }
+
+    #[test]
+    fn equipment_plan_finds_the_shortest_torch_at_the_chosen_brightness() {
+        use crate::headers::list_object_modifiers_h::OBJ_MOD_LIGHT;
+
+        let full = full_torch_stack();
         let short = borg_item { iqty: 1, timeout: 73, ..full };
         let spent = borg_item { timeout: 0, ..short };
         let cursed = borg_item { timeout: 1, cursed: true, ..short };
@@ -1647,6 +1671,20 @@ mod tests {
         assert_eq!(planned_wear_slot(want, &items), Some(4));
         want.torch_radius = Some(light_contribution(&bright));
         assert_eq!(planned_wear_slot(want, &items), Some(1));
+    }
+
+    #[test]
+    fn torch_fuel_breaks_a_tie_only_after_accepting_a_pack_upgrade() {
+        let full = full_torch_stack();
+        let short = borg_item { iqty: 1, timeout: 73, ..full };
+        let lightless_power = 100;
+        let lit_power = 200;
+        let min_gain = 5;
+
+        assert!(!prefer_wear_candidate(lit_power, lit_power, min_gain, &short, None));
+        assert!(prefer_wear_candidate(lit_power, lightless_power, min_gain, &full, None));
+        assert!(prefer_wear_candidate(lit_power, lit_power, min_gain, &short, Some(&full)));
+        assert!(!prefer_wear_candidate(lit_power, lit_power, min_gain, &full, Some(&short)));
     }
 
     #[test]
