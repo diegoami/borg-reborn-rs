@@ -112,6 +112,7 @@ pub struct ItemValState {
     pub sv_scroll_satisfy_hunger: i32,
     pub sv_scroll_light: i32,
     pub sv_scroll_mapping: i32,
+    pub sv_scroll_treasure_detection: i32,
     pub sv_scroll_acquirement: i32,
     pub sv_scroll_star_acquirement: i32,
     pub sv_scroll_remove_curse: i32,
@@ -346,6 +347,7 @@ pub fn borg_init_item_val(st: &mut BorgState) {
     st.item_val.sv_scroll_satisfy_hunger = borg_lookup_sval_fail(st, tval, "Remove Hunger");
     st.item_val.sv_scroll_light = borg_lookup_sval_fail(st, tval, "Light");
     st.item_val.sv_scroll_mapping = borg_lookup_sval_fail(st, tval, "Magic Mapping");
+    st.item_val.sv_scroll_treasure_detection = borg_lookup_sval_fail(st, tval, "Treasure Detection");
     st.item_val.sv_scroll_acquirement = borg_lookup_sval_fail(st, tval, "Acquirement");
     st.item_val.sv_scroll_star_acquirement = borg_lookup_sval_fail(st, tval, "*Acquirement*");
     st.item_val.sv_scroll_remove_curse = borg_lookup_sval_fail(st, tval, "Remove Curse");

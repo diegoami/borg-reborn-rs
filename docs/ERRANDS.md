@@ -78,6 +78,7 @@ core's own stop) when it is done.
 | command | what it does | done |
 |---|---|---|
 | `/town` | home: Word of Recall if the core has one, else the stairs up | in town |
+| `/level-up N` | play normally until character level N (1–50), then return as with `/town` | in town after reaching the target |
 | `/shopping` | in town, run the core's buying, selling and home-inventory round | when shopping is finished, before leaving town |
 | `/walk-back` | home by the stairs only | in town |
 | `/explore-back` | this level and each one above it explored, in turn, then home | in town |
@@ -95,6 +96,19 @@ Several commands can go on one line, separated by `;`
 (`/stopscared 50; /dive 3; /walk-back`). Settings apply at once. Errands
 run in turn, each one starting when the one before it is done. Any other
 ending (scared, aborted, the budget) drops the rest.
+
+`/level-up 10` lets the core explore, restock and visit town as usual until its
+current character level reaches 10 or higher. Below the target, the errand
+has no destination and town visits leave it active. Once the target is met,
+the Borg heads home or stops immediately if already in town. It keeps
+returning even if it subsequently loses a level. `BORG_ERRAND_BUDGET`, if
+set, covers both phases from the first think.
+
+The usual errand rules apply to `borg_plan`. An interactive `/level-up`
+cancels the active plan for the rest of the process. A configured
+`/level-up` conflicts with a configured plan and exits with status 2.
+The usual automatic stops also apply. For example, reaching
+`borg_stop_clevel` during the errand can stop the Borg before it gets home.
 
 `/shopping` uses the core's existing choices about what is worth buying,
 selling, storing at home or taking from home. It does not force a purchase

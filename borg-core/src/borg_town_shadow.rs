@@ -594,7 +594,9 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     // unchanged. Keep zero-quantity rows to preserve recorded candidate order.
     let unlight = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT);
     let torch = st.item_val.sv_light_torch;
-    let torch_shortfall = if live && param(Param::town_light_reserve_turns) > 0 {
+    // The zero mode is the historical shopping policy used by exact replays.
+    let torch_shortfall = if live && param(Param::town_shop_overloaded) > 0
+        && param(Param::town_light_reserve_turns) > 0 {
         crate::borg_light::torch_fuel_turns(st).map(|turns| {
             crate::borg_light::fuel_goal(st, crate::borg_town_utility::Journey::of(st)) - i64::from(turns)
         })

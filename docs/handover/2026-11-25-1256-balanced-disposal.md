@@ -32,5 +32,14 @@ The regression uses the captured Half-Elf Priest inventory and restores
 the oil and shot from the recorded discard sequence for a fresh-Borg
 dungeon check. The source and its checksum are in
 [#1256](https://github.com/diegoami/borg-reborn-rs/issues/1256).
+
+The reconstructed dungeon kit shed the harmful potions and 11 torches
+while keeping all 12 flasks of oil and its shot. In town it shed 21
+torches and shopped with 5 lb of headroom. The General Store torch offer
+remained at zero. A larger native fixture also cleared all 14 Sleep and
+22 Confusion potions plus examples of harmful scrolls, mushrooms, wands
+and staves. The full-Home regression observed the lighter exchange and
+deposit before the Recall acquisition.
+
 Stopping torch purchases at the fuel target is tracked in
 [#1257](https://github.com/diegoami/borg-reborn-rs/issues/1257).
