@@ -8240,19 +8240,19 @@ the ten below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1269` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1541` |
-| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1324` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1402` |
-| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1403` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1480` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1482` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1484` |
-| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1404` |
-| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1328` |
-| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1335` |
-| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1402` |
-| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1403` |
-| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1404` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1540` |
+| `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1323` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1401` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1402` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1479` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1481` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1483` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1403` |
+| `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1327` |
+| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1334` |
+| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1401` |
+| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1402` |
+| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1403` |
 
 ## An overweight Mage's torches, cursed spares and stat curse (#1151)
 

@@ -1226,13 +1226,12 @@ fn run_tries(st: &mut BorgState, frame: &StairFrame, tries: Vec<RingTry>, label:
 /// (`borg_flow_far_from_stairs_dist`: the depth at least the level less the
 /// margin, below `flow_leash_stairs_max_level`), or while the kit is short.
 fn c_leash_on(st: &BorgState) -> bool {
-    c_stair_leash_on(st) || crate::borg_kit::leash_active(st)
+    let c = crate::borg_flow::c_leash();
+    c_stair_leash_on(st, c.depth_margin, c.stairs_max_level) || crate::borg_kit::leash_active(st)
 }
 
-fn c_stair_leash_on(st: &BorgState) -> bool {
-    let c = crate::borg_flow::c_leash();
-    st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin
-        && st.borg.tr(BI_CLEVEL) < c.stairs_max_level
+fn c_stair_leash_on(st: &BorgState, depth_margin: i32, max_level: i32) -> bool {
+    st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - depth_margin && st.borg.tr(BI_CLEVEL) < max_level
 }
 
 /// #1080, #1085: breadth-first exploration from the staircases.
@@ -1317,20 +1316,20 @@ fn released(st: &BorgState) -> bool {
 /// Not above `explore_mix_max_clevel` (per class), and not on a level where
 /// leaving after the walk failed (`release_after_failed_exit`).
 pub(crate) fn mixed_active(st: &BorgState) -> bool {
-    mixed_active_with_leash(st, c_leash_on)
+    mixed_active_with(st, c_leash_on, value)
 }
 
-fn mixed_active_with_leash(st: &BorgState, leash_on: impl FnOnce(&BorgState) -> bool) -> bool {
+fn mixed_active_with(st: &BorgState, leash_on: impl FnOnce(&BorgState) -> bool, value: impl Fn(Param) -> i32) -> bool {
     value(Param::explore_mixed) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
         && leash_on(st)
-        && mix_level(st) <= value(Param::explore_mix_max_clevel)
+        && mix_level(st, &value) <= value(Param::explore_mix_max_clevel)
         && !released(st)
 }
 
 /// #1220: the level used for both mixed eligibility and radius growth.
-fn mix_level(st: &BorgState) -> i32 {
+fn mix_level(st: &BorgState, value: impl Fn(Param) -> i32) -> i32 {
     let clevel = st.borg.tr(BI_CLEVEL);
     if value(Param::explore_mix_depth_adjusted_level) != 0 {
         (clevel - st.borg.tr(BI_CDEPTH) + 1).max(1)
@@ -1396,8 +1395,8 @@ struct MixRadii {
 
 /// #1160, #1220: the stair planner grows all three radii by the same level
 /// that gates mixed exploration (per mille a level, per class).
-fn mix_radii(st: &BorgState) -> MixRadii {
-    let level = mix_level(st);
+fn mix_radii(st: &BorgState, value: impl Fn(Param) -> i32) -> MixRadii {
+    let level = mix_level(st, &value);
     MixRadii {
         start: grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), level),
         step: grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), level),
@@ -1474,7 +1473,7 @@ fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, ste
 /// known staircase.
 fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
     let frame = stair_frame(st, scum)?;
-    let MixRadii { start, step, max } = mix_radii(st);
+    let MixRadii { start, step, max } = mix_radii(st, value);
     let mut limit = mix_limit(MixModel {
         start,
         sight: value(Param::explore_mix_sight),
@@ -2389,30 +2388,28 @@ mod breadth_first_tests {
         ] {
             st.borg.trait_[BI_CLEVEL as usize] = clevel;
             st.borg.trait_[BI_CDEPTH as usize] = depth;
-            crate::params::with_test_values(&[
-                (Param::explore_breadth_first, 0),
-                (Param::explore_mixed, 1),
-                (Param::explore_mix_max_clevel, 9),
-                (Param::explore_mix_depth_adjusted_level, adjusted),
-                (Param::explore_mix_radius, 2),
-                (Param::explore_mix_radius_dp, 300),
-                (Param::explore_mix_step, 3),
-                (Param::explore_mix_step_dp, 100),
-                (Param::explore_mix_max_radius, 6),
-                (Param::explore_mix_max_radius_dp, 1000),
-                // Widen the depth margin to isolate the class cap below CL20.
-                (Param::flow_leash_depth_margin, 10),
-                (Param::flow_leash_stairs_max_level, 20),
-            ], || {
-                // The unit fixture has a stair leash and no engine inventory.
-                assert_eq!(
-                    mixed_active_with_leash(&st, c_stair_leash_on),
-                    eligible,
-                    "eligibility with flag {adjusted} at CL{clevel}/DL{depth}",
-                );
-                let MixRadii { start, step, max } = mix_radii(&st);
-                assert_eq!([start, step, max], growth, "growth with flag {adjusted} at CL{clevel}/DL{depth}");
-            });
+            let setting = |param| match param {
+                Param::explore_mixed => 1,
+                Param::explore_mix_max_clevel => 9,
+                Param::explore_mix_depth_adjusted_level => adjusted,
+                Param::explore_mix_radius => 2,
+                Param::explore_mix_radius_dp => 300,
+                Param::explore_mix_step => 3,
+                Param::explore_mix_step_dp => 100,
+                Param::explore_mix_max_radius => 6,
+                Param::explore_mix_max_radius_dp => 1000,
+                _ => unreachable!("unexpected mixed exploration parameter"),
+            };
+            // The fixture has no engine inventory. Widen the stair leash's
+            // depth margin to isolate the class cap below CL20.
+            let leash_on = |st: &BorgState| c_stair_leash_on(st, 10, 20);
+            assert_eq!(
+                mixed_active_with(&st, leash_on, setting),
+                eligible,
+                "eligibility with flag {adjusted} at CL{clevel}/DL{depth}",
+            );
+            let MixRadii { start, step, max } = mix_radii(&st, setting);
+            assert_eq!([start, step, max], growth, "growth with flag {adjusted} at CL{clevel}/DL{depth}");
         }
     }
 }
