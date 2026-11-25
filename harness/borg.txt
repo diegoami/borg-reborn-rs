@@ -1417,6 +1417,8 @@ borg_param_caution_remember_never_move = 0
 borg_param_caution_desperate_fast_danger_percent = 50
 # #907: compare current player and observed monster speeds in the faster-neighbour veto.
 borg_param_caution_desperate_fast_haste = 0
+# #908: refuse branch (three) when the walk costs this share of HP. 0 disables the test.
+borg_param_caution_desperate_walk_cost_percent = 0
 # #1123: avoid a recently retreated-from grid on a stair route while it
 # is still dangerous. The hold lasts at most 128 Borg thinks.
 borg_param_caution_retreat_reentry_ticks = 128
@@ -2030,6 +2032,8 @@ borg_param_stair_scum_slack_per_level_percent = 50
 borg_param_stair_scum_alarm_turns = 100
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
+# #992: reserve this share of HP in the priority fight verdict. 0 uses the current verdict.
+borg_param_caution_winning_fight_margin_percent = 0
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34
