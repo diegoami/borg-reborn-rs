@@ -1592,6 +1592,44 @@ pub fn store_stock_descs(store: usize, mode: u32) -> Vec<Vec<u8>> {
 // ---------------------------------------------------------------------------
 // Store stock (borg-store.c)
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum NormalStock {
+    Unlisted,
+    Intermittent,
+    Staple,
+}
+
+/// The public shop catalogue, independent of the currently rolled stock.
+/// Engine store.c: parse_always(), parse_normal(), and store_maint().
+pub(crate) fn normal_store_stock(access: &Access, kind: u32) -> NormalStock {
+    use crate::headers::list_terrain_h::{FEAT_HOME, FEAT_STORE_BLACK};
+    use crate::headers::object_h::object_kind;
+    use crate::headers::store_h::stores;
+
+    check_access(access);
+    let mut stock = NormalStock::Unlisted;
+    // SAFETY: store initialization populates store_max entries and each
+    // populated catalogue owns its parsed number of non-null kind pointers.
+    unsafe {
+        for store in core::slice::from_raw_parts(stores, usize::from(z_info().store_max)) {
+            if store.feat == FEAT_HOME as i32 || store.feat == FEAT_STORE_BLACK as i32 {
+                continue;
+            }
+            let has_kind = |table: *const *mut object_kind, count: usize| {
+                count > 0 && core::slice::from_raw_parts(table, count)
+                    .iter().any(|&entry| (*entry).kidx == kind)
+            };
+            if has_kind(store.always_table, store.always_num) {
+                return NormalStock::Staple;
+            }
+            if has_kind(store.normal_table, store.normal_num) {
+                stock = NormalStock::Intermittent;
+            }
+        }
+    }
+    stock
+}
+
 /// An object in a store's stock (an entry of `store_stock_list`). Bound
 /// to the borrow of the state's `access` token (see "Engine object
 /// handles"): the stock only changes while the game runs.

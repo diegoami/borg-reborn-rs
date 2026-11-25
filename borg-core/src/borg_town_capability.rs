@@ -531,7 +531,7 @@ fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Ve
     effect_supply_for_consumer(effects, hp, service_turns, false)
 }
 
-fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
+pub(crate) fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
     let mut sum = BTreeMap::<usize, i64>::new();
     let mut i = 0;
     while i < effects.len() {
@@ -586,11 +586,11 @@ fn reduction_cap(subtype: u32) -> Option<usize> {
 fn rod_uses(quantity: i64, timeout: i64, cooldown: i64, horizon: i64) -> i64 {
     let q = quantity.clamp(1, 255);
     let cool = cooldown.max(1);
-    let mut timeout = timeout.max(0);
+    let first_ready = rod_ready_after(q, timeout, cool);
+    let mut timeout = timeout.saturating_sub(first_ready.saturating_mul(q)).max(0);
     let mut uses = 0;
-    // Match number_charging/recharge_timeout, using the native average
-    // cooldown as an explicit forecast (actual recharge rolls may differ).
-    for _ in 0..horizon.max(0) {
+    // Forecast subsequent charges with the native average cooldown.
+    for _ in first_ready..horizon {
         let charging = (timeout as u64).div_ceil(cool as u64).min(q as u64) as i64;
         if charging < q { uses += 1; timeout += cool; }
         let charging = (timeout as u64).div_ceil(cool as u64).min(q as u64) as i64;
@@ -1731,7 +1731,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
     #[test]
@@ -1829,7 +1829,7 @@ mod tests {
             settings[(BORG_TOWN_HOME_DISCOUNT - BORG_TOWN_PLAN) as usize] = 500;
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            let input = StepInput { departure: false, storing: None, revision: 12, capability: Some(&m), utility: true,
+            let input = StepInput { departure: false, shop_overloaded: false, storing: None, revision: 12, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold: i64::from(gold), pack_slots: 4, weight: 100 },
                 urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
@@ -2262,7 +2262,7 @@ mod tests {
         let groups = vec![Group { key: GroupKey::Class(0), options: vec![Choice::default(), choice(0)] },
             Group { key: GroupKey::Class(1), options: vec![Choice::default(), choice(1)] }];
         let limits = Limits { gold: 100, pack_slots: 5, weight: 100 };
-        let input = crate::borg_town_record::StepInput { departure: false, storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
+        let input = crate::borg_town_record::StepInput { departure: false, shop_overloaded: false, storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
             black_market_percentage: -1, candidates: cs.clone(), facts: &[], tryon: &[], limits, urgent: vec![],
             params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 };
         shared_groups(groups, &input, &cs, &m, &limits, (0, 100, 0)).len()
@@ -2537,7 +2537,7 @@ mod tests {
             m.curves[CURSE] = [CURSE as i64, if curse { 100 * UNIT } else { 0 }, -UNIT, 0, 0];
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            let input = StepInput { departure: false, storing: None, revision, capability: Some(&m), utility: true,
+            let input = StepInput { departure: false, shop_overloaded: false, storing: None, revision, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates: vec![scroll.clone()],
                 facts: &[], tryon: &[], limits: Limits { gold: 89_159, pack_slots: 4, weight },
                 urgent: vec![], params: [0; PARAMS], traits: &traits, power: 0, carried: &[],
@@ -2730,7 +2730,7 @@ mod tests {
         let groups=vec![Group {key:GroupKey::Slot(5),options:vec![Choice::default(),choice(0),choice(1)]},
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
-        let input=crate::borg_town_record::StepInput { departure: false,storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
+        let input=crate::borg_town_record::StepInput { departure: false, shop_overloaded: false,storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
             urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,reads_now:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {
@@ -3138,4 +3138,41 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
         || [REVITALIZE, REMEMBRANCE].into_iter()
             .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, param(Param::town_restore_life_spell_fail)));
     if repeatable { 0 } else { copies }
+}
+
+impl Model {
+    /// Marginal future use of one shop copy against capabilities already at Home.
+    pub(crate) fn home_offer(&self, shop: u8, slot: u8) -> i64 {
+        self.units(i64::from(shop), i64::from(slot), 1).into_iter()
+            .filter(|(id, _)| !HEAL_KINDS.contains(id))
+            .map(|(id, n)| {
+                let row = &self.curves[id];
+                self.value(id, row, row[4] + n) - self.value(id, row, row[4])
+            }).sum()
+    }
+}
+
+pub(crate) fn home_consumable_effect(effects: &[(u16, i32, i64)], st: &BorgState) -> bool {
+    effect_supply_for_consumer(effects, i64::from(st.borg.tr(BI_MAXHP)), Journey::of(st).turns, false)
+        .iter()
+        .any(|&(id, _)| id != MANA || st.borg.tr(BI_MAXSP) > 0)
+}
+
+/// World ticks before at least one rod is ready. While all rods are cooling,
+/// the engine subtracts the full stack size from its aggregate timeout.
+pub(crate) fn rod_ready_after(quantity: i64, timeout: i64, cooldown: i64) -> i64 {
+    let quantity = quantity.clamp(1, 255);
+    let threshold = (quantity - 1).saturating_mul(cooldown.max(1));
+    let remaining = timeout.saturating_sub(threshold).max(0) as u64;
+    remaining.div_ceil(quantity as u64) as i64
+}
+
+#[test]
+fn a_fully_cooling_stack_supplies_a_charge_only_after_its_first_ready_tick() {
+    assert_eq!(rod_uses(1, 40, 40, 40), 0);
+    assert_eq!(rod_uses(1, 40, 40, 41), 1);
+    assert_eq!(rod_ready_after(2, 40, 40), 0);
+    assert_eq!(rod_ready_after(2, 80, 40), 20);
+    assert_eq!(rod_uses(2, 80, 40, 20), 0);
+    assert_eq!(rod_uses(2, 80, 40, 21), 1);
 }

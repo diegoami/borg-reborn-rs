@@ -1,5 +1,7 @@
 //! Execute the town plan through the existing store UI, refreshing after
 //! every transaction. Default-off: the historical chooser remains control.
+use crate::borg_town_home::{self, Role};
+use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_h::{BORG_TOWN_NO_STORES, BORG_TOWN_PLAN};
 use crate::borg_store::BORG_HOME;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
@@ -48,8 +50,24 @@ struct BuyAttempt {
     context: CarryContext,
     item: crate::borg_headers::borg_item_h::borg_item,
     keep: bool,
+    home_intent: Option<HomeIntent>,
+    kind_before: u32,
     /// borg-reborn-rs (#507): copies asked for at the quantity prompt; 1 outside a purchase.
     qty: i32,
+}
+
+#[derive(Clone, Copy)]
+enum HomeIntent {
+    Stash,
+    Dispose(i16),
+}
+
+#[derive(Clone, Copy)]
+struct HomeDisposal {
+    item: borg_item,
+    shop: i16,
+    qty: i32,
+    kind_before: u32,
 }
 
 struct HomeMove {
@@ -94,8 +112,25 @@ pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_ite
 }
 
 /// Known excess can be cleared in a single native transaction.
-pub(crate) fn batch_home_disposal(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+pub(crate) fn batch_home_disposal(st: &BorgState, item: &borg_item) -> bool {
     home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
+        || unsuitable_home_overflow(st, item)
+}
+
+fn unsuitable_home_overflow(st: &BorgState, item: &borg_item) -> bool {
+    if !borg_town_home::enabled(st) {
+        return false;
+    }
+    let role = borg_town_home::classify(st, item, false, 0);
+    role == Role::Reject || role.common()
+}
+
+pub(crate) fn home_buy_available(st: &BorgState) -> bool {
+    !st.think.town_live.reserve_bought
+}
+
+pub(crate) fn home_kind_cleared(st: &BorgState, kind: u32) -> bool {
+    st.think.town_live.cleared_kinds.contains(&kind)
 }
 
 fn overflow_action(st: &BorgState) -> Option<TownAction> {
@@ -111,7 +146,7 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
             if shop == BORG_HOME && (home_at_limit(st, item)
-                || crate::borg_town_capability::unwanted_home_item(item)) { continue; }
+                || crate::borg_town_capability::unwanted_home_item(item) || unsuitable_home_overflow(st, item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let excess = if shop == BORG_HOME { excess }
@@ -153,6 +188,10 @@ pub struct LiveState {
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
     home_moves: Vec<(u32, bool)>,
+    reserve_bought: bool,
+    stash: Option<u32>,
+    disposal: Option<HomeDisposal>,
+    cleared_kinds: Vec<u32>,
     // borg-reborn-rs (#1239): remember confirmed trims for this visit.
     pending_quiver_trim: Option<(u32, u32)>, // Item kind and carried copies before the trim.
     trimmed_quiver_kinds: Vec<u32>,
@@ -213,6 +252,21 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
             // the price of one (review of #509, F2).
             let paid = paid_for(attempt.context.gold, now.gold, attempt.item.cost, bought);
             crate::borg_store_buy::confirm_purchase(st, &attempt.item, i32::from(attempt.offer.shop), attempt.keep, bought, paid);
+            let gained = carried_kind(st, attempt.item.kind).saturating_sub(attempt.kind_before);
+            match attempt.home_intent.filter(|_| gained > 0) {
+                Some(HomeIntent::Stash) => {
+                    st.think.town_live.stash = Some(attempt.item.kind);
+                    st.think.town_live.reserve_bought = true;
+                }
+                Some(HomeIntent::Dispose(shop)) => {
+                    st.think.town_live.disposal = Some(HomeDisposal {
+                        item: attempt.item, shop, qty: (gained as i32).min(attempt.qty),
+                        kind_before: attempt.kind_before,
+                    });
+                    st.think.town_live.cleared_kinds.push(attempt.item.kind);
+                }
+                None => {}
+            }
         } else {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: purchase made no progress; exclude unchanged offer/context");
@@ -282,7 +336,7 @@ fn goal(a: TownAction) -> Option<(i16, i16, i16)> {
     let slot = i16::try_from(a.at[1]).ok()?;
     if slot < 0 || a.at[2] <= 0 { return None; }
     match a.code {
-        action::BUY if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, slot, -1)),
+        action::BUY | action::BUY_FOR_HOME if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, slot, -1)),
         action::SELL if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, -1, slot)),
         action::STORE => Some((7, -1, slot)),
         action::TAKE_HOME | action::SELL_HOME | action::DROP_HOME => Some((7, slot, -1)),
@@ -314,6 +368,8 @@ pub(crate) fn set_action(st: &mut BorgState, a: TownAction) -> bool {
 pub fn choose_overflow(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) != 0 || !active(st) || configured_limit(st) <= 0
         || st.cfg(BORG_TOWN_NO_STORES) != 0 || st.borg.shop_override.is_some()
+        || st.think.town_live.disposal.is_some() || st.think.town_live.stash.is_some()
+        || st.think.town_live.pending_buy.as_ref().is_some_and(|a| a.home_intent.is_some())
         // borg-reborn-rs (#1140): the poison triage goes first.
         || crate::borg_poison::town_triage_holds(st) {
         return false;
@@ -326,6 +382,36 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
         return overflow_action(st).is_some_and(|a| set_action(st, a));
     }
     set_action(st, action)
+}
+
+fn home_followup(st: &mut BorgState) -> Option<TownAction> {
+    if st.think.town_live.disposal.is_none() && st.think.town_live.stash.is_none() { return None; }
+    let pack_end = crate::borg_item::inven_wield() as usize;
+    if let Some(d) = st.think.town_live.disposal {
+        let to_dispose = (carried_kind(st, d.item.kind).saturating_sub(d.kind_before) as i32).min(d.qty);
+        let stack = st.items.items[..pack_end].iter().enumerate().find(|(_, item)| {
+            to_dispose > 0 && item.iqty > 0 && borg_town_home::same_variant(item, &d.item)
+                && (d.shop < 0 || !sale_rejected(st, d.shop, item))
+        });
+        if let Some((slot, item)) = stack {
+            let code = if d.shop < 0 { action::DROP } else { action::SELL };
+            return Some(TownAction { code,
+                at: [i64::from(d.shop), slot as i64, i64::from(to_dispose.min(i32::from(item.iqty))), 0] });
+        }
+        st.think.town_live.disposal = None;
+    }
+    if let Some(kind) = st.think.town_live.stash {
+        let stack = st.items.items[..pack_end].iter().enumerate().find(|(slot, item)| {
+            item.iqty == 1 && item.kind == kind && !sale_rejected(st, BORG_HOME as i16, item)
+                && crate::engine::inven_object(&st.access, *slot)
+                    .is_some_and(|o| o.store_accepts_quantity(BORG_HOME, 1))
+        });
+        if let Some((slot, _)) = stack {
+            return Some(TownAction { code: action::STORE, at: [BORG_HOME as i64, slot as i64, 1, 0] });
+        }
+        st.think.town_live.stash = None;
+    }
+    None
 }
 
 /// borg-reborn-rs (#1239): select the shopping policy for live play,
@@ -381,6 +467,9 @@ pub fn choose(st: &mut BorgState) -> bool {
     // sale or excess trip while selling pays nothing during it.
     if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
     let no_sale = crate::borg_poison::no_sale_now(st);
+    if !no_sale {
+        if let Some(a) = home_followup(st) { return set_action(st, a); }
+    }
     // borg-reborn-rs (#1239): keep the historical order for control runs.
     let overloaded_shopping = shop_overloaded();
     if !overloaded_shopping && !no_sale {
@@ -438,7 +527,7 @@ pub fn choose(st: &mut BorgState) -> bool {
     }
     // Finish shopping normally while carrying unidentified potions. A
     // purchase may identify the stack before the planner can sell it.
-    if matches!(a.code, action::BUY | action::TAKE_HOME | action::LEAVE) {
+    if matches!(a.code, action::BUY | action::BUY_FOR_HOME | action::TAKE_HOME | action::LEAVE) {
         if let Some(refill) = crate::borg_healing_restock::purchase(st).filter(|_| {
             a.code == action::LEAVE || !crate::borg_healing_restock::carries_unknown_potion(st)
         }) {
@@ -507,7 +596,8 @@ pub fn execute_store(st: &mut BorgState) -> bool {
     let Some(a) = st.think.town_action else { return false; };
     if st.borg.goal.shop != st.think.shop_num || st.think.shop_num < 0 { return false; }
     let home_disposal = matches!(a.code, action::SELL_HOME | action::DROP_HOME);
-    if home_disposal || matches!(a.code, action::BUY | action::TAKE_HOME) {
+    let purchase = matches!(a.code, action::BUY | action::BUY_FOR_HOME);
+    if home_disposal || purchase || a.code == action::TAKE_HOME {
         let shop = st.think.shop_num as usize;
         let slot = a.at[1] as usize;
         let Some(item) = st.store.shops[shop].ware.get(slot).copied().filter(|i| i.iqty > 0) else { clear(st); return false; };
@@ -539,7 +629,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         if let Some(offer) = offer.filter(|_| fits && a.code == action::TAKE_HOME) {
             qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap), 0, 0);
         }
-        if let Some(offer) = offer.filter(|_| fits && a.code == action::BUY) {
+        if let Some(offer) = offer.filter(|_| fits && purchase) {
             qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity().min(room_under_cap),
                 offer.purchase_quote(shop), purchase_gold);
             if protects_gold || protects_recall {
@@ -549,12 +639,19 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             }
         }
         if let Some(offer) = offer.filter(|_| home_disposal) {
-            if a.code == action::DROP_HOME || batch_home_disposal(st, &item) {
+            if a.code == action::DROP_HOME || crate::borg_town_home::enabled(st) || batch_home_disposal(st, &item) {
                 qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity(), 0, 0);
             }
         }
+        let home_intent = if a.code == action::BUY_FOR_HOME {
+            Some(HomeIntent::Stash)
+        } else if home_disposal && crate::borg_town_home::enabled(st) && !loadout_pending(st) {
+            let destination = if a.code == action::DROP_HOME { -1 } else { a.at[0] as i16 };
+            Some(HomeIntent::Dispose(destination))
+        } else { None };
+        let kind_before = home_intent.map_or(0, |_| carried_kind(st, item.kind));
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
-            context: CarryContext::of(st), item, keep: !home_disposal, qty };
+            context: CarryContext::of(st), item, keep: !home_disposal, home_intent, kind_before, qty };
         if !fits {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: native carrying preflight rejected purchase");
@@ -563,15 +660,29 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         }
         st.think.town_live.pending_buy = Some(attempt);
     }
+    let reason = if a.code == action::BUY_FOR_HOME { Some("buying a reserve") }
+        else if home_disposal && st.think.town_live.pending_buy.as_ref().is_some_and(|b| b.home_intent.is_some()) {
+            Some("withdrawing low-priority stock")
+        } else if a.code == action::STORE && st.think.town_live.stash.is_some() { Some("storing a reserve") }
+        else { None };
+    if let Some(reason) = reason { borg_note(st, &format!("# Home reserve: {reason}")); }
     borg_note(st, &format!("# Town plan executing action {} at shop {} slot {}", a.code, st.think.shop_num, a.at[1]));
     let moved = HomeMove::pending(st, a);
     let executed = match a.code {
-        action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
+        action::BUY | action::BUY_FOR_HOME | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
         action::SELL_HOME | action::DROP_HOME => crate::borg_store_buy::take_selected_for_disposal(st),
         action::SELL | action::STORE => {
             let slot = a.at[1] as usize;
             let stamp = SaleStamp::of(st.think.shop_num, slot, &st.items.items[slot]);
             let sold = crate::borg_store_sell::sell_selected_quantity(st, a.at[2] as i32);
+            if a.code == action::STORE && st.think.town_live.stash == Some(st.items.items[slot].kind) {
+                st.think.town_live.stash = None;
+            }
+            if a.code == action::SELL && st.think.town_live.disposal.is_some_and(|d|
+                d.shop == st.think.shop_num && borg_town_home::same_variant(&st.items.items[slot], &d.item))
+            {
+                st.think.town_live.disposal = None;
+            }
             if sold { st.think.town_live.pending_sale = Some(stamp); }
             sold
         }
@@ -630,19 +741,24 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#1239): departure can split above the trip reserve.
     let fuel = matches!(u32::from(item.tval),
         crate::headers::list_tvals_h::TV_LIGHT | crate::headers::list_tvals_h::TV_FLASK);
-    let splits = (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
-        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel
-        || departure_preparing(st);
+    let home_disposal = st.think.town_live.disposal
+        .is_some_and(|d| d.shop < 0 && borg_town_home::same_variant(item, &d.item));
+    let splits = home_disposal || (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
+        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel || departure_preparing(st);
     let drop_qty = drop_quantity(a.at[2], qty, splits);
     if i64::from(crate::borg_store_sell::disposable_book_quantity(st, item, drop_qty as i32)) < drop_qty {
         clear(st);
         return false;
     }
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
-    let note = if drop_qty < qty && departure_preparing(st) {
-        "# Town plan dropping surplus copies for departure"
-    } else { "# Town plan dropping worthless stack" };
-    borg_note(st, note);
+    if home_disposal {
+        st.think.town_live.disposal = None;
+        borg_note(st, "# Home reserve: discarding lower-priority stock");
+    } else if drop_qty < qty && departure_preparing(st) {
+        borg_note(st, "# Town plan dropping surplus copies for departure");
+    } else {
+        borg_note(st, "# Town plan dropping worthless stack");
+    }
     borg_keypress(st, u32::from(b'{'));
     borg_keypress(st, letter);
     borg_keypresses(st, b"borg ignore");
@@ -782,7 +898,7 @@ mod tests {
         assert_eq!(buy_quantity(&st), 1, "no pending purchase asks for one");
         let item = crate::borg_item::blank_item();
         st.think.town_live.pending_buy = Some(BuyAttempt { offer: SaleStamp::of(1, 0, &item),
-            context: CarryContext::of(&st), item, keep: true, qty: 40 });
+            context: CarryContext::of(&st), item, keep: true, home_intent: None, kind_before: 0, qty: 40 });
         assert_eq!(buy_quantity(&st), 40);
     }
     fn state() -> BorgState {
@@ -903,7 +1019,7 @@ mod tests {
         st.store.shops=(0..8).map(|_|crate::borg_store::BorgShop::default()).collect();
         st.store.shops[4].ware=vec![crate::borg_item::blank_item()];st.store.shops[4].ware[0].iqty=3;
         let item=st.store.shops[4].ware[0];
-        st.think.town_live.rejected_buys.push(BuyAttempt {offer:SaleStamp::of(4,0,&item),context:CarryContext::of(&st),item,keep:true,qty:1});
+        st.think.town_live.rejected_buys.push(BuyAttempt {offer:SaleStamp::of(4,0,&item),context:CarryContext::of(&st),item,keep:true,home_intent:None,kind_before:0,qty:1});
         assert!(buy_rejected(&st,4,0));st.items.items[0].iqty=1;assert!(!buy_rejected(&st,4,0));
         st.items.items[0].iqty=0;st.store.shops[4].ware[0].iqty=2;assert!(!buy_rejected(&st,4,0));
     }

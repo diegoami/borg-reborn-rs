@@ -24,6 +24,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crate::borg_town_home::{self, Role};
 use crate::borg_headers::borg_h::{BORG_TOWN_PLAN, BORG_TOWN_W_KNOWLEDGE};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
@@ -271,7 +272,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     // while the poison triage holds.
     let triage_no_sale = crate::borg_poison::no_sale_now(st);
     let pack_end = inven_wield() as usize;
-    let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64| -> KitItem {
+    let home_policy = borg_town_home::enabled(st);
+    let can_decurse = home_policy && crate::borg_item_decurse::can_decurse(st);
+    let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64, worn_gain: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
         // borg-reborn-rs (#470): an unaware device is never used either; one
@@ -304,6 +307,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             })
         } else { None };
         KitItem {
+            home_role: if home_policy {
+                borg_town_home::classify(st, it, can_decurse, worn_gain)
+            } else { Role::Ordinary },
             home_room,
             keep_last_book: protects_class_book(it),
             protect_disposal: (place == Place::Home && crate::borg_town_live::retained_gear(st, it))
@@ -344,6 +350,23 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     let base_light = i64::from(crate::borg_power::borg_power_equipment(st));
     let light_slot = pack_end + 5;
 
+    let worn_gain = |st: &mut BorgState, it: &borg_item| -> i64 {
+        if !home_policy || it.cursed || !it.ident {
+            return 0;
+        }
+        let Some(slot) = borg_town_home::gear_slot(it) else { return 0; };
+        let worn = st.items.items[slot];
+        if worn.one_ring || engine::flag_has(&worn.flags, crate::headers::list_object_flags_h::OF_STICKY as i32) {
+            return 0;
+        }
+        st.items.items[slot] = *it;
+        crate::borg_trait::borg_notice(st, true);
+        let gain = i64::from(crate::borg_power::borg_power_equipment(st)) - base_light;
+        st.items.items[slot] = worn;
+        crate::borg_trait::borg_notice(st, true);
+        gain
+    };
+
     let mut kit = Vec::new();
     for (slot, &it) in items.iter().enumerate().take(pack_end) {
         if it.iqty == 0 {
@@ -355,11 +378,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             let gain = i64::from(crate::borg_power::borg_power_equipment(st)) - base_light;
             st.items.items[light_slot] = items[light_slot];
             crate::borg_trait::borg_notice(st, true);
-            kit.push(fact(st, &it, Place::Pack, slot, gain.max(0)));
+            kit.push(fact(st, &it, Place::Pack, slot, gain.max(0), 0));
             continue;
         }
         if !has_inventory_power(&it) {
-            kit.push(fact(st, &it, Place::Pack, slot, 0));
+            kit.push(fact(st, &it, Place::Pack, slot, 0, 0));
             continue;
         }
         st.items.items[slot].iqty = 0;
@@ -367,7 +390,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         let loss = base - i64::from(crate::borg_power::borg_power(st));
         st.items.items[slot] = it;
         crate::borg_trait::borg_notice(st, true);
-        kit.push(fact(st, &it, Place::Pack, slot, loss));
+        let gain = worn_gain(st, &it);
+        kit.push(fact(st, &it, Place::Pack, slot, loss, gain));
     }
     let home: Vec<borg_item> = st.store.shops.get(BORG_HOME).map_or(Vec::new(), |h| h.ware.clone());
     for (slot, it) in home.iter().enumerate() {
@@ -391,7 +415,9 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             None => 0,
         } };
         crate::borg_trait::borg_notice(st, true);
-        kit.push(fact(st, it, Place::Home, slot, gain));
+        let equipped_gain = worn_gain(st, it);
+        let gear = home_policy && borg_town_home::gear_slot(it).is_some();
+        kit.push(fact(st, it, Place::Home, slot, if gear { equipped_gain } else { gain }, equipped_gain));
     }
 
     // Reserve one stack per book kind, preferring a copy already safe at Home.
@@ -482,14 +508,20 @@ fn unusable_torch(unlight: bool, tval: u8, sval: u8, torch: i32) -> bool {
 /// (a whole stack, or the surplus past `town_store_keep_min`, #859) is
 /// therefore reached one copy at a time.
 fn executed_copies(code: i64, planned: i64) -> i64 {
-    if code != crate::borg_town_record::action::BUY { 1 } else { planned.max(1) }
+    if matches!(code, crate::borg_town_record::action::BUY | crate::borg_town_record::action::BUY_FOR_HOME) { planned.max(1) } else { 1 }
 }
 
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let file = crate::borg_town_dump::plan_record_file();
     // borg-reborn-rs (#1239): select the schema and record the departure pass.
     let overloaded_shopping = crate::borg_town_live::shop_overloaded();
-    let revision = if overloaded_shopping { crate::borg_town_record::PLAN_SCHEMA } else { 20 };
+    let reserve_on = borg_town_home::enabled(st);
+    let revision = match (overloaded_shopping, reserve_on) {
+        (true, true) => crate::borg_town_record::PLAN_SCHEMA,
+        (true, false) => 21,
+        (false, true) => 23,
+        (false, false) => 20,
+    };
     let departure = live && overloaded_shopping && crate::borg_town_live::departure_preparing(st);
 
     // A new visit when the level clock moved (new_level restarts it on
@@ -564,6 +596,39 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             }
         }
     }
+    let capability = crate::borg_town_capability::observe(st, &stock, &kit,
+        crate::borg_town_utility::Journey::of(st), gold_after_urgent);
+    let may_buy_for_home = reserve_on && budget.unmet.is_empty()
+        && crate::borg_town_live::home_buy_available(st);
+    let home_value = |c: &crate::borg_town_stock::Candidate, item: &borg_item| {
+        if reserve_on && c.shop < BORG_HOME as u8
+            && crate::borg_town_live::home_kind_cleared(st, c.kind)
+        {
+            return -1;
+        }
+        if !may_buy_for_home || c.shop >= BORG_HOME as u8 || c.qty <= 0 || !item.flavour_aware
+            || item.cursed || c.stack_count > 0 || kit.iter().any(|k| k.kind == c.kind)
+            || !engine::store_stock(&st.access, usize::from(c.shop)).get(usize::from(c.slot))
+                .is_some_and(|offer| offer.carry_capacity() >= 1)
+        {
+            return 0;
+        }
+        let gain = tryon.iter().find(|t| t.shop == c.shop && t.slot == c.slot)
+            .map_or(0, |t| t.value);
+        let role = borg_town_home::classify(st, item, false, gain);
+        if matches!(role, Role::Device | Role::Scarce) {
+            return role.offer_value(capability.home_offer(c.shop, c.slot));
+        }
+        if !c.is_black_market() || !item.ident || !borg_town_home::known_special(item) {
+            return 0;
+        }
+        if !role.gear() {
+            return 0;
+        }
+        let worn = borg_town_home::gear_slot(item).map(|slot| &st.items.items[slot]);
+        let weight_saved = worn.map_or(0, |w| (i64::from(w.weight) - i64::from(item.weight)).max(0));
+        role.offer_value(gain.max(0) + weight_saved)
+    };
     let mask = |ns: &[Need]| ns.iter().fold(0u8, |m, &n| m | (1 << need_index(n)));
     let wares: Vec<WareFact> = stock
         .candidates
@@ -572,6 +637,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             let item = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
             let (need, reduction) = ware_role(st, item);
             WareFact {
+                home_value: home_value(c, item),
                 shop: c.shop,
                 slot: c.slot,
                 kind: c.kind,
@@ -607,13 +673,12 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         .filter(|it| it.iqty != 0)
         .map(|it| (it.tval, i32::from(it.iqty)))
         .collect();
-    let capability = crate::borg_town_capability::observe(st, &stock, &kit,
-        crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     crate::borg_town_capability::audit(st, crate::borg_town_utility::Journey::of(st), &capability);
     let limits = Limits::of(&budget);
     // #957: the storing settings this solve uses, recorded with it (v13).
     let storing = crate::borg_town_utility::Storing::settings();
     let out = step(&StepInput { departure, storing: Some(storing),
+        shop_overloaded: overloaded_shopping,
         revision,
         capability: Some(&capability),
         utility: true,
@@ -685,8 +750,10 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         let unloading = departure && matches!(paction, action::STORE | action::SELL)
             && kit.iter().enumerate().any(|(i, item)| item.place == Place::Pack && usize::from(item.slot) == slot
                 && out.copies.get(i).is_some_and(|&qty| qty > 0));
-        if paction != action::DROP_HOME && !replenishing && !unloading
-            && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item)) {
+        let policy_cleanup = paction == action::SELL_HOME && reserve_on;
+        if paction != action::DROP_HOME && !replenishing && !policy_cleanup && !unloading
+            && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item))
+        {
             act[2] = executed_copies(paction, act[2]);
         }
         if selling.is_some() && act[2] > 0 {
@@ -706,6 +773,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         storing: Some(storing.to_array()),
         capability: Some(capability),
         schema: revision,
+        legacy_home_21: false,
         mode: if departure { 2 } else { u8::from(live) },
         visit,
         step: step_no,
@@ -855,11 +923,11 @@ mod knowledge_only_purchase_tests {
     fn copies_bought(params: [i64; PARAMS], utility: bool) -> i32 {
         let candidates = vec![Candidate { shop: 4, slot: 10, kind: 216, tval: 0, sval: 0, price: 30, qty: 1,
             weight: 5, slots_cost: 1, stack_count: 0, class: 48 }];
-        let wares = [WareFact { shop: 4, slot: 10, kind: 216, class: 48, slots_cost: 1, weight: 5, need: -1, reduction: 0,
+        let wares = [WareFact { home_value: 0, shop: 4, slot: 10, kind: 216, class: 48, slots_cost: 1, weight: 5, need: -1, reduction: 0,
             serves: 1 << need_index(Need::Knowledge) }];
         let mut traits = vec![0; BI_MAX as usize];
         traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
-        let out = step(&StepInput { departure: false, storing: None,
+        let out = step(&StepInput { departure: false, shop_overloaded: false, storing: None,
             revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, black_market_reserve: 0, black_market_percentage: -1, candidates, facts: &wares,
             tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
             traits: &traits, power: 1000, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 });
