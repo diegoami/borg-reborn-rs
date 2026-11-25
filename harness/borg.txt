@@ -2319,7 +2319,7 @@ borg_param_town_staple_phase__druid = 12
 borg_param_town_staple_oil__druid = 9
 borg_param_explore_bfs_max_hp__druid = 33
 borg_param_explore_bfs_hp_per_level__druid = 2
-borg_param_stair_scum_slack_steps__druid = 1
+borg_param_stair_scum_slack_steps__druid = 2
 borg_param_explore_mix_max_clevel__druid = 7
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
@@ -2371,7 +2371,7 @@ borg_param_town_staple_phase__necromancer = 12
 borg_param_town_staple_oil__necromancer = 14
 borg_param_explore_bfs_max_hp__necromancer = 28
 borg_param_explore_bfs_hp_per_level__necromancer = 2
-borg_param_stair_scum_slack_steps__necromancer = 1
+borg_param_stair_scum_slack_steps__necromancer = 2
 borg_param_explore_mix_max_clevel__necromancer = 9
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
