@@ -28,6 +28,12 @@ class UnknownConsumablesTest(unittest.TestCase):
                 # Match the route to the confusion encounter used by this replay.
                 BORG_PARAM_CAUTION_RISING_SKIP_HELD_STAIRS="0",
                 BORG_PARAM_ATTACK_THROW_SURPLUS="0",
+                BORG_PARAM_PREPARED_DL2_MIN_HP="30",
+                BORG_PARAM_PREPARED_DL2_MIN_CLEVEL__WARRIOR="0",
+                BORG_PARAM_PREPARED_DL34_MIN_HP__WARRIOR="50",
+                BORG_PARAM_PREPARED_DL34_MIN_CLEVEL__WARRIOR="4",
+                BORG_PARAM_PREPARED_DL59_MIN_HP__WARRIOR="60",
+                BORG_PARAM_PREPARED_DL59_MIN_CLEVEL__WARRIOR="6",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_POTIONS="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP="1",
                 BORG_PARAM_ITEM_TEST_UNKNOWN_MIN_HP_PERCENT="1",
