@@ -1226,9 +1226,13 @@ fn run_tries(st: &mut BorgState, frame: &StairFrame, tries: Vec<RingTry>, label:
 /// (`borg_flow_far_from_stairs_dist`: the depth at least the level less the
 /// margin, below `flow_leash_stairs_max_level`), or while the kit is short.
 fn c_leash_on(st: &BorgState) -> bool {
+    c_stair_leash_on(st) || crate::borg_kit::leash_active(st)
+}
+
+fn c_stair_leash_on(st: &BorgState) -> bool {
     let c = crate::borg_flow::c_leash();
-    (st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin && st.borg.tr(BI_CLEVEL) < c.stairs_max_level)
-        || crate::borg_kit::leash_active(st)
+    st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - c.depth_margin
+        && st.borg.tr(BI_CLEVEL) < c.stairs_max_level
 }
 
 /// #1080, #1085: breadth-first exploration from the staircases.
@@ -1313,10 +1317,14 @@ fn released(st: &BorgState) -> bool {
 /// Not above `explore_mix_max_clevel` (per class), and not on a level where
 /// leaving after the walk failed (`release_after_failed_exit`).
 pub(crate) fn mixed_active(st: &BorgState) -> bool {
+    mixed_active_with_leash(st, c_leash_on)
+}
+
+fn mixed_active_with_leash(st: &BorgState, leash_on: impl FnOnce(&BorgState) -> bool) -> bool {
     value(Param::explore_mixed) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
-        && c_leash_on(st)
+        && leash_on(st)
         && mix_level(st) <= value(Param::explore_mix_max_clevel)
         && !released(st)
 }
@@ -2395,9 +2403,13 @@ mod breadth_first_tests {
                 // Widen the depth margin to isolate the class cap below CL20.
                 (Param::flow_leash_depth_margin, 10),
                 (Param::flow_leash_stairs_max_level, 20),
-                (Param::kit_leash, 0),
             ], || {
-                assert_eq!(mixed_active(&st), eligible, "eligibility with flag {adjusted} at CL{clevel}/DL{depth}");
+                // The unit fixture has a stair leash and no engine inventory.
+                assert_eq!(
+                    mixed_active_with_leash(&st, c_stair_leash_on),
+                    eligible,
+                    "eligibility with flag {adjusted} at CL{clevel}/DL{depth}",
+                );
                 let MixRadii { start, step, max } = mix_radii(&st);
                 assert_eq!([start, step, max], growth, "growth with flag {adjusted} at CL{clevel}/DL{depth}");
             });
