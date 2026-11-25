@@ -942,6 +942,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_caution");
     }
 
+    if crate::borg_junk::borg_discard_town_consumable(st) {
+        return choice!("borg_discard_town_consumable");
+    }
+
     // borg-reborn-rs (#1153; review of #1158: caution first): a movement loop
     // (n moves among a few grids, the map unchanged, no danger) is broken, or
     // its exit continued, before any other flow.

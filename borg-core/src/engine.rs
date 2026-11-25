@@ -1921,6 +1921,16 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    /// The individual ignore flag set by "This item only".
+    pub(crate) fn marked_ignored(self) -> bool {
+        use crate::headers::object_h::OBJ_NOTICE_IGNORE;
+        // SAFETY: the carried object is live. Its known copy may be absent.
+        unsafe {
+            let known = (*self.0).known;
+            !known.is_null() && (*known).notice & OBJ_NOTICE_IGNORE as u8 != 0
+        }
+    }
+
     /// Check the store's capacity for the same quantity the command would split.
     pub fn store_accepts_quantity(self, shop: usize, quantity: i32) -> bool {
         use crate::headers::{object_h::object, store_h::{store, stores}};

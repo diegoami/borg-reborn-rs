@@ -47,6 +47,7 @@ use crate::headers::list_terrain_h::FEAT_FLOOR;
 use crate::headers::list_tvals_h::*;
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+use std::sync::OnceLock;
 
 /// `CLASS_WARRIOR` .. `CLASS_RANGER` (player-calcs.h class indexes)
 const CLASS_WARRIOR: i32 = 0;
@@ -594,6 +595,63 @@ fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
     }
 }
 
+// object.txt and Strategy Manual ch. 7, "Bad items". The throw policy
+// deliberately keeps a smaller set than the effect-based disposal policy.
+const THROWABLE_HARMFUL_POTIONS: &[&str] = &[
+    "Sleep", "Blindness", "Confusion", "Poison", "Slowness", "Surprise", "Salt Water",
+];
+
+/// Slime Mold Juice is expendable in a fight when its nutrition is unneeded.
+pub(crate) fn junk_potion_to_throw(st: &BorgState, item: &borg_item) -> bool {
+    if u32::from(item.tval) != TV_POTION || item.iqty == 0 || !item.aware || !item.flavour_aware {
+        return false;
+    }
+    let sval = i32::from(item.sval);
+    if sval == st.item_val.sv_potion_slime_mold {
+        return st.borg.tr(BI_ISHUNGRY) == 0 && st.borg.tr(BI_ISWEAK) == 0;
+    }
+    static KINDS: OnceLock<Vec<i32>> = OnceLock::new();
+    KINDS.get_or_init(|| THROWABLE_HARMFUL_POTIONS.iter().map(|name| {
+        let sval = engine::lookup_sval(TV_POTION as i32, name);
+        assert!(sval >= 0, "unknown throwable potion {name}");
+        sval
+    }).collect()).contains(&sval)
+}
+
+fn retain_for_throwing(st: &BorgState, item: &borg_item) -> bool {
+    crate::params::value(crate::params::Param::attack_throw_junk_potions) != 0
+        && junk_potion_to_throw(st, item)
+}
+
+/// Ignore only this stack. Angband drops it and filters it out of native
+/// auto-pickup, while fresh copies of its kind can still be found later.
+pub(crate) fn borg_discard_town_consumable(st: &mut BorgState) -> bool {
+    use crate::params::{value as param, Param};
+
+    if param(Param::junk_discard_harmful_in_town) == 0 || st.borg.tr(BI_CDEPTH) != 0 {
+        return false;
+    }
+    if engine::feat_is_shop(i32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat)) {
+        return false;
+    }
+    let Some(slot) = (0..pack_size() as usize).find(|&slot| {
+        let item = &st.items.items[slot];
+        harmful_item(item, engine::kind_effects)
+            && !crate::borg_item::item_note(st, item).windows(2).any(|mark| matches!(mark, b"!d" | b"!*"))
+            && engine::inven_object(&st.access, slot).is_some_and(|item| !item.marked_ignored())
+    }) else {
+        return false;
+    };
+    if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
+        return false;
+    }
+    note_desc(st, "# Dropping harmful town consumable ", slot as i32, ".");
+    borg_keypress(st, key(b'k'));
+    slot_keys(st, slot as i32);
+    borg_keypress(st, key(b'a')); // textui_cmd_ignore_menu: "This item only".
+    true
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct SurplusDrop {
     pub slot: usize,
@@ -624,8 +682,10 @@ fn harmful_item(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>
 }
 
 fn harmful_item_drop(st: &BorgState) -> Option<SurplusDrop> {
-    let slot = st.items.items[..pack_size() as usize].iter()
-        .position(|item| harmful_item(item, engine::kind_effects))?;
+    let town = st.borg.tr(BI_CDEPTH) == 0;
+    let slot = st.items.items[..pack_size() as usize].iter().position(|item| {
+        harmful_item(item, engine::kind_effects) && (town || !retain_for_throwing(st, item))
+    })?;
     Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
 }
 
@@ -714,13 +774,15 @@ pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
     if harmful_item(item, engine::kind_effects)
         && engine::kind(item.kind as usize).ignore == 0
     {
+        // ui-object.c:textui_cmd_ignore_menu offers the individual
+        // stack first and the known kind second. Leave the kind available
+        // when the Borg could throw a fresh copy on a later trip.
+        let selection = if retain_for_throwing(st, item) { b'a' } else { b'b' };
         let slot = drop.slot as i32;
         note_desc(st, "# Discarding known harmful stack ", slot, ".");
         borg_keypress(st, key(b'k'));
         slot_keys(st, slot);
-        // ui-object.c:textui_cmd_ignore_menu offers the individual
-        // stack first and the known kind second.
-        borg_keypress(st, key(b'b'));
+        borg_keypress(st, key(selection));
         return true;
     }
     // obj-pile.c:drop_find_grid scatters drops off stairs and away from

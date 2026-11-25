@@ -730,6 +730,38 @@ static void borgh_checkpoint(void)
 #endif
 
 
+static bool junk_consumables_town_fixture(void)
+{
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+	const char *fixture = getenv("BORGH_TEST_JUNK_CONSUMABLES");
+	return fixture && streq(fixture, "town");
+#else
+	return false;
+#endif
+}
+
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+/* Give the attack a known line of fire and a target at an exact range. */
+static void place_junk_consumables_target(struct monster_race *race, int distance)
+{
+	struct monster_group_info info = { 0, 0 };
+	struct loc target = loc(player->grid.x + distance, player->grid.y);
+	for (int step = 1; step <= distance; step++) {
+		struct loc grid = loc(player->grid.x + step, player->grid.y);
+		if (!square_in_bounds_fully(cave, grid) || square_monster(cave, grid))
+			quit("borgh: junk consumables fixture line is obstructed");
+		square_set_feat(cave, grid, FEAT_FLOOR);
+		sqinfo_on(square(cave, grid)->info, SQUARE_GLOW);
+		square_memorize(cave, grid);
+	}
+	if (!place_new_monster(cave, target, race, false, false, info, ORIGIN_DROP_WIZARD))
+		quit("borgh: could not place junk consumables fixture monster");
+	player->upkeep->update |= PU_UPDATE_VIEW | PU_MONSTERS;
+	update_stuff(player);
+	start_monsters_placed++;
+}
+#endif
+
 /**
  * borg-reborn-rs (#722): place the monsters of -start-monsters near the
  * player, as the debug command's summon does (cmd-wizard.c,
@@ -768,6 +800,15 @@ static void place_start_monsters(const char *spec)
 		if (!race || !race->name || my_stricmp(race->name, name) != 0)
 			quit_fmt("borgh: -start-monsters: no monster named exactly '%s'", name);
 		start_monsters_requested += (int)count;
+#ifdef BORGH_TEST_JUNK_CONSUMABLES
+		const char *fixture = getenv("BORGH_TEST_JUNK_CONSUMABLES");
+		if (fixture && streq(fixture, "throw")) {
+			if (count != 1 || dist > 11)
+				quit("borgh: junk consumables fixture needs one target at range 1..11");
+			place_junk_consumables_target(race, (int)dist);
+			return;
+		}
+#endif
 		while (count-- > 0) {
 			int tries;
 			for (tries = 0; tries < 10; tries++) {
@@ -785,6 +826,11 @@ static void place_start_monsters(const char *spec)
 
 static void prepare_borg_start(void)
 {
+	if (junk_consumables_town_fixture()) {
+		synthetic_build_apply(opt_start_build, start_build_sha256);
+		square_set_feat(cave, player->grid, FEAT_MORE);
+		square_memorize(cave, player->grid);
+	}
 	if (opt_start_depth) {
 		bool auto_more = OPT(player, auto_more);
 		if (opt_start_depth >= z_info->max_depth)
@@ -1135,7 +1181,10 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_random_birth && opt_load) quit("borgh: random birth cannot load a save");
 	if (opt_start_depth && (opt_load || opt_random_birth))
 		quit("borgh: -start-depth cannot load a save or use random birth");
-	if (opt_start_build && !opt_start_depth) quit("borgh: -start-build requires -start-depth");
+	if (junk_consumables_town_fixture() && (!opt_start_build || opt_start_depth || opt_load || opt_random_birth))
+		quit("borgh: junk consumables town fixture requires a build and explicit town birth");
+	if (opt_start_build && !opt_start_depth && !junk_consumables_town_fixture())
+		quit("borgh: -start-build requires -start-depth");
 	if (opt_start_monsters && !opt_start_depth && !opt_load)
 		quit("borgh: -start-monsters requires -start-depth or -load");
 	if (!!opt_capture_build != !!opt_capture_build_level || opt_capture_build_level < 0 || opt_capture_build_level > 15)
