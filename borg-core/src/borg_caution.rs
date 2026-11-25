@@ -5392,9 +5392,10 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
         };
         if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
             // borg-reborn-rs (#1206, review 3): the scare's goals were
-            // withdrawn mid-think — the escape ended even if a new one
-            // re-arms below in the same think.
-            crate::borg_flow::escape_context_disarm_now(st);
+            // withdrawn mid-think. Observe the actual post-withdrawal
+            // state (review 4): another caution's goals may keep the
+            // escape armed.
+            crate::borg_flow::escape_context_tick(st);
             borg_note(
                 st,
                 if killed && (rules.kill || rules.calmed) {
@@ -5417,10 +5418,11 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
-        withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
-        // borg-reborn-rs (#1206, review 3): the scare's goals were
-        // withdrawn mid-think; a re-arm in the same think is a new escape.
-        crate::borg_flow::escape_context_disarm_now(st);
+        // borg-reborn-rs (#1206, review 3): the withdrawal is the
+        // transition. Observe the actual post-withdrawal state (review
+        // 4): the scare clears only the flags it owns — a restock or
+        // breeder flight can keep the aggregate escape armed.
+        crate::borg_caution::withdraw_scare_and_observe(st);
         if !st.borg.mon.scary_stand {
             borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
         }
@@ -5452,6 +5454,17 @@ pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mu
     if std::mem::take(&mut mon.scary_town) {
         goal.fleeing_to_town = false;
     }
+}
+
+/// borg-reborn-rs (#1206, review 4): withdraw the scare's goals and
+/// observe the escape context at that transition. The withdrawal clears
+/// only the flags the scare owns, so a restock or breeder flight can
+/// keep the aggregate escape armed — stamp the disarm only when nothing
+/// remains armed, or the still-armed flight loses the protection on the
+/// door it just opened. The decision fixture drives this same transition.
+pub(crate) fn withdraw_scare_and_observe(st: &mut BorgState) {
+    withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+    crate::borg_flow::escape_context_tick(st);
 }
 
 /// borg-reborn-rs (#515): the scan found nothing scary; clear the flag and

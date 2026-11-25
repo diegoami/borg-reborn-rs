@@ -1262,20 +1262,16 @@ fn note_at(st: &mut BorgState, prefix: &str, name: &[u8], y: i32, x: i32) {
 /// borg-reborn-rs (#1206, review 3): the escape context's own record of
 /// itself. `borg_think_dungeon` observes it at the start of every dungeon
 /// think, before the goals are re-planned; the scare-goal withdrawal
-/// stamps it directly, because a scare can be withdrawn and re-armed
-/// within one think and the flags never read off across a think
+/// observes it too (through `borg_caution`'s
+/// `withdraw_scare_and_observe`), because a scare can be withdrawn and
+/// re-armed within one think and the flags never read off across a think
 /// boundary. The remembered door openings die with the escape that
 /// opened them: a disarm ends that escape even when the breeder
 /// containment never gets a turn in between.
 pub(crate) fn escape_context_tick(st: &mut BorgState) {
     if !(st.borg.goal.fleeing || st.borg.goal.leaving) {
-        escape_context_disarm_now(st);
+        st.flow.escape_last_disarm = st.borg.time.now;
     }
-}
-
-/// The escape context was disarmed at this instant (the withdrawal).
-pub(crate) fn escape_context_disarm_now(st: &mut BorgState) {
-    st.flow.escape_last_disarm = st.borg.time.now;
 }
 
 /// Breeder levels: close an open door next to the Borg (not the goal

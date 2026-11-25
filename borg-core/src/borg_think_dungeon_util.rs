@@ -3097,10 +3097,10 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     assert!(!door_open(st), "the new flight's containment closed the door");
 
     // Review 3, route B: the scare's goals are withdrawn and re-armed
-    // within one think — the flags never read off across a think
-    // boundary, and the withdrawal itself stamps the disarm
-    // (escape_context_disarm_now, as borg_caution does). The re-armed
-    // scare is a new escape and must close the door.
+    // within one think, through the production transition
+    // (withdraw_scare_and_observe: the withdrawal disarms the context and
+    // the tick stamps it). The re-armed scare is a new escape and must
+    // close the door.
     crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, door.y, door.x);
     apply_action(
@@ -3125,7 +3125,14 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
         &mut deliberate_closes,
     );
     st.borg.c = loc { x: 44, y: 20 };
-    crate::borg_flow::escape_context_disarm_now(st);
+    // The withdrawal runs through the production transition: the scare
+    // owns both goals, so withdraw_scare_and_observe clears them and the
+    // tick stamps the disarm — then the same think re-arms a new scare.
+    st.borg.mon.scary_leaving = true;
+    st.borg.mon.scary_fleeing = true;
+    crate::borg_caution::withdraw_scare_and_observe(st);
+    st.borg.goal.fleeing = true;
+    st.borg.goal.leaving = true;
     let _ = crate::borg_flow::borg_play_step(st, 20, 45);
     apply_action(
         st,
@@ -3142,10 +3149,11 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     );
     assert!(!door_open(st), "the re-armed scare's containment closed the door");
 
-    // The undo window itself, isolated from the context bound: the
-    // flight's own open is recorded while armed and continuous, then
-    // ages out of the window with no disarm in between — the containment
-    // closes it.
+    // Review 4: a partial withdrawal through the production transition.
+    // The scare owns only `fleeing`; the restock or breeder flight keeps
+    // `leaving` armed — the aggregate escape continues, so the withdrawal
+    // must not stamp the disarm, and the door the flight just opened
+    // stays protected while the Borg routes away from it.
     crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, door.y, door.x);
     apply_action(
@@ -3157,8 +3165,49 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
         &mut side_closed_seen,
         &mut deliberate_closes,
     );
-    assert!(door_open(st), "the flight opened the corridor door");
+    assert!(door_open(st), "the leaving flight opened the corridor door");
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    st.borg.mon.scary_fleeing = true; // the scare owns only its fleeing
+    crate::borg_caution::withdraw_scare_and_observe(st);
+    assert!(st.borg.goal.leaving, "the restock flight keeps the escape armed");
+    assert!(!st.borg.goal.fleeing, "the scare's own fleeing was withdrawn");
+    st.borg.c = loc { x: 44, y: 20 };
+    crate::borg_flow::escape_context_tick(st); // armed: no stamp
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert_eq!(
+        deliberate_closes, 3,
+        "the partial withdrawal keeps the armed flight's door protected"
+    );
+    assert!(
+        door_open(st),
+        "the armed flight's door stays open through the partial withdrawal"
+    );
+
+    // The undo window itself, isolated from the context bound: the
+    // leaving flight's open (recorded above, still armed and continuous)
+    // ages out of the window with no disarm in between — the containment
+    // closes it.
     st.borg.time.now += i32::from(crate::borg_flow::OPENED_DOOR_UNDO_TURNS) + 1;
+    st.borg.c = loc { x: 44, y: 20 };
     crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, 20, 45);
     apply_action(
