@@ -212,7 +212,7 @@ pub struct LiveState {
     disposal: Option<HomeDisposal>,
     cleared_kinds: Vec<u32>,
     // borg-reborn-rs (#1239): remember confirmed trims for this visit.
-    pending_quiver_trim: Option<(u32, u32)>, // Item kind and carried copies before the trim.
+    pending_quiver_trim: Option<(u32, u32, bool)>, // Item kind, previous carried count, and whether to log the measured result.
     trimmed_quiver_kinds: Vec<u32>,
     /// #859: the level clock (`time.level`, when the current level was
     /// entered) at the last departure-room note. A town visit starts on
@@ -263,7 +263,10 @@ pub(crate) fn settle_sale(st: &mut BorgState) {
         };
     }
     settle_home(st);
-    settle_quiver_trim(st);
+    if settle_quiver_trim(st) {
+        borg_note(st, &format!("# Quiver after trim: {} usable shots, {} free pack slots",
+            crate::borg_junk::usable_quiver_count(st), crate::engine::pack_slots_free()));
+    }
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
@@ -498,6 +501,17 @@ fn continue_loadout(st: &mut BorgState) -> Option<TownAction> {
     Some(next)
 }
 
+fn quiver_drop(st: &BorgState, slot: usize) -> TownAction {
+    TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] }
+}
+
+fn enchanted_quiver_trim(st: &BorgState, required_weight: i64) -> Option<TownAction> {
+    let room = crate::borg_town_utility::departure_room();
+    let shortfall = room.weight + required_weight - crate::borg_town_budget::Facts::of(st).allowance();
+    let need_slot = crate::engine::pack_slots_free() < room.slots.max(1);
+    crate::borg_junk::town_enchanted_quiver_surplus(st, shortfall, need_slot).map(|slot| quiver_drop(st, slot))
+}
+
 /// Cleanup runs once on arrival. A temporary acquisition is allowed while
 /// an observed exchange is in progress, until the old item reaches Home.
 fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
@@ -507,7 +521,8 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
     let allowance = crate::borg_town_budget::Facts::of(st).allowance();
     let lighten = allowance < crate::borg_town_utility::departure_room().weight;
     let drop = crate::borg_junk::surplus_drop(st, lighten);
-    if lighten || drop.is_some() {
+    let trim = drop.is_none().then(|| enchanted_quiver_trim(st, 0)).flatten();
+    if lighten || drop.is_some() || trim.is_some() {
         if let Some(drop) = drop.filter(|drop| drop.sell_first) {
             if let Some(sale) = spare_sale(st, drop.slot, &st.items.items[drop.slot]) {
                 st.think.town_live.arrival_sale_planned = true;
@@ -524,6 +539,7 @@ fn unload_arrival_kit(st: &mut BorgState) -> Option<bool> {
                 at: [-1, drop.slot as i64, i64::from(drop.quantity), 0],
             }));
         }
+        if let Some(trim) = trim { return Some(set_action(st, trim)); }
         if allowance < 0 {
             let tried = st.think.town_live.departure_slots;
             if let Some(swap) = borg_town_loadout::propose(st, &tried, false) {
@@ -707,11 +723,11 @@ pub fn choose(st: &mut BorgState) -> bool {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         let allowance = crate::borg_town_budget::Facts::of(st).allowance();
         let required = if recall_first { plan.urgent.weight } else { 0 };
-        if reserve > 0 && allowance < required {
+        let plain = if reserve > 0 && allowance < required {
             let shortfall = crate::borg_town_utility::departure_room().weight + required - allowance;
-            crate::borg_junk::town_quiver_surplus(st, reserve, shortfall).map(|slot|
-                TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] })
-        } else { None }
+            crate::borg_junk::town_quiver_surplus(st, reserve, shortfall).map(|slot| quiver_drop(st, slot))
+        } else { None };
+        plain.or_else(|| enchanted_quiver_trim(st, required))
     } else { None };
     if !overloaded_shopping {
         if let Some(drop) = trim { return set_action(st, drop); }
@@ -947,9 +963,14 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
         // borg-reborn-rs (#1239): settle the trim from refreshed inventory.
-        if shop_overloaded() {
+        let enchanted = item.to_h != 0 || item.to_d != 0;
+        if shop_overloaded() || enchanted {
             let kind = item.kind;
-            st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind)));
+            st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind), enchanted));
+        }
+        if enchanted {
+            borg_note(st, &format!("# Quiver before trim: {} usable shots, {} free pack slots",
+                crate::borg_junk::usable_quiver_count(st), crate::engine::pack_slots_free()));
         }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
         clear(st);
@@ -995,11 +1016,13 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     true
 }
 
-fn settle_quiver_trim(st: &mut BorgState) {
-    let Some((kind, before)) = st.think.town_live.pending_quiver_trim.take() else { return; };
-    if carried_kind(st, kind) < before && !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
+fn settle_quiver_trim(st: &mut BorgState) -> bool {
+    let Some((kind, before, enchanted)) = st.think.town_live.pending_quiver_trim.take() else { return false; };
+    if carried_kind(st, kind) >= before { return false; }
+    if !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
         st.think.town_live.trimmed_quiver_kinds.push(kind);
     }
+    enchanted
 }
 
 /// Use a shop with room for the whole inferior spare stack.
@@ -1203,11 +1226,11 @@ mod tests {
         let mut st = home_state();
         let kind = st.items.items[0].kind;
         let shop = BORG_HOME as i16;
-        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        st.think.town_live.pending_quiver_trim = Some((kind, 3, false));
         settle_quiver_trim(&mut st);
         assert!(!buy_rejected(&st, shop, 0));
 
-        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        st.think.town_live.pending_quiver_trim = Some((kind, 3, false));
         st.items.items[0].iqty = 1;
         settle_quiver_trim(&mut st);
         assert!(buy_rejected(&st, shop, 0));

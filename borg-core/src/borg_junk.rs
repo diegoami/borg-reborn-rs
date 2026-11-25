@@ -36,7 +36,7 @@ use crate::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CARRY, BI_CCON, BI_CDEPTH,
+    BI_AMISSILES, BI_AMMO_POWER, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CARRY, BI_CCON, BI_CDEPTH,
     BI_CDEX, BI_CINT, BI_CLASS, BI_CLEVEL, BI_CSTR, BI_CURHP, BI_CWIS, BI_FOOD, BI_GOLD,
     BI_GOOD_S_CHG, BI_ISFIXEXP, BI_ISFULL, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH,
     BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED, BI_WEIGHT,
@@ -1866,6 +1866,69 @@ pub(crate) fn town_quiver_surplus(st: &BorgState, reserve: i32, shortfall: i64) 
         .map(|slot| start + slot)
 }
 
+fn usable_quiver_ammo(item: &borg_item, ammo_tval: i32) -> bool {
+    matches!(ammo_tval as u32, TV_SHOT | TV_ARROW | TV_BOLT)
+        && i32::from(item.tval) == ammo_tval && item.ident && !item.cursed
+        && !item.curses.contains(&true) && item.to_h >= 0 && item.to_d >= 0
+}
+
+pub(crate) fn usable_quiver_count(st: &BorgState) -> i32 {
+    let ammo_tval = st.borg.tr(BI_AMMO_TVAL);
+    st.items.items[quiver_start() as usize..quiver_end() as usize].iter()
+        .filter(|item| usable_quiver_ammo(item, ammo_tval))
+        .map(|item| i32::from(item.iqty)).sum()
+}
+
+fn enchanted_quiver_stack(
+    quiver: &[borg_item], ammo_tval: i32, reserve: i32, shortfall: i64,
+    need_slot: bool, sizes: (u32, u32),
+    protected: impl Fn(usize, u8) -> bool,
+) -> Option<usize> {
+    let (quiver_slot_size, thrown_quiver_mult) = sizes;
+    let ammo = |item: &borg_item| usable_quiver_ammo(item, ammo_tval);
+    let surplus = quiver.iter().filter(|item| ammo(item))
+        .map(|item| i32::from(item.iqty)).sum::<i32>() - reserve;
+    if surplus <= 0 { return None; }
+
+    // The engine rounds up total quiver units across stacks. Dropping one
+    // quiver entry alone may release no pack slot (obj-gear.c:pack_slots_used).
+    let units: u32 = quiver.iter().map(|item| {
+        let multiplier = if matches!(u32::from(item.tval), TV_SHOT | TV_ARROW | TV_BOLT) {
+            1
+        } else { thrown_quiver_mult };
+        u32::from(item.iqty) * multiplier
+    }).sum();
+    let slots = units.div_ceil(quiver_slot_size);
+    quiver.iter().enumerate().filter_map(|(slot, item)| {
+        if !ammo(item) || item.iqty == 0 || i32::from(item.iqty) > surplus || item.weight <= 0
+            || item.ego_idx != 0 || item.art_idx != 0 || (item.to_h == 0 && item.to_d == 0)
+            || item.desc.contains(&(b'{' as core::ffi::c_char)) || protected(slot, item.iqty)
+        { return None; }
+        let releases_slot = (units - u32::from(item.iqty)).div_ceil(quiver_slot_size) < slots;
+        if shortfall <= 0 && (!need_slot || !releases_slot) { return None; }
+        let weight = i64::from(item.iqty) * i64::from(item.weight);
+        Some(((need_slot && !releases_slot, weight < shortfall,
+            crate::borg_ranged::missile_damage_twice(item, 0), item.to_h, weight.abs_diff(shortfall), slot), slot))
+    }).min_by_key(|(score, _)| *score).map(|(_, slot)| slot)
+}
+
+pub(crate) fn town_enchanted_quiver_surplus(st: &BorgState, shortfall: i64, need_slot: bool) -> Option<usize> {
+    use crate::params::{value, Param};
+    let reserve = value(Param::town_quiver_trim_reserve);
+    let start = quiver_start() as usize;
+    let quiver = st.items.items.get(start..quiver_end() as usize)?;
+    if !exploration_first() || reserve <= 0 || st.borg.tr(BI_AMMO_POWER) <= 0
+        || (shortfall <= 0 && !need_slot) || !quiver.iter().any(|item| item.to_h > 0 || item.to_d > 0)
+    { return None; }
+    let reserve = reserve.max(value(Param::town_ranger_arrows_max)).max(value(Param::town_ranged_reserve));
+    let sizes = engine::z_info();
+    let supplies = crate::borg_town_capability::carried_supplies(st);
+    enchanted_quiver_stack(quiver, st.borg.tr(BI_AMMO_TVAL), reserve, shortfall, need_slot,
+        (u32::from(sizes.quiver_slot_size), u32::from(sizes.thrown_quiver_mult)),
+        |slot, copies| supplies.keeps_exploration_supply(start + slot, copies))
+        .map(|slot| start + slot)
+}
+
 pub(crate) fn town_drop_quiver_stack(st: &mut BorgState, slot: usize, qty: i64) {
     let slot = slot as i32;
     note_desc(st, "# Town headroom dropping ", slot, ".");
@@ -2303,6 +2366,26 @@ mod tests {
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 12, 90), Some(1));
         quiver[2] = blank_item();
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, 90), None);
+    }
+
+    #[test]
+    fn enchanted_quiver_trim_opens_a_pack_slot_and_keeps_the_reserve() {
+        let shot = |iqty, to_h, to_d, ego_idx| borg_item {
+            tval: TV_SHOT as u8, ident: true, iqty, weight: 4, dd: 1, ds: 2,
+            to_h, to_d, ego_idx, ..blank_item()
+        };
+        let quiver = [shot(14, 3, 2, 0), shot(25, 2, 3, 0), shot(1, 5, 2, 0), shot(19, 1, 3, 1)];
+        let choose = |reserve, shortfall, need_slot| enchanted_quiver_stack(&quiver,
+            TV_SHOT as i32, reserve, shortfall, need_slot, (40, 5), |_, _| false);
+        assert_eq!(choose(30, 0, false), None);
+        assert_eq!(choose(30, 0, true), Some(1));
+        assert_eq!(choose(35, 0, true), None);
+        assert_eq!(choose(30, 50, false), Some(0));
+        assert_eq!(choose(59, 50, false), None);
+        let inscribed = borg_item { desc: [b'{' as core::ffi::c_char; 80], ..quiver[1] };
+        let mut protected = quiver;
+        protected[1] = inscribed;
+        assert_eq!(enchanted_quiver_stack(&protected, TV_SHOT as i32, 30, 0, true, (40, 5), |_, _| false), None);
     }
 
     #[test]
