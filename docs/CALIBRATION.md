@@ -9063,8 +9063,8 @@ play. [Handover](handover/2026-11-25-1229-stale-kobold-door.md)
 
 ## Inferior spare equipment (#1236)
 
-The shipped policy sells inferior same-kind equipment in town. In the
-dungeon its priority drop is limited to stacks worth at most 15 gold,
+The legacy town comparison sells inferior same-kind equipment. In the
+dungeon the same-kind priority drop is limited to stacks worth at most 15 gold,
 the first positive threshold in the ordinary junk policy. It runs after
 urgent travel and recovery.
 
@@ -9078,8 +9078,8 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2169` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2170` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2187` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2188` |
 
 ## Exploration reserves and full packs (#1264)
 
@@ -9090,6 +9090,9 @@ with each item equipped in turn. It preserves an accuracy, damage, speed,
 casting or departure headroom tradeoff, planned swaps, and visible special
 gear. A remaining rune keeps the item eligible for identification while the
 Borg has an Identify Rune scroll or a usable learned Identify Rune spell.
+The same comparison serves the cheap dungeon drop, town sales and arrival
+unloading. On arrival, offer a whole inferior stack to a shop before
+dropping it.
 
 A separate gate protects the remaining trip targets for light and fuel,
 nutrition, healing, Phase Door, Recall and ranged combat supplies. It

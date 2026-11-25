@@ -1,4 +1,4 @@
-//! #1264: compare two known equipment loadouts before making pack room.
+//! #1264: compare two known equipment loadouts before disposing of ordinary spares.
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::*;
 use crate::borg_item::{inven_wield, quiver_start};
@@ -10,7 +10,7 @@ use crate::headers::list_object_flags_h::{
 };
 use crate::{engine, state::BorgState};
 
-fn equipment_slot(item: &borg_item) -> Option<usize> {
+pub(crate) fn equipment_slot(item: &borg_item) -> Option<usize> {
     match u32::from(item.tval) {
         TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW | TV_SOFT_ARMOR | TV_HARD_ARMOR
         | TV_DRAG_ARMOR | TV_CLOAK | TV_SHIELD | TV_HELM | TV_CROWN | TV_GLOVES
@@ -99,6 +99,7 @@ impl Kit {
 pub(crate) fn inferior(st: &mut BorgState, pack_slot: usize) -> bool {
     let spare = st.items.items[pack_slot];
     if spare.iqty == 0 || !spare.aware || spare.curses.contains(&true)
+        || crate::borg_junk::is_swap(st, pack_slot as i32)
         || crate::borg_town_home::known_special(&spare)
         || crate::borg_town_live::retained_gear(st, &spare)
         || inspection_pending(st, &spare)
