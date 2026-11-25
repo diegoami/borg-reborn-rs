@@ -596,7 +596,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     let torch = st.item_val.sv_light_torch;
     // The zero mode is the historical shopping policy used by exact replays.
     let torch_shortfall = if live && param(Param::town_shop_overloaded) > 0
-        && param(Param::town_light_reserve_turns) > 0 {
+        && param(Param::town_torch_purchase_limit) != 0 && param(Param::town_light_reserve_turns) > 0 {
         crate::borg_light::torch_fuel_turns(st).map(|turns| {
             crate::borg_light::fuel_goal(st, crate::borg_town_utility::Journey::of(st)) - i64::from(turns)
         })
