@@ -104,6 +104,8 @@ PINNED_TOWN_SETTINGS = [
     # #1200 shipped surplus throwing after these incidents. Use the
     # original throw range and scoring to reach the recorded stair grids.
     ("attack_throw_surplus", 0),
+    # #1236 changed ordinary spare disposal after these exact-turn replays.
+    ("junk_inferior_spares", 0),
     # #1217 changed shallow preparedness after these recorded routes.
     ("prepared_dl2_min_hp", 30),
     ("prepared_dl2_min_clevel__warrior", 0), ("prepared_dl2_min_clevel__mage", 0),

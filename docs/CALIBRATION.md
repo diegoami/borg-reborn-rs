@@ -8971,3 +8971,23 @@ The recovery is unconditional. The native fixture covers a live target,
 active and inactive stale records, slot reuse, lockpick failure, and route
 progress. A comparison of pinned builds can measure effects in seeded
 play. [Handover](handover/2026-11-25-1229-stale-kobold-door.md)
+
+## Inferior spare equipment (#1236)
+
+The shipped policy sells inferior same-kind equipment in town. In the
+dungeon its priority drop is limited to stacks worth at most 15 gold,
+the first positive threshold in the ordinary junk policy. It runs after
+urgent travel and recovery.
+
+The unknown-rune exception compares Leather Sandals visibly at `[1,+0]`
+before max DL5 and requires a seven-point advantage in the worn pair's
+enchantment. The six-item fixture frees one slot with the margin disabled
+and two when it is seven, preserving the possible ego, nexus and speed
+swaps, and the +8 upgrade. The native test exercises the actual
+description and ignore inscription. The depth and margin are hypotheses
+pending a sized Zoo comparison (RULES 14).
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1882` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1883` |

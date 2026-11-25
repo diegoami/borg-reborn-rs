@@ -2064,6 +2064,50 @@ pub(crate) fn carry_test_lanterns(st: &mut BorgState) {
     });
 }
 
+#[cfg(feature = "test-town-review")]
+pub(crate) fn equip_test_sandal_spares(st: &mut BorgState) {
+    use crate::headers::list_tvals_h::TV_BOOTS;
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_set_base_known(p: *mut player, obj: *mut object);
+        fn player_know_object(p: *mut player, obj: *mut object);
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn inven_wield(obj: *mut object, slot: i32);
+        fn slot_by_name(p: *mut player, name: *const c_char) -> i32;
+    }
+
+    let sval = lookup_sval(TV_BOOTS as i32, "Pair of Leather Sandals");
+    // SAFETY: the fixture runs on the engine thread in town after birth.
+    // The kind and body slot belong to the live player tables, and the
+    // engine owns the objects and their known copies after inven_carry.
+    lend(st, || unsafe {
+        assert_eq!((*player).depth, 0);
+        let kind = lookup_kind(TV_BOOTS as i32, sval);
+        let feet = slot_by_name(player, c"feet".as_ptr());
+        assert!(!kind.is_null() && (0..i32::from((*player).body.count)).contains(&feet));
+        for (quantity, to_a) in [(1, 7), (3, 0)] {
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = quantity;
+            (*obj).to_a = to_a;
+            (*obj).known = object_new();
+            object_set_base_known(player, obj);
+            (*(*obj).known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            player_know_object(player, obj);
+            inven_carry(player, obj, false, false);
+            if to_a > 0 {
+                inven_wield(obj, feet);
+            }
+        }
+    });
+}
+
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
 /// kind.
 pub fn equip_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {

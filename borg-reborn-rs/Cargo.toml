@@ -26,6 +26,7 @@ test-perception = []
 test-stair-handoff = ["borg-core/test-stair-handoff"]
 test-combat-heal = ["borg-core/test-combat-heal"]
 test-cursed-spares = ["borg-core/test-cursed-spares"]
+test-town-review = ["borg-core/test-town-review"]
 
 [dependencies]
 libc = "0.2"
