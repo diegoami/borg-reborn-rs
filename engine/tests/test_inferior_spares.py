@@ -15,7 +15,7 @@ FIXTURE = ROOT / "engine/tests/fixtures/inferior-sandals.build"
 
 @unittest.skipUnless(GAME.is_file(), "native build required")
 class InferiorSparesTest(unittest.TestCase):
-    def run_sandals(self):
+    def run_sandals(self, legacy_source):
         # The fixture leaves to-hit unknown and gives the pack pair a hidden
         # penalty. Angband renders [1,+0] {??} from the actual object.
         with tempfile.TemporaryDirectory(prefix="inferior-sandals-") as directory:
@@ -23,14 +23,18 @@ class InferiorSparesTest(unittest.TestCase):
             paths = {key: root / key for key in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            shutil.copyfile(ROOT / "harness/borg.txt", paths["user"] / "borg.txt")
+            config = (ROOT / "harness/borg.txt").read_text()
+            if legacy_source == "file":
+                config += "\nborg_param_junk_inferior_sandal_ac_margin = 7\n"
+            (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_PARAM_JUNK_INFERIOR_SPARES="1",
-                BORG_PARAM_JUNK_INFERIOR_SANDAL_AC_MARGIN="7",
             )
+            if legacy_source == "environment":
+                env["BORG_PARAM_JUNK_INFERIOR_SANDAL_AC_MARGIN"] = "7"
             messages = root / "messages.log"
             run = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),
@@ -43,7 +47,9 @@ class InferiorSparesTest(unittest.TestCase):
             return messages.read_text()
 
     def test_retired_margin_does_not_drop_unknown_sandals(self):
-        self.assertNotRegex(self.run_sandals(), r"You drop [^\n]*Leather Sandals")
+        for source in ("file", "environment"):
+            with self.subTest(source=source):
+                self.assertNotRegex(self.run_sandals(source), r"You drop [^\n]*Leather Sandals")
 
 
 @unittest.skipUnless(

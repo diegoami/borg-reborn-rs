@@ -9069,10 +9069,15 @@ the first positive threshold in the ordinary junk policy. It runs after
 urgent travel and recovery.
 
 The priority comparison requires a fully identified spare and equipped
-item. #1265 retired the former Leather Sandals exception. The native
-regressions cover an unidentified spare that stays in the pack and the
-sale of identified spares.
+item. It keeps spares whose descriptions include an inscription block.
+#1265 retired the former Leather Sandals exception. The native regressions
+cover an unidentified spare that stays in the pack and the sale of
+identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2097` |
+
+The removal establishes the control for the paired pilot of the #1264
+redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
+[Zoo pilot #804](https://github.com/diegoami/borg-zoo/issues/804)

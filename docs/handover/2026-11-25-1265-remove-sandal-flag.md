@@ -1,5 +1,17 @@
-# #1265 Remove sandal-specific junking
+## 2026-11-25: Remove the sandal-specific junking setting (#1265)
 
-The generic identified-spare comparison stays in place. The Leather Sandals exception and its setting are removed. A legacy setting is accepted and ignored with the existing retired-parameter diagnostic so an older profile still loads.
+### What changed
 
-The redesign is tracked in #1264. The existing town-arrival and dungeon disposal rules use different eligibility checks. In the dungeon, priority disposal requires an identified same-kind pair and a stack worth no more than 15 gold. Town arrival can drop plain, worse gear with unknown runes, regardless of the dungeon's identification gate. The full-pack fallback also spends some selected consumables to make space and has separate protections for unknown gear. The fallback's initial desperate bonuses for boots, weapons held while digging, and unknown runes are overwritten by its generic 7,000 bonus before later checks run.
+Removed the Leather Sandals exception and its threshold. The generic comparison still applies to fully identified spares. The parser accepts the retired setting and reports that it was ignored.
+
+### Findings and verification
+
+The review found that the first regression covered the environment override. The native fixture now runs separately with the setting in an old `borg.txt` and with the environment override. Each run checks the diagnostic and shows that the Borg retains the unknown-rune spare. The native town fixture checks that both selling choosers still sell identified inferior spares.
+
+### Remaining work
+
+#1264 tracks the equipment redesign. Dungeon priority disposal requires an identified same-kind pair and caps the whole stack at 15 gold. Town arrival can discard some inferior gear with unknown runes. The full-pack fallback can consume items to make space. Its generic desperate-pass bonus overwrites earlier bonuses for unknown boots, weapons held while digging, and unknown runes.
+
+### Owner decision
+
+The removal needs no further gameplay decision.
