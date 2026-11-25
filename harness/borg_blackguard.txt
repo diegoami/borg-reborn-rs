@@ -54,3 +54,5 @@ borg_param_stair_scum_slack_steps = 4
 # #1208: mixed exploration eligibility lasts two CLs longer than the
 # original class cap in #1098. This is the last eligible CL.
 borg_param_explore_mix_max_clevel = 6
+# #1199: plain shots to keep when trimming the quiver in town.
+borg_param_town_quiver_trim_reserve = 40
