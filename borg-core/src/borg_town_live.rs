@@ -318,6 +318,12 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
     set_action(st, action)
 }
 
+/// The shipped shopping policy can be pinned off for exact historical
+/// reproductions and a paired Zoo comparison.
+pub(crate) fn shop_overloaded() -> bool {
+    crate::params::value(crate::params::Param::town_shop_overloaded) != 0
+}
+
 pub(crate) fn departure_preparing(st: &BorgState) -> bool {
     st.think.town_live.clock == Some(st.borg.time.level) && st.think.town_live.departure
 }
@@ -365,16 +371,20 @@ pub fn choose(st: &mut BorgState) -> bool {
     // sale or excess trip while selling pays nothing during it.
     if let Some(a) = crate::borg_poison::town_triage_action(st) { return set_action(st, a); }
     let no_sale = crate::borg_poison::no_sale_now(st);
+    let overloaded_shopping = shop_overloaded();
+    if !overloaded_shopping && !no_sale {
+        if let Some(a) = overflow_action(st) { return set_action(st, a); }
+    }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
         || st.borg.antibounce_count > 1350 {
-        if crate::borg_town_budget::Facts::of(st).allowance() < 0 {
+        if overloaded_shopping && crate::borg_town_budget::Facts::of(st).allowance() < 0 {
             st.think.town_live.departure_failure = Some("the town visit reached its time or movement limit");
             note_departure_room(st);
         }
         clear(st);
         return false;
     }
-    if !no_sale {
+    if overloaded_shopping && !no_sale {
         if let Some(a) = continue_loadout(st) { return set_action(st, a); }
         if let Some(a) = overflow_action(st).filter(|_| !preparing_loadout(st)) { return set_action(st, a); }
     }
@@ -383,7 +393,21 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    let mut a = crate::borg_town_shadow::live_action(st);
+    let a = crate::borg_town_shadow::live_action(st);
+    let trim = if !no_sale && (overloaded_shopping || !st.borg.in_shop)
+        && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE)
+    {
+        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
+        let allowance = crate::borg_town_budget::Facts::of(st).allowance();
+        if reserve > 0 && allowance < 0 {
+            let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
+            crate::borg_junk::town_quiver_surplus(st, reserve, shortfall).map(|slot|
+                TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] })
+        } else { None }
+    } else { None };
+    if !overloaded_shopping {
+        if let Some(drop) = trim { return set_action(st, drop); }
+    }
     // Finish shopping normally while carrying unidentified potions. A
     // purchase may identify the stack before the planner can sell it.
     if matches!(a.code, action::BUY | action::TAKE_HOME | action::LEAVE) {
@@ -393,18 +417,13 @@ pub fn choose(st: &mut BorgState) -> bool {
             return set_action(st, refill);
         }
     }
-    // Do the quiver trim before weight-driven dispositions, leaving the
-    // store first if the next command needs the inventory UI.
-    if !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
-        let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
-        let allowance = crate::borg_town_budget::Facts::of(st).allowance();
-        if reserve > 0 && allowance < 0 {
-            let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
-            if let Some(slot) = crate::borg_junk::town_quiver_surplus(st, reserve, shortfall) {
-                if st.borg.in_shop { clear(st); return false; }
-                a = TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] };
-            }
-        }
+    if let Some(drop) = trim {
+        if st.borg.in_shop { clear(st); return false; }
+        return set_action(st, drop);
+    }
+    if !overloaded_shopping {
+        if a.code == action::LEAVE { note_departure_room(st); }
+        return set_action(st, a);
     }
     // A swap starts only once no purchase, withdrawal, quiver drop or
     // ordinary pack disposition is pending. At a shop, defer the decision
@@ -441,10 +460,10 @@ pub fn choose(st: &mut BorgState) -> bool {
 fn note_departure_room(st: &mut BorgState) {
     let room = crate::borg_town_utility::departure_room();
     let facts = crate::borg_town_budget::Facts::of(st);
-    if room == crate::borg_town_utility::Room::default() && facts.allowance() >= 0 { return; }
+    if room == crate::borg_town_utility::Room::default() && (!shop_overloaded() || facts.allowance() >= 0) { return; }
     let level = st.borg.time.level;
     if st.think.town_live.room_noted_level.replace(level) == Some(level) { return; }
-    if facts.allowance() < 0 {
+    if shop_overloaded() && facts.allowance() < 0 {
         let reason = st.think.town_live.departure_failure
             .unwrap_or("no safe lighter loadout with room at Home");
         borg_note(st, &format!("# Town loadout: leaving over the carry allowance; {reason}"));

@@ -482,10 +482,13 @@ pub(crate) fn saturated_home_kinds(input: &StepInput, u: &Utility, dispositions:
 /// for it). The purchases then leave the departure room free, so the scroll
 /// fits on top of it. Off when the departure room is.
 fn storing_target(input: &StepInput, u: &Utility, room: Room) -> Room {
-    if input.revision >= 21 || room == Room::default() { return room; }
+    if room == Room::default() { return room; }
     let (weight, slots) = u.capability.as_ref()
         .map_or((0, 0), |m| crate::borg_town_capability::recall_room(m, u.recall_reserve, &input.candidates));
-    Room { weight: room.weight + weight, slots: room.slots + slots }
+    Room {
+        weight: room.weight + if input.revision < 21 { weight } else { 0 },
+        slots: room.slots + slots,
+    }
 }
 
 /// The order the pack is visited in: lowest keep value per weight first. With
@@ -1969,6 +1972,8 @@ mod tests {
         inp.candidates = vec![crate::borg_town_stock::Candidate { shop: 5, slot: 3, kind: 1, tval: 0, sval: 0, price: 125,
             qty: 4, weight: 5, slots_cost: 1, stack_count: 0, class: 0 }];
         assert_eq!(storing_target(&inp, &u, Room { weight: 30, slots: 2 }), Room { weight: 35, slots: 3 });
+        inp.revision = 21;
+        assert_eq!(storing_target(&inp, &u, Room { weight: 30, slots: 2 }), Room { weight: 30, slots: 3 });
         assert_eq!(storing_target(&inp, &u, Room::default()), Room::default());
     }
 

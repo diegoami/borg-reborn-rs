@@ -8752,7 +8752,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:880` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:884` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8766,7 +8766,28 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:385` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:400` |
+
+## Shopping while overloaded and departure loadout (#1239)
+
+**Plan schema 21.** The Track P profile enables `town_shop_overloaded`.
+The town planner uses value, gold, and pack slots for ordinary and urgent
+purchases and Home withdrawals. Weight remains a soft cost and a departure
+objective. The Recall reserve keeps its pack-slot allowance and no longer
+adds weight to the headroom needed before purchase.
+
+The departure pass trims surplus quiver stacks, evaluates lighter gear with
+the displaced equipment stored at Home, and sheds surplus above the trip
+reserves. Urgent resupply remains available during the pass. If the Borg
+cannot remove the remaining overload safely, it logs the reason and leaves.
+
+Setting `town_shop_overloaded` to 0 records and uses schema 20 with the
+previous acquisition weight limits. Exact incident fixtures and the Zoo
+control use this setting. Replays use the schema recorded in each visit.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:324` |
 
 ## Ranged readiness for the next trip (#1184)
 

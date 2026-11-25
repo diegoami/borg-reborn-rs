@@ -440,7 +440,7 @@ pub fn live_action(st: &mut BorgState) -> TownAction {
 /// Refill the torch reserve after immediate needs and before other shopping.
 /// Spend the ordinary shopping budget and use the same one-copy action as
 /// the light emergency, then replan with the torch actually carried.
-fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
+fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget, overloaded_shopping: bool) {
     let reserve = param(Param::town_light_reserve_turns);
     // borg-reborn-rs (#1110): to the planner's goal, scaled while
     // breadth-first exploration applies (review of #1113).
@@ -455,6 +455,7 @@ fn replenish_torch_reserve(st: &BorgState, stock: &Stock, budget: &mut Budget) {
         if !matches!(shop, BORG_HOME | GENERAL_STORE) || u32::from(c.tval) != TV_LIGHT
             || i32::from(c.sval) != st.item_val.sv_light_torch || c.qty <= 0
             || i64::from(c.price) > budget.gold || c.slots_cost > budget.pack_slots
+            || (!overloaded_shopping && i64::from(c.weight) > budget.weight)
         {
             return false;
         }
@@ -484,7 +485,9 @@ fn executed_copies(code: i64, planned: i64) -> i64 {
 
 fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let file = crate::borg_town_dump::plan_record_file();
-    let departure = live && crate::borg_town_live::departure_preparing(st);
+    let overloaded_shopping = crate::borg_town_live::shop_overloaded();
+    let revision = if overloaded_shopping { crate::borg_town_record::PLAN_SCHEMA } else { 20 };
+    let departure = live && overloaded_shopping && crate::borg_town_live::departure_preparing(st);
 
     // A new visit when the level clock moved (new_level restarts it on
     // every arrival, the town included).
@@ -541,7 +544,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     }
     let st: &BorgState = st;
     let mut budget = Budget::of(st, &stock, &trip);
-    replenish_torch_reserve(st, &stock, &mut budget);
+    replenish_torch_reserve(st, &stock, &mut budget, overloaded_shopping);
     let urgent_cost: i64 = budget.urgent.iter().map(|purchase|
         i64::from(stock.candidates[purchase.candidate].price)).sum();
     let gold_after_urgent = i64::from(st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD))
@@ -607,7 +610,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     // #957: the storing settings this solve uses, recorded with it (v13).
     let storing = crate::borg_town_utility::Storing::settings();
     let out = step(&StepInput { departure, storing: Some(storing),
-        revision: crate::borg_town_record::PLAN_SCHEMA,
+        revision,
         capability: Some(&capability),
         utility: true,
         candidates: stock.candidates.clone(),
@@ -643,17 +646,18 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             // #939 re-review: an urgent ware that cannot be carried must not
             // hide an affordable urgent ware that can.
             let pack_slots = facts.pack_capacity - stock.pack_slots_used();
-            let acquire = if facts.allowance() < 0 {
+            let acquire = if overloaded_shopping && facts.allowance() < 0 {
                 crate::borg_town_record::acquisition_before_disposal(
                     &stock.candidates, &budget.urgent, &chosen_from, &wares, &kit, pack_slots)
             } else { None };
+            let weight_room = if overloaded_shopping { i64::MAX } else { facts.allowance() };
             acquire.unwrap_or_else(|| crate::borg_town_record::live_selection(
                 &stock.candidates, &budget.urgent, &chosen_from, &wares, &kit,
-                budget.home_slots, pack_slots, i64::MAX, |blocked| {
+                budget.home_slots, pack_slots, weight_room, |blocked| {
                     let mut others = stock.clone();
                     for &i in blocked { others.candidates[i].qty = 0; }
                     let mut b = Budget::of(st, &others, &trip);
-                    replenish_torch_reserve(st, &others, &mut b);
+                    replenish_torch_reserve(st, &others, &mut b, overloaded_shopping);
                     b.urgent
                 }))
         }
@@ -695,7 +699,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let rec = PlanRecord {
         storing: Some(storing.to_array()),
         capability: Some(capability),
-        schema: crate::borg_town_record::PLAN_SCHEMA,
+        schema: revision,
         mode: if departure { 2 } else { u8::from(live) },
         visit,
         step: step_no,
@@ -740,7 +744,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         &mut line,
         st,
         SEQ.fetch_add(1, Ordering::Relaxed),
-        crate::borg_town_record::PLAN_SCHEMA,
+        revision,
         i64::from(st.borg.time.now),
         true,
     );

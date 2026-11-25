@@ -441,6 +441,7 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
 
     /* Wear "optimal" equipment */
     let overloaded = crate::borg_town_live::active(st)
+        && crate::borg_town_live::shop_overloaded()
         && st.borg.tr(crate::borg_headers::borg_trait_h::BI_WEIGHT) > st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY) / 2;
     if !overloaded && !crate::borg_town_live::preparing_loadout(st) && borg_best_stuff(st) {
         return true;

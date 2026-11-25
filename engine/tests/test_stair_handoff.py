@@ -32,6 +32,9 @@ PINNED_TOWN_SETTINGS = [
     ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
     ("town_store_keep_min", 0), ("town_recall_curve_scale_percent", 0),
     ("town_recall_urgent", 0),
+    # #1239 lets Town acquisitions exceed the old weight allowance. Keep
+    # the shopping rules that lead to the recorded stair incident grids.
+    ("town_shop_overloaded", 0),
     ("town_prepared_percent", 0), ("town_variety_min_depth", 0),
     ("town_recall_reserve", 1), ("buy_recall_from_gold", 400),
     ("town_phase_reserve", 0), ("town_phase_reserve_percent", 100),

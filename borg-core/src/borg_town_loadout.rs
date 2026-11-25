@@ -220,6 +220,10 @@ fn improves(current: (i32, i32), trial: (i32, i32)) -> bool {
     room > current_room && speed >= current_speed
 }
 
+fn suitable_weight(candidate: i16, worn: i16, restoring: bool) -> bool {
+    if restoring { candidate > worn } else { candidate < worn }
+}
+
 fn initial_phase(source: Source, can_deposit: bool, spare: Option<borg_item>) -> Option<Phase> {
     if can_deposit {
         Some(match source {
@@ -297,11 +301,8 @@ pub(crate) fn propose(st: &mut BorgState, tried: &[bool; 12], restoring: bool) -
             || !known(&item)
             || item.cursed
             || old.iqty == 0
-            || (if restoring {
-                item.weight <= old.weight
-            } else {
-                item.weight >= old.weight
-            })
+            || !suitable_weight(item.weight, old.weight, restoring)
+            || crate::borg_town_live::sale_rejected(st, BORG_HOME as i16, &old)
             || engine::flag_has(
                 &old.flags,
                 crate::headers::list_object_flags_h::OF_STICKY as i32,
@@ -490,6 +491,59 @@ impl Swap {
                     Next::Failed
                 }
             }
+        }
+    }
+}
+
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn fixture(st: &mut BorgState, case: &str) {
+    use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
+    static SETUP: AtomicU8 = AtomicU8::new(0);
+    assert!(matches!(case, "trim" | "restore" | "no-storage"));
+    if SETUP.load(Relaxed) == 1 { return; }
+    let wield = inven_wield() as usize;
+    if SETUP.load(Relaxed) == 0 {
+        SETUP.store(1, Relaxed);
+        let excess = if case == "trim" { 188 } else { 104 };
+        engine::setup_test_town_loadout(st, excess, case != "no-storage", false);
+        crate::borg_item::borg_find_all_items(st);
+        crate::borg_trait::borg_notice(st, true);
+        assert_eq!(st.borg.tr(BI_CLEVEL), 20);
+        assert_eq!(crate::borg_town_budget::Facts::of(st).allowance(), -i64::from(excess));
+        let plan = propose(st, &[false; 12], false);
+        if case == "no-storage" {
+            assert!(plan.is_none(), "no safe deposit can be proposed with full Home stock");
+            println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
+        }
+        let swap = plan.expect("the overweight Priest should be offered a lighter Home weapon");
+        assert!(matches!(swap.source, Source::Store(BORG_HOME, _)));
+        assert_eq!((swap.old.weight, swap.new.weight), (180, 30));
+        SETUP.store(2, Relaxed);
+    }
+    assert_eq!(st.borg.tr(BI_CDEPTH), 0, "left town before the fixture observed the exchange");
+    if SETUP.load(Relaxed) == 2 && st.items.items[wield].weight == 30 {
+        let heavy = st.store.shops[BORG_HOME].ware.iter()
+            .find(|item| item.weight == 180 && crate::borg_town_live::retained_gear(st, item));
+        if heavy.is_some() && st.borg.tr(BI_RECALL) > 0 {
+            assert!(crate::borg_town_budget::Facts::of(st).allowance() >= 0);
+            if case == "trim" {
+                assert_eq!(st.borg.tr(BI_AMISSILES), 20);
+                println!("#1239 town loadout passed: {case}");
+                std::process::exit(0);
+            }
+            SETUP.store(1, Relaxed);
+            engine::strengthen_test_town_loadout(st);
+            st.borg.time.level -= 1;
+            crate::borg_trait::borg_notice(st, true);
+            let swap = propose(st, &[false; 12], true)
+                .expect("a stronger Priest should be offered the heavier stored mace");
+            assert_eq!((swap.old.weight, swap.new.weight), (30, 180));
+            let mace = swap.new;
+            let after = st.borg.tr(BI_CARRY) / 2 - st.borg.tr(BI_WEIGHT) - i32::from(mace.weight - swap.old.weight);
+            assert!(after >= 0);
+            println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
         }
     }
 }
