@@ -73,21 +73,24 @@ as the candidate. All arms use the shipped profile with no parameter changes.
 The shipped `harness/borg.txt` SHA-256 is
 `dd21cc3e95f5ac0dc504d1f821f148befe356df74d4eb69b17d3b549edc4e046`.
 The cell environment needs `BORG_SHADOW=off` for native and `check` or
-`switch` for the candidate, plus a unique `BORG_RUN_DIR` for each shadow cell.
-Record the effective mode and retain `shadow.jsonl`, `shadow-stats.jsonl`,
-keys, messages, state, summaries, execution status and build identity.
+`switch` for the candidate. The frontend uses the cell's `-summary`
+directory for diagnostics. A local check run confirmed both shadow files
+are written there with no inherited `BORG_RUN_DIR`.
 
 The read-only inspection of Zoo's pinned and current Borg Rust adapters
 found that inherited `BORG_*` environment settings are cleared and there is no
-explicit `BORG_SHADOW` arm field. Zoo needs a per-arm mode and artifact path
-before a pilot can establish shadow parity. Its owner dispatches the pilot.
-[Zoo adapter at the recorded pin](https://github.com/diegoami/borg-zoo/blob/7b373a702e7b9bb491ba468d97d34cf99ec3df2d/zoo/borgrs.py)
+explicit `BORG_SHADOW` arm field. Zoo needs a per-arm mode and raw evidence
+retention before its owner can dispatch the parity pilot.
+[Zoo request draft](R45-ZOO-REQUEST.md)
 
 The R4.5 exit slice is the exact 45 starts in `harness/suites/full`
 (SHA-256 `7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed`).
 The gate is zero check mismatches and 45/45 switch runs matching the native
 keys, messages, state and meaningful summary fields. Retain every attempted
-cell and reconcile natural deaths in Cemetery.
+cell and reconcile natural deaths in Cemetery. The receiving checker
+`harness/check-r45-suite.py` validates build, settings, exit and mode
+receipts before running the existing shadow reader and gameplay diff. The
+retained three-start smoke artifacts passed this checker in its smoke mode.
 
 ## Work after the pin and R5 sizing
 
