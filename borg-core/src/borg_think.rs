@@ -255,6 +255,13 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     }
 
     #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_EXPLORATION_PACK") {
+        if crate::borg_spare_gear::fixture(st, &case) {
+            return choice!("borg_drop_hole");
+        }
+    }
+
+    #[cfg(feature = "test-town-loadout")]
     if let Ok(case) = std::env::var("BORG_TEST_TOWN_LOADOUT") {
         crate::borg_town_loadout::fixture(st, &case);
     }

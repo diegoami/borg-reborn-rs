@@ -954,7 +954,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     if st.borg.tr(BI_CDEPTH) != 0 && crate::borg_town_live::unload_on_arrival(st)
-        && crate::borg_junk::borg_discard_harmful_item(st)
+        && crate::borg_junk::borg_discard_harmful_item(st, false)
     {
         return choice!("borg_discard_harmful_item");
     }

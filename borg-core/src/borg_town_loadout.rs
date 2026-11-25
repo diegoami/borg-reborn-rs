@@ -167,7 +167,7 @@ fn eviction(st: &BorgState) -> Option<borg_item> {
         .map(|(_, item)| item)
 }
 
-fn affordable(st: &BorgState, shop: usize, price: i32) -> bool {
+pub(crate) fn affordable(st: &BorgState, shop: usize, price: i32) -> bool {
     use crate::borg_town_budget::{black_market_budget, black_market_percentage, gold_reserve};
     use crate::params::{value, Param};
     let gold = i64::from(st.borg.tr(BI_GOLD));
@@ -517,7 +517,9 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap"));
+    assert!(matches!(case, "trim" | "arrival" | "arrival-shop" | "restore" | "no-storage" | "reserve-overlap" | "reserve-overweight" | "reserve-overweight-shop"));
+    let shop_reserve = case == "reserve-overweight-shop";
+    let reserve = shop_reserve || case == "reserve-overweight";
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
@@ -526,16 +528,22 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         let excess = match case {
             "trim" | "arrival" => 188,
             "arrival-shop" => 80,
+            _ if reserve => 170,
             _ => 104,
         };
         engine::setup_test_town_loadout(
-            st, excess, !shop && case != "no-storage", false,
-            if shop { 500 } else { 0 }, shop || case == "reserve-overlap",
+            st, excess, !shop && !reserve && case != "no-storage", false,
+            if shop || shop_reserve { 500 } else { 0 }, shop || case == "reserve-overlap", !shop_reserve,
         );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
         assert_eq!(st.borg.tr(BI_CLEVEL), 20);
         assert_eq!(crate::borg_town_budget::Facts::of(st).allowance(), -i64::from(excess));
+        if reserve {
+            assert_eq!(st.borg.tr(BI_RECALL), 0);
+            SETUP.store(2, Relaxed);
+            return;
+        }
         if case == "reserve-overlap" {
             use crate::borg_town_home::{self, Role};
             assert!(borg_town_home::enabled(st));
@@ -568,6 +576,16 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
         assert!(matches!(swap.source, Source::Store(BORG_HOME, _)));
         assert_eq!((swap.old.weight, swap.new.weight), (180, 30));
         SETUP.store(2, Relaxed);
+    }
+    if reserve {
+        if st.borg.tr(BI_CDEPTH) > 0 {
+            assert!(st.borg.tr(BI_RECALL) > 0, "departed without the replenished Recall");
+            assert_eq!(st.items.items[wield].weight, 180);
+            assert!(crate::borg_town_budget::Facts::of(st).allowance() < 0);
+            println!("#1264 exploration reserve passed: {case}");
+            std::process::exit(0);
+        }
+        return;
     }
     assert_eq!(st.borg.tr(BI_CDEPTH), 0, "left town before the fixture observed the exchange");
     if case == "arrival-shop" {
