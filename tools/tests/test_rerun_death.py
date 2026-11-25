@@ -53,8 +53,8 @@ class PlanTest(unittest.TestCase):
 
     def test_shadow_mode_is_replayed_and_does_not_leak_from_the_environment(self):
         with tempfile.TemporaryDirectory() as t:
-            p = rd.plan(dossier(t, config_extra='borg_shadow=switch\n'))
-        self.assertEqual(p['env'], {'BORG_SHADOW': 'switch'})
+            p = rd.plan(dossier(t, config_extra='borg_core=borg-rs\nborg_shadow=switch\n'))
+        self.assertEqual(p['env'], {'BORG_CORE': 'borg-rs', 'BORG_SHADOW': 'switch'})
         self.assertIn('BORG_SHADOW', rd.SETTINGS)
 
     def test_a_changed_ladders_file_is_refused(self):

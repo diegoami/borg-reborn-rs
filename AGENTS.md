@@ -9,7 +9,8 @@ session, a local one, any model, or a person. It is the only entry point;
    the last sessions left, one note per task, newest first
    (`ls -r docs/handover/`); older entries are in
    [docs/HANDOVER.md](docs/HANDOVER.md);
-   Track R resumes from [docs/R856-HANDOVER.md](docs/R856-HANDOVER.md).
+   Track R resumes from the [R4.5 rebuild note](docs/handover/2026-11-25-856-r45-rebuild.md).
+   The [published preflight handover](docs/R856-HANDOVER.md) records the earlier state.
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/architecture/](docs/architecture/README.md): how the original C Borg
