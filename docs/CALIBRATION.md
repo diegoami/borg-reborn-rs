@@ -8766,7 +8766,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:410` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:406` |
 
 ## Shopping while overloaded and departure loadout (#1239)
 
@@ -8788,7 +8788,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:334` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:330` |
 
 ## Ranged readiness for the next trip (#1184)
 

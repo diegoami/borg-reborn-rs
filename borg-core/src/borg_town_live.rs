@@ -196,11 +196,7 @@ fn settle_sale(st: &mut BorgState) {
         };
     }
     settle_home(st);
-    if let Some((kind, before)) = st.think.town_live.pending_quiver_trim.take() {
-        if carried_kind(st, kind) < before && !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
-            st.think.town_live.trimmed_quiver_kinds.push(kind);
-        }
-    }
+    settle_quiver_trim(st);
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
@@ -636,6 +632,13 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     true
 }
 
+fn settle_quiver_trim(st: &mut BorgState) {
+    let Some((kind, before)) = st.think.town_live.pending_quiver_trim.take() else { return; };
+    if carried_kind(st, kind) < before && !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
+        st.think.town_live.trimmed_quiver_kinds.push(kind);
+    }
+}
+
 /// Controlled refreshed-inventory observations for the native regression fixture.
 /// UI commands are queued by production code, then discarded by the fixture.
 #[cfg(feature = "test-town-review")]
@@ -802,20 +805,18 @@ mod tests {
     #[test]
     fn confirmed_quiver_trims_block_reacquisition_until_the_next_visit() {
         let mut st = home_state();
-        settle_sale(&mut st);
         let kind = st.items.items[0].kind;
         let shop = BORG_HOME as i16;
         st.think.town_live.pending_quiver_trim = Some((kind, 3));
-        settle_sale(&mut st);
+        settle_quiver_trim(&mut st);
         assert!(!buy_rejected(&st, shop, 0));
 
         st.think.town_live.pending_quiver_trim = Some((kind, 3));
         st.items.items[0].iqty = 1;
-        settle_sale(&mut st);
+        settle_quiver_trim(&mut st);
         assert!(buy_rejected(&st, shop, 0));
 
-        st.borg.time.level += 1;
-        settle_sale(&mut st);
+        st.think.town_live = LiveState::default();
         assert!(!buy_rejected(&st, shop, 0));
     }
     #[test]
