@@ -8345,7 +8345,7 @@ replay as they were):
 |---|---:|---|---|---|
 | `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
 
-## Home stock and town plan schemas 21–22 (#1241)
+## Home stock and town plan schemas 21–23 (#1241)
 
 Plan replay uses the schema recorded in `v`.
 
@@ -8361,6 +8361,11 @@ Plan replay uses the schema recorded in `v`.
   stock can be cleared once its requirements are covered. Schema 21 replays
   use the original cleanup rule, which applies this floor to common stock.
   Schemas 4–20 keep their original layouts and planner rules.
+- **Schema 23** uses the same layout. Role 1 represents useful intermittent
+  normal-shop stock. Role 6 represents scarce consumables, and role 7 marks
+  lighter gear when carrying capacity is tight. A positive `home_value`
+  sorts first by priority, encoded in multiples of 2^40, then by the offer's
+  capped marginal utility. Older records retain their original decisions.
 
 ## Committing to a brave stair walk (#1130)
 

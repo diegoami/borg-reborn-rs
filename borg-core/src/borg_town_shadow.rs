@@ -583,7 +583,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
     let capability = crate::borg_town_capability::observe(st, &stock, &kit,
         crate::borg_town_utility::Journey::of(st), gold_after_urgent);
     let reserve_on = borg_town_home::enabled(st);
-    let may_buy_for_home = reserve_on && budget.home_slots > 0 && budget.unmet.is_empty()
+    let may_buy_for_home = reserve_on && budget.unmet.is_empty()
         && crate::borg_town_live::home_buy_available(st);
     let home_value = |c: &crate::borg_town_stock::Candidate, item: &borg_item| {
         if reserve_on && c.shop < BORG_HOME as u8
@@ -598,20 +598,21 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         {
             return 0;
         }
-        if borg_town_home::device(st, item) {
-            return capability.home_offer(c.shop, c.slot);
+        let gain = tryon.iter().find(|t| t.shop == c.shop && t.slot == c.slot)
+            .map_or(0, |t| t.value);
+        let role = borg_town_home::classify(st, item, false, gain);
+        if matches!(role, Role::Device | Role::Scarce) {
+            return role.offer_value(capability.home_offer(c.shop, c.slot));
         }
         if !c.is_black_market() || !item.ident || !borg_town_home::known_special(item) {
             return 0;
         }
-        let gain = tryon.iter().find(|t| t.shop == c.shop && t.slot == c.slot)
-            .map_or(0, |t| t.value);
-        if borg_town_home::classify(st, item, false, gain) != Role::Gear {
+        if !role.gear() {
             return 0;
         }
         let worn = borg_town_home::gear_slot(item).map(|slot| &st.items.items[slot]);
         let weight_saved = worn.map_or(0, |w| (i64::from(w.weight) - i64::from(item.weight)).max(0));
-        gain.max(0) + weight_saved
+        role.offer_value(gain.max(0) + weight_saved)
     };
     let mask = |ns: &[Need]| ns.iter().fold(0u8, |m, &n| m | (1 << need_index(n)));
     let wares: Vec<WareFact> = stock
@@ -721,9 +722,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         let replenishing = paction == action::TAKE_HOME && !now
             && kit.iter().enumerate().any(|(i, item)| item.place == Place::Home && usize::from(item.slot) == slot
                 && out.copies.get(i).is_some_and(|&qty| qty > 0));
-        let policy_cleanup = paction == action::SELL_HOME && kit.iter().any(|item|
-            item.place == Place::Home && usize::from(item.slot) == slot
-                && (item.home_role == Role::Reject || item.home_role.common()));
+        let policy_cleanup = paction == action::SELL_HOME && reserve_on;
         if paction != action::DROP_HOME && !replenishing && !policy_cleanup
             && !selling.is_some_and(|item| crate::borg_town_live::batch_home_disposal(st, item))
         {

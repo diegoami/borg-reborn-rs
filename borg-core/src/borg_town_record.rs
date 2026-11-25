@@ -52,7 +52,7 @@ use crate::state::BorgState;
 /// does not charge the weight of a Remove Curse read in town.
 /// Schema 21 records Home roles and reserve offer values. Schema 22
 /// also preserves explicit kit reserves for renewable Home stock.
-pub const PLAN_SCHEMA: i64 = 22;
+pub const PLAN_SCHEMA: i64 = 23;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -711,6 +711,7 @@ pub struct StepInput<'a> {
 /// What a step produces.
 #[derive(Clone, Debug)]
 pub struct StepOutput {
+    revision: i64,
     /// The first planned purchase that fills an outstanding ranged reserve.
     pub ranged_purchase: Option<(usize, i32)>,
     pub home_purchase: Option<usize>,
@@ -827,7 +828,7 @@ pub fn step(input: &StepInput) -> StepOutput {
             }
         }
     }
-    let (dispositions, freed, copies) = if input.utility {
+    let (mut dispositions, mut freed, copies) = if input.utility {
         crate::borg_town_utility::dispositions(input, &mut utility, &st)
     } else {
         let (d, f) = dispose(
@@ -987,12 +988,28 @@ pub fn step(input: &StepInput) -> StepOutput {
     .fold(0, |m, (_, b)| m | b);
     let solve_row = [solution.value, solution.bound, solution.lambda, flags];
     let displaced = runner_up(&groups, &solution);
-    let home_purchase = if input.revision >= 21 && plan.is_empty()
-        && input.home_slots > 0 && input.limits.pack_slots > 0
+    let mut home_purchase = if input.revision >= 21 && plan.is_empty()
+        && (input.home_slots > 0 || input.revision >= 23) && input.limits.pack_slots > 0
     {
         reserve_purchase(input, &stock.candidates, limits.gold)
     } else { None };
-    StepOutput { ranged_purchase, home_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed, copies }
+    if input.revision >= 23 && input.home_slots <= 0 {
+        if let Some(i) = home_purchase.take().filter(|_| freed.home_slots <= 0 && input.urgent.is_empty()) {
+            let c = &stock.candidates[i];
+            let rank = crate::borg_town_home::Role::offer_rank(facts[&(c.shop, c.slot)].home_value);
+            // Make room before buying. A fresh solve will check the actual
+            // vacancy, pack room, purse and offer after the withdrawal.
+            if rank >= crate::borg_town_home::Role::Scarce.rank() {
+                if let Some(j) = crate::borg_town_utility::home_replacement(input, &utility, &dispositions, c.kind, rank, 0) {
+                    let item = &input.kit[j];
+                    dispositions[j] = if item.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
+                    freed.home_slots += 1;
+                    freed.gold += item.proceeds;
+                }
+            }
+        }
+    }
+    StepOutput { revision: input.revision, ranged_purchase, home_purchase, groups, solution, plan, solve: solve_row, displaced, dispositions, freed, copies }
 }
 
 /// Reserve purchases use the ordinary purse and Black Market cap. They are
@@ -1158,7 +1175,14 @@ fn first_action_with_room(
                 && (disposition == Some(&d) || home_disposal && disposition == Some(&Disposition::Drop))
                 && !(place == Place::Pack && d == Disposition::Store && home_slots.is_some_and(|n| n <= 0))
                 && !(place == Place::Home && pack_slots.is_some_and(|n| n <= 0) && !joins)
-        }).min_by_key(|(i, k)| (!(home_disposal && k.home_unwanted), *i));
+        }).min_by_key(|(i, k)| {
+            let rank = if out.revision >= 23 && d == Disposition::Store {
+                u8::MAX - k.home_role.rank()
+            } else if out.revision >= 23 && home_disposal {
+                k.home_role.rank()
+            } else { 0 };
+            (!(home_disposal && k.home_unwanted), rank, *i)
+        });
         if let Some((i, k)) = selected {
             let (code, at) = match (place, out.dispositions[i]) {
                 (Place::Pack, Disposition::Sell) => (action::SELL, i64::from(k.sell_shop)),
@@ -1720,6 +1744,20 @@ mod tests {
             action::BUY_FOR_HOME);
         input.home_slots = 0;
         assert_eq!(step(&input).home_purchase, None);
+        let ranked = [WareFact { home_value: crate::borg_town_home::Role::Gear.offer_value(9000), ..facts[0] }];
+        let expendable = [KitItem { home_role: crate::borg_town_home::Role::Common, home_room: Some([3, 0, 3]),
+            keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
+            joins_pack: false, place: Place::Home, slot: 4, kind: 50, qty: 3, weight: 5, need: -1,
+            reduction: 0, serves: 0, power: 0, proceeds: 10, sell_shop: 4, unknown: false,
+            unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }];
+        input.facts = &ranked;
+        input.kit = &expendable;
+        let crowded = step(&input);
+        assert_eq!(crowded.home_purchase, None);
+        assert_eq!(first_executable_action(&input.candidates, &[], &crowded, &ranked, &expendable, 0, 1, 30).0,
+            action::SELL_HOME);
+        input.facts = &facts;
+        input.kit = &[];
         input.home_slots = 1;
         input.limits.pack_slots = 0;
         assert_eq!(step(&input).home_purchase, None);

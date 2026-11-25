@@ -3152,6 +3152,12 @@ impl Model {
     }
 }
 
+pub(crate) fn home_consumable_effect(effects: &[(u16, i32, i64)], st: &BorgState) -> bool {
+    effect_supply_for_consumer(effects, i64::from(st.borg.tr(BI_MAXHP)), Journey::of(st).turns, false)
+        .iter()
+        .any(|&(id, _)| id != MANA || st.borg.tr(BI_MAXSP) > 0)
+}
+
 /// World ticks before at least one rod is ready. While all rods are cooling,
 /// the engine subtracts the full stack size from its aggregate timeout.
 pub(crate) fn rod_ready_after(quantity: i64, timeout: i64, cooldown: i64) -> i64 {

@@ -113,10 +113,10 @@ pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_ite
 /// Known excess can be cleared in a single native transaction.
 pub(crate) fn batch_home_disposal(st: &BorgState, item: &borg_item) -> bool {
     home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
-        || low_home_priority(st, item)
+        || unsuitable_home_overflow(st, item)
 }
 
-fn low_home_priority(st: &BorgState, item: &borg_item) -> bool {
+fn unsuitable_home_overflow(st: &BorgState, item: &borg_item) -> bool {
     if !borg_town_home::enabled(st) {
         return false;
     }
@@ -145,7 +145,7 @@ fn overflow_action(st: &BorgState) -> Option<TownAction> {
     for shop in std::iter::once(BORG_HOME).chain(0..BORG_HOME) {
         for &(slot, item, excess) in &excess {
             if shop == BORG_HOME && (home_at_limit(st, item)
-                || crate::borg_town_capability::unwanted_home_item(item) || low_home_priority(st, item)) { continue; }
+                || crate::borg_town_capability::unwanted_home_item(item) || unsuitable_home_overflow(st, item)) { continue; }
             if sale_rejected(st, shop as i16, item) { continue; }
             if shop != BORG_HOME && !crate::borg_store_sell::borg_store_buys(item, shop as i32) { continue; }
             let excess = if shop == BORG_HOME { excess }
@@ -512,13 +512,13 @@ pub fn execute_store(st: &mut BorgState) -> bool {
             }
         }
         if let Some(offer) = offer.filter(|_| home_disposal) {
-            if a.code == action::DROP_HOME || batch_home_disposal(st, &item) {
+            if a.code == action::DROP_HOME || crate::borg_town_home::enabled(st) || batch_home_disposal(st, &item) {
                 qty = purchase_quantity(a.at[2], item.iqty, offer.carry_capacity(), 0, 0);
             }
         }
         let home_intent = if a.code == action::BUY_FOR_HOME {
             Some(HomeIntent::Stash)
-        } else if home_disposal && low_home_priority(st, &item) {
+        } else if home_disposal && crate::borg_town_home::enabled(st) {
             let destination = if a.code == action::DROP_HOME { -1 } else { a.at[0] as i16 };
             Some(HomeIntent::Dispose(destination))
         } else { None };
@@ -611,7 +611,7 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     let letter = crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32;
     if home_disposal {
         st.think.town_live.disposal = None;
-        borg_note(st, "# Home reserve: discarding inferior gear or common surplus");
+        borg_note(st, "# Home reserve: discarding lower-priority stock");
     } else {
         borg_note(st, "# Town plan dropping worthless stack");
     }
