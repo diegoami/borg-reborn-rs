@@ -38,6 +38,8 @@
 //!
 //! - `/town`: home fast: the core reads Word of Recall if it can
 //!   (`borg_recall`), else the stairs up; done in town.
+//! - `/level-up N`: play normally until character level N, then return
+//!   as with `/town` and stop.
 //! - `/shopping`: in town, buy, sell and manage the home with the core's
 //!   own choices; done when the core would leave town after shopping.
 //! - `/walk-back`: home by the stairs only, finding each up staircase; done
@@ -102,6 +104,8 @@ pub enum Errand {
     Ladder,
     /// Home; done in town.
     Town,
+    /// Play normally until character level N, then go home.
+    LevelUp(i32),
     /// One shopping round in town; stop before leaving town.
     Shopping,
     /// The stairs down to DL N, not exploring; done on arrival.
@@ -132,42 +136,69 @@ pub enum Command {
 }
 
 impl Command {
-    /// `/town`, `/dive 2`, `/explore-level`, `/dive-exploring 2`, `/ladder`,
+    /// `/town`, `/level-up 10`, `/dive 2`, `/explore-level`, `/ladder`,
     /// `/trips 1*/1,2,1*@3`, `/stopscared true`, `/stop`. The slash is
     /// optional; `trips:...` and `dive:2` are accepted too.
     pub fn parse(line: &str) -> Option<Command> {
+        Self::parse_checked(line).ok()
+    }
+
+    fn parse_checked(line: &str) -> Result<Command, String> {
         let line = line.trim();
-        let line = line.strip_prefix('/').unwrap_or(line);
-        let (name, arg) = match line.find(|c: char| c == ' ' || c == ':') {
-            Some(i) => (&line[..i], line[i + 1..].trim()),
-            None => (line, ""),
+        let command = line.strip_prefix('/').unwrap_or(line);
+        let (name, arg) = match command.find(|c: char| c == ' ' || c == ':') {
+            Some(i) => (&command[..i], command[i + 1..].trim()),
+            None => (command, ""),
         };
-        let depth = || arg.parse::<i32>().ok().filter(|d| *d >= 1);
-        Some(match (name.to_ascii_lowercase().as_str(), arg) {
+        let unknown = || format!("unknown command {line:?}");
+        let positive = || arg.parse::<i32>().ok().filter(|n| *n >= 1);
+        Ok(match (name.to_ascii_lowercase().as_str(), arg) {
             ("town", "") => Command::Errand(Errand::Town),
+            ("level-up", _) => {
+                // Angband's PY_MAX_LEVEL (engine/angband/src/player.h).
+                const MAX_LEVEL: i32 = 50;
+                let level = positive().filter(|n| *n <= MAX_LEVEL).ok_or_else(|| {
+                    format!("{line:?} requires a character level from 1 to {MAX_LEVEL}")
+                })?;
+                Command::Errand(Errand::LevelUp(level))
+            }
             ("shopping", "") => Command::Errand(Errand::Shopping),
-            ("dive", _) => Command::Errand(Errand::Dive(depth()?)),
+            ("dive", _) => Command::Errand(Errand::Dive(positive().ok_or_else(unknown)?)),
             ("explore-level", "") => Command::Errand(Errand::ExploreLevel),
-            ("dive-exploring", _) => Command::Errand(Errand::DiveExploring(depth()?)),
+            ("dive-exploring", _) => {
+                Command::Errand(Errand::DiveExploring(positive().ok_or_else(unknown)?))
+            }
             ("ladder", "") => Command::Errand(Errand::Ladder),
             ("walk-back", "") => Command::Errand(Errand::WalkBack),
             ("explore-back", "") => Command::Errand(Errand::ExploreBack),
-            ("trips", _) => Command::Errand(Errand::parse(&format!("trips:{arg}"))?),
+            ("trips", _) => {
+                Command::Errand(Errand::parse(&format!("trips:{arg}")).ok_or_else(unknown)?)
+            }
             ("stopscared", v) => Command::StopScared(match v.to_ascii_lowercase().as_str() {
                 "true" | "on" | "yes" | "flee" => Some(100),
                 "false" | "off" | "no" => None,
-                n => Some(n.parse::<i32>().ok().filter(|n| (1..=1000).contains(n))?),
+                n => Some(
+                    n.parse::<i32>()
+                        .ok()
+                        .filter(|n| (1..=1000).contains(n))
+                        .ok_or_else(unknown)?,
+                ),
             }),
             ("explored", v) => Command::Explored(match v.to_ascii_lowercase().as_str() {
                 "off" | "false" | "no" => None,
-                n => Some(n.parse::<i32>().ok().filter(|n| (1..=100).contains(n))?),
+                n => Some(
+                    n.parse::<i32>()
+                        .ok()
+                        .filter(|n| (1..=100).contains(n))
+                        .ok_or_else(unknown)?,
+                ),
             }),
             ("stall", v) => Command::Stall(match v.to_ascii_lowercase().as_str() {
                 "off" | "false" | "no" => None,
-                n => Some(n.parse::<i32>().ok().filter(|n| *n >= 1)?),
+                _ => Some(positive().ok_or_else(unknown)?),
             }),
             ("stop", "") | ("none", "") => Command::Stop,
-            _ => return None,
+            _ => return Err(unknown()),
         })
     }
 }
@@ -383,6 +414,8 @@ enum FromHere {
 enum End {
     /// Each trip goes home; the errand ends when every trip is over.
     Home,
+    /// Play normally until the level is reached, then switch to Home.
+    ReachLevel(i32),
     /// Done on arriving at the plan's level (`/dive`).
     Arrive,
     /// Done when the plan's last level is explored, where it is.
@@ -392,6 +425,16 @@ enum End {
 }
 
 impl Running {
+    fn waiting_for_level(&mut self, level: i32) -> bool {
+        if let End::ReachLevel(target) = self.end {
+            if level < target {
+                return true;
+            }
+            self.end = End::Home;
+        }
+        false
+    }
+
     /// The depth the errand wants now: a level of the trip, 0 for home, or
     /// `None` when the errand is over.
     fn target(&self) -> Option<i32> {
@@ -403,6 +446,23 @@ impl Running {
             Some(&d) => Some(d),
             None if self.end == End::Home => Some(0),
             None => None,
+        }
+    }
+
+    /// Advance a trip on arriving home, or check the gate for its next repeat.
+    fn arrive_home(&mut self, depth: i32) -> Option<(i32, Option<i32>)> {
+        if depth != 0 || self.target() != Some(0) {
+            return None;
+        }
+        let trip = self.trips.get(self.trip)?;
+        self.step = 0;
+        if trip.repeat {
+            self.trips
+                .get(self.trip + 1)
+                .map(|next| (next.levels.iter().copied().max().unwrap_or(1), next.min_level))
+        } else {
+            self.trip += 1;
+            None
         }
     }
 }
@@ -447,6 +507,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
     };
     *running() = errand.map(|e| {
         let name = format!("{e:?}");
+        let recall = matches!(e, Errand::Town | Errand::LevelUp(_));
         let one = |levels| {
             vec![Trip {
                 levels,
@@ -458,13 +519,13 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             Errand::Trips(t) => (t, End::Home, true, None),
             Errand::Ladder => (Vec::new(), End::Home, true, None),
             Errand::Town | Errand::WalkBack => (one(vec![]), End::Home, false, None),
+            Errand::LevelUp(n) => (one(vec![]), End::ReachLevel(n), false, None),
             Errand::Shopping => (Vec::new(), End::Shopping, false, None),
             Errand::Dive(n) => (one(vec![n]), End::Arrive, false, None),
             Errand::ExploreLevel => (Vec::new(), End::Stop, false, Some(FromHere::Here)),
             Errand::DiveExploring(n) => (Vec::new(), End::Stop, false, Some(FromHere::DownTo(n))),
             Errand::ExploreBack => (Vec::new(), End::Home, false, Some(FromHere::UpToOne)),
         };
-        let recall = name == "Town";
         Running {
             trips,
             trip: 0,
@@ -524,7 +585,7 @@ pub fn parse_line(line: &str) -> Result<Vec<Command>, String> {
     line.split(';')
         .map(str::trim)
         .filter(|c| !c.is_empty())
-        .map(|c| Command::parse(c).ok_or_else(|| c.to_string()))
+        .map(Command::parse_checked)
         .collect()
 }
 
@@ -554,7 +615,7 @@ pub(crate) fn borg_cmd_errand(st: &mut BorgState) {
     let mut buf = [0u8; 80];
     if !engine::get_string(
         st,
-        c"Errand (/town /shopping /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stop; ...): ",
+        c"Errand (/level-up N /town /shopping /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stop; ...): ",
         &mut buf,
         80,
     ) {
@@ -565,7 +626,7 @@ pub(crate) fn borg_cmd_errand(st: &mut BorgState) {
     match apply_line(&line, 0) {
         Ok(true) => crate::borg_commands::borg_cmd_start(st),
         Ok(false) => {}
-        Err(c) => borg_note(st, &format!("# Errand: unknown command '{c}'.")),
+        Err(error) => borg_note(st, &format!("# Errand: {error}.")),
     }
 }
 
@@ -623,6 +684,13 @@ pub fn active() -> bool {
     running().is_some()
 }
 
+/// A level-up errand lets the core play normally while it gains experience.
+fn steering() -> bool {
+    running()
+        .as_ref()
+        .is_some_and(|r| !matches!(r.end, End::ReachLevel(_)))
+}
+
 /// The target depth now, skipping the planned levels the core is not
 /// prepared for.
 fn target(st: &mut BorgState) -> Option<i32> {
@@ -675,11 +743,21 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         finish(st, "scared");
         return Some(true);
     }
-    // Shopping is a town session, not a trip that is done on arrival in
-    // town. Never let the generic trip indexing advance its empty plan.
     let shopping = {
         let mut guard = running();
         let r = guard.as_mut()?;
+        // borg_notice refreshed BI_CLEVEL from player->lev on this think.
+        // Keep the starting turn when the errand switches to returning home.
+        if r.waiting_for_level(st.borg.tr(BI_CLEVEL)) {
+            let started = *r.started.get_or_insert(turn);
+            if r.budget > 0 && turn - started >= r.budget {
+                drop(guard);
+                finish(st, "budget");
+                return Some(true);
+            }
+            return None;
+        }
+        // Shopping finishes when the core would leave town.
         if r.end == End::Shopping {
             let first = r.started.is_none();
             let started = *r.started.get_or_insert(turn);
@@ -819,22 +897,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         let mut guard = running();
         let r = guard.as_mut()?;
         r.started.get_or_insert(turn);
-        if depth == 0 && r.target() == Some(0) {
-            r.step = 0;
-            if r.trips[r.trip].repeat {
-                r.trips.get(r.trip + 1).map(|next| {
-                    (
-                        next.levels.iter().copied().max().unwrap_or(1),
-                        next.min_level,
-                    )
-                })
-            } else {
-                r.trip += 1;
-                None
-            }
-        } else {
-            None
-        }
+        r.arrive_home(depth)
     };
     if let Some((deepest, min_level)) = next_deepest {
         // A repeating trip moves on at the next trip's character level, or,
@@ -870,7 +933,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
 /// then the trip starts by the stairs (never a recall to the maximum
 /// depth). `None` lets the core decide as usual.
 pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
-    if !active() || st.borg.tr(BI_CDEPTH) != 0 {
+    if !steering() || st.borg.tr(BI_CDEPTH) != 0 {
         return None;
     }
     if running().as_ref().is_some_and(|r| r.end == End::Shopping) {
@@ -916,7 +979,7 @@ pub(crate) fn shopping_departure(st: &mut BorgState) -> bool {
 /// first, so routine `borg_leave_level(st, false)` calls ended levels, and
 /// the core's readiness and restock reasons were skipped.
 pub(crate) fn on_leave_choice(st: &mut BorgState, free: bool) -> Option<bool> {
-    if !active() || !free {
+    if !steering() || !free {
         return None;
     }
     Some(move_on(st))
@@ -974,7 +1037,7 @@ const GOAL_FLEE: i32 = 7;
 /// After the core's caution: away from the target depth, walk the stairs
 /// toward it. `true` when a step was queued.
 pub(crate) fn steer(st: &mut BorgState) -> bool {
-    if !active() {
+    if !steering() {
         return false;
     }
     let depth = st.borg.tr(BI_CDEPTH);
@@ -995,7 +1058,7 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         }
         return true;
     }
-    // `/town`: the core's own recall (scroll, rod, spell, activation) when
+    // `/town` and `/level-up` after its target: the core's own recall when
     // it has one, whatever else the core wants (review #227, finding 6,
     // and re-review 5); until it takes effect the stairs up are walked.
     let recall = running()
@@ -1413,7 +1476,14 @@ mod tests {
                 C::Errand(Errand::WalkBack)
             ])
         );
-        assert_eq!(parse_line("/dive 2; /sing"), Err("/sing".to_string()));
+        assert_eq!(
+            parse_line("/dive 2; /sing"),
+            Err("unknown command \"/sing\"".to_string())
+        );
+        assert_eq!(
+            parse_line("/dive 2; /level-up 51"),
+            Err("\"/level-up 51\" requires a character level from 1 to 50".to_string())
+        );
     }
 
     #[test]
@@ -1428,6 +1498,11 @@ mod tests {
     fn commands_parse() {
         use Command as C;
         assert_eq!(C::parse("/town"), Some(C::Errand(Errand::Town)));
+        assert_eq!(C::parse("/level-up 1"), Some(C::Errand(Errand::LevelUp(1))));
+        assert_eq!(C::parse("level-up:50"), Some(C::Errand(Errand::LevelUp(50))));
+        for invalid in ["/level-up", "/level-up 0", "/level-up 51", "/level-up 10 20"] {
+            assert_eq!(C::parse(invalid), None, "{invalid}");
+        }
         assert_eq!(C::parse("/shopping"), Some(C::Errand(Errand::Shopping)));
         assert_eq!(C::parse("/shopping 2"), None);
         assert_eq!(C::parse("/dive 2"), Some(C::Errand(Errand::Dive(2))));
@@ -1472,7 +1547,7 @@ mod tests {
     }
 
     #[test]
-    fn a_dive_ends_on_arrival_and_town_ends_home() {
+    fn finite_errands_set_their_next_destination() {
         let dive = Running {
             trips: vec![Trip {
                 levels: vec![3],
@@ -1509,6 +1584,25 @@ mod tests {
             ..dive
         };
         assert_eq!(town.target(), Some(0));
+        let mut leveling = Running {
+            started: Some(1),
+            end: End::ReachLevel(10),
+            ..town
+        };
+        assert!(leveling.waiting_for_level(9));
+        assert_eq!(leveling.target(), None);
+        assert!(!leveling.waiting_for_level(11));
+        assert_eq!(leveling.target(), Some(0));
+        assert_eq!(leveling.started, Some(1));
+        assert!(
+            !leveling.waiting_for_level(9),
+            "level drain cannot undo the return"
+        );
+        assert_eq!(leveling.arrive_home(1), None);
+        assert_eq!(leveling.target(), Some(0));
+        assert_eq!(leveling.arrive_home(0), None);
+        assert_eq!(leveling.trip, 1);
+        assert_eq!(leveling.target(), None, "the errand is done in town");
     }
 
     #[test]
