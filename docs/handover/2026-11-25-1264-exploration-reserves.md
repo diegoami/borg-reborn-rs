@@ -5,7 +5,7 @@ four Potions of Sleep and four Scrolls of Word of Recall. The inherited
 full-pack valuation dropped the Recall stack. Its nominal reserve was two.
 [#1263](https://github.com/diegoami/borg-reborn-rs/issues/1263)
 
-The opt-in policy tries known harmful items and plainly outclassed spare
+The Track P profile enables the policy. It tries known harmful items and plainly outclassed spare
 gear before ranking other full-pack candidates. It uses the properties
 the Borg knows and compares the worn and alternate kits after removing the
 other item. It keeps visible or planned swaps and gives the Borg its normal
@@ -44,7 +44,7 @@ cover a Priest departing overweight with Recall from Home and from a shop.
   request to focus on full-pack disposal and has no closing reference.
 - #1263 still tracks sustainable backup light and returning before a
   repeated action can run down the final fuel.
-- The flag defaults to zero. The owner decides whether to enable it after
-  the paired Zoo evaluation. The comparison request calls for the control
-  to include the separate #1265 change.
+- The owner enabled the flag in the shipped Track P profile. The compiled
+  default of zero is available for the paired Zoo control. The comparison
+  request calls for the control to include the separate #1265 change.
   [#804](https://github.com/diegoami/borg-zoo/issues/804)

@@ -9083,7 +9083,7 @@ pending a sized Zoo comparison (RULES 14).
 
 ## Exploration reserves and full packs (#1264)
 
-When a full pack needs a slot, the candidate first discards an identified
+When a full pack needs a slot, the Borg first discards an identified
 harmful consumable or a plain spare weapon or armour stack that the worn
 item clearly beats. The comparison uses known properties and the whole kit
 with each item equipped in turn. It preserves an accuracy, damage, speed,
@@ -9103,5 +9103,8 @@ carried or free Home Recall eligible for the reserve.
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `junk_exploration_first` | 0 | flag | 0–1 | `borg_junk.rs:60` |
+
+Track P ships this flag at 1 by owner decision. The compiled default is 0,
+which also serves as the Zoo control.
 
 [Zoo comparison request](https://github.com/diegoami/borg-zoo/issues/804)
