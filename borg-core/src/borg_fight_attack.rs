@@ -1126,6 +1126,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
      * Bonuses */
     let bow = st.items.items[(inven_wield() + 1) as usize];
     let ammo = st.items.items[ammo_location as usize];
+    let junk_potion = is_potion_throw(st, typ, ammo_location);
     let bonus = tr(st, BI_TOHIT) + i32::from(bow.to_h) + i32::from(ammo.to_h);
     let chance = tr(st, BI_THB) + (bonus * BTH_PLUS_ADJ);
     let armor = r_ptr.ac + cur_dis;
@@ -1156,8 +1157,10 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             }
             let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
             let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
-            let divisor = throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
-                point_blank_divisor(tr(st, BI_CLASS)));
+            let divisor = if junk_potion { 1 } else {
+                throw_point_blank_divisor(param(Param::attack_throw_point_blank_divisor),
+                    point_blank_divisor(tr(st, BI_CLASS)))
+            };
             dam = rated_throw_damage(dam, cur_dis, rf(r, RF_UNIQUE), divisor,
                 throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac));
         }
@@ -1714,7 +1717,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
 
     /*  Try to conserve missiles.
      */
-    if typ as u32 == BORG_ATTACK_ARROW && !borg_use_missile {
+    if typ as u32 == BORG_ATTACK_ARROW && !borg_use_missile && !junk_potion {
         /* set damage to zero, force borg to melee attack */
         dam = 0;
     }
@@ -1857,6 +1860,16 @@ fn borg_launch_bolt_aux_hack(
     if typ as u32 == BORG_ATTACK_CURSE && belief.is_some() {
         return 0;
     }
+    let junk_potion = is_potion_throw(st, typ, ammo_location);
+    if junk_potion {
+        // New records have no seen bit yet, and the decision loop advances
+        // the Borg clock once between the perception scan and ordinary attacks.
+        let current = kill.seen || (0..=1).contains(&age);
+        let visible = current && ag.info & BORG_VIEW != 0 && belief.is_none();
+        if !kill.awake || !visible || ignored(st, usize::from(r)) {
+            return 0;
+        }
+    }
     // A projected hit can wake a sleeper even when it reduces the score.
     collect_believed_target(unseen, i as usize, &kill, belief, age);
 
@@ -1876,6 +1889,11 @@ fn borg_launch_bolt_aux_hack(
 
     /* Return 0 if the true damage (w/o the danger bonus) is 0 */
     if d <= 0 {
+        // Some junk potions have no damage dice. A reachable target still
+        // lets us spend one, after attacks that can do useful damage.
+        if d == 0 && junk_potion {
+            return 1;
+        }
         return expected_score(d, belief);
     }
 
@@ -2075,7 +2093,9 @@ fn borg_launch_bolt_at_location(
 
     /* Simulate the spell/missile path */
     let mut dist = 1;
-    while dist < max {
+    // A native throw can hit a monster on its final grid.
+    let end = max + i32::from(is_potion_throw(st, typ, ammo_location));
+    while dist < end {
         /* Calculate the new location */
         borg_inc_motion(&mut y, &mut x, y1, x1, y2, x2);
 
@@ -2967,9 +2987,17 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
     if cant_use_item_attack(st) {
         return 0;
     }
-    if param(Param::attack_throw_surplus) != 0 {
+    let surplus = param(Param::attack_throw_surplus) != 0;
+    let junk_potions = param(Param::attack_throw_junk_potions) != 0
+        && tr(st, BI_CDEPTH) > 0
+        && !st.borg.goal.fleeing && !st.borg.goal.fleeing_to_town
+        && tr(st, BI_ISPOISONED) == 0 && tr(st, BI_ISCUT) == 0
+        && st.items.items[..usize::from(engine::z_info().pack_size)]
+            .iter().any(|item| crate::borg_junk::junk_potion_to_throw(st, item))
+        && low_risk_potion_throw(tr(st, BI_CURHP), danger_here(st, 1, true));
+    if surplus || junk_potions {
         mark_confused_aim(st);
-        return attack_throw_surplus(st);
+        return attack_throw_candidates(st, surplus, junk_potions);
     }
     let (slot, damage) = best_throw(st);
     if slot < 0 {
@@ -2977,6 +3005,17 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
     }
     mark_confused_aim(st);
     borg_attack_aux_object_fire(st, slot, damage)
+}
+
+// A miss consumes a full turn. Start with the same small danger budget
+// as safe junk disposal, measured against current rather than maximum HP.
+fn low_risk_potion_throw(hp: i32, danger: i32) -> bool {
+    hp > 0 && danger <= hp / 10
+}
+
+fn is_potion_throw(st: &BorgState, typ: i32, slot: i32) -> bool {
+    st.fight_attack.throwing && typ as u32 == BORG_ATTACK_ARROW
+        && u32::from(st.items.items[slot as usize].tval) == TV_POTION
 }
 
 /// #1200: Only a fully known plain weapon dominated by the equipped weapon
@@ -3007,35 +3046,46 @@ fn native_throw_range(strength: i32, weight: i32) -> i32 {
     ((strength + 20) * 10 / weight.max(10)).min(10)
 }
 
-fn attack_throw_surplus(st: &mut BorgState) -> i32 {
-    // Both families use the engine-based throw rating when compared.
-    let (legacy_slot, legacy_damage) = best_throw_of(st, false, true);
+fn attack_throw_candidates(st: &mut BorgState, surplus: bool, junk_potions: bool) -> i32 {
+    let native_rating = surplus || native_throw_rating(st);
+    let (legacy_slot, legacy_damage) = best_throw_of(st, false, native_rating);
     let strength = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
     let mut slot = legacy_slot;
     let mut range = 0;
     let mut best = ProjectedAttack::default();
-    st.fight_attack.throwing = true;
     if legacy_slot >= 0 {
         let weight = st.items.items[legacy_slot as usize].weight;
-        range = native_throw_range(strength, i32::from(weight));
+        range = if surplus { native_throw_range(strength, i32::from(weight)) }
+            else { 6 + 2 * tr(st, BI_AMMO_POWER) };
+        st.fight_attack.throwing = native_rating;
         best = choose_bolt(st, 0, legacy_damage, BORG_ATTACK_ARROW as i32, range, legacy_slot);
     }
     let mut damage = st.fight_attack.dmg_best;
     let mut kills = st.fight_attack.kill_best;
     let worn = st.items.items[inven_wield() as usize];
-    for k in 0..inven_wield() {
+    st.fight_attack.throwing = true;
+    for k in 0..i32::from(engine::z_info().pack_size) {
         let item = st.items.items[k as usize];
-        if !surplus_weapon(st, k, &item, &worn) {
+        let potion = junk_potions && crate::borg_junk::junk_potion_to_throw(st, &item);
+        if !potion && !(surplus && surplus_weapon(st, k, &item, &worn)) {
             continue;
         }
         let max = native_throw_range(strength, i32::from(item.weight));
         let per_hit = thrown_damage(i32::from(item.dd), i32::from(item.ds),
-            i32::from(item.to_d), i32::from(item.weight), true, false);
-        if per_hit <= 0 {
+            i32::from(item.to_d), i32::from(item.weight), !potion, false);
+        if per_hit <= 0 && !potion {
             continue;
         }
-        let candidate = choose_bolt(st, 0, per_hit, BORG_ATTACK_ARROW as i32, max, k);
-        if candidate.score > best.score {
+        let mut candidate = choose_bolt(st, 0, per_hit, BORG_ATTACK_ARROW as i32, max, k);
+        if potion && st.fight_attack.dmg_best > 0 && candidate.score > 0 {
+            candidate.score += 2;
+        }
+        let smaller_potion_stack = potion && slot >= 0 && slot != legacy_slot
+            && u32::from(st.items.items[slot as usize].tval) == TV_POTION
+            && item.iqty < st.items.items[slot as usize].iqty;
+        if candidate.score > best.score
+            || (candidate.score > 0 && candidate.score == best.score && smaller_potion_stack)
+        {
             best = candidate;
             slot = k;
             range = max;
@@ -3053,7 +3103,9 @@ fn attack_throw_surplus(st: &mut BorgState) -> i32 {
     st.fight_attack.cost = Some(AttackCost { fail_pct: 0, uses: Some(i32::from(item.iqty)), spell: false });
     let score = best.score;
     if !simulating(st) {
-        if slot != legacy_slot {
+        if u32::from(item.tval) == TV_POTION {
+            borg_note(st, &format!("# Junk potion throw: pack slot {slot}, score {score}."));
+        } else if slot != legacy_slot {
             if let Some(aim) = best.aim {
                 let distance = dist_to(st, aim.x, aim.y);
                 let target = grid(st, aim.x, aim.y).kill;
@@ -3063,6 +3115,8 @@ fn attack_throw_surplus(st: &mut BorgState) -> i32 {
                 };
                 borg_note(st, &format!("# Surplus throw: pack slot {slot}, distance {distance}/{range}, hit {hit}%, score {score}."));
             }
+        }
+        if surplus || slot != legacy_slot {
             crate::borg_object_log::log_use(st, "throw", &item);
         }
         best.target(st, false);
@@ -6017,7 +6071,7 @@ fn focused_attack_ranked(
         let utility = confused_weight(st, utility, true);
         let damage = st.fight_attack.dmg_best;
         let mut cost = st.fight_attack.cost;
-        if kind == BF_OBJECT as i32 && param(Param::attack_throw_surplus) == 0 {
+        if kind == BF_OBJECT as i32 && cost.is_none() && param(Param::attack_throw_surplus) == 0 {
             let (slot, _) = best_throw(st);
             cost = Some(AttackCost { fail_pct: 0, uses: Some(if slot < 0 { 0 } else { i32::from(st.items.items[slot as usize].iqty) }), spell: false });
         } else if kind == BF_LAUNCH as i32 {
@@ -6761,7 +6815,15 @@ mod fallback_tests {
 
 #[cfg(test)]
 mod throw_tests {
-    use super::{native_throw_range, throw_hit_percent, thrown_damage};
+    use super::{low_risk_potion_throw, native_throw_range, throw_hit_percent, thrown_damage};
+
+    #[test]
+    fn spending_a_potion_requires_enough_current_hp_to_survive_a_miss() {
+        assert!(low_risk_potion_throw(72, 7));
+        assert!(!low_risk_potion_throw(72, 8));
+        assert!(!low_risk_potion_throw(7, 7));
+        assert!(!low_risk_potion_throw(0, 0));
+    }
 
     /// #568: the engine's throw damage (`player-attack.c:554-582`, `:1296`).
     #[test]

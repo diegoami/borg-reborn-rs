@@ -47,6 +47,7 @@ use crate::headers::list_terrain_h::FEAT_FLOOR;
 use crate::headers::list_tvals_h::*;
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+use std::sync::OnceLock;
 
 /// `CLASS_WARRIOR` .. `CLASS_RANGER` (player-calcs.h class indexes)
 const CLASS_WARRIOR: i32 = 0;
@@ -594,6 +595,88 @@ fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
         borg_keypress(st, key(b'*'));
         borg_keypress(st, KC_ENTER);
     }
+}
+
+// object.txt and Strategy Manual ch. 7, "Bad items". Kind cost and the
+// engine's equipment-quality ignore setting do not describe use effects.
+const HARMFUL_CONSUMABLES: &[(u32, &str)] = &[
+    (TV_POTION, "Sleep"),
+    (TV_POTION, "Blindness"),
+    (TV_POTION, "Confusion"),
+    (TV_POTION, "Poison"),
+    (TV_POTION, "Slowness"),
+    (TV_POTION, "Surprise"),
+    (TV_POTION, "Salt Water"),
+    (TV_SCROLL, "Summon Monster"),
+    (TV_SCROLL, "Summon Undead"),
+    (TV_SCROLL, "Aggravate Monster"),
+    (TV_SCROLL, "Curse Weapon"),
+    (TV_SCROLL, "Curse Armour"),
+    (TV_SCROLL, "Darkness"),
+    (TV_SCROLL, "Trap Creation"),
+    (TV_WAND, "Clone Monster"),
+    (TV_WAND, "Heal Monster"),
+    (TV_WAND, "Haste Monster"),
+    (TV_STAFF, "Summoning"),
+    (TV_STAFF, "Haste Monsters"),
+    (TV_STAFF, "Darkness"),
+];
+
+fn known_consumable(item: &borg_item) -> bool {
+    item.iqty > 0 && item.aware && item.flavour_aware
+}
+
+fn harmful_consumable(item: &borg_item) -> bool {
+    if !known_consumable(item) {
+        return false;
+    }
+    static KINDS: OnceLock<Vec<(u32, i32)>> = OnceLock::new();
+    KINDS.get_or_init(|| {
+        HARMFUL_CONSUMABLES
+            .iter()
+            .map(|&(tval, name)| (tval, engine::lookup_sval(tval as i32, name)))
+            .collect()
+    })
+    .contains(&(u32::from(item.tval), i32::from(item.sval)))
+}
+
+/// Slime Mold Juice is expendable in a fight when its nutrition is unneeded.
+pub(crate) fn junk_potion_to_throw(st: &BorgState, item: &borg_item) -> bool {
+    u32::from(item.tval) == TV_POTION
+        && (harmful_consumable(item)
+            || (known_consumable(item)
+                && i32::from(item.sval) == st.item_val.sv_potion_slime_mold
+                && st.borg.tr(BI_ISHUNGRY) == 0
+                && st.borg.tr(BI_ISWEAK) == 0))
+}
+
+/// Ignore only this stack. Angband drops it and filters it out of native
+/// auto-pickup, while fresh copies of its kind can still be found later.
+pub(crate) fn borg_discard_town_consumable(st: &mut BorgState) -> bool {
+    use crate::params::{value as param, Param};
+
+    if param(Param::junk_discard_harmful_in_town) == 0 || st.borg.tr(BI_CDEPTH) != 0 {
+        return false;
+    }
+    if engine::feat_is_shop(i32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat)) {
+        return false;
+    }
+    let Some(slot) = (0..pack_size() as usize).find(|&slot| {
+        let item = &st.items.items[slot];
+        harmful_consumable(item)
+            && !crate::borg_item::item_note(st, item).windows(2).any(|mark| matches!(mark, b"!d" | b"!*"))
+            && engine::inven_object(&st.access, slot).is_some_and(|item| !item.marked_ignored())
+    }) else {
+        return false;
+    };
+    if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
+        return false;
+    }
+    note_desc(st, "# Dropping harmful town consumable ", slot as i32, ".");
+    borg_keypress(st, key(b'k'));
+    slot_keys(st, slot as i32);
+    borg_keypress(st, key(b'a')); // textui_cmd_ignore_menu: "This item only".
+    true
 }
 
 #[cfg(feature = "test-cursed-spares")]
