@@ -239,6 +239,21 @@ fn borg_flow_dark_reachable(st: &BorgState, y: i32, x: i32) -> bool {
     false
 }
 
+/// borg-reborn-rs (#1189): can an exploration flow take its step onto this
+/// grid? With GOAL_DARK, `borg_play_step` steps into the unknown, digs
+/// rubble and opens a closed door, and refuses every other wall and seam
+/// ("Don't dig walls and seams when exploring", borg_flow.rs
+/// `borg_play_step`). `borg_flow_dark_interesting` still calls a treasure
+/// vein interesting and reachable, so the flow commits, walks the Borg up
+/// to the vein and then gives no step: the vein stays a goal forever, and
+/// the next ring sends the Borg back the way it came (#1189: a Half-Troll
+/// Warrior walked the six moves 444666 between (113,44) and (110,44) on DL1
+/// for 4,000 turns, ring 10 the treasure vein at (109,44) and ring 11 the
+/// vein at (114,45)).
+fn dark_goal_cannot_enter(feat: u32) -> bool {
+    !(feat == FEAT_NONE || feat == FEAT_RUBBLE || feat == FEAT_CLOSED)
+}
+
 /// The "Increase bravery" fear threshold of `borg_flow_direct()` (the same
 /// sequence of overriding assignments as C).
 fn direct_fear(st: &BorgState) -> i32 {
@@ -1104,11 +1119,21 @@ fn stair_frame(st: &mut BorgState, scum: Option<&Scum>) -> Option<StairFrame> {
     let lit: Vec<(i32, i32)> = (0..st.light.light_n.max(0) as usize)
         .map(|i| (i32::from(st.light.light_y[i]), i32::from(st.light.light_x[i])))
         .collect();
+    // borg-reborn-rs (#1189): with explore_stepable_goals, a candidate the
+    // exploration flow cannot enter is no goal (`dark_goal_cannot_enter`):
+    // the flow commits beside the vein and gives no step, and the next ring
+    // sends the Borg back the way it came.
+    let stepable_only = value(Param::explore_stepable_goals) != 0;
     let mut consider = |st: &mut BorgState, y: i32, x: i32, lit: bool| {
         if seen[y as usize][x as usize] {
             return;
         }
         if !borg_flow_dark_interesting(st, y, x) || (!lit && !borg_flow_dark_reachable(st, y, x)) {
+            return;
+        }
+        // borg-reborn-rs (#1189): the veins and vault walls stay unknown,
+        // and when nothing else is left the level is done (#1098).
+        if stepable_only && dark_goal_cannot_enter(u32::from(st.cave.grid(x, y).feat)) {
             return;
         }
         // borg-reborn-rs (#1061): with stair_scum, only targets in its safe area.
@@ -1612,11 +1637,14 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
 #[cfg(test)]
 mod breadth_first_tests {
     use super::*;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
 
     /// A synthetic map: '#' wall, '?' unknown, '^' a known trap (a wall to
     /// the flow below 60 HP), '<' or '>' a staircase, '@' the Borg, '.'
     /// known floor, 'P' known floor past the return leash (the rings cross
-    /// it; the reach and the route do not).
+    /// it; the reach and the route do not). #1189 adds '*' a treasure vein
+    /// (a wall the flow cannot enter, still interesting) and "'" an open
+    /// door (floor to the flow).
     struct Map {
         g: Vec<Vec<u8>>,
         borg: (i32, i32),
@@ -1644,7 +1672,7 @@ mod breadth_first_tests {
         }
 
         fn open(&self, y: i32, x: i32) -> bool {
-            matches!(self.at(y, x), b'.' | b'<' | b'>' | b'@' | b'P')
+            matches!(self.at(y, x), b'.' | b'<' | b'>' | b'@' | b'P' | b'\'')
         }
 
         /// Open to the reach and the route: not past the return leash.
@@ -1695,12 +1723,15 @@ mod breadth_first_tests {
         }
 
         /// The candidates: unknown grids next to known floor, with a ring.
+        /// #1189: a treasure vein next to known floor too
+        /// (`borg_flow_dark_interesting` calls it interesting), still no
+        /// grid the flow could enter.
         fn cands(&self, rings: &[Vec<u8>]) -> Vec<(i32, i32, i32)> {
             let mut c = Vec::new();
             for (y, row) in self.g.iter().enumerate() {
                 for (x, &ch) in row.iter().enumerate() {
                     let (y, x) = (y as i32, x as i32);
-                    if ch == b'?' && NEIGHBOURS.iter().any(|&(dy, dx)| self.open(y + dy, x + dx)) {
+                    if matches!(ch, b'?' | b'*') && NEIGHBOURS.iter().any(|&(dy, dx)| self.open(y + dy, x + dx)) {
                         if let Some(r) = ring_of(rings, y, x) {
                             c.push((y, x, r));
                         }
@@ -1710,9 +1741,25 @@ mod breadth_first_tests {
             c
         }
 
-        /// The goal the flow leads to: the one nearest the Borg over open
-        /// grids within the limit (ties: the first in the list).
-        fn nearest_goal(&self, rings: &[Vec<u8>], t: &RingTry) -> Option<(i32, i32)> {
+        /// The feature of a grid, as `stair_frame`'s `consider` reads it,
+        /// for `dark_goal_cannot_enter`.
+        fn feat(&self, y: i32, x: i32) -> u32 {
+            match self.at(y, x) {
+                b'?' => FEAT_NONE,
+                b'*' => FEAT_MAGMA_K,
+                _ => FEAT_FLOOR,
+            }
+        }
+
+        /// The candidates as `consider` keeps them with
+        /// `explore_stepable_goals`: only the grids the flow can enter.
+        fn stepable_cands(&self, rings: &[Vec<u8>]) -> Vec<(i32, i32, i32)> {
+            self.cands(rings).into_iter().filter(|&(y, x, _)| !dark_goal_cannot_enter(self.feat(y, x))).collect()
+        }
+
+        /// The flow distances from the Borg over walkable grids, closed
+        /// beyond the try's limit, as `run_tries`' spread leaves them.
+        fn dist_map(&self, rings: &[Vec<u8>], t: &RingTry) -> Vec<Vec<i32>> {
             let mut dist = vec![vec![i32::MAX; self.g[0].len()]; self.g.len()];
             let mut queue = std::collections::VecDeque::from([self.borg]);
             dist[self.borg.0 as usize][self.borg.1 as usize] = 0;
@@ -1728,15 +1775,27 @@ mod breadth_first_tests {
                     }
                 }
             }
-            let to = |&(y, x): &(i32, i32)| {
-                NEIGHBOURS
-                    .iter()
-                    .filter_map(|&(dy, dx)| dist.get((y + dy) as usize).and_then(|r| r.get((x + dx) as usize)).copied())
-                    .filter(|&d| d != i32::MAX)
-                    .min()
-                    .map(|d| d + 1)
-            };
-            t.goals.iter().filter_map(|g| to(g).map(|d| (d, *g))).min_by_key(|&(d, _)| d).map(|(_, g)| g)
+            dist
+        }
+
+        /// The commit cost of a goal: its distance in the try's spread, the
+        /// goal itself the last step (a wall goal: the refused step).
+        fn cost_to(&self, rings: &[Vec<u8>], t: &RingTry, goal: (i32, i32)) -> Option<i32> {
+            let dist = self.dist_map(rings, t);
+            NEIGHBOURS
+                .iter()
+                .filter_map(|&(dy, dx)| {
+                    dist.get((goal.0 + dy) as usize).and_then(|r| r.get((goal.1 + dx) as usize)).copied()
+                })
+                .filter(|&d| d != i32::MAX)
+                .min()
+                .map(|d| d + 1)
+        }
+
+        /// The goal the flow leads to: the one nearest the Borg over open
+        /// grids within the limit (ties: the first in the list).
+        fn nearest_goal(&self, rings: &[Vec<u8>], t: &RingTry) -> Option<(i32, i32)> {
+            t.goals.iter().filter_map(|&g| self.cost_to(rings, t, g).map(|d| (d, g))).min_by_key(|&(d, _)| d).map(|(_, g)| g)
         }
 
         /// Explore until nothing is left: each step the plan's first ring
@@ -1931,6 +1990,127 @@ mod breadth_first_tests {
         assert!(!boosted_bravery(12, 12), "the avoidance is reset to the HP each think");
     }
 
+    /// The recorded region of #1189, Borg261124143216 (Half-Troll Warrior,
+    /// CL1, DL1), the memory map at the pause on turn 5,852: the rows are
+    /// y = 30..47, the columns x = 104..126 ('%' plain veins are walls and
+    /// are written '#'). The up staircase at (112,36), the corridor at
+    /// y = 44 between (113,44) and (110,44), the treasure vein west of it
+    /// at (109,44) and the one south-east at (114,45).
+    const DL1_VEIN_LOOP: [&str; 18] = [
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.##..#???????",
+        "?????????#.#...#???????",
+        "?????????#.#.#.####????",
+        "???????###...#.....????",
+        "???????#<....'..###????",
+        "?????######.###.###?##?",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????#.................",
+        "?????*...@.............",
+        "?????.####*############",
+        "???????????????????????",
+        "???????????????????????",
+    ];
+
+    /// A recorded coordinate (x, y) as (row, col) of [`DL1_VEIN_LOOP`].
+    fn dl1(x: i32, y: i32) -> (i32, i32) {
+        (y - 30, x - 104)
+    }
+
+    #[test]
+    fn the_recorded_dl1_vein_loop_plans_no_unenterable_goal() {
+        // From turn 1,662 the Borg walked the six moves 444666 between the
+        // two ends of the corridor, 23 times in a row from turn 4,472, zero
+        // danger, nothing learned. The notes: at the east end "dark-bfs
+        // (ring 10) at cost 4" and three steps west; at the west end
+        // "ring 10 at cost 1" whose step never came, then "ring 11 at
+        // cost 4" and three steps east. Ring 10 was the west vein, ring 11
+        // the east one: `borg_flow_dark_interesting` calls a vein with
+        // treasure interesting, and `borg_play_step` refuses to dig walls
+        // and seams while the goal is GOAL_DARK, so each try ends beside a
+        // vein it cannot enter. No leash in this test; the recorded costs
+        // come out the same.
+        let (wv, ev) = (dl1(109, 44), dl1(114, 45));
+        let mut m = Map::new(&DL1_VEIN_LOOP);
+        let rings = m.rings();
+        assert_eq!(ring_of(&rings, wv.0, wv.1), Some(10), "the west vein: the recorded ring 10");
+        assert_eq!(ring_of(&rings, ev.0, ev.1), Some(11), "the east vein: the recorded ring 11");
+        let all = m.cands(&rings);
+        assert!(all.contains(&(wv.0, wv.1, 10)) && all.contains(&(ev.0, ev.1, 11)), "the veins are candidates");
+        assert_eq!(ring_of(&rings, dl1(113, 44).0, dl1(113, 44).1), Some(10), "the Borg's ring at both ends");
+
+        // The east end (113,44): the ring-10 try, the west vein at cost 4,
+        // and the flow steps toward it (west, over floor).
+        m.borg = dl1(113, 44);
+        let Plan::Rings(east) = plan(&all, Some(10), None, 0, 16) else { panic!("planned") };
+        assert_eq!(east[0].base, 10);
+        assert_eq!(east[0].goals, vec![wv]);
+        assert_eq!(m.nearest_goal(&rings, &east[0]), Some(wv));
+        assert_eq!(m.cost_to(&rings, &east[0], wv), Some(4), "recorded: ring 10 at cost 4");
+
+        // The west end (110,44): the same vein, now cost 1, and the step
+        // onto it refused (it is a wall); the next try is ring 11, whose
+        // nearest goal is the east vein at cost 4: three steps back east.
+        m.borg = dl1(110, 44);
+        let Plan::Rings(west) = plan(&all, Some(10), None, 0, 16) else { panic!("planned") };
+        assert_eq!(west[0].goals, vec![wv]);
+        assert_eq!(m.cost_to(&rings, &west[0], wv), Some(1), "recorded: ring 10 at cost 1");
+        assert!(!m.open(wv.0, wv.1), "the goal is a vein: exploring does not dig, so no step");
+        assert_eq!(west[1].base, 11);
+        assert_eq!(m.nearest_goal(&rings, &west[1]), Some(ev), "the ring-11 try aims back east");
+        assert_eq!(m.cost_to(&rings, &west[1], ev), Some(4), "recorded: ring 11 at cost 4");
+
+        // With explore_stepable_goals the veins are no goals: every goal
+        // left is one the flow can step onto, the walk goes on (the unknown
+        // grids east and south-west), and neither end sends the Borg to the
+        // other any more.
+        let kept = m.stepable_cands(&rings);
+        assert!(!kept.iter().any(|&(y, x, _)| (y, x) == wv || (y, x) == ev), "no vein is a goal");
+        let Plan::Rings(fixed) = plan(&kept, Some(10), None, 0, 16) else { panic!("planned") };
+        assert!(!fixed.is_empty(), "the level is not done: the unknown grids stay");
+        assert!(
+            fixed.iter().flat_map(|t| t.goals.iter()).all(|&g| m.feat(g.0, g.1) == FEAT_NONE || m.open(g.0, g.1)),
+            "every goal enterable: the unknown grid or a known floor grid"
+        );
+        assert_ne!(m.nearest_goal(&rings, &fixed[0]), Some(wv), "the west end does not send the Borg east past the vein");
+    }
+
+    #[test]
+    fn when_only_veins_are_left_the_level_is_done() {
+        // The same region with every unknown grid a wall: the two veins are
+        // the only candidates, and neither is enterable. With
+        // explore_stepable_goals nothing is left to explore: the think is
+        // exhausted and `borg_leave_level` takes the stairs (#1098), where
+        // without the switch the flow would commit beside the west vein and
+        // give no step, forever.
+        let walls: Vec<String> = DL1_VEIN_LOOP.iter().map(|r| r.replace('?', "#")).collect();
+        let rows: Vec<&str> = walls.iter().map(|s| s.as_str()).collect();
+        let m = Map::new(&rows);
+        let rings = m.rings();
+        let cands = m.cands(&rings);
+        assert_eq!(cands.len(), 2, "the two veins are the only candidates left");
+        assert!(m.stepable_cands(&rings).is_empty(), "neither is enterable");
+        assert_eq!(plan(&m.stepable_cands(&rings), Some(10), None, 0, 16), Plan::Rings(vec![]));
+    }
+
+    #[test]
+    fn exploring_enters_only_the_unknown_rubble_and_doors() {
+        // The steps a GOAL_DARK flow can take (borg_play_step): into the
+        // unknown, digging rubble, opening a closed door. Every wall and
+        // seam is refused, the treasure veins included.
+        assert!(!dark_goal_cannot_enter(FEAT_NONE));
+        assert!(!dark_goal_cannot_enter(FEAT_RUBBLE));
+        assert!(!dark_goal_cannot_enter(FEAT_CLOSED));
+        for feat in [FEAT_SECRET, FEAT_MAGMA, FEAT_QUARTZ, FEAT_MAGMA_K, FEAT_QUARTZ_K, FEAT_GRANITE] {
+            assert!(dark_goal_cannot_enter(feat), "feat {feat}");
+        }
+    }
+
     #[test]
     fn the_threshold_grows_with_the_level() {
         // A Human Mage (hit die 10: 10 HP at CL1, 5.5 more per level on
@@ -1949,6 +2129,7 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_bfs_hp_per_level), 0, "no level delta");
         assert_eq!(value(Param::explore_bfs_leave_when_done), 0, "compiled 0: an ordinary miss (borg.txt ships 1)");
         assert_eq!(value(Param::explore_c_leave_when_done), 0, "compiled 0: C stays until a reason to leave");
+        assert_eq!(value(Param::explore_stepable_goals), 0, "#1189: compiled 0 (borg.txt ships 1)");
         assert_eq!(value(Param::explore_bfs_food_percent), 100, "#1110: today's food");
         assert_eq!(value(Param::explore_bfs_light_percent), 100, "#1110: today's light");
     }

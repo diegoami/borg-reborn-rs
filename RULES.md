@@ -218,6 +218,13 @@ not undo other-track work already authorized before the gate.
     of one life never inflate independent counts. Test-feature/fabricated
     scenarios are explicitly labelled and kept apart from natural measured
     deaths. Original published hashes and historical records are preserved.
+12a. **Post requested death diagnostics on the ticket at hand** (owner,
+    2026-11-24, #1186). When asked to diagnose a death with an identified
+    ticket, post the findings as a comment on that ticket before reporting
+    back in chat. State what the evidence establishes, what the replay
+    verified, and the results of any tested alternatives. Include suggestions
+    supported by the evidence and link the canonical Cemetery case when
+    available (rule 12).
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
