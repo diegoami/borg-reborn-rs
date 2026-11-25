@@ -8141,6 +8141,12 @@ start from 10 maximum radius").
   first, added back-and-forth on the 20 starts (straight-back steps 7.7% →
   9.2%) for no gain.
 
+**Depth-adjusted level** (#1220, compiled and shipped 0). With
+`explore_mix_depth_adjusted_level = 1`, the class cap and all three growth
+values use `max(1, CL - DL + 1)` in place of CL. At DL1 the level is CL.
+The existing leash still gates mixed exploration, and the escape model
+still prices contact damage using actual dungeon depth.
+
 Shipped:
 
 | | CL1 | CL3 | CL5 | CL7 |
@@ -8221,16 +8227,17 @@ the ten below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1269` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1517` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1530` |
 | `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1316` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1452` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1465` |
 | `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1466` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1455` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1457` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1459` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1468` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1470` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1472` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1461` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1320` |
-| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1452` |
+| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1321` |
+| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1465` |
 | `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1466` |
 | `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1461` |
 

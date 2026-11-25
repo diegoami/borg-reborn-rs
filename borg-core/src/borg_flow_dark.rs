@@ -1317,15 +1317,28 @@ pub(crate) fn mixed_active(st: &BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
         && c_leash_on(st)
-        && within_mix_levels(st.borg.tr(BI_CLEVEL), value(Param::explore_mix_max_clevel))
+        && within_mix_levels(
+            mix_level(st, value(Param::explore_mix_depth_adjusted_level) != 0),
+            value(Param::explore_mix_max_clevel),
+        )
         && !released(st)
 }
 
+/// #1220: the level used for both mixed eligibility and radius growth.
+fn mix_level(st: &BorgState, depth_adjusted: bool) -> i32 {
+    let clevel = st.borg.tr(BI_CLEVEL);
+    if depth_adjusted {
+        (clevel - st.borg.tr(BI_CDEPTH) + 1).max(1)
+    } else {
+        clevel
+    }
+}
+
 /// #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): mixed
-/// exploration applies up to this character level, per class; above it the
-/// class counts as prepared and C's depth-first order explores.
-fn within_mix_levels(clevel: i32, max_clevel: i32) -> bool {
-    clevel <= max_clevel
+/// exploration applies up to this level, per class; above it C's depth-first
+/// order explores.
+fn within_mix_levels(level: i32, max_clevel: i32) -> bool {
+    level <= max_clevel
 }
 
 /// #1098: leaving after the stair-anchored exploration was exhausted failed
@@ -1368,11 +1381,11 @@ struct MixModel {
 }
 
 /// #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by
-/// level (and class)"): `base` grown by `dp` per mille a character level from
-/// CL1, linearly and rounded: base x (1000 + dp x (CL - 1)) / 1000. `dp` 0
-/// leaves it as it is.
-fn grow_by_level(base: i32, dp: i32, clevel: i32) -> i32 {
-    let levels = i64::from(clevel.max(1) - 1);
+/// level (and class)"): `base` grown by `dp` per mille per mixed exploration
+/// level above 1, linearly and rounded: base x (1000 + dp x (level - 1)) / 1000.
+/// `dp` 0 leaves it as it is.
+fn grow_by_level(base: i32, dp: i32, level: i32) -> i32 {
+    let levels = i64::from(level.max(1) - 1);
     let scaled = i64::from(base) * (1000 + i64::from(dp) * levels);
     i32::try_from((scaled + 500).div_euclid(1000)).unwrap_or(i32::MAX)
 }
@@ -1446,10 +1459,10 @@ fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, ste
 /// known staircase.
 fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
     let frame = stair_frame(st, scum)?;
-    // #1160 (owner, 2026-11-23): the radius, the step and the cap grow by
-    // character level (per mille a level, per class).
-    let clevel = st.borg.tr(BI_CLEVEL);
-    let start = grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), clevel);
+    // #1160, #1220: the radius, the step and the cap grow by the same level
+    // used for eligibility (per mille a level, per class).
+    let level = mix_level(st, value(Param::explore_mix_depth_adjusted_level) != 0);
+    let start = grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), level);
     let mut limit = mix_limit(MixModel {
         start,
         sight: value(Param::explore_mix_sight),
@@ -1458,12 +1471,12 @@ fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool>
         max_hp: st.borg.tr(BI_MAXHP),
         contact: value(Param::explore_mix_contact_damage),
         depth: st.borg.tr(BI_CDEPTH),
-        max: grow_by_level(value(Param::explore_mix_max_radius), value(Param::explore_mix_max_radius_dp), clevel),
+        max: grow_by_level(value(Param::explore_mix_max_radius), value(Param::explore_mix_max_radius_dp), level),
     });
     if c_leash_on(st) {
         limit = limit.min(borg_flow_misc::borg_get_leash(st, false));
     }
-    let step = grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), clevel);
+    let step = grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), level);
     let plan = mixed_plan(&frame.cands, Some(frame.borg_ring), start, step, limit, BREADTH_FIRST_MAX_RINGS);
     let stepped = match plan {
         Plan::Fallback => return None,
@@ -2326,6 +2339,7 @@ mod breadth_first_tests {
         assert_eq!(value(Param::explore_mix_contact_damage), 5);
         assert_eq!(value(Param::explore_mix_max_radius), 30);
         assert_eq!(value(Param::explore_mix_max_clevel), 50, "compiled: no cap (C's leash ends at CL20)");
+        assert_eq!(value(Param::explore_mix_depth_adjusted_level), 0);
         assert_eq!(value(Param::explore_mix_radius_dp), 0, "#1160: compiled, no growth");
         assert_eq!(value(Param::explore_mix_step_dp), 0);
         assert_eq!(value(Param::explore_mix_max_radius_dp), 0);
@@ -2352,5 +2366,30 @@ mod breadth_first_tests {
         assert!(within_mix_levels(6, 6), "up to the cap");
         assert!(!within_mix_levels(7, 6), "above it, C's order");
         assert!(within_mix_levels(19, 50), "compiled: no cap");
+    }
+
+    #[test]
+    fn mixed_depth_adjustment_drives_the_cap_and_growth() {
+        let mut st = BorgState::default();
+        for (clevel, depth, expected_level, expected_eligible, expected_growth) in [
+            (9, 1, 9, true, [7, 5, 54]),
+            (10, 1, 10, false, [7, 6, 60]),
+            (10, 2, 9, true, [7, 5, 54]),
+            (11, 2, 10, false, [7, 6, 60]),
+            (11, 3, 9, true, [7, 5, 54]),
+            (11, 12, 1, true, [2, 3, 6]),
+        ] {
+            st.borg.trait_[BI_CLEVEL as usize] = clevel;
+            st.borg.trait_[BI_CDEPTH as usize] = depth;
+            let level = mix_level(&st, true);
+            assert_eq!(level, expected_level, "CL{clevel}/DL{depth}");
+            assert_eq!(within_mix_levels(level, 9), expected_eligible, "Priest cap at CL{clevel}/DL{depth}");
+            assert_eq!(
+                [grow_by_level(2, 300, level), grow_by_level(3, 100, level), grow_by_level(6, 1000, level)],
+                expected_growth,
+                "starting radius, step and cap at CL{clevel}/DL{depth}",
+            );
+            assert_eq!(mix_level(&st, false), clevel, "flag off at CL{clevel}/DL{depth}");
+        }
     }
 }

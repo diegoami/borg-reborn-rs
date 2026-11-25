@@ -965,9 +965,11 @@ borg_param_explore_mix_max_radius = 6
 borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
 borg_param_explore_mix_max_radius_dp = 1000
-# Up to which CL the mixed walk applies (per class in the class files; 50 =
-# no cap, the walk ends with C's leash at CL20).
+# Level cap for the mixed walk (per class in the class files; 50 = no cap).
 borg_param_explore_mix_max_clevel = 50
+# #1220: 1 uses max(1, CL - DL + 1) for the class cap and all three radius
+# growth values. 0 uses CL. The leash gate and contact damage use real depth.
+borg_param_explore_mix_depth_adjusted_level = 0
 
 # The holes in C's leash (#1062). Compiled 0 = C; shipped on with the values
 # of the zoo arms (owner, 2026-11-23: "merge with the values to try"),
