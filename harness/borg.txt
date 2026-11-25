@@ -262,8 +262,8 @@ borg_param_town_departure_free_slots = 2
 # #1168, #1199: plain shots to keep when trimming the quiver in town.
 # The class files set the reserve for each playable class. The fallback
 # is 0, which disables trimming when there is no class override.
-# #1239: shop before lightening the departing kit.
-borg_param_town_shop_overloaded = 1
+# #1256: unload on arrival, try a lighter loadout, then shop within the allowance.
+borg_param_town_shop_overloaded = 2
 borg_param_town_quiver_trim_reserve = 0
 # Recall-first trial when town_shop_overloaded is 0. A positive value allows
 # a safe lighter exchange with up to this much equipment power loss.

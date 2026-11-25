@@ -255,6 +255,24 @@ pub(crate) fn kit_just_bought(st: &BorgState, item: &borg_item, place: Place, ho
     })
 }
 
+/// The arrival pass is responsible for trimming staples. The shopping
+/// planner may still identify unknown flavours and store worthwhile gear.
+fn protects_arrival_supply(st: &BorgState, item: &borg_item) -> bool {
+    use crate::headers::list_tvals_h::*;
+    if !item.aware || !item.flavour_aware || item.cursed {
+        return false;
+    }
+    let iv = &st.item_val;
+    let sval = i32::from(item.sval);
+    match u32::from(item.tval) {
+        TV_FLASK => sval == iv.sv_flask_oil,
+        TV_LIGHT => sval == iv.sv_light_torch && item.ego_idx == 0,
+        TV_ARROW | TV_BOLT | TV_SHOT => i32::from(item.tval) == st.borg.tr(crate::borg_headers::borg_trait_h::BI_AMMO_TVAL),
+        TV_FOOD | TV_MUSHROOM | TV_POTION | TV_SCROLL => !crate::borg_town_capability::unwanted_home_item(item),
+        _ => false,
+    }
+}
+
 /// The kit: the pack's and the Home's stacks, with what the dispositions
 /// read (slice 3). The power of a pack stack is a **try-off** - its
 /// quantity set to 0, `borg_notice` and `borg_power` run - and of a Home
@@ -294,6 +312,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         };
         let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
         let just_bought = kit_just_bought(st, it, place, at_limit);
+        let protected_supply = live && place == Place::Pack
+            && crate::borg_town_live::unload_on_arrival(st) && protects_arrival_supply(st, it);
         // borg-reborn-rs (#1239): protect retained gear from ordinary Home moves.
         let home_room = if place == Place::Home {
             engine::store_stock(&st.access, BORG_HOME).get(slot).map(|offer| {
@@ -303,6 +323,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
                 let carry = if blocked { 0 } else { offer.carry_capacity() };
                 let acquire = if live { crate::borg_town_live::acquisition_room(st, it.tval, it.kind) }
                     else { i32::from(it.iqty) };
+                let acquire = if live { acquire.min(crate::borg_town_live::shopping_weight_capacity(st, it.weight)) }
+                    else { acquire };
                 [carry, offer.merge_capacity(), acquire.min(i32::from(it.iqty))]
             })
         } else { None };
@@ -312,7 +334,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             } else { Role::Ordinary },
             home_room,
             keep_last_book: protects_class_book(it),
-            protect_disposal: (place == Place::Home && crate::borg_town_live::retained_gear(st, it))
+            protect_disposal: protected_supply
+                || (place == Place::Home && crate::borg_town_live::retained_gear(st, it))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
@@ -593,6 +616,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
         c.qty = cap_torch(&st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)], c.qty);
         if live {
             c.qty = c.qty.min(crate::borg_town_live::acquisition_room(st, c.tval, c.kind));
+            let weight = st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)].weight;
+            c.qty = c.qty.min(crate::borg_town_live::shopping_weight_capacity(st, weight));
             if crate::borg_town_live::buy_rejected(st, c.shop as i16, c.slot as usize) { c.qty = 0; }
         }
     }
@@ -600,7 +625,8 @@ fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     for (slot, item) in st.store.shops[BORG_HOME].ware.iter().enumerate() {
         if item.iqty == 0 { continue; }
         // borg-reborn-rs (#1239): reserve saved gear for the loadout pass.
-        let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0)
+        let available = (!live || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) > 0
+                && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0)
             && item.aware && !unusable_torch(unlight, item.tval, item.sval, torch) && !(live && crate::borg_town_live::buy_rejected(st, 7, slot))
             && !(live && (crate::borg_town_live::home_moved(st, item.kind, true)
                 || crate::borg_town_live::retained_gear(st, item)));

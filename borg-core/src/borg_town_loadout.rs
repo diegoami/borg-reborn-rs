@@ -517,12 +517,12 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "restore" | "no-storage" | "reserve-overlap"));
+    assert!(matches!(case, "trim" | "arrival" | "restore" | "no-storage" | "reserve-overlap"));
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
         SETUP.store(1, Relaxed);
-        let excess = if case == "trim" { 188 } else { 104 };
+        let excess = if matches!(case, "trim" | "arrival") { 188 } else { 104 };
         engine::setup_test_town_loadout(
             st, excess, case != "no-storage", false, 0, case == "reserve-overlap",
         );
@@ -564,8 +564,12 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             .find(|item| item.weight == 180 && crate::borg_town_live::retained_gear(st, item));
         if heavy.is_some() && st.borg.tr(BI_RECALL) > 0 {
             assert!(crate::borg_town_budget::Facts::of(st).allowance() >= 0);
-            if case == "trim" {
-                assert_eq!(st.borg.tr(BI_AMISSILES), 20);
+            if matches!(case, "trim" | "arrival") {
+                if case == "trim" {
+                    assert_eq!(st.borg.tr(BI_AMISSILES), 20);
+                } else {
+                    assert!((20..57).contains(&st.borg.tr(BI_AMISSILES)));
+                }
                 println!("#1239 town loadout passed: {case}");
                 std::process::exit(0);
             }

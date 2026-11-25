@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -28,8 +29,9 @@ class TownLoadoutTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
+                BORG_PARAM_TOWN_SHOP_OVERLOADED="2" if case == "arrival" else "1",
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
-                BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST="20" if case == "trim" else "0",
+                BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST="20" if case in ("trim", "arrival") else "0",
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
                 BORG_PARAM_TOWN_HOME_RESERVE="1" if case == "reserve-overlap" else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
@@ -41,7 +43,7 @@ class TownLoadoutTest(unittest.TestCase):
             result = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "3", "-menu-letters",
-                 "-msglog", str(messages), "-keys", "750"],
+                 "-msglog", str(messages), "-keys", "1800" if case == "arrival" else "750"],
                 cwd=GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             log = messages.read_text()
@@ -53,6 +55,17 @@ class TownLoadoutTest(unittest.TestCase):
         log = self.run_case("trim")
         self.assertLess(log.index("# Town headroom dropping"), log.index("# Town loadout: preparing a lighter kit"))
         self.assertLess(log.index("# Town loadout: preparing a lighter kit"), log.index("# Town loadout: displaced gear stored at Home"))
+
+    def test_arrival_trims_and_deposits_gear_before_shopping(self):
+        log = self.run_case("arrival")
+        dropped = log.index("# Dropping surplus Rounded Pebbles")
+        exchange = log.index("# Town loadout: preparing a lighter kit")
+        deposit = log.index("# Town loadout: displaced gear stored at Home")
+        recall = re.search(r"You have .*\bWord of Recall", log)
+        self.assertIsNotNone(recall, log[-4000:])
+        self.assertLess(dropped, exchange)
+        self.assertLess(exchange, deposit)
+        self.assertLess(deposit, recall.start())
 
     def test_full_home_without_storage_has_no_safe_proposal(self):
         self.run_case("no-storage")

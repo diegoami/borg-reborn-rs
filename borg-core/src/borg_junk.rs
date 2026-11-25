@@ -36,10 +36,10 @@ use crate::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CCON, BI_CDEPTH,
+    BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CARRY, BI_CCON, BI_CDEPTH,
     BI_CDEX, BI_CINT, BI_CLASS, BI_CLEVEL, BI_CSTR, BI_CURHP, BI_CWIS, BI_FOOD, BI_GOLD,
     BI_GOOD_S_CHG, BI_ISFIXEXP, BI_ISFULL, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH,
-    BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED,
+    BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED, BI_WEIGHT,
 };
 use crate::headers::list_options_h::OPT_birth_randarts;
 use crate::headers::list_stats_h::{OBJ_MOD_CON, OBJ_MOD_DEX, OBJ_MOD_INT, OBJ_MOD_STR, OBJ_MOD_WIS};
@@ -208,24 +208,22 @@ fn slot_keys(st: &mut BorgState, b_i: i32) {
 pub fn borg_destroy_floor(st: &mut BorgState) -> bool {
     let (x, y) = (st.borg.c.x, st.borg.c.y);
     let t = st.cave.grid(x, y).take;
-    if t == 0 {
-        return false;
-    }
-
     /* double check that there is an object here.  This is simulating doing */
     /* "look" so it is okay */
-    if engine::top_floor_object(&st.access, x, y).is_none() {
+    let Some(floor) = engine::top_floor_object(&st.access, x, y) else {
+        return false;
+    };
+    // On stairs or in town the take tracker can have no entry for our
+    // discard. Hide the specific floor stack before native autopickup.
+    let surplus = floor.note() == Some(b"borg ignore surplus");
+    if !surplus && (t == 0 || st.takes.takes[usize::from(t)].value != -10) {
         return false;
     }
 
-    let take = st.takes.takes[usize::from(t)];
-    if take.value != -10 {
-        return false;
-    }
-
-    let base = if take.kidx != 0 { engine::kind_base_name(take.kidx as usize) } else { None };
+    let kind = if surplus { floor.kind().kidx } else { st.takes.takes[usize::from(t)].kidx } as usize;
+    let base = if kind != 0 { engine::kind_base_name(kind) } else { None };
     if let Some(base) = base {
-        let s = [b"# Destroying floor item ", base, engine::kind_name(take.kidx as usize)].concat();
+        let s = [b"# Destroying floor item ", base, engine::kind_name(kind)].concat();
         borg_note_bytes(st, &s);
     } else {
         borg_note(st, "# Destroying floor item.");
@@ -596,6 +594,100 @@ fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(crate) struct SurplusDrop {
+    pub slot: usize,
+    pub quantity: u8,
+}
+
+fn harmful_potion_slot(pack: &[borg_item], kinds: [i32; 3]) -> Option<usize> {
+    pack.iter().position(|item| item.iqty > 0 && item.aware && item.flavour_aware
+        && u32::from(item.tval) == TV_POTION && kinds.contains(&i32::from(item.sval)))
+}
+
+fn harmful_potion_drop(st: &BorgState) -> Option<SurplusDrop> {
+    let iv = &st.item_val;
+    let slot = harmful_potion_slot(&st.items.items[..pack_size() as usize],
+        [iv.sv_potion_sleep, iv.sv_potion_confusion, iv.sv_potion_slowness])?;
+    Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
+}
+
+/// Compare the fractional surplus above each target. Recheck the actual
+/// inventory after every useful copy, so no stack keeps priority as it shrinks.
+pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop> {
+    if st.borg.goal.recalling != 0 {
+        return None;
+    }
+    if let Some(drop) = harmful_potion_drop(st) {
+        return Some(drop);
+    }
+    if !lighten {
+        return None;
+    }
+    let supplies = crate::borg_town_capability::carried_supplies(st);
+    (0..pack_size() as usize).chain(quiver_start() as usize..quiver_end() as usize)
+        .filter_map(|slot| {
+            let (excess, target) = supplies.discard_surplus(st, slot)?;
+            Some((slot, excess, target))
+        })
+        .reduce(|a, b| {
+            let ratio = (i128::from(b.1) * i128::from(a.2)).cmp(&(i128::from(a.1) * i128::from(b.2)));
+            let (first, second) = (&st.items.items[a.0], &st.items.items[b.0]);
+            let order = ratio.then_with(|| {
+                if first.tval == second.tval && matches!(u32::from(first.tval), TV_SHOT | TV_ARROW | TV_BOLT) {
+                    let damage = |ammo: &borg_item| crate::borg_ranged::missile_damage_twice(ammo, 0);
+                    damage(first).cmp(&damage(second))
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            }).then_with(|| second.weight.cmp(&first.weight));
+            if order.is_gt() { b } else { a }
+        })
+        .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1 })
+}
+
+pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
+    // obj-pile.c:drop_find_grid scatters drops off stairs and away from
+    // visible piles. Use ordinary clear floor so the native ignore command
+    // can mark the dropped copies on the next think.
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    if off_floor(st) || engine::top_floor_object(&st.access, x, y).is_some() {
+        for direction in 0..8 {
+            let nx = x + i32::from(engine::ddx_ddd(direction));
+            let ny = y + i32::from(engine::ddy_ddd(direction));
+            if !engine::square_in_bounds_fully(nx, ny) {
+                continue;
+            }
+            let grid = st.cave.grid(nx, ny);
+            if u32::from(grid.feat) == FEAT_FLOOR && !grid.trap && grid.kill == 0
+                && grid.info & crate::borg_cave_view::BORG_VIEW != 0
+                && engine::top_floor_object(&st.access, nx, ny).is_none()
+                && borg_danger(st, ny, nx, 1, true, false) <= st.borg.tr(BI_CURHP) / 20
+            {
+                borg_keypress(st, digit(i32::from(engine::ddd(direction))));
+                return true;
+            }
+        }
+        return false;
+    }
+    let slot = drop.slot as i32;
+    let quantity = st.items.items[drop.slot].iqty;
+    note_desc(st, "# Dropping surplus ", slot, &format!(" ({} copies).", drop.quantity));
+    // Inventory refresh removes the pending Borg inscription before the
+    // next action. Inscribe each drop so only the dropped copies keep it.
+    borg_keypress(st, key(b'{'));
+    slot_keys(st, slot);
+    borg_keypresses(st, b"borg ignore surplus");
+    borg_keypress(st, KC_ENTER);
+    borg_keypress(st, key(b'd'));
+    slot_keys(st, slot);
+    if quantity > 1 {
+        borg_keypress(st, key(if drop.quantity == quantity { b'*' } else { b'1' }));
+        borg_keypress(st, KC_ENTER);
+    }
+    true
+}
+
 #[cfg(feature = "test-cursed-spares")]
 pub(crate) fn check_cursed_spares(st: &mut BorgState) -> ! {
     use crate::borg_headers::borg_item_h::BORG_CURSE_PARALYSIS;
@@ -758,6 +850,10 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
     /* No crush if even slightly dangerous */
     if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
         return false;
+    }
+
+    if let Some(drop) = harmful_potion_drop(st).filter(|_| crate::borg_town_live::unload_on_arrival(st)) {
+        return drop_surplus(st, drop);
     }
 
     /* Destroy actual "junk" items */
@@ -1097,6 +1193,12 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         return false;
     }
 
+    if let Some(drop) = harmful_potion_drop(st)
+        .filter(|_| st.borg.goal.recalling == 0 && crate::borg_town_live::unload_on_arrival(st))
+    {
+        return drop_surplus(st, drop);
+    }
+
     /* Scan the inventory */
     for i in 0..pack_size() {
         let item = st.items.items[i as usize];
@@ -1352,6 +1454,18 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
 
     /* Never in town */
     if st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+
+    if crate::borg_town_live::unload_on_arrival(st) {
+        // player-calcs.c:calc_bonuses charges the first point of slowdown at
+        // half the weight limit plus one tenth of the limit.
+        let carry = st.borg.tr(BI_CARRY);
+        if carry > 0 && st.borg.tr(BI_WEIGHT) >= carry / 2 + carry / 10 {
+            if let Some(drop) = surplus_drop(st, true) {
+                return drop_surplus(st, drop);
+            }
+        }
         return false;
     }
 
@@ -2037,6 +2151,36 @@ mod tests {
         }
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, shortfall), None);
         assert_eq!(quiver.iter().map(|stack| u16::from(stack.iqty)).sum::<u16>(), 130);
+    }
+
+    #[test]
+    fn the_recorded_priest_potions_go_before_other_pack_contents() {
+        let potion = |sval, iqty, known| {
+            let mut item = blank_item();
+            item.tval = TV_POTION as u8;
+            item.sval = sval;
+            item.iqty = iqty;
+            item.aware = true;
+            item.flavour_aware = known;
+            item
+        };
+        let mut oil = blank_item();
+        oil.tval = TV_FLASK as u8;
+        oil.iqty = 12;
+        let mut torch = blank_item();
+        torch.tval = TV_LIGHT as u8;
+        torch.iqty = 26;
+        let kinds = [1, 3, 5];
+        let mut pack = [
+            oil, potion(1, 1, false), potion(10, 3, true), potion(11, 2, true),
+            potion(1, 3, true), potion(3, 4, true), potion(5, 2, true), torch,
+        ];
+        for (slot, quantity) in [(4, 3), (5, 4), (6, 2)] {
+            assert_eq!(harmful_potion_slot(&pack, kinds), Some(slot));
+            assert_eq!(pack[slot].iqty, quantity);
+            pack[slot].iqty = 0;
+        }
+        assert_eq!(harmful_potion_slot(&pack, kinds), None);
     }
 
     #[test]

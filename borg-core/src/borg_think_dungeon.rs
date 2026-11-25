@@ -979,7 +979,8 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     // borg-reborn-rs (#1239): finish an observed loadout transaction
     // before the usual wear and junk passes can touch its two pieces.
-    if st.borg.tr(BI_CDEPTH) == 0 && crate::borg_town_live::loadout_pending(st)
+    if st.borg.tr(BI_CDEPTH) == 0
+        && (crate::borg_town_live::arrival_pending(st) || crate::borg_town_live::loadout_pending(st))
         && borg_choose_shop(st)
     {
         if crate::borg_town_live::execute_outside(st) { return true; }
@@ -1427,6 +1428,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_recharging");
     }
 
+    let balanced_disposal = crate::borg_town_live::unload_on_arrival(st);
+    if balanced_disposal && borg_drop_slow(st) {
+        return choice!("borg_drop_slow");
+    }
+
     /* Drop junk */
     if borg_drop_junk(st) {
         return choice!("borg_drop_junk");
@@ -1438,7 +1444,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Drop items if we are slow */
-    if borg_drop_slow(st) {
+    if !balanced_disposal && borg_drop_slow(st) {
         return choice!("borg_drop_slow");
     }
 

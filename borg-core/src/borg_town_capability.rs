@@ -1110,6 +1110,94 @@ fn ranged_reserves(configured: i64, readiness: i64, launcher_needs_reserve: bool
 /// Physical supply curves use the same forecast, gold opportunity cost and
 /// capacity constraints as the core town model. No consumable calls borg_power.
 pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey, gold_after_urgent: i64) -> Model {
+    observe_supplies(st, stock, Some(kit), journey, gold_after_urgent)
+}
+
+/// Reuse the town reserve curves without reading shop or Home stock. Index
+/// the quiver by slot as well, so its copies can compete with pack surplus.
+pub(crate) fn carried_supplies(st: &BorgState) -> Model {
+    observe_supplies(st, &Stock::default(), None, Journey::of(st), i64::from(st.borg.tr(BI_GOLD)))
+}
+
+impl Model {
+    /// Stock and target in the same units, for one safely removable copy.
+    /// Use an independent target for staples that have one, then check the
+    /// shared reserves for any other effect the copy would take with it.
+    pub(crate) fn discard_surplus(&self, st: &BorgState, slot: usize) -> Option<(i64, i64)> {
+        let item = &st.items.items[slot];
+        if item.iqty == 0 || !item.aware || !item.flavour_aware
+            || item.cursed || item.art_idx != 0 || item.ego_idx != 0 || item.weight <= 0 {
+            return None;
+        }
+        let tval = u32::from(item.tval);
+        let sval = i32::from(item.sval);
+        let supplies = self.units(PACK, slot as i64, 1);
+        let supply = |cap| supplies.iter().find(|&&(id, _)| id == cap).map_or(0, |&(_, n)| n);
+        let demand = |cap| self.curves.get(cap).map_or(0, |row: &[i64; 5]| row[2].abs());
+        let pack = crate::borg_item::inven_wield() as usize;
+        let quiver = crate::borg_item::quiver_start() as usize;
+        let carried = || st.items.items[..pack].iter().chain(&st.items.items[quiver..])
+            .filter(|it| it.aware && !it.cursed);
+        let count_kind = || carried().filter(|it| it.kind == item.kind).map(|it| i64::from(it.iqty)).sum::<i64>();
+        let coverage = |cap: usize| (self.curves[cap][3], demand(cap), supply(cap));
+        let oil = tval == TV_FLASK && sval == st.item_val.sv_flask_oil;
+        let (held, target, per_copy) = match tval {
+            TV_LIGHT if sval == st.item_val.sv_light_torch && self.curves[LIGHT][1] > 0 => coverage(LIGHT),
+            TV_FLASK if oil => {
+                let fuel = self.supplies.iter().filter(|r| r[0] == PACK && r[2] == LIGHT as i64
+                    && st.items.items[r[1] as usize].kind == item.kind)
+                    .map(|r| r[3] * i64::from(st.items.items[r[1] as usize].iqty)).sum::<i64>();
+                // The model spreads the fuel bottles over the stack. Keep
+                // those bottles plus the independent throwing-oil target.
+                let fuel = if item.pval > 0 {
+                    (fuel + i64::from(item.pval) * UNIT / 2) / (i64::from(item.pval) * UNIT)
+                } else { 0 };
+                let staple = i64::from(param(Param::town_staple_oil));
+                let target = if staple > 0 { staple } else { demand(THROWN_OIL) / UNIT };
+                (count_kind(), fuel + target.max(demand(RANGED_RESERVE) / UNIT), 1)
+            }
+            TV_SHOT | TV_ARROW | TV_BOLT if i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL)
+                && st.borg.tr(BI_AMMO_POWER) > 0 && item.ident && item.to_h == 0 && item.to_d == 0 => {
+                let reserve = param(Param::town_quiver_trim_reserve).max(param(Param::town_ranger_arrows_max));
+                let ammo = carried().filter(|it| it.tval == item.tval).map(|it| i64::from(it.iqty)).sum();
+                (ammo, i64::from(reserve).max(demand(RANGED_RESERVE) / UNIT), 1)
+            }
+            TV_POTION if supply(HEAL_RESERVE) > 0 => {
+                if let Some(row) = HEAL_KINDS.into_iter().find(|&row| supply(row) > 0 && demand(row) >= UNIT) {
+                    coverage(row)
+                } else {
+                    coverage(HEAL_RESERVE)
+                }
+            }
+            TV_SCROLL if supply(PHASE_RESERVE) > 0 => {
+                let (held, target, units) = coverage(PHASE_RESERVE);
+                (held, target.max(demand(STAPLE_PHASE)), units)
+            }
+            TV_SCROLL if supply(RECALL_RESERVE) > 0 => {
+                (count_kind(), i64::from(param(Param::town_recall_reserve)).max(1), 1)
+            }
+            TV_SCROLL if supply(TELEPORT) > 0 || supply(LEVEL) > 0 => {
+                (count_kind(), i64::from(param(Param::caution_reserve_escape_count)).max(1), 1)
+            }
+            TV_FOOD | TV_MUSHROOM | TV_SCROLL if supply(FOOD) > 0 => coverage(FOOD),
+            _ => return None,
+        };
+        if target <= 0 || per_copy <= 0 || held - per_copy < target {
+            return None;
+        }
+        if supplies.iter().any(|&(cap, units)| {
+            let row = self.curves[cap];
+            // Removal spends throwing bottles first, even when the model
+            // attributed a fractional share of fuel to every bottle.
+            !(oil && cap == LIGHT) && row[1] > 0 && row[2] < 0 && row[3] - units < -row[2]
+        }) {
+            return None;
+        }
+        Some((held - target, target))
+    }
+}
+
+fn observe_supplies(st: &BorgState, stock: &Stock, kit: Option<&[KitItem]>, journey: Journey, gold_after_urgent: i64) -> Model {
     let t = |id| i64::from(st.borg.tr(id)).max(0);
     let cfg = |id| i64::from(st.cfg(id)).clamp(0, 1_000_000);
     let exposure = journey.exposure();
@@ -1505,7 +1593,7 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
             model.supplies.push([i64::from(c.shop), i64::from(c.slot), cap as i64, n]);
         }
     }
-    for it in kit {
+    for it in kit.into_iter().flatten() {
         let item = if it.place == Place::Pack { &st.items.items[usize::from(it.slot)] }
             else { &st.store.shops[crate::borg_store::BORG_HOME].ware[usize::from(it.slot)] };
         for (cap, n) in supplies(item, &ctx, (Model::scope(it), usize::from(it.slot))) {
@@ -1513,10 +1601,17 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey,
             model.curves[cap][if it.place == Place::Pack { 3 } else { 4 }] += n * i64::from(it.qty);
         }
     }
-    // Equipment/quiver supplies are not movable pack stacks, but do close
-    // the same needs (especially current fuel and already-loaded arrows).
-    for item in st.items.items.iter().skip(crate::borg_item::inven_wield() as usize).filter(|i| i.iqty > 0) {
-        for (cap, n) in supplies(item, &ctx, (10, 0)) { model.curves[cap][3] += n * i64::from(item.iqty); }
+    let pack_end = crate::borg_item::inven_wield() as usize;
+    let quiver = crate::borg_item::quiver_start() as usize;
+    let start = if kit.is_some() { pack_end } else { 0 };
+    for (slot, item) in st.items.items.iter().enumerate().skip(start).filter(|(_, i)| i.iqty > 0) {
+        let origin = if slot < pack_end { PACK } else { HOME + 1 };
+        for (cap, n) in supplies(item, &ctx, (origin, slot)) {
+            model.curves[cap][3] += n * i64::from(item.iqty);
+            if kit.is_none() && (slot < pack_end || slot >= quiver) {
+                model.supplies.push([PACK, slot as i64, cap as i64, n]);
+            }
+        }
     }
     use crate::headers::list_object_flags_h::OF_NO_FUEL;
     let fuel_free = engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT)
