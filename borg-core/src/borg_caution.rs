@@ -74,7 +74,7 @@ const CLASS_PALADIN: i32 = 5;
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
 const GOAL_BORE: i32 = 6;
-use crate::borg_flow_take::GOAL_TAKE;
+use crate::decision_api::borg_flow_take::GOAL_TAKE;
 
 /// A literal key (`borg_keypress('R')` etc.).
 fn key(c: u8) -> keycode_t {
@@ -981,7 +981,7 @@ fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why:
     // instead (`caution_stairs_clean_path`; 0 = C).
     if p(Param::caution_stairs_clean_path) != 0 && weight == 0 {
         let percent = p(Param::caution_stairs_block_danger_percent);
-        if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
+        if let Some(k) = crate::decision_api::borg_flow_stairs::stair_path_blocker(st, up, percent) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
             borg_note(st, &format!("# Stairs not reachable: {} in the way ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
             return false;
@@ -1001,7 +1001,7 @@ fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why:
     };
     if weight == 0 && ranged_reach > 0 {
         let percent = p(Param::caution_stairs_block_danger_percent);
-        if let Some(k) = crate::borg_flow_stairs::stair_path_ahead(st, up, percent, reach) {
+        if let Some(k) = crate::decision_api::borg_flow_stairs::stair_path_ahead(st, up, percent, reach) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
             borg_note(st, &format!("# Stairs not reachable: {} ahead, fighting at range ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
             return false;
@@ -1011,7 +1011,7 @@ fn desperate_flow(st: &mut BorgState, up: bool, range: DesperateStairRange, why:
     let ok = if weight > 0 || matches!(range, DesperateStairRange::Remaining(_)) {
         // A stair that is close across the map may be far away on foot.
         // Keep the proximity limit on the route, including any detour.
-        crate::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach)
+        crate::decision_api::borg_flow_stairs::bounded_desperate_flight(st, up, range.moves(), ranged_reach)
     } else if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
     } else {
@@ -1126,7 +1126,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent_down = p(Param::caution_desperate_adjacent_down_distance);
     if b_m <= adjacent_down
         && b_m != -1
-        && (crate::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)"))
+        && (crate::decision_api::borg_flow_stairs::resume_known_up_stair_flight(st, pos_danger) || desperate_flow(st, false, DesperateStairRange::Nearby(adjacent_down), "# Desperate for Stairs (four)"))
     {
         return true;
     }
@@ -1150,7 +1150,6 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
 fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     let mut b_r = -1;
     let mut b_p = -1;
-    let mut p1 = -1;
     let mut b_x = st.borg.c.x;
     let mut b_y = st.borg.c.y;
 
@@ -1234,7 +1233,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             }
 
             // Check danger of that spot
-            p1 = borg_danger(
+            let p1 = borg_danger(
                 st,
                 y1,
                 x1,
@@ -1618,15 +1617,15 @@ pub(crate) fn listed_ranged(st: &BorgState, r_idx: usize) -> bool {
     if p(Param::caution_ranged_only) == 0 || r_idx == 0 || r_idx >= engine::r_max().saturating_sub(1) || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
-    let Some(list) = crate::scary_list::selected() else { return false };
-    let who = crate::scary_list::Situation {
+    let Some(list) = crate::decision_api::scary_list::selected() else { return false };
+    let who = crate::decision_api::scary_list::Situation {
         clevel: st.borg.tr(BI_CLEVEL),
         class: st.borg.tr(BI_CLASS),
         breeder_count: 0,
         breeder_stand: false,
         levels_less: 0,
     };
-    crate::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
+    crate::decision_api::scary_list::ranged_reason(list, r_idx, || engine::race_base_name(r_idx), who).is_some()
 }
 
 /// borg-reborn-rs (#713, #838): race `r_idx` is kept at range: an immobile
@@ -1735,7 +1734,7 @@ fn mobile_danger_at(st: &mut BorgState, y: i32, x: i32) -> i32 {
         if (i32::from(kill.pos.y) - y).abs() > 2 || (i32::from(kill.pos.x) - x).abs() > 2 {
             continue;
         }
-        danger = danger.saturating_add(crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i, true, true));
+        danger = danger.saturating_add(crate::decision_api::borg_danger::borg_danger_one_kill(st, y, x, 1, i, true, true));
     }
     danger
 }
@@ -1930,7 +1929,7 @@ fn best_step_away(st: &mut BorgState) -> Option<usize> {
     // one with the fewest steps to a staircase wins (then the least danger);
     // 0 = the least danger only.
     let to_exit = p(Param::caution_immobile_step_to_exit) != 0;
-    let steps = if to_exit { crate::borg_flow_stairs::stair_steps_around(st) } else { [255; 8] };
+    let steps = if to_exit { crate::decision_api::borg_flow_stairs::stair_steps_around(st) } else { [255; 8] };
     let mobile_first = p(Param::caution_immobile_step_mobile_first) != 0;
     let mut best: Option<(usize, (i32, i32, i32))> = None;
     for i in 0..8 {
@@ -2110,7 +2109,7 @@ mod winning_fight_tests {
 
     #[test]
     fn observed_haste_is_included_without_changing_legacy_speed() {
-        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        let mut kill = crate::decision_api::borg_flow_kill::BorgKill::default();
         kill.speed = 110;
         assert_eq!(super::forecast_monster_speed(&kill), 110);
         kill.observed_fast = true;
@@ -2287,7 +2286,7 @@ pub(crate) fn flight_recall_survivable(st: &mut BorgState) -> bool {
         // Literal contact HP uses the actual walking route. A harmless
         // HEAL/SCARE flag does not turn a distant bite into a ranged hit.
         let forecast = fight_incoming_with(st, i, true);
-        let projectable = forecast.ranged_risk && crate::borg_projection::borg_projectable_pure(
+        let projectable = forecast.ranged_risk && crate::decision_api::borg_projection::borg_projectable_pure(
             st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x);
         let Some(risk_steps) = recall_attack_steps(steps, forecast.ranged_risk, projectable) else { continue };
         reachable += 1;
@@ -2350,7 +2349,7 @@ pub(crate) struct IncomingDamage {
 
 /// mon-move.c:1929-1934 (574b618c): Haste adds ten. Do not assume Slow
 /// persists during a future fight or the Recall delay.
-pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+pub(crate) fn forecast_monster_speed(kill: &crate::decision_api::borg_flow_kill::BorgKill) -> i32 {
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
 }
 
@@ -2458,12 +2457,12 @@ fn winning_fight(st: &mut BorgState) -> bool {
         if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
             continue;
         }
-        if crate::borg_town_hunt::viewed_target(st, &kill) {
+        if crate::decision_api::borg_town_hunt::viewed_target(st, &kill) {
             return false;
         }
         let d = engine::distance(st.borg.c, kill.pos);
-        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
-            if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
+        if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::decision_api::borg_cave_view::BORG_VIEW == 0 {
+            if d <= 1 || crate::decision_api::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
                 return false; // an attacker without a current observable target
             }
             continue;
@@ -2531,7 +2530,7 @@ fn winning_fight(st: &mut BorgState) -> bool {
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
 
-pub(crate) fn fight_regeneration(kill: &crate::borg_flow_kill::BorgKill) -> f64 {
+pub(crate) fn fight_regeneration(kill: &crate::decision_api::borg_flow_kill::BorgKill) -> f64 {
     let max_hp = kill.observed_health.expect("fight needs observed health").1;
     f64::from((i32::from(max_hp) / 100).max(1))
         * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
@@ -2560,7 +2559,7 @@ pub(crate) fn category_attack_safe_with(st: &mut BorgState, target: usize, gate_
     let mut other_danger = 0_i64;
     for i in 1..st.kills.nxt.max(0) as usize {
         if i == target || st.kills.kills[i].r_idx == 0 { continue; }
-        other_danger += i64::from(crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
+        other_danger += i64::from(crate::decision_api::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true)).max(0);
     }
     let limit = i64::from(hp) * i64::from(p(Param::caution_flee_danger_hp_multiplier));
     if !gate_target {
@@ -2584,6 +2583,16 @@ mod category_threat_tests {
 /// #760/#759: before any dungeon flight, including the light/countdown
 /// and depth-return rungs which otherwise precede borg_caution.
 pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
+    match crate::shadow::decision(st, crate::decisions::Decision::FightBeforeFlight) {
+        crate::decisions::Value::Acted(acted) => acted,
+        _ => unreachable!(),
+    }
+}
+
+pub(crate) fn fight_before_flight_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() {
+        crate::decision_tape::mark("policy::caution.fight_before_flight", format!("{:?}", ()));
+    }
     crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
 }
 
@@ -2914,7 +2923,7 @@ pub(crate) fn borg_caution_native(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#840): short of kit, a real danger sends it to the stairs.
     // Its own test, not a branch of the chain above: with `kit_restock` on the
     // restock branch fires first and would mask it (review of #844, finding 3).
-    if crate::borg_kit::leave_danger_percent(st)
+    if crate::decision_api::borg_kit::leave_danger_percent(st)
         .is_some_and(|pct| pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1))
         && !st.borg.goal.fleeing
         && st.borg.near.unique == 0
@@ -3318,10 +3327,10 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
     }
     if st.stairs.less.num != 0 {
         let depth = st.borg.tr(BI_CDEPTH) + 1;
-        if crate::borg_prepared::prepared_c_for_decision(st, depth).is_some()
+        if crate::decision_api::borg_prepared::prepared_c_for_decision(st, depth).is_some()
             || (st.borg.tr(BI_CDEPTH) != 0
                 && (st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_FOOD) < 2))
-            || crate::borg_trip::legacy_sale_hold(st)
+            || crate::decision_api::borg_trip::legacy_sale_hold(st)
         {
             return false;
         }
@@ -3337,20 +3346,20 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
     let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
     let weight = stair_flight_weight(GOAL_FLEE, false);
     if weight > 0 {
-        return crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
+        return crate::decision_api::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight);
     }
     let track = if up { &st.stairs.less } else { &st.stairs.more };
     let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
     if stairs.is_empty() {
         return false;
     }
-    crate::borg_flow::borg_flow_clear(st);
+    crate::decision_api::borg_flow::borg_flow_clear(st);
     for (y, x) in stairs {
         if st.cave.grid(x, y).kill == 0 {
-            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+            crate::decision_api::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
-    crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
+    crate::decision_api::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
     i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
 }
 
@@ -3365,13 +3374,13 @@ pub(crate) fn scary_ranged_no_stairs(st: &mut BorgState) -> bool {
 /// borg-reborn-rs (#539): the monster the ranged rule is about: awake, in
 /// view and not next to the Borg. Recall and Phase Door wait for one, and
 /// `borg_attack` takes only these on a scary level without stairs.
-pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::BorgKill) -> bool {
+pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::decision_api::borg_flow_kill::BorgKill) -> bool {
     ranged_target(
         true,
         &[(
             kill.awake,
             engine::distance(st.borg.c, kill.pos),
-            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0,
+            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::decision_api::borg_cave_view::BORG_VIEW != 0,
         )],
     )
 }
@@ -3469,7 +3478,7 @@ pub(crate) fn ranged_before_recall(st: &mut BorgState) -> bool {
         known.push((
             kill.awake,
             engine::distance(st.borg.c, kill.pos),
-            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0,
+            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::decision_api::borg_cave_view::BORG_VIEW != 0,
         ));
     }
     ranged_target(means, &known) && !stair_reachable(st)
@@ -3776,6 +3785,16 @@ fn recall_pending_escape(on: bool, recalling: i32) -> bool {
 /// Otherwise it stays still one turn (`,`), so each think sees what comes.
 /// 0 = C (explore while waiting; the wait comes after exploration).
 pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
+    match crate::shadow::decision(st, crate::decisions::Decision::RecallWaitNoExplore) {
+        crate::decisions::Value::Acted(acted) => acted,
+        _ => unreachable!(),
+    }
+}
+
+pub(crate) fn recall_wait_no_explore_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() {
+        crate::decision_tape::mark("policy::caution.recall_wait_no_explore", format!("{:?}", ()));
+    }
     if !recall_wait_holds(
         p(Param::caution_recall_wait_no_explore) != 0,
         st.borg.goal.recalling,
@@ -3786,7 +3805,7 @@ pub(crate) fn recall_wait_no_explore(st: &mut BorgState) -> bool {
     let (y, x) = (st.borg.c.y, st.borg.c.x);
     // Review of #762: the rest keeps `borg_check_rest`'s refusals (hungry,
     // weak, unlit, fear, a multiplier just killed, lava).
-    let safe = borg_danger(st, y, x, 1, true, false) <= 0 && crate::borg_flow_misc::borg_check_rest(st, y, x);
+    let safe = borg_danger(st, y, x, 1, true, false) <= 0 && crate::decision_api::borg_flow_misc::borg_check_rest(st, y, x);
     // #567's hold (a monster was near a moment ago) presses its own `,`.
     if safe && recall_rest_held(st) {
         return true;
@@ -4115,24 +4134,24 @@ pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: 
     if targets.is_empty() {
         return false;
     }
-    crate::borg_flow::borg_flow_clear(st);
+    crate::decision_api::borg_flow::borg_flow_clear(st);
     for e in &targets {
-        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+        crate::decision_api::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
     }
-    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
-    crate::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    crate::decision_api::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
+    crate::decision_api::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::decision_api::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 
 /// Flow to the nearest of `exits` and take its first step. When the flow
 /// is committed but no step can be taken, `borg_flow_old` cancels the goal
 /// (`goal.type_0 = 0`), so no `GOAL_FLEE` flow is left for the next think.
 fn breeder_exit_flow(st: &mut BorgState, exits: &[loc]) -> bool {
-    crate::borg_flow::borg_flow_clear(st);
+    crate::decision_api::borg_flow::borg_flow_clear(st);
     for e in exits {
-        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+        crate::decision_api::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
     }
-    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
-    crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    crate::decision_api::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    crate::decision_api::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::decision_api::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 
 /// borg-reborn-rs (#556): with `caution_breeder_avoid`, remember the grid of
@@ -4214,7 +4233,7 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
         .filter(|k| k.r_idx != 0)
         .map(|k| k.pos)
         .collect();
-    let energy = |speed: i32| f64::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    let energy = |speed: i32| f64::from(crate::decision_api::engine::extract_energy(speed.clamp(0, 199) as usize));
     let mut births = 0.0;
     for &i in &breeders {
         let kill = st.kills.kills[i];
@@ -4230,9 +4249,9 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
     // run draws the Borg's random numbers; their state is restored after it
     // (it also leaves an attack ranking in the decision trace and refills the
     // temporary target list, as #584's estimate does).
-    let (quick, value) = crate::engine::rand_state();
+    let (quick, value) = crate::decision_api::engine::rand_state();
     let estimate = crate::borg_fight_attack::borg_attack_estimate(st);
-    crate::engine::set_rand_state(quick, value);
+    crate::decision_api::engine::set_rand_state(quick, value);
     let kills = st.fight_attack.est_kills;
     // Only a turn with something to attack is judged: out of reach is not
     // "cannot be stopped".
@@ -4313,7 +4332,7 @@ pub(crate) fn breeder_recall_due(st: &BorgState) -> bool {
 /// constants.txt) while `k` < 4, never with 4 or more
 /// (`monster_turn_multiply`, mon-move.c).
 fn breed_chance(k: i32) -> f64 {
-    let rate = f64::from(crate::engine::z_info().repro_monster_rate.max(1));
+    let rate = f64::from(crate::decision_api::engine::z_info().repro_monster_rate.max(1));
     if (1..4).contains(&k) {
         1.0 / (f64::from(k) * rate)
     } else {
@@ -4579,7 +4598,7 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
 /// borg-reborn-rs (#622, owner): how many character levels sooner a town
 /// race (race level 0) stops being scary on the named list.
 pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
-    if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
+    if crate::decision_api::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
 }
 
 /// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
@@ -4604,7 +4623,7 @@ pub(crate) fn scary_named_monsters() -> bool {
 pub(crate) fn town_flee_fear_floor(st: &mut BorgState) -> i32 {
     if !town_flee_applies(
         p(Param::caution_town_flee_no_worse),
-        crate::engine::player_depth(),
+        crate::decision_api::engine::player_depth(),
         st.borg.mon.scary || st.borg.goal.fleeing || st.borg.goal.leaving,
     ) {
         return 0;
@@ -4655,11 +4674,11 @@ pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32, note: bool) -> bool {
     if percent <= 0 || max_hp <= 0 { return false; }
     let kill = st.kills.kills[i as usize];
     let r_idx = usize::from(kill.r_idx);
-    if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
+    if r_idx == 0 || r_idx >= usize::from(crate::decision_api::engine::z_info().r_max) - 1 { return false; }
     let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
     let scary = scary_damage_reaches(damage, max_hp, percent);
     if note && scary && !st.borg.mon.scary {
-        let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
+        let name = crate::decision_api::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
         borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
     }
     scary
@@ -4724,13 +4743,13 @@ pub(crate) fn stand_contribution(scare: Scare, never_move: bool, awake_and_fast:
 /// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
 /// character turn, at these speeds.
 fn melee_damage_per_turn(r_idx: usize, monster_speed: i32, player_speed: i32) -> i32 {
-    let never_blow = crate::engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW);
-    let level = i32::from(crate::engine::race(r_idx).level);
-    let blows: Vec<_> = (0..usize::from(crate::engine::z_info().mon_blows_max))
-        .map_while(|k| crate::engine::race_blow(r_idx, k))
+    let never_blow = crate::decision_api::engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW);
+    let level = i32::from(crate::decision_api::engine::race(r_idx).level);
+    let blows: Vec<_> = (0..usize::from(crate::decision_api::engine::z_info().mon_blows_max))
+        .map_while(|k| crate::decision_api::engine::race_blow(r_idx, k))
         .map(|b| (b.base, b.dice, b.sides, b.m_bonus))
         .collect();
-    let energy = |speed: i32| i32::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    let energy = |speed: i32| i32::from(crate::decision_api::engine::extract_energy(speed.clamp(0, 199) as usize));
     melee_damage(&blows, level, never_blow, energy(monster_speed), energy(player_speed))
 }
 
@@ -5101,7 +5120,7 @@ fn fast_neighbour_counts(st: &mut BorgState, kill: usize) -> bool {
         return true;
     }
     let (y, x) = (st.borg.c.y, st.borg.c.x);
-    let danger = crate::borg_danger::borg_danger_one_kill(st, y, x, 1, kill as i32, true, false);
+    let danger = crate::decision_api::borg_danger::borg_danger_one_kill(st, y, x, 1, kill as i32, true, false);
     danger_share_reaches(danger, st.borg.tr(BI_CURHP), percent)
 }
 
@@ -5143,7 +5162,7 @@ fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
         && !rising_holds_flee_descent(st);
     // borg-reborn-rs (#840): a Borg short of kit, on an up staircase, leaves at
     // the first danger of `kit_leave_danger_percent` of its HP.
-    let kit = crate::borg_kit::leave_danger_percent(st)
+    let kit = crate::decision_api::borg_kit::leave_danger_percent(st)
         .is_some_and(|pct| up && pos_danger >= (st.borg.tr(BI_CURHP) * pct / 100).max(1));
     if !(kit || stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold)) {
         return false;
@@ -5188,7 +5207,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         st.borg.stair_more = true;
     }
 
-    if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
+    if crate::decision_api::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
         st.borg.stair_more = true;
     }
 
@@ -5283,13 +5302,13 @@ pub(crate) fn monster_died(st: &mut BorgState, k: i32) {
 /// (the engine's distance) of `c`. A monster that never moves (a floating
 /// eye, a mold) cannot come back.
 #[cfg(test)]
-fn mover_seen_within(kills: &[crate::borg_flow_kill::BorgKill], c: loc, range: i32, never_moves: impl Fn(u16) -> bool) -> bool {
+fn mover_seen_within(kills: &[crate::decision_api::borg_flow_kill::BorgKill], c: loc, range: i32, never_moves: impl Fn(u16) -> bool) -> bool {
     nearest_mover_seen_in(kills, c, range, never_moves).is_some()
 }
 
 /// The position in `kills` of the nearest such monster.
 fn nearest_mover_seen_in(
-    kills: &[crate::borg_flow_kill::BorgKill],
+    kills: &[crate::decision_api::borg_flow_kill::BorgKill],
     c: loc,
     range: i32,
     never_moves: impl Fn(u16) -> bool,
@@ -5430,7 +5449,7 @@ fn cornered_shape(adjacent: i32, no_escape: bool, outmatched: bool, surrounded: 
 /// around). A staircase farther than the cap leaves the cost at the Borg's
 /// grid unset, so the commit fails and nothing is noted.
 fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
-    if rising_holds_flee_descent(st) || crate::borg_flow_stairs::more_refused(st, false) {
+    if rising_holds_flee_descent(st) || crate::decision_api::borg_flow_stairs::more_refused(st, false) {
         return false;
     }
     // Desperate before the enqueue too: `borg_flow_enqueue_grid` rates an
@@ -5440,14 +5459,14 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     let weight = stair_flight_weight(GOAL_FLEE, false);
     let depth = flee_down_depth(max_cost);
     let ok = if weight > 0 {
-        crate::borg_flow_stairs::weighted_down_flight(st, depth, weight)
+        crate::decision_api::borg_flow_stairs::weighted_down_flight(st, depth, weight)
     } else {
-        crate::borg_flow::borg_flow_clear(st);
-        crate::borg_flow_stairs::enqueue_down_stairs(st);
-        crate::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
-        crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+        crate::decision_api::borg_flow::borg_flow_clear(st);
+        crate::decision_api::borg_flow_stairs::enqueue_down_stairs(st);
+        crate::decision_api::borg_flow::borg_flow_spread(st, depth, true, false, false, -1, false);
+        crate::decision_api::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
             st.borg.flight_to_stairs = true; // #614: a flight to a staircase
-            crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+            crate::decision_api::borg_flow::borg_flow_old(st, GOAL_FLEE)
         }
     };
     st.borg.status.desperate = false;
@@ -5489,7 +5508,7 @@ fn flee_down_depth(max_cost: i32) -> i32 {
 #[cfg(test)]
 mod recall_watch_tests {
     use super::{mover_seen_within, recall_watch_holds};
-    use crate::borg_flow_kill::BorgKill;
+    use crate::decision_api::borg_flow_kill::BorgKill;
     use crate::headers::z_type_h::loc;
 
     /// Review of #640: only a monster seen now refreshes the watch; a record
@@ -6754,24 +6773,24 @@ mod breeder_pause_tests {
 // :767, :840-860 (574b618c), mon-desc.h:45 and mon-desc.c:143-165.
 #[derive(Clone, Default, PartialEq)]
 pub struct UnseenBumps {
-    step: Option<(loc, loc, bool)>,
-    shot: Option<UnseenOilShot>,
-    grids: Vec<UnseenBump>,
+    pub step: Option<(loc, loc, bool)>,
+    pub shot: Option<UnseenOilShot>,
+    pub grids: Vec<UnseenBump>,
 }
 
 #[derive(Clone, Copy, PartialEq)]
-struct UnseenOilShot {
-    grid: loc,
-    dead: bool,
-    resolved: bool,
+pub struct UnseenOilShot {
+    pub grid: loc,
+    pub dead: bool,
+    pub resolved: bool,
 }
 
 #[derive(Clone, PartialEq)]
-struct UnseenBump {
-    grid: loc,
-    at: i32,
-    throws: i32,
-    detection_read: bool,
+pub struct UnseenBump {
+    pub grid: loc,
+    pub at: i32,
+    pub throws: i32,
+    pub detection_read: bool,
 }
 
 fn same_grid(a: loc, b: loc) -> bool { a.x == b.x && a.y == b.y }
@@ -7073,7 +7092,7 @@ mod unseen_oil_lifecycle_tests {
             assert!(st.borg.unseen_bumps.shot.is_none());
         }
         let mut st = pending();
-        crate::borg_io::borg_flush(&mut st);
+        crate::decision_api::borg_io::borg_flush(&mut st);
         assert!(st.borg.unseen_bumps.shot.is_none());
     }
 }
@@ -7085,6 +7104,16 @@ pub(crate) fn unseen_bump_cancel_shot(st: &mut BorgState) {
 
 /// #811: apply self-care before routing in darkness. This cannot start a flow.
 pub(crate) fn lightless_self_care(st: &mut BorgState, danger: i32) -> bool {
+    match crate::shadow::decision(st, crate::decisions::Decision::LightlessSelfCare { danger }) {
+        crate::decisions::Value::Acted(acted) => acted,
+        _ => unreachable!(),
+    }
+}
+
+pub(crate) fn lightless_self_care_native(st: &mut BorgState, danger: i32) -> bool {
+    if crate::decision_tape::active() {
+        crate::decision_tape::mark("policy::caution.lightless_self_care", format!("{:?}", (danger,)));
+    }
     // Cure known poison before paying for the walk with HP, even when the
     // ordinary fight rule would wait for lower HP.
     (st.borg.tr(BI_ISPOISONED) != 0
@@ -7112,18 +7141,18 @@ impl DesperateStairRange {
 /// #1052: caution has had its full turn to act on the current danger.
 /// Replan the remaining escape before the dungeon thinker resumes exploring.
 fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
-    let Some(handoff) = st.stairs.off_stair_handoff.down else { return false; };
+    let Some(handoff) = st.stairs.emergency_descent() else { return false; };
     if !handoff.can_resume(st.borg.c, st.borg.time.level, st.borg.time.now, danger, st.borg.tr(BI_CURHP))
         || st.borg.tr(BI_ISCONFUSED) != 0
         || rising_holds_descent(st, danger)
     {
-        st.stairs.off_stair_handoff.down = None;
+        st.stairs.clear_emergency_descent();
         return false;
     }
 
     if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE {
-        st.stairs.off_stair_handoff.down = None;
-        if !rising_holds_flee_descent(st) && !crate::borg_flow_stairs::more_refused(st, false) {
+        st.stairs.clear_emergency_descent();
+        if !rising_holds_flee_descent(st) && !crate::decision_api::borg_flow_stairs::more_refused(st, false) {
             borg_note(st, "# Taking down stairs after emergency flight (#1052)");
             borg_keypress(st, key(b'>'));
             return true;
@@ -7134,7 +7163,7 @@ fn resume_emergency_down_flight(st: &mut BorgState, danger: i32) -> bool {
         return true;
     }
 
-    st.stairs.off_stair_handoff.down = None;
+    st.stairs.clear_emergency_descent();
     false
 }
 

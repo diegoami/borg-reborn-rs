@@ -143,7 +143,7 @@ pub struct Borg {
     /// as (the think's `time.now`, the verdict, whether its attack or boost
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
-    pub(crate) phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     /// borg-reborn-rs (#556): the grids where a breeder was last known on
     /// this level, with when (the kill's `when`); cleared on a new level.
     pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,

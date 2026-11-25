@@ -58,8 +58,8 @@ pub(crate) fn watch_for_rest(st: &mut BorgState) {
         return;
     }
     if let Some(k) = crate::borg_caution::nearest_mover_seen(st, param(Param::recover_rest_monster_distance)) {
-        st.borg.rest_watch_turn = crate::engine::game_turn();
-        st.borg.rest_watch_depth = crate::engine::player_depth();
+        st.borg.rest_watch_turn = crate::decision_api::engine::game_turn();
+        st.borg.rest_watch_depth = crate::decision_api::engine::player_depth();
         st.borg.rest_watch_kill = k;
     }
 }
@@ -84,6 +84,16 @@ fn rest_held_for_monster(st: &mut BorgState) -> bool {
 /// without the note. `borg_think_dungeon` also holds the walk to a recovery
 /// grid with it (review of #645), as #614 does with `holding_for_stairs`.
 pub(crate) fn holding_for_monster(st: &mut BorgState) -> bool {
+    match crate::shadow::decision(st, crate::decisions::Decision::HoldRestForMonster) {
+        crate::decisions::Value::Acted(acted) => acted,
+        _ => unreachable!(),
+    }
+}
+
+pub(crate) fn holding_for_monster_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() {
+        crate::decision_tape::mark("policy::recovery.holding_for_monster", format!("{:?}", ()));
+    }
     holding_for_monster_ago(st).is_some()
 }
 
@@ -100,8 +110,8 @@ fn holding_for_monster_ago(st: &mut BorgState) -> Option<i32> {
         .iter()
         .any(|&f| st.borg.tr(f) != 0);
     watch_for_rest(st);
-    let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
-    let here = st.borg.rest_watch_depth == crate::engine::player_depth();
+    let ago = crate::decision_api::engine::game_turn() - st.borg.rest_watch_turn;
+    let here = st.borg.rest_watch_depth == crate::decision_api::engine::player_depth();
     rest_monster_hold(turns, st.borg.rest_watch_turn, ago, here, impaired).then_some(ago)
 }
 
@@ -163,7 +173,7 @@ fn flight_now(st: &BorgState) -> (bool, i32) {
     }
     let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
     let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= param(Param::recover_rest_reach_stairs_memory);
-    let here = st.borg.flight_depth == crate::engine::player_depth();
+    let here = st.borg.flight_depth == crate::decision_api::engine::player_depth();
     (still_fleeing && recent && here && st.borg.flight_time > 0, st.borg.flight_steps)
 }
 
@@ -595,7 +605,7 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
     // only when a rest is due and the HP test passes.
     let hunt_first = rest_hp && hunt_now(st);
     // Noted once per stretch of skipped rests, not every think.
-    let noted = NOT_RESTING_NOTED.with(|n| n.replace(rest_hp && hunt_first));
+    let noted = crate::decision_api::borg_recover::note_rest_hunt(rest_hp && hunt_first);
     if rest_hp && hunt_first && !noted {
         borg_note(st, "# Not resting: breeders to hunt.");
     }
@@ -687,7 +697,7 @@ fn breeder_rest_decision(st: &mut BorgState) -> BreederRest {
     }
     let ours = st.borg.breeder_leaving && st.borg.goal.leaving;
     let engaged = crate::borg_caution::breeder_engaged_but_own_leave(st, ours);
-    breeder_choice(crate::borg_flow_kill::breeder_hunt_now_with(st, engaged))
+    breeder_choice(crate::decision_api::borg_flow_kill::breeder_hunt_now_with(st, engaged))
 }
 
 /// Hunt when the hunt applies, otherwise leave.
@@ -1114,7 +1124,7 @@ thread_local! {
 /// `borg_flow_kill::breeder_hunt_now`'s scan runs only when it passes.
 fn hunt_now(st: &mut BorgState) -> bool {
     hunt_before_rest(true, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::recover_breeder_hunt_hp_percent))
-        && crate::borg_flow_kill::breeder_hunt_now(st)
+        && crate::decision_api::borg_flow_kill::breeder_hunt_now(st)
 }
 
 /// borg-reborn-rs (#558): skip resting to hunt breeders while `hunt` (the
@@ -1399,4 +1409,8 @@ mod unseen_tests {
 // borg-reborn-rs (#286): the root chooses one effect-driving policy.
 pub fn borg_recover(st:&mut BorgState)->bool {
 match crate::shadow::decision(st,crate::decisions::Decision::Recover) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+pub(crate) fn note_rest_hunt(active: bool) -> bool {
+    NOT_RESTING_NOTED.with(|noted| noted.replace(active))
 }

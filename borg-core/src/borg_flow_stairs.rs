@@ -169,15 +169,15 @@ impl StairHandoffStep {
 }
 
 #[derive(Clone, Copy, PartialEq)]
-pub(crate) struct EmergencyDownHandoff {
+pub struct EmergencyDownHandoff {
     step: StairHandoffStep,
-    pub(crate) steps_left: i32,
+    pub steps_left: i32,
     expected_danger: i32,
     hp: i32,
 }
 
 impl EmergencyDownHandoff {
-    pub(crate) fn can_resume(self, here: loc, level_started: i32, turn: i32, danger: i32, hp: i32) -> bool {
+    pub fn can_resume(self, here: loc, level_started: i32, turn: i32, danger: i32, hp: i32) -> bool {
         self.step.arrived(here, level_started, turn) && danger <= self.expected_danger && hp >= self.hp
     }
 }
@@ -186,6 +186,16 @@ impl EmergencyDownHandoff {
 pub(crate) struct OffStairHandoff {
     last_dark_step: Option<StairHandoffStep>,
     pub(crate) down: Option<EmergencyDownHandoff>,
+}
+
+impl StairsState {
+    pub fn emergency_descent(&self) -> Option<EmergencyDownHandoff> {
+        self.off_stair_handoff.down
+    }
+
+    pub fn clear_emergency_descent(&mut self) {
+        self.off_stair_handoff.down = None;
+    }
 }
 
 impl OffStairHandoff {

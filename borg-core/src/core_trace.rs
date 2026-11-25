@@ -23,13 +23,13 @@ struct Selection {
 
 /// One native attack-selector invocation. Multiple attempts in one think are
 /// retained; nested thinks use their own Selection frames. Data never feeds policy.
-#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
-pub(crate) struct AttackRanking {
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AttackRanking {
     candidates: Vec<AttackCandidate>,
     winner: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 struct AttackCandidate {
     attack_id: i32,
     attack_name: Option<String>,
@@ -48,7 +48,7 @@ struct AttackCandidate {
 }
 
 impl AttackRanking {
-    pub(crate) fn candidate(&mut self, class: i32, id: i32, raw: i32,
+    pub fn candidate(&mut self, class: i32, id: i32, raw: i32,
         result: &crate::attack_preference::Candidate, changed: bool) {
         self.candidates.push(AttackCandidate {
             attack_id: id,

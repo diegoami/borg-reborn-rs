@@ -2,6 +2,8 @@
 //! No danger policy, mutable state, RNG, keys or engine effects are exposed.
 use crate::state::BorgState;
 pub use crate::params::{value as param, Param};
+
+pub fn resolved_param(param: Param) -> (i32, &'static str) { crate::params::resolved(param) }
 pub use crate::engine::{adj_dex_safe, ddx_ddd, ddy_ddd, extract_energy,
     game_turn, race_flag_has, square_in_bounds, square_in_bounds_fully, z_info};
 pub use crate::borg_cave_util::{borg_cave_floor_grid as floor_grid,

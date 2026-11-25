@@ -30,7 +30,7 @@ use crate::decision_api::borg_item_use::{
 use crate::decision_api::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
 use crate::decision_api::borg_projection::{borg_distance, borg_los, borg_target};
 use crate::borg_update::Detect;
-use crate::borg_cave_view::BORG_VIEW;
+use crate::decision_api::borg_cave_view::BORG_VIEW;
 use crate::decision_api::engine;
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -550,7 +550,7 @@ pub(crate) fn fox_form_before_town_step(st: &mut BorgState, why: i32, steps_left
         || on_stairs(st)
         || !borg_spell_okay_fail(st, FOX_FORM, fail)
         || !mana_kept(
-            st.borg.tr(BI_CURSP) - crate::borg_magic::borg_get_spell_power(st, FOX_FORM),
+            st.borg.tr(BI_CURSP) - crate::decision_api::borg_magic::borg_get_spell_power(st, FOX_FORM),
             st.borg.tr(BI_MAXSP),
             st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level),
             param(Param::recover_mana_rest_sp_tenths),
@@ -756,7 +756,7 @@ mod fox_form_tests {
         assert_eq!(super::change_back_answer(&mut st), b'y');
         // Review of #594: a flushed `v` takes its flag with it.
         st.borg.fox_revert = true;
-        crate::borg_io::borg_flush(&mut st);
+        crate::decision_api::borg_io::borg_flush(&mut st);
         assert_eq!(super::change_back_answer(&mut st), b'y', "a flushed change back answers no later prompt");
     }
 
@@ -774,7 +774,7 @@ mod fox_form_tests {
 /// the site, so a game's messages say why every Phase Door happened.
 /// docs/PHASE-DOOR.md lists each site's trigger and settings.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub(crate) enum PhaseSite {
+pub enum PhaseSite {
     /// #781: confirmed unseen bump, after bounded oil attempts.
     UnseenBump,
     /// `borg_escape` 1: danger far above the HP, after every teleport failed.
@@ -816,7 +816,7 @@ pub(crate) enum PhaseSite {
 
 impl PhaseSite {
     /// The site's name in the notes (and in docs/PHASE-DOOR.md).
-    pub(crate) fn label(self) -> &'static str {
+    pub fn label(self) -> &'static str {
         match self {
             PhaseSite::UnseenBump => "unseen bump",
             PhaseSite::Emergency => "escape 1 emergency",
@@ -843,7 +843,7 @@ impl PhaseSite {
 /// borg-reborn-rs (#584): what a site checks before it phases. Each site keeps
 /// the check it had (C's, plus #539's), so the refactor plays the same keys.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub(crate) enum PhaseCheck {
+pub enum PhaseCheck {
     /// `borg_caution_phase`: the ability, #539's "a monster next to me", and
     /// at most `tolerance` scary landing grids of 100, looking `horizon`
     /// turns ahead.
@@ -918,7 +918,7 @@ pub(crate) fn phase_door(
 
 /// borg-reborn-rs (#584, owner): what the rule decides in a think.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub(crate) enum PhaseVerdict {
+pub enum PhaseVerdict {
     /// An enemy on an adjacent square and the fight looks lost: the site's
     /// own check and Phase Door follow.
     Phase,
@@ -1387,7 +1387,7 @@ pub struct TeleportBlock {
     /// The equipment the curse may sit on, as it was when learned:
     /// `(slot, kind, artifact, weight)`. The named item's slot alone; every
     /// worn item when the message named none.
-    watched: Vec<(usize, u32, u8, i16)>,
+    pub watched: Vec<(usize, u32, u8, i16)>,
 }
 
 /// The identity of a worn item that survives learning its runes.
@@ -1458,7 +1458,7 @@ pub(crate) fn teleport_block_message(st: &mut BorgState, msg: &[u8]) {
 impl TeleportBlock {
     /// Whether every item the curse may sit on is still the one worn when it
     /// was learned; `worn` is the identity of a slot now.
-    fn holds(&self, worn: impl Fn(usize) -> Option<(usize, u32, u8, i16)>) -> bool {
+    pub fn holds(&self, worn: impl Fn(usize) -> Option<(usize, u32, u8, i16)>) -> bool {
         self.watched.iter().all(|&w| worn(w.0) == Some(w))
     }
 }

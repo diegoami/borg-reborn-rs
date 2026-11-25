@@ -5,11 +5,13 @@ use borg_rs::{
     memory::BorgState,
 };
 pub mod attack;
+mod attack_preference;
 pub mod caution;
 pub mod defence;
 pub mod equipment_identify;
 pub mod equipment_wear;
 pub mod escape;
+mod fast_fragile;
 pub mod home_power;
 pub mod item_use;
 pub mod power;
@@ -131,6 +133,13 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         }
         Decision::Escape { b_q } => Value::Acted(escape::borg_escape(st, b_q)),
         Decision::Recover => Value::Acted(recovery::borg_recover(st)),
+        Decision::FightBeforeFlight => Value::Acted(caution::fight_before_flight(st)),
+        Decision::AttackOnSight => Value::Acted(attack::attack_on_sight(st)),
+        Decision::RecallWaitNoExplore => Value::Acted(caution::recall_wait_no_explore(st)),
+        Decision::LightlessSelfCare { danger } => {
+            Value::Acted(caution::lightless_self_care(st, danger))
+        }
+        Decision::HoldRestForMonster => Value::Acted(recovery::holding_for_monster(st)),
         Decision::Defend { p1 } => Value::Acted(defence::borg_defend(st, p1)),
         Decision::AttackLaunchBolt {
             rad,

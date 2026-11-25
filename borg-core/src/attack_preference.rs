@@ -7,7 +7,7 @@ use crate::borg_headers::borg_fight_attack_h::*;
 use crate::params::{self, Param};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum Family { Melee, Projectile, Thrown, Spell, Device, Activation, Wait }
+pub enum Family { Melee, Projectile, Thrown, Spell, Device, Activation, Wait }
 
 impl Family {
     pub(crate) fn name(self) -> &'static str {
@@ -24,7 +24,7 @@ impl Family {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) struct AttackKind {
+pub struct AttackKind {
     pub name: &'static str,
     pub family: Family,
 }
@@ -262,7 +262,7 @@ pub(crate) fn adjust(raw: i32, weight: i32) -> i32 {
     ((i64::from(raw) * i64::from(weight)) / 1000).clamp(1, i64::from(i32::MAX)) as i32
 }
 
-pub(crate) struct Candidate {
+pub struct Candidate {
     pub attack: Option<AttackKind>,
     pub parameter: Option<Param>,
     pub weight: i32,

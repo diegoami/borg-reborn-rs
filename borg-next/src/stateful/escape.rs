@@ -20,6 +20,7 @@ use borg_rs::decision_api::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use borg_rs::decision_api::borg_cave_util::{
     borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid,
 };
+use borg_rs::decision_api::borg_cave_view::BORG_VIEW;
 use borg_rs::decision_api::borg_danger::borg_danger;
 use borg_rs::decision_api::borg_flow_kill::borg_shoot_scoot_safe;
 use borg_rs::decision_api::borg_headers::borg_h::BORG_PLAYS_RISKY;
@@ -39,6 +40,7 @@ use borg_rs::decision_api::headers::list_options_h::OPT_birth_force_descend;
 use borg_rs::decision_api::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_NONE};
 use borg_rs::decision_api::headers::ui_event_h::keycode_t;
 use borg_rs::decision_api::headers::z_type_h::loc;
+pub(crate) use borg_rs::decision_api::phase_types::{PhaseCheck, PhaseSite, PhaseVerdict};
 use borg_rs::memory::BorgState;
 use borg_rs::threat_facts::{param, Param};
 
@@ -70,7 +72,7 @@ fn rand_spread(a: i32, d: i32) -> i32 {
 }
 
 /// "Reset timer if borg was in a anti-summon corridor".
-fn reset_antisummon(st: &mut BorgState) {
+pub(crate) fn reset_antisummon(st: &mut BorgState) {
     if borg_timer(st, st.borg.time.antisummon) < param(Param::escape_antisummon_reset_turns) {
         st.borg.time.antisummon = 0;
     }
@@ -83,7 +85,20 @@ fn phase_not_escape(st: &mut BorgState) {
 
 /// Attempt to induce WORD_OF_RECALL
 /// artifact activations added throughout this code
-pub fn borg_recall(st: &mut BorgState) -> bool {
+/// #758: flight-only entry point. The failed-teleport fallback sets flight
+/// flags; borg_caution later reaches this same entry point. Trip-home calls
+/// continue to call borg_recall directly, without this gate.
+pub(crate) fn borg_recall_for_flight(st: &mut BorgState) -> bool {
+    // Match borg_recall's existing pending gate before forecasting: this
+    // is not a new read and must not be logged as a blocked Recall.
+    if st.borg.goal.recalling != 0 {
+        return false;
+    }
+    crate::stateful::caution::flight_recall_survivable(st) && borg_recall(st)
+}
+
+/// Ordinary Recall, including trips home; no flight-survival policy here.
+pub(crate) fn borg_recall(st: &mut BorgState) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark("policy::escape.borg_recall", format!("{:?}", ()));
     }
@@ -163,7 +178,7 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
 /// will see that several monsters are approaching him and he may
 /// become surrounded then die.  This routine looks at near-by monsters
 /// and determines the likelihood of him getting surrounded.
-pub fn borg_surrounded(st: &mut BorgState) -> bool {
+pub(crate) fn borg_surrounded(st: &mut BorgState) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark("policy::escape.borg_surrounded", format!("{:?}", ()));
     }
@@ -313,7 +328,7 @@ pub fn borg_surrounded(st: &mut BorgState) -> bool {
 /// This method is used in town to chase the stairs.
 ///
 /// XXX XXX XXX We should attempt to walk "around" buildings.
-pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
+pub(crate) fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark("policy::escape.borg_freedom", format!("{:?}", (y, x,)));
     }
@@ -450,23 +465,560 @@ fn count_scary(
         let p = borg_danger(st, y, x, turns, true, false);
 
         // if *very* scary, do not allow jumps at all
-        if p > crate::Read::new(st).character().curhp() {
+        // borg-reborn-rs (#556): a landing near a remembered breeder is
+        // scary too (a Phase Door into the colony; no random numbers drawn).
+        if p > crate::Read::new(st).character().curhp()
+            || crate::stateful::caution::near_known_breeder(st, x, y)
+        {
             n += 1;
         }
     }
     n
 }
 
-/// Help determine if PHASE_DOOR seems like a good idea
-pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
-    if borg_rs::decision_tape::active() {
-        borg_rs::decision_tape::mark(
-            "policy::escape.borg_caution_phase",
-            format!("{:?}", (emergency, turns,)),
-        );
+/// borg-reborn-rs (#539, owner): "do not phase door when a monster is still
+/// distant". With `escape_phase_adjacent_only`, a Phase Door is pointless
+/// unless a known awake monster is next to the Borg, or one in view can
+/// hurt it from where it is (spells, breath, missiles): phasing away from a
+/// monster that has yet to arrive only spends the scroll (Grip, speed +10,
+/// found the Priest 809881907 again within a turn).
+pub(crate) fn phase_is_pointless(st: &mut BorgState) -> bool {
+    if param(Param::escape_phase_adjacent_only) == 0 {
+        // #539: the ranged-attack rule stands on its own switch.
+        return crate::stateful::caution::ranged_before_recall(st) && !adjacent_awake(st);
     }
+    let mut monsters = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0
+            || engine::r_max() == 0
+            || kill.r_idx as i32 >= engine::r_max() as i32 - 1
+        {
+            continue;
+        }
+        monsters.push((
+            kill.awake,
+            engine::distance(st.borg.c, kill.pos),
+            kill.ranged_attack != 0,
+            st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0,
+        ));
+    }
+    // #539 (owner): with no stairs, the best ranged attack comes before a
+    // Phase Door too, unless a monster is already next to the Borg.
+    let adjacent = monsters.iter().any(|&(awake, d, _, _)| awake && d <= 1);
+    !phase_helps(&monsters) || (!adjacent && crate::stateful::caution::ranged_before_recall(st))
+}
+
+/// An awake known monster next to the Borg.
+fn adjacent_awake(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+    })
+}
+
+/// The known monsters as (awake, distance, ranged attack, in view): a phase
+/// helps against an awake adjacent monster or an awake one in view with a
+/// ranged attack.
+fn phase_helps(monsters: &[(bool, i32, bool, bool)]) -> bool {
+    monsters
+        .iter()
+        .any(|&(awake, d, ranged, view)| awake && (d <= 1 || (ranged && view)))
+}
+
+/// borg-reborn-rs (#551): `escape_fox_form` is on.
+pub(crate) fn fox_form_on() -> bool {
+    param(Param::escape_fox_form) != 0
+}
+
+/// borg-reborn-rs (#620): `escape_fox_form` or `escape_fox_form_town` is
+/// on: the Borg casts the shape, so the change back is its own (the prompt
+/// answer, the revert before a blow, at a shop door).
+pub(crate) fn any_fox_form_on() -> bool {
+    fox_form_on() || param(Param::escape_fox_form_town) != 0
+}
+
+/// borg-reborn-rs (#551): the player is in fox shape.
+pub(crate) fn is_fox() -> bool {
+    engine::player_is_shapechanged() && engine::player_shape_name() == b"fox"
+}
+
+/// borg-reborn-rs (#551): queue the Borg's own change back from fox shape:
+/// `v` (a command that asks), answered `r` by the prompt handler. Changing
+/// back uses no energy (`player_resume_normal_shape`).
+pub(crate) fn queue_fox_revert(st: &mut BorgState) {
+    st.borg.fox_revert = true;
+    borg_keypress(st, u32::from(b'v'));
+}
+
+/// borg-reborn-rs (#551, owner): a fox does not fight. Before a melee blow
+/// (an attack or a step into a monster), the Borg changes back; it fights
+/// in its own shape from the next think. Other attacks are item or spell
+/// commands, which change back through the game's prompt.
+pub(crate) fn revert_fox_to_fight(st: &mut BorgState) -> bool {
+    if !(any_fox_form_on() && is_fox()) {
+        return false;
+    }
+    borg_note(st, "# Fox Form: reverting to fight");
+    queue_fox_revert(st);
+    true
+}
+
+/// borg-reborn-rs (#584): the one Phase Door decision. `check` is the site's
+/// own check; `cast` reads, casts or activates in the site's own order (a
+/// site's list may also hold a teleport, as C's did). Notes the outcome with
+/// the site, the HP, the danger here when the site knows it, and the nearest
+/// awake monster. Returns whether the Borg acted.
+pub(crate) fn phase_door(
+    st: &mut BorgState,
+    site: PhaseSite,
+    check: PhaseCheck,
+    danger: Option<i32>,
+    cast: impl FnOnce(&mut BorgState) -> bool,
+) -> bool {
+    // borg-reborn-rs (#829): no site may skip it. A teleport curse stops
+    // Phase Door too (it is a short `effect_handler_TELEPORT`); a no-teleport
+    // grid does not (`dis` 10 is not above 10), so the grid is not asked.
+    if teleport_stopped(st) {
+        borg_note(
+            st,
+            &format!("# Phase ({}): no, teleport is blocked", site.label()),
+        );
+        return false;
+    }
+    // borg-reborn-rs (#584, owner): the one rule, before the site's own check.
+    // It only refuses the Phase Door: the site goes on with its other escapes,
+    // and the rule's attack or boost waits until no escape acted
+    // (`phase_rule_act`, from `borg_caution`).
+    // Shoot N Scoot's own check answers first (re-review of #612): it only
+    // passes with a monster next to the Borg, so asking the rule before it
+    // made two thirds of the rule's notes on turns with nothing adjacent.
+    let rule = site != PhaseSite::UnseenBump
+        && param(Param::escape_phase_adjacent_rule) != 0
+        && crate::Read::new(st).supplies().aphase() > 0;
+    let site_first = matches!(check, PhaseCheck::ShootScoot { .. });
+    if rule && !site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
+        return false;
+    }
+    let checked = match check {
+        PhaseCheck::Landing { tolerance, horizon } => caution_phase(st, site, tolerance, horizon),
+        PhaseCheck::MonsterNear => {
+            // With #584's rule on, the rule decides instead of #539.
+            let pointless = param(Param::escape_phase_adjacent_rule) == 0 && phase_is_pointless(st);
+            if pointless {
+                borg_note(
+                    st,
+                    &format!("# Phase ({}): no, no monster next to me", site.label()),
+                );
+            }
+            !pointless
+        }
+        PhaseCheck::ShootScoot {
+            tolerance,
+            horizon,
+            danger,
+        } => borg_shoot_scoot_safe(st, tolerance, horizon, danger),
+        PhaseCheck::None => true,
+    };
+    if !checked {
+        return false;
+    }
+    if rule && site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
+        return false;
+    }
+    let done = cast(st);
+    if done {
+        let note = phase_note(
+            site,
+            crate::Read::new(st).character().curhp(),
+            crate::Read::new(st).character().maxhp(),
+            danger,
+            nearest_awake(st),
+        );
+        borg_note(st, &note);
+    }
+    done
+}
+
+/// The rule (`escape_phase_adjacent_rule`): Phase Door only with an awake
+/// enemy on an adjacent square and the fight judged lost, the danger where
+/// the Borg stands at or above `escape_phase_lost_danger_percent` of the
+/// current HP.
+fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> PhaseVerdict {
+    if !adjacent {
+        PhaseVerdict::Shoot
+    } else if i64::from(danger) * 100 >= i64::from(hp) * i64::from(lost_percent) {
+        PhaseVerdict::Phase
+    } else {
+        PhaseVerdict::Fight
+    }
+}
+
+/// borg-reborn-rs (#584, owner): whether the adjacent fight is lost, by
+/// `escape_phase_lost_test` (owner, 2026-11-19: both comparisons behind a
+/// setting):
+/// - 0: the danger here at or above `escape_phase_lost_danger_percent` of
+///   the HP (`phase_verdict`);
+/// - 1 (compiled): the fight compared. Killing the adjacent awake monsters
+///   one after another (their HP left, `kill.power` less `kill.injury`
+///   percent) takes more turns than the danger here needs to kill the Borg
+///   (`fight_lost_by`). The Borg's damage a turn is the larger of its melee
+///   against that monster (`borg_thrust_damage_one`) and the true damage of
+///   the attack it would choose now, of any kind (`borg_attack_estimate`: a
+///   Mage casts next to an enemy). (Review of #612's Druid death:
+///   `borg_attack`'s ranking value adds the kill and danger bonuses to the
+///   damage, so the true damage is tracked apart.)
+/// - 2: as 1, and the expected landing is safer than here: the mean danger
+///   of the sampled landing grids (`landing_danger`) below the danger here.
+fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
+    match param(Param::escape_phase_lost_test) {
+        0 => {
+            phase_verdict(
+                true,
+                here,
+                hp,
+                param(Param::escape_phase_lost_danger_percent),
+            ) == PhaseVerdict::Phase
+        }
+        test => {
+            // The attack the Borg would choose now, of any kind (a Mage casts
+            // next to an enemy too; owner, 2026-11-19): its true damage.
+            let best = crate::stateful::attack::borg_attack_estimate(st).unwrap_or(0);
+            let lost = if param(Param::escape_phase_lost_mana) != 0 {
+                // borg-reborn-rs (#625, owner): the chosen attack's damage
+                // weighed by its success chance, for as many uses as the mana
+                // (or the charges) pay for; then the best attack that is not a
+                // spell, or melee.
+                let cost = st.fight_attack.est_cost;
+                let fallback = st.fight_attack.est_fallback;
+                let foes = adjacent_foes(st);
+                let primary = Primary::of(best, cost);
+                let lost = fight_turns(&foes, primary, fallback)
+                    .is_none_or(|t| t * f64::from(here) > f64::from(hp));
+                let list: Vec<String> = foes
+                    .iter()
+                    .map(|(left, melee)| format!("{left} HP (melee {melee})"))
+                    .collect();
+                let uses = primary.uses.map_or("no limit".to_string(), |u| {
+                    format!("{u} use{}", if u == 1 { "" } else { "s" })
+                });
+                let note = format!(
+                    "# Phase rule: the fight: {}; attack {best} at {}% fail ({uses}), then {fallback}; danger {here}, HP {hp}: {}",
+                    list.join(", "),
+                    cost.map_or(0, |c| c.fail_pct),
+                    if lost { "lost" } else { "not lost" }
+                );
+                borg_note(st, &note);
+                lost
+            } else {
+                let foes: Vec<(i32, i32)> = adjacent_foes(st)
+                    .into_iter()
+                    .map(|(left, melee)| (left, melee.max(best)))
+                    .collect();
+                let lost = fight_lost_by(&foes, here, hp);
+                let list: Vec<String> = foes
+                    .iter()
+                    .map(|(left, dam)| format!("{left} HP at {dam} a turn"))
+                    .collect();
+                let note = format!(
+                    "# Phase rule: the fight: {}; danger {here}, HP {hp}: {}",
+                    list.join(", "),
+                    if lost { "lost" } else { "not lost" }
+                );
+                borg_note(st, &note);
+                lost
+            };
+            if !lost || test < 2 {
+                return lost;
+            }
+            let landing = landing_danger(st);
+            borg_note(
+                st,
+                &format!("# Phase rule: the landing: mean danger {landing}, here {here}"),
+            );
+            landing < here
+        }
+    }
+}
+
+/// The fight is lost when killing every foe, one after another (HP left and
+/// the Borg's damage a turn against it), takes more turns than the danger
+/// (`danger` a turn) needs to kill the Borg's `hp`: sum(left / dam) >
+/// hp / danger. A foe it cannot hurt (damage 0) loses the fight; no foe, or
+/// no danger, does not.
+fn fight_lost_by(foes: &[(i32, i32)], danger: i32, hp: i32) -> bool {
+    if foes.iter().any(|&(_, dam)| dam <= 0) {
+        return true;
+    }
+    // sum(left_i / dam_i) * danger > hp, in exact fractions: scaled by the
+    // product of the damages would overflow; compare in f64.
+    let turns: f64 = foes
+        .iter()
+        .map(|&(left, dam)| f64::from(left) / f64::from(dam))
+        .sum();
+    turns * f64::from(danger) > f64::from(hp)
+}
+
+/// borg-reborn-rs (#625): the attack the Borg would choose now, for the
+/// fight test: its expected damage a turn (true damage times the success
+/// chance) and the uses it can pay for (`None`: no limit).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Primary {
+    dam: f64,
+    uses: Option<i32>,
+}
+
+impl Primary {
+    /// From `borg_attack_estimate`'s true damage and the winner's cost
+    /// (`None`: melee, missiles, throws: no fail chance, no limit).
+    fn of(best: i32, cost: Option<crate::stateful::attack::AttackCost>) -> Primary {
+        match cost {
+            None => Primary {
+                dam: f64::from(best.max(0)),
+                uses: None,
+            },
+            Some(c) => Primary {
+                dam: f64::from(best.max(0)) * f64::from(100 - c.fail_pct.clamp(0, 100)) / 100.0,
+                uses: c.uses.map(|u| u.max(0)),
+            },
+        }
+    }
+}
+
+/// borg-reborn-rs (#625): the turns to kill the adjacent foes one after
+/// another, each `(HP left, melee a turn)`. Each turn uses the chosen attack
+/// (`primary`) while it does more than the foe's other damage (the larger of
+/// melee and `fallback`, the best attack that is not a spell) and uses are
+/// left (fractions count: a 2-use spell spends 0.5 of a use on a foe it
+/// kills in half a cast); then the other damage. `None`: a foe the Borg
+/// cannot hurt.
+fn fight_turns(foes: &[(i32, i32)], primary: Primary, fallback: i32) -> Option<f64> {
+    let mut uses = primary.uses.map(f64::from);
+    let mut turns = 0.0;
+    for &(left, melee) in foes {
+        let mut left = f64::from(left);
+        let other = f64::from(melee.max(fallback).max(0));
+        if primary.dam > other {
+            let needed = left / primary.dam;
+            match uses {
+                None => {
+                    turns += needed;
+                    continue;
+                }
+                Some(u) if needed <= u => {
+                    turns += needed;
+                    uses = Some(u - needed);
+                    continue;
+                }
+                Some(u) => {
+                    turns += u;
+                    left -= u * primary.dam;
+                    uses = Some(0.0);
+                }
+            }
+        }
+        if other <= 0.0 {
+            return None;
+        }
+        turns += left / other;
+    }
+    Some(turns)
+}
+
+/// The awake known monsters next to the Borg, as (HP left, the Borg's melee
+/// damage a turn against it): `kill.power` less `kill.injury` percent (at
+/// least 1), and `borg_thrust_damage_one` without its unique bonus (its
+/// Mage/Necromancer reduction stays: it errs towards the Phase Door).
+fn adjacent_foes(st: &BorgState) -> Vec<(i32, i32)> {
+    (1..st.kills.nxt.max(0) as usize)
+        .filter(|&i| {
+            let kill = &st.kills.kills[i];
+            kill.r_idx != 0
+                && engine::r_max() != 0
+                && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+                && kill.awake
+                && engine::distance(st.borg.c, kill.pos) <= 1
+        })
+        .map(|i| {
+            let kill = &st.kills.kills[i];
+            let left =
+                (i32::from(kill.power) * (100 - i32::from(kill.injury).clamp(0, 100)) / 100).max(1);
+            let mut dam = crate::stateful::attack::borg_thrust_damage_one(st, i as i32);
+            // `borg_thrust_damage_one` multiplies the damage on a unique in the
+            // dungeon by 1 + `attack_melee_unique_bonus` so the Borg targets
+            // it: a preference, not damage (Grip, Fang). Taken back out.
+            if engine::race_flag_has(
+                usize::from(kill.r_idx),
+                borg_rs::decision_api::headers::list_mon_race_flags_h::RF_UNIQUE,
+            ) && crate::Read::new(st).character().cdepth() >= 1
+            {
+                dam /= 1 + param(Param::attack_melee_unique_bonus).max(0);
+            }
+            (left, dam)
+        })
+        .collect()
+}
+
+/// The mean danger (one turn) of the grids a Phase Door may land on: up to
+/// `escape_landing_samples` floor grids without a monster, 5 to 10 steps
+/// away, drawn as `count_scary` draws them. `i32::MAX` when none is found.
+fn landing_danger(st: &mut BorgState) -> i32 {
+    let dis = 10;
+    let min = dis / 2;
+    let (mut sum, mut n) = (0i64, 0i64);
+    for _ in 0..param(Param::escape_landing_samples) {
+        for _ in 0..param(Param::escape_landing_trials) {
+            let y = rand_spread(st.borg.c.y, dis);
+            let x = rand_spread(st.borg.c.x, dis);
+            let d = engine::distance(st.borg.c, loc { x, y });
+            if d < min || d > dis || y <= 0 || y >= AUTO_MAX_Y - 1 || x <= 0 || x >= AUTO_MAX_X - 1
+            {
+                continue;
+            }
+            let g = *st.cave.grid(x, y);
+            if !borg_cave_floor_bold(st, y, x) || g.kill != 0 || g.web {
+                continue;
+            }
+            sum += i64::from(borg_danger(st, y, x, 1, true, false));
+            n += 1;
+            break;
+        }
+    }
+    if n == 0 {
+        i32::MAX
+    } else {
+        (sum / n) as i32
+    }
+}
+
+/// borg-reborn-rs (#584, owner): the rule's verdict this think. Decided and
+/// noted once, at the first site that asks (re-review of #612: one note and
+/// no attack simulation per site); later sites reuse it. `danger` is the
+/// site's danger where the Borg stands (`borg_escape`'s `b_q` is
+/// `borg_caution`'s `pos_danger`), else measured here.
+fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) -> PhaseVerdict {
+    let now = st.borg.time.now;
+    if let Some((t, verdict, _)) = st.borg.phase_rule {
+        if t == now {
+            return verdict;
+        }
+    }
+    let hp = crate::Read::new(st).character().curhp();
+    let here = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
+    let adjacent = adjacent_awake(st);
+    let lost = adjacent && fight_lost(st, here, hp);
+    let verdict = if !adjacent {
+        PhaseVerdict::Shoot
+    } else if lost {
+        PhaseVerdict::Phase
+    } else {
+        PhaseVerdict::Fight
+    };
+    let label = site.label();
+    let why = match verdict {
+        PhaseVerdict::Phase => format!("enemy adjacent and the fight looks lost (danger {here}, HP {hp}): the rule allows a Phase Door"),
+        PhaseVerdict::Fight => format!("enemy adjacent but the fight is not lost (danger {here}, HP {hp}): no Phase Door; other escapes, else fight"),
+        PhaseVerdict::Shoot => "no enemy on an adjacent square: no Phase Door; other escapes, else attack at range or boost".to_string(),
+    };
+    borg_note(st, &format!("# Phase rule (from {label}): {why}"));
+    st.borg.phase_rule = Some((now, verdict, false));
+    verdict
+}
+
+/// borg-reborn-rs (#584, owner): after `borg_escape` found no escape, act on
+/// the rule's refusal this think, once: the Borg's best attack by its own
+/// ranking (`borg_attack`; with no enemy adjacent only a ranged one can be
+/// chosen), else, with an awake monster in view, a boost (`cornered_boost`:
+/// Speed first, then Heroism, Berserk Strength, Bless; its Monster Confusion
+/// needs a big monster adjacent, so never in the Shoot case). The boost is
+/// the cornered one by its set, not by its premise: in the Fight case the
+/// fight is not lost. Returns whether the Borg acted.
+pub(crate) fn phase_rule_act(st: &mut BorgState) -> bool {
+    let now = st.borg.time.now;
+    let Some((t, verdict, tried)) = st.borg.phase_rule else {
+        return false;
+    };
+    if t != now || tried || verdict == PhaseVerdict::Phase {
+        return false;
+    }
+    st.borg.phase_rule = Some((t, verdict, true));
+    if crate::stateful::attack::borg_attack(st, false) {
+        borg_note(st, "# Phase rule: attacked instead of a Phase Door");
+        return true;
+    }
+    if !awake_in_view(st) {
+        return false;
+    }
+    if crate::stateful::caution::cornered_boost(st, "Phase rule boost") {
+        return true;
+    }
+    // The owner's "potions, scrolls, spells, staves": `borg_defend`'s
+    // boosts (resistances, Protection from Evil, shields, the staves), at the
+    // danger where the Borg stands.
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if crate::stateful::defence::borg_defend(st, here) {
+        borg_note(st, "# Phase rule boost: a defence (borg_defend)");
+        return true;
+    }
+    false
+}
+
+/// An awake known monster in view (#584's boost waits for one).
+fn awake_in_view(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0
+            && engine::r_max() != 0
+            && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+            && kill.awake
+            && st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0
+    })
+}
+
+/// The note of a Phase Door the Borg did (#584).
+fn phase_note(
+    site: PhaseSite,
+    hp: i32,
+    max_hp: i32,
+    danger: Option<i32>,
+    nearest: Option<i32>,
+) -> String {
+    let danger = danger.map_or(String::new(), |d| format!(", danger {d}"));
+    let nearest = nearest.map_or("none".to_string(), |d| d.to_string());
+    format!(
+        "# Phase ({}): done, HP {hp}/{max_hp}{danger}, nearest awake monster {nearest}",
+        site.label()
+    )
+}
+
+/// The distance to the nearest known awake monster (#584's note).
+fn nearest_awake(st: &BorgState) -> Option<i32> {
+    (1..st.kills.nxt.max(0) as usize)
+        .filter_map(|i| {
+            let kill = &st.kills.kills[i];
+            (kill.r_idx != 0 && kill.awake).then(|| engine::distance(st.borg.c, kill.pos))
+        })
+        .min()
+}
+
+/// Help determine if PHASE_DOOR seems like a good idea
+/// (`borg_caution_phase`; #584: with the asking site in its notes).
+fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32) -> bool {
     // must have the ability
     if crate::Read::new(st).supplies().aphase() == 0 {
+        return false;
+    }
+
+    // borg-reborn-rs (#539): not while the monster is still distant. With
+    // #584's rule on, the rule decides instead (it must not rely on #539).
+    if site != PhaseSite::UnseenBump
+        && param(Param::escape_phase_adjacent_rule) == 0
+        && phase_is_pointless(st)
+    {
+        borg_note(
+            st,
+            &format!("# Phase ({}): no, no monster next to me", site.label()),
+        );
         return false;
     }
 
@@ -478,18 +1030,40 @@ pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> boo
     // Too much danger
     // in an emergency try with extra danger allowed
     if n > emergency {
-        borg_note(st, &format!("# No Phase. scary squares: {n}"));
+        borg_note(
+            st,
+            &format!(
+                "# Phase ({}): no, {n} scary landing grids of 100 (at most {emergency})",
+                site.label()
+            ),
+        );
         return false;
-    } else {
-        borg_note(st, &format!("# Safe to Phase. scary squares: {n}"));
     }
+    borg_note(
+        st,
+        &format!(
+            "# Phase ({}): landing ok, {n} scary landing grids of 100 (at most {emergency})",
+            site.label()
+        ),
+    );
 
     // Okay
     true
 }
 
+/// borg-reborn-rs (#724): whether `borg_caution_teleport` lacks the ability:
+/// with `either` (upstream 95387b06) neither a teleport scroll or spell nor
+/// a teleport staff or activation; without it (C), not both.
+fn lacks_teleport(either: bool, teleport: i32, escape: i32) -> bool {
+    if either {
+        teleport == 0 && escape == 0
+    } else {
+        teleport == 0 || escape == 0
+    }
+}
+
 /// Help determine if "Teleport" seems like a good idea
-pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
+pub(crate) fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark(
             "policy::escape.borg_caution_teleport",
@@ -501,9 +1075,16 @@ pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> 
     let q_y = st.core.w_y / borg_panel_hgt();
 
     // must have the ability
-    if crate::Read::new(st).supplies().ateleport() == 0
-        || crate::Read::new(st).supplies().aescape() == 0
-    {
+    // borg-reborn-rs (#724): upstream Angband 95387b06 needs a teleport
+    // scroll or spell (BI_ATELEPORT) **or** a teleport staff or activation
+    // (BI_AESCAPE). C (and borg-rs) needed both, so with only one of them the
+    // landing check never ran, and the Destruction and Teleport Level
+    // defences that ask it never saw a safe landing.
+    if lacks_teleport(
+        param(Param::escape_teleport_landing_either) != 0,
+        crate::Read::new(st).supplies().ateleport(),
+        crate::Read::new(st).supplies().aescape(),
+    ) {
         return false;
     }
 
@@ -556,7 +1137,7 @@ fn borg_escape_stair(st: &mut BorgState) -> bool {
 }
 
 /// Is teleport currently allowed
-pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
+pub(crate) fn borg_allow_teleport(st: &mut BorgState) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark("policy::escape.borg_allow_teleport", format!("{:?}", ()));
     }
@@ -571,15 +1152,47 @@ pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
     }
 
     // Check for a no teleport curse
-    if crate::Read::new(st).curses().crsnotel() != 0 {
+    // borg-reborn-rs (#829): known from the item's curses (`BI_CRSNOTEL`), or
+    // learned from the engine's own messages (`TeleportBlock`).
+    if teleport_curse(st) {
         return false;
     }
 
     true
 }
 
+/// The identity of a worn item that survives learning its runes.
+fn worn_identity(st: &BorgState, slot: usize) -> Option<(usize, u32, u8, i16)> {
+    let item = st.items.items.get(slot)?;
+    (item.iqty != 0).then_some((slot, item.kind, item.art_idx, item.weight))
+}
+
+/// borg-reborn-rs (#829, `escape_teleport_block`): whether a teleport curse
+/// stops the Borg's teleports now. Off (0): never, as before.
+pub(crate) fn teleport_stopped(st: &mut BorgState) -> bool {
+    param(Param::escape_teleport_block) != 0 && teleport_curse(st)
+}
+
+/// borg-reborn-rs (#829): whether a teleport curse stops the Borg now: one it
+/// knows from its items (`BI_CRSNOTEL`) or one the engine's messages told it
+/// about, while the item that carries it is still worn.
+pub fn teleport_curse(st: &mut BorgState) -> bool {
+    if crate::Read::new(st).curses().crsnotel() != 0 {
+        return true;
+    }
+    let Some(block) = &st.borg.teleport_block else {
+        return false;
+    };
+    if block.holds(|slot| worn_identity(st, slot)) {
+        return true;
+    }
+    st.borg.teleport_block = None;
+    borg_note(st, "# Teleport block lifted: the equipment changed");
+    false
+}
+
 /// short range teleport + pain
-pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
+pub(crate) fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark(
             "policy::escape.borg_shadow_shift",
@@ -594,7 +1207,7 @@ pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
 }
 
 /// medium range teleport
-pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
+pub(crate) fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark(
             "policy::escape.borg_dimension_door",
@@ -674,7 +1287,9 @@ pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
 fn borg_teleport_off_level(st: &mut BorgState) -> bool {
     // don't if we are already recalling or waiting for
     // deep descent
-    if !(st.borg.goal.recalling != 0 || st.borg.goal.descending != 0) {
+    // borg-reborn-rs (#603): a pending Recall blocks it only without
+    // caution_recall_wait_as_usual (the countdown survives the level change).
+    if !(crate::stateful::caution::recall_restricts(st) || st.borg.goal.descending != 0) {
         // teleport level before deep descent because there is no delay
         if borg_read_scroll(st, st.item_val.sv_scroll_teleport_level)
             || borg_activate_item(st, st.act.tele_level)
@@ -682,11 +1297,8 @@ fn borg_teleport_off_level(st: &mut BorgState) -> bool {
             return true;
         }
 
-        if borg_activate_item(st, st.act.deep_descent)
-            || borg_read_scroll(st, st.item_val.sv_scroll_deep_descent)
-        {
-            return true;
-        }
+        // borg-reborn-rs (#470): never Deep Descent. It lands five levels
+        // below the deepest level so far, past any plan cap (borg-zoo#147).
     }
 
     false
@@ -704,8 +1316,10 @@ fn near_unique_1_8(st: &BorgState) -> bool {
 }
 
 /// Try to phase door or teleport
-/// b_q is the danger of the least dangerous square around us.
-pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
+/// b_q is the danger where the Borg stands (`borg_caution`'s `pos_danger`;
+/// C's comment said "of the least dangerous square around us", but C passes
+/// the same `pos_danger`, borg-caution.c).
+pub(crate) fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark("policy::escape.borg_escape", format!("{:?}", (b_q,)));
     }
@@ -779,7 +1393,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         && crate::Read::new(st).character().cdepth() == 1
         && borg_teleport_off_level(st)
     {
-        borg_note(st, "# Attempting to leave via teleport level/deep descent");
+        borg_note(st, "# Attempting to leave via teleport level");
         return true;
     }
 
@@ -835,11 +1449,12 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
                     || borg_spell_fail(st, TELEPORT_LEVEL, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
                     // try phase at least, with some hedging of the safety of
                     // landing zone
-                    || (borg_caution_phase(st, param(Param::escape_emergency_phase_tolerance), param(Param::escape_emergency_phase_horizon))
-                        && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                    || (phase_door(st, PhaseSite::Emergency, PhaseCheck::Landing { tolerance: param(Param::escape_emergency_phase_tolerance), horizon: param(Param::escape_emergency_phase_horizon) }, Some(b_q), |st| {
+                borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
                             || borg_activate_item(st, st.act.tele_phase)
                             || borg_spell_fail(st, PHASE_DOOR, tmp_allow_fail)
-                            || borg_spell_fail(st, PORTAL, tmp_allow_fail)))))
+                            || borg_spell_fail(st, PORTAL, tmp_allow_fail)
+            }))))
         {
             // Flee!
             borg_note(st, "# Danger Level 1.");
@@ -849,7 +1464,8 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // Pretend to have full mana for the last-ditch casts (C bug 35:
         // not restored when one of them succeeds).
-        super::set_mana(st, crate::Read::new(st).character().maxsp());
+        let simulated_mana = crate::Read::new(st).character().maxsp();
+        super::set_mana(st, simulated_mana);
 
         // try to teleport, get far away from here
         if crate::Read::new(st).character().cdepth() != 0
@@ -874,8 +1490,16 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
                 < crate::Read::new(st).character().maxhp()
                     / param(Param::escape_critical_phase_hp_divisor)
                 || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb))
-            && (borg_activate_item(st, st.act.tele_phase)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+            && phase_door(
+                st,
+                PhaseSite::Critical,
+                PhaseCheck::MonsterNear,
+                Some(b_q),
+                |st| {
+                    borg_activate_item(st, st.act.tele_phase)
+                        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                },
+            )
         {
             // Flee!
             phase_not_escape(st);
@@ -891,8 +1515,16 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             && crate::Read::new(st).character().curhp()
                 < crate::Read::new(st).character().maxhp()
                     / param(Param::escape_last_ditch_phase_hp_divisor)
-            && (borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
-                || borg_spell(st, PORTAL))
+            && phase_door(
+                st,
+                PhaseSite::LastDitch,
+                PhaseCheck::MonsterNear,
+                Some(b_q),
+                |st| {
+                    borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
+                        || borg_spell(st, PORTAL)
+                },
+            )
         {
             // Flee!
             borg_note(st, "# Danger Level 1.3  Critical Attempt");
@@ -962,17 +1594,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             return true;
         }
         // Phase door, if useful
-        if borg_caution_phase(
+        if phase_door(
             st,
-            param(Param::escape_teleport_phase_tolerance),
-            param(Param::escape_teleport_phase_horizon),
-        ) && borg_timer(st, st.borg.time.antisummon)
-            > param(Param::escape_phase_antisummon_delay)
-            && (borg_spell(st, PHASE_DOOR)
-                || borg_spell(st, PORTAL)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-                || borg_activate_item(st, st.act.tele_phase))
-        {
+            PhaseSite::AfterTeleport,
+            PhaseCheck::Landing {
+                tolerance: param(Param::escape_teleport_phase_tolerance),
+                horizon: param(Param::escape_teleport_phase_horizon),
+            },
+            Some(b_q),
+            |st| {
+                borg_timer(st, st.borg.time.antisummon)
+                    > param(Param::escape_phase_antisummon_delay)
+                    && (borg_spell(st, PHASE_DOOR)
+                        || borg_spell(st, PORTAL)
+                        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                        || borg_activate_item(st, st.act.tele_phase))
+            },
+        ) {
             // Flee!
             borg_note(st, "# Danger Level 2.2");
             reset_antisummon(st);
@@ -996,16 +1634,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(
+            || (phase_door(
                 st,
-                param(Param::escape_phase_tolerance),
-                param(Param::escape_phase_horizon),
-            ) && borg_timer(st, st.borg.time.antisummon)
-                > param(Param::escape_phase_antisummon_delay)
-                && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                    || borg_spell_fail(st, PORTAL, allow_fail)
-                    || borg_activate_item(st, st.act.tele_phase)
-                    || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)))
+                PhaseSite::Danger,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_phase_tolerance),
+                    horizon: param(Param::escape_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_timer(st, st.borg.time.antisummon)
+                        > param(Param::escape_phase_antisummon_delay)
+                        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                            || borg_spell_fail(st, PORTAL, allow_fail)
+                            || borg_activate_item(st, st.act.tele_phase)
+                            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+                },
+            ))
         {
             // Flee!
             phase_not_escape(st);
@@ -1035,18 +1680,24 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             return true;
         }
         // Phase door, if useful
-        if borg_caution_phase(
+        if phase_door(
             st,
-            param(Param::escape_fallback_phase_tolerance),
-            param(Param::escape_fallback_phase_horizon),
-        ) && borg_timer(st, st.borg.time.antisummon)
-            > param(Param::escape_phase_antisummon_delay)
-            && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                || borg_spell_fail(st, PORTAL, allow_fail)
-                || borg_shadow_shift(st, allow_fail)
-                || borg_activate_item(st, st.act.tele_phase)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
-        {
+            PhaseSite::DangerFallback,
+            PhaseCheck::Landing {
+                tolerance: param(Param::escape_fallback_phase_tolerance),
+                horizon: param(Param::escape_fallback_phase_horizon),
+            },
+            Some(b_q),
+            |st| {
+                borg_timer(st, st.borg.time.antisummon)
+                    > param(Param::escape_phase_antisummon_delay)
+                    && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                        || borg_spell_fail(st, PORTAL, allow_fail)
+                        || borg_shadow_shift(st, allow_fail)
+                        || borg_activate_item(st, st.act.tele_phase)
+                        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+            },
+        ) {
             // Flee!
             phase_not_escape(st);
             borg_note(st, "# Danger Level 3.3");
@@ -1134,17 +1785,24 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(
+            || (phase_door(
                 st,
-                param(Param::escape_compromised_phase_tolerance),
-                param(Param::escape_compromised_phase_horizon),
-            ) && borg_timer(st, st.borg.time.antisummon)
-                > param(Param::escape_phase_antisummon_delay)
-                && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                    || borg_spell_fail(st, PORTAL, allow_fail)
-                    || borg_activate_item(st, st.act.tele_phase)
-                    || borg_shadow_shift(st, allow_fail)
-                    || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)))
+                PhaseSite::Compromised,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_compromised_phase_tolerance),
+                    horizon: param(Param::escape_compromised_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_timer(st, st.borg.time.antisummon)
+                        > param(Param::escape_phase_antisummon_delay)
+                        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                            || borg_spell_fail(st, PORTAL, allow_fail)
+                            || borg_activate_item(st, st.act.tele_phase)
+                            || borg_shadow_shift(st, allow_fail)
+                            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+                },
+            ))
         {
             // Flee!
             phase_not_escape(st);
@@ -1201,16 +1859,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             || crate::Read::new(st).character().class() == CLASS_NECROMANCER)
             && crate::Read::new(st).character().clevel()
                 <= param(Param::escape_weak_caster_max_level))
-            && borg_caution_phase(
+            && phase_door(
                 st,
-                param(Param::escape_weak_caster_phase_tolerance),
-                param(Param::escape_weak_caster_phase_horizon),
+                PhaseSite::WeakCaster,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_weak_caster_phase_tolerance),
+                    horizon: param(Param::escape_weak_caster_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_timer(st, st.borg.time.antisummon)
+                        > param(Param::escape_phase_antisummon_delay)
+                        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                            || borg_activate_item(st, st.act.tele_phase)
+                            || borg_activate_item(st, st.act.tele_long)
+                            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+                },
             )
-            && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
-            && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                || borg_activate_item(st, st.act.tele_phase)
-                || borg_activate_item(st, st.act.tele_long)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
         {
             // Flee!
             phase_not_escape(st);
@@ -1230,15 +1895,22 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(
+            || (phase_door(
                 st,
-                param(Param::escape_low_level_phase_tolerance),
-                param(Param::escape_low_level_phase_horizon),
-            ) && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                || borg_spell_fail(st, PORTAL, allow_fail)
-                || borg_activate_item(st, st.act.tele_phase)
-                || borg_shadow_shift(st, allow_fail)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)))
+                PhaseSite::LowLevel,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_low_level_phase_tolerance),
+                    horizon: param(Param::escape_low_level_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                        || borg_spell_fail(st, PORTAL, allow_fail)
+                        || borg_activate_item(st, st.act.tele_phase)
+                        || borg_shadow_shift(st, allow_fail)
+                        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                },
+            ))
         {
             // Flee!
             borg_note(st, "# Danger Level 5.1");
@@ -1289,15 +1961,21 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             || crate::Read::new(st).character().class() == CLASS_NECROMANCER)
             && crate::Read::new(st).character().clevel()
                 <= param(Param::escape_low_caster_max_level))
-            && borg_caution_phase(
+            && phase_door(
                 st,
-                param(Param::escape_low_caster_phase_tolerance),
-                param(Param::escape_low_caster_phase_horizon),
+                PhaseSite::LowCaster,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_low_caster_phase_tolerance),
+                    horizon: param(Param::escape_low_caster_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                        || borg_activate_item(st, st.act.tele_phase)
+                        || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                        || borg_activate_item(st, st.act.tele_long)
+                },
             )
-            && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                || borg_activate_item(st, st.act.tele_phase)
-                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-                || borg_activate_item(st, st.act.tele_long))
         {
             // Flee!
             phase_not_escape(st);
@@ -1322,16 +2000,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(
+            || (phase_door(
                 st,
-                param(Param::escape_low_mana_phase_tolerance),
-                param(Param::escape_low_mana_phase_horizon),
-            ) && borg_timer(st, st.borg.time.antisummon)
-                > param(Param::escape_phase_antisummon_delay)
-                && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                    || borg_spell_fail(st, PORTAL, allow_fail)
-                    || borg_activate_item(st, st.act.tele_phase)
-                    || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)))
+                PhaseSite::LowMana,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_low_mana_phase_tolerance),
+                    horizon: param(Param::escape_low_mana_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_timer(st, st.borg.time.antisummon)
+                        > param(Param::escape_phase_antisummon_delay)
+                        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                            || borg_spell_fail(st, PORTAL, allow_fail)
+                            || borg_activate_item(st, st.act.tele_phase)
+                            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+                },
+            ))
         {
             // Flee!
             borg_note(st, "# Danger Level 6.1");
@@ -1362,10 +2047,14 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // 7- Shoot N Scoot
     if (borg_spell_okay_fail(st, PHASE_DOOR, allow_fail)
         || borg_spell_okay_fail(st, PORTAL, allow_fail))
-        && borg_shoot_scoot_safe(st, param(Param::escape_scoot_tolerance), param(Param::escape_scoot_horizon), b_q)
         // Phase door
-        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-            || borg_spell_fail(st, PORTAL, allow_fail))
+        && phase_door(
+            st,
+            PhaseSite::ShootScoot,
+            PhaseCheck::ShootScoot { tolerance: param(Param::escape_scoot_tolerance), horizon: param(Param::escape_scoot_horizon), danger: b_q },
+            Some(b_q),
+            |st| borg_spell_fail(st, PHASE_DOOR, allow_fail) || borg_spell_fail(st, PORTAL, allow_fail),
+        )
     {
         // Flee!
         borg_note(st, "# Shoot N Scoot. (Danger Level 7.1)");
@@ -1380,16 +2069,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     if i32::from(st.borg.times_twitch) > param(Param::escape_twitch_limit) {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(
+            || (phase_door(
                 st,
-                param(Param::escape_twitch_phase_tolerance),
-                param(Param::escape_twitch_phase_horizon),
-            ) && borg_timer(st, st.borg.time.antisummon)
-                > param(Param::escape_phase_antisummon_delay)
-                && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
-                    || borg_spell_fail(st, PORTAL, allow_fail)
-                    || borg_activate_item(st, st.act.tele_phase)
-                    || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)))
+                PhaseSite::Twitch,
+                PhaseCheck::Landing {
+                    tolerance: param(Param::escape_twitch_phase_tolerance),
+                    horizon: param(Param::escape_twitch_phase_horizon),
+                },
+                Some(b_q),
+                |st| {
+                    borg_timer(st, st.borg.time.antisummon)
+                        > param(Param::escape_phase_antisummon_delay)
+                        && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
+                            || borg_spell_fail(st, PORTAL, allow_fail)
+                            || borg_activate_item(st, st.act.tele_phase)
+                            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+                },
+            ))
         {
             // Flee!
             borg_note(st, "# Danger Level 8");
@@ -1425,4 +2121,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     false
+}
+
+/// borg-reborn-rs (#781 review): confirmed bump supplies adjacency in place
+/// of a known race. Keep the ordinary emergency landing tolerance/horizon.
+pub(crate) fn unseen_bump_phase(st: &mut BorgState, danger: i32) -> bool {
+    phase_door(
+        st,
+        PhaseSite::UnseenBump,
+        PhaseCheck::Landing {
+            tolerance: param(Param::escape_emergency_phase_tolerance),
+            horizon: param(Param::escape_emergency_phase_horizon),
+        },
+        Some(danger),
+        |st| {
+            borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || borg_activate_item(st, st.act.tele_phase)
+                || borg_spell(st, PHASE_DOOR)
+        },
+    )
 }

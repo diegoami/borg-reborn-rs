@@ -639,8 +639,42 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             );
             out.flush().unwrap();
             eprintln!("R4 store constructed fixture complete");
+            lightless_self_care(&base, mode, provider);
         })
     });
+}
+
+fn lightless_self_care(base: &BorgState, mode: Mode, provider: &impl Shadow) {
+    let mut state = base.clone();
+    state.borg.trait_[BI_LIGHT as usize] = 0;
+    state.borg.trait_[BI_ISPOISONED as usize] = 1;
+    let potion = &mut state.items.items[0];
+    potion.tval = TV_POTION as u8;
+    potion.sval = state.item_val.sv_potion_cure_poison as u8;
+    potion.iqty = 1;
+    potion.aware = true;
+    potion.ident = true;
+
+    let before = queued_keys(&state);
+    let value = provider.decision(&mut state, Decision::LightlessSelfCare { danger: 0 });
+    assert_eq!(value, Value::Acted(true));
+    let after = queued_keys(&state);
+    assert!(after.starts_with(&before));
+    assert_eq!(&after[before.len()..], &[u32::from(b'q'), u32::from(b'a')]);
+    assert_eq!(state.items.items[0].iqty, 1);
+    let row = serde_json::json!({
+        "schema": "borg-reborn-rs/r45-constructed@1",
+        "case": "lightless-cures-poison",
+        "mode": mode,
+        "synthetic": true,
+        "engine_consumption": false,
+        "value": value,
+        "queued": &after[before.len()..],
+    });
+    let path = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR").unwrap())
+        .join("r45-constructed.jsonl");
+    let mut out = File::create(path).unwrap();
+    writeln!(out, "{row}").unwrap();
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -696,5 +730,5 @@ fn record(
 }
 
 fn context(mode: Mode, label: &str, readonly: bool) -> serde_json::Value {
-    serde_json::json!({"schema":"borg-reborn-rs/shadow@8","mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
+    serde_json::json!({"schema":"borg-reborn-rs/shadow@9","mode":mode,"point":format!("fixture.store.{label}"),"readonly":readonly,"synthetic":true})
 }

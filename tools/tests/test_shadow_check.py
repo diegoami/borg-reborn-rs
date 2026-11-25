@@ -182,6 +182,39 @@ class ShadowCheckTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'missing individual entry coverage'):
                 module.check([root],r4_store=True,require_all_entries=True)
 
+    def test_receiving_surface_replaces_retired_markers(self):
+        row = valid_store_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@9', surface='r45')
+        counts = row['counts']
+        points = counts['stateful_points']
+        for name in module.R45_RETIRED:
+            counts[name.split('.')[0] + '_calls'] -= points.pop(name)
+        for name in module.R45_ADDED:
+            points[name] = 1
+            counts[name.split('.')[0] + '_calls'] += 1
+        counts['policy_markers'] = sum(points.values())
+        counts['tape_events'] = counts['policy_markers'] + counts['dependency_requests']
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write(root, row)
+            module.check([root], r45=True, require_all_entries=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r4_store=True)
+
+            point = 'caution.lightless_self_care'
+            del points[point]
+            counts['caution_calls'] -= 1
+            counts['policy_markers'] -= 1
+            counts['tape_events'] -= 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'missing individual entry coverage'):
+                module.check([root], r45=True, require_all_entries=True)
+
+            points['escape.borg_caution_phase'] = 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'entry coverage'):
+                module.check([root], r45=True)
+
     def test_declared_run_partition_keeps_combined_strict_gate(self):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);natural=root/'natural';constructed=root/'constructed'

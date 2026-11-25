@@ -509,7 +509,7 @@ fn check(
     let value = dispatch(&mut state, request.clone());
     let after = queued_keys(&state);
     let unchanged_items = state.items == initial.items;
-    let row = serde_json::json!({"schema":"borg-reborn-rs/r4-item-use-constructed@1","synthetic":true,
+    let row = serde_json::json!({"schema":"borg-reborn-rs/r4-item-use-constructed@2","synthetic":true,
         "mode":mode,"case":label,"request":request,"value":value,"expected":expected,
         "keys_before":before,"keys_after":after,"items_unchanged":unchanged_items,
         "engine_consumption":false,"stubbed_dependencies":["borg_io::borg_note_bytes"]});

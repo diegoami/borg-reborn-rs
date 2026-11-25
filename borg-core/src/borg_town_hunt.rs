@@ -16,7 +16,7 @@ use crate::engine;
 use crate::params::{value, Param};
 use crate::state::BorgState;
 
-pub(crate) const REASON: &str = "town-melee-only";
+pub const REASON: &str = "town-melee-only";
 
 pub(crate) fn enabled(st: &BorgState) -> bool {
     st.borg.tr(BI_CDEPTH) == 0 && value(Param::town_hunt) != 0

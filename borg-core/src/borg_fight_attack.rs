@@ -379,16 +379,16 @@ pub(crate) fn borg_mon_blow_effect_native(name: &[u8]) -> i32 {
 /// race's base name is read only for a base entry (the race copy is not
 /// free, and this runs on every damage estimate).
 pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
-    if crate::borg_town_hunt::avoids_maggot(st, r_idx) { return true; }
-    let Some(list) = crate::scary_list::selected() else { return false };
-    let who = crate::scary_list::Situation {
+    if crate::decision_api::borg_town_hunt::avoids_maggot(st, r_idx) { return true; }
+    let Some(list) = crate::decision_api::scary_list::selected() else { return false };
+    let who = crate::decision_api::scary_list::Situation {
         clevel: tr(st, BI_CLEVEL),
         class: tr(st, BI_CLASS),
         breeder_count: 0,
         breeder_stand: false,
         levels_less: 0,
     };
-    crate::scary_list::is_ignored(list, r_idx, || engine::race_base_name(r_idx), who)
+    crate::decision_api::scary_list::is_ignored(list, r_idx, || engine::race_base_name(r_idx), who)
 }
 
 /// borg-reborn-rs (#619): a dangerous town monster: a town race (level 0)
@@ -2745,7 +2745,7 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
-    let mut supply_journey: Option<crate::borg_town_utility::Journey> = None;
+    let mut supply_journey: Option<i64> = None;
     let mut b_k: i32 = -1;
     let mut b_d: i32 = -1;
 
@@ -2797,9 +2797,11 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
                 && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
             let policy = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
             let reserve = if policy && lantern {
-                let journey = supply_journey.get_or_insert_with(||
-                    crate::borg_town_utility::Journey::of(st));
-                let goal = journey.fuel_goal(i64::from(param(Param::town_light_reserve_turns)));
+                let goal = *supply_journey.get_or_insert_with(|| {
+                    crate::decision_api::borg_town_utility::journey_fuel_goal(
+                        st, i64::from(param(Param::town_light_reserve_turns)),
+                    )
+                });
                 let shortage = (goal - i64::from(light.timeout)).max(0) as u64;
                 shortage.div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
@@ -2849,12 +2851,12 @@ fn best_throw_of(st: &BorgState, flasks_only: bool) -> (i32, i32) {
 pub(crate) fn throw_at_unseen_bump(st: &mut BorgState, grid: loc) -> bool {
     let (slot, _) = best_throw_of(st, true);
     if slot < 0 || !st.items.items[slot as usize].aware { return false; }
-    let dir = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
+    let dir = crate::decision_api::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, grid.y, grid.x);
     borg_note(st, &format!("# Throwing oil at unseen bump ({},{})", grid.y, grid.x));
-    crate::borg_object_log::log_use(st, "throw", &st.items.items[slot as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "throw", &st.items.items[slot as usize]);
     borg_keypress(st, key(b'v'));
     borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(slot)));
-    crate::borg_io::borg_queue_direction(st, (dir + i32::from(b'0')) as keycode_t);
+    crate::decision_api::borg_io::borg_queue_direction(st, (dir + i32::from(b'0')) as keycode_t);
     // This is a direction, not a tracked target: no unknown-wall inference.
     st.fight_attack.successful_target = 0;
     true
@@ -4872,7 +4874,7 @@ pub(crate) fn borg_attack_native(st: &mut BorgState, boosted_bravery: bool) -> b
         }
 
         // #789 owns these targets while the town hunt is enabled.
-        if crate::borg_town_hunt::controls_target(st, usize::from(r)) {
+        if crate::decision_api::borg_town_hunt::controls_target(st, usize::from(r)) {
             continue;
         }
 
@@ -4988,7 +4990,7 @@ pub(crate) fn borg_attack_native(st: &mut BorgState, boosted_bravery: bool) -> b
         let immobile = |st: &BorgState, k: usize| k != 0 && rf(st.kills.kills[k].r_idx, RF_NEVER_MOVE);
         let mut threat = false;
         for &(_, _, k) in &targets {
-            if k != 0 && !immobile(st, k) && crate::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false) * 100 >= hp * percent {
+            if k != 0 && !immobile(st, k) && crate::decision_api::borg_danger::borg_danger_one_kill(st, cy, cx, 1, k as i32, true, false) * 100 >= hp * percent {
                 threat = true;
                 break;
             }
@@ -5022,7 +5024,7 @@ pub(crate) fn borg_attack_native(st: &mut BorgState, boosted_bravery: bool) -> b
         BF_ACT_STARLIGHT as i32
     };
 
-    let mut attack_trace = crate::core_trace::attack_ranking();
+    let mut attack_trace = crate::decision_api::core_trace::attack_ranking();
     let mut winning_raw = 0;
     let mut winning_damage = 0;
     let mut winning_cost = None;
@@ -5057,7 +5059,7 @@ pub(crate) fn borg_attack_native(st: &mut BorgState, boosted_bravery: bool) -> b
         }
     }
 
-    crate::core_trace::record_attack_ranking(attack_trace, ranking.winner);
+    crate::decision_api::core_trace::record_attack_ranking(attack_trace, ranking.winner);
     let Some(b_g) = ranking.winner else {
         st.traits.attacking = false;
         return false;
@@ -5136,7 +5138,7 @@ fn focused_power(st: &BorgState, power: i16) -> i32 {
 
 /// mon-util.c:1300 at 574b618c: a monster dies below zero HP, so one at
 /// zero still needs a point of damage. Unknown health cannot certify a win.
-pub(crate) fn observed_kill_hp(kill: &crate::borg_flow_kill::BorgKill) -> Option<i32> {
+pub(crate) fn observed_kill_hp(kill: &crate::decision_api::borg_flow_kill::BorgKill) -> Option<i32> {
     kill.observed_health.filter(|&(hp, max)| hp >= 0 && max > 0).map(|(hp, _)| i32::from(hp) + 1)
 }
 
@@ -5241,17 +5243,17 @@ pub(crate) fn attack_on_sight_reason(st: &BorgState, r: usize) -> Option<&'stati
     if param(Param::attack_on_sight) == 0 || r == 0 || r >= engine::r_max().saturating_sub(1) {
         return None;
     }
-    let list = crate::scary_list::selected()?;
-    crate::scary_list::attack_reason(list, r, engine::race_base_name(r), crate::scary_list::Situation {
+    let list = crate::decision_api::scary_list::selected()?;
+    crate::decision_api::scary_list::attack_reason(list, r, engine::race_base_name(r), crate::decision_api::scary_list::Situation {
         clevel: tr(st, BI_CLEVEL), class: tr(st, BI_CLASS),
         breeder_count: i32::from(st.borg.mon.breeders),
         breeder_stand: !st.borg.breeders_lost && crate::borg_caution::breeder_stand(st),
         levels_less: 0,
-    }).filter(|reason| *reason != crate::borg_town_hunt::REASON)
+    }).filter(|reason| *reason != crate::decision_api::borg_town_hunt::REASON)
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct FocusedAttack {
+pub struct FocusedAttack {
     pub kind: i32,
     /// Expected millihitpoints per Borg turn, AFTER firing/blow rate scaling.
     pub hp_per_turn_milli: i32,
@@ -5350,7 +5352,7 @@ mod focused_tests {
 
     #[test]
     fn observed_hp_is_not_the_rounded_health_bar() {
-        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        let mut kill = crate::decision_api::borg_flow_kill::BorgKill::default();
         assert_eq!(observed_kill_hp(&kill), None);
         kill.power = 3;
         kill.injury = 60;
@@ -5463,6 +5465,16 @@ pub(crate) fn perform_focused_attack(st: &mut BorgState, target: usize, attack: 
 /// #760: the category target comes before flight and remains the target on
 /// subsequent thinks. A breeder colony already lost is not an attack entry.
 pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
+    match crate::shadow::decision(st, crate::decisions::Decision::AttackOnSight) {
+        crate::decisions::Value::Acted(acted) => acted,
+        _ => unreachable!(),
+    }
+}
+
+pub(crate) fn attack_on_sight_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() {
+        crate::decision_tape::mark("policy::attack.attack_on_sight", format!("{:?}", ()));
+    }
     if param(Param::attack_on_sight) == 0 { return false; }
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = st.kills.kills[i];

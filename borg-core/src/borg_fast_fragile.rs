@@ -15,14 +15,14 @@
 //! and `fast_fragile_no_heal` (no healing potion in contact with one).
 
 use crate::borg_caution::{fight_incoming_with, forecast_monster_speed};
-use crate::borg_cave_view::BORG_VIEW;
+use crate::decision_api::borg_cave_view::BORG_VIEW;
 use crate::borg_escape::{phase_door, PhaseCheck, PhaseSite};
 use crate::borg_fight_attack::{
     attack_on_sight_reason, focused_attack, observed_kill_hp, FocusedAttack,
 };
 use crate::borg_headers::borg_trait_h::*;
-use crate::borg_io::{borg_keypress, borg_note};
-use crate::engine;
+use crate::decision_api::borg_io::{borg_keypress, borg_note};
+use crate::decision_api::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_UNIQUE};
 use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE};
 use crate::headers::list_tvals_h::{TV_POTION, TV_SCROLL};
@@ -105,8 +105,8 @@ fn viewed(st: &BorgState, i: usize) -> bool {
 /// Whether the character's list names this race in an attack entry (of any
 /// reason, active at its level or not): a name overrides the stats.
 fn named_in_list(st: &BorgState, r: usize) -> bool {
-    crate::scary_list::selected()
-        .is_some_and(|list| crate::scary_list::attack_named(list, r, engine::race_base_name(r)))
+    crate::decision_api::scary_list::selected()
+        .is_some_and(|list| crate::decision_api::scary_list::attack_named(list, r, engine::race_base_name(r)))
         || attack_on_sight_reason(st, r).is_some()
 }
 
@@ -218,14 +218,14 @@ fn escape_available(st: &mut BorgState) -> bool {
     }
     let can_read = !engine::no_light()
         && st.borg.tr(BI_ISBLIND) == 0 && st.borg.tr(BI_ISCONFUSED) == 0 && st.borg.tr(BI_ISFORGET) == 0;
-    (can_read && crate::borg_inventory::borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_phase_door) >= 0)
-        || crate::borg_magic::borg_spell_okay_fail(
+    (can_read && crate::decision_api::borg_inventory::borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_phase_door) >= 0)
+        || crate::decision_api::borg_magic::borg_spell_okay_fail(
             st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
 }
 
 fn has_cure(st: &mut BorgState) -> bool {
     let svals = [st.item_val.sv_potion_cure_light, st.item_val.sv_potion_cure_serious, st.item_val.sv_potion_cure_critical];
-    svals.into_iter().any(|sval| crate::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0)
+    svals.into_iter().any(|sval| crate::decision_api::borg_inventory::borg_slot(st, TV_POTION as i32, sval) >= 0)
 }
 
 /// The one exception to the heal ban (`fast_fragile_no_heal` = 2; the issue's
@@ -285,7 +285,7 @@ pub(crate) fn escape_instead(st: &mut BorgState, target: usize, f: &Facts) -> bo
         st.borg.time.now.wrapping_sub(st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
             && crate::borg_escape::borg_allow_teleport(st)
             && (crate::borg_item_use::borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-                || crate::borg_magic::borg_spell_fail(
+                || crate::decision_api::borg_magic::borg_spell_fail(
                     st, crate::borg_headers::borg_magic_h::PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)))
     }) {
         crate::borg_escape::reset_antisummon(st);
