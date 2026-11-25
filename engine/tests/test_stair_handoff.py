@@ -657,6 +657,7 @@ class BreederDoorLoopTest(unittest.TestCase):
 
 
 
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class RecoveryManaLoopTest(unittest.TestCase):
     """#1211: the Priest pacing between recovery grids on DL19, spending the
     regenerated mana on Heroism.
