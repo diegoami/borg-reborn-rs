@@ -104,6 +104,8 @@ fn expendable_rank(
         {
             return None;
         }
+        // Eviction clears rejected kinds before renewable stock. Offer
+        // scoring assigns both the same Role::rank().
         match role {
             Role::Reject => return Some((0, value)),
             Role::Renewable => return Some((1, value)),
@@ -521,7 +523,9 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     if SETUP.load(Relaxed) == 0 {
         SETUP.store(1, Relaxed);
         let excess = if case == "trim" { 188 } else { 104 };
-        engine::setup_test_town_loadout(st, excess, case != "no-storage", false, case == "reserve-overlap");
+        engine::setup_test_town_loadout(
+            st, excess, case != "no-storage", false, 0, case == "reserve-overlap",
+        );
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
         assert_eq!(st.borg.tr(BI_CLEVEL), 20);

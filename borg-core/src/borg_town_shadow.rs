@@ -460,7 +460,14 @@ pub struct TownAction {
     pub at: [i64; 4],
 }
 
-pub fn live_action(st: &mut BorgState) -> TownAction {
+pub(crate) struct LivePlan {
+    pub action: TownAction,
+    pub urgent: crate::borg_town_utility::Room,
+    pub urgent_action: bool,
+    pub gold: i64,
+}
+
+pub(crate) fn live_plan(st: &mut BorgState) -> LivePlan {
     evaluate(st, true)
 }
 
@@ -511,7 +518,7 @@ fn executed_copies(code: i64, planned: i64) -> i64 {
     if matches!(code, crate::borg_town_record::action::BUY | crate::borg_town_record::action::BUY_FOR_HOME) { planned.max(1) } else { 1 }
 }
 
-fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
+fn evaluate(st: &mut BorgState, live: bool) -> LivePlan {
     let file = crate::borg_town_dump::plan_record_file();
     // borg-reborn-rs (#1239): select the schema and record the departure pass.
     let overloaded_shopping = crate::borg_town_live::shop_overloaded();
@@ -705,7 +712,9 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         for (k, d) in kit.iter().zip(chosen_from.dispositions.iter_mut()) {
             let reverses = match (k.place, *d) {
                 (Place::Pack, Disposition::Store) => crate::borg_town_live::home_moved(st, k.kind, false),
-                (Place::Home, Disposition::Take) => crate::borg_town_live::home_moved(st, k.kind, true),
+                (Place::Home, Disposition::Take | Disposition::Sell | Disposition::Drop) =>
+                    crate::borg_town_recall_loadout::retained_at_home(st, &st.store.shops[BORG_HOME].ware[usize::from(k.slot)])
+                    || *d == Disposition::Take && crate::borg_town_live::home_moved(st, k.kind, true),
                 _ => false,
             };
             if reverses { *d = Disposition::Keep; }
@@ -767,7 +776,15 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
             };
         }
     }
-    let chosen = TownAction { code: paction, at: act };
+    let chosen = LivePlan {
+        action: TownAction { code: paction, at: act },
+        urgent_action: now,
+        urgent: crate::borg_town_utility::Room {
+            weight: budget.urgent.iter().map(|p| i64::from(stock.candidates[p.candidate].weight)).sum(),
+            slots: crate::borg_town_budget::Facts::of(st).pack_capacity - stock.pack_slots_used() - budget.pack_slots,
+        },
+        gold: budget.gold,
+    };
     if file.is_none() { return chosen; }
     let rec = PlanRecord {
         storing: Some(storing.to_array()),

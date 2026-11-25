@@ -28,6 +28,7 @@ class TownLoadoutTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
+                BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
                 BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST="20" if case == "trim" else "0",
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
                 BORG_PARAM_TOWN_HOME_RESERVE="1" if case == "reserve-overlap" else "0",

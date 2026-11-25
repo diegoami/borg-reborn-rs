@@ -1994,7 +1994,14 @@ pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
 }
 
 #[cfg(feature = "test-town-loadout")]
-pub(crate) fn setup_test_town_loadout(st: &mut BorgState, excess: i32, has_whip: bool, pack_whip: bool, reserve_overlap: bool) {
+pub(crate) fn setup_test_town_loadout(
+    st: &mut BorgState,
+    excess: i32,
+    has_whip: bool,
+    pack_whip: bool,
+    gold: i32,
+    reserve_overlap: bool,
+) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
     use crate::headers::player_h::player;
@@ -2036,9 +2043,7 @@ pub(crate) fn setup_test_town_loadout(st: &mut BorgState, excess: i32, has_whip:
         (*player).max_exp = (*player).exp;
         (*player).max_depth = 10;
         (*player).recall_depth = 10;
-        // This fixture exercises the Home exchange using Recall in stock
-        // there. Ordinary shop purchases are covered by the shop-first tests.
-        (*player).au = 0;
+        (*player).au = gold;
         (*player).stat_cur = [14, 12, 17, 14, 13];
         (*player).stat_max = (*player).stat_cur;
 
