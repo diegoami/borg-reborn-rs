@@ -32,6 +32,7 @@ class InferiorSparesTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_PARAM_JUNK_INFERIOR_SPARES="1",
+                BORG_PARAM_JUNK_EXPLORATION_FIRST="0",
             )
             if legacy_source == "environment":
                 env["BORG_PARAM_JUNK_INFERIOR_SANDAL_AC_MARGIN"] = "7"
@@ -83,7 +84,7 @@ class TownSpareSaleTest(unittest.TestCase):
             env = {key: value for key, value in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             # Exercise the two selling choosers with the original town order.
             env.update(BORG_CORE="borg-rs", BORG_TEST_INFERIOR_SPARE_SALE="1",
-                       BORG_PARAM_TOWN_SHOP_OVERLOADED="1")
+                       BORG_PARAM_TOWN_SHOP_OVERLOADED="1", BORG_PARAM_JUNK_EXPLORATION_FIRST="0")
             messages = root / "messages.log"
             run = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),

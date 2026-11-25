@@ -1226,6 +1226,10 @@ borg_param_town_light_percent = 100
 # before ordinary dungeon pack disposal.
 borg_param_junk_inferior_spares = 1
 
+# #1264: clear known harmful items and outclassed gear before trip reserves.
+# Let a needed resupply exceed the ordinary town weight limit.
+borg_param_junk_exploration_first = 1
+
 # #1250: idle use of expendable consumables from DL1.
 borg_param_item_use_idle = 1
 

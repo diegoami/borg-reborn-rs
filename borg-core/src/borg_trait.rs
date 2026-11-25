@@ -580,6 +580,10 @@ pub fn borg_uses_swaps(st: &BorgState) -> bool {
 ///
 /// copied and adjusted from player-calcs.c
 pub fn borg_calc_blows(st: &BorgState, item: &borg_item) -> i32 {
+    borg_calc_blows_hundredths(st, item) / 100
+}
+
+pub(crate) fn borg_calc_blows_hundredths(st: &BorgState, item: &borg_item) -> i32 {
     let class = engine::player_class_info();
 
     /* The engine weighs one weapon (object_weight_one): blows per
@@ -611,7 +615,6 @@ pub fn borg_calc_blows(st: &BorgState, item: &borg_item) -> i32 {
     let min = if engine::player_opt(OPT_birth_percent_damage) { 200 } else { 100 };
     (blows + 100 * (i32::from(item.modifiers[OBJ_MOD_BLOWS as usize]) + t(st, BI_EXTRA_BLOWS)))
         .max(min)
-        / 100
 }
 
 /*

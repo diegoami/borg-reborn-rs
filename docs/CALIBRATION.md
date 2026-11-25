@@ -937,8 +937,8 @@ the pack). Every switch compiles and ships 0 (C); borg-zoo measures them.
 | `caution_confusion_cure_when_stuck` | 0 | flag | 0–1 | `borg_caution.rs:2329` |
 | `caution_immobile_no_return` | 0 | mode | 0–2 | `borg_caution.rs:2054` |
 | `caution_immobile_step_mobile_first` | 0 | flag | 0–1 | `borg_caution.rs:2440` |
-| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3232` |
-| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3225` |
+| `town_restore_life_spell_fail` | 20 | percent | 0–100 | `borg_town_capability.rs:3280` |
+| `town_restore_life_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:3278` |
 | `town_confusion_cure_reserve` | 0 | count | 0–10 | `borg_town_capability.rs:1557` |
 | `town_confusion_cure_reserve_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:1560` |
 | `town_csw_reserve_percent` | 0 | percent | 0–1000 | `borg_town_capability.rs:1420` |
@@ -1266,7 +1266,7 @@ The registry now holds **2280** parameters (2276 before; four added).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1211` |
+| `town_ranged_reserve` | 0 | count | 0–100 | `borg_town_capability.rs:1246` |
 | `town_hunt` | 0 | flag | 0–1 | `borg_town_hunt.rs:22` |
 | `town_hunt_ranged_bonus_percent` | 0 | percent | 0–1000 | `borg_town_hunt.rs:198` |
 | `town_hunt_min_hp_percent` | 0 | percent of max HP | 0–100 | `borg_town_hunt.rs:140` |
@@ -3326,7 +3326,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:1263` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:967` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1175` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3007` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3058` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -6463,7 +6463,7 @@ The shipped `harness/borg.txt` sets `town_light_reserve_turns = 20000`.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1221` |
+| `town_light_reserve_turns` | 0 | turns | 0–60000 | `borg_town_capability.rs:1256` |
 | `town_lantern_upgrade_power` | 0 | power | 0–100000 | `borg_town_shadow.rs:185` |
 
 The reserve target is the larger of the configured amount and planned
@@ -7251,7 +7251,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1228` |
+| `town_prepared_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1395` |
 | `town_prepared_poison` | 3 | copies | 1–20 | `borg_town_capability.rs:1246` |
 | `town_prepared_invisible` | 4 | copies | 1–20 | `borg_town_capability.rs:1248` |
 | `town_prepared_curse` | 2 | copies | 1–20 | `borg_town_capability.rs:1247` |
@@ -7262,10 +7262,10 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
 | `town_staple_csw` | 0 | copies | 0–99 | `borg_town_capability.rs:1346` |
 | `town_staple_ccw` | 0 | copies | 0–99 | `borg_town_capability.rs:1433` |
 | `town_staple_phase` | 0 | copies | 0–99 | `borg_town_capability.rs:1439` |
-| `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1154` |
+| `town_staple_oil` | 0 | copies | 0–99 | `borg_town_capability.rs:1188` |
 | `town_staple_food` | 0 | copies | 0–99 | `borg_town_capability.rs:1441` |
 | `town_staple_light` | 0 | copies | 0–99 | `borg_town_capability.rs:1442` |
-| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3048` |
+| `town_variety_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:3099` |
 
 ## A monster at 0 HP is alive (#975)
 
@@ -7352,7 +7352,7 @@ lead only, RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3142` |
+| `town_first_cure` | 0 (off) | count | 0–10 | `borg_town_capability.rs:3193` |
 | `town_first_cure_percent` | 200 | percent | 0–10000 | `borg_town_capability.rs:1361` |
 
 ## Grouped monster messages (#915)
@@ -7546,12 +7546,12 @@ Magic Missile) and wands on the worthless list (Darkness, Wonder).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_device_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1205` |
-| `town_device_attack` | 10 | charges | 1–99 | `borg_town_capability.rs:1206` |
-| `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:1206` |
-| `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:1207` |
-| `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:1207` |
-| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1202` |
+| `town_device_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1436` |
+| `town_device_attack` | 10 | charges | 1–99 | `borg_town_capability.rs:1437` |
+| `town_device_escape` | 5 | charges | 1–99 | `borg_town_capability.rs:1437` |
+| `town_device_detect` | 5 | charges | 1–99 | `borg_town_capability.rs:1438` |
+| `town_device_control` | 5 | charges | 1–99 | `borg_town_capability.rs:1438` |
+| `town_device_escape_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1433` |
 
 ## Black Market access and town reserves (#1103)
 
@@ -7581,9 +7581,9 @@ These are P9 candidates. The shipped settings are neutral during P8.
 |---|---|---|---|---|
 | `town_black_market_min_gold` | 0 | gold | 0–10000000 | `borg_town_budget.rs:326` |
 | `town_black_market_level_delta` | 0 | gold per level | 0–100000 | `borg_town_budget.rs:327` |
-| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3226` |
+| `town_restore_life_min_depth` | 12 | level | 1–127 | `borg_town_capability.rs:3279` |
 | `town_restore_life_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:1044` |
-| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3054` |
+| `town_restore_stat_min_depth` | 0 | level | 0–127 | `borg_town_capability.rs:3107` |
 | `town_restore_stat_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:1413` |
 | `town_second_stat_potions_by_class` | 0 | flag | 0–1 | `borg_town_capability.rs:924` |
 
@@ -8805,7 +8805,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:539` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:675` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -9063,8 +9063,8 @@ play. [Handover](handover/2026-11-25-1229-stale-kobold-door.md)
 
 ## Inferior spare equipment (#1236)
 
-The shipped policy sells inferior same-kind equipment in town. In the
-dungeon its priority drop is limited to stacks worth at most 15 gold,
+The legacy town comparison sells inferior same-kind equipment. In the
+dungeon the same-kind priority drop is limited to stacks worth at most 15 gold,
 the first positive threshold in the ordinary junk policy. It runs after
 urgent travel and recovery.
 
@@ -9076,8 +9076,39 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2097` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2158` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)
 [Zoo pilot #804](https://github.com/diegoami/borg-zoo/issues/804)
+
+## Exploration reserves and full packs (#1264)
+
+When a full pack needs a slot, the Borg first discards an identified
+harmful consumable or a plain spare weapon or armour stack that the worn
+item clearly beats. The comparison uses known properties and the whole kit
+with each item equipped in turn. It preserves an accuracy, damage, speed,
+casting or departure headroom tradeoff, planned swaps, and visible special
+gear. A remaining rune keeps the item eligible for identification while the
+Borg has an Identify Rune scroll or a usable learned Identify Rune spell.
+The same comparison serves the cheap dungeon drop, town sales and arrival
+unloading. On arrival, offer a whole inferior stack to a shop before
+dropping it.
+
+A separate gate protects the remaining trip targets for light and fuel,
+nutrition, healing, Phase Door, Recall and ranged combat supplies. It
+also protects one usable source each of teleportation and level escape.
+The town planner can take or buy one copy toward a shortfall even when
+the weight ceiling would block it. It retains the gold and native
+pack-capacity checks and recalculates the shortfall after each transaction.
+The Recall purchase floor applies to shop spending. A low purse leaves
+carried or free Home Recall eligible for the reserve.
+
+| parameter | default | unit | range | source |
+|---|---:|---|---|---|
+| `junk_exploration_first` | 0 | flag | 0–1 | `borg_junk.rs:60` |
+
+Track P ships this flag at 1 by owner decision. The compiled default is 0,
+which also serves as the Zoo control.
+
+[Zoo comparison request](https://github.com/diegoami/borg-zoo/issues/804)

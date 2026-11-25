@@ -293,6 +293,7 @@ jobs:
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception,test-stair-handoff,test-combat-heal,test-town-loadout,test-cursed-spares,test-town-review,test-junk-consumables harness/build.sh
       - run: python3 engine/tests/test_combat_heal.py
       - run: python3 engine/tests/test_town_loadout.py
+      - run: python3 engine/tests/test_exploration_pack.py
       - run: python3 engine/tests/test_town_recall_loadout.py
       - run: python3 engine/tests/test_cursed_spares.py
       - run: python3 engine/tests/test_junk_consumables.py

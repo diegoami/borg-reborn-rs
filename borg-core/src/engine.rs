@@ -2011,6 +2011,7 @@ pub(crate) fn setup_test_town_loadout(
     pack_whip: bool,
     gold: i32,
     reserve_overlap: bool,
+    recall_at_home: bool,
 ) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
@@ -2032,7 +2033,7 @@ pub(crate) fn setup_test_town_loadout(
         fn object_flavor_aware(p: *mut player, obj: *mut object);
         fn update_stuff(p: *mut player);
         fn weight_remaining(p: *mut player) -> i32;
-        fn wipe_mon_list(c: *mut crate::headers::cave_h::chunk, p: *mut player);
+        fn delete_monster_idx(c: *mut crate::headers::cave_h::chunk, idx: i32);
         fn player_learn_all_runes(p: *mut player);
     }
 
@@ -2105,9 +2106,16 @@ pub(crate) fn setup_test_town_loadout(
             (*(*whip).known).to_d = 3;
             if pack_whip { inven_carry(player, whip, false, false); } else { home_carry(whip); }
         }
-        let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
-        object_flavor_aware(player, recall);
-        home_carry(recall);
+        if recall_at_home {
+            let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
+            object_flavor_aware(player, recall);
+            home_carry(recall);
+        } else {
+            let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
+            object_flavor_aware(player, recall);
+            object_free((*recall).known);
+            object_free(recall);
+        }
         if reserve_overlap {
             for (tval, name) in [(TV_MUSHROOM, c"Second Sight"), (TV_POTION, c"Speed")] {
                 let item = make(tval, name, 1, None, None);
@@ -2146,7 +2154,13 @@ pub(crate) fn setup_test_town_loadout(
         (*player).csp = (*player).msp;
         player_learn_all_runes(player);
         // Isolate the native town commands from unrelated town-monster flight.
-        wipe_mon_list(crate::headers::cave_h::cave, player);
+        let cave = crate::headers::cave_h::cave;
+        for idx in 1..i32::from((*cave).mon_max) {
+            let monster = crate::headers::cave_h::cave_monster(cave, idx);
+            if !(*monster).race.is_null() {
+                delete_monster_idx(cave, idx);
+            }
+        }
     });
 }
 
