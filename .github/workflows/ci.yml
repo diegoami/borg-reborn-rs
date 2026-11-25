@@ -238,13 +238,15 @@ jobs:
               rows = [json.loads(line) for line in receiving.read_text().splitlines()]
               assert all(r['schema']=='borg-reborn-rs/r45-constructed@1' and r['mode']==mode
                          and r['synthetic'] and not r['engine_consumption'] for r in rows)
-              assert [(r['case'], r['value'], r['queued']) for r in rows] == [
-                  ('teleport-missing-escape-supply', {'Acted': False}, []),
-                  ('lightless-cures-poison', {'Acted': True}, [113, 97]),
+              assert [(r['case'], r['value'], r['queued'], r['rng_draws']) for r in rows] == [
+                  ('teleport-missing-escape-supply', {'Acted': False}, [], None),
+                  ('teleport-accepts-sampled-landings', {'Acted': True}, [], 16698),
+                  ('teleport-rejects-dangerous-landings', {'Acted': False}, [], 16698),
+                  ('lightless-cures-poison', {'Acted': True}, [113, 97], None),
               ]
           PYITEM
-          if strings build/rust/game/angband | grep -E 'R4 (item-use|power|equipment|store) constructed fixture' > /dev/null; then
-            echo 'R4 constructed fixtures leaked into the normal binary'; exit 1
+          if strings build/rust/game/angband | grep -E 'R4 (item-use|power|equipment|store) constructed fixture|teleport-accepts-sampled-landings|teleport-rejects-dangerous-landings' > /dev/null; then
+            echo 'Constructed fixtures leaked into the normal binary'; exit 1
           fi
       - name: Retain constructed item-use evidence
         if: always()

@@ -91,4 +91,6 @@ conditions instead of silently truncating receiving policy.
 
 The [receiving rebuild handover](handover/2026-11-25-856-r45-rebuild.md)
 records the recovered local branch, independent policy implementation,
-source receipt and runtime results. It supersedes the preflight status above.
+source receipt and runtime results. The [carry report](R45-CARRY-REPORT.md)
+gives the per-file counts, shared boundaries, and Zoo handoff. These
+supersede the preflight status above.
