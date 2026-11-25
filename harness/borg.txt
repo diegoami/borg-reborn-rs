@@ -522,12 +522,17 @@ borg_param_power_inventory_clevel_threshold_3 = 7
 # Impact: set to 10, 0 of 6 test games play differently.
 
 borg_param_prepared_recall_depth = 5
-# #768: C Borg dive gates. A positive margin allows a deeper level before
-# CL50. Class HP and CL gates are in the folded class files below.
-# The mid depth limit applies to classes other than Mage and Necromancer.
-# Those two use the mid character-level limit and the deep ramp.
+# #1217: the folded class files set DL2 one CL above the mixed exploration
+# cap and set separate minimum levels for DL3–4 and DL5–9. The common DL2
+# CL minimum is 0, which disables it for classes without an override.
+# Changing the gate for a class requires editing that class's line.
+# A zero HP minimum disables that gate.
+# #768: a positive margin allows a deeper level before CL50. The mid-depth
+# limit applies to classes other than Mage and Necromancer. Those two use
+# the mid character-level limit and the deep ramp.
 borg_param_prepared_clevel_depth_margin = 0
-borg_param_prepared_dl2_min_hp = 30
+borg_param_prepared_dl2_min_hp = 0
+borg_param_prepared_dl2_min_clevel = 0
 borg_param_prepared_cure_min = 2
 borg_param_prepared_cure_until_clevel = 30
 borg_param_prepared_mid_max_depth = 19
@@ -1437,6 +1442,8 @@ borg_param_caution_remember_never_move = 0
 borg_param_caution_desperate_fast_danger_percent = 50
 # #907: compare current player and observed monster speeds in the faster-neighbour veto.
 borg_param_caution_desperate_fast_haste = 0
+# #908: refuse branch (three) when the walk costs this share of HP. 0 disables the test.
+borg_param_caution_desperate_walk_cost_percent = 0
 # #1123: avoid a recently retreated-from grid on a stair route while it
 # is still dangerous. The hold lasts at most 128 Borg thinks.
 borg_param_caution_retreat_reentry_ticks = 128
@@ -2050,6 +2057,8 @@ borg_param_stair_scum_slack_per_level_percent = 50
 borg_param_stair_scum_alarm_turns = 100
 # #759: damage-race fight test; compiled 0, shipped 1 by owner decision.
 borg_param_caution_winning_fight = 1
+# #992: reserve this share of HP in the priority fight verdict. 0 uses the current verdict.
+borg_param_caution_winning_fight_margin_percent = 0
 # #758: flight Recall survival gate; compiled 0, shipped 1 by owner decision.
 borg_param_caution_recall_survival = 1
 borg_param_caution_recall_survival_delay = 34
@@ -2234,10 +2243,11 @@ borg_param_town_devices_percent__warrior = 75
 borg_param_town_phase_curve_scale_percent__warrior = 75
 borg_param_town_oil_curve_scale_percent__warrior = 100
 borg_param_caution_breeder_hunt_max_count__warrior = 7
-borg_param_prepared_dl34_min_hp__warrior = 50
-borg_param_prepared_dl34_min_clevel__warrior = 4
-borg_param_prepared_dl59_min_hp__warrior = 60
-borg_param_prepared_dl59_min_clevel__warrior = 6
+borg_param_prepared_dl2_min_clevel__warrior = 6
+borg_param_prepared_dl34_min_hp__warrior = 0
+borg_param_prepared_dl34_min_clevel__warrior = 7
+borg_param_prepared_dl59_min_hp__warrior = 0
+borg_param_prepared_dl59_min_clevel__warrior = 8
 borg_param_prepared_mid_clevel_offset__warrior = -4
 borg_param_prepared_deep_clevel_offset__warrior = 5
 borg_param_prepared_deep_min_clevel__warrior = 0
@@ -2260,10 +2270,11 @@ borg_param_town_devices_percent__mage = 150
 borg_param_town_phase_curve_scale_percent__mage = 175
 borg_param_town_oil_curve_scale_percent__mage = 100
 borg_param_light_detect_evil_spell_min_level__mage = 10
-borg_param_prepared_dl34_min_hp__mage = 60
+borg_param_prepared_dl2_min_clevel__mage = 9
+borg_param_prepared_dl34_min_hp__mage = 0
 borg_param_prepared_dl34_min_clevel__mage = 11
-borg_param_prepared_dl59_min_hp__mage = 80
-borg_param_prepared_dl59_min_clevel__mage = 15
+borg_param_prepared_dl59_min_hp__mage = 0
+borg_param_prepared_dl59_min_clevel__mage = 13
 borg_param_prepared_mid_clevel_offset__mage = 5
 borg_param_prepared_deep_clevel_offset__mage = 8
 borg_param_prepared_deep_min_clevel__mage = 0
@@ -2284,10 +2295,11 @@ borg_param_town_devices_percent__druid = 100
 borg_param_town_phase_curve_scale_percent__druid = 175
 borg_param_town_oil_curve_scale_percent__druid = 150
 borg_param_light_detect_evil_spell_min_level__druid = 10
-borg_param_prepared_dl34_min_hp__druid = 40
-borg_param_prepared_dl34_min_clevel__druid = 9
-borg_param_prepared_dl59_min_hp__druid = 60
-borg_param_prepared_dl59_min_clevel__druid = 15
+borg_param_prepared_dl2_min_clevel__druid = 8
+borg_param_prepared_dl34_min_hp__druid = 0
+borg_param_prepared_dl34_min_clevel__druid = 10
+borg_param_prepared_dl59_min_hp__druid = 0
+borg_param_prepared_dl59_min_clevel__druid = 12
 borg_param_prepared_mid_clevel_offset__druid = 0
 borg_param_prepared_deep_clevel_offset__druid = 13
 borg_param_prepared_deep_min_clevel__druid = 0
@@ -2308,10 +2320,11 @@ borg_param_town_devices_percent__priest = 125
 borg_param_town_phase_curve_scale_percent__priest = 125
 borg_param_town_oil_curve_scale_percent__priest = 150
 borg_param_light_detect_evil_spell_min_level__priest = 10
-borg_param_prepared_dl34_min_hp__priest = 40
-borg_param_prepared_dl34_min_clevel__priest = 9
-borg_param_prepared_dl59_min_hp__priest = 60
-borg_param_prepared_dl59_min_clevel__priest = 15
+borg_param_prepared_dl2_min_clevel__priest = 10
+borg_param_prepared_dl34_min_hp__priest = 0
+borg_param_prepared_dl34_min_clevel__priest = 12
+borg_param_prepared_dl59_min_hp__priest = 0
+borg_param_prepared_dl59_min_clevel__priest = 14
 borg_param_prepared_mid_clevel_offset__priest = 0
 borg_param_prepared_deep_clevel_offset__priest = 13
 borg_param_prepared_deep_min_clevel__priest = 0
@@ -2334,10 +2347,11 @@ borg_param_town_devices_percent__necromancer = 150
 borg_param_town_phase_curve_scale_percent__necromancer = 175
 borg_param_town_oil_curve_scale_percent__necromancer = 100
 borg_param_light_detect_evil_spell_min_level__necromancer = 10
-borg_param_prepared_dl34_min_hp__necromancer = 60
-borg_param_prepared_dl34_min_clevel__necromancer = 11
-borg_param_prepared_dl59_min_hp__necromancer = 80
-borg_param_prepared_dl59_min_clevel__necromancer = 15
+borg_param_prepared_dl2_min_clevel__necromancer = 10
+borg_param_prepared_dl34_min_hp__necromancer = 0
+borg_param_prepared_dl34_min_clevel__necromancer = 13
+borg_param_prepared_dl59_min_hp__necromancer = 0
+borg_param_prepared_dl59_min_clevel__necromancer = 14
 borg_param_prepared_mid_clevel_offset__necromancer = 5
 borg_param_prepared_deep_clevel_offset__necromancer = 8
 borg_param_prepared_deep_min_clevel__necromancer = 0
@@ -2360,10 +2374,11 @@ borg_param_town_phase_curve_scale_percent__paladin = 100
 borg_param_town_oil_curve_scale_percent__paladin = 125
 borg_param_light_detect_evil_spell_min_level__paladin = 10
 borg_param_caution_breeder_hunt_max_count__paladin = 6
-borg_param_prepared_dl34_min_hp__paladin = 50
-borg_param_prepared_dl34_min_clevel__paladin = 4
-borg_param_prepared_dl59_min_hp__paladin = 60
-borg_param_prepared_dl59_min_clevel__paladin = 6
+borg_param_prepared_dl2_min_clevel__paladin = 9
+borg_param_prepared_dl34_min_hp__paladin = 0
+borg_param_prepared_dl34_min_clevel__paladin = 10
+borg_param_prepared_dl59_min_hp__paladin = 0
+borg_param_prepared_dl59_min_clevel__paladin = 12
 borg_param_prepared_mid_clevel_offset__paladin = 0
 borg_param_prepared_deep_clevel_offset__paladin = 7
 borg_param_prepared_deep_min_clevel__paladin = 0
@@ -2387,9 +2402,10 @@ borg_param_town_devices_percent__rogue = 135
 borg_param_town_phase_curve_scale_percent__rogue = 125
 borg_param_town_oil_curve_scale_percent__rogue = 125
 borg_param_caution_breeder_hunt_max_count__rogue = 6
-borg_param_prepared_dl34_min_hp__rogue = 50
+borg_param_prepared_dl2_min_clevel__rogue = 7
+borg_param_prepared_dl34_min_hp__rogue = 0
 borg_param_prepared_dl34_min_clevel__rogue = 8
-borg_param_prepared_dl59_min_hp__rogue = 60
+borg_param_prepared_dl59_min_hp__rogue = 0
 borg_param_prepared_dl59_min_clevel__rogue = 10
 borg_param_prepared_mid_clevel_offset__rogue = 0
 borg_param_prepared_deep_clevel_offset__rogue = 10
@@ -2415,10 +2431,11 @@ borg_param_town_phase_reserve__ranger = 10
 borg_param_town_first_cure__ranger = 2
 borg_param_town_oil_curve_scale_percent__ranger = 50
 borg_param_caution_breeder_hunt_max_count__ranger = 6
-borg_param_prepared_dl34_min_hp__ranger = 50
-borg_param_prepared_dl34_min_clevel__ranger = 4
-borg_param_prepared_dl59_min_hp__ranger = 60
-borg_param_prepared_dl59_min_clevel__ranger = 6
+borg_param_prepared_dl2_min_clevel__ranger = 8
+borg_param_prepared_dl34_min_hp__ranger = 0
+borg_param_prepared_dl34_min_clevel__ranger = 9
+borg_param_prepared_dl59_min_hp__ranger = 0
+borg_param_prepared_dl59_min_clevel__ranger = 11
 borg_param_prepared_mid_clevel_offset__ranger = 0
 borg_param_prepared_deep_clevel_offset__ranger = 8
 borg_param_prepared_deep_min_clevel__ranger = 29
@@ -2443,10 +2460,11 @@ borg_param_town_devices_percent__blackguard = 100
 borg_param_town_phase_curve_scale_percent__blackguard = 50
 borg_param_town_oil_curve_scale_percent__blackguard = 100
 borg_param_caution_breeder_hunt_max_count__blackguard = 8
-borg_param_prepared_dl34_min_hp__blackguard = 50
-borg_param_prepared_dl34_min_clevel__blackguard = 4
-borg_param_prepared_dl59_min_hp__blackguard = 60
-borg_param_prepared_dl59_min_clevel__blackguard = 6
+borg_param_prepared_dl2_min_clevel__blackguard = 7
+borg_param_prepared_dl34_min_hp__blackguard = 0
+borg_param_prepared_dl34_min_clevel__blackguard = 9
+borg_param_prepared_dl59_min_hp__blackguard = 0
+borg_param_prepared_dl59_min_clevel__blackguard = 10
 borg_param_prepared_mid_clevel_offset__blackguard = -4
 borg_param_prepared_deep_clevel_offset__blackguard = 5
 borg_param_prepared_deep_min_clevel__blackguard = 0

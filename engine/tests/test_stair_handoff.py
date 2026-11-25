@@ -99,6 +99,13 @@ PINNED_TOWN_SETTINGS = [
     # #1159 changes the path to the incident. Keep the original route
     # selection for these exact-turn replays.
     ("caution_rising_skip_held_stairs", 0),
+    # #1217 changed shallow preparedness after these recorded routes.
+    ("prepared_dl2_min_hp", 30),
+    ("prepared_dl2_min_clevel__warrior", 0), ("prepared_dl2_min_clevel__mage", 0),
+    ("prepared_dl34_min_hp__warrior", 50), ("prepared_dl34_min_clevel__warrior", 4),
+    ("prepared_dl34_min_hp__mage", 60), ("prepared_dl34_min_clevel__mage", 11),
+    ("prepared_dl59_min_hp__warrior", 60), ("prepared_dl59_min_clevel__warrior", 6),
+    ("prepared_dl59_min_hp__mage", 80), ("prepared_dl59_min_clevel__mage", 15),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -182,7 +189,7 @@ class StairHandoffTest(unittest.TestCase):
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight=None, player_class=6, depth=5):
+    def run_case(self, case, weight=None, player_class=6, depth=5, **settings):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
@@ -198,7 +205,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
                     if changed == 0:
                         config += f"\n{key} = 0\n"
-                for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
+                caution = {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}
+                for name, value in (caution | settings).items():
                     key = f"borg_param_caution_{name}"
                     config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                     if changed == 0:
@@ -220,6 +228,14 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for case in ("one-step", "two-steps"):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
+
+    def test_pursuit_budget_checks_the_reachable_route_and_its_handoff(self):
+        cases = (("pursuit-budget-off", 0), ("pursuit-budget", 100),
+                 ("pursuit-budget-slowed", 100), ("pursuit-budget-handoff", 100))
+        for weight in (0, 5):
+            for case, budget in cases:
+                with self.subTest(weight=weight, case=case):
+                    self.run_case(case, weight, desperate_walk_cost_percent=budget)
 
     def test_known_up_handoff_with_shipped_settings(self):
         self.run_case("known-up-handoff", player_class=0, depth=2)
@@ -273,6 +289,7 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0),
                 ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -341,6 +358,7 @@ class StaleStairMoreTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -415,6 +433,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -486,6 +505,7 @@ class NoteStandingFlagsTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -583,6 +603,7 @@ class DarkVeinLoopTest(unittest.TestCase):
 
     def test_without_the_switch_the_recorded_loop_repeats(self):
         self.run_case(False)
+
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class BreederDoorLoopTest(unittest.TestCase):
