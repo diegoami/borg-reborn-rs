@@ -5,6 +5,12 @@ whatever the model.
 
 ## Owner and scope
 
+**Early alpha** (owner, 2026-11-25). Move fast and accept breaking changes
+when they simplify the project or help us learn faster. We have no user
+base to maintain yet. Skip compatibility work whose only purpose is to
+support hypothetical existing users. Keep recorded evidence reproducible
+and use the owner review gate for integration.
+
 1. **Track P integrates on `track-p`, never directly on `main`** (owner,
    2026-11-15; branch spelling confirmed as `track-p`). A session creates P
    task branches from `track-p`, targets task PRs at `track-p`, and merges
