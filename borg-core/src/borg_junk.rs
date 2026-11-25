@@ -2222,14 +2222,27 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) == 0 || st.borg.goal.recalling != 0 || st.borg.goal.fleeing || off_floor(st) {
         return false;
     }
-    let Some(slot) = find_inferior_spare(st, |_, slot, item| {
-        (i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)).then_some(slot)
-    }) else {
-        return false;
+    let cheap_stack = |item: &borg_item| {
+        item.iqty > 0 && i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
     };
-    if engine::player_is_shapechanged() || danger_here(st) != 0 {
-        return false;
-    }
+    let safe_to_drop = |st: &mut BorgState| !engine::player_is_shapechanged() && danger_here(st) == 0;
+    let slot = if exploration_first() {
+        // Run the danger check only when a stack could qualify. Check it
+        // once, before simulating any equipment changes.
+        let pack_end = pack_size() as usize;
+        let first = (0..pack_end).find(|&slot| {
+            let item = &st.items.items[slot];
+            cheap_stack(item) && crate::borg_spare_gear::equipment_slot(item).is_some()
+        });
+        first.filter(|_| safe_to_drop(st)).and_then(|first| {
+            (first..pack_end).find(|&slot| cheap_stack(&st.items.items[slot])
+                && crate::borg_spare_gear::inferior(st, slot))
+        })
+    } else {
+        let legacy = inferior_spares(st).find_map(|(slot, item)| cheap_stack(item).then_some(slot));
+        legacy.filter(|_| safe_to_drop(st))
+    };
+    let Some(slot) = slot else { return false; };
     note_desc(st, "# Dropping inferior spare ", slot as i32, ".");
     drop_ignored_pack_stack(st, slot as i32);
     true

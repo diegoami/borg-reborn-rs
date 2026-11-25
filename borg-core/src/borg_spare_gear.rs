@@ -10,7 +10,7 @@ use crate::headers::list_object_flags_h::{
 };
 use crate::{engine, state::BorgState};
 
-fn equipment_slot(item: &borg_item) -> Option<usize> {
+pub(crate) fn equipment_slot(item: &borg_item) -> Option<usize> {
     match u32::from(item.tval) {
         TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW | TV_SOFT_ARMOR | TV_HARD_ARMOR
         | TV_DRAG_ARMOR | TV_CLOAK | TV_SHIELD | TV_HELM | TV_CROWN | TV_GLOVES

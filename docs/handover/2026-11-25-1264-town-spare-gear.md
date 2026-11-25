@@ -2,7 +2,8 @@
 
 With the shipped exploration-first setting, town sales and arrival unloading
 use the same known-loadout comparison as dungeon disposal, including the
-cheap priority drop. It checks combat, protection, weight and speed, and
+cheap priority drop. The cheap drop checks stack value and safety before
+simulating loadouts. The comparison checks combat, protection, weight and speed, and
 preserves special gear, viable loadouts, selected swaps, and equipment with
 a rune the Borg can still identify. Both town planners can sell an inferior stack whole when a shop has
 room for it. Arrival offers a marketable stack before using the existing
