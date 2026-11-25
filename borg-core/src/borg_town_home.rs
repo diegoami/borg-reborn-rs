@@ -74,7 +74,7 @@ impl Role {
 }
 
 pub(crate) fn enabled(st: &BorgState) -> bool {
-    crate::borg_town_live::active(st) && param(Param::town_home_reserve) != 0
+    param(Param::town_home_reserve) != 0 && crate::borg_town_live::active(st)
 }
 
 fn consumable(st: &BorgState, item: &borg_item) -> Role {
