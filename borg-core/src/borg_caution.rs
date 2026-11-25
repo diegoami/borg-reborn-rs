@@ -1127,6 +1127,8 @@ pub(crate) fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool 
         && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_scary_level)
     {
         let mut safe = true;
+        let current_speed = p(Param::caution_desperate_fast_haste) != 0;
+        let player_speed = if current_speed { engine::player_combat_speed() } else { st.borg.tr(BI_SPEED) };
 
         // do not attempt it if an adjacent monster is faster than me
         for i in 0..8 {
@@ -1148,7 +1150,7 @@ pub(crate) fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool 
             // borg-reborn-rs (#747): with caution_desperate_fast_danger_percent,
             // only a faster monster that is also dangerous (a fruit bat
             // next to the Borg is not a reason to stay).
-            if i32::from(st.kills.kills[usize::from(kill)].speed) > st.borg.tr(BI_SPEED)
+            if desperate_neighbour_faster(&st.kills.kills[usize::from(kill)], player_speed, current_speed)
                 && fast_neighbour_counts(st, usize::from(kill))
             {
                 safe = false;
@@ -3762,6 +3764,11 @@ pub(crate) fn forecast_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> 
     i32::from(kill.speed) + if kill.observed_fast { 10 } else { 0 }
 }
 
+/// Current speed for an immediate movement decision (mon-move.c:1928-1935).
+fn current_monster_speed(kill: &crate::borg_flow_kill::BorgKill) -> i32 {
+    forecast_monster_speed(kill) - 2 * i32::from(kill.observed_slow_level)
+}
+
 // Recall is already pending during exposure: these non-damaging spells do
 // not stop its countdown. They CAN change the ability to execute attacks,
 // so a winning fight with spells still remains uncertified. monster_spell.txt
@@ -5391,6 +5398,11 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
             calmed: p(Param::caution_scary_unlatch_calmed) != 0,
         };
         if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
+            // borg-reborn-rs (#1206, review 3): the scare's goals were
+            // withdrawn mid-think. Observe the actual post-withdrawal
+            // state (review 4): another caution's goals may keep the
+            // escape armed.
+            crate::borg_flow::escape_context_tick(st);
             borg_note(
                 st,
                 if killed && (rules.kill || rules.calmed) {
@@ -5413,7 +5425,11 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
-        withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+        // borg-reborn-rs (#1206, review 3): the withdrawal is the
+        // transition. Observe the actual post-withdrawal state (review
+        // 4): the scare clears only the flags it owns — a restock or
+        // breeder flight can keep the aggregate escape armed.
+        crate::borg_caution::withdraw_scare_and_observe(st);
         if !st.borg.mon.scary_stand {
             borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
         }
@@ -5445,6 +5461,17 @@ pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mu
     if std::mem::take(&mut mon.scary_town) {
         goal.fleeing_to_town = false;
     }
+}
+
+/// borg-reborn-rs (#1206, review 4): withdraw the scare's goals and
+/// observe the escape context at that transition. The withdrawal clears
+/// only the flags the scare owns, so a restock or breeder flight can
+/// keep the aggregate escape armed — stamp the disarm only when nothing
+/// remains armed, or the still-armed flight loses the protection on the
+/// door it just opened. The decision fixture drives this same transition.
+pub(crate) fn withdraw_scare_and_observe(st: &mut BorgState) {
+    withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+    crate::borg_flow::escape_context_tick(st);
 }
 
 /// borg-reborn-rs (#515): the scan found nothing scary; clear the flag and
@@ -7021,6 +7048,31 @@ pub(crate) fn flight_goal(why: i32, fleeing_or_leaving: bool) -> bool {
 /// also when it is next to it and ahead of the Borg.
 pub(crate) fn stairs_clean_path_mode() -> i32 {
     p(Param::caution_stairs_clean_path)
+}
+
+/// #907: compare current monster speed when the opt-in veto is active.
+fn desperate_neighbour_faster(kill: &crate::borg_flow_kill::BorgKill, player_speed: i32, current_speed: bool) -> bool {
+    let speed = if current_speed { current_monster_speed(kill) } else { i32::from(kill.speed) };
+    speed > player_speed
+}
+
+#[cfg(test)]
+#[test]
+fn hasted_soldier_can_veto_the_desperate_stair_walk() {
+    let mut soldier = crate::borg_flow_kill::BorgKill::default();
+    soldier.speed = 109;
+    soldier.observed_fast = true;
+    assert!(!desperate_neighbour_faster(&soldier, 110, false));
+    assert!(desperate_neighbour_faster(&soldier, 110, true));
+    assert!(!desperate_neighbour_faster(&soldier, 119, true));
+    soldier.observed_slow_level = 5;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
+    assert!(desperate_neighbour_faster(&soldier, 100, true));
+    soldier.observed_slow_level = 0;
+    assert!(danger_share_reaches(41, 23, 50));
+    assert!(!danger_share_reaches(11, 23, 50));
+    soldier.observed_fast = false;
+    assert!(!desperate_neighbour_faster(&soldier, 110, true));
 }
 
 /// borg-reborn-rs (#747, owner case 432972050: a fruit bat next to the Borg

@@ -678,6 +678,10 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1206, review 3): observe the escape context at
+    // every dungeon think, before the goals are re-planned — the
+    // remembered door openings belong to one continuous escape.
+    crate::borg_flow::escape_context_tick(st);
     crate::borg_flow::observe_flight_retreats(st);
     crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;

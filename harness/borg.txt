@@ -1073,6 +1073,9 @@ borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
 
+# #1119: first discretionary radius-one room-lighting cast needs evidence of darkness.
+borg_param_light_first_cast_require_dark = 1
+
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
 borg_param_light_hallway_repeat_guard = 1
 borg_param_light_detect_dark_entry = 0
@@ -1413,6 +1416,8 @@ borg_param_caution_remember_never_move = 0
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 50
+# #907: compare current player and observed monster speeds in the faster-neighbour veto.
+borg_param_caution_desperate_fast_haste = 0
 # #1123: avoid a recently retreated-from grid on a stair route while it
 # is still dangerous. The hold lasts at most 128 Borg thinks.
 borg_param_caution_retreat_reentry_ticks = 128
