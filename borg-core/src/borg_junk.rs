@@ -459,6 +459,9 @@ fn borg_consume(st: &mut BorgState, i: i32) -> bool {
     false
 }
 
+// The first positive value threshold in the ordinary dungeon junk policy.
+const EARLY_JUNK_VALUE: i32 = 15;
+
 /// `borg_drop_junk`: the items worth keeping by value at this depth.
 fn junk_worth_keeping(st: &BorgState, value: i32) -> bool {
     /* up to level 5, keep anything of any value */
@@ -473,7 +476,7 @@ fn junk_worth_keeping(st: &BorgState, value: i32) -> bool {
     /* below level 127, keep anything of value 2000 or better */
     const TIERS: [(i32, i32); 10] = [
         (5, 0),
-        (10, 15),
+        (10, EARLY_JUNK_VALUE),
         (15, 100),
         (30, 500),
         (40, 1000),
@@ -1653,8 +1656,10 @@ fn inferior_spare(
         // learning the AC rune. Leather Sandals start at [1,+0] (object.txt).
         // Their egos add no flat AC penalty (ego_item.txt), and obj-make.c:
         // apply_magic/armour adds at least +1 when creating ego armour.
-        // Disenchantment can bring this back to +0. Keep unknowns starting
-        // at the disenchanter eye's native depth (monster.txt, DL5).
+        // This is a shallow-game heuristic. Elemental inventory damage can
+        // lower the enchantment of carried armor (project-obj.c:inven_damage),
+        // and disenchantment can affect a pair worn earlier. Keep unknowns
+        // once the Borg has reached DL5 to limit the heuristic's exposure.
         if tval != TV_BOOTS || i32::from(spare.sval) != sandal_sval || max_depth >= 5
             || spare.ego_idx != 0 || spare.ac != 1 || spare.to_a != 0
             || !description.ends_with(b" [1,+0] {??}")
@@ -1717,14 +1722,16 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_CDEPTH) == 0 || st.borg.goal.recalling != 0 || st.borg.goal.fleeing || off_floor(st) {
         return false;
     }
-    let Some(slot) = inferior_spares(st).next().map(|(slot, _)| slot as i32) else {
+    let Some((slot, _)) = inferior_spares(st).find(|(_, item)| {
+        i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
+    }) else {
         return false;
     };
     if engine::player_is_shapechanged() || danger_here(st) != 0 {
         return false;
     }
-    note_desc(st, "# Dropping inferior spare ", slot, ".");
-    drop_marked_pack_stack(st, slot);
+    note_desc(st, "# Dropping inferior spare ", slot as i32, ".");
+    drop_marked_pack_stack(st, slot as i32);
     true
 }
 
@@ -1780,7 +1787,7 @@ mod tests {
     fn unsafe_inferences_about_a_zero_ac_spare_keep_the_item() {
         let worn = sandals(7, b"a Pair of Leather Sandals of Slow Descent [1,+7]");
         let spare = sandals(0, b"a Pair of Leather Sandals [1,+0] {??}");
-        assert!(!inferior_spare(&spare, &worn, 1, 5, 7), "disenchantment is credible");
+        assert!(!inferior_spare(&spare, &worn, 1, 5, 7), "unknown-rune heuristic ends at max DL5");
         assert!(!inferior_spare(&spare, &worn, 1, 3, 8), "insufficient enchantment margin");
 
         let hidden_ac = sandals(0, b"a Pair of Leather Sandals [1] {??}");

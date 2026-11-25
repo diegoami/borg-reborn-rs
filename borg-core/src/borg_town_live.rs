@@ -174,7 +174,7 @@ pub fn home_moved(st: &BorgState, kind: u32, stored: bool) -> bool {
 
 /// The native store may reject an otherwise plausible offer (for example,
 /// its stock is full). A queued command is not proof of a transaction.
-fn settle_sale(st: &mut BorgState) {
+pub(crate) fn settle_sale(st: &mut BorgState) {
     if st.think.town_live.clock != Some(st.borg.time.level) {
         st.think.town_live = LiveState { clock: Some(st.borg.time.level), ..LiveState::default() };
     }
@@ -278,7 +278,7 @@ fn visit_gate(st: &mut BorgState) -> Option<bool> {
     None
 }
 
-fn set_action(st: &mut BorgState, a: TownAction) -> bool {
+pub(crate) fn set_action(st: &mut BorgState, a: TownAction) -> bool {
     let Some((shop, ware, item)) = goal(a) else { clear(st); return false; };
     st.borg.goal.shop = shop;
     st.borg.goal.ware = ware;
