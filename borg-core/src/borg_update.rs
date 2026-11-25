@@ -2198,6 +2198,9 @@ fn new_level(st: &mut BorgState) {
     st.flow.track_step.num = 0;
     st.flow.track_door.num = 0;
     st.flow.track_closed.num = 0;
+    // borg-reborn-rs (#1206): a new level has no recently opened doors.
+    st.flow.opened_doors.clear();
+    st.flow.escape_last_disarm = 0;
     st.flow_misc.track_vein.num = 0;
     st.flow_misc.spastic_local = false;
     st.flow_misc.spastic_approach = None;

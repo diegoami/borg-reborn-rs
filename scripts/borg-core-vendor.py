@@ -69,7 +69,7 @@ HOOKED = {
     'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters; #929: a miss in view is not a wall
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
-    'src/borg.rs',  # #530: the scary goals and scary stand flags
+    'src/borg.rs',  # #530: scary goals and stand flags. #1213: removed potion-testing state.
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
@@ -83,6 +83,7 @@ HOOKED = {
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 
     'Cargo.toml', 'src/borg_power.rs', 'src/borg_item_use.rs', 'src/borg_fight_defend.rs', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
+    'src/borg_messages_react.rs',  # #1213: remove the unknown-item Recall prompt exception
     'src/borg_think_dungeon.rs', 'src/borg_think_dungeon_util.rs', 'src/engine.rs', 'src/lib.rs',
 }
 
