@@ -8819,8 +8819,8 @@ piece and deposit the displaced gear at Home. Ordinary purchases and Home
 withdrawals fit within the current carry allowance.
 
 The departure weight buffer comes from each class's `borg_<class>.txt`.
-In tenths of a pound, it is 30 for Mage, 40 for Necromancer, 50 for
-Druid, 60 for Priest, 75 for Rogue, 90 for Ranger, 110 for Paladin, 130
+In tenths of a pound, it is 60 for Mage, 70 for Necromancer, 80 for
+Druid, 90 for Priest, 100 for Rogue, 110 for Ranger, 120 for Paladin, 135
 for Blackguard, and 150 for Warrior. These values are provisional.
 
 `town_shop_overloaded = 1` keeps the shopping-first control (#1239,

@@ -58,4 +58,4 @@ borg_param_stair_scum_slack_steps = 4
 borg_param_explore_mix_max_clevel = 8
 # #1199: plain shots to keep when trimming the quiver in town.
 borg_param_town_quiver_trim_reserve = 50
-borg_param_town_departure_free_weight = 110
+borg_param_town_departure_free_weight = 120

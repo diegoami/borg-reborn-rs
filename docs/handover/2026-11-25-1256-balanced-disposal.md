@@ -51,6 +51,6 @@ order and weight policy. Its original purchase and first-contact
 assertions passed for both the zero-scroll and two-scroll reserves.
 
 The departure weight buffer is set per class in tenths of a pound.
-The agreed range is 30 for Mage through 150 for Warrior. The provisional
-intermediate values are Necromancer 40, Druid 50, Priest 60, Rogue 75,
-Ranger 90, Paladin 110, and Blackguard 130.
+The agreed range is 60 for Mage through 150 for Warrior. The intermediate
+values are Necromancer 70, Druid 80, Priest 90, Rogue 100, Ranger 110,
+Paladin 120, and Blackguard 135.
