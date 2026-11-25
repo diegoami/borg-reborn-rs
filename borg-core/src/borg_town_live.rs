@@ -7,6 +7,7 @@ use crate::borg_store::BORG_HOME;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::borg_io::{borg_keypress, borg_keypresses, borg_note, KC_ENTER};
 use crate::borg_town_record::action;
+use crate::borg_town_loadout::{self, Next, Swap};
 use crate::borg_town_shadow::TownAction;
 use crate::state::BorgState;
 
@@ -170,6 +171,10 @@ impl HomeMove {
     }
 }
 
+// borg-reborn-rs (#1239): execute the wear command after the store closes.
+// Keep the UI-only wear step outside the replayable purchase plan.
+const WEAR_FOR_DEPARTURE: i64 = -2;
+
 #[derive(Default)]
 pub struct LiveState {
     clock: Option<i32>,
@@ -187,11 +192,20 @@ pub struct LiveState {
     stash: Option<u32>,
     disposal: Option<HomeDisposal>,
     cleared_kinds: Vec<u32>,
+    // borg-reborn-rs (#1239): remember confirmed trims for this visit.
+    pending_quiver_trim: Option<(u32, u32)>, // Item kind and carried copies before the trim.
+    trimmed_quiver_kinds: Vec<u32>,
     /// #859: the level clock (`time.level`, when the current level was
     /// entered) at the last departure-room note. A town visit starts on
     /// arriving in town, so this notes once a visit; two departures with no
     /// level change between them share one note.
     room_noted_level: Option<i32>,
+    // borg-reborn-rs (#1239): departure swaps span several native commands.
+    departure: bool,
+    departure_swap: Option<Swap>,
+    departure_slots: [bool; 12],
+    departure_failure: Option<&'static str>,
+    retained_gear: Vec<crate::borg_headers::borg_item_h::borg_item>,
 }
 
 /// Consume one queued Home attempt after refreshing inventory. Count the kind
@@ -215,9 +229,16 @@ pub fn home_moved(st: &BorgState, kind: u32, stored: bool) -> bool {
 /// its stock is full). A queued command is not proof of a transaction.
 pub(crate) fn settle_sale(st: &mut BorgState) {
     if st.think.town_live.clock != Some(st.borg.time.level) {
-        st.think.town_live = LiveState { clock: Some(st.borg.time.level), ..LiveState::default() };
+        // borg-reborn-rs (#1239): carry forward only gear still at Home.
+        let mut retained_gear = std::mem::take(&mut st.think.town_live.retained_gear);
+        retained_gear.retain(|saved| st.store.shops.get(BORG_HOME).is_some_and(|home|
+            home.ware.iter().any(|item| borg_town_loadout::same_item(item, saved))));
+        st.think.town_live = LiveState {
+            clock: Some(st.borg.time.level), retained_gear, ..LiveState::default()
+        };
     }
     settle_home(st);
+    settle_quiver_trim(st);
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
@@ -265,6 +286,9 @@ pub fn sale_rejected(st: &BorgState, shop: i16, item: &crate::borg_headers::borg
 
 pub fn buy_rejected(st: &BorgState, shop: i16, slot: usize) -> bool {
     let Some(item) = st.store.shops.get(shop as usize).and_then(|s| s.ware.get(slot)) else { return true; };
+    // borg-reborn-rs (#1239): suppress trimmed ammo until the next visit
+    // so the ranged reserve cannot immediately buy it back.
+    if st.think.town_live.trimmed_quiver_kinds.contains(&item.kind) { return true; }
     let context = CarryContext::of(st);
     st.think.town_live.rejected_buys.iter().any(|a|
         a.offer.shop == shop && a.offer.slot == slot && a.offer.matches(item) && a.context == context)
@@ -316,7 +340,7 @@ fn goal(a: TownAction) -> Option<(i16, i16, i16)> {
         action::SELL if (0..7).contains(&a.at[0]) => Some((a.at[0] as i16, -1, slot)),
         action::STORE => Some((7, -1, slot)),
         action::TAKE_HOME | action::SELL_HOME | action::DROP_HOME => Some((7, slot, -1)),
-        action::DROP => Some((-1, -1, slot)),
+        action::DROP | WEAR_FOR_DEPARTURE => Some((-1, -1, slot)),
         _ => None,
     }
 }
@@ -350,6 +374,8 @@ pub fn choose_overflow(st: &mut BorgState) -> bool {
         || crate::borg_poison::town_triage_holds(st) {
         return false;
     }
+    // borg-reborn-rs (#1239): leave staged swap gear alone during departure.
+    if preparing_loadout(st) { return false; }
     let Some(action) = overflow_action(st) else { return false; };
     settle_sale(st);
     if sale_rejected(st, action.at[0] as i16, &st.items.items[action.at[1] as usize]) {
@@ -388,6 +414,52 @@ fn home_followup(st: &mut BorgState) -> Option<TownAction> {
     None
 }
 
+/// borg-reborn-rs (#1239): select the shopping policy for live play,
+/// historical replays and a paired Zoo comparison.
+pub(crate) fn shop_overloaded() -> bool {
+    crate::params::value(crate::params::Param::town_shop_overloaded) != 0
+}
+
+pub(crate) fn departure_preparing(st: &BorgState) -> bool {
+    st.think.town_live.clock == Some(st.borg.time.level) && st.think.town_live.departure
+}
+
+pub(crate) fn preparing_loadout(st: &BorgState) -> bool {
+    let live = &st.think.town_live;
+    active(st) && live.clock == Some(st.borg.time.level)
+        && (live.departure || live.departure_slots.contains(&true))
+}
+
+pub(crate) fn retained_gear(st: &BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> bool {
+    active(st) && st.think.town_live.retained_gear.iter().any(|saved| borg_town_loadout::same_item(item, saved))
+}
+
+pub(crate) fn loadout_pending(st: &BorgState) -> bool {
+    preparing_loadout(st) && st.think.town_live.departure_swap.is_some()
+}
+
+fn continue_loadout(st: &mut BorgState) -> Option<TownAction> {
+    let mut swap = st.think.town_live.departure_swap.take()?;
+    let next = match swap.next(st) {
+        Next::Town(action) => action,
+        Next::Wear(slot) => TownAction { code: WEAR_FOR_DEPARTURE, at: [-1, slot as i64, 1, 0] },
+        Next::Done => {
+            if let Some(item) = swap.retained().filter(|item| !retained_gear(st, item)) {
+                st.think.town_live.retained_gear.push(item);
+            }
+            borg_note(st, "# Town loadout: displaced gear stored at Home");
+            return None;
+        }
+        Next::Failed => {
+            st.think.town_live.departure_failure = Some("the Home loadout transaction could not complete");
+            borg_note(st, "# Town loadout: transaction could not complete");
+            return None;
+        }
+    };
+    st.think.town_live.departure_swap = Some(swap);
+    Some(next)
+}
+
 pub fn choose(st: &mut BorgState) -> bool {
     settle_sale(st);
     if let Some(result) = visit_gate(st) { return result; }
@@ -398,15 +470,31 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !no_sale {
         if let Some(a) = home_followup(st) { return set_action(st, a); }
     }
-    if let Some(a) = overflow_action(st).filter(|_| !no_sale) { return set_action(st, a); }
+    // borg-reborn-rs (#1239): keep the historical order for control runs.
+    let overloaded_shopping = shop_overloaded();
+    if !overloaded_shopping && !no_sale {
+        if let Some(a) = overflow_action(st) { return set_action(st, a); }
+    }
     if st.borg.time.now.wrapping_sub(st.borg.time.level) > 2000
-        || st.borg.antibounce_count > 1350 { clear(st); return false; }
+        || st.borg.antibounce_count > 1350 {
+        if overloaded_shopping && crate::borg_town_budget::Facts::of(st).allowance() < 0 {
+            st.think.town_live.departure_failure = Some("the town visit reached its time or movement limit");
+            note_departure_room(st);
+        }
+        clear(st);
+        return false;
+    }
+    if overloaded_shopping && !no_sale {
+        if let Some(a) = continue_loadout(st) { return set_action(st, a); }
+        if let Some(a) = overflow_action(st).filter(|_| !preparing_loadout(st)) { return set_action(st, a); }
+    }
     // While walking, retain only the destination. On entering a store the
     // plan is recomputed against freshly read inventory and stock indices.
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    let mut a = crate::borg_town_shadow::live_action(st);
+    let a = crate::borg_town_shadow::live_action(st);
+    // borg-reborn-rs (#1236): offer inferior spares before other disposals.
     if !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
     {
@@ -422,19 +510,20 @@ pub fn choose(st: &mut BorgState) -> bool {
             }
         }
     }
-    // The opt-in trial tests discarding surplus plain shots before the
-    // planner disposes of other kit. Poison triage and purchases go first.
-    if !st.borg.in_shop && !no_sale && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE) {
+    // borg-reborn-rs (#1239): evaluate quiver trimming after shopping.
+    let trim = if !no_sale && (overloaded_shopping || !st.borg.in_shop)
+        && matches!(a.code, action::LEAVE | action::DROP | action::SELL | action::STORE)
+    {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
-        if reserve > 0 {
-            let allowance = crate::borg_town_budget::Facts::of(st).allowance();
-            if allowance < 0 {
-                let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
-                if let Some(slot) = crate::borg_junk::town_quiver_surplus(st, reserve, shortfall) {
-                    a = TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] };
-                }
-            }
-        }
+        let allowance = crate::borg_town_budget::Facts::of(st).allowance();
+        if reserve > 0 && allowance < 0 {
+            let shortfall = crate::borg_town_utility::departure_room().weight - allowance;
+            crate::borg_junk::town_quiver_surplus(st, reserve, shortfall).map(|slot|
+                TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(st.items.items[slot].iqty), 0] })
+        } else { None }
+    } else { None };
+    if !overloaded_shopping {
+        if let Some(drop) = trim { return set_action(st, drop); }
     }
     // Finish shopping normally while carrying unidentified potions. A
     // purchase may identify the stack before the planner can sell it.
@@ -445,19 +534,57 @@ pub fn choose(st: &mut BorgState) -> bool {
             return set_action(st, refill);
         }
     }
-    if a.code == action::LEAVE { note_departure_room(st); }
+    if let Some(drop) = trim {
+        if st.borg.in_shop { clear(st); return false; }
+        return set_action(st, drop);
+    }
+    if !overloaded_shopping {
+        if a.code == action::LEAVE { note_departure_room(st); }
+        return set_action(st, a);
+    }
+    // borg-reborn-rs (#1239): swap only after shopping and quiver trims.
+    // Defer the decision at a shop so the wear step uses the dungeon UI.
+    if a.code == action::LEAVE {
+        let allowance = crate::borg_town_budget::Facts::of(st).allowance();
+        let restoring = allowance >= 0;
+        let already_preparing = departure_preparing(st);
+        if !st.borg.in_shop && !no_sale && !restoring { st.think.town_live.departure = true; }
+        if !st.borg.in_shop && !no_sale && (!restoring || !st.think.town_live.retained_gear.is_empty()) {
+            let tried = st.think.town_live.departure_slots;
+            if let Some(swap) = borg_town_loadout::propose(st, &tried, restoring) {
+                borg_note(st, if restoring { "# Town loadout: recovering a stored upgrade" }
+                    else { "# Town loadout: preparing a lighter kit at Home" });
+                st.think.town_live.departure_slots[swap.equipment_index()] = true;
+                st.think.town_live.departure_swap = Some(swap);
+                if let Some(a) = continue_loadout(st) { return set_action(st, a); }
+            }
+        }
+        if departure_preparing(st) && !already_preparing {
+            // The regular plan had no shopping left. Give recently acquired
+            // surplus a chance to leave, with urgent purchases still allowed.
+            let departure = crate::borg_town_shadow::live_action(st);
+            if departure.code != action::LEAVE { return set_action(st, departure); }
+        }
+        if !st.borg.in_shop || restoring { note_departure_room(st); }
+    }
     set_action(st, a)
 }
 
 /// borg-reborn-rs (#859): what a departure leaves free, against the room
 /// `town_departure_free_weight` and `town_departure_free_slots` ask for, in
 /// the messages a zoo run counts. Nothing when both are off.
+/// borg-reborn-rs (#1239): also report overload and its cause at departure.
 fn note_departure_room(st: &mut BorgState) {
     let room = crate::borg_town_utility::departure_room();
-    if room == crate::borg_town_utility::Room::default() { return; }
+    let facts = crate::borg_town_budget::Facts::of(st);
+    if room == crate::borg_town_utility::Room::default() && (!shop_overloaded() || facts.allowance() >= 0) { return; }
     let level = st.borg.time.level;
     if st.think.town_live.room_noted_level.replace(level) == Some(level) { return; }
-    let facts = crate::borg_town_budget::Facts::of(st);
+    if shop_overloaded() && facts.allowance() < 0 {
+        let reason = st.think.town_live.departure_failure
+            .unwrap_or("no safe lighter loadout with room at Home");
+        borg_note(st, &format!("# Town loadout: leaving over the carry allowance; {reason}"));
+    }
     let pack = &st.items.items[..crate::borg_item::inven_wield() as usize];
     let slots = facts.pack_capacity - crate::borg_town_stock::pack_slots_used_of(pack);
     let note = format!("# Town departure room: weight {} free (keep {}), slots {} free (keep {})",
@@ -518,7 +645,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         }
         let home_intent = if a.code == action::BUY_FOR_HOME {
             Some(HomeIntent::Stash)
-        } else if home_disposal && crate::borg_town_home::enabled(st) {
+        } else if home_disposal && crate::borg_town_home::enabled(st) && !loadout_pending(st) {
             let destination = if a.code == action::DROP_HOME { -1 } else { a.at[0] as i16 };
             Some(HomeIntent::Dispose(destination))
         } else { None };
@@ -580,14 +707,28 @@ fn drop_quantity(planned: i64, qty: i64, splits: bool) -> i64 {
 pub fn execute_outside(st: &mut BorgState) -> bool {
     if !active(st) || st.borg.in_shop { return false; }
     let Some(a) = st.think.town_action else { return false; };
-    if a.code != action::DROP { return false; }
     let slot = a.at[1] as usize;
+    // borg-reborn-rs (#1239): run the wear step using the dungeon UI.
+    if a.code == WEAR_FOR_DEPARTURE {
+        // cmd-obj.c:do_cmd_wield (265–336), obj-gear.c:inven_wield
+        // (930–1008). A single pack item frees its slot on wield.
+        borg_keypress(st, u32::from(b'w'));
+        borg_keypress(st, crate::engine::all_letters_nohjkl(slot as i32) as i8 as u32);
+        clear(st);
+        return true;
+    }
+    if a.code != action::DROP { return false; }
     let Some(item) = st.items.items.get(slot) else { clear(st); return false; };
     let qty = i64::from(item.iqty);
     if qty == 0 { clear(st); return false; }
     if slot >= crate::borg_item::quiver_start() as usize {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
+        // borg-reborn-rs (#1239): settle the trim from refreshed inventory.
+        if shop_overloaded() {
+            let kind = item.kind;
+            st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind)));
+        }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
         clear(st);
         return true;
@@ -597,12 +738,13 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#1151, review of #1155): so does a split fuel stack
     // (torches, flasks), whose floor is the light reserve. Other drops stay
     // whole: a split applied to every drop moved a smoke game (review of #989).
+    // borg-reborn-rs (#1239): departure can split above the trip reserve.
     let fuel = matches!(u32::from(item.tval),
         crate::headers::list_tvals_h::TV_LIGHT | crate::headers::list_tvals_h::TV_FLASK);
     let home_disposal = st.think.town_live.disposal
         .is_some_and(|d| d.shop < 0 && borg_town_home::same_variant(item, &d.item));
     let splits = home_disposal || (crate::borg_item_use::is_restore_life(item, st.item_val.sv_potion_restore_life)
-        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel;
+        && crate::borg_town_capability::restore_life_reserve(st) > 0) || home_at_limit(st, item) || fuel || departure_preparing(st);
     let drop_qty = drop_quantity(a.at[2], qty, splits);
     if i64::from(crate::borg_store_sell::disposable_book_quantity(st, item, drop_qty as i32)) < drop_qty {
         clear(st);
@@ -612,6 +754,8 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if home_disposal {
         st.think.town_live.disposal = None;
         borg_note(st, "# Home reserve: discarding lower-priority stock");
+    } else if drop_qty < qty && departure_preparing(st) {
+        borg_note(st, "# Town plan dropping surplus copies for departure");
     } else {
         borg_note(st, "# Town plan dropping worthless stack");
     }
@@ -627,6 +771,13 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     }
     clear(st);
     true
+}
+
+fn settle_quiver_trim(st: &mut BorgState) {
+    let Some((kind, before)) = st.think.town_live.pending_quiver_trim.take() else { return; };
+    if carried_kind(st, kind) < before && !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
+        st.think.town_live.trimmed_quiver_kinds.push(kind);
+    }
 }
 
 /// borg-reborn-rs (#1236): use a shop with room for the whole spare stack.
@@ -810,6 +961,23 @@ mod tests {
         st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop::default()).collect();
         st.store.shops[BORG_HOME].ware = vec![item];
         st
+    }
+    #[test]
+    fn confirmed_quiver_trims_block_reacquisition_until_the_next_visit() {
+        let mut st = home_state();
+        let kind = st.items.items[0].kind;
+        let shop = BORG_HOME as i16;
+        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        settle_quiver_trim(&mut st);
+        assert!(!buy_rejected(&st, shop, 0));
+
+        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        st.items.items[0].iqty = 1;
+        settle_quiver_trim(&mut st);
+        assert!(buy_rejected(&st, shop, 0));
+
+        st.think.town_live = LiveState::default();
+        assert!(!buy_rejected(&st, shop, 0));
     }
     #[test]
     fn home_history_waits_for_successful_store_and_take() {

@@ -1829,7 +1829,7 @@ mod tests {
             settings[(BORG_TOWN_HOME_DISCOUNT - BORG_TOWN_PLAN) as usize] = 500;
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            let input = StepInput { storing: None, revision: 12, capability: Some(&m), utility: true,
+            let input = StepInput { departure: false, shop_overloaded: false, storing: None, revision: 12, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates,
                 facts: &[], tryon: &[], limits: Limits { gold: i64::from(gold), pack_slots: 4, weight: 100 },
                 urgent: vec![], params: settings, traits: &traits, power: 0, carried: &[],
@@ -2262,7 +2262,7 @@ mod tests {
         let groups = vec![Group { key: GroupKey::Class(0), options: vec![Choice::default(), choice(0)] },
             Group { key: GroupKey::Class(1), options: vec![Choice::default(), choice(1)] }];
         let limits = Limits { gold: 100, pack_slots: 5, weight: 100 };
-        let input = crate::borg_town_record::StepInput { storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
+        let input = crate::borg_town_record::StepInput { departure: false, shop_overloaded: false, storing: None, revision: 9, capability: Some(&m), utility: true, black_market_reserve: 0,
             black_market_percentage: -1, candidates: cs.clone(), facts: &[], tryon: &[], limits, urgent: vec![],
             params: [0; crate::borg_town_record::PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, reads_now: false, kit: &[], home_slots: 10 };
         shared_groups(groups, &input, &cs, &m, &limits, (0, 100, 0)).len()
@@ -2537,7 +2537,7 @@ mod tests {
             m.curves[CURSE] = [CURSE as i64, if curse { 100 * UNIT } else { 0 }, -UNIT, 0, 0];
             let mut traits = [0; BI_MAX as usize];
             traits[BI_CARRY as usize] = 100;
-            let input = StepInput { storing: None, revision, capability: Some(&m), utility: true,
+            let input = StepInput { departure: false, shop_overloaded: false, storing: None, revision, capability: Some(&m), utility: true,
                 black_market_reserve: 0, black_market_percentage: -1, candidates: vec![scroll.clone()],
                 facts: &[], tryon: &[], limits: Limits { gold: 89_159, pack_slots: 4, weight },
                 urgent: vec![], params: [0; PARAMS], traits: &traits, power: 0, carried: &[],
@@ -2730,7 +2730,7 @@ mod tests {
         let groups=vec![Group {key:GroupKey::Slot(5),options:vec![Choice::default(),choice(0),choice(1)]},
             Group {key:GroupKey::Class(2),options:vec![Choice::default(),choice(2)]}];
         let limits=Limits {gold:100,pack_slots:5,weight:100};
-        let input=crate::borg_town_record::StepInput {storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
+        let input=crate::borg_town_record::StepInput { departure: false, shop_overloaded: false,storing:None,revision:9,capability:Some(&m),utility:true,black_market_reserve:0,black_market_percentage:-1,candidates:cs.clone(),facts:&[],tryon:&[],limits,
             urgent:vec![],params:[0;crate::borg_town_record::PARAMS],traits:&[],power:0,carried:&[],cure_spell:false,reads_now:false,kit:&[],home_slots:10};
         let merged=shared_groups(groups,&input,&cs,&m,&limits,(0,100,0));assert_eq!(merged.len(),1);
         for option in &merged[0].options {

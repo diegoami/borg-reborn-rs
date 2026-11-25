@@ -1993,6 +1993,154 @@ pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
     });
 }
 
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn setup_test_town_loadout(st: &mut BorgState, excess: i32, has_whip: bool, pack_whip: bool) {
+    use crate::headers::list_tvals_h::*;
+    use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
+    use crate::headers::player_h::player;
+    use crate::headers::store_h::stores;
+    use crate::headers::z_rand_h::{aspect, MINIMISE};
+
+    extern "C" {
+        static player_exp: [i32; 50];
+        fn lookup_kind(tval: i32, sval: i32) -> *mut object_kind;
+        fn object_new() -> *mut object;
+        fn object_prep(obj: *mut object, kind: *mut object_kind, level: i32, roll: aspect);
+        fn object_copy(dest: *mut object, src: *const object);
+        fn object_free(obj: *mut object);
+        fn gear_object_for_use(p: *mut player, obj: *mut object, qty: i32, message: bool, none_left: *mut bool) -> *mut object;
+        fn inven_carry(p: *mut player, obj: *mut object, absorb: bool, message: bool);
+        fn wield_slot(obj: *const object) -> i32;
+        fn home_carry(obj: *mut object);
+        fn object_flavor_aware(p: *mut player, obj: *mut object);
+        fn update_stuff(p: *mut player);
+        fn weight_remaining(p: *mut player) -> i32;
+        fn wipe_mon_list(c: *mut crate::headers::cave_h::chunk, p: *mut player);
+        fn player_learn_all_runes(p: *mut player);
+    }
+
+    let pack_size = i32::from(z_info().pack_size);
+    // SAFETY: test-only setup on the engine thread after birth. The engine
+    // owns the constructed objects once they enter gear or Home. Lend state
+    // while the native inventory commands can emit events.
+    lend(st, || unsafe {
+        while !(*player).gear.is_null() {
+            let first = (*player).gear;
+            let detached = gear_object_for_use(player, first, i32::from((*first).number), false, &mut false);
+            object_free((*detached).known);
+            object_free(detached);
+        }
+        (*player).lev = 20;
+        (*player).max_lev = 20;
+        (*player).exp = player_exp[18] * i32::from((*player).expfact) / 100;
+        (*player).max_exp = (*player).exp;
+        (*player).max_depth = 10;
+        (*player).recall_depth = 10;
+        // This fixture exercises the Home exchange using Recall in stock
+        // there. Ordinary shop purchases are covered by the shop-first tests.
+        (*player).au = 0;
+        (*player).stat_cur = [14, 12, 17, 14, 13];
+        (*player).stat_max = (*player).stat_cur;
+
+        let make = |tval: u32, name: &CStr, qty, weight: Option<i16>, to_h: Option<i16>| {
+            let sval = crate::headers::obj_util_h::lookup_sval(tval as i32, name.as_ptr());
+            let kind = lookup_kind(tval as i32, sval);
+            assert!(!kind.is_null(), "unknown fixture item {name:?}");
+            let obj = object_new();
+            object_prep(obj, kind, 0, MINIMISE);
+            (*obj).number = qty;
+            if let Some(weight) = weight { (*obj).weight = weight; }
+            if let Some(to_h) = to_h { (*obj).to_h = to_h; }
+            if tval == TV_LIGHT { (*obj).timeout = 4500; }
+            let known = object_new();
+            object_copy(known, obj);
+            (*obj).known = known;
+            (*known).notice |= OBJ_NOTICE_ASSESSED as u8;
+            (*obj).notice |= OBJ_NOTICE_ASSESSED as u8;
+            obj
+        };
+        for (tval, name, weight) in [
+            (TV_HAFTED, c"Lead-Filled Mace", None),
+            (TV_SOFT_ARMOR, c"Leather Scale Mail", None),
+            (TV_SHIELD, c"Leather Shield", Some(100)),
+            (TV_BOW, c"Sling", None),
+            (TV_LIGHT, c"Wooden Torch", None),
+        ] {
+            let obj = make(tval, name, 1, weight, None);
+            inven_carry(player, obj, false, false);
+            let slot = wield_slot(obj) as usize;
+            (*(*player).body.slots.add(slot)).obj = obj;
+            (*(*player).upkeep).equip_cnt += 1;
+        }
+        for (tval, name, qty) in [
+            (TV_SHOT, c"Rounded Pebble", 37),
+            (TV_SHOT, c"Iron Shot", 20),
+            (TV_FOOD, c"Ration of Food", 4),
+        ] {
+            let obj = make(tval, name, qty, None, None);
+            object_flavor_aware(player, obj);
+            inven_carry(player, obj, false, false);
+        }
+        let home = stores.add(crate::borg_store::BORG_HOME);
+        assert_eq!((*home).stock_num, 0);
+        if has_whip {
+            let whip = make(TV_HAFTED, c"Whip", 1, None, None);
+            // A modest known damage bonus makes this a usable Priest weapon.
+            (*whip).to_d = 3;
+            (*(*whip).known).to_d = 3;
+            if pack_whip { inven_carry(player, whip, false, false); } else { home_carry(whip); }
+        }
+        let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
+        object_flavor_aware(player, recall);
+        home_carry(recall);
+        // Distinct known bonuses keep the inert Home filler in separate stacks.
+        let home_space = (*home).stock_size - i16::from(pack_whip);
+        while i16::from((*home).stock_num) < home_space {
+            let count = i16::from((*home).stock_num);
+            home_carry(make(TV_ARROW, c"Arrow", 1, None, Some(1 + count)));
+            assert_eq!(i16::from((*home).stock_num), count + 1);
+        }
+        if pack_whip {
+            let slots = pack_size - 2; // Two native quiver slots, 37 and 20 shots.
+            for bonus in 0..(slots - 3) {
+                let item = make(TV_GLOVES, c"Set of Leather Gloves", 1, Some(1), Some(1 + bonus as i16));
+                inven_carry(player, item, false, false);
+            }
+        }
+        update_stuff(player);
+        let carried = (*(*player).upkeep).total_weight;
+        // player-calcs.c:weight_remaining():1756-1764 returns room under
+        // 60% of the limit less one. The planner starts charging at 50%.
+        let allowance = (weight_remaining(player) + carried + 1) * 5 / 6;
+        let ballast = allowance + excess - carried;
+        assert!(ballast > 0);
+        // The carried prayer book supplies the rest of the recorded burden.
+        let book = make(TV_PRAYER_BOOK, c"[Novice's Handbook]", 1, Some(ballast as i16), None);
+        inven_carry(player, book, false, false);
+        // PU_HP | PU_MANA, engine/angband/src/player-calcs.h:38-39.
+        (*(*player).upkeep).update |= 0b1100;
+        update_stuff(player);
+        (*player).chp = (*player).mhp;
+        (*player).csp = (*player).msp;
+        player_learn_all_runes(player);
+        // Isolate the native town commands from unrelated town-monster flight.
+        wipe_mon_list(crate::headers::cave_h::cave, player);
+    });
+}
+
+#[cfg(feature = "test-town-loadout")]
+pub(crate) fn strengthen_test_town_loadout(st: &mut BorgState) {
+    use crate::headers::player_h::player;
+    extern "C" { fn update_stuff(p: *mut player); }
+    // SAFETY: test-only adjustment on the engine thread with a live player.
+    lend(st, || unsafe {
+        (*player).stat_cur[0] = 18;
+        (*player).stat_max[0] = 18;
+        (*(*player).upkeep).update |= 1; // PU_BONUS (player-calcs.h:36).
+        update_stuff(player);
+    });
+}
+
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn set_test_terrain(st: &mut BorgState, at: loc, feat: u32) {
     use crate::headers::cave_h::{cave, chunk};

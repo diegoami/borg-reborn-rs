@@ -503,7 +503,7 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 #1213 removes experimental quaffing and the recovery hold after a test.
 The existing town planner selects a sale for an unknown flavour when a shop
 accepts it (`unknown_flavour` and `Disposition::Sell` in
-`borg_town_utility.rs:620`). The engine's sale marks the kind as flavour-aware
+`borg_town_utility.rs:622`). The engine's sale marks the kind as flavour-aware
 (`engine/angband/src/store.c:1948` and `obj-knowledge.c:2284–2292`), so selling
 one copy identifies the remaining copies of that kind. The
 [native regression](../engine/tests/test_unknown_consumables.py) covers the
@@ -8345,16 +8345,17 @@ replay as they were):
 |---|---:|---|---|---|
 | `trait_curse_stats` | 0 | flag | 0–1 | `borg_trait.rs:1346` |
 
-## Home stock and town plan schemas 21–23 (#1241)
+## Home stock and town plan schemas 21–24 (#1241)
 
 Plan replay uses the schema recorded in `v`.
 
-- **Schema 21** encodes `home_role` in bits 9–11 of the kit row's `flags`
+- **Schema 21** from the Home reserve branch encodes `home_role` in bits 9–11 of the kit row's `flags`
   field. The values are 0 ordinary, 1 common, 2 renewable, 3 reject, 4 gear,
   and 5 device. The tenth field of each `wares` row is `home_value`. A
   positive value prices the offer as a reserve. Zero means no reserve value,
   and −1 suppresses optional purchases of a kind cleared as surplus during
-  the visit. These fields are present at shipped settings.
+  the visit. The schema 21 from #1239 instead has nine fields per ware
+  and uses soft purchase weight.
 - **Schema 22** uses the schema 21 layout and also applies the capability
   model's explicit reserve floor to renewable Home stacks. A weighted
   capability with negative demand supplies a floor. Renewable convenience
@@ -8366,6 +8367,8 @@ Plan replay uses the schema recorded in `v`.
   lighter gear when carrying capacity is tight. A positive `home_value`
   sorts first by priority, encoded in multiples of 2^40, then by the offer's
   capped marginal utility. Older records retain their original decisions.
+- **Schema 24** uses the schema 23 layout when the Home priority rule and
+  shopping while overloaded are both enabled.
 
 ## Committing to a brave stair walk (#1130)
 
@@ -8774,7 +8777,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:930` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:958` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8788,7 +8791,29 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:428` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:517` |
+
+## Shopping while overloaded and departure loadout (#1239)
+
+**Plan schema 21.** The Track P profile enables `town_shop_overloaded`.
+The town planner uses value, gold, and pack slots for ordinary and urgent
+purchases and Home withdrawals. Weight remains a soft cost and a departure
+objective. The Recall reserve keeps its pack-slot allowance and no longer
+adds weight to the headroom needed before purchase.
+
+The departure pass trims surplus quiver stacks, evaluates lighter gear with
+the displaced equipment stored at Home, and sheds surplus above the trip
+reserves. A confirmed trim prevents reacquiring the same ammunition until
+the next town visit. Urgent resupply remains available during the pass. If the Borg
+cannot remove the remaining overload safely, it logs the reason and leaves.
+
+With the Home reserve policy off, setting `town_shop_overloaded` to 0 records and uses schema 20 with the
+previous acquisition weight limits. Exact incident fixtures and the Zoo
+control use this setting. Replays use the schema recorded in each visit.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:420` |
 
 ## Ranged readiness for the next trip (#1184)
 

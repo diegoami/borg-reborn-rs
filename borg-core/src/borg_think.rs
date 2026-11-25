@@ -254,6 +254,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::borg_combat_heal::fixture::run(st, &case);
     }
 
+    #[cfg(feature = "test-town-loadout")]
+    if let Ok(case) = std::env::var("BORG_TEST_TOWN_LOADOUT") {
+        crate::borg_town_loadout::fixture(st, &case);
+    }
+
     #[cfg(feature = "test-cursed-spares")]
     if let Ok(case) = std::env::var("BORG_TEST_CURSED_SPARES") {
         if case == "live-lantern" {

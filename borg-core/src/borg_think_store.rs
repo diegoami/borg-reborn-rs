@@ -447,8 +447,11 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
         return true;
     }
 
-    /* Wear "optimal" equipment */
-    if borg_best_stuff(st) {
+    // borg-reborn-rs (#1239): leave overweight kits and staged swaps to the departure planner.
+    let overloaded = crate::borg_town_live::active(st)
+        && crate::borg_town_live::shop_overloaded()
+        && st.borg.tr(crate::borg_headers::borg_trait_h::BI_WEIGHT) > st.borg.tr(crate::borg_headers::borg_trait_h::BI_CARRY) / 2;
+    if !overloaded && !crate::borg_town_live::preparing_loadout(st) && borg_best_stuff(st) {
         return true;
     }
 
@@ -457,7 +460,9 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
      * it as a normal weapon
      */
     let wield = &st.items.items[inven_wield() as usize];
-    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0 && borg_wear_stuff(st) {
+    // borg-reborn-rs (#1239): let an active loadout swap choose the weapon.
+    if i32::from(wield.tval) == TV_DIGGING as i32 && wield.art_idx == 0
+        && !crate::borg_town_live::preparing_loadout(st) && borg_wear_stuff(st) {
         return true;
     }
 
