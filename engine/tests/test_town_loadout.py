@@ -97,7 +97,7 @@ class TownLoadoutTest(unittest.TestCase):
     def test_heavier_home_upgrade_can_be_proposed_after_a_strength_gain(self):
         self.run_case("restore")
 
-    def test_excluded_effect_item_is_evicted_ahead_of_a_scarce_reserve(self):
+    def test_excluded_effect_item_is_evicted_ahead_of_a_priority_potion(self):
         self.run_case("reserve-overlap")
 
 

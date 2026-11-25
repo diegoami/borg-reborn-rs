@@ -278,7 +278,7 @@ pub(crate) fn propose(st: &mut BorgState, tried: &[bool; 12], restoring: bool) -
                 || pack_slot(st, item).is_some()
                 || crate::borg_town_live::acquisition_room(st, item.tval, item.kind) == 0
                 || crate::borg_town_live::buy_rejected(st, shop as i16, slot)
-                || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item.kind, true)
+                || shop == BORG_HOME && crate::borg_town_live::home_moved(st, item, true)
                 || restoring && !crate::borg_town_live::retained_gear(st, item)
             {
                 continue;
@@ -556,7 +556,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             let speed = home_item(TV_POTION, st.item_val.sv_potion_speed);
             assert!(crate::borg_town_capability::unwanted_home_item(second_sight));
             assert_eq!(borg_town_home::classify(st, second_sight, false, 0), Role::Reject);
-            assert_eq!(borg_town_home::classify(st, speed, false, 0), Role::Scarce);
+            assert_eq!(borg_town_home::classify(st, speed, false, 0), Role::LatePotion);
             assert!(same_item(&eviction(st).expect("the excluded stack makes room"), second_sight));
             println!("#1239 town loadout passed: {case}");
             std::process::exit(0);
