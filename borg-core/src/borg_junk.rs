@@ -646,15 +646,6 @@ pub(crate) fn check_cursed_spares(st: &mut BorgState) -> ! {
     assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Refuel));
     assert_eq!(st.io.queued_keys(), b"Fa".iter().copied().map(u32::from).collect::<Vec<_>>());
     borg_flush(st);
-    // The engine's next inventory observation has the fuel in the equipped
-    // lantern and the drained donor still in the pack.
-    st.items.items[equipped].timeout = 8700;
-    st.items.items[0].timeout = 0;
-    assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Drop));
-    let mut drop = b"{aborg ignore".iter().copied().map(u32::from).collect::<Vec<_>>();
-    drop.extend([KC_ENTER, u32::from(b'd'), u32::from(b'a')]);
-    assert_eq!(st.io.queued_keys(), drop);
-    borg_flush(st);
 
     st.borg.trait_[BI_LIGHT as usize] = 2;
     st.items.items[equipped] = light(3, &[OF_LIGHT_2]);
@@ -664,9 +655,82 @@ pub(crate) fn check_cursed_spares(st: &mut BorgState) -> ! {
     assert!(st.io.queued_keys().is_empty());
     st.items.items[1] = light(5000, &[OF_LIGHT_2]);
     assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Drop));
-    assert_eq!(st.io.queued_keys(), [drop, vec![u32::from(b'*'), KC_ENTER]].concat());
+    let mut drop = b"{aborg ignore".iter().copied().map(u32::from).collect::<Vec<_>>();
+    drop.extend([KC_ENTER, u32::from(b'd'), u32::from(b'a'), u32::from(b'*'), KC_ENTER]);
+    assert_eq!(st.io.queued_keys(), drop);
     println!("#1231 cursed spare actions passed");
     std::process::exit(0);
+}
+
+#[cfg(feature = "test-cursed-spares")]
+pub(crate) fn check_cursed_lantern_in_game(st: &mut BorgState) {
+    #[derive(Clone, Copy)]
+    enum Step {
+        Equip,
+        Refuel,
+        Drop { fuel_before: i16 },
+        VerifyDrop,
+    }
+    thread_local! {
+        static STEP: std::cell::Cell<Step> = const { std::cell::Cell::new(Step::Equip) };
+    }
+
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    assert_eq!(u32::from(engine::square_feat(x.into(), y.into())), FEAT_FLOOR);
+    // Isolate the item action from the surrounding dungeon's danger.
+    st.kills.nxt = 1;
+    st.danger = Default::default();
+
+    let equipped = crate::borg_light::inven_light() as usize;
+    let lantern = st.item_val.sv_light_lantern;
+    let is_lantern = |item: &borg_item| {
+        item.iqty > 0 && u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == lantern
+    };
+    let pack_len = pack_size() as usize;
+    let pack = &st.items.items[..pack_len];
+    match STEP.get() {
+        Step::Equip => {
+            engine::carry_test_lanterns(st);
+            crate::borg_item::borg_find_all_items(st);
+            let slot = st.items.items[..pack_len].iter().position(|item| is_lantern(item) && !item.cursed)
+                .expect("clean lantern in pack");
+            borg_keypress(st, key(b'w'));
+            borg_keypress(st, letter(slot as i32));
+            STEP.set(Step::Refuel);
+        }
+        Step::Refuel => {
+            let lamp = &st.items.items[equipped];
+            assert!(is_lantern(lamp) && !lamp.cursed);
+            let fuel_before = lamp.timeout;
+            let (slot, donor) = pack.iter().enumerate().find(|(_, item)| is_lantern(item))
+                .expect("donor in pack");
+            assert!(donor.cursed && donor.needs_ident);
+            assert_eq!(donor.timeout, 7500);
+            let desc = engine::object_desc_full(engine::inven_object(&st.access, slot).unwrap());
+            assert!(desc.ends_with(b"{cursed, ??}"), "{}", String::from_utf8_lossy(&desc));
+            assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Refuel));
+            STEP.set(Step::Drop { fuel_before });
+        }
+        Step::Drop { fuel_before } => {
+            let fuel_gained = st.items.items[equipped].timeout - fuel_before;
+            // Angband can burn one turn of fuel before asking for the next key.
+            assert!((7499..=7500).contains(&fuel_gained), "gained {fuel_gained} fuel");
+            let donor = pack.iter().find(|item| is_lantern(item)).expect("drained donor in pack");
+            assert_eq!(donor.timeout, 0);
+            assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Drop));
+            STEP.set(Step::VerifyDrop);
+        }
+        Step::VerifyDrop => {
+            assert!(!pack.iter().any(is_lantern));
+            let dropped = engine::top_floor_object(&st.access, x.into(), y.into())
+                .expect("lantern on the floor");
+            let kind = dropped.kind();
+            assert_eq!((kind.tval, kind.sval), (TV_LIGHT as i32, lantern));
+            assert_eq!(dropped.note(), Some(b"borg ignore".as_slice()));
+            println!("#1231 cursed lantern refuel and drop passed");
+            std::process::exit(0);
+        }
+    }
 }
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).

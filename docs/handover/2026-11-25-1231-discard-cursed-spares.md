@@ -12,4 +12,10 @@ The updated regression checks the recorded torch mix, an intrinsic drawback, an 
 
 The rereview confirmed that Angband prints `{cursed, ??}` when it knows a curse and other runes remain unknown (`obj-desc.c:532–542`, `obj-knowledge.c:1131–1148`). The Borg rebuilds the inventory and recomputes swap slots in `borg_think_inner` before routing to any store or dungeon decision. Pack curse removal can still run under its existing gates when early disposal yields.
 
-The clean-light check now uses the existing three-turn threshold for imminent burnout. A working clean light or clean spare is sufficient. A cursed torch cannot transfer fuel, while a cursed lantern can donate fuel directly without being worn. The native fixture checks that recall, stairs and danger defer disposal, that the Borg queues refuel before dropping a drained lantern, and that it keeps the cursed torch stack through imminent burnout until a clean spare is available. It verifies the ignore inscription and the whole-stack drop keys. The fixture supplies the post-refill inventory observation. The watched save is on the recording machine, and the measured result here is limited to the stated inventory and action regressions.
+The clean-light check now uses the existing three-turn threshold for imminent burnout. A working clean light or clean spare is sufficient. A cursed torch cannot transfer fuel. A cursed lantern can donate fuel directly from the pack. The action fixture uses synthetic danger to check that recall, stairs and danger defer disposal. It also checks the refuel keys, the whole-stack drop keys, and retention of the cursed torch stack through imminent burnout.
+
+A second native fixture gives Angband a clean lantern and a donor marked `{cursed, ??}`. It checks that the real refill increases the equipped lantern's fuel and drains the donor. On the next decision it checks that the Borg discards the donor and that the lantern reaches the floor with the `borg ignore` inscription. The watched save remains on the recording machine. The regression covers the action sequence on the revision that incorporates the torch selection from #1237.
+
+## What is left
+
+Track P integration of [#1232](https://github.com/diegoami/borg-reborn-rs/pull/1232) requires green CI and the owner's confirmation that review is complete under RULES 1a.

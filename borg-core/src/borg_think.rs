@@ -244,7 +244,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     }
 
     #[cfg(feature = "test-cursed-spares")]
-    if std::env::var_os("BORG_TEST_CURSED_SPARES").is_some() {
+    if let Ok(case) = std::env::var("BORG_TEST_CURSED_SPARES") {
+        if case == "live-lantern" {
+            crate::borg_junk::check_cursed_lantern_in_game(st);
+            return choice!("test_cursed_lantern");
+        }
         crate::borg_junk::check_cursed_spares(st);
     }
 
