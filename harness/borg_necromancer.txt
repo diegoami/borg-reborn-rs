@@ -51,3 +51,5 @@ borg_param_stair_scum_slack_steps = 2
 borg_param_explore_mix_max_clevel = 9
 # #1199: plain shots to keep when trimming the quiver in town.
 borg_param_town_quiver_trim_reserve = 35
+# #1261: spare sandal margin follows the class Strength modifier.
+borg_param_junk_inferior_sandal_ac_margin = 3
