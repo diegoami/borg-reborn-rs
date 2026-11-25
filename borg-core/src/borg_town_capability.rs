@@ -3141,7 +3141,7 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
 }
 
 impl Model {
-    /// Marginal future use of one shop copy against capabilities already at Home.
+    /// borg-reborn-rs (#1241): marginal future use of a shop copy against Home stock.
     pub(crate) fn home_offer(&self, shop: u8, slot: u8) -> i64 {
         self.units(i64::from(shop), i64::from(slot), 1).into_iter()
             .filter(|(id, _)| !HEAL_KINDS.contains(id))

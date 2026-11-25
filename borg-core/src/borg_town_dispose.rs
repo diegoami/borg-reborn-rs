@@ -58,7 +58,7 @@ pub enum Disposition {
 /// The facts of one stack the dispositions read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KitItem {
-    /// Home admission and retention facts from the known item and loadout.
+    /// borg-reborn-rs (#1241): Home admission and retention facts.
     pub home_role: crate::borg_town_home::Role,
     /// Schema 15: native carry room, stack merge room, and room under the
     /// acquisition limit. Zero native room also marks a rejected Home offer.

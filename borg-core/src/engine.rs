@@ -1599,7 +1599,7 @@ pub(crate) enum NormalStock {
     Staple,
 }
 
-/// The public shop catalogue, independent of the currently rolled stock.
+/// borg-reborn-rs (#1241): the public shop catalogue, independent of rolled stock.
 /// Engine store.c: parse_always(), parse_normal(), and store_maint().
 pub(crate) fn normal_store_stock(access: &Access, kind: u32) -> NormalStock {
     use crate::headers::list_terrain_h::{FEAT_HOME, FEAT_STORE_BLACK};
@@ -1994,7 +1994,14 @@ pub(crate) fn carry_test_potion(st: &mut BorgState, sval: i32) {
 }
 
 #[cfg(feature = "test-town-loadout")]
-pub(crate) fn setup_test_town_loadout(st: &mut BorgState, excess: i32, has_whip: bool, pack_whip: bool, gold: i32) {
+pub(crate) fn setup_test_town_loadout(
+    st: &mut BorgState,
+    excess: i32,
+    has_whip: bool,
+    pack_whip: bool,
+    gold: i32,
+    reserve_overlap: bool,
+) {
     use crate::headers::list_tvals_h::*;
     use crate::headers::object_h::{object, object_kind, OBJ_NOTICE_ASSESSED};
     use crate::headers::player_h::player;
@@ -2091,6 +2098,13 @@ pub(crate) fn setup_test_town_loadout(st: &mut BorgState, excess: i32, has_whip:
         let recall = make(TV_SCROLL, c"Word of Recall", 1, None, None);
         object_flavor_aware(player, recall);
         home_carry(recall);
+        if reserve_overlap {
+            for (tval, name) in [(TV_MUSHROOM, c"Second Sight"), (TV_POTION, c"Speed")] {
+                let item = make(tval, name, 1, None, None);
+                object_flavor_aware(player, item);
+                home_carry(item);
+            }
+        }
         // Distinct known bonuses keep the inert Home filler in separate stacks.
         let home_space = (*home).stock_size - i16::from(pack_whip);
         while i16::from((*home).stock_num) < home_space {

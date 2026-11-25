@@ -31,6 +31,7 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
                 BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST="20" if case == "trim" else "0",
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
+                BORG_PARAM_TOWN_HOME_RESERVE="1" if case == "reserve-overlap" else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
@@ -58,6 +59,9 @@ class TownLoadoutTest(unittest.TestCase):
 
     def test_heavier_home_upgrade_can_be_proposed_after_a_strength_gain(self):
         self.run_case("restore")
+
+    def test_excluded_effect_item_is_evicted_ahead_of_a_scarce_reserve(self):
+        self.run_case("reserve-overlap")
 
 
 if __name__ == "__main__":

@@ -8347,6 +8347,9 @@ replay as they were):
 
 ## Home stock and town plan schemas 21–24 (#1241)
 
+The shipped profile sets `borg_param_town_home_reserve = 1`. Set it to
+`0` for a run using the earlier Home stock policy.
+
 Plan replay uses the schema recorded in `v`.
 
 - **Schema 21** from the Home reserve branch encodes `home_role` in bits 9–11 of the kit row's `flags`

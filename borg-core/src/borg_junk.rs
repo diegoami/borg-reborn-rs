@@ -769,7 +769,7 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
             || crate::borg_ranged::keep_stack(st, i as usize)
             || keeps_restore_life(st, i as usize, false, false)
-            || crate::borg_town_home::keep_in_dungeon(st, i as usize) {
+            || crate::borg_town_home::keep_in_dungeon(st, i as usize) { // borg-reborn-rs (#1241): retain useful Home candidates until town.
             continue;
         }
 
