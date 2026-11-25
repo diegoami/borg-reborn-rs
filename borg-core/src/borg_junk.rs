@@ -36,10 +36,10 @@ use crate::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
-    BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CCON, BI_CDEPTH,
+    BI_AMISSILES, BI_AMMO_TVAL, BI_ASTFDEST, BI_ATELEPORTLVL, BI_ATPORTOTHER, BI_CARRY, BI_CCON, BI_CDEPTH,
     BI_CDEX, BI_CINT, BI_CLASS, BI_CLEVEL, BI_CSTR, BI_CURHP, BI_CWIS, BI_FOOD, BI_GOLD,
     BI_GOOD_S_CHG, BI_ISFIXEXP, BI_ISFULL, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH,
-    BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED,
+    BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_SPEED, BI_WEIGHT,
 };
 use crate::headers::list_options_h::OPT_birth_randarts;
 use crate::headers::list_stats_h::{OBJ_MOD_CON, OBJ_MOD_DEX, OBJ_MOD_INT, OBJ_MOD_STR, OBJ_MOD_WIS};
@@ -208,24 +208,22 @@ fn slot_keys(st: &mut BorgState, b_i: i32) {
 pub fn borg_destroy_floor(st: &mut BorgState) -> bool {
     let (x, y) = (st.borg.c.x, st.borg.c.y);
     let t = st.cave.grid(x, y).take;
-    if t == 0 {
-        return false;
-    }
-
     /* double check that there is an object here.  This is simulating doing */
     /* "look" so it is okay */
-    if engine::top_floor_object(&st.access, x, y).is_none() {
+    let Some(floor) = engine::top_floor_object(&st.access, x, y) else {
+        return false;
+    };
+    // On stairs or in town the take tracker can have no entry for our
+    // discard. Hide the specific floor stack before native autopickup.
+    let surplus = floor.note() == Some(b"borg ignore surplus");
+    if !surplus && (t == 0 || st.takes.takes[usize::from(t)].value != -10) {
         return false;
     }
 
-    let take = st.takes.takes[usize::from(t)];
-    if take.value != -10 {
-        return false;
-    }
-
-    let base = if take.kidx != 0 { engine::kind_base_name(take.kidx as usize) } else { None };
+    let kind = if surplus { floor.kind().kidx } else { st.takes.takes[usize::from(t)].kidx } as usize;
+    let base = if kind != 0 { engine::kind_base_name(kind) } else { None };
     if let Some(base) = base {
-        let s = [b"# Destroying floor item ", base, engine::kind_name(take.kidx as usize)].concat();
+        let s = [b"# Destroying floor item ", base, engine::kind_name(kind)].concat();
         borg_note_bytes(st, &s);
     } else {
         borg_note(st, "# Destroying floor item.");
@@ -594,6 +592,176 @@ fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
         borg_keypress(st, key(b'*'));
         borg_keypress(st, KC_ENTER);
     }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct SurplusDrop {
+    pub slot: usize,
+    pub quantity: u8,
+}
+
+fn harmful_item(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>) -> bool {
+    use crate::headers::list_effects_h::*;
+    use crate::headers::list_player_timed_h::*;
+    use crate::headers::list_projections_h::{PROJ_MAKE_TRAP, PROJ_MON_CLONE, PROJ_MON_HEAL, PROJ_MON_SPEED};
+    // ui-options.c:sval_dependent supports kind-ignore for these item types.
+    item.iqty > 0 && item.aware && item.flavour_aware && item.kind != 0
+        && item.art_idx == 0
+        && matches!(u32::from(item.tval), TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_FOOD | TV_WAND | TV_STAFF | TV_ROD)
+        && effects(item.kind as usize).into_iter().any(|(effect, subtype)| match u32::from(effect) {
+            // object.txt: Salt Water always inflicts paralysis, and Surprise
+            // can scramble or drain stats. Stat trades use LOSE_RANDOM_STAT.
+            EF_TIMED_INC | EF_TIMED_INC_NO_RES | EF_TIMED_SET =>
+                matches!(subtype as u32, TMD_SLOW | TMD_BLIND | TMD_PARALYZED
+                    | TMD_CONFUSED | TMD_AFRAID | TMD_IMAGE | TMD_POISONED | TMD_CUT
+                    | TMD_STUN | TMD_AMNESIA | TMD_SCRAMBLE | TMD_TERROR),
+            EF_DRAIN_STAT | EF_CURSE_WEAPON | EF_CURSE_ARMOR | EF_SUMMON | EF_DARKEN_AREA => true,
+            EF_TOUCH => subtype == PROJ_MAKE_TRAP as i32,
+            EF_BOLT_STATUS | EF_PROJECT_LOS =>
+                matches!(subtype as u32, PROJ_MON_CLONE | PROJ_MON_HEAL | PROJ_MON_SPEED),
+            _ => false,
+        })
+}
+
+fn harmful_item_drop(st: &BorgState) -> Option<SurplusDrop> {
+    let slot = st.items.items[..pack_size() as usize].iter()
+        .position(|item| harmful_item(item, engine::kind_effects))?;
+    Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
+}
+
+pub(crate) fn borg_discard_harmful_item(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling != 0 {
+        return false;
+    }
+    if let Some(drop) = harmful_item_drop(st) {
+        if danger_here(st) <= st.borg.tr(BI_CURHP) / 20 {
+            return drop_surplus(st, drop);
+        }
+    }
+    false
+}
+
+fn expendable_town_spare(item: &borg_item, worn: &borg_item) -> bool {
+    if item.iqty == 0 || !item.aware {
+        return false;
+    }
+    if item.curses.contains(&true) {
+        return true;
+    }
+    let plain = item.to_a <= 0 && item.to_h <= 0 && item.to_d <= 0;
+    (plain || item.value <= EARLY_JUNK_VALUE)
+        && !crate::borg_town_home::known_special(item)
+        && crate::borg_town_home::outclasses_spare(worn, item)
+}
+
+fn town_spare_drop(st: &BorgState) -> Option<SurplusDrop> {
+    let pack = &st.items.items[..pack_size() as usize];
+    pack.iter().enumerate().filter(|&(slot, item)| {
+        if !matches!(u32::from(item.tval), TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW
+            | TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_DRAG_ARMOR | TV_CLOAK | TV_SHIELD
+            | TV_HELM | TV_CROWN | TV_GLOVES | TV_BOOTS) {
+            return false;
+        }
+        let worn = crate::borg_inventory::borg_wield_slot(item) as usize;
+        (item.curses.contains(&true) || !is_swap(st, slot as i32))
+            && expendable_town_spare(item, &st.items.items[worn])
+    }).min_by_key(|&(_, item)| {
+        (!item.curses.contains(&true), item.value, std::cmp::Reverse(item.weight))
+    }).map(|(slot, item)| SurplusDrop { slot, quantity: item.iqty })
+}
+
+/// Compare the fractional surplus above each target. Recheck the actual
+/// inventory after every useful copy, so no stack keeps priority as it shrinks.
+pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop> {
+    if st.borg.goal.recalling != 0 {
+        return None;
+    }
+    if let Some(drop) = harmful_item_drop(st) {
+        return Some(drop);
+    }
+    if st.borg.tr(BI_CDEPTH) == 0 {
+        if let Some(drop) = town_spare_drop(st) {
+            return Some(drop);
+        }
+    }
+    if !lighten {
+        return None;
+    }
+    let supplies = crate::borg_town_capability::carried_supplies(st);
+    (0..pack_size() as usize).chain(quiver_start() as usize..quiver_end() as usize)
+        .filter_map(|slot| {
+            let (excess, target) = supplies.discard_surplus(st, slot)?;
+            Some((slot, excess, target))
+        })
+        .reduce(|a, b| {
+            let ratio = (i128::from(b.1) * i128::from(a.2)).cmp(&(i128::from(a.1) * i128::from(b.2)));
+            let (first, second) = (&st.items.items[a.0], &st.items.items[b.0]);
+            let order = ratio.then_with(|| {
+                if first.tval == second.tval && matches!(u32::from(first.tval), TV_SHOT | TV_ARROW | TV_BOLT) {
+                    let damage = |ammo: &borg_item| crate::borg_ranged::missile_damage_twice(ammo, 0);
+                    damage(first).cmp(&damage(second))
+                } else {
+                    std::cmp::Ordering::Equal
+                }
+            }).then_with(|| second.weight.cmp(&first.weight));
+            if order.is_gt() { b } else { a }
+        })
+        .map(|(slot, _, _)| SurplusDrop { slot, quantity: 1 })
+}
+
+pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
+    let item = &st.items.items[drop.slot];
+    if harmful_item(item, engine::kind_effects)
+        && engine::kind(item.kind as usize).ignore == 0
+    {
+        let slot = drop.slot as i32;
+        note_desc(st, "# Discarding known harmful stack ", slot, ".");
+        borg_keypress(st, key(b'k'));
+        slot_keys(st, slot);
+        // ui-object.c:textui_cmd_ignore_menu offers the individual
+        // stack first and the known kind second.
+        borg_keypress(st, key(b'b'));
+        return true;
+    }
+    // obj-pile.c:drop_find_grid scatters drops off stairs and away from
+    // visible piles. Use ordinary clear floor so the native ignore command
+    // can mark the dropped copies on the next think.
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    if off_floor(st) || engine::top_floor_object(&st.access, x, y).is_some() {
+        for direction in 0..8 {
+            let nx = x + i32::from(engine::ddx_ddd(direction));
+            let ny = y + i32::from(engine::ddy_ddd(direction));
+            if !engine::square_in_bounds_fully(nx, ny) {
+                continue;
+            }
+            let grid = st.cave.grid(nx, ny);
+            if u32::from(grid.feat) == FEAT_FLOOR && !grid.trap && grid.kill == 0
+                && grid.info & crate::borg_cave_view::BORG_VIEW != 0
+                && engine::top_floor_object(&st.access, nx, ny).is_none()
+                && borg_danger(st, ny, nx, 1, true, false) <= st.borg.tr(BI_CURHP) / 20
+            {
+                borg_keypress(st, digit(i32::from(engine::ddd(direction))));
+                return true;
+            }
+        }
+        return false;
+    }
+    let slot = drop.slot as i32;
+    let quantity = st.items.items[drop.slot].iqty;
+    note_desc(st, "# Dropping surplus ", slot, &format!(" ({} copies).", drop.quantity));
+    // Inventory refresh removes the pending Borg inscription before the
+    // next action. Inscribe each drop so only the dropped copies keep it.
+    borg_keypress(st, key(b'{'));
+    slot_keys(st, slot);
+    borg_keypresses(st, b"borg ignore surplus");
+    borg_keypress(st, KC_ENTER);
+    borg_keypress(st, key(b'd'));
+    slot_keys(st, slot);
+    if quantity > 1 {
+        borg_keypress(st, key(if drop.quantity == quantity { b'*' } else { b'1' }));
+        borg_keypress(st, KC_ENTER);
+    }
+    true
 }
 
 #[cfg(feature = "test-cursed-spares")]
@@ -1355,6 +1523,18 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
         return false;
     }
 
+    if crate::borg_town_live::unload_on_arrival(st) {
+        // player-calcs.c:calc_bonuses charges the first point of slowdown at
+        // half the weight limit plus one tenth of the limit.
+        let carry = st.borg.tr(BI_CARRY);
+        if carry > 0 && st.borg.tr(BI_WEIGHT) >= carry / 2 + carry / 10 {
+            if let Some(drop) = surplus_drop(st, true) {
+                return drop_surplus(st, drop);
+            }
+        }
+        return false;
+    }
+
     /* Do not crush items unless we are slow */
     if st.borg.tr(BI_SPEED) >= 110 {
         return false;
@@ -2037,6 +2217,97 @@ mod tests {
         }
         assert_eq!(surplus_quiver_stack(&quiver, TV_SHOT as i32, 40, shortfall), None);
         assert_eq!(quiver.iter().map(|stack| u16::from(stack.iqty)).sum::<u16>(), 130);
+    }
+
+    #[test]
+    fn the_recorded_priest_potions_go_before_other_pack_contents() {
+        use crate::headers::list_effects_h::{EF_CURE, EF_TIMED_INC};
+        use crate::headers::list_player_timed_h::{TMD_BLIND, TMD_CONFUSED, TMD_PARALYZED, TMD_SLOW};
+        let potion = |sval, iqty, known| {
+            let mut item = blank_item();
+            item.tval = TV_POTION as u8;
+            item.sval = sval;
+            item.kind = u32::from(sval);
+            item.iqty = iqty;
+            item.aware = true;
+            item.flavour_aware = known;
+            item
+        };
+        let mut oil = blank_item();
+        oil.tval = TV_FLASK as u8;
+        oil.iqty = 12;
+        let mut torch = blank_item();
+        torch.tval = TV_LIGHT as u8;
+        torch.iqty = 26;
+        let harmful = |item: &borg_item| harmful_item(item, |kind| {
+            let (effect, status) = match kind {
+                1 => (EF_TIMED_INC, TMD_PARALYZED),
+                3 => (EF_TIMED_INC, TMD_CONFUSED),
+                5 => (EF_TIMED_INC, TMD_SLOW),
+                _ => (EF_CURE, TMD_BLIND),
+            };
+            vec![(effect as u16, status as i32)]
+        });
+        for (sleep, confusion) in [(3, 4), (14, 22)] {
+            let mut pack = [
+                oil, potion(1, 1, false), potion(10, 3, true), potion(11, 2, true),
+                potion(1, sleep, true), potion(3, confusion, true), potion(5, 2, true), torch,
+            ];
+            for (slot, quantity) in [(4, sleep), (5, confusion), (6, 2)] {
+                assert_eq!(pack.iter().position(harmful), Some(slot));
+                assert_eq!(pack[slot].iqty, quantity);
+                pack[slot].iqty = 0;
+            }
+            assert_eq!(pack.iter().position(harmful), None);
+        }
+    }
+
+    #[test]
+    fn adverse_item_effects_are_distinguished_from_cures_buffs_and_trades() {
+        use crate::headers::list_effects_h::*;
+        use crate::headers::list_player_timed_h::*;
+        use crate::headers::list_projections_h::{PROJ_MAKE_TRAP, PROJ_MON_CONF, PROJ_MON_HEAL, PROJ_MON_SPEED};
+        let classify = |tval: u32, effect: u32, subtype: u32| {
+            let known = borg_item {
+                tval: tval as u8, kind: 1, iqty: 1, aware: true, flavour_aware: true,
+                ..blank_item()
+            };
+            harmful_item(&known, |_| vec![(effect as u16, subtype as i32)])
+        };
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_BLIND));
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_POISONED));
+        assert!(classify(TV_POTION, EF_TIMED_INC_NO_RES, TMD_PARALYZED));
+        assert!(classify(TV_POTION, EF_TIMED_INC, TMD_SCRAMBLE));
+        assert!(classify(TV_MUSHROOM, EF_DRAIN_STAT, 0));
+        assert!(classify(TV_MUSHROOM, EF_TIMED_SET, TMD_TERROR));
+        assert!(classify(TV_FOOD, EF_TIMED_INC, TMD_CONFUSED));
+        assert!(classify(TV_SCROLL, EF_CURSE_ARMOR, 0));
+        assert!(classify(TV_SCROLL, EF_TOUCH, PROJ_MAKE_TRAP));
+        assert!(classify(TV_WAND, EF_BOLT_STATUS, PROJ_MON_HEAL));
+        assert!(classify(TV_STAFF, EF_SUMMON, 0));
+        assert!(classify(TV_STAFF, EF_PROJECT_LOS, PROJ_MON_SPEED));
+        assert!(!classify(TV_WAND, EF_BOLT_STATUS, PROJ_MON_CONF));
+        assert!(!classify(TV_MUSHROOM, EF_CURE, TMD_POISONED));
+        assert!(!classify(TV_POTION, EF_TIMED_INC, TMD_HERO));
+        assert!(!classify(TV_POTION, EF_LOSE_RANDOM_STAT, 0));
+        assert!(!classify(TV_SCROLL, EF_TELEPORT, 0));
+    }
+
+    #[test]
+    fn arrival_discards_obviously_inferior_gear_with_unknown_runes() {
+        let worn = sandals(2, b"Pair of Leather Sandals [1,+2]");
+        let plain = sandals(0, b"Pair of Leather Sandals [1,+0] {??}");
+        assert!(expendable_town_spare(&plain, &worn));
+        let cheap = borg_item { to_a: 1, value: EARLY_JUNK_VALUE, ..plain };
+        assert!(expendable_town_spare(&cheap, &worn));
+        let lighter = borg_item { weight: plain.weight - 1, ..plain };
+        assert!(!expendable_town_spare(&lighter, &worn));
+        let mut special = plain;
+        special.modifiers[OBJ_MOD_STR as usize] = 1;
+        assert!(!expendable_town_spare(&special, &worn));
+        assert!(!expendable_town_spare(&plain, &blank_item()));
+        special.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        assert!(expendable_town_spare(&special, &worn));
     }
 
     #[test]

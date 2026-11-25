@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -15,6 +16,8 @@ GAME = ROOT / "build/rust-test/game/angband"
 @unittest.skipUnless(GAME.is_file(), "test-town-loadout build required")
 class TownLoadoutTest(unittest.TestCase):
     def run_case(self, case):
+        arrival = case in ("arrival", "arrival-shop")
+        ammo_reserve = "57" if case == "arrival-shop" else "20" if case in ("trim", "arrival") else "0"
         with tempfile.TemporaryDirectory(prefix="town-loadout-") as directory:
             paths = {name: Path(directory) / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
@@ -28,10 +31,11 @@ class TownLoadoutTest(unittest.TestCase):
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
+                BORG_PARAM_TOWN_SHOP_OVERLOADED="2" if arrival else "1",
                 BORG_PARAM_TOWN_LOADOUT_POWER_LOSS="3000",
-                BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST="20" if case == "trim" else "0",
+                BORG_PARAM_TOWN_QUIVER_TRIM_RESERVE__PRIEST=ammo_reserve,
                 BORG_PARAM_TOWN_RECALL_URGENT_DEPTH="5",
-                BORG_PARAM_TOWN_HOME_RESERVE="1" if case == "reserve-overlap" else "0",
+                BORG_PARAM_TOWN_HOME_RESERVE="1" if case in ("reserve-overlap", "arrival-shop") else "0",
                 BORG_PARAM_CAUTION_TOWN_NEVER_SCARY="1",
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
@@ -41,7 +45,7 @@ class TownLoadoutTest(unittest.TestCase):
             result = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "3", "-menu-letters",
-                 "-msglog", str(messages), "-keys", "750"],
+                 "-msglog", str(messages), "-keys", "1800" if arrival else "750"],
                 cwd=GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             log = messages.read_text()
@@ -54,8 +58,28 @@ class TownLoadoutTest(unittest.TestCase):
         self.assertLess(log.index("# Town headroom dropping"), log.index("# Town loadout: preparing a lighter kit"))
         self.assertLess(log.index("# Town loadout: preparing a lighter kit"), log.index("# Town loadout: displaced gear stored at Home"))
 
+    def test_arrival_trims_and_deposits_gear_before_shopping(self):
+        log = self.run_case("arrival")
+        dropped = log.index("# Dropping surplus Rounded Pebbles")
+        exchange = log.index("# Town loadout: preparing a lighter kit")
+        deposit = log.index("# Town loadout: displaced gear stored at Home")
+        recall = re.search(r"You have .*\bWord of Recall", log)
+        self.assertIsNotNone(recall, log[-4000:])
+        self.assertLess(dropped, exchange)
+        self.assertLess(exchange, deposit)
+        self.assertLess(deposit, recall.start())
+
     def test_full_home_without_storage_has_no_safe_proposal(self):
         self.run_case("no-storage")
+
+    def test_arrival_buys_lighter_gear_and_stores_displaced_piece(self):
+        log = self.run_case("arrival-shop")
+        exchange = log.index("# Town loadout: preparing a lighter kit")
+        bought = log.index("You bought ", exchange)
+        deposit = log.index("# Town loadout: displaced gear stored at Home", bought)
+        self.assertRegex(log[bought:deposit], r"You are (?:wielding|wearing) ")
+        recall = re.search(r"You have .*\bWord of Recall", log[deposit:])
+        self.assertIsNotNone(recall, log[-4000:])
 
     def test_heavier_home_upgrade_can_be_proposed_after_a_strength_gain(self):
         self.run_case("restore")

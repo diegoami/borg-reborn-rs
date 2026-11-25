@@ -32,6 +32,7 @@ PINNED_TOWN_SETTINGS = [
     # #1250: keep the original use and timing of Magic Mapping.
     ("item_use_idle", 0),
     ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
+    ("town_departure_free_weight__warrior", 0), ("town_departure_free_weight__mage", 0),
     ("town_store_keep_min", 0), ("town_recall_curve_scale_percent", 0),
     ("town_recall_urgent", 0),
     # #1239 lets Town acquisitions exceed the old weight allowance. Keep

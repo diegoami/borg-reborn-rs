@@ -44,11 +44,13 @@ def check_arm(out, reserve):
     # CL1 Ranger by the stairs, and its first foe comes later.
     # #1098's mixed walk and C stair exit (shipped 1) are off too: the trace
     # predates them. So is #1140's poison triage (deal_with_poison, shipped 1).
-    # The original trace also predates #1004's last-copy book protection.
+    # The original trace also predates #1004's last-copy book protection and
+    # #1256's arrival unloading and weight-limited shopping.
     env.update(BORG_CORE="borg-rs", BORG_IMPL="rust",
                BORG_TXT_SET=f"borg_param_town_phase_reserve__ranger={reserve};"
                             "borg_param_town_phase_reserve_percent=100;"
                             "borg_param_town_light_reserve_turns=0;"
+                            "borg_param_town_shop_overloaded=1;"
                             "borg_param_town_first_cure__ranger=0;"
                             "borg_param_explore_breadth_first=0;"
                             "borg_param_stair_scum=0;"
