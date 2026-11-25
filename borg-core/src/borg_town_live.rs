@@ -651,7 +651,7 @@ pub fn choose(st: &mut BorgState) -> bool {
     let plan = crate::borg_town_shadow::live_plan(st);
     let a = plan.action;
     let recall_first = recall_loadout::enabled(st);
-    // borg-reborn-rs (#1236): offer inferior spares before other disposals.
+    // #1264: offer inferior spares before other disposals.
     if !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
     {
@@ -659,8 +659,9 @@ pub fn choose(st: &mut BorgState) -> bool {
             return set_action(st, sale);
         }
         if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
-            let drop = crate::borg_junk::inferior_spares(st).next().map(|(slot, item)| {
-                TownAction { code: action::DROP, at: [-1, slot as i64, i64::from(item.iqty), 0] }
+            let code = if crate::borg_junk::exploration_first() { DROP_SURPLUS } else { action::DROP };
+            let drop = crate::borg_junk::find_town_inferior_spare(st, |_, slot, item| {
+                Some(TownAction { code, at: [-1, slot as i64, i64::from(item.iqty), 0] })
             });
             if let Some(drop) = drop {
                 return set_action(st, drop);
@@ -970,23 +971,21 @@ fn settle_quiver_trim(st: &mut BorgState) {
     }
 }
 
-/// borg-reborn-rs (#1236): use a shop with room for the whole spare stack.
-pub(crate) fn inferior_spare_sale(st: &BorgState) -> Option<TownAction> {
-    for (slot, item) in crate::borg_junk::inferior_spares(st) {
+/// Use a shop with room for the whole inferior spare stack.
+pub(crate) fn inferior_spare_sale(st: &mut BorgState) -> Option<TownAction> {
+    crate::borg_junk::find_town_inferior_spare(st, |st, slot, item| {
         if item.value <= 0 {
-            continue;
+            return None;
         }
-        let Some(native) = crate::engine::inven_object(&st.access, slot) else { continue; };
+        let native = crate::engine::inven_object(&st.access, slot)?;
         let quantity = i32::from(item.iqty);
-        if let Some(shop) = (0..BORG_HOME).find(|&shop| {
+        let shop = (0..BORG_HOME).find(|&shop| {
             !sale_rejected(st, shop as i16, item)
                 && crate::borg_store_sell::borg_store_buys(item, shop as i32)
                 && native.store_accepts_quantity(shop, quantity)
-        }) {
-            return Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] });
-        }
-    }
-    None
+        })?;
+        Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
+    })
 }
 
 /// Controlled refreshed-inventory observations for the native regression fixture.
