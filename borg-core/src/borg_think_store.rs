@@ -316,6 +316,14 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // Let planned sales identify unknown stock and fund the refill first.
+    if let Some(a) = crate::borg_healing_restock::purchase(st) {
+        clear_shop_goal(st);
+        st.borg.goal.shop = a.at[0] as i16;
+        st.borg.goal.ware = a.at[1] as i16;
+        return true;
+    }
+
     /* Step 3 -- Buy items from the shops (for the player) */
     if borg_think_shop_buy_useful(st) {
         /* Message */
@@ -383,13 +391,6 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         note_ware(st, "# Buying", " from the home as a backup");
 
         /* Success */
-        return true;
-    }
-
-    if let Some(a) = crate::borg_healing_restock::purchase(st) {
-        clear_shop_goal(st);
-        st.borg.goal.shop = a.at[0] as i16;
-        st.borg.goal.ware = a.at[1] as i16;
         return true;
     }
 

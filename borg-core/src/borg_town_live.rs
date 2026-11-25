@@ -332,12 +332,14 @@ pub fn choose(st: &mut BorgState) -> bool {
             }
         }
     }
-    if a.code == action::LEAVE {
+    // Give planned disposal priority. Selling can identify the carried
+    // potion stack and provide gold for the refill.
+    if matches!(a.code, action::BUY | action::TAKE_HOME | action::LEAVE) {
         if let Some(refill) = crate::borg_healing_restock::purchase(st) {
             return set_action(st, refill);
         }
-        note_departure_room(st);
     }
+    if a.code == action::LEAVE { note_departure_room(st); }
     set_action(st, a)
 }
 
