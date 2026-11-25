@@ -8144,9 +8144,9 @@ spastic"; "all of them should grow in decpercentile by level (and class)";
 "I would like the radius to start small and increase by level"; "make CL1
 start from 10 maximum radius").
 - **The formula.** `explore_mix_radius`, `explore_mix_step` and
-  `explore_mix_max_radius` each grow by their `_dp`, per mille a character
-  level from CL1, linearly and rounded: value × (1000 + dp × (CL − 1)) / 1000
-  (`grow_by_level`).
+  `explore_mix_max_radius` each grow by their `_dp` per mille per mixed
+  exploration level above 1, linearly and rounded. `grow_by_level` computes
+  value × (1000 + dp × (level − 1)) / 1000. The default level is CL.
 - **Per class.** Each `_dp` takes `__<class>`; compiled 0 means no growth.
 - **The level caps stay as #1098 shipped them.** Raising them by one, tried
   first, added back-and-forth on the 20 starts (straight-back steps 7.7% →
@@ -8155,8 +8155,10 @@ start from 10 maximum radius").
 **Depth-adjusted level** (#1220, compiled and shipped 0). With
 `explore_mix_depth_adjusted_level = 1`, the class cap and all three growth
 values use `max(1, CL - DL + 1)` in place of CL. At DL1 the level is CL.
-The existing leash still gates mixed exploration, and the escape model
-still prices contact damage using actual dungeon depth.
+On deeper floors, a cap of 9 allows a character up to eight levels above
+the current depth if the other gates pass. The existing leash still gates
+mixed exploration, and the escape model still prices contact damage using
+actual dungeon depth.
 
 Shipped:
 
@@ -8238,19 +8240,19 @@ the ten below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1269` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1530` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1533` |
 | `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1316` |
-| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1465` |
-| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1466` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1468` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1470` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1472` |
-| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1461` |
+| `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1394` |
+| `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1395` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1472` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1474` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1476` |
+| `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1396` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1320` |
-| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1321` |
-| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1465` |
-| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1466` |
-| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1461` |
+| `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1327` |
+| `explore_mix_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1394` |
+| `explore_mix_step_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1395` |
+| `explore_mix_max_radius_dp` | 0 | per mille per level | 0–10000 | `borg_flow_dark.rs:1396` |
 
 ## An overweight Mage's torches, cursed spares and stat curse (#1151)
 

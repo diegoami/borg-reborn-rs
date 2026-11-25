@@ -79,6 +79,13 @@ the `# Danger Level N` notes after an escape are unchanged.
   tunnel dug straight to a monster (`borg_flow_kill_direct`, e.g. #558's
   breeder hunt) sets it too.
 
+If [#1116] adds a mixed exploration radius check, use the radius chosen by
+the mixed planner for the same level and stair-flow frame. The planner grows
+its starting radius, expansion step, and cap using the level selected by
+`explore_mix_depth_adjusted_level` (#1220).
+
+[#1116]: https://github.com/diegoami/borg-reborn-rs/issues/1116
+
 ## The sites
 
 `borg_escape(st, danger)` is tried from `borg_caution` after retreat and

@@ -1317,28 +1317,18 @@ pub(crate) fn mixed_active(st: &BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) > 0
         && !breadth_first_active(st)
         && c_leash_on(st)
-        && within_mix_levels(
-            mix_level(st, value(Param::explore_mix_depth_adjusted_level) != 0),
-            value(Param::explore_mix_max_clevel),
-        )
+        && mix_level(st) <= value(Param::explore_mix_max_clevel)
         && !released(st)
 }
 
 /// #1220: the level used for both mixed eligibility and radius growth.
-fn mix_level(st: &BorgState, depth_adjusted: bool) -> i32 {
+fn mix_level(st: &BorgState) -> i32 {
     let clevel = st.borg.tr(BI_CLEVEL);
-    if depth_adjusted {
+    if value(Param::explore_mix_depth_adjusted_level) != 0 {
         (clevel - st.borg.tr(BI_CDEPTH) + 1).max(1)
     } else {
         clevel
     }
-}
-
-/// #1098 (owner, 2026-11-23: "explore_mix_max_clevel by class"): mixed
-/// exploration applies up to this level, per class; above it C's depth-first
-/// order explores.
-fn within_mix_levels(level: i32, max_clevel: i32) -> bool {
-    level <= max_clevel
 }
 
 /// #1098: leaving after the stair-anchored exploration was exhausted failed
@@ -1388,6 +1378,23 @@ fn grow_by_level(base: i32, dp: i32, level: i32) -> i32 {
     let levels = i64::from(level.max(1) - 1);
     let scaled = i64::from(base) * (1000 + i64::from(dp) * levels);
     i32::try_from((scaled + 500).div_euclid(1000)).unwrap_or(i32::MAX)
+}
+
+struct MixRadii {
+    start: i32,
+    step: i32,
+    max: i32,
+}
+
+/// #1160, #1220: the stair planner grows all three radii by the same level
+/// that gates mixed exploration (per mille a level, per class).
+fn mix_radii(st: &BorgState) -> MixRadii {
+    let level = mix_level(st);
+    MixRadii {
+        start: grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), level),
+        step: grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), level),
+        max: grow_by_level(value(Param::explore_mix_max_radius), value(Param::explore_mix_max_radius_dp), level),
+    }
 }
 
 /// #1098: the depth band of the contact damage: 1 at DL1-5, 2 at DL6-10, ...
@@ -1459,10 +1466,7 @@ fn mixed_plan(cands: &[(i32, i32, i32)], borg_ring: Option<i32>, start: i32, ste
 /// known staircase.
 fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool> {
     let frame = stair_frame(st, scum)?;
-    // #1160, #1220: the radius, the step and the cap grow by the same level
-    // used for eligibility (per mille a level, per class).
-    let level = mix_level(st, value(Param::explore_mix_depth_adjusted_level) != 0);
-    let start = grow_by_level(value(Param::explore_mix_radius), value(Param::explore_mix_radius_dp), level);
+    let MixRadii { start, step, max } = mix_radii(st);
     let mut limit = mix_limit(MixModel {
         start,
         sight: value(Param::explore_mix_sight),
@@ -1471,12 +1475,11 @@ fn borg_flow_dark_mixed(st: &mut BorgState, scum: Option<&Scum>) -> Option<bool>
         max_hp: st.borg.tr(BI_MAXHP),
         contact: value(Param::explore_mix_contact_damage),
         depth: st.borg.tr(BI_CDEPTH),
-        max: grow_by_level(value(Param::explore_mix_max_radius), value(Param::explore_mix_max_radius_dp), level),
+        max,
     });
     if c_leash_on(st) {
         limit = limit.min(borg_flow_misc::borg_get_leash(st, false));
     }
-    let step = grow_by_level(value(Param::explore_mix_step), value(Param::explore_mix_step_dp), level);
     let plan = mixed_plan(&frame.cands, Some(frame.borg_ring), start, step, limit, BREADTH_FIRST_MAX_RINGS);
     let stepped = match plan {
         Plan::Fallback => return None,
@@ -2361,36 +2364,43 @@ mod breadth_first_tests {
     }
 
     #[test]
-    fn mixed_stops_above_the_class_cap() {
-        // Owner, 2026-11-23: "explore_mix_max_clevel by class".
-        assert!(within_mix_levels(6, 6), "up to the cap");
-        assert!(!within_mix_levels(7, 6), "above it, C's order");
-        assert!(within_mix_levels(19, 50), "compiled: no cap");
-    }
-
-    #[test]
     fn mixed_depth_adjustment_drives_the_cap_and_growth() {
         let mut st = BorgState::default();
         st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
-        for (clevel, depth, expected_level, expected_eligible, expected_growth) in [
-            (9, 1, 9, true, [7, 5, 54]),
-            (10, 1, 10, false, [7, 6, 60]),
-            (10, 2, 9, true, [7, 5, 54]),
-            (11, 2, 10, false, [7, 6, 60]),
-            (11, 3, 9, true, [7, 5, 54]),
-            (11, 12, 1, true, [2, 3, 6]),
+        for (adjusted, clevel, depth, eligible, growth) in [
+            (1, 9, 1, true, [7, 5, 54]),
+            (1, 10, 1, false, [7, 6, 60]),
+            (1, 10, 2, true, [7, 5, 54]),
+            (1, 11, 2, false, [7, 6, 60]),
+            (1, 11, 3, true, [7, 5, 54]),
+            (1, 11, 12, true, [2, 3, 6]),
+            (1, 20, 20, false, [2, 3, 6]), // The leash ends at CL20.
+            (0, 9, 1, true, [7, 5, 54]),
+            (0, 10, 2, false, [7, 6, 60]),
+            (0, 11, 12, false, [8, 6, 66]),
         ] {
             st.borg.trait_[BI_CLEVEL as usize] = clevel;
             st.borg.trait_[BI_CDEPTH as usize] = depth;
-            let level = mix_level(&st, true);
-            assert_eq!(level, expected_level, "CL{clevel}/DL{depth}");
-            assert_eq!(within_mix_levels(level, 9), expected_eligible, "Priest cap at CL{clevel}/DL{depth}");
-            assert_eq!(
-                [grow_by_level(2, 300, level), grow_by_level(3, 100, level), grow_by_level(6, 1000, level)],
-                expected_growth,
-                "starting radius, step and cap at CL{clevel}/DL{depth}",
-            );
-            assert_eq!(mix_level(&st, false), clevel, "flag off at CL{clevel}/DL{depth}");
+            crate::params::with_test_values(&[
+                (Param::explore_breadth_first, 0),
+                (Param::explore_mixed, 1),
+                (Param::explore_mix_max_clevel, 9),
+                (Param::explore_mix_depth_adjusted_level, adjusted),
+                (Param::explore_mix_radius, 2),
+                (Param::explore_mix_radius_dp, 300),
+                (Param::explore_mix_step, 3),
+                (Param::explore_mix_step_dp, 100),
+                (Param::explore_mix_max_radius, 6),
+                (Param::explore_mix_max_radius_dp, 1000),
+                // Widen the depth margin to isolate the class cap below CL20.
+                (Param::flow_leash_depth_margin, 10),
+                (Param::flow_leash_stairs_max_level, 20),
+                (Param::kit_leash, 0),
+            ], || {
+                assert_eq!(mixed_active(&st), eligible, "eligibility with flag {adjusted} at CL{clevel}/DL{depth}");
+                let MixRadii { start, step, max } = mix_radii(&st);
+                assert_eq!([start, step, max], growth, "growth with flag {adjusted} at CL{clevel}/DL{depth}");
+            });
         }
     }
 }
