@@ -2196,7 +2196,7 @@ Before the fix (main `3ba17e2c`, the hunt stopped by the rule's own leave):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:685` |
+| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:692` |
 
 ## Kill breeders first; flee only what cannot be stopped (#556)
 
@@ -4394,12 +4394,12 @@ item preference, random roll or effect was changed.
 | `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
 | `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
 | `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
-| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1315` |
-| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1316` |
-| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1315` |
-| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1325` |
-| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1323` |
-| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1324` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:1322` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:1323` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:1325` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:1350` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:1351` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:1352` |
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
@@ -7693,9 +7693,9 @@ below).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:894` |
-| `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:897` |
-| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1259` |
+| `explore_breadth_first` | 0 | flag | 0–1 | `borg_flow_dark.rs:890` |
+| `explore_bfs_max_hp` | 25 | hp | 0–10000 | `borg_flow_dark.rs:893` |
+| `explore_bfs_slack` | 0 | steps | 0–250 | `borg_flow_dark.rs:1248` |
 | `explore_bfs_hp_per_level` | 0 | hp per level | -100–100 | `borg_flow_dark.rs:894` |
 
 ## Only goals the exploration flow can enter (#1189, #1227)
@@ -7727,6 +7727,9 @@ routed back to the vein at (189,34) after each five-step spastic search.
 The regression follows the legacy flow from (186,30) to a reachable
 unknown grid on the recorded map with the filter enabled. At 0 it follows
 the five steps back to the vein approach (189,33) and observes the refusal.
+With the frontier sealed and a usable up stair placed in the crop, the
+enabled filter lets the legacy scans report exhaustion. The stair policy
+then routes to the up stair and queues `<`.
 
 The refusal itself is no longer silent, in either setting: a flow whose step
 would have to dig notes `# Exploring: the goal at (y,x) needs a dig; no
@@ -8261,13 +8264,13 @@ the ten below).
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
 | `explore_bfs_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1258` |
-| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1540` |
+| `explore_c_leave_when_done` | 0 | flag | 0–1 | `borg_flow_dark.rs:1526` |
 | `explore_mixed` | 0 | flag | 0–1 | `borg_flow_dark.rs:1309` |
 | `explore_mix_radius` | 5 | steps | 1–250 | `borg_flow_dark.rs:1387` |
 | `explore_mix_step` | 2 | steps | 1–250 | `borg_flow_dark.rs:1388` |
-| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1479` |
-| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1481` |
-| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1483` |
+| `explore_mix_sight` | 5 | grids | 0–250 | `borg_flow_dark.rs:1465` |
+| `explore_mix_speed_ratio` | 2 | ratio | 2–10 | `borg_flow_dark.rs:1467` |
+| `explore_mix_contact_damage` | 5 | hp per turn | 1–1000 | `borg_flow_dark.rs:1469` |
 | `explore_mix_max_radius` | 30 | steps | 1–250 | `borg_flow_dark.rs:1389` |
 | `explore_mix_max_clevel` | 50 | level | 1–50 | `borg_flow_dark.rs:1313` |
 | `explore_mix_depth_adjusted_level` | 0 | flag | 0–1 | `borg_flow_dark.rs:1320` |
@@ -8891,3 +8894,59 @@ switch; its value is a hypothesis.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_note_standing_on_stairs` | 0 | flag | 0–1 | `borg_caution.rs:930` |
+
+## The recovery loop on DL19 (#1211)
+
+A Priest (Borg261124230918, CL26) spent 438 consecutive decisions
+(turns 4,159,478–4,163,120) pacing a DL19 corridor at full HP with SP pinned
+at 0–2/47: 61 `borg_flow_recover` routes, 27 Heroism casts through the
+defense path, no rest. Two rules of the shipped core made the loop, each
+contradicting the other through the same danger number:
+
+- **The mana spend.** Five sleeping cave orcs (ARROW, innate-freq 13) sat at
+  x = 75–80 of the corridor the Priest paced. A sleeping orc's arrow danger
+  prices every grid within `danger_monster_max_distance` (20) — 5 per orc in
+  range — so the corridor read danger 20–25, which lands in the defense
+  path's "some danger but not much" window (`defend_some_danger_divisor`
+  10 to `defend_some_danger_tenths` 5 of the avoidance: 17–85). In that
+  window `borg_defend_aux_hero` pre-buffs for a fight that is not happening:
+  nothing was visible or adjacent, HP was full, and the 2 SP a cast costs
+  was everything the Priest had. The buff expires ("You no longer feel
+  heroic", 23 times), the Priest regenerates 2 SP, the window still holds,
+  the cast repeats — the mana never survives to be anything else. Hero,
+  Berserk Strength and Rapid Regeneration all cast on `some_danger` alone;
+  Bless and Smite Evil already require a monster at hand.
+- **The rest veto.** The same danger 25 sits above the mana rest's own gate
+  (`recover_mana_rest_danger_divisor` 10: rest only under danger 17) while
+  the general recovery veto at the top of `borg_recover` allows recovery up
+  to `recover_danger_divisor` 4 (danger 42), and the defense path calls the
+  same 25 "not much" up to 85. The Borg that cures, pre-buffs and flows for
+  recovery at danger 25 could not rest for the one resource it was missing.
+  Each `borg_flow_recover` walk (first happy grid at least 7 away — the
+  destination eligibility's own radius) ended at a grid the veto refused,
+  the goal cancelled, and the next scan started the walk back: the
+  pendulum. The corridor's rest destinations pass `borg_check_rest`'s
+  monster checks because the orcs sleep (a sleeping monster beyond 8 grids
+  is skipped), so the walk always found somewhere to go and nowhere to
+  rest.
+
+The switches, shipped 1 (a bug, like `explore_stepable_goals`):
+`defend_prep_mana_starved` holds the three no-proximity prep casts while at
+full HP with SP at or below the quarter of the maximum that arms the
+recovery walk (the potion and activation fallbacks are untouched: no mana
+behind them); `recover_mana_rest_full_hp` lets the full-HP mana rest read
+the general recovery gate. The fixture
+(`recovery-mana-loop-off/on`, `RecoveryManaLoopTest`) drives the production
+decision points in the think's order on the recorded row — at the off
+values the cast reproduces with the recorded keys (m,a,f) and the walk
+restarts (≥ 2 flows, no rest); at the shipped 1s the cast is declined and
+the Borg rests ("Resting to gain Mana"). Widths to measure through the zoo
+(the request issue of #1211): whether `defend_prep_mana_starved`'s
+quarter-SP bound is the right line for hurt characters (it holds only at
+full HP today), and how far past the general gate a full-HP mana rest may
+sit before the rest's own interrupts stop protecting it.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `defend_prep_mana_starved` | 0 | flag | 0–1 | `borg_fight_defend.rs:220` |
+| `recover_mana_rest_full_hp` | 0 | flag | 0–1 | `borg_recover.rs:638` |

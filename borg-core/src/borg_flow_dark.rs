@@ -98,8 +98,8 @@ fn borg_timer(st: &BorgState, t: BorgTime) -> BorgTime {
 
 /// Determine if a grid is "interesting" (and should be explored)
 ///
-/// An unknown grid, closed door or rubble can be an exploration goal. The
-/// original rules also consider treasure veins and walls next to vaults.
+/// An unknown grid, closed door or rubble can be an exploration goal. At
+/// `explore_stepable_goals = 0`, C's rules also consider veins and vault walls.
 fn borg_flow_dark_interesting(st: &mut BorgState, y: i32, x: i32) -> bool {
     /* Get the borg_grid */
     let mut ag = *st.cave.grid(x, y);
@@ -115,8 +115,8 @@ fn borg_flow_dark_interesting(st: &mut BorgState, y: i32, x: i32) -> bool {
         return false;
     }
 
-    // #1189, #1227: every dark flow uses GOAL_DARK, whose final step
-    // refuses to dig walls and seams. Skip those goals before routing.
+    // #1189, #1227: GOAL_DARK refuses to dig walls and seams. With the
+    // filter enabled, skip the treasure and vault branches below.
     if value(Param::explore_stepable_goals) != 0 && dark_goal_cannot_enter(feat) {
         return false;
     }
@@ -1643,10 +1643,10 @@ pub fn borg_flow_dark(st: &mut BorgState, neer: bool) -> bool {
     false
 }
 
-/// #1227: use the recorded corridor and the nearest reachable frontier.
-/// Follow the same production flow the dungeon thinker starts and resumes.
+/// #1227: follow the production flow on the recorded corridor, with its
+/// reachable frontier or with the frontier sealed and an up stair added.
 #[cfg(feature = "test-stair-handoff")]
-pub(crate) fn run_legacy_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
+pub(crate) fn run_legacy_vein_loop_regression(st: &mut BorgState, on: bool, exit: bool) -> ! {
     use crate::borg_flow::borg_flow_old;
     use crate::borg_headers::borg_trait_h::BI_DIG;
     use crate::headers::list_terrain_h::FEAT_FLOOR;
@@ -1684,8 +1684,8 @@ pub(crate) fn run_legacy_vein_loop_regression(st: &mut BorgState, on: bool) -> !
         for (cell, x) in row.bytes().zip((169 - WEST_SHIFT)..) {
             assert!(engine::square_in_bounds(x, y));
             st.cave.grid_mut(x, y).feat = match cell {
-                b'?' => FEAT_NONE,
-                b'#' => FEAT_GRANITE,
+                b'?' if !exit => FEAT_NONE,
+                b'?' | b'#' => FEAT_GRANITE,
                 b'.' => FEAT_FLOOR,
                 b'*' => FEAT_QUARTZ_K,
                 _ => panic!("unexpected map cell {cell}"),
@@ -1722,26 +1722,63 @@ pub(crate) fn run_legacy_vein_loop_regression(st: &mut BorgState, on: bool) -> !
     assert_eq!(st.flow.commit_seq - before, if on { 0 } else { 2 }, "dark-1 and dark-3 vein commits");
     assert!(st.io.queued_keys().is_empty());
 
-    // The spastic-search end of the recorded cycle. With the filter off,
-    // dark-4 walks five steps back towards the vein and refuses the dig.
-    st.borg.c = loc { x: 186 - WEST_SHIFT, y: 30 };
-    st.light.light_n = 0;
-    assert!(borg_flow_dark(st, false), "legacy far exploration takes a step");
-    let cost = st.flow.data_flow[30][(186 - WEST_SHIFT) as usize];
-    if on {
-        assert!(cost <= 20, "the reachable frontier is just beyond the local scan");
-    } else {
-        assert_eq!(cost, 6, "the recorded dark-4 flow heads back to the vein");
-    }
-    for _ in 0..cost {
-        let keys = st.io.queued_keys();
-        assert_eq!(keys.len(), 1, "one movement command per step");
+    let take_step = |st: &mut BorgState| {
+        assert_eq!(st.io.queued_keys().len(), 1, "one movement command per step");
         let key = crate::borg_io::borg_inkey(st, true);
         assert!((u32::from(b'1')..=u32::from(b'9')).contains(&key) && key != u32::from(b'5'));
         let dir = (key - u32::from(b'0')) as usize;
         st.borg.c.x += i32::from(engine::ddx(dir));
         st.borg.c.y += i32::from(engine::ddy(dir));
         st.borg.time.now += 1;
+    };
+    let search_end = loc { x: 186 - WEST_SHIFT, y: 30 };
+
+    if exit {
+        // The recorded stairs are outside the crop. Place one at the
+        // known search endpoint and give the Borg no down staircase.
+        assert!(engine::option_set(c"birth_force_descend", false));
+        st.cave.grid_mut(search_end.x, search_end.y).feat = FEAT_LESS as u8;
+        st.stairs.less.num = 1;
+        st.stairs.less.x[0] = search_end.x;
+        st.stairs.less.y[0] = search_end.y;
+        st.borg.time.level = st.borg.time.now;
+
+        assert!(!exhausted_this_think(st));
+        assert!(!borg_flow_dark(st, false), "the vein is the only candidate left");
+        assert!(exhausted_this_think(st), "legacy exploration hands off to the stair policy");
+        assert_eq!(st.flow.commit_seq, before, "no exploration flow commits to the vein");
+        assert!(crate::borg_think_dungeon_util::borg_leave_level(st, false));
+        assert!(st.borg.stair_less, "the exit is an up stair");
+        let stair_goal = i32::from(st.borg.goal.type_0);
+        for _ in 0..5 {
+            take_step(st);
+            assert_ne!(st.borg.c, approach, "the stair flow does not return to the vein");
+            assert_ne!(st.borg.c, vein);
+            if st.borg.c == search_end {
+                break;
+            }
+            assert!(borg_flow_old(st, stair_goal), "continue walking to the stair");
+        }
+        assert_eq!(st.borg.c, search_end);
+        assert!(crate::borg_caution::borg_caution(st), "take the up stair");
+        assert_eq!(st.io.queued_keys(), [u32::from(b'<')]);
+        println!("legacy vein loop passed: exit");
+        std::process::exit(0);
+    }
+
+    // The spastic-search end of the recorded cycle. With the filter off,
+    // dark-4 walks five steps back towards the vein and refuses the dig.
+    st.borg.c = search_end;
+    st.light.light_n = 0;
+    assert!(borg_flow_dark(st, false), "legacy far exploration takes a step");
+    let cost = st.flow.data_flow[search_end.y as usize][search_end.x as usize];
+    if on {
+        assert!(cost <= 20, "the reachable frontier is just beyond the local scan");
+    } else {
+        assert_eq!(cost, 6, "the recorded dark-4 flow heads back to the vein");
+    }
+    for _ in 0..cost {
+        take_step(st);
         assert!(!on || st.borg.c != approach, "the flow returned to the refused dig");
         if st.borg.c == approach || st.cave.grid(st.borg.c.x, st.borg.c.y).feat == FEAT_NONE as u8 {
             break;

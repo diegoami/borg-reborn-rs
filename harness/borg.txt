@@ -855,6 +855,30 @@ borg_param_recover_rest_cure_hp_percent = 50
 borg_param_recover_rest_cure_speed_edge = 1
 borg_param_recover_rest_cure_distance = 20
 
+# The prep buffs wait for mana (#1211): 1 = the "some danger" prep spells
+# (Hero, Berserk Strength, Rapid Regeneration — Bless and Smite Evil already
+# require a monster at hand) are not cast while at full HP with SP at or
+# below MAXSP/4, the level that arms the recovery walk. The recorded Priest
+# Borg261124230918 (DL19, full HP, SP 0-2/47, five remembered orc archers
+# pricing the corridor at danger 20-25 = "some danger") cast every
+# regenerated point back into Heroism while pacing between recovery grids,
+# 438 decisions, 27 casts, no rest. The potions and activations are
+# untouched (no mana behind them). 0 = C. Shipped 1 (a bug, like
+# explore_stepable_goals). Not measured yet: the zoo request of #1211.
+
+borg_param_defend_prep_mana_starved = 1
+
+# The mana rest at full HP (#1211): 1 = at full HP the Resting-to-gain-Mana
+# danger gate is the general recovery gate (recover_danger_divisor, 42 here)
+# instead of the stricter recover_mana_rest_danger_divisor (17). Only mana
+# is missing, the recovery veto at the top of borg_recover has already
+# passed at that danger, and the rest ends at the first monster seen or the
+# first blow. The same recorded Priest paced forever: its corridor priced
+# 20-25, above the mana gate's 17 but inside every other recovery window.
+# 0 = C. Shipped 1 (a bug). Not measured yet: the zoo request of #1211.
+
+borg_param_recover_mana_rest_full_hp = 1
+
 # Throws on melee's footing (#568): 1 = a thrown object is rated with the
 # engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
 # chance with the throwing skill, no launcher, and melee's danger term

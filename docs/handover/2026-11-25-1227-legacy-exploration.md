@@ -15,5 +15,15 @@ crop of the recorded map, shifted west to fit the test dungeon. With the
 filter off it sees the nearby flow commits and the five-step return to
 the refused dig. With the filter on it follows a route to a reachable
 unknown grid and checks the door, rubble and intentional vein commands.
+With the frontier sealed and an up stair placed in the crop, a separate
+case checks that legacy exploration reports exhaustion and the Borg
+takes the stair. The fixture uses the shipped depth-adjusted mixed level.
 The original save rebuilds Borg memory on load, so the check uses the
 recorded geometry in place of a live replay.
+
+**What is left.** The four smoke references cover mixed exploration at
+these levels. The native fixture exercises the legacy behavior above the
+mixed cap. Effects across the shipped population remain unmeasured.
+
+**Owner decision.** A paired Zoo run can compare the synced base with
+this PR at shipped settings if population measurement is needed.
