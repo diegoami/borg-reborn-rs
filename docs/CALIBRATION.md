@@ -8766,7 +8766,7 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:400` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:410` |
 
 ## Shopping while overloaded and departure loadout (#1239)
 
@@ -8778,7 +8778,8 @@ adds weight to the headroom needed before purchase.
 
 The departure pass trims surplus quiver stacks, evaluates lighter gear with
 the displaced equipment stored at Home, and sheds surplus above the trip
-reserves. Urgent resupply remains available during the pass. If the Borg
+reserves. A confirmed trim prevents reacquiring the same ammunition until
+the next town visit. Urgent resupply remains available during the pass. If the Borg
 cannot remove the remaining overload safely, it logs the reason and leaves.
 
 Setting `town_shop_overloaded` to 0 records and uses schema 20 with the
@@ -8787,7 +8788,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:324` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:334` |
 
 ## Ranged readiness for the next trip (#1184)
 

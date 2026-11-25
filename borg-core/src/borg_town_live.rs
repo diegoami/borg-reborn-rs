@@ -153,6 +153,8 @@ pub struct LiveState {
     /// unit can look better on each side in turn; the reverse of a confirmed
     /// Home move is not offered again within the visit (borg-rs#90).
     home_moves: Vec<(u32, bool)>,
+    pending_quiver_trim: Option<(u32, u32)>, // Item kind and carried copies before the trim.
+    trimmed_quiver_kinds: Vec<u32>,
     /// #859: the level clock (`time.level`, when the current level was
     /// entered) at the last departure-room note. A town visit starts on
     /// arriving in town, so this notes once a visit; two departures with no
@@ -194,6 +196,11 @@ fn settle_sale(st: &mut BorgState) {
         };
     }
     settle_home(st);
+    if let Some((kind, before)) = st.think.town_live.pending_quiver_trim.take() {
+        if carried_kind(st, kind) < before && !st.think.town_live.trimmed_quiver_kinds.contains(&kind) {
+            st.think.town_live.trimmed_quiver_kinds.push(kind);
+        }
+    }
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
@@ -226,6 +233,9 @@ pub fn sale_rejected(st: &BorgState, shop: i16, item: &crate::borg_headers::borg
 
 pub fn buy_rejected(st: &BorgState, shop: i16, slot: usize) -> bool {
     let Some(item) = st.store.shops.get(shop as usize).and_then(|s| s.ware.get(slot)) else { return true; };
+    // The ranged reserve can value the same ammo again after a trim. Keep
+    // confirmed trims out of this visit's offers to avoid a buy/drop loop.
+    if st.think.town_live.trimmed_quiver_kinds.contains(&item.kind) { return true; }
     let context = CarryContext::of(st);
     st.think.town_live.rejected_buys.iter().any(|a|
         a.offer.shop == shop && a.offer.slot == slot && a.offer.matches(item) && a.context == context)
@@ -584,6 +594,10 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     if slot >= crate::borg_item::quiver_start() as usize {
         let reserve = crate::params::value(crate::params::Param::town_quiver_trim_reserve);
         if reserve == 0 || a.at[2] != qty { clear(st); return false; }
+        if shop_overloaded() {
+            let kind = item.kind;
+            st.think.town_live.pending_quiver_trim = Some((kind, carried_kind(st, kind)));
+        }
         crate::borg_junk::town_drop_quiver_stack(st, slot, qty);
         clear(st);
         return true;
@@ -784,6 +798,25 @@ mod tests {
         st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop::default()).collect();
         st.store.shops[BORG_HOME].ware = vec![item];
         st
+    }
+    #[test]
+    fn confirmed_quiver_trims_block_reacquisition_until_the_next_visit() {
+        let mut st = home_state();
+        settle_sale(&mut st);
+        let kind = st.items.items[0].kind;
+        let shop = BORG_HOME as i16;
+        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        settle_sale(&mut st);
+        assert!(!buy_rejected(&st, shop, 0));
+
+        st.think.town_live.pending_quiver_trim = Some((kind, 3));
+        st.items.items[0].iqty = 1;
+        settle_sale(&mut st);
+        assert!(buy_rejected(&st, shop, 0));
+
+        st.borg.time.level += 1;
+        settle_sale(&mut st);
+        assert!(!buy_rejected(&st, shop, 0));
     }
     #[test]
     fn home_history_waits_for_successful_store_and_take() {

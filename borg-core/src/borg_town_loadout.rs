@@ -536,6 +536,7 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) {
             engine::strengthen_test_town_loadout(st);
             st.borg.time.level -= 1;
             crate::borg_trait::borg_notice(st, true);
+            crate::borg_town_live::choose(st);
             let swap = propose(st, &[false; 12], true)
                 .expect("a stronger Priest should be offered the heavier stored mace");
             assert_eq!((swap.old.weight, swap.new.weight), (30, 180));

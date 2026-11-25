@@ -22,7 +22,9 @@ class TownLoadoutTest(unittest.TestCase):
             for name in ("borg.txt", "scary_monsters.txt"):
                 shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
             messages = Path(directory) / "messages.log"
-            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env = {
+                key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))
+            }
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
@@ -41,7 +43,7 @@ class TownLoadoutTest(unittest.TestCase):
                 cwd=GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             log = messages.read_text()
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr + log[-4000:])
+            self.assertEqual(result.returncode, 0, result.stderr + log[-4000:])
             self.assertIn(f"#1239 town loadout passed: {case}", result.stdout, log[-6000:])
         return log
 
