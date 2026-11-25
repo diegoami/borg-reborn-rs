@@ -952,6 +952,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("healing_restock_return");
     }
 
+    if crate::borg_junk::borg_drop_inferior_spare(st) {
+        return choice!("borg_drop_inferior_spare");
+    }
+
     // borg-reborn-rs (#1061): handle the door alarm, peek and return to the
     // stair-scumming radius before continuing with the ordinary flows.
     if crate::borg_stair_scum::think(st) {

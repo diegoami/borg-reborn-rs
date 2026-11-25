@@ -312,6 +312,15 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         }
     }
 
+    // Give a clearly inferior spare to a buyer before considering Home.
+    if !crate::borg_poison::no_sale_now(st) {
+        if let Some(sale) = crate::borg_town_live::inferior_spare_sale(st) {
+            st.borg.goal.shop = sale.at[0] as i16;
+            st.borg.goal.item = sale.at[1] as i16;
+            return true;
+        }
+    }
+
     /* Step 1 -- Sell items to the home */
     if borg_think_home_sell_useful(st, &mut best_home_power) {
         /* Message */

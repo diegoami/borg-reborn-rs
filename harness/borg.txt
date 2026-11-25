@@ -1207,6 +1207,10 @@ borg_param_ranged_readiness_trace = 1
 borg_param_town_unseen_percent = 100
 borg_param_town_food_percent = 100
 borg_param_town_light_percent = 100
+# #1236: Keep unknown sandals unless [1,+0] is visible before DL5 and
+# the worn pair has at least this many more points of armor enchantment.
+borg_param_junk_inferior_sandal_ac_margin = 7
+
 # #810 pilot. Total usable fuel turns in equipment and pack, including oil
 # when using a lantern. While using a torch, top up from Home or the General
 # Store after immediate needs and within the normal shopping budget.
