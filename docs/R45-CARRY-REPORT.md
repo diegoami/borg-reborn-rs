@@ -81,7 +81,8 @@ The read-only inspection of Zoo's pinned and current Borg Rust adapters
 found that inherited `BORG_*` environment settings are cleared and there is no
 explicit `BORG_SHADOW` arm field. Zoo needs a per-arm mode and raw evidence
 retention before its owner can dispatch the parity pilot.
-[Zoo request draft](R45-ZOO-REQUEST.md)
+[Request and run inputs](R45-ZOO-REQUEST.md) ·
+[Zoo #792](https://github.com/diegoami/borg-zoo/issues/792)
 
 The R4.5 exit slice is the exact 45 starts in `harness/suites/full`
 (SHA-256 `7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed`).

@@ -4,7 +4,8 @@ Track R4.5 needs paired native, check and switch results against the owner’s
 fixed receiving baseline. The local carry passed all three shipped smoke
 starts in both shadow modes. The receiving task requires the exact
 45-start suite, with zero check mismatches and 45/45 switch parity.
-[borg-reborn-rs #856](https://github.com/diegoami/borg-reborn-rs/issues/856)
+[borg-reborn-rs #856](https://github.com/diegoami/borg-reborn-rs/issues/856) ·
+[Zoo request #792](https://github.com/diegoami/borg-zoo/issues/792)
 
 ## Builds and arms
 
@@ -14,13 +15,13 @@ starts in both shadow modes. The receiving task requires the exact
 | Check | `83e28cd4c3fb9a3a0eb4cb75e0ff8d635f25a9d2` | `check` |
 | Switch | `83e28cd4c3fb9a3a0eb4cb75e0ff8d635f25a9d2` | `switch` |
 
-The candidate is held locally on `task/T856-r45-rebuild`. Publish that
-branch before scheduling a workflow that fetches this commit. Build the
-candidate once for both shadow arms, using the same GCC right-to-left
+The candidate commit is reachable from the published rebuild branch.
+Build the candidate once for both shadow arms, using the same GCC right-to-left
 argument evaluation as the native control. Use the shipped
 `harness/borg.txt` and class and scary-list inputs in all three arms.
 The base `borg.txt` SHA-256 is
 `dd21cc3e95f5ac0dc504d1f821f148befe356df74d4eb69b17d3b549edc4e046`.
+[Rebuild branch](https://github.com/diegoami/borg-reborn-rs/tree/task/T856-r45-rebuild)
 
 ## Adapter and evidence
 
