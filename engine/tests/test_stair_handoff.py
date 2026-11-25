@@ -98,6 +98,9 @@ PINNED_TOWN_SETTINGS = [
     # #1159 changes the path to the incident. Keep the original route
     # selection for these exact-turn replays.
     ("caution_rising_skip_held_stairs", 0),
+    # #1200 shipped surplus throwing after these incidents. Use the
+    # original throw range and scoring to reach the recorded stair grids.
+    ("attack_throw_surplus", 0),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
