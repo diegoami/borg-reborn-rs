@@ -13,9 +13,13 @@ check follows the flask resupply rule. [#1184](https://github.com/diegoami/borg-
 The return survives level changes while the reserve is short. Picking up
 enough healing ends the restock objective and its stair walk. A separate
 town objective and any Recall already underway remain active. The return
-tries a reachable up stair first and uses Recall when the exposure check permits it. Both town shoppers can
-refill the reserve. A failed trip defers ordinary cure checks through DL35.
-The deeper Heal and star-healing checks remain independent.
+tries a reachable up stair first and uses Recall when the exposure check
+permits it. Both town shoppers can refill the reserve. The live planner
+executes planned disposal first and follows its normal plan while it
+carries an unidentified potion. The legacy shopper gives its seller a
+chance to identify carried unknown potions when a refill is ready. A failed
+trip defers ordinary cure checks through DL35. The deeper Heal and
+star-healing checks remain independent.
 [#1212 stair routing](https://github.com/diegoami/borg-reborn-rs/pull/1212)
 
 ### What was found
@@ -26,11 +30,17 @@ unit coverage of first funding, free Home offers, failed visits, and the
 deep-level restock checks. The core trace records the last observed known
 potion count in both arms of the comparison. The re-review added a
 replenishment test that also checks the independent town objective and
-its stair flow. On the same synced build (`33100858`), Warrior seed 101
-differed first at turn 13,103 when the restock arm headed for the up stairs.
-It made two funded return requests and bought a cure potion. Both arms
-survived to the cap and reached maximum DL1, with CL2 on and CL3 off.
-The refreshed smoke reference matches all four games.
+its stair flow. The third review reproduced the purchase that identified
+the carried Orange Speckled stack before sale. The enabled replay now
+verifies the return, sale, and identification. The historical confusion
+replay retains all ten assertions, with Track P's #1204 preparedness pins
+and restock off.
+On the same synced build (`7cbdf0ab`), the Warrior seed 101 restock arm
+requested town at turn 8,074 and bought two cure potions at 8,639. The
+first key difference was at turn 8,104. Both arms survived to the cap
+and reached maximum DL1, with CL4 on and CL2 off. All four smoke runs
+match the refreshed reference.
+[Round 3 review](https://github.com/diegoami/borg-reborn-rs/pull/1218#issuecomment-7149467518)
 [Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
 
 ### What is left
