@@ -8798,8 +8798,9 @@ reserve and the action order need measurement before activation.
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
-Track P ships `town_shop_overloaded = 2`. On arrival the Borg discards the
-known harmful potion stacks and compares the surplus above the targets
+Track P ships `town_shop_overloaded = 2`. On arrival the Borg ignores the
+known harmful potions, discards expendable weapons and armour based on
+observed properties, and compares the surplus above the targets
 for fuel, food, healing, escapes, oil and ammunition. It rechecks the
 inventory after each useful copy and aims for the configured free carry
 weight. If surplus runs out, it can exchange equipment for a lighter
@@ -9061,5 +9062,5 @@ pending a sized Zoo comparison (RULES 14).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:1996` |
-| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:1997` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2057` |
+| `junk_inferior_sandal_ac_margin` | 7 | AC | 0–30 | `borg_junk.rs:2058` |

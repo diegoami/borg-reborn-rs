@@ -1,7 +1,11 @@
 ## Balance the kit on town arrival (#1256)
 
-Track P now unloads at the start of a town visit. The Borg discards known
-Sleep, Confusion and Slowness potions first, then compares surplus relative
+Track P now unloads at the start of a town visit. The Borg ignores known
+harmful potion kinds using their effects, including Sleep, Blindness,
+Confusion, Poison, Slowness, Surprise and Salt Water. It then discards
+cursed weapons and armour and plain or low-value spares outclassed by
+worn gear, including spares with unknown runes. Viable lighter swaps and
+known special equipment remain available. The Borg compares surplus relative
 to the existing supply targets across the pack and quiver. It refreshes
 the inventory after each useful copy. Torch coverage uses remaining fuel
 turns and the ranged allowance keeps independent throwing oil even when
@@ -16,10 +20,11 @@ executor both cap purchases and Home withdrawals at the carry allowance.
 When no safe exchange can resolve the overload, the visit can finish
 without acquiring additional stock.
 
-Angband scatters drops made from stairs and those made next to piles. The
-Borg uses a clear floor tile and marks the dropped stack through the
-native item-specific ignore command so it stays out of automatic pickup.
-Unknown potion flavours retain the existing identification and sale rules.
+Angband scatters manual drops made from stairs and those made next to
+piles. The Borg uses a clear floor tile and marks these drops through
+the native item-specific ignore command. Ignoring a potion kind also
+blocks later automatic pickups of that kind. Unknown flavours retain the
+existing identification and sale rules.
 
 The regression uses the captured Half-Elf Priest inventory and restores
 the oil and shot from the recorded discard sequence for a fresh-Borg

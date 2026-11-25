@@ -600,16 +600,67 @@ pub(crate) struct SurplusDrop {
     pub quantity: u8,
 }
 
-fn harmful_potion_slot(pack: &[borg_item], kinds: [i32; 3]) -> Option<usize> {
-    pack.iter().position(|item| item.iqty > 0 && item.aware && item.flavour_aware
-        && u32::from(item.tval) == TV_POTION && kinds.contains(&i32::from(item.sval)))
+fn harmful_potion(item: &borg_item, effects: impl FnOnce(usize) -> Vec<(u16, i32)>) -> bool {
+    use crate::headers::list_effects_h::{EF_DRAIN_STAT, EF_TIMED_INC, EF_TIMED_INC_NO_RES};
+    use crate::headers::list_player_timed_h::*;
+    // object.txt: Salt Water always inflicts paralysis, and Surprise can
+    // scramble or drain stats. Intentional stat trades use LOSE_RANDOM_STAT.
+    item.iqty > 0 && item.aware && item.flavour_aware && item.kind != 0
+        && u32::from(item.tval) == TV_POTION
+        && effects(item.kind as usize).into_iter().any(|(effect, subtype)| {
+            u32::from(effect) == EF_DRAIN_STAT
+                || matches!(u32::from(effect), EF_TIMED_INC | EF_TIMED_INC_NO_RES)
+                && matches!(subtype as u32, TMD_SLOW | TMD_BLIND | TMD_PARALYZED
+                    | TMD_CONFUSED | TMD_AFRAID | TMD_IMAGE | TMD_POISONED | TMD_CUT
+                    | TMD_STUN | TMD_AMNESIA | TMD_SCRAMBLE)
+        })
 }
 
 fn harmful_potion_drop(st: &BorgState) -> Option<SurplusDrop> {
-    let iv = &st.item_val;
-    let slot = harmful_potion_slot(&st.items.items[..pack_size() as usize],
-        [iv.sv_potion_sleep, iv.sv_potion_confusion, iv.sv_potion_slowness])?;
+    let slot = st.items.items[..pack_size() as usize].iter()
+        .position(|item| harmful_potion(item, engine::kind_effects))?;
     Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty })
+}
+
+pub(crate) fn borg_discard_harmful_potion(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling != 0 {
+        return false;
+    }
+    if let Some(drop) = harmful_potion_drop(st) {
+        if danger_here(st) <= st.borg.tr(BI_CURHP) / 20 {
+            return drop_surplus(st, drop);
+        }
+    }
+    false
+}
+
+fn expendable_town_spare(item: &borg_item, worn: &borg_item) -> bool {
+    if item.iqty == 0 || !item.aware {
+        return false;
+    }
+    if item.curses.contains(&true) {
+        return true;
+    }
+    let plain = item.to_a <= 0 && item.to_h <= 0 && item.to_d <= 0;
+    (plain || item.value <= EARLY_JUNK_VALUE)
+        && !crate::borg_town_home::known_special(item)
+        && crate::borg_town_home::outclasses_spare(worn, item)
+}
+
+fn town_spare_drop(st: &BorgState) -> Option<SurplusDrop> {
+    let pack = &st.items.items[..pack_size() as usize];
+    pack.iter().enumerate().filter(|&(slot, item)| {
+        if !matches!(u32::from(item.tval), TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOW
+            | TV_SOFT_ARMOR | TV_HARD_ARMOR | TV_DRAG_ARMOR | TV_CLOAK | TV_SHIELD
+            | TV_HELM | TV_CROWN | TV_GLOVES | TV_BOOTS) {
+            return false;
+        }
+        let worn = crate::borg_inventory::borg_wield_slot(item) as usize;
+        (item.curses.contains(&true) || !is_swap(st, slot as i32))
+            && expendable_town_spare(item, &st.items.items[worn])
+    }).min_by_key(|&(_, item)| {
+        (!item.curses.contains(&true), item.value, std::cmp::Reverse(item.weight))
+    }).map(|(slot, item)| SurplusDrop { slot, quantity: item.iqty })
 }
 
 /// Compare the fractional surplus above each target. Recheck the actual
@@ -620,6 +671,11 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
     }
     if let Some(drop) = harmful_potion_drop(st) {
         return Some(drop);
+    }
+    if st.borg.tr(BI_CDEPTH) == 0 {
+        if let Some(drop) = town_spare_drop(st) {
+            return Some(drop);
+        }
     }
     if !lighten {
         return None;
@@ -647,6 +703,19 @@ pub(crate) fn surplus_drop(st: &BorgState, lighten: bool) -> Option<SurplusDrop>
 }
 
 pub(crate) fn drop_surplus(st: &mut BorgState, drop: SurplusDrop) -> bool {
+    let item = &st.items.items[drop.slot];
+    if harmful_potion(item, engine::kind_effects)
+        && engine::kind(item.kind as usize).ignore == 0
+    {
+        let slot = drop.slot as i32;
+        note_desc(st, "# Discarding known harmful potion stack ", slot, ".");
+        borg_keypress(st, key(b'k'));
+        slot_keys(st, slot);
+        // ui-object.c:textui_cmd_ignore_menu offers the individual
+        // stack first and the known kind second.
+        borg_keypress(st, key(b'b'));
+        return true;
+    }
     // obj-pile.c:drop_find_grid scatters drops off stairs and away from
     // visible piles. Use ordinary clear floor so the native ignore command
     // can mark the dropped copies on the next think.
@@ -850,10 +919,6 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
     /* No crush if even slightly dangerous */
     if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
         return false;
-    }
-
-    if let Some(drop) = harmful_potion_drop(st).filter(|_| crate::borg_town_live::unload_on_arrival(st)) {
-        return drop_surplus(st, drop);
     }
 
     /* Destroy actual "junk" items */
@@ -1191,12 +1256,6 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
                 || danger_here(st) > (st.borg.tr(BI_CURHP) * 2) / 3))
     {
         return false;
-    }
-
-    if let Some(drop) = harmful_potion_drop(st)
-        .filter(|_| st.borg.goal.recalling == 0 && crate::borg_town_live::unload_on_arrival(st))
-    {
-        return drop_surplus(st, drop);
     }
 
     /* Scan the inventory */
@@ -2155,10 +2214,13 @@ mod tests {
 
     #[test]
     fn the_recorded_priest_potions_go_before_other_pack_contents() {
+        use crate::headers::list_effects_h::{EF_CURE, EF_TIMED_INC};
+        use crate::headers::list_player_timed_h::{TMD_BLIND, TMD_CONFUSED, TMD_PARALYZED, TMD_SLOW};
         let potion = |sval, iqty, known| {
             let mut item = blank_item();
             item.tval = TV_POTION as u8;
             item.sval = sval;
+            item.kind = u32::from(sval);
             item.iqty = iqty;
             item.aware = true;
             item.flavour_aware = known;
@@ -2170,17 +2232,65 @@ mod tests {
         let mut torch = blank_item();
         torch.tval = TV_LIGHT as u8;
         torch.iqty = 26;
-        let kinds = [1, 3, 5];
-        let mut pack = [
-            oil, potion(1, 1, false), potion(10, 3, true), potion(11, 2, true),
-            potion(1, 3, true), potion(3, 4, true), potion(5, 2, true), torch,
-        ];
-        for (slot, quantity) in [(4, 3), (5, 4), (6, 2)] {
-            assert_eq!(harmful_potion_slot(&pack, kinds), Some(slot));
-            assert_eq!(pack[slot].iqty, quantity);
-            pack[slot].iqty = 0;
+        let harmful = |item: &borg_item| harmful_potion(item, |kind| {
+            let (effect, status) = match kind {
+                1 => (EF_TIMED_INC, TMD_PARALYZED),
+                3 => (EF_TIMED_INC, TMD_CONFUSED),
+                5 => (EF_TIMED_INC, TMD_SLOW),
+                _ => (EF_CURE, TMD_BLIND),
+            };
+            vec![(effect as u16, status as i32)]
+        });
+        for (sleep, confusion) in [(3, 4), (14, 22)] {
+            let mut pack = [
+                oil, potion(1, 1, false), potion(10, 3, true), potion(11, 2, true),
+                potion(1, sleep, true), potion(3, confusion, true), potion(5, 2, true), torch,
+            ];
+            for (slot, quantity) in [(4, sleep), (5, confusion), (6, 2)] {
+                assert_eq!(pack.iter().position(harmful), Some(slot));
+                assert_eq!(pack[slot].iqty, quantity);
+                pack[slot].iqty = 0;
+            }
+            assert_eq!(pack.iter().position(harmful), None);
         }
-        assert_eq!(harmful_potion_slot(&pack, kinds), None);
+    }
+
+    #[test]
+    fn adverse_potion_effects_are_distinguished_from_cures_buffs_and_trades() {
+        use crate::headers::list_effects_h::*;
+        use crate::headers::list_player_timed_h::*;
+        let known = borg_item {
+            tval: TV_POTION as u8, kind: 1, iqty: 1, aware: true, flavour_aware: true,
+            ..blank_item()
+        };
+        let classify = |effect: u32, subtype: u32| {
+            harmful_potion(&known, |_| vec![(effect as u16, subtype as i32)])
+        };
+        assert!(classify(EF_TIMED_INC, TMD_BLIND));
+        assert!(classify(EF_TIMED_INC, TMD_POISONED));
+        assert!(classify(EF_TIMED_INC_NO_RES, TMD_PARALYZED));
+        assert!(classify(EF_TIMED_INC, TMD_SCRAMBLE));
+        assert!(classify(EF_DRAIN_STAT, 0));
+        assert!(!classify(EF_CURE, TMD_POISONED));
+        assert!(!classify(EF_TIMED_INC, TMD_HERO));
+        assert!(!classify(EF_LOSE_RANDOM_STAT, 0));
+    }
+
+    #[test]
+    fn arrival_discards_obviously_inferior_gear_with_unknown_runes() {
+        let worn = sandals(2, b"Pair of Leather Sandals [1,+2]");
+        let plain = sandals(0, b"Pair of Leather Sandals [1,+0] {??}");
+        assert!(expendable_town_spare(&plain, &worn));
+        let cheap = borg_item { to_a: 1, value: EARLY_JUNK_VALUE, ..plain };
+        assert!(expendable_town_spare(&cheap, &worn));
+        let lighter = borg_item { weight: plain.weight - 1, ..plain };
+        assert!(!expendable_town_spare(&lighter, &worn));
+        let mut special = plain;
+        special.modifiers[OBJ_MOD_STR as usize] = 1;
+        assert!(!expendable_town_spare(&special, &worn));
+        assert!(!expendable_town_spare(&plain, &blank_item()));
+        special.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        assert!(expendable_town_spare(&special, &worn));
     }
 
     #[test]

@@ -948,11 +948,19 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("break_loop");
     }
 
+    if st.borg.tr(BI_CDEPTH) != 0 && crate::borg_town_live::unload_on_arrival(st)
+        && crate::borg_junk::borg_discard_harmful_potion(st)
+    {
+        return choice!("borg_discard_harmful_potion");
+    }
+
     // #1231: free cursed pack slots before ordinary shopping or item flows.
-    match borg_dispose_cursed_spare(st) {
-        Some(CursedSpareAction::Refuel) => return choice!("borg_refuel_from_cursed_spare"),
-        Some(CursedSpareAction::Drop) => return choice!("borg_drop_cursed_spare"),
-        None => {}
+    if !crate::borg_town_live::arrival_pending(st) {
+        match borg_dispose_cursed_spare(st) {
+            Some(CursedSpareAction::Refuel) => return choice!("borg_refuel_from_cursed_spare"),
+            Some(CursedSpareAction::Drop) => return choice!("borg_drop_cursed_spare"),
+            None => {}
+        }
     }
 
     if crate::borg_healing_restock::returning(st) && borg_leave_level(st, false) {
