@@ -1507,6 +1507,12 @@ pub fn player_timed(idx: u32) -> i16 {
     unsafe { *player_ref().timed.add(idx as usize) }
 }
 
+#[cfg(feature = "test-combat-heal")]
+pub(crate) fn set_test_poison(duration: i16) {
+    // SAFETY: the live test player owns a TMD_MAX-element timer array.
+    unsafe { *player_ref().timed.add(crate::headers::list_player_timed_h::TMD_POISONED as usize) = duration; }
+}
+
 /// `player_of_has(player, flag)`: an object flag on the player.
 pub fn player_of_has(flag: u32) -> bool {
     // C: `of_has(p->state.flags, flag)`, i.e. `flag_has` on OF_SIZE bytes.
@@ -2517,9 +2523,21 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
-#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
+}
+
+pub(crate) fn activation_effect_values(index: i32, kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
+    // SAFETY: the loaded activation array is a linked catalogue. The index
+    // being looked up is from known equipment, and each effect is read only.
+    unsafe {
+        let mut act = crate::headers::object_h::activations.add(1);
+        while !act.is_null() {
+            if (*act).index == index { return effect_values((*act).effect, level); }
+            act = (*act).next;
+        }
+    }
+    kind_effect_values(kind, level)
 }
 
 fn effect_values(mut e: *const crate::headers::object_h::effect, level: i32) -> Vec<(u16, i32, i64)> {

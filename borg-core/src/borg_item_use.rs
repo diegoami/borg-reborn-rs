@@ -101,6 +101,22 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
+/// Failure gates used by known attack devices, without rolling or using a charge.
+pub(crate) fn ranged_device_reliable(st: &BorgState, item: &borg_item) -> bool {
+    let limit = match u32::from(item.tval) {
+        TV_WAND => param(Param::attack_unknown_wand_max_failure),
+        TV_ROD => param(Param::attack_rod_max_failure)
+            .min(param(Param::item_use_rod_equip_max_failure))
+            .min(param(Param::item_use_rod_use_max_failure)),
+        TV_STAFF => param(Param::item_use_staff_equip_max_failure),
+        _ => return false,
+    };
+    let skill = device_skill(st);
+    let level = i32::from(item.level);
+    // Outside the usable domain of the inherited device approximation.
+    level - skill < 90 && device_fail(skill, level) <= limit
+}
+
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us
@@ -500,20 +516,16 @@ mod unknown_potion_tests {
     }
 }
 
+pub(crate) fn can_read_now(st: &BorgState) -> bool {
+    !engine::no_light()
+        && st.borg.tr(BI_ISBLIND) == 0
+        && st.borg.tr(BI_ISCONFUSED) == 0
+        && st.borg.tr(BI_ISFORGET) == 0
+}
+
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
-    /* Dark */
-    if engine::no_light() {
-        return false;
-    }
-
-    /* Blind or Confused or Amnesia*/
-    if st.borg.tr(BI_ISBLIND) != 0
-        || st.borg.tr(BI_ISCONFUSED) != 0
-        || st.borg.tr(BI_ISFORGET) != 0
-    {
-        return false;
-    }
+    if !can_read_now(st) { return false; }
 
     /* borg-reborn-rs (#829): not a teleport under a teleport curse */
     if crate::borg_escape::teleport_scroll_blocked(st, sval) {
@@ -1253,7 +1265,7 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;

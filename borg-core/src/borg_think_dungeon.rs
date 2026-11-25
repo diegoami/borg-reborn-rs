@@ -107,7 +107,7 @@ const GOAL_DARK: i32 = 4;
 /// `GOAL_XTRA` (borg-flow.h)
 const GOAL_XTRA: i32 = 5;
 /// `GOAL_BORE` (borg-flow.h)
-const GOAL_BORE: i32 = 6;
+pub(crate) const GOAL_BORE: i32 = 6;
 /// `GOAL_FLEE` (borg-flow.h)
 const GOAL_FLEE: i32 = 7;
 /// `GOAL_VAULT` (borg-flow.h)
@@ -678,6 +678,10 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#1206, review 3): observe the escape context at
+    // every dungeon think, before the goals are re-planned — the
+    // remembered door openings belong to one continuous escape.
+    crate::borg_flow::escape_context_tick(st);
     crate::borg_flow::observe_flight_retreats(st);
     crate::borg_loop::observe(st); // borg-reborn-rs (#1153)
     let mut b_j = -1;
@@ -1445,6 +1449,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Leave the level XXX XXX XXX ***/
+
+    if crate::borg_ranged::return_to_town(st) {
+        return choice!("ranged_restock");
+    }
 
     /* Leave the level */
     if (st.borg.goal.leaving && !crate::borg_caution::recall_restricts(st) && st.borg.mon.unique == 0)

@@ -259,6 +259,8 @@ borg_param_town_store_only_overweight = 1
 
 borg_param_town_departure_free_weight = 50
 borg_param_town_departure_free_slots = 2
+# #1168: optional plain quiver reserve when unloading for departure weight.
+borg_param_town_quiver_trim_reserve = 0
 
 # What goes home first (#859, owner: "prefer objects that they have an
 # abundance of, typically healing potions and phase doors, ideally we want
@@ -345,6 +347,21 @@ borg_param_town_device_detect = 5
 borg_param_town_device_control = 5
 borg_param_town_device_escape_min_gold = 3000
 
+# P9 candidate settings (#1103), all neutral during P8. Candidate market
+# threshold: 6000 less 100 gold per character level, with a minimum of zero.
+# Urgent needs keep access under the configured Black Market spending cap.
+borg_param_town_black_market_min_gold = 0
+borg_param_town_black_market_level_delta = 0
+
+# Candidate town reserve for one Mushroom of Vigor or Purging: 50 percent of
+# one stat's restoration weight from maximum depth 6 when no stat is drained.
+# Radiation eyes can drain Strength from depth 3; depth 6 is a candidate cutoff.
+borg_param_town_restore_stat_percent = 0
+borg_param_town_restore_stat_min_depth = 0
+
+# Candidate filter for paid offers of mixed gain/loss stat potions.
+borg_param_town_second_stat_potions_by_class = 0
+
 # Staples lose value (#863, owner: "make staple objects start losing value";
 # "it must be a decaying curve"; "Food and Light start decaying from 4, phase
 # door, flasks and CLW from 6, CSW from 4, CCW 2, but again it might be class
@@ -423,9 +440,18 @@ borg_param_caution_ranged_only = 0
 borg_param_town_confusion_cure_reserve = 0
 borg_param_town_confusion_cure_reserve_percent = 100
 
-# Restore Life Levels reserve for measurement (#978). Zero disables retention;
-# the healthy-character junk-quaff guard applies at every setting.
+# #1162: prefer CSW after light, food, Phase Door and due Recall are covered.
+# A carried full confusion cure counts toward the reserve. One quarter of the
+# configured bonus applies to the second copy.
+borg_param_town_csw_reserve_percent = 100
+
+# Restore Life Levels reserve (#978, #1103). P9 candidate: one copy from
+# maximum depth 12 without repeatable restoration, with 1000 gold for
+# preventive purchases. Owned stock and treatment of current drain are
+# independent of the purse floor. Zero copies disables the reserve.
 borg_param_town_restore_life_reserve = 0
+borg_param_town_restore_life_min_depth = 12
+borg_param_town_restore_life_min_gold = 0
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
@@ -673,6 +699,10 @@ borg_param_caution_rising_explore_ticks = 500
 
 borg_param_caution_rising_descend_danger_tenths = 10
 
+# During the rising window, skip down-stair destinations that caution
+# would refuse on arrival (#1159). 0 preserves historical route selection.
+borg_param_caution_rising_skip_held_stairs = 1
+
 
 ### Combat ###
 
@@ -880,10 +910,9 @@ borg_param_flow_leash_take_near_max_level = 10
 borg_param_flow_leash_take_nearness = 5
 borg_param_flow_leash_take_max_level = 20
 # #1080, #1085: breadth-first exploration from the staircases below a
-# maximum HP (the ring nearest the stairs is explored first). Shipped 1
-# (owner, 2026-11-23: "ship it like that ... turn it on by default"), with
-# the per-class thresholds of the class files; 0 = C's depth-first order.
-borg_param_explore_breadth_first = 1
+# class-specific maximum HP threshold. Off for P8 (#1201, owner 2026-11-24,
+# borg-zoo#754). Mixed can apply as soon as its own conditions are met.
+borg_param_explore_breadth_first = 0
 borg_param_explore_bfs_max_hp = 25
 borg_param_explore_bfs_slack = 0
 # The threshold by level (per class with __<class>): max HP below
@@ -903,8 +932,16 @@ borg_param_explore_bfs_leave_when_done = 1
 # too once it finds nothing it may reach, before the secret-door search.
 # Shipped 1 (owner, 2026-11-23: "merge it but with all settings on").
 borg_param_explore_c_leave_when_done = 1
-# #1098 (second piece of #1080): mixed exploration above the breadth-first
-# threshold, until prepared for the depth (for now: where C's leash applies).
+# #1189: the stair-anchored exploration aims only at grids its flow can
+# enter (the unknown grid, rubble, a closed door). borg_play_step refuses to
+# dig walls and seams while exploring, so a treasure vein as a goal had the
+# flow commit beside it and give no step, and the next ring sent the Borg
+# back the way it came (a Warrior walked 444666 between two corridor ends on
+# DL1 for 4,000 turns, ring 10 and ring 11 both veins). Shipped 1 (a bug,
+# like loop_breaker); 0 = the veins stay goals.
+borg_param_explore_stepable_goals = 1
+# #1098 (second piece of #1080): mixed exploration when breadth-first is
+# inactive and the Borg is unprepared for the depth (where C's leash applies).
 # Depth-first inside a radius R from the nearest staircase; R starts at
 # explore_mix_radius and grows by explore_mix_step only when nothing the Borg
 # can reach is left inside it, up to floor(D / (r - 1)) + floor(max HP / c)
@@ -913,22 +950,21 @@ borg_param_explore_c_leave_when_done = 1
 # explore_mix_max_radius and C's leash. Shipped 1 (owner, 2026-11-23: "merge
 # it but with all settings on"), up to explore_mix_max_clevel per class.
 borg_param_explore_mixed = 1
-borg_param_explore_mix_radius = 3
+borg_param_explore_mix_radius = 2
 borg_param_explore_mix_step = 3
 borg_param_explore_mix_sight = 5
 borg_param_explore_mix_speed_ratio = 2
 borg_param_explore_mix_contact_damage = 5
-borg_param_explore_mix_max_radius = 10
+# #1208: the cap starts at six steps from the nearest staircase.
+borg_param_explore_mix_max_radius = 6
 # #1160 (owner, 2026-11-23: "all of them should grow in decpercentile by level
 # (and class)"): per mille a character level from CL1, linearly:
 # value x (1000 + dp x (CL - 1)) / 1000, rounded (per class with __<class>).
-# Owner, 2026-11-23: "I would like the radius to start small and increase by
-# level", "make CL1 start from 10 maximum radius": the starting radius 3 at
-# CL1, 5 at CL3, 7 at CL5, 8 at CL7; the step 3, 4, 4, 5; the cap 10, 20, 30,
-# 40. The level caps stay as #1098 shipped them (the +1 added back-and-forth).
+# #1208: a cap of 6 growing at 1000 gives 6, 12, 18, 24 and 30 steps at CL1–5.
+# Mixed exploration can stop sooner when the escape model or leash is tighter.
 borg_param_explore_mix_radius_dp = 300
 borg_param_explore_mix_step_dp = 100
-borg_param_explore_mix_max_radius_dp = 500
+borg_param_explore_mix_max_radius_dp = 1000
 # Up to which CL the mixed walk applies (per class in the class files; 50 =
 # no cap, the walk ends with C's leash at CL20).
 borg_param_explore_mix_max_clevel = 50
@@ -981,6 +1017,12 @@ borg_param_defend_bless_fail = 25
 
 ### Healing ###
 
+# #1194: choose the least wound cure that covers the projected monster reply.
+# Start routine combat healing after 30% HP loss. A lethal reply can trigger
+# healing sooner if a carried cure covers it.
+borg_param_caution_combat_heal = 1
+borg_param_caution_combat_heal_min_loss = 30
+
 # Hurt and outmatched, after every escape was declined, drink a Cure Light,
 # Serious or Critical Wounds potion instead of attacking (#457), once at
 # least this percent of max HP is lost. Lower drinks sooner and uses more
@@ -1025,6 +1067,9 @@ borg_param_town_heal_curve_scale_percent = 125
 # not changed). 100 = before #682. Each class sets its own in its class file.
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
+
+# #1119: first discretionary radius-one room-lighting cast needs evidence of darkness.
+borg_param_light_first_cast_require_dark = 1
 
 # Dark-entry detection (#796): opt in below the spell level gate while retaining response SP.
 borg_param_light_hallway_repeat_guard = 1
@@ -1110,6 +1155,13 @@ borg_param_town_first_cure_percent = 200
 # #789: reserve of oil available to throw and missiles for the equipped
 # launcher, counted together. Use __<class> for a class override.
 borg_param_town_ranged_reserve = 0
+# #1184: buy a usable ranged reserve for the next trip and recover it
+# in the dungeon. The trace records readiness for watched runs and the Zoo.
+borg_param_town_ranged_readiness = 1
+borg_param_trip_ranged_readiness = 1
+borg_param_ranged_readiness_target = 6
+borg_param_ranged_readiness_damage_depth = 2
+borg_param_ranged_readiness_trace = 1
 
 # Unseen flavours, food and light, per class (#761, owner 2026-11-20). The
 # town planner does not buy unknown flavours to learn them (borg_town_w_knowledge
@@ -1376,9 +1428,34 @@ borg_param_flow_brave_walk_commit = 1
 # at most 3 grids with the map unchanged and no danger: walk to a staircase,
 # else a committed brave walk to one, else close the loop's grids for 20 thinks.
 borg_param_loop_breaker = 1
+# #1190: the detector's window, named so the zoo can measure a wider one
+# (the arm at loop_grids = 4, the question of #1190). These are #1153's
+# guesses (16 moves, 3 grids); a four-grid cycle like #1189's needs 4.
+borg_param_loop_moves = 16
+borg_param_loop_grids = 3
 borg_param_caution_retreat_oscillation_thinks = 3
 # #1023: 1 = a back-away joins the run and is vetoed too (seed 1512540769).
 borg_param_caution_retreat_oscillation_backaway = 0
+
+# #1178 (C's own bookkeeping: stair_more outlives its failed flows until a
+# new level; upstream shape at borg-update.c:2172): 1 = caution's standing
+# "Take stairs down" applies more_refused's descent gates, so a stale flag
+# completes a descent only when the gates agree. Shipped 0 per the P9 rule:
+# C's play until the zoo measures the switch.
+borg_param_caution_standing_descent_gated = 0
+
+# #1176 (C's defect, borg-caution.c:805/983/996): 1 = note_standing's
+# on_upstair/on_dnstair mean their evident intent (true on the tracked
+# staircase), which makes the danger+standing-on-stair trigger of
+# choose_stairs live. Shipped 0 per the P9 rule: C's play until the zoo
+# measures the switch.
+borg_param_caution_note_standing_on_stairs = 0
+
+# #1177 (C's defect, borg-flow-stairs.c:193; upstream better-borg-c #540,
+# neo-angband-tracker #629): 1 = more_refused's descent gates (prepared,
+# hunger, sale hold, light) apply even when no up staircase has been seen.
+# Shipped 0 per the P9 rule: C's play until the zoo measures the switch.
+borg_param_stairs_descent_gates_without_upstair = 0
 
 # #916: no strategic retreat (the step to a happier grid) while an awake
 # adjacent monster record (no freshness or mobility check) has a haste
@@ -1950,13 +2027,11 @@ borg_param_kit_money_first = 0
 # within the depth plan); on a staircase a threat the fight race does not
 # take is left by the stairs. Every number is a hypothesis until the zoo
 # measures it (borg-zoo#721: arms at max HP 20, 25, 30, the slack dials).
-# Shipped on (owner, 2026-11-23: "ok let us merge with those settings"), the
-# owner's byclass arm of borg-zoo#721, before its pilot: the mode at max HP
-# 20, slack per class in harness/borg_<class>.txt (Druid and Necromancer 1,
-# Mage and Priest 2, Ranger and Rogue 3, Paladin and Blackguard 4; the
-# Warrior with the mode off), the level rate at its default 50.
+# #1208 (owner, 2026-11-24): every class uses stair scumming below 28
+# maximum HP. Warriors get 4 base slack steps. Other classes retain their
+# configured class values.
 borg_param_stair_scum = 1
-borg_param_stair_scum_max_hp = 20
+borg_param_stair_scum_max_hp = 28
 borg_param_stair_scum_max_hp_race_delta = 0
 borg_param_stair_scum_speed_ratio = 2
 borg_param_stair_scum_contact_damage = 4
@@ -2173,8 +2248,8 @@ borg_param_town_staple_oil__warrior = 15
 borg_param_attack_throw_point_blank_divisor__warrior = 0
 borg_param_explore_bfs_max_hp__warrior = 28
 borg_param_explore_bfs_hp_per_level__warrior = 2
-borg_param_stair_scum__warrior = 0
-borg_param_explore_mix_max_clevel__warrior = 3
+borg_param_stair_scum_slack_steps__warrior = 4
+borg_param_explore_mix_max_clevel__warrior = 5
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -2199,7 +2274,7 @@ borg_param_town_staple_oil__mage = 10
 borg_param_explore_bfs_max_hp__mage = 32
 borg_param_explore_bfs_hp_per_level__mage = 1
 borg_param_stair_scum_slack_steps__mage = 2
-borg_param_explore_mix_max_clevel__mage = 6
+borg_param_explore_mix_max_clevel__mage = 8
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
@@ -2223,7 +2298,7 @@ borg_param_town_staple_oil__druid = 9
 borg_param_explore_bfs_max_hp__druid = 33
 borg_param_explore_bfs_hp_per_level__druid = 2
 borg_param_stair_scum_slack_steps__druid = 1
-borg_param_explore_mix_max_clevel__druid = 5
+borg_param_explore_mix_max_clevel__druid = 7
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
@@ -2248,7 +2323,7 @@ borg_param_town_phase_reserve__priest = 8
 borg_param_explore_bfs_max_hp__priest = 28
 borg_param_explore_bfs_hp_per_level__priest = 2
 borg_param_stair_scum_slack_steps__priest = 2
-borg_param_explore_mix_max_clevel__priest = 7
+borg_param_explore_mix_max_clevel__priest = 9
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
@@ -2273,7 +2348,7 @@ borg_param_town_staple_oil__necromancer = 14
 borg_param_explore_bfs_max_hp__necromancer = 28
 borg_param_explore_bfs_hp_per_level__necromancer = 2
 borg_param_stair_scum_slack_steps__necromancer = 1
-borg_param_explore_mix_max_clevel__necromancer = 7
+borg_param_explore_mix_max_clevel__necromancer = 9
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
@@ -2300,7 +2375,7 @@ borg_param_attack_throw_point_blank_divisor__paladin = 0
 borg_param_explore_bfs_max_hp__paladin = 31
 borg_param_explore_bfs_hp_per_level__paladin = 2
 borg_param_stair_scum_slack_steps__paladin = 4
-borg_param_explore_mix_max_clevel__paladin = 6
+borg_param_explore_mix_max_clevel__paladin = 8
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -2327,7 +2402,7 @@ borg_param_attack_throw_point_blank_divisor__rogue = 0
 borg_param_explore_bfs_max_hp__rogue = 33
 borg_param_explore_bfs_hp_per_level__rogue = 2
 borg_param_stair_scum_slack_steps__rogue = 3
-borg_param_explore_mix_max_clevel__rogue = 4
+borg_param_explore_mix_max_clevel__rogue = 6
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
@@ -2357,7 +2432,7 @@ borg_param_town_staple_oil__ranger = 6
 borg_param_explore_bfs_max_hp__ranger = 41
 borg_param_explore_bfs_hp_per_level__ranger = 2
 borg_param_stair_scum_slack_steps__ranger = 3
-borg_param_explore_mix_max_clevel__ranger = 5
+borg_param_explore_mix_max_clevel__ranger = 7
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
@@ -2384,7 +2459,7 @@ borg_param_attack_throw_point_blank_divisor__blackguard = 0
 borg_param_explore_bfs_max_hp__blackguard = 27
 borg_param_explore_bfs_hp_per_level__blackguard = 2
 borg_param_stair_scum_slack_steps__blackguard = 4
-borg_param_explore_mix_max_clevel__blackguard = 4
+borg_param_explore_mix_max_clevel__blackguard = 6
 # ---- END CLASS FILES ----
 
 # #802: ship the unseen blocker profile exercised in #781's review trials.
