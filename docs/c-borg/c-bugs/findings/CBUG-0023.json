@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0023",
+  "source_groups": [
+    3
+  ],
+  "title": "adjust_order_operations(): the blocks passed to adjust_order_ops_depth_block(f, pdepth, start, itoken - 1) are scanned with tok < end, so the last\u2026",
+  "site": "src/borg/borg-formulas-calc.c:adjust_order_operations",
+  "origin": "upstream-c",
+  "priority": "low",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 39
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-formulas-calc.c",
+      "start": 445,
+      "end": 471,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 34,
+      "end": 40,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        3
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 3,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 34,
+        "end": 40,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "borg-formulas-calc.c, `adjust_order_operations()`: the blocks passed to\n  `adjust_order_ops_depth_block(f, pdepth, start, itoken - 1)` are scanned\n  with `tok < end`, so the last token of each block is never looked at.\n  Harmless for well-formed formulas (a block ends in a value); a malformed\n  one such as `(1 + 2 +) 3` parses and evaluates to 3 with \"error\n  calculating a formula value\" notes. Only with `borg_uses_dynamic_calcs`;\n  not seen in any suite. Pinned by a unit test in `borg_formulas_calc.rs`."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "review-only",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

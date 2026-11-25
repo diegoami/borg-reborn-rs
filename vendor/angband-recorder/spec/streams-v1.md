@@ -23,7 +23,7 @@ are stored as `file-input-NNNNNN.bin`; absent files have no blob. Capture and
 replay both open these immutable bytes. SHA-256 is checked before replay.
 Read paths are not portable identities; event order is the v1 identity.
 
-`frames.jsonl` contains observation-only command/wait/input/tick/exit frames:
+`frames.jsonl` contains observation-only command/wait/input/tick/exit/final frames:
 index, turn, key ordinal, input-poll count, player vitals, full RNG, screen
 size and cell deltas `[offset,codepoint,attribute]`. `full` resets the screen
 at startup, resize and every hundred frames. Player-known inventory/spells
@@ -31,6 +31,14 @@ and separately labelled diagnostic state are host observations. `world` is
 FNV-1a-64 of an engine save written by a forked child; tick frames omit it.
 It is a fingerprint, not an uninterrupted continuation checkpoint. Hidden
 diagnostic state is never supplied to a bot.
+`final` is the last frame: `ar_finish` asks the host (`ar_host_final_frame`)
+for the end state before it closes the recording, unless an `exit` frame was
+already written. Frames precede each command, so without it the turns after
+the last command, including a death, would not appear. `ar_finish` runs from
+the frontend's own call and from the `atexit` handler, so a game that leaves
+without the engine's quit hook (a headless frontend that calls `_exit`, or a
+window that was closed or killed) still ends with its end state. A `final`
+frame omits `world`, like a tick, because the character may be dead.
 
 `messages.jsonl` contains frame, turn, type and text. Compatibility outputs
 are `events.txt`, `clock.txt`, `pid.txt`, `actions.txt`, `file-inputs.txt`,

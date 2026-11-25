@@ -47,6 +47,8 @@ extern void (*borgh_command_hook)(void);
 extern void borgh_setting(int index, const char *name, int value);
 extern void borgh_decision(uint32_t rng);
 extern void borgh_rng(uint32_t rng);
+extern bool borgh_synthetic_start(void);
+extern void borgh_generate_start(void);
 extern void (*borgh_turn_hook)(void);
 
 #endif /* BORG_HARNESS */

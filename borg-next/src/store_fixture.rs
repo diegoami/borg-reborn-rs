@@ -119,7 +119,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                 ("no-selected-sale", Decision::StoreSell, Value::Acted(false)),
                 (
                     "no-selected-single-sale",
-                    Decision::StoreSellOne,
+                    Decision::StoreSellQuantity { quantity: 1 },
                     Value::Acted(false),
                 ),
                 (
@@ -355,6 +355,8 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                 item: ItemSnapshot::new(wand),
                 shop: 5,
                 keep: true,
+                qty: 2,
+                paid: 40,
             };
             wand.pval = 19; // The request owns the original charge count.
             let state = case(

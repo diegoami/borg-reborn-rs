@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0008-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 3,
+    "turn": 49147,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "2f74e1c5d57ce2b41ded1b5b694174b91b51f265",
+    "git_dirty": "no",
+    "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9",
+    "binary_sha256": "c0249d4af00d4716bee97f9bc6c39e7f621bdd10121a066d7814f1c89617d626",
+    "borg_txt_sha256": "d44a0b4a9347cfa39ed07059950f2961cf03d4038ca2b315318cde941b9ecd6d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 5008
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p341-validation/receiving-full/full-6-rogue-2",
+      "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+      "raw_sha256": {
+        "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+        "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+        "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+      },
+      "source_commit": "2f74e1c5d57ce2b41ded1b5b694174b91b51f265",
+      "binary_sha256": "c0249d4af00d4716bee97f9bc6c39e7f621bdd10121a066d7814f1c89617d626"
+    }
+  ],
+  "encounter_family": "start-593e0ed3f0fafa661c6b5ff3d43fb443001109d01661fb210df3f0d18f5c0ef7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "be316642f0c19a071ffeb2033fb4e8c4c03ba2cec3806457f6d0827549c09cad",
+    "config.txt": "da5f2026e2e1ec0bbca19f01cdcfa086f12033c1fdd79a5d1af511cf36b252f7",
+    "depths.json": "73af7e2ebf7397375b9e6948fe653a90556e9954481b0a11f825947092ee4b45",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "d118f296a48cfd2b3ffb4b70556eb3e2b8a2e44cdd8d3b9548654f9f32a38311",
+    "trace-core-tail.jsonl": "5ff7eaf0b2d5876443ad27ca4e2650111fc0554c0b88933e16d7382a1a93f1ae"
+  },
+  "investigation": null,
+  "issue": null
+}

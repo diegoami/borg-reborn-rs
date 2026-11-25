@@ -1,0 +1,73 @@
+{
+  "id": "CBUG-0147",
+  "record_kind": "historical-import-and-provenance",
+  "source_groups": [
+    41
+  ],
+  "title": "Debug flow follows stale origin cost and can read past map edges",
+  "site": "src/borg/borg-commands.c:borg_cmd_flow",
+  "origin": "upstream-c",
+  "priority": "med",
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Reported manual/debug-command behavior. Actual native reachability, effect and consumer applicability still require independent validation."
+  },
+  "notes": "Borg-rs lead, not a newly proven C-game outcome. Preserve harmless/dead/manual-only qualifications.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 163
+  },
+  "proposals_at_import": [],
+  "next_at_import": "Validate the cited C context and legal debug scenario with controls; deduplicate related mechanisms before any local fix proposal.",
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-commands.c",
+      "start": 918,
+      "end": 987,
+      "description": "C function context only; fault/reachability not independently verified here"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 833,
+      "end": 836,
+      "description": "source-reported manual debug-command observation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "groups": [
+        41
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 41,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 833,
+        "end": 836,
+        "description": "source-reported manual debug-command observation"
+      },
+      "text": "`borg_cmd_flow()` (`^`): the start cost `b_c` is read at the Borg's real\n  grid on every step, not at the simulated one. Neighbours of a simulated\n  grid on the map edge are read at `y` or `x` = -1 (C reads outside the\n  array; Rust panics)."
+    }
+  ]
+}

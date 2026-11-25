@@ -112,6 +112,20 @@ pub struct SpellRating {
     pub spell_enum: borg_spells,
 }
 
+/// borg-reborn-rs (#694, owner: "make the druid learn this spell first").
+/// The rating a spell is studied by (`borg_study_magic`). Fox Form is rated 5
+/// in C's table, below the 50 a spell needs unless the Borg is bored, so a
+/// Druid learns it once bored; with `magic_fox_form_study_rating` above 0
+/// that rating replaces C's.
+pub(crate) fn study_rating(spell: &BorgMagic) -> i32 {
+    let fox = crate::params::value(crate::params::Param::magic_fox_form_study_rating);
+    study_rating_with(spell.spell_enum == FOX_FORM, i32::from(spell.rating), fox)
+}
+
+fn study_rating_with(is_fox_form: bool, rating: i32, fox_rating: i32) -> i32 {
+    if is_fox_form && fox_rating > 0 { fox_rating } else { rating }
+}
+
 const fn rating(name: &'static CStr, rating: u8, spell_enum: borg_spells) -> SpellRating {
     SpellRating { name, rating, spell_enum }
 }
@@ -463,6 +477,20 @@ pub fn borg_spell_legal(st: &BorgState, spell: borg_spells) -> bool {
     true
 }
 
+/// borg-reborn-rs (#831): the Borg knows a spell that reveals invisible
+/// monsters (Sense Invisible, Detection or Reveal Monsters, the three
+/// `borg_defend_aux_inviso` casts) and has its book and the mana for it.
+pub fn detects_invisible(st: &BorgState) -> bool {
+    [SENSE_INVISIBLE, DETECTION, REVEAL_MONSTERS].into_iter().any(|spell| borg_spell_legal(st, spell))
+}
+
+/// borg-reborn-rs (#831): the Borg can cast Detect Evil (it has its book and
+/// the mana for it): that reveals the evil invisible monsters (ghosts, a
+/// poltergeist), not every one.
+pub fn detects_evil(st: &BorgState) -> bool {
+    borg_spell_legal(st, DETECT_EVIL)
+}
+
 /// Check a spell for a given effect (`borg_spell_has_effect`)
 fn borg_spell_has_effect(spell_num: i32, effect: u16) -> bool {
     engine::spell_effect_indices(spell_num).contains(&effect)
@@ -644,6 +672,11 @@ fn menu_letter(i: i32) -> keycode_t {
 
 /// Attempt to cast a spell (`borg_spell`)
 pub fn borg_spell(st: &mut BorgState, spell: borg_spells) -> bool {
+    // borg-reborn-rs (#829): not a teleport under a teleport curse
+    if crate::borg_escape::teleport_spell_blocked(st, spell) {
+        return false;
+    }
+
     let spell_num = borg_get_spell_number(st, spell);
     if spell_num < 0 {
         return false;
@@ -852,6 +885,13 @@ pub fn borg_prepare_book_info(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fox_form_study_rating() {
+        assert_eq!(study_rating_with(true, 5, 0), 5, "0: C's rating");
+        assert_eq!(study_rating_with(true, 5, 100), 100, "first, above Detect Life's 95");
+        assert_eq!(study_rating_with(false, 95, 100), 95, "other spells keep theirs");
+    }
 
     #[test]
     fn rating_tables_match_the_c_source() {

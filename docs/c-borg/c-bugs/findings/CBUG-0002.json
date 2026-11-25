@@ -1,0 +1,101 @@
+{
+  "id": "CBUG-0002",
+  "source_groups": [
+    14
+  ],
+  "title": "Paralysis/knockout message suppression resets a different variable",
+  "site": "src/borg/borg.c / borg-messages-react.c",
+  "priority": "high",
+  "checked": "2026-11-05",
+  "c": "present-at-pin",
+  "neo": "absent-different-pipeline",
+  "mandos": "absent-different-pipeline",
+  "impact": {
+    "level": "predicted-or-unproven",
+    "description": "C reactions can remain suppressed after recovery; no actual later death/decision change observed."
+  },
+  "notes": "Older imported C resets the global correctly. This is a newer C regression, not a Neo omission.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 14
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg.c",
+      "start": 310,
+      "end": 314,
+      "description": "borg.dont_react = false;"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-messages-react.c",
+      "start": 45,
+      "end": 49,
+      "description": "if (borg_dont_react"
+    },
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-messages.c",
+      "start": 439,
+      "end": 448,
+      "description": "borg_dont_react = true;"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 182,
+      "end": 198,
+      "description": "discovery group 14"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 184,
+      "end": 193,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "origin": "upstream-c",
+  "reported_sources": [
+    {
+      "group": 14,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 184,
+        "end": 193,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg-messages.c` sets the global `borg_dont_react` on \"You have been\n  knocked out.\" and \"You are paralyzed\"; `borg_react()`\n  (`borg-messages-react.c`) then queues nothing and only notes \"# Ignoring\n  messages.\". The reset in `borg.c` (`borg_inkey_hack` path:\n  `borg.dont_react = false;`) clears the unused struct field\n  `borg.dont_react` instead, so once set the global stays true for the rest\n  of the process: the Borg never again queues hit/miss/kill/SELF messages\n  for `borg_update()`, and `borg_caution()` notes \"# Borg ignoring messges.\"\n  every turn. By code reading; the full suite never sets it (checked with\n  a temporary log of the flag)."
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        14
+      ]
+    }
+  ],
+  "evidence_at_import": "source-checked",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Retain a legal/reachable normal-rule scenario, initialization/pins, actual before/after commands/outcomes and negative controls before marking a fix validated.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

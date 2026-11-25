@@ -694,7 +694,8 @@ fn backup_forbidden(st: &BorgState, i: i32) -> [bool; 2] {
     let item = &st.items.items[i as usize];
     [
         randarts() && item.art_idx != 0 && !item.ident,
-        item.cursed && !item.uncursable,
+        (item.cursed && !item.uncursable)
+            || borg_rs::decision_api::borg_cursed::harmful_curse(item).is_some(),
     ]
 }
 

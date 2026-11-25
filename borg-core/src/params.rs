@@ -1,6 +1,7 @@
 //! borg-reborn-rs (#219): calibration of the vendored core.
 //!
-//! Source locations: caution at 726e04fa; danger/escape/recovery at 30ab9d66 (before hooks).
+//! Source locations: each citation points at the first line in the live tree that reads the
+//! parameter, or inside the function that does (scripts/check-param-citations.py, #601).
 //! Defaults retain the original integer operations and RNG calls.
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -9,13 +10,17 @@ use std::sync::OnceLock;
 // One row generates both the lookup index and its metadata: additions cannot
 // accidentally shift the values away from their names.
 macro_rules! parameters {
-    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr)),* $(,)?) => {
+    (@class_defaults) => { None };
+    (@class_defaults $values:expr) => { Some(&$values) };
+    ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr $(, $class_defaults:expr)?)),* $(,)?) => {
         #[derive(Clone, Copy)]
         #[repr(usize)]
         pub enum Param { $($name),* }
+        const PARAMETERS: &[Param] = &[$(Param::$name),*];
         pub(crate) const SPECS: &[Spec] = &[
             $(Spec { name: stringify!($name), default: $default, unit: $unit,
-                min: $min, max: $max, source: $source, description: $description }),*
+                min: $min, max: $max, source: $source, description: $description,
+                class_defaults: parameters!(@class_defaults $($class_defaults)?) }),*
         ];
     };
 }
@@ -29,210 +34,432 @@ pub(crate) struct Spec {
     pub max: i32,
     pub source: &'static str,
     pub description: &'static str,
+    #[serde(skip)]
+    class_defaults: Option<&'static [i32; CLASSES.len()]>,
 }
 
 parameters! {
-    caution_bounce_healthy_tenths => (7, "tenths", 0, 100, "borg_caution.rs:102", "Controls bounce healthy tenths."),
-    caution_bounce_limit => (300, "turns", 0, 100000, "borg_caution.rs:108", "Controls bounce limit."),
-    caution_caster_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:157", "Controls caster stat vote."),
-    caution_priest_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:160", "Controls priest stat vote."),
-    caution_druid_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:163", "Controls druid stat vote."),
-    caution_necromancer_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:166", "Controls necromancer stat vote."),
-    caution_warrior_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:169", "Controls warrior stat vote."),
-    caution_stat_fix_hp_high => (850, "hp", 0, 10000, "borg_caution.rs:171", "Controls stat fix hp high."),
-    caution_stat_fix_vote_high => (1, "votes", 0, 100, "borg_caution.rs:172", "Controls stat fix vote high."),
-    caution_stat_fix_hp_low => (700, "hp", 0, 10000, "borg_caution.rs:174", "Controls stat fix hp low."),
-    caution_stat_fix_vote_low => (3, "votes", 0, 100, "borg_caution.rs:175", "Controls stat fix vote low."),
-    caution_priest_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:177", "Controls priest stat fix sp."),
-    caution_priest_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:178", "Controls priest stat fix votes."),
-    caution_mage_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:180", "Controls mage stat fix sp."),
-    caution_mage_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:181", "Controls mage stat fix votes."),
-    caution_heal_spell_fail => (15, "percent", 0, 100, "borg_caution.rs:196", "Controls heal spell fail."),
+    caution_recall_survival => (0, "flag", 0, 1, "borg_caution.rs:2257", "#758: refuse flight Recall when modelled contact HP reaches current HP during the delay, or a reachable spell/status contribution is unmodelled. Sleepers may wake. Unmodelled risk is reported separately, never as damage. Ordinary trip-home Recall and countdown handling are unchanged. 0 retains today's play."),
+    caution_recall_survival_delay => (34, "world_ticks", 15, 100, "borg_caution.rs:2258", "#758: flight Recall survival horizon, in ten-game-turn world ticks, converted with monster/player energy. 34 is the engine's maximum random delay (15 + randint0(20)); a conservative hypothesis."),
+    caution_winning_fight => (0, "mode", 0, 2, "borg_caution.rs:2445", "#759: 1 attacks while estimated turns to kill every attacker are strictly fewer than turns to die; 2 only logs estimates and retains control actions. Uses remaining HP once, attack success, finite supplies, and monster/player speed. Unknown estimates fall through to ordinary caution. 0 retains today's play."),
+    caution_ranged_only => (0, "flag", 0, 1, "borg_caution.rs:1615", "#838 (owner): 1 = the scary list's ranged entries (`monster | up to CL | classes | ranged | reason`) are kept at range, up to the level for the class: no melee blow at it, no hunt walk to it, and flows keep out of its grid and the eight around it (a flow to the stairs may pass, never onto its grid), as caution_ranged_vs_immobile 2 does for the immobile ones; missiles, spells, throws and devices still reach it, or it is left alone. Not a scare. Works for any listed monster, and needs no step away (caution_ranged_vs_immobile stays as it is). 0 = ranged entries are not read."),
+    attack_on_sight => (0, "flag", 0, 1, "borg_fight_attack.rs:5233", "#760: prioritize attack-category monsters with their recorded reasons, never classify them as scares. Breeder entries honor the existing stoppable-colony policy. 0 retains today's play."),
+    fast_fragile_policy => (0, "flag", 0, 1, "borg_fast_fragile.rs:39", "#842 (owner, 2026-11-21): a fast-fragile monster (a `fast-fragile` entry of the scary list, or by stats with fast_fragile_by_stats) is attacked with the best attack at hand every turn, without attack-on-sight's `target damage < HP` gate; the only alternatives are Phase Door or a staircase underfoot, when the next turn kills the Borg and the kill needs more than one more turn. Needs attack_on_sight = 1. 0 retains today's play."),
+    fast_fragile_by_stats => (0, "flag", 0, 1, "borg_fast_fragile.rs:173", "#842: besides the named entries, mark a monster fast-fragile by its stats for this character: faster than the Borg, killed in fast_fragile_kill_turns of its best attack, at least fast_fragile_damage_percent of the current HP per Borg turn, mobile, not unique, not a breeder, at most fast_fragile_group_max others of its race in view. A named attack entry (any reason) decides its monster over the stats. Acts with fast_fragile_policy and fast_fragile_no_heal. 0 = the names only."),
+    fast_fragile_no_heal => (0, "flag", 0, 2, "borg_fast_fragile.rs:236", "#842: 1 = no healing potion (borg_heal, the outmatched heal) while a fast-fragile attacker is awake next to the Borg: the cure buys a turn and loses the race (owner: a death sentence); the attack, the escapes and the flight decide instead. 2 = the same, except when cornered (the next turn kills, the kill needs more than one more turn, and neither Phase Door nor a staircase underfoot is at hand): then a cure comes before the attack. Needs attack_on_sight = 1. 0 retains today\'s play."),
+    fast_fragile_escape_percent => (100, "percent of HP", 0, 1000, "borg_fast_fragile.rs:239", "#842: the next turn \'kills\' the Borg (for Phase Door, the stairs underfoot and the cornered exception) when the expected damage of the fast-fragile monsters within two grids reaches this percent of its HP. 100 is the mean; less leaves room for the spread of four bites (the Dunadan Priest 1309976551: 7.2 damage against 8 HP, dead in two rounds). Hypothesis: no measurement chose 100."),
+    fast_fragile_phase_landing => (0, "flag", 0, 1, "borg_fast_fragile.rs:276", "#842 (review of #847): 1 = the fast-fragile Phase Door also takes the emergency landing test (escape_emergency_phase_tolerance / _horizon) like the core's other sites; 0 = no landing test (the #584 adjacent-enemy rule and the anti-summon gate still apply). At the HP it fires at, every landing grid is scary against a crow (100 of 100): on the 8 crow cases 1 = 4 dead of 8, 0 = 1 dead. Only with fast_fragile_policy = 1."),
+    fast_fragile_speed_margin => (5, "speed points", 1, 40, "borg_fast_fragile.rs:184", "#842: fast = the monster's speed exceeds the Borg's by at least this many points. Monsters spread by about one point around their race's speed (mon-make.c:1158-1164): at +1 a small kobold was marked. The crow and the wild cat are +10. Hypothesis: no measurement chose 5."),
+    fast_fragile_kill_turns => (2, "turns", 1, 10, "borg_fast_fragile.rs:179", "#842: fragile = the monster's HP at most this many turns of the Borg's best attack (focused planner's HP/turn, hit chance and failure included). Hypothesis: no measurement chose 2."),
+    fast_fragile_damage_percent => (25, "percent of HP", 1, 1000, "borg_fast_fragile.rs:180", "#842: dangerous enough to matter = the monster's expected damage per Borg turn is at least this percent of the current HP. Hypothesis: no measurement chose 25."),
+    fast_fragile_group_max => (2, "monsters", 0, 100, "borg_fast_fragile.rs:181", "#842: a monster is not fast-fragile when more than this many others of its race are in view (a swarm: cave spiders, wood spiders, crabans). Hypothesis: no measurement chose 2."),
+    town_hunt => (0, "flag", 0, 1, "borg_town_hunt.rs:22", "#789: in town let the fight forecast govern attacks and approaches to the town-melee-only category, prioritize the highest danger, and avoid Farmer Maggot. 0 retains the existing town scare rules."),
+    town_hunt_ranged_bonus_percent => (0, "percent", 0, 1000, "borg_town_hunt.rs:198", "#789: extra percent applied to the expected damage score of a ranged attack among winning town plans. Melee remains available."),
+    kit_leash => (0, "flag", 0, 1, "borg_kit.rs:201", "#840 (owner, 2026-11-21: \"the smaller the kit the smaller the leash\"): 1 = the leash follows the kit score: kit_leash_min + (C's leash - kit_leash_min) x score^kit_leash_power, while the kit is short, at any depth and level up to kit_max_level (the hunts and item detours the leash refuses stay refused). 0 = C's leash, today's play."),
+    kit_leash_min => (1, "steps", 0, 20, "borg_kit.rs:314", "#840: the leash of a Borg with no basic kit at all (0-2 in the issue): it stays on or next to the stairs. Used with kit_leash."),
+    kit_leash_power => (1, "power", 1, 4, "borg_kit.rs:314", "#840: the exponent of the score in the kit leash (1 = linear, 2 = squared: a half kit gets a quarter of the room). Integer, so a game replays from its keys. Used with kit_leash."),
+    kit_max_level => (15, "level", 1, 51, "borg_kit.rs:279", "#840: the kit mode (every kit_ setting but the start reserve) applies up to this character level (the issue's band tops out at 15)."),
+    kit_band_split_level => (5, "level", 1, 51, "borg_kit.rs:178", "#840: character levels up to this use kit_cure_target and kit_phase_target, higher levels the _high ones (the issue's CL1-5 and CL6-15)."),
+    kit_cure_target => (3, "count", 0, 20, "borg_kit.rs:180", "#840: cure potions (CLW + CSW + CCW; a cure spell counts as plenty) that make the cure share 1 at CL up to kit_band_split_level. A hypothesis, from the issue's example."),
+    kit_phase_target => (2, "count", 0, 20, "borg_kit.rs:181", "#840: Phase Door (scrolls; the spell or an activation counts as plenty) that make the Phase Door share 1 at CL up to kit_band_split_level. A hypothesis, from the issue's example."),
+    kit_cure_target_high => (5, "count", 0, 20, "borg_kit.rs:180", "#840: kit_cure_target above kit_band_split_level. A hypothesis."),
+    kit_phase_target_high => (4, "count", 0, 20, "borg_kit.rs:181", "#840: kit_phase_target above kit_band_split_level. A hypothesis."),
+    kit_missile_target => (20, "count", 0, 200, "borg_kit.rs:182", "#840: missiles for the launcher (flasks of oil not counted) that make the ranged share 1. A Mage's or Necromancer's attack spell makes it 1 too. The share is the larger of this and the flask share."),
+    kit_flask_target => (5, "count", 0, 100, "borg_kit.rs:183", "#840: flasks of oil to throw that make the ranged share 1 (the issue: at least 20 missiles or 5 flasks)."),
+    kit_light_turns_target => (1000, "turns", 0, 100000, "borg_kit.rs:184", "#840: turns of light, in the wielded light and the spares (torches by their turns, flasks of oil 7500 each when a lantern is wielded), that make the light share 1. A light that needs no fuel, or a Necromancer's unlight, is always 1."),
+    kit_food_target => (3, "count", 0, 20, "borg_kit.rs:185", "#840: food (the core's BI_FOOD: rations, and the like) that makes the food share 1."),
+    kit_weight_cure => (1, "weight", 0, 100, "borg_kit.rs:191", "#840: the weight of the cure share in the kit score (all five 1 = the plain mean)."),
+    kit_weight_phase => (1, "weight", 0, 100, "borg_kit.rs:192", "#840: the weight of the Phase Door share in the kit score."),
+    kit_weight_ranged => (1, "weight", 0, 100, "borg_kit.rs:193", "#840: the weight of the ranged (missiles or flasks) share in the kit score."),
+    kit_weight_light => (1, "weight", 0, 100, "borg_kit.rs:194", "#840: the weight of the light share in the kit score."),
+    kit_weight_food => (1, "weight", 0, 100, "borg_kit.rs:195", "#840: the weight of the food share in the kit score."),
+    kit_descent_min_percent => (0, "percent", 0, 100, "borg_kit.rs:202", "#840: no descent (to a depth below the current one and below DL1, from the dungeon) while the kit score, in percent, is below this. 0 = off, today's play."),
+    kit_leave_danger_percent => (0, "percent of HP", 0, 1000, "borg_kit.rs:203", "#840: a Borg short of kit takes the stairs it stands on (up) at the first danger of at least this share of its current HP, instead of fighting, and starts fleeing to the stairs when the danger is that high and it is off them (the #614 rule's kit twin, borg_caution.rs). 0 = off, today's play."),
+    kit_restock => (0, "flag", 0, 1, "borg_kit.rs:204", "#840 remedy a: the kit is part of borg_restock at every depth, not only DL6+: a trip to town when the kit score is below kit_restock_below_percent and the purse has grown by kit_restock_min_gold since the Borg left town, and (with kit_restock_light_turns) when the light is short of turns with no spare. 0 = off, today's play."),
+    kit_restock_below_percent => (75, "percent", 0, 100, "borg_kit.rs:385", "#840: with kit_restock (or kit_money_first), the kit score, in percent, below which the Borg goes to town if it can pay. A hypothesis."),
+    kit_restock_min_gold => (50, "gold", 0, 100000, "borg_kit.rs:365", "#840: the gold gained since the Borg left town that makes a trip worth it (about two potions of Cure Light Wounds, 20 each, and a Phase Door, 15: object.txt). Leaving town short of kit because a store lacked stock does not bring the Borg back until it has found this much more."),
+    kit_restock_light_turns => (0, "turns", 0, 100000, "borg_kit.rs:384", "#840: with kit_restock, restock when the wielded light and its spares hold fewer turns than this and the purse allows it. 0 = off. C's rule asks for a trip only once the light is out."),
+    kit_start_reserve => (0, "flag", 0, 1, "borg_kit.rs:420", "#840 remedy b: the live town planner keeps kit_start_cure_reserve cures and kit_start_phase_reserve Phase Door as requirements (as town_phase_reserve and town_heal_reserve_hp_percent do), bought before missiles and oil. Per class with @<class>. 0 = off, today's play."),
+    kit_start_cure_reserve => (3, "count", 0, 20, "borg_kit.rs:424", "#840: with kit_start_reserve, cure potions the town planner keeps, in HP of kit_start_cure_hp each."),
+    kit_start_cure_hp => (20, "hp", 1, 1000, "borg_kit.rs:424", "#840: the hit points one reserved cure potion stands for (Cure Light Wounds heals 20: object.txt)."),
+    kit_start_phase_reserve => (2, "count", 0, 10, "borg_kit.rs:420", "#840: with kit_start_reserve, Phase Door scrolls the town planner keeps (the larger of this and town_phase_reserve applies)."),
+    kit_money_first => (0, "flag", 0, 1, "borg_kit.rs:205", "#840 remedy c: at character level up to kit_money_first_max_level, short of kit and too poor to fix it, no descent below DL1 and a leash of at least kit_money_leash while it looks for gold near the stairs; once the purse has grown by kit_restock_min_gold it goes to town (restock). The town hunt (town_hunt) and money scum (borg_money_scum_amount) are the other ways. 0 = off, today's play."),
+    kit_money_first_max_level => (2, "level", 1, 51, "borg_kit.rs:298", "#840: the character level up to which kit_money_first applies (the issue: CL1-2)."),
+    kit_money_leash => (6, "steps", 0, 250, "borg_kit.rs:317", "#840: with kit_money_first, the least leash while the Borg looks for gold (the kit leash alone may be 1: nothing within reach)."),
+    // #403: final attack ranking, neutral for every supported class/family.
+    attack_preference_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the melee family; per class with attack_preference_melee_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the projectile family; per class with attack_preference_projectile_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the thrown family; per class with attack_preference_thrown_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the spell family; per class with attack_preference_spell_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the device family; per class with attack_preference_device_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:5023", "Final returned attack utility preference for the activation family; per class with attack_preference_activation_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    caution_bounce_healthy_tenths => (7, "tenths", 0, 100, "borg_caution.rs:105", "Controls bounce healthy tenths."),
+    caution_bounce_limit => (300, "turns", 0, 100000, "borg_caution.rs:111", "Controls bounce limit."),
+    caution_caster_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:166", "Controls caster stat vote."),
+    caution_priest_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:169", "Controls priest stat vote."),
+    caution_druid_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:172", "Controls druid stat vote."),
+    caution_necromancer_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:175", "Controls necromancer stat vote."),
+    caution_warrior_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:178", "Controls warrior stat vote."),
+    caution_stat_fix_hp_high => (850, "hp", 0, 10000, "borg_caution.rs:180", "Controls stat fix hp high."),
+    caution_stat_fix_vote_high => (1, "votes", 0, 100, "borg_caution.rs:181", "Controls stat fix vote high."),
+    caution_stat_fix_hp_low => (700, "hp", 0, 10000, "borg_caution.rs:183", "Controls stat fix hp low."),
+    caution_stat_fix_vote_low => (3, "votes", 0, 100, "borg_caution.rs:184", "Controls stat fix vote low."),
+    caution_priest_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:187", "Controls priest stat fix sp."),
+    caution_priest_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:190", "Controls priest stat fix votes."),
+    caution_mage_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:193", "Controls mage stat fix sp."),
+    caution_mage_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:196", "Controls mage stat fix votes."),
+    caution_heal_spell_fail => (15, "percent", 0, 100, "borg_caution.rs:262", "Controls heal spell fail."),
     // #328: fixed potion healing, donor 1443c2d1 borg_caution.rs (M13 patch0133).
-    caution_clw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:203", "Controls clw estimate percent."),
-    caution_clw_estimate_min => (20, "hp", 0, 10000, "borg_caution.rs:203", "Controls clw estimate min."),
-    caution_csw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:204", "Controls csw estimate percent."),
-    caution_csw_estimate_min => (40, "hp", 0, 10000, "borg_caution.rs:204", "Controls csw estimate min."),
-    caution_ccw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:205", "Controls ccw estimate percent."),
-    caution_ccw_estimate_min => (60, "hp", 0, 10000, "borg_caution.rs:205", "Controls ccw estimate min."),
-    caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:205", "Controls heal estimate percent."),
-    caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:205", "Controls heal estimate min."),
-    caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:211", "Controls healing rod fail."),
-    caution_confused_heal_loss => (80, "percent", 0, 100, "borg_caution.rs:225", "Controls confused heal loss."),
-    caution_confused_star_loss => (85, "percent", 0, 100, "borg_caution.rs:232", "Controls confused star loss."),
-    caution_confused_star_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:233", "Controls confused star danger multiplier."),
-    caution_confused_staff_fail => (650, "permille", 0, 1000, "borg_caution.rs:259", "Controls confused staff fail."),
-    caution_confused_cure_danger_tenths => (15, "tenths", 0, 100, "borg_caution.rs:260", "Controls confused cure danger tenths."),
-    caution_confused_escape_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:270", "Controls confused escape danger multiplier."),
-    caution_blind_cure_chance => (85, "percent", 0, 100, "borg_caution.rs:287", "Controls blind cure chance."),
-    caution_blind_escape_danger_tenths => (25, "tenths", 0, 100, "borg_caution.rs:291", "Controls blind escape danger tenths."),
-    caution_blind_heal_loss => (300, "hp", 0, 10000, "borg_caution.rs:296", "Controls blind heal loss."),
-    caution_blind_warrior_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:301", "Controls blind warrior hp divisor."),
-    caution_blind_confused_star_loss => (400, "hp", 0, 10000, "borg_caution.rs:318", "Controls blind confused star loss."),
-    caution_blind_confused_danger_multiplier => (5, "multiplier", 0, 20, "borg_caution.rs:318", "Controls blind confused danger multiplier."),
-    caution_blind_confused_min_loss => (100, "hp", 0, 10000, "borg_caution.rs:318", "Controls blind confused min loss."),
-    caution_questor_heal_hp => (700, "hp", 0, 10000, "borg_caution.rs:327", "Controls questor heal hp."),
-    caution_questor_holy_word_hp => (250, "hp", 0, 10000, "borg_caution.rs:328", "Controls questor holy word hp."),
-    caution_questor_holy_word_fail => (14, "percent", 0, 100, "borg_caution.rs:328", "Controls questor holy word fail."),
-    caution_questor_life_stat_votes => (5, "votes", 0, 100, "borg_caution.rs:330", "Controls questor life stat votes."),
-    caution_questor_life_loss => (500, "hp", 0, 10000, "borg_caution.rs:332", "Controls questor life loss."),
-    caution_questor_emergency_holy_hp => (250, "hp", 0, 10000, "borg_caution.rs:344", "Controls questor emergency holy hp."),
-    caution_questor_emergency_holy_fail => (5, "percent", 0, 100, "borg_caution.rs:344", "Controls questor emergency holy fail."),
-    caution_questor_safe_holy_hp => (550, "hp", 0, 10000, "borg_caution.rs:345", "Controls questor safe holy hp."),
-    caution_questor_safe_holy_fail => (15, "percent", 0, 100, "borg_caution.rs:345", "Controls questor safe holy fail."),
-    caution_questor_healing_fail => (15, "percent", 0, 100, "borg_caution.rs:346", "Controls questor healing fail."),
-    caution_magi_sp_divisor => (5, "divisor", 1, 100, "borg_caution.rs:356", "Controls magi sp divisor."),
-    caution_magi_chance => (50, "percent", 0, 100, "borg_caution.rs:357", "Controls magi chance."),
-    caution_restore_mana_sp_divisor => (10, "divisor", 1, 100, "borg_caution.rs:366", "Controls restore mana sp divisor."),
-    caution_restore_mana_sp => (70, "sp", 0, 10000, "borg_caution.rs:367", "Controls restore mana sp."),
-    caution_restore_mana_maxsp => (200, "sp", 0, 10000, "borg_caution.rs:367", "Controls restore mana maxsp."),
-    caution_restore_mana_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:370", "Controls restore mana danger multiplier."),
-    caution_restore_stat_votes => (5, "votes", 0, 100, "borg_caution.rs:393", "Controls restore stat votes."),
-    caution_restore_stat_hp => (650, "hp", 0, 10000, "borg_caution.rs:395", "Controls restore stat hp."),
-    caution_heal_unique_chance_bonus => (10, "percent", 0, 100, "borg_caution.rs:414", "Controls heal unique chance bonus."),
-    caution_heal_lethal_chance_bonus => (75, "percent", 0, 100, "borg_caution.rs:419", "Controls heal lethal chance bonus."),
-    caution_heal_nonpriest_chance_penalty => (25, "percent", 0, 100, "borg_caution.rs:421", "Controls heal nonpriest chance penalty."),
-    caution_heal_risky_chance_penalty => (5, "percent", 0, 100, "borg_caution.rs:426", "Controls heal risky chance penalty."),
-    caution_heal_band1_max_loss => (15, "percent", 0, 100, "borg_caution.rs:429", "Controls heal band1 max loss."),
-    caution_heal_band1_skip_chance => (98, "percent", 0, 100, "borg_caution.rs:429", "Controls heal band1 skip chance."),
-    caution_heal_band2_min_loss => (16, "percent", 0, 100, "borg_caution.rs:430", "Controls heal band2 min loss."),
-    caution_heal_band2_max_loss => (25, "percent", 0, 100, "borg_caution.rs:430", "Controls heal band2 max loss."),
-    caution_heal_band2_skip_chance => (95, "percent", 0, 100, "borg_caution.rs:430", "Controls heal band2 skip chance."),
-    caution_heal_band3_min_loss => (26, "percent", 0, 100, "borg_caution.rs:431", "Controls heal band3 min loss."),
-    caution_heal_band3_max_loss => (50, "percent", 0, 100, "borg_caution.rs:431", "Controls heal band3 max loss."),
-    caution_heal_band3_skip_chance => (80, "percent", 0, 100, "borg_caution.rs:431", "Controls heal band3 skip chance."),
-    caution_heal_band4_min_loss => (51, "percent", 0, 100, "borg_caution.rs:432", "Controls heal band4 min loss."),
-    caution_heal_band4_max_loss => (65, "percent", 0, 100, "borg_caution.rs:432", "Controls heal band4 max loss."),
-    caution_heal_band4_skip_chance => (50, "percent", 0, 100, "borg_caution.rs:432", "Controls heal band4 skip chance."),
-    caution_heal_band5_min_loss => (66, "percent", 0, 100, "borg_caution.rs:433", "Controls heal band5 min loss."),
-    caution_heal_band5_max_loss => (74, "percent", 0, 100, "borg_caution.rs:433", "Controls heal band5 max loss."),
-    caution_heal_band5_skip_chance => (25, "percent", 0, 100, "borg_caution.rs:433", "Controls heal band5 skip chance."),
-    caution_heal_band6_min_loss => (75, "percent", 0, 100, "borg_caution.rs:434", "Controls heal band6 min loss."),
-    caution_heal_band6_skip_chance => (1, "percent", 0, 100, "borg_caution.rs:434", "Controls heal band6 skip chance."),
-    caution_clw_min_loss => (30, "percent", 0, 100, "borg_caution.rs:444", "Controls clw min loss."),
-    caution_clw_max_loss => (40, "percent", 0, 100, "borg_caution.rs:445", "Controls clw max loss."),
-    caution_clw_max_level => (10, "level", 1, 51, "borg_caution.rs:445", "Controls clw max level."),
-    caution_clw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:447", "Controls clw danger divisor."),
-    caution_csw_min_loss => (40, "percent", 0, 100, "borg_caution.rs:456", "Controls csw min loss."),
-    caution_csw_max_loss => (50, "percent", 0, 100, "borg_caution.rs:457", "Controls csw max loss."),
-    caution_csw_max_level => (20, "level", 1, 51, "borg_caution.rs:457", "Controls csw max level."),
-    caution_csw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:459", "Controls csw danger divisor."),
-    caution_ccw_min_loss => (50, "percent", 0, 100, "borg_caution.rs:468", "Controls ccw min loss."),
-    caution_ccw_max_loss => (55, "percent", 0, 100, "borg_caution.rs:468", "Controls ccw max loss."),
-    caution_ccw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:470", "Controls ccw danger divisor."),
-    caution_emergency_ccw_hp => (50, "hp", 0, 10000, "borg_caution.rs:480", "Controls emergency ccw hp."),
-    caution_deep_ccw_depth => (80, "depth", 0, 127, "borg_caution.rs:490", "Controls deep ccw depth."),
-    caution_deep_ccw_danger => (50, "danger", 0, 10000, "borg_caution.rs:491", "Controls deep ccw danger."),
-    caution_deep_ccw_loss => (20, "percent", 0, 100, "borg_caution.rs:492", "Controls deep ccw loss."),
-    caution_heal_device_min_loss => (55, "percent", 0, 100, "borg_caution.rs:500", "Controls heal device min loss."),
-    caution_conserve_heal_depth => (98, "depth", 0, 127, "borg_caution.rs:520", "Controls conserve heal depth."),
-    caution_heal_potion_min_loss => (50, "percent", 0, 100, "borg_caution.rs:530", "Controls heal potion min loss."),
-    caution_heal_all_min_loss => (60, "percent", 0, 100, "borg_caution.rs:544", "Controls heal all min loss."),
-    caution_heal_unique_reserve_min_loss => (65, "percent", 0, 100, "borg_caution.rs:563", "Controls heal unique reserve min loss."),
-    caution_heal_last_resort_loss => (75, "percent", 0, 100, "borg_caution.rs:589", "Controls heal last resort loss."),
-    caution_cure_safe_danger_tenths => (2, "tenths", 0, 100, "borg_caution.rs:603", "Controls cure safe danger tenths."),
-    caution_poison_cure_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:609", "Controls poison cure hp divisor."),
-    caution_poison_cure_fail => (60, "percent", 0, 100, "borg_caution.rs:610", "Controls poison cure fail."),
-    caution_poison_herbal_fail => (60, "percent", 0, 100, "borg_caution.rs:611", "Controls poison herbal fail."),
-    caution_poison_healing_fail => (60, "percent", 0, 100, "borg_caution.rs:626", "Controls poison healing fail."),
-    caution_poison_holy_fail => (60, "percent", 0, 100, "borg_caution.rs:627", "Controls poison holy fail."),
-    caution_poison_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:646", "Controls poison critical hp."),
-    caution_poison_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:646", "Controls poison critical hp divisor."),
-    caution_poison_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:684", "Controls poison reserve hp divisor."),
-    caution_cut_cure_hp_divisor => (3, "divisor", 1, 100, "borg_caution.rs:702", "Controls cut cure hp divisor."),
-    caution_cut_cure_chance => (20, "percent", 0, 100, "borg_caution.rs:702", "Controls cut cure chance."),
-    caution_cut_critical_ccw_hp => (10, "hp", 0, 10000, "borg_caution.rs:705", "Controls cut critical ccw hp."),
-    caution_cut_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:713", "Controls cut critical hp."),
-    caution_cut_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:713", "Controls cut critical hp divisor."),
-    caution_cut_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:736", "Controls cut reserve hp divisor."),
-    caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:872", "Controls desperate stair distance."),
-    caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:881", "Controls desperate adjacent up distance."),
-    caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:886", "Controls desperate scary distance."),
-    caution_desperate_scary_level => (20, "level", 1, 51, "borg_caution.rs:886", "Controls desperate scary level."),
-    caution_desperate_unique_depth => (5, "depth", 0, 127, "borg_caution.rs:912", "Controls desperate unique depth."),
-    caution_desperate_adjacent_down_distance => (2, "grids", 1, 100, "borg_caution.rs:922", "Controls desperate adjacent down distance."),
-    caution_retreat_max_distance => (10, "grids", 1, 100, "borg_caution.rs:1009", "Controls retreat max distance."),
-    caution_retreat_step_hp_tenths => (4, "tenths", 0, 100, "borg_caution.rs:1024", "Controls retreat step hp tenths."),
-    caution_retreat_step_danger_tenths => (5, "tenths", 0, 100, "borg_caution.rs:1029", "Controls retreat step danger tenths."),
-    caution_retreat_surrounded_level => (20, "level", 1, 51, "borg_caution.rs:1034", "Controls retreat surrounded level."),
-    caution_retreat_surrounded_distance => (5, "grids", 1, 100, "borg_caution.rs:1035", "Controls retreat surrounded distance."),
-    caution_retreat_surrounded_hp_tenths => (15, "tenths", 0, 100, "borg_caution.rs:1036", "Controls retreat surrounded hp tenths."),
-    caution_retreat_low_level_hp_multiplier => (4, "multiplier", 0, 20, "borg_caution.rs:1043", "Controls retreat low level hp multiplier."),
-    caution_retreat_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1060", "Controls retreat monster age."),
-    caution_back_surrounded_danger_tenths => (12, "tenths", 0, 100, "borg_caution.rs:1143", "Controls back surrounded danger tenths."),
-    caution_back_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1199", "Controls back monster age."),
-    caution_back_fast_monster_distance => (2, "grids", 1, 100, "borg_caution.rs:1209", "Controls back fast monster distance."),
-    caution_back_high_level => (35, "level", 1, 51, "borg_caution.rs:1235", "Controls back high level."),
-    caution_back_high_level_danger_tenths => (6, "tenths", 0, 100, "borg_caution.rs:1235", "Controls back high level danger tenths."),
-    caution_back_low_level => (35, "level", 1, 51, "borg_caution.rs:1243", "Controls back low level."),
-    caution_back_low_level_danger_tenths => (8, "tenths", 0, 100, "borg_caution.rs:1243", "Controls back low level danger tenths."),
-    caution_back_injured_level => (10, "level", 1, 51, "borg_caution.rs:1264", "Controls back injured level."),
-    caution_back_freedom_depth => (85, "depth", 0, 127, "borg_caution.rs:1273", "Controls back freedom depth."),
-    caution_move_antisummon_delay => (50, "turns", 0, 100000, "borg_caution.rs:1330", "Controls move antisummon delay."),
-    caution_move_max_hp => (500, "hp", 0, 10000, "borg_caution.rs:1333", "Controls move max hp."),
-    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1365", "Controls one blow monster age."),
-    caution_nasty_light_timeout => (250, "turns", 0, 100000, "borg_caution.rs:1425", "Controls nasty light timeout."),
-    caution_questor_arrival_turns => (10, "turns", 0, 100000, "borg_caution.rs:1438", "Controls questor arrival turns."),
-    caution_escape_limit => (3, "count", 0, 1000, "borg_caution.rs:1472", "Controls escape limit."),
-    caution_escape_absolute_limit => (55, "count", 0, 1000, "borg_caution.rs:1473", "Controls escape absolute limit."),
-    caution_escape_limit_max_depth => (98, "depth", 0, 127, "borg_caution.rs:1475", "Controls escape limit max depth."),
-    caution_escape_flee_limit => (3, "count", 0, 1000, "borg_caution.rs:1481", "Controls escape flee limit."),
-    caution_swap_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:1615", "Controls swap danger divisor."),
-    caution_recall_prep_turns => (2, "turns", 0, 100000, "borg_caution.rs:1643", "Controls recall prep turns."),
-    caution_restock_town_delay => (200, "turns", 0, 100000, "borg_caution.rs:1657", "Controls restock town delay."),
-    caution_restock_ccw_count => (2, "count", 0, 1000, "borg_caution.rs:1671", "Controls restock ccw count."),
-    caution_restock_food_count => (3, "count", 0, 1000, "borg_caution.rs:1672", "Controls restock food count."),
-    caution_restock_fuel_count => (2, "count", 0, 1000, "borg_caution.rs:1673", "Controls restock fuel count."),
-    caution_restock_level_delay => (400, "turns", 0, 100000, "borg_caution.rs:1674", "Controls restock level delay."),
-    caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1685", "Controls flee danger hp multiplier."),
-    caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1690", "Controls flee max level."),
-    caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
-    caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
-    caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
-    caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),
-    caution_desperate_max_level => (35, "level", 1, 51, "borg_caution.rs:1809", "Controls desperate max level."),
-    caution_retreat_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:1822", "Controls retreat danger divisor."),
-    caution_back_danger_tenths => (4, "tenths", 0, 100, "borg_caution.rs:1851", "Controls back danger tenths."),
-    caution_confused_emergency_loss => (300, "hp", 0, 10000, "borg_caution.rs:1863", "Controls confused emergency loss."),
-    caution_fear_cure_chance => (70, "percent", 0, 100, "borg_caution.rs:1885", "Controls fear cure chance."),
-    caution_fear_berserk_fail => (25, "percent", 0, 100, "borg_caution.rs:1891", "Controls fear berserk fail."),
-    caution_fear_hero_fail => (25, "percent", 0, 100, "borg_caution.rs:1892", "Controls fear hero fail."),
-    caution_fear_holy_fail => (25, "percent", 0, 100, "borg_caution.rs:1899", "Controls fear holy fail."),
-    caution_flee_low_hp_divisor => (3, "divisor", 1, 100, "borg_caution.rs:1907", "Controls flee low hp divisor."),
-    caution_flee_moderate_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1908", "Controls flee moderate hp divisor."),
-    caution_flee_hp_per_level => (3, "hp_per_level", 0, 100, "borg_caution.rs:1909", "Controls flee hp per level."),
-    caution_flee_ccw_count => (3, "count", 0, 1000, "borg_caution.rs:1910", "Controls flee ccw count."),
-    caution_flee_heal_count => (1, "count", 0, 1000, "borg_caution.rs:1911", "Controls flee heal count."),
-    caution_flee_low_hp_chance => (25, "percent", 0, 100, "borg_caution.rs:1914", "Controls flee low hp chance."),
-    caution_flee_status_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1922", "Controls flee status hp divisor."),
-    caution_flee_status_chance => (25, "percent", 0, 100, "borg_caution.rs:1925", "Controls flee status chance."),
-    caution_reserve_critical_hp_divisor => (10, "divisor", 1, 100, "borg_caution.rs:1934", "Controls reserve critical hp divisor."),
-    caution_reserve_escape_count => (2, "count", 0, 1000, "borg_caution.rs:1936", "Controls reserve escape count."),
-    caution_reserve_danger_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:1937", "Controls reserve danger hp divisor."),
-    caution_reserve_heal_count => (5, "count", 0, 1000, "borg_caution.rs:1939", "Controls reserve heal count."),
-    caution_reserve_surplus_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:1939", "Controls reserve surplus hp divisor."),
-    caution_reserve_unique_loss => (600, "hp", 0, 10000, "borg_caution.rs:1941", "Controls reserve unique loss."),
-    caution_reserve_unique_depth => (85, "depth", 0, 127, "borg_caution.rs:1943", "Controls reserve unique depth."),
-    caution_recall_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1970", "Controls recall danger multiplier."),
-    caution_unknown_danger_multiplier => (4, "multiplier", 0, 20, "borg_caution.rs:1978", "Controls unknown danger multiplier."),
-    caution_unknown_max_level => (20, "level", 1, 51, "borg_caution.rs:1979", "Controls unknown max level."),
-    caution_stair_danger_max_level => (49, "level", 1, 51, "borg_caution.rs:2019", "Controls stair danger max level."),
-    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:2044", "Controls stair min food."),
-    caution_sell_max_level => (25, "level", 1, 51, "borg_caution.rs:2052", "Controls sell max level."),
-    caution_sell_max_gold => (25000, "gold", 0, 1000000, "borg_caution.rs:2053", "Controls sell max gold."),
-    caution_sell_min_count => (13, "count", 0, 1000, "borg_caution.rs:2054", "Controls sell min count."),
-    caution_recall_mana_maxsp => (60, "sp", 0, 10000, "borg_caution.rs:2077", "Controls recall mana maxsp."),
-    caution_recall_mana_divisor => (4, "divisor", 1, 100, "borg_caution.rs:2078", "Controls recall mana divisor."),
-    caution_recall_phase_tolerance => (50, "percent", 0, 100, "borg_caution.rs:2086", "Controls recall phase tolerance."),
-    caution_recall_phase_horizon => (1, "turns", 1, 100000, "borg_caution.rs:2086", "Controls recall phase horizon."),
-    caution_recall_phase_fail => (30, "percent", 0, 100, "borg_caution.rs:2088", "Controls recall phase fail."),
-    caution_recall_portal_fail => (30, "percent", 0, 100, "borg_caution.rs:2089", "Controls recall portal fail."),
-    caution_recall_cure_loss => (100, "hp", 0, 10000, "borg_caution.rs:2096", "Controls recall cure loss."),
-    caution_recall_heal_loss => (150, "hp", 0, 10000, "borg_caution.rs:2105", "Controls recall heal loss."),
-    caution_retreat_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1014", "Number of Borg turns of danger evaluated along a retreat."),
-    caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1223", "Number of Borg turns of danger evaluated for a back-away grid."),
-    caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1514", "Number of Borg turns of danger evaluated at the current grid."),
-    caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
+    caution_clw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:264", "Controls clw estimate percent."),
+    caution_clw_estimate_min => (20, "hp", 0, 10000, "borg_caution.rs:265", "Controls clw estimate min."),
+    caution_csw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:269", "Controls csw estimate percent."),
+    caution_csw_estimate_min => (40, "hp", 0, 10000, "borg_caution.rs:270", "Controls csw estimate min."),
+    caution_ccw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:274", "Controls ccw estimate percent."),
+    caution_ccw_estimate_min => (60, "hp", 0, 10000, "borg_caution.rs:275", "Controls ccw estimate min."),
+    caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:280", "Controls heal estimate percent."),
+    caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:281", "Controls heal estimate min."),
+    caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:289", "Controls healing rod fail."),
+    caution_ranged_vs_immobile => (0, "mode", 0, 3, "borg_caution.rs:1597", "#646, #713 (owner): immobile creatures (a monster that never moves and attacks with its blows). 1 (#646) = next to one, step away when confused (up to 3 steps) or carrying a ranged attack (1 step), and hold the confusion cure next to it. 2 (#713; shipped 0) = also keep one whose blows do more than plain damage (poison, confusion, paralysis, fear, drain...: 23 of the 25 in monster.txt, 15 of them at DL10 or shallower and 8 deeper, down to Wiruin at DL80) at range: never melee it, no hunt walk to it, flows keep out of its reach (stair flows may pass, never onto its grid), and always step away from it, while fleeing too, up to 3 times; ranged attacks kill it from afar. 3 = as 2 for every immobile attacker. 0 = C."),
+    caution_confused_heal_loss => (80, "percent", 0, 100, "borg_caution.rs:304", "Controls confused heal loss."),
+    caution_confused_star_loss => (85, "percent", 0, 100, "borg_caution.rs:311", "Controls confused star loss."),
+    caution_confused_star_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:312", "Controls confused star danger multiplier."),
+    caution_confused_staff_fail => (650, "permille", 0, 1000, "borg_caution.rs:338", "Controls confused staff fail."),
+    caution_confused_cure_danger_tenths => (15, "tenths", 0, 100, "borg_caution.rs:340", "Controls confused cure danger tenths."),
+    caution_confused_escape_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:351", "Controls confused escape danger multiplier."),
+    caution_blind_cure_chance => (85, "percent", 0, 100, "borg_caution.rs:368", "Controls blind cure chance."),
+    caution_blind_escape_danger_tenths => (25, "tenths", 0, 100, "borg_caution.rs:372", "Controls blind escape danger tenths."),
+    caution_blind_heal_loss => (300, "hp", 0, 10000, "borg_caution.rs:377", "Controls blind heal loss."),
+    caution_blind_warrior_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:385", "Controls blind warrior hp divisor."),
+    caution_blind_confused_star_loss => (400, "hp", 0, 10000, "borg_caution.rs:402", "Controls blind confused star loss."),
+    caution_blind_confused_danger_multiplier => (5, "multiplier", 0, 20, "borg_caution.rs:403", "Controls blind confused danger multiplier."),
+    caution_blind_confused_min_loss => (100, "hp", 0, 10000, "borg_caution.rs:404", "Controls blind confused min loss."),
+    caution_questor_heal_hp => (700, "hp", 0, 10000, "borg_caution.rs:413", "Controls questor heal hp."),
+    caution_questor_holy_word_hp => (250, "hp", 0, 10000, "borg_caution.rs:414", "Controls questor holy word hp."),
+    caution_questor_holy_word_fail => (14, "percent", 0, 100, "borg_caution.rs:414", "Controls questor holy word fail."),
+    caution_questor_life_stat_votes => (5, "votes", 0, 100, "borg_caution.rs:416", "Controls questor life stat votes."),
+    caution_questor_life_loss => (500, "hp", 0, 10000, "borg_caution.rs:418", "Controls questor life loss."),
+    caution_questor_emergency_holy_hp => (250, "hp", 0, 10000, "borg_caution.rs:430", "Controls questor emergency holy hp."),
+    caution_questor_emergency_holy_fail => (5, "percent", 0, 100, "borg_caution.rs:430", "Controls questor emergency holy fail."),
+    caution_questor_safe_holy_hp => (550, "hp", 0, 10000, "borg_caution.rs:431", "Controls questor safe holy hp."),
+    caution_questor_safe_holy_fail => (15, "percent", 0, 100, "borg_caution.rs:431", "Controls questor safe holy fail."),
+    caution_questor_healing_fail => (15, "percent", 0, 100, "borg_caution.rs:432", "Controls questor healing fail."),
+    caution_magi_sp_divisor => (5, "divisor", 1, 100, "borg_caution.rs:442", "Controls magi sp divisor."),
+    caution_magi_chance => (50, "percent", 0, 100, "borg_caution.rs:443", "Controls magi chance."),
+    caution_restore_mana_sp_divisor => (10, "divisor", 1, 100, "borg_caution.rs:452", "Controls restore mana sp divisor."),
+    caution_restore_mana_sp => (70, "sp", 0, 10000, "borg_caution.rs:453", "Controls restore mana sp."),
+    caution_restore_mana_maxsp => (200, "sp", 0, 10000, "borg_caution.rs:453", "Controls restore mana maxsp."),
+    caution_restore_mana_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:456", "Controls restore mana danger multiplier."),
+    caution_restore_stat_votes => (5, "votes", 0, 100, "borg_caution.rs:479", "Controls restore stat votes."),
+    caution_restore_stat_hp => (650, "hp", 0, 10000, "borg_caution.rs:481", "Controls restore stat hp."),
+    caution_heal_unique_chance_bonus => (10, "percent", 0, 100, "borg_caution.rs:500", "Controls heal unique chance bonus."),
+    caution_heal_lethal_chance_bonus => (75, "percent", 0, 100, "borg_caution.rs:505", "Controls heal lethal chance bonus."),
+    caution_heal_nonpriest_chance_penalty => (25, "percent", 0, 100, "borg_caution.rs:507", "Controls heal nonpriest chance penalty."),
+    caution_heal_risky_chance_penalty => (5, "percent", 0, 100, "borg_caution.rs:512", "Controls heal risky chance penalty."),
+    caution_heal_band1_max_loss => (15, "percent", 0, 100, "borg_caution.rs:515", "Controls heal band1 max loss."),
+    caution_heal_band1_skip_chance => (98, "percent", 0, 100, "borg_caution.rs:516", "Controls heal band1 skip chance."),
+    caution_heal_band2_min_loss => (16, "percent", 0, 100, "borg_caution.rs:517", "Controls heal band2 min loss."),
+    caution_heal_band2_max_loss => (25, "percent", 0, 100, "borg_caution.rs:517", "Controls heal band2 max loss."),
+    caution_heal_band2_skip_chance => (95, "percent", 0, 100, "borg_caution.rs:519", "Controls heal band2 skip chance."),
+    caution_heal_band3_min_loss => (26, "percent", 0, 100, "borg_caution.rs:520", "Controls heal band3 min loss."),
+    caution_heal_band3_max_loss => (50, "percent", 0, 100, "borg_caution.rs:520", "Controls heal band3 max loss."),
+    caution_heal_band3_skip_chance => (80, "percent", 0, 100, "borg_caution.rs:522", "Controls heal band3 skip chance."),
+    caution_heal_band4_min_loss => (51, "percent", 0, 100, "borg_caution.rs:523", "Controls heal band4 min loss."),
+    caution_heal_band4_max_loss => (65, "percent", 0, 100, "borg_caution.rs:523", "Controls heal band4 max loss."),
+    caution_heal_band4_skip_chance => (50, "percent", 0, 100, "borg_caution.rs:525", "Controls heal band4 skip chance."),
+    caution_heal_band5_min_loss => (66, "percent", 0, 100, "borg_caution.rs:526", "Controls heal band5 min loss."),
+    caution_heal_band5_max_loss => (74, "percent", 0, 100, "borg_caution.rs:526", "Controls heal band5 max loss."),
+    caution_heal_band5_skip_chance => (25, "percent", 0, 100, "borg_caution.rs:528", "Controls heal band5 skip chance."),
+    caution_heal_band6_min_loss => (75, "percent", 0, 100, "borg_caution.rs:529", "Controls heal band6 min loss."),
+    caution_heal_band6_skip_chance => (1, "percent", 0, 100, "borg_caution.rs:530", "Controls heal band6 skip chance."),
+    caution_clw_min_loss => (30, "percent", 0, 100, "borg_caution.rs:540", "Controls clw min loss."),
+    caution_clw_max_loss => (40, "percent", 0, 100, "borg_caution.rs:541", "Controls clw max loss."),
+    caution_clw_max_level => (10, "level", 1, 51, "borg_caution.rs:541", "Controls clw max level."),
+    caution_clw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:543", "Controls clw danger divisor."),
+    caution_csw_min_loss => (40, "percent", 0, 100, "borg_caution.rs:552", "Controls csw min loss."),
+    caution_csw_max_loss => (50, "percent", 0, 100, "borg_caution.rs:553", "Controls csw max loss."),
+    caution_csw_max_level => (20, "level", 1, 51, "borg_caution.rs:553", "Controls csw max level."),
+    caution_csw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:555", "Controls csw danger divisor."),
+    caution_ccw_min_loss => (50, "percent", 0, 100, "borg_caution.rs:564", "Controls ccw min loss."),
+    caution_ccw_max_loss => (55, "percent", 0, 100, "borg_caution.rs:564", "Controls ccw max loss."),
+    caution_ccw_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:566", "Controls ccw danger divisor."),
+    caution_emergency_ccw_hp => (50, "hp", 0, 10000, "borg_caution.rs:576", "Controls emergency ccw hp."),
+    caution_deep_ccw_depth => (80, "depth", 0, 127, "borg_caution.rs:586", "Controls deep ccw depth."),
+    caution_deep_ccw_danger => (50, "danger", 0, 10000, "borg_caution.rs:587", "Controls deep ccw danger."),
+    caution_deep_ccw_loss => (20, "percent", 0, 100, "borg_caution.rs:588", "Controls deep ccw loss."),
+    caution_heal_device_min_loss => (55, "percent", 0, 100, "borg_caution.rs:596", "Controls heal device min loss."),
+    caution_conserve_heal_depth => (98, "depth", 0, 127, "borg_caution.rs:616", "Controls conserve heal depth."),
+    caution_heal_potion_min_loss => (50, "percent", 0, 100, "borg_caution.rs:626", "Controls heal potion min loss."),
+    caution_heal_all_min_loss => (60, "percent", 0, 100, "borg_caution.rs:640", "Controls heal all min loss."),
+    caution_heal_unique_reserve_min_loss => (65, "percent", 0, 100, "borg_caution.rs:659", "Controls heal unique reserve min loss."),
+    caution_heal_last_resort_loss => (75, "percent", 0, 100, "borg_caution.rs:685", "Controls heal last resort loss."),
+    caution_cure_safe_danger_tenths => (2, "tenths", 0, 100, "borg_caution.rs:699", "Controls cure safe danger tenths."),
+    caution_poison_cure_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:706", "Controls poison cure hp divisor."),
+    caution_poison_cure_fail => (60, "percent", 0, 100, "borg_caution.rs:708", "Controls poison cure fail."),
+    caution_poison_herbal_fail => (60, "percent", 0, 100, "borg_caution.rs:709", "Controls poison herbal fail."),
+    caution_poison_healing_fail => (60, "percent", 0, 100, "borg_caution.rs:724", "Controls poison healing fail."),
+    caution_poison_holy_fail => (60, "percent", 0, 100, "borg_caution.rs:725", "Controls poison holy fail."),
+    caution_poison_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:744", "Controls poison critical hp."),
+    caution_poison_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:746", "Controls poison critical hp divisor."),
+    caution_poison_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:784", "Controls poison reserve hp divisor."),
+    caution_cut_cure_hp_divisor => (3, "divisor", 1, 100, "borg_caution.rs:799", "Controls cut cure hp divisor."),
+    caution_cut_cure_chance => (20, "percent", 0, 100, "borg_caution.rs:800", "Controls cut cure chance."),
+    caution_cut_critical_ccw_hp => (10, "hp", 0, 10000, "borg_caution.rs:805", "Controls cut critical ccw hp."),
+    caution_cut_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:814", "Controls cut critical hp."),
+    caution_cut_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:816", "Controls cut critical hp divisor."),
+    caution_cut_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:839", "Controls cut reserve hp divisor."),
+    caution_flee_stairs_before_recall => (0, "flag", 0, 1, "borg_caution.rs:3287", "#539 (owner): 1 = a fleeing Borg that can walk to a free staircase (the flee flows' stair flow reaches it) does not read Word of Recall (the flee flow walks it to the stairs); 0 = Recall first (C's behaviour)."),
+    caution_flee_recall => (1, "flag", 0, 1, "borg_caution.rs:3394", "#557 (owner): 1 = C: a fleeing Borg reads Word of Recall as its escape (after #539's stairs and ranged checks), and Recall counts as an easy escape for the #503/#530 stand tests; 0 = only on a level swamped by breeders (caution_flee_recall_breeders) or when chased by several monsters (caution_flee_recall_chasers), else the flight walks."),
+    caution_flee_recall_breeders => (5, "monsters", 0, 100, "borg_caution.rs:3418", "#557: with caution_flee_recall 0, this many breeders known on the level make Word of Recall an escape again; 0 = never for breeders."),
+    caution_flee_recall_chasers => (3, "monsters", 0, 100, "borg_caution.rs:3419", "#557: with caution_flee_recall 0, this many awake monsters that can move (not RF_NEVER_MOVE) within caution_flee_recall_chase_distance make Word of Recall an escape again; 0 = never for chasers."),
+    caution_flee_recall_chase_distance => (6, "grids", 1, 30, "borg_caution.rs:3414", "#557: the distance within which an awake monster counts as a chaser for caution_flee_recall_chasers."),
+    caution_flee_recall_gate_below_depth => (0, "dungeon level", 0, 127, "borg_caution.rs:3396", "#557 (owner): a ceiling. With caution_flee_recall 1, a flight at a depth shallower than this (2 = DL1 only) reads Word of Recall only with the breeder or chaser exception of caution_flee_recall 0, and Recall there is no easy escape in the stand tests; the stairs are a short walk. 0 = off (C at every depth); 1 is off too (the town never asks)."),
+    caution_flee_recall_danger_percent => (0, "percent of HP", 0, 10000, "borg_caution.rs:3405", "#587 (owner): where the depth gate or caution_flee_recall 0 holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it (with the breeder and chaser exceptions); only the flight's read, not the stand tests. 0 = off; at the shipped gate (1, off) and caution_flee_recall 1 nothing is held back, so it acts only with the gate on or caution_flee_recall 0."),
+    caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:3358", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
+    flow_leash_per_level => (3, "steps per level", 0, 100, "borg_flow.rs:1978", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x this + flow_leash_base steps from the stairs (C: 3)."),
+    flow_leash_base => (9, "steps", 0, 250, "borg_flow.rs:1979", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_get_leash's leash = character level x flow_leash_per_level + this (C: 9)."),
+    flow_leash_unbounded => (250, "steps", 0, 250, "borg_flow.rs:1975", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash when none applies (C: 250, the flow's whole reach)."),
+    flow_leash_pickup_max_level => (20, "level", 0, 51, "borg_flow.rs:1976", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the leash for picking up items applies below this character level (C: 20)."),
+    flow_leash_depth_margin => (5, "levels", 0, 127, "borg_flow.rs:1977", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: the exploring leash, and the distance-to-stairs check, apply while the depth is at least the character level less this (C: 5); a larger margin keeps the leash deeper."),
+    flow_leash_twitch_after => (21, "twitches", 0, 1000, "borg_flow.rs:1978", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: once the Borg has twitched (run out of things to do) more than this many times, the leash grows by the twitch count (C: 21)."),
+    flow_leash_stairs_max_level => (20, "level", 0, 51, "borg_flow.rs:1979", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: borg_flow_far_from_stairs_dist checks the distance to the stairs below this character level (C: 20)."),
+    flow_leash_take_near_max_level => (10, "level", 0, 51, "borg_flow.rs:1980", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select skips an item far from the stairs while the Borg is near them, below this character level (C: 10)."),
+    flow_leash_take_nearness => (5, "steps", 0, 250, "borg_flow.rs:1981", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs against the leash when the item search reaches beyond this nearness (C: 5)."),
+    flow_leash_take_max_level => (20, "level", 0, 51, "borg_flow.rs:1982", "#732 (owner, 2026-11-20: \"expose the leash of C with configuration parameters\"). C: take_select checks an item's steps to the stairs below this character level (C: 20)."),
+    flow_take_phase_short_below => (0, "count", 0, 20, "borg_flow.rs:1971", "#761 (owner: \"make sure it picks it up\"): while the Borg holds fewer Scrolls of Phase Door than this, take_select does not skip a Phase Door on the floor for being far from the stairs (the two leash checks, flow_leash_take_*); the count is the pack's aware scrolls (carried_phase_scrolls): a Phase Door spell or an equipped activation does not count (review of #778); 0 = off, as before (case 425904011 left a Phase Door 12 or more steps from the stairs at CL1). Per class with @<class> or __<class>."),
+    flow_take_phase_first => (0, "flag", 0, 1, "borg_flow.rs:1971", "#761: with flow_take_phase_short_below, while short of Phase Doors the object flow goes only to Phase Doors when one is among the objects it may take (an armour piece nearer no longer wins); when that Phase-only flow reaches nothing (past the flow's depth or behind danger), the dropped candidates return and the flow is tried once more (review of #778); 0 = off, as before."),
+    kill_live_min_power => (0, "hp", 0, 10, "borg_flow_kill.rs:375", "#546 (owner): a living monster (hp above 0) is estimated at least this many hit points; the estimate truncates twice and puts a monster left with 1 HP of 9 at 0, which every attack's overkill cap then scores 0; 0 = off (C's estimate)."),
+    caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:1040", "Controls desperate stair distance."),
+    caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:1066", "Controls desperate adjacent up distance."),
+    caution_stairs_clean_path => (0, "choice", 0, 3, "borg_caution.rs:977", "#736 (owner): 1 = a desperate walk to the stairs (borg_caution's 'Desperate for Stairs') needs a clean path: an awake monster on, or next to, the flow path whose danger is at least caution_stairs_block_danger_percent of the HP makes the stairs not reachable, and the escapes and the attack decide instead. 2 (#751, owner: \"stop flight when other monsters are IN BETWEEN the stairs, not close\") = only a monster on the path (a grid of the walk, the staircase included) blocks it, not one next to it. 3 (#751, owner on 93034700: \"he has to actually walk past his opponent\") = on the path, or next to it (one of the 8 grids around a grid of the path) and nearer the staircase at the path's end than the Borg, in grid steps (king moves): a monster the walk has to pass. 0 = C."),
+    caution_stairs_block_danger_percent => (50, "percent", 0, 10_000, "borg_caution.rs:978", "#736: with caution_stairs_clean_path, the danger (in percent of the current HP) at which a monster on or next to the path to the stairs blocks it."),
+    caution_stairs_clean_path_flee => (0, "flag", 0, 1, "borg_caution.rs:961", "#743 (owner, the follow-up of #736): 1 = every flight to the stairs (GOAL_FLEE: a scary level, too much danger, 'Looking for any stair') takes a staircase only by a clean path: the flight's own flow is walked before it is committed (#736's path_blocker), and an awake monster on, or next to, the path whose danger is at least caution_stairs_block_danger_percent of the HP refuses it; a flight to any stairs then tries each kind on its own; with none clean the flight does not start and the escapes and the attack decide (#736's 'Stairs not reachable', noted once per level). The desperate walk keeps its own check (caution_stairs_clean_path). 0 = C."),
+    caution_desperate_ranged_first_reach => (0, "grids", 0, 10, "borg_caution.rs:981", "#751 (owner on 247597266: the Mage walked toward a cutpurse and an apprentice between it and the stairs, with 22 Flasks of oil and Magic Missile): above 0, while the Borg has a ranged attack (a bow with ammunition or something to throw; spells are not counted) and no awake monster is adjacent, the desperate walk to the stairs does not start toward an awake monster within this many grids of its path and nearer the stairs than the Borg, whose danger is at least caution_stairs_block_danger_percent of the HP; the attack at range decides. 0 = C."),
+    caution_desperate_fast_danger_percent => (0, "percent of HP", 0, 10_000, "borg_caution.rs:5095", "#747: 'Desperate for Stairs (three)' does not walk when an adjacent monster is faster than the Borg; above 0, only when that monster's danger is also at least this percent of the current HP (a harmless fruit bat no longer cancels the walk). 0 = C (any faster monster)."),
+    caution_stairs_flight_ignore_danger => (0, "flag", 0, 1, "borg_caution.rs:5073", "#750: 1 = a flight's stair flow (GOAL_FLEE, or any GOAL_BORE stair flow while fleeing or leaving: the bored walk up, the bored walks down and the powerdive) refuses no grid for its danger, as the desperate walk; a monster near a clear corridor no longer closes it (807683971: a black naga two grids beside the corridor). Whether a monster stands on the path is caution_stairs_clean_path's test. 0 = C (grids above the flow's fear are refused)."),
+    caution_stairs_flight_threat_weight => (0, "extra steps at current HP", 0, 100, "borg_caution.rs:5459", "#765: stair flights (GOAL_FLEE, including desperate walks, or a bored ascent while fleeing or leaving) price each entered grid at one step plus this weight times danger divided by current HP. Awake monster grids are blocked. A clean-path veto can trigger a search for a clean detour. 0 = existing stair flows."),
+    caution_immobile_step_to_exit => (0, "flag", 0, 1, "borg_caution.rs:1929", "#736 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) takes, among the grids it may step to, the one with the fewest steps to a staircase, then the least danger. 0 = the least danger only."),
+    caution_confused_clw_cure => (0, "flag", 0, 1, "borg_caution.rs:1778", "#837 (owner): 1 = a Potion of Cure Light Wounds is a confusion cure for the Borg: it takes 20 turns off confusion (object.txt TIMED_DEC:CONFUSED, dice 20), enough for a grey mushroom patch's 3 + 1d(level) turns. Added after Clear Mind, Cure Serious and Critical Wounds to the confusion chains of borg_heal ('Fixing Confusion', levels 2 and 5) and of the cures at the end of borg_caution, before a Healing potion. 0 = C (CLW cures blindness only)."),
+    caution_confused_cure_before_walk => (0, "mode", 0, 2, "borg_caution.rs:1033", "#837 (owner): 1 = a confused Borg with a confusion cure in the pack does not start a 'Desperate for Stairs' walk (75% of its steps go astray, player_confuse_dir); the cures at the end of borg_caution come first. Not while the cure is held next to an immobile attacker (#646). 2 = no 'Desperate for Stairs' walk at all while confused, cure or not. 0 = C."),
+    caution_confusion_cure_when_stuck => (0, "flag", 0, 1, "borg_caution.rs:1837", "#837 (owner): 1 = next to an immobile confuser, the confusion cure is held only while a step out of its reach can still be taken (a qualifying grid, tries left); with none, cure anyway (#646's hold left the Borg neither stepping nor curing, and it went on to melee confused). Needs caution_ranged_vs_immobile >= 1. 0 = #646's hold whether or not a step is possible."),
+    caution_immobile_step_mobile_first => (0, "flag", 0, 1, "borg_caution.rs:1922", "#837 (owner): 1 = the step away from an immobile attacker (caution_ranged_vs_immobile 1-3) ranks the grids out of its reach by the danger from the monsters that move within two grids of the grid first (lowest wins), then the fewest steps to a staircase (caution_immobile_step_to_exit), then the least danger; the stairs decide only between equally safe grids. The first key is the full damage of the movers (borg_danger_one_kill, full), the last the average danger of the grid (borg_danger), so they are on different scales. Acts only with caution_ranged_vs_immobile >= 1 (shipped 0). 0 = the stairs first."),
+    caution_immobile_no_return => (0, "mode", 0, 2, "borg_caution.rs:1664", "#837 (borg-zoo#576: the step away from a grey mold was undone by the next flow, 'Flowing toward dark-3', in two deaths): after a step away from an immobile attacker (caution_ranged_vs_immobile 1-3), the flows (borg_flow_spread) do not enter its grid or the grids next to it while it is still known there. 1 = only while the Borg is below its full HP; 2 = for the rest of the level. A flight to the stairs is not stopped. 0 = the flows may lead back."),
+    attack_mobile_threat_first => (0, "flag", 0, 1, "borg_fight_attack.rs:4881", "#736 (owner): 1 = while a mobile monster among borg_attack's targets is a threat (danger at least attack_mobile_threat_percent of the HP), immobile monsters are not targets. 0 = C."),
+    attack_mobile_threat_percent => (50, "percent", 0, 10_000, "borg_fight_attack.rs:4882", "#736: with attack_mobile_threat_first, the danger (in percent of the current HP) at which a mobile target is a threat."),
+    caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:1038", "Controls desperate scary distance."),
+    caution_desperate_scary_level => (20, "level", 1, 51, "borg_caution.rs:1041", "Controls desperate scary level."),
+    caution_desperate_unique_depth => (5, "depth", 0, 127, "borg_caution.rs:1086", "Controls desperate unique depth."),
+    caution_desperate_adjacent_down_distance => (2, "grids", 1, 100, "borg_caution.rs:1123", "Controls desperate adjacent down distance."),
+    caution_retreat_max_distance => (10, "grids", 1, 100, "borg_caution.rs:1229", "Controls retreat max distance."),
+    caution_retreat_step_hp_tenths => (4, "tenths", 0, 100, "borg_caution.rs:1158", "Controls retreat step hp tenths."),
+    caution_retreat_step_danger_tenths => (5, "tenths", 0, 100, "borg_caution.rs:1163", "Controls retreat step danger tenths."),
+    caution_retreat_surrounded_level => (20, "level", 1, 51, "borg_caution.rs:1168", "Controls retreat surrounded level."),
+    caution_retreat_surrounded_distance => (5, "grids", 1, 100, "borg_caution.rs:1169", "Controls retreat surrounded distance."),
+    caution_retreat_surrounded_hp_tenths => (15, "tenths", 0, 100, "borg_caution.rs:1170", "Controls retreat surrounded hp tenths."),
+    caution_retreat_low_level_hp_multiplier => (4, "multiplier", 0, 20, "borg_caution.rs:1179", "Controls retreat low level hp multiplier."),
+    caution_retreat_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1197", "Controls retreat monster age."),
+    caution_back_surrounded_danger_tenths => (12, "tenths", 0, 100, "borg_caution.rs:1379", "Controls back surrounded danger tenths."),
+    caution_back_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:1425", "Controls back monster age."),
+    caution_back_fast_monster_distance => (2, "grids", 1, 100, "borg_caution.rs:1452", "Controls back fast monster distance."),
+    caution_back_high_level => (35, "level", 1, 51, "borg_caution.rs:1385", "Controls back high level."),
+    caution_back_high_level_danger_tenths => (6, "tenths", 0, 100, "borg_caution.rs:1386", "Controls back high level danger tenths."),
+    caution_back_low_level => (35, "level", 1, 51, "borg_caution.rs:1395", "Controls back low level."),
+    caution_back_low_level_danger_tenths => (8, "tenths", 0, 100, "borg_caution.rs:1397", "Controls back low level danger tenths."),
+    caution_back_injured_level => (10, "level", 1, 51, "borg_caution.rs:1419", "Controls back injured level."),
+    caution_back_freedom_depth => (85, "depth", 0, 127, "borg_caution.rs:1428", "Controls back freedom depth."),
+    caution_move_antisummon_delay => (50, "turns", 0, 100000, "borg_caution.rs:1980", "Controls move antisummon delay."),
+    caution_move_max_hp => (500, "hp", 0, 10000, "borg_caution.rs:1983", "Controls move max hp."),
+    caution_one_blow_monster_age => (2, "turns", 0, 100000, "borg_caution.rs:2015", "Controls one blow monster age."),
+    caution_nasty_light_timeout => (250, "turns", 0, 100000, "borg_caution.rs:2595", "Controls nasty light timeout."),
+    caution_questor_arrival_turns => (10, "turns", 0, 100000, "borg_caution.rs:2609", "Controls questor arrival turns."),
+    caution_escape_limit => (3, "count", 0, 1000, "borg_caution.rs:2643", "Controls escape limit."),
+    caution_escape_absolute_limit => (55, "count", 0, 1000, "borg_caution.rs:2644", "Controls escape absolute limit."),
+    caution_escape_limit_max_depth => (98, "depth", 0, 127, "borg_caution.rs:2646", "Controls escape limit max depth."),
+    caution_escape_flee_limit => (3, "count", 0, 1000, "borg_caution.rs:2652", "Controls escape flee limit."),
+    caution_swap_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:2810", "Controls swap danger divisor."),
+    caution_recall_prep_turns => (2, "turns", 0, 100000, "borg_caution.rs:2642", "Controls recall prep turns."),
+    caution_restock_town_delay => (200, "turns", 0, 100000, "borg_caution.rs:2670", "Controls restock town delay."),
+    caution_restock_ccw_count => (2, "count", 0, 1000, "borg_caution.rs:2871", "Controls restock ccw count."),
+    caution_restock_food_count => (3, "count", 0, 1000, "borg_caution.rs:2872", "Controls restock food count."),
+    caution_restock_fuel_count => (2, "count", 0, 1000, "borg_caution.rs:2873", "Controls restock fuel count."),
+    caution_restock_level_delay => (400, "turns", 0, 100000, "borg_caution.rs:2874", "Controls restock level delay."),
+    caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:2562", "Controls flee danger hp multiplier."),
+    caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:2890", "Controls flee max level."),
+    caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:2904", "Controls town flee max level."),
+    town_recall_reserve => (0, "count", 0, 5, "borg_town_capability.rs:1631", "#557: the live town planner (the capability model, and borg_town_utility.rs's need model) values this many Word of Recall as a requirement at the full trip weight each, at any depth (the walk a scroll saves is always worth less than that), so a shallow Borg buys and carries one; 0 = off (Recall valued only as the walk it saves, which at DL1-3 never beats saving gold)."),
+    buy_recall_from_gold => (0, "gold", 0, 10_000_000, "borg_store_buy.rs:366", "#810: minimum gold that must remain after a Word of Recall purchase. Below this amount the reserve target gives way to ordinary walk-saving value; 0 disables the purchase floor."),
+    town_recall_value_percent => (100, "percent", 0, 10000, "borg_town_capability.rs:1621", "#557 (owner): the town planner values a Word of Recall at this percent of the walk it saves (both the capability model and borg_town_utility.rs's need model); 100 = as computed; higher makes a shallow Borg buy and keep one."),
+    prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:236", "#557 (owner): a descent to this depth or deeper needs one Word of Recall carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
+    // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
+    prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:718", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
+    prepared_dl2_min_hp => (30, "hp", 0, 10000, "borg_prepared.rs:257", "Minimum maximum HP from DL2, skipped in risky play."),
+    prepared_dl34_min_hp => (50, "hp", 0, 10000, "borg_prepared.rs:271", "Minimum maximum HP from DL3, skipped in risky play.", [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+    prepared_dl34_min_clevel => (4, "level", 0, 50, "borg_prepared.rs:275", "Minimum maximum character level from DL3, skipped in risky play.", [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+    prepared_cure_min => (2, "potions", 0, 99, "borg_prepared.rs:283", "Minimum sum of CLW, CSW and CCW from DL3 while below prepared_cure_until_clevel."),
+    prepared_cure_until_clevel => (30, "level", 0, 50, "borg_prepared.rs:284", "Maximum character level at which the early combined-cure requirement stops applying."),
+    prepared_dl59_min_hp => (60, "hp", 0, 10000, "borg_prepared.rs:299", "Minimum maximum HP from DL5 while already in the dungeon, skipped in risky play.", [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+    prepared_dl59_min_clevel => (6, "level", 0, 50, "borg_prepared.rs:303", "Minimum maximum character level from DL5 while already in the dungeon, skipped in risky play.", [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+    prepared_mid_clevel_offset => (0, "levels", -50, 50, "borg_prepared.rs:372", "From DL10, require maximum character level to reach depth plus this offset when the mid-depth class gate applies.", [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+    prepared_mid_max_depth => (19, "depth", 0, 127, "borg_prepared.rs:370", "Last depth at which the mid-depth offset applies for classes other than Mage and Necromancer."),
+    prepared_mid_caster_max_clevel => (28, "level", 0, 50, "borg_prepared.rs:368", "Last maximum character level at which the mid-depth offset applies for Mage and Necromancer."),
+    prepared_deep_clevel_offset => (5, "levels", -50, 50, "borg_prepared.rs:386", "From DL21, require maximum character level to reach depth plus this offset within the deep character-level range.", [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+    prepared_deep_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:387", "First maximum character level at which the deep offset applies (C: 29 for Ranger).", [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+    prepared_deep_max_clevel => (38, "level", 0, 50, "borg_prepared.rs:385", "Last maximum character level at which the deep offset applies. The Mage and Necromancer depth ramp starts above this level.", [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+    prepared_deep_caster_ramp_max_clevel => (44, "level", 0, 50, "borg_prepared.rs:393", "Last maximum character level at which the Mage and Necromancer depth ramp applies."),
+    prepared_deep_caster_ramp_base_depth => (30, "depth", 0, 127, "borg_prepared.rs:394", "Base depth of the Mage and Necromancer ramp from DL21."),
+    prepared_deep_caster_ramp_depth_per_level => (2, "levels", 0, 127, "borg_prepared.rs:395", "Extra depth per character level above prepared_deep_max_clevel on the Mage and Necromancer ramp."),
+    prepared_dl34_plus_min_clevel => (40, "level", 0, 50, "borg_prepared.rs:438", "Minimum maximum character level from DL34, skipped in risky play."),
+    town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:255", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
+    town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:251", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
+    town_fear_cure_count => (0, "count", 0, 100, "borg_town_capability.rs:820", "#516: while the character is not afraid, fear cures (Potion of Boldness, CURE:AFRAID) are valued linearly up to this many in the pack and not beyond (each of the first ones is worth more than on the curve, a further one nothing); 0 = the diminishing curve (the planner kept buying Boldness: 35 bought, 7 drunk on 18 games)."),
+    town_confusion_cure_reserve => (0, "count", 0, 10, "borg_town_capability.rs:848", "#837 (owner): while the character is not confused, the first this many confusion cures (Cure Serious or Critical Wounds, Clear Mind, a Curing staff) in the pack are a requirement, as Recall's reserve: each worth town_confusion_cure_reserve_percent of the restore weight, nothing past them, so the first trip buys one and the weight repair does not store it at the Home. Only a full cure counts (Cure Serious or Critical Wounds, Clear Mind, a Curing staff: one unit each): not confused, a Cure Light Wounds supplies none, as its TIMED_DEC is clamped to the timer, which is 0. 0 = the saturating curve."),
+    town_confusion_cure_reserve_percent => (100, "percent", 0, 1000, "borg_town_capability.rs:848", "#837: each reserved confusion cure's weight, in percent of the town restore weight (BORG_TOWN_W_RESTORE). Only with town_confusion_cure_reserve > 0."),
+    town_store_only_overweight => (0, "flag", 0, 1, "borg_town_utility.rs:268", "#711 (owner, 2026-11-20: \"only when it weighs too much they should stash the object with less value at home, until they are not overcarrying again\"): 1 = the live town planner stores a pack stack in the Home only while the pack is over its weight allowance, the lowest keep value per weight first, until it is under; 0 = today (a stack also goes home when its value kept for later, borg_town_home_discount, beats its value carried now: 329 stores in 18 classes-18 games, 130 of them fight consumables)."),
+    town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:480", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
+    town_phase_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:711", "#682 (owner): stretches the live town planner's Phase Door curve, as town_heal_curve_scale_percent does healing's: weight and demand scale together (100 = today). Per class with town_phase_curve_scale_percent@<class> or the class files."),
+    town_oil_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:570", "#682 (owner): weights a flask of oil's thrown damage in the live town planner (100 = today), so a class buys more or fewer flasks to throw; flasks kept as lantern fuel are not changed. Per class with town_oil_curve_scale_percent@<class> or the class files."),
+    town_ranger_arrows_max => (0, "count", 0, 1000, "borg_town_capability.rs:816", "#716: the soft cap: the town planner's missile reserve (Ranger usable shots) as a requirement: each shot up to this many is worth the same, past it nothing. 0 = C (a curve that grows with the trip and never stops paying). Per class with @<class>."),
+    town_ranger_arrows_curve_scale_percent => (0, "percent", 0, 10_000, "borg_town_capability.rs:722", "#716: with town_ranger_arrows_max (the soft cap), shots past the cap count on C's shot curve with weight and demand scaled by this percent, as town_heal_curve_scale_percent does healing: each worth less than the last, never nothing. 0 = nothing past the cap. Per class with __<class>."),
+    town_oil_apart => (0, "flag", 0, 1, "borg_town_capability.rs:429", "#712: 1 = the town planner values each flask of oil kept to throw on a curve of its own (thrown oil), beside its damage on the shared ATTACK curve that launcher ammunition saturates; 0 = C (ATTACK only). Per class with @<class>."),
+    town_invisible_count => (0, "reads", 0, 10, "borg_town_capability.rs:833", "#831 (owner): the town planner values Detect Invisible (scrolls, or a staff's charges) on a diminishing curve like Phase Door's and the flasks': the first read is worth about town_invisible_percent of the trip's escape weight, the curve reaches half its value at this many reads, and nothing is a requirement (no reserve): it competes with the rest of the purse. 0 = #663: worth 1% of the support weight, never bought."),
+    town_invisible_percent => (20, "percent", 0, 10_000, "borg_town_capability.rs:1595", "#831: with town_invisible_count, the curve's first value per read (a read's realised first value is this times count / (count + 1)) for a class that can neither cast Detect Evil nor a spell that reveals invisible monsters (Warriors, Blackguards, and others until they learn one), in percent of the trip's escape weight. A hypothesis."),
+    town_invisible_evil_percent => (10, "percent", 0, 10_000, "borg_town_capability.rs:1597", "#831: as town_invisible_percent for a class that can cast Detect Evil (it reveals the evil invisible monsters, ghosts and a poltergeist, not a clear icky thing) and no spell that reveals invisible monsters. A hypothesis."),
+    town_invisible_spell_percent => (3, "percent", 0, 10_000, "borg_town_capability.rs:1596", "#831: as town_invisible_percent for a class that can cast Sense Invisible, Detection or Reveal Monsters (borg_spell_legal). A hypothesis."),
+    town_phase_reserve => (0, "count", 0, 10, "borg_town_capability.rs:700", "#761 (owner: \"we need to value phase doors much more, especially for rangers\"): the live town planner values this many Phase Door scrolls as a requirement on top of the Phase Door curve, each worth town_phase_reserve_percent of the trip's escape weight, nothing past the reserve, so the first ones are bought before arrows and potions (0 = off, as before). Per class with town_phase_reserve@<class> or __<class>."),
+    town_phase_reserve_percent => (100, "percent", 0, 10_000, "borg_town_capability.rs:702", "#761: with town_phase_reserve, what each reserved Phase Door is worth, in percent of the trip's escape weight (the Phase Door curve's first scroll is about a third of that at 150 percent scale). Per class with @<class> or __<class>."),
+    town_ranged_reserve => (0, "count", 0, 100, "borg_town_capability.rs:694", "#789: first N carried flasks of oil available to throw or usable launcher missiles, priced as a town shopping requirement. Per class with @<class> or __<class>. 0 disables the reserve."),
+    town_unseen_percent => (100, "percent", 0, 10_000, "borg_town_capability.rs:542", "#761 (owner: \"unknown flavours ... a coefficient per class\"): the live town planner values a shop ware whose flavour the player has not seen (shown {unseen}: a Potion or Scroll at birth, so Cure Light Wounds too) at this percent of what it supplies, Phase Door excepted (town_phase_*); 100 = today. Not a buy-to-identify weight: that one (borg_town_w_knowledge) is forced to 0 in the plan (borg_town_shadow.rs effective_params). Per class with @<class> or __<class>."),
+    town_food_percent => (100, "percent", 0, 10_000, "borg_town_capability.rs:724", "#761 (owner): the live town planner's food weight, in percent of borg_town_w_food (100 = today); per class with @<class> or __<class>, which borg_town_w_food is not."),
+    town_light_reserve_turns => (0, "turns", 0, 60000, "borg_town_capability.rs:704", "#810: value enough equipped and spare fuel to cover this many dungeon turns. While using a torch, replenish from Home or the General Store after immediate needs. Zero preserves ordinary fuel shopping."),
+    town_lantern_upgrade_power => (0, "power", 0, 100000, "borg_town_shadow.rs:180", "#810: experimental equipment preference for a fueled lantern replacing a torch. Zero leaves normal try-on scoring."),
+    town_light_percent => (100, "percent", 0, 10_000, "borg_town_capability.rs:714", "#761 (owner): the live town planner's light weight (torches, fuel), in percent of borg_town_w_light (100 = today); per class with @<class> or __<class>, which borg_town_w_light is not."),
+    town_oil_flasks => (10, "count", 1, 255, "borg_town_capability.rs:698", "#712: with town_oil_apart, the thrown-oil curve is at half its value with this many flasks kept to throw."),
+    town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:346", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone). With town_heal_reserve_real_hp = 1 speed weights only the healing curve; with 0 also the reserve."),
+    town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:489", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
+    town_heal_reserve_real_hp => (0, "flag", 0, 1, "borg_town_capability.rs:345", "#487: 1 = the healing reserve counts the real HP a potion restores; town_heal_speed_percent then weights only the healing curve (which kind is worth more), not how many potions fill the reserve; 0 = speed-weighted HP (#491 as first shipped)."),
+    town_digger_min_gold => (0, "gold", 0, 10_000_000, "borg_town_capability.rs:794", "#487: below this much gold the live town planner values no digging (a Shovel only clears rubble, which a weapon also digs); 0 = off."),
+    town_missiles_percent => (-1, "percent_override", -1, 1000, "borg_town_capability.rs:438", "#666 (owner): the town plan's reserve of shots for the class's launcher, in percent of borg_town_w_ranger_missiles, for any class (set per class by shooting skill in harness/borg_<class>.txt). -1 = C: the Ranger's reserve only."),
+    town_missiles_other_ranged_percent => (100, "percent", 0, 100, "borg_town_capability.rs:780", "#666 (owner): \"projectile buying is more important if they cannot get flasks of oil or wands\". With at least 5 flasks of oil and attack-wand charges (Magic Missile, Stinking Cloud) in the pack, the reserve of shots weighs this percent. 100 = no change."),
+    town_devices_percent => (100, "percent", 0, 1000, "borg_town_capability.rs:562", "#666 (owner): a wand, rod or staff is worth this percent of what it supplies in the town plan (set per class by device skill in harness/borg_<class>.txt). 100 = as computed."),
+    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:5059", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
+    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:5064", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
+    caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:2756", "Controls stair low level."),
+    caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:2757", "Controls stair danger divisor."),
+    caution_cornered => (0, "flag", 0, 1, "borg_caution.rs:4837", "#504: 1 = cornered (no Phase Door, teleport or escape, a monster near, danger at or above the HP) the Borg uses every buff it has (fear cure, Speed, Heroism, Berserk Strength, Blessing) regardless of their usual danger windows, reads Monster Confusion against an adjacent big monster, and a melee class neither retreats nor backs away; 0 = off."),
+    caution_cornered_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:4838", "#504: cornered when danger here x 10 >= current HP x this (10 = danger at or above the HP)."),
+    caution_cornered_radius => (2, "grids", 0, 100, "borg_caution.rs:4840", "#504: cornered only with a known monster within this many grids (a fight is on)."),
+    caution_breeder_boost_danger_tenths => (0, "tenths", 0, 1000, "borg_caution.rs:4885", "#504 (owner): standing against breeders with no easy escape, danger here at or above the HP x this / 10 makes the Borg use the cornered boosts (fear cure, Speed, Heroism, Berserk Strength, Blessing); 0 = off."),
+    caution_cornered_spell_fail => (25, "percent", 0, 100, "borg_caution.rs:4961", "#504: cornered, a buff spell (Haste Self, Heroism, Berserk Strength, Bless) is cast only at or below this failure percent, so a failing cast is not retried turn after turn under fire."),
+    caution_cornered_throw_first => (0, "choice", 0, 2, "borg_caution.rs:5017", "#719 (owner): \"if I am cornered I should throw missile and then boost myself\". 1 = while no monster is adjacent and an attack from range would do damage (borg_attack_estimate), the cornered boost waits and the Borg attacks first; it buffs once a monster is next to it or nothing reaches. 2 = the same for the hard breeder fight's boost (the Phase Door rule's boost already follows its own attack, so mode 2 adds nothing there). 0 = buff first (today)."),
+    caution_cornered_big_level_margin => (0, "levels", 0, 100, "borg_caution.rs:4897", "#504: an adjacent monster is big (Monster Confusion) when unique or its level exceeds the Borg's by more than this."),
+    caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:3012", "Controls breeder flee max level."),
+    caution_breeder_fight => (0, "flag", 0, 1, "borg_caution.rs:3507", "#503: 1 = with breeders on the level and no easy escape the Borg stands and fights (no breeder flee, no breeder scary level, no breeder 'no recall' flee), and below clevel 10 it hunts breeders while few (caution_breeder_hunt_max_count, per class since #558); 0 = off (C's behaviour), which also turns off recover_breeder_hunt_hp_percent and danger_hunt_breeder_no_acid_fear."),
+    caution_breeder_easy_escape_steps => (5, "grids", 0, 100, "borg_caution.rs:3508", "#503: a free staircase within this many grids (the engine's distance) is an easy escape from breeders (as is a Phase Door, teleport, Teleport Level, escape or Word of Recall)."),
+    caution_breeder_stand_radius => (5, "grids", 0, 100, "borg_caution.rs:3857", "#503: standing against breeders, with a breeder within this many grids and no other known monster within danger_monster_max_distance (on the larger axis distance, borg_danger's reach), the Borg neither retreats nor backs away from their danger (being surrounded still moves it)."),
+    caution_scary_named_monsters => (1, "flag", 0, 1, "borg_caution.rs:4585", "#503: 1 = the C Borg's hard-coded scary monsters by character level (squint-eyed rogue, Grip, Fang, small kobold, soldier, cutpurse, ..., Bullroarer, breeders, cave spider, ..., hounds, ancient dragons, Beorn, Dread) and the low-level door scares mark the level scary (leave and flee) until a new level; 0 = off (the resist-based scares stay). The data file's ignore lines (#621) don't depend on it."),
+    caution_town_never_scary => (0, "flag", 0, 1, "borg_caution.rs:4619", "#604 (owner): 1 = in town no monster makes the level scary (the named list, the damage rule, the resist scares): the Borg meets town monsters by its danger rules instead of fleeing to DL1; 0 = C."),
+    town_hunt_min_hp_percent => (0, "percent", 0, 100, "borg_town_hunt.rs:140", "#789: retreat during a town hunt when current HP is below this percentage of maximum HP. 0 disables the HP floor; the fight forecast still applies."),
+    caution_town_scary_levels_less => (0, "levels", 0, 51, "borg_caution.rs:4578", "#622 (owner): a town monster (race level 0) on the data-file scary list (borg_scary_list; not the compiled C list) is scary for this many fewer character levels: clevel <= listed level - this. The list's order stays; 11 or more ends the town's list scares at once (the damage rule and resist scares still apply); 0 = the list as it is."),
+    caution_town_flee_no_worse => (0, "flag", 0, 1, "borg_caution.rs:4602", "#647: 1 = in town, while the level is scary or the Borg flees or leaves, the flow refuses no grid at most as dangerous as the Borg's own (its fear is at least the danger here): a low-level Borg next to a filthy street urchin found every path to the stairs refused and twitched for 70,000 turns. 0 = C (the flow's fear alone)."),
+    caution_scary_damage_percent => (0, "percent of max HP", 0, 1000, "borg_caution.rs:4649", "#505: a monster on the level is scary (leave and flee, as the named list) when one character turn of its melee (the average of its blows' random_value, base + dice + level bonus as randcalc AVERAGE, times its moves per character turn) takes at least this percent of max HP (owner: scary is a monster that can one- or two-shot you). Spells are not counted. 0 = off."),
+    caution_scary_stand => (0, "flag", 0, 1, "borg_caution.rs:3545", "#530: 1 = in the dungeon a monster that never moves is never scary, and a scary level is fled only while the escape is real: a free staircase within caution_breeder_easy_escape_steps or an escape item, or no scary monster awake and at least as fast as the character; otherwise the Borg stands and fights (the scare's leave and flee are withdrawn). 0 = C (flee every scary level)."),
+    caution_scary_latch => (1, "flag", 0, 1, "borg_caution.rs:3560", "#515: with caution_scary_stand, 1 = the C latch: a scary level stays scary until a new level; 0 = the flag is re-checked each scan of the known monsters, and when no scary monster remains the level stops being scary and the goals the scare set (leave, flee, flee to town) are withdrawn. Door scares stay latched."),
+    caution_stairs_leave_on_monster => (0, "flag", 0, 1, "borg_caution.rs:5131", "#614: 1 = in the dungeon, a Borg standing on a staircase that still needs to recover (HP or SP below the maximum) takes the stairs as soon as a monster threatens it (danger here at least caution_stairs_leave_danger_percent of the current HP), instead of fighting or reading an escape; never in town (review of #616: the town's down staircase made it dive into DL1); 0 = C."),
+    caution_stairs_leave_danger_percent => (10, "percent of current HP", 0, 1000, "borg_caution.rs:5130", "#614 (review of #616): with caution_stairs_leave_on_monster, the danger here, as a percent of the current HP, that counts as a monster threatening (at least 1): any danger above 0 fired at danger 1, a distant or harmless monster."),
+    caution_stairs_leave_down => (1, "flag", 0, 1, "borg_caution.rs:5125", "#614 (review of #616): with caution_stairs_leave_on_monster, 1 = take the staircase the Borg stands on, up or down (the owner: climb up/down); 0 = an up staircase only (a down one goes deeper)."),
+    caution_scary_unlatch_kill => (0, "flag", 0, 1, "borg_caution.rs:3561", "#590 (owner): with caution_scary_stand (the scary flag is decided after each scan), 1 = the level's scary flag clears once no scary monster is known and the last one known was killed (a monster of a race that made the level scary died since a scan last found one known), with caution_scary_latch on or off; forgetting the monster is not enough (it has not left the level). 0 = the latch decides (1: never on the level; 0: whenever none is known)."),
+    caution_scary_unlatch_calmed => (0, "flag", 0, 1, "borg_caution.rs:3562", "#593 (owner): with caution_scary_stand, 1 = the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan (caution_scary_hurt_percent, caution_scary_afraid; resist-based scares are never calmed), or one was killed, with caution_scary_latch on or off; forgetting the monster is not enough. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary. 0 = off."),
+    caution_scary_hurt_percent => (0, "percent of HP", 0, 100, "borg_caution.rs:4673", "#539: a named-list or damage-rule scary monster that has lost at least this percent of its HP (kill.injury, from the health bar) makes nothing scary; resist-based and door scares are not affected. With caution_scary_latch 0 a level whose scary monsters are all hurt stops being scary. 0 = off (C)."),
+    caution_scary_afraid => (0, "flag", 0, 1, "borg_caution.rs:4673", "#539: 1 = a named-list or damage-rule scary monster that is afraid (kill.afraid) makes nothing scary; resist-based and door scares are not affected. 0 = C."),
+    caution_flee_known_down_stairs => (0, "flag", 0, 1, "borg_caution.rs:1043", "#544 (A), narrowed in #548: 1 = fleeing (or the level scary) with no free up staircase known, the Borg walks to a known down staircase with the desperate flow (danger ignored, monster grids routed around), only when cornered (caution_flee_known_down_cornered) and within caution_flee_known_down_max_cost grids of flow; 0 = off (C's behaviour). Keeping the stairs through the stuck jumpstart is caution_jumpstart_keep_stairs."),
+    caution_flee_known_down_cornered => (1, "flag", 0, 1, "borg_caution.rs:1048", "#548: with caution_flee_known_down_stairs, 1 = only when cornered: a known monster that can move is adjacent (distance 1, diagonals included; #504 uses caution_cornered_radius), no Phase Door, teleport, Teleport Level or escape in the pack (items; spells are not counted), and the danger here at or above the HP or the Borg surrounded; 0 = any flight (#545 as merged: it fired on 13 of 18 classes-18 games, up to 721 times)."),
+    caution_flee_known_down_max_cost => (40, "steps of flow", 0, 250, "borg_caution.rs:1049", "#548: with caution_flee_known_down_stairs, the known down staircase is taken only within this many steps of flow (the flow's depth from the staircases: the walk around walls, not the straight-line distance); 0 = any distance (#545 as merged)."),
+    caution_jumpstart_keep_stairs => (0, "flag", 0, 1, "borg_caution.rs:5476", "#548 (K of #544, split from caution_flee_known_down_stairs): 1 = the stuck jumpstart (bravery boost 3) keeps the known up and down staircases instead of forgetting them; 0 = C (forgets them). Usually wanted with caution_flee_known_down_stairs: in the worm room (priest-1055640847) the narrowed flight escapes only with it. Alone it did not save that game (still dead at turn 91,153)."),
+    caution_twitch_avoid_lava => (0, "flag", 0, 1, "borg_caution.rs:3716", "#597: 1 = the twitch's random step (borg_twitchy, borg_flow_misc.rs) never chooses lava without fire immunity (100 + 1d100 fire damage per step); if every direction is wall or lava the Borg rests. 0 = C (only walls are refused)."),
+    caution_stair_parked_fallback => (0, "flag", 0, 1, "borg_caution.rs:3723", "#597: 1 = a stair flow that finds a monster marked on every known staircase of its kind (enqueue_stairs, borg_flow_stairs.rs) flows to them anyway, so the only known staircase is never refused for a monster on it, harmless or long gone. 0 = C (a parked staircase is skipped)."),
+    caution_breeder_exit => (0, "flag", 0, 1, "borg_caution.rs:3883", "#544 (B): 1 = only breeders near, one adjacent, and danger here at or above the HP or surrounded: the Borg walks with the desperate flow to the nearest known chokepoint (a grid whose passable known neighbours form at least two separate groups: a corridor or doorway; unknown grids count as walls) at least caution_breeder_exit_distance grids from every known breeder; 0 = off."),
+    caution_breeder_exit_distance => (6, "grids", 1, 100, "borg_caution.rs:3886", "#544 (B): an exit grid is at least this many grids (the engine's distance) from every known breeder."),
+    caution_slow_crowd_exit => (0, "flag", 0, 1, "borg_caution.rs:3946", "#690 (generalising #544's breeder exit): 1 = surrounded (borg_surrounded), the danger here at or above the HP, a monster adjacent, and every awake monster within danger_monster_max_distance either never moving or slower than the Borg by caution_slow_crowd_exit_margin_percent (energy per game turn, extract_energy): the Borg walks with the desperate flow to the nearest known chokepoint or staircase at least caution_slow_crowd_exit_distance grids from every monster within that reach, or else to the nearest other known open grid that far; with neither reachable, the distance comes down by one to 2. Held while a faster or equally fast awake monster is near. 0 = off (C's behaviour)."),
+    caution_slow_crowd_exit_distance => (6, "grids", 1, 100, "borg_caution.rs:3965", "#690: with caution_slow_crowd_exit, the first distance tried (the engine's distance) from every monster within danger_monster_max_distance; when no grid that far can be reached, it comes down by one to 2."),
+    caution_slow_crowd_exit_margin_percent => (25, "percent", 0, 1000, "borg_caution.rs:3955", "#690: with caution_slow_crowd_exit, a monster is slower when the Borg's energy per game turn is at least 100 + this percent of the monster's (speed 110 against 100 is 10 against 5: 100% faster; 110 against 105, 10 against 7: 43%)."),
+    caution_breeder_avoid => (0, "flag", 0, 1, "borg_caution.rs:4140", "#556: 1 = every grid a breeder is seen on (a moving breeder leaves a trail of marks, one per grid) is remembered for caution_breeder_avoid_turns; every flow but a kill flow (the stair and flee flows, exploration, items, the breeder exit) treats a grid within caution_breeder_avoid_radius of one as impassable, except the grids next to the Borg (its first step), so it neither walks into a colony nor back into one it lost from view; and a Phase Door landing grid there counts as scary. 0 = off (C's behaviour)."),
+    caution_breeder_avoid_radius => (1, "grids", 0, 10, "borg_caution.rs:4149", "#556: with caution_breeder_avoid, a grid within this many grids (the engine's distance) of a remembered breeder is avoided; 0 = only the breeder's own grid."),
+    caution_breeder_avoid_turns => (50, "borg turns", 1, 100000, "borg_caution.rs:4144", "#556: with caution_breeder_avoid, a breeder's grid is remembered this many Borg turns (`time.now`, one per think) after the breeder was last known there."),
+    caution_breeder_avoid_fight_through => (1, "flag", 0, 1, "borg_caution.rs:4398", "#556 (owner 2026-11-19: \"fallback to fight our way out\"): with caution_breeder_avoid, 1 = a flight whose stair flow finds no route around the remembered breeders takes the plain route through them, and for caution_breeder_through_turns after, retreat and back-away stand down while the danger here is below the HP (the Borg kills what blocks the way and goes on); 0 = no route, the flight looks elsewhere."),
+    caution_breeder_through_turns => (5, "borg turns", 0, 1000, "borg_caution.rs:4407", "#556: with caution_breeder_avoid_fight_through, retreat and back-away stand down this many Borg turns after the flight last took the route through the breeders (the flow is recomputed after every attack)."),
+    caution_breeder_stuck_turns => (20, "borg turns", 0, 1000, "borg_caution.rs:4381", "#556: with caution_breeder_avoid, when the Borg is stuck (the dungeon think reaches its bravery boosts) while remembered breeders block its flows, the marks are ignored for this many Borg turns, so it can fight its way out instead of staying boxed in; 0 = never (the marks hold even when stuck)."),
+    caution_breeder_policy => (-1, "mode", -1, 5, "borg_caution.rs:4190", "#722 (owner): the breeder policy, one setting for the breeder switches. -1 = the switches as set (caution_breeder_fight, danger_hunt_breeder_no_acid_fear, recover_rest_breeders, caution_breeder_stoppable, caution_breeder_avoid, caution_breeder_exit). 0 = C (all off). 1 = stand without an easy escape and hunt few breeders below CL10 (#503, #558). 2 = and no rest while breeders are known (#644). 3 = and kill them first while the kills outpace the breeding, at any count and level (#556); the level is lost once more breeders are known than caution_breeder_hunt_max_count (per class) or the breeding outpaces the kills; on a lost level the Borg searches for stairs, and reads Recall after caution_breeder_lost_recall_turns. 4 = and paths avoid colonies (#556). 5 = and walk out of a breeder room (#544)."),
+    caution_breeder_lost_recall_turns => (500, "game turns", 0, 100000, "borg_caution.rs:4287", "#722 (owner: \"search for stairs first, but if paths are blocked by breeders, recall at some point\"): with caution_breeder_policy 3 or more, this many game turns after the level was lost to breeders the Borg reads Word of Recall, stairs known or not; until then a lost level's flight searches for stairs and does not read Recall. 0 = Recall at once."),
+    caution_breeder_stoppable => (0, "flag", 0, 1, "borg_caution.rs:4177", "#556 (owner 2026-11-19: \"kill them first and only escape if it is not possible\"): 1 = on a level with breeders the Borg stands and hunts them (breeder_stand and breeder_hunt, at any count and character level, escape items or not) while the breeding can be stopped: the known breeders' expected births a turn (the engine's 1 in 8k while k < 4, monster speed against the character's), times caution_breeder_stoppable_births_percent, below the Borg's kills a turn (every attack it has: the attack planner's dry run, borg_attack_estimate, and the kills of the attack it would choose, for each monster hit its true damage over that monster's HP at most 1; the random state is restored after the dry run). A think is judged only when the planner has something to attack. With the danger where it stands at or above the HP it does not stand that think. While no staircase is known it fights on even then (a flight with nowhere to go). Once the breeding outpaces the kills, the level is lost to them until a new one, and the breeder flees act (with caution_breeder_avoid, the flight avoids the colony). 0 = #503's stand (no easy escape) and #558's hunt (caution_breeder_hunt_max_count, below clevel 10)."),
+    caution_breeder_stoppable_births_percent => (200, "percent", 1, 10000, "borg_caution.rs:4231", "#556: with caution_breeder_stoppable, the expected births a turn are weighed by this percent against the kills a turn (200 = the Borg must kill twice as fast as they breed: it walks between them and does not see them all)."),
+    caution_breeder_stoppable_confirm => (5, "thinks", 1, 1000, "borg_caution.rs:4235", "#556: with caution_breeder_stoppable, the level is lost to the breeders only after the breeding outpaced the kills on this many judged thinks in a row (a think is judged only when the attack planner has something to attack)."),
+    caution_stair_scum_threat => (0, "flag", 0, 1, "borg_caution.rs:4505", "#549: 1 = after fleeing town, no stair scum (grabbing DL1 items near the stairs before going back up) while the level is scary, the danger here is above caution_stair_scum_danger, or the HP is below the maximum: the Borg goes straight back up (and the scum's own GOAL_TAKE flow is cancelled). The HP condition is the broad one: any injury stops the scum; 0 = off (C's behaviour)."),
+    caution_stair_scum_danger => (0, "danger", 0, 10000, "borg_caution.rs:4509", "#549: with caution_stair_scum_threat, a danger here above this stops the stair scum."),
+    caution_rising_hold_flee_descent => (0, "flag", 0, 1, "borg_caution.rs:4536", "#557: 1 = while rising (a return trip on foot) in the dungeon, a flight takes no down staircase (stair_more, the both-stairs flee flow, the down-stairs flee flow) unless the danger here is at or above the HP; with birth_connect_stairs each such flight lands on DL+1's up staircase and the climb restarts on a fresh level; 0 = off (C's behaviour)."),
+    caution_rising_hold_min_hp_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:4542", "#753: with caution_rising_hold_flee_descent, a fleeing Borg with less than this percent of its max HP is not held off a descent while rising (214960633: held at 2 of 47 HP on a down staircase, the danger there 0, next to a grey mold). 0 = today."),
+    caution_breeder_hunt_max_count => (4, "count", 0, 1000, "borg_caution.rs:4189", "#503, #558: below clevel 10 the Borg hunts breeders while at most this many are known on the level (with caution_breeder_fight); a class value per class (the class files), 0 = that class does not hunt. Before #558 only Warriors, Paladins, Rogues and Blackguards hunted."),
+    recover_breeder_hunt_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:1115", "#558 (owner): when a rest is due, HP is at least this percent of max HP and the Borg is fit to hunt breeders now (the hunt applies: caution_breeder_fight on and caution_breeder_hunt_max_count; the Borg is not ignoring the breeders, fleeing or leaving, and no scary monster is on the level; a Mage or Necromancer has half its mana; it is not hungry, confused, blind, hallucinating, afraid or stunned; a known breeder passes the hunt walk's danger test, but not its leash to the stairs or reachability), the Borg does not rest (breeders multiply while it rests) and hunts them first. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For an acid breeder (a worm mass) the danger test passes only with danger_hunt_breeder_no_acid_fear on; 0 = off (C's rest)."),
+    recover_unseen_attack_turns => (0, "game turns", 0, 100000, "borg_recover.rs:765", "#697 (owner): an attack by a monster the Borg cannot see (\"Something/Someone ... you\") counts for this many game turns: no rest within recover_unseen_attack_distance of where it struck; hurt, the Borg walks to a corridor (else any known grid) at least that far and rests there; struck again that far from the last attack (it followed), or nowhere to walk, it leaves the level. 0 = C (the attacker is ignored: no monster, no danger)."),
+    recover_unseen_attack_distance => (10, "grids", 1, 100, "borg_recover.rs:768", "#697: the distance from an unseen attack within which the Borg does not rest, the distance it walks away, and the distance at which a later attack means the attacker followed it."),
+    recover_unseen_heal_hp_percent => (0, "percent", 0, 100, "borg_recover.rs:846", "#697 (owner): while an unseen attack is recent (recover_unseen_attack_turns), below this share of the maximum HP the Borg drinks Cure Light, Cure Serious, then Cure Critical Wounds. 0 = off."),
+    recover_unseen_detect_reads => (0, "reads", 0, 10, "borg_recover.rs:951", "#831 (owner): in the invisible-attacker mode (recover_unseen_attack_turns), a blow that has just struck makes the Borg read Detect Invisible, quaff True Seeing, use a staff or activation or cast a spell that reveals invisible monsters, at most this many times in the episode; it then fights what it sees. 0 = never."),
+    recover_unseen_probe_tries => (0, "attacks", 0, 100, "borg_recover.rs:920", "#831 (owner): in the invisible-attacker mode, with nothing to detect it with, a blow that has just struck makes the Borg attack (alter) the open adjacent grids in turn, remembering the one where it struck something, at most this many times in the episode; when they are spent and it still strikes, the Borg leaves the level. 0 = never."),
+    recover_unseen_probe_max_grids => (3, "grids", 1, 8, "borg_recover.rs:973", "#831: the blind attacks are made only while at most this many adjacent grids may hold the attacker (a corridor or a doorway, not the open, where it would be guesswork); more, and the Borg walks away or leaves instead."),
+    recover_unseen_act_age => (30, "game turns", 0, 1000, "borg_recover.rs:913", "#831: detection and blind attacks answer a blow this recent (game turns; 10 are a player turn at normal speed): the attacker is next to the Borg now. 0 = never."),
+    recover_rest_breeders => (0, "flag", 0, 1, "borg_recover.rs:679", "#644 (owner): 1 = in the dungeon, while any breeder is known on the level, no rod, HP/SP or mana rest: the Borg hunts the breeders when #558's hunt applies, otherwise leaves the level; kept when confused, blind, hallucinating or stunned. 0 = rest as C."),
+    caution_desperate_max_level => (35, "level", 1, 51, "borg_caution.rs:3031", "Controls desperate max level."),
+    caution_retreat_danger_divisor => (3, "divisor", 1, 100, "borg_caution.rs:3072", "Controls retreat danger divisor."),
+    caution_back_danger_tenths => (4, "tenths", 0, 100, "borg_caution.rs:2590", "Controls back danger tenths."),
+    caution_confused_emergency_loss => (300, "hp", 0, 10000, "borg_caution.rs:2659", "Controls confused emergency loss."),
+    caution_fear_cure_chance => (70, "percent", 0, 100, "borg_caution.rs:2681", "Controls fear cure chance."),
+    caution_fear_berserk_fail => (25, "percent", 0, 100, "borg_caution.rs:2687", "Controls fear berserk fail."),
+    caution_fear_hero_fail => (25, "percent", 0, 100, "borg_caution.rs:2688", "Controls fear hero fail."),
+    caution_fear_holy_fail => (25, "percent", 0, 100, "borg_caution.rs:2695", "Controls fear holy fail."),
+    caution_flee_low_hp_divisor => (3, "divisor", 1, 100, "borg_caution.rs:2703", "Controls flee low hp divisor."),
+    caution_flee_moderate_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:2704", "Controls flee moderate hp divisor."),
+    caution_flee_hp_per_level => (3, "hp_per_level", 0, 100, "borg_caution.rs:2773", "Controls flee hp per level."),
+    caution_flee_ccw_count => (3, "count", 0, 1000, "borg_caution.rs:2774", "Controls flee ccw count."),
+    caution_flee_heal_count => (1, "count", 0, 1000, "borg_caution.rs:2775", "Controls flee heal count."),
+    caution_flee_low_hp_chance => (25, "percent", 0, 100, "borg_caution.rs:2778", "Controls flee low hp chance."),
+    caution_flee_status_hp_divisor => (2, "divisor", 1, 100, "borg_caution.rs:2786", "Controls flee status hp divisor."),
+    caution_flee_status_chance => (25, "percent", 0, 100, "borg_caution.rs:2789", "Controls flee status chance."),
+    caution_reserve_critical_hp_divisor => (10, "divisor", 1, 100, "borg_caution.rs:2798", "Controls reserve critical hp divisor."),
+    caution_reserve_escape_count => (2, "count", 0, 1000, "borg_caution.rs:2800", "Controls reserve escape count."),
+    caution_reserve_danger_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:2801", "Controls reserve danger hp divisor."),
+    caution_reserve_heal_count => (5, "count", 0, 1000, "borg_caution.rs:2803", "Controls reserve heal count."),
+    caution_reserve_surplus_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:2803", "Controls reserve surplus hp divisor."),
+    caution_reserve_unique_loss => (600, "hp", 0, 10000, "borg_caution.rs:2805", "Controls reserve unique loss."),
+    caution_reserve_unique_depth => (85, "depth", 0, 127, "borg_caution.rs:2807", "Controls reserve unique depth."),
+    caution_recall_danger_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:2848", "Controls recall danger multiplier."),
+    caution_recall_wait_as_usual => (0, "flag", 0, 1, "borg_caution.rs:3741", "#603 (owner): 1 = while Word of Recall counts down the Borg plays by its ordinary rules: it flees and leaves by stairs or Teleport Level (the countdown keeps running on the new level), takes stairs down in caution, counts a staircase as an escape, uses the ordinary escape and attack decisions instead of buy_time_for_recall, and handles a scary level as without Recall; only on DL2 and deeper (in town and on DL1 a staircase crosses between town and dungeon, and the Recall would take the Borg back); resting or waiting when safe is kept. 0 = C (the Recall-only rules; the caution_recall_* buy-time settings apply only at 0)."),
+    caution_recall_pending_escape => (0, "flag", 0, 1, "borg_caution.rs:3583", "#754 (owner): 1 = a Word of Recall already counting down is an escape that is running: on a scary level the Borg keeps its flight instead of #530's 'no escape: standing and fighting' (#530 counts only a Recall still in the pack); #603's gates still hold the flee flows and down stairs, but an up staircase reached on foot is taken (on DL1: town, where the Recall fires and returns the Borg to its maximum depth). 0 = #530."),
+    caution_recall_wait_no_explore => (0, "flag", 0, 1, "borg_caution.rs:3776", "#754 (owner): 1 = while Word of Recall counts down in the dungeon the Borg does not explore or chase far monsters and objects (the 'Explore the dungeon' block of borg_think_dungeon): the think ends there; it rests for Recall where it stands (caution_recall_rest_turns) when borg_check_rest allows it and nothing threatens it there, else stays still one turn. 0 = C (explore while waiting; the wait comes after exploration)."),
+    caution_stair_danger_max_level => (49, "level", 1, 51, "borg_caution.rs:5171", "Controls stair danger max level."),
+    caution_stair_min_food => (2, "count", 0, 1000, "borg_caution.rs:5179", "Controls stair min food."),
+    caution_sell_max_level => (25, "level", 1, 51, "borg_caution.rs:5187", "Controls sell max level."),
+    caution_sell_max_gold => (25000, "gold", 0, 1000000, "borg_caution.rs:5188", "Controls sell max gold."),
+    caution_sell_min_count => (13, "count", 0, 1000, "borg_caution.rs:5189", "Controls sell min count."),
+    caution_recall_mana_maxsp => (60, "sp", 0, 10000, "borg_caution.rs:5337", "Controls recall mana maxsp."),
+    caution_recall_mana_divisor => (4, "divisor", 1, 100, "borg_caution.rs:5338", "Controls recall mana divisor."),
+    caution_recall_phase_tolerance => (50, "percent", 0, 100, "borg_caution.rs:5334", "Controls recall phase tolerance."),
+    caution_recall_phase_horizon => (1, "turns", 1, 100000, "borg_caution.rs:5335", "Controls recall phase horizon."),
+    caution_recall_phase_fail => (30, "percent", 0, 100, "borg_caution.rs:5340", "Controls recall phase fail."),
+    caution_recall_portal_fail => (30, "percent", 0, 100, "borg_caution.rs:5341", "Controls recall portal fail."),
+    caution_recall_cure_loss => (100, "hp", 0, 10000, "borg_caution.rs:5354", "Controls recall cure loss."),
+    caution_recall_cure_min_loss_percent => (0, "percent of max HP", 0, 100, "borg_caution.rs:5355", "#749: waiting for Recall in danger, C buys time with a Cure Light or Serious Wounds while less than caution_recall_cure_loss (100) HP are lost, which at low level includes full HP; above 0, only with at least this percent of the max HP lost. 0 = C."),
+    caution_recall_heal_loss => (150, "hp", 0, 10000, "borg_caution.rs:5364", "Controls recall heal loss."),
+    caution_retreat_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1238", "Number of Borg turns of danger evaluated along a retreat."),
+    caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1373", "Number of Borg turns of danger evaluated for a back-away grid."),
+    caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:2694", "Number of Borg turns of danger evaluated at the current grid."),
+    caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:2597", "Number of rest turns queued while waiting safely for recall."),
+    caution_recall_rest_monster_turns => (0, "game turns", 0, 100000, "borg_caution.rs:5238", "#567: while Word of Recall is active, no long rest (Resting for Recall, Waiting for Recall, or the wait with no light) if an awake monster was known within caution_recall_rest_monster_distance in the last this many game turns; the Borg stays still one turn at a time instead (','), so each think sees a returning monster. 0 = off (C)."),
+    caution_recall_rest_monster_distance => (20, "grids", 1, 100, "borg_caution.rs:5241", "#567: with caution_recall_rest_monster_turns, how near an awake monster must be (the engine's distance) to hold the Recall rest."),
+    caution_unseen_bump_turns => (0, "game turns", 0, 100000, "borg_caution.rs:6780", "#781: a queued step with unseen melee feedback and no movement marks its destination occupied for this many game turns. All flows refuse it. 0 = off."),
+    caution_unseen_bump_response => (0, "flag", 0, 1, "borg_caution.rs:6905", "#781: after ordinary healing, defence, Recall and food, before stair walking, try one carried Detect Invisible scroll under the existing detection danger/darkness gates, bounded directional oil throws with normal fuel reserves, then Phase Door under the emergency landing test. Requires caution_unseen_bump_turns. Counts successful phases toward level escape accounting. 0 = off."),
+    caution_unseen_bump_heal_hp_percent => (0, "percent", 0, 100, "borg_caution.rs:6897", "#781: below this HP percentage with a recent adjacent unseen bump, drink CLW, CSW, then CCW after ordinary healing/defence/Recall but before stair walking, even while fleeing. Intentionally ignores danger, including survivable-healing and no-rope-a-doping gates: regional fear does not quantify the unseen blow. Requires caution_unseen_bump_turns; independent of response. 0 = off."),
+    caution_unseen_bump_throw_tries => (3, "throws per grid", 0, 100, "borg_caution.rs:6899", "#781: maximum queued oil attempts at one remembered bump grid before trying Phase Door. Cancels also spend an attempt; only one command is queued per response. Expiry or a confirmed kill clears that grid and its budget. 0 = phase after detection; hypothesis, not calibrated."),
+    // #457: outmatched healing, a study flag. 0 = the vendored behaviour exactly.
+    caution_heal_when_outmatched => (0, "flag", 0, 1, "borg_caution.rs:229", "1 = after every escape declined, a hurt Borg whose danger reaches its HP drinks CLW/CSW/CCW instead of attacking; 0 = off."),
+    caution_heal_outmatched_min_loss => (50, "percent", 0, 100, "borg_caution.rs:233", "Minimum percent of maximum HP lost before outmatched healing applies (only when caution_heal_when_outmatched is 1)."),
     // borg-reborn-rs (#220): source lines in danger/escape/recovery at 30ab9d66.
     danger_monblow_hurt_fear => (400, "danger", 0, 5000, "borg_danger.rs:208", "Additional melee danger for MONBLOW_HURT (n += 400;)."),
     danger_monblow_hurt_hit_power => (60, "hit_power", 0, 1000, "borg_danger.rs:210", "Legacy hit-power estimate used for MONBLOW_HURT in partial melee danger."),
@@ -251,7 +478,8 @@ parameters! {
     danger_monblow_eat_food_fear => (5, "danger", 0, 5000, "borg_danger.rs:302", "Additional melee danger for MONBLOW_EAT_FOOD (z += 5;)."),
     danger_monblow_eat_light_hit_power => (5, "hit_power", 0, 1000, "borg_danger.rs:310", "Legacy hit-power estimate used for MONBLOW_EAT_LIGHT in partial melee danger."),
     danger_monblow_eat_light_fear => (5, "danger", 0, 5000, "borg_danger.rs:319", "Additional melee danger for MONBLOW_EAT_LIGHT (z += 5;)."),
-    danger_monblow_acid_fear => (200, "danger", 0, 5000, "borg_danger.rs:337", "Additional melee danger for MONBLOW_ACID (z += 200; // We don't want our armour corroded.)."),
+    danger_monblow_acid_fear => (200, "danger", 0, 5000, "borg_danger.rs:359", "Additional melee danger for MONBLOW_ACID (z += 200; // We don't want our armour corroded.)."),
+    danger_hunt_breeder_no_acid_fear => (0, "flag", 0, 1, "borg_danger.rs:152", "#558 (owner): 1 = while the Borg hunts the level's breeders (the hunt applies: caution_breeder_fight on and caution_breeder_hunt_max_count; it is not ignoring them, fleeing or leaving, and no scary monster is on the level), every breeder on the level is judged on its bite, without danger_monblow_acid_fear (a green worm mass's 1d3 acid bite read 630 danger at CL6). The condition is level-wide, not per monster, so the regional fear map and retreat grids see it too; 0 = off."),
     danger_monblow_elec_hit_power => (10, "hit_power", 0, 1000, "borg_danger.rs:348", "Legacy hit-power estimate used for MONBLOW_ELEC in partial melee danger."),
     danger_monblow_elec_damage_multiplier => (2, "multiplier", 0, 50, "borg_danger.rs:356", "Multiplies damage to account for MONBLOW_ELEC side effects."),
     danger_monblow_fire_hit_power => (10, "hit_power", 0, 1000, "borg_danger.rs:367", "Legacy hit-power estimate used for MONBLOW_FIRE in partial melee danger."),
@@ -408,8 +636,8 @@ parameters! {
     danger_melee_hit_ac_divisor => (4, "divisor", 1, 1000, "borg_danger.rs:657", "Sets melee hit ac divisor, measured in divisor, in the existing danger rule."),
     danger_melee_hit_power_scale => (3, "denominator multiplier", 1, 1000, "borg_danger.rs:657", "Positive multiplier inside the melee hit-chance denominator; zero would divide by zero."),
     danger_melee_hit_floor_percent => (5, "percent", 0, 100, "borg_danger.rs:663", "Sets melee hit floor percent, measured in percent, in the existing danger rule."),
-    danger_summon_protected_divisor => (100, "divisor", 1, 1000, "borg_danger.rs:707", "Sets summon protected divisor, measured in divisor, in the existing danger rule."),
-    danger_summon_corridor_divisor => (1000, "divisor", 1, 10000, "borg_danger.rs:710", "Sets summon corridor divisor, measured in divisor, in the existing danger rule."),
+    danger_summon_protected_divisor => (100, "divisor", 1, 1000, "borg_danger.rs:739", "Sets summon protected divisor, measured in divisor, in the existing danger rule."),
+    danger_summon_corridor_divisor => (1000, "divisor", 1, 10000, "borg_danger.rs:742", "Sets summon corridor divisor, measured in divisor, in the existing danger rule."),
     danger_unknown_spell => (1000, "danger", 0, 5000, "borg_danger.rs:766", "Sets unknown spell, measured in danger, in the existing danger rule."),
     danger_brain_smash_save_weight => (2, "multiplier", 0, 50, "borg_danger.rs:1362", "Sets brain smash save weight, measured in multiplier, in the existing danger rule."),
     danger_cause4_save_bias => (120, "save_points", 0, 1000, "borg_danger.rs:1374", "Sets cause4 save bias, measured in save_points, in the existing danger rule."),
@@ -418,12 +646,12 @@ parameters! {
     danger_corridor_spell_tenths => (7, "tenths", 0, 30, "borg_danger.rs:1901", "Sets corridor spell tenths, measured in tenths, in the existing danger rule."),
     danger_worst_spell_average_tenths => (15, "tenths", 0, 30, "borg_danger.rs:1948", "Sets worst spell average tenths, measured in tenths, in the existing danger rule."),
     danger_worst_spell_hp_tenths => (8, "tenths", 0, 30, "borg_danger.rs:1948", "Sets worst spell hp tenths, measured in tenths, in the existing danger rule."),
-    danger_sleep_level_margin => (15, "level", 1, 51, "borg_danger.rs:1972", "Sets sleep level margin, measured in level, in the existing danger rule."),
-    danger_ghost_monster => (100, "danger", 0, 5000, "borg_danger.rs:2035", "Sets ghost monster, measured in danger, in the existing danger rule."),
-    danger_monster_max_distance => (20, "grids", 1, 100, "borg_danger.rs:2067", "Sets monster max distance, measured in grids, in the existing danger rule."),
-    danger_fast_player_threshold => (135, "speed", 110, 135, "borg_danger.rs:2072", "Sets fast player threshold, measured in speed, in the existing danger rule."),
-    danger_fast_player_unique_speed => (120, "speed", 110, 189, "borg_danger.rs:2073", "Sets fast player unique speed, measured in speed, in the existing danger rule."),
-    danger_fast_player_normal_speed => (125, "speed", 110, 189, "borg_danger.rs:2073", "Sets fast player normal speed, measured in speed, in the existing danger rule."),
+    danger_sleep_level_margin => (15, "level", 1, 51, "borg_danger.rs:2043", "Sets sleep level margin, measured in level, in the existing danger rule."),
+    danger_ghost_monster => (100, "danger", 0, 5000, "borg_danger.rs:2106", "Sets ghost monster, measured in danger, in the existing danger rule."),
+    danger_monster_max_distance => (20, "grids", 1, 100, "borg_danger.rs:2138", "Sets monster max distance, measured in grids, in the existing danger rule."),
+    danger_fast_player_threshold => (135, "speed", 110, 135, "borg_danger.rs:2143", "Sets fast player threshold, measured in speed, in the existing danger rule."),
+    danger_fast_player_unique_speed => (120, "speed", 110, 189, "borg_danger.rs:2144", "Sets fast player unique speed, measured in speed, in the existing danger rule."),
+    danger_fast_player_normal_speed => (125, "speed", 110, 189, "borg_danger.rs:2144", "Sets fast player normal speed, measured in speed, in the existing danger rule."),
     danger_low_hp_speed_limit => (20, "hp", 0, 10000, "borg_danger.rs:2085", "Sets low hp speed limit, measured in hp, in the existing danger rule."),
     danger_low_hp_monster_speed_bonus => (3, "speed", 0, 3, "borg_danger.rs:2086", "Sets low hp monster speed bonus, measured in speed, in the existing danger rule."),
     danger_minimum_monster_energy => (10, "energy_tenths", 1, 100, "borg_danger.rs:2122", "Sets minimum monster energy, measured in energy_tenths, in the existing danger rule."),
@@ -477,9 +705,9 @@ parameters! {
     danger_frequency_high_percent => (51, "percent", 0, 100, "borg_danger.rs:2471", "Sets frequency high percent, measured in percent, in the existing danger rule."),
     danger_frequency_high_tenths => (8, "tenths", 0, 30, "borg_danger.rs:2472", "Sets frequency high tenths, measured in tenths, in the existing danger rule."),
     danger_maximum => (2000, "danger", 0, 5000, "borg_danger.rs:2487", "Sets maximum, measured in danger, in the existing danger rule."),
-    danger_regional_fear_max_depth => (80, "depth", 0, 127, "borg_danger.rs:2544", "Sets regional fear max depth, measured in depth, in the existing danger rule."),
-    danger_morgoth_regional_fear_cap => (300, "danger", 0, 5000, "borg_danger.rs:2549", "Sets morgoth regional fear cap, measured in danger, in the existing danger rule."),
-    danger_monster_fear_bounce_limit => (200, "count", 0, 1000, "borg_danger.rs:2556", "Sets monster fear bounce limit, measured in count, in the existing danger rule."),
+    danger_regional_fear_max_depth => (80, "depth", 0, 127, "borg_danger.rs:2618", "Sets regional fear max depth, measured in depth, in the existing danger rule."),
+    danger_morgoth_regional_fear_cap => (300, "danger", 0, 5000, "borg_danger.rs:2623", "Sets morgoth regional fear cap, measured in danger, in the existing danger rule."),
+    danger_monster_fear_bounce_limit => (200, "count", 0, 1000, "borg_danger.rs:2630", "Sets monster fear bounce limit, measured in count, in the existing danger rule."),
     danger_rsf_s_kin_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1685", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_KIN."),
     danger_rsf_s_hi_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1703", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_DEMON."),
     danger_rsf_s_hydra_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1759", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HYDRA."),
@@ -487,135 +715,154 @@ parameters! {
     danger_rsf_s_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1795", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_DEMON."),
     danger_rsf_s_hi_undead_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1813", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_UNDEAD."),
     danger_rsf_s_unique_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1849", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_UNIQUE."),
-    escape_antisummon_reset_turns => (50, "turns", 0, 100000, "borg_escape.rs:77", "Sets antisummon reset turns, measured in turns, in the existing escape rule."),
-    escape_recall_fail => (60, "percent", 0, 100, "borg_escape.rs:95", "Sets recall fail, measured in percent, in the existing escape rule."),
-    escape_recall_depth_window => (5, "depth", 0, 127, "borg_escape.rs:107", "Sets recall depth window, measured in depth, in the existing escape rule."),
-    escape_recall_reset_min_depth => (80, "depth", 0, 127, "borg_escape.rs:111", "Sets recall reset min depth, measured in depth, in the existing escape rule."),
-    escape_recall_reset_unique_count => (5, "count", 0, 1000, "borg_escape.rs:127", "Sets recall reset unique count, measured in count, in the existing escape rule."),
-    escape_surround_distance => (3, "grids", 1, 100, "borg_escape.rs:197", "Sets surround distance, measured in grids, in the existing escape rule."),
-    escape_surround_single_exit_count => (1, "count", 1, 8, "borg_escape.rs:265", "Sets surround single exit count, measured in count, in the existing escape rule."),
-    escape_surround_single_monster_count => (1, "count", 1, 8, "borg_escape.rs:265", "Sets surround single monster count, measured in count, in the existing escape rule."),
-    escape_town_stair_value => (1000, "freedom_score", 0, 5000, "borg_escape.rs:316", "Sets town stair value, measured in freedom_score, in the existing escape rule."),
-    escape_town_stair_close_distance => (4, "grids", 1, 100, "borg_escape.rs:319", "Sets town stair close distance, measured in grids, in the existing escape rule."),
-    escape_town_stair_close_value => (2000, "freedom_score", 0, 5000, "borg_escape.rs:320", "Sets town stair close value, measured in freedom_score, in the existing escape rule."),
-    escape_town_stair_distance_penalty => (500, "freedom_score", 0, 5000, "borg_escape.rs:320", "Sets town stair distance penalty, measured in freedom_score, in the existing escape rule."),
-    escape_dungeon_stair_value => (1000, "freedom_score", 0, 5000, "borg_escape.rs:330", "Sets dungeon stair value, measured in freedom_score, in the existing escape rule."),
-    escape_dungeon_stair_close_distance => (4, "grids", 1, 100, "borg_escape.rs:333", "Sets dungeon stair close distance, measured in grids, in the existing escape rule."),
-    escape_dungeon_stair_close_value => (2000, "freedom_score", 0, 5000, "borg_escape.rs:334", "Sets dungeon stair close value, measured in freedom_score, in the existing escape rule."),
-    escape_dungeon_stair_distance_penalty => (500, "freedom_score", 0, 5000, "borg_escape.rs:334", "Sets dungeon stair distance penalty, measured in freedom_score, in the existing escape rule."),
-    escape_landing_samples => (100, "count", 1, 1000, "borg_escape.rs:362", "Sets landing samples, measured in count, in the existing escape rule."),
-    escape_landing_trials => (100, "count", 1, 1000, "borg_escape.rs:368", "Sets landing trials, measured in count, in the existing escape rule."),
-    escape_unknown_landing_max_hp => (30, "hp", 0, 10000, "borg_escape.rs:418", "Sets unknown landing max hp, measured in hp, in the existing escape rule."),
-    escape_unknown_teleport_level_turns => (2000, "turns", 0, 100000, "borg_escape.rs:487", "Sets unknown teleport level turns, measured in turns, in the existing escape rule."),
-    escape_shadow_shift_min_hp => (12, "hp", 0, 10000, "borg_escape.rs:549", "Sets shadow shift min hp, measured in hp, in the existing escape rule."),
-    escape_dimension_door_range => (50, "grids", 1, 100, "borg_escape.rs:558", "Sets dimension door range, measured in grids, in the existing escape rule."),
-    escape_dimension_door_horizon => (2, "turns", 1, 10, "borg_escape.rs:601", "Sets dimension door horizon, measured in turns, in the existing escape rule."),
-    escape_near_unique_max_count => (8, "count", 1, 9, "borg_escape.rs:650", "Sets near unique max count, measured in count, in the existing escape rule."),
-    escape_normal_fail => (25, "percent", 0, 100, "borg_escape.rs:659", "Sets normal fail, measured in percent, in the existing escape rule."),
-    escape_healthy_hp_percent => (70, "percent", 0, 100, "borg_escape.rs:662", "Sets healthy hp percent, measured in percent, in the existing escape rule."),
-    escape_healthy_fail => (10, "percent", 0, 100, "borg_escape.rs:663", "Sets healthy fail, measured in percent, in the existing escape rule."),
-    escape_stunned_fail => (35, "percent", 0, 100, "borg_escape.rs:668", "Sets stunned fail, measured in percent, in the existing escape rule."),
-    escape_morgoth_hold_hp_tenths => (5, "tenths", 0, 100, "borg_escape.rs:689", "Sets morgoth hold hp tenths, measured in tenths, in the existing escape rule."),
-    escape_morgoth_hold_glyph_count => (3, "count", 0, 1000, "borg_escape.rs:707", "Sets morgoth hold glyph count, measured in count, in the existing escape rule."),
-    escape_risky_danger_extra_tenths => (3, "tenths", 0, 100, "borg_escape.rs:725", "Sets risky danger extra tenths, measured in tenths, in the existing escape rule."),
-    escape_emergency_danger_tenths => (45, "tenths", 0, 100, "borg_escape.rs:733", "Sets emergency danger tenths, measured in tenths, in the existing escape rule."),
-    escape_morgoth_danger_tenths => (40, "tenths", 0, 100, "borg_escape.rs:734", "Sets morgoth danger tenths, measured in tenths, in the existing escape rule."),
-    escape_morgoth_max_hp => (600, "hp", 0, 10000, "borg_escape.rs:737", "Sets morgoth max hp, measured in hp, in the existing escape rule."),
-    escape_sauron_danger_tenths => (30, "tenths", 0, 100, "borg_escape.rs:738", "Sets sauron danger tenths, measured in tenths, in the existing escape rule."),
-    escape_sauron_max_hp => (600, "hp", 0, 10000, "borg_escape.rs:741", "Sets sauron max hp, measured in hp, in the existing escape rule."),
-    escape_deep_unique_danger_tenths => (25, "tenths", 0, 100, "borg_escape.rs:742", "Sets deep unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_deep_unique_depth => (95, "depth", 0, 127, "borg_escape.rs:744", "Sets deep unique depth, measured in depth, in the existing escape rule."),
-    escape_deep_unique_max_hp => (550, "hp", 0, 10000, "borg_escape.rs:745", "Sets deep unique max hp, measured in hp, in the existing escape rule."),
-    escape_unique_danger_tenths => (17, "tenths", 0, 100, "borg_escape.rs:746", "Sets unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_ordinary_danger_tenths => (15, "tenths", 0, 100, "borg_escape.rs:747", "Sets ordinary danger tenths, measured in tenths, in the existing escape rule."),
-    escape_emergency_fail => (15, "percent", 0, 100, "borg_escape.rs:749", "Sets emergency fail, measured in percent, in the existing escape rule."),
-    escape_initial_fail_discount => (10, "percent", 0, 100, "borg_escape.rs:753", "Sets initial fail discount, measured in percent, in the existing escape rule."),
-    escape_emergency_fail_extra => (9, "percent", 0, 100, "borg_escape.rs:762", "Sets emergency fail extra, measured in percent, in the existing escape rule."),
-    escape_emergency_phase_tolerance => (75, "count", 0, 1000, "borg_escape.rs:772", "Sets emergency phase tolerance, measured in count, in the existing escape rule."),
-    escape_emergency_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:772", "Sets emergency phase horizon, measured in turns, in the existing escape rule."),
-    escape_last_ditch_max_level => (10, "level", 1, 51, "borg_escape.rs:790", "Sets last ditch max level, measured in level, in the existing escape rule."),
-    escape_last_ditch_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:791", "Sets last ditch hp divisor, measured in divisor, in the existing escape rule."),
-    escape_last_ditch_dimension_fail => (90, "percent", 0, 100, "borg_escape.rs:793", "Sets last ditch dimension fail, measured in percent, in the existing escape rule."),
-    escape_critical_phase_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:805", "Sets critical phase hp divisor, measured in divisor, in the existing escape rule."),
-    escape_last_ditch_phase_max_level => (10, "level", 1, 51, "borg_escape.rs:818", "Sets last ditch phase max level, measured in level, in the existing escape rule."),
-    escape_last_ditch_phase_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:819", "Sets last ditch phase hp divisor, measured in divisor, in the existing escape rule."),
-    escape_last_ditch_phase_fail => (15, "percent", 0, 100, "borg_escape.rs:820", "Sets last ditch phase fail, measured in percent, in the existing escape rule."),
-    escape_endgame_stay_danger_tenths => (25, "tenths", 0, 100, "borg_escape.rs:834", "Sets endgame stay danger tenths, measured in tenths, in the existing escape rule."),
-    escape_endgame_stay_unique_count => (3, "count", 1, 9, "borg_escape.rs:836", "Sets endgame stay unique count, measured in count, in the existing escape rule."),
-    escape_endgame_stay_min_depth => (97, "depth", 0, 127, "borg_escape.rs:837", "Sets endgame stay min depth, measured in depth, in the existing escape rule."),
-    escape_mage_danger_tenths => (3, "tenths", 0, 100, "borg_escape.rs:846", "Sets mage danger tenths, measured in tenths, in the existing escape rule."),
-    escape_mage_max_sp => (20, "sp", 0, 10000, "borg_escape.rs:848", "Sets mage max sp, measured in sp, in the existing escape rule."),
-    escape_mage_min_level => (45, "level", 1, 51, "borg_escape.rs:849", "Sets mage min level, measured in level, in the existing escape rule."),
-    escape_teleport_unique_danger_tenths => (13, "tenths", 0, 100, "borg_escape.rs:850", "Sets teleport unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_teleport_ordinary_danger_tenths => (11, "tenths", 0, 100, "borg_escape.rs:851", "Sets teleport ordinary danger tenths, measured in tenths, in the existing escape rule."),
-    escape_teleport_phase_tolerance => (50, "count", 0, 1000, "borg_escape.rs:877", "Sets teleport phase tolerance, measured in count, in the existing escape rule."),
-    escape_teleport_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:877", "Sets teleport phase horizon, measured in turns, in the existing escape rule."),
-    escape_phase_antisummon_delay => (50, "turns", 0, 100000, "borg_escape.rs:878", "Sets phase antisummon delay, measured in turns, in the existing escape rule."),
-    escape_phase_unique_danger_tenths => (13, "tenths", 0, 100, "borg_escape.rs:895", "Sets phase unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_phase_unique_min_count => (2, "count", 1, 9, "borg_escape.rs:895", "Sets phase unique min count, measured in count, in the existing escape rule."),
-    escape_phase_ordinary_danger_tenths => (10, "tenths", 0, 100, "borg_escape.rs:896", "Sets phase ordinary danger tenths, measured in tenths, in the existing escape rule."),
-    escape_afraid_warrior_danger_tenths => (10, "tenths", 0, 100, "borg_escape.rs:897", "Sets afraid warrior danger tenths, measured in tenths, in the existing escape rule."),
-    escape_phase_tolerance => (25, "count", 0, 1000, "borg_escape.rs:903", "Sets phase tolerance, measured in count, in the existing escape rule."),
-    escape_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:903", "Sets phase horizon, measured in turns, in the existing escape rule."),
-    escape_fallback_phase_tolerance => (75, "count", 0, 1000, "borg_escape.rs:938", "Sets fallback phase tolerance, measured in count, in the existing escape rule."),
-    escape_fallback_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:938", "Sets fallback phase horizon, measured in turns, in the existing escape rule."),
-    escape_failed_teleport_flee_max_level => (35, "level", 1, 51, "borg_escape.rs:968", "Sets failed teleport flee max level, measured in level, in the existing escape rule."),
-    escape_failed_teleport_leave_max_level => (35, "level", 1, 51, "borg_escape.rs:980", "Sets failed teleport leave max level, measured in level, in the existing escape rule."),
-    escape_compromised_danger_tenths => (8, "tenths", 0, 100, "borg_escape.rs:992", "Sets compromised danger tenths, measured in tenths, in the existing escape rule."),
-    escape_compromised_max_level => (35, "level", 1, 51, "borg_escape.rs:993", "Sets compromised max level, measured in level, in the existing escape rule."),
-    escape_compromised_hp_divisor => (3, "divisor", 1, 1000, "borg_escape.rs:993", "Sets compromised hp divisor, measured in divisor, in the existing escape rule."),
-    escape_compromised_unique_danger_tenths => (9, "tenths", 0, 100, "borg_escape.rs:994", "Sets compromised unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_compromised_unique_max_level => (35, "level", 1, 51, "borg_escape.rs:996", "Sets compromised unique max level, measured in level, in the existing escape rule."),
-    escape_compromised_unique_hp_divisor => (3, "divisor", 1, 1000, "borg_escape.rs:996", "Sets compromised unique hp divisor, measured in divisor, in the existing escape rule."),
-    escape_compromised_ordinary_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:997", "Sets compromised ordinary danger tenths, measured in tenths, in the existing escape rule."),
-    escape_compromised_ordinary_max_level => (20, "level", 1, 51, "borg_escape.rs:997", "Sets compromised ordinary max level, measured in level, in the existing escape rule."),
-    escape_compromised_general_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:998", "Sets compromised general danger tenths, measured in tenths, in the existing escape rule."),
-    escape_compromised_general_max_level => (35, "level", 1, 51, "borg_escape.rs:998", "Sets compromised general max level, measured in level, in the existing escape rule."),
-    escape_compromised_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1002", "Sets compromised phase tolerance, measured in count, in the existing escape rule."),
-    escape_compromised_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1002", "Sets compromised phase horizon, measured in turns, in the existing escape rule."),
-    escape_failed_compromised_flee_max_level => (25, "level", 1, 51, "borg_escape.rs:1041", "Sets failed compromised flee max level, measured in level, in the existing escape rule."),
-    escape_weak_caster_max_level => (35, "level", 1, 51, "borg_escape.rs:1061", "Sets weak caster max level, measured in level, in the existing escape rule."),
-    escape_weak_caster_phase_tolerance => (65, "count", 0, 1000, "borg_escape.rs:1062", "Sets weak caster phase tolerance, measured in count, in the existing escape rule."),
-    escape_weak_caster_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1062", "Sets weak caster phase horizon, measured in turns, in the existing escape rule."),
-    escape_low_level_max_level => (10, "level", 1, 51, "borg_escape.rs:1080", "Sets low level max level, measured in level, in the existing escape rule."),
-    escape_low_level_danger_tenths => (5, "tenths", 0, 100, "borg_escape.rs:1081", "Sets low level danger tenths, measured in tenths, in the existing escape rule."),
-    escape_low_level_unique_danger_tenths => (7, "tenths", 0, 100, "borg_escape.rs:1081", "Sets low level unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_low_level_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1085", "Sets low level phase tolerance, measured in count, in the existing escape rule."),
-    escape_low_level_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1085", "Sets low level phase horizon, measured in turns, in the existing escape rule."),
-    escape_low_caster_max_level => (8, "level", 1, 51, "borg_escape.rs:1138", "Sets low caster max level, measured in level, in the existing escape rule."),
-    escape_low_caster_phase_tolerance => (65, "count", 0, 1000, "borg_escape.rs:1139", "Sets low caster phase tolerance, measured in count, in the existing escape rule."),
-    escape_low_caster_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1139", "Sets low caster phase horizon, measured in turns, in the existing escape rule."),
-    escape_low_mana_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:1159", "Sets low mana danger tenths, measured in tenths, in the existing escape rule."),
-    escape_low_mana_unique_danger_tenths => (8, "tenths", 0, 100, "borg_escape.rs:1159", "Sets low mana unique danger tenths, measured in tenths, in the existing escape rule."),
-    escape_low_mana_sp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:1160", "Sets low mana sp divisor, measured in divisor, in the existing escape rule."),
-    escape_low_mana_min_maxsp => (100, "sp", 0, 10000, "borg_escape.rs:1160", "Sets low mana min maxsp, measured in sp, in the existing escape rule."),
-    escape_low_mana_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1164", "Sets low mana phase tolerance, measured in count, in the existing escape rule."),
-    escape_low_mana_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1164", "Sets low mana phase horizon, measured in turns, in the existing escape rule."),
-    escape_scoot_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1200", "Sets scoot tolerance, measured in count, in the existing escape rule."),
-    escape_scoot_horizon => (2, "turns", 1, 10, "borg_escape.rs:1200", "Sets scoot horizon, measured in turns, in the existing escape rule."),
-    escape_twitch_limit => (50, "count", 0, 1000, "borg_escape.rs:1215", "Sets twitch limit, measured in count, in the existing escape rule."),
-    escape_twitch_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1218", "Sets twitch phase tolerance, measured in count, in the existing escape rule."),
-    escape_twitch_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1218", "Sets twitch phase horizon, measured in turns, in the existing escape rule."),
+    escape_phase_adjacent_only => (0, "flag", 0, 1, "borg_escape.rs:469", "#539 (owner): 1 = no Phase Door unless an awake monster is next to the Borg or one in view has a ranged attack (\"do not phase door when a monster is still distant\"); 0 = off (C's behaviour)."),
+    escape_phase_adjacent_rule => (0, "flag", 0, 1, "borg_escape.rs:871", "#584 (owner): 1 = at every Phase Door site (docs/PHASE-DOOR.md), if the Borg can Phase Door, no Phase Door unless an awake enemy is on an adjacent square and the fight is judged lost (escape_phase_lost_test). The rule only refuses the Phase Door: the escape levels go on with their other escapes, and if none acts the Borg attacks (its best attack by its own ranking; with no enemy adjacent only a ranged one) or, with an awake monster in view, boosts (Speed first, then Heroism, Berserk Strength, Bless; else borg_defend's resistances, Protection from Evil, shields and staves). Decided once per think; #539's escape_phase_adjacent_only check is skipped while it is on. 0 = each site's own check (C, #539)."),
+    escape_teleport_block => (0, "flag", 0, 1, "borg_escape.rs:1431", "#829: 1 = a teleport curse stops every teleport of the player. The Borg learns it from \"Your X prevents you teleporting.\" and \"Teleportation forbidden!\" (the engine's own words, whatever the item's identification state) and keeps it while the watched equipment is unchanged or until \"The anti-teleportation curse is removed!\"; Phase Door (every site, inside phase_door), Teleportation and Teleport Level scrolls, the staff of Teleportation, the teleport activations and the teleporting spells are then refused, so the site goes on with its next escape. A no-teleport grid is not asked for Phase Door (the engine does not stop it). 0 = as before (BI_CRSNOTEL only, at the sites that ask borg_allow_teleport)."),
+    escape_phase_lost_danger_percent => (100, "percent of HP", 0, 1000, "borg_escape.rs:962", "#584: with escape_phase_adjacent_rule, an adjacent fight is judged lost (Phase Door allowed) when escape_phase_lost_test is 0: the danger where the Borg stands at or above this percent of the current HP; 100 = the Borg could die this turn."),
+    escape_teleport_landing_either => (0, "flag", 0, 1, "borg_escape.rs:1295", "#724 (upstream Angband 95387b06): 1 = borg_caution_teleport checks the teleport landing with a teleport scroll or spell (BI_ATELEPORT) or a teleport staff or activation (BI_AESCAPE); 0 = C and borg-rs (both needed, so with only one the check never ran and the Destruction and Teleport Level defences never saw a safe landing)."),
+    escape_phase_lost_mana => (1, "flag", 0, 1, "borg_escape.rs:967", "#625 (owner): with escape_phase_adjacent_rule on and escape_phase_lost_test 1 or 2, 1 = the fight test weighs the chosen attack's true damage by its success chance (a spell's fail rate, a device's activation failure) and uses it only for the casts the current mana pays for, all of it (owner: the escape reserve is not set aside; a wand: its charges; a rod: one), then the best other attack that needs no mana, or melee; 0 = the chosen attack at full damage every turn (#612)."),
+    escape_phase_lost_test => (1, "choice", 0, 2, "borg_escape.rs:961", "#584 (owner): with escape_phase_adjacent_rule, how an adjacent fight is judged lost (Phase Door allowed): 0 = the danger where the Borg stands at or above escape_phase_lost_danger_percent of the HP; 1 = the fight compared: killing the adjacent awake monsters one after another (their HP left) takes more turns than the danger where it stands needs to kill the Borg; its damage a turn is the larger of its melee and the true damage of the attack it would choose now, of any kind (a Mage casts next to an enemy); 2 = as 1, and the mean danger of the sampled landing grids is below the danger here."),
+    escape_fox_form => (0, "flag", 0, 1, "borg_escape.rs:504", "#551: 1 = a Druid about to take a flight step (GOAL_FLEE) at least escape_fox_form_min_steps from its goal casts Fox Form (double movement, Free Action) first, and keeps the shape while the flight lasts: an item or a spell answers the game's \"Change back and ...?\" with y (same command, no extra energy). 0 = C (never cast; any shape is reverted at once)."),
+    escape_fox_form_fail => (25, "percent", 0, 100, "borg_escape.rs:542", "#551: with escape_fox_form, the highest Fox Form fail rate at which it is cast (Fox Form: level 1, 20% base fail)."),
+    escape_fox_form_min_steps => (3, "steps of flow", 1, 250, "borg_escape.rs:639", "#551: with escape_fox_form, the fewest flow steps left to the flight's goal for which the cast (one turn) is worth it."),
+    escape_fox_form_speed => (10, "speed", 0, 30, "borg_escape.rs:695", "#551: with escape_fox_form, the speed a fox's flight is worth: borg_danger while a fox (it only moves), and the stand decision's pursuer test while a fox (MOVES[1] halves a step's energy: +10 at normal speed)."),
+    escape_fox_form_stand_speed => (10, "speed", 0, 30, "borg_escape.rs:697", "#551 (review of #594): with escape_fox_form, the speed the stand decision's pursuer test counts for a Druid that is not yet a fox but can cast Fox Form (it will at its first flight step): more speed, fewer pursuers, more flights. 0 = only a fox counts."),
+    escape_fox_form_town => (0, "flag", 0, 1, "borg_escape.rs:511", "#620 (owner): 1 = a Druid at most escape_fox_form_town_max_level, about to take a step of a walk in town (to a shop, home, a staircase, or a flight; not a kill or a take) at least escape_fox_form_town_min_steps from its goal, casts Fox Form (double movement) if its fail rate is at most escape_fox_form_fail, keeps it while the walk lasts, and changes back at the shop door (the game shuts it on a fox) or before a blow. 0 = C (never in town)."),
+    escape_fox_form_town_max_level => (20, "level", 1, 51, "borg_escape.rs:532", "#620: with escape_fox_form_town, the highest character level that casts Fox Form for a walk in town (the manual's CL1-20 escape, 14-class-playbooks.md:453)."),
+    escape_fox_form_town_min_steps => (10, "steps of flow", 1, 250, "borg_escape.rs:546", "#620: with escape_fox_form_town, the fewest flow steps left to the walk's goal for which the cast (one turn, and its mana) is worth it."),
+    magic_fox_form_study_rating => (0, "rating", 0, 255, "borg_magic.rs:120", "#694 (owner): \"make the druid learn this spell first\". Above 0, the rating Fox Form is studied by, in place of C's 5 (below the 50 a spell needs unless the Borg is bored: the Druid learns it once bored). 100 puts it above Detect Life and Stinking Cloud (95): learned first. 0 = C's rating."),
+    escape_antisummon_reset_turns => (50, "turns", 0, 100000, "borg_escape.rs:87", "Sets antisummon reset turns, measured in turns, in the existing escape rule."),
+    escape_recall_fail => (60, "percent", 0, 100, "borg_escape.rs:116", "Sets recall fail, measured in percent, in the existing escape rule."),
+    escape_recall_depth_window => (5, "depth", 0, 127, "borg_escape.rs:112", "Sets recall depth window, measured in depth, in the existing escape rule."),
+    escape_recall_reset_min_depth => (80, "depth", 0, 127, "borg_escape.rs:116", "Sets recall reset min depth, measured in depth, in the existing escape rule."),
+    escape_recall_reset_unique_count => (5, "count", 0, 1000, "borg_escape.rs:128", "Sets recall reset unique count, measured in count, in the existing escape rule."),
+    escape_surround_distance => (3, "grids", 1, 100, "borg_escape.rs:198", "Sets surround distance, measured in grids, in the existing escape rule."),
+    escape_surround_single_exit_count => (1, "count", 1, 8, "borg_escape.rs:266", "Sets surround single exit count, measured in count, in the existing escape rule."),
+    escape_surround_single_monster_count => (1, "count", 1, 8, "borg_escape.rs:266", "Sets surround single monster count, measured in count, in the existing escape rule."),
+    escape_town_stair_value => (1000, "freedom_score", 0, 5000, "borg_escape.rs:333", "Sets town stair value, measured in freedom_score, in the existing escape rule."),
+    escape_town_stair_close_distance => (4, "grids", 1, 100, "borg_escape.rs:336", "Sets town stair close distance, measured in grids, in the existing escape rule."),
+    escape_town_stair_close_value => (2000, "freedom_score", 0, 5000, "borg_escape.rs:337", "Sets town stair close value, measured in freedom_score, in the existing escape rule."),
+    escape_town_stair_distance_penalty => (500, "freedom_score", 0, 5000, "borg_escape.rs:337", "Sets town stair distance penalty, measured in freedom_score, in the existing escape rule."),
+    escape_dungeon_stair_value => (1000, "freedom_score", 0, 5000, "borg_escape.rs:331", "Sets dungeon stair value, measured in freedom_score, in the existing escape rule."),
+    escape_dungeon_stair_close_distance => (4, "grids", 1, 100, "borg_escape.rs:334", "Sets dungeon stair close distance, measured in grids, in the existing escape rule."),
+    escape_dungeon_stair_close_value => (2000, "freedom_score", 0, 5000, "borg_escape.rs:335", "Sets dungeon stair close value, measured in freedom_score, in the existing escape rule."),
+    escape_dungeon_stair_distance_penalty => (500, "freedom_score", 0, 5000, "borg_escape.rs:335", "Sets dungeon stair distance penalty, measured in freedom_score, in the existing escape rule."),
+    escape_landing_samples => (100, "count", 1, 1000, "borg_escape.rs:379", "Sets landing samples, measured in count, in the existing escape rule."),
+    escape_landing_trials => (100, "count", 1, 1000, "borg_escape.rs:369", "Sets landing trials, measured in count, in the existing escape rule."),
+    escape_unknown_landing_max_hp => (30, "hp", 0, 10000, "borg_escape.rs:419", "Sets unknown landing max hp, measured in hp, in the existing escape rule."),
+    escape_unknown_teleport_level_turns => (2000, "turns", 0, 100000, "borg_escape.rs:1293", "Sets unknown teleport level turns, measured in turns, in the existing escape rule."),
+    escape_shadow_shift_min_hp => (12, "hp", 0, 10000, "borg_escape.rs:1539", "Sets shadow shift min hp, measured in hp, in the existing escape rule."),
+    escape_dimension_door_range => (50, "grids", 1, 100, "borg_escape.rs:1548", "Sets dimension door range, measured in grids, in the existing escape rule."),
+    escape_dimension_door_horizon => (2, "turns", 1, 10, "borg_escape.rs:1591", "Sets dimension door horizon, measured in turns, in the existing escape rule."),
+    escape_near_unique_max_count => (8, "count", 1, 9, "borg_escape.rs:1639", "Sets near unique max count, measured in count, in the existing escape rule."),
+    escape_normal_fail => (25, "percent", 0, 100, "borg_escape.rs:1650", "Sets normal fail, measured in percent, in the existing escape rule."),
+    escape_healthy_hp_percent => (70, "percent", 0, 100, "borg_escape.rs:1653", "Sets healthy hp percent, measured in percent, in the existing escape rule."),
+    escape_healthy_fail => (10, "percent", 0, 100, "borg_escape.rs:1654", "Sets healthy fail, measured in percent, in the existing escape rule."),
+    escape_stunned_fail => (35, "percent", 0, 100, "borg_escape.rs:1659", "Sets stunned fail, measured in percent, in the existing escape rule."),
+    escape_morgoth_hold_hp_tenths => (5, "tenths", 0, 100, "borg_escape.rs:1680", "Sets morgoth hold hp tenths, measured in tenths, in the existing escape rule."),
+    escape_morgoth_hold_glyph_count => (3, "count", 0, 1000, "borg_escape.rs:1698", "Sets morgoth hold glyph count, measured in count, in the existing escape rule."),
+    escape_risky_danger_extra_tenths => (3, "tenths", 0, 100, "borg_escape.rs:1716", "Sets risky danger extra tenths, measured in tenths, in the existing escape rule."),
+    escape_emergency_danger_tenths => (45, "tenths", 0, 100, "borg_escape.rs:1724", "Sets emergency danger tenths, measured in tenths, in the existing escape rule."),
+    escape_morgoth_danger_tenths => (40, "tenths", 0, 100, "borg_escape.rs:1725", "Sets morgoth danger tenths, measured in tenths, in the existing escape rule."),
+    escape_morgoth_max_hp => (600, "hp", 0, 10000, "borg_escape.rs:1728", "Sets morgoth max hp, measured in hp, in the existing escape rule."),
+    escape_sauron_danger_tenths => (30, "tenths", 0, 100, "borg_escape.rs:1729", "Sets sauron danger tenths, measured in tenths, in the existing escape rule."),
+    escape_sauron_max_hp => (600, "hp", 0, 10000, "borg_escape.rs:1732", "Sets sauron max hp, measured in hp, in the existing escape rule."),
+    escape_deep_unique_danger_tenths => (25, "tenths", 0, 100, "borg_escape.rs:1733", "Sets deep unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_deep_unique_depth => (95, "depth", 0, 127, "borg_escape.rs:1735", "Sets deep unique depth, measured in depth, in the existing escape rule."),
+    escape_deep_unique_max_hp => (550, "hp", 0, 10000, "borg_escape.rs:1736", "Sets deep unique max hp, measured in hp, in the existing escape rule."),
+    escape_unique_danger_tenths => (17, "tenths", 0, 100, "borg_escape.rs:1737", "Sets unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_ordinary_danger_tenths => (15, "tenths", 0, 100, "borg_escape.rs:1738", "Sets ordinary danger tenths, measured in tenths, in the existing escape rule."),
+    escape_emergency_fail => (15, "percent", 0, 100, "borg_escape.rs:1740", "Sets emergency fail, measured in percent, in the existing escape rule."),
+    escape_initial_fail_discount => (10, "percent", 0, 100, "borg_escape.rs:1744", "Sets initial fail discount, measured in percent, in the existing escape rule."),
+    escape_emergency_fail_extra => (9, "percent", 0, 100, "borg_escape.rs:1753", "Sets emergency fail extra, measured in percent, in the existing escape rule."),
+    escape_emergency_phase_tolerance => (75, "count", 0, 1000, "borg_escape.rs:1763", "Sets emergency phase tolerance, measured in count, in the existing escape rule."),
+    escape_emergency_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1763", "Sets emergency phase horizon, measured in turns, in the existing escape rule."),
+    escape_last_ditch_max_level => (10, "level", 1, 51, "borg_escape.rs:1782", "Sets last ditch max level, measured in level, in the existing escape rule."),
+    escape_last_ditch_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:1783", "Sets last ditch hp divisor, measured in divisor, in the existing escape rule."),
+    escape_last_ditch_dimension_fail => (90, "percent", 0, 100, "borg_escape.rs:1785", "Sets last ditch dimension fail, measured in percent, in the existing escape rule."),
+    escape_critical_phase_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:1797", "Sets critical phase hp divisor, measured in divisor, in the existing escape rule."),
+    escape_last_ditch_phase_max_level => (10, "level", 1, 51, "borg_escape.rs:1811", "Sets last ditch phase max level, measured in level, in the existing escape rule."),
+    escape_last_ditch_phase_hp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:1812", "Sets last ditch phase hp divisor, measured in divisor, in the existing escape rule."),
+    escape_last_ditch_phase_fail => (15, "percent", 0, 100, "borg_escape.rs:1814", "Sets last ditch phase fail, measured in percent, in the existing escape rule."),
+    escape_endgame_stay_danger_tenths => (25, "tenths", 0, 100, "borg_escape.rs:1829", "Sets endgame stay danger tenths, measured in tenths, in the existing escape rule."),
+    escape_endgame_stay_unique_count => (3, "count", 1, 9, "borg_escape.rs:1831", "Sets endgame stay unique count, measured in count, in the existing escape rule."),
+    escape_endgame_stay_min_depth => (97, "depth", 0, 127, "borg_escape.rs:1832", "Sets endgame stay min depth, measured in depth, in the existing escape rule."),
+    escape_mage_danger_tenths => (3, "tenths", 0, 100, "borg_escape.rs:1841", "Sets mage danger tenths, measured in tenths, in the existing escape rule."),
+    escape_mage_max_sp => (20, "sp", 0, 10000, "borg_escape.rs:1843", "Sets mage max sp, measured in sp, in the existing escape rule."),
+    escape_mage_min_level => (45, "level", 1, 51, "borg_escape.rs:1844", "Sets mage min level, measured in level, in the existing escape rule."),
+    escape_teleport_unique_danger_tenths => (13, "tenths", 0, 100, "borg_escape.rs:1845", "Sets teleport unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_teleport_ordinary_danger_tenths => (11, "tenths", 0, 100, "borg_escape.rs:1846", "Sets teleport ordinary danger tenths, measured in tenths, in the existing escape rule."),
+    escape_teleport_phase_tolerance => (50, "count", 0, 1000, "borg_escape.rs:1671", "Sets teleport phase tolerance, measured in count, in the existing escape rule."),
+    escape_teleport_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1671", "Sets teleport phase horizon, measured in turns, in the existing escape rule."),
+    escape_phase_antisummon_delay => (50, "turns", 0, 100000, "borg_escape.rs:1678", "Sets phase antisummon delay, measured in turns, in the existing escape rule."),
+    escape_phase_unique_danger_tenths => (13, "tenths", 0, 100, "borg_escape.rs:1709", "Sets phase unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_phase_unique_min_count => (2, "count", 1, 9, "borg_escape.rs:1709", "Sets phase unique min count, measured in count, in the existing escape rule."),
+    escape_phase_ordinary_danger_tenths => (10, "tenths", 0, 100, "borg_escape.rs:1710", "Sets phase ordinary danger tenths, measured in tenths, in the existing escape rule."),
+    escape_afraid_warrior_danger_tenths => (10, "tenths", 0, 100, "borg_escape.rs:1711", "Sets afraid warrior danger tenths, measured in tenths, in the existing escape rule."),
+    escape_phase_tolerance => (25, "count", 0, 1000, "borg_escape.rs:1894", "Sets phase tolerance, measured in count, in the existing escape rule."),
+    escape_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1894", "Sets phase horizon, measured in turns, in the existing escape rule."),
+    escape_fallback_phase_tolerance => (75, "count", 0, 1000, "borg_escape.rs:1929", "Sets fallback phase tolerance, measured in count, in the existing escape rule."),
+    escape_fallback_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1929", "Sets fallback phase horizon, measured in turns, in the existing escape rule."),
+    escape_failed_teleport_flee_max_level => (35, "level", 1, 51, "borg_escape.rs:1959", "Sets failed teleport flee max level, measured in level, in the existing escape rule."),
+    escape_failed_teleport_leave_max_level => (35, "level", 1, 51, "borg_escape.rs:1971", "Sets failed teleport leave max level, measured in level, in the existing escape rule."),
+    escape_compromised_danger_tenths => (8, "tenths", 0, 100, "borg_escape.rs:1983", "Sets compromised danger tenths, measured in tenths, in the existing escape rule."),
+    escape_compromised_max_level => (35, "level", 1, 51, "borg_escape.rs:1984", "Sets compromised max level, measured in level, in the existing escape rule."),
+    escape_compromised_hp_divisor => (3, "divisor", 1, 1000, "borg_escape.rs:1984", "Sets compromised hp divisor, measured in divisor, in the existing escape rule."),
+    escape_compromised_unique_danger_tenths => (9, "tenths", 0, 100, "borg_escape.rs:1985", "Sets compromised unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_compromised_unique_max_level => (35, "level", 1, 51, "borg_escape.rs:1987", "Sets compromised unique max level, measured in level, in the existing escape rule."),
+    escape_compromised_unique_hp_divisor => (3, "divisor", 1, 1000, "borg_escape.rs:1987", "Sets compromised unique hp divisor, measured in divisor, in the existing escape rule."),
+    escape_compromised_ordinary_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:1988", "Sets compromised ordinary danger tenths, measured in tenths, in the existing escape rule."),
+    escape_compromised_ordinary_max_level => (20, "level", 1, 51, "borg_escape.rs:1988", "Sets compromised ordinary max level, measured in level, in the existing escape rule."),
+    escape_compromised_general_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:1989", "Sets compromised general danger tenths, measured in tenths, in the existing escape rule."),
+    escape_compromised_general_max_level => (35, "level", 1, 51, "borg_escape.rs:1989", "Sets compromised general max level, measured in level, in the existing escape rule."),
+    escape_compromised_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1993", "Sets compromised phase tolerance, measured in count, in the existing escape rule."),
+    escape_compromised_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1993", "Sets compromised phase horizon, measured in turns, in the existing escape rule."),
+    escape_failed_compromised_flee_max_level => (25, "level", 1, 51, "borg_escape.rs:2032", "Sets failed compromised flee max level, measured in level, in the existing escape rule."),
+    escape_weak_caster_max_level => (35, "level", 1, 51, "borg_escape.rs:2052", "Sets weak caster max level, measured in level, in the existing escape rule."),
+    escape_weak_caster_phase_tolerance => (65, "count", 0, 1000, "borg_escape.rs:2053", "Sets weak caster phase tolerance, measured in count, in the existing escape rule."),
+    escape_weak_caster_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:2053", "Sets weak caster phase horizon, measured in turns, in the existing escape rule."),
+    escape_low_level_max_level => (10, "level", 1, 51, "borg_escape.rs:1647", "Sets low level max level, measured in level, in the existing escape rule."),
+    escape_low_level_danger_tenths => (5, "tenths", 0, 100, "borg_escape.rs:1648", "Sets low level danger tenths, measured in tenths, in the existing escape rule."),
+    escape_low_level_unique_danger_tenths => (7, "tenths", 0, 100, "borg_escape.rs:1648", "Sets low level unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_low_level_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1652", "Sets low level phase tolerance, measured in count, in the existing escape rule."),
+    escape_low_level_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1652", "Sets low level phase horizon, measured in turns, in the existing escape rule."),
+    escape_low_caster_max_level => (8, "level", 1, 51, "borg_escape.rs:1706", "Sets low caster max level, measured in level, in the existing escape rule."),
+    escape_low_caster_phase_tolerance => (65, "count", 0, 1000, "borg_escape.rs:1707", "Sets low caster phase tolerance, measured in count, in the existing escape rule."),
+    escape_low_caster_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1707", "Sets low caster phase horizon, measured in turns, in the existing escape rule."),
+    escape_low_mana_danger_tenths => (6, "tenths", 0, 100, "borg_escape.rs:1728", "Sets low mana danger tenths, measured in tenths, in the existing escape rule."),
+    escape_low_mana_unique_danger_tenths => (8, "tenths", 0, 100, "borg_escape.rs:1728", "Sets low mana unique danger tenths, measured in tenths, in the existing escape rule."),
+    escape_low_mana_sp_divisor => (10, "divisor", 1, 1000, "borg_escape.rs:1729", "Sets low mana sp divisor, measured in divisor, in the existing escape rule."),
+    escape_low_mana_min_maxsp => (100, "sp", 0, 10000, "borg_escape.rs:1729", "Sets low mana min maxsp, measured in sp, in the existing escape rule."),
+    escape_low_mana_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1733", "Sets low mana phase tolerance, measured in count, in the existing escape rule."),
+    escape_low_mana_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1733", "Sets low mana phase horizon, measured in turns, in the existing escape rule."),
+    escape_scoot_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1773", "Sets scoot tolerance, measured in count, in the existing escape rule."),
+    escape_scoot_horizon => (2, "turns", 1, 10, "borg_escape.rs:1773", "Sets scoot horizon, measured in turns, in the existing escape rule."),
+    escape_twitch_limit => (50, "count", 0, 1000, "borg_escape.rs:1788", "Sets twitch limit, measured in count, in the existing escape rule."),
+    escape_twitch_phase_tolerance => (20, "count", 0, 1000, "borg_escape.rs:1791", "Sets twitch phase tolerance, measured in count, in the existing escape rule."),
+    escape_twitch_phase_horizon => (2, "turns", 1, 10, "borg_escape.rs:1791", "Sets twitch phase horizon, measured in turns, in the existing escape rule."),
     danger_default_hit_power => (0, "hit_power", 0, 1000, "borg_danger.rs:197", "Fallback hit-power estimate for blows without a specific legacy hit-power value."),
     danger_rsf_lash_damage => (100, "danger", 0, 5000, "borg_danger.rs:800", "Fixed danger estimate for a lash in reach."),
     danger_rsf_spit_damage => (100, "danger", 0, 5000, "borg_danger.rs:806", "Fixed danger estimate for spit in reach."),
     danger_pfe_melee_divisor => (2, "divisor", 1, 1000, "borg_danger.rs:212", "Divides melee damage plus fear when the legacy protection-from-evil approximation applies."),
     // borg-reborn-rs (#221): recovery source lines at 30ab9d66.
-    recover_danger_horizon => (1, "turns", 1, 10, "borg_recover.rs:98", "Sets danger horizon, in turns, in the existing recovery rule."),
-    recover_danger_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:101", "Sets danger divisor, in divisor, in the existing recovery rule."),
-    recover_hurt_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:111", "Sets hurt hp divisor, in divisor, in the existing recovery rule."),
-    recover_hurt_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:112", "Sets hurt chance bonus, in percent, in the existing recovery rule."),
-    recover_critical_hp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:116", "Sets critical hp divisor, in divisor, in the existing recovery rule."),
-    recover_critical_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:117", "Sets critical chance bonus, in percent, in the existing recovery rule."),
-    recover_cheap_stun_chance => (75, "percent", 0, 100, "borg_recover.rs:124", "Sets cheap stun chance, in percent, in the existing recovery rule."),
-    recover_cheap_cut_chance => (75, "percent", 0, 100, "borg_recover.rs:160", "Sets cheap cut chance, in percent, in the existing recovery rule."),
-    recover_cheap_poison_chance => (75, "percent", 0, 100, "borg_recover.rs:173", "Sets cheap poison chance, in percent, in the existing recovery rule."),
-    recover_cheap_fear_chance => (75, "percent", 0, 100, "borg_recover.rs:186", "Sets cheap fear chance, in percent, in the existing recovery rule."),
-    recover_cheap_hunger_chance => (75, "percent", 0, 100, "borg_recover.rs:199", "Sets cheap hunger chance, in percent, in the existing recovery rule."),
-    recover_cheap_image_chance => (75, "percent", 0, 100, "borg_recover.rs:207", "Sets cheap image chance, in percent, in the existing recovery rule."),
-    recover_cheap_heal_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:214", "Sets cheap heal hp divisor, in divisor, in the existing recovery rule."),
-    recover_cheap_heal_chance => (75, "percent", 0, 100, "borg_recover.rs:215", "Sets cheap heal chance, in percent, in the existing recovery rule."),
-    recover_cheap_heal_sp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:217", "Sets cheap heal sp divisor, in divisor, in the existing recovery rule."),
+    recover_danger_horizon => (1, "turns", 1, 10, "borg_recover.rs:233", "Sets danger horizon, in turns, in the existing recovery rule."),
+    recover_danger_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:236", "Sets danger divisor, in divisor, in the existing recovery rule."),
+    lightless_recovery_actions => (250, "actions", 1, 1000, "borg_lightless.rs:68", "#811: action budget per lightless episode on one dungeon level."),
+    lightless_search_actions => (32, "actions", 0, 250, "borg_lightless.rs:69", "#811: action budget for walking to and probing map edges without a known return route. 0 disables probes."),
+    lightless_door_attempts => (3, "attempts", 1, 10, "borg_lightless.rs:70", "#811: attempts from one approach to open a closed door during lightless recovery."),
+    recover_hurt_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:229", "Sets hurt hp divisor, in divisor, in the existing recovery rule."),
+    recover_hurt_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:230", "Sets hurt chance bonus, in percent, in the existing recovery rule."),
+    recover_critical_hp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:234", "Sets critical hp divisor, in divisor, in the existing recovery rule."),
+    recover_critical_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:235", "Sets critical chance bonus, in percent, in the existing recovery rule."),
+    recover_cheap_stun_chance => (75, "percent", 0, 100, "borg_recover.rs:242", "Sets cheap stun chance, in percent, in the existing recovery rule."),
+    recover_cheap_cut_chance => (75, "percent", 0, 100, "borg_recover.rs:278", "Sets cheap cut chance, in percent, in the existing recovery rule."),
+    recover_cheap_poison_chance => (75, "percent", 0, 100, "borg_recover.rs:291", "Sets cheap poison chance, in percent, in the existing recovery rule."),
+    recover_cheap_fear_chance => (75, "percent", 0, 100, "borg_recover.rs:304", "Sets cheap fear chance, in percent, in the existing recovery rule."),
+    recover_cheap_hunger_chance => (75, "percent", 0, 100, "borg_recover.rs:317", "Sets cheap hunger chance, in percent, in the existing recovery rule."),
+    recover_cheap_image_chance => (75, "percent", 0, 100, "borg_recover.rs:342", "Sets cheap image chance, in percent, in the existing recovery rule."),
+    recover_cheap_heal_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:349", "Sets cheap heal hp divisor, in divisor, in the existing recovery rule."),
+    recover_cheap_heal_chance => (75, "percent", 0, 100, "borg_recover.rs:350", "Sets cheap heal chance, in percent, in the existing recovery rule."),
+    recover_cheap_heal_sp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:352", "Sets cheap heal sp divisor, in divisor, in the existing recovery rule."),
     recover_unholy_min_hp => (90, "hp", 0, 10000, "borg_recover.rs:237", "Sets unholy min hp, in hp, in the existing recovery rule."),
     recover_costly_stun_chance => (25, "percent", 0, 100, "borg_recover.rs:266", "Sets costly stun chance, in percent, in the existing recovery rule."),
     recover_costly_heavy_stun_chance => (95, "percent", 0, 100, "borg_recover.rs:279", "Sets costly heavy stun chance, in percent, in the existing recovery rule."),
@@ -628,186 +875,200 @@ parameters! {
     recover_costly_hunger_chance => (25, "percent", 0, 100, "borg_recover.rs:362", "Sets costly hunger chance, in percent, in the existing recovery rule."),
     recover_costly_heal_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:370", "Sets costly heal hp divisor, in divisor, in the existing recovery rule."),
     recover_costly_heal_chance => (25, "percent", 0, 100, "borg_recover.rs:371", "Sets costly heal chance, in percent, in the existing recovery rule."),
-    recover_rest_high_depth => (85, "depth", 0, 127, "borg_recover.rs:418", "Sets rest high depth, in depth, in the existing recovery rule."),
-    recover_rest_high_sp_tenths => (7, "tenths", 0, 10, "borg_recover.rs:418", "Sets rest high sp tenths, in tenths, in the existing recovery rule."),
-    recover_rest_sp_tenths => (6, "tenths", 0, 10, "borg_recover.rs:418", "Sets rest sp tenths, in tenths, in the existing recovery rule."),
-    recover_mana_rest_max_level => (40, "level", 1, 51, "borg_recover.rs:461", "Sets mana rest max level, in level, in the existing recovery rule."),
-    recover_mana_rest_deep_depth => (85, "depth", 0, 127, "borg_recover.rs:461", "Sets mana rest deep depth, in depth, in the existing recovery rule."),
-    recover_mana_rest_sp_tenths => (8, "tenths", 0, 10, "borg_recover.rs:462", "Sets mana rest sp tenths, in tenths, in the existing recovery rule."),
+    recover_rest_high_depth => (85, "depth", 0, 127, "borg_recover.rs:1127", "Sets rest high depth, in depth, in the existing recovery rule."),
+    recover_rest_high_sp_tenths => (7, "tenths", 0, 10, "borg_recover.rs:1128", "Sets rest high sp tenths, in tenths, in the existing recovery rule."),
+    recover_rest_arms_see_invis => (1, "flag", 0, 1, "borg_recover.rs:450", "#516: 1 = C: a rest stamps the see-invisible clock as recent, which arms the Detect Invisible defence after every rest; 0 = a rest leaves it alone (only an unseen attack arms it). The same clock gates the Light Beam defence (skipped while recent) and the removal of regional fear (kept while recent), so at 0 both can act after a rest where C did not. 187 reads on 18 games, 171 with no unseen monster on the level."),
+    recover_rest_monster_turns => (0, "game turns", 0, 100000, "borg_recover.rs:56", "#615 rule a (owner): no rest (rod, HP/SP, mana) while an awake monster that can move was known within recover_rest_monster_distance in the last this many game turns on this level; a monster that comes into view would break the rest, and one that leaves the screen may come back. Kept when impaired (confused, blind, hallucinating, stunned, afraid); the clock clears when the monster that set it dies. 0 = off (C)."),
+    recover_rest_monster_distance => (20, "grids", 1, 100, "borg_recover.rs:57", "#615 rule a: with recover_rest_monster_turns, how near an awake monster must be (the engine's distance)."),
+    recover_rest_reach_stairs => (0, "steps of flow", 0, 250, "borg_recover.rs:143", "#614: a Borg on a flight to a staircase (GOAL_FLEE) at most this many flow steps away does not rest (rod, HP or mana) until it stands on the staircase; potions and cures are not rests; a farther staircase is a long walk, not a commitment. 0 = C (the low-level mana rest stopped a flight 11 steps short of the stairs)."),
+    recover_rest_reach_stairs_memory => (10, "borg time", 0, 1000, "borg_recover.rs:164", "#614 (review of #616): with recover_rest_reach_stairs, how long after its last flight step, on the same level, a flight that is still on (fleeing, leaving or a scary level) keeps the Borg committed to its staircase when the flow goal was wiped (a new monster wipes it for a think)."),
+    recover_rest_sp_tenths => (6, "tenths", 0, 10, "borg_recover.rs:1130", "Sets rest sp tenths, in tenths, in the existing recovery rule."),
+    light_detect_dark_entry => (0, "flag", 0, 1, "borg_light.rs:346", "#796: permit Detect Monsters or Read Minds below the usual level gate when entering an undetected dark frontier (one attempt per panel per level). 0 preserves current play."),
+    light_detect_dark_entry_reserve_sp => (2, "spell_points", 0, 255, "borg_light.rs:359", "#796: minimum SP the dark-entry detection leaves, raised to the cheapest known suitable response and both applicable mana recovery floors."),
+    light_detect_evil_spell_min_level => (0, "level", 0, 51, "borg_light.rs:452", "#685: below this character level the panel check casts no Detect Evil, Detect Monsters, Read Minds or Seek Battle (items and rods still detect). 0 = C. Per class with light_detect_evil_spell_min_level@<class>."),
+    recover_mana_rest_max_level => (40, "level", 1, 51, "borg_recover.rs:1137", "Sets mana rest max level, in level, in the existing recovery rule."),
+    recover_mana_rest_deep_depth => (85, "depth", 0, 127, "borg_recover.rs:1138", "Sets mana rest deep depth, in depth, in the existing recovery rule."),
+    recover_mana_rest_sp_tenths => (8, "tenths", 0, 10, "borg_recover.rs:1139", "Sets mana rest sp tenths, in tenths, in the existing recovery rule."),
     recover_mana_rest_danger_divisor => (10, "divisor", 1, 1000, "borg_recover.rs:463", "Sets mana rest danger divisor, in divisor, in the existing recovery rule."),
     recover_mana_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:469", "Sets mana rest min food, in count, in the existing recovery rule."),
     recover_rod_rest_turns => (100, "turns", 2, 9999, "borg_recover.rs:404", "Number of rest turns queued while waiting for a healing/recall rod to recharge."),
     // borg-reborn-rs (#240): attack source at 5d9abb8f.
-    attack_melee_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:380", "Attack melee min hit tenths: existing policy tenths."),
-    attack_melee_bonus_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:388", "Attack melee bonus min level: existing policy level."),
-    attack_melee_hit_bonus => (10, "percent", 0, 100, "borg_fight_attack.rs:389", "Attack melee hit bonus: existing policy percent."),
-    attack_mage_melee_min_sp => (1, "mana", 0, 1000, "borg_fight_attack.rs:394", "Attack mage melee min sp: existing policy mana."),
-    attack_mage_hit_penalty => (10, "percent", 0, 100, "borg_fight_attack.rs:396", "Attack mage hit penalty: existing policy percent."),
-    attack_melee_overkill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:408", "Attack melee overkill multiplier: existing policy multiplier."),
-    attack_mage_melee_max_level => (40, "level", 0, 51, "borg_fight_attack.rs:416", "Attack mage melee max level: existing policy level."),
-    attack_mage_melee_damage_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:419", "Attack mage melee damage tenths: existing policy tenths."),
-    attack_melee_unique_bonus => (5, "multiplier", 0, 10, "borg_fight_attack.rs:430", "Attack melee unique bonus: existing policy multiplier."),
-    attack_melee_town_unique_numerator => (2, "multiplier", 0, 10, "borg_fight_attack.rs:438", "Attack melee town unique numerator: existing policy multiplier."),
-    attack_melee_town_unique_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:438", "Attack melee town unique divisor: existing policy divisor."),
-    attack_town_unique_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:441", "Attack town unique min level: existing policy level."),
-    attack_melee_breeder_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:448", "Attack melee breeder numerator: existing policy multiplier."),
-    attack_melee_breeder_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:448", "Attack melee breeder divisor: existing policy divisor."),
-    attack_melee_summoner_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:455", "Attack melee summoner numerator: existing policy multiplier."),
-    attack_melee_summoner_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:455", "Attack melee summoner divisor: existing policy divisor."),
-    attack_melee_questor_bonus => (5, "multiplier", 0, 10, "borg_fight_attack.rs:463", "Attack melee questor bonus: existing policy multiplier."),
-    attack_melee_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:478", "Attack melee sleep danger horizon: existing policy turns."),
-    attack_melee_sleep_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:480", "Attack melee sleep danger multiplier: existing policy multiplier."),
-    attack_melee_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:491", "Attack melee danger horizon: existing policy turns."),
-    attack_melee_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:494", "Attack melee partial min level: existing policy level."),
-    attack_melee_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:495", "Attack melee partial danger divisor: existing policy divisor."),
-    attack_status_low_level_cutoff => (13, "level", 0, 51, "borg_fight_attack.rs:660", "Attack status low level cutoff: existing policy level."),
-    attack_status_low_level_limit => (10, "level", 0, 51, "borg_fight_attack.rs:660", "Attack status low level limit: existing policy level."),
-    attack_status_level_offset => (10, "level", 0, 51, "borg_fight_attack.rs:660", "Attack status level offset: existing policy level."),
-    attack_status_level_divisor => (4, "divisor", 1, 1000, "borg_fight_attack.rs:660", "Attack status level divisor: existing policy divisor."),
-    attack_status_level_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:660", "Attack status level numerator: existing policy multiplier."),
-    attack_status_level_base => (10, "level", 0, 51, "borg_fight_attack.rs:660", "Attack status level base: existing policy level."),
-    attack_status_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:691", "Attack status danger horizon: existing policy turns."),
-    attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:694", "Attack fear bonus max level: existing policy level."),
-    attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:695", "Attack fear danger bonus: existing policy danger."),
-    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:766", "Attack arrow point blank divisor: existing policy divisor."),
-    attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:769", "Attack arrow min hit tenths: existing policy tenths."),
-    attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:777", "Attack mana unique min potions: existing policy count."),
-    attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:779", "Attack mana unique multiplier: existing policy multiplier."),
-    attack_nether_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:887", "Attack nether point blank divisor: existing policy divisor."),
-    attack_teleport_unique_injury => (60, "percent", 0, 100, "borg_fight_attack.rs:995", "Attack teleport unique injury: existing policy percent."),
-    attack_teleport_unique_danger_tenths => (13, "tenths", 0, 26, "borg_fight_attack.rs:1001", "Attack teleport unique danger tenths: existing policy tenths."),
-    attack_teleport_unique_max_depth => (98, "depth", 0, 127, "borg_fight_attack.rs:1001", "Attack teleport unique max depth: existing policy depth."),
-    attack_teleport_unique_min_count => (2, "count", 0, 255, "borg_fight_attack.rs:1004", "Attack teleport unique min count: existing policy count."),
-    attack_teleport_unique_max_count => (8, "count", 0, 9, "borg_fight_attack.rs:1004", "Attack teleport unique max count: existing policy count."),
-    attack_teleport_mage_unique_distance => (2, "grids", 1, 20, "borg_fight_attack.rs:1007", "Attack teleport mage unique distance: existing policy grids."),
-    attack_teleport_vault_min_walls => (2, "count", 0, 255, "borg_fight_attack.rs:1032", "Attack teleport vault min walls: existing policy count."),
-    attack_teleport_glyph_value => (300, "score", 0, 100000, "borg_fight_attack.rs:1062", "Attack teleport glyph value: existing policy score."),
-    attack_teleport_morgoth_value => (100, "score", 0, 100000, "borg_fight_attack.rs:1070", "Attack teleport morgoth value: existing policy score."),
-    attack_teleport_low_sp => (35, "mana", 0, 1000, "borg_fight_attack.rs:1076", "Attack teleport low sp: existing policy mana."),
-    attack_teleport_low_sp_value => (150, "score", 0, 100000, "borg_fight_attack.rs:1079", "Attack teleport low sp value: existing policy score."),
-    attack_turn_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1090", "Attack turn danger horizon: existing policy turns."),
-    attack_status_slow_speed_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:1098", "Attack status slow speed margin: existing policy speed."),
-    attack_fear_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:1160", "Attack fear danger horizon: existing policy turns."),
-    attack_fear_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1162", "Attack fear danger multiplier: existing policy multiplier."),
-    attack_crush_monster_level_margin => (5, "level", 0, 51, "borg_fight_attack.rs:1175", "Attack crush monster level margin: existing policy level."),
-    attack_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1198", "Attack sleep danger horizon: existing policy turns."),
-    attack_missile_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1236", "Attack missile danger horizon: existing policy turns."),
-    attack_missile_danger_tenths => (2, "tenths", 0, 10, "borg_fight_attack.rs:1236", "Attack missile danger tenths: existing policy tenths."),
-    attack_missile_level_margin => (5, "level", 0, 51, "borg_fight_attack.rs:1238", "Attack missile level margin: existing policy level."),
-    attack_missile_weak_max_level => (20, "level", 0, 51, "borg_fight_attack.rs:1244", "Attack missile weak max level: existing policy level."),
-    attack_ranged_overkill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1258", "Attack ranged overkill multiplier: existing policy multiplier."),
-    attack_ranged_unique_multiplier => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1265", "Attack ranged unique multiplier: existing policy multiplier."),
-    attack_ranged_town_unique_numerator => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1273", "Attack ranged town unique numerator: existing policy multiplier."),
-    attack_ranged_town_unique_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:1273", "Attack ranged town unique divisor: existing policy divisor."),
-    attack_ranged_breeder_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1283", "Attack ranged breeder numerator: existing policy multiplier."),
-    attack_ranged_breeder_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1283", "Attack ranged breeder divisor: existing policy divisor."),
-    attack_ranged_summoner_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1290", "Attack ranged summoner numerator: existing policy multiplier."),
-    attack_ranged_summoner_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1290", "Attack ranged summoner divisor: existing policy divisor."),
-    attack_ranged_questor_bonus => (9, "multiplier", 0, 18, "borg_fight_attack.rs:1298", "Attack ranged questor bonus: existing policy multiplier."),
-    attack_bolt_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:1347", "Attack bolt max target age: existing policy turns."),
-    attack_bolt_unknown_min_walls => (2, "count", 0, 255, "borg_fight_attack.rs:1388", "Attack bolt unknown min walls: existing policy count."),
-    attack_bolt_unknown_min_grids => (1, "count", 0, 255, "borg_fight_attack.rs:1388", "Attack bolt unknown min grids: existing policy count."),
-    attack_bolt_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1415", "Attack bolt sleep danger horizon: existing policy turns."),
-    attack_bolt_sleep_danger_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1418", "Attack bolt sleep danger divisor: existing policy divisor."),
-    attack_bolt_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1428", "Attack bolt danger horizon: existing policy turns."),
-    attack_bolt_kill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1432", "Attack bolt kill multiplier: existing policy multiplier."),
-    attack_destroy_unknown_boots_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1450", "Attack destroy unknown boots value: existing policy score."),
-    attack_destroy_unknown_ring_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1456", "Attack destroy unknown ring value: existing policy score."),
-    attack_destroy_speed_ring_value => (2000, "score", 0, 100000, "borg_fight_attack.rs:1459", "Attack destroy speed ring value: existing policy score."),
-    attack_destroy_valuable_potion_value => (2000, "score", 0, 100000, "borg_fight_attack.rs:1482", "Attack destroy valuable potion value: existing policy score."),
-    attack_destroy_unknown_potion_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1485", "Attack destroy unknown potion value: existing policy score."),
-    attack_unmapped_fear_divisor => (20, "divisor", 1, 1000, "borg_fight_attack.rs:1531", "Attack unmapped fear divisor: existing policy divisor."),
-    attack_ego_ammo_multiplier => (99, "multiplier", 0, 198, "borg_fight_attack.rs:2193", "Attack ego ammo multiplier: existing policy multiplier."),
-    attack_throw_max_target_age => (10, "turns", 1, 10, "borg_fight_attack.rs:2307", "Attack throw max target age: existing policy turns."),
-    attack_throw_fast_monster_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:2317", "Attack throw fast monster margin: existing policy speed."),
-    attack_throw_min_item_value => (100, "gold", 0, 100000, "borg_fight_attack.rs:2408", "Attack throw min item value: existing policy gold."),
-    attack_throw_low_damage => (5, "damage", 0, 5000, "borg_fight_attack.rs:2408", "Attack throw low damage: existing policy damage."),
-    attack_reserve_mage_sp => (6, "mana", 0, 1000, "borg_fight_attack.rs:2503", "Attack reserve mage sp: existing policy mana."),
-    attack_reserve_ranger_sp => (22, "mana", 0, 1000, "borg_fight_attack.rs:2504", "Attack reserve ranger sp: existing policy mana."),
-    attack_reserve_rogue_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2505", "Attack reserve rogue sp: existing policy mana."),
-    attack_reserve_priest_sp => (8, "mana", 0, 1000, "borg_fight_attack.rs:2506", "Attack reserve priest sp: existing policy mana."),
-    attack_reserve_paladin_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2507", "Attack reserve paladin sp: existing policy mana."),
-    attack_reserve_necromancer_sp => (10, "mana", 0, 1000, "borg_fight_attack.rs:2508", "Attack reserve necromancer sp: existing policy mana."),
-    attack_spell_paranoia_max_level => (2, "level", 0, 51, "borg_fight_attack.rs:2534", "Attack spell paranoia max level: existing policy level."),
-    attack_spell_paranoia_chance => (1, "percent", 0, 100, "borg_fight_attack.rs:2535", "Attack spell paranoia chance: existing policy percent."),
-    attack_spell_unique_fail => (40, "percent", 0, 100, "borg_fight_attack.rs:2546", "Attack spell unique fail: existing policy percent."),
-    attack_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:2546", "Attack spell fail: existing policy percent."),
-    attack_primary_teleport_fail => (15, "percent", 0, 100, "borg_fight_attack.rs:2562", "Attack primary teleport fail: existing policy percent."),
-    attack_primary_max_level => (30, "level", 0, 51, "borg_fight_attack.rs:2562", "Attack primary max level: existing policy level."),
-    attack_spell_low_max_sp => (50, "mana", 0, 1000, "borg_fight_attack.rs:2575", "Attack spell low max sp: existing policy mana."),
-    attack_spell_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:2580", "Attack spell reserve divisor: existing policy divisor."),
-    attack_spell_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:2581", "Attack spell reserve penalty: existing policy multiplier."),
-    attack_spell_deep_reserve_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:2585", "Attack spell deep reserve divisor: existing policy divisor."),
-    attack_spell_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:2586", "Attack spell deep reserve penalty: existing policy multiplier."),
-    attack_escape_reserve_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:2592", "Attack escape reserve min max sp: existing policy mana."),
-    attack_escape_reserve_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:2593", "Attack escape reserve penalty: existing policy multiplier."),
-    attack_reserve_spell_max_level => (15, "level", 0, 51, "borg_fight_attack.rs:2631", "Attack reserve spell max level: existing policy level."),
-    attack_reserve_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:2646", "Attack reserve spell fail: existing policy percent."),
-    attack_reserve_spell_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:2651", "Attack reserve spell danger horizon: existing policy turns."),
-    attack_reserve_spell_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:2651", "Attack reserve spell danger multiplier: existing policy multiplier."),
-    attack_reserve_spell_near_distance => (7, "grids", 1, 20, "borg_fight_attack.rs:2679", "Attack reserve spell near distance: existing policy grids."),
-    attack_reserve_spell_damage_margin => (4, "damage", 0, 5000, "borg_fight_attack.rs:2686", "Attack reserve spell damage margin: existing policy damage."),
-    attack_dispel_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:2757", "Attack dispel paranoia chance: existing policy percent."),
-    attack_dispel_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:2762", "Attack dispel fail: existing policy percent."),
-    attack_dispel_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:2775", "Attack dispel reserve divisor: existing policy divisor."),
-    attack_dispel_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:2776", "Attack dispel reserve penalty: existing policy multiplier."),
-    attack_dispel_deep_reserve_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:2780", "Attack dispel deep reserve divisor: existing policy divisor."),
-    attack_dispel_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:2781", "Attack dispel deep reserve penalty: existing policy multiplier."),
-    attack_dispel_escape_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:2786", "Attack dispel escape min max sp: existing policy mana."),
-    attack_dispel_escape_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:2787", "Attack dispel escape penalty: existing policy multiplier."),
-    attack_wand_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:2818", "Attack wand paranoia chance: existing policy percent."),
-    attack_wand_charge_penalty => (50, "score", 0, 100000, "borg_fight_attack.rs:2831", "Attack wand charge penalty: existing policy score."),
-    attack_rod_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:2854", "Attack rod paranoia chance: existing policy percent."),
-    attack_rod_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:2859", "Attack rod max failure: existing policy permille."),
-    attack_unknown_device_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:2911", "Attack unknown device paranoia chance: existing policy percent."),
-    attack_unknown_wand_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:2929", "Attack unknown wand max failure: existing policy permille."),
-    attack_unknown_wand_penalty_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:2937", "Attack unknown wand penalty min level: existing policy level."),
-    attack_unknown_wand_penalty => (5, "score", 0, 100000, "borg_fight_attack.rs:2938", "Attack unknown wand penalty: existing policy score."),
-    attack_unknown_wand_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:2949", "Attack unknown wand danger horizon: existing policy turns."),
-    attack_unknown_wand_danger_tenths => (7, "tenths", 0, 14, "borg_fight_attack.rs:2949", "Attack unknown wand danger tenths: existing policy tenths."),
-    attack_unknown_wand_emergency_value => (999, "score", 0, 100000, "borg_fight_attack.rs:2951", "Attack unknown wand emergency value: existing policy score."),
-    attack_staff_paranoia_chance => (5, "percent", 0, 100, "borg_fight_attack.rs:2994", "Attack staff paranoia chance: existing policy percent."),
-    attack_activation_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3088", "Attack activation paranoia chance: existing policy percent."),
-    attack_ring_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3132", "Attack ring paranoia chance: existing policy percent."),
-    attack_dragon_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3171", "Attack dragon paranoia chance: existing policy percent."),
-    attack_leap_min_target_score => (10, "score", 0, 100000, "borg_fight_attack.rs:3284", "Attack leap min target score: existing policy score."),
-    attack_leap_max_distance => (4, "grids", 1, 4, "borg_fight_attack.rs:3296", "Attack leap max distance: existing policy grids."),
-    attack_vampire_max_distance => (20, "grids", 1, 20, "borg_fight_attack.rs:3513", "Attack vampire max distance: existing policy grids."),
-    attack_vampire_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3577", "Attack vampire sleep danger horizon: existing policy turns."),
-    attack_vampire_sleep_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3579", "Attack vampire sleep danger multiplier: existing policy multiplier."),
-    attack_vampire_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:3585", "Attack vampire danger horizon: existing policy turns."),
-    attack_vampire_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:3588", "Attack vampire partial min level: existing policy level."),
-    attack_vampire_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:3589", "Attack vampire partial danger divisor: existing policy divisor."),
-    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:3618", "Attack flag danger horizon: existing policy turns."),
-    attack_crush_hp_margin => (10, "hp", 0, 10000, "borg_fight_attack.rs:3636", "Attack crush hp margin: existing policy hp."),
-    attack_crush_hp_level_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:3636", "Attack crush hp level multiplier: existing policy multiplier."),
-    attack_crush_post_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3648", "Attack crush post danger multiplier: existing policy multiplier."),
-    attack_crush_min_post_hp => (50, "hp", 0, 10000, "borg_fight_attack.rs:3648", "Attack crush min post hp: existing policy hp."),
-    attack_crush_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3658", "Attack crush reserve divisor: existing policy divisor."),
-    attack_crush_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:3659", "Attack crush reserve penalty: existing policy multiplier."),
-    attack_trance_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3704", "Attack trance reserve divisor: existing policy divisor."),
-    attack_trance_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:3705", "Attack trance reserve penalty: existing policy multiplier."),
-    attack_holy_word_min_loss => (300, "hp", 0, 10000, "borg_fight_attack.rs:3917", "Attack holy word min loss: existing policy hp."),
-    attack_curse_min_hp => (120, "hp", 0, 10000, "borg_fight_attack.rs:4030", "Attack curse min hp: existing policy hp."),
-    attack_unknown_rod_damage => (75, "damage", 0, 5000, "borg_fight_attack.rs:4085", "Attack unknown rod damage: existing policy damage."),
-    attack_unknown_wand_damage => (75, "damage", 0, 5000, "borg_fight_attack.rs:4088", "Attack unknown wand damage: existing policy damage."),
-    attack_holy_staff_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4164", "Attack holy staff hp divisor: existing policy divisor."),
-    attack_holy_staff_hurt_value => (500, "score", 0, 100000, "borg_fight_attack.rs:4164", "Attack holy staff hurt value: existing policy score."),
-    attack_holy_staff_value => (120, "score", 0, 100000, "borg_fight_attack.rs:4164", "Attack holy staff value: existing policy score."),
-    attack_holy_activation_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4283", "Attack holy activation hp divisor: existing policy divisor."),
-    attack_holy_activation_hurt_value => (500, "score", 0, 100000, "borg_fight_attack.rs:4283", "Attack holy activation hurt value: existing policy score."),
-    attack_holy_activation_value => (120, "score", 0, 100000, "borg_fight_attack.rs:4283", "Attack holy activation value: existing policy score."),
-    attack_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:4444", "Attack max target age: existing policy turns."),
-    attack_town_mage_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:4457", "Attack town mage max level: existing policy level."),
-    attack_fast_monster_distance => (2, "grids", 1, 20, "borg_fight_attack.rs:4466", "Attack fast monster distance: existing policy grids."),
-    attack_scary_breeder_max_depth => (5, "depth", 0, 127, "borg_fight_attack.rs:4476", "Attack scary breeder max depth: existing policy depth."),
-    attack_scary_max_level_time => (2000, "turns", 1, 2000, "borg_fight_attack.rs:4478", "Attack scary max level time: existing policy turns."),
-    attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4478", "Attack scary max town time: existing policy turns."),
-    attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4487", "Attack scary depth multiplier: existing policy multiplier."),
-    attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4487", "Attack scary min level: existing policy level."),
+    attack_melee_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:565", "Attack melee min hit tenths: existing policy tenths."),
+    attack_melee_bonus_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:479", "Attack melee bonus min level: existing policy level."),
+    attack_melee_hit_bonus => (10, "percent", 0, 100, "borg_fight_attack.rs:480", "Attack melee hit bonus: existing policy percent."),
+    attack_mage_melee_min_sp => (1, "mana", 0, 1000, "borg_fight_attack.rs:485", "Attack mage melee min sp: existing policy mana."),
+    attack_mage_hit_penalty => (10, "percent", 0, 100, "borg_fight_attack.rs:487", "Attack mage hit penalty: existing policy percent."),
+    attack_melee_overkill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:513", "Attack melee overkill multiplier: existing policy multiplier."),
+    attack_mage_melee_max_level => (40, "level", 0, 51, "borg_fight_attack.rs:528", "Attack mage melee max level: existing policy level."),
+    attack_mage_melee_damage_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:531", "Attack mage melee damage tenths: existing policy tenths."),
+    attack_melee_unique_bonus => (5, "multiplier", 0, 10, "borg_fight_attack.rs:570", "Attack melee unique bonus: existing policy multiplier."),
+    attack_melee_town_unique_numerator => (2, "multiplier", 0, 10, "borg_fight_attack.rs:578", "Attack melee town unique numerator: existing policy multiplier."),
+    attack_melee_town_unique_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:578", "Attack melee town unique divisor: existing policy divisor."),
+    attack_town_unique_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:581", "Attack town unique min level: existing policy level."),
+    attack_town_dangerous_on_sight => (0, "flag", 0, 1, "borg_fight_attack.rs:417", "#619 (owner): 1 = in town a dangerous town monster (attack_town_dangerous_min_damage; the veteran, the mercenary, the squint-eyed rogue, the urchin) is killed on sight once the town is not scary (the scary list's level per monster and class decides that): it is the preferred target (attack_town_dangerous_bonus_percent) with the best attack borg_attack has, and the hunt walks to it below CL20; 0 = C."),
+    attack_town_dangerous_min_damage => (6, "damage", 1, 1000, "borg_fight_attack.rs:401", "#619: a town monster is dangerous when a blow steals (gold, an item) or hurts for at least this much (dice x sides): 6 takes the veteran (2d6), the mercenary (1d10) and the rogue (1d6), not the merchant (1d3) or the cats and dogs (1d1)."),
+    attack_town_dangerous_bonus_percent => (300, "percent", 100, 10000, "borg_fight_attack.rs:422", "#619: a dangerous town monster's attack value is multiplied by this / 100, so it is chosen before the harmless ones."),
+    attack_town_dangerous_caster_walk => (0, "flag", 0, 1, "borg_fight_attack.rs:438", "#637 (owner): with attack_town_dangerous_on_sight, 1 = in town a Mage or Necromancer below borg_flow_kill's caster level (CL25 in town; the town hunt gate stops at CL20, this does not) walks to a dangerous town monster too, with at least half its mana (its town hunt is otherwise breeders only, and no town race breeds). 0 = C."),
+    attack_town_dangerous_wand => (0, "flag", 0, 1, "borg_fight_attack.rs:447", "#637 (owner): with attack_town_dangerous_on_sight, 1 = in town a wand (not Wonder) may be aimed when a dangerous town monster is known, and only those are worth its charge. 0 = C (no wands in town: charges are too spendy)."),
+    attack_town_dangerous_bonus_whole => (0, "flag", 0, 1, "borg_fight_attack.rs:430", "#637 (owner): with attack_town_dangerous_on_sight, 1 = attack_town_dangerous_bonus_percent also multiplies the danger term of an attack's value (melee and bolts), so a dangerous town monster is the target for certain, not only when its damage term wins. 0 = the damage term only (#619)."),
+    attack_melee_breeder_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:619", "Attack melee breeder numerator: existing policy multiplier."),
+    attack_melee_breeder_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:619", "Attack melee breeder divisor: existing policy divisor."),
+    attack_melee_summoner_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:633", "Attack melee summoner numerator: existing policy multiplier."),
+    attack_melee_summoner_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:633", "Attack melee summoner divisor: existing policy divisor."),
+    attack_melee_questor_bonus => (5, "multiplier", 0, 10, "borg_fight_attack.rs:653", "Attack melee questor bonus: existing policy multiplier."),
+    attack_melee_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:669", "Attack melee sleep danger horizon: existing policy turns."),
+    attack_melee_sleep_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:671", "Attack melee sleep danger multiplier: existing policy multiplier."),
+    attack_melee_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:682", "Attack melee danger horizon: existing policy turns."),
+    attack_melee_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:666", "Attack melee partial min level: existing policy level."),
+    attack_melee_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:667", "Attack melee partial danger divisor: existing policy divisor."),
+    attack_status_low_level_cutoff => (13, "level", 0, 51, "borg_fight_attack.rs:903", "Attack status low level cutoff: existing policy level."),
+    attack_status_low_level_limit => (10, "level", 0, 51, "borg_fight_attack.rs:903", "Attack status low level limit: existing policy level."),
+    attack_status_level_offset => (10, "level", 0, 51, "borg_fight_attack.rs:903", "Attack status level offset: existing policy level."),
+    attack_status_level_divisor => (4, "divisor", 1, 1000, "borg_fight_attack.rs:903", "Attack status level divisor: existing policy divisor."),
+    attack_status_level_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:903", "Attack status level numerator: existing policy multiplier."),
+    attack_status_level_base => (10, "level", 0, 51, "borg_fight_attack.rs:903", "Attack status level base: existing policy level."),
+    attack_status_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:934", "Attack status danger horizon: existing policy turns."),
+    attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:937", "Attack fear bonus max level: existing policy level."),
+    attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:938", "Attack fear danger bonus: existing policy danger."),
+    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:3453", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
+    attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:984", "Attack arrow min hit tenths: existing policy tenths."),
+    attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:992", "Attack mana unique min potions: existing policy count."),
+    attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:994", "Attack mana unique multiplier: existing policy multiplier."),
+    attack_nether_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:1102", "Attack nether point blank divisor: existing policy divisor."),
+    attack_teleport_unique_injury => (60, "percent", 0, 100, "borg_fight_attack.rs:1012", "Attack teleport unique injury: existing policy percent."),
+    attack_teleport_unique_danger_tenths => (13, "tenths", 0, 26, "borg_fight_attack.rs:1018", "Attack teleport unique danger tenths: existing policy tenths."),
+    attack_teleport_unique_max_depth => (98, "depth", 0, 127, "borg_fight_attack.rs:1018", "Attack teleport unique max depth: existing policy depth."),
+    attack_teleport_unique_min_count => (2, "count", 0, 255, "borg_fight_attack.rs:1021", "Attack teleport unique min count: existing policy count."),
+    attack_teleport_unique_max_count => (8, "count", 0, 9, "borg_fight_attack.rs:1021", "Attack teleport unique max count: existing policy count."),
+    attack_teleport_mage_unique_distance => (2, "grids", 1, 20, "borg_fight_attack.rs:1024", "Attack teleport mage unique distance: existing policy grids."),
+    attack_teleport_vault_min_walls => (2, "count", 0, 255, "borg_fight_attack.rs:1049", "Attack teleport vault min walls: existing policy count."),
+    attack_teleport_glyph_value => (300, "score", 0, 100000, "borg_fight_attack.rs:1079", "Attack teleport glyph value: existing policy score."),
+    attack_teleport_morgoth_value => (100, "score", 0, 100000, "borg_fight_attack.rs:1087", "Attack teleport morgoth value: existing policy score."),
+    attack_teleport_low_sp => (35, "mana", 0, 1000, "borg_fight_attack.rs:1093", "Attack teleport low sp: existing policy mana."),
+    attack_teleport_low_sp_value => (150, "score", 0, 100000, "borg_fight_attack.rs:1096", "Attack teleport low sp value: existing policy score."),
+    attack_turn_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1107", "Attack turn danger horizon: existing policy turns."),
+    attack_status_slow_speed_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:1115", "Attack status slow speed margin: existing policy speed."),
+    attack_fear_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:1177", "Attack fear danger horizon: existing policy turns."),
+    attack_fear_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1179", "Attack fear danger multiplier: existing policy multiplier."),
+    attack_crush_monster_level_margin => (5, "level", 0, 51, "borg_fight_attack.rs:1192", "Attack crush monster level margin: existing policy level."),
+    attack_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1215", "Attack sleep danger horizon: existing policy turns."),
+    attack_missile_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1253", "Attack missile danger horizon: existing policy turns."),
+    attack_missile_danger_tenths => (2, "tenths", 0, 10, "borg_fight_attack.rs:1253", "Attack missile danger tenths: existing policy tenths."),
+    attack_missile_level_margin => (5, "level", 0, 51, "borg_fight_attack.rs:1255", "Attack missile level margin: existing policy level."),
+    attack_missile_weak_max_level => (20, "level", 0, 51, "borg_fight_attack.rs:1261", "Attack missile weak max level: existing policy level."),
+    attack_ranged_overkill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1275", "Attack ranged overkill multiplier: existing policy multiplier."),
+    attack_ranged_unique_multiplier => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1282", "Attack ranged unique multiplier: existing policy multiplier."),
+    attack_ranged_town_unique_numerator => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1290", "Attack ranged town unique numerator: existing policy multiplier."),
+    attack_ranged_town_unique_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:1290", "Attack ranged town unique divisor: existing policy divisor."),
+    attack_ranged_breeder_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1300", "Attack ranged breeder numerator: existing policy multiplier."),
+    attack_ranged_breeder_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1300", "Attack ranged breeder divisor: existing policy divisor."),
+    attack_ranged_summoner_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:1307", "Attack ranged summoner numerator: existing policy multiplier."),
+    attack_ranged_summoner_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1307", "Attack ranged summoner divisor: existing policy divisor."),
+    attack_ranged_questor_bonus => (9, "multiplier", 0, 18, "borg_fight_attack.rs:1315", "Attack ranged questor bonus: existing policy multiplier."),
+    attack_bolt_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:1604", "Attack bolt max target age: existing policy turns."),
+    attack_bolt_unknown_min_walls => (2, "count", 0, 255, "borg_fight_attack.rs:1612", "Attack bolt unknown min walls: existing policy count."),
+    attack_bolt_unknown_min_grids => (1, "count", 0, 255, "borg_fight_attack.rs:1612", "Attack bolt unknown min grids: existing policy count."),
+    attack_bolt_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1639", "Attack bolt sleep danger horizon: existing policy turns."),
+    attack_bolt_sleep_danger_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:1642", "Attack bolt sleep danger divisor: existing policy divisor."),
+    attack_bolt_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:1662", "Attack bolt danger horizon: existing policy turns."),
+    attack_bolt_kill_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:1707", "Attack bolt kill multiplier: existing policy multiplier."),
+    attack_destroy_unknown_boots_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1744", "Attack destroy unknown boots value: existing policy score."),
+    attack_destroy_unknown_ring_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1750", "Attack destroy unknown ring value: existing policy score."),
+    attack_destroy_speed_ring_value => (2000, "score", 0, 100000, "borg_fight_attack.rs:1753", "Attack destroy speed ring value: existing policy score."),
+    attack_destroy_valuable_potion_value => (2000, "score", 0, 100000, "borg_fight_attack.rs:1765", "Attack destroy valuable potion value: existing policy score."),
+    attack_destroy_unknown_potion_value => (20, "score", 0, 100000, "borg_fight_attack.rs:1779", "Attack destroy unknown potion value: existing policy score."),
+    attack_unmapped_fear_divisor => (20, "divisor", 1, 1000, "borg_fight_attack.rs:1825", "Attack unmapped fear divisor: existing policy divisor."),
+    attack_ego_ammo_multiplier => (99, "multiplier", 0, 198, "borg_fight_attack.rs:2461", "Attack ego ammo multiplier: existing policy multiplier."),
+    attack_throw_max_target_age => (10, "turns", 1, 10, "borg_fight_attack.rs:2642", "Attack throw max target age: existing policy turns."),
+    attack_throw_fast_monster_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:2633", "Attack throw fast monster margin: existing policy speed."),
+    kill_flow_mode => (0, "mode", 0, 3, "borg_flow_kill.rs:1925", "#691: the hunt (borg_flow_kill, walking to a monster to fight it) removed in steps. 0 = C. 1 = only the targeted hunts: breeders when a hunt for them applies (#503, #558), dangerous town monsters (#619, #637). 2 = no out-of-view call (\"chase old monsters\"). 3 = never hunt; borg_attack still fights what is in reach."),
+    attack_throw_min_item_value => (100, "gold", 0, 100000, "borg_fight_attack.rs:2748", "Attack throw min item value: existing policy gold."),
+    attack_throw_low_damage => (5, "damage", 0, 5000, "borg_fight_attack.rs:2748", "Attack throw low damage: existing policy damage."),
+    attack_throw_as_melee => (0, "flag", 0, 1, "borg_fight_attack.rs:2786", "#568: 1 = a throw is rated on melee's footing: the engine's throw damage (a flask of oil 22, not its 1d4), the engine's hit chance with the throwing skill, no launcher, and melee's danger term (its horizon, full damage, the partial-kill division). 0 = C (the dice average, the bow skill and launcher, the bolt's one-turn danger)."),
+    attack_reserve_mage_sp => (6, "mana", 0, 1000, "borg_fight_attack.rs:2946", "Attack reserve mage sp: existing policy mana."),
+    attack_reserve_ranger_sp => (22, "mana", 0, 1000, "borg_fight_attack.rs:2947", "Attack reserve ranger sp: existing policy mana."),
+    attack_reserve_rogue_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2948", "Attack reserve rogue sp: existing policy mana."),
+    attack_reserve_priest_sp => (8, "mana", 0, 1000, "borg_fight_attack.rs:2949", "Attack reserve priest sp: existing policy mana."),
+    attack_reserve_paladin_sp => (20, "mana", 0, 1000, "borg_fight_attack.rs:2950", "Attack reserve paladin sp: existing policy mana."),
+    attack_reserve_necromancer_sp => (10, "mana", 0, 1000, "borg_fight_attack.rs:2951", "Attack reserve necromancer sp: existing policy mana."),
+    attack_spell_paranoia_max_level => (2, "level", 0, 51, "borg_fight_attack.rs:2966", "Attack spell paranoia max level: existing policy level."),
+    attack_spell_paranoia_chance => (1, "percent", 0, 100, "borg_fight_attack.rs:2967", "Attack spell paranoia chance: existing policy percent."),
+    attack_spell_unique_fail => (40, "percent", 0, 100, "borg_fight_attack.rs:2978", "Attack spell unique fail: existing policy percent."),
+    attack_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:2978", "Attack spell fail: existing policy percent."),
+    attack_primary_teleport_fail => (15, "percent", 0, 100, "borg_fight_attack.rs:2969", "Attack primary teleport fail: existing policy percent."),
+    attack_primary_max_level => (30, "level", 0, 51, "borg_fight_attack.rs:2969", "Attack primary max level: existing policy level."),
+    attack_spell_low_max_sp => (50, "mana", 0, 1000, "borg_fight_attack.rs:3007", "Attack spell low max sp: existing policy mana."),
+    attack_spell_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3012", "Attack spell reserve divisor: existing policy divisor."),
+    attack_spell_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:2981", "Attack spell reserve penalty: existing policy multiplier."),
+    attack_spell_deep_reserve_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:2985", "Attack spell deep reserve divisor: existing policy divisor."),
+    attack_spell_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:2986", "Attack spell deep reserve penalty: existing policy multiplier."),
+    attack_escape_reserve_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:2992", "Attack escape reserve min max sp: existing policy mana."),
+    attack_escape_reserve_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:2993", "Attack escape reserve penalty: existing policy multiplier."),
+    attack_reserve_spell_max_level => (15, "level", 0, 51, "borg_fight_attack.rs:3063", "Attack reserve spell max level: existing policy level."),
+    attack_reserve_spell_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3078", "Attack reserve spell fail: existing policy percent."),
+    attack_reserve_spell_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3094", "Attack reserve spell danger horizon: existing policy turns."),
+    attack_reserve_spell_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3094", "Attack reserve spell danger multiplier: existing policy multiplier."),
+    attack_reserve_spell_near_distance => (7, "grids", 1, 20, "borg_fight_attack.rs:3111", "Attack reserve spell near distance: existing policy grids."),
+    attack_reserve_spell_damage_margin => (4, "damage", 0, 5000, "borg_fight_attack.rs:3086", "Attack reserve spell damage margin: existing policy damage."),
+    attack_dispel_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3195", "Attack dispel paranoia chance: existing policy percent."),
+    attack_dispel_fail => (25, "percent", 0, 100, "borg_fight_attack.rs:3200", "Attack dispel fail: existing policy percent."),
+    attack_dispel_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:3213", "Attack dispel reserve divisor: existing policy divisor."),
+    attack_dispel_reserve_penalty => (3, "multiplier", 0, 10, "borg_fight_attack.rs:3214", "Attack dispel reserve penalty: existing policy multiplier."),
+    attack_dispel_deep_reserve_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:3229", "Attack dispel deep reserve divisor: existing policy divisor."),
+    attack_dispel_deep_reserve_penalty => (5, "multiplier", 0, 10, "borg_fight_attack.rs:3230", "Attack dispel deep reserve penalty: existing policy multiplier."),
+    attack_dispel_escape_min_max_sp => (30, "mana", 0, 1000, "borg_fight_attack.rs:3235", "Attack dispel escape min max sp: existing policy mana."),
+    attack_dispel_escape_penalty => (750, "multiplier", 0, 1500, "borg_fight_attack.rs:3236", "Attack dispel escape penalty: existing policy multiplier."),
+    attack_wand_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3267", "Attack wand paranoia chance: existing policy percent."),
+    attack_wand_charge_penalty => (50, "score", 0, 100000, "borg_fight_attack.rs:3269", "Attack wand charge penalty: existing policy score."),
+    attack_rod_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3303", "Attack rod paranoia chance: existing policy percent."),
+    attack_rod_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:3298", "Attack rod max failure: existing policy permille."),
+    attack_unknown_device_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3362", "Attack unknown device paranoia chance: existing policy percent."),
+    attack_unknown_wand_max_failure => (500, "permille", 0, 1000, "borg_fight_attack.rs:3392", "Attack unknown wand max failure: existing policy permille."),
+    attack_unknown_wand_penalty_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:3392", "Attack unknown wand penalty min level: existing policy level."),
+    attack_unknown_wand_penalty => (5, "score", 0, 100000, "borg_fight_attack.rs:3393", "Attack unknown wand penalty: existing policy score."),
+    attack_unknown_wand_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3404", "Attack unknown wand danger horizon: existing policy turns."),
+    attack_unknown_wand_danger_tenths => (7, "tenths", 0, 14, "borg_fight_attack.rs:3404", "Attack unknown wand danger tenths: existing policy tenths."),
+    attack_unknown_wand_emergency_value => (999, "score", 0, 100000, "borg_fight_attack.rs:3406", "Attack unknown wand emergency value: existing policy score."),
+    attack_activation_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3462", "Attack activation paranoia chance: existing policy percent."),
+    attack_ring_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3517", "Attack ring paranoia chance: existing policy percent."),
+    attack_dragon_paranoia_chance => (2, "percent", 0, 100, "borg_fight_attack.rs:3556", "Attack dragon paranoia chance: existing policy percent."),
+    attack_leap_min_target_score => (10, "score", 0, 100000, "borg_fight_attack.rs:3670", "Attack leap min target score: existing policy score."),
+    attack_leap_max_distance => (4, "grids", 1, 4, "borg_fight_attack.rs:3682", "Attack leap max distance: existing policy grids."),
+    attack_vampire_max_distance => (20, "grids", 1, 20, "borg_fight_attack.rs:3933", "Attack vampire max distance: existing policy grids."),
+    attack_vampire_sleep_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:3963", "Attack vampire sleep danger horizon: existing policy turns."),
+    attack_vampire_sleep_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3965", "Attack vampire sleep danger multiplier: existing policy multiplier."),
+    attack_vampire_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:3971", "Attack vampire danger horizon: existing policy turns."),
+    attack_vampire_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:3974", "Attack vampire partial min level: existing policy level."),
+    attack_vampire_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:3975", "Attack vampire partial danger divisor: existing policy divisor."),
+    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:4042", "Attack flag danger horizon: existing policy turns."),
+    attack_crush_hp_margin => (10, "hp", 0, 10000, "borg_fight_attack.rs:4060", "Attack crush hp margin: existing policy hp."),
+    attack_crush_hp_level_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4060", "Attack crush hp level multiplier: existing policy multiplier."),
+    attack_crush_post_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:4061", "Attack crush post danger multiplier: existing policy multiplier."),
+    attack_crush_min_post_hp => (50, "hp", 0, 10000, "borg_fight_attack.rs:4061", "Attack crush min post hp: existing policy hp."),
+    attack_crush_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4082", "Attack crush reserve divisor: existing policy divisor."),
+    attack_crush_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:4083", "Attack crush reserve penalty: existing policy multiplier."),
+    attack_trance_reserve_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4117", "Attack trance reserve divisor: existing policy divisor."),
+    attack_trance_reserve_penalty => (10, "multiplier", 0, 20, "borg_fight_attack.rs:4118", "Attack trance reserve penalty: existing policy multiplier."),
+    attack_holy_word_min_loss => (300, "hp", 0, 10000, "borg_fight_attack.rs:4251", "Attack holy word min loss: existing policy hp."),
+    attack_curse_min_hp => (120, "hp", 0, 10000, "borg_fight_attack.rs:4364", "Attack curse min hp: existing policy hp."),
+    attack_holy_staff_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4575", "Attack holy staff hp divisor: existing policy divisor."),
+    attack_holy_staff_hurt_value => (500, "score", 0, 100000, "borg_fight_attack.rs:4575", "Attack holy staff hurt value: existing policy score."),
+    attack_holy_staff_value => (120, "score", 0, 100000, "borg_fight_attack.rs:4575", "Attack holy staff value: existing policy score."),
+    attack_holy_activation_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4292", "Attack holy activation hp divisor: existing policy divisor."),
+    attack_holy_activation_hurt_value => (500, "score", 0, 100000, "borg_fight_attack.rs:4292", "Attack holy activation hurt value: existing policy score."),
+    attack_holy_activation_value => (120, "score", 0, 100000, "borg_fight_attack.rs:4292", "Attack holy activation value: existing policy score."),
+    attack_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:451", "Attack max target age: existing policy turns."),
+    attack_town_mage_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:4844", "Attack town mage max level: existing policy level."),
+    attack_fast_monster_distance => (2, "grids", 1, 20, "borg_fight_attack.rs:4878", "Attack fast monster distance: existing policy grids."),
+    attack_scary_breeder_max_depth => (5, "depth", 0, 127, "borg_fight_attack.rs:4888", "Attack scary breeder max depth: existing policy depth."),
+    attack_scary_max_level_time => (2000, "turns", 1, 2000, "borg_fight_attack.rs:4890", "Attack scary max level time: existing policy turns."),
+    attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4890", "Attack scary max town time: existing policy turns."),
+    attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4915", "Attack scary depth multiplier: existing policy multiplier."),
+    attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4915", "Attack scary min level: existing policy level."),
+    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:5522", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
 
     // borg-reborn-rs (#241): defend source at 5d9abb8f.
-    defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:291", "Defend bless fail: existing policy percent."),
+    defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:293", "Defend bless fail: existing policy percent."),
     defend_bless_max_target_age => (5, "turns", 1, 10, "borg_fight_defend.rs:332", "Defend bless max target age: existing policy turns."),
     defend_bless_no_rest_duration => (11000, "duration", 0, 32767, "borg_fight_defend.rs:357", "Defend bless no rest duration: existing policy duration."),
     defend_speed_fail_base => (25, "percent", 0, 100, "borg_fight_defend.rs:393", "Defend speed fail base: existing policy percent."),
@@ -853,7 +1114,7 @@ parameters! {
     defend_prot_evil_improvement_divisor => (7, "divisor", 1, 1000, "borg_fight_defend.rs:1069", "Defend prot evil improvement divisor: existing policy divisor."),
     defend_shield_improvement_divisor => (7, "divisor", 1, 1000, "borg_fight_defend.rs:1126", "Defend shield improvement divisor: existing policy divisor."),
     defend_shield_no_rest_duration => (2000, "duration", 0, 32767, "borg_fight_defend.rs:1139", "Defend shield no rest duration: existing policy duration."),
-    defend_tele_away_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:1152", "Defend tele away fail: existing policy percent."),
+    defend_tele_away_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:1154", "Defend tele away fail: existing policy percent."),
     defend_tele_away_max_target_age => (2, "turns", 1, 10, "borg_fight_defend.rs:1235", "Defend tele away max target age: existing policy turns."),
     defend_hero_fail => (15, "percent", 0, 100, "borg_fight_defend.rs:1336", "Defend hero fail: existing policy percent."),
     defend_hero_no_rest_duration => (10000, "duration", 0, 32767, "borg_fight_defend.rs:1374", "Defend hero no rest duration: existing policy duration."),
@@ -878,11 +1139,11 @@ parameters! {
     defend_inviso_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:2723", "Defend inviso fail: existing policy percent."),
     defend_inviso_no_rest_duration => (18000, "duration", 0, 32767, "borg_fight_defend.rs:2789", "Defend inviso no rest duration: existing policy duration."),
     defend_inviso_potion_no_rest_duration => (16000, "duration", 0, 32767, "borg_fight_defend.rs:2795", "Defend inviso potion no rest duration: existing policy duration."),
-    defend_tele_away_morgoth_fail => (40, "percent", 0, 100, "borg_fight_defend.rs:3097", "Defend tele away morgoth fail: existing policy percent."),
+    defend_tele_away_morgoth_fail => (40, "percent", 0, 100, "borg_fight_defend.rs:3131", "Defend tele away morgoth fail: existing policy percent."),
     defend_tele_away_morgoth_max_target_age => (2, "turns", 1, 10, "borg_fight_defend.rs:3151", "Defend tele away morgoth max target age: existing policy turns."),
-    defend_banishment_morgoth_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:3247", "Defend banishment morgoth fail: existing policy percent."),
+    defend_banishment_morgoth_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:3281", "Defend banishment morgoth fail: existing policy percent."),
     defend_banishment_morgoth_max_target_age => (2, "turns", 1, 10, "borg_fight_defend.rs:3291", "Defend banishment morgoth max target age: existing policy turns."),
-    defend_light_morgoth_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:3368", "Defend light morgoth fail: existing policy percent."),
+    defend_light_morgoth_fail => (50, "percent", 0, 100, "borg_fight_defend.rs:3402", "Defend light morgoth fail: existing policy percent."),
     defend_light_morgoth_max_target_age => (2, "turns", 1, 10, "borg_fight_defend.rs:3418", "Defend light morgoth max target age: existing policy turns."),
     defend_scaled_fail_high_adjustment => (19, "percent", 0, 100, "borg_fight_defend.rs:170", "Defend scaled fail high adjustment: existing policy percent."),
     defend_scaled_fail_mid_numerator => (2, "multiplier", 0, 10, "borg_fight_defend.rs:171", "Defend scaled fail mid numerator: existing policy multiplier."),
@@ -996,22 +1257,22 @@ parameters! {
     defend_banish_evil_morgoth_hp => (350, "hp", 0, 10000, "borg_fight_defend.rs:2706", "Defend banish evil morgoth hp: existing policy hp."),
     defend_see_invis_max_age => (45, "turns", 1, 90, "borg_fight_defend.rs:2735", "Defend see invis max age: existing policy turns."),
     defend_see_invis_max_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_defend.rs:2740", "Defend see invis max danger multiplier: existing policy multiplier."),
-    defend_see_invis_value => (10, "score", 0, 100000, "borg_fight_defend.rs:2767", "Defend see invis value: existing policy score."),
-    defend_see_invis_short_duration => (3000, "duration", 0, 32767, "borg_fight_defend.rs:2784", "Defend see invis short duration: existing policy duration."),
+    defend_see_invis_value => (10, "score", 0, 100000, "borg_fight_defend.rs:2755", "Defend see invis value: existing policy score."),
+    defend_see_invis_short_duration => (3000, "duration", 0, 32767, "borg_fight_defend.rs:2801", "Defend see invis short duration: existing policy duration."),
     defend_see_invis_spell_duration => (18000, "duration", 0, 32767, "borg_fight_defend.rs:2788", "Defend see invis spell duration: existing policy duration."),
     defend_see_invis_potion_duration => (30000, "duration", 0, 32767, "borg_fight_defend.rs:2794", "Defend see invis potion duration: existing policy duration."),
-    defend_light_beam_max_invis_age => (48, "turns", 1, 96, "borg_fight_defend.rs:2817", "Defend light beam max invis age: existing policy turns."),
+    defend_light_beam_max_invis_age => (48, "turns", 1, 96, "borg_fight_defend.rs:2851", "Defend light beam max invis age: existing policy turns."),
     defend_light_beam_danger_numerator => (3, "multiplier", 0, 10, "borg_fight_defend.rs:2870", "Defend light beam danger numerator: existing policy multiplier."),
     defend_light_beam_danger_divisor => (4, "divisor", 1, 1000, "borg_fight_defend.rs:2870", "Defend light beam danger divisor: existing policy divisor."),
     defend_light_beam_value => (10, "score", 0, 100000, "borg_fight_defend.rs:2881", "Defend light beam value: existing policy score."),
-    defend_panel_shift_min_depth => (70, "depth", 0, 127, "borg_fight_defend.rs:2917", "Defend panel shift min depth: existing policy depth."),
+    defend_panel_shift_min_depth => (70, "depth", 0, 127, "borg_fight_defend.rs:2951", "Defend panel shift min depth: existing policy depth."),
     defend_panel_shift_edge_distance => (5, "grids", 1, 20, "borg_fight_defend.rs:2940", "Defend panel shift edge distance: existing policy grids."),
     defend_panel_shift_max_age => (10, "turns", 1, 20, "borg_fight_defend.rs:2977", "Defend panel shift max age: existing policy turns."),
     defend_panel_shift_morgoth_max_age => (10, "turns", 1, 20, "borg_fight_defend.rs:2978", "Defend panel shift morgoth max age: existing policy turns."),
-    defend_panel_shift_antisummon_min_age => (50, "turns", 1, 100, "borg_fight_defend.rs:3020", "Defend panel shift antisummon min age: existing policy turns."),
-    defend_panel_shift_teleport_fail => (30, "percent", 0, 100, "borg_fight_defend.rs:3038", "Defend panel shift teleport fail: existing policy percent."),
+    defend_panel_shift_antisummon_min_age => (50, "turns", 1, 100, "borg_fight_defend.rs:3054", "Defend panel shift antisummon min age: existing policy turns."),
+    defend_panel_shift_teleport_fail => (30, "percent", 0, 100, "borg_fight_defend.rs:3072", "Defend panel shift teleport fail: existing policy percent."),
     defend_panel_shift_value => (200, "score", 0, 100000, "borg_fight_defend.rs:3082", "Defend panel shift value: existing policy score."),
-    defend_teleport_morgoth_min_glyphs => (10, "count", 0, 255, "borg_fight_defend.rs:3121", "Defend teleport morgoth min glyphs: existing policy count."),
+    defend_teleport_morgoth_min_glyphs => (10, "count", 0, 255, "borg_fight_defend.rs:3155", "Defend teleport morgoth min glyphs: existing policy count."),
     defend_teleport_morgoth_value_cap => (1000, "score", 0, 100000, "borg_fight_defend.rs:3199", "Defend teleport morgoth value cap: existing policy score."),
     defend_teleport_distance => (7, "grids", 1, 20, "borg_fight_defend.rs:3313", "Defend teleport distance: existing policy grids."),
     defend_teleport_min_count => (7, "count", 0, 255, "borg_fight_defend.rs:3322", "Defend teleport min count: existing policy count."),
@@ -1020,34 +1281,34 @@ parameters! {
     defend_smite_max_distance => (5, "grids", 1, 20, "borg_fight_defend.rs:3430", "Defend smite max distance: existing policy grids."),
     defend_smite_simulated_value => (500, "score", 0, 100000, "borg_fight_defend.rs:3452", "Defend smite simulated value: existing policy score."),
     defend_smite_value => (200, "score", 0, 100000, "borg_fight_defend.rs:3469", "Defend smite value: existing policy score."),
-    defend_refresh_resistance_horizon => (2, "turns", 1, 10, "borg_fight_defend.rs:3532", "Defend refresh resistance horizon: existing policy turns."),
+    defend_refresh_resistance_horizon => (2, "turns", 1, 10, "borg_fight_defend.rs:3566", "Defend refresh resistance horizon: existing policy turns."),
     defend_refresh_resistance_duration => (25000, "duration", 0, 32767, "borg_fight_defend.rs:3553", "Defend refresh resistance duration: existing policy duration."),
 
     // borg-reborn-rs (#242): item_use source at 5d9abb8f.
-    item_use_ccw_recent_window => (4, "turns", 1, 10, "borg_item_use.rs:148", "Item_Use ccw recent window: existing policy turns."),
-    item_use_ccw_recent_skip_chance => (75, "percent", 0, 100, "borg_item_use.rs:148", "Item_Use ccw recent skip chance: existing policy percent."),
-    item_use_ccw_min_stock => (2, "count", 0, 255, "borg_item_use.rs:153", "Item_Use ccw min stock: existing policy count."),
-    item_use_food_heal_critical_hp => (4, "hp", 0, 10000, "borg_item_use.rs:423", "Item_Use food heal critical hp: existing policy hp."),
-    item_use_rod_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:461", "Item_Use rod equip max failure: existing policy permille."),
-    item_use_rod_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:494", "Item_Use rod use max failure: existing policy permille."),
-    item_use_staff_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:586", "Item_Use staff use max failure: existing policy permille."),
-    item_use_staff_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:641", "Item_Use staff equip max failure: existing policy permille."),
-    item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:650", "Item_Use staff teleport max failure: existing policy permille."),
-    item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:748", "Item_Use ring equip max failure: existing policy permille."),
-    item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:867", "Item_Use dragon equip max failure: existing policy permille."),
+    item_use_ccw_recent_window => (4, "turns", 1, 10, "borg_item_use.rs:120", "Item_Use ccw recent window: existing policy turns."),
+    item_use_ccw_recent_skip_chance => (75, "percent", 0, 100, "borg_item_use.rs:120", "Item_Use ccw recent skip chance: existing policy percent."),
+    item_use_ccw_min_stock => (2, "count", 0, 255, "borg_item_use.rs:125", "Item_Use ccw min stock: existing policy count."),
+    item_use_food_heal_critical_hp => (4, "hp", 0, 10000, "borg_item_use.rs:343", "Item_Use food heal critical hp: existing policy hp."),
+    item_use_rod_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:381", "Item_Use rod equip max failure: existing policy permille."),
+    item_use_rod_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:414", "Item_Use rod use max failure: existing policy permille."),
+    item_use_staff_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:487", "Item_Use staff use max failure: existing policy permille."),
+    item_use_staff_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:545", "Item_Use staff equip max failure: existing policy permille."),
+    item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:554", "Item_Use staff teleport max failure: existing policy permille."),
+    item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:655", "Item_Use ring equip max failure: existing policy permille."),
+    item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:777", "Item_Use dragon equip max failure: existing policy permille."),
     item_use_unholy_min_hp => (90, "hp", 0, 10000, "borg_item_use.rs:1010", "Item_Use unholy min hp: existing policy hp."),
-    item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1179", "Item_Use recharge wand max charges: existing policy count."),
-    item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1196", "Item_Use recharge staff max charges: existing policy count."),
-    item_use_recharge_stacked_min_charges => (1, "count", 0, 255, "borg_item_use.rs:1208", "Item_Use recharge stacked min charges: existing policy count."),
-    item_use_recharge_low_charges => (2, "count", 0, 255, "borg_item_use.rs:1188", "Item_Use recharge low charges: existing policy count."),
-    item_use_recharge_fail => (96, "percent", 0, 100, "borg_item_use.rs:1189", "Item_Use recharge fail: existing policy percent."),
-    item_use_teleport_staff_min_charges => (3, "count", 0, 255, "borg_item_use.rs:1201", "Item_Use teleport staff min charges: existing policy count."),
-    item_use_recharge_min_total_stock => (4, "count", 0, 255, "borg_item_use.rs:1208", "Item_Use recharge min total stock: existing policy count."),
+    item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1097", "Item_Use recharge wand max charges: existing policy count."),
+    item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1114", "Item_Use recharge staff max charges: existing policy count."),
+    item_use_recharge_stacked_min_charges => (1, "count", 0, 255, "borg_item_use.rs:1126", "Item_Use recharge stacked min charges: existing policy count."),
+    item_use_recharge_low_charges => (2, "count", 0, 255, "borg_item_use.rs:1106", "Item_Use recharge low charges: existing policy count."),
+    item_use_recharge_fail => (96, "percent", 0, 100, "borg_item_use.rs:1107", "Item_Use recharge fail: existing policy percent."),
+    item_use_teleport_staff_min_charges => (3, "count", 0, 255, "borg_item_use.rs:1119", "Item_Use teleport staff min charges: existing policy count."),
+    item_use_recharge_min_total_stock => (4, "count", 0, 255, "borg_item_use.rs:1126", "Item_Use recharge min total stock: existing policy count."),
 
     // borg-reborn-rs (#243): power source at 5d9abb8f.
-    power_activation_tele_other_mage_base => (500, "score", 0, 100000, "borg_power.rs:109", "Power activation tele other mage base: existing policy score."),
-    power_activation_tele_other_base => (500, "score", 0, 100000, "borg_power.rs:109", "Power activation tele other base: existing policy score."),
-    power_activation_tele_other_nonmage_bonus => (500, "score", 0, 100000, "borg_power.rs:109", "Power activation tele other nonmage bonus: existing policy score."),
+    power_activation_tele_other_mage_base => (500, "score", 0, 100000, "borg_power.rs:111", "Power activation tele other mage base: existing policy score."),
+    power_activation_tele_other_base => (500, "score", 0, 100000, "borg_power.rs:111", "Power activation tele other base: existing policy score."),
+    power_activation_tele_other_nonmage_bonus => (500, "score", 0, 100000, "borg_power.rs:111", "Power activation tele other nonmage bonus: existing policy score."),
     power_activation_remove_fear_caster_base => (500, "score", 0, 100000, "borg_power.rs:111", "Power activation remove fear caster base: existing policy score."),
     power_activation_remove_fear_base => (500, "score", 0, 100000, "borg_power.rs:113", "Power activation remove fear base: existing policy score."),
     power_activation_remove_fear_noncaster_bonus => (200, "score", 0, 100000, "borg_power.rs:113", "Power activation remove fear noncaster bonus: existing policy score."),
@@ -2089,7 +2350,7 @@ parameters! {
     sell_gold_greed_ceiling => (25000, "gold", 0, 1000000, "borg_store_sell.rs:1241", "sell gold greed ceiling: inherited policy; neutral default."),
     sell_gold_greed_deep_depth => (50, "depth", 0, 127, "borg_store_sell.rs:1242", "sell gold greed deep depth: inherited policy; neutral default."),
     sell_gold_greed_deep_value => (75000, "gold", 0, 1000000, "borg_store_sell.rs:1243", "sell gold greed deep value: inherited policy; neutral default."),
-    sell_gold_greed_divisor => (100, "divisor", 1, 10000, "borg_store_sell.rs:1228", "sell gold greed divisor: inherited policy; neutral default."),
+    sell_gold_greed_divisor => (100, "divisor", 1, 10000, "borg_store_sell.rs:1221", "sell gold greed divisor: inherited policy; neutral default."),
     sell_gold_greed_floor => (1000, "gold", 0, 1000000, "borg_store_sell.rs:1241", "sell gold greed floor: inherited policy; neutral default."),
     sell_gold_greed_level_10 => (10, "level", 1, 50, "borg_store_sell.rs:1257", "sell gold greed level 10: inherited policy; neutral default."),
     sell_gold_greed_level_13 => (13, "level", 1, 50, "borg_store_sell.rs:1254", "sell gold greed level 13: inherited policy; neutral default."),
@@ -2104,7 +2365,7 @@ parameters! {
     sell_mana_reserve_min_sp => (100, "sp", 0, 10000, "borg_store_sell.rs:917", "sell mana reserve min sp: inherited policy; neutral default."),
     sell_mapping_rod_reserve_count => (2, "count", 0, 255, "borg_store_sell.rs:1023", "sell mapping rod reserve count: inherited policy; neutral default."),
     sell_unidentified_max_level => (10, "level", 1, 50, "borg_store_sell.rs:898", "sell unidentified max level: inherited policy; neutral default."),
-    sell_value_cap => (30000, "gold", 0, 1000000, "borg_store_sell.rs:131", "sell value cap: inherited policy; neutral default."),
+    sell_value_cap => (30000, "gold", 0, 1000000, "borg_store_sell.rs:133", "sell value cap: inherited policy; neutral default."),
     shopping_emergency_light_max_level => (10, "level", 1, 50, "borg_think_store.rs:235", "shopping emergency light max level: inherited policy; neutral default."),
     shopping_light_min_gold => (100, "gold", 0, 1000000, "borg_think_store.rs:224", "shopping light min gold: inherited policy; neutral default."),
     shopping_max_bounces => (1350, "count", 0, 30000, "borg_think_store.rs:203", "shopping max bounces: inherited policy; neutral default."),
@@ -2136,6 +2397,29 @@ parameters! {
     sell_unidentified_ego_min_copies => (2, "count", 1, 99, "borg_store_sell.rs:956", "sell unidentified ego min copies: inherited policy; neutral default."),
     shopping_upgrade_light_radius => (1, "grids", 1, 5, "borg_think_store.rs:224", "shopping upgrade light radius: inherited policy; neutral default."),
 
+    // borg-reborn-rs (#680): enchant/decurse policy, neutral inherited defaults.
+    decurse_spell_fail => (40, "percent", 0, 100, "borg_item_decurse.rs:65", "Maximum acceptable Remove Curse spell failure rate."),
+    enchant_spell_fail => (65, "percent", 0, 100, "borg_item_enchant.rs:98", "Maximum acceptable enchant spell failure rate, for availability and casting."),
+    enchant_brand_spell_fail => (65, "percent", 0, 100, "borg_item_enchant.rs:486", "Maximum acceptable Brand Ammunition spell failure rate."),
+    enchant_plain_target => (8, "bonus", 0, 20, "borg_item_enchant.rs:96", "Target bonus without an acceptable spell or star-enchant scroll."),
+    enchant_ammo_target => (10, "bonus", 0, 20, "borg_item_enchant.rs:391", "Ammo target with an acceptable spell or star-enchant scroll; equipment keeps BORG_ENCHANT_LIMIT."),
+    enchant_min_shooter_power => (3, "multiplier", 0, 10, "borg_item_enchant.rs:318", "Minimum launcher multiplier to enchant a plain bow or ammunition; other ego/artifact gates unchanged."),
+    enchant_ammo_min_quantity => (5, "count", 1, 255, "borg_item_enchant.rs:373", "Minimum ammunition stack eligible for enchantment."),
+    enchant_brand_min_quantity => (20, "count", 1, 255, "borg_item_enchant.rs:447", "Minimum ammunition stack eligible for branding."),
+    enchant_dungeon_max_turns => (5500, "turns", 0, 100000, "borg_item_enchant.rs:507", "Elapsed level-turn cutoff before dungeon curse removal; strict greater-than comparison."),
+    enchant_town_max_turns => (3501, "turns", 0, 100000, "borg_item_enchant.rs:508", "Elapsed level-turn cutoff before town curse removal and enchantment; strict greater-than comparison."),
+}
+
+/// borg-reborn-rs (#520): the class names, `class.txt` order (`cidx`).
+pub(crate) const CLASSES: [&str; 9] =
+    ["warrior", "mage", "druid", "priest", "necromancer", "paladin", "rogue", "ranger", "blackguard"];
+
+/// A class's own value of a parameter (`<name>@<class>`, a class file, or a
+/// legacy `<name>_<class>` alias).
+#[derive(Serialize)]
+struct ClassValue {
+    value: i32,
+    origin: &'static str,
 }
 
 #[derive(Serialize)]
@@ -2144,22 +2428,172 @@ struct Setting<'a> {
     spec: &'a Spec,
     value: i32,
     origin: &'static str,
+    /// borg-reborn-rs (#520): per-class values, by class name.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    class_values: BTreeMap<&'static str, ClassValue>,
 }
 
-static VALUES: OnceLock<Vec<i32>> = OnceLock::new();
+#[derive(Clone, Copy)]
+struct Resolved {
+    value: i32,
+    origin: &'static str,
+    class: [Option<(i32, &'static str)>; 9],
+}
 
-/// Pure lookup after init; isolated decision tests use the same defaults.
-pub fn value(param: Param) -> i32 {
+static VALUES: OnceLock<Vec<Resolved>> = OnceLock::new();
+
+/// borg-reborn-rs (#520): the character's class (`cidx`), -1 while none is
+/// known. Set when the parameters load and whenever the Borg notices its
+/// race and class (start and reincarnation).
+static CLASS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// borg-reborn-rs (#520): the class whose values `value` returns.
+pub(crate) fn set_class(class: i32) {
+    CLASS.store(class, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn current_class() -> Option<usize> {
+    let class = usize::try_from(CLASS.load(std::sync::atomic::Ordering::Relaxed)).ok()?;
+    (class < CLASSES.len()).then_some(class)
+}
+
+fn pick(r: &Resolved, class: Option<usize>) -> (i32, &'static str) {
+    class.and_then(|c| r.class[c]).unwrap_or((r.value, r.origin))
+}
+
+fn compiled_default(spec: &Spec, class: Option<usize>) -> i32 {
+    spec.class_defaults.and_then(|defaults| class.map(|class| defaults[class])).unwrap_or(spec.default)
+}
+
+pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
+    if let Some(v) = breeder_policy_switch(param) {
+        return (v, "caution_breeder_policy");
+    }
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| values[i])
+    VALUES.get().map_or_else(|| (compiled_default(&SPECS[i], current_class()), "default"), |values| pick(&values[i], current_class()))
 }
+
+/// Pure lookup after init: the current class's value when it has one, else
+/// the common one. Isolated decision tests use the same defaults.
+pub fn value(param: Param) -> i32 {
+    if let Some(v) = breeder_policy_switch(param) {
+        return v;
+    }
+    let i = param as usize;
+    VALUES.get().map_or_else(|| compiled_default(&SPECS[i], current_class()), |values| pick(&values[i], current_class()).0)
+}
+
+/// borg-reborn-rs (#722): the layer of `caution_breeder_policy` that turns
+/// each breeder switch on (`None`: not one of them).
+fn breeder_policy_layer(param: Param) -> Option<i32> {
+    match param {
+        Param::caution_breeder_fight | Param::danger_hunt_breeder_no_acid_fear => Some(1),
+        Param::recover_rest_breeders => Some(2),
+        Param::caution_breeder_stoppable => Some(3),
+        Param::caution_breeder_avoid => Some(4),
+        Param::caution_breeder_exit => Some(5),
+        _ => None,
+    }
+}
+
+/// borg-reborn-rs (#722): with `caution_breeder_policy` 0..5, the breeder
+/// switches follow it (each on from its layer); at -1 (compiled) they are
+/// read as set.
+fn breeder_policy_switch(param: Param) -> Option<i32> {
+    let layer = breeder_policy_layer(param)?;
+    let i = Param::caution_breeder_policy as usize;
+    let policy = VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i], current_class()).0);
+    applied_breeder_layer(policy, layer)
+}
+
+fn applied_breeder_layer(policy: i32, layer: i32) -> Option<i32> {
+    (policy >= 0).then(|| i32::from(policy >= layer))
+}
+
+/// borg-reborn-rs (#520): the per-class names of the families that #520
+/// folded into one parameter, accepted as aliases of `<name>@<class>`. A
+/// value equal to the family's old "use the general value" sentinel sets no
+/// class value (divisor and curve scale 0, reserve -1).
+fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
+    let spec = |n: &str| SPECS.iter().find(|s| s.name == n);
+    for (c, class) in CLASSES.iter().enumerate() {
+        if let Some(fam) = name.strip_prefix(&format!("attack_preference_{class}_")).and_then(|r| r.strip_suffix("_permille")) {
+            return spec(&format!("attack_preference_{fam}_permille")).map(|s| (s, c, None));
+        }
+        for (base, sentinel) in [
+            ("attack_arrow_point_blank_divisor", 0),
+            ("town_heal_curve_scale_percent", 0),
+            ("town_heal_reserve_hp_percent", -1),
+        ] {
+            if name == format!("{base}_{class}") {
+                return spec(base).map(|s| (s, c, Some(sentinel)));
+            }
+        }
+    }
+    None
+}
+
+/// A setting's name: the parameter, its class if any, and the alias's
+/// "general value" sentinel.
+fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    // #696: `<name>__<class>` is `<name>@<class>` in the characters a zoo
+    // profile can write (`[A-Za-z0-9_.-]`); no parameter name has `__`.
+    let at;
+    let name = match name.rsplit_once("__") {
+        Some((base, class)) if !name.contains('@') && CLASSES.contains(&class) => {
+            at = format!("{base}@{class}");
+            at.as_str()
+        }
+        _ => name,
+    };
+    if let Some((base, class)) = name.split_once('@') {
+        let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
+        let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
+        return Ok((spec, Some(c), None));
+    }
+    if let Some(spec) = SPECS.iter().find(|s| s.name == name) {
+        return Ok((spec, None, None));
+    }
+    legacy_alias(name).map(|(s, c, sentinel)| (s, Some(c), sentinel)).ok_or(format!("unknown parameter {name}"))
+}
+
+/// The environment's name for a setting: `BORG_PARAM_<NAME>` with the class
+/// as `__<CLASS>` (shells cannot export a name with `@`); `@` and the
+/// legacy aliases are accepted too. Upper case only, as before #520: a
+/// lower-case name is an unknown parameter, not a silent match.
+fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if name != name.to_ascii_uppercase() {
+        return Err(format!("unknown parameter {name}"));
+    }
+    let lower = name.to_ascii_lowercase();
+    if let Some((base, class)) = lower.rsplit_once("__") {
+        if CLASSES.contains(&class) {
+            return split_name(&format!("{base}@{class}"));
+        }
+    }
+    split_name(&lower)
+}
+
+/// #768: allow an existing profile to load after the errands cap was removed.
+fn retired_depth_cap(name: &str) -> bool {
+    let base = match name.rsplit_once("__").or_else(|| name.rsplit_once('@')) {
+        Some((base, class)) if CLASSES.contains(&class) => base,
+        _ => name,
+    };
+    matches!(base, "prepared_depth_plan" | "prepared_depth_early_levels_per_dl"
+        | "prepared_depth_early_until_level" | "prepared_depth_late_levels_below")
+}
+
+type Key = (&'static str, Option<usize>);
 
 fn parse<'a>(
     text: &str,
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
-    let mut file = BTreeMap::new();
+    let mut had_depth_cap = false;
+    // (parameter, class) -> (raw value, alias sentinel)
+    let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
         let raw = raw.split('#').next().unwrap_or("").trim();
         if !raw.starts_with("borg_param_") {
@@ -2169,47 +2603,62 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
-        if !specs.iter().any(|s| s.name == name) {
-            return Err(format!("unknown borg_param_{name}"));
+        if retired_depth_cap(name) {
+            had_depth_cap = true;
+            continue;
         }
-        if file.insert(name, value.trim()).is_some() {
+        let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
+        if file.insert((spec.name, class), (value.trim().to_string(), sentinel)).is_some() {
             return Err(format!("duplicate borg_param_{name}"));
         }
     }
-    for name in env.keys() {
-        if !specs.iter().any(|s| s.name.to_ascii_uppercase() == *name) {
-            return Err(format!("unknown BORG_PARAM_{name}"));
+    let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
+    for (name, value) in env {
+        if *name == name.to_ascii_uppercase() && retired_depth_cap(&name.to_ascii_lowercase()) {
+            had_depth_cap = true;
+            continue;
+        }
+        let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
+        if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
+            return Err(format!("duplicate BORG_PARAM_{name}"));
         }
     }
-    let settings: Vec<Setting<'_>> = specs
-        .iter()
-        .map(|spec| {
-            let (raw, origin) = if let Some(raw) = env.get(&spec.name.to_ascii_uppercase()) {
-                (Some(raw.as_str()), "environment")
-            } else if let Some(raw) = file.get(spec.name) {
-                (Some(*raw), "borg.txt")
-            } else {
-                (None, "default")
-            };
-            let value = match raw {
-                Some(raw) => raw
-                    .parse::<i32>()
-                    .map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?,
-                None => spec.default,
-            };
-            if !(spec.min..=spec.max).contains(&value) {
-                return Err(format!(
-                    "{}: {value} outside {}..={} {}",
-                    spec.name, spec.min, spec.max, spec.unit
-                ));
+    if had_depth_cap {
+        eprintln!("borg-reborn-rs: ignoring retired preparedness depth cap settings (#768)");
+    }
+    let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
+        let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
+        if !(spec.min..=spec.max).contains(&value) {
+            return Err(format!("{}: {value} outside {}..={} {}", spec.name, spec.min, spec.max, spec.unit));
+        }
+        Ok(value)
+    };
+    let mut settings = Vec::with_capacity(specs.len());
+    for spec in specs {
+        let (value, origin) = if let Some((raw, _)) = envs.get(&(spec.name, None)) {
+            (check(spec, raw)?, "environment")
+        } else if let Some((raw, _)) = file.get(&(spec.name, None)) {
+            (check(spec, raw)?, "borg.txt")
+        } else {
+            (spec.default, "default")
+        };
+        let mut class_values = BTreeMap::new();
+        for (c, class) in CLASSES.iter().enumerate() {
+            let found = envs.get(&(spec.name, Some(c))).map(|v| (v, "environment"))
+                .or_else(|| file.get(&(spec.name, Some(c))).map(|v| (v, "borg.txt")));
+            if let Some(((raw, sentinel), class_origin)) = found {
+                let raw = raw.trim();
+                // An alias at its old "general value" sentinel sets nothing.
+                if sentinel.is_some() && raw.parse::<i32>().ok() == *sentinel {
+                    continue;
+                }
+                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin: class_origin });
+            } else if let Some(defaults) = spec.class_defaults.filter(|_| origin == "default") {
+                class_values.insert(*class, ClassValue { value: defaults[c], origin: "default" });
             }
-            Ok(Setting {
-                spec,
-                value,
-                origin,
-            })
-        })
-        .collect::<Result<_, String>>()?;
+        }
+        settings.push(Setting { spec, value, origin, class_values });
+    }
     let value = |name: &str| settings.iter().find(|s| s.spec.name == name).map(|s| s.value);
     for (low, high) in [
         ("sell_gold_greed_floor", "sell_gold_greed_ceiling"),
@@ -2226,11 +2675,25 @@ fn parse<'a>(
     Ok(settings)
 }
 
+fn resolve(settings: &[Setting<'_>]) -> Vec<Resolved> {
+    settings
+        .iter()
+        .map(|s| {
+            let mut class = [None; 9];
+            for (c, name) in CLASSES.iter().enumerate() {
+                class[c] = s.class_values.get(name).map(|v| (v.value, v.origin));
+            }
+            Resolved { value: s.value, origin: s.origin, class }
+        })
+        .collect()
+}
+
 /// Called before initialization consumes RNG or makes decisions. Configuration
-/// is immutable for the process, including reincarnations and core switches.
+/// is immutable for the process, including reincarnations and core switches;
+/// which class's values apply follows the character (`set_class`, #520).
 pub(crate) fn initialize() {
     VALUES.get_or_init(|| {
-        let result = (|| -> Result<Vec<i32>, String> {
+        let result = (|| -> Result<Vec<Resolved>, String> {
             let text = crate::shell::borg_txt_contents()?;
             let mut env = BTreeMap::new();
             for (name, value) in std::env::vars_os() {
@@ -2248,18 +2711,113 @@ pub(crate) fn initialize() {
                 json.push(b'\n');
                 std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
             }
-            Ok(settings.iter().map(|s| s.value).collect())
+            Ok(resolve(&settings))
         })();
         result.unwrap_or_else(|e| {
             eprintln!("borg-reborn-rs: core parameters: {e}");
             std::process::exit(2)
         })
     });
+    if let Some(class) = crate::engine::class_cidx_if_set() {
+        set_class(class as i32);
+    }
+}
+
+#[derive(Serialize)]
+struct SettingsReceipt {
+    schema: &'static str,
+    class_index: usize,
+    class_name: &'static str,
+    effective_settings: BTreeMap<&'static str, i32>,
+}
+
+fn settings_receipt(values: &[Resolved], class: usize) -> SettingsReceipt {
+    let class_index = Some(class);
+    let policy = pick(&values[Param::caution_breeder_policy as usize], class_index).0;
+    let effective_settings = PARAMETERS.iter().filter_map(|&param| {
+        let spec = &SPECS[param as usize];
+        let value = breeder_policy_layer(param).and_then(|layer| applied_breeder_layer(policy, layer))
+            .unwrap_or_else(|| pick(&values[param as usize], class_index).0);
+        (value != compiled_default(spec, Some(class))).then_some((spec.name, value))
+    }).collect();
+    SettingsReceipt {
+        schema: "borg-settings-resolved@1",
+        class_index: class,
+        class_name: CLASSES[class],
+        effective_settings,
+    }
+}
+
+/// Write after birth (or load), once the active class is known. The run
+/// directory holds the current character's receipt, including after rebirth.
+pub(crate) fn write_settings_receipt() {
+    let (Some(dir), Some(values), Some(class)) = (
+        std::env::var_os("BORG_RUN_DIR"), VALUES.get(), current_class(),
+    ) else {
+        return;
+    };
+    let path = std::path::PathBuf::from(dir).join("settings-resolved.json");
+    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
+        let mut json = serde_json::to_vec_pretty(&settings_receipt(values, class))?;
+        json.push(b'\n');
+        std::fs::write(&path, json)?;
+        Ok(())
+    })();
+    if let Err(e) = result {
+        eprintln!("borg-reborn-rs: {}: {e}", path.display());
+        std::process::exit(2);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn enchant_decurse_bounds_precedence_and_provenance() {
+        let names = ["decurse_spell_fail", "enchant_spell_fail", "enchant_brand_spell_fail",
+            "enchant_plain_target", "enchant_ammo_target", "enchant_min_shooter_power",
+            "enchant_ammo_min_quantity", "enchant_brand_min_quantity",
+            "enchant_dungeon_max_turns", "enchant_town_max_turns"];
+        for name in names {
+            let spec = SPECS.iter().find(|s| s.name == name).unwrap();
+            for value in [spec.min - 1, spec.max + 1] {
+                assert!(parse(&format!("borg_param_{name} = {value}"), &BTreeMap::new(), SPECS).is_err());
+            }
+            for value in [spec.min, spec.default, spec.max] {
+                let env = BTreeMap::from([(name.to_uppercase(), value.to_string())]);
+                let parsed = parse(&format!("borg_param_{name} = {}", spec.min), &env, SPECS).unwrap();
+                let row = parsed.iter().find(|s| s.spec.name == name).unwrap();
+                assert_eq!((row.value, row.origin), (value, "environment"));
+                let json = serde_json::to_value(row).unwrap();
+                assert_eq!(json["name"], name);
+                assert_eq!(json["default"], spec.default);
+                assert_eq!(json["value"], value);
+            }
+        }
+    }
+
+    #[test]
+    fn birth_receipt_resolves_class_overrides_and_omits_compiled_defaults() {
+        let settings = parse(
+            "borg_param_town_phase_reserve = 1\n\
+             borg_param_town_phase_reserve__ranger = 2\n\
+             borg_param_town_phase_reserve__mage = 0\n\
+             borg_param_caution_breeder_policy__ranger = 0\n",
+            &BTreeMap::new(), SPECS,
+        ).unwrap();
+        let values = resolve(&settings);
+        let ranger = serde_json::to_value(settings_receipt(&values, 7)).unwrap();
+        assert_eq!(ranger["class_index"], 7);
+        assert_eq!(ranger["class_name"], "ranger");
+        assert_eq!(ranger["effective_settings"]["town_phase_reserve"], 2);
+        assert_eq!(ranger["effective_settings"]["caution_breeder_policy"], 0);
+        assert!(ranger["effective_settings"].get("town_phase_reserve_percent").is_none());
+        assert_eq!(settings_receipt(&values, 0).effective_settings["town_phase_reserve"], 1);
+        assert!(!settings_receipt(&values, 1).effective_settings.contains_key("town_phase_reserve"));
+        assert!(settings_receipt(&resolve(&parse("", &BTreeMap::new(), SPECS).unwrap()), 7)
+            .effective_settings.is_empty());
+    }
 
     #[test]
     fn inventory_bounds_reject_unsafe_quantity_rng_and_ordering() {
@@ -2300,6 +2858,99 @@ mod tests {
         assert!(parse("borg_param_sell_gold_greed_floor = 30000", &env, SPECS).is_ok());
     }
 
+    /// #520: the class value of a setting and its origin.
+    fn class_value(settings: &[Setting<'_>], p: Param, class: &str) -> Option<(i32, &'static str)> {
+        settings[p as usize].class_values.get(class).map(|v| (v.value, v.origin))
+    }
+
+    #[test]
+    fn attack_preferences_validate_bounds_and_record_override_provenance() {
+        // #520: the legacy per-class name is an alias of `<name>@<class>`.
+        let legacy = "attack_preference_mage_spell_permille";
+        let p = Param::attack_preference_spell_permille;
+        for name in [legacy, "attack_preference_spell_permille@mage"] {
+            for bad in ["499", "2001", "1.5", "no", "2147483648"] {
+                assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err(), "{name} {bad}");
+            }
+            for valid in [500, 1000, 2000] {
+                let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+                assert_eq!(class_value(&values, p, "mage"), Some((valid, "borg.txt")));
+                assert_eq!((values[p as usize].value, values[p as usize].origin), (1000, "default"), "the common value stays");
+                assert_eq!(class_value(&values, p, "warrior"), None);
+            }
+        }
+        let env = BTreeMap::from([("ATTACK_PREFERENCE_MAGE_SPELL_PERMILLE".into(), "1600".into())]);
+        let values = parse(&format!("borg_param_{legacy} = 1500"), &env, SPECS).unwrap();
+        assert_eq!(class_value(&values, p, "mage"), Some((1600, "environment")));
+        let json = serde_json::to_value(&values[p as usize]).unwrap();
+        assert_eq!(json["name"], "attack_preference_spell_permille");
+        assert_eq!(json["unit"], "utility_permille");
+        assert_eq!(json["default"], 1000);
+        assert_eq!(json["class_values"]["mage"]["value"], 1600);
+        assert_eq!(json["class_values"]["mage"]["origin"], "environment");
+        // The same class value twice, by either name, is a duplicate.
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_{legacy} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_attack_preference_spell_permille@mage = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_preference_spell_permille@wizard = 1000", &BTreeMap::new(), SPECS).is_err());
+        // #696: `<name>__<class>` is `<name>@<class>`, for every parameter.
+        let d = Param::town_devices_percent;
+        let values = parse("borg_param_town_devices_percent__mage = 150", &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!(class_value(&values, d, "mage"), Some((150, "borg.txt")));
+        assert_eq!(values[d as usize].value, 100, "the common value stays");
+        assert!(parse("borg_param_town_devices_percent__mage = 150\nborg_param_town_devices_percent@mage = 140", &BTreeMap::new(), SPECS).is_err(), "a duplicate");
+        assert!(parse("borg_param_town_devices_percent__wizard = 150", &BTreeMap::new(), SPECS).is_err());
+    }
+
+    /// #520: precedence (default < borg.txt < class line < environment <
+    /// class environment), the `__CLASS` environment form, and the legacy
+    /// aliases' "general value" sentinels.
+    #[test]
+    fn class_values_override_the_common_value() {
+        let p = Param::town_heal_reserve_hp_percent;
+        let text = "borg_param_town_heal_reserve_hp_percent = 100\nborg_param_town_heal_reserve_hp_percent@mage = 300\nborg_param_town_heal_reserve_hp_percent_warrior = 50";
+        let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (100, "borg.txt"));
+        assert_eq!(class_value(&values, p, "mage"), Some((300, "borg.txt")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        let env = BTreeMap::from([
+            ("TOWN_HEAL_RESERVE_HP_PERCENT".into(), "120".into()),
+            ("TOWN_HEAL_RESERVE_HP_PERCENT__MAGE".into(), "250".into()),
+        ]);
+        let values = parse(text, &env, SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (120, "environment"));
+        assert_eq!(class_value(&values, p, "mage"), Some((250, "environment")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        // The old "use the general value" sentinels set no class value.
+        for text in ["borg_param_town_heal_reserve_hp_percent_mage = -1",
+                     "borg_param_town_heal_curve_scale_percent_mage = 0",
+                     "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
+            let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+            assert!(
+                values.iter().all(|s| s.class_values.values().all(|v| v.origin == "default")),
+                "{text}"
+            );
+        }
+        // #534 review: environment names stay upper case.
+        let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
+        assert!(parse("", &lower, SPECS).is_err());
+        let lower_class = BTreeMap::from([("TOWN_HEAL_RESERVE_HP_PERCENT__mage".into(), "100".into())]);
+        assert!(parse("", &lower_class, SPECS).is_err());
+        // Without the alias, the sentinel is out of range.
+        assert!(parse("borg_param_town_heal_reserve_hp_percent@mage = -1", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_arrow_point_blank_divisor_ranger = 2", &BTreeMap::new(), SPECS).is_ok());
+    }
+
+    /// #520: `pick` returns the current class's value, else the common one.
+    #[test]
+    fn lookup_follows_the_class() {
+        let mut class = [None; 9];
+        class[1] = Some((300, "borg.txt"));
+        let r = Resolved { value: 100, origin: "borg.txt", class };
+        assert_eq!(pick(&r, None), (100, "borg.txt"));
+        assert_eq!(pick(&r, Some(1)), (300, "borg.txt"));
+        assert_eq!(pick(&r, Some(0)), (100, "borg.txt"));
+    }
 
     #[test]
     fn m13_defaults_preserve_healing_fixes_and_retire_removed_branches() {
@@ -2320,6 +2971,62 @@ mod tests {
     }
 
     #[test]
+    fn dive_gates_ship_compiled_class_defaults_and_accept_overrides() {
+        let compiled = parse("", &BTreeMap::new(), SPECS).unwrap();
+        let shipped = parse(include_str!("../../harness/borg.txt"), &BTreeMap::new(), SPECS).unwrap();
+        for (param, expected) in [
+            (Param::prepared_clevel_depth_margin, 0),
+            (Param::prepared_dl2_min_hp, 30),
+            (Param::prepared_cure_min, 2),
+            (Param::prepared_cure_until_clevel, 30),
+            (Param::prepared_mid_max_depth, 19),
+            (Param::prepared_mid_caster_max_clevel, 28),
+            (Param::prepared_deep_caster_ramp_max_clevel, 44),
+            (Param::prepared_deep_caster_ramp_base_depth, 30),
+            (Param::prepared_deep_caster_ramp_depth_per_level, 2),
+            (Param::prepared_dl34_plus_min_clevel, 40),
+        ] {
+            assert_eq!(compiled[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].value, expected);
+            assert_eq!(shipped[param as usize].origin, "borg.txt");
+        }
+        let gate_values = [
+            (Param::prepared_dl34_min_hp, [50, 60, 40, 40, 60, 50, 50, 50, 50]),
+            (Param::prepared_dl34_min_clevel, [4, 11, 9, 9, 11, 4, 8, 4, 4]),
+            (Param::prepared_dl59_min_hp, [60, 80, 60, 60, 80, 60, 60, 60, 60]),
+            (Param::prepared_dl59_min_clevel, [6, 15, 15, 15, 15, 6, 10, 6, 6]),
+            (Param::prepared_mid_clevel_offset, [-4, 5, 0, 0, 5, 0, 0, 0, -4]),
+            (Param::prepared_deep_clevel_offset, [5, 8, 13, 13, 8, 7, 10, 8, 5]),
+            (Param::prepared_deep_min_clevel, [0, 0, 0, 0, 0, 0, 0, 29, 0]),
+            (Param::prepared_deep_max_clevel, [38, 38, 46, 46, 38, 40, 43, 41, 38]),
+        ];
+        for (param, values) in gate_values {
+            for (class, expected) in CLASSES.into_iter().zip(values) {
+                assert_eq!(class_value(&compiled, param, class), Some((expected, "default")));
+                assert_eq!(class_value(&shipped, param, class), Some((expected, "borg.txt")));
+            }
+        }
+        let param = Param::prepared_mid_clevel_offset;
+        let overrides = parse(
+            "borg_param_prepared_mid_clevel_offset = -2\nborg_param_prepared_mid_clevel_offset__mage = 2",
+            &BTreeMap::new(),
+            SPECS,
+        ).unwrap();
+        assert_eq!(overrides[param as usize].value, -2);
+        assert_eq!(class_value(&overrides, param, "warrior"), None);
+        assert_eq!(class_value(&overrides, param, "mage"), Some((2, "borg.txt")));
+    }
+
+    #[test]
+    fn retired_depth_cap_settings_can_load() {
+        let text = "borg_param_prepared_depth_plan = 1\nborg_param_prepared_depth_early_until_level__warrior = 4";
+        let env = BTreeMap::from([("PREPARED_DEPTH_LATE_LEVELS_BELOW__MAGE".into(), "3".into())]);
+        let settings = parse(text, &env, SPECS).unwrap();
+        assert_eq!(settings[Param::prepared_clevel_depth_margin as usize].value, 0);
+        assert!(parse("borg_param_prepared_depth_plan__typo = 1", &env, SPECS).is_err());
+    }
+
+    #[test]
     fn defaults_and_registry_are_valid() {
         let settings = parse("", &BTreeMap::new(), SPECS).unwrap();
         let mut names = std::collections::BTreeSet::new();
@@ -2335,13 +3042,23 @@ mod tests {
                 "defend" => "fight_defend",
                 "item" => "item_use",
                 "wear" => "item_wear",
+                "enchant" => "item_enchant",
+                "decurse" => "item_decurse",
                 "buy" => "store_buy",
                 "sell" => "store_sell",
                 "shopping" => "think_store",
                 "home" => "home_power",
+                "town" => "town_budget",
+                "kill" => "flow_kill",
+                "fast" => "fast_fragile",
                 _ => prefix,
             };
-            assert_eq!(file, format!("borg_{module}.rs"));
+            if prefix == "town" {
+                // The town planner's parameters live in its borg_town_*.rs modules.
+                assert!(file.starts_with("borg_town_") && file.ends_with(".rs"), "{file}");
+            } else {
+                assert_eq!(file, format!("borg_{module}.rs"));
+            }
             assert!(line.parse::<usize>().unwrap() > 0);
         }
     }

@@ -1,5 +1,7 @@
 """Real exporter -> qualified import, including concurrent isolated registries."""
 import concurrent.futures
+import contextlib
+import io
 import importlib.util
 import json
 import os
@@ -8,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from test_export_death import ed, make_run
 
@@ -41,10 +44,13 @@ class QualifiedImportTest(unittest.TestCase):
                 os.environ['BORG_DEATH_RECORDS_DIR'] = before
         return registry / case
 
-    def test_same_numeric_ids_from_two_branches_preserve_all_evidence(self):
+    def test_two_branch_registries_preserve_all_evidence(self):
         left = self.exported('left')
         right = self.exported('right', seed=102)
-        self.assertTrue(left.name.startswith('D0001-') and right.name.startswith('D0001-'))
+        # The Cemetery exporter names dossiers by canonical hash (death-id@1).
+        self.assertRegex(left.name, r'^D-[0-9a-f]{64}$')
+        self.assertRegex(right.name, r'^D-[0-9a-f]{64}$')
+        self.assertTrue((left / 'death-id.json').is_file())
         results = imp.import_packages([left, right], self.dest)
         self.assertNotEqual(results[0][0], results[1][0])
         for source, (identifier, _) in zip([left, right], results):
@@ -55,9 +61,141 @@ class QualifiedImportTest(unittest.TestCase):
             self.assertEqual((target / imp.ORIGINAL).read_bytes(), (source / 'record.json').read_bytes())
             for file in source.iterdir():
                 if file.name != 'record.json':
-                    self.assertEqual((target / file.name).read_bytes(), file.read_bytes())
+                    name = imp.SOURCE_ID if file.name == 'death-id.json' else file.name
+                    self.assertEqual((target / name).read_bytes(), file.read_bytes())
+            self.assertFalse((target / 'death-id.json').exists())
+            receipt = json.loads((target / imp.RECEIPT).read_text())
+            self.assertEqual(receipt['original_id'], source.name)
+            self.assertEqual(json.loads((target / imp.SOURCE_ID).read_text())['id'], source.name)
             self.assertEqual(imp.package(target)[0], identifier)
         self.assertEqual(json.loads((self.dest / 'index.json').read_text())['distinct_starting_conditions'], 2)
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_published_package_preserves_source_directory_access(self):
+        for mode in [0o750, 0o700]:
+            source = self.exported(f'access-{mode}')
+            source.chmod(mode)
+            (source / 'report.md').chmod(0o600)
+            (source / 'record.json').chmod(0o600)
+            previous = os.umask(0o022)
+            try:
+                identifier, _ = imp.import_packages([source], self.dest)[0]
+            finally:
+                os.umask(previous)
+            target = self.dest / identifier
+            for name in ['report.md', 'record.json', imp.ORIGINAL, imp.RECEIPT]:
+                self.assertEqual((target / name).stat().st_mode & 0o777, 0o600)
+            self.assertEqual(target.stat().st_mode & 0o777, mode)
+            self.assertEqual(imp.package(target)[0], identifier)
+            self.assertEqual((target / imp.ORIGINAL).read_bytes(),
+                             (source / 'record.json').read_bytes())
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_directory_and_file_modes_are_bounded_without_changing_evidence(self):
+        for source_mode in [0o777, 0o755, 0o750, 0o700, 0o3777]:
+            for mask in [0o000, 0o022, 0o027, 0o077]:
+                with self.subTest(source_mode=oct(source_mode), umask=oct(mask)):
+                    source = self.exported(f'modes-{source_mode}-{mask}')
+                    source.chmod(source_mode)
+                    for name in ['record.json', 'report.md']:
+                        (source / name).chmod(0o600)
+                    (source / 'summary.json').chmod(0o664)
+                    expected_id, expected_files = imp.package(source)
+                    real_write = Path.write_bytes
+
+                    def check_private(asset, data):
+                        if asset.parent.name.startswith('.import-'):
+                            self.assertEqual(asset.parent.stat().st_mode & 0o777, 0o700)
+                        return real_write(asset, data)
+
+                    previous = os.umask(mask)
+                    try:
+                        with mock.patch.object(Path, 'write_bytes', check_private):
+                            identifier, _ = imp.import_packages([source], self.dest)[0]
+                    finally:
+                        os.umask(previous)
+                    target = self.dest / identifier
+                    self.assertEqual(identifier, expected_id)
+                    self.assertEqual(target.stat().st_mode & 0o7777,
+                                     source_mode & ~mask & 0o777)
+                    self.assertEqual(source.stat().st_mode & 0o7777, source_mode)
+                    for name, data in expected_files.items():
+                        self.assertEqual((target / name).read_bytes(), data)
+                        original = source / ('death-id.json' if name == imp.SOURCE_ID else name)
+                        if not original.exists():
+                            original = source / 'record.json'
+                        self.assertEqual((target / name).stat().st_mode & 0o7777,
+                                         original.stat().st_mode & ~mask & 0o666)
+                    modes = {p.name: p.stat().st_mode for p in target.iterdir()}
+                    directory_mode = target.stat().st_mode
+                    previous = os.umask(mask ^ 0o077)
+                    try:
+                        self.assertEqual(imp.import_packages([source], self.dest),
+                                         [(identifier, 'already retained')])
+                    finally:
+                        os.umask(previous)
+                    self.assertEqual(target.stat().st_mode, directory_mode)
+                    self.assertEqual({p.name: p.stat().st_mode for p in target.iterdir()}, modes)
+                    self.assertEqual(list(self.dest.glob('.import-*')), [])
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_failed_publication_cleans_own_read_only_staging(self):
+        source = self.exported('read-only')
+        source.chmod(0o500)
+        self.addCleanup(source.chmod, 0o700)
+        self.dest.mkdir()
+        other = self.dest / '.import-another-process'
+        other.mkdir()
+        (other / 'keep').write_text('active work')
+        retained_source = self.exported('retained')
+        retained_id, _ = imp.import_packages([retained_source], self.dest)[0]
+        retained = self.dest / retained_id
+        before = {p.name: p.read_bytes() for p in retained.iterdir()}
+        real_rename, real_rmtree = Path.rename, imp.shutil.rmtree
+        staged = []
+
+        def fail_publication(stage, target):
+            if stage.name.startswith('.import-'):
+                self.assertEqual(stage.stat().st_mode & 0o777, 0o500)
+                staged.append(stage)
+                raise OSError('publication failed')
+            return real_rename(stage, target)
+
+        def check_cleanup(stage, *args, **kwargs):
+            if stage in staged:
+                self.assertEqual(stage.stat().st_mode & 0o777, 0o700)
+            return real_rmtree(stage, *args, **kwargs)
+
+        with mock.patch.object(Path, 'rename', fail_publication), \
+                mock.patch.object(imp.shutil, 'rmtree', check_cleanup):
+            with self.assertRaisesRegex(OSError, '^publication failed$'):
+                imp.import_packages([source], self.dest)
+        self.assertEqual(len(staged), 1)
+        self.assertFalse(staged[0].exists())
+        self.assertEqual(list(self.dest.glob('.import-*')), [other])
+        self.assertEqual((other / 'keep').read_text(), 'active work')
+        self.assertEqual(source.stat().st_mode & 0o777, 0o500)
+        self.assertEqual({p.name: p.read_bytes() for p in retained.iterdir()}, before)
+        self.assertFalse((self.dest / imp.package(source)[0]).exists())
+
+    def test_cleanup_failure_retains_primary_publication_error(self):
+        source = self.exported('cleanup-error')
+        with mock.patch.object(Path, 'rename', side_effect=OSError('publication failed')), \
+                mock.patch.object(imp.shutil, 'rmtree', side_effect=OSError('cleanup failed')):
+            with self.assertRaisesRegex(OSError, '^publication failed$') as caught:
+                imp.import_packages([source], self.dest)
+        self.assertTrue(any('cleanup failed' in note for note in caught.exception.__notes__))
+        stderr = io.StringIO()
+        with mock.patch.object(sys, 'argv', ['import-deaths.py', str(source)]), \
+                mock.patch.object(imp, 'import_packages', side_effect=caught.exception), \
+                contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as exited:
+                imp.main()
+        self.assertEqual(exited.exception.code, 2)
+        self.assertIn('publication failed', stderr.getvalue())
+        self.assertIn('cleanup failed', stderr.getvalue())
+        self.assertEqual(len(list(self.dest.glob('.import-*'))), 1)
+        self.assertFalse((self.dest / imp.package(source)[0]).exists())
 
     def test_identical_import_and_reimport_are_idempotent(self):
         source = self.exported('one')
@@ -104,7 +242,7 @@ class QualifiedImportTest(unittest.TestCase):
         self.assertEqual(imp.check_registry(self.dest, legacy), 1)
         import shutil
         shutil.copytree(good, self.dest / good.name)
-        with self.assertRaisesRegex(ValueError, 'provisional numeric ID'):
+        with self.assertRaisesRegex(ValueError, 'unqualified ID'):
             imp.check_registry(self.dest, legacy)
 
     def test_existing_package_and_legacy_identities_cannot_be_overwritten(self):

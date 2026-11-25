@@ -1,4 +1,4 @@
-# Upstream Angband 42cd156ac's core sources (CMakeLists.txt, add_library(OurCoreLib
+# Upstream Angband 574b618c's core sources (CMakeLists.txt, add_library(OurCoreLib
 # OBJECT ...)), without src/borg/*.c: the Rust Borg takes the C Borg's place
 # (docs/SPEC.md §3.6). Copied, not included: upstream's file lists the C Borg
 # inside its core library. engine/tests/test_build.py checks that this list is

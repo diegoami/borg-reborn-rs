@@ -380,6 +380,21 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         borg_prompt = false;
     }
 
+    // borg-reborn-rs (#551): "Change back and <verb> (y/n) or (r)eturn to
+    // normal?" (player_get_resume_normal_shape), with escape_fox_form.
+    if borg_prompt
+        && !engine::inkey_flag()
+        && crate::borg_escape::any_fox_form_on()
+        && prefix(cstr(&buffer[off..]), b"Change back and")
+    {
+        let answer = crate::borg_escape::change_back_answer(st);
+        if answer == b'y' {
+            borg_note(st, "# Fox Form: reverting for an item or a spell");
+        }
+        key.code = u32::from(answer);
+        return true;
+    }
+
     // handle the messages the borg has to react to immediately
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
@@ -608,6 +623,14 @@ fn inven_wield() -> usize {
 /// We notice a few "terrain feature" messages here so we can acquire
 /// knowledge about wall types and door types.
 fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
+    // borg-reborn-rs (#781): associate melee feedback only with a queued step.
+    crate::borg_caution::unseen_bump_message(st, msg);
+    // borg-reborn-rs (#829): "Teleportation forbidden!" and friends.
+    crate::borg_escape::teleport_block_message(st, msg);
+    // borg-reborn-rs (#831): the answer to a blind attack on an unseen attacker.
+    if let Some(note) = crate::borg_recover::unseen_mode_message(st, msg) {
+        borg_note(st, note);
+    }
     // `ag` (`&borg_grids[borg.goal.g.y][borg.goal.g.x]`), read at each use
     let g = st.borg.goal.g;
     let ag_feat = |st: &BorgState| i32::from(st.cave.grid(g.x, g.y).feat);
@@ -1158,8 +1181,13 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     // Be aware and concerned of busted doors
     if prefix(msg, b"You hear a door burst open!") {
         // on level 1 and 2 be concerned.  Could be Grip or Fang
-        if st.borg.tr(BI_CDEPTH) <= 3 && st.borg.tr(BI_CLEVEL) <= 5 {
+        // borg-reborn-rs (#503): only with caution_scary_named_monsters
+        if st.borg.tr(BI_CDEPTH) <= 3
+            && st.borg.tr(BI_CLEVEL) <= 5
+            && crate::borg_caution::scary_named_monsters()
+        {
             st.borg.mon.scary = true;
+            st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
     }
 

@@ -2049,6 +2049,7 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
 ///    and they must be dealt with. The first option may be called at any
 ///    time.  While the 2nd option is only called when the borg is in
 ///    relatively good health.
+#[allow(clippy::unnecessary_cast)] // wchar_t can differ by platform.
 fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
     /* power of danger without this kill */
     let mut p_without_kill = 0;
@@ -2359,7 +2360,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
                 let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
 
                 /* Our char of the monster */
-                if engine::race(r_idx).d_char != i32::from(tmp_genocide_target) {
+                if engine::race(r_idx).d_char as i32 != i32::from(tmp_genocide_target) {
                     continue;
                 }
 
@@ -2392,6 +2393,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
 /// when they get too numerous (`borg_defend_aux_genocide_nasties`). The
 /// acceptable numbers are `borg_nasties_limit[]`; the list is
 /// `borg_nasties[7] = "ZAVULWD"`.
+#[allow(clippy::unnecessary_cast)] // wchar_t can differ by platform.
 fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
     let mut b_i: i32 = -1;
 
@@ -2471,7 +2473,7 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
             let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
 
             /* Our char of the monster */
-            if engine::race(r_idx).d_char != i32::from(st.kills.nasties[b]) {
+            if engine::race(r_idx).d_char as i32 != i32::from(st.kills.nasties[b]) {
                 continue;
             }
 
@@ -2996,18 +2998,7 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* Do I have anything that will work? */
-    if -1 == borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_detect_invis)
-        && -1 == borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_detect_invis)
-        && !borg_equips_staff_fail(st, st.item_val.sv_staff_detect_invis)
-        && !borg_equips_staff_fail(st, st.item_val.sv_staff_detect_evil)
-        && !borg_spell_okay_fail(st, SENSE_INVISIBLE, fail_allowed)
-        && !borg_spell_okay_fail(st, DETECTION, fail_allowed)
-        && !borg_spell_okay_fail(st, REVEAL_MONSTERS, fail_allowed)
-        && !borg_equips_item(st, st.act.detect_invis, true)
-        && !borg_equips_item(st, st.act.tmd_sinvis, true)
-        && !borg_equips_item(st, st.act.tmd_esp, true)
-        && !borg_equips_item(st, st.act.detect_evil, true)
-    {
+    if !detect_invisible_on_hand(st, fail_allowed) {
         return 0;
     }
 
@@ -3021,6 +3012,35 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
         return param(Param::defend_see_invis_value);
     }
 
+    if use_detect_invisible(st, fail_allowed) {
+        return param(Param::defend_see_invis_value);
+    }
+
+    /* ah crap, I guess I won't be able to see them */
+    0
+}
+
+/// Whether anything that reveals invisible monsters is at hand: a potion
+/// (True Seeing), a scroll, a staff, a spell or an activation. The test of
+/// `borg_defend_aux_inviso` ("Do I have anything that will work?").
+fn detect_invisible_on_hand(st: &mut BorgState, fail_allowed: i32) -> bool {
+    !(-1 == borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_detect_invis)
+        && -1 == borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_detect_invis)
+        && !borg_equips_staff_fail(st, st.item_val.sv_staff_detect_invis)
+        && !borg_equips_staff_fail(st, st.item_val.sv_staff_detect_evil)
+        && !borg_spell_okay_fail(st, SENSE_INVISIBLE, fail_allowed)
+        && !borg_spell_okay_fail(st, DETECTION, fail_allowed)
+        && !borg_spell_okay_fail(st, REVEAL_MONSTERS, fail_allowed)
+        && !borg_equips_item(st, st.act.detect_invis, true)
+        && !borg_equips_item(st, st.act.tmd_sinvis, true)
+        && !borg_equips_item(st, st.act.tmd_esp, true)
+        && !borg_equips_item(st, st.act.detect_evil, true))
+}
+
+/// Use the first thing that reveals invisible monsters: the "smoke em if you
+/// got em" half of `borg_defend_aux_inviso`, with its durations. True when
+/// something was used.
+fn use_detect_invisible(st: &mut BorgState, fail_allowed: i32) -> bool {
     /* smoke em if you got em */
     /* short time */
     /* snap shot */
@@ -3036,22 +3056,39 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
     {
         /* hack, actually a snap shot, no ignition message */
         st.borg.see_inv = param(Param::defend_see_invis_short_duration) as i16;
-        return param(Param::defend_see_invis_value);
+        return true;
     }
     if borg_quaff_potion(st, st.item_val.sv_potion_detect_invis) {
         st.borg.see_inv = param(Param::defend_see_invis_spell_duration) as i16;
         st.borg.no_rest_prep = param(Param::defend_inviso_no_rest_duration);
-        return param(Param::defend_see_invis_value);
+        return true;
     }
     /* long time */
     if borg_spell_fail(st, SENSE_INVISIBLE, fail_allowed) {
         st.borg.see_inv = param(Param::defend_see_invis_potion_duration) as i16;
         st.borg.no_rest_prep = param(Param::defend_inviso_potion_no_rest_duration);
-        return param(Param::defend_see_invis_value);
+        return true;
     }
+    false
+}
 
-    /* ah crap, I guess I won't be able to see them */
-    0
+/// borg-reborn-rs (#831): the invisible-attacker mode reads or casts
+/// whatever reveals invisible monsters, once: not while blind, confused,
+/// amnesic or in the dark (`borg_defend_aux_inviso`'s "no need" and
+/// "Darkness"), and not under True Seeing or its spell (`see_inv`). It sets
+/// the same `see_inv` and no-rest timers a defence does.
+pub(crate) fn detect_invisible_now(st: &mut BorgState) -> bool {
+    let fail_allowed = param(Param::defend_inviso_fail);
+    if crate::Read::new(st).status().isforget() != 0
+        || crate::Read::new(st).status().isblind() != 0
+        || crate::Read::new(st).status().isconfused() != 0
+        || st.borg.see_inv != 0
+        || dark_here(st)
+        || !detect_invisible_on_hand(st, fail_allowed)
+    {
+        return false;
+    }
+    use_detect_invisible(st, fail_allowed)
 }
 
 /// Light Beam to spot lurkers (`borg_defend_aux_lbeam`). Used only if I am
@@ -3895,6 +3932,13 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#781 review): reuse See Invisible's danger and darkness
+/// gates for the bump response. borg_read_scroll retains blindness,
+/// confusion, amnesia and no-light refusals too.
+pub(crate) fn unseen_detection_safe(st: &BorgState, danger: i32) -> bool {
+    danger <= avoid(st) * param(Param::defend_see_invis_max_danger_multiplier) && !dark_here(st)
 }
 
 // Test-only defence fixture entry.

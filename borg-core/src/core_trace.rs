@@ -17,6 +17,154 @@ struct Selection {
     name: Option<&'static str>,
     source: Option<&'static str>,
     errand: Option<(String, Option<i32>)>,
+    attacks: Vec<AttackRanking>,
+    prepared: Vec<PreparedCheck>,
+}
+
+/// One native attack-selector invocation. Multiple attempts in one think are
+/// retained; nested thinks use their own Selection frames. Data never feeds policy.
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct AttackRanking {
+    candidates: Vec<AttackCandidate>,
+    winner: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct AttackCandidate {
+    attack_id: i32,
+    attack_name: Option<String>,
+    family: Option<String>,
+    class_id: i32,
+    class_name: Option<String>,
+    // Only the aggregate result is available here. Do not claim a nonpositive
+    // return identifies a specific immunity, mana or charge rejection.
+    eligibility: String,
+    raw_utility: i32,
+    parameter_name: Option<String>,
+    effective_weight: i32,
+    parameter_origin: String,
+    adjusted_utility: i32,
+    incumbent_changed: bool,
+}
+
+impl AttackRanking {
+    pub(crate) fn candidate(&mut self, class: i32, id: i32, raw: i32,
+        result: &crate::attack_preference::Candidate, changed: bool) {
+        self.candidates.push(AttackCandidate {
+            attack_id: id,
+            attack_name: result.attack.map(|a| a.name.into()),
+            family: result.attack.map(|a| a.family.name().into()),
+            class_id: class,
+            class_name: crate::attack_preference::class_name(class).map(str::to_owned),
+            eligibility: if result.attack.is_none() { "unknown_attack" }
+                else if raw <= 0 { "nonpositive_return" } else { "positive_return" }.into(),
+            raw_utility: raw,
+            parameter_name: result.parameter.map(|p| crate::params::SPECS[p as usize].name.into()),
+            effective_weight: result.weight,
+            parameter_origin: result.origin.into(),
+            adjusted_utility: result.adjusted,
+            incumbent_changed: changed,
+        });
+    }
+}
+
+/// Allocate candidate records only when a trace frame is active. No frame borrow
+/// survives simulation (which may reenter thinking); no engine reads or RNG.
+pub(crate) fn attack_ranking() -> Option<AttackRanking> {
+    FRAMES.with(|frames| (!frames.borrow().is_empty()).then(AttackRanking::default))
+}
+
+pub(crate) fn record_attack_ranking(trace: Option<AttackRanking>, winner: Option<i32>) {
+    if let Some(mut trace) = trace {
+        trace.winner = winner;
+        FRAMES.with(|frames| {
+            if let Some(frame) = frames.borrow_mut().last_mut() {
+                frame.attacks.push(trace);
+            }
+        });
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct PreparedCheck {
+    current_depth: i32,
+    proposed_depth: i32,
+    source: String,
+    requirement: Option<FailedRequirement>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct FailedRequirement {
+    name: String,
+    actual: i32,
+    required: i32,
+    relation: String,
+    message: String,
+}
+
+pub(crate) fn record_prepared(
+    st: &BorgState, depth: i32, result: Option<&crate::borg_prepared::Reason>,
+    source: &std::panic::Location<'_>,
+) {
+    FRAMES.with(|frames| {
+        let mut frames = frames.borrow_mut();
+        let Some(frame) = frames.last_mut() else { return };
+        frame.prepared.push(PreparedCheck {
+            current_depth: st.borg.tr(BI_CDEPTH),
+            proposed_depth: depth,
+            source: source.to_string(),
+            requirement: result.map(|reason| FailedRequirement {
+                name: reason.requirement.name.into(),
+                actual: reason.requirement.actual,
+                required: reason.requirement.required,
+                relation: reason.requirement.relation.into(),
+                message: String::from_utf8_lossy(reason.text(st)).into_owned(),
+            }),
+        });
+    });
+}
+
+#[derive(Debug, Default)]
+struct ObservedTrip {
+    depth: i32,
+    trip_id: u64,
+    pending_think: Option<u64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct PreparedOutcome {
+    think: u64,
+    action: DepthOutcome,
+    depth: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+enum DepthOutcome {
+    Descended,
+    ReturnedToTown,
+    Ascended,
+    Stayed,
+}
+
+impl ObservedTrip {
+    fn observe(&mut self, depth: i32, next_pending: Option<u64>) -> Option<PreparedOutcome> {
+        let action = if depth > self.depth {
+            DepthOutcome::Descended
+        } else if depth == self.depth {
+            DepthOutcome::Stayed
+        } else if depth == 0 {
+            DepthOutcome::ReturnedToTown
+        } else {
+            DepthOutcome::Ascended
+        };
+        if depth > 0 && self.depth == 0 {
+            self.trip_id += 1;
+        }
+        self.depth = depth;
+        std::mem::replace(&mut self.pending_think, next_pending)
+            .map(|think| PreparedOutcome { think, action, depth })
+    }
 }
 
 thread_local! {
@@ -30,6 +178,7 @@ static WRITER: OnceLock<Mutex<Recorder>> = OnceLock::new();
 struct Recorder {
     file: File,
     think: u64,
+    trip: ObservedTrip,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -66,6 +215,14 @@ struct Line {
     errand: Option<Errand>,
     keys: Vec<u32>,
     acted: bool,
+    #[serde(default)]
+    attacks: Vec<AttackRanking>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    prepared: Vec<PreparedCheck>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    trip_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    previous_prepared_outcome: Option<PreparedOutcome>,
 }
 
 fn failure(error: impl std::fmt::Display) -> ! {
@@ -146,7 +303,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
     }
     .map(|(name, target)| Errand { name, target });
     let mut line = Line {
-        schema: "borg-reborn-rs/core-trace@1".into(),
+        schema: "borg-reborn-rs/core-trace@2".into(),
         think: 0,
         turn: crate::engine::game_turn(),
         borg_turn: st.borg.time.now,
@@ -169,6 +326,10 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         errand,
         keys: st.io.queued_keys(),
         acted,
+        attacks: frame.attacks,
+        prepared: frame.prepared,
+        trip_id: None,
+        previous_prepared_outcome: None,
     };
     let writer = WRITER.get_or_init(|| {
         let path = PATH
@@ -177,11 +338,14 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
             .expect("enabled core trace path");
         let file =
             File::create(path).unwrap_or_else(|e| failure(format!("{}: {e}", path.display())));
-        Mutex::new(Recorder { file, think: 0 })
+        Mutex::new(Recorder { file, think: 0, trip: ObservedTrip::default() })
     });
     let mut writer = writer.lock().unwrap_or_else(|e| e.into_inner());
     writer.think = writer.think.wrapping_add(1);
     line.think = writer.think;
+    let checked = !line.prepared.is_empty();
+    line.previous_prepared_outcome = writer.trip.observe(depth, checked.then_some(line.think));
+    line.trip_id = checked.then_some(writer.trip.trip_id);
     let mut bytes = serde_json::to_vec(&line).unwrap_or_else(|e| failure(e));
     bytes.push(b'\n');
     // A direct write per line leaves no userspace buffer stranded when the C
@@ -192,6 +356,24 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trip_outcomes_link_to_the_previous_think_and_keep_one_id_until_town() {
+        let mut trip = ObservedTrip::default();
+        assert_eq!(trip.observe(0, Some(2)), None);
+        assert_eq!(trip.trip_id, 0);
+        assert_eq!(trip.observe(1, Some(5)), Some(PreparedOutcome {
+            think: 2, action: DepthOutcome::Descended, depth: 1,
+        }));
+        assert_eq!(trip.trip_id, 1);
+        assert_eq!(trip.observe(1, Some(6)).unwrap().action, DepthOutcome::Stayed);
+        assert_eq!(trip.observe(2, Some(7)).unwrap().action, DepthOutcome::Descended);
+        assert_eq!(trip.observe(1, Some(8)).unwrap().action, DepthOutcome::Ascended);
+        assert_eq!(trip.trip_id, 1);
+        assert_eq!(trip.observe(0, Some(9)).unwrap().action, DepthOutcome::ReturnedToTown);
+        assert_eq!(trip.observe(2, None).unwrap().action, DepthOutcome::Descended);
+        assert_eq!(trip.trip_id, 2);
+    }
 
     #[test]
     fn nested_frames_keep_their_own_selected_check() {
@@ -207,9 +389,40 @@ mod tests {
     }
 
     #[test]
+    fn attack_attempts_are_retained_and_nested_frames_are_isolated() {
+        use crate::borg_headers::borg_fight_attack_h::*;
+        FRAMES.with(|f| f.borrow_mut().push(Selection::default()));
+        let mut outer = attack_ranking().unwrap();
+        let result = crate::attack_preference::evaluate(1, BF_THRUST as i32, 25);
+        outer.candidate(1, BF_THRUST as i32, 25, &result, true);
+        FRAMES.with(|f| f.borrow_mut().push(Selection::default()));
+        let mut inner = attack_ranking().unwrap();
+        let invalid = crate::attack_preference::evaluate(1, BF_WAND_MAGIC_MISSILE as i32, 0);
+        inner.candidate(1, BF_WAND_MAGIC_MISSILE as i32, 0, &invalid, false);
+        record_attack_ranking(Some(inner), None);
+        let nested = FRAMES.with(|f| f.borrow_mut().pop().unwrap());
+        assert_eq!(nested.attacks.len(), 1);
+        assert_eq!(nested.attacks[0].winner, None);
+        assert_eq!(nested.attacks[0].candidates[0].eligibility, "nonpositive_return");
+        record_attack_ranking(Some(outer), Some(BF_THRUST as i32));
+        record_attack_ranking(attack_ranking(), None);
+        let frame = FRAMES.with(|f| f.borrow_mut().pop().unwrap());
+        assert_eq!(frame.attacks.len(), 2);
+        let trace = &frame.attacks[0];
+        assert_eq!(trace.winner, Some(BF_THRUST as i32));
+        assert_eq!(trace.candidates[0].raw_utility, 25);
+        assert_eq!(trace.candidates[0].adjusted_utility, 25);
+        assert_eq!(trace.candidates[0].parameter_origin, "default");
+        assert_eq!(trace.candidates[0].parameter_name.as_deref(), Some("attack_preference_melee_permille"));
+        let json = serde_json::to_string(trace).unwrap();
+        assert_eq!(serde_json::from_str::<AttackRanking>(&json).unwrap(), *trace);
+        assert!(attack_ranking().is_none());
+    }
+
+    #[test]
     fn line_round_trips_with_keys_and_errand() {
         let line = Line {
-            schema: "borg-reborn-rs/core-trace@1".into(),
+            schema: "borg-reborn-rs/core-trace@2".into(),
             think: 9,
             turn: 1234,
             borg_turn: 120,
@@ -235,6 +448,10 @@ mod tests {
             }),
             keys: vec![27, 82, 49, 48, 48, 13, 0x80],
             acted: true,
+            attacks: vec![],
+            prepared: vec![],
+            trip_id: None,
+            previous_prepared_outcome: None,
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));

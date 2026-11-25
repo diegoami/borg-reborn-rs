@@ -2,7 +2,7 @@
 
 *Commands that give the Borg a job: go home, dive to a depth, explore a
 level, climb a ladder of trips. They run over **borg-rs's decision core**,
-vendored at the M13 town/trip integration tag as `borg-core/` (docs/PROVENANCE.md). The
+vendored at its pin (`borg-core/PIN`) as `borg-core/` (docs/PROVENANCE.md, [architecture/borg-core.md](architecture/borg-core.md)). The
 errand code is `borg-core/src/shell.rs`, plus the hook calls marked
 `borg-reborn-rs (#207)` / `(#208)` in the vendored files. The original
 evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reborn-rs/pull/206).*
@@ -11,7 +11,7 @@ evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reb
 
 | setting | where | values |
 |---|---|---|
-| core | `BORG_CORE`, else `borg_reborn_core` in the run's `borg.txt` | `reborn` (default: this repository's Borg, unchanged) or `borg-rs` |
+| core | `BORG_CORE`, else `borg_reborn_core` in the run's `borg.txt` | `borg-rs` (the shipped default since #479, and the harness default since #606) or `reborn` (this repository's Borg, not ready; `BORG_CORE=reborn`) |
 | errand | `BORG_ERRAND`, else `borg_reborn_errand` | a command line, below; `none` |
 | fear | `BORG_STOPSCARED`, else `borg_reborn_stopscared` | `off`, `flee`, `1`-`1000` |
 | budget | `BORG_ERRAND_BUDGET` | nonnegative game turns; absent, `0` or `none` means unbounded |
@@ -65,8 +65,9 @@ a ladders file), and `tools/rerun-death.py` sets them again when it reruns a
 death (review #227, finding 8).
 
 `harness/borg.txt` is borg-rs's `borg.txt` with its munchkin start by class
-and its town scumming off (owner, 2026-11-14) and these keys added; the
-zoo copies it. `BORG_CORE_OVERRIDES=off` runs borg-rs's own copy
+and its town scumming off (owner, 2026-11-14; borg-rs has since removed the
+munchkin start) and these keys added, and since #479 the shipped values of
+its settings and the track P parameters (`borg_param_*`); the zoo copies it. `BORG_CORE_OVERRIDES=off` runs borg-rs's own copy
 (`borg-core/borg.txt`), for the parity check.
 
 ## Commands
@@ -78,7 +79,6 @@ core's own stop) when it is done.
 |---|---|---|
 | `/town` | home: Word of Recall if the core has one, else the stairs up | in town |
 | `/shopping` | in town, run the core's buying, selling and home-inventory round | when shopping is finished, before leaving town |
-| `/loop-levels A B` | explore every level from A to B, then back, repeatedly; 0 is town | never; town detours restart the route |
 | `/walk-back` | home by the stairs only | in town |
 | `/explore-back` | this level and each one above it explored, in turn, then home | in town |
 | `/dive N` | the stairs down to DL N, not exploring | on arrival |
@@ -106,23 +106,11 @@ Calling it in the dungeon aborts; use `/town; /shopping` to return first.
 `BORG_ERRAND_BUDGET` and `/stall` bound the round; no completion ranking of
 the errands has been measured.
 
-`/loop-levels 3 5` explores `3 → 4 → 5 → 4 → 3 → …`; `/loop-levels 5 3`
-starts at DL5 and goes the other way first. Supply two distinct depths in
-the engine's range, 0–127. `/loop-levels 0 3` includes town and the core's
-normal shopping/restocking at that endpoint, then repeats the dungeon trip.
-
-The core's own decision to go to town overrides a loop, including fear,
-restocking and an unprepared descent. The loop waits for arrival in town
-and restarts from its first endpoint after the core's town work. It does
-not skip an unprepared level or force a descent. A missing route lets the
-core try its own exploration/movement after the existing stall bound.
-Return travel can use the core's Recall; departure from town uses its usual
-Recall supply/readiness policy, otherwise stairs. Recall goes to the game's
-recall depth, not an arbitrary loop endpoint: after landing, the loop walks
-to the next planned level and explores it there. Pending Recall is allowed
-to finish. `/stopscared`, the errand budget and `/stop` still apply. An
-endless loop does not start following queued errands; budget/scared endings
-and `/stop` clear the remaining queue.
+The level-loop errand (`/loop-levels A B`) was removed (owner,
+2026-11-16): it forced a route with planned town visits, and its town
+restarts caused the #421 stair livelock and slowed casters
+(borg-cemetery#19). Plans now cap depth instead (`max-depth N`,
+docs/GAME-PLAN-LANGUAGE.md); `/loop-levels` is an unknown command.
 
 ## Rules
 
@@ -135,7 +123,7 @@ and `/stop` clear the remaining queue.
 - **No level is forced.** The errand never takes the stairs down to a
   level the core is not prepared for (`borg_prepared` for the level below):
   a ladder trip goes home instead, a command stops ("the core is not
-  prepared for DL3"); a level loop goes home and retries after town. A
+  prepared for DL3"). A
   ladder also skips a planned level the core is not
   prepared for. When the core climbs back up off the plan inside the
   dungeon by itself (below character level 10 it leaves a level it is not
@@ -143,7 +131,7 @@ and `/stop` clear the remaining queue.
   rose from DL2, not fit for DL3"). The commands do not skip levels.
 - **Fear overrides the plan.** If the core flees to town, or climbs out of
   a depth it is not prepared for, the trip ends and goes home, or a
-  finite command stops; a level loop restarts after town. If it flees a
+  finite command stops. If it flees a
   level, it leaves its own way, and a level
   of the plan it leaves for another dungeon level counts as explored.
 - **A trip to town of the core's own is not fear.** When it goes home to

@@ -35,6 +35,7 @@ pub const BORG_LIGHT: u16 = 0x10;
 /// after `borg_update_light()` when the player has a light.
 #[derive(Clone, PartialEq)]
 pub struct LightState {
+    pub(crate) detected_entries: std::collections::BTreeSet<(i32, i32)>,
     /// `borg_light_n`
     pub light_n: i16,
     /// `borg_light_x`
@@ -52,6 +53,7 @@ pub struct LightState {
 impl Default for LightState {
     fn default() -> Self {
         LightState {
+            detected_entries: std::collections::BTreeSet::new(),
             light_n: 0,
             light_x: vec![0; AUTO_LIGHT_MAX],
             light_y: vec![0; AUTO_LIGHT_MAX],

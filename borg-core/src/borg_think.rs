@@ -50,6 +50,7 @@ pub struct ThinkState {
     pub just_saved: bool,
     pub town_action: Option<crate::borg_town_shadow::TownAction>,
     pub town_live: crate::borg_town_live::LiveState,
+    pub phase_observation: crate::borg_town_dump::PhaseObservation,
 }
 
 impl Default for ThinkState {
@@ -61,6 +62,7 @@ impl Default for ThinkState {
             just_saved: false,
             town_action: None,
             town_live: crate::borg_town_live::LiveState::default(),
+            phase_observation: crate::borg_town_dump::PhaseObservation::default(),
         }
     }
 }
@@ -201,11 +203,22 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     }
 
     /* Always revert shapechanged players to normal form. */
-    if engine::player_is_shapechanged() {
+    // borg-reborn-rs (#551): with escape_fox_form, a fleeing fox keeps its
+    // shape; the revert's "(r)eturn" is then answered by the prompt
+    // handler (borg_messages), so only the command is queued here.
+    if !engine::player_is_shapechanged() {
+        st.borg.fox_revert = false;
+    }
+    if engine::player_is_shapechanged() && !crate::borg_escape::keep_fox_form(st) {
         /* it looks like throw is a good command that checks */
         /* your form without a prerequisite check */
-        borg_keypress(st, 'v' as u32);
-        borg_keypress(st, 'r' as u32);
+        if crate::borg_escape::any_fox_form_on() {
+            crate::borg_escape::note_fox_revert(st);
+            crate::borg_escape::queue_fox_revert(st);
+        } else {
+            borg_keypress(st, 'v' as u32);
+            borg_keypress(st, 'r' as u32);
+        }
         return choice!("revert_shapechange");
     }
 
@@ -214,6 +227,11 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
 
     /* Examine the screen */
     crate::borg_update::borg_update(st);
+
+    #[cfg(feature = "test-stair-handoff")]
+    if let Ok(case) = std::env::var("BORG_TEST_STAIR_HANDOFF") {
+        crate::borg_flow_stairs::run_handoff_regression(st, &case);
+    }
 
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
@@ -230,6 +248,8 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::core_trace::selected("borg_think_store", concat!(file!(), ":", line!()));
         return done;
     }
+
+    crate::borg_town_dump::record_phase_observation(st, None);
 
     /* Check spells again later */
     st.think.do_spell = true;

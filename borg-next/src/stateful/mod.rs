@@ -30,8 +30,14 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         Decision::HomeBuySwapArmour => Value::Acted(store_buy::borg_think_home_buy_swap_armour(st)),
         Decision::StoreBuy => Value::Acted(store_buy::borg_think_shop_buy(st)),
         Decision::StoreTakeForSale => Value::Acted(store_buy::take_selected_for_sale(st)),
-        Decision::StoreConfirmPurchase { item, shop, keep } => {
-            store_buy::confirm_purchase(st, &item.0, shop, keep);
+        Decision::StoreConfirmPurchase {
+            item,
+            shop,
+            keep,
+            qty,
+            paid,
+        } => {
+            store_buy::confirm_purchase(st, &item.0, shop, keep, qty, paid);
             Value::Unit
         }
         Decision::StoreMinimumQuantity { item } => {
@@ -48,7 +54,9 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         }
         Decision::StoreSellUseless => Value::Acted(store_sell::borg_think_shop_sell_useless(st)),
         Decision::StoreSell => Value::Acted(store_sell::borg_think_shop_sell(st)),
-        Decision::StoreSellOne => Value::Acted(store_sell::sell_one_selected(st)),
+        Decision::StoreSellQuantity { quantity } => {
+            Value::Acted(store_sell::sell_selected_quantity(st, quantity))
+        }
         Decision::StoreCountSell => Value::Score(store_sell::borg_count_sell(st)),
         Decision::StoreChooseShop => Value::Acted(think_store::borg_choose_shop(st)),
         Decision::StoreThink => Value::Acted(think_store::borg_think_store(st)),
@@ -69,16 +77,12 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
             Value::Acted(item_use::borg_quaff_crit(st, no_check))
         }
         Decision::ItemQuaffPotion { sval } => Value::Acted(item_use::borg_quaff_potion(st, sval)),
-        Decision::ItemQuaffUnknown => Value::Acted(item_use::borg_quaff_unknown(st)),
         Decision::ItemReadScroll { sval } => Value::Acted(item_use::borg_read_scroll(st, sval)),
-        Decision::ItemReadUnknown => Value::Acted(item_use::borg_read_unknown(st)),
         Decision::ItemEat { tval, sval } => Value::Acted(item_use::borg_eat(st, tval, sval)),
-        Decision::ItemEatUnknown => Value::Acted(item_use::borg_eat_unknown(st)),
         Decision::ItemEatFoodAny => Value::Acted(item_use::borg_eat_food_any(st)),
         Decision::ItemEquipsRod { sval } => Value::Acted(item_use::borg_equips_rod(st, sval)),
         Decision::ItemZapRod { sval } => Value::Acted(item_use::borg_zap_rod(st, sval)),
         Decision::ItemUseStaff { sval } => Value::Acted(item_use::borg_use_staff(st, sval)),
-        Decision::ItemUseUnknown => Value::Acted(item_use::borg_use_unknown(st)),
         Decision::ItemUseStaffFail { sval } => {
             Value::Acted(item_use::borg_use_staff_fail(st, sval))
         }
@@ -115,9 +119,6 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         Decision::Recall => Value::Acted(escape::borg_recall(st)),
         Decision::Surrounded => Value::Acted(escape::borg_surrounded(st)),
         Decision::Freedom { y, x } => Value::Score(escape::borg_freedom(st, y, x)),
-        Decision::CautionPhase { emergency, turns } => {
-            Value::Acted(escape::borg_caution_phase(st, emergency, turns))
-        }
         Decision::CautionTeleport { emergency, turns } => {
             Value::Acted(escape::borg_caution_teleport(st, emergency, turns))
         }

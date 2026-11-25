@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0143",
+  "source_groups": [
+    40
+  ],
+  "title": "Second healing-rod attempt bypasses the earlier escape-reserve guard",
+  "site": "src/borg/borg-caution.c:borg_heal",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "Retained source report; practical reachability, actual outcome and port applicability require independent review."
+  },
+  "notes": "Lead supplied by borg-rs, not independently reproduced by Mandos. A function-context link is not proof of the reported defect. Related sub-symptoms remain grouped pending triage.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 159
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-caution.c",
+      "start": 60,
+      "end": 667,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 811,
+      "end": 813,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        40
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 40,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 811,
+        "end": 813,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg_heal()`, \"Heal step two\": the chain zaps the healing rod twice, the\n  second time without the \"keep the rod if I can escape\" test, so that test\n  has no effect there. `cmw_heal` is computed and never used."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check current C and both ports, duplicate-search the exact symptom, then reproduce a legal scenario with controls before a local proposal. No C submission.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

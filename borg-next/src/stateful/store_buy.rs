@@ -37,7 +37,9 @@ use borg_rs::decision_api::borg_home_power::borg_power_home;
 use borg_rs::decision_api::borg_inventory::{
     borg_first_empty_inventory_slot, borg_slot, borg_wield_slot,
 };
-use borg_rs::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
+use borg_rs::decision_api::borg_io::{
+    borg_keypress, borg_keypresses, borg_note, borg_note_bytes, ESCAPE, KC_ENTER,
+};
 use borg_rs::decision_api::borg_item::inven_wield;
 use borg_rs::decision_api::borg_magic::{
     borg_get_book_num, borg_is_dungeon_book, borg_primarily_caster,
@@ -1452,15 +1454,32 @@ fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
 }
 
 /// Live mode calls this only after observing the native transaction.
-pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
+pub fn confirm_purchase(
+    st: &mut BorgState,
+    item: &borg_item,
+    shop: i32,
+    keep: bool,
+    qty: i32,
+    paid: i32,
+) {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark(
             "policy::store.confirm_purchase",
-            format!("{:?}", (item, shop, keep,)),
+            format!("{:?}", (item, shop, keep, qty, paid)),
         );
     }
 
-    note_desc(st, "# Buying ", item, ".");
+    let qty = qty.max(1);
+    note_desc(
+        st,
+        &if qty > 1 {
+            format!("# Buying {qty} x ")
+        } else {
+            "# Buying ".to_string()
+        },
+        item,
+        ".",
+    );
     let shop_name = String::from_utf8_lossy(&borg_rs::decision_api::engine::store_feat_name(
         shop as usize,
     ))
@@ -1469,8 +1488,9 @@ pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: b
         st,
         item,
         &shop_name,
-        item.cost,
+        paid,
         shop == BORG_HOME as i32,
+        qty as u32,
     );
     borg_rs::decision_api::borg_town_dump::dump_purchase(st, shop, item);
     if keep {
@@ -1499,7 +1519,7 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
         }
 
         if !borg_rs::decision_api::borg_town_live::active(st) {
-            confirm_purchase(st, &item, shop, false);
+            confirm_purchase(st, &item, shop, false, 1, item.cost);
         }
 
         /* Buy the desired item */
@@ -1508,6 +1528,11 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
             borg_rs::decision_api::headers::list_options_h::OPT_store_buy_direct,
         ) {
             borg_keypress(st, keycode_t::from(b'p'));
+
+            let qty = borg_rs::decision_api::borg_town_live::buy_quantity(st);
+            if qty > 1 {
+                borg_keypresses(st, qty.to_string().as_bytes());
+            }
 
             /* Mega-Hack -- Accept the purchase */
             borg_keypress(st, KC_ENTER);

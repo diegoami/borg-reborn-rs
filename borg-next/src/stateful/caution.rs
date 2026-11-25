@@ -32,9 +32,8 @@ use borg_rs::decision_api::borg_headers::borg_magic_h::{
 use borg_rs::decision_api::borg_inventory::borg_slot;
 use borg_rs::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
 use borg_rs::decision_api::borg_item_use::{
-    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_eat_unknown,
-    borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_quaff_unknown,
-    borg_read_scroll, borg_read_unknown, borg_use_staff, borg_use_staff_fail, borg_use_unknown,
+    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_equips_staff_fail,
+    borg_quaff_crit, borg_quaff_potion, borg_read_scroll, borg_use_staff, borg_use_staff_fail,
     borg_zap_rod,
 };
 use borg_rs::decision_api::borg_item_val::borg_lookup_kind;
@@ -761,12 +760,6 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             borg_note(st, "# Healing. Curing section.");
             return true;
         }
-
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
     }
 
     // Cure wounds when bleeding, also critical check
@@ -834,12 +827,6 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             return true;
         }
         set_cursp(st, sv_mana);
-
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
     }
 
     // nothing to do
@@ -2139,20 +2126,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if st.borg.goal.recalling != 0
         && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
-    {
-        return true;
-    }
-
-    // if I am gonna die next round, and I have no way to escape
-    // use the unknown stuff (if I am low level).
-    if pos_danger
-        > crate::Read::new(st).character().curhp() * p(Param::caution_unknown_danger_multiplier)
-        && crate::Read::new(st).character().clevel() < p(Param::caution_unknown_max_level)
-        && crate::Read::new(st).character().maxsp() == 0
-        && (borg_use_unknown(st)
-            || borg_read_unknown(st)
-            || borg_quaff_unknown(st)
-            || borg_eat_unknown(st))
     {
         return true;
     }

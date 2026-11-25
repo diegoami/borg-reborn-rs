@@ -1,0 +1,9 @@
+{
+  "repository": "diegoami/borg-cemetery",
+  "commit": "c78cfe58ce0754ee11444708008d5be97cf5aa4c",
+  "archive_path": "scenarios/planmage-town-phase-407718/fixture.zip",
+  "archive_sha256": "0fc7c61b6e2719c5fa47735a995ba7673a1981901750666746c5b17d6bbbad25",
+  "save_sha256": "e02057c7a011c271c45b6f693473ff64e1368e2e819063f63cfabfb0efed2572",
+  "turn": 407718,
+  "case": "deaths/recorded-planmage-20261115-wild-cat"
+}

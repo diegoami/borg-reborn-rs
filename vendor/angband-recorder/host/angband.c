@@ -10,6 +10,7 @@
 #include <errno.h>
 static long keys;
 long record_key_count(void) { return keys; }
+void record_early_init(void) { ar_early_init(ANGBAND_RECORDER_BUILD); }
 void record_init(void)
 {
     int64_t geometry[5] = { Term->wid, Term->hgt, Term->key_size,
@@ -29,6 +30,7 @@ int ar_host_save(const char *path)
     while (waitpid(child, &status, 0) < 0) if (errno != EINTR) return -1;
     return WIFEXITED(status) && WEXITSTATUS(status) == 0 ? 0 : -1;
 }
+void ar_host_final_frame(void) { record_frame("final", keys); }
 static ar_input event_data(const ui_event *event, bool wait, bool take, int result)
 {
     bool mouse = event->type == EVT_MOUSE;

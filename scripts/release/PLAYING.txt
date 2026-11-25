@@ -1,0 +1,61 @@
+borg-reborn-rs: Angband with the Borg, a computer player
+=========================================================
+
+This package is upstream Angband (the commit RELEASE.txt names) with no change
+to the game: the Borg's harness hooks, a headless frontend and the Borg
+itself (a Rust library) are linked in. RELEASE.txt says exactly what it was
+built from; SHA256SUMS lists every file. Unpack anywhere you can write;
+nothing is installed.
+
+Needs
+-----
+Linux    x86_64, glibc 2.39 or newer (Ubuntu 24.04, Debian 13, or the like),
+         OpenSSL 3's libcrypto (Ubuntu 24.04: apt install libssl3t64) and
+         ncurses (libncursesw6), and the X11 library (apt install libx11-6:
+         angband links it, in the window or in the terminal); for the
+         window also the X11 fonts (xfonts-base).
+macOS    Apple silicon (arm64), macOS 14 or newer. Nothing else: OpenSSL is
+         linked in, curses is the system's. The first start may need
+         "Open Anyway" in System Settings > Privacy & Security, or
+         xattr -dr com.apple.quarantine on the unpacked folder (the
+         binaries are not signed).
+Windows  64-bit Windows 10 or 11. Nothing else: one static angband.exe.
+         Windows may warn that the program is unrecognised (it is not
+         signed): More info > Run anyway.
+
+Watch the Borg
+--------------
+Linux:    in the unpacked folder, ./angband (a window when there is a
+          display; ./angband -mgcu plays in the terminal). If it says it
+          requires UTF-8 support: LANG=C.UTF-8 ./angband
+Windows:  double-click angband.exe in the unpacked folder (it plays in a
+          console window; make it at least 80x24).
+macOS:    in the unpacked folder, ./angband (in the terminal).
+
+Create a character (or load your save), then press Ctrl-Z and then z: the
+Borg plays. Any key stops it and gives you the controls back. Saves are in
+lib/save, the Borg's settings in lib/user/borg.txt (edit it to change a
+setting); the game must be started from its own folder, which it finds lib/
+in.
+
+What is where
+-------------
+    angband[.exe]       the game with its frontends (Linux: X11, curses and
+                        headless; macOS and Windows: curses and headless)
+    angband-headless    Linux only: the game without the X11 library, for
+                        scripted headless runs (-mborgh)
+    lib/                the game's data (upstream's lib/)
+    lib/user/borg.txt   the Borg's settings, which the game reads (the class
+                        files are folded in)
+    borg/               the shipped settings again, for reference: borg.txt,
+                        the class files on their own (class/), the plans
+    borg/plans/         errands plans (optional, see docs/ in the source)
+    docs/               the Angband manual and, when present, the guide
+    LICENSES/           Angband's licence, the GPL-2.0 of the Borg, and the
+                        licences of the Rust crates (and on macOS and
+                        Windows OpenSSL) it is built from
+    BUILD_ID.*          the build identity of each executable
+
+The source of this exact release is the source archive next to this package
+on the release page, or the tagged commit of
+https://github.com/diegoami/borg-reborn-rs

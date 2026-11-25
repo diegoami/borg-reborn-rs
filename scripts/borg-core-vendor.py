@@ -50,6 +50,12 @@ MAP = [
 OURS = {
     'PIN',
     'ladders.txt',
+    'src/attack_preference.rs',
+    'src/borg_cursed.rs',
+    'src/borg_fast_fragile.rs',
+    'src/borg_kit.rs',
+    'src/borg_lightless.rs',
+    'src/borg_town_hunt.rs',
     'src/core_trace.rs',
     'src/decision_api.rs',
     'src/decision_snapshot.rs',
@@ -58,6 +64,7 @@ OURS = {
     'src/errands_plan.rs',
     'src/memory.rs',
     'src/params.rs',
+    'src/scary_list.rs',
     'src/shadow.rs',
     'src/shell.rs',
     'src/threat_facts.rs',
@@ -65,59 +72,58 @@ OURS = {
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
-    # #343: Clone/PartialEq for owned town/trip memory.
-    'src/borg_town_live.rs',
-    'src/borg_trip.rs',
-    'Cargo.toml',
-    'build.rs',
-    'src/borg.rs',
-    'src/borg_caution.rs',
+    'src/borg_item_enchant.rs', 'src/borg_item_decurse.rs',  # #680 neutral policy extraction
+    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_item_decurse.rs', 'src/borg_item_analyze.rs',  # #830: can_decurse and borg_object_value_known are shared with the cursed-equipment module; the swap decurse reads a scroll only for an item worth its price
+    'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
+    'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
+    'src/borg_trip.rs',  # #795: trace the live trip preparedness check
+    'src/borg_prepared.rs',  # #447: independent plan cap
+    'src/borg_headers/borg_h.rs', 'src/borg_town_solve.rs',  # #810: Black Market reserve
+    'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
+    'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
+    'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
+    'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_town_dump.rs',  # #797: Phase Door stock and first-contact receipts
+    'src/borg_town_record.rs',  # #651: plan schema 12 (what a visit bought is not stored)
+    'src/state.rs',  # #840: the basic kit's state
+    'src/borg_flow_take.rs',  # #732: C's take leashes read from c_leash (parameters)
+    'src/borg_magic.rs', 'src/borg_magic_play.rs',  # #694: Fox Form's study rating (magic_fox_form_study_rating)
+    'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
+    'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
+    'src/borg_junk.rs',  # #470: discard Deep Descent on sight
+    'src/borg_item.rs',  # #775: defer uninscribing carried items until normal form
+    'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
+    'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
+    'src/borg_flow_misc.rs',  # #597: the twitch refuses lava
+    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
+    'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
+    'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
+    'src/borg.rs',  # #530: the scary goals and scary stand flags
+    'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
+    'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
+    'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
+    'src/borg_light.rs',  # #685: no detection spell by panel below a level
+    'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
+    'build.rs',  # #328: receiving recorder integrity checker path
+    'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
+
+    'Cargo.toml', 'src/borg_power.rs', 'src/borg_item_use.rs', 'src/borg_fight_defend.rs', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
+    'src/borg_think_dungeon.rs', 'src/borg_think_dungeon_util.rs', 'src/engine.rs', 'src/lib.rs',
+    # Track R typed snapshots, shadow dispatch and replay boundaries.
     'src/borg_cave.rs',
-    'src/borg_cave_light.rs',
     'src/borg_cave_view.rs',
-    'src/borg_commands.rs',
-    'src/borg_danger.rs',
-    'src/borg_escape.rs',
-    'src/borg_fight_attack.rs',
-    'src/borg_fight_defend.rs',
-    'src/borg_flow.rs',
     'src/borg_flow_glyph.rs',
-    'src/borg_flow_kill.rs',
-    'src/borg_flow_misc.rs',
-    'src/borg_flow_stairs.rs',
-    'src/borg_flow_take.rs',
     'src/borg_formulas.rs',
     'src/borg_formulas_calc.rs',
-    'src/borg_init.rs',
     'src/borg_inventory.rs',
-    'src/borg_io.rs',
-    'src/borg_item.rs',
     'src/borg_item_activation.rs',
-    'src/borg_item_use.rs',
-    'src/borg_item_val.rs',
-    'src/borg_item_wear.rs',
     'src/borg_item_id.rs',
-    'src/borg_magic.rs',
-    'src/borg_messages.rs',
+    'src/borg_item_val.rs',
     'src/borg_messages_react.rs',
-    'src/borg_power.rs',
-    'src/borg_prepared.rs',
     'src/borg_projection.rs',
-    'src/borg_recover.rs',
     'src/borg_store.rs',
-    'src/borg_store_buy.rs',
-    'src/borg_store_sell.rs',
-    'src/borg_home_power.rs',
-    'src/borg_think_store.rs',
-    'src/borg_think.rs',
-    'src/borg_think_dungeon.rs',
-    'src/borg_think_dungeon_util.rs',
-    'src/borg_update.rs',
-    'src/engine.rs',
-    'src/headers/option_h.rs',
-    'src/lib.rs',
     'src/shadow.rs',
-    'src/state.rs',
 }
 
 

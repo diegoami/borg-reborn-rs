@@ -207,6 +207,9 @@ pub fn borg_reincarnate_end(st: &mut BorgState) {
 
     crate::borg_trait::borg_notice_player(st);
 
+    // borg-reborn-rs (#447): reincarnation bypasses borg_init.
+    crate::errands_plan::refresh();
+
     // clear out the old reactions again in case more messages came after
     // the borg died
     crate::borg_messages_react::borg_clear_reactions(st);
