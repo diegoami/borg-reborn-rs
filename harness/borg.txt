@@ -523,13 +523,16 @@ borg_param_power_inventory_clevel_threshold_3 = 7
 
 borg_param_prepared_recall_depth = 5
 # #1217: the folded class files set DL2 one CL above the mixed exploration
-# cap and set separate minimum levels for DL3–4 and DL5–9. A zero HP
-# minimum disables that gate.
+# cap and set separate minimum levels for DL3–4 and DL5–9. The common DL2
+# CL minimum is 0, which disables it for classes without an override.
+# Changing the gate for a class requires editing that class's line.
+# A zero HP minimum disables that gate.
 # #768: a positive margin allows a deeper level before CL50. The mid-depth
 # limit applies to classes other than Mage and Necromancer. Those two use
 # the mid character-level limit and the deep ramp.
 borg_param_prepared_clevel_depth_margin = 0
 borg_param_prepared_dl2_min_hp = 0
+borg_param_prepared_dl2_min_clevel = 0
 borg_param_prepared_cure_min = 2
 borg_param_prepared_cure_until_clevel = 30
 borg_param_prepared_mid_max_depth = 19

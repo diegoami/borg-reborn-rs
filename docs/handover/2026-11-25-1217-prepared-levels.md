@@ -1,4 +1,4 @@
-## #1217 · Shallow preparedness by class
+## 2026-11-25: Shallow preparedness by class (#1217)
 
 The folded `harness/borg.txt` sets DL2 one level above each class's mixed
 exploration cap. The owner set the DL3 minimum to 11 for Mage, 10 for
@@ -19,5 +19,12 @@ at each CL boundary through DL5. The
 [watched incident](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
 provides the character state for the fixture.
 
-Issue #1217 tracks the population comparison against the previous
-shallow defaults before adoption.
+The [review](https://github.com/diegoami/borg-reborn-rs/pull/1219#issuecomment-7148517918)
+found four feature-gated stair fixtures that need the DL2 level minimum
+disabled explicitly. The common and Warrior settings are both pinned in
+those fixtures. DL2 proposals report their own CL failure, and deeper
+proposals follow the inherited check order.
+
+The Warrior smoke run reaches DL1 by the cap with the proposed settings
+and DL3 with the control. Adoption and closing #1217 depend on the
+[Zoo comparison](https://github.com/diegoami/borg-zoo/issues/788).

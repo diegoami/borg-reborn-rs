@@ -279,6 +279,7 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0),
                 ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -347,6 +348,7 @@ class StaleStairMoreTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -421,6 +423,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -492,6 +495,7 @@ class NoteStandingFlagsTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),

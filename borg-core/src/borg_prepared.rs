@@ -259,18 +259,18 @@ fn shallow_requirements(st: &BorgState, depth: i32, value: impl Fn(Param) -> i32
         return Some(Reason::threshold(format!("{min_hp} hp"), "prepared_dl2_min_hp", hp, min_hp));
     }
 
-    let min_clevel = value(Param::prepared_dl2_min_clevel);
-    if !risky && clevel < min_clevel {
-        return Some(Reason::threshold(
-            format!("{min_clevel} clevel"),
-            "prepared_dl2_min_clevel",
-            clevel,
-            min_clevel,
-        ));
-    }
-
-    // Usually ready for level 2
+    // The DL2 level gate is specific to DL2. Deeper proposals use their
+    // own character-level checks.
     if depth <= 2 {
+        let min_clevel = value(Param::prepared_dl2_min_clevel);
+        if !risky && clevel < min_clevel {
+            return Some(Reason::threshold(
+                format!("{min_clevel} clevel"),
+                "prepared_dl2_min_clevel",
+                clevel,
+                min_clevel,
+            ));
+        }
         return None;
     }
 
@@ -1165,6 +1165,8 @@ mod recall_depth_tests {
         assert!(shallow_requirements(&st, 1, ranger).is_none());
         assert_eq!(shallow_requirements(&st, 2, ranger).unwrap().requirement,
             Requirement { name: "prepared_dl2_min_clevel", actual: 4, required: 8, relation: ">=" });
+        assert_eq!(shallow_requirements(&st, 3, ranger).unwrap().requirement,
+            Requirement { name: "prepared_dl34_min_clevel", actual: 4, required: 9, relation: ">=" });
 
         for (depth, name, required) in [
             (2, "prepared_dl2_min_clevel", 8),
