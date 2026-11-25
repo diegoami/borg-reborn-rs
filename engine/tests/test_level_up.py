@@ -28,6 +28,8 @@ class LevelUpTest(unittest.TestCase):
         # These policies change the route of the seed-102 recall fixture on
         # track-p. Keep the encounter and the exact budget boundary stable.
         env.update(
+            BORG_PARAM_TOWN_SHOP_OVERLOADED='1',
+            BORG_PARAM_TOWN_TORCH_PURCHASE_LIMIT='0',
             BORG_PARAM_TOWN_PHASE_RESERVE='0',
             BORG_PARAM_TOWN_RANGED_READINESS='0',
             BORG_PARAM_CAVE_LIGHT_ENGINE_RADIUS='0',
