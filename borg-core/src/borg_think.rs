@@ -224,6 +224,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
 
     /* Examine the screen */
     crate::borg_update::borg_update(st);
+    crate::core_trace::observe_healing_potions(st);
 
     #[cfg(feature = "test-stair-handoff")]
     if let Ok(case) = std::env::var("BORG_TEST_STAIR_HANDOFF") {

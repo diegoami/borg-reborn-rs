@@ -54,14 +54,49 @@ impl TownSupply {
         None
     }
 
-    fn can_refill(&self, missing: i32, gold: i32, adequate_departure: bool) -> bool {
+    fn can_refill(&self, missing: i32, gold: i32, minimum: i32, failed_visit: bool) -> bool {
         let Some(cost) = self.refill_cost(missing) else {
             return false;
         };
+        if cost == 0 {
+            // A free withdrawal can justify a first trip. If that visit
+            // left it behind, the same offer cannot justify a repeat.
+            return !failed_visit;
+        }
         gold >= cost
-            && (adequate_departure
+            && ((!failed_visit && self.departure_stock >= minimum)
                 || self.departure_gold < cost
-                || gold.saturating_sub(self.departure_gold) >= cost.max(1))
+                || gold.saturating_sub(self.departure_gold) >= cost)
+    }
+}
+
+impl Restock {
+    fn observe_reserve(&mut self, held: i32, minimum: i32, gold: i32) {
+        let old = self.phase;
+        self.phase = match old {
+            // Keep a committed return through dungeon level changes.
+            Phase::Returning { .. } => old,
+            _ if held >= minimum => Phase::Stocked,
+            Phase::Shopping => Phase::Deferred,
+            // A reserve that ran out calls for one visit even when town's
+            // offers or the Borg's ability to fund them are uncertain.
+            Phase::Stocked if held == 0 => Phase::Returning { started_with: held },
+            _ => {
+                let failed_visit = old == Phase::Deferred;
+                let missing = if failed_visit && held == 0 {
+                    1
+                } else {
+                    minimum - held
+                };
+                if self.town.can_refill(missing, gold, minimum, failed_visit) {
+                    Phase::Returning { started_with: held }
+                } else if old == Phase::NoReserve && held > 0 {
+                    Phase::Stocked
+                } else {
+                    old
+                }
+            }
+        };
     }
 }
 
@@ -80,7 +115,7 @@ fn healing_potion(st: &BorgState, item: &borg_item) -> bool {
         .contains(&i32::from(item.sval))
 }
 
-fn carried_potions(st: &BorgState) -> i32 {
+pub(crate) fn carried_potions(st: &BorgState) -> i32 {
     // The quaff command uses known pack items. The healing traits can also
     // count spells and device charges, which cannot replace a potion here.
     st.items
@@ -105,33 +140,10 @@ pub(crate) fn observe_dungeon(st: &mut BorgState) {
         return;
     }
     let held = carried_potions(st);
+    let gold = st.borg.tr(BI_GOLD);
     let restock = &mut st.think_dungeon.healing_restock;
     let old = restock.phase;
-    restock.phase = match old {
-        // Keep a committed return through dungeon level changes.
-        Phase::Returning { .. } => old,
-        _ if held >= minimum() => Phase::Stocked,
-        Phase::Shopping => Phase::Deferred,
-        // Losing the last potion still calls for one visit when town's
-        // offers or the Borg's ability to fund them are uncertain.
-        Phase::Stocked if held == 0 => Phase::Returning { started_with: held },
-        _ if held > 0 || old == Phase::Deferred => {
-            let missing = if held == 0 { 1 } else { minimum() - held };
-            let adequate_departure =
-                old != Phase::Deferred && restock.town.departure_stock >= minimum();
-            if restock
-                .town
-                .can_refill(missing, st.borg.tr(BI_GOLD), adequate_departure)
-            {
-                Phase::Returning { started_with: held }
-            } else if old == Phase::NoReserve {
-                Phase::Stocked
-            } else {
-                old
-            }
-        }
-        _ => old,
-    };
+    restock.observe_reserve(held, minimum(), gold);
     if returning(st) {
         if !matches!(old, Phase::Returning { .. }) {
             crate::borg_io::borg_note(
@@ -295,6 +307,83 @@ fn town_offers(
                     Some((shop, slot, price, i32::from(item.iqty)))
                 })
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn refill_uses_cheapest_stacks_and_requires_enough_observed_stock() {
+        let supply = TownSupply {
+            offers: vec![(0, 1), (20, 2), (70, 1)],
+            departure_stock: 2,
+            ..Default::default()
+        };
+        assert_eq!(supply.refill_cost(3), Some(40));
+        assert_eq!(supply.refill_cost(5), None);
+        assert!(!supply.can_refill(3, 39, 2, false));
+        assert!(supply.can_refill(3, 40, 2, false));
+    }
+
+    #[test]
+    fn a_never_stocked_borg_can_return_when_it_can_fund_the_reserve() {
+        let mut restock = Restock {
+            town: TownSupply {
+                offers: vec![(20, 2)],
+                departure_gold: 20,
+                departure_stock: 0,
+            },
+            ..Default::default()
+        };
+        restock.observe_reserve(0, 2, 39);
+        assert!(restock.phase == Phase::NoReserve);
+        restock.observe_reserve(0, 2, 40);
+        assert!(restock.phase == Phase::Returning { started_with: 0 });
+    }
+
+    #[test]
+    fn free_home_stock_can_start_a_return_but_cannot_repeat_a_failed_visit() {
+        let mut restock = Restock {
+            town: TownSupply {
+                offers: vec![(0, 2)],
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        restock.observe_reserve(0, 2, 0);
+        assert!(restock.phase == Phase::Returning { started_with: 0 });
+        restock.phase = Phase::Shopping;
+        restock.observe_reserve(1, 2, 0);
+        assert!(restock.phase == Phase::Deferred);
+        restock.observe_reserve(1, 2, 100);
+        assert!(restock.phase == Phase::Deferred);
+        restock.observe_reserve(2, 2, 100);
+        assert!(restock.phase == Phase::Stocked);
+    }
+
+    #[test]
+    fn paid_short_departure_waits_for_new_funding() {
+        let supply = TownSupply {
+            offers: vec![(20, 2)],
+            departure_gold: 25,
+            departure_stock: 1,
+        };
+        assert!(!supply.can_refill(1, 25, 2, false));
+        assert!(!supply.can_refill(1, 44, 2, true));
+        assert!(supply.can_refill(1, 45, 2, true));
+    }
+
+    #[test]
+    fn depletion_requests_a_return_without_quotes_and_keeps_it_across_observations() {
+        let mut restock = Restock::default();
+        restock.observe_reserve(2, 2, 0);
+        assert!(restock.phase == Phase::Stocked);
+        restock.observe_reserve(0, 2, 0);
+        assert!(restock.phase == Phase::Returning { started_with: 0 });
+        restock.observe_reserve(1, 2, 0);
+        assert!(restock.phase == Phase::Returning { started_with: 0 });
+    }
 }
 
 #[cfg(feature = "test-stair-handoff")]

@@ -8747,6 +8747,26 @@ The trace can run with either behavior off.
 | `ranged_readiness_damage_depth` | 2 | levels | 1–100 | `borg_ranged.rs:58` |
 | `ranged_readiness_trace` | 0 | flag | 0–1 | `borg_ranged.rs:400` |
 
+## Healing potion restock (#1214)
+
+The Track P profile enables the policy with a minimum of two known healing
+potions. A short reserve can justify a return when the last observed offers
+and current gold cover the deficit. A short departure needs a new funding
+opportunity for a paid refill. Free Home stock can justify one trip, and a
+failed visit defers it. Depleting a previously observed reserve can start
+a return before town stock is confirmed. The ordinary cure checks through
+DL35 honor that deferral. The DL65+ Heal and DL100 star-healing checks
+remain independent.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `restock_healing` | 0 | flag | 0–1 | `borg_healing_restock.rs:131` |
+| `restock_healing_min_potions` | 2 | potions | 1–10 | `borg_healing_restock.rs:135` |
+
+The additive `healing_potions` field in `trace-core.jsonl` counts the
+known healing potions observed before the Borg's decision. It is available
+with the restock switch on or off.
+
 ## The descent gates without a seen up staircase (#1177)
 
 From the #1173 investigation. `more_refused`'s four descent refusals — not

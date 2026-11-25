@@ -1,11 +1,39 @@
-# #1214 Return to restock healing potions
+## 2026-11-25: Return to restock healing potions (#1214)
 
-Based on the stair-routing changes at `8bf96f01`. [#1212](https://github.com/diegoami/borg-reborn-rs/pull/1212)
+### What was done
 
-The shipped minimum is two known healing potions. Below it, the Borg can return before depletion when the stock it last saw in town and its current gold cover the deficit. A failed or already short departure needs a new funding opportunity before another trip. The Borg still requests a return on first depleting its reserve. The funded low-stock check follows the flask resupply rule. [#1184](https://github.com/diegoami/borg-reborn-rs/issues/1184)
+Track P proposes a minimum of two known healing potions. Below it, the Borg
+can return when the stock it last saw in town and its current gold can
+cover the deficit. This covers an empty pack after a never-stocked
+departure when the refill becomes affordable. Free Home stock can justify
+one visit. Paid retries after a short departure require new funding.
+Depleting a previously stocked reserve still requests a return. The funded
+check follows the flask resupply rule. [#1184](https://github.com/diegoami/borg-reborn-rs/issues/1184)
 
-Caution still handles immediate threats. The return uses a reachable up stair first, then Word of Recall if the Borg can survive the delay. The objective survives dungeon level changes.
+The return survives level changes, tries a reachable up stair first, and
+uses Recall when the exposure check permits it. Both town shoppers can
+refill the reserve. A failed trip defers ordinary cure checks through DL35.
+The deeper Heal and star-healing checks remain independent.
+[#1212 stair routing](https://github.com/diegoami/borg-reborn-rs/pull/1212)
 
-Either town shopper can fill the reserve from Home or affordable regular-store stock. The normal shopper can sell or free pack space if the Borg cannot buy yet. If a visit ends short, the Borg uses the last observed offers to assess whether new dungeon gold can fund another trip. Other supplies and preparedness keep their own checks.
+### What was found
 
-The native regression drives the shallow dungeon and leave decisions with one potion remaining and at depletion. It covers an unaffordable refill, a blocked staircase, the next level's grace period and the failed-visit guard. A separate native town run verifies that each shopper buys up to the configured minimum. [Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
+The native cases cover one potion remaining, depletion, a blocked stair,
+insufficient gold, and shopping through both strategies. The review added
+unit coverage of first funding, free Home offers, failed visits, and the
+deep-level restock checks. The core trace records the last observed known
+potion count in both arms of the comparison.
+[Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
+
+### What is left
+
+The paired population comparison for #1214 is linked from the draft.
+[#1214](https://github.com/diegoami/borg-reborn-rs/issues/1214)
+[#1218](https://github.com/diegoami/borg-reborn-rs/pull/1218)
+
+### Owner decisions
+
+The draft keeps the switch enabled with a two-potion minimum. The owner
+can confirm that value after the Zoo results and decide when review is
+complete. The paid retry guard and preservation of the deeper healing
+checks are part of the proposed behavior.
