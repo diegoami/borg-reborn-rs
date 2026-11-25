@@ -72,7 +72,9 @@ class JunkConsumablesTest(unittest.TestCase):
             return messages.read_text(), frames
 
     def test_max_range_throw_uses_the_singleton(self):
-        kit = [(BLINDNESS, 1, True, 0), (SLEEP, 2, True, 0),
+        # Sleep sorts before Blindness in the native pack. Equal damage
+        # must therefore displace the first candidate with the singleton.
+        kit = [(SLEEP, 2, True, 0), (BLINDNESS, 1, True, 0),
                (CONFUSION, 1, False, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
         messages, frames = self.launch(kit, distance=10)
         self.assertIn(ord("v"), frames[0]["keys"])
@@ -90,10 +92,13 @@ class JunkConsumablesTest(unittest.TestCase):
         kit = [(CONFUSION, 1, False, 0), (CURE_LIGHT_WOUNDS, 2, True, 0)]
         messages, frames = self.launch(kit, distance=3)
         self.assertNotIn("Junk potion throw", messages)
+        self.assertNotIn("# Dropping junk", messages)
         self.assertEqual(frames[0]["healing_potions"], 2)
 
     def test_zero_dice_throw_is_an_option(self):
-        messages, _ = self.launch([(SLIME_MOLD_JUICE, 1, True, 0)], distance=4)
+        messages, frames = self.launch([(SLIME_MOLD_JUICE, 1, True, 0)], distance=4)
+        self.assertIn(ord("v"), frames[0]["keys"])
+        self.assertIn("Throwing painful object 'Potion of Slime Mold Juice'", messages)
         self.assertIn("You have no more Potions of Slime Mold Juice", messages)
 
     def test_stronger_melee_attack_wins(self):
@@ -101,6 +106,7 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertNotIn(ord("v"), frames[0]["keys"])
         self.assertIn("Attacking with weapon 'Dagger", messages)
         self.assertNotIn("Junk potion throw", messages)
+        self.assertNotIn("You have no more Potions of Blindness", messages)
 
     def test_dangerous_contact_uses_escape(self):
         kit = [(BLINDNESS, 1, True, 0), (CURE_LIGHT_WOUNDS, 2, True, 0),
@@ -109,6 +115,7 @@ class JunkConsumablesTest(unittest.TestCase):
         self.assertGreaterEqual(frames[0]["danger"], frames[0]["hp"])
         self.assertIn("You have 2 Scrolls of Teleportation", messages)
         self.assertNotIn("Junk potion throw", messages)
+        self.assertNotIn("You have no more Potions of Blindness", messages)
 
     def test_town_drops_harmful_stacks_before_shopping(self):
         kit = [(BLINDNESS, 1, True, 0), (SLEEP, 2, True, 0),

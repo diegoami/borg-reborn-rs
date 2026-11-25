@@ -1862,9 +1862,10 @@ fn borg_launch_bolt_aux_hack(
     }
     let junk_potion = is_potion_throw(st, typ, ammo_location);
     if junk_potion {
-        // New records have no seen bit yet, and the decision loop advances
-        // the Borg clock once between the perception scan and ordinary attacks.
-        let current = kill.seen || (0..=1).contains(&age);
+        // New records have no seen bit yet. An estimate can run during
+        // the scan, while ordinary attacks run one Borg turn after it.
+        const MAX_CURRENT_SCAN_AGE: BorgTime = 1;
+        let current = kill.seen || (0..=MAX_CURRENT_SCAN_AGE).contains(&age);
         let visible = current && ag.info & BORG_VIEW != 0 && belief.is_none();
         if !kill.awake || !visible || ignored(st, usize::from(r)) {
             return 0;
@@ -2093,7 +2094,8 @@ fn borg_launch_bolt_at_location(
 
     /* Simulate the spell/missile path */
     let mut dist = 1;
-    // A native throw can hit a monster on its final grid.
+    // A native throw can hit a monster on its final grid. Apply that
+    // boundary to the new potion policy and preserve existing throw play.
     let end = max + i32::from(is_potion_throw(st, typ, ammo_location));
     while dist < end {
         /* Calculate the new location */

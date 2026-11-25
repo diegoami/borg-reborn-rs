@@ -17,10 +17,18 @@ of the same kind remain eligible in the dungeon. The list follows
 [the strategy manual's bad items](../strategy/07-consumables-and-devices.md#13-bad-items-do-not-use-ignore-on-sight)
 and [the engine kind data](../../engine/angband/lib/gamedata/object.txt).
 
-Both candidate settings ship at zero under the P9 gate.
-Set `borg_param_attack_throw_junk_potions = 1` and
-`borg_param_junk_discard_harmful_in_town = 1` to test both behaviors.
-Population effects remain unmeasured.
+The owner expanded #1253 in chat to all known junk potions and asked
+for immediate town cleanup of harmful items. The owner then approved
+shipping both settings at `1` on Track P. The curated throw set covers
+the named harmful potions and expendable Slime Mold Juice. It stays
+independent of any broader effect classification. Population effects
+remain unmeasured.
+
+[#1256](https://github.com/diegoami/borg-reborn-rs/issues/1256) also needs
+town cleanup as part of its carry-reserve work. Its
+[draft PR](https://github.com/diegoami/borg-reborn-rs/pull/1259) should
+incorporate this town path and use the current Track P smoke reference
+before integration.
 
 Rust format, workspace Clippy, both Rust test suites, and parameter
 citations passed. All four shipped smoke runs matched the reference keys,

@@ -634,7 +634,11 @@ fn harmful_consumable(item: &borg_item) -> bool {
     KINDS.get_or_init(|| {
         HARMFUL_CONSUMABLES
             .iter()
-            .map(|&(tval, name)| (tval, engine::lookup_sval(tval as i32, name)))
+            .map(|&(tval, name)| {
+                let sval = engine::lookup_sval(tval as i32, name);
+                assert!(sval >= 0, "unknown harmful consumable {name} (tval {tval})");
+                (tval, sval)
+            })
             .collect()
     })
     .contains(&(u32::from(item.tval), i32::from(item.sval)))

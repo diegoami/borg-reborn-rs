@@ -281,7 +281,7 @@ borg_param_town_home_stack_limit = 2
 # #1049: clear known kinds the town planner deliberately excludes from purchases.
 borg_param_town_home_reject_unwanted = 1
 # #1253: discard known harmful consumables on a safe turn in town.
-borg_param_junk_discard_harmful_in_town = 0
+borg_param_junk_discard_harmful_in_town = 1
 # #1241: prioritize useful reserves, spare equipment and devices at Home.
 # Enabled by owner during early alpha (#1247).
 borg_param_town_home_reserve = 1
@@ -903,7 +903,7 @@ borg_param_attack_throw_as_melee = 1
 borg_param_attack_throw_surplus = 1
 borg_param_attack_throw_surplus_max_value = 100
 # #1253: use known junk potions as throws in low-risk fights.
-borg_param_attack_throw_junk_potions = 0
+borg_param_attack_throw_junk_potions = 1
 
 # Thrown objects at point blank (#870): the divisor of an adjacent, non-unique
 # throw rated with attack_throw_as_melee. 0 = inherit
