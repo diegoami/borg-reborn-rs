@@ -2103,6 +2103,60 @@ pub(crate) fn strengthen_test_town_loadout(st: &mut BorgState) {
     });
 }
 
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn set_test_terrain(st: &mut BorgState, at: loc, feat: u32) {
+    use crate::headers::cave_h::{cave, chunk};
+    extern "C" {
+        fn square_set_feat(c: *mut chunk, grid: loc, feat: i32);
+        fn square_memorize(c: *mut chunk, grid: loc);
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!(matches!(feat, headers::list_terrain_h::FEAT_CLOSED | headers::list_terrain_h::FEAT_OPEN));
+    // SAFETY: the initialized native fixture owns the engine thread. The
+    // grid and feature are valid, and redraw events may re-enter the Borg.
+    lend(st, || unsafe {
+        square_set_feat(cave, at, feat as i32);
+        square_memorize(cave, at);
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn place_test_monster(st: &mut BorgState, at: loc, race: usize) {
+    use crate::headers::cave_h::{cave, chunk};
+    use crate::headers::monster_h::{monster_group_info, monster_race, r_info, MON_GROUP_LEADER};
+    extern "C" {
+        fn place_new_monster(c: *mut chunk, grid: loc, race: *mut monster_race,
+            sleep: bool, group_ok: bool, group: monster_group_info, origin: u8) -> bool;
+    }
+    assert!(square_in_bounds_fully(at.x, at.y));
+    assert!((1..usize::from(r_max()) - 1).contains(&race));
+    // SAFETY: the initialized native fixture has a live level and race
+    // table. Both indices are in bounds and UI events may re-enter.
+    lend(st, || unsafe {
+        assert!(place_new_monster(cave, at, r_info.add(race), false, false,
+            monster_group_info { index: 0, role: MON_GROUP_LEADER }, 0));
+    });
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn alter_test_grid(st: &mut BorgState, direction: i32) {
+    use crate::headers::cmd_core_h::{command, CMD_ALTER, CTX_GAME};
+    extern "C" {
+        fn cmd_set_arg_direction(cmd: *mut command, name: *const c_char, direction: i32);
+        fn do_cmd_alter(cmd: *mut command);
+    }
+    assert!((1..=9).contains(&direction) && direction != 5);
+    // SAFETY: the initialized fixture owns the engine thread. A zeroed
+    // command has empty argument slots. The engine may re-enter on UI events.
+    lend(st, || unsafe {
+        let mut cmd: command = std::mem::zeroed();
+        cmd.context = CTX_GAME;
+        cmd.code = CMD_ALTER;
+        cmd_set_arg_direction(&mut cmd, c"direction".as_ptr(), direction);
+        do_cmd_alter(&mut cmd);
+    });
+}
+
 /// `player->body.slots[i].obj` (i < body.count), if it is an object with a
 /// kind.
 pub fn equip_object(access: &Access, i: usize) -> Option<CarriedObject<'_>> {
