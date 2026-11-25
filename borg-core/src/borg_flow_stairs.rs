@@ -1566,6 +1566,9 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     if case == "breeder-door-loop" {
         crate::borg_think_dungeon_util::run_breeder_door_regression(st);
     }
+    if case == "stale-kobold-door" {
+        crate::borg_update::stale_kobold_door_fixture::run(st);
+    }
     use crate::borg_caution::borg_caution;
     use crate::borg_flow::GOAL_DARK;
     use crate::borg_headers::borg_trait_h::BI_MAXHP;

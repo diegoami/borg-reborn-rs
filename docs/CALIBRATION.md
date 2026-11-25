@@ -6806,7 +6806,7 @@ miss at an adjacent monster wrote granite under the Borg (Paladin 1194051723:
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1740` |
+| `update_miss_wall_guess` | 0 | flag | 0–1 | `borg_update.rs:1874` |
 
 ## Shooting at a monster believed in the dark (#879)
 

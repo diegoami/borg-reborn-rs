@@ -67,7 +67,7 @@ const BORG_DIG_HARD: i32 = 40;
 pub(crate) const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
-const GOAL_FLEE: i32 = 7;
+pub(crate) const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
@@ -1706,6 +1706,7 @@ pub(crate) fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
             borg_keypress(st, keycode_t::from(b';'));
             st.borg.status.no_alter = false;
         } else {
+            crate::borg_update::note_alter_door_attack(st, loc { x, y }, ag.kill);
             borg_keypress(st, keycode_t::from(b'+'));
         }
         borg_keypress(st, i2d(dir));
