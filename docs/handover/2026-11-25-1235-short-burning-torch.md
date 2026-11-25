@@ -23,6 +23,10 @@ turn. It also covers the low-fuel departure check, the lantern fallback,
 and the equipment-upgrade tie-break. The fuel comparison uses the
 timeout of one wielded copy, including when the spare is a stack.
 
+Rust formatting, Clippy, both Rust test suites, the vendor check, and the
+parameter citation check passed. All four default-core smoke runs matched
+the checked-in reference.
+
 **Remaining work.** The integration decision stays with #1235. Population
 effects are unmeasured. The recorded inventory was reconstructed in the
 tests, and the original native recording has not been replayed.
