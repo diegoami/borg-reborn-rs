@@ -179,7 +179,7 @@ class StairHandoffTest(unittest.TestCase):
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight=None, player_class=6, depth=5):
+    def run_case(self, case, weight=None, player_class=6, depth=5, **settings):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
@@ -195,7 +195,8 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     config, changed = re.subn(fr"^{key} = .*$", f"{key} = 0", config, flags=re.M)
                     if changed == 0:
                         config += f"\n{key} = 0\n"
-                for name, value in {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}.items():
+                caution = {"stairs_flight_threat_weight": weight, "desperate_adjacent_down_distance": 3}
+                for name, value in (caution | settings).items():
                     key = f"borg_param_caution_{name}"
                     config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                     if changed == 0:
@@ -217,6 +218,14 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             for case in ("one-step", "two-steps"):
                 with self.subTest(weight=weight, case=case):
                     self.run_case(case, weight)
+
+    def test_pursuit_budget_checks_the_reachable_route_and_its_handoff(self):
+        cases = (("pursuit-budget-off", 0), ("pursuit-budget", 100),
+                 ("pursuit-budget-slowed", 100), ("pursuit-budget-handoff", 100))
+        for weight in (0, 5):
+            for case, budget in cases:
+                with self.subTest(weight=weight, case=case):
+                    self.run_case(case, weight, desperate_walk_cost_percent=budget)
 
     def test_known_up_handoff_with_shipped_settings(self):
         self.run_case("known-up-handoff", player_class=0, depth=2)

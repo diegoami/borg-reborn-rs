@@ -1413,6 +1413,8 @@ borg_param_caution_remember_never_move = 0
 borg_param_caution_desperate_fast_danger_percent = 50
 # #907: compare current player and observed monster speeds in the faster-neighbour veto.
 borg_param_caution_desperate_fast_haste = 0
+# #908: refuse branch (three) when the walk costs this share of HP. 0 disables the test.
+borg_param_caution_desperate_walk_cost_percent = 0
 # #1123: avoid a recently retreated-from grid on a stair route while it
 # is still dangerous. The hold lasts at most 128 Borg thinks.
 borg_param_caution_retreat_reentry_ticks = 128
