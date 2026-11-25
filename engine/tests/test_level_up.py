@@ -25,6 +25,17 @@ class LevelUpTest(unittest.TestCase):
         env.update(BORG_CORE='borg-rs', BORG_ERRAND=f'/level-up {level}',
                    BORG_ERRAND_BUDGET=str(budget), BORG_ERRAND_OUT=str(receipt),
                    BORG_TXT_SET=f'borg_stop_clevel={stop_level}', RUN_TIMEOUT_SECONDS='30')
+        # These policies change the route of the seed-102 recall fixture on
+        # track-p. Keep the encounter and the exact budget boundary stable.
+        env.update(
+            BORG_PARAM_TOWN_PHASE_RESERVE='0',
+            BORG_PARAM_TOWN_RANGED_READINESS='0',
+            BORG_PARAM_CAVE_LIGHT_ENGINE_RADIUS='0',
+            BORG_PARAM_EXPLORE_MIXED='0',
+            BORG_PARAM_STAIR_SCUM='0',
+            BORG_PARAM_CAUTION_COMBAT_HEAL='0',
+            BORG_PARAM_LONE_SLOW_ATTACK='0',
+        )
         result = subprocess.run(
             [str(ROOT / 'harness/run.sh'), str(out), '102', '2', '1', '2000', 'menu'],
             env=env, capture_output=True, text=True, timeout=40)
