@@ -2787,16 +2787,19 @@ pub(crate) fn run_dark_vein_loop_regression(st: &mut BorgState, on: bool) -> ! {
 /// a carved corridor whose only passage is the flight path's closed door,
 /// an unrelated open door in a niche beside it, the down stairs beyond —
 /// driving `borg_play_step` with adjacent next grids, as the flows hand
-/// them, and applying the door state after each action along the
+/// them, ticking the escape context at every think as `borg_think_dungeon`
+/// does, and applying the door state after each action along the
 /// direction the Borg actually queued (`borg_queue_direction`), advancing
 /// the turn for every action. During the flight the corridor door must
 /// open exactly once and never be closed again (the #1206 suppression)
-/// while the unrelated niche door stays closed; afterwards a deliberate
-/// containment must be able to close that door once the flight's escape
-/// context ends, a new flight must not inherit a dead flight's exemption
-/// over a door ordinary play reopened (review 2's repro: re-arming
-/// inside the old window), and the new flight's own open must age out of
-/// the undo window (the review of PR #1207).
+/// while the unrelated niche door stays closed. Afterwards the
+/// containment must close that door: once the flight's escape context
+/// ends; when a new flight re-arms inside the old window after ordinary
+/// play reopened the door with no containment turn in between (review 3,
+/// route A — the tick observed the disarm, the containment did not); when
+/// a scare is withdrawn and re-armed within one think so the flags never
+/// read off (review 3, route B — the withdrawal stamps the disarm); and
+/// when the new flight's own open ages out of the undo window.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     use crate::borg_headers::borg_trait_h::BI_FOOD;
@@ -2959,12 +2962,13 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     let mut side_closed_seen = false;
     let mut deliberate_closes = 0usize;
 
-    // The flight: staged adjacent next grids, as the flows hand them. The
-    // first think closes the niche door, the second opens the corridor
-    // door, the third walks onto it, and the replanned walks past it —
-    // from the fifth think on the open door is a neighbour behind the
-    // Borg while the next grid is the corridor ahead: the shape that
-    // closed the recorded door 35 times.
+    // The flight: staged adjacent next grids, as the flows hand them,
+    // with the escape-context tick each think (armed here, so it never
+    // stamps). The first think closes the niche door, the second opens
+    // the corridor door, the third walks onto it, and the replanned walks
+    // past it — from the fifth think on the open door is a neighbour
+    // behind the Borg while the next grid is the corridor ahead: the
+    // shape that closed the recorded door 35 times.
     let path = [
         door,
         door,
@@ -2982,6 +2986,7 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
             "the flows hand adjacent next grids (at {:?} for {next:?})",
             st.borg.c
         );
+        crate::borg_flow::escape_context_tick(st);
         let _ = crate::borg_flow::borg_play_step(st, next.y, next.x);
         apply_action(
             st,
@@ -3005,14 +3010,13 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     assert!(door_opened_yet, "the flight opened the corridor door");
 
     // A deliberate containment once the escape context ends: the
-    // exemption must lapse with it (review of PR #1207, [P2] — it is not
-    // a property of every open on the level). Stand next to the door
-    // again and pick a next grid that is not the door. With no escape
-    // armed the containment also drops the whole record: remembered
-    // openings belong to the escape that opened them.
+    // exemption must lapse with it (review of PR #1207, [P2]). The tick
+    // observes the disarm at the think's start; the containment then
+    // closes the door.
     st.borg.c = loc { x: 44, y: 20 };
     st.borg.goal.fleeing = false;
     st.borg.goal.leaving = false;
+    crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, 20, 45);
     apply_action(
         st,
@@ -3029,20 +3033,53 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     );
     assert!(!door_open(st), "the deliberate containment closed the door");
 
-    // Review 2's repro: the door is reopened in ordinary play (fabricated
-    // — no `o` runs, so nothing records it) and a new escape arms well
-    // inside the old window. A dead flight's exemption must not carry
-    // over: the record was dropped when the first context ended, and the
-    // ordinary open recorded nothing, so the new flight closes the door.
-    st.cave.grid_mut(door.x, door.y).feat = FEAT_OPEN as u8;
+    // Review 3, route A: a new flight opens the corridor door itself,
+    // then ends without the containment ever getting a turn while the
+    // context is disarmed — the tick is the only observer of the disarm.
+    // Ordinary play closes and reopens the door; the record still holds
+    // the flight's entry. A third flight re-arms inside the old window
+    // and must close the door: the entry died with its escape.
     st.borg.goal.fleeing = true;
     st.borg.goal.leaving = true;
     st.borg.time.now += 5;
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, door.y, door.x);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert!(door_open(st), "the new flight opened the corridor door");
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
     assert!(
-        engine::distance(st.borg.c, loc { x: 45, y: 20 }) == 1,
-        "the flows hand adjacent next grids (at {:?})",
+        st.borg.c.x >= loc { x: 45, y: 20 }.x,
+        "the new flight walks past the door (at {:?})",
         st.borg.c
     );
+    st.borg.goal.fleeing = false;
+    st.borg.goal.leaving = false;
+    crate::borg_flow::escape_context_tick(st); // the disarm: no containment turn
+    st.cave.grid_mut(door.x, door.y).feat = FEAT_CLOSED as u8;
+    st.cave.grid_mut(door.x, door.y).feat = FEAT_OPEN as u8; // ordinary reopen
+    st.borg.goal.fleeing = true;
+    st.borg.goal.leaving = true;
+    st.borg.time.now += 5;
+    st.borg.c = loc { x: 44, y: 20 };
+    crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, 20, 45);
     apply_action(
         st,
@@ -3059,10 +3096,12 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     );
     assert!(!door_open(st), "the new flight's containment closed the door");
 
-    // The undo window itself, isolated from the context bound: the new
-    // flight's own open is recorded (a real `o` while armed), then ages
-    // out while the flight stays armed — the containment closes it.
-    st.borg.c = loc { x: 44, y: 20 };
+    // Review 3, route B: the scare's goals are withdrawn and re-armed
+    // within one think — the flags never read off across a think
+    // boundary, and the withdrawal itself stamps the disarm
+    // (escape_context_disarm_now, as borg_caution does). The re-armed
+    // scare is a new escape and must close the door.
+    crate::borg_flow::escape_context_tick(st);
     let _ = crate::borg_flow::borg_play_step(st, door.y, door.x);
     apply_action(
         st,
@@ -3073,8 +3112,20 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
         &mut side_closed_seen,
         &mut deliberate_closes,
     );
-    assert!(door_open(st), "the new flight opened the corridor door");
-    st.borg.time.now += i32::from(crate::borg_flow::OPENED_DOOR_UNDO_TURNS) + 1;
+    assert!(door_open(st), "the re-armed flight opened the corridor door");
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    st.borg.c = loc { x: 44, y: 20 };
+    crate::borg_flow::escape_context_disarm_now(st);
     let _ = crate::borg_flow::borg_play_step(st, 20, 45);
     apply_action(
         st,
@@ -3087,6 +3138,40 @@ pub(crate) fn run_breeder_door_regression(st: &mut BorgState) -> ! {
     );
     assert_eq!(
         deliberate_closes, 3,
+        "the re-armed scare closes the door its predecessor's flight opened"
+    );
+    assert!(!door_open(st), "the re-armed scare's containment closed the door");
+
+    // The undo window itself, isolated from the context bound: the
+    // flight's own open is recorded while armed and continuous, then
+    // ages out of the window with no disarm in between — the containment
+    // closes it.
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, door.y, door.x);
+    apply_action(
+        st,
+        door,
+        side,
+        true,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert!(door_open(st), "the flight opened the corridor door");
+    st.borg.time.now += i32::from(crate::borg_flow::OPENED_DOOR_UNDO_TURNS) + 1;
+    crate::borg_flow::escape_context_tick(st);
+    let _ = crate::borg_flow::borg_play_step(st, 20, 45);
+    apply_action(
+        st,
+        door,
+        side,
+        false,
+        &mut door_opened_yet,
+        &mut side_closed_seen,
+        &mut deliberate_closes,
+    );
+    assert_eq!(
+        deliberate_closes, 4,
         "the containment closes the door once the undo window expired"
     );
     assert!(!door_open(st), "the deliberate containment closed the door");

@@ -5391,6 +5391,10 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
             calmed: p(Param::caution_scary_unlatch_calmed) != 0,
         };
         if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
+            // borg-reborn-rs (#1206, review 3): the scare's goals were
+            // withdrawn mid-think — the escape ended even if a new one
+            // re-arms below in the same think.
+            crate::borg_flow::escape_context_disarm_now(st);
             borg_note(
                 st,
                 if killed && (rules.kill || rules.calmed) {
@@ -5414,6 +5418,9 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     if stand {
         st.borg.mon.scary = false;
         withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+        // borg-reborn-rs (#1206, review 3): the scare's goals were
+        // withdrawn mid-think; a re-arm in the same think is a new escape.
+        crate::borg_flow::escape_context_disarm_now(st);
         if !st.borg.mon.scary_stand {
             borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
         }
