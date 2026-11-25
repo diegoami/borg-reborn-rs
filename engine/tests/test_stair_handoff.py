@@ -99,6 +99,13 @@ PINNED_TOWN_SETTINGS = [
     # #1200 shipped surplus throwing after these incidents. Use the
     # original throw range and scoring to reach the recorded stair grids.
     ("attack_throw_surplus", 0),
+    # #1217 changed shallow preparedness after these recorded routes.
+    ("prepared_dl2_min_hp", 30),
+    ("prepared_dl2_min_clevel__warrior", 0), ("prepared_dl2_min_clevel__mage", 0),
+    ("prepared_dl34_min_hp__warrior", 50), ("prepared_dl34_min_clevel__warrior", 4),
+    ("prepared_dl34_min_hp__mage", 60), ("prepared_dl34_min_clevel__mage", 11),
+    ("prepared_dl59_min_hp__warrior", 60), ("prepared_dl59_min_clevel__warrior", 6),
+    ("prepared_dl59_min_hp__mage", 80), ("prepared_dl59_min_clevel__mage", 15),
 ] + [(f"town_staple_{kind}", 0) for kind in ("clw", "csw", "ccw", "phase", "oil", "food", "light")] + [
     (f"town_staple_{kind}__{cls}", 0) for cls in ("warrior", "mage") for kind in ("clw", "csw", "phase", "oil")
 ]
@@ -282,6 +289,7 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0),
                 ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -350,6 +358,7 @@ class StaleStairMoreTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -424,6 +433,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 1),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -495,6 +505,7 @@ class NoteStandingFlagsTest(unittest.TestCase):
             pinned = [
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
+                ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
                 ("prepared_dl2_min_hp", 0), ("prepared_dl34_min_hp", 0),
                 ("prepared_dl34_min_clevel", 0), ("prepared_dl59_min_hp", 0),
                 ("prepared_dl59_min_clevel", 0), ("prepared_cure_min", 0),
@@ -593,6 +604,7 @@ class DarkVeinLoopTest(unittest.TestCase):
     def test_without_the_switch_the_recorded_loop_repeats(self):
         self.run_case(False)
 
+
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class BreederDoorLoopTest(unittest.TestCase):
     """#1206: the breeder containment must not close the door the flight
@@ -643,61 +655,6 @@ class BreederDoorLoopTest(unittest.TestCase):
     def test_the_containment_never_closes_the_flight_door_again(self):
         self.run_case()
 
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-
-@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
-class DarkVeinLoopTest(unittest.TestCase):
-    """#1189: the recorded DL1 vein loop driven through the production
-    exploration — borg_think_dungeon on the fabricated recorded region
-    (run_dark_vein_loop_regression, borg_think_dungeon_util.rs), not a test
-    copy of the candidate filter. The recorded Half-Troll Warrior
-    (Borg261124143216, the issue's evidence) walked 444666 between
-    (113,44) and (110,44) for 4,000 turns: ring 10 the treasure vein at
-    (109,44), ring 11 the vein at (114,45). With explore_stepable_goals = 1
-    (shipped) the veins are no goals and the Borg walks out of the corridor
-    (or leaves the level when nothing is left); with 0 the first think
-    commits twice — the recorded cost-1 aim beside the vein whose step
-    never comes, then the aim back east — and the corridor loop repeats.
-    """
-
-    def run_case(self, on):
-        case = "dark-vein-loop-on" if on else "dark-vein-loop-off"
-        with tempfile.TemporaryDirectory(prefix="dark-vein-loop-") as directory:
-            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
-            for path in paths.values():
-                path.mkdir()
-            config = (ROOT / "harness/borg.txt").read_text()
-            # The switch under test, replaced in place (it ships 1), and the
-            # exploration mode the incident ran under, breadth-first
-            # (track-p #1201 shipped it 0; the recorded game predates that).
-            pins = [("borg_param_explore_stepable_goals", 1 if on else 0), ("borg_param_explore_breadth_first", 1)]
-            for name, value in pins:
-                config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
-                assert changed, f"the shipped file ships {name}"
-            (paths["user"] / "borg.txt").write_text(config)
-            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
-            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
-            # The recorded character: a Half-Troll Warrior (race 7, class 0)
-            # at DL1. Its birth kit feeds the think; the fixture pins the
-            # traits (23 max HP: breadth-first applies, stair_scum does not).
-            result = subprocess.run(
-                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
-                 "--", "-seed", "101", "-race", "7", "-class", "0", "-menu-letters", "-start-depth", "1", "-keys", "250"],
-                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=60,
-            )
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn(f"dark vein loop passed: {'on' if on else 'off'}", result.stdout)
-
-    def test_stepable_goals_walks_out_of_the_recorded_corridor(self):
-        self.run_case(True)
-
-    def test_without_the_switch_the_recorded_loop_repeats(self):
-        self.run_case(False)
 
 if __name__ == "__main__":
     unittest.main()
