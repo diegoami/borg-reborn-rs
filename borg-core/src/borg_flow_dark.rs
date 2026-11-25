@@ -2371,6 +2371,7 @@ mod breadth_first_tests {
     #[test]
     fn mixed_depth_adjustment_drives_the_cap_and_growth() {
         let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
         for (clevel, depth, expected_level, expected_eligible, expected_growth) in [
             (9, 1, 9, true, [7, 5, 54]),
             (10, 1, 10, false, [7, 6, 60]),
