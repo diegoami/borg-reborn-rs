@@ -1,0 +1,2816 @@
+{
+  "schema": "borg-reborn-rs/r45-port-source@1",
+  "receiving_main": "24be98732748230062882fe2b7d9601dba5e2cc0",
+  "pinned_native_files": {
+    "borg-core/src/borg_inventory.rs": "d16d7a791c3e3698bf0eac4e5f5c9c8cddbbc142fbd8bfc11b4d367be4070e1b",
+    "borg-core/src/borg_caution.rs": "120ad19646d0c176a276787cc2ff3a3277a40f810ec23708852eae3e29fc2a01",
+    "borg-core/src/borg_escape.rs": "8ce976f36b7ac1bdc58b9fdc66ce54477f8b69178bc9b3879a287505d0b262a4",
+    "borg-core/src/borg_recover.rs": "bdc3e6d5affa8796f512bff1921ef9c2caa9e1fad453b886327f5173ffe9a2d9",
+    "borg-core/src/borg_fight_attack.rs": "e71da0db63550c4f96d1213767981b056429352a82b91d768484cbebee0dc794",
+    "borg-core/src/borg_fast_fragile.rs": "652cc75ad34f41f7c55591527b870e73b1e2fc682b664db124d35e9e87181a24",
+    "borg-core/src/attack_preference.rs": "44f292d243a6e420d5048a52ab6fb826ca293a354c3736122a96eea7db216f45",
+    "borg-core/src/borg_fight_defend.rs": "c0199a22ff1d223446b85fe591049d1cb618371daba5711ba9a922c96b189edb",
+    "borg-core/src/borg_item_use.rs": "ecf4d5e46e097e021b1716586e82f7ef442b51acb9a87da16ffda8ab462b80d8",
+    "borg-core/src/borg_power.rs": "8a3b42d7cc902b878e84fc8fd6fba5aa7d3982b0c2714cbc73531e7e45332e70",
+    "borg-core/src/borg_item_wear.rs": "d6e436ca8bbbd257d4a01d4d356ef859a812f4e175fe9c5bac92a50ee71a45b9",
+    "borg-core/src/borg_item_id.rs": "9c81b12dd403bad83ce728b6a031309acb062472f3c6bb4364a914adac79c9ac",
+    "borg-core/src/borg_home_power.rs": "6dd98e54bf536129e1c0a204be6051ce55de305c290a99449789e9dd7c164614",
+    "borg-core/src/borg_store_buy.rs": "fb0212807d865d501b52a9a7c3bfdbba55df3ddb0c84868bf5bd9cb6ff458c81",
+    "borg-core/src/borg_store_sell.rs": "4951adf64afec157c5f6ad4f8a9e6e1afea49cc58618cfdcdf6b98914b620086",
+    "borg-core/src/borg_think_store.rs": "6c67c1003fb8dd001dff4301f38728146b55568b66414ab5fd4165b411cc2d5b"
+  },
+  "receiving_files": {
+    "borg-core/src/borg_inventory.rs": "02e59c1b39fe9a3c3c66b15d9dbd0dd804aca9df6f7232f8df29436de0db6232",
+    "borg-core/src/borg_caution.rs": "a64bd17cf2a8f4cf7f7078832f5641cadb935cd8289ac6fee6a9003737e24486",
+    "borg-next/src/stateful/caution.rs": "1d409d84449f3acdd19a3de927828363d7de91dd3b5f8b3732726291bb4cf546",
+    "borg-core/src/borg_escape.rs": "bb1f9f41a38e7f3cae2057917930ec33fc62f35e7ca009087a8c4d56bac2d7e4",
+    "borg-next/src/stateful/escape.rs": "4286889fcf1bad8ccb41649f78d18b3b6d4f3d43b5b1193aeb4f29f6296fcbfd",
+    "borg-core/src/borg_recover.rs": "2ad68436b6e2d4b470ebeabf325b24adff153bd6391374ab1e07bcac8a4f085b",
+    "borg-next/src/stateful/recovery.rs": "bd5b621fe5b0db40571fe80d526ea461cb19aa9431299f2eec00a9a45e9a3511",
+    "borg-core/src/borg_fight_attack.rs": "5f50c756fe5536d6b6b3ae6e8784e5f82693854ac228ffc794fc8b77cb77e555",
+    "borg-next/src/stateful/attack.rs": "cd955a409b005f72a536a7dfce7f89158c92cf3f03e2152e1d8ea3a3c28418e5",
+    "borg-core/src/borg_fast_fragile.rs": "763189634e6dab48b11c0e07810206269e81793d27a38b7aa31d542f0dabed24",
+    "borg-next/src/stateful/fast_fragile.rs": "883d15d4f7cbcbde98ab6a5124c29cbc14cd8a9ff2cfc7a6c02c8ff2f8bae16f",
+    "borg-core/src/attack_preference.rs": "02f8f51afb8b5cc38dd9abba039f89ed3731880dc40c8ae710e03119f4a498b4",
+    "borg-next/src/stateful/attack_preference.rs": "8f7271704bbd5e83f104c570cb29a04d6187804c342f0210d00822d3ce176608",
+    "borg-core/src/borg_fight_defend.rs": "d40c9f8100da5e79234e273c88605be7b20563c3cb4b8bd90fb467b06cd16958",
+    "borg-next/src/stateful/defence.rs": "d44be379c408c70d31a754fa1a57d1a92a3927e748567a6fe965ba8674a12c55",
+    "borg-core/src/borg_item_use.rs": "d67f1538f6ab5167d977b36e79e6efba8d2685e7dfa7d7a2affec2275897195e",
+    "borg-next/src/stateful/item_use.rs": "45d9cb84a2752c69f53e34282c060e20ba824c65412c7099ecb9a8608529b667",
+    "borg-core/src/borg_power.rs": "c2732f682c2544bf1ea991aa917b6889b35d8c4f28d0d49f9948b5027015fd94",
+    "borg-next/src/stateful/power.rs": "0f3f4cead2a65c3e59111aae971c0f77ae1b79e9761c3e025fe8cb0b3fe5e2de",
+    "borg-core/src/borg_item_wear.rs": "e0734594be935c08ce7b28a237ec8929675757271c8a397c10f8eec9bcbe038d",
+    "borg-next/src/stateful/equipment_wear.rs": "bc0b48fa0efedd1ee81cffa49331b4f8e20d4037cc18a12cfedb12c84b918156",
+    "borg-core/src/borg_item_id.rs": "4d2d9e38a562d98908a704c631e43964f014373ced1892ae210b7cdd4c3fa7d7",
+    "borg-next/src/stateful/equipment_identify.rs": "0447f95ffd9a7cb62312fcef00a1e2611a4e8905acedd7ef4d45e7f12324f804",
+    "borg-core/src/borg_home_power.rs": "c7e5ad0934c2de6a2158b69ad7202c553b4ed9775c339c4cd660b8c4a1c8b019",
+    "borg-next/src/stateful/home_power.rs": "cc2d33bdaeeb28c28f71d2b628b664ddceb59bfe3612fb5e2b2f69fb8d53d22a",
+    "borg-core/src/borg_store_buy.rs": "508ffb7b1b8ce244f936388f0cfbffb36627c9581d89a8d0e6ddc534bba53ff4",
+    "borg-next/src/stateful/store_buy.rs": "d00be2ef0f872376411ec7bc9b0dc07c6442a36dd2081b0246a7111d4b3af048",
+    "borg-core/src/borg_store_sell.rs": "9672467b49a3858cfcafba339e378b9d697c3981796a4738a742ccb143580df1",
+    "borg-next/src/stateful/store_sell.rs": "f24450ef391391c2969e421df9c004a8cb66a5c0c716e2f3687fc3fb285de1be",
+    "borg-core/src/borg_think_store.rs": "3aa5553b7e702520b066a66b13a0ef30b18d755d3313ab56e4a55e411dea7d82",
+    "borg-next/src/stateful/think_store.rs": "1f6f54d29a83a9e3f5f4a08cc8ae2d2b35fc1a3ed9c22d5a36c8559a68405019",
+    "borg-next/src/lib.rs": "90afa70f89aff9d940009eb0b871c823611b58a72be17018483a16357569ecac",
+    "borg-next/src/stateful/mod.rs": "c98fde2c78dbf0f1605528da92914484f4e0cd4190810f59fb164a7b0296442f",
+    "borg-core/src/decision_api.rs": "5ef11923d90ea0531c09d02e43617d08d660b7a7b1bd7a49a1b0eeca0fe2bf72",
+    "borg-core/src/decisions.rs": "9c36aa9ee6f75018a50c2d7c837dad85344844459c8c8119817e41c594e476ef",
+    "borg-core/src/threat_facts.rs": "26eb061506bd262deaffe8c20d6150b10cae7d7c0629dbd658ad88558fd42816"
+  },
+  "modules": {
+    "caution": {
+      "paired": {
+        "annoying_effect": {
+          "native": "annoying_effect",
+          "normalized_sha256": "4b1e2a60f879b320939187548320edcbb348d3fae1c06e904839d2523a35bf84"
+        },
+        "awake_monster_adjacent": {
+          "native": "awake_monster_adjacent",
+          "normalized_sha256": "c990cdba1255da97a5d3c049847b067a0652967c64e5ae6166142cfa0bd8ab53"
+        },
+        "back_away": {
+          "native": "back_away",
+          "normalized_sha256": "283a97b705afcf051fc39d34be341a6ec61ed69543842087b950f98aae47f36c"
+        },
+        "best_step_away": {
+          "native": "best_step_away",
+          "rewrite": "iterate the same eight i32 stair scores in index order",
+          "native_sha256": "b0134d270ae9edcd9e6515a521703f668e4c55e5a6f1d1e03615fa0add97bb62",
+          "owned_sha256": "cafd6a5b085ddae2e97384111568ee80a4a6e3555bee71da7a77d0bd96ca718a"
+        },
+        "big_monster_adjacent": {
+          "native": "big_monster_adjacent",
+          "normalized_sha256": "82777ccda8ccb354049659b58a87417e870d50e76ab12fe7a8331fdcd8e98e16"
+        },
+        "blow_average_tenths": {
+          "native": "blow_average_tenths",
+          "normalized_sha256": "9f5c280d24464f8cd34bc7a0148a884b68b7485778225b41ab9dae2ca6adf614"
+        },
+        "blow_hp_per_action": {
+          "native": "blow_hp_per_action",
+          "normalized_sha256": "ece6d18e610c8dd0dfce50202b0d7d00a1802e4061d47e5ab788ffc80fa29b2b"
+        },
+        "boost_order": {
+          "native": "boost_order",
+          "normalized_sha256": "217aecab087d0c6a0e5b2e884af59456138c0c3d322bc6d40d6d38e0f49a0dcf"
+        },
+        "borg_adjacent_kill_in_one_blow": {
+          "native": "borg_adjacent_kill_in_one_blow",
+          "normalized_sha256": "08b30664f3d57058a174eaa71a3f8a6b1920254d870d8f8a27be1f6beedf03e1"
+        },
+        "borg_caution": {
+          "native": "borg_caution_native",
+          "rewrite": "typed values are read in array order before the predicate",
+          "native_sha256": "12f4f5676f58e441c7ef2d32e11cbdec4581ed30ce46abf17e01b48a2332e95d",
+          "owned_sha256": "b3109a447154da8bd591088f0a4947b6bcf079501339bae479aed9ea557b1c61"
+        },
+        "borg_heal": {
+          "native": "borg_heal",
+          "normalized_sha256": "14b2d4a0f6fe22d7ab3fdf8875f81fe077becbf4e4206e138f056d4d040d5c92"
+        },
+        "borg_heal_outmatched": {
+          "native": "borg_heal_outmatched",
+          "normalized_sha256": "eb09356b1325521f1af969554ea70475913998ca59cc2b753932424696c7accb"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "f8d311b2746fdfe094c4090a3eb68ff3283fca69cae6db14c2dcfa6e2e2ac320"
+        },
+        "bouncing": {
+          "native": "bouncing",
+          "normalized_sha256": "a5381fa9eaab596c1b60984afdf7b0878452cc93e867dc0026f945e56e91ed3c"
+        },
+        "breeder_engaged_but_own_leave": {
+          "native": "breeder_engaged_but_own_leave",
+          "normalized_sha256": "087cf64aae0930278bde8bc908e99fa9f7a1320f447778e25a42259318bcf7a0"
+        },
+        "breeder_exit": {
+          "native": "breeder_exit",
+          "normalized_sha256": "0337e2a7fcb099e33bc24663be651ff6c6eedad3285daa16141a3ff2fab10da9"
+        },
+        "breeder_exit_flow": {
+          "native": "breeder_exit_flow",
+          "normalized_sha256": "a0183b5f547612fcc38583c7534b636055e1f2168943602fd7ec257d6a04ec8f"
+        },
+        "breeder_exit_grid": {
+          "native": "breeder_exit_grid",
+          "normalized_sha256": "c246c66d600b455c348ba57559e472c99c7057e76023b7c7f32b6678ad0787d1"
+        },
+        "breeder_fight_hard": {
+          "native": "breeder_fight_hard",
+          "normalized_sha256": "ed3dda16eb9f09fb3fc8768a9a683aa75786869ff7d0106acf8f240f4faea1ce"
+        },
+        "breeder_fight_hard_with": {
+          "native": "breeder_fight_hard_with",
+          "normalized_sha256": "6ec460e5759d67fc0e2db1c77d8695c8b0323b5c19ab509cf87d1c1c4219d2bb"
+        },
+        "breeder_fighting_through": {
+          "native": "breeder_fighting_through",
+          "normalized_sha256": "776830598d7d3e4024d8611dd7edfc4895b2cabb0d61e6b05cf15525e88150f3"
+        },
+        "breeder_hunt": {
+          "native": "breeder_hunt",
+          "normalized_sha256": "472239146c275e97d84a17110b66fd6176650472343ace3c32f2622eff2045de"
+        },
+        "breeder_hunt_with": {
+          "native": "breeder_hunt_with",
+          "normalized_sha256": "506e4213e93798d9e19702d25f240db624073d5f0176038dd01120543e243d2f"
+        },
+        "breeder_marks_suspended": {
+          "native": "breeder_marks_suspended",
+          "normalized_sha256": "0e2c9650ac7b31024ca8a4a9d34d34fa54a92d8ca7b8843e2e4a067707802e0d"
+        },
+        "breeder_recall_held": {
+          "native": "breeder_recall_held",
+          "normalized_sha256": "3d9d22b11ba7ff4dd41f52f17cf8293bba523076d3e361903239789d9c888374"
+        },
+        "breeder_stand": {
+          "native": "breeder_stand",
+          "normalized_sha256": "42993c847c09e210bd445405a832d2cc73cbdc35c16eccf146fb874c6f3b8e94"
+        },
+        "breeder_stand_here": {
+          "native": "breeder_stand_here",
+          "normalized_sha256": "853a17e8eaef8d3ab2260e280164287c8d6436455593673e9ddbc626a9b0dea1"
+        },
+        "breeder_stand_paused": {
+          "native": "breeder_stand_paused",
+          "normalized_sha256": "93520f4b5b1d9882e71a4b5592564573c4c7115867898499fe08657a5ea62316"
+        },
+        "breeder_stand_with": {
+          "native": "breeder_stand_with",
+          "normalized_sha256": "bf345aedb60191edce1bcbd1d5a4137d0e6bf17e1530551b362dd7a331763d81"
+        },
+        "breeders_stoppable": {
+          "native": "breeders_stoppable",
+          "normalized_sha256": "00c41b45c38c96aec3b64d5bc25d9301d8952b4b8b7b5a321c3ea9f0b9201b0b"
+        },
+        "bump_heal_due": {
+          "native": "bump_heal_due",
+          "normalized_sha256": "690a4f4d3102aa4c6606205000ee5e41041b80afb3b1a450651513a422d810e9"
+        },
+        "bump_recent": {
+          "native": "bump_recent",
+          "normalized_sha256": "afca10f28483a8e7b790adddc2a30619c4f34f513e25b56241f5344bab044a7b"
+        },
+        "buy_time_for_recall": {
+          "native": "buy_time_for_recall",
+          "normalized_sha256": "c5fdc73a76de61d19750e5d661cc1425126b67a83a1a245433401ba0c88505e4"
+        },
+        "category_attack_safe": {
+          "native": "category_attack_safe",
+          "normalized_sha256": "a07c1c7e16bb30e95d97c299b38e071c3209e0732389e4515da3e100a5864b3e"
+        },
+        "category_attack_safe_with": {
+          "native": "category_attack_safe_with",
+          "normalized_sha256": "e4462d435e063dbe951804d5f902ec29051859164bf95d3aa759fc025ffd41d2"
+        },
+        "category_threat_safe": {
+          "native": "category_threat_safe",
+          "normalized_sha256": "ca2b8736e4f6722fb9193c8e2c0592ca97a8fd6e1c7d838c149731a3bb34a576"
+        },
+        "chokepoint": {
+          "native": "chokepoint",
+          "normalized_sha256": "3b4c37a3f5647a0d0ee7da91567ef2513e4bf8e7fe141126b35f1d5524db976e"
+        },
+        "choose_stairs": {
+          "native": "choose_stairs",
+          "normalized_sha256": "5263c716561d03127de9dcc12e5154e40a76e29ce8c74cbd253546113bf64e2b"
+        },
+        "complete_attack_commands": {
+          "native": "complete_attack_commands",
+          "normalized_sha256": "c05735a4530d111ce4078fb64a136f177d17fb9c18f3b5636358f8191d3fe943"
+        },
+        "confusion_clw_cure": {
+          "native": "confusion_clw_cure",
+          "normalized_sha256": "95324b5559076fc6258b4685a0abbf0c6e8b8badd9733b6dc6a9142d90f2dcfb"
+        },
+        "confusion_cure_carried": {
+          "native": "confusion_cure_carried",
+          "normalized_sha256": "bb1caa606b6dcf634aab9497881f81634edcfae21f3bcdc16770cd1d45d7edef"
+        },
+        "confusion_cure_held": {
+          "native": "confusion_cure_held",
+          "normalized_sha256": "e612b479678bb7f3ae9c2c01d55658bdb7ad568e8ac42fd4e5ed4e66c32acea6"
+        },
+        "cornered_boost": {
+          "native": "cornered_boost",
+          "normalized_sha256": "14cb58e93b80034d5eeba398804d5f351ff437cbf0622fb4e90aa06f6427af36"
+        },
+        "cornered_shape": {
+          "native": "cornered_shape",
+          "normalized_sha256": "9a597bba786d12db4291b7caee564c3819a176ecb4f89ab359bbed2a73df0f5a"
+        },
+        "crowd_exit_grid": {
+          "native": "crowd_exit_grid",
+          "normalized_sha256": "eafc950e079e686cbedd87bb356d66a4953f266d7af185499ba0a0da01da5aea"
+        },
+        "danger_reaches_percent": {
+          "native": "danger_reaches_percent",
+          "normalized_sha256": "0b3c895504e003fc3125877cdd2c3aed709608679a160fdd78bd029f77c804e2"
+        },
+        "danger_share_reaches": {
+          "native": "danger_share_reaches",
+          "normalized_sha256": "f34b05826f49b6510cc2065a0ed279565a0bc06f0a8da68abe4541beb7613af9"
+        },
+        "desperate_flow": {
+          "native": "desperate_flow",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "00062bd40fdd06ad75e1c4f41d104e6d9f45ff803d6d8c985cdaa7fd858405be",
+          "owned_sha256": "d4e1854b9d2f222da77d68d3f6eaaa9418d77e046ab971074df033e154eae74f"
+        },
+        "desperate_for_stairs": {
+          "native": "desperate_for_stairs",
+          "normalized_sha256": "560e6999c86557df30082b2a962f2d147b5316eaff8c9b1c82ddae7b80fde87b"
+        },
+        "down_stair_allowed": {
+          "native": "down_stair_allowed",
+          "normalized_sha256": "50fc508fd852464e52f1bab4a56e02e03fb811b18481ad5e7ff3ffb1bbe5e0bb"
+        },
+        "easy_escape_with": {
+          "native": "easy_escape_with",
+          "normalized_sha256": "c004099a5fe33e69d9c66803134ec6def6f18ab0abe5c1e8eea0d29a379299b9"
+        },
+        "engaged_ignoring_own_leave": {
+          "native": "engaged_ignoring_own_leave",
+          "normalized_sha256": "9ed9bf88485019b71cbeeeac5f891bafa0d3b8a88e856c0e8c19b665529a41a3"
+        },
+        "engaged_with": {
+          "native": "engaged_with",
+          "normalized_sha256": "8ac37eac7c55c0edf0258622f74de6ab29333342e6ec2e1682dfd9919c6cfc4b"
+        },
+        "fast_neighbour_counts": {
+          "native": "fast_neighbour_counts",
+          "normalized_sha256": "44c598dde08cb0b7cc708991d1b97f6cab32dbdad8447e46db2bd26afde56dad"
+        },
+        "fight_before_flight": {
+          "native": "fight_before_flight_native",
+          "normalized_sha256": "148965710a6fcdd1c6268d1163873d9f09069dab6627a13462429609d6fa05ed"
+        },
+        "fight_cornered": {
+          "native": "fight_cornered",
+          "normalized_sha256": "2bc06a1d648a20359adfc7bd6f34f39f60e3b7f83ab6cabd82185351620c5fc3"
+        },
+        "fight_cornered_with": {
+          "native": "fight_cornered_with",
+          "normalized_sha256": "d642ded4644cc77c19aba5452235da367f6541e81a09495a74967f1c3652cafe"
+        },
+        "fight_incoming": {
+          "native": "fight_incoming",
+          "normalized_sha256": "c3ea5104252f1d3be103418a80c39ef4297baec02c7f6590e480c3861dda6bf1"
+        },
+        "fight_incoming_with": {
+          "native": "fight_incoming_with",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "a43c0366d66c9ddf3ecd2483db5a20154bac79b3d2caa231950373ed08085946",
+          "owned_sha256": "7a848dc0c5951a74c01aa747e028d5e493c026aa3b9c9ac8c5ce1d22533091c3"
+        },
+        "fight_regeneration": {
+          "native": "fight_regeneration",
+          "normalized_sha256": "de7096555fc819f44e5746038cb44fb0466ebe3279b7f8abd6895869ba2b8a5f"
+        },
+        "flee_down_cornered": {
+          "native": "flee_down_cornered",
+          "normalized_sha256": "11d3f1b37993790270345de9612f590e5bc19df8dfb3a9cada6b464e280d2ad5"
+        },
+        "flee_down_depth": {
+          "native": "flee_down_depth",
+          "normalized_sha256": "8a0f72681e5dbdd4c524d146149feeb0d9daea1613ce327e27f1062e18fb85f2"
+        },
+        "flee_known_down_flow": {
+          "native": "flee_known_down_flow",
+          "normalized_sha256": "fad855df39c7f66c6f70b6752e5076e31f219ad4c94f4837ac60e85e86355b65"
+        },
+        "fleeing_hurt": {
+          "native": "fleeing_hurt",
+          "normalized_sha256": "682b06f0759099ed555613f57c991d4d6352a042b6d44c2861800fd513966250"
+        },
+        "flight_goal": {
+          "native": "flight_goal",
+          "normalized_sha256": "ed1c9ae0281da2415a91ba9cb24fa6bb6d765edc752ba2cda8615aeb3bd3ca70"
+        },
+        "flight_recall_survivable": {
+          "native": "flight_recall_survivable",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "efe87e47f4b12bcf09fcc89663157498739b6981c1dc20b2a5f7bd3c7f93eeb4",
+          "owned_sha256": "dd3e6f12a487d75079cff2962a9cd5018681d6eddce065aa2a0ea53d15498802"
+        },
+        "forecast_monster_speed": {
+          "native": "forecast_monster_speed",
+          "normalized_sha256": "10e79c5960eb69ea964900393e103464cbccaf6bc53ef5fe2785fdd1526c861f"
+        },
+        "heal_amount": {
+          "native": "heal_amount",
+          "normalized_sha256": "ca67db42e87f81d94ed518177acb9221941ea4cad33a26f53797f88d717d5284"
+        },
+        "i2d": {
+          "native": "i2d",
+          "normalized_sha256": "87d685dcdf35ed7090c3049d24bdc30a9a2b38b2371bfb823a4182991d8498dd"
+        },
+        "immobile_annoying": {
+          "native": "immobile_annoying",
+          "normalized_sha256": "4280763ea125905137aadaf722e4df6ae7b5a9f5c8946600eb25e49c50729ae9"
+        },
+        "immobile_attacker": {
+          "native": "immobile_attacker",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "9ff771daf7b31c12ec6685002601c23727daae83e76e4604b07ecae5e05ca54c",
+          "owned_sha256": "62cc164b34d3105b98abbae842b73a7c745efaf24188dacc70c4c94f88e0b94e"
+        },
+        "immobile_attacker_next_to": {
+          "native": "immobile_attacker_next_to",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "d3aec159dd7c0f60afb84a69c108d72335dd8997bc3dfbec17ff306f256d5492",
+          "owned_sha256": "e65571f57a4f25844d122dac467cae90fc2b1db157424a5685a5377c4c2b9def"
+        },
+        "immobile_kept_at_range": {
+          "native": "immobile_kept_at_range",
+          "normalized_sha256": "fe61f36c30f1453564a5bd7b69699c60125fa1c99f338000ebe200e9304b425e"
+        },
+        "immobile_step_away": {
+          "native": "immobile_step_away",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "73a2d2d55fe32051af18568012706792e90c1c4a9acc2b192e0c8e6e248ec1a9",
+          "owned_sha256": "6671488c9ea7510635f9292419c299a1c7908674e4e3a64145dd0945e51077b0"
+        },
+        "inven_light": {
+          "native": "inven_light",
+          "normalized_sha256": "cf0c0a7aa337887f813ed01a6b6d777b804b88b99350a9861b5889d37e598b01"
+        },
+        "kept_at_range": {
+          "native": "kept_at_range",
+          "normalized_sha256": "dbbc5bf4adc2b0599a194e85d373303b610aafb7a5f21a95ada4f4db9c03fef8"
+        },
+        "kept_at_range_next_to": {
+          "native": "kept_at_range_next_to",
+          "normalized_sha256": "c2cab6095d5be9a2162711ff68b5a3ebec73186e62f021fbd003629ed12f4108"
+        },
+        "kept_attacker_next_to": {
+          "native": "kept_attacker_next_to",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "ee796def6958ec45b1a732d44accfb6b54720516352d6759a6f58cd44e2bd4bb",
+          "owned_sha256": "1cda2a767d5b243f6917d5f2755c39928be51695d3ce924f7508067143026904"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "lava_forbids_step": {
+          "native": "lava_forbids_step",
+          "normalized_sha256": "25ebd359d6c6cd834b680a07f2085f1237d1089fa8c9c7b859446d8caaa62422"
+        },
+        "leave_stairs_on_monster": {
+          "native": "leave_stairs_on_monster",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "9623c120a23d786508bb5033d0d11017e4efc59fc00e2be27cd96cc010495584",
+          "owned_sha256": "dd9cee9f47f51ea34eba454b1d1162492e988e3e3849873fdc426f90c7f06a94"
+        },
+        "lightless_self_care": {
+          "native": "lightless_self_care_native",
+          "normalized_sha256": "8fa5a886286fcce0065b3ac162adc9b3de0ddd5a2b9d5f881fb4974176c5a490"
+        },
+        "listed_ranged": {
+          "native": "listed_ranged",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "86b7109e86095db5b11bad9e828acf7d4562f409193c97ea6170a47ffd1279eb",
+          "owned_sha256": "b9dd585a3cf1ff5ce8409bbce328ee8c8e2229b826674bd781883a6b1d163aba"
+        },
+        "lost_recall": {
+          "native": "lost_recall",
+          "normalized_sha256": "4ad578292031b23925594fea2715fa7c410f47539607f49673d94939808fa9f2"
+        },
+        "may_move_away": {
+          "native": "may_move_away",
+          "normalized_sha256": "a22deea29b02c91049e163bd3a274144140820f0a53ff28643fa8416548a5a6a"
+        },
+        "melee_class": {
+          "native": "melee_class",
+          "normalized_sha256": "3211b773f44f727fcf97a991ab7a9d28b6891b4df2bf4e1653fa8d4676a523e1"
+        },
+        "mobile_danger": {
+          "native": "mobile_danger",
+          "normalized_sha256": "7515beaeb97b7b2936f9515ac5772207b3b2d09c6fd334fcd437b9da2da509e4"
+        },
+        "mobile_danger_at": {
+          "native": "mobile_danger_at",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "53400e49496750fc61bb4dca2a6a3738e0821e2a34cb412f862f383bcf542754",
+          "owned_sha256": "ac12d047762ef9bf66901328b09dcd29d96720b5e168e128729f23dab1654c8e"
+        },
+        "modelled_blow": {
+          "native": "modelled_blow",
+          "normalized_sha256": "3c2e174b8e29a1a85089293f795d902b88b949c3e0947b134509ec5de7365b0b"
+        },
+        "moves": {
+          "native": "moves",
+          "normalized_sha256": "0df15f238f66600532b60c8bfad55347f9287d174ed4076124de00505121684d"
+        },
+        "near_known_breeder": {
+          "native": "near_known_breeder",
+          "normalized_sha256": "8d158fc0d8e0d8e9771df68d434736f6ed2eb01cefa4a686803925ac549180d3"
+        },
+        "nearest_free_stair": {
+          "native": "nearest_free_stair",
+          "normalized_sha256": "935d55d7a2e2f7d7aa864a5d1a3f9473d59ae4a5164639b7771ecff2a9c1b953"
+        },
+        "nearest_kill": {
+          "native": "nearest_kill",
+          "normalized_sha256": "741ee9a8b67930f729f0d703dd76665e59fa2c5f20984123f379cb571f74cec3"
+        },
+        "nearest_mover_seen": {
+          "native": "nearest_mover_seen",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "f632089c05876f00bcb1fc18c895e5902b424901ae5354ded7f65c6c03d0ceed",
+          "owned_sha256": "871a63df1915a2e7cd9eab5ef79f84f9c018a9cd9b8b88d8c65e4680a5c1187b"
+        },
+        "nearest_mover_seen_in": {
+          "native": "nearest_mover_seen_in",
+          "normalized_sha256": "bd032085e004742e76f213da43689cb00242e5e1445fa0c71e5e53124d44ede1"
+        },
+        "note_scary_goals": {
+          "native": "note_scary_goals",
+          "normalized_sha256": "656eaf4f55c7ef5f2c9ee63597b1adf003042a4777823d3217397cda24367d44"
+        },
+        "note_standing": {
+          "native": "note_standing",
+          "normalized_sha256": "213c9467d10cf9921c922b4099733e47cfdddfcf666003373beb137976588e39"
+        },
+        "note_with_reason": {
+          "native": "note_with_reason",
+          "normalized_sha256": "9085082af0f6b2d9156a4a7724350791608aff0b0f7ccfcb56241eb44d999a34"
+        },
+        "only_breeders_near": {
+          "native": "only_breeders_near",
+          "normalized_sha256": "958749458f2e6963f963100fbdbdaf9098f7958f4c6548cbd72a51b53387dd09"
+        },
+        "outmatched_heal_applies": {
+          "native": "outmatched_heal_applies",
+          "normalized_sha256": "1d8c1c91177f2c3779750a798eb814e8e6a8c0955f77725a668c2816d79a5661"
+        },
+        "race_turns": {
+          "native": "race_turns",
+          "normalized_sha256": "64aee08b1c3a9232a62680d349240b309d2257cf1245510c08e6fb00a20d1fd0"
+        },
+        "ranged_before_recall": {
+          "native": "ranged_before_recall",
+          "normalized_sha256": "3a647e8e2f89678a063b1c1b3d6d3ca2d9c2871eec9a16ca37cb2d744e3870e1"
+        },
+        "ranged_candidate": {
+          "native": "ranged_candidate",
+          "normalized_sha256": "3f86821775bf7f6fa8c4c953266972a8e28290f11ce74b3f30e2bc358cd7d338"
+        },
+        "ranged_target": {
+          "native": "ranged_target",
+          "normalized_sha256": "6e0f820086e16578d7400353096d85f60017f9a76d96b66378f006a21ec97f24"
+        },
+        "recall_allowed_with": {
+          "native": "recall_allowed_with",
+          "normalized_sha256": "1152cb428dfeddeabc2da0367b4d3f1be39783e2a57392f25a9ec85dea9e12c3"
+        },
+        "recall_attack_steps": {
+          "native": "recall_attack_steps",
+          "normalized_sha256": "911d8a392b6b86faa745c800cf9b97f216f2a9bf25b6d518dd02301745079434"
+        },
+        "recall_contact_steps": {
+          "native": "recall_contact_steps",
+          "normalized_sha256": "e069abc99fec7286c78a47e8b76fe644347c1edf71316bda9bfab3cb1bbaf5ce"
+        },
+        "recall_cure_hurt_enough": {
+          "native": "recall_cure_hurt_enough",
+          "normalized_sha256": "17c704988aae476890adf4402354f9d1a3ca8c8878a50cb1d0fd4e0df47878e6"
+        },
+        "recall_danger_reaches": {
+          "native": "recall_danger_reaches",
+          "normalized_sha256": "3bf86c032dce7aaafe808e4ee223117f8ffe681f644509664e4d3fa102dd2b50"
+        },
+        "recall_escape_allowed": {
+          "native": "recall_escape_allowed",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "f9aa8e83da8dbc042cee2194e8e44eac4870cd5df1f814d816ef0dfae3d4d71f",
+          "owned_sha256": "020f876bd47a5e916df6b3d94e53a2189c804700271896b2b92d06335cad4fbd"
+        },
+        "recall_escape_with": {
+          "native": "recall_escape_with",
+          "normalized_sha256": "4ebd9ffe0891a42a1d5b0e92d5c5f0ae2048afb26da9da6351519fc0a962b85b"
+        },
+        "recall_exception": {
+          "native": "recall_exception",
+          "normalized_sha256": "1e6b899b15380c0eb545a448abd2cab8b6893eeb5c9964c1e9dfca2dc5da24f0"
+        },
+        "recall_exposure": {
+          "native": "recall_exposure",
+          "normalized_sha256": "044a2b60af5ff08b4d1e0113ab37c5acb1ebc4440c4a01d38448d5bc5fcf4a09"
+        },
+        "recall_forecast_allows": {
+          "native": "recall_forecast_allows",
+          "normalized_sha256": "db7c7876676157146884687e179b0e180e27827bcea5e66a4ef1ab9a4e128b9e"
+        },
+        "recall_needs_exception": {
+          "native": "recall_needs_exception",
+          "normalized_sha256": "46cab264d65eb86965fabfadd5f0413d729fd391f71f5d11a54e4bd8089dfb2d"
+        },
+        "recall_rest_held": {
+          "native": "recall_rest_held",
+          "normalized_sha256": "54289819c3fe19a4a3edbe03668f76ff241bf17f50a0d53749c9b8c02a1208e6"
+        },
+        "recall_restricts": {
+          "native": "recall_restricts",
+          "normalized_sha256": "8852de2c79de199ca6dc6644c68d1111021cfe2b9d92edd1b4ce3faefcf81c22"
+        },
+        "recall_restricts_with": {
+          "native": "recall_restricts_with",
+          "normalized_sha256": "17e7a55180900031c2393ce19d7dd4161ca4cc86b543016be723005811db9855"
+        },
+        "recall_spell_has_unknown_damage": {
+          "native": "recall_spell_has_unknown_damage",
+          "normalized_sha256": "f4b6eb49479e0005b24870fdd1cdce77d1f01c8bed3e03ac57bd067870937d7a"
+        },
+        "recall_wait_holds": {
+          "native": "recall_wait_holds",
+          "normalized_sha256": "2d0fd6261c3871bc4f3100e4ff07ff9d42f6aa85841279c0f33eddc5b5a6a94a"
+        },
+        "recall_wait_no_explore": {
+          "native": "recall_wait_no_explore_native",
+          "normalized_sha256": "d60c6e1a3f0fa86139425a36318cc55e2bec16f19c32da3327de5fbf69d36901"
+        },
+        "recall_watch_holds": {
+          "native": "recall_watch_holds",
+          "normalized_sha256": "13f8aa9239c022a4be8f322d1027353f4a8ceb0168b2f5955db5a6550c257547"
+        },
+        "resume_emergency_down_flight": {
+          "native": "resume_emergency_down_flight",
+          "normalized_sha256": "155a94e42733c0d4d2b45e9f471f1d299b641003f60b6c99b0cd08a251a2e145"
+        },
+        "retreat": {
+          "native": "retreat",
+          "normalized_sha256": "e0c1111afa90cb2f42aad01dd16a996361d788c65a7bfc7827353f4f295a619a"
+        },
+        "rising_hold": {
+          "native": "rising_hold",
+          "normalized_sha256": "86f474b976ac04221d3a8284994a956716fde1026a208ad48af13c8289877715"
+        },
+        "rising_holds_descent": {
+          "native": "rising_holds_descent",
+          "normalized_sha256": "0c09d47e1e84f98b269b2b8a96fb0afd3a45240409bdcdd7cd9db54f49dde6fd"
+        },
+        "rising_holds_flee_descent": {
+          "native": "rising_holds_flee_descent",
+          "normalized_sha256": "77f779ea2c5b0ed5d14cd7156343665e1c1c0b28761b61ece935e9c1fbfbba07"
+        },
+        "rod_ok": {
+          "native": "rod_ok",
+          "normalized_sha256": "13a6458dd85e40d32e4519c93ce7f678fc9ff688f1a404d2ca6c443005b34e06"
+        },
+        "scary_ranged_no_stairs": {
+          "native": "scary_ranged_no_stairs",
+          "normalized_sha256": "a73ca37228981d9a1693f7d447376acbc62fd957a2951ddfc559a8800dab616b"
+        },
+        "set_cursp": {
+          "native": "set_cursp",
+          "normalized_sha256": "002bbffb3661c27a7fa108e25de8e653cebceeace2b383ca245c4498933937a3"
+        },
+        "slow_crowd": {
+          "native": "slow_crowd",
+          "normalized_sha256": "34136f91b6d00d92ef1c5c70addab847f3b3d446c57ab1fbd410b3b84834c7cc"
+        },
+        "slow_crowd_exit": {
+          "native": "slow_crowd_exit",
+          "normalized_sha256": "10aab5b53c13d5ab716ff0cedb349d1d31c10408d39cc9c3d1a8cfc9ba32ee85"
+        },
+        "stair_flight_weight": {
+          "native": "stair_flight_weight",
+          "normalized_sha256": "afb8c155e73fc441c249fe625946ca73528ab677d93bc989ff63a258d386d443"
+        },
+        "stair_flow_reaches": {
+          "native": "stair_flow_reaches",
+          "normalized_sha256": "c061c76e5e909092b374c8a94f64b94555d978136f83e8b4ece7008b45e3214d"
+        },
+        "stair_reachable": {
+          "native": "stair_reachable",
+          "normalized_sha256": "31219b6881984652f60c85f57a59c651c66b5b7560f5683bc5d90e4185209ec3"
+        },
+        "stairs_before_recall": {
+          "native": "stairs_before_recall",
+          "normalized_sha256": "9999132073dfaaed0327a08e1b32afbc3439b8f5f70eb4730e6475ccc372b359"
+        },
+        "stairs_leave_when": {
+          "native": "stairs_leave_when",
+          "normalized_sha256": "bb499fc2d7c28cb98eb3b379566c85e92864be17208bc04026cf39e547ff196d"
+        },
+        "stand_against_breeders": {
+          "native": "stand_against_breeders",
+          "normalized_sha256": "1ac5797b1dd9a84d499c90907b52ec42c6cd03faf83fa108f9190dfaf97c3681"
+        },
+        "stand_paused": {
+          "native": "stand_paused",
+          "normalized_sha256": "7b33a6467e530a712e35f6d78d35063b74e3eab932e9234aca4060b2754f52dc"
+        },
+        "start_fleeing": {
+          "native": "start_fleeing",
+          "normalized_sha256": "78a09750f07a2d531e290955d731cb330b37697e4a8cee71373df82681c5ce3c"
+        },
+        "start_leaving": {
+          "native": "start_leaving",
+          "normalized_sha256": "f85bb1462edd22a4dc89d161a85c7e266bba93e8d4d2daf660cc4099afd9976d"
+        },
+        "stats_needing_fix": {
+          "native": "stats_needing_fix",
+          "rewrite": "typed values are read in array order before the predicate",
+          "native_sha256": "fde9be35cc04b453b7fd5d9c4f876a4ed7b8f82593b151a6a224eb7d3b1b1ee2",
+          "owned_sha256": "36dcc8c05c535c58dc5ee9d4b853b90346bf52c4ffaaa98a7c00441743d55843"
+        },
+        "step_allowed": {
+          "native": "step_allowed",
+          "normalized_sha256": "5c2933b82af0197b7feb8f78f8c4bed908223cd6f6145ab3db441f9c1f77067f"
+        },
+        "step_away_wanted": {
+          "native": "step_away_wanted",
+          "normalized_sha256": "d05641f257f3406683bc5c0b663657589d2673847509449ef4cbd126f3a14041"
+        },
+        "step_left": {
+          "native": "step_left",
+          "normalized_sha256": "8b37118d880747a10da17c17b147ed9bae606ce36b17da89c5eabd0c0a9a3cea"
+        },
+        "throw_first": {
+          "native": "throw_first",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "b1792a117b7b9a40bac40b0312857608d742c716079640f172d4540655e1bfbf",
+          "owned_sha256": "c614181ef1d631309ad1120a3d2d87e069eeed02ab2ae81b149b3b2226f8f9fa"
+        },
+        "throw_first_applies": {
+          "native": "throw_first_applies",
+          "normalized_sha256": "b7b13730545582ab38266828b224568cb41db65c0bba685803646b3bfb64365d"
+        },
+        "unseen_bump_blocked": {
+          "native": "unseen_bump_blocked",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "4288c53343824b5c89d146ad77eaa39864260217e4baa5d7ed1c4b80eedb3970",
+          "owned_sha256": "bed26f97819bb24c1705fea57e573b8d2d9b3bc2587d203bd7dcd567bc0da624"
+        },
+        "unseen_bump_response": {
+          "native": "unseen_bump_response",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "6711043eb14b9362cc51e8ded011334dc1de1148d57e04332a4b78996de13b54",
+          "owned_sha256": "058bf3f1c21478f554d9fd5310b06389a02e898173064d0c4e6faec08bdfa46f"
+        },
+        "walk_away_from": {
+          "native": "walk_away_from",
+          "normalized_sha256": "8f0792a2f7ddeeb2f3d48f21e788585d2718e31edbaf470314d8280645340f8e"
+        },
+        "watch_for_recall": {
+          "native": "watch_for_recall",
+          "normalized_sha256": "0862c57458e63c21832a7c675a19f0ca52e26021c8f97233d4ed79bd81647fc8"
+        },
+        "winning_fight": {
+          "native": "winning_fight",
+          "rewrite": "typed values are read in array order before the predicate",
+          "native_sha256": "edd366b190d9ccec86a9ecc652a0816b1baa93e56e32dddc0e604ae4c75ecc56",
+          "owned_sha256": "0524b1ee8da0230ed76c38233056aa560aa898636abef795e349764036e33375"
+        },
+        "wins_race": {
+          "native": "wins_race",
+          "normalized_sha256": "5c0d6e99042b2998513e10c456ebcf3a829c3717f82b75d07532f97cda897803"
+        }
+      },
+      "native_only": [
+        "apply_scary_stand",
+        "borg_caution",
+        "breed_chance",
+        "breeder_block_grid",
+        "breeder_engaged",
+        "breeder_fight_through_on",
+        "breeder_level_full",
+        "breeder_recall_due",
+        "calmed",
+        "classify_scare",
+        "fight_before_flight",
+        "finish_bump",
+        "forget_scary",
+        "in_reach_of_kept",
+        "in_reach_of_stepped_from",
+        "jumpstart_keeps_stairs",
+        "lightless_self_care",
+        "melee_damage",
+        "melee_damage_per_turn",
+        "monster_died",
+        "note_breeders",
+        "note_breeders_stoppable",
+        "note_calmed",
+        "note_kill",
+        "note_scan",
+        "note_scary_race",
+        "only_parked",
+        "race_bit",
+        "recall_pending_escape",
+        "recall_wait_no_explore",
+        "remember_breeder",
+        "same_grid",
+        "scary_by_damage",
+        "scary_calmed",
+        "scary_damage_reaches",
+        "scary_named_monsters",
+        "scary_stand",
+        "stair_parked_fallback",
+        "stair_scum_threat",
+        "stair_scum_threatened",
+        "stair_scum_threatened_with",
+        "stairs_clean_path_flee_on",
+        "stairs_clean_path_mode",
+        "stairs_flight_ignores_danger",
+        "stand_contribution",
+        "stand_decision",
+        "stand_inputs",
+        "stoppable",
+        "suspend_breeder_marks_when_stuck",
+        "town_flee_applies",
+        "town_flee_fear_floor",
+        "town_never_scary",
+        "town_never_scary_with",
+        "town_scary_levels_less",
+        "twitch_refuses",
+        "unlatch_scare",
+        "unlatch_when",
+        "unseen_bump_cancel_shot",
+        "unseen_bump_message",
+        "unseen_bump_step",
+        "unseen_bump_update",
+        "unseen_melee_message",
+        "weighted_stairs_blocker_percent",
+        "withdraw_scary_goals"
+      ]
+    },
+    "escape": {
+      "paired": {
+        "adjacent_awake": {
+          "native": "adjacent_awake",
+          "normalized_sha256": "263a9d8bce41a5ab593a7abd436148173c3f37de08be37884236bc8e93c8fdbd"
+        },
+        "adjacent_foes": {
+          "native": "adjacent_foes",
+          "normalized_sha256": "d04906bb5c5361e18a37b7b3c314b8b7f2a71110798ec1f1b1bf888a07d37719"
+        },
+        "any_fox_form_on": {
+          "native": "any_fox_form_on",
+          "normalized_sha256": "be47943029720de1109f9ed1e789ffe4c687178555c23bd1e4fe58d44645cc5e"
+        },
+        "avoid": {
+          "native": "avoid",
+          "normalized_sha256": "001fb2953360fbe5519962b52ecc245488f2cc76d372b1f4c0afc80e03351dd6"
+        },
+        "awake_in_view": {
+          "native": "awake_in_view",
+          "normalized_sha256": "6cc28ef3b2e92b63afd1f833064a78488aa39698817a92db450cd538e7fb2222"
+        },
+        "borg_allow_teleport": {
+          "native": "borg_allow_teleport_native",
+          "normalized_sha256": "1fd9835010bc226b0536b09e1fa024155e51f2ce23b4dfe29c457274e8cea53f"
+        },
+        "borg_caution_teleport": {
+          "native": "borg_caution_teleport_native",
+          "normalized_sha256": "aa208b651ec52a0e47a7e157266b81f7b1b584ecb8e81f0a390df2db07656dde"
+        },
+        "borg_dimension_door": {
+          "native": "borg_dimension_door_native",
+          "normalized_sha256": "10db06ac16ae045228b2782693503dd82e43ad100c45e7f613f6f007215819a6"
+        },
+        "borg_escape": {
+          "native": "borg_escape_native",
+          "normalized_sha256": "365638e03e121c5fad465dcd0fb4d81f7443ccdf8a50c6b1f6b2126ba71e0955"
+        },
+        "borg_escape_stair": {
+          "native": "borg_escape_stair",
+          "normalized_sha256": "fac79ebedb13bb504c6c977929fa03f0b834f71093c5df2b3f81813b2d9fbe0f"
+        },
+        "borg_freedom": {
+          "native": "borg_freedom_native",
+          "normalized_sha256": "2c74cd0013cc5190439df6f40b46d8198eab607147b65e3cf3594f10ba451d3c"
+        },
+        "borg_recall": {
+          "native": "borg_recall_native",
+          "normalized_sha256": "d45a2c02d94817bb2f63c9f9fcb26f03d2c9a15c1ba95dcc9499a65451da9e49"
+        },
+        "borg_recall_for_flight": {
+          "native": "borg_recall_for_flight",
+          "normalized_sha256": "dd9a64f88b933a3e7501078f1a1f14dd8c80c0efb8f5e6c059177ebc0acd84b9"
+        },
+        "borg_shadow_shift": {
+          "native": "borg_shadow_shift_native",
+          "normalized_sha256": "20bf1e6d63bb92c4f0123a8816cda9af22bfa00868f5fe1082abc1c7d2f57d38"
+        },
+        "borg_surrounded": {
+          "native": "borg_surrounded_native",
+          "normalized_sha256": "1fd68a58d4535855822942b56e374e61eed7a84d1addb8747e11d53c6807ac8b"
+        },
+        "borg_teleport_off_level": {
+          "native": "borg_teleport_off_level",
+          "normalized_sha256": "9501df19db82df4b0ad1f99ed01d7950dd4a446da09f7145d227e8e87697e8b1"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "f8d311b2746fdfe094c4090a3eb68ff3283fca69cae6db14c2dcfa6e2e2ac320"
+        },
+        "caution_phase": {
+          "native": "caution_phase",
+          "normalized_sha256": "8da0f7879533ff6e6bfd54393534b448001f7ce9fc345b90202b2a89bbd32531"
+        },
+        "count_scary": {
+          "native": "count_scary",
+          "normalized_sha256": "7f593675b9cd0a857d61987f3ef7d2e93b020ab7d9ab1629dc5d238ab1cdec18"
+        },
+        "detect_wall": {
+          "native": "detect_wall",
+          "normalized_sha256": "7bcf2419322a4faa5c975606ab407437ad9f4c52c7dfb75681f2b8f95127649a"
+        },
+        "double_distance": {
+          "native": "double_distance",
+          "normalized_sha256": "1aa8e8c44284eaf3ec03e66b24e4d3404cb97114f7512158d5668a9cf0b61b10"
+        },
+        "fight_lost": {
+          "native": "fight_lost",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "cf5775b243467278ef4346235bf0bcb0b4cb903f78c5b387707687ee5e41aee0",
+          "owned_sha256": "8dcc0aad9beffc2dd9fa8660b46d4fd705ca0670c1fb629c560ba79abfb91af0"
+        },
+        "fight_lost_by": {
+          "native": "fight_lost_by",
+          "normalized_sha256": "ab576b302581406dce5cfe169ad238bb87000401a86c57678ca17db29bfb3e72"
+        },
+        "fight_turns": {
+          "native": "fight_turns",
+          "normalized_sha256": "1dbf2c43de3ccd7b943467d1c9028565ef55ac95d74f8598a1d72047ceb6bd39"
+        },
+        "fox_form_on": {
+          "native": "fox_form_on",
+          "normalized_sha256": "c0da82fe97767bd9305f96df2de036f353e7081a423e92a57efb6e2c7cf55502"
+        },
+        "is_fox": {
+          "native": "is_fox",
+          "normalized_sha256": "32003d7fab0fa4db730a0877ae4950daa18a43e54efd69fed24b4b9938ba5abf"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "lacks_teleport": {
+          "native": "lacks_teleport",
+          "normalized_sha256": "9c68bf85e094b7749449319bad60d27ff3ec050b38cae58f6e662a28c951571b"
+        },
+        "landing_danger": {
+          "native": "landing_danger",
+          "normalized_sha256": "5766a57772d365ca7e114496116c83cdff720a8fa4559d5baecc98481266fd35"
+        },
+        "near_unique_1_8": {
+          "native": "near_unique_1_8",
+          "normalized_sha256": "b05cdd702a3e1c1bfc4c36e9c8b6ca9d44e0c49e9b916e1f3672500e263ec370"
+        },
+        "nearest_awake": {
+          "native": "nearest_awake",
+          "normalized_sha256": "6be74f73ad66368e512b5db591e0c20ee97b0c477234203a99dde02e6f080296"
+        },
+        "of": {
+          "native": "of",
+          "normalized_sha256": "56a0341a823ccfd923eba1aff3839deff76d4f06f5d5b595a77ed0657531a4ce"
+        },
+        "phase_door": {
+          "native": "phase_door",
+          "normalized_sha256": "82338e4dd557bde2c07810700a9b8c0198cfef352c08388b02e648e7c08058c2"
+        },
+        "phase_helps": {
+          "native": "phase_helps",
+          "normalized_sha256": "ae1a7a84260152968c1e507ca33e05384323deb0c42ae053e3f7539e076364aa"
+        },
+        "phase_is_pointless": {
+          "native": "phase_is_pointless",
+          "normalized_sha256": "9efea572755863fafb71697b51dd40351fafef267eb3a19452ba40568b02f9d9"
+        },
+        "phase_not_escape": {
+          "native": "phase_not_escape",
+          "normalized_sha256": "b8fb35ee3a2700f43ef4c87fca0900398ecc600dca235dba643af03b8e403bae"
+        },
+        "phase_note": {
+          "native": "phase_note",
+          "normalized_sha256": "bd0d9991c4d2bd651099fb5b233bc5249a7e98b872a765280fc53d398ecc8068"
+        },
+        "phase_rule_act": {
+          "native": "phase_rule_act",
+          "normalized_sha256": "64fb3d5986afa3866d75859f5733a5b3eaf2776f89d46930db4414de869c3bb2"
+        },
+        "phase_rule_verdict": {
+          "native": "phase_rule_verdict",
+          "normalized_sha256": "e32c806824dc5339dab4d84a2b89e67cdf0aa23151512bcfcd71d5169e876ff8"
+        },
+        "phase_verdict": {
+          "native": "phase_verdict",
+          "normalized_sha256": "b550d6a9bf1abd420380180d86b53d9e36abdd98eda896d9b49d21f0ebeefc2b"
+        },
+        "queue_fox_revert": {
+          "native": "queue_fox_revert",
+          "normalized_sha256": "4687b4e3d04a30ce5a7427aee0c3b9365cf3bbb1251e7a428f3bc8b603f5b6fc"
+        },
+        "rand_spread": {
+          "native": "rand_spread",
+          "normalized_sha256": "c3a52a145e1dae8153bc1a09a5b5bc22d909d5881315685f74f665b066459dae"
+        },
+        "reset_antisummon": {
+          "native": "reset_antisummon",
+          "normalized_sha256": "d4c918967295acb1036079d9b33795a90bc3bc44d59722c9a23bcbd51bfe5466"
+        },
+        "revert_fox_to_fight": {
+          "native": "revert_fox_to_fight",
+          "normalized_sha256": "72719a697c9d8bc9d29e2b654ed1a55ddb6211f3ae168f904b7abcc4bcb1f641"
+        },
+        "teleport_curse": {
+          "native": "teleport_curse",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "0224dad5afea1ee2615719cc7498dc06ac24880cca47e26b5cb7a8a75edac9ed",
+          "owned_sha256": "fce64387b68f89dc649ac0d314ec1669b7982c3530e565d8b4e0fd83f2b9f651"
+        },
+        "teleport_stopped": {
+          "native": "teleport_stopped",
+          "normalized_sha256": "b352d8bdab1409b1c5bda587bd4ff50b5dde2c94155231c750afbc49dd39ce0e"
+        },
+        "unseen_bump_phase": {
+          "native": "unseen_bump_phase",
+          "normalized_sha256": "305da25312d24618b22647dde01924835941cc3d4f38a540313a1227c7cbfd0d"
+        },
+        "worn_identity": {
+          "native": "worn_identity",
+          "normalized_sha256": "4a2bdc970a3f66e8df9c8c071d308e81e0580453868cc95b6aeffb5ae544c453"
+        }
+      },
+      "native_only": [
+        "borg_allow_teleport",
+        "borg_caution_teleport",
+        "borg_dimension_door",
+        "borg_escape",
+        "borg_freedom",
+        "borg_recall",
+        "borg_shadow_shift",
+        "borg_surrounded",
+        "cast_fox_when",
+        "change_back_answer",
+        "flight_speed_bonus",
+        "fox_form_before_flight_step",
+        "fox_form_before_town_step",
+        "fox_moving_speed_bonus",
+        "holds",
+        "keep_fox_form",
+        "keep_fox_when",
+        "label",
+        "learn_teleport_block",
+        "mana_kept",
+        "note_fox_revert",
+        "on_stairs",
+        "revert_fox_at_shop",
+        "teleport_activation_blocked",
+        "teleport_block_message",
+        "teleport_message",
+        "teleport_scroll_blocked",
+        "teleport_spell_blocked",
+        "teleport_staff_blocked",
+        "town_fox_now",
+        "town_fox_when",
+        "walk_goal",
+        "worn_desc"
+      ]
+    },
+    "recovery": {
+      "paired": {
+        "apply_breeder_rest": {
+          "native": "apply_breeder_rest",
+          "normalized_sha256": "e7b2b5035ac9b3a57676a22afb8a03069f90721d68566ddb26d8d61596eaf914"
+        },
+        "borg_recover": {
+          "native": "borg_recover_native",
+          "normalized_sha256": "7cc32069b770cadf89587b6a381d61e90e89acabf840221988a57f64dbb74ff6"
+        },
+        "breeder_choice": {
+          "native": "breeder_choice",
+          "normalized_sha256": "36019fcd6a5f1934ade96fcf232619731f758309857d43f11354ee9c759c851f"
+        },
+        "breeder_hold": {
+          "native": "breeder_hold",
+          "normalized_sha256": "6d1524245811067283d55024ddce040ca684adbf117f2951fa80e37b66e16e1d"
+        },
+        "breeder_rest_decision": {
+          "native": "breeder_rest_decision",
+          "normalized_sha256": "090329dc89af95b1adc9d54082752e12c6d9c78c6f0ef614346e7a9ff2edd778"
+        },
+        "committed_steps": {
+          "native": "committed_steps",
+          "normalized_sha256": "e556566b403e5764803b15b0c27d07a53f0465ef5f2aae91259adb7a1deaf385"
+        },
+        "flee_flow_flight": {
+          "native": "flee_flow_flight",
+          "normalized_sha256": "975316f190c7492a11edaecf67d38700292bc49397153ae66bd52098d61224c1"
+        },
+        "flight_now": {
+          "native": "flight_now",
+          "normalized_sha256": "a26335cd34ba5cfbe03d7e3dc3fbabae27aa0c4899e8484f2df66de795183a99"
+        },
+        "hold_for_breeders": {
+          "native": "hold_for_breeders",
+          "normalized_sha256": "67ba7376890f5ae90c3f057eaf0d3620e251806eef0bd3edd67d84cf65612f77"
+        },
+        "hold_rest_for_stairs": {
+          "native": "hold_rest_for_stairs",
+          "normalized_sha256": "5c372a751afa9e076fdad3fe3060450acbadb547f0e98792aab5af359f211758"
+        },
+        "holding_for_monster": {
+          "native": "holding_for_monster_native",
+          "normalized_sha256": "628d4e8706c29361e8ffe9170bd7ac8a7f643a658fafe27505747587f6652777"
+        },
+        "holding_for_monster_ago": {
+          "native": "holding_for_monster_ago",
+          "rewrite": "typed values are read in array order before the predicate",
+          "native_sha256": "f1dc3139f4c99aaba6161d877d291ea7e99cee1bab0aee484a34cd2956e4b0c7",
+          "owned_sha256": "99e7fd8d0889545741912d39906fcb42ad2f73044671d061f3947c4f6ad92dac"
+        },
+        "holding_for_stairs": {
+          "native": "holding_for_stairs",
+          "normalized_sha256": "9bb5d18077c7eef401601be2122c00ad46aa67eea0e937fb662eba5682b086f5"
+        },
+        "hunt_before_rest": {
+          "native": "hunt_before_rest",
+          "normalized_sha256": "0c4a4552ff74ee8266e3e5473d3f72a33aa9ba69872cb48e63fc5c1c2553a6fe"
+        },
+        "hunt_now": {
+          "native": "hunt_now",
+          "normalized_sha256": "08b41200a0b835cb17945d750ef17857b60de119a0bc9b72c985e573526d473a"
+        },
+        "impaired": {
+          "native": "impaired",
+          "rewrite": "typed values are read in array order before the predicate",
+          "native_sha256": "50050caa10bc5a82f4f0a860b4c02877108537c4f369546fbfd191ab911945bc",
+          "owned_sha256": "5f5f822e37e621e625ace7d0c0d5de3d677473573e305404218177d645bc913b"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "mana_rest_sp_floor": {
+          "native": "mana_rest_sp_floor",
+          "normalized_sha256": "fe2233774960487ed0211df331a4073923ece5d592ca1a3cd09e078b59e9f966"
+        },
+        "probe_candidates": {
+          "native": "probe_candidates",
+          "normalized_sha256": "909b9c0e333a5f29ce3cd9812c64455dcf454e9e4638835f01412f4cb2cd2a23"
+        },
+        "probe_choice": {
+          "native": "probe_choice",
+          "normalized_sha256": "1bc21e6103221c4a07f055122d93edfbff2e0728c72b1ebdd5b64da299ec8279"
+        },
+        "probe_grid_open": {
+          "native": "probe_grid_open",
+          "normalized_sha256": "c13b5dc485b7f868b565dcc9a273fb93e0411f276b398ad57e8359856d92de58"
+        },
+        "rest": {
+          "native": "rest",
+          "normalized_sha256": "4bf88f2d70643c4f30c1d192492f95bf94b28510ca90e10aede5c81aeb79624c"
+        },
+        "rest_held_for_monster": {
+          "native": "rest_held_for_monster",
+          "normalized_sha256": "fe1e64caf192003674d63a4b63c7090bffbd9b97e32d834ceecb437400096c1b"
+        },
+        "rest_held_for_stairs": {
+          "native": "rest_held_for_stairs",
+          "normalized_sha256": "65ddad1ce22ace8464c8e0b90bb0fe1a2f25d1c80ad2cda62fa7de0b92e2a624"
+        },
+        "rest_monster_hold": {
+          "native": "rest_monster_hold",
+          "normalized_sha256": "a6a8d2ba96e06c5a54ef349f9af8c5cdaba45f0b1a26263727cf6dfe82396056"
+        },
+        "rest_sp_floor": {
+          "native": "rest_sp_floor",
+          "normalized_sha256": "ac6a30b3a4816be94073309c435d17fbb996cea1ac3114988eea06438ea66e70"
+        },
+        "rod_charging": {
+          "native": "rod_charging",
+          "normalized_sha256": "a80ba9af0b1abdf97e507784c0f598d53831b877bab61409724d67fea14483c8"
+        },
+        "unseen_active": {
+          "native": "unseen_active",
+          "normalized_sha256": "e035b357c05326850a4a5754ce72b8478519b0731028e40f3df8e35e1a5fd411"
+        },
+        "unseen_away": {
+          "native": "unseen_away",
+          "normalized_sha256": "35baeb34de67a6e0270bb36dd0a06e39da5a0bd5228ca8e7f4a707ee76840621"
+        },
+        "unseen_deal": {
+          "native": "unseen_deal",
+          "normalized_sha256": "a129222167a61cacd16263175e05fe5bc7c8c519eeb92d5f668767c730358300"
+        },
+        "unseen_detect": {
+          "native": "unseen_detect",
+          "normalized_sha256": "045ed26993d5c3c227f48ec11409074b18ee078f411c3ad92201deee25be0a94"
+        },
+        "unseen_fresh": {
+          "native": "unseen_fresh",
+          "normalized_sha256": "585da9c0d48fe2325390afe45652f014f59b649eb8bd4de38225daed94330490"
+        },
+        "unseen_heal": {
+          "native": "unseen_heal",
+          "normalized_sha256": "fa22e3b19ca988de87431705464ddd16749ac10cd77463acd0b797454408f1fc"
+        },
+        "unseen_heal_due": {
+          "native": "unseen_heal_due",
+          "normalized_sha256": "f076922e39841c799b7b95db0c5f2f9906616512b7139c92c48bb3220ca46a46"
+        },
+        "unseen_near": {
+          "native": "unseen_near",
+          "normalized_sha256": "88959f00dd956b1605fab4d43a34c1463cf398c73b7a831c2a1a12dd799d2951"
+        },
+        "unseen_probe": {
+          "native": "unseen_probe",
+          "normalized_sha256": "9a0cfc6c3e3a16ae6066e7307599cbb262cb10fe6716eddbb49eeea42efd324b"
+        },
+        "unseen_probes_spent": {
+          "native": "unseen_probes_spent",
+          "normalized_sha256": "623291b5dcc91302abec7e6141dfd0fd6e6eedae2f6504e77eaa84521ffc6d9c"
+        },
+        "unseen_recent": {
+          "native": "unseen_recent",
+          "normalized_sha256": "bb35070bd5af058d5631d63e52830f3c9aac60387e8184b1720872a4fdc45632"
+        },
+        "unseen_rest_held": {
+          "native": "unseen_rest_held",
+          "normalized_sha256": "5dc9feb703f467560acbd595e22eab2fd7e3826363d26297d1385a8fae80fca5"
+        },
+        "watch_for_rest": {
+          "native": "watch_for_rest",
+          "normalized_sha256": "e16ed616da9ed097ac622d136b4a63db7939bb4a868b37312863a7fbbcde4d41"
+        },
+        "withdraw_own_leave": {
+          "native": "withdraw_own_leave",
+          "normalized_sha256": "e2c859e217e26c963024acc960c05d4e87a55441cbc427bdb1e71457b2abf6a1"
+        }
+      },
+      "native_only": [
+        "borg_recover",
+        "holding_for_monster",
+        "mode_ends_on",
+        "note_rest_hunt",
+        "note_unseen_attack",
+        "recovery_sp_floor",
+        "revealed_kill_message",
+        "unseen_followed_next",
+        "unseen_kill_message",
+        "unseen_mode_message",
+        "unseen_name"
+      ]
+    },
+    "attack": {
+      "paired": {
+        "attack_on_sight": {
+          "native": "attack_on_sight_native",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "754019b4295c941d773468c86c7300d99c011a9e21917b34d55438923ec34d95",
+          "owned_sha256": "5f41fd5857bdb801705803aa367aa175d52c95d1af4dbab473f09079700fbf6e"
+        },
+        "attack_on_sight_reason": {
+          "native": "attack_on_sight_reason",
+          "normalized_sha256": "86bcac107144f672b0e6e0ddbd43b5d7a58d99d7ddf3342e935eda290a7fdd19"
+        },
+        "avoid": {
+          "native": "avoid",
+          "normalized_sha256": "6e83165768226c69498e947d7d93dc87ea5c33f09e2684b1b5d998d32fe61de6"
+        },
+        "best_of": {
+          "native": "best_of",
+          "normalized_sha256": "e3c0964fe5367f3df2079c0b953471614dfee43bdf96ab20f31f0d0c1c8532f4"
+        },
+        "best_throw": {
+          "native": "best_throw",
+          "normalized_sha256": "6e3e12da4b5d6e75cdf89b0356f8050cb0a871a4df5fb15e92cea45b61c9e0d4"
+        },
+        "best_throw_of": {
+          "native": "best_throw_of",
+          "normalized_sha256": "0badfdb65c7600a30046eeba3a5d55af3ef93947f041768de7fcf69a6800b0f0"
+        },
+        "blow_effect_name": {
+          "native": "blow_effect_name",
+          "normalized_sha256": "15ebf396958b89c2fd2882f4f197842a0b1b17e6589d29ce9da3f8d6551c447d"
+        },
+        "borg_attack": {
+          "native": "borg_attack_native",
+          "normalized_sha256": "9ddfb6b40f24739c7bb01dcd0b195ad0dc5668f9cf9f7eb1c3774b25f156575c"
+        },
+        "borg_attack_aux_activation": {
+          "native": "borg_attack_aux_activation",
+          "normalized_sha256": "51708c4fdf5da252439dfe737a2855e9c040e8e0382ebcbb6682dd6d848af079"
+        },
+        "borg_attack_aux_artifact_holcolleth": {
+          "native": "borg_attack_aux_artifact_holcolleth",
+          "normalized_sha256": "82883eabb72f328825035790e16d818c0264fd9cda56e6f54e33201672e643f7"
+        },
+        "borg_attack_aux_crush": {
+          "native": "borg_attack_aux_crush",
+          "normalized_sha256": "ad2fd32ca36f39ef850a31acb5326c1886d0b771ff96a2bc90facc63fb169269"
+        },
+        "borg_attack_aux_dragon": {
+          "native": "borg_attack_aux_dragon",
+          "normalized_sha256": "dcfe8d34475fdf3617b3e1f8862dc0e420272fc1963ec9545e0ef96f612d7d91"
+        },
+        "borg_attack_aux_launch": {
+          "native": "borg_attack_aux_launch_native",
+          "normalized_sha256": "d909c45eb962ee0d0bfc9170871ad469bc8b581f4c78ca2abac01031b42e6fb1"
+        },
+        "borg_attack_aux_leap_into_battle": {
+          "native": "borg_attack_aux_leap_into_battle",
+          "normalized_sha256": "b32868746f7e8d589d6b263c750039bdb19f17a508a17c3c2c4416d524a93d9e"
+        },
+        "borg_attack_aux_maim_foe": {
+          "native": "borg_attack_aux_maim_foe",
+          "normalized_sha256": "66880a40571d8deb6c823401886554057ac46ee948400fa478f443d5c7a2764c"
+        },
+        "borg_attack_aux_object": {
+          "native": "borg_attack_aux_object",
+          "normalized_sha256": "e657ea7cdf2000ffaa8bcdeb66d335b04b2fe78f606e86f18890f6f9a33e07c4"
+        },
+        "borg_attack_aux_object_fire": {
+          "native": "borg_attack_aux_object_fire",
+          "normalized_sha256": "a6b11deddeccccc1fa004e37f595d26b45ec74e37bc3fb0a1c7afe800c2a5671"
+        },
+        "borg_attack_aux_rest": {
+          "native": "borg_attack_aux_rest",
+          "normalized_sha256": "4afa0a3c2a7d076fdc598dec290b9007d75f61bbd38786e2db201fd74aa8755d"
+        },
+        "borg_attack_aux_ring": {
+          "native": "borg_attack_aux_ring",
+          "normalized_sha256": "edcb8715dccf582f45a9343308190d8b9331c35573b5549e3e3b5dfb1eee2cb2"
+        },
+        "borg_attack_aux_rod_bolt": {
+          "native": "borg_attack_aux_rod_bolt",
+          "normalized_sha256": "e667364ebdfed7733ba8bddd02800da5d6545fdcb1d2a20bd3265f832da271be"
+        },
+        "borg_attack_aux_spell_bolt": {
+          "native": "borg_attack_aux_spell_bolt_native",
+          "normalized_sha256": "b1e84f865e4ade965871411dfc20aa09f457b378f67fc5bed6bc3a6ce6fdc826"
+        },
+        "borg_attack_aux_spell_bolt_reserve": {
+          "native": "borg_attack_aux_spell_bolt_reserve",
+          "normalized_sha256": "a3dc7b8398288188c2fe5899237c760ddafd68d8ae32226ee76a48947342d682"
+        },
+        "borg_attack_aux_spell_dispel": {
+          "native": "borg_attack_aux_spell_dispel",
+          "normalized_sha256": "8958ff35453b24a9a49ef145df79a716965211b9d1745277fc5a0f7186446631"
+        },
+        "borg_attack_aux_staff_dispel": {
+          "native": "borg_attack_aux_staff_dispel",
+          "normalized_sha256": "16def9a98ad6f29c475ab89d5de54f3bdfb0def9d22288679391f52f4b2fc006"
+        },
+        "borg_attack_aux_thrust": {
+          "native": "borg_attack_aux_thrust",
+          "normalized_sha256": "c1664ec29c42f7ab8fda115a55a964f04ee8f57ae5f37ea6b05562f3b04c8cd9"
+        },
+        "borg_attack_aux_trance": {
+          "native": "borg_attack_aux_trance",
+          "normalized_sha256": "23482a4836a0854efe75c54ce272201a36a0bbdde8a5d4772de2d1eadc8ac36d"
+        },
+        "borg_attack_aux_vampire_strike": {
+          "native": "borg_attack_aux_vampire_strike",
+          "normalized_sha256": "63c7b6b9ebf92b65c36767174a3652d47afa6388e107da359cb52537b2565a99"
+        },
+        "borg_attack_aux_wand_bolt": {
+          "native": "borg_attack_aux_wand_bolt",
+          "normalized_sha256": "b917440ed213527061b7972261e242d60b0be86e1d393427aad4a87cec0c7c18"
+        },
+        "borg_attack_aux_whirlwind_attack": {
+          "native": "borg_attack_aux_whirlwind_attack",
+          "normalized_sha256": "b8e47ec09266938077f967659b1daabee57a0ef170ca988aa39a90524e6ee047"
+        },
+        "borg_attack_estimate": {
+          "native": "borg_attack_estimate",
+          "normalized_sha256": "713b0612c89a3ebb04aa62bfa1d9e8540c718fe70d6c65c9284b464ffd6a5a48"
+        },
+        "borg_best_mult": {
+          "native": "borg_best_mult",
+          "normalized_sha256": "396a86f5a3653f5656b3ff454d34d1815aac16c2ef4df11e3be356c1e92270ab"
+        },
+        "borg_calculate_attack_effectiveness": {
+          "native": "borg_calculate_attack_effectiveness_native",
+          "normalized_sha256": "7ac3dae9a23c08d8e7d9eb4deff2f4a5ad710fd51aab2cef751401d7afdf17c5"
+        },
+        "borg_fight_speed": {
+          "native": "borg_fight_speed",
+          "normalized_sha256": "c55673a901cc40bc81df1830dfb5854cd7a4180a8539cb41a778c672f47bf7ba"
+        },
+        "borg_launch_arc": {
+          "native": "borg_launch_arc",
+          "normalized_sha256": "ae610002691c8c7a849855e01821b1981fe08eb200f863c6d9dfc156fa855a5c"
+        },
+        "borg_launch_arc_at_location": {
+          "native": "borg_launch_arc_at_location",
+          "normalized_sha256": "9dd23bd41c01b628f85dbbe2f5750e43baa26d6afd25791d48fe280009f31b20"
+        },
+        "borg_launch_bolt": {
+          "native": "borg_launch_bolt_native",
+          "normalized_sha256": "d47ea52919331ed9b35d2a2e32e4ac66091e69ea61de17175f3c841e72728df3"
+        },
+        "borg_launch_bolt_at_location": {
+          "native": "borg_launch_bolt_at_location",
+          "normalized_sha256": "b921724297aa6281b40a79f4fe6decf81c1d393278c7982716bc9b553a91b595"
+        },
+        "borg_launch_bolt_aux_hack": {
+          "native": "borg_launch_bolt_aux_hack",
+          "normalized_sha256": "7944813bb657e888dd3b12e9bcc1e22cab10517d5888456a7459da21202900f5"
+        },
+        "borg_launch_damage_one": {
+          "native": "borg_launch_damage_one",
+          "normalized_sha256": "692f9296d414f0a62e42d030e218c6e81282afe860ea9bb028582c117198a060"
+        },
+        "borg_launch_destroy_stuff": {
+          "native": "borg_launch_destroy_stuff",
+          "normalized_sha256": "1ef27182fca7ef1bcd24b9276ea2a299a454a201cb6fb19984a53563b9faba95"
+        },
+        "borg_mon_blow_effect": {
+          "native": "borg_mon_blow_effect_native",
+          "normalized_sha256": "dc7b54cfc199ca8dc864d15a078f4394f5ad848bd90559971be8db93b238169a"
+        },
+        "borg_thrust_damage_one": {
+          "native": "borg_thrust_damage_one_native",
+          "normalized_sha256": "e7a6e2cbe966f1318fa5989b9e8630ed6f34419833fed12e0f895c772582e2d6"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "f8d311b2746fdfe094c4090a3eb68ff3283fca69cae6db14c2dcfa6e2e2ac320"
+        },
+        "breath_third": {
+          "native": "breath_third",
+          "normalized_sha256": "a93e1cd0f0927ebbfc7259bb87dcb9140cfa12f660553d3deca0b19c7b3b2d50"
+        },
+        "cant_aim": {
+          "native": "cant_aim",
+          "normalized_sha256": "f17dd19eb809f0a77b52053c8aca6bdf351372c81a62e9888064f2ac20809e53"
+        },
+        "class_penalty": {
+          "native": "class_penalty",
+          "normalized_sha256": "17cf36c0ee62ec206175362b6407c57cb3aed5b6fdc67b7c0e2024725798ba27"
+        },
+        "commission_value": {
+          "native": "commission_value",
+          "normalized_sha256": "142d71e52c6e50df2e442a4315e2bf0db8f11dba3528b5a9d3df987561951f55"
+        },
+        "contains": {
+          "native": "contains",
+          "normalized_sha256": "48a22b7a540ff63614cb9fbdb7170661176f8a2fa8582d9619584cba7e7b0d7e"
+        },
+        "danger_here": {
+          "native": "danger_here",
+          "normalized_sha256": "c45ea6b8831fdca32af173ba1661653f4ef2182030878f4e3eed7a54aec26944"
+        },
+        "danger_one_here": {
+          "native": "danger_one_here",
+          "normalized_sha256": "0dbfdb38e2a4df99ef7a26efb5a7affa37cf76cb5368998765e99fec608d7501"
+        },
+        "danger_with_flag": {
+          "native": "danger_with_flag",
+          "normalized_sha256": "3eacb6da607aa9c56fdc528d5a3cae658e07599e73b136915b1fa79656de8b91"
+        },
+        "dangerous_blow": {
+          "native": "dangerous_blow",
+          "normalized_sha256": "beea9d3375a213e665cb0da20ee6a58c2ee344629f4404746000caf95cd03be1"
+        },
+        "dangerous_town_race": {
+          "native": "dangerous_town_race",
+          "rewrite": "remove same-type conversion or redundant reference",
+          "native_sha256": "f5b684cf220e6e268dbabcf9849af8ae5f0b3ebeefc4063ac52e092a40dfc2e8",
+          "owned_sha256": "037e0efc5173274a0eea20e57097ec056f47344247bd80e20e440037553093c3"
+        },
+        "desc": {
+          "native": "desc",
+          "normalized_sha256": "11d576c6c04c09cdb3db84292d1e030b6f07bc3209ca6f40741db3311394e225"
+        },
+        "dist_to": {
+          "native": "dist_to",
+          "normalized_sha256": "248ee1ce014b3c105dbf6e7aaf86e59cd927b98935f9fc95779536e30a9dabfe"
+        },
+        "fallback_without": {
+          "native": "fallback_without",
+          "normalized_sha256": "1a658f9d74dca8b75a28fb11c3b9612540a9ea50076a4378b3fc4625d1469b5b"
+        },
+        "fight_speed_wanted": {
+          "native": "fight_speed_wanted",
+          "normalized_sha256": "7b10eefbb93be866b719c9a16a396e04b0ca847ba8bad12d5c605626e398ed15"
+        },
+        "focused_attack": {
+          "native": "focused_attack",
+          "normalized_sha256": "ecaf3e23877544232d6de46899e29fcae04e3c280365b6e5d25bf345ca113af9"
+        },
+        "focused_attack_ranked": {
+          "native": "focused_attack_ranked",
+          "normalized_sha256": "41f38677fda9e069ae3e2de384d1dfcbb9f72352d055f97b10e0a2313dc66787"
+        },
+        "focused_blow_expectation": {
+          "native": "focused_blow_expectation",
+          "normalized_sha256": "0b9d118031b3e575082c0f1fc32c18f0c2cfafdfb33698d7812eb238f80f32c6"
+        },
+        "focused_launch_damage": {
+          "native": "focused_launch_damage",
+          "normalized_sha256": "8e1a4d55a371363cb2aac591fb4413d967683c5daba8cc42e3e20e9785391608"
+        },
+        "focused_power": {
+          "native": "focused_power",
+          "normalized_sha256": "3ae62b00d08f183a770aa8ed86e646e70ce883d5e678a87e88f103611e6f72e7"
+        },
+        "focused_priority": {
+          "native": "focused_priority",
+          "normalized_sha256": "0bfb5861b2d2458069f073e4b5b4254dcd3778df137b8fb27e6086eb554349ce"
+        },
+        "focused_projectile_rate": {
+          "native": "focused_projectile_rate",
+          "normalized_sha256": "d2729103e03fb2a2b87d1bc72a67f4ce8c4d802bb2676284e09500f1b91dcd01"
+        },
+        "focused_score": {
+          "native": "focused_score",
+          "normalized_sha256": "6d0bbea6c91fc0954c234e5d20586c22b43daf3c2e2d9d78fb1612c5eb27f7fa"
+        },
+        "grid": {
+          "native": "grid",
+          "normalized_sha256": "ed1ee696a4d3e1f0fe1ee68de5469b4abd41916731a13c42f2792862e57810cb"
+        },
+        "has_friends": {
+          "native": "has_friends",
+          "normalized_sha256": "7fffeaf1ff062b18c3d9e630ddbb2dda3ad59088ae4d82cb1babb5762dbfa1cc"
+        },
+        "hit_permyriad": {
+          "native": "hit_permyriad",
+          "normalized_sha256": "bb5bfa7f90742a97a459e1236835caf6b150d449ff03e37c5e9153bfff791aac"
+        },
+        "i2d": {
+          "native": "i2d",
+          "normalized_sha256": "87d685dcdf35ed7090c3049d24bdc30a9a2b38b2371bfb823a4182991d8498dd"
+        },
+        "ignored": {
+          "native": "ignored",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "705bc717d32bf48cdeed3028d2603a0ddea3cb2c6fa3d53ab5b49fd14a1cc4d4",
+          "owned_sha256": "c8c5d199e6fc8cb774f6b3a57da1e563f62e4c628220fa496a028a7081ec5144"
+        },
+        "is_ghost": {
+          "native": "is_ghost",
+          "normalized_sha256": "75cda94d8abd5bb1f860cf53425d885d32d1f4c3a9a689856fffe89ea7bf0c46"
+        },
+        "is_summoner": {
+          "native": "is_summoner",
+          "normalized_sha256": "9d387ee1ebfbd37de18272f181251cf14efb056a91ac2c4afbf6bca488ad6c11"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "kill_fraction": {
+          "native": "kill_fraction",
+          "normalized_sha256": "22648379ca0a92faeb1b994a26a6d4fecb00399ded2547b74596c8678fc15893"
+        },
+        "launch_damage": {
+          "native": "launch_damage",
+          "normalized_sha256": "48a10a3b1e17b1f72acab28fe19d58760979bfd3fa19dc3d15f40d7ad7d406a8"
+        },
+        "low_on_food": {
+          "native": "low_on_food",
+          "normalized_sha256": "7f7cecabb5f50308acb08347303063e48dd2c0dead8ff84b9eb223aa0ee702ae"
+        },
+        "max_range": {
+          "native": "max_range",
+          "normalized_sha256": "e817be6f38e76646ec6da64e4092d9e657cc82d137f613a5bf43ff2a326e5f73"
+        },
+        "melee_score": {
+          "native": "melee_score",
+          "normalized_sha256": "8942ba848b51cb4c2fdf3f74b81dbceab46ffa9eb3bd9be1768a4dbcc4029e1c"
+        },
+        "missed_before": {
+          "native": "missed_before",
+          "normalized_sha256": "aa6035cfb5c3ed1c966a845d85a9e6046f013d1a01c25f4df80f1b37711727fe"
+        },
+        "not_mapped": {
+          "native": "not_mapped",
+          "normalized_sha256": "5c76e17bad802d65a9437dc9a0bf16e9ec12a958dcc30922fa06c4ac91241ba1"
+        },
+        "note_device_cost": {
+          "native": "note_device_cost",
+          "normalized_sha256": "e276e2c6fd096539adc9e59bbe1cc25581cbdf3497875f36e51b105efa766976"
+        },
+        "observed_kill_hp": {
+          "native": "observed_kill_hp",
+          "normalized_sha256": "9a115b0c22f1793995c29af58d2cdb024cb37390608f548cbf5e8b8c2111a658"
+        },
+        "oil_reserved": {
+          "native": "oil_reserved",
+          "normalized_sha256": "8206e97a0fff044c6d7d89b7d05ce39e8aa53628a16c96edc418fda961c1971f"
+        },
+        "paranoia": {
+          "native": "paranoia",
+          "normalized_sha256": "adc665bf7a2431694833c15f02059bce103d9a8892b829690ddfcfdbe4c90986"
+        },
+        "path_stop": {
+          "native": "path_stop",
+          "normalized_sha256": "62f3755bb0369652fd9912d31e4a4615e204a7c2bffd34dacf7c72ac995581ca"
+        },
+        "perform_focused_attack": {
+          "native": "perform_focused_attack",
+          "normalized_sha256": "6117dbf76859b7380906bb61766add6080bd4bc301b9a88d069a66b6b344b915"
+        },
+        "point_blank_divisor": {
+          "native": "point_blank_divisor",
+          "normalized_sha256": "f7f733632a133402745e83efaf637c6ee17fe178222398a9ac3fc1ff20d4d8f8"
+        },
+        "power": {
+          "native": "power",
+          "normalized_sha256": "53ec5637e888dc44f46475c8c3fa6174162fe93d71b404261cf1c831dbb7638e"
+        },
+        "primary_spell_for_class": {
+          "native": "primary_spell_for_class",
+          "normalized_sha256": "f4614634799795bd53b1215c16c321507069db07f0b672c9e1c035f20c76d995"
+        },
+        "ranged_means": {
+          "native": "ranged_means",
+          "normalized_sha256": "47943840e029a8e60d9df8ab30b7350fca5bafdd879a6bc4a82eb483e3682644"
+        },
+        "rf": {
+          "native": "rf",
+          "normalized_sha256": "01162cfb4870be12078e2949193007704749e00bb640d4f40e8874e77ee02395"
+        },
+        "rsf": {
+          "native": "rsf",
+          "normalized_sha256": "1efb9f9f80c86eedb5eab84ea4cd7d9f92452b6017a21943814f71021657a54c"
+        },
+        "select_effect": {
+          "native": "select_effect",
+          "normalized_sha256": "c3340bb089c95c6b3090be7053e218270ca3b39dafd40489366457e28a81c5a1"
+        },
+        "set_flag": {
+          "native": "set_flag",
+          "normalized_sha256": "d85dc77ca512c7d0c1d72091231b22e69c6493ad242602d543596f0fd4f560f7"
+        },
+        "simulating": {
+          "native": "simulating",
+          "normalized_sha256": "6e61395bfbfe6ea3150a83c0e4dd48b4ed500e3c5a18dcc3bc23683fc32de085"
+        },
+        "spell_okay_fail_noted": {
+          "native": "spell_okay_fail_noted",
+          "normalized_sha256": "36358bfab50f3da90144c885c2b0166c7b7f6432598152e2d0ec2402b4f860f9"
+        },
+        "strchr_egv": {
+          "native": "strchr_egv",
+          "normalized_sha256": "beceea7af2018bbd7f4b5b0be898a2abc6c28b17091dadac09f2af28321921b5"
+        },
+        "throw_at_unseen_bump": {
+          "native": "throw_at_unseen_bump",
+          "normalized_sha256": "2e331734849bdae2f35e20e63450ad400e59c9601a83f0954d49e83dd26a7bd9"
+        },
+        "throw_hit_percent": {
+          "native": "throw_hit_percent",
+          "normalized_sha256": "c80e13b9cb44aafcea81625f6207c2d6df75d6ee37d2f08b2d7f2740eb3075c4"
+        },
+        "thrown_damage": {
+          "native": "thrown_damage",
+          "normalized_sha256": "3e50ca28a700d547ffd26b8c4b7ed6a4e74dadd3e7d41f1736bf8abe092ecbbc"
+        },
+        "thrust_damage": {
+          "native": "thrust_damage",
+          "normalized_sha256": "2169855832b4c6c0f7c91dd41f5761963f70ddd8d49814313d8b50dcdddc46b2"
+        },
+        "thrust_damage_with": {
+          "native": "thrust_damage_with",
+          "normalized_sha256": "6c58260909559e6de503b49ad36fc796d4c3b27ad3dbd500f3a00f4fc49d4af8"
+        },
+        "too_high_level": {
+          "native": "too_high_level",
+          "normalized_sha256": "16f8be3396543f36a654b7e85d0b9ee833c5d6080eb3817fc1e4afe816aebf96"
+        },
+        "town_danger_bonus": {
+          "native": "town_danger_bonus",
+          "normalized_sha256": "2566364f08895439268bd677d0e6bc4ac25722e00774409f012fe7f9b1b25c1e"
+        },
+        "town_kill_bonus": {
+          "native": "town_kill_bonus",
+          "normalized_sha256": "5e3f97e22aac8bbe1ebe5cc77dfdd534fca52d8394b8c48cbae9f2ee1fc5cc6e"
+        },
+        "town_kill_on_sight": {
+          "native": "town_kill_on_sight",
+          "normalized_sha256": "ab69715896959a1df03057341f754ebdebd0393222fd23d4da3ea68879de8438"
+        },
+        "town_wand_allowed": {
+          "native": "town_wand_allowed",
+          "normalized_sha256": "bd5e4d1444652d55a64aa3b1c41be8f23e3796581dcf50adad5e1b0ac5c6a09d"
+        },
+        "tp_other_add": {
+          "native": "tp_other_add",
+          "normalized_sha256": "cffaaf392f1a9ad99a1396fb6bd0d42c1ecf077ea83c18ca1ea321f2bee35eeb"
+        }
+      },
+      "native_only": [
+        "attack_on_sight",
+        "borg_attack",
+        "borg_attack_aux_launch",
+        "borg_attack_aux_spell_bolt",
+        "borg_calculate_attack_effectiveness",
+        "borg_launch_bolt",
+        "borg_mon_blow_effect",
+        "borg_thrust_damage_one",
+        "default",
+        "focused_attack_is_ranged",
+        "town_caster_walk",
+        "town_focused_attack",
+        "town_focused_score",
+        "town_melee_damage",
+        "tr"
+      ]
+    },
+    "fast_fragile": {
+      "paired": {
+        "classify": {
+          "native": "classify",
+          "normalized_sha256": "16c47b09dd9def02438789bf9840d93befd62b9a362791b9b116bb89760503bb"
+        },
+        "cornered": {
+          "native": "cornered",
+          "normalized_sha256": "dd2e35cc316b03f8246f869c409a546c8f00ff03decd1fd970fde5dd8038842d"
+        },
+        "describe": {
+          "native": "describe",
+          "normalized_sha256": "25bb09eb3ff161406116103c4732e4618c02d3226cf30cd1c17aad9b5414cbcd"
+        },
+        "escape_available": {
+          "native": "escape_available",
+          "normalized_sha256": "155ed201361811cbe1c736d2ddbe382db5a092f691ddf21f020c54e1b6bbe431"
+        },
+        "escape_instead": {
+          "native": "escape_instead",
+          "normalized_sha256": "a3b0d184895cea9ae29d64c15372fe2c0dced05a17516176871c8ac1ea028911"
+        },
+        "escape_wanted": {
+          "native": "escape_wanted",
+          "normalized_sha256": "9d79802b2906229bd3553c7f086f767224645f2c24632ec1c3e2b6a415fc82c0"
+        },
+        "facts": {
+          "native": "facts",
+          "normalized_sha256": "5a73440dcd7c11d678bc983d7278c48fa635ae068f3ddfe7fbb0f2099edc7f1a"
+        },
+        "has_cure": {
+          "native": "has_cure",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "fe4f099da85693010429bea4abe4a3e5fa5b2a5cdc9198106a407487eabd179e",
+          "owned_sha256": "e38676fd2f7bb98dd8a16f0e337cff2f57cf2a50fb57d9561e65eed7485a864a"
+        },
+        "heal_banned": {
+          "native": "heal_banned",
+          "normalized_sha256": "498d562325c0c92d2932c2daebbf3472b35ce8622e87fdb57db0369220e4233e"
+        },
+        "incoming_total": {
+          "native": "incoming_total",
+          "normalized_sha256": "a81b678bd3a11a6fd55f46ca9c2d8134bc45b2cf34bc69b29192b231ddc71675"
+        },
+        "named_in_list": {
+          "native": "named_in_list",
+          "rewrite": "closure formatting or let-else terminators",
+          "native_sha256": "75a70dcfa3749a843b7d2c0d625ab3e6f23f9bcd43c8deb5a698321f01649487",
+          "owned_sha256": "3ee9161693a0a88b2360d41fa7bc5141b7eb45bdb415a973c998f6aafa9a2963"
+        },
+        "per_turn": {
+          "native": "per_turn",
+          "normalized_sha256": "b825cea1aa45512d406b908648b3e4f0f1bb559a782b461cd35be8cce0460fa9"
+        },
+        "policy": {
+          "native": "policy",
+          "normalized_sha256": "ca110f3d2470278955d75b96eb567c1463e629742861c49c6b58b777552034a7"
+        },
+        "verdict": {
+          "native": "verdict",
+          "normalized_sha256": "f6b3812277b01ba02f5b4504c890309016396c1cad4ff172fb4b1d8b90bc9eaa"
+        },
+        "viewed": {
+          "native": "viewed",
+          "normalized_sha256": "6c1a5fc158c6f5c526837c602d06cc1ba27b1db7b49281270dcac7b571b7f580"
+        },
+        "yield_to_cure": {
+          "native": "yield_to_cure",
+          "normalized_sha256": "004f891a661fe3cd5dd48e87a5a1f4c0c61cc736d8026462edeac8c9523a173f"
+        }
+      },
+      "native_only": []
+    },
+    "attack_preference": {
+      "paired": {
+        "adjust": {
+          "native": "adjust",
+          "normalized_sha256": "fb9ca23fc7b75a43206b60ef8c9bb817dbc89f3fde4f6e6e2efce5e42e5e777e"
+        },
+        "class_name": {
+          "native": "class_name",
+          "normalized_sha256": "6a5ac256d3d8163b44e4392954ebdb53b985200b8d2875deecd05e6640c3a5bf"
+        },
+        "classify": {
+          "native": "classify",
+          "normalized_sha256": "d500e0c07897f58a649a843b89c3ed3a25c9857952831566e519543fbc00f2b8"
+        },
+        "consider": {
+          "native": "consider",
+          "normalized_sha256": "0ebbd0adc96210b58b6174c8b419eb0d790a77bba441dfa94f59f7cdb368222d"
+        },
+        "evaluate": {
+          "native": "evaluate",
+          "normalized_sha256": "78537a5c1cb752efcdb3e611c63aef76377468d28aefde59d376aa67316ff541"
+        },
+        "parameter": {
+          "native": "parameter",
+          "normalized_sha256": "f95e73826556c9d08dd465edc167b0c44dc5b7ceab5b44e146529d751ac833d8"
+        }
+      },
+      "native_only": [
+        "name"
+      ]
+    },
+    "defence": {
+      "paired": {
+        "avoid": {
+          "native": "avoid",
+          "normalized_sha256": "6e83165768226c69498e947d7d93dc87ea5c33f09e2684b1b5d998d32fe61de6"
+        },
+        "banish_note": {
+          "native": "banish_note",
+          "normalized_sha256": "5244074d53847735ee22c4a48131da0a830a324b7fd1bfdbfd3554fa7539a982"
+        },
+        "borg_calculate_defense_effectiveness": {
+          "native": "borg_calculate_defense_effectiveness",
+          "normalized_sha256": "e00f277cf77c60962850b8d372048a35af62b15e69177df23cca9f9429a3c56e"
+        },
+        "borg_defend": {
+          "native": "borg_defend_native",
+          "normalized_sha256": "1b2a0e0d5a37a47f9df6202d4376d67a344891fefbc687979c2bc90a2b9b9409"
+        },
+        "borg_defend_aux_banishment": {
+          "native": "borg_defend_aux_banishment",
+          "normalized_sha256": "e41bf0aa8a594e795ac2088de5a87f2044dbc3958304777250b63ddd76ced8f7"
+        },
+        "borg_defend_aux_banishment_morgoth": {
+          "native": "borg_defend_aux_banishment_morgoth",
+          "normalized_sha256": "3afb8dc10f9d9feba7e17ef39630a6dadb03813a941af14f9ba161cf53745a94"
+        },
+        "borg_defend_aux_berserk": {
+          "native": "borg_defend_aux_berserk",
+          "normalized_sha256": "da4c7b72b137dfa4f8e74f63187a94c34c9cadd3f92e218d38a4aea66f4ecb13"
+        },
+        "borg_defend_aux_bless": {
+          "native": "borg_defend_aux_bless",
+          "normalized_sha256": "43f86e4e306fbc724396da9f2e52589f57c3cec89847de20c99c3bf4a3a66c3e"
+        },
+        "borg_defend_aux_create_door": {
+          "native": "borg_defend_aux_create_door",
+          "normalized_sha256": "a55a9e3694769c6ea9927e20578c62dd3f1897cfba4f212f22bd43f7d8077ac6"
+        },
+        "borg_defend_aux_destruction": {
+          "native": "borg_defend_aux_destruction",
+          "normalized_sha256": "f97a6840a16240bf0f79a01b11cc156bfa80e6432e48c4001628ddf73f0bc859"
+        },
+        "borg_defend_aux_earthquake": {
+          "native": "borg_defend_aux_earthquake",
+          "normalized_sha256": "926753f1d08227bb77511dce144adfb6d56e41d6004faaaa87f3743f6db5f664"
+        },
+        "borg_defend_aux_genocide": {
+          "native": "borg_defend_aux_genocide",
+          "normalized_sha256": "33c9670ad8c33d394829feaf72682c2fe0051d4fa451da7f551753ed692f251d"
+        },
+        "borg_defend_aux_genocide_nasties": {
+          "native": "borg_defend_aux_genocide_nasties",
+          "normalized_sha256": "952c28a7332f4ba86ac9d4fa19458f7b5046db2fa46397e2af52bc758881ae7f"
+        },
+        "borg_defend_aux_glyph": {
+          "native": "borg_defend_aux_glyph",
+          "normalized_sha256": "571fc13b61a2a194c6f23967af586c0dfd152542742144c2d42660ac0008ee5c"
+        },
+        "borg_defend_aux_grim_purpose": {
+          "native": "borg_defend_aux_grim_purpose",
+          "normalized_sha256": "0e49bf686ce129c0049f3cb7952ed787e3d8f3651eb4bb93db906ea7db729855"
+        },
+        "borg_defend_aux_hero": {
+          "native": "borg_defend_aux_hero",
+          "normalized_sha256": "6a0a4f1b71080d9a1ae92aa7a137f145f4f242dd42819662375d8c833642b528"
+        },
+        "borg_defend_aux_inviso": {
+          "native": "borg_defend_aux_inviso",
+          "normalized_sha256": "2661e79ff1776dfcf1a53a45f130397ff70698684ef8958f8620962d4a2cc086"
+        },
+        "borg_defend_aux_lbeam": {
+          "native": "borg_defend_aux_lbeam",
+          "normalized_sha256": "a990efbe9fc3596a12440ff58aeefc5aacd7edb49408f7db1fb0a79f0370151e"
+        },
+        "borg_defend_aux_light_morgoth": {
+          "native": "borg_defend_aux_light_morgoth",
+          "normalized_sha256": "9664a2b8e5adcf5fbc5211423e8385f02614f08ee3230e8cb98ec295de8eb3d5"
+        },
+        "borg_defend_aux_mass_genocide": {
+          "native": "borg_defend_aux_mass_genocide",
+          "normalized_sha256": "b44dcc31ff20ceeb2e3753e960c51af9f7e7d440c4a7c420181521c88a42188f"
+        },
+        "borg_defend_aux_prot_evil": {
+          "native": "borg_defend_aux_prot_evil",
+          "normalized_sha256": "a14be9770903d7299c1f928ed5e9ad9d0fca9f50753c9dfe9d8fe9c9a6766439"
+        },
+        "borg_defend_aux_regen": {
+          "native": "borg_defend_aux_regen",
+          "normalized_sha256": "069d794d3369d0e209b335ebcf2479275b6a19467673bba3ef7889e1d08a51b7"
+        },
+        "borg_defend_aux_resist_a": {
+          "native": "borg_defend_aux_resist_a",
+          "normalized_sha256": "a89af672623521c7c0b3e2c7ffcd7d2d97f9bb2fec95f2f162872ebc9e43ab4b"
+        },
+        "borg_defend_aux_resist_c": {
+          "native": "borg_defend_aux_resist_c",
+          "normalized_sha256": "0b87db3efc91b1f0e8b3475c9542b948ca375594d929b19699691f2cc0d65f77"
+        },
+        "borg_defend_aux_resist_e": {
+          "native": "borg_defend_aux_resist_e",
+          "normalized_sha256": "d9fc240878e325616e94337a2e2ad7cd518539da442cd7556d8bb7f307ffee41"
+        },
+        "borg_defend_aux_resist_f": {
+          "native": "borg_defend_aux_resist_f",
+          "normalized_sha256": "252d22b8a0bee7036d37437eda9bfdf3812f850066de46d40c318b7afa02b21e"
+        },
+        "borg_defend_aux_resist_fecap": {
+          "native": "borg_defend_aux_resist_fecap",
+          "normalized_sha256": "0c39c21496564459b63305387dd470ed2f6fc97a64826e3569bfbf31dd48800e"
+        },
+        "borg_defend_aux_resist_p": {
+          "native": "borg_defend_aux_resist_p",
+          "normalized_sha256": "88c10d5b6abb85dc4cc3aa270a1fbfaa6f8d8fc85fe45caf4b7738c93feb7437"
+        },
+        "borg_defend_aux_rest": {
+          "native": "borg_defend_aux_rest",
+          "normalized_sha256": "06fad27036b8c2bf8747e0735ffea8532dae2706ad41c6cbccaf9b852dcf3431"
+        },
+        "borg_defend_aux_shield": {
+          "native": "borg_defend_aux_shield",
+          "normalized_sha256": "4a6ce6f29a450e75b2a8f80327aa281f82c2d2dc15512fbfca69cc598f91aab5"
+        },
+        "borg_defend_aux_smite_evil": {
+          "native": "borg_defend_aux_smite_evil",
+          "normalized_sha256": "6fcf5dfa7c5b23116c60ca15abead21e3a2c510dee3630a6c363ebd361bee04e"
+        },
+        "borg_defend_aux_speed": {
+          "native": "borg_defend_aux_speed",
+          "normalized_sha256": "69bd1cb90c4f789df2a65704814c297f2b50ae27a2d884112ffebc4dcd952f1d"
+        },
+        "borg_defend_aux_tele_away": {
+          "native": "borg_defend_aux_tele_away",
+          "normalized_sha256": "69d41669fada01763229089d108a6093180b5d6e7bf6ca3cd14f91897d8857b6"
+        },
+        "borg_defend_aux_tele_away_morgoth": {
+          "native": "borg_defend_aux_tele_away_morgoth",
+          "normalized_sha256": "2ba3d263f3de3b3e4fac94e5b590e65abf5be6b92e05742881408d4856e89af1"
+        },
+        "borg_defend_aux_teleportlevel": {
+          "native": "borg_defend_aux_teleportlevel",
+          "normalized_sha256": "ae725d288c109e5293e0978e09fb57d4608fb2da620cee65625047f1ef0362ca"
+        },
+        "borg_defend_panel_shift": {
+          "native": "borg_defend_panel_shift",
+          "normalized_sha256": "ea062d9532f2ce5b8cd4d116b13115f6f58fd465ea7ba3d55b458a413f813a8a"
+        },
+        "borg_log_spellpath": {
+          "native": "borg_log_spellpath",
+          "normalized_sha256": "0d01121227fdb17aff5ad5b1db27bda3241cb8e51ef38ae26a7e01899b7baf72"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "f8d311b2746fdfe094c4090a3eb68ff3283fca69cae6db14c2dcfa6e2e2ac320"
+        },
+        "danger_here": {
+          "native": "danger_here",
+          "normalized_sha256": "06d21c7a8a2ec776a57423daa174a5e0c878c0e93f405503aa66df10d54e4aae"
+        },
+        "danger_one_here": {
+          "native": "danger_one_here",
+          "normalized_sha256": "bacfb5b2f788ac5fb214bf1c2b3e74f8abc3751d1a38009bbf390222e3fd7067"
+        },
+        "dark_here": {
+          "native": "dark_here",
+          "normalized_sha256": "376a1a1a996a0c0c8e4647c01e7232f8c38f6c9e763e6886c5406361cf680d67"
+        },
+        "detect_invisible_now": {
+          "native": "detect_invisible_now",
+          "normalized_sha256": "adebb1650574effa67faeab967b2e13b458865f0ce54c7b3ca84772b6c65a73e"
+        },
+        "detect_invisible_on_hand": {
+          "native": "detect_invisible_on_hand",
+          "normalized_sha256": "93900124d745bf8b22a16f4e3be985e9055cbdde0be6e2278e75f3e2c5362de3"
+        },
+        "fixture_choice": {
+          "native": "fixture_choice",
+          "normalized_sha256": "2e0020296de8a5754511d220997534ca88f407bd5048855bf1de6d496659c70a"
+        },
+        "grid": {
+          "native": "grid",
+          "normalized_sha256": "ed1ee696a4d3e1f0fe1ee68de5469b4abd41916731a13c42f2792862e57810cb"
+        },
+        "i2d": {
+          "native": "i2d",
+          "normalized_sha256": "87d685dcdf35ed7090c3049d24bdc30a9a2b38b2371bfb823a4182991d8498dd"
+        },
+        "improves": {
+          "native": "improves",
+          "normalized_sha256": "3c08bfe53072faf59f4f4c094b503fec83f534e5a74d848205742c37a9fc30c5"
+        },
+        "is_ghost": {
+          "native": "is_ghost",
+          "normalized_sha256": "75cda94d8abd5bb1f860cf53425d885d32d1f4c3a9a689856fffe89ea7bf0c46"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "limit": {
+          "native": "limit",
+          "normalized_sha256": "efbb25ccdb98164c8638ce9b850fd11e8144ed0a5afc0cf564e1a1ec6745acec"
+        },
+        "max_range": {
+          "native": "max_range",
+          "normalized_sha256": "e817be6f38e76646ec6da64e4092d9e657cc82d137f613a5bf43ff2a326e5f73"
+        },
+        "near_evil": {
+          "native": "near_evil",
+          "normalized_sha256": "1c60a78defcaea25b1dbd105336c5d9d814b876e52c7049c08c86b176c1f36aa"
+        },
+        "reset_lists": {
+          "native": "reset_lists",
+          "normalized_sha256": "d1ccd9baa4d8a8077d23593bd0e7f62a64772e893b4a29f6e3b42a5cfca86375"
+        },
+        "scaled_fail": {
+          "native": "scaled_fail",
+          "normalized_sha256": "106a641f405c485a810ad3936e73cf13d861333d6b1b60bbae78061981780a9d"
+        },
+        "screwed": {
+          "native": "screwed",
+          "normalized_sha256": "e76efb350ed2f445e7c63caa8198be726c1ae681e5e551c70b8e281a9bde4428"
+        },
+        "shift_as_precaution": {
+          "native": "shift_as_precaution",
+          "normalized_sha256": "36f2f804dc1954d0c7eba4fee7d6c37d7389629263dcf922b4c4b094fb332c4f"
+        },
+        "simulating": {
+          "native": "simulating",
+          "normalized_sha256": "6e61395bfbfe6ea3150a83c0e4dd48b4ed500e3c5a18dcc3bc23683fc32de085"
+        },
+        "some_danger": {
+          "native": "some_danger",
+          "normalized_sha256": "7dbfe96407cc756600700a72d42d5b35b03cd3adf3c31856f1aedc5d0cda8c1d"
+        },
+        "unique_is": {
+          "native": "unique_is",
+          "normalized_sha256": "a6cd16a305139fe15e76e9d7a2679b569418812766d4156ed592e6c35292dff2"
+        },
+        "unseen_detection_safe": {
+          "native": "unseen_detection_safe",
+          "normalized_sha256": "cf285b6214600ec310e32f9bb57781ae51c1ed376abe23af078f74756ca0c705"
+        },
+        "use_detect_invisible": {
+          "native": "use_detect_invisible",
+          "normalized_sha256": "3383add081a846a1b4ce1766a074b4a9c78609fc8c213f0b776fd2059ecb33f4"
+        }
+      },
+      "native_only": [
+        "borg_defend",
+        "tr"
+      ]
+    },
+    "item_use": {
+      "paired": {
+        "borg_activate_dragon": {
+          "native": "borg_activate_dragon_native",
+          "normalized_sha256": "4cb3e60e2cf2cb2898074d933605fd74049925874af80b24a922a55be0a87f1b"
+        },
+        "borg_activate_failure": {
+          "native": "borg_activate_failure_native",
+          "normalized_sha256": "15e0e7e614c8178c035ae2e351ac2149190a01d870eea2aa18f158e9790e1073"
+        },
+        "borg_activate_item": {
+          "native": "borg_activate_item_native",
+          "normalized_sha256": "daa72b5166a1c9da169a932566c5d248aa25825f173ab38baf6f5f4ed14bbc24"
+        },
+        "borg_activate_ring": {
+          "native": "borg_activate_ring_native",
+          "normalized_sha256": "06d0e7ff6045c98255ff184a195f8343ddea9373f7b530cbcb4cd1a4a08afed1"
+        },
+        "borg_aim_wand": {
+          "native": "borg_aim_wand_native",
+          "normalized_sha256": "f4b5705603dc2ea13b9a690249332b9a1305c1355ad585303114850588629eca"
+        },
+        "borg_eat": {
+          "native": "borg_eat_native",
+          "normalized_sha256": "aff04328e29202ab15f42b9bb97b545b7e051833ac902ae0d842978a5169e151"
+        },
+        "borg_eat_food_any": {
+          "native": "borg_eat_food_any_native",
+          "normalized_sha256": "f04e7111dd85a436478890b9d1ae16b955d8df88d33aac3a5000147b273b9446"
+        },
+        "borg_eat_when_hungry": {
+          "native": "borg_eat_when_hungry",
+          "normalized_sha256": "f4f59052b85ad33720575a02550dadc5dd2431f25d5ea17604db2e24538edb1d"
+        },
+        "borg_equips_dragon": {
+          "native": "borg_equips_dragon_native",
+          "normalized_sha256": "a45bfa5f048ae606a5d3222bacacd364d66804061dfc680293a59ec870f262fa"
+        },
+        "borg_equips_item": {
+          "native": "borg_equips_item_native",
+          "normalized_sha256": "a0ba581a54d835eff77ee7087c7b2c79fe30a3029facfa5d1666296199d7bb6b"
+        },
+        "borg_equips_ring": {
+          "native": "borg_equips_ring_native",
+          "normalized_sha256": "0062d71747c3e7f2c05d34d7bb6a23618abb5b40e6b0ecc63cf00708fced51e4"
+        },
+        "borg_equips_rod": {
+          "native": "borg_equips_rod_native",
+          "normalized_sha256": "81ad7089122cf8af7a509663f98e9120023562b8b1615b5688f435ba79ae113a"
+        },
+        "borg_equips_staff_fail": {
+          "native": "borg_equips_staff_fail_native",
+          "normalized_sha256": "8915608eebcb6010c23ece24241808a79bf4f63364bb714a73d84a68ba48f5bf"
+        },
+        "borg_quaff_crit": {
+          "native": "borg_quaff_crit_native",
+          "normalized_sha256": "b2c1d94f0377b032742c2786725176fb66490b375796cc8e9549944039405d23"
+        },
+        "borg_quaff_potion": {
+          "native": "borg_quaff_potion_native",
+          "normalized_sha256": "01ecc5b8abd2e4052cf606630fd21b5db8ac8e1685ff5451eb44ec8941ff9007"
+        },
+        "borg_read_scroll": {
+          "native": "borg_read_scroll_native",
+          "normalized_sha256": "f0e44776d3b0031abd97099dd20dc818209b268cde38637552cf3c852b9fd5f3"
+        },
+        "borg_recharging": {
+          "native": "borg_recharging_native",
+          "normalized_sha256": "c9327de38d055edc93bb347f7edc72a8f5a280af02006fbc8fd0c0ede936030a"
+        },
+        "borg_satisfy_hunger_before_food": {
+          "native": "borg_satisfy_hunger_before_food",
+          "normalized_sha256": "fcedfdbf51a62885773415dc659109d2280a3b7a33972f71c5c7133c77bd41ac"
+        },
+        "borg_use_staff": {
+          "native": "borg_use_staff_native",
+          "normalized_sha256": "6e1e7194ff220da329484c7ad23b61b8ef6215309aecb451ec3468410edf0fcd"
+        },
+        "borg_use_staff_fail": {
+          "native": "borg_use_staff_fail_native",
+          "normalized_sha256": "b036d28dac23fcf3e8454dd6241137b1e881abf2ac355bdd789a0599d46f3e56"
+        },
+        "borg_use_things": {
+          "native": "borg_use_things_native",
+          "normalized_sha256": "132a0bcfe9ae9f260bd44626151c13bad8e3b6a037805fe9b295f0b46857515a"
+        },
+        "borg_zap_rod": {
+          "native": "borg_zap_rod_native",
+          "normalized_sha256": "a160fbb5e2a49e961102a877b2cd23fe845f0ee692401a2a107e1c897cfa73bd"
+        },
+        "clear_shop_goals": {
+          "native": "clear_shop_goals",
+          "normalized_sha256": "1d38a55b072e19b1c522195c384554b7fbe5119d26a644543d7058fa9f50f807"
+        },
+        "desc": {
+          "native": "desc",
+          "normalized_sha256": "11d576c6c04c09cdb3db84292d1e030b6f07bc3209ca6f40741db3311394e225"
+        },
+        "device_fail": {
+          "native": "device_fail",
+          "normalized_sha256": "828ce54b695660722ccc4489e14636a448359c7639a67cfad372b65912ba8daf"
+        },
+        "device_skill": {
+          "native": "device_skill",
+          "normalized_sha256": "548821c96dc5200fe63cf511254b5906b03aacc0666eaf4d12e6c208edfd726f"
+        },
+        "dragon_ready": {
+          "native": "dragon_ready",
+          "normalized_sha256": "c37f0323ed4513f1f9e5563e4525304e7fe211740981acdef1678b7badc85cae"
+        },
+        "inven_body": {
+          "native": "inven_body",
+          "normalized_sha256": "e36c0b33f247c8961cfe30cc4446ff8edee34f98ecf774aa5112e108e9073903"
+        },
+        "inven_left": {
+          "native": "inven_left",
+          "normalized_sha256": "97469423ca3e5effec16d1d109770a3fbcdbe9799d1467b40af1f40c814d8254"
+        },
+        "inven_right": {
+          "native": "inven_right",
+          "normalized_sha256": "034b1c7f3171eef15219ceda665ab7977eddedb1367ab5a51820f24a3efa4053"
+        },
+        "inven_total": {
+          "native": "inven_total",
+          "normalized_sha256": "cfdb6d8a301b622a4212b7f97a28d1c10f2f7813f71d5029f041a32382cb6534"
+        },
+        "key": {
+          "native": "key",
+          "normalized_sha256": "6c50ac8961ab76377fb1e43a42069ff8473e0f90549d8200ae39a03eb1a0be09"
+        },
+        "letter": {
+          "native": "letter",
+          "normalized_sha256": "4f1b7ca2696733617ae10f7558a6d6213fd633064d967d2484ab384af8676c8e"
+        },
+        "may_read_hunger_scroll_first": {
+          "native": "may_read_hunger_scroll_first",
+          "normalized_sha256": "8ac75416eee116ccd7c8a59d1c3569ad54b1bac758ec3e0819370afd55f1009f"
+        },
+        "note_desc": {
+          "native": "note_desc",
+          "normalized_sha256": "0e5c32aa27ef040db7e1487efb9058f51e1126e12e043f49c444cfd9e39ce2dd"
+        }
+      },
+      "native_only": [
+        "borg_activate_dragon",
+        "borg_activate_failure",
+        "borg_activate_item",
+        "borg_activate_ring",
+        "borg_aim_wand",
+        "borg_eat",
+        "borg_eat_food_any",
+        "borg_equips_dragon",
+        "borg_equips_item",
+        "borg_equips_ring",
+        "borg_equips_rod",
+        "borg_equips_staff_fail",
+        "borg_quaff_crit",
+        "borg_quaff_potion",
+        "borg_read_scroll",
+        "borg_recharging",
+        "borg_use_staff",
+        "borg_use_staff_fail",
+        "borg_use_things",
+        "borg_zap_rod"
+      ]
+    },
+    "power": {
+      "paired": {
+        "activation_bonus": {
+          "native": "activation_bonus",
+          "normalized_sha256": "9afea7411d52d3b6135ee84fd12bb8a69611bf9e3cdbdfa80f269feb76cbf0ed"
+        },
+        "add": {
+          "native": "add",
+          "normalized_sha256": "81127e61dad3da2eba97ea5c6cfa40000c9125f95fa6243203d3a0c2df997e1a"
+        },
+        "addi": {
+          "native": "addi",
+          "normalized_sha256": "29c8cf71c3e2ead55a31ec3d2f85feea3236948057f95a4f2bf8cb1138e6f351"
+        },
+        "borg_power": {
+          "native": "borg_power_native",
+          "normalized_sha256": "18557d172dd96046230e2699894d09db325b02c4df08bb7cb6301b633fd88116"
+        },
+        "borg_power_equipment": {
+          "native": "borg_power_equipment_native",
+          "rewrite": "named stat offsets and spell read projection",
+          "native_sha256": "36ab6e0b22b60dea863394c9df81e1bc0b8eb3d58d7f7acd5327a74698044236",
+          "owned_sha256": "85599d620e236306711e7db7c326878d591374607ad36cacc722c159f5a5b22f"
+        },
+        "borg_power_inventory": {
+          "native": "borg_power_inventory",
+          "rewrite": "named stat offsets and spell read projection",
+          "native_sha256": "3c268027de1ae8cf4ff9918ceaec1c28942ee7cb76be48486fe088ed3fc15c1d",
+          "owned_sha256": "3db8828b440d03b02cede2cfb8c936b0324f2db06996af049a71f828337b609b"
+        },
+        "count_down": {
+          "native": "count_down",
+          "normalized_sha256": "85a4394be9a16d8e4d131372064cdfc15b32c2a0b3635e963a4126cc60149704"
+        },
+        "count_up": {
+          "native": "count_up",
+          "normalized_sha256": "9bceeec2a13d27f1045b3e1f604c9986fbd882d9be982e4ecf0097fb33483bb8"
+        },
+        "inven": {
+          "native": "inven",
+          "normalized_sha256": "e26c4bf929ceb57928659b7f1d757038ff3aaaaee0d7e76eccadb38e6fca6b53"
+        },
+        "sub": {
+          "native": "sub",
+          "normalized_sha256": "d53205425115dcdbd24f2269577dc18dfbf4d6d72ec3358e1ea7d68f3accf1b6"
+        },
+        "subi": {
+          "native": "subi",
+          "normalized_sha256": "5ab767d70183f096a4501e50af7fd578eb0efdf716426dbd2807d079961cdc30"
+        }
+      },
+      "native_only": [
+        "borg_power",
+        "borg_power_equipment"
+      ]
+    },
+    "equipment_wear": {
+      "paired": {
+        "add_iqty": {
+          "native": "add_iqty",
+          "normalized_sha256": "37e4644d2fe8be0411e5e1d626a590e0e9cfbb9a7f7d8a5bf78d46f71efcef19"
+        },
+        "add_long": {
+          "native": "add_long",
+          "normalized_sha256": "a24675e41beca55eb8002b20c413e1b20960039e89dc31f85ec825c989bec138"
+        },
+        "antibounce": {
+          "native": "antibounce",
+          "normalized_sha256": "8640c8d967a69d6c15c78aa05360debd19055ce42ad38b03fecd7827cb9280f5"
+        },
+        "backup_forbidden": {
+          "native": "backup_forbidden",
+          "normalized_sha256": "e1c2378e99a2ff7bdce11d6fa4c8a0e8a9cfb23284ecda5628dcfc02de5e7dac"
+        },
+        "backup_swap_choice": {
+          "native": "backup_swap_choice",
+          "normalized_sha256": "00c525f1d620ff25e959ad9fada0de3676297cfe5e1be55ddcdfe88881716a56"
+        },
+        "backup_try": {
+          "native": "backup_try",
+          "normalized_sha256": "d1772f06eb0ee58096caa5115f9084950a9d5366186e6d0da5e6466f0617acbe"
+        },
+        "borg_backup_swap": {
+          "native": "borg_backup_swap_native",
+          "normalized_sha256": "4c9b7415dc2de42b2bce296362c0e057501a4552a434413f50ef29cdce7492e0"
+        },
+        "borg_best_stuff": {
+          "native": "borg_best_stuff_native",
+          "normalized_sha256": "e2154c602968819159dd00954753095b50596c5fc83a1a6415ce0fa0df1a6003"
+        },
+        "borg_best_stuff_aux": {
+          "native": "borg_best_stuff_aux",
+          "normalized_sha256": "3c2c6764f2543013d19de5efd1f438807fbd5f5da59814c518a923360112ee5e"
+        },
+        "borg_best_stuff_order": {
+          "native": "borg_best_stuff_order",
+          "normalized_sha256": "c22075746093aaa5de742e21a841b33e426581c8bdf022c69a21b495fc6f6caa"
+        },
+        "borg_clear_best": {
+          "native": "borg_clear_best_native",
+          "normalized_sha256": "e9d4b6f93bd9188c13fbc6d3f8a8277f7b973c83e1524f56d351911cbc1f87f7"
+        },
+        "borg_item_worth_id": {
+          "native": "borg_item_worth_id",
+          "rewrite": "already imported item-id and inventory seam paths",
+          "native_sha256": "e666e57e79ae003a3060ab5d0b5b15b2b2db118c24d7d7fd7f59c8f3e7275d8f",
+          "owned_sha256": "fdbf66b085f8db2e5305b360f994115c4be237faa6e9bdbb3a439d578674c1ec"
+        },
+        "borg_one_step_wearing_best": {
+          "native": "borg_one_step_wearing_best",
+          "normalized_sha256": "9e50ed0362ffe0d889a5e06d7ec0c28cc7c5b2cfc81c7a727bee277d2d554225"
+        },
+        "borg_swap_rings": {
+          "native": "borg_swap_rings_native",
+          "normalized_sha256": "83d4e2da07402555091286a5a553b52808ca7ce7a16439f5ec6b3b0728b74914"
+        },
+        "borg_test_stuff": {
+          "native": "borg_test_stuff_native",
+          "normalized_sha256": "575ffb77b0207180bf10ab22d3a244517673b341f7559b04fe74cf81b5d81ab3"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "812b98080cd68a7b5e7cc1d443e5cb3e932df788ecabfa0fc233cf3d4ad34509"
+        },
+        "borg_wear_recharge": {
+          "native": "borg_wear_recharge_native",
+          "normalized_sha256": "86bdb883e112be7495db9f94a4bc99ecdb0804dd8d757aff5a899452ec39c0d9"
+        },
+        "borg_wear_rings": {
+          "native": "borg_wear_rings_native",
+          "normalized_sha256": "033b3923a0d84855fd8db78f5780d61f4cc3834cfe2d843d18e44118d856eceb"
+        },
+        "borg_wear_stuff": {
+          "native": "borg_wear_stuff_native",
+          "normalized_sha256": "663630b244ac3820de834de6a723439bebcdcc4c5615982ef8bc5799b5fc6192"
+        },
+        "danger_here": {
+          "native": "danger_here",
+          "normalized_sha256": "4232e7548f277f813e591313a982d5022bc2ab07c4bbe2413c49215d5da919fe"
+        },
+        "desc": {
+          "native": "desc",
+          "normalized_sha256": "11d576c6c04c09cdb3db84292d1e030b6f07bc3209ca6f40741db3311394e225"
+        },
+        "equip_slots_max": {
+          "native": "equip_slots_max",
+          "normalized_sha256": "1f8fee1bb7063ceaf31197a236160ddb682cb4118c10506a0d2c2249b06df2bb"
+        },
+        "from_safe": {
+          "native": "from_safe",
+          "normalized_sha256": "10b40de8d1ee55a98d9050b2b8640a406cf5e5c7da28cb8a8b310732663149d2"
+        },
+        "inven_left": {
+          "native": "inven_left",
+          "normalized_sha256": "97469423ca3e5effec16d1d109770a3fbcdbe9799d1467b40af1f40c814d8254"
+        },
+        "inven_right": {
+          "native": "inven_right",
+          "normalized_sha256": "034b1c7f3171eef15219ceda665ab7977eddedb1367ab5a51820f24a3efa4053"
+        },
+        "letter": {
+          "native": "letter",
+          "normalized_sha256": "4f1b7ca2696733617ae10f7558a6d6213fd633064d967d2484ab384af8676c8e"
+        },
+        "lost_critical": {
+          "native": "lost_critical",
+          "normalized_sha256": "b0691fd90e086b6f4df2914c084970095a82941aedad8f566623be02b4ffccf8"
+        },
+        "note_desc": {
+          "native": "note_desc",
+          "normalized_sha256": "99824374c27704674f242aeb8d854194c7a6576829a0dfe6229dda8c3f5a0862"
+        },
+        "pack_slots": {
+          "native": "pack_slots",
+          "normalized_sha256": "fcccec36f877ebeeeb301cdaa6b918464f2b4ec496a2840a26900b102712e984"
+        },
+        "randarts": {
+          "native": "randarts",
+          "normalized_sha256": "2c601595b8d2c10a2ec41f04c1e0ff1cc277294599e852cc4a0689b44d4ebf06"
+        },
+        "swap_letter": {
+          "native": "swap_letter",
+          "normalized_sha256": "df9d15de8ac75c89d7e0cdb25632e3c8c3643e89c4117b65346b406635dc37d8"
+        },
+        "wear_trial": {
+          "native": "wear_trial",
+          "normalized_sha256": "be47b88b9b24a4c84c5960825db98b8c1e078dd073273c9f09692fa581be30b7"
+        }
+      },
+      "native_only": [
+        "borg_backup_swap",
+        "borg_best_stuff",
+        "borg_clear_best",
+        "borg_free_item_wear",
+        "borg_init_item_wear",
+        "borg_is_ammo",
+        "borg_swap_rings",
+        "borg_test_stuff",
+        "borg_wear_recharge",
+        "borg_wear_rings",
+        "borg_wear_stuff",
+        "choice",
+        "critical",
+        "trial"
+      ]
+    },
+    "equipment_identify": {
+      "paired": {
+        "borg_item_note_needs_id": {
+          "native": "borg_item_note_needs_id",
+          "normalized_sha256": "b09bf5a2a891266827dab7a811430ab608ccab2e30e7f2c3333778955e2c3aa4"
+        },
+        "borg_object_fully_id": {
+          "native": "borg_object_fully_id_native",
+          "normalized_sha256": "f37d6e15fe8a97c975967b176def32ad442544bd17fbac88e805265c62437a69"
+        },
+        "contains": {
+          "native": "contains",
+          "normalized_sha256": "ba795b78198146727b5ea02e1a676d7390159c16d8d0267c272561ed288d9bee"
+        },
+        "of_has": {
+          "native": "of_has",
+          "normalized_sha256": "2f6497f3bf68865982c2cf3731ca83de9a2c24823cc758b139e8062ed1a23c61"
+        },
+        "res_level": {
+          "native": "res_level",
+          "normalized_sha256": "61aa049469c2b94aa023dba2290a94fd9f97501b452d97fc7ef1cd28dc768661"
+        }
+      },
+      "native_only": [
+        "borg_object_fully_id",
+        "flavour_sale_type"
+      ]
+    },
+    "home_power": {
+      "paired": {
+        "add": {
+          "native": "add",
+          "normalized_sha256": "81127e61dad3da2eba97ea5c6cfa40000c9125f95fa6243203d3a0c2df997e1a"
+        },
+        "borg_power_home": {
+          "native": "borg_power_home_native",
+          "normalized_sha256": "d1af7c26c25d5153edd547d09f2be1875b6364d2c74af910d0b7cc47199520ff"
+        },
+        "borg_power_home_aux1": {
+          "native": "borg_power_home_aux1",
+          "normalized_sha256": "956277b92fabf7c08ba97319876dc4c9c6dcd88ceb81fb361850d90611d021b9"
+        },
+        "borg_power_home_aux2": {
+          "native": "borg_power_home_aux2",
+          "normalized_sha256": "6bf86f08f15756045eaaa1597362c9be69cd68ef92f6149c06919c01b5a7e22c"
+        },
+        "max_stack": {
+          "native": "max_stack",
+          "normalized_sha256": "4e0ffa0c9e18a9f1c18ac65bdc6a6033407d992bac3e6625e401158684915e80"
+        },
+        "spare": {
+          "native": "spare",
+          "normalized_sha256": "bbaeee0c9724ed9f70c9a0df5856651f82ca59e6fc517af063685a74e781caa3"
+        },
+        "stack": {
+          "native": "stack",
+          "normalized_sha256": "aa970cd00d0c38f2da870dcb3957f4cb475d0f65357a1e11e4c77ab3f3fa03c6"
+        },
+        "stat_tiers": {
+          "native": "stat_tiers",
+          "normalized_sha256": "7dbcf24113065cd2b7fdca74920a15b680b74eceed34a58545ba5d8412453c95"
+        },
+        "sub": {
+          "native": "sub",
+          "normalized_sha256": "d53205425115dcdbd24f2269577dc18dfbf4d6d72ec3358e1ea7d68f3accf1b6"
+        },
+        "too_many": {
+          "native": "too_many",
+          "normalized_sha256": "017eb85f5035833b7121bcd5dd68aacb6055a942c7c588bcf23bf436c1c47f3b"
+        }
+      },
+      "native_only": [
+        "borg_power_home"
+      ]
+    },
+    "store_buy": {
+      "paired": {
+        "borg_buy_identify": {
+          "native": "borg_buy_identify",
+          "normalized_sha256": "dcfeaeb3dcece4230d01356061661e7c8be22b817644151153ed7a47be2d47c6"
+        },
+        "borg_buy_reserve410": {
+          "native": "borg_buy_reserve410",
+          "normalized_sha256": "a56c0d3c9e992d537418510e9f8d8bf1df541e5722277218a81646368a2b501d"
+        },
+        "borg_good_buy": {
+          "native": "borg_good_buy",
+          "normalized_sha256": "1affeabe3b100ca5319bdbd330c32c937421989ceddfe90b8f2dac1d2708d633"
+        },
+        "borg_think_home_buy_swap_armour": {
+          "native": "borg_think_home_buy_swap_armour_native",
+          "normalized_sha256": "e71cb4ea8baebcebd512713e07fa50d0a43e4873550015e304a8fc2ce25d3ea3"
+        },
+        "borg_think_home_buy_swap_weapon": {
+          "native": "borg_think_home_buy_swap_weapon_native",
+          "normalized_sha256": "a639522b26867de475af42f647d9a187efd9e858ff3416a142784bd807719c03"
+        },
+        "borg_think_home_buy_useful": {
+          "native": "borg_think_home_buy_useful_native",
+          "normalized_sha256": "e89ff8a1effecddf2542ce4315cc2747b45d2ec2cde44bd3251d739442d1e369"
+        },
+        "borg_think_home_grab_useless": {
+          "native": "borg_think_home_grab_useless_native",
+          "normalized_sha256": "263f467f807dbdaa3476fc9d35daa5315ffdceaa32cfe1a9d1537101aa39abac"
+        },
+        "borg_think_shop_buy": {
+          "native": "borg_think_shop_buy_native",
+          "normalized_sha256": "688258010be4227159455dad0df2c4de2392c349c4f9aa3855fb2485455da612"
+        },
+        "borg_think_shop_buy_useful": {
+          "native": "borg_think_shop_buy_useful_native",
+          "normalized_sha256": "82c0015063d497cb20552c5bd82448536410f920147cba1763495df7fc13c1ac"
+        },
+        "borg_think_shop_grab_interesting": {
+          "native": "borg_think_shop_grab_interesting_native",
+          "normalized_sha256": "3df716fb224d2cf46cb7380f9f9f2d46e82d7dc3d024066e43c5fa7512eb41af"
+        },
+        "buy_selected": {
+          "native": "buy_selected",
+          "normalized_sha256": "165b2cbc82c4b5c69154f80f478299324935cc2257489d70d1b3cb7eb8677e09"
+        },
+        "can_browse": {
+          "native": "can_browse",
+          "normalized_sha256": "6ca249dfd9e38a58085c1b6d69230f07110700c13790c3d33e31031aa7339cbe"
+        },
+        "confirm_purchase": {
+          "native": "confirm_purchase_native",
+          "normalized_sha256": "4d8742893307fea63058b9b3b4e05422844ca9be56b083bb198f0e7ea72c2ffd"
+        },
+        "home_buy_swap": {
+          "native": "home_buy_swap",
+          "normalized_sha256": "6b7d816b49d1c5b0e7e83c3069a10468ac73807cf81c073f1e024d25921314fb"
+        },
+        "inven_left": {
+          "native": "inven_left",
+          "normalized_sha256": "97469423ca3e5effec16d1d109770a3fbcdbe9799d1467b40af1f40c814d8254"
+        },
+        "inven_light": {
+          "native": "inven_light",
+          "normalized_sha256": "de538ca6ec925f8938b0e5efb2f1b1522dbaf8ea2698efab6bb6589edab4d2b4"
+        },
+        "inven_right": {
+          "native": "inven_right",
+          "normalized_sha256": "034b1c7f3171eef15219ceda665ab7977eddedb1367ab5a51820f24a3efa4053"
+        },
+        "is_device": {
+          "native": "is_device",
+          "normalized_sha256": "2e57e8ba5b2a52be4e31489373c6d643dc38f016ca0a4f5cb01f190b738705b9"
+        },
+        "item_from_safe": {
+          "native": "item_from_safe",
+          "normalized_sha256": "f791872faa50a96edcc4b42a022538ff1f01509e901beca3652116bdae20af41"
+        },
+        "item_from_safe_ware": {
+          "native": "item_from_safe_ware",
+          "normalized_sha256": "1566151a8f7cb537639df2915b4826ae9340238ec821e059b7d1fe254ec97252"
+        },
+        "item_mut": {
+          "native": "item_mut",
+          "normalized_sha256": "55e1c98f9dcdfd4ed8dc8eec3b63e0c2b1f141d7325c1a7803511853e4093278"
+        },
+        "min_quantity": {
+          "native": "min_quantity",
+          "normalized_sha256": "d87e6bafeb7caba04238d63e6359aa53ba060037ca4fd79647edec39a72f3720"
+        },
+        "note_desc": {
+          "native": "note_desc",
+          "normalized_sha256": "ab4ddb472e416fc53b5b7cc2f7ed9a680eca98e5980b369955584a5f03ac4175"
+        },
+        "pack_slots": {
+          "native": "pack_slots",
+          "normalized_sha256": "fcccec36f877ebeeeb301cdaa6b918464f2b4ec496a2840a26900b102712e984"
+        },
+        "purchase_done": {
+          "native": "purchase_done",
+          "normalized_sha256": "66d57c93c82df7b3399699b2bf45bca1534decf008ce9b47e85e08e97d7bc6a3"
+        },
+        "remember_purchase": {
+          "native": "remember_purchase",
+          "normalized_sha256": "a4d7ab2fa775e628ca0acb945f05c6e07cd75f49334094966269d3b40b1eee83"
+        },
+        "reset_money_scum": {
+          "native": "reset_money_scum",
+          "normalized_sha256": "8b0a22c38a1bb6373ca75f9f264603314825351f229a1c6a6f338ed613415613"
+        },
+        "restore_ware": {
+          "native": "restore_ware",
+          "normalized_sha256": "fe9bf8833baadd97a36c4a3331e0af4ead9185c617c259827e1348e7a7511c4b"
+        },
+        "set_buy_goal": {
+          "native": "set_buy_goal",
+          "normalized_sha256": "99775f3aa246e572a8c65e4fba268dee7053e1537b24997586af1472d6ea0d48"
+        },
+        "set_swaps": {
+          "native": "set_swaps",
+          "normalized_sha256": "b5c44b536e7e7d58da3b4fbb7eb3d138a27ce719a9e0ed911788895960dc898a"
+        },
+        "store_inven_max": {
+          "native": "store_inven_max",
+          "normalized_sha256": "0192de9ebe4a22db1c0c034c6f9f8c37166ae0bea65e023d2e634b197713005a"
+        },
+        "store_max": {
+          "native": "store_max",
+          "normalized_sha256": "c523dbb9a0d8f3a5f57c458178d04405323cd3cc88ad1925f8890d135f223c2d"
+        },
+        "sub_iqty": {
+          "native": "sub_iqty",
+          "normalized_sha256": "e52249e50ee7e064538db51e834beb009b7ac0dfa067cfaf1a45080cddf1af33"
+        },
+        "swap_value": {
+          "native": "swap_value",
+          "normalized_sha256": "cfc284057b19809eee37afe313eb02a1e4b10c26e09c2df700f1c06a61b707c0"
+        },
+        "swaps": {
+          "native": "swaps",
+          "normalized_sha256": "23993909bde4918c5d02e339c6f814503e5fd759cf4a1fdd2021c464a4d018dc"
+        },
+        "take_selected_for_sale": {
+          "native": "take_selected_for_sale_native",
+          "normalized_sha256": "22de241649931ab9065d2947ff65942d439a4b903213e6467874ad006341f992"
+        },
+        "ware": {
+          "native": "ware",
+          "normalized_sha256": "f478af465d1b19f34c33c2520675d4fcbd4a2152a8189c5c638a8b7ed11e4d4d"
+        },
+        "ware_mut": {
+          "native": "ware_mut",
+          "normalized_sha256": "a2f6ac924a75d4497ce3aedc50982b086f17fd2ca54a2bd6a560a006067483e0"
+        }
+      },
+      "native_only": [
+        "borg_think_home_buy_swap_armour",
+        "borg_think_home_buy_swap_weapon",
+        "borg_think_home_buy_useful",
+        "borg_think_home_grab_useless",
+        "borg_think_shop_buy",
+        "borg_think_shop_buy_useful",
+        "borg_think_shop_grab_interesting",
+        "bought_item",
+        "confirm_purchase",
+        "default",
+        "recall_purchase_budget",
+        "recall_purchase_floor",
+        "take_selected_for_sale"
+      ]
+    },
+    "store_sell": {
+      "paired": {
+        "borg_count_sell": {
+          "native": "borg_count_sell_native",
+          "normalized_sha256": "2420a1d15cd9f04ca1dbfb9e8ae67a2b257636ebefc70c145e8c020daffc75d7"
+        },
+        "borg_good_sell": {
+          "native": "borg_good_sell",
+          "normalized_sha256": "97092f0e9b3557b19127965ad9f79d545e25faa548d8e0de4c27aa2ebde06c4e"
+        },
+        "borg_has_mutiple": {
+          "native": "borg_has_mutiple",
+          "normalized_sha256": "95af3d68a357ad9b94ef93b79f74b629901acc0682986515cc9044a26a4ae75d"
+        },
+        "borg_min_item_quantity": {
+          "native": "borg_min_item_quantity_native",
+          "normalized_sha256": "ea5489d822467e8d581a933c9247ce732f0782d5c6fd965b554c2779af0257c8"
+        },
+        "borg_object_similar": {
+          "native": "borg_object_similar",
+          "normalized_sha256": "d0fba4b03d45060cdb15e4549c98c17043012e5c1d88fa59aeb6df1ef87c358f"
+        },
+        "borg_store_buys": {
+          "native": "borg_store_buys",
+          "normalized_sha256": "193a76a4b343327680d9308ba0deea0a917d35e57d004d8c35674270f0806881"
+        },
+        "borg_think_home_sell_bad": {
+          "native": "borg_think_home_sell_bad",
+          "normalized_sha256": "981202287b943d735dfe29166c88c389f2e2daf3dc9b2c89ab25635e5899a820"
+        },
+        "borg_think_home_sell_best": {
+          "native": "borg_think_home_sell_best",
+          "normalized_sha256": "41783599c9f723e5c206bcbeb120b2aefd7642aeb55346d69f68016a6b53ef25"
+        },
+        "borg_think_home_sell_useful": {
+          "native": "borg_think_home_sell_useful_native",
+          "normalized_sha256": "3231aa57bc7c65e306212e7774c91cf7f30b68b51a85122e7a773f2670b3f34e"
+        },
+        "borg_think_shop_sell": {
+          "native": "borg_think_shop_sell_native",
+          "normalized_sha256": "2d599f422177344958bae2d23cac3edaa8315d6a7abcb22e240e3c662533bd60"
+        },
+        "borg_think_shop_sell_useless": {
+          "native": "borg_think_shop_sell_useless_native",
+          "normalized_sha256": "751b1538cd3f7e1dc97d3d1be190ff10d8668fb5195fb466eeaff8e28780fbe0"
+        },
+        "capped_value": {
+          "native": "capped_value",
+          "normalized_sha256": "cdfeb68e60658bef37b5a67a656a25469304fe3bfb22e2f6da60b966ac11230f"
+        },
+        "gold_greed": {
+          "native": "gold_greed",
+          "normalized_sha256": "9d988503f565c1e8616e41fc23e3802c10cfd7dbc2f727634e65e63bac9d8a6a"
+        },
+        "home_ware": {
+          "native": "home_ware",
+          "normalized_sha256": "0a17272856c6807a5f911643a1b763f4b0100d1ba58a217804a17610806fe444"
+        },
+        "inven_total": {
+          "native": "inven_total",
+          "normalized_sha256": "cfdb6d8a301b622a4212b7f97a28d1c10f2f7813f71d5029f041a32382cb6534"
+        },
+        "is_charged": {
+          "native": "is_charged",
+          "normalized_sha256": "86f4d50081b8b182baabda3b590727debd5598b0f392b2406b0ba4a152fe5f00"
+        },
+        "is_swap": {
+          "native": "is_swap",
+          "normalized_sha256": "c86a151bdfd382a60f04cb9e323503c176f994003f819c26907e515e3ccb70da"
+        },
+        "pack_item": {
+          "native": "pack_item",
+          "normalized_sha256": "45b7b71e74ac784ff5df9a65b6989ba88378cd111dd9dd5699c1dc7de07a3f56"
+        },
+        "pack_size": {
+          "native": "pack_size",
+          "normalized_sha256": "e04a10fd93999794878431e0bcba666cf93e83f249506845ad70ac1ebefdc35a"
+        },
+        "pack_slots": {
+          "native": "pack_slots",
+          "normalized_sha256": "ae8d80093d416b36a36d96bb407a44dfa9e2ebc66708c94f8aead711527b4514"
+        },
+        "randarts": {
+          "native": "randarts",
+          "normalized_sha256": "2c601595b8d2c10a2ec41f04c1e0ff1cc277294599e852cc4a0689b44d4ebf06"
+        },
+        "sell_selected": {
+          "native": "sell_selected",
+          "normalized_sha256": "033e4093392b7d6efee2c967f401b63ffd358f672b24f00136010af95795617d"
+        },
+        "sell_selected_quantity": {
+          "native": "sell_selected_quantity_native",
+          "normalized_sha256": "d1d96eb9be2777c17c650f7b08ca582e836d2e5a05f5aeb0dd78fb32e140f3fb"
+        },
+        "store_inven_max": {
+          "native": "store_inven_max",
+          "normalized_sha256": "0192de9ebe4a22db1c0c034c6f9f8c37166ae0bea65e023d2e634b197713005a"
+        }
+      },
+      "native_only": [
+        "borg_count_sell",
+        "borg_free_store_sell",
+        "borg_init_store_sell",
+        "borg_min_item_quantity",
+        "borg_think_home_sell_useful",
+        "borg_think_shop_sell",
+        "borg_think_shop_sell_useless",
+        "default",
+        "sell_selected_quantity",
+        "sold_item"
+      ]
+    },
+    "think_store": {
+      "paired": {
+        "borg_choose_shop": {
+          "native": "borg_choose_shop_native",
+          "normalized_sha256": "3f5ceb54d4a9cd69c058b787b7094f15b782f7f8603a9f61cbea1f3c18a2acb8"
+        },
+        "borg_choose_shop_inner": {
+          "native": "borg_choose_shop_inner",
+          "normalized_sha256": "944f1b5e9bb2c64892384c086516c65c2071c02d3950e2d03d1b5f121b3d2ce4"
+        },
+        "borg_think_store": {
+          "native": "borg_think_store_native",
+          "normalized_sha256": "c01af7546b53ddab4134f89d7f4b98b9cb75e56c7b46ad034419f155af66d736"
+        },
+        "borg_timer": {
+          "native": "borg_timer",
+          "normalized_sha256": "f8d311b2746fdfe094c4090a3eb68ff3283fca69cae6db14c2dcfa6e2e2ac320"
+        },
+        "clear_shop_goal": {
+          "native": "clear_shop_goal",
+          "normalized_sha256": "d8aba4ce6f8bc552926335767f6629931ca0ae06ff153a93889ab0fe65547f85"
+        },
+        "cstr": {
+          "native": "cstr",
+          "normalized_sha256": "40a3a1081aa986e3acf736b1768f663b3e04f6d4bbcaa5db4dfa010260e9b25c"
+        },
+        "goal_item_desc": {
+          "native": "goal_item_desc",
+          "normalized_sha256": "d0c10990253db730e2bada9ab7d80fe454f48e96734ccced7640366142468024"
+        },
+        "goal_shop_name": {
+          "native": "goal_shop_name",
+          "normalized_sha256": "f11ca0f2698e42fe6d64e06d10fc62d7d187aa2070401bb92bc3c22d104e4f87"
+        },
+        "goal_ware_desc": {
+          "native": "goal_ware_desc",
+          "normalized_sha256": "41448ef1cec5976d91d6379b3ccf79cfdefa02c414a64da7a17f1a4cfc4cf178"
+        },
+        "leave": {
+          "native": "leave",
+          "normalized_sha256": "ccbd968b51789e75eb9bce02f5f9166a7a0e758fb92b0cb78ae4714d3bb7f7d2"
+        },
+        "note": {
+          "native": "note",
+          "normalized_sha256": "bcc130a74700d60e347f29fd52b5d11d582f984c79660b2b6e79d3f1a280ebca"
+        },
+        "note_ware": {
+          "native": "note_ware",
+          "normalized_sha256": "8c6ed0add9d15839987f538c02d4c3c88fd20724ac33c1da599864cf4fd2794e"
+        },
+        "note_ware_at": {
+          "native": "note_ware_at",
+          "normalized_sha256": "a055f167085900a00628cdeec42b1e4ff20a3b935b735aaec21e7e569244dd23"
+        },
+        "null_arm_gate": {
+          "native": "null_arm_gate",
+          "normalized_sha256": "be75a5ef08493f60a4737d5999d2c4ed1231e1e11dc29fc6d5de1743d5f7a120"
+        },
+        "town_strategy_disabled": {
+          "native": "town_strategy_disabled_native",
+          "normalized_sha256": "f81bc37a414540161949d68b244a3bf2d90e56afa0eaa12cc932c54d13ef1234"
+        }
+      },
+      "native_only": [
+        "borg_choose_shop",
+        "borg_think_store",
+        "town_strategy_disabled"
+      ]
+    }
+  }
+}

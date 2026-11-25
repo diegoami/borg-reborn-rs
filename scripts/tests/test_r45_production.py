@@ -1,4 +1,5 @@
 """Receiving inventories must retain policy after interleaved test items."""
+import importlib.util
 import sys
 from pathlib import Path
 import unittest
@@ -6,8 +7,19 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from rust_ports import functions, without_test_items
 
+spec = importlib.util.spec_from_file_location(
+    'audit_r45_port', Path(__file__).resolve().parents[1] / 'audit-r45-port.py')
+audit = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(audit)
+
 
 class ProductionItemsTest(unittest.TestCase):
+    def test_receiving_normalization_preserves_keys_and_short_circuit_operators(self):
+        source = "fn step() { if can_move() && safe() { borg_keypress(st, b'5'); } }"
+        normalized = audit.normalize(source, {})
+        self.assertNotEqual(normalized, audit.normalize(source.replace("b'5'", "b'6'"), {}))
+        self.assertNotEqual(normalized, audit.normalize(source.replace('&&', '& &'), {}))
+
     def test_interleaved_nested_modules_literals_and_later_production(self):
         source = '''fn before() {}
 #[cfg(test)]

@@ -30,17 +30,45 @@ jobs:
       # Offline provenance attestation; builds never read an external source tree.
       - name: Verify exact recorded vendor bytes and hooks
         run: python3 scripts/borg-core-vendor.py check-recorded
-      - run: python3 scripts/audit-power-port.py
-      - run: python3 scripts/audit-item-use-port.py
-      - run: python3 scripts/audit-equipment-port.py
-      - run: python3 scripts/audit-store-port.py
-      - run: python3 scripts/r4-code-metrics.py
+      - name: Verify accepted R4 and receiving R4.5 source
+        run: |
+          accepted_r4=40cbaf272193abb44dd80fad2cfeec24b627be22
+          receiving_main=24be98732748230062882fe2b7d9601dba5e2cc0
+          git fetch --no-tags --depth=1 origin "$accepted_r4" "$receiving_main"
+          accepted="$RUNNER_TEMP/accepted-r4"
+          git worktree add --detach "$accepted" "$accepted_r4"
+          (
+            cd "$accepted"
+            for policy in power item-use equipment store attack defence; do
+              python3 "scripts/audit-$policy-port.py" > /dev/null
+            done
+            python3 scripts/r4-code-metrics.py
+            python3 -m unittest discover -s scripts/tests
+          )
+          python3 scripts/audit-r45-port.py
+          python3 scripts/r45-receiving-surface.py > /dev/null
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core
       - run: cargo test --release -p borg-core
       - run: bash -n scripts/setup.sh
-      - run: python3 -m unittest discover -s scripts/tests
+      - name: Receiving source-tool tests
+        run: |
+          python3 - <<'PYSOURCE'
+          from pathlib import Path
+          import sys
+          import unittest
+
+          # These assertions use the archived source and receipts checked above.
+          r4_tests = {'equipment_port', 'item_use_port', 'p4_carry', 'policy_audits',
+                      'power_port', 'store_port'}
+          loader = unittest.TestLoader()
+          suite = unittest.TestSuite()
+          for test in sorted(Path('scripts/tests').glob('test_*.py')):
+              if test.stem.removeprefix('test_') not in r4_tests:
+                  suite.addTests(loader.discover('scripts/tests', pattern=test.name))
+          sys.exit(not unittest.TextTestRunner(verbosity=1).run(suite).wasSuccessful())
+          PYSOURCE
       - run: python3 scripts/check-death-ids.py docs/deaths
       - run: python3 tools/import-deaths.py --check
       # #601: every parameter cites the line that reads it (params.rs and docs/CALIBRATION.md).
@@ -300,9 +328,9 @@ jobs:
       # Track R: pure danger and stateful caution/escape/recovery must have
       # real coverage, zero mismatches and identical off/check/switch play.
       - run: |
-          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
-          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
-          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=on BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
           harness/check-shadow.py --r45 --expect-mode check harness/out/shadow-check
           harness/check-shadow.py --r45 --expect-mode switch harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check

@@ -71,7 +71,7 @@ merge or validation result.
    merges into feature/track-r. Finish R4.5 with its own immutable owner-selected
    milestone review; do not start R5 or promote R to main/global reviewed.
 
-## Current state
+## Preflight state
 
 Preflight, production-surface inventory and isolated receiving control setup
 are complete. The exact main control builds and its native smoke passes 3/3
@@ -88,3 +88,7 @@ interleaved test modules. Eleven existing native entry signatures differ or
 are retired. The inventory is not a dependency/ownership classification or
 semantic parity proof. Its generator fails closed on unsupported test cfg
 conditions instead of silently truncating receiving policy.
+
+The [receiving rebuild handover](handover/2026-11-25-856-r45-rebuild.md)
+records the recovered local branch, independent policy implementation,
+source receipt and runtime results. It supersedes the preflight status above.
