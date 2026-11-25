@@ -248,6 +248,15 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
         crate::borg_town_loadout::fixture(st, &case);
     }
 
+    #[cfg(feature = "test-cursed-spares")]
+    if let Ok(case) = std::env::var("BORG_TEST_CURSED_SPARES") {
+        if case == "live-lantern" {
+            crate::borg_junk::check_cursed_lantern_in_game(st);
+            return choice!("test_cursed_lantern");
+        }
+        crate::borg_junk::check_cursed_spares(st);
+    }
+
     // Remember learning opportunities only while actually in town. The
     // dungeon decision must not inspect freshly restocked hidden shop data.
     crate::borg_trip::observe_town(st);

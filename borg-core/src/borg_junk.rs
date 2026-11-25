@@ -541,6 +541,198 @@ fn protects_restore_life(pack: &[borg_item], slot: usize, sval: i32, reserve: i3
     carried - discarded < reserve
 }
 
+/// Choose a spare with a learned curse, even when other runes are unknown.
+fn cursed_spare_slot(pack: &[borg_item], clean_light_available: impl Fn() -> bool) -> Option<usize> {
+    pack.iter().position(|item| {
+        item.iqty > 0
+            && item.curses.iter().any(|&known| known)
+            && !item.one_ring
+            && crate::borg_inventory::borg_wield_slot(item) >= 0
+            && (u32::from(item.tval) != TV_LIGHT || clean_light_available())
+    })
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum CursedSpareAction {
+    Refuel,
+    Drop,
+}
+
+/// #1231: discard known cursed spares at a safe opportunity, including gear
+/// that would otherwise be a swap or a candidate for Remove Curse.
+pub(crate) fn borg_dispose_cursed_spare(st: &mut BorgState) -> Option<CursedSpareAction> {
+    if st.borg.goal.recalling != 0 || off_floor(st) {
+        return None;
+    }
+    let pack = &st.items.items[..pack_size() as usize];
+    let slot = cursed_spare_slot(pack, || crate::borg_light::has_clean_light(st, pack))?;
+    if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
+        return None;
+    }
+    if crate::borg_light::borg_refuel_from_cursed_spare(st, slot) {
+        return Some(CursedSpareAction::Refuel);
+    }
+
+    let slot = slot as i32;
+    note_desc(st, "# Dropping cursed spare ", slot, ".");
+    drop_ignored_pack_stack(st, slot);
+    Some(CursedSpareAction::Drop)
+}
+
+fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
+    borg_keypress(st, key(b'{'));
+    borg_keypress(st, letter(slot));
+    borg_keypresses(st, b"borg ignore");
+    borg_keypress(st, KC_ENTER);
+
+    borg_keypress(st, key(b'd'));
+    borg_keypress(st, letter(slot));
+    if st.items.items[slot as usize].iqty > 1 {
+        borg_keypress(st, key(b'*'));
+        borg_keypress(st, KC_ENTER);
+    }
+}
+
+#[cfg(feature = "test-cursed-spares")]
+pub(crate) fn check_cursed_spares(st: &mut BorgState) -> ! {
+    use crate::borg_headers::borg_item_h::BORG_CURSE_PARALYSIS;
+    use crate::borg_io::borg_flush;
+    use crate::headers::list_object_flags_h::{OF_LIGHT_2, OF_LIGHT_3, OF_TAKES_FUEL};
+    use crate::headers::list_terrain_h::FEAT_MORE;
+
+    let light = |timeout, flags: &[u32]| {
+        let mut item = crate::borg_item::blank_item();
+        item.iqty = 1;
+        item.tval = TV_LIGHT as u8;
+        item.timeout = timeout;
+        for &flag in flags {
+            let bit = (flag as i32 - engine::FLAG_START) as usize;
+            item.flags[bit / 8] |= 1 << (bit % 8);
+        }
+        item
+    };
+    let curse = |mut item: borg_item| {
+        item.cursed = true;
+        item.needs_ident = true;
+        item.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        item
+    };
+
+    let equipped = crate::borg_light::inven_light() as usize;
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    st.borg.goal.recalling = 0;
+    st.borg.trait_[BI_CDEPTH as usize] = 5;
+    st.borg.trait_[BI_LIGHT as usize] = 3;
+    st.borg.trait_[BI_CURHP as usize] = 100;
+    st.items.items.fill(crate::borg_item::blank_item());
+    st.items.items[equipped] = light(1200, &[OF_LIGHT_3, OF_TAKES_FUEL]);
+    st.items.items[0] = curse(light(7500, &[OF_LIGHT_3, OF_TAKES_FUEL]));
+    st.kills.nxt = 1;
+    st.borg.antibounce_count = 0;
+    st.danger = Default::default();
+    borg_flush(st);
+
+    st.cave.grid_mut(x, y).feat = FEAT_MORE as u8;
+    assert_eq!(borg_dispose_cursed_spare(st), None, "wait for ordinary floor");
+    st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+    st.borg.goal.recalling = 1;
+    assert_eq!(borg_dispose_cursed_spare(st), None, "wait for recall");
+    st.borg.goal.recalling = 0;
+    st.danger.fear_monsters[y as usize][x as usize] = 20;
+    assert_eq!(borg_dispose_cursed_spare(st), None, "wait for low danger");
+    assert!(st.io.queued_keys().is_empty());
+    st.danger.fear_monsters[y as usize][x as usize] = 0;
+
+    assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Refuel));
+    assert_eq!(st.io.queued_keys(), b"Fa".iter().copied().map(u32::from).collect::<Vec<_>>());
+    borg_flush(st);
+
+    st.borg.trait_[BI_LIGHT as usize] = 2;
+    st.items.items[equipped] = light(3, &[OF_LIGHT_2]);
+    st.items.items[0] = curse(light(5000, &[OF_LIGHT_2]));
+    st.items.items[0].iqty = 2;
+    assert_eq!(borg_dispose_cursed_spare(st), None, "keep a light through imminent burnout");
+    assert!(st.io.queued_keys().is_empty());
+    st.items.items[1] = light(5000, &[OF_LIGHT_2]);
+    assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Drop));
+    let mut drop = b"{aborg ignore".iter().copied().map(u32::from).collect::<Vec<_>>();
+    drop.extend([KC_ENTER, u32::from(b'd'), u32::from(b'a'), u32::from(b'*'), KC_ENTER]);
+    assert_eq!(st.io.queued_keys(), drop);
+    println!("#1231 cursed spare actions passed");
+    std::process::exit(0);
+}
+
+#[cfg(feature = "test-cursed-spares")]
+pub(crate) fn check_cursed_lantern_in_game(st: &mut BorgState) {
+    #[derive(Clone, Copy)]
+    enum Step {
+        Equip,
+        Refuel,
+        Drop { fuel_before: i16 },
+        VerifyDrop,
+    }
+    thread_local! {
+        static STEP: std::cell::Cell<Step> = const { std::cell::Cell::new(Step::Equip) };
+    }
+
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    assert_eq!(u32::from(engine::square_feat(x.into(), y.into())), FEAT_FLOOR);
+    // Isolate the item action from the surrounding dungeon's danger.
+    st.kills.nxt = 1;
+    st.danger = Default::default();
+
+    let equipped = crate::borg_light::inven_light() as usize;
+    let lantern = st.item_val.sv_light_lantern;
+    let is_lantern = |item: &borg_item| {
+        item.iqty > 0 && u32::from(item.tval) == TV_LIGHT && i32::from(item.sval) == lantern
+    };
+    let pack_len = pack_size() as usize;
+    let pack = &st.items.items[..pack_len];
+    match STEP.get() {
+        Step::Equip => {
+            engine::carry_test_lanterns(st);
+            crate::borg_item::borg_find_all_items(st);
+            let slot = st.items.items[..pack_len].iter().position(|item| is_lantern(item) && !item.cursed)
+                .expect("clean lantern in pack");
+            borg_keypress(st, key(b'w'));
+            borg_keypress(st, letter(slot as i32));
+            STEP.set(Step::Refuel);
+        }
+        Step::Refuel => {
+            let lamp = &st.items.items[equipped];
+            assert!(is_lantern(lamp) && !lamp.cursed);
+            let fuel_before = lamp.timeout;
+            let (slot, donor) = pack.iter().enumerate().find(|(_, item)| is_lantern(item))
+                .expect("donor in pack");
+            assert!(donor.cursed && donor.needs_ident);
+            assert_eq!(donor.timeout, 7500);
+            let desc = engine::object_desc_full(engine::inven_object(&st.access, slot).unwrap());
+            assert!(desc.ends_with(b"{cursed, ??}"), "{}", String::from_utf8_lossy(&desc));
+            assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Refuel));
+            STEP.set(Step::Drop { fuel_before });
+        }
+        Step::Drop { fuel_before } => {
+            let fuel_gained = st.items.items[equipped].timeout - fuel_before;
+            // Angband can burn one turn of fuel before asking for the next key.
+            assert!((7499..=7500).contains(&fuel_gained), "gained {fuel_gained} fuel");
+            let donor = pack.iter().find(|item| is_lantern(item)).expect("drained donor in pack");
+            assert_eq!(donor.timeout, 0);
+            assert_eq!(borg_dispose_cursed_spare(st), Some(CursedSpareAction::Drop));
+            STEP.set(Step::VerifyDrop);
+        }
+        Step::VerifyDrop => {
+            assert!(!pack.iter().any(is_lantern));
+            let dropped = engine::top_floor_object(&st.access, x.into(), y.into())
+                .expect("lantern on the floor");
+            let kind = dropped.kind();
+            assert_eq!((kind.tval, kind.sval), (TV_LIGHT as i32, lantern));
+            assert_eq!(dropped.note(), Some(b"borg ignore".as_slice()));
+            println!("#1231 cursed lantern refuel and drop passed");
+            std::process::exit(0);
+        }
+    }
+}
+
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
 pub fn borg_drop_junk(st: &mut BorgState) -> bool {
     if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH) == 0 && crate::borg_town_live::active(st) && st.cfg(crate::borg_headers::borg_h::BORG_TOWN_NO_STORES) == 0 { return false; }
@@ -1120,21 +1312,7 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         /* Message */
         note_desc(st, "# Dropping ", b_i, ".");
 
-        /* Drop that item */
-        /* inscribe "borg ignore". The borg crushes all items */
-        /* on the floor that are inscribed this way */
-        borg_keypress(st, key(b'{'));
-        borg_keypress(st, letter(b_i));
-        borg_keypresses(st, b"borg ignore");
-        borg_keypress(st, KC_ENTER);
-
-        /* drop it */
-        borg_keypress(st, key(b'd'));
-        borg_keypress(st, letter(b_i));
-        if st.items.items[b_i as usize].iqty > 1 {
-            borg_keypress(st, key(b'*'));
-            borg_keypress(st, KC_ENTER);
-        }
+        drop_ignored_pack_stack(st, b_i);
 
         /* Success */
         return true;
@@ -1715,6 +1893,37 @@ mod tests {
         assert!(protects_restore_life(&pack, 0, 16, 1, false));
         pack[1].aware = true;
         assert!(!protects_restore_life(&pack, 0, 16, 1, true));
+    }
+
+    #[test]
+    fn cursed_torch_loses_its_pack_slot_to_clean_spares_and_unknown_gear() {
+        let mut clean = crate::borg_item::blank_item();
+        clean.tval = TV_LIGHT as u8;
+        clean.iqty = 6;
+        clean.timeout = 5000;
+        let mut cursed = clean;
+        cursed.iqty = 1;
+        cursed.needs_ident = true;
+        cursed.cursed = true;
+        cursed.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        let mut unknown = crate::borg_item::blank_item();
+        unknown.tval = TV_SWORD as u8;
+        unknown.iqty = 1;
+        unknown.needs_ident = true;
+
+        assert_eq!(cursed_spare_slot(&[clean, unknown, cursed], || true), Some(2));
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), None);
+        // Intrinsic drawbacks set the broad cursed flag during analysis.
+        unknown.cursed = true;
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || true), Some(1));
+        unknown.curses[BORG_CURSE_AIR_SWING as usize] = true;
+        unknown.uncursable = true;
+        unknown.art_idx = 1;
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), Some(0));
+        unknown.one_ring = true;
+        let mut consumable = cursed;
+        consumable.tval = TV_POTION as u8;
+        assert_eq!(cursed_spare_slot(&[unknown, consumable, cursed], || true), Some(2));
     }
 
     #[test]
