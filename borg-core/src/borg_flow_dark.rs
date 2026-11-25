@@ -1744,7 +1744,7 @@ pub(crate) fn run_legacy_vein_loop_regression(st: &mut BorgState, on: bool, exit
         st.borg.time.level = st.borg.time.now;
 
         assert!(!exhausted_this_think(st));
-        assert!(!borg_flow_dark(st, false), "the vein is the only candidate left");
+        assert!(!borg_flow_dark(st, false), "the sealed frontier and filtered vein leave no exploration goal");
         assert!(exhausted_this_think(st), "legacy exploration hands off to the stair policy");
         assert_eq!(st.flow.commit_seq, before, "no exploration flow commits to the vein");
         assert!(crate::borg_think_dungeon_util::borg_leave_level(st, false));

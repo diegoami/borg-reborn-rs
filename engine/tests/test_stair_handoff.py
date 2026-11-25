@@ -634,8 +634,8 @@ class DarkVeinLoopTest(unittest.TestCase):
             for path in paths.values():
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
-            # Select each incident's planner. The legacy Paladin uses the
-            # shipped depth-adjusted level and still exceeds its mixed cap.
+            # #1189 used breadth-first before #1201 switched it off.
+            # The legacy Paladin exceeds its shipped depth-adjusted mixed cap.
             pins = [
                 ("borg_param_explore_stepable_goals", int(setting != "off")),
                 ("borg_param_explore_breadth_first", 0 if legacy else 1),
