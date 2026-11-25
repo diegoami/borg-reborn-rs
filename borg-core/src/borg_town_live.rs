@@ -111,7 +111,7 @@ pub(crate) fn home_at_limit(st: &BorgState, item: &crate::borg_headers::borg_ite
             .filter(|ware| ware.iqty > 0 && ware.kind == item.kind).count() >= limit
 }
 
-/// Known excess can be cleared in a single native transaction.
+/// borg-reborn-rs (#1241): known Home excess can clear in one transaction.
 pub(crate) fn batch_home_disposal(st: &BorgState, item: &borg_item) -> bool {
     home_at_limit(st, item) || crate::borg_town_capability::unwanted_home_item(item)
         || unsuitable_home_overflow(st, item)

@@ -446,7 +446,7 @@ fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
     }
 }
 
-/// Clear one low-priority stack per solve. Native room describes this
+/// borg-reborn-rs (#1241): clear one low-priority stack per solve. Native room describes this
 /// withdrawal; the next solve will see the actual pack and Home again.
 fn prune_low_priority_home(
     input: &StepInput, u: &mut Utility, out: &mut [Disposition],

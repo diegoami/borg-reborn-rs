@@ -98,17 +98,17 @@ fn expendable_rank(
     let value = item.value.saturating_mul(i32::from(item.iqty));
     if crate::borg_town_home::enabled(st) {
         use crate::borg_town_home::Role;
-        if unwanted {
-            return Some((0, value));
-        }
         let role = crate::borg_town_home::classify(st, item, false, 0);
         if role.reserve() || (u32::from(item.tval) == TV_SCROLL
             && i32::from(item.sval) == st.item_val.sv_scroll_detect_invis)
         {
             return None;
         }
-        if matches!(role, Role::Reject | Role::Renewable | Role::Common) {
-            return Some((role.rank(), value));
+        match role {
+            Role::Reject => return Some((0, value)),
+            Role::Renewable => return Some((1, value)),
+            Role::Common => return Some((2, value)),
+            _ => {}
         }
     }
     let sv = i32::from(item.sval);
@@ -515,17 +515,34 @@ impl Swap {
 pub(crate) fn fixture(st: &mut BorgState, case: &str) {
     use std::sync::atomic::{AtomicU8, Ordering::Relaxed};
     static SETUP: AtomicU8 = AtomicU8::new(0);
-    assert!(matches!(case, "trim" | "restore" | "no-storage"));
+    assert!(matches!(case, "trim" | "restore" | "no-storage" | "reserve-overlap"));
     if SETUP.load(Relaxed) == 1 { return; }
     let wield = inven_wield() as usize;
     if SETUP.load(Relaxed) == 0 {
         SETUP.store(1, Relaxed);
         let excess = if case == "trim" { 188 } else { 104 };
-        engine::setup_test_town_loadout(st, excess, case != "no-storage", false);
+        engine::setup_test_town_loadout(st, excess, case != "no-storage", false, case == "reserve-overlap");
         crate::borg_item::borg_find_all_items(st);
         crate::borg_trait::borg_notice(st, true);
         assert_eq!(st.borg.tr(BI_CLEVEL), 20);
         assert_eq!(crate::borg_town_budget::Facts::of(st).allowance(), -i64::from(excess));
+        if case == "reserve-overlap" {
+            use crate::borg_town_home::{self, Role};
+            assert!(borg_town_home::enabled(st));
+            let home_item = |tval, sval| {
+                st.store.shops[BORG_HOME].ware.iter().find(|it| {
+                    it.iqty > 0 && u32::from(it.tval) == tval && i32::from(it.sval) == sval
+                }).expect("fixture stock should be known at Home")
+            };
+            let second_sight = home_item(TV_MUSHROOM, st.item_val.sv_mush_second_sight);
+            let speed = home_item(TV_POTION, st.item_val.sv_potion_speed);
+            assert!(crate::borg_town_capability::unwanted_home_item(second_sight));
+            assert_eq!(borg_town_home::classify(st, second_sight, false, 0), Role::Reject);
+            assert_eq!(borg_town_home::classify(st, speed, false, 0), Role::Scarce);
+            assert!(same_item(&eviction(st).expect("the excluded stack makes room"), second_sight));
+            println!("#1239 town loadout passed: {case}");
+            std::process::exit(0);
+        }
         let plan = propose(st, &[false; 12], false);
         if case == "no-storage" {
             assert!(plan.is_none(), "no safe deposit can be proposed with full Home stock");

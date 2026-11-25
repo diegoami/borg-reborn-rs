@@ -765,7 +765,7 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         let item = st.items.items[i as usize];
         let tval = u32::from(item.tval);
 
-        /* Skip empty items */
+        /* borg-reborn-rs (#1241): retain useful Home candidates until town. */
         if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize)
             || crate::borg_ranged::keep_stack(st, i as usize)
             || keeps_restore_life(st, i as usize, false, false)

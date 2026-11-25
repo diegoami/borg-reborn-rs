@@ -307,7 +307,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             })
         } else { None };
         KitItem {
-            home_role: if home_policy {
+            home_role: if home_policy { // borg-reborn-rs (#1241)
                 borg_town_home::classify(st, it, can_decurse, worn_gain)
             } else { Role::Ordinary },
             home_room,

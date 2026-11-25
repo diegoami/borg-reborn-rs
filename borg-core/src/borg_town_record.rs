@@ -50,8 +50,8 @@ use crate::state::BorgState;
 /// V20 (#1151) splits a fuel stack at the light reserve, lets a known-cursed
 /// spare that adds no power go while the pack is over its allowance, and
 /// does not charge the weight of a Remove Curse read in town.
-/// V21 overload records (nine ware fields) and Home records (ten) were
-/// produced by parallel branches. V22–23 are Home-only. V24 combines both.
+/// borg-reborn-rs (#1241): V21 overload records have nine ware fields and
+/// V21 Home records have ten. V22–23 are Home-only. V24 combines both.
 pub const PLAN_SCHEMA: i64 = 24;
 
 /// The 24 town settings, `borg_town_plan` through
