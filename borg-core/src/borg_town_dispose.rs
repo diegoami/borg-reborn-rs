@@ -58,6 +58,8 @@ pub enum Disposition {
 /// The facts of one stack the dispositions read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KitItem {
+    /// Home admission and retention facts from the known item and loadout.
+    pub home_role: crate::borg_town_home::Role,
     /// Schema 15: native carry room, stack merge room, and room under the
     /// acquisition limit. Zero native room also marks a rejected Home offer.
     pub home_room: Option<[i32; 3]>,
@@ -294,7 +296,7 @@ mod tests {
     }
 
     fn item(place: Place, slot: u8, need: i8, qty: i32) -> KitItem {
-        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false,
             joins_pack: false,
             place,
             slot,

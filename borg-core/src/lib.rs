@@ -87,6 +87,7 @@ pub(crate) mod borg_think;
 pub(crate) mod borg_think_dungeon;
 pub(crate) mod borg_think_dungeon_util;
 pub(crate) mod borg_think_store;
+mod borg_town_home;
 pub(crate) mod borg_town_capability;
 pub(crate) mod borg_town_packing;
 pub(crate) mod borg_town_budget;

@@ -531,7 +531,7 @@ fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Ve
     effect_supply_for_consumer(effects, hp, service_turns, false)
 }
 
-fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
+pub(crate) fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
     let mut sum = BTreeMap::<usize, i64>::new();
     let mut i = 0;
     while i < effects.len() {
@@ -1731,7 +1731,7 @@ mod tests {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
     fn item(place: Place, slot: u8, count: i32) -> KitItem {
-        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0, serves: 0 }
     }
     #[test]
@@ -3138,4 +3138,16 @@ pub(crate) fn restore_life_reserve(st: &BorgState) -> i32 {
         || [REVITALIZE, REMEMBRANCE].into_iter()
             .any(|spell| crate::borg_magic::borg_spell_legal_fail(st, spell, param(Param::town_restore_life_spell_fail)));
     if repeatable { 0 } else { copies }
+}
+
+impl Model {
+    /// Marginal future use of one shop copy against capabilities already at Home.
+    pub(crate) fn home_offer(&self, shop: u8, slot: u8) -> i64 {
+        self.units(i64::from(shop), i64::from(slot), 1).into_iter()
+            .filter(|(id, _)| !HEAL_KINDS.contains(id))
+            .map(|(id, n)| {
+                let row = &self.curves[id];
+                self.value(id, row, row[4] + n) - self.value(id, row, row[4])
+            }).sum()
+    }
 }

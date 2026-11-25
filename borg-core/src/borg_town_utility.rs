@@ -6,6 +6,7 @@
 //! probabilities. Destination and duration can be declared independently.
 
 use std::collections::{BTreeMap, BTreeSet};
+use crate::borg_town_home::Role;
 use crate::borg_headers::borg_h::{BORG_TOWN_TARGET_DEPTH, BORG_TOWN_TRIP_TURNS, BORG_TOWN_W_GOLD,
     BORG_TOWN_DEPTH_GAIN, BORG_TOWN_EXPLORE_TURNS, BORG_TOWN_STAIR_TURNS, BORG_TOWN_FOOD_TURNS,
     BORG_TOWN_LIGHT_TURNS, BORG_TOWN_RISK, BORG_TOWN_HOME_DISCOUNT, BORG_TOWN_W_SPACE, BORG_TOWN_POWER_SCALE};
@@ -445,6 +446,57 @@ fn prune_home(input: &StepInput, u: &mut Utility, limit: usize, minimum: i32,
     }
 }
 
+/// Clear one low-priority stack per solve. Native room describes this
+/// withdrawal; the next solve will see the actual pack and Home again.
+fn prune_low_priority_home(
+    input: &StepInput, u: &mut Utility, out: &mut [Disposition],
+    copies: &mut Vec<i32>, freed: &mut Freed,
+) {
+    let mut stock: Vec<_> = input.kit.iter().enumerate().filter(|(i, item)| {
+        item.place == Place::Home && out[*i] == Disposition::Keep
+            && (item.home_role == Role::Reject || item.home_role.common())
+    }).collect();
+    stock.sort_by_key(|(_, item)| (item.home_role != Role::Reject, item.qty, item.slot));
+    for (i, item) in stock {
+        if item.just_bought || item.protect_disposal || item.keep_last_book || item.unknown_flavour {
+            continue;
+        }
+        let pack = input.kit.iter().filter(|p| p.place == Place::Pack && p.kind == item.kind);
+        if pack.clone().any(|p| p.just_bought) {
+            continue;
+        }
+        let held: i32 = pack.map(|p| p.qty).sum();
+        let needed = if item.home_role == Role::Common {
+            u.capability.as_ref().map_or(0, |m| {
+                let one = KitItem { qty: 1, ..*item };
+                let first_useful = held == 0 && m.take(&one) > 0;
+                i32::from(first_useful).max(m.home_stock_floor(item, held) - held)
+            })
+        } else { 0 };
+        let other_home: i32 = input.kit.iter().enumerate().filter(|(j, other)| {
+            *j != i && other.place == Place::Home && other.kind == item.kind
+                && out[*j] == Disposition::Keep
+        }).map(|(_, other)| other.qty).sum();
+        let surplus = item.qty - (needed - other_home).max(0);
+        // An unsellable common stack that would merge with a needed carried
+        // stack is safer left in Home. Reject gear has no carried reserve.
+        let mut qty = home_disposal_copies(input, u, item).min(surplus);
+        if item.home_role.common() && item.sell_shop < 0 && held > 0 {
+            qty = 0;
+        }
+        if qty <= 0 {
+            continue;
+        }
+        out[i] = if item.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
+        copies.resize(input.kit.len(), 0);
+        copies[i] = qty;
+        freed.home_slots += i32::from(qty == item.qty);
+        freed.gold += item.proceeds * i64::from(qty) / i64::from(item.qty);
+        change_home_stock(u, &KitItem { qty, ..*item }, -1);
+        break;
+    }
+}
+
 /// When Home and the carried kit cover a kind, its nonurgent offers
 /// have no claim on the shopping budget. Use the after-disposition kit.
 pub(crate) fn saturated_home_kinds(input: &StepInput, u: &Utility, dispositions: &[Disposition], copies: &[i32]) -> BTreeSet<u32> {
@@ -497,11 +549,13 @@ fn storing_target(input: &StepInput, u: &Utility, room: Room) -> Room {
 fn store_order(input: &StepInput, u: &Utility, surplus: impl Fn(&KitItem) -> bool) -> Vec<usize> {
     let mut pack: Vec<usize> = (0..input.kit.len()).filter(|&i| input.kit[i].place == Place::Pack).collect();
     let priced = |k: &KitItem| if surplus(k) { KitItem { qty: 1, ..*k } } else { *k };
+    let spare = |k: &KitItem| k.home_role.reserve() && !k.just_bought && u.keep(k) == 0;
     pack.sort_by(|&a, &b| {
         let (ka, kb) = (priced(&input.kit[a]), priced(&input.kit[b]));
         let wa = (i64::from(ka.weight) * i64::from(ka.qty)).max(1);
         let wb = (i64::from(kb.weight) * i64::from(kb.qty)).max(1);
-        surplus(&input.kit[b]).cmp(&surplus(&input.kit[a]))
+        spare(&kb).cmp(&spare(&ka))
+            .then_with(|| surplus(&input.kit[b]).cmp(&surplus(&input.kit[a])))
             .then((i128::from(u.keep(&ka)) * i128::from(wb)).cmp(&(i128::from(u.keep(&kb)) * i128::from(wa))))
             .then(input.kit[a].slot.cmp(&input.kit[b].slot))
     });
@@ -552,6 +606,9 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
     if limit > 0 || input.kit.iter().any(|item| item.home_unwanted) {
         prune_home(input, u, limit, keep_min, &pack_counts, &mut home_counts, (&mut out, &mut copies, &mut freed));
     }
+    if input.revision >= 21 {
+        prune_low_priority_home(input, u, &mut out, &mut copies, &mut freed);
+    }
     let mut home_free = input.home_slots + freed.home_slots;
     let target = storing_target(input, u, room);
     // A stack only frees a slot when all of it goes, so the surplus comes
@@ -571,7 +628,9 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         && (k.need >= 0 || k.serves != 0 || is_flask(st, k));
     for i in store_order(input, u, surplus) {
         let whole = &input.kit[i];
-        if whole.home_unwanted && !whole.unknown && !whole.unknown_flavour {
+        if whole.home_role == Role::Reject && !whole.just_bought
+            || whole.home_unwanted && !whole.unknown && !whole.unknown_flavour
+        {
             out[i] = if whole.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
             u.change(whole, -1);
             if let Some(held) = pack_counts.get_mut(&whole.kind) { *held -= whole.qty; }
@@ -635,7 +694,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // A worthless Home stack can pay for room even under no-selling.
         // Unknown durable items and this visit's purchases stay protected.
         let spare = input.kit.iter().enumerate().find(|(j, k)| k.place == Place::Home
-            && out[*j] == Disposition::Keep
+            && out[*j] == Disposition::Keep && !k.home_role.reserve()
             && !u.capability.as_ref().is_some_and(|m| m.available.iter().any(|r| r[0] == 7 && r[1] == i64::from(k.slot) && r[2] == 0))
             && !(input.revision >= 9 && input.urgent.iter().any(|f| {
                 let c = &input.candidates[f.candidate]; c.shop == 7 && c.slot == k.slot
@@ -693,8 +752,15 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let overweight = input.limits.weight + freed.weight < target.weight
             || (target.slots > 0 && input.limits.pack_slots + freed.pack_slots < target.slots);
         let worth_more_at_home = !only_overweight && future - home_cost > loss - cost;
-        let store = !capped && !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (worth_more_at_home ||
-            overweight && (loss > 0 || future > 0 || protected));
+        let spare_is_unique = it.home_role.reserve() && !input.kit.iter().enumerate().any(|(j, k)| {
+            k.place == Place::Home && k.kind == it.kind && out[j] == Disposition::Keep
+        });
+        let stash_for_later = spare_is_unique && loss <= cost
+            && (it.home_role == Role::Gear || future > home_cost);
+        let store = !capped && !it.home_role.common() && !(input.revision >= 12 && it.just_bought)
+            && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0 || stash_for_later)
+            && (home_free > 0 || spare.is_some())
+            && (stash_for_later || worth_more_at_home || overweight && (loss > 0 || future > 0 || protected));
         // borg-reborn-rs (#1151, plan schema 20): over the weight allowance
         // itself, with no room at Home, the copies past a stack's floor (the
         // light reserve, `town_store_keep_min`, the Restore Life reserve) are
@@ -705,7 +771,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         // (`execute_outside`); it drops other stacks whole.
         let excess = input.revision >= 20 && partial && (it.sell_shop >= 0 || it.fuel > 0)
             && input.limits.weight + freed.weight < 0;
-        let worthless = capped || loss <= cost && future <= home_cost;
+        let worthless = capped || loss <= cost && (future <= home_cost || it.home_role.common()) && !it.home_role.reserve();
         let action = if store { Disposition::Store }
             else if !protected && (worthless || excess) {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
@@ -809,7 +875,8 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
         let cost = burden(u.space_weight, opening, weight, slots, carry);
         // borg-reborn-rs (#859): a withdrawal leaves the departure room free.
         let whole = it.qty == input.kit[i].qty;
-        if slots - room.slots >= opening && weight <= weight_room && value - cost > future_loss {
+        let wearable_upgrade = it.home_role == Role::Gear && it.power > 0;
+        if slots - room.slots >= opening && weight <= weight_room && (wearable_upgrade || value - cost > future_loss) {
             out[i] = Disposition::Take;
             if withdrawal.is_some() {
                 copies.resize(input.kit.len(), 0);
@@ -824,7 +891,7 @@ fn dispositions_by(input: &StepInput, u: &mut Utility, st: &BorgState, storing: 
             freed.pack_slots -= opening;
             freed.home_slots += i32::from(whole);
             freed.weight -= weight;
-        } else if whole && value == 0 && future_loss == 0 && !it.unknown && (input.revision < 6 || !it.just_bought)
+        } else if whole && value == 0 && future_loss == 0 && !it.home_role.reserve() && !it.unknown && (input.revision < 6 || !it.just_bought)
             && !it.keep_last_book && (input.revision < 19 || !it.protect_disposal) && it.proceeds > 0 && it.sell_shop >= 0 {
             out[i] = Disposition::Sell;
             if input.revision >= 9 {
@@ -1005,8 +1072,114 @@ mod tests {
     }
 
     fn recall(place: Place) -> KitItem {
-        KitItem { home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
+        KitItem { home_role: Default::default(), home_room: None, keep_last_book: false, protect_disposal: false, home_unwanted: false, home_limited: false, joins_pack: false, place, slot: 0, kind: 42, qty: 1, weight: 5, need: index(Need::Trip) as i8,
             reduction: UNIT, serves: 0, power: 0, proceeds: 0, sell_shop: 4, unknown: false, unknown_flavour: false, just_bought: false, cursed_spare: false, fuel: 0 }
+    }
+
+    #[test]
+    fn full_priest_home_releases_low_priority_stacks_and_keeps_a_slot_for_gear() {
+        use crate::borg_town_record::{action, first_executable_action, step, PLAN_SCHEMA};
+        let st = state(9, 20, 160);
+        let idle = KitItem { home_role: Role::Gear, need: -1, reduction: 0,
+            sell_shop: -1, ..recall(Place::Home) };
+        let mut kit: Vec<_> = (0..24).map(|slot| KitItem {
+            slot, kind: 100 + u32::from(slot), ..idle
+        }).collect();
+        kit[0] = KitItem { home_role: Role::Renewable, kind: 1, qty: 38, sell_shop: 4, ..kit[0] };
+        kit[1] = KitItem { home_role: Role::Renewable, kind: 1, qty: 3, sell_shop: 4, ..kit[1] };
+        kit[2] = KitItem { home_role: Role::Renewable, qty: 27, sell_shop: 4, ..kit[2] };
+        kit[3] = KitItem { home_role: Role::Common, qty: 3, sell_shop: 4, ..kit[3] };
+        kit[4] = KitItem { slot: 4, ..recall(Place::Home) };
+        kit[5] = KitItem { home_role: Role::Device, weight: 20, ..kit[5] };
+        kit[23] = KitItem { home_role: Role::Reject, sell_shop: -1, ..kit[23] };
+        let spare = KitItem { place: Place::Pack, kind: 200, ..idle };
+        kit.push(spare);
+        let storing = Storing { only_overweight: true, home_stack_limit: 2, ..Storing::default() };
+
+        let decide = |kit: &[KitItem], home_slots, pack_slots| {
+            let mut inp = input(kit);
+            inp.revision = PLAN_SCHEMA;
+            inp.home_slots = home_slots;
+            inp.limits.pack_slots = pack_slots;
+            inp.storing = Some(storing);
+            let mut out = step(&inp);
+            let mut u = Utility::of(&st, kit, false);
+            (out.dispositions, out.freed, out.copies) = dispositions_by(&inp, &mut u, &st, storing);
+            let selected = first_executable_action(&[], &[], &out, &[], kit, home_slots, pack_slots, 1000);
+            (out.dispositions, out.freed, selected)
+        };
+        let (actions, freed, chosen) = decide(&kit, 0, 7);
+        assert_eq!(chosen.0, action::DROP_HOME);
+        assert_eq!(chosen.1, [7, 23, 1, 0]);
+        assert!(matches!(actions[4], Disposition::Keep | Disposition::Take), "Recall");
+        assert_eq!(actions[5], Disposition::Keep, "charged device");
+        assert_eq!(actions[6], Disposition::Keep, "alternate equipment");
+        assert_eq!(actions[23], Disposition::Drop);
+        assert_eq!(actions[24], Disposition::Store);
+        assert_eq!(freed.home_slots, 0, "the spare takes the freed slot");
+        let mut withdrawn = kit.remove(23);
+        withdrawn.place = Place::Pack;
+        withdrawn.slot = 1;
+        kit.push(withdrawn);
+        assert_eq!(decide(&kit, 1, 6).2.0, action::DROP);
+        kit.pop();
+        assert_eq!(decide(&kit, 1, 7).2.0, action::STORE);
+        kit.pop();
+        assert_eq!(decide(&kit, 1, 7).2.0, action::SELL_HOME);
+
+        // A known curse takes precedence over unloading pack weight, even
+        // before the inferior spare's remaining runes are identified.
+        let bad_pack = [KitItem { unknown: true, ..withdrawn }];
+        let mut inp = input(&bad_pack);
+        inp.revision = PLAN_SCHEMA;
+        inp.limits.weight = -300;
+        let mut u = Utility::of(&st, &bad_pack, false);
+        assert_eq!(dispositions_by(&inp, &mut u, &st, storing).0, [Disposition::Drop]);
+    }
+
+    #[test]
+    fn an_upgrade_can_be_taken_from_a_full_home() {
+        let st = state(9, 20, 160);
+        let upgrade = KitItem { home_role: Role::Gear, power: 200000, need: -1,
+            reduction: 0, ..recall(Place::Home) };
+        let kit = [upgrade];
+        let mut inp = input(&kit);
+        inp.revision = crate::borg_town_record::PLAN_SCHEMA;
+        inp.home_slots = 0;
+        let mut u = Utility::of(&st, &kit, false);
+        let (out, freed, _) = dispositions_by(&inp, &mut u, &st, Storing::default());
+        assert_eq!(out, [Disposition::Take]);
+        assert_eq!(freed.home_slots, 1);
+    }
+
+    #[test]
+    fn home_cleanup_keeps_the_last_useful_common_copy_and_leaves_room_if_no_offer() {
+        use crate::borg_town_capability::Model;
+        use crate::borg_town_record::{action, first_executable_action, step, PLAN_SCHEMA};
+        let st = state(9, 20, 160);
+        let stock = KitItem { home_role: Role::Common, qty: 3, need: -1, reduction: 0,
+            home_room: Some([3, 0, 3]), ..recall(Place::Home) };
+        let model = Model { available: Vec::new(), packing: None,
+            curves: vec![[0, 100 * UNIT, -UNIT, 0, 3 * UNIT]],
+            supplies: vec![[crate::borg_town_capability::HOME, 0, 0, UNIT]],
+        };
+        let kit = [stock];
+        let mut inp = input(&kit);
+        inp.revision = PLAN_SCHEMA;
+        inp.capability = Some(&model);
+        inp.limits.weight = 0;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model.clone());
+        let (out, freed, copies) = dispositions_by(&inp, &mut u, &st, Storing::default());
+        assert_eq!(out, [Disposition::Sell]);
+        assert_eq!(copies, [2]);
+        assert_eq!(freed.home_slots, 0, "the last copy still occupies its slot");
+
+        let no_stock: [KitItem; 0] = [];
+        let mut inp = input(&no_stock);
+        inp.revision = PLAN_SCHEMA;
+        let out = step(&inp);
+        assert_eq!(first_executable_action(&[], &[], &out, &[], &[], 2, 7, 100).0, action::LEAVE);
     }
 
     #[test]
@@ -1220,9 +1393,9 @@ mod tests {
         let candidate = |kind, slot, price| Candidate { shop: 4, slot, kind, tval: 1, sval: 0,
             price, qty: 2, weight: 4, slots_cost: 1, stack_count: 0, class: slot as u16 };
         let candidates = vec![candidate(100, 0, 20), candidate(101, 1, 35)];
-        let facts = [WareFact { shop: 4, slot: 0, kind: 100, class: 0, slots_cost: 1, weight: 4,
+        let facts = [WareFact { home_value: 0, shop: 4, slot: 0, kind: 100, class: 0, slots_cost: 1, weight: 4,
             need: index(Need::Healing) as i8, reduction: 20 * UNIT, serves: 0 },
-            WareFact { shop: 4, slot: 1, kind: 101, class: 1, slots_cost: 1, weight: 4,
+            WareFact { home_value: 0, shop: 4, slot: 1, kind: 101, class: 1, slots_cost: 1, weight: 4,
             need: index(Need::Healing) as i8, reduction: 40 * UNIT, serves: 0 }];
         let mut inp = input(&[]);
         inp.candidates = candidates.clone();
@@ -1624,7 +1797,7 @@ mod tests {
     fn two_home_stacks_protect_the_carried_floor_and_release_the_rest() {
         let mut st = state(9, 26, 198);
         st.borg.trait_[BI_APHASE as usize] = 20;
-        let pack = KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: true, kind: 51, qty: 20, need: index(Need::Escape) as i8,
+        let pack = KitItem { home_role: Default::default(), home_room: None, protect_disposal: false, home_unwanted: false, home_limited: true, kind: 51, qty: 20, need: index(Need::Escape) as i8,
             reduction: UNIT, sell_shop: 4, proceeds: 0, ..recall(Place::Pack) };
         let home = KitItem { place: Place::Home, qty: 40, joins_pack: true, ..pack };
         let kit = [pack, home, KitItem { slot: 1, ..home }, KitItem { slot: 2, qty: 19, ..home }];
@@ -1646,7 +1819,7 @@ mod tests {
     fn a_capped_home_can_replenish_a_short_kit_and_leave_other_kinds_available() {
         let mut st = state(9, 26, 198);
         st.borg.trait_[BI_APHASE as usize] = 2;
-        let phase = KitItem { home_room: None, protect_disposal: false, home_unwanted: false, home_limited: true, kind: 51, qty: 2,
+        let phase = KitItem { home_role: Default::default(), home_room: None, protect_disposal: false, home_unwanted: false, home_limited: true, kind: 51, qty: 2,
             need: index(Need::Escape) as i8, reduction: UNIT, ..recall(Place::Pack) };
         let home = KitItem { place: Place::Home, qty: 6, home_room: Some([6, 4, 35]), ..phase };
         let food = KitItem { kind: 52, qty: 1, ..phase };
@@ -1774,7 +1947,7 @@ mod tests {
         let storing = Storing { home_stack_limit: 2, ..Storing::default() };
         for (held, acquire, expected) in [(10, 7, Disposition::Keep), (34, 1, Disposition::Keep),
             (35, 0, Disposition::Sell)] {
-            let kit = [KitItem { qty: held, ..pack }, KitItem { home_room: Some([7, 7, acquire]), ..home },
+            let kit = [KitItem { qty: held, ..pack }, KitItem { home_role: Default::default(), home_room: Some([7, 7, acquire]), ..home },
                 KitItem { slot: 1, qty: 40, ..home }, KitItem { slot: 2, qty: 40, ..home }];
             let mut inp = input(&kit);
             inp.revision = 19;
