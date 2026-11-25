@@ -73,6 +73,7 @@ HOOKED = {
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'src/borg_cave_light.rs',  # #796: level-local dark-entry attempt tracking
+    'src/borg_cave.rs',  # #1119: allocate the map in standalone lighting tests
     'src/borg_light.rs',  # #685: no detection spell by panel below a level; #884: radius branches, dark frontier and Light Beam read the own light radius
     'src/borg_cave_view.rs',  # #917: passable rubble stops sight behind view_rubble_blocks_sight
     'src/borg_flow_dark.rs',  # #884: flow_dark_2 looks just outside the own light radius

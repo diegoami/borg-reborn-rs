@@ -1018,6 +1018,21 @@ The exception can protect a Mage or Rogue against a visible-species eye
 while it is still unseen. The named Necromancer death cannot be prevented
 by this spell eligibility change.
 
+## First discretionary room-lighting cast (#1119)
+
+The registry at Track P `20ac7d19` holds **2544** parameters with this flag
+(2543 before).
+
+Under the radius-one check, a first cast with the flag at 1 needs an
+unglowing casting square or observed unglowing floor within the spell's
+light sphere. Call Light reaches one grid and Light Room reaches two.
+At 0, the first cast uses the previous behavior. Confirmed-cast suppression
+and the newly observed floor rule apply at both settings. The harness ships 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_first_cast_require_dark` | 0 | flag | 0–1 | `borg_light.rs:284` |
+
 ## Ranger Phase Door reserve regression (#797)
 
 The Ranger check runs one fixed Half-Orc birth with reserve 0 and 2 and
@@ -1981,7 +1996,7 @@ The registry now holds **2200** parameters (2199 after #625; one added).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:550` |
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:593` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
