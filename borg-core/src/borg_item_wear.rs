@@ -1333,12 +1333,6 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
                 &st.store.shops[BORG_HOME].ware[(i - pack_size) as usize]
             };
 
-            // borg-reborn-rs (#1239): a stashed heavy upgrade needs the
-            // live town planner's post-exchange carrying check.
-            if !in_pack && crate::borg_town_loadout::retained_at_home(st, item) {
-                continue;
-            }
-
             /* Skip empty items */
             if item.iqty == 0 {
                 continue;
@@ -1346,6 +1340,12 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut 
 
             /* Require aware */
             if !item.aware {
+                continue;
+            }
+
+            // borg-reborn-rs (#1239): reconsider reserved upgrades with the
+            // departing kit's carry allowance and Home transaction preflight.
+            if !in_pack && crate::borg_town_live::retained_gear(st, item) {
                 continue;
             }
 

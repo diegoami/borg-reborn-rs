@@ -50,7 +50,9 @@ use crate::state::BorgState;
 /// V20 (#1151) splits a fuel stack at the light reserve, lets a known-cursed
 /// spare that adds no power go while the pack is over its allowance, and
 /// does not charge the weight of a Remove Curse read in town.
-pub const PLAN_SCHEMA: i64 = 20;
+/// V21 (#1239) treats weight as a departure objective and a soft purchase cost.
+/// Mode 2 records the live departure pass, which can shed purchased surplus.
+pub const PLAN_SCHEMA: i64 = 21;
 
 /// The 24 town settings, `borg_town_plan` through
 /// `borg_town_power_scale`, contiguous; v4 stores the first 12.
@@ -132,6 +134,7 @@ pub struct PlanRecord {
     /// 4 historical flat/capped model, 5 trip-relative utility.
     pub schema: i64,
     /// 0 shadow (computed, not executed), 1 live.
+    /// 0 is shadow, 1 is live shopping, and 2 is live departure.
     pub mode: u8,
     pub visit: u64,
     pub step: u64,
@@ -527,7 +530,7 @@ impl PlanRecord {
     #[cfg_attr(not(test), expect(dead_code))]
     pub fn from_json(j: &Json) -> Result<PlanRecord, String> {
         let schema = j.get("v")?.int()?;
-        if schema != 4 && schema != 5 && schema != 6 && schema != 7 && schema != 8 && schema != 9 && schema != 10 && schema != 11 && schema != 12 && schema != 13 && schema != 14 && schema != 15 && schema != 16 && schema != 17 && schema != 18 && schema != 19 && schema != PLAN_SCHEMA { return Err("not a supported plan record".into()); }
+        if !(4..=PLAN_SCHEMA).contains(&schema) { return Err("not a supported plan record".into()); }
         let raw_params = j.get("params")?.ints()?;
         if raw_params.len() != if schema == 4 { 12 } else { PARAMS } { return Err("params has the wrong length".into()); }
         let mut params = [0; PARAMS];
@@ -657,6 +660,8 @@ impl PlanRecord {
 
 /// What a step reads.
 pub struct StepInput<'a> {
+    /// Shopping is finished. Keep urgent needs available while shedding surplus.
+    pub departure: bool,
     pub revision: i64,
     pub capability: Option<&'a crate::borg_town_capability::Model>,
     pub utility: bool,
@@ -857,7 +862,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     let limits = Limits {
         gold: input.limits.gold + freed.gold,
         pack_slots: input.limits.pack_slots + freed.pack_slots - room.slots,
-        weight: input.limits.weight + freed.weight - room.weight,
+        weight: if input.revision >= 21 { i64::MAX } else { input.limits.weight + freed.weight - room.weight },
     };
     let st = st;
     let facts: BTreeMap<(u8, u8), &WareFact> = input.facts.iter().map(|f| ((f.shop, f.slot), f)).collect();
@@ -866,7 +871,7 @@ pub fn step(input: &StepInput) -> StepOutput {
     if input.utility {
         let saturated = crate::borg_town_utility::saturated_home_kinds(input, &utility, &dispositions, &copies);
         for c in &mut candidates {
-            if (input.revision >= 9 && c.shop == 7) || saturated.contains(&c.kind) { c.qty = 0; }
+            if input.departure || (input.revision >= 9 && c.shop == 7) || saturated.contains(&c.kind) { c.qty = 0; }
             // borg-reborn-rs (#1151, plan schema 20): a Remove Curse scroll
             // bought for a curse the Borg has is read in town, so the weight
             // allowance does not price it. Overweight, the solver's weight
@@ -1037,6 +1042,36 @@ fn urgent_fits(c: &Candidate, pack_slots: Option<i32>, weight_room: Option<i64>)
     pack_slots.is_none_or(|n| n >= c.slots_cost) && weight_room.is_none_or(|w| w >= i64::from(c.weight))
 }
 
+fn planned_purchase(out: &StepOutput) -> Option<(usize, i32)> {
+    out.ranged_purchase.or_else(|| {
+        let &(g, o) = out.solution.ranked(&out.groups).first()?;
+        out.groups[g].options[o].picks.first().copied()
+    })
+}
+
+/// If the offered purchase can already be carried, finish acquiring stock
+/// before doing the weight-driven dispositions. A blocked urgent offer
+/// keeps its slot-opening prerequisite.
+pub(crate) fn acquisition_before_disposal(
+    candidates: &[Candidate], urgent: &[UrgentPurchase], out: &StepOutput,
+    facts: &[WareFact], kit: &[KitItem], pack_slots: i32,
+) -> Option<(i64, [i64; 4], i64, bool)> {
+    if !urgent.is_empty() { return None; }
+    for (i, item) in kit.iter().enumerate() {
+        if item.place != Place::Home || out.dispositions.get(i) != Some(&Disposition::Take) { continue; }
+        let qty = out.copies.get(i).copied().filter(|&n| n > 0).unwrap_or(item.qty);
+        let joins = item.home_room.map_or(item.joins_pack, |[_, merge, _]| qty <= merge);
+        if pack_slots > 0 || joins {
+            return Some((action::TAKE_HOME, [7, i64::from(item.slot), i64::from(qty), 0], i64::from(item.need), false));
+        }
+    }
+    let (i, copies) = planned_purchase(out)?;
+    let c = &candidates[i];
+    if c.slots_cost > pack_slots { return None; }
+    let need = facts.iter().find(|f| f.shop == c.shop && f.slot == c.slot).map_or(-1, |f| i64::from(f.need));
+    Some((action::BUY, [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)], need, false))
+}
+
 /// The live selection (#939 re-review, P2). The urgent pass picks its set by
 /// gold, with the urgent Recall first (#956), before anything checks what
 /// fits; the selector then skips an urgent copy that does not fit (#955) and
@@ -1136,18 +1171,9 @@ fn first_action_with_room(
         }
     }
     if blocked_urgent { return (action::LEAVE, [-1; 4], -1, false); }
-    let purchase = out.ranged_purchase.or_else(|| {
-        let &(g, o) = out.solution.ranked(&out.groups).first()?;
-        out.groups[g].options[o].picks.first().copied()
-    });
-    if let Some((i, copies)) = purchase {
+    if let Some((i, copies)) = planned_purchase(out) {
         let c = &candidates[i];
-        return (
-            action::BUY,
-            [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)],
-            need_of(c),
-            false,
-        );
+        return (action::BUY, [i64::from(c.shop), i64::from(c.slot), i64::from(copies), i64::from(c.price)], need_of(c), false);
     }
     (action::LEAVE, [-1, -1, -1, -1], -1, false)
 }
@@ -1190,6 +1216,7 @@ impl ReplayParts {
     /// The step input over these parts and the record's facts.
     pub fn input<'a>(&'a self, rec: &'a PlanRecord) -> StepInput<'a> {
         StepInput {
+            departure: rec.schema >= 21 && rec.mode == 2,
             revision: rec.schema,
             capability: rec.capability.as_ref(),
             utility: rec.schema >= 5,
@@ -1421,7 +1448,7 @@ mod tests {
             })
             .collect();
         let limits = Limits::of(&budget);
-        let out = step(&StepInput { storing: None,
+        let out = step(&StepInput { departure: false, storing: None,
             revision: 4,
             capability: None,
             utility: false,
@@ -1980,6 +2007,39 @@ mod tests {
         assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::TAKE_HOME);
         cs[1].slots_cost=1;
         assert_eq!(first_executable_action(&cs,&urgent,&out,&[],&[],1,0, i64::MAX).0,action::LEAVE);
+    }
+
+    #[test]
+    fn overweight_priest_can_buy_recall_and_a_worthwhile_upgrade() {
+        let stock = stock();
+        let (line, _) = produce(&stock, 24_223, &traits(), &[], &[]);
+        let (mut rec, mut parts) = replay_parts(&line).unwrap();
+        let recall = 0;
+        let armour = parts.candidates.iter().position(|c| c.kind == ARMOUR).unwrap();
+        let candidate = &parts.candidates[armour];
+        let tryon = TryOn { shop: candidate.shop, slot: candidate.slot, eq_slot: 6, value: 500_000 };
+        for (i, candidate) in parts.candidates.iter_mut().enumerate() {
+            candidate.qty = i32::from(i == armour || i == recall);
+        }
+        parts.tryon = vec![tryon];
+        parts.limits = Limits { gold: 24_098, pack_slots: 6, weight: -109 };
+        parts.urgent = vec![UrgentPurchase { candidate: recall, needs: vec![Need::Trip] }];
+        rec.schema = 20;
+        let old = step(&parts.input(&rec));
+        assert!(planned_purchase(&old).is_none());
+        assert_eq!(first_executable_action(&parts.candidates, &parts.urgent, &old, &rec.wares, &[], 0, 7, -104).0, action::LEAVE);
+
+        rec.schema = 21;
+        let new = step(&parts.input(&rec));
+        assert_eq!(live_selection(&parts.candidates, &parts.urgent, &new, &rec.wares, &[], 0, 7, i64::MAX, |_| Vec::new()).0, action::BUY);
+        parts.urgent.clear();
+        parts.candidates[recall].qty = 0;
+        let new = step(&parts.input(&rec));
+        assert_eq!(planned_purchase(&new), Some((armour, 1)));
+        let ordinary = acquisition_before_disposal(&parts.candidates, &[], &new, &rec.wares, &[], 6).unwrap();
+        assert_eq!((ordinary.0, ordinary.1[1]), (action::BUY, i64::from(parts.candidates[armour].slot)));
+        rec.mode = 2;
+        assert!(planned_purchase(&step(&parts.input(&rec))).is_none(), "departure cannot buy the surplus back");
     }
 
     #[test]

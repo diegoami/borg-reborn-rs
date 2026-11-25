@@ -22,7 +22,9 @@ class TownLoadoutTest(unittest.TestCase):
             for name in ("borg.txt", "scary_monsters.txt"):
                 shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
             messages = Path(directory) / "messages.log"
-            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env = {
+                key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))
+            }
             env.update(
                 BORG_CORE="borg-rs",
                 BORG_TEST_TOWN_LOADOUT=case,
@@ -33,8 +35,8 @@ class TownLoadoutTest(unittest.TestCase):
                 BORG_PARAM_CAUTION_SCARY_NAMED_MONSTERS="0",
                 BORG_PARAM_CAUTION_SCARY_DAMAGE_PERCENT="0",
             )
-            if case == "restore":
-                env["BORG_PARAM_TOWN_LIGHT_RESERVE_TURNS__PRIEST"] = "0"
+            env["BORG_PARAM_TOWN_LIGHT_RESERVE_TURNS__PRIEST"] = "0"
+            env["BORG_PARAM_TOWN_STAPLE_OIL__PRIEST"] = "0"
             result = subprocess.run(
                 [str(GAME), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "3", "-menu-letters",
@@ -42,30 +44,19 @@ class TownLoadoutTest(unittest.TestCase):
                 cwd=GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             log = messages.read_text()
-            self.assertEqual(result.returncode, 0, result.stdout + result.stderr + log[-4000:])
+            self.assertEqual(result.returncode, 0, result.stderr + log[-4000:])
             self.assertIn(f"#1239 town loadout passed: {case}", result.stdout, log[-6000:])
         return log
 
-    def test_full_home_replacement_opens_a_slot_for_the_mace(self):
-        self.assertNotIn("# Town headroom dropping", self.run_case("full-home"))
-
-    def test_quiver_trim_leaves_an_overweight_kit(self):
+    def test_trim_and_full_home_swap_store_the_mace(self):
         log = self.run_case("trim")
-        self.assertLess(log.index("# Town headroom dropping"), log.index("# Town loadout: wearing replacement"))
-        self.assertLess(log.index("# Town loadout: wearing replacement"), log.index("# Town loadout: confirmed displaced gear"))
+        self.assertLess(log.index("# Town headroom dropping"), log.index("# Town loadout: preparing a lighter kit"))
+        self.assertLess(log.index("# Town loadout: preparing a lighter kit"), log.index("# Town loadout: displaced gear stored at Home"))
 
-    def test_full_pack_can_exchange_a_single_carried_replacement(self):
-        self.run_case("full-pack")
-
-    def test_full_home_without_a_replacement_slot_falls_back(self):
+    def test_full_home_without_storage_has_no_safe_proposal(self):
         self.run_case("no-storage")
 
-    def test_rejected_deposit_leaves_the_mace_unprotected(self):
-        log = self.run_case("deposit-failed")
-        self.assertIn("# Town loadout: gear move failed to make progress", log)
-        self.assertNotIn("# Town loadout: confirmed displaced gear", log)
-
-    def test_heavy_upgrade_returns_when_a_later_visit_has_capacity(self):
+    def test_heavier_home_upgrade_can_be_proposed_after_a_strength_gain(self):
         self.run_case("restore")
 
 

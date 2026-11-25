@@ -977,9 +977,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
     }
 
-    // Finish a verified loadout exchange before ordinary wear or departure
-    // can undo it. Town threat handling above still takes precedence.
-    if st.borg.tr(BI_CDEPTH) == 0 && crate::borg_town_loadout::pending(st)
+    // borg-reborn-rs (#1239): finish an observed loadout transaction
+    // before the usual wear and junk passes can touch its two pieces.
+    if st.borg.tr(BI_CDEPTH) == 0 && crate::borg_town_live::loadout_pending(st)
         && borg_choose_shop(st)
     {
         if crate::borg_town_live::execute_outside(st) { return true; }

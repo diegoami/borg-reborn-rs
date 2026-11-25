@@ -503,7 +503,7 @@ Hypotheses: no measurement chose a mode or a step count (RULES 14).
 #1213 removes experimental quaffing and the recovery hold after a test.
 The existing town planner selects a sale for an unknown flavour when a shop
 accepts it (`unknown_flavour` and `Disposition::Sell` in
-`borg_town_utility.rs:620`). The engine's sale marks the kind as flavour-aware
+`borg_town_utility.rs:622`). The engine's sale marks the kind as flavour-aware
 (`engine/angband/src/store.c:1948` and `obj-knowledge.c:2284–2292`), so selling
 one copy identifies the remaining copies of that kind. The
 [native regression](../engine/tests/test_unknown_consumables.py) covers the
@@ -8752,7 +8752,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:886` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:907` |
 
 ## Plain quiver surplus at town departure (#1168)
 
@@ -8766,24 +8766,42 @@ reserve and the action order need measurement before activation.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:366` |
+| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:450` |
 
-## Lighter town loadouts (#1239)
+## Shopping while overloaded and departure loadout (#1239)
 
-With a positive `town_loadout_power_loss`, the planner can exchange one
-known worn weapon or armor piece after quiver trimming. It models the
-weight after the displaced piece reaches Home. The exchange must make
-room for urgent supplies and preserve effective speed, existing
-resistances, casting ability and usable attacks. It prefers room for the
-configured departure reserve when otherwise comparable. A later visit
-can restore the retained gear if the resulting kit fits with the reserve.
+**Plan schema 21.** The Track P profile enables `town_shop_overloaded`.
+The town planner uses value, gold, and pack slots for ordinary and urgent
+purchases and Home withdrawals. Weight remains a soft cost and a departure
+objective. The Recall reserve keeps its pack-slot allowance and no longer
+adds weight to the headroom needed before purchase.
 
-The compiled and shipped defaults are zero. The constructed Priest
-regression uses 3,000 equipment power as a trial loss allowance.
+The departure pass trims surplus quiver stacks, evaluates lighter gear with
+the displaced equipment stored at Home, and sheds surplus above the trip
+reserves. A confirmed trim prevents reacquiring the same ammunition until
+the next town visit. Urgent resupply remains available during the pass. If the Borg
+cannot remove the remaining overload safely, it logs the reason and leaves.
+
+Setting `town_shop_overloaded` to 0 records and uses schema 20 with the
+previous acquisition weight limits. Exact incident fixtures and the Zoo
+control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_loadout_power_loss` | 0 | equipment power | 0–100,000 | `borg_town_loadout.rs:58` |
+| `town_shop_overloaded` | 1 | flag | 0–1 | `borg_town_live.rs:339` |
+
+### Recall-first trial
+
+Set `town_shop_overloaded = 0` and a positive
+`town_loadout_power_loss` to try making room for urgent supplies before
+purchasing them. The planner trims excess quiver ammo first and evaluates
+the kit after depositing the displaced gear. The positive value caps the
+equipment power loss and defaults to zero. Shop-first remains the shipped
+policy and takes precedence when enabled.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_loadout_power_loss` | 0 | equipment power | 0–100000 | `borg_town_recall_loadout.rs:59` |
 
 ## Ranged readiness for the next trip (#1184)
 
