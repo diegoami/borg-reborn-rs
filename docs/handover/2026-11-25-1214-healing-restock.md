@@ -22,14 +22,15 @@ The native cases cover one potion remaining, depletion, a blocked stair,
 insufficient gold, and shopping through both strategies. The review added
 unit coverage of first funding, free Home offers, failed visits, and the
 deep-level restock checks. The core trace records the last observed known
-potion count in both arms of the comparison.
+potion count in both arms of the comparison. In smoke seed 101, the
+Warrior earned enough for its first reserve and returned at turn 13,103.
+The game ended alive at CL2 and maximum DL1. The previous reference
+reached CL4 and maximum DL3. The other three games matched.
 [Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
 
 ### What is left
 
-The paired population comparison for #1214 is linked from the draft.
-[#1214](https://github.com/diegoami/borg-reborn-rs/issues/1214)
-[#1218](https://github.com/diegoami/borg-reborn-rs/pull/1218)
+The paired population comparison awaits dispatch. [Zoo #791](https://github.com/diegoami/borg-zoo/issues/791)
 
 ### Owner decisions
 
