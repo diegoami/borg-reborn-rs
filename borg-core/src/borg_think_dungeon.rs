@@ -948,6 +948,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("break_loop");
     }
 
+    // #1231: free cursed pack slots before ordinary shopping or item flows.
+    if crate::borg_junk::borg_drop_cursed_spare(st) {
+        return choice!("borg_drop_cursed_spare");
+    }
+
     if crate::borg_healing_restock::returning(st) && borg_leave_level(st, false) {
         return choice!("healing_restock_return");
     }

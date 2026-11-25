@@ -954,6 +954,14 @@ pub(crate) fn uncursed_light_replacement(equipped: &BorgItem, pack: &[BorgItem],
     best_light(pack, radius - current, |_| false)
 }
 
+/// #1231: a spare cursed light is dispensable once a clean light works.
+pub(crate) fn has_clean_light(st: &BorgState, pack: &[BorgItem]) -> bool {
+    let equipped = &st.items.items[inven_light() as usize];
+    let radius = st.borg.tr(BI_LIGHT);
+    (equipped.iqty != 0 && !equipped.cursed && light_powered(equipped) && radius > 0)
+        || uncursed_light_replacement(equipped, pack, radius).is_some()
+}
+
 /// Restore carried light without relying on ordinary equipment power or wear cooldowns.
 pub(crate) fn borg_restore_light(st: &mut BorgState) -> bool {
     let action = light_action(

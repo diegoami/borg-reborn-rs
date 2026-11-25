@@ -541,6 +541,51 @@ fn protects_restore_life(pack: &[borg_item], slot: usize, sval: i32, reserve: i3
     carried - discarded < reserve
 }
 
+/// Choose a known cursed spare without treating unknown runes as a curse.
+fn cursed_spare_slot(pack: &[borg_item], clean_light_available: impl Fn() -> bool) -> Option<usize> {
+    pack.iter().position(|item| {
+        item.iqty > 0
+            && item.cursed
+            && !item.one_ring
+            && crate::borg_inventory::borg_wield_slot(item) >= 0
+            && (u32::from(item.tval) != TV_LIGHT || clean_light_available())
+    })
+}
+
+/// #1231: discard cursed spares at a safe opportunity. Unlearned runes
+/// must not protect a known cursed item ahead of usable supplies.
+pub(crate) fn borg_drop_cursed_spare(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling != 0 || off_floor(st) {
+        return false;
+    }
+    let pack = &st.items.items[..pack_size() as usize];
+    let Some(slot) = cursed_spare_slot(pack, || crate::borg_light::has_clean_light(st, pack)) else {
+        return false;
+    };
+    if danger_here(st) > st.borg.tr(BI_CURHP) / 10 {
+        return false;
+    }
+
+    let slot = slot as i32;
+    note_desc(st, "# Dropping cursed spare ", slot, ".");
+    drop_ignored_pack_stack(st, slot);
+    true
+}
+
+fn drop_ignored_pack_stack(st: &mut BorgState, slot: i32) {
+    borg_keypress(st, key(b'{'));
+    borg_keypress(st, letter(slot));
+    borg_keypresses(st, b"borg ignore");
+    borg_keypress(st, KC_ENTER);
+
+    borg_keypress(st, key(b'd'));
+    borg_keypress(st, letter(slot));
+    if st.items.items[slot as usize].iqty > 1 {
+        borg_keypress(st, key(b'*'));
+        borg_keypress(st, KC_ENTER);
+    }
+}
+
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
 pub fn borg_drop_junk(st: &mut BorgState) -> bool {
     if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH) == 0 && crate::borg_town_live::active(st) && st.cfg(crate::borg_headers::borg_h::BORG_TOWN_NO_STORES) == 0 { return false; }
@@ -1120,21 +1165,7 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
         /* Message */
         note_desc(st, "# Dropping ", b_i, ".");
 
-        /* Drop that item */
-        /* inscribe "borg ignore". The borg crushes all items */
-        /* on the floor that are inscribed this way */
-        borg_keypress(st, key(b'{'));
-        borg_keypress(st, letter(b_i));
-        borg_keypresses(st, b"borg ignore");
-        borg_keypress(st, KC_ENTER);
-
-        /* drop it */
-        borg_keypress(st, key(b'd'));
-        borg_keypress(st, letter(b_i));
-        if st.items.items[b_i as usize].iqty > 1 {
-            borg_keypress(st, key(b'*'));
-            borg_keypress(st, KC_ENTER);
-        }
+        drop_ignored_pack_stack(st, b_i);
 
         /* Success */
         return true;
@@ -1715,6 +1746,27 @@ mod tests {
         assert!(protects_restore_life(&pack, 0, 16, 1, false));
         pack[1].aware = true;
         assert!(!protects_restore_life(&pack, 0, 16, 1, true));
+    }
+
+    #[test]
+    fn cursed_torch_loses_its_pack_slot_to_clean_spares_and_unknown_gear() {
+        let mut clean = crate::borg_item::blank_item();
+        clean.tval = TV_LIGHT as u8;
+        clean.iqty = 6;
+        clean.timeout = 5000;
+        let mut cursed = clean;
+        cursed.iqty = 1;
+        cursed.needs_ident = true;
+        cursed.cursed = true;
+        let mut unknown = crate::borg_item::blank_item();
+        unknown.tval = TV_SWORD as u8;
+        unknown.iqty = 1;
+        unknown.needs_ident = true;
+
+        assert_eq!(cursed_spare_slot(&[clean, unknown, cursed], || true), Some(2));
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), None);
+        unknown.cursed = true;
+        assert_eq!(cursed_spare_slot(&[unknown, cursed], || false), Some(0));
     }
 
     #[test]
