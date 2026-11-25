@@ -29,6 +29,8 @@ def state_at(states, turn):
 # two attack settings). The
 # incident classes are Warrior (0) and Mage (1), so only their class lines exist.
 PINNED_TOWN_SETTINGS = [
+    # #1250: keep the original use and timing of Magic Mapping.
+    ("item_use_idle", 0),
     ("town_departure_free_weight", 0), ("town_departure_free_slots", 0),
     ("town_store_keep_min", 0), ("town_recall_curve_scale_percent", 0),
     ("town_recall_urgent", 0),
@@ -357,6 +359,9 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
             # ("nothing reachable left within the leash"), which needs
             # explore_c_leave_when_done = 1.
             pinned = [
+                # The birth Warrior's Berserk Strength would consume the
+                # turn whose stair-flow decision this fixture inspects.
+                ("item_use_idle", 0),
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0),
                 ("explore_c_leave_when_done", 1),
@@ -427,6 +432,7 @@ class StaleStairMoreTest(unittest.TestCase):
             # triage are not what the case tests;
             # explore_c_leave_when_done 0 keeps the exhaustion out.
             pinned = [
+                ("item_use_idle", 0),
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 0),
                 ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
@@ -502,6 +508,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
             # the level exhausted for the leave decision's own exhausted
             # branch.
             pinned = [
+                ("item_use_idle", 0),
                 ("stair_scum", 0), ("explore_mixed", 0), ("deal_with_poison", 0),
                 ("explore_breadth_first", 0), ("explore_c_leave_when_done", 1),
                 ("prepared_dl2_min_clevel", 0), ("prepared_dl2_min_clevel__warrior", 0),
@@ -651,6 +658,7 @@ class DarkVeinLoopTest(unittest.TestCase):
             # #1189 used breadth-first before #1201 switched it off.
             # The legacy Paladin exceeds its shipped depth-adjusted mixed cap.
             pins = [
+                ("borg_param_item_use_idle", 0),
                 ("borg_param_explore_stepable_goals", int(setting != "off")),
                 ("borg_param_explore_breadth_first", 0 if legacy else 1),
                 ("borg_param_stair_scum", 0),

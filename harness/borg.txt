@@ -1224,6 +1224,9 @@ borg_param_junk_inferior_spares = 1
 # the worn pair has at least this many more points of armor enchantment.
 borg_param_junk_inferior_sandal_ac_margin = 7
 
+# #1250: idle use of expendable consumables from DL1.
+borg_param_item_use_idle = 1
+
 # #810 pilot. Total usable fuel turns in equipment and pack, including oil
 # when using a lantern. While using a torch, top up from Home or the General
 # Store after immediate needs and within the normal shopping budget.
