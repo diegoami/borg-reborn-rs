@@ -26,7 +26,11 @@ unit coverage of first funding, free Home offers, failed visits, and the
 deep-level restock checks. The core trace records the last observed known
 potion count in both arms of the comparison. The re-review added a
 replenishment test that also checks the independent town objective and
-its stair flow. The earlier smoke reference came from a different build.
+its stair flow. On the same synced build (`33100858`), Warrior seed 101
+differed first at turn 13,103 when the restock arm headed for the up stairs.
+It made two funded return requests and bought a cure potion. Both arms
+survived to the cap and reached maximum DL1, with CL2 on and CL3 off.
+The refreshed smoke reference matches all four games.
 [Original Ranger case](https://github.com/diegoami/borg-cemetery/tree/d7d90fbc40275da3d06af57bea22c6b3d1a16ca0/incidents/2026-11-25-watch-half-orc-ranger-poison-37450)
 
 ### What is left
