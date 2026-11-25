@@ -39,7 +39,9 @@ torches and shopped with 5 lb of headroom. The General Store torch offer
 remained at zero. A larger native fixture also cleared all 14 Sleep and
 22 Confusion potions plus examples of harmful scrolls, mushrooms, wands
 and staves. The full-Home regression observed the lighter exchange and
-deposit before the Recall acquisition.
+deposit before the Recall acquisition. With no lighter gear at Home, the
+Priest made room at Home, bought and wielded a Trident from the Weaponsmith,
+and deposited the displaced mace before taking Recall within the allowance.
 
 Stopping torch purchases at the fuel target is tracked in
 [#1257](https://github.com/diegoami/borg-reborn-rs/issues/1257).
