@@ -26,3 +26,15 @@ unknown. It still needs normal
 identification before the new wear planner selects it. Run
 `python3 engine/tests/check_paladin_daggers.py /path/to/extracted-evidence`
 to check disposal with either gear policy.
+
+The later Paladin checkpoint from [#1105](https://github.com/diegoami/borg-reborn-rs/issues/1105)
+also covers the stronger stealth cloak, a weaker cloak with unseen
+runes, and duplicate fueled lighting. The regular cloak backup favors
+stealth when worn gear in that slot supplies none. Plain uninspected
+armour can leave when two retained pieces cover its observed properties
+and the character currently has no usable identification. The Phial
+and permanent backup cover the radii and properties of both fueled
+spares in this save. A brighter light or a light with a distinct known
+benefit can still stay. Run
+`python3 engine/tests/check_paladin_cloaks_lights.py /path/to/extracted-evidence`
+to check this checkpoint.

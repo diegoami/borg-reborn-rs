@@ -708,7 +708,17 @@ pub fn choose(st: &mut BorgState) -> bool {
     // can consume the rest of this town visit.
     let cutoff = crate::borg_junk::gear_alternatives();
     if cutoff > 0 && !no_sale && !plan.urgent_action {
-        let cleanup = if gear_home_backups() { organize_gear(st) } else { ranked_gear_cleanup(st, cutoff) };
+        let cleanup = if gear_home_backups() {
+            // Leave blocked urgent purchases to quiver relief and the
+            // Recall-first exchange before changing the equipment plan.
+            if recall_first && crate::borg_town_budget::Facts::of(st).allowance() < plan.urgent.weight {
+                None
+            } else {
+                organize_gear(st)
+            }
+        } else {
+            ranked_gear_cleanup(st, cutoff)
+        };
         if let Some(cleanup) = cleanup { return set_action(st, cleanup); }
     }
     // #1264: the earlier policy offers inferior spares before other disposals.

@@ -378,7 +378,13 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec
     ranked.sort_by_key(|&i| {
         let distinct = capacity == 1 && worn.iter().any(|&w| choices[w].item.iqty > 0
             && !known_properties_cover(&choices[w].item, &choices[i].item));
-        (std::cmp::Reverse(distinct), std::cmp::Reverse(choices[i].power), choices[i].source)
+        // A stealth cloak is an alternate exploration kit. Keep the best
+        // cloak for that use when the primary supplies no stealth.
+        let stealth = crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize;
+        let stealth_backup = distinct && u32::from(choices[i].item.tval) == TV_CLOAK
+            && choices[i].item.modifiers[stealth] > 0
+            && worn.iter().all(|&w| choices[w].item.modifiers[stealth] <= 0);
+        (std::cmp::Reverse(stealth_backup), std::cmp::Reverse(distinct), std::cmp::Reverse(choices[i].power), choices[i].source)
     });
     let mut regular = Vec::new();
     for &index in &ranked {
