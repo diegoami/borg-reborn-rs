@@ -98,7 +98,7 @@ class StairHandoffTest(unittest.TestCase):
 
 @unittest.skipUnless(has_stair_handoff_build(), "test-stair-handoff build required")
 class EmergencyStairHandoffTest(unittest.TestCase):
-    def run_case(self, case, weight):
+    def run_case(self, case, weight, *, shadow="off"):
         with tempfile.TemporaryDirectory(prefix="emergency-stair-handoff-") as directory:
             root = Path(directory)
             paths = {kind: root / kind for kind in ("user", "save", "archive", "panic", "scores")}
@@ -117,14 +117,26 @@ class EmergencyStairHandoffTest(unittest.TestCase):
             (paths["user"] / "borg.txt").write_text(config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
-            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case, BORG_RUN_DIR=str(root))
+            env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case, BORG_RUN_DIR=str(root), BORG_SHADOW=shadow)
             result = subprocess.run(
                 [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
                  "--", "-seed", "101", "-race", "3", "-class", "6", "-menu-letters", "-start-depth", "5", "-keys", "250"],
                 cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
             )
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-            self.assertIn(f"emergency stair handoff passed: {case}", result.stdout)
+            if case == "flow-step":
+                self.assertIn("flow direction selection passed", result.stdout)
+                stats = root / "shadow-stats.jsonl"
+                if shadow == "off":
+                    self.assertFalse(stats.exists())
+                else:
+                    self.assertEqual((root / "shadow.jsonl").read_bytes(), b"")
+                    row = json.loads(stats.read_text().splitlines()[-1])
+                    self.assertEqual(row["mode"], shadow)
+                    self.assertEqual(row["counts"]["readonly_points"]["flow.select_step"], 8)
+                    self.assertEqual(row["counts"]["flow_calls"], 8)
+            else:
+                self.assertIn(f"emergency stair handoff passed: {case}", result.stdout)
             settings = {row["name"]: row for row in json.loads((root / "params-core.json").read_text())}
             resolved = json.loads((root / "settings-resolved.json").read_text())
             self.assertEqual((resolved["class_index"], resolved["class_name"]), (6, "rogue"))
@@ -140,6 +152,11 @@ class EmergencyStairHandoffTest(unittest.TestCase):
 
     def test_unweighted_handoff_cannot_walk_toward_a_farther_stair(self):
         self.run_case("blocked", 0)
+
+    def test_flow_direction_selection_preserves_native_results_and_rng(self):
+        for shadow in ("off", "check", "switch"):
+            with self.subTest(shadow=shadow):
+                self.run_case("flow-step", 0, shadow=shadow)
 
 
 if __name__ == "__main__":

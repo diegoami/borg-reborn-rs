@@ -64,7 +64,7 @@ const BORG_DIG_HARD: i32 = 40;
 
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
 pub(crate) const GOAL_DARK: i32 = 4;
-const GOAL_DIGGING: i32 = 10;
+pub const GOAL_DIGGING: i32 = 10;
 /// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
 const GOAL_FLEE: i32 = 7;
 
@@ -1708,6 +1708,17 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
 /// The "Look around" part of `borg_flow_old()`: the direction index
 /// (`ddx_ddd`) of the best next grid along the committed flow, or -1.
 fn select_step(st: &BorgState) -> i32 {
+    let request = crate::decisions::ReadDecision::FlowSelectStep;
+    match crate::shadow::read_decision(st, request) {
+        crate::decisions::Value::Score(step) => step,
+        _ => unreachable!("flow direction result"),
+    }
+}
+
+pub(crate) fn select_step_native(st: &BorgState) -> i32 {
+    use crate::decision_api::engine;
+
+    crate::decision_tape::mark("policy::flow.select_step", String::new());
     let mut b_n = 0;
     let mut b_i: i32 = -1;
 
@@ -1771,6 +1782,68 @@ fn select_step(st: &BorgState) -> i32 {
     }
 
     b_i
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_step_selection_regression(live: &BorgState) -> ! {
+    let mut st = live.clone();
+    let depth = st.borg.tr(BI_CDEPTH);
+    assert_eq!(depth, 5);
+    st.borg.c = loc { x: 40, y: 20 };
+    for row in &mut st.flow.data_flow {
+        row.fill(255);
+    }
+    crate::borg_io::borg_flush(&mut st);
+    st.flow.data_flow[20][40] = 4;
+    st.borg.goal.type_0 = GOAL_DARK as i16;
+    assert!(!borg_flow_old(&mut st, GOAL_DARK), "no downhill route");
+    assert_eq!(st.borg.goal.type_0, 0);
+    assert!(st.io.queued_keys().is_empty());
+
+    let south = loc { x: 40, y: 21 };
+    st.flow.data_flow[21][40] = 2;
+    st.flow.data_flow[19][40] = 2;
+    assert_eq!(select_step(&st), 0, "dungeon ties keep the first direction");
+    st.flow.data_flow[19][40] = 1;
+    assert_eq!(select_step(&st), 1, "a lower cost replaces the earlier direction");
+
+    st.borg.trait_[BI_CDEPTH as usize] = 0;
+    st.flow.data_flow[19][40] = 2;
+    let (quick, seed) = engine::rand_state();
+    engine::set_rand_state(true, 101);
+    let expected = i32::from(engine::randint0(2) == 0);
+    let after_tie = engine::rand_state();
+    engine::set_rand_state(true, 101);
+    assert_eq!(select_step(&st), expected, "town ties follow the draw");
+    assert_eq!(engine::rand_state(), after_tie, "town tie consumes one live draw");
+    engine::set_rand_state(quick, seed);
+
+    st.borg.trait_[BI_CDEPTH as usize] = depth;
+    st.borg.goal.type_0 = GOAL_DIGGING as i16;
+    st.flow.data_flow[19][40] = 255;
+    st.flow.data_flow[21][41] = 3;
+    st.flow.flow_y[0] = 20;
+    st.flow.flow_x[0] = 42;
+    assert_eq!(select_step(&st), 4, "the digging filter still applies at distance two");
+    st.flow.flow_x[0] = 43;
+    assert_eq!(select_step(&st), 0, "farther digging permits the cheaper cardinal step");
+
+    st.borg.goal.type_0 = GOAL_DARK as i16;
+    assert!(up_stair_search_can_continue(&st, st.borg.c));
+    assert!(!up_stair_search_can_continue(&st, south));
+
+    // Keep the unweighted downhill route available while testing both weighted branches.
+    st.flow.weighted_flight = WeightedFlight::Step(st.borg.c);
+    assert!(!borg_flow_old(&mut st, GOAL_DARK), "weighted step is already reached");
+    assert!(matches!(st.flow.weighted_flight, WeightedFlight::Replan));
+    st.borg.goal.type_0 = GOAL_DARK as i16;
+    assert!(!borg_flow_old(&mut st, GOAL_DARK), "weighted flow must replan");
+    assert_eq!(st.borg.goal.type_0, 0);
+    assert!(st.io.queued_keys().is_empty());
+
+    crate::shadow::after_think(&st);
+    println!("flow direction selection passed");
+    std::process::exit(0);
 }
 
 /// `borg_init_flow()`: allocate the grid maps (`borg_data_hard` all 255)

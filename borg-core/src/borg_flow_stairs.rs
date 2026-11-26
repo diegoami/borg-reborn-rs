@@ -1348,6 +1348,10 @@ pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
     use crate::borg_headers::borg_trait_h::BI_MAXHP;
     use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE, FEAT_MORE};
 
+    if case == "flow-step" {
+        borg_flow::run_step_selection_regression(st);
+    }
+
     fn observe_move(st: &mut BorgState, direction: u8, expected: loc) {
         assert_eq!(st.io.queued_keys(), [u32::from(direction)], "movement from ({}, {})", st.borg.c.x, st.borg.c.y);
         let dir = (borg_io::borg_inkey(st, true) - u32::from(b'0')) as usize;

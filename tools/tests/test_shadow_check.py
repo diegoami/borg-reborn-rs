@@ -183,17 +183,9 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root],r4_store=True,require_all_entries=True)
 
     def test_receiving_surface_replaces_retired_markers(self):
-        row = valid_store_row()
-        row.update(schema='borg-reborn-rs/shadow-stats@9', surface='r45')
+        row = valid_receiving_row()
         counts = row['counts']
         points = counts['stateful_points']
-        for name in module.R45_RETIRED:
-            counts[name.split('.')[0] + '_calls'] -= points.pop(name)
-        for name in module.R45_ADDED:
-            points[name] = 1
-            counts[name.split('.')[0] + '_calls'] += 1
-        counts['policy_markers'] = sum(points.values())
-        counts['tape_events'] = counts['policy_markers'] + counts['dependency_requests']
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.write(root, row)
@@ -214,6 +206,39 @@ class ShadowCheckTest(unittest.TestCase):
             self.write(root, row)
             with self.assertRaisesRegex(ValueError, 'entry coverage'):
                 module.check([root], r45=True)
+
+    def test_r5_requires_the_new_flow_root_and_checks_its_counter(self):
+        row = valid_receiving_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@10', surface='r5',
+                   ported_points=row['ported_points'] + ['flow'])
+        counts = row['counts']
+        point = module.FLOW_STEP_POINT
+        counts['stateful_points'][point] = 1
+        counts['readonly_points'][point] = 1
+        counts['flow_calls'] = 1
+        for field in ('policy_markers', 'tape_events', 'readonly_comparisons', 'comparisons'):
+            counts[field] += 1
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write(root, row)
+            _, totals = module.check([root], r5=True, require_all_entries=True)
+            self.assertEqual(totals['flow_calls'], 1)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r45=True)
+
+            counts['flow_calls'] += 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'inconsistent individual entry coverage'):
+                module.check([root], r5=True)
+            counts['flow_calls'] -= 1
+
+            del counts['readonly_points'][point]
+            counts['readonly_comparisons'] -= 1
+            counts['comparisons'] -= 1
+            self.write(root, row)
+            module.check([root], r5=True)
+            with self.assertRaisesRegex(ValueError, 'missing read-only root coverage'):
+                module.check([root], r5=True, require_all_entries=True)
 
     def test_declared_run_partition_keeps_combined_strict_gate(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -395,4 +420,19 @@ def valid_store_row():
              'store.borg_power_home':1,'store.borg_min_item_quantity':1},
              stateful_comparisons=4,comparisons=14)
     c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1,'store.borg_think_shop_buy_useful':1})
+    return row
+
+
+def valid_receiving_row():
+    row = valid_store_row()
+    row.update(schema='borg-reborn-rs/shadow-stats@9', surface='r45')
+    counts = row['counts']
+    points = counts['stateful_points']
+    for name in module.R45_RETIRED:
+        counts[name.split('.')[0] + '_calls'] -= points.pop(name)
+    for name in module.R45_ADDED:
+        points[name] = 1
+        counts[name.split('.')[0] + '_calls'] += 1
+    counts['policy_markers'] = sum(points.values())
+    counts['tape_events'] = counts['policy_markers'] + counts['dependency_requests']
     return row

@@ -170,13 +170,22 @@ def measure(root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--write', action='store_true', help='record after reviewing receiving source changes')
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--write', action='store_true', help='record after reviewing receiving source changes')
+    mode.add_argument('--receiving-r5', action='store_true',
+                      help='verify prior policy while allowing the R5 dispatch additions')
     args = parser.parse_args()
     actual = measure(ROOT)
     if args.write:
         RECEIPT.write_text(json.dumps(actual, indent=2) + '\n')
-    elif actual != json.loads(RECEIPT.read_text()):
-        raise SystemExit('receiving proof differs from its recorded source or reviewed rewrites')
+    else:
+        expected = json.loads(RECEIPT.read_text())
+        if args.receiving_r5:
+            for path in ('borg-next/src/stateful/mod.rs', 'borg-core/src/decisions.rs'):
+                del expected['receiving_files'][path]
+                del actual['receiving_files'][path]
+        if actual != expected:
+            raise SystemExit('receiving proof differs from its recorded source or reviewed rewrites')
     counts = Counter('reviewed rewrite' if 'rewrite' in row else 'normalized match'
                      for module in actual['modules'].values() for row in module['paired'].values())
     print(json.dumps(counts, sort_keys=True))

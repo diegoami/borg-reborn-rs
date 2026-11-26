@@ -59,6 +59,7 @@ struct Counts {
     power_calls: u64,
     equipment_calls: u64,
     store_calls: u64,
+    flow_calls: u64,
     pure_attack_comparisons: u64,
     pure_points: BTreeMap<&'static str, u64>,
     stateful_comparisons: u64,
@@ -94,6 +95,7 @@ impl Counts {
                 Some("power") => self.power_calls += count,
                 Some("equipment") => self.equipment_calls += count,
                 Some("store") => self.store_calls += count,
+                Some("flow") => self.flow_calls += count,
                 _ => panic!("unknown policy marker namespace: {name}"),
             }
         }
@@ -221,10 +223,10 @@ impl<W: Write> Recorder<W> {
     fn think(&mut self, mode: Mode, borg_turn: i32) -> std::io::Result<()> {
         self.counts.thinks += 1;
         let row = serde_json::json!({
-            "schema": "borg-reborn-rs/shadow-stats@9", "mode": mode,
+            "schema": "borg-reborn-rs/shadow-stats@10", "mode": mode,
             "borg_turn": borg_turn,
-            "surface": "r45",
-            "ported_points": ["danger.wall_like", "danger", "danger.one_monster", "caution", "escape", "recovery", "attack", "defence", "item_use", "power", "equipment", "store"],
+            "surface": "r5",
+            "ported_points": ["danger.wall_like", "danger", "danger.one_monster", "caution", "escape", "recovery", "attack", "defence", "item_use", "power", "equipment", "store", "flow"],
             "unported_points": [],
             "counts": self.counts,
         });
