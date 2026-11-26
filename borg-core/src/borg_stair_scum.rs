@@ -680,6 +680,11 @@ impl Map {
     }
 }
 
+/// The Borg is already committed to returning to the stairs on this level.
+pub(crate) fn returning_to_stairs(st: &BorgState) -> bool {
+    st.stair_scum.level == st.borg.time.level && st.stair_scum.returning
+}
+
 /// A new level forgets the last one's doors and walks.
 fn sync_level(st: &mut BorgState) {
     if st.stair_scum.level != st.borg.time.level {
