@@ -1758,7 +1758,8 @@ mod tests {
     /// name every setting in the table and no retired one.
     #[test]
     fn the_borg_txt_copies_agree_and_name_every_setting() {
-        let harness = borg_txt_settings(include_str!("../borg.txt"));
+        let yaml = crate::shell::yaml_settings(include_str!("../pborg.yaml")).unwrap();
+        let harness = borg_txt_settings(&yaml);
         let shipped = borg_txt_settings(include_str!("../c-reference/borg.txt"));
         assert_eq!(harness, shipped, "the two borg.txt copies disagree");
         for s in BORG_SETTINGS.iter().take(crate::borg_headers::borg_h::BORG_SUM_EXCLUDED_FROM_BLACK_MARKET as usize) {
@@ -1779,7 +1780,8 @@ mod tests {
     /// default is a product choice, and it is listed.
     #[test]
     fn the_borg_txt_values_follow_the_declaration() {
-        let harness = borg_txt_settings(include_str!("../borg.txt"));
+        let yaml = crate::shell::yaml_settings(include_str!("../pborg.yaml")).unwrap();
+        let harness = borg_txt_settings(&yaml);
         // the configured values are compared case-insensitively: one of the
         // borg.txt lines says "false" in lower case
         let value_of = |name: &str| -> String {
