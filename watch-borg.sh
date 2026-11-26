@@ -7,7 +7,7 @@
 # .angband-reborn/ (kept between builds). The first start writes the shipped
 # settings (harness/borg.txt and its scary list, prepared as a run's, #826)
 # into .angband-reborn/user/, so the borg-rs core plays them; later starts
-# keep that borg.txt (yours to edit) and say when it differs from the
+# keep that pborg.yaml (yours to edit) and say when it differs from the
 # shipped one; --reset-settings writes the shipped one again. Create or load a character, then
 # press Ctrl-Z and z to start the Borg; any key stops it. Needs the X11
 # development libraries (libx11-dev) and a display.
@@ -57,33 +57,27 @@ if [ "$BUILD_ONLY" = 1 ]; then
     exit 0
 fi
 mkdir -p "$DATA"/{user,save,archive,panic,scores}
-# #826: without a borg.txt the Borg writes the C Borg's defaults, which name
-# no core, and the frozen reborn core plays instead of borg-rs.
+# Install PBorg settings in their own file, beside any existing CBorg configuration.
 SHIPPED=$(mktemp -d "${TMPDIR:-/tmp}/borg-settings.XXXXXXXX")
 trap 'rm -rf "$SHIPPED"' EXIT
-"$ROOT/harness/prepare-borg-txt.sh" "$SHIPPED"
-if [ "$RESET" = 1 ] || [ ! -e "$DATA/user/borg.txt" ]; then
-    cp "$SHIPPED/borg.txt" "$DATA/user/"
-    echo "Settings: the shipped harness/borg.txt, in $DATA/user/borg.txt"
-elif cmp -s "$SHIPPED/borg.txt" "$DATA/user/borg.txt"; then
+"$ROOT/harness/prepare-pborg-config.sh" "$SHIPPED"
+if [ "$RESET" = 1 ] || [ ! -e "$DATA/user/pborg.yaml" ]; then
+    cp "$SHIPPED/pborg.yaml" "$DATA/user/"
+    echo "Settings: the shipped harness/borg.txt, in $DATA/user/pborg.yaml"
+elif cmp -s "$SHIPPED/pborg.yaml" "$DATA/user/pborg.yaml"; then
     echo "Settings: the shipped harness/borg.txt"
 else
-    echo "Settings: your $DATA/user/borg.txt (it differs from the shipped harness/borg.txt; --reset-settings takes the shipped one)"
+    echo "Settings: your $DATA/user/pborg.yaml (it differs from the shipped harness/borg.txt; --reset-settings takes the shipped one)"
 fi
-# The files borg.txt names (the scary list): every shipped one that is
+# The files pborg.yaml names (the scary list): every shipped one that is
 # missing, whatever borg.txt is (review of #866: a kept borg.txt naming a
 # list that is not there made the core exit at start).
 for f in "$SHIPPED"/*; do
-    [ -e "$f" ] && [ "$(basename "$f")" != borg.txt ] || continue
+    [ -e "$f" ] && [ "$(basename "$f")" != pborg.yaml ] || continue
     { [ "$RESET" = 1 ] || [ ! -e "$DATA/user/$(basename "$f")" ]; } && cp "$f" "$DATA/user/"
 done
-LIST="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$DATA/user/borg.txt" | tail -1 | tr -d '[:space:]')"
-if [ -n "$LIST" ] && [ "$LIST" != none ] && [ ! -e "$DATA/user/$LIST" ]; then
-    echo "watch-borg.sh: $DATA/user/borg.txt names the scary list $LIST, which is not in $DATA/user/ (the Borg would stop at start): copy it there, or --reset-settings" >&2
-    exit 2
-fi
 rm -rf "$SHIPPED"; trap - EXIT   # exec below would skip the trap
-echo "Create or load a character; Ctrl-Z then z starts the Rust Borg. Any key stops it."
+echo "Create or load a character; Ctrl-Z then z starts PBorg by default. Ctrl-Z then B switches Borgs. Any key stops the active Borg."
 cd "$BUILD/game"   # the game finds ./lib relative to the working directory
 # Angband resolves -u immediately: select the save directory first.
 exec ./angband -mx11 -duser="$DATA/user" -dsave="$DATA/save" -darchive="$DATA/archive" \

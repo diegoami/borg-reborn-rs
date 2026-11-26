@@ -44,14 +44,16 @@ class SurvivalIncidentTest(unittest.TestCase):
                     data = source.read(name)
                     self.assertEqual(hashlib.sha256(data).hexdigest(), point['sha256'])
                     (out / 'starting.save').write_bytes(data)
-                    for config in ['borg.txt', 'errands_plan.txt']:
-                        (out / 'user' / config).write_bytes(source.read(config))
+                    (out / 'user/errands_plan.txt').write_bytes(source.read('errands_plan.txt'))
+                    settings = source.read('borg.txt').decode()
                     if disable_tiers:
-                        with (out / 'user/borg.txt').open('a') as config:
-                            config.write('\nborg_param_caution_clw_max_level = 1\n'
-                                         'borg_param_caution_clw_max_loss = 0\n'
-                                         'borg_param_caution_csw_max_level = 1\n'
-                                         'borg_param_caution_csw_max_loss = 0\n')
+                        settings += ('\nborg_param_caution_clw_max_level = 1\n'
+                                     'borg_param_caution_clw_max_loss = 0\n'
+                                     'borg_param_caution_csw_max_level = 1\n'
+                                     'borg_param_caution_csw_max_loss = 0\n')
+                    config = subprocess.check_output(['python3', str(ROOT / 'harness/pborg-config.py'), '-'],
+                                                     input=settings, text=True)
+                    (out / 'user/pborg.yaml').write_text(config)
                     env = {k:v for k,v in os.environ.items()
                            if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
                     env.update(BORG_CORE='borg-rs', BORG_RUN_DIR=str(out / 'diagnostics'),

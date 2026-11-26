@@ -18,7 +18,7 @@ Re-pinned from `42cd156ac` on 2026-11-20 (#724, owner: "update engine"):
 game: trap display made consistent (`cave-map.c`, `ui-target.c`,
 `ui-display.c`, `trap.c`, `trap.h`), two effect handlers
 (`effect-handler-attack.c`, `effect-handler-general.c`), `datafile.c` and
-`obj-init.c`. Three commits are the C Borg's (`src/borg`, not built here; the
+`obj-init.c`. Three commits are the C Borg's (`src/borg`; the
 fixes are carried into borg-core and listed in `engine/upstream-borg.txt`);
 the rest are CI, Windows and SDL2. The patch series applied unchanged (two
 hunks at new offsets: 02, 5 lines; 09, 2 lines), the core source list is
@@ -118,8 +118,8 @@ Our CMake project (docs/SPEC.md §3.6; task TE.4):
   remade by `engine/apply-patches.sh` whenever a patch changes), our
   frontend, and the Rust Borg's staticlib (`cargo build -p borg-reborn-rs
   --features borgh`), into `game/angband`, with the data in `game/lib`;
-- it does not build the C Borg (`src/borg/`): the Rust Borg exports
-  `do_cmd_borg` in its place;
+- it builds CBorg (`src/borg/`) alongside the Rust static library. The
+  shared Ctrl-Z prompt defaults to PBorg and accepts `B` to switch Borgs;
 - the source list is a copy of upstream's (`engine/sources.cmake`, 150 of
   upstream's 209 core sources: all but the 59 of `src/borg/`), and
   `engine/tests/test_build.py` checks that it is upstream's list minus the C

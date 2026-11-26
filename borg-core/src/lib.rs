@@ -122,10 +122,9 @@ pub(crate) mod core_trace;
 // borg-reborn-rs (#403): pure class/family attack ranking.
 pub(crate) mod attack_preference;
 
-/// The `^Z` command of this core (borg-reborn-rs #207): the shell's
-/// `do_cmd_borg` calls it when `BORG_CORE=borg-rs` selects this core.
-pub fn do_cmd_borg() {
-    engine::do_cmd_borg()
+/// Run a key from the shared Borg command prompt.
+pub fn do_cmd_borg_key(cmd: u8) {
+    engine::do_cmd_borg_key(cmd)
 }
 
 // Owner-requested class/level errand-plan POC (#305).

@@ -24,7 +24,7 @@ use crate::borg_headers::borg_h::{
     BORG_STOP_DLEVEL, BORG_STOP_KING, BORG_USES_DYNAMIC_CALCS,
 };
 use crate::headers::game_event_h::{
-    game_event_data, game_event_type, EVENT_LEAVE_GAME, EVENT_MESSAGE_FLUSH,
+    game_event_data, game_event_type, EVENT_LEAVE_GAME,
 };
 use crate::headers::list_options_h::{
     OPT_birth_connect_stairs, OPT_birth_force_descend, OPT_birth_no_recall,
@@ -339,7 +339,7 @@ fn borg_free_txt_file(st: &mut BorgState) {
 }
 
 /// What the borg.txt parser reads from and writes to: the open file, the
-/// formula loader and the outputs. The game uses [`TxtFile`]; the unit
+/// formula loader and the outputs. The game uses [`ConfigLines`]; the unit
 /// tests use a fake.
 pub(crate) trait TxtEnv {
     fn st(&mut self) -> &mut BorgState;
@@ -353,25 +353,34 @@ pub(crate) trait TxtEnv {
     fn term_fresh(&mut self);
 }
 
-/// The borg.txt of the game (`None` once closed).
-struct TxtFile<'a> {
+/// The PBorg configuration after decoding YAML and before legacy validation.
+struct ConfigLines<'a> {
     st: &'a mut BorgState,
-    fp: Option<engine::ReadFile>,
+    lines: std::str::Lines<'a>,
 }
 
-impl TxtEnv for TxtFile<'_> {
+impl ConfigLines<'_> {
+    fn next_line(lines: &mut std::str::Lines<'_>, buf: &mut [u8], len: usize) -> bool {
+        let Some(line) = lines.next() else { return false };
+        let bytes = line.as_bytes();
+        let count = bytes.len().min(len - 1);
+        buf[..count].copy_from_slice(&bytes[..count]);
+        buf[count] = 0;
+        true
+    }
+}
+
+impl TxtEnv for ConfigLines<'_> {
     fn st(&mut self) -> &mut BorgState {
         self.st
     }
     fn getl(&mut self, buf: &mut [u8; TXT_BUF]) -> bool {
-        self.fp
-            .as_mut()
-            .expect("borg.txt is open")
-            .getl(buf, TXT_BUF - 1)
+        Self::next_line(&mut self.lines, buf, TXT_BUF - 1)
     }
     fn load_formulas(&mut self) {
-        let fp = self.fp.as_mut().expect("borg.txt is open");
-        crate::borg_formulas::borg_load_formulas_from(self.st, |buf, len| fp.getl(buf, len));
+        crate::borg_formulas::borg_load_formulas_from(self.st, |buf, len| {
+            Self::next_line(&mut self.lines, buf, len)
+        });
     }
     fn warning(&mut self, what: &str) {
         borg_warning(self.st, what);
@@ -383,6 +392,7 @@ impl TxtEnv for TxtFile<'_> {
 
 /// The default borg.txt that `borg_init_txt_file()` writes when there is
 /// none (each piece is one `file_putf()`).
+#[cfg(test)]
 pub(crate) fn default_txt_file() -> Vec<Vec<u8>> {
     let mut out: Vec<Vec<u8>> = vec![
         b"# BORG.txt default settings \n".to_vec(),
@@ -682,14 +692,7 @@ fn judged(common: &[i32], values: &[(usize, i32)]) -> (bool, Vec<&'static str>) 
     (cfg != before, errors)
 }
 
-/// Initialize borg.txt (`borg_init_txt_file`). Returns whether a warning
-/// was given.
-///
-/// The config starts with the default values before borg.txt is opened, so
-/// a borg.txt that is missing and cannot be written, or cannot be read back,
-/// leaves the defaults in place (milestone6 patch 0059; before it, C read
-/// through a NULL `borg_cfg` and the first Rust `cfg` read panicked;
-/// c-bugs.md section 38).
+/// Initialize PBorg from pborg.yaml. Returns whether a warning was given.
 pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
     borg_free_txt_file(st);
     crate::borg_trait::borg_trait_init(st);
@@ -702,51 +705,10 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
         st.init.init_failure = true;
     }
 
-    // allocate the config data and start it with the default values, so
-    // every early return below leaves the defaults in place
-    st.core.cfg = BORG_SETTINGS.iter().map(|s| s.default_value).collect();
-
-    let path = engine::path_build_user(TXT_BUF, b"borg.txt");
-
-    // Open the file
-    let mut fp = engine::file_open_read(&path);
-
-    // No file, use defaults
-    if fp.is_none() {
-        // Complain
-        engine::msg(st, b"*****WARNING***** You do not have a proper BORG.TXT file!");
-        engine::msg(st, b"writing borg.txt to the \\user\\ subdirectory with default values");
-        engine::msg(st, &[b"Which is: ".as_slice(), &path].concat());
-        engine::event_signal(st, EVENT_MESSAGE_FLUSH);
-
-        let Some(mut out) = engine::file_open(&path, engine::WriteMode::Write) else {
-            borg_warning(
-                st,
-                "*****WARNING***** unable to write default BORG.TXT file!",
-            );
-            return true;
-        };
-        for piece in default_txt_file() {
-            // file_putf(fp, ...): file_put of the formatted text
-            out.put(&piece);
-        }
-        out.close();
-        fp = engine::file_open_read(&path);
-        if fp.is_none() {
-            borg_warning(st, "*****WARNING***** unable to read default BORG.TXT file!");
-            return true;
-        }
-    }
-
-    let fp = fp.expect("borg.txt opened above");
-    let mut file = TxtFile { st, fp: Some(fp) };
+    let text = crate::shell::borg_txt_contents()
+        .unwrap_or_else(|error| crate::shell::config_file_error(error));
+    let mut file = ConfigLines { st, lines: text.lines() };
     let (formulas_found, old_formulas_found) = read_txt_settings(&mut file);
-
-    // Close it
-    if let Some(fp) = file.fp.take() {
-        fp.close();
-    }
-
     let warning = finish_txt_settings(&mut file, formulas_found, old_formulas_found);
     // borg-reborn-rs (#520): the common values of the settings with class
     // lines, then the current character's class lines (a reload with `$`
@@ -1025,7 +987,7 @@ pub fn borg_init(st: &mut BorgState) {
     // Initialize borg.ini options
 
     // Message
-    borg_note(st, "Initializing the Borg... (borg.txt)");
+    borg_note(st, "Initializing PBorg... (pborg.yaml)");
     let warning_given = borg_init_txt_file(st);
 
     // Initialize game options

@@ -11,7 +11,7 @@
 # (macOS: Homebrew's) and Python 3.
 # The package plays what a harness run plays: harness/borg.txt (class files
 # folded in) and its scary list, prepared as harness/run.sh prepares a run's
-# user/borg.txt, written into the package's lib/user/, which a game started
+# user/pborg.yaml, written into the package's lib/user/, which a game started
 # directly reads (no launcher is shipped).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -70,12 +70,12 @@ for b in "${BUILDS[@]}"; do
     fi
 done
 
-# The Borg's settings, as harness/run.sh writes a run's user/borg.txt
-# before it substitutes the run's race and class (harness/prepare-borg-txt.sh,
+# The Borg's settings, as harness/run.sh writes a run's user/pborg.yaml
+# before it substitutes the run's race and class (harness/prepare-pborg-config.sh,
 # shared with watch-borg.sh and harness/play.sh).
-BT="$STAGE/borg/borg.txt"
-"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/borg"
-# The class files are already folded into borg.txt; shipped for reading.
+BT="$STAGE/borg/pborg.yaml"
+"$ROOT/harness/prepare-pborg-config.sh" "$STAGE/borg"
+# The class files are already folded into pborg.yaml; shipped for reading.
 cp "$ROOT"/harness/borg_*.txt "$STAGE/borg/class/"
 cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 
@@ -88,7 +88,7 @@ cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 # that game plays the borg-rs core as the launchers' do (#826).
 rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user"
 mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
-"$ROOT/harness/prepare-borg-txt.sh" "$STAGE/lib/user"
+"$ROOT/harness/prepare-pborg-config.sh" "$STAGE/lib/user"
 
 # The short guide. The game is started directly (angband, angband.exe): the
 # owner, for v0.1.0-alpha.1, ships no launcher and no headless runner (lib/
@@ -139,7 +139,7 @@ ENGINE=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")
     echo "angband:         upstream $ENGINE, unchanged (engine/angband/), with the"
     echo "                 harness hooks of engine/patches/ and the borgh frontend"
     echo "borg core:       borg-rs, vendored as borg-core/ ($(head -1 "$ROOT/borg-core/PIN"))"
-    echo "settings:        borg/borg.txt sha256 $(sha "$BT")"
+    echo "settings:        borg/pborg.yaml sha256 $(sha "$BT")"
     echo "                 (from harness/borg.txt sha256 $(sha "$ROOT/harness/borg.txt"))"
     echo "source_sha256:   $SRC"
     echo "executables:     $(for b in "${BUILDS[@]}"; do printf '%s%s ' "${b%%=*}" "$EXE"; done)"

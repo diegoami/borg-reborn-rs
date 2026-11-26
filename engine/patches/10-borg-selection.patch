@@ -1,0 +1,88 @@
+Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
+
+--- a/src/cmd-misc.c
++++ b/src/cmd-misc.c
+@@ -109,6 +109,32 @@
+ 
+ extern void do_cmd_borg(void);
+ 
++#ifdef BORG_HARNESS
++extern void do_cmd_cborg_key(int cmd);
++extern void do_cmd_pborg(unsigned char cmd);
++
++static bool use_cborg;
++
++static void do_cmd_selected_borg(void)
++{
++	const char *prompt = use_cborg
++		? "CBorg command (? for help, B for PBorg): "
++		: "PBorg command (? for help, B for CBorg): ";
++	char cmd;
++
++	if (!get_com(prompt, &cmd))
++		return;
++	if (cmd == 'B') {
++		use_cborg = !use_cborg;
++		msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
++	} else if (use_cborg) {
++		do_cmd_cborg_key((unsigned char)cmd);
++	} else {
++		do_cmd_pborg((unsigned char)cmd);
++	}
++}
++#endif
++
+ /*
+  * Verify use of "borg" mode
+  */
+@@ -130,8 +156,12 @@
+ 		player->noscore |= NOSCORE_BORG;
+ 	}
+ 
+ 	/* Okay */
++#ifdef BORG_HARNESS
++	do_cmd_selected_borg();
++#else
+ 	do_cmd_borg();
++#endif
+ }
+ 
+ #endif /* ALLOW_BORG */
+--- a/src/borg/borg-commands.c
++++ b/src/borg/borg-commands.c
+@@ -1554,7 +1554,11 @@
+ /*
+  * Interact with the Borg
+  */
++#ifdef BORG_HARNESS
++void do_cmd_cborg_key(int selected)
++#else
+ void do_cmd_borg(void)
++#endif
+ {
+     int  i;
+     char cmd = 0;
+@@ -1574,6 +1578,11 @@
+     borg.c = player->grid;
+ 
+     /* Get a "Borg command", or abort */
++#ifdef BORG_HARNESS
++    if (selected >= 0)
++        cmd = (char)selected;
++    else
++#endif
+     if (!get_com("Borg command (? for help): ", &cmd)) {
+         /* Restore the screen */
+         Term_load();
+@@ -1611,4 +1620,11 @@
+     return;
+ }
+ 
++#ifdef BORG_HARNESS
++void do_cmd_borg(void)
++{
++    do_cmd_cborg_key(-1);
++}
+ #endif
++
++#endif

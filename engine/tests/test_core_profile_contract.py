@@ -2,7 +2,7 @@
 
 Small contract cells, not a population experiment. Import the zoo's
 committed tree, never its working Python files or cached modules. The run
-uses the adapter unchanged, with no BORG_* environment. The frontend derives
+uses the pinned adapter, converting its historical settings at the game boundary. The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
 
 #540: the environment overrides (BORG_CORE, BORG_ERRAND, BORG_ERRAND_BUDGET,
@@ -51,6 +51,7 @@ class CoreProfileContractTest(unittest.TestCase):
         tree.mkdir()
         checker.pinned_tree(ZOO, pin, tree)
         cls.catalogue, _ = checker.import_zoo(tree)
+        cls.legacy_zoo_command = staticmethod(checker.legacy_zoo_command)
         cls.adapter = importlib.import_module('zoo.borgrs')
         if not Path(cls.adapter.__file__).resolve().is_relative_to(tree):
             raise AssertionError('adapter did not come from the pinned archive')
@@ -78,6 +79,12 @@ class CoreProfileContractTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
+    @staticmethod
+    def write_pborg_config(path, legacy):
+        converted = subprocess.check_output(
+            ['python3', str(ROOT / 'harness/pborg-config.py'), '-'], input=legacy, text=True)
+        (path / 'pborg.yaml').write_text(converted)
+
     def cell(self, name, settings, overrides=None):
         profile = {'description': 'core parameter contract', 'settings': settings}
         cat = {
@@ -94,7 +101,8 @@ class CoreProfileContractTest(unittest.TestCase):
         # No ambient core, errand or parameter override can make this pass.
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides or {})
-        with patch.dict(os.environ, env, clear=True):
+        command = self.legacy_zoo_command(self.adapter.command)
+        with patch.dict(os.environ, env, clear=True), patch.object(self.adapter, 'command', command):
             record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
         self.assertEqual(record['profile_sha256'], self.catalogue.profile_sha256(profile))
         config = (out / 'user/borg.txt').read_text()
@@ -132,7 +140,7 @@ class CoreProfileContractTest(unittest.TestCase):
             text = '\n'.join(l for l in text.splitlines() if l.partition('=')[0].strip() != 'borg_scary_list')
             text += f'\n# direct (#535): scary list sha256 {sha}\nborg_scary_list = {name}\n'
             scary = {'name': name, 'sha256': sha}
-        (out / 'user/borg.txt').write_text(text)
+        self.write_pborg_config(out / 'user', text)
         argv = self.adapter.command(self.build / 'game' / 'angband', out, cell, 0, 0, suite, spec)
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides, TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
@@ -196,7 +204,7 @@ class CoreProfileContractTest(unittest.TestCase):
                 out, record = self.cell(f'invalid-core-{value}', {'borg_reborn_core': value})
                 self.assertIn(record['outcome'], REFUSED, record)
                 self.assertIn('exit code 2', record['error'])
-                self.assertIn('borg.txt borg_reborn_core: invalid core selector',
+                self.assertIn('pborg.yaml borg_reborn_core: invalid core selector',
                               (out / 'stderr.log').read_text())
                 self.assertFalse((out / 'params-core.json').exists())
                 self.assertFalse((out / 'params.json').exists())
@@ -217,8 +225,8 @@ class CoreProfileContractTest(unittest.TestCase):
         # The direct run plays the shipped list, pinned by its hash (#535).
         name = 'scary_monsters.txt'
         self.assertEqual(record['scary_list'], {'name': name, 'sha256': self.scary_lists[name]}, record)
-        self.assertIn(f"scary list sha256 {self.scary_lists[name]}\nborg_scary_list = {name}\n",
-                      (out / 'user/borg.txt').read_text())
+        self.assertIn(f"scary list sha256 {self.scary_lists[name]}\nborg_scary_list: \"{name}\"\n",
+                      (out / 'user/pborg.yaml').read_text())
         self.assertEqual((out / 'user' / name).read_bytes(), (ROOT / 'harness' / name).read_bytes())
 
     def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
@@ -229,7 +237,7 @@ class CoreProfileContractTest(unittest.TestCase):
                 })
                 self.assertIn(record['outcome'], REFUSED, record)
                 self.assertIn('exit code 2', record['error'])
-                self.assertIn('borg.txt borg_reborn_errand: invalid errand selector',
+                self.assertIn('pborg.yaml borg_reborn_errand: invalid errand selector',
                               (out / 'stderr.log').read_text())
                 self.assertFalse((out / 'trace-core.jsonl').exists())
 
@@ -264,7 +272,7 @@ class CoreProfileContractTest(unittest.TestCase):
             })
             self.assertIn(record['outcome'], REFUSED, record)
             self.assertIn('exit code 2', record['error'])
-            self.assertIn('borg.txt borg_reborn_stopscared: invalid stopscared value',
+            self.assertIn('pborg.yaml borg_reborn_stopscared: invalid stopscared value',
                           (out / 'stderr.log').read_text())
         for value in ['bogus', '0', '1001', 'off; /dive 2']:
             out, record = self.direct('invalid-fear-env-' + str(len(value)),

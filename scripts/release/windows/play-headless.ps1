@@ -6,7 +6,7 @@
 # 0 = no limit) or its death, and writes OUTDIR\keys.log, messages.log,
 # state.log and summary.json. RACE and CLASS are indices into
 # lib\gamedata\p_race.txt and class.txt (defaults: seed 101, Human Warrior).
-# The settings are borg\borg.txt with the race and class set, as the source
+# The settings are borg\pborg.yaml with the race and class set, as the source
 # tree's harness/run.sh sets them, so seed 101 0 0 20000 plays the same keys
 # as its smoke-warrior-1 reference.
 param(
@@ -21,11 +21,11 @@ $out = (New-Item -ItemType Directory -Path $OutDir).FullName
 foreach ($d in 'user', 'save', 'archive', 'panic', 'scores') { New-Item -ItemType Directory -Path (Join-Path $out $d) | Out-Null }
 Copy-Item (Join-Path $pkg 'borg\*.txt') (Join-Path $out 'user')
 # The same bytes as the Unix runner writes: UTF-8 without a BOM, LF kept.
-$text = [IO.File]::ReadAllText((Join-Path $pkg 'borg\borg.txt'))
-$text = [Regex]::Replace($text, '(?m)^borg_respawn_race = .*$', "borg_respawn_race = $Race")
-$text = [Regex]::Replace($text, '(?m)^borg_respawn_class = .*$', "borg_respawn_class = $Class")
-$text = [Regex]::Replace($text, '(?m)^borg_cheat_death = .*$', 'borg_cheat_death = FALSE')
-[IO.File]::WriteAllText((Join-Path $out 'user\borg.txt'), $text, (New-Object Text.UTF8Encoding $false))
+$text = [IO.File]::ReadAllText((Join-Path $pkg 'borg\pborg.yaml'))
+$text = [Regex]::Replace($text, '(?m)^borg_respawn_race: .*$', "borg_respawn_race: $Race")
+$text = [Regex]::Replace($text, '(?m)^borg_respawn_class: .*$', "borg_respawn_class: $Class")
+$text = [Regex]::Replace($text, '(?m)^borg_cheat_death: .*$', 'borg_cheat_death: false')
+[IO.File]::WriteAllText((Join-Path $out 'user\pborg.yaml'), $text, (New-Object Text.UTF8Encoding $false))
 # The engine's own paths use '/', which Windows accepts.
 $o = $out -replace '\\', '/'
 $gameArgs = @('-mborgh', '-n', '-uBorg', "-duser=$o/user", "-dsave=$o/save", "-darchive=$o/archive",

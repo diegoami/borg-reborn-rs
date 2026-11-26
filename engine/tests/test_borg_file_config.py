@@ -1,4 +1,4 @@
-"""Actual native startup with missing, malformed and unreadable borg.txt files."""
+"""Actual native startup with missing, malformed and unreadable pborg.yaml files."""
 import json
 import os
 from pathlib import Path
@@ -26,7 +26,7 @@ class BorgFileConfigTest(unittest.TestCase):
         if raw_user:
             user = out / os.fsdecode(b'user-\xff')
             user.mkdir()
-        config = user / 'borg.txt'
+        config = user / 'pborg.yaml'
         if directory:
             config.mkdir()
         elif content is not None:
@@ -50,7 +50,7 @@ class BorgFileConfigTest(unittest.TestCase):
         self.assertTrue((out / 'params.json').is_file())
         self.assertFalse((out / 'params-core.json').exists())
         for core in [0, 1]:
-            out, result = self.launch(f'valid-{core}', f'borg_reborn_core={core}\n'.encode())
+            out, result = self.launch(f'valid-{core}', f'borg_reborn_core: {core}\n'.encode())
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((out / ('params-core.json' if core else 'params.json')).is_file())
             self.assertFalse(json.loads((out / 'summary.json').read_text())['dead'])
@@ -58,16 +58,16 @@ class BorgFileConfigTest(unittest.TestCase):
     def test_invalid_utf8_and_unreadable_paths_do_not_select_a_default_arm(self):
         for core in [0, 1]:
             _, result = self.launch(f'invalid-{core}',
-                                    f'borg_reborn_core={core}\n# '.encode() + b'\xff')
+                                    f'borg_reborn_core: {core}\n# '.encode() + b'\xff')
             self.assertEqual(result.returncode, 2, result.stderr)
-            self.assertIn('cannot read borg.txt', result.stderr)
+            self.assertIn('pborg.yaml: cannot read configuration', result.stderr)
             self.assertIn('UTF-8', result.stderr)
         _, result = self.launch('directory', directory=True)
         self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('cannot read borg.txt', result.stderr)
+        self.assertIn('pborg.yaml: cannot read configuration', result.stderr)
 
     def test_environment_precedence_and_parameter_loader_read_policy(self):
-        content = b'borg_reborn_core=1\n# \xff'
+        content = b'borg_reborn_core: 1\n# \xff'
         out, result = self.launch('env-original', content, {'BORG_CORE': 'reborn'})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((out / 'params.json').is_file())
@@ -75,7 +75,7 @@ class BorgFileConfigTest(unittest.TestCase):
             'BORG_CORE': 'borg-rs', 'BORG_STOPSCARED': 'off', 'BORG_ERRAND': 'none',
         })
         self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('cannot read borg.txt', result.stderr)
+        self.assertIn('pborg.yaml: cannot read configuration', result.stderr)
         plan = self.root / 'explicit-plan.txt'
         plan.write_text('[default]\n  level <= 50\n    max-depth 1\n')
         _, result = self.launch('env-plan-parameters', content, {
@@ -84,10 +84,10 @@ class BorgFileConfigTest(unittest.TestCase):
         })
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn('core parameters:', result.stderr)
-        self.assertIn('cannot read borg.txt', result.stderr)
+        self.assertIn('pborg.yaml: cannot read configuration', result.stderr)
 
     def test_plan_core_isolation_preserves_lazy_environment_priority(self):
-        content = b'borg_reborn_core=0\nborg_plan=missing-plan.txt\n'
+        content = b'borg_reborn_core: 0\nborg_plan: missing-plan.txt\n'
         _, result = self.launch('file-original-plan', content)
         self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn('plans require BORG_CORE=borg-rs', result.stderr)
@@ -102,6 +102,6 @@ class BorgFileConfigTest(unittest.TestCase):
 
     @unittest.skipUnless(os.name == 'posix', 'OS-byte paths require POSIX')
     def test_valid_config_in_a_non_utf8_user_directory(self):
-        out, result = self.launch('raw-path', b'borg_reborn_core=1\n', raw_user=True)
+        out, result = self.launch('raw-path', b'borg_reborn_core: 1\n', raw_user=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertTrue((out / 'params-core.json').is_file())

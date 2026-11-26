@@ -8,7 +8,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,7 +16,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--plan', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
-    p.add_argument('--via-borg-txt', action='store_true', help='select user/errands_plan.txt through borg_plan in borg.txt')
+    p.add_argument('--via-pborg-yaml', '--via-borg-txt', dest='via_pborg_yaml', action='store_true',
+                   help='select user/errands_plan.txt through borg_plan in pborg.yaml')
     p.add_argument('--seed', type=int, default=1010)
     p.add_argument('--race', type=int, default=0)
     p.add_argument('--class', dest='class_index', type=int, default=0)
@@ -30,19 +30,14 @@ def main():
     out = a.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
     for name in ['user','save','archive','panic','scores']: (out/name).mkdir()
-    shutil.copy2(ROOT/'harness/borg.txt',out/'user/borg.txt')
-    # #535: the scary list the shipped borg.txt names travels with it.
-    for line in (out/'user/borg.txt').read_text().splitlines():
-        key, _, value = line.partition('=')
-        if key.strip() == 'borg_scary_list' and value.strip() not in ('', 'none'):
-            shutil.copy2(ROOT/'harness'/value.strip(), out/'user'/value.strip())
+    subprocess.run([str(ROOT/'harness/prepare-pborg-config.sh'), str(out/'user')], check=True)
     source = out/'errands_plan.input.txt';source.write_bytes(plan)
     exe = a.binary.resolve()
     env = {k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
     env.update(BORG_CORE='borg-rs',BORG_ERRANDS_PLAN=str(source),BORG_RUN_DIR=str(out),LANG='C.UTF-8',LC_ALL='C.UTF-8',TZ='UTC')
-    if a.via_borg_txt:
+    if a.via_pborg_yaml:
         (out/'user/errands_plan.txt').write_bytes(plan)
-        with (out/'user/borg.txt').open('a') as f: f.write('\nborg_plan = errands_plan.txt\n')
+        with (out/'user/pborg.yaml').open('a') as f: f.write('\nborg_plan: errands_plan.txt\n')
         env.pop('BORG_ERRANDS_PLAN',None)
     command = [str(exe),'-mborgh','-n']+[f'-d{k}={out/k}' for k in ['user','save','archive','panic','scores']]
     command += ['-uPlanPOC','--','-seed',str(a.seed),'-race',str(a.race),'-class',str(a.class_index),'-menu-letters','-turns',str(a.turns),'-keylog',str(out/'keys.log'),'-msglog',str(out/'messages.log'),'-statelog',str(out/'state.log'),'-summary',str(out/'summary.json')]

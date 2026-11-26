@@ -24,7 +24,7 @@
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
 #   (docs/SPEC.md §6). Its default core (borg-rs's, #606) reads the run's
-#   user/borg.txt (borg_* settings, borg_param_*, borg_reborn_*); the reborn
+#   user/pborg.yaml (borg_* settings, borg_param_*, borg_reborn_*); the reborn
 #   core (BORG_CORE=reborn) reads BORG_PROFILE instead.
 #   Env: BORG_IMPL=rust (the default; build/rust), ANGBAND_BIN (override binary)
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
@@ -57,7 +57,7 @@
 # Produces OUTDIR/keys.log (the oracle), OUTDIR/messages.log (every message
 # added to the message log, Borg notes included), OUTDIR/state.log (one
 # engine-state line per key), OUTDIR/summary.json, OUTDIR/stderr.log,
-# OUTDIR/config.txt (flags and sha256 of the run's user/borg.txt; not part of
+# OUTDIR/config.txt (flags and sha256 of the run's pborg.yaml; not part of
 # the oracle, harness/diff does not read it)
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -240,19 +240,19 @@ if [ "${BORG_CORE_OVERRIDES:-on}" = off ] && [ -z "${BORG_CORE+set}" ]; then
     export BORG_CORE=borg-rs
 fi
 [ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
-# The run's user/borg.txt: the default borg-rs core reads it (the reborn
+# The run's pborg.yaml: the default borg-rs core reads it (the reborn
 # core does not), the zoo's adapter copies harness/borg.txt
 # (docs/ZOO-INTERFACE.md) and its hash is part of a death's encounter family.
 sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
-    "$BORG_TXT" > "$OUT/user/borg.txt"
+    "$BORG_TXT" > "$OUT/pborg-legacy.txt"
 # #606 (owner): a run with no BORG_CORE plays the core harness/borg.txt
 # names (borg_reborn_core = borg-rs), the one the zoo runs and the one that
 # reads this file. BORG_CORE=reborn selects the reborn core (it reads the
 # profile above, not this file); its run's borg.txt says so, so the file and
 # its hash describe the core that played (review of #607).
-[ "${BORG_CORE:-}" = reborn ] && sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"
+[ "${BORG_CORE:-}" = reborn ] && sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/pborg-legacy.txt"
 # BORG_TXT_SET="name=value;name=value": rewrite existing keys of the run's
 # borg.txt (a test pinning a setting whose shipped default moved, #479).
 if [ -n "${BORG_TXT_SET:-}" ]; then
@@ -261,12 +261,12 @@ if [ -n "${BORG_TXT_SET:-}" ]; then
         name="${kv%%=*}"; value="${kv#*=}"
         [[ "$kv" == *=* && "$name" =~ ^[A-Za-z0-9_]+$ && "$value" =~ ^[A-Za-z0-9_.-]+$ ]] || {
             echo "run.sh: BORG_TXT_SET: invalid entry '$kv' (name=value, [A-Za-z0-9_.-])" >&2; exit 2; }
-        grep -q "^$name = " "$OUT/user/borg.txt" || { echo "run.sh: BORG_TXT_SET: no key $name in borg.txt" >&2; exit 2; }
-        sed -i "s/^$name = .*/$name = $value/" "$OUT/user/borg.txt"
+        grep -q "^$name = " "$OUT/pborg-legacy.txt" || { echo "run.sh: BORG_TXT_SET: no key $name in borg.txt" >&2; exit 2; }
+        sed -i "s/^$name = .*/$name = $value/" "$OUT/pborg-legacy.txt"
     done
 fi
 # A plan selected in the borg.txt itself would escape the identity below.
-if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
+if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/pborg-legacy.txt"; then
     echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
     exit 2
 fi
@@ -277,7 +277,7 @@ fi
 # A copied list goes next to the run's borg.txt; its one selecting line is
 # rewritten with the list's SHA-256, so its bytes are part of
 # borg_txt_sha256, and config.txt records its name and hash.
-SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$OUT/pborg-legacy.txt" | tail -1 | tr -d '[:space:]')"
 SCARY_SRC=""; SCARY_SHA=""
 if [ -n "$SCARY" ]; then
     SCARY_SRC="$SCARY"; SCARY_NAME="$(basename "$SCARY")"
@@ -290,9 +290,9 @@ if [ -n "$SCARY_SRC" ]; then
     [ -f "$SCARY_SRC" ] || { echo "run.sh: scary list $SCARY_SRC: no such file" >&2; exit 2; }
     cp "$SCARY_SRC" "$OUT/user/$SCARY_NAME"
     SCARY_SHA="$(sha256sum < "$SCARY_SRC" | cut -d' ' -f1)"
-    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$OUT/user/borg.txt"
+    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$OUT/pborg-legacy.txt"
     printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
-        "$SCARY_SHA" "$SCARY_NAME" >> "$OUT/user/borg.txt"
+        "$SCARY_SHA" "$SCARY_NAME" >> "$OUT/pborg-legacy.txt"
 fi
 # A world (#704): game data with some monsters more common, generated by
 # scripts/make-world.py from the game's own lib/ (the engine is upstream byte
@@ -304,7 +304,7 @@ fi
 # The key line is always replaced by a comment with the config's and the
 # data's SHA-256, so the core never reads it and the world is part of
 # borg_txt_sha256; config.txt records the name and both hashes.
-WORLD_NAME="$(sed -n 's/^[[:space:]]*borg_world[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+WORLD_NAME="$(sed -n 's/^[[:space:]]*borg_world[[:space:]]*=[[:space:]]*//p' "$OUT/pborg-legacy.txt" | tail -1 | tr -d '[:space:]')"
 WORLD_SRC=""; WORLD_SHA=""; WORLD_DATA_SHA=""
 if [ -n "${BORG_WORLD:-}" ]; then
     WORLD_SRC="$BORG_WORLD"; WORLD_NAME="$(basename "$BORG_WORLD" .txt)"
@@ -315,7 +315,7 @@ elif [ -n "$WORLD_NAME" ] && [ "$WORLD_NAME" != none ]; then
         echo "run.sh: world name '$WORLD_NAME': a plain name is expected" >&2; exit 2; }
     WORLD_SRC="$ROOT/harness/worlds/$WORLD_NAME.txt"
 fi
-sed -i '/^[[:space:]]*borg_world[[:space:]]*=/d' "$OUT/user/borg.txt"
+sed -i '/^[[:space:]]*borg_world[[:space:]]*=/d' "$OUT/pborg-legacy.txt"
 if [ -n "$WORLD_SRC" ]; then
     [ -f "$WORLD_SRC" ] || { echo "run.sh: world $WORLD_SRC: no such file" >&2; exit 2; }
     [ -z "${BORGH_DATA_ROOT:-}" ] || { echo "run.sh: a world and BORGH_DATA_ROOT together" >&2; exit 2; }
@@ -324,7 +324,7 @@ if [ -n "$WORLD_SRC" ]; then
         echo "run.sh: world $WORLD_NAME: $(tail -1 "$OUT/world.log")" >&2; exit 2; }
     BORGH_DATA_ROOT="$OUT/world"
     printf '\n# harness/run.sh (#704): world %s, config sha256 %s, data sha256 %s\n' \
-        "$WORLD_NAME" "$WORLD_SHA" "$WORLD_DATA_SHA" >> "$OUT/user/borg.txt"
+        "$WORLD_NAME" "$WORLD_SHA" "$WORLD_DATA_SHA" >> "$OUT/pborg-legacy.txt"
 fi
 if [ -n "$PLAN" ]; then
     # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the
@@ -334,8 +334,10 @@ if [ -n "$PLAN" ]; then
     PLAN_SHA="$(sha256sum < "$PLAN" | cut -d' ' -f1)"
     PLAN_NAME="${PLAN#"$ROOT"/}"
     printf '\n# harness/run.sh (#352): errands plan sha256 %s\nborg_plan = errands_plan.txt\n' \
-        "$PLAN_SHA" >> "$OUT/user/borg.txt"
+        "$PLAN_SHA" >> "$OUT/pborg-legacy.txt"
 fi
+# Keep the legacy snapshot outside the game user directory for encounter identity.
+python3 "$ROOT/harness/pborg-config.py" "$OUT/pborg-legacy.txt" > "$OUT/user/pborg.yaml"
 {
     echo "flags=$FLAGS"
     [ -z "$START_MONSTERS" ] || echo "start_monsters=$START_MONSTERS"
@@ -349,7 +351,8 @@ fi
         echo 'dungeon_mode=one_way'
         echo 'synthetic_contract=borg-reborn-rs/synthetic-start@2'
     fi
-    echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
+    echo "borg_txt_sha256=$(sha256sum < "$OUT/pborg-legacy.txt" | cut -d' ' -f1)"
+    echo "pborg_yaml_sha256=$(sha256sum < "$OUT/user/pborg.yaml" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
         # The loaded save's hash is part of a death's encounter family.
         echo "save_sha256=$(sha256sum < "$OUT/save/input.save" | cut -d' ' -f1)"
@@ -374,7 +377,7 @@ fi
     # Never empty: a borg.txt naming no core plays the game's compiled
     # fallback, the reborn core (review of #607).
     if [ -z "${BORG_CORE+set}" ]; then
-        core="$(sed -n 's/^borg_reborn_core = //p' "$OUT/user/borg.txt" | head -1)"
+        core="$(sed -n 's/^borg_reborn_core = //p' "$OUT/pborg-legacy.txt" | head -1)"
         echo "borg_core=${core:-reborn}"
     fi
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi

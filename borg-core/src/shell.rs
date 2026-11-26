@@ -228,23 +228,20 @@ pub(crate) const CLASSES: [&str; 9] = [
     "blackguard",
 ];
 
-/// A setting of the run's `borg.txt` (`ANGBAND_DIR_USER/borg.txt`).
-/// All shell and plan callers share the strict missing/read-error policy.
+pub(crate) const PBORG_CONFIG: &[u8] = b"pborg.yaml";
+
+/// The same configuration supplies the shell, parameter registry and command core.
 pub fn borg_txt_setting(name: &str) -> Option<String> {
-    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt"))
-        .unwrap_or_else(|error| config_file_error(error));
-    borg_txt_setting_at(&path, name)
+    let text = borg_txt_contents().unwrap_or_else(|error| config_file_error(error));
+    find_setting(&text, name)
 }
 
-/// borg-reborn-rs (#704, review of #740): `borg_txt_setting` that never
-/// reports a file it cannot read: `None` instead, so a check that runs before
-/// the parameter loader leaves the loader's own error to the loader.
+/// Leave reporting to the strict loader when a probe runs before initialization.
 pub(crate) fn borg_txt_setting_lenient(name: &str) -> Option<String> {
-    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt")).ok()?;
-    borg_txt_value_at(&path, name).ok().flatten()
+    find_setting(&borg_txt_contents().ok()?, name)
 }
 
-fn config_file_error(error: String) -> ! {
+pub(crate) fn config_file_error(error: String) -> ! {
     eprintln!("borg-reborn-rs: configuration: {error}");
     std::process::exit(2)
 }
@@ -258,7 +255,7 @@ fn borg_txt_path(bytes: Vec<u8>) -> Result<std::path::PathBuf, String> {
     #[cfg(not(unix))]
     {
         String::from_utf8(bytes).map(std::path::PathBuf::from)
-            .map_err(|error| format!("invalid borg.txt path: {error}"))
+            .map_err(|error| format!("invalid pborg.yaml path: {error}"))
     }
 }
 
@@ -266,28 +263,72 @@ fn read_borg_txt(path: &std::path::Path) -> Result<String, String> {
     match std::fs::read_to_string(path) {
         Ok(text) => Ok(text),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
-        Err(error) => Err(format!("{}: cannot read borg.txt: {error}", path.display())),
+        Err(error) => Err(format!("{}: cannot read configuration: {error}", path.display())),
     }
 }
 
-/// The parameter loader shares the same missing-file and read-error policy.
-pub(crate) fn borg_txt_contents() -> Result<String, String> {
-    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt"))?;
-    read_borg_txt(&path)
+/// Adapt the YAML mapping in memory to the legacy core's line-oriented
+/// validators. No borg.txt is opened or produced by PBorg.
+fn yaml_settings(text: &str) -> Result<String, String> {
+    use serde_yaml_ng::Value;
+    use std::fmt::Write;
+
+    let settings: Option<serde_yaml_ng::Mapping> =
+        serde_yaml_ng::from_str(text).map_err(|error| error.to_string())?;
+    let mut lines = String::new();
+    let mut formulas = None;
+    for (key, value) in settings.into_iter().flatten() {
+        let name = key.as_str().ok_or("setting names must be strings")?;
+        if name == "formulas" {
+            formulas = Some(value.as_str().ok_or("formulas must be a string")?.to_owned());
+            continue;
+        }
+        if !name.starts_with("borg_")
+            || !name.bytes().all(|c| c.is_ascii_alphanumeric() || b"_@".contains(&c))
+        {
+            return Err(format!("invalid setting name {name:?}"));
+        }
+        let scalar = match value {
+            Value::String(value) => value,
+            Value::Bool(value) => if value { "TRUE" } else { "FALSE" }.to_owned(),
+            Value::Number(value) if value.is_i64() || value.is_u64() => value.to_string(),
+            _ => return Err(format!("{name}: expected a string, integer or boolean")),
+        };
+        if scalar.contains(['\n', '\r', '\0']) || name.len() + scalar.len() + 3 >= 1023 {
+            return Err(format!("{name}: expected a short, single-line value"));
+        }
+        writeln!(lines, "{name} = {scalar}").expect("writing to a String");
+    }
+    if let Some(formulas) = formulas {
+        lines.push_str("[BEGIN FORMULA SECTION]\n");
+        lines.push_str(&formulas);
+        lines.push_str("\n[END FORMULA SECTION]\n");
+    }
+    Ok(lines)
 }
 
+pub(crate) fn borg_txt_contents() -> Result<String, String> {
+    let path = borg_txt_path(engine::path_build_user(1024, PBORG_CONFIG))?;
+    yaml_settings(&read_borg_txt(&path)?).map_err(|error| format!("{}: {error}", path.display()))
+}
+
+#[cfg(test)]
 fn borg_txt_setting_at(path: &std::path::Path, name: &str) -> Option<String> {
     borg_txt_value_at(path, name).unwrap_or_else(|error| config_file_error(error))
 }
 
+#[cfg(test)]
 pub(crate) fn borg_txt_value_at(path: &std::path::Path, name: &str) -> Result<Option<String>, String> {
-    let text = read_borg_txt(path)?;
-    Ok(text.lines()
+    Ok(find_setting(&read_borg_txt(path)?, name))
+}
+
+fn find_setting(text: &str, name: &str) -> Option<String> {
+    text.lines()
         .map(str::trim)
         .filter(|l| !l.starts_with('#'))
         .filter_map(|l| l.split_once('='))
         .find(|(n, _)| n.trim() == name)
-        .map(|(_, v)| v.trim().to_string()))
+        .map(|(_, v)| v.trim().to_string())
 }
 
 /// The default ladders by class (`borg-core/ladders.txt`), or the file
@@ -1390,7 +1431,7 @@ mod tests {
         std::fs::write(&path, b"borg_reborn_core = 1\n# \xff").unwrap();
         let error = read_borg_txt(&path).unwrap_err();
         assert!(error.contains("borg.txt") && error.contains("UTF-8"));
-        assert!(read_borg_txt(&root).unwrap_err().contains("cannot read borg.txt"));
+        assert!(read_borg_txt(&root).unwrap_err().contains("cannot read configuration"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -1423,7 +1464,7 @@ mod tests {
             .args(["--exact", "shell::tests::config_file_is_checked_again_on_reentry", "--nocapture"])
             .env("BORG_CONFIG_TEST_PATH", &path).output().unwrap();
         assert_eq!(result.status.code(), Some(2), "{:?}", result);
-        assert!(String::from_utf8_lossy(&result.stderr).contains("cannot read borg.txt"));
+        assert!(String::from_utf8_lossy(&result.stderr).contains("cannot read configuration"));
         std::fs::remove_dir_all(root).unwrap();
     }
 

@@ -30,7 +30,9 @@ class PhaseStockTest(unittest.TestCase):
             save = source.read('town.save')
             self.assertEqual(hashlib.sha256(save).hexdigest(), FIXTURE['save_sha256'])
             (out / 'input.save').write_bytes(save)
-            (out / 'user/borg.txt').write_bytes(source.read('borg.txt'))
+            config = subprocess.check_output(['python3', str(ROOT / 'harness/pborg-config.py'), '-'],
+                                             input=source.read('borg.txt'))
+            (out / 'user/pborg.yaml').write_bytes(config)
             env = {k: v for k, v in os.environ.items()
                    if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
             env.update(BORG_CORE='borg-rs', BORG_ERRAND='/shopping',

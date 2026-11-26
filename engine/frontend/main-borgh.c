@@ -28,7 +28,7 @@
  * What it does:
  *  - provides an 80x24 terminal that draws nothing and never sleeps;
  *  - feeds a scripted key sequence that creates a character (given race and
- *    class, point-based stats, default name) and then sends ^Z z to start
+ *    class, point-based stats, default name) and then sends Ctrl-Z z to start
  *    the Borg;
  *  - logs every key returned by inkey_hack (one line per key:
  *    "<game turn> <event type> <key code hex> <mods hex>");
@@ -39,6 +39,7 @@
  *  - writes a JSON summary on exit.
  *
  * Usage: angband -mborgh -n -u<name> -d... -- [options]
+ *   -cborg           switch to CBorg through the normal command prompt
  *   -seed N       seed the game RNG (also settable with $ANGBAND_SEED)
  *   -race N       race index (0-based, as in p_race.txt); explicit only
  *   -class N      class index (0-based, as in class.txt); explicit only
@@ -190,11 +191,12 @@ static unsigned long keys_logged = 0;
 static struct timeval start_tv;
 static bool finished = false;
 static bool borg_started = false;
+static bool opt_cborg = false;
 static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
 
 /* Scripted keys (before the Borg is running) */
 #define SCRIPT_MAX 64
-#define SCRIPT_START_BORG 0x7fffffff /* marker: set options, then ^Z */
+#define SCRIPT_START_BORG 0x7fffffff /* marker: set options, then Ctrl-Z */
 static keycode_t script[SCRIPT_MAX];
 static int script_len = 0;
 static int script_pos = 0;
@@ -956,7 +958,7 @@ static errr term_xtra_borgh(int n, int v)
 		}
 
 		/*
-		 * A "-more-" prompt after "^Z z" but before the Borg has
+		 * A "-more-" prompt after "Ctrl-Z z" but before the Borg has
 		 * returned any key: borg_init() shows it for a borg.txt
 		 * warning (e.g. borg_uses_dynamic_calcs), before the keypress
 		 * hook is installed.  Answer it with ESC, the same way for
@@ -1062,6 +1064,8 @@ errr init_borgh(int argc, char *argv[])
 		if (streq(argv[i], "-seed")) {
 			borgh_seed = (uint32_t)arg_long(argc, argv, &i);
 			borgh_seed_set = true;
+		} else if (streq(argv[i], "-cborg")) {
+			opt_cborg = true;
 		} else if (streq(argv[i], "-race")) {
 			opt_race = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-class")) {
@@ -1260,8 +1264,12 @@ errr init_borgh(int argc, char *argv[])
 	script_add('y');                          /* accept history */
 	script_add(KC_ENTER);                     /* final confirm */
 	}
-	script_add(SCRIPT_START_BORG);            /* ^Z */
-	script_add('z');                          /* activate borg */
+	script_add(SCRIPT_START_BORG);            /* Ctrl-Z */
+	if (opt_cborg) {
+		script_add('B');                      /* switch PBorg to CBorg */
+		script_add(KTRL('Z'));                /* open CBorg's commands */
+	}
+	script_add('z');                          /* activate selected Borg */
 
 	borgh_turn_hook = borgh_tick;
 	borgh_key_hook = borgh_key;

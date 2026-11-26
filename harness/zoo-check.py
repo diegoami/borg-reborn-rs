@@ -9,8 +9,8 @@ here (docs/SPEC.md §6).
 Loads the zoo at its pin (vendor/borg-zoo, scripts/setup.sh), adds in memory
 one specimen per implementation: kind "borg-rs", repository
 diegoami/borg-reborn-rs, ref = this checkout's HEAD. It then calls the zoo's
-own harness.build and harness.run_cell, exactly as a zoo workflow would. The
-zoo's files are not changed. It prints one line per cell (outcome, max depth,
+own harness.build and harness.run_cell. For a legacy pin it stages YAML
+at the adapter command boundary. It prints one line per cell (outcome, max depth,
 turn, play hash) and exits 1 if a cell is a harness failure or a config error.
 
 Evidence rules (M1 review):
@@ -73,6 +73,17 @@ def import_zoo(tree):
     return catalogue, harness
 
 
+def legacy_zoo_command(command):
+    """Stage YAML at the command boundary of the historical pinned adapter."""
+    def with_pborg_config(binary, destination, *args, **kwargs):
+        user = destination / 'user'
+        with (user / 'pborg.yaml').open('wb') as output:
+            subprocess.run([sys.executable, str(ROOT / 'harness/pborg-config.py'),
+                            str(user / 'borg.txt')], stdout=output, check=True)
+        return command(binary, destination, *args, **kwargs)
+    return with_pborg_config
+
+
 def repatriate(impl, rec, suite, work, cat_mod):
     """Rerun a zoo death through harness/run.sh, check the keys, record the dossier."""
     import hashlib
@@ -110,6 +121,9 @@ def main(argv=None):
     tmp = tempfile.TemporaryDirectory(prefix='zoo-check-pin-')
     tree = pinned_tree(ZOO, pin, tmp.name)
     cat_mod, harness = import_zoo(tree)
+    from zoo import borgrs
+    if not hasattr(borgrs, 'stage_config'):
+        borgrs.command = legacy_zoo_command(borgrs.command)
     cat = cat_mod.catalogue(tree)
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {

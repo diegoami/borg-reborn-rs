@@ -22,7 +22,8 @@ def git(*args):
 
 def strip_guarded(text):
     """The file as a compiler sees it with the harness guards undefined."""
-    return re.sub(r'#ifdef (?:%s)\n(?:.*\n)*?#endif[^\n]*\n' % '|'.join(GUARDS), '', text)
+    pattern = r'#ifdef (?:%s)\n(.*?)(?:^#else\n(.*?))?^#endif[^\n]*\n' % '|'.join(GUARDS)
+    return re.sub(pattern, lambda match: match[2] or '', text, flags=re.M | re.S)
 
 
 def code(text):

@@ -9,6 +9,8 @@ import tempfile
 import unittest
 
 
+from pborg_fixture import write_pborg_config
+
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust/game/angband"
 FEATURE_GAME = ROOT / "build/rust-test/game/angband"
@@ -25,8 +27,8 @@ class ExplorationPackTest(unittest.TestCase):
             paths = {name: root / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            for name in ("borg.txt", "scary_monsters.txt"):
-                shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             build = root / "full.build"
             kit_name = "exploration-full-pack.build" if full_pack else "exploration-town-spares.build"
             kit = (FIXTURES / kit_name).read_text()
@@ -100,7 +102,7 @@ class TownSpareGearTest(unittest.TestCase):
                 path.mkdir()
             config = (ROOT / "harness/borg.txt").read_text()
             self.assertIn("\nborg_town_plan = 1\n", config)
-            (paths["user"] / "borg.txt").write_text(
+            write_pborg_config(paths["user"],
                 config.replace("\nborg_town_plan = 1\n", f"\nborg_town_plan = {planner}\n")
             )
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")

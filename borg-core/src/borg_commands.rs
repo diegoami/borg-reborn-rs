@@ -14,8 +14,8 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 //!
-//! The engine calls `do_cmd_borg` (through `engine::do_cmd_borg`) when the
-//! player presses `^Z`. It asks for a command key and runs the matching
+//! The engine command prompt dispatches PBorg keys to `do_cmd_borg_key`.
+//! Nested command prompts pass through `do_cmd_borg`. Both run the matching
 //! entry of `BORG_COMMANDS`. Every engine call here that can wait for a
 //! key (prompts, menus, targeting, messages and message flushes) takes the
 //! state and lends it to the engine call, as the engine may run a Borg
@@ -77,7 +77,7 @@ struct BorgCommand {
 /// them in this order).
 const BORG_COMMANDS: [BorgCommand; 30] = [
     BorgCommand { selection: b'?', description: "borg command help", function: borg_cmd_help },
-    BorgCommand { selection: b'$', description: "reload borg.txt file", function: borg_cmd_init_txt_file },
+    BorgCommand { selection: b'$', description: "reload pborg.yaml settings", function: borg_cmd_init_txt_file },
     BorgCommand { selection: b'z', description: "activate borg", function: borg_cmd_start },
     BorgCommand { selection: b'x', description: "step the borg", function: borg_cmd_step },
     BorgCommand { selection: b'm', description: "show map information", function: borg_cmd_map },
@@ -1494,10 +1494,6 @@ fn borg_cmd_shop(st: &mut BorgState, key: u8) {
 
 /// Interact with the Borg (`do_cmd_borg`).
 pub fn do_cmd_borg(st: &mut BorgState) {
-    // Set the Borg's player location from the game: the screen has not
-    // been scanned yet, and some commands need the position.
-    st.borg.c = engine::player_grid();
-
     // Get a "Borg command", or abort
     let (ok, cmd) = engine::get_com(st, c"Borg command (? for help): ");
     if !ok {
@@ -1505,6 +1501,14 @@ pub fn do_cmd_borg(st: &mut BorgState) {
         engine::term_load();
         return;
     }
+
+    do_cmd_borg_key(st, cmd);
+}
+
+pub(crate) fn do_cmd_borg_key(st: &mut BorgState, cmd: u8) {
+    // Set the Borg's player location from the game: the screen has not
+    // been scanned yet, and some commands need the position.
+    st.borg.c = engine::player_grid();
 
     // The shop selector: "1" .. "9", "+", "-", ">". The Borg's menu leaves
     // the digits (but "0", the stats) and those three free; in the game

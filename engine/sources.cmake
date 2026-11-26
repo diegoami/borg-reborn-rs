@@ -1,8 +1,4 @@
-# Upstream Angband 574b618c's core sources (CMakeLists.txt, add_library(OurCoreLib
-# OBJECT ...)), without src/borg/*.c: the Rust Borg takes the C Borg's place
-# (docs/SPEC.md §3.6). Copied, not included: upstream's file lists the C Borg
-# inside its core library. engine/tests/test_build.py checks that this list is
-# upstream's minus src/borg/.
+# Upstream Angband core sources, including the C Borg.
 set(ANGBAND_CORE_SOURCES
     src/buildid.c
     src/cave-map.c
@@ -154,4 +150,63 @@ set(ANGBAND_CORE_SOURCES
     src/z-type.c
     src/z-util.c
     src/z-virt.c
+        src/borg/borg-attack-munchkin.c
+        src/borg/borg-caution.c
+        src/borg/borg-cave-light.c
+        src/borg/borg-cave-util.c
+        src/borg/borg-cave-view.c
+        src/borg/borg-cave.c
+        src/borg/borg-commands.c
+        src/borg/borg-danger.c
+        src/borg/borg-escape.c
+        src/borg/borg-fight-attack.c
+        src/borg/borg-fight-defend.c
+        src/borg/borg-fight-perm.c
+        src/borg/borg-flow-dark.c
+        src/borg/borg-flow-glyph.c
+        src/borg/borg-flow-kill.c
+        src/borg/borg-flow-misc.c
+        src/borg/borg-flow-stairs.c
+        src/borg/borg-flow-take.c
+        src/borg/borg-flow.c
+        src/borg/borg-formulas.c
+        src/borg/borg-formulas-calc.c
+        src/borg/borg-home-notice.c
+        src/borg/borg-home-power.c
+        src/borg/borg-init.c
+        src/borg/borg-inventory.c
+        src/borg/borg-io.c
+        src/borg/borg-item-activation.c
+        src/borg/borg-item-analyze.c
+        src/borg/borg-item-decurse.c
+        src/borg/borg-item-enchant.c
+        src/borg/borg-item-id.c
+        src/borg/borg-item-use.c
+        src/borg/borg-item-val.c
+        src/borg/borg-item-wear.c
+        src/borg/borg-item.c
+        src/borg/borg-junk.c
+        src/borg/borg-light.c
+        src/borg/borg-log.c
+        src/borg/borg-magic-play.c
+        src/borg/borg-magic.c
+        src/borg/borg-messages-react.c
+        src/borg/borg-messages.c
+        src/borg/borg-power.c
+        src/borg/borg-prepared.c
+        src/borg/borg-projection.c
+        src/borg/borg-recover.c
+        src/borg/borg-reincarnate.c
+        src/borg/borg-store-buy.c
+        src/borg/borg-store-sell.c
+        src/borg/borg-store.c
+        src/borg/borg-think-dungeon-util.c
+        src/borg/borg-think-dungeon.c
+        src/borg/borg-think-store.c
+        src/borg/borg-think.c
+        src/borg/borg-trait-swap.c
+        src/borg/borg-trait.c
+        src/borg/borg-update.c
+        src/borg/borg-util.c
+        src/borg/borg.c
 )

@@ -32,9 +32,13 @@ Windows:  double-click angband.exe in the unpacked folder (it plays in a
           console window; make it at least 80x24).
 macOS:    in the unpacked folder, ./angband (in the terminal).
 
+PBorg is selected when you launch the game. Ctrl-Z opens the selected
+Borg's command prompt. Press B there to switch Borgs, then use Ctrl-Z, z
+to start the selected Borg. CBorg settings live in lib/user/borg.txt.
+
 Create a character (or load your save), then press Ctrl-Z and then z: the
 Borg plays. Any key stops it and gives you the controls back. Saves are in
-lib/save, the Borg's settings in lib/user/borg.txt (edit it to change a
+lib/save, the Borg's settings in lib/user/pborg.yaml (edit it to change a
 setting); the game must be started from its own folder, which it finds lib/
 in.
 
@@ -45,9 +49,9 @@ What is where
     angband-headless    Linux only: the game without the X11 library, for
                         scripted headless runs (-mborgh)
     lib/                the game's data (upstream's lib/)
-    lib/user/borg.txt   the Borg's settings, which the game reads (the class
+    lib/user/pborg.yaml   the Borg's settings, which the game reads (the class
                         files are folded in)
-    borg/               the shipped settings again, for reference: borg.txt,
+    borg/               the shipped settings again, for reference: pborg.yaml,
                         the class files on their own (class/), the plans
     borg/plans/         errands plans (optional, see docs/ in the source)
     docs/               the Angband manual and, when present, the guide

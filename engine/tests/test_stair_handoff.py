@@ -14,6 +14,8 @@ import tempfile
 import unittest
 
 
+from pborg_fixture import write_pborg_config
+
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust/game/angband"
 TEST_GAME = ROOT / "build/rust-test/game/angband"
@@ -240,7 +242,7 @@ class EmergencyStairHandoffTest(unittest.TestCase):
                     config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                     if changed == 0:
                         config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=case)
@@ -301,7 +303,7 @@ class HealingRestockTest(unittest.TestCase):
             config = (ROOT / "harness/borg.txt").read_text()
             if not live:
                 config = config.replace("borg_town_plan = 1", "borg_town_plan = 0")
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"healing-restock-{case}")
@@ -396,7 +398,7 @@ class LeaveLevelUpstairsTest(unittest.TestCase):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
@@ -472,7 +474,7 @@ class StaleStairMoreTest(unittest.TestCase):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="stale-stair-more")
@@ -546,7 +548,7 @@ class MoreRefusedGatesTest(unittest.TestCase):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="more-refused-gates")
@@ -615,7 +617,7 @@ class NoteStandingFlagsTest(unittest.TestCase):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="note-standing-flags")
@@ -678,7 +680,7 @@ class DarkVeinLoopTest(unittest.TestCase):
             for name, value in pins:
                 config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF=case)
@@ -745,7 +747,7 @@ class BreederDoorLoopTest(unittest.TestCase):
                 config, changed = re.subn(fr"^{key} = .*$", f"{key} = {value}", config, flags=re.M)
                 if changed == 0:
                     config += f"\n{key} = {value}\n"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="breeder-door-loop")
@@ -768,8 +770,8 @@ class StaleKoboldDoorTest(unittest.TestCase):
             paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            for name in ("borg.txt", "scary_monsters.txt"):
-                shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="stale-kobold-door")
             result = subprocess.run(
@@ -814,7 +816,7 @@ class RecoveryManaLoopTest(unittest.TestCase):
             for name, value in pinned:
                 config, changed = re.subn(fr"^{name} = .*$", f"{name} = {value}", config, flags=re.M)
                 assert changed, f"the shipped file ships {name}"
-            (paths["user"] / "borg.txt").write_text(config)
+            write_pborg_config(paths["user"], config)
             shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"recovery-mana-loop-{'on' if on else 'off'}")
