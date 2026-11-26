@@ -632,8 +632,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         }
     }
 
-    // Hack to recharge mana if a low level mage or priest
+    // Combat regeneration drains mana at rest (player-util.c:507).
     if mana_rest_sp_floor(st).is_some_and(|floor| st.borg.tr(BI_CURSP) < floor)
+        && !engine::player_has(crate::headers::list_player_flags_h::PF_COMBAT_REGEN)
         && p < mana_rest_danger_gate(
             param(Param::recover_mana_rest_full_hp) != 0,
             st.borg.tr(BI_CURHP),
