@@ -79,7 +79,7 @@ jobs:
       # and skips it. Those files can change the borg-rs core's play, which
       # this suite never measures: the borg-rs steps below do (the default
       # core's smoke against smoke-borg-rs, #606, plays the shipped
-      # harness/borg.txt), and they run on every PR; the zoo measures more. Any other file, and every push to main or
+      # harness/pborg.yaml), and they run on every PR; the zoo measures more. Any other file, and every push to main or
       # track-p, runs the full suite. On a pull request HEAD is the merge
       # commit and HEAD^1 the base.
       - id: scope
@@ -87,7 +87,7 @@ jobs:
           full=1
           if [ "${{ github.event_name }}" = pull_request ] \
               && ! git diff --name-only HEAD^1 HEAD \
-                | grep -qvE '^(docs/|reference/|borg-core/|harness/borg(_[a-z]+)?\.txt$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$)'; then
+                | grep -qvE '^(docs/|reference/|borg-core/|harness/pborg\.yaml$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$)'; then
               full=0
           fi
           echo "full=$full" >> "$GITHUB_OUTPUT"
@@ -241,7 +241,7 @@ jobs:
       # ... and the same keys, messages and states as the reference (TE.5).
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
-      # #606: the harness default, the borg-rs core (it reads harness/borg.txt),
+      # #606: the harness default, the borg-rs core (it reads harness/pborg.yaml),
       # plays smoke twice with the same keys, and the same keys, messages and
       # states as its own reference.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-borg-rs-1
@@ -299,6 +299,7 @@ jobs:
       - run: python3 engine/tests/test_junk_consumables.py
       - run: python3 engine/tests/test_inferior_spares.py TownSpareSaleTest
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py TownRecallReadinessTest
       - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
       - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
       - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
@@ -308,6 +309,7 @@ jobs:
       - run: python3 engine/tests/test_stair_handoff.py NoteStandingFlagsTest
       - run: python3 engine/tests/test_stair_handoff.py BreederDoorLoopTest
       - run: python3 engine/tests/test_stair_handoff.py StaleKoboldDoorTest
+      - run: python3 engine/tests/test_stair_handoff.py StairScumLootRoutesTest
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_CORE=reborn BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # Full too: smoke has too few monsters to meet every case (T2.5 found

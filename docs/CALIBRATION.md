@@ -1158,8 +1158,8 @@ moved to borg-zoo, so the arms below are a request, not a recommendation.
 |---|---|---|---|---|
 | `town_phase_reserve` | 0 (off) | count | 0–10 | `borg_town_capability.rs:1316` |
 | `town_phase_reserve_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1318` |
-| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2523` |
-| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2523` |
+| `flow_take_phase_short_below` | 0 (off) | count | 0–20 | `borg_flow.rs:2570` |
+| `flow_take_phase_first` | 0 (off) | flag | 0–1 | `borg_flow.rs:2570` |
 | `town_unseen_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:839` |
 | `town_food_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1275` |
 | `town_light_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1256` |
@@ -1482,16 +1482,16 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2530` |
-| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2531` |
-| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2532` |
-| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2533` |
-| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2534` |
-| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2535` |
-| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2536` |
-| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2537` |
-| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2538` |
-| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2539` |
+| `flow_leash_per_level` | 3 | steps per level | 0–100 | `borg_flow.rs:2577` |
+| `flow_leash_base` | 9 | steps | 0–250 | `borg_flow.rs:2578` |
+| `flow_leash_unbounded` | 250 | steps | 0–250 | `borg_flow.rs:2579` |
+| `flow_leash_pickup_max_level` | 20 | level | 0–51 | `borg_flow.rs:2580` |
+| `flow_leash_depth_margin` | 5 | levels | 0–127 | `borg_flow.rs:2581` |
+| `flow_leash_twitch_after` | 21 | twitches | 0–1000 | `borg_flow.rs:2582` |
+| `flow_leash_stairs_max_level` | 20 | level | 0–51 | `borg_flow.rs:2583` |
+| `flow_leash_take_near_max_level` | 10 | level | 0–51 | `borg_flow.rs:2584` |
+| `flow_leash_take_nearness` | 5 | steps | 0–250 | `borg_flow.rs:2585` |
+| `flow_leash_take_max_level` | 20 | level | 0–51 | `borg_flow.rs:2586` |
 
 ## Immobile monsters and blocked stairs (#736)
 
@@ -3360,7 +3360,7 @@ digger 500 gold.
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:967` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:1175` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:3058` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
-| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -5814,26 +5814,26 @@ The offset check starts at DL10, after the light and escape checks. For
 Mage and Necromancer, it applies through CL28, including checks for depths
 past DL19. For the other classes, it applies through DL19. The DL21 class
 gate has its own offset and inclusive CL bounds. Above their DL21 upper CL
-bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 38) through CL44.
-DL34 adds a minimum of CL40. `borg-prepared.c:borg_prepared_aux:221-253`
+bound, Mage and Necromancer require DL ≤ 30 + 2 × (CL − 40) from CL41 through CL46.
+DL34 adds a minimum of CL42. `borg-prepared.c:borg_prepared_aux:221-253`
 and `304-377` at `574b618c`.
 
 | Class | Mixed exploration cap | DL2 min CL / HP | DL3–4 min CL / HP | DL5–9 min CL / HP | DL10 offset | DL21 offset / min CL / max CL |
 |---|---:|---:|---:|---:|---:|---:|
-| Warrior | 5 | 6 / 0 | 7 / 0 | 8 / 0 | −4 | +5 / 0 / 38 |
-| Mage | 8 | 9 / 0 | 11 / 0 | 13 / 0 | +5 | +8 / 0 / 38 |
-| Druid | 7 | 8 / 0 | 10 / 0 | 12 / 0 | 0 | +13 / 0 / 46 |
-| Priest | 9 | 10 / 0 | 12 / 0 | 14 / 0 | 0 | +13 / 0 / 46 |
-| Necromancer | 9 | 10 / 0 | 13 / 0 | 14 / 0 | +5 | +8 / 0 / 38 |
-| Paladin | 8 | 9 / 0 | 10 / 0 | 12 / 0 | 0 | +7 / 0 / 40 |
-| Rogue | 6 | 7 / 0 | 8 / 0 | 10 / 0 | 0 | +10 / 0 / 43 |
-| Ranger | 7 | 8 / 0 | 9 / 0 | 11 / 0 | 0 | +8 / 29 / 41 |
-| Blackguard | 6 | 7 / 0 | 9 / 0 | 10 / 0 | −4 | +5 / 0 / 38 |
+| Warrior | 5 | 6 / 0 | 7 / 0 | 8 / 0 | −4 | +7 / 0 / 40 |
+| Mage | 8 | 9 / 0 | 11 / 0 | 13 / 0 | +5 | +10 / 0 / 40 |
+| Druid | 7 | 8 / 0 | 10 / 0 | 12 / 0 | 0 | +15 / 0 / 48 |
+| Priest | 9 | 10 / 0 | 12 / 0 | 14 / 0 | 0 | +15 / 0 / 48 |
+| Necromancer | 9 | 10 / 0 | 13 / 0 | 14 / 0 | +5 | +10 / 0 / 40 |
+| Paladin | 8 | 9 / 0 | 10 / 0 | 12 / 0 | 0 | +9 / 0 / 42 |
+| Rogue | 6 | 7 / 0 | 8 / 0 | 10 / 0 | 0 | +12 / 0 / 45 |
+| Ranger | 7 | 8 / 0 | 9 / 0 | 11 / 0 | 0 | +10 / 0 / 43 |
+| Blackguard | 6 | 7 / 0 | 9 / 0 | 10 / 0 | −4 | +7 / 0 / 40 |
 
 The compiled defaults preserve older profiles, including an off-by-default
-DL2 CL gate. The shipped cure and Recall requirements, depth margin, and
-mid- and deep-depth settings retain the existing values while the shallow
-policy is measured. The class sections in `harness/pborg.yaml` supply the class
+DL2 CL gate. The shipped DL21 offsets and upper CL bounds are two levels
+higher than the inherited values. Ranger uses the same rule below CL29.
+The class sections in `harness/pborg.yaml` supply the class
 values folded as `borg_param_<name>__<class>` in `harness/borg.txt`.
 Set that class-specific key to sweep a threshold in the zoo.
 The optional `borg_plan` overlay and
@@ -5842,26 +5842,163 @@ retired #693 settings load with a warning and use these checks.
 
 | Parameter | Compiled default | Unit | Range | Source |
 |---|---|---|---|---|
-| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:747` |
-| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:236` |
-| `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:265` |
-| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:257` |
-| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:281` |
-| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:285` |
-| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:293` |
-| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:294` |
-| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:309` |
-| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:313` |
-| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:382` |
-| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:380` |
-| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:378` |
-| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:450` |
-| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:451` |
-| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:449` |
-| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:457` |
-| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:458` |
-| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:459` |
-| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:503` |
+| `prepared_clevel_depth_margin` | 0 | levels | -50–50 | `borg_prepared.rs:896` |
+| `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:240` |
+| `prepared_dl2_min_clevel` | 0 | level | 0–50 | `borg_prepared.rs:277` |
+| `prepared_dl2_min_hp` | 30 | hp | 0–10000 | `borg_prepared.rs:269` |
+| `prepared_dl34_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:293` |
+| `prepared_dl34_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:297` |
+| `prepared_cure_min` | 2 | potions | 0–99 | `borg_prepared.rs:305` |
+| `prepared_cure_until_clevel` | 30 | level | 0–50 | `borg_prepared.rs:306` |
+| `prepared_dl59_min_hp` | By class | hp | 0–10000 | `borg_prepared.rs:321` |
+| `prepared_dl59_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:325` |
+| `prepared_mid_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:410` |
+| `prepared_mid_max_depth` | 19 | depth | 0–127 | `borg_prepared.rs:408` |
+| `prepared_mid_caster_max_clevel` | 28 | level | 0–50 | `borg_prepared.rs:406` |
+| `prepared_deep_clevel_offset` | By class | levels | -50–50 | `borg_prepared.rs:510` |
+| `prepared_deep_min_clevel` | By class | level | 0–50 | `borg_prepared.rs:511` |
+| `prepared_deep_max_clevel` | By class | level | 0–50 | `borg_prepared.rs:509` |
+| `prepared_deep_caster_ramp_max_clevel` | 44 | level | 0–50 | `borg_prepared.rs:517` |
+| `prepared_deep_caster_ramp_base_depth` | 30 | depth | 0–127 | `borg_prepared.rs:518` |
+| `prepared_deep_caster_ramp_depth_per_level` | 2 | levels | 0–127 | `borg_prepared.rs:519` |
+| `prepared_dl34_plus_min_clevel` | 40 | level | 0–50 | `borg_prepared.rs:577` |
+
+### Configurable preparedness and restock bands (#1283)
+
+The approved stricter values are unmeasured hypotheses about readiness.
+The smoke suite reached DL2. The paired DL21+ comparison requested in
+[#1283](https://github.com/diegoami/borg-reborn-rs/issues/1283) remains open.
+
+The shared values are in [`harness/borg.txt`](../harness/borg.txt).
+Append `__<class>` to a key to override it for a class. For example,
+`borg_param_prepared_dl20_min_depth__paladin = 18` moves the Paladin's
+Free Action requirement to DL18. Every other class uses DL19. A band's
+`min_depth` is inclusive, and earlier bands remain in force at later depths.
+A cure or Hold Life check with an `until_clevel` applies below that level.
+
+| Check | Depth | Shipped requirement |
+|---|---:|---|
+| Preparedness | 10 | Light radius 2 (Necromancer 0), 3 teleport or staff escapes, 3 CCW below CL30, and See Invisible, Detect Invisible or telepathy |
+| Preparedness | 19 | Free Action |
+| Preparedness | 21 | Fire resistance, 2 of acid/cold/lightning resistance, STR/spell stat/DEX/CON ≥ 9, and the class-level rules above |
+| Preparedness | 26 | Swap-aware cold, lightning and acid resistance, 8 teleport or staff escapes, and 12 CSW/CCW below CL30 |
+| Preparedness | 34 | CL42 |
+| Preparedness | 39 | Poison and confusion resistance plus STR/spell stat/DEX/CON ≥ 16 |
+| Preparedness | 46 | Speed 117, 2 Healing or 1 *Healing*, 550 max HP in ordinary play, STR 18/40, DEX and CON 18/60, spell stat 18/100, Hold Life below CL50 |
+| Preparedness | 56 | 3 Healing or 2 *Healing*, blindness resistance, and telepathy |
+| Preparedness | 60, 81 | Speed 122 and chaos/disenchantment resistance from DL60, then speed 132 from DL81 |
+| Endgame stock | 82 | 12 *Healing*/Life in either home or pack, 35 across both after visiting DL97, and collect reserves from home after visiting DL99 |
+| Auxiliary Morgoth kit | 100 | 15 Restore Mana above 100 max SP, 5 Healing, 15 *Healing*/Life, and 10 speed potions before defeating Morgoth |
+| Restock | 20 | 5 teleport or staff escapes and 5 CSW/CCW below CL30 |
+| Restock | 36 | 3 Teleport or Teleport Level escapes |
+| Restock | 65 | 2 across Healing, Rod of Healing and *Healing* |
+| Restock | 100 | 17 *Healing* during the first 10 turns |
+
+The shallower supply floors are also configurable. The preparedness defaults
+are radius 1 and 5 food, 5 fuel at DL2+ without light, and 1 Recall where
+`prepared_recall_depth` applies. Restock checks radius 1, fuel when dark, 3
+food from DL2, 1 Phase Door and 1 cure below CL30 from DL6, and from DL10
+radius 2 (Necromancer 0), 2 cures below CL30 and 2 teleport or staff escapes.
+
+The live static entry point evaluates auxiliary preparedness bands only
+through DL99, as it did before #1283. The default Morgoth inventory band
+is retained in that helper. The live DL100 restock and endgame checks
+still run on their existing paths.
+
+| Parameter | Compiled default | Shipped value | Unit | Range | Source |
+|---|---|---|---|---|---|
+| `prepared_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:385` |
+| `prepared_dl10_min_teleports` | 2 | 3 | count | 0–999 | `borg_prepared.rs:394` |
+| `prepared_dl10_cure_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:418` |
+| `prepared_dl10_min_cure_critical` | 3 | 3 | count | 0–999 | `borg_prepared.rs:420` |
+| `prepared_dl10_min_see_invisible_detection_or_esp` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:430` |
+| `prepared_dl10_min_depth` | 10 | 10 | depth | 0–127 | `borg_prepared.rs:382` |
+| `prepared_dl20_min_free_action` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:441` |
+| `prepared_dl20_min_depth` | 20 | 19 | depth | 0–127 | `borg_prepared.rs:438` |
+| `prepared_dl21_min_resist_fire` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:461` |
+| `prepared_dl21_min_strength` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:476` |
+| `prepared_dl21_min_spell_stat` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:485` |
+| `prepared_dl21_min_dexterity` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:493` |
+| `prepared_dl21_min_constitution` | 7 | 9 | stat | 0–118 | `borg_prepared.rs:500` |
+| `prepared_dl21_min_basic_resists` | 2 | 2 | count | 0–3 | `borg_prepared.rs:468` |
+| `prepared_dl21_min_depth` | 21 | 21 | depth | 0–127 | `borg_prepared.rs:449` |
+| `prepared_dl26_min_resist_cold` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:533` |
+| `prepared_dl26_min_resist_electricity` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:540` |
+| `prepared_dl26_min_resist_acid` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:547` |
+| `prepared_dl26_min_teleports` | 6 | 8 | count | 0–999 | `borg_prepared.rs:556` |
+| `prepared_dl26_cure_serious_or_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:564` |
+| `prepared_dl26_min_cure_serious_or_critical` | 10 | 12 | count | 0–999 | `borg_prepared.rs:566` |
+| `prepared_dl26_min_depth` | 26 | 26 | depth | 0–127 | `borg_prepared.rs:530` |
+| `prepared_dl34_min_depth` | 34 | 34 | depth | 0–127 | `borg_prepared.rs:575` |
+| `prepared_dl40_min_resist_poison` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:586` |
+| `prepared_dl40_min_resist_confusion` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:593` |
+| `prepared_dl40_min_strength` | 16 | 16 | stat | 0–118 | `borg_prepared.rs:601` |
+| `prepared_dl40_min_spell_stat` | 16 | 16 | stat | 0–118 | `borg_prepared.rs:610` |
+| `prepared_dl40_min_dexterity` | 16 | 16 | stat | 0–118 | `borg_prepared.rs:618` |
+| `prepared_dl40_min_constitution` | 16 | 16 | stat | 0–118 | `borg_prepared.rs:625` |
+| `prepared_dl40_min_depth` | 40 | 39 | depth | 0–127 | `borg_prepared.rs:450` |
+| `prepared_dl46_min_speed` | 115 | 117 | speed | 0–255 | `borg_prepared.rs:636` |
+| `prepared_dl46_min_star_heal` | 1 | 1 | count | 0–999 | `borg_prepared.rs:644` |
+| `prepared_dl46_min_heal` | 1 | 2 | count | 0–999 | `borg_prepared.rs:646` |
+| `prepared_dl46_min_strength` | 58 | 58 | stat | 0–118 | `borg_prepared.rs:666` |
+| `prepared_dl46_min_spell_stat` | 118 | 118 | stat | 0–118 | `borg_prepared.rs:675` |
+| `prepared_dl46_min_dexterity` | 78 | 78 | stat | 0–118 | `borg_prepared.rs:683` |
+| `prepared_dl46_min_constitution` | 78 | 78 | stat | 0–118 | `borg_prepared.rs:690` |
+| `prepared_dl46_hold_life_until_clevel` | 50 | 50 | level | 0–50 | `borg_prepared.rs:698` |
+| `prepared_dl46_min_hold_life` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:700` |
+| `prepared_dl46_min_max_hp` | 500 | 550 | hp | 0–10000 | `borg_prepared.rs:656` |
+| `prepared_dl46_min_depth` | 46 | 46 | depth | 0–127 | `borg_prepared.rs:451` |
+| `prepared_dl56_min_star_heal` | 1 | 2 | count | 0–999 | `borg_prepared.rs:711` |
+| `prepared_dl56_min_heal` | 2 | 3 | count | 0–999 | `borg_prepared.rs:713` |
+| `prepared_dl56_min_resist_blindness` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:723` |
+| `prepared_dl56_min_esp` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:731` |
+| `prepared_dl56_min_depth` | 56 | 56 | depth | 0–127 | `borg_prepared.rs:709` |
+| `prepared_dl60_min_speed` | 120 | 122 | speed | 0–255 | `borg_prepared.rs:739` |
+| `prepared_dl60_min_resist_chaos` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:748` |
+| `prepared_dl60_min_resist_disenchantment` | 1 | 1 | flag | 0–1 | `borg_prepared.rs:755` |
+| `prepared_dl60_min_depth` | 60 | 60 | depth | 0–127 | `borg_prepared.rs:736` |
+| `prepared_dl81_min_speed` | 130 | 132 | speed | 0–255 | `borg_prepared.rs:766` |
+| `prepared_dl81_min_depth` | 81 | 81 | depth | 0–127 | `borg_prepared.rs:763` |
+| `prepared_dl100_min_depth` | 100 | 100 | depth | 0–127 | `borg_prepared.rs:774` |
+| `prepared_dl100_restore_mana_above_sp` | 100 | 100 | sp | 0–10000 | `borg_prepared.rs:776` |
+| `prepared_dl100_min_restore_mana` | 15 | 15 | count | 0–999 | `borg_prepared.rs:778` |
+| `prepared_dl100_min_healing_potions` | 5 | 5 | count | 0–999 | `borg_prepared.rs:786` |
+| `prepared_dl100_min_star_heal_or_life` | 15 | 15 | count | 0–999 | `borg_prepared.rs:793` |
+| `prepared_dl100_min_speed_potions` | 10 | 10 | count | 0–999 | `borg_prepared.rs:800` |
+| `restock_dl1_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:1073` |
+| `restock_dl1_min_fuel` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1083` |
+| `restock_dl2_min_fuel` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1095` |
+| `restock_dl2_min_food` | 3 | 3 | count | 0–999 | `borg_prepared.rs:1071` |
+| `restock_dl2_min_depth` | 2 | 2 | depth | 0–127 | `borg_prepared.rs:1091` |
+| `restock_dl6_min_phase_door` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1083` |
+| `restock_dl6_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1091` |
+| `restock_dl6_min_cures` | 1 | 1 | count | 0–999 | `borg_prepared.rs:1093` |
+| `restock_dl6_min_depth` | 6 | 6 | depth | 0–127 | `borg_prepared.rs:1080` |
+| `restock_dl10_min_light_radius` | 2 (Necromancer 0) | 2 (Necromancer 0) | radius | 0–99 | `borg_prepared.rs:1105` |
+| `restock_dl10_cures_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1113` |
+| `restock_dl10_min_cures` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1115` |
+| `restock_dl10_min_teleports` | 2 | 2 | count | 0–999 | `borg_prepared.rs:1125` |
+| `restock_dl10_min_depth` | 10 | 10 | depth | 0–127 | `borg_prepared.rs:1102` |
+| `restock_dl20_cure_serious_or_critical_until_clevel` | 30 | 30 | level | 0–50 | `borg_prepared.rs:1135` |
+| `restock_dl20_min_cure_serious_or_critical` | 4 | 5 | count | 0–999 | `borg_prepared.rs:1137` |
+| `restock_dl20_min_teleports` | 4 | 5 | count | 0–999 | `borg_prepared.rs:1147` |
+| `restock_dl20_min_depth` | 20 | 20 | depth | 0–127 | `borg_prepared.rs:1133` |
+| `restock_dl36_min_teleport_or_teleport_level` | 2 | 3 | count | 0–999 | `borg_prepared.rs:1158` |
+| `restock_dl36_min_depth` | 36 | 36 | depth | 0–127 | `borg_prepared.rs:1155` |
+| `restock_dl65_min_healing` | 1 | 2 | count | 0–999 | `borg_prepared.rs:1169` |
+| `restock_dl65_min_depth` | 65 | 65 | depth | 0–127 | `borg_prepared.rs:1166` |
+| `restock_dl100_arrival_turns` | 10 | 10 | turns | 0–10000 | `borg_prepared.rs:1180` |
+| `restock_dl100_min_star_heal` | 15 | 17 | count | 0–999 | `borg_prepared.rs:1182` |
+| `restock_dl100_min_depth` | 100 | 100 | depth | 0–127 | `borg_prepared.rs:1177` |
+| `prepared_endgame_stock_min_depth` | 82 | 82 | depth | 0–127 | `borg_prepared.rs:899` |
+| `prepared_endgame_min_home_or_pack_heals` | 10 | 12 | count | 0–999 | `borg_prepared.rs:900` |
+| `prepared_endgame_total_heals_min_max_depth` | 97 | 97 | depth | 0–127 | `borg_prepared.rs:916` |
+| `prepared_endgame_min_total_heals` | 30 | 35 | count | 0–999 | `borg_prepared.rs:918` |
+| `prepared_endgame_collect_heals_min_max_depth` | 99 | 99 | depth | 0–127 | `borg_prepared.rs:936` |
+| `prepared_early_min_light_radius` | 1 | 1 | radius | 0–99 | `borg_prepared.rs:224` |
+| `prepared_early_min_food` | 5 | 5 | count | 0–999 | `borg_prepared.rs:232` |
+| `prepared_early_min_recall` | 1 | 1 | count | 0–999 | `borg_prepared.rs:243` |
+| `prepared_early_min_fuel` | 5 | 5 | count | 0–999 | `borg_prepared.rs:260` |
 
 ## Fox Form's study rating (#694)
 
@@ -6758,6 +6895,21 @@ switches below are off by default, which reproduces today's play.
 |---|---|---|---|---|
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:256` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9669` |
+
+## Town Word of Recall destination (#1281)
+
+`town_recall_prepared_depth_percent` sets the share of Angband's resolved
+dungeon destination checked for preparedness, rounded down. Both the
+compiled and shipped defaults are 100. Use 60 to reproduce the former
+probe when the recorded maximum and Recall destination coincide. A value
+of 0 checks town preparedness. The separate DL100 restock guard uses the
+resolved destination at any percentage. The smoke games reach DL1–2, below
+the town Recall gate. The native regression exercises the departure
+decision with a constructed kit.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_recall_prepared_depth_percent` | 100 | percent | 0–100 | `borg_think_dungeon_util.rs:1221` |
 
 ## The Borg's own light radius (#877)
 
@@ -7838,11 +7990,11 @@ engine's light, every step checked, the unplaced door sound).
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:152` |
-| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:159` |
-| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:159` |
+| `stair_scum` | 0 | flag | 0–1 | `borg_stair_scum.rs:154` |
+| `stair_scum_max_hp` | 25 | HP | 1–1000 | `borg_stair_scum.rs:161` |
+| `stair_scum_max_hp_race_delta` | 0 | HP | -100–100 | `borg_stair_scum.rs:161` |
 | `stair_scum_speed_ratio` | 2 | actions per player action | 1–10 | `borg_stair_scum.rs:559` |
-| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:539` |
+| `stair_scum_contact_damage` | 4 | HP per attack | 1–1000 | `borg_stair_scum.rs:563` |
 | `stair_scum_slack_steps` | 0 | steps | 0–50 | `borg_stair_scum.rs:541` |
 | `stair_scum_slack_per_hp_tenths` | 0 | tenths of a step per max HP | 0–100 | `borg_stair_scum.rs:542` |
 | `stair_scum_slack_per_level_percent` | 50 | percent of a step per level | 0–1000 | `borg_stair_scum.rs:544` |
@@ -8028,12 +8180,12 @@ local, a lead only, RULES 14; keys.log sha256 prefixes):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2559` |
-| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2560` |
-| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2561` |
-| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2562` |
-| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2563` |
-| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2564` |
+| `flow_leash_any_stair` | 0 | flag | 0–1 | `borg_flow.rs:2606` |
+| `flow_leash_unknown_stair_steps` | 0 | steps | 0–250 | `borg_flow.rs:2607` |
+| `flow_leash_teleported_recall` | 0 | flag | 0–1 | `borg_flow.rs:2608` |
+| `flow_leash_recall_max_level` | 5 | level | 0–51 | `borg_flow.rs:2609` |
+| `flow_leash_recall_steps` | 30 | steps | 0–250 | `borg_flow.rs:2610` |
+| `flow_leash_recall_min_jump` | 12 | grids | 2–250 | `borg_flow.rs:2611` |
 
 ## Deal with poison (#1140)
 
@@ -8457,7 +8609,7 @@ Checked on the build where the loop reproduces (`433457a4`, with
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1956` |
+| `flow_brave_walk_commit` | 0 | flag | 0–1 | `borg_flow.rs:1990` |
 
 ## A general movement-loop detector (#1153)
 

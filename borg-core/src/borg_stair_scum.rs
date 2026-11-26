@@ -80,6 +80,7 @@ use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
 use crate::headers::list_options_h::OPT_birth_force_descend;
+use crate::headers::z_type_h::loc;
 use crate::headers::list_terrain_h::{FEAT_BROKEN, FEAT_CLOSED, FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN};
 use crate::headers::list_tvals_h::TV_ROD;
 use crate::headers::ui_event_h::keycode_t;
@@ -649,10 +650,11 @@ impl Map {
 
     /// `(y, x)` is a step nearer the staircase on the retreat walk itself
     /// (re-review of #1090, P1: a closed door is not, whatever `steps` says).
-    fn nearer(&self, st: &BorgState, y: i32, x: i32) -> bool {
-        walkable(st, y, x)
-            && self.at(&self.dist, y, x) != FAR
-            && self.at(&self.dist, y, x) < self.at(&self.dist, st.borg.c.y, st.borg.c.x)
+    pub(crate) fn allows_step(&self, st: &BorgState, from: loc, to: loc) -> bool {
+        !self.routed
+            || self.target_safe(st, to.y, to.x)
+            || (walkable(st, to.y, to.x)
+                && self.at(&self.dist, to.y, to.x) < self.at(&self.dist, from.y, from.x))
     }
 
     /// The Borg's next step home on the retreat walk (re-review of #1090,
@@ -678,6 +680,11 @@ impl Map {
     fn radius_here(&self, st: &BorgState) -> i32 {
         radius(self.sight(st, st.borg.c.y, st.borg.c.x), self.ratio, self.hp, self.per_attack) + self.slack
     }
+}
+
+/// The Borg is already committed to returning to the stairs on this level.
+pub(crate) fn returning_to_stairs(st: &BorgState) -> bool {
+    st.stair_scum.level == st.borg.time.level && st.stair_scum.returning
 }
 
 /// A new level forgets the last one's doors and walks.
@@ -790,10 +797,7 @@ pub(crate) fn step_allowed(st: &mut BorgState, why: i32, y: i32, x: i32) -> bool
         return true;
     }
     let Some(map) = Map::of(st) else { return true };
-    if !map.routed {
-        return true;
-    }
-    map.nearer(st, y, x) || map.target_safe(st, y, x)
+    map.allows_step(st, st.borg.c, loc { x, y })
 }
 
 /// `borg_flow_step`'s door: the Borg sends the open command toward `dir`.
@@ -1089,6 +1093,82 @@ pub(crate) fn leave_on_threat(st: &mut BorgState, pos_danger: i32, threshold: i3
         FEAT_MORE if down => Some(false),
         _ => None,
     }
+}
+
+/// Exercise the actual reverse flow on known terrain with a safe detour.
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn run_loot_route_regression(st: &mut BorgState) -> ! {
+    use crate::borg_flow;
+    use crate::headers::list_terrain_h::{FEAT_FLOOR, FEAT_GRANITE};
+
+    crate::borg_cave::borg_init_cave(st);
+    st.borg.c = loc { x: 40, y: 20 };
+    for y in 19..=23 {
+        for x in 39..=43 {
+            st.cave.grid_mut(x, y).feat = FEAT_GRANITE as u8;
+        }
+    }
+
+    let grids = [(20, 40), (20, 42), (21, 40), (22, 41), (21, 42)];
+    let size = (AUTO_MAX_X * AUTO_MAX_Y) as usize;
+    let mut map = Map {
+        dist: vec![FAR; size],
+        stair_front: vec![FAR; size],
+        entry: vec![FAR; size],
+        area: vec![false; size],
+        routed: true,
+        stair_cheb: vec![FAR; size],
+        light: 1,
+        ratio: 2,
+        hp: 20,
+        per_attack: 4,
+        slack: 0,
+        up: true,
+        down: false,
+    };
+    for (y, x) in grids {
+        st.cave.grid_mut(x, y).feat = FEAT_FLOOR as u8;
+        map.area[index(y, x)] = true;
+        map.dist[index(y, x)] = 1;
+    }
+    st.cave.grid_mut(41, 20).feat = FEAT_FLOOR as u8;
+    map.dist[index(20, 41)] = 1;
+
+    borg_flow::borg_flow_clear(st);
+    borg_flow::borg_flow_enqueue_grid(st, 20, 42);
+    borg_flow::borg_flow_spread(st, 6, true, true, false, -1, true);
+    assert_eq!(st.flow.cost_at(20, 40), 2, "the ordinary route cuts across the unsafe grid");
+
+    borg_flow::borg_flow_clear(st);
+    borg_flow::borg_flow_enqueue_grid(st, 20, 42);
+    borg_flow::spread_stair_scum_loot(st, 6, true, &map);
+    assert_eq!(st.flow.cost_at(20, 40), 4, "use the legal detour");
+
+    let goal = i32::from(crate::borg_flow_take::GOAL_TAKE);
+    assert!(borg_flow::borg_flow_commit(st, c"Scum item", goal));
+    let step = borg_flow::select_step(st, Some(&map));
+    assert!(step >= 0, "the committed route can take the detour");
+    assert_eq!(
+        (engine::ddx_ddd(step as usize), engine::ddy_ddd(step as usize)),
+        (0, 1),
+        "skip the lower-cost unsafe neighbour",
+    );
+
+    map.area[index(21, 40)] = false;
+    assert_eq!(
+        borg_flow::select_step(st, Some(&map)),
+        -1,
+        "the committed route yields if the map no longer allows its step",
+    );
+    map.area[index(21, 40)] = true;
+
+    st.cave.grid_mut(41, 22).feat = FEAT_GRANITE as u8;
+    borg_flow::borg_flow_clear(st);
+    borg_flow::borg_flow_enqueue_grid(st, 20, 42);
+    borg_flow::spread_stair_scum_loot(st, 6, true, &map);
+    assert!(!borg_flow::borg_flow_commit(st, c"Scum item", i32::from(crate::borg_flow_take::GOAL_TAKE)), "no legal route to commit");
+    println!("stair-scum loot routes passed (#1290)");
+    std::process::exit(0);
 }
 
 #[cfg(test)]

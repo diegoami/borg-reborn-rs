@@ -241,7 +241,11 @@ flag (go to town), then executes:
 ### Out of town (`leave_town`)
 
 Recall down when max depth >= 8 (10 when worshipping gold), **Recall >= 3**,
-and prepared for 60% of the max depth; otherwise walk down.
+and the kit passes preparedness at the engine's Recall destination. Set
+`borg_param_town_recall_prepared_depth_percent` to check a fraction of that
+depth, rounded down. The default is 100. A value of 60 uses the former
+fraction. Risky play can bypass preparedness. If Recall is unavailable or
+the check fails, the Borg takes the stairs.
 
 ### What the map shows
 

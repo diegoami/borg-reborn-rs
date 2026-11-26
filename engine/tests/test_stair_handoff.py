@@ -784,6 +784,26 @@ class StaleKoboldDoorTest(unittest.TestCase):
 
 
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class StairScumLootRoutesTest(unittest.TestCase):
+    def test_loot_flow_uses_a_safe_detour_or_yields(self):
+        with tempfile.TemporaryDirectory(prefix="stair-scum-loot-routes-") as directory:
+            paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+            for path in paths.values():
+                path.mkdir()
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+            env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+            env.update(BORG_CORE="borg-rs", BORG_CORE_TRACE="off", BORG_TEST_STAIR_HANDOFF="stair-scum-loot-routes")
+            result = subprocess.run(
+                [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                 "--", "-seed", "101", "-race", "8", "-class", "6", "-menu-letters", "-start-depth", "1", "-keys", "250"],
+                cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("stair-scum loot routes passed (#1290)", result.stdout)
+
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class RecoveryManaLoopTest(unittest.TestCase):
     """#1211: the Priest pacing between recovery grids on DL19, spending the
     regenerated mana on Heroism.
@@ -836,6 +856,34 @@ class RecoveryManaLoopTest(unittest.TestCase):
 
     def test_the_cast_is_declined_and_the_borg_rests_with_the_parameters_on(self):
         self.run_case(True)
+
+@unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
+class TownRecallReadinessTest(unittest.TestCase):
+    def test_destination_readiness(self):
+        cases = (
+            "blocked", "two-escapes", "ready", "saved", "sixty", "zero", "forced", "persistent",
+            "persistent-new", "endgame", "shallower-than-100",
+        )
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory(prefix="town-recall-") as directory:
+                paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
+                for path in paths.values():
+                    path.mkdir()
+                write_pborg_config(paths["user"])
+                shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
+                env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
+                env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"town-recall-{case}")
+                percentages = {"sixty": "60", "zero": "0", "endgame": "0"}
+                if case in percentages:
+                    env["BORG_PARAM_TOWN_RECALL_PREPARED_DEPTH_PERCENT"] = percentages[case]
+                result = subprocess.run(
+                    [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
+                     "--", "-seed", "101", "-race", "1", "-class", "5", "-menu-letters", "-keys", "250"],
+                    cwd=TEST_GAME.parent, env=env, capture_output=True, text=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(f"town Recall readiness passed: {case}", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
