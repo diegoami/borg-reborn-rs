@@ -13,6 +13,12 @@ from rust_ports import functions, mask_non_code, without_test_items
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = '24be98732748230062882fe2b7d9601dba5e2cc0'
 RECEIPT = ROOT / 'docs/R45-PORT-SOURCE.json'
+# R5 adds an immutable request and its dispatch. Keep checking the exact
+# receiving bytes for those files alongside the unchanged R4.5 policy.
+R5_DISPATCH = {
+    'borg-core/src/decisions.rs': '911740a6d1f693a65ebc35270ea207e7ee4499418edf23727e2aa6fe888def72',
+    'borg-next/src/stateful/mod.rs': 'fcef991129cd4b2d9a0eb5bea75483633a85357925b71db9d6dd257245c862d0',
+}
 MODULES = {
     'caution': 'borg_caution', 'escape': 'borg_escape', 'recovery': 'borg_recover',
     'attack': 'borg_fight_attack', 'fast_fragile': 'borg_fast_fragile',
@@ -181,9 +187,7 @@ def main():
     else:
         expected = json.loads(RECEIPT.read_text())
         if args.receiving_r5:
-            for path in ('borg-next/src/stateful/mod.rs', 'borg-core/src/decisions.rs'):
-                del expected['receiving_files'][path]
-                del actual['receiving_files'][path]
+            expected['receiving_files'].update(R5_DISPATCH)
         if actual != expected:
             raise SystemExit('receiving proof differs from its recorded source or reviewed rewrites')
     counts = Counter('reviewed rewrite' if 'rewrite' in row else 'normalized match'
