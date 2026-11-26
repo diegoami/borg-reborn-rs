@@ -761,8 +761,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     if !lightless && st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
         /* Try to grab a close item while I'm down here */
         // borg-reborn-rs (#549): not while threatened
-        // (`caution_stair_scum_threat`): go straight back up instead.
-        if !crate::borg_caution::stair_scum_threatened(st) && borg_think_stair_scum(st) {
+        // (`caution_stair_scum_threat`) or during a committed return (#1260).
+        if !crate::borg_stair_scum::returning_to_stairs(st)
+            && !crate::borg_caution::stair_scum_threatened(st)
+            && borg_think_stair_scum(st)
+        {
             return choice!("borg_think_stair_scum");
         }
 
