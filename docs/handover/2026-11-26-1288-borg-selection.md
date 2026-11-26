@@ -41,3 +41,9 @@ reports the reborn-core fallback.
 The re-review reconciled the remaining live build and command-interface
 documentation. The settings helper now removes its temporary configuration
 files after both successful and failed conversions.
+
+Cemetery #161 now reconstructs the normal-world Zoo settings hash before
+YAML conversion. A combined build at f8e74d2 reproduced an Elf Druid death
+from seed 1020 with the `reborn` decision core through Zoo bundle export
+and Cemetery import and replay. The death endpoint, all three gameplay
+streams, and both settings files matched.
