@@ -8810,19 +8810,19 @@ borg-cemetery#132:
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
 | `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1079` |
 
-## Plain quiver surplus at town departure (#1168)
+## Quiver surplus in town (#1168, #1272)
 
-At zero, the compiled and shipped default, quiver trimming is off.
-When enabled, the live planner can discard whole stacks while over its
-carry allowance to keep at least this many eligible plain shots for the
-worn launcher. It excludes unidentified, annotated, cursed, enchanted,
-ego and artifact stacks. A planned sale or Home deposit can give way to
-the discard. The named case used 40, one native full quiver slot. The
-reserve and the action order need measurement before activation.
+The common default is zero. The shipped class profiles specify their own
+reserves. The plain stack trim keeps its configured floor and has priority.
+With `junk_exploration_first`, the planner can then trim a whole stack of
+known, compatible enchanted ammunition when town weight or pack slots are
+short. It checks the physical slot gain in native quiver units and preserves
+the usable ammunition reserve. Ego, artifact, cursed and annotated stacks
+cannot be selected. Zero disables this trim.
 
 | parameter | default | unit | range | source |
-|---|---|---|---|---|
-| `town_quiver_trim_reserve` | 0 | plain quivered ammunition | 0–999 | `borg_town_live.rs:675` |
+|---|---:|---|---|---|
+| `town_quiver_trim_reserve` | 0 | usable quivered ammunition | 0–999 | `borg_town_live.rs:675` |
 
 ## Town-arrival unloading and weight-limited shopping (#1256)
 
@@ -8859,7 +8859,7 @@ control use this setting. Replays use the schema recorded in each visit.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:446` |
+| `town_shop_overloaded` | 1 | mode | 0–2 | `borg_town_live.rs:449` |
 
 ### Recall-first trial
 
@@ -9093,7 +9093,7 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2170` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2233` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)

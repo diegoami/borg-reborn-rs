@@ -1548,6 +1548,15 @@ fn object_desc80(obj: *const crate::headers::object_h::object, mode: u32) -> Vec
     buf[..n].to_vec()
 }
 
+/// How many pack slots remain after the engine accounts for the quiver.
+pub(crate) fn pack_slots_free() -> i32 {
+    extern "C" {
+        fn pack_slots_used(player: *const crate::headers::player_h::player) -> i32;
+    }
+    // SAFETY: the active player and gear are initialized before the Borg runs.
+    i32::from(z_info().pack_size) - unsafe { pack_slots_used(crate::headers::player_h::player) }
+}
+
 /// `player->body.count`: the number of equipment slots.
 pub fn body_count() -> u16 {
     player_ref().body.count
