@@ -3557,7 +3557,9 @@ borg_param_attack_on_sight = 1";
                 "caution" if s.spec.name.starts_with("caution_combat_heal") => "combat_heal",
                 _ => prefix,
             };
-            if prefix == "town" {
+            if s.spec.name == "town_recall_prepared_depth_percent" {
+                assert_eq!(file, "borg_think_dungeon_util.rs");
+            } else if prefix == "town" {
                 // The town planner's parameters live in its borg_town_*.rs modules.
                 assert!(file.starts_with("borg_town_") && file.ends_with(".rs"), "{file}");
             } else {
