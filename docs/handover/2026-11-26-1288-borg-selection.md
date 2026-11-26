@@ -14,7 +14,9 @@ original file. The independent plan and scary-list data formats are
 selected by keys in the YAML.
 
 The combined-build regression runs the same executable with conflicting
-stop depths and verifies that each Borg follows its own file. The new
-`pborg_config=yaml` build identity is covered by the companion Zoo adapter
-work in diegoami/borg-zoo#810. The existing native parameter receipt uses
+stop depths and verifies that each Borg follows its own file. A Linux headless package also ran with
+its shipped YAML. Three 2,000-turn starts matched the pre-change build's
+key streams and resolved native settings byte for byte. The companion
+Zoo adapter and Cemetery replay changes are diegoami/borg-zoo#812 and
+diegoami/borg-cemetery#161. The existing native parameter receipt uses
 its historical origin labels for compatibility.

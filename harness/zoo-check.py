@@ -28,6 +28,7 @@ Evidence rules (M1 review):
 """
 
 import argparse
+import hashlib
 import io
 import json
 import subprocess
@@ -86,7 +87,6 @@ def legacy_zoo_command(command):
 
 def repatriate(impl, rec, suite, work, cat_mod):
     """Rerun a zoo death through harness/run.sh, check the keys, record the dossier."""
-    import hashlib
     race, cls = cat_mod.character(suite, rec['seed']) or ('Human', 'Warrior')
     out = work / 'repatriated' / impl / str(rec['seed'])
     if out.exists():
@@ -125,10 +125,13 @@ def main(argv=None):
     if not hasattr(borgrs, 'stage_config'):
         borgrs.command = legacy_zoo_command(borgrs.command)
     cat = cat_mod.catalogue(tree)
+    settings = (ROOT / 'harness/borg.txt').read_text()
+    scary, _ = borgrs.scary_name({'settings': {}}, settings)
+    scary_lists = {scary: hashlib.sha256((ROOT / 'harness' / scary).read_bytes()).hexdigest()} if scary else {}
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {
             'kind': 'borg-rs', 'impl': impl, 'repository': 'diegoami/borg-reborn-rs', 'ref': head,
-            'carries': 0, 'label': f'borg-reborn-rs {impl} at {head[:12]} (local zoo check, not in the catalogue)'}
+            'carries': 0, 'scary_lists': scary_lists, 'label': f'borg-reborn-rs {impl} at {head[:12]} (local zoo check, not in the catalogue)'}
     suite = cat['suites'][a.suite]
     bad = 0
     for impl in a.impl:
