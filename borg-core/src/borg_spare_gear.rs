@@ -42,7 +42,7 @@ fn properties_cover(worn: &borg_item, spare: &borg_item, other_slots: &[&borg_it
         })
 }
 
-fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
+pub(crate) fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
     properties_and_attack_cover(worn, spare, &[])
 }
 
@@ -366,6 +366,7 @@ struct GearChoice {
     power: i32,
     lighter: bool,
     backup: bool,
+    wearable: bool,
 }
 
 fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec<u8> {
@@ -374,7 +375,11 @@ fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec
         keep[index] += 1;
     }
     let mut ranked: Vec<_> = (0..choices.len()).filter(|&index| choices[index].backup).collect();
-    ranked.sort_by_key(|&i| (std::cmp::Reverse(choices[i].power), choices[i].source));
+    ranked.sort_by_key(|&i| {
+        let distinct = capacity == 1 && worn.iter().any(|&w| choices[w].item.iqty > 0
+            && !known_properties_cover(&choices[w].item, &choices[i].item));
+        (std::cmp::Reverse(distinct), std::cmp::Reverse(choices[i].power), choices[i].source)
+    });
     let mut regular = Vec::new();
     for &index in &ranked {
         if capacity == 1 && worn.iter().any(|&i| crate::borg_town_home::same_variant(&choices[i].item, &choices[index].item)
@@ -405,6 +410,20 @@ pub(crate) fn planned_slot(item: &borg_item) -> Option<usize> {
         && u32::from(item.tval) != TV_DIGGING).then(|| ranked_slot(item)).flatten()
 }
 
+fn uninspected_plain_armour(item: &borg_item) -> bool {
+    if !item.aware || item.iqty == 0 || !item.needs_ident || item.art_idx != 0 || item.ego_idx != 0
+        || item.cursed || item.curses.contains(&true) || !armour(item) { return false; }
+    let note = item.desc.iter().copied().map(|c| c as u8).skip_while(|&c| c != b'{')
+        .take_while(|&c| c != 0).collect::<Vec<_>>();
+    note == b"{??}"
+}
+
+pub(crate) fn cleanup_slot(st: &BorgState, item: &borg_item) -> Option<usize> {
+    planned_slot(item).or_else(|| {
+        (st.borg.tr(BI_AID) == 0 && uninspected_plain_armour(item)).then(|| ranked_slot(item)).flatten()
+    })
+}
+
 pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> GearPlan {
     let pack = inven_wield() as usize;
     let ring = slot == pack + 3;
@@ -412,6 +431,8 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let capacity = if ring { 2 } else { 1 };
     let choice = |(source, item)| GearChoice {
         source, item, power: i32::MIN, lighter: false, backup: planned_slot(&item) == Some(slot),
+        wearable: can_rank(&item) && (!matches!(source, GearLocation::Home(_))
+            || !crate::borg_town_live::retained_gear(st, &item)),
     };
     let mut choices: Vec<_> = slots.clone().map(|i| choice((GearLocation::Worn(i), st.items.items[i])))
         .chain(st.store.shops[crate::borg_store::BORG_HOME].ware.iter().copied().enumerate()
@@ -449,7 +470,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         let old = items[destinations[target]];
         !old.one_ring && !engine::flag_has(&old.flags, OF_STICKY as i32)
             && !old.desc.contains(&(b'!' as core::ffi::c_char))
-            && can_rank(&choices[i].item)
+            && choices[i].wearable
     };
     let (baseline, _) = evaluate(st, &current, &choices);
     let mut best = current.clone();
@@ -499,7 +520,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
         .min_by_key(|&(target, _)| choices[target].item.iqty != 0)
         .map(|(target, &i)| (choices[i].source, destinations[target]));
     let keep = backup_counts(&choices, &best, capacity);
-    let stock = choices.into_iter().zip(keep).enumerate().skip(capacity).map(|(index, (entry, keep))| {
+    let mut stock: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &keep))| {
         let item = entry.item;
         let protected = item.art_idx != 0 || item.activ_idx != 0
             || item.desc.contains(&(b'{' as core::ffi::c_char))
@@ -510,6 +531,20 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
             release: if protected { 0 } else { item.iqty - keep },
         }
     }).collect();
+    // When there is no usable identification, two verified alternatives
+    // can release plain armour that is visibly worse than either one.
+    if st.borg.tr(BI_AID) == 0 {
+        for (index, item) in st.items.items[..pack].iter().enumerate().filter(|(_, item)| {
+            uninspected_plain_armour(item) && ranked_slot(item) == Some(slot)
+        }) {
+            let covered = choices.iter().zip(&keep).filter(|(entry, qty)| {
+                **qty > 0 && can_rank(&entry.item) && static_gear_covers(&entry.item, item, &[], false)
+            }).take(2).count();
+            if covered == 2 {
+                stock.push(GearStock { source: GearLocation::Pack(index), stash: 0, release: item.iqty });
+            }
+        }
+    }
     GearPlan { upgrade, stock }
 }
 

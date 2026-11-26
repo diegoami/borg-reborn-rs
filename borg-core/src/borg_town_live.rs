@@ -1074,12 +1074,13 @@ fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
 }
 
 fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
-    use crate::borg_spare_gear::{gear_plan, planned_slot, GearLocation};
+    use crate::borg_spare_gear::{cleanup_slot, gear_plan, planned_slot, GearLocation};
     if preparing_loadout(st) || crate::engine::player_is_shapechanged() { return None; }
     let pack = crate::borg_item::inven_wield() as usize;
     let groups: std::collections::BTreeSet<_> = st.items.items[..pack].iter()
-        .chain(&st.store.shops[BORG_HOME].ware).filter_map(planned_slot).collect();
-    let mut release_pack = None;
+        .filter_map(|item| cleanup_slot(st, item))
+        .chain(st.store.shops[BORG_HOME].ware.iter().filter_map(planned_slot)).collect();
+    let mut release_pack = crate::borg_junk::surplus_light_drop(st).map(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
     let mut release_home = None;
     let mut stash = None;
     for group in groups {
@@ -1103,9 +1104,7 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                 GearLocation::Pack(slot) => {
                     let item = &st.items.items[slot];
                     if entry.release > 0 && release_pack.is_none() {
-                        release_pack = spare_sale(st, slot, item, entry.release).or(Some(TownAction {
-                            code: DROP_SURPLUS, at: [-1, slot as i64, i64::from(entry.release), 0],
-                        }));
+                        release_pack = Some(pack_gear_disposal(st, slot, entry.release));
                     }
                     // A withdrawn inferior variant does not block storing
                     // the selected backup of the same kind.
@@ -1126,6 +1125,12 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
         }
     }
     release_pack.or(release_home).or(stash)
+}
+
+fn pack_gear_disposal(st: &BorgState, slot: usize, quantity: u8) -> TownAction {
+    spare_sale(st, slot, &st.items.items[slot], quantity).unwrap_or(TownAction {
+        code: DROP_SURPLUS, at: [-1, slot as i64, i64::from(quantity), 0],
+    })
 }
 
 fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Option<TownAction> {

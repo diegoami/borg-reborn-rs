@@ -20,11 +20,11 @@ HASHES = {
 }
 
 
-def check(binary, fixture, run, home_backups):
+def replay(binary, fixture, run, home_backups, save_hash=HASHES[SAVE], turns=(1196638, 1205000)):
     paths = {kind: run / kind for kind in ("user", "save", "archive", "panic", "scores")}
     for path in paths.values():
         path.mkdir(parents=True)
-    for name, digest in HASHES.items():
+    for name, digest in (HASHES | {SAVE: save_hash}).items():
         source = fixture / name
         assert hashlib.sha256(source.read_bytes()).hexdigest() == digest, name
         shutil.copyfile(source, paths["save" if name == SAVE else "user"] / source.name)
@@ -35,13 +35,17 @@ def check(binary, fixture, run, home_backups):
     subprocess.run(
         [str(binary), "-mborgh", *(f"-d{kind}={path}" for kind, path in paths.items()),
          "--", "-seed", "1", "-race", "0", "-class", "5", "-load", str(paths["save"] / SAVE),
-         "-keep-load-rng", "-exact-turns", "-turns", "1205000", "-msglog", str(messages),
+         "-keep-load-rng", "-exact-turns", "-turns", str(turns[1]), "-msglog", str(messages),
          "-summary", str(summary)],
         cwd=binary.parent, env=env, check=True, timeout=120,
     )
     receipt = json.loads(summary.read_text())
-    assert receipt["loaded_turn"] == 1196638 and receipt["stop_reason"] == "turns", receipt
-    log = messages.read_text()
+    assert receipt["loaded_turn"] == turns[0] and receipt["stop_reason"] == "turns", receipt
+    return messages.read_text()
+
+
+def check(binary, fixture, run, home_backups):
+    log = replay(binary, fixture, run, home_backups)
     for bonus in ("+6,+2", "+3,+3"):
         assert re.search(rf"You (?:drop|sold|had) [^\n]*Dagger[^\n]*\({re.escape(bonus)}\)", log), (home_backups, bonus)
     assert not re.search(r"You (?:drop|sold|had) [^\n]*(?:Narthanc|Nimthanc)", log), home_backups
