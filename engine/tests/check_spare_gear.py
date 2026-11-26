@@ -47,6 +47,9 @@ def replay(binary, fixture, run, cutoff):
     receipt = json.loads(summary.read_text())
     assert receipt["loaded_turn"] == 1020544 and receipt["stop_reason"] == "turns", receipt
     log = messages.read_text()
+    if cutoff == 3:
+        assert "You drop 2 Robes [2,+0] {borg ignore surplus}" in log
+        assert "You drop a Spear (1d6) (+0,+0) {borg ignore surplus}" in log
     return {name for name, (count, item) in STACKS.items()
             if re.search(rf"You drop {count} {re.escape(item)} \{{borg ignore(?: surplus)?\}}", log)}
 

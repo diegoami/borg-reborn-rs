@@ -220,12 +220,12 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     }
 
     #[cfg(feature = "test-town-review")]
-    if std::env::var_os("BORG_TEST_INFERIOR_SPARE_SALE").is_some() {
+    if let Some(case) = std::env::var_os("BORG_TEST_INFERIOR_SPARE_SALE") {
         thread_local! {
             static PREPARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
         }
         if !PREPARED.replace(true) {
-            engine::equip_test_sandal_spares(st);
+            engine::equip_test_sandal_spares(st, case == "ranked-home");
             crate::borg_item::borg_find_all_items(st);
         }
     }

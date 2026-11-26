@@ -702,7 +702,7 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
     {
-        let cutoff = crate::borg_spare_gear::alternatives_required();
+        let cutoff = crate::borg_junk::gear_alternatives();
         if cutoff > 0 {
             if let Some(cleanup) = ranked_gear_cleanup(st, cutoff) { return set_action(st, cleanup); }
         } else {
@@ -868,7 +868,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let home_intent = if a.code == action::BUY_FOR_HOME {
             Some(HomeIntent::Stash)
         } else if home_disposal && (crate::borg_town_home::enabled(st)
-            || crate::borg_spare_gear::alternatives_required() > 0) && !loadout_pending(st) {
+            || crate::borg_junk::gear_alternatives() > 0) && !loadout_pending(st) {
             let destination = if a.code == action::DROP_HOME { -1 } else { a.at[0] as i16 };
             Some(HomeIntent::Dispose(destination))
         } else { None };
@@ -1067,7 +1067,7 @@ fn spare_sale(st: &BorgState, slot: usize, item: &borg_item, quantity: u8) -> Op
         !sale_rejected(st, shop as i16, item)
             && crate::borg_store_sell::borg_store_buys(item, shop as i32)
             && native.store_accepts_quantity(shop, quantity)
-            && (crate::borg_spare_gear::alternatives_required() == 0 || native.sale_quote(shop, quantity) > 0)
+            && (crate::borg_junk::gear_alternatives() == 0 || native.sale_quote(shop, quantity) > 0)
     })?;
     Some(TownAction { code: action::SELL, at: [shop as i64, slot as i64, i64::from(quantity), 0] })
 }

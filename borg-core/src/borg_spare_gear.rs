@@ -293,19 +293,10 @@ pub(crate) fn redundant_carried_launcher(st: &BorgState, slot: usize) -> bool {
 
 pub(crate) fn redundant_home_gear(st: &mut BorgState, slot: usize) -> bool {
     let spare = st.store.shops[crate::borg_store::BORG_HOME].ware[slot];
-    alternatives_required() == 0 && crate::borg_junk::exploration_first()
+    crate::borg_junk::gear_alternatives() == 0 && crate::borg_junk::exploration_first()
         && !crate::borg_town_live::retained_gear(st, &spare)
         && if melee_weapon(&spare) { redundant_melee(st, slot, true) }
             else { redundant_static_gear(st, &spare, slot, true) }
-}
-
-pub(crate) fn alternatives_required() -> usize {
-    use crate::params::{value, Param};
-    if crate::borg_junk::exploration_first() {
-        value(Param::junk_gear_alternatives) as usize
-    } else {
-        0
-    }
 }
 
 // Stable order for equivalent gear: keep it worn if possible, then at Home

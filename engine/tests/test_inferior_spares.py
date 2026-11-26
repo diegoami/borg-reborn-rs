@@ -68,7 +68,13 @@ class TownSpareSaleTest(unittest.TestCase):
                 self.assertIn("You are wearing a Pair of Leather Sandals [1,+7]", sandals)
                 self.assertEqual(quantities, ["3"], sandals)
 
-    def run_town(self, planner):
+    def test_redundant_home_stack_is_withdrawn_and_disposed(self):
+        messages = self.run_town(1, ranked_home=True)
+        self.assertIn("# Home reserve: withdrawing low-priority stock", messages)
+        self.assertRegex(messages, r"You (?:drop|had|sold) 3 Pairs of Leather Sandals \[1,\+0\]")
+        self.assertNotRegex(messages, r"You (?:drop|had|sold)[^\n]*Leather Sandals \[1,\+4\]")
+
+    def run_town(self, planner, *, ranked_home=False):
         game = ROOT / "build/rust-test/game/angband"
         with tempfile.TemporaryDirectory(prefix="inferior-sandal-sale-") as directory:
             root = Path(directory)
@@ -85,6 +91,9 @@ class TownSpareSaleTest(unittest.TestCase):
             # Exercise the two selling choosers with the original town order.
             env.update(BORG_CORE="borg-rs", BORG_TEST_INFERIOR_SPARE_SALE="1",
                        BORG_PARAM_TOWN_SHOP_OVERLOADED="1", BORG_PARAM_JUNK_EXPLORATION_FIRST="0")
+            if ranked_home:
+                env.update(BORG_TEST_INFERIOR_SPARE_SALE="ranked-home", BORG_PARAM_JUNK_EXPLORATION_FIRST="1",
+                           BORG_PARAM_JUNK_GEAR_ALTERNATIVES="2")
             messages = root / "messages.log"
             run = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{key}={path}" for key, path in paths.items()),

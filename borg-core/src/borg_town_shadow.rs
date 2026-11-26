@@ -292,7 +292,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     let pack_end = inven_wield() as usize;
     let home_policy = borg_town_home::enabled(st);
     let can_decurse = home_policy && crate::borg_item_decurse::can_decurse(st);
-    let ranked_gear = live && crate::borg_spare_gear::alternatives_required() > 0;
+    let ranked_gear = live && crate::borg_junk::gear_alternatives() > 0;
     let preferred_dagger = home_policy.then(|| borg_town_home::preferred_elemental_dagger(st)).flatten();
     let redundant_at_home: Vec<bool> = if home_policy {
         (0..st.store.shops[BORG_HOME].ware.len())
