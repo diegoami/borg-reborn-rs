@@ -435,10 +435,19 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     let ring = slot == pack + 3;
     let slots = if ring { slot - 1..=slot } else { slot..=slot };
     let capacity = if ring { 2 } else { 1 };
-    let choice = |(source, item)| GearChoice {
-        source, item, power: i32::MIN, lighter: false, backup: planned_slot(&item) == Some(slot),
-        wearable: can_rank(&item) && (!matches!(source, GearLocation::Home(_))
-            || !crate::borg_town_live::retained_gear(st, &item)),
+    let choice = |(source, item)| {
+        let available = match source {
+            GearLocation::Home(index) => !crate::borg_town_live::retained_gear(st, &item)
+                && !crate::borg_town_live::buy_rejected(st, crate::borg_store::BORG_HOME as i16, index)
+                && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0,
+            _ => true,
+        };
+        GearChoice {
+            source, item, power: i32::MIN, lighter: false, backup: planned_slot(&item) == Some(slot),
+            wearable: available && (can_rank(&item) || matches!(source, GearLocation::Pack(_))
+                && visible_artifact_weapon(&item)
+                && !engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts)),
+        }
     };
     let mut choices: Vec<_> = slots.clone().map(|i| choice((GearLocation::Worn(i), st.items.items[i])))
         .chain(st.store.shops[crate::borg_store::BORG_HOME].ware.iter().copied().enumerate()
@@ -462,6 +471,7 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     }
     let destinations: Vec<_> = slots.collect();
     let current: Vec<_> = (0..capacity).collect();
+    let pack_has_room = engine::pack_slots_free() > 0;
     let evaluate = |st: &mut BorgState, kit: &[usize], choices: &[GearChoice]| {
         for (&index, &target) in kit.iter().zip(&destinations) {
             let item = choices[index].item;
@@ -473,10 +483,15 @@ pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> 
     };
     let wear_allowed = |i: usize, target: usize| {
         if i < capacity { return i == target; }
-        let old = items[destinations[target]];
-        !old.one_ring && !engine::flag_has(&old.flags, OF_STICKY as i32)
-            && !old.desc.contains(&(b'!' as core::ffi::c_char))
-            && choices[i].wearable
+        choices[i].wearable && match choices[i].source {
+            GearLocation::Pack(source) => {
+                // Use the real inventory for capacity and the ring prompt.
+                let old = &items[destinations[target]];
+                crate::borg_item_wear::allows_ranked_wear(&choices[i].item, old)
+                    && (old.iqty == 0 || items[source].iqty == 1 || pack_has_room)
+            }
+            _ => crate::borg_item_wear::allows_ranked_wear(&choices[i].item, &items[destinations[target]]),
+        }
     };
     let (baseline, _) = evaluate(st, &current, &choices);
     let mut best = current.clone();
@@ -682,7 +697,7 @@ pub(crate) fn inspection_pending(st: &BorgState, item: &borg_item) -> bool {
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
     let wield = inven_wield() as usize;
-    if case == "ranked-gear" {
+    if matches!(case, "ranked-gear" | "weight-blocked-upgrade") {
         use GearLocation::{Home, Pack};
         let worn_slot = wield + 6;
         let home = crate::borg_store::BORG_HOME;
@@ -693,6 +708,20 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         let empty = crate::borg_item::blank_item();
         st.items.items[..wield].fill(empty);
         st.store.shops[home].ware.fill(empty);
+        if case == "weight-blocked-upgrade" {
+            st.items.items[worn_slot] = borg_item { iqty: 1, ..robe };
+            st.items.items[0] = better;
+            st.store.shops[home].ware[0] = best;
+            st.borg.trait_[BI_WEIGHT as usize] = st.borg.tr(BI_CARRY) / 2 - 5;
+            assert_eq!(crate::borg_town_live::shopping_weight_capacity(st, best.weight), 0);
+            let plan = gear_plan(st, worn_slot, true);
+            assert_eq!(plan.upgrade, Some((Pack(0), worn_slot)));
+            assert!(plan.stock.iter().any(|entry| entry.source == Home(0) && entry.release == 0));
+            st.items.items[0].desc[0] = b'!' as core::ffi::c_char;
+            assert_eq!(gear_plan(st, worn_slot, true).upgrade, None);
+            println!("#1264 exploration pack passed: {case}");
+            std::process::exit(0);
+        }
         st.items.items[0] = robe;
         st.items.items[worn_slot] = best;
         st.store.shops[home].ware[1] = better;
@@ -806,6 +835,24 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cloak_backup_keeps_stealth_and_requires_a_pound_for_an_extra_copy() {
+        let cloak = |source, power, weight, stealth| {
+            let mut item = borg_item { iqty: 1, tval: TV_CLOAK as u8, weight,
+                to_a: power as i16, ..crate::borg_item::blank_item() };
+            item.modifiers[crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize] = stealth;
+            GearChoice { source, item, power, lighter: true, backup: true, wearable: true }
+        };
+        let choices = [
+            cloak(GearLocation::Worn(0), 20, 25, 0),
+            cloak(GearLocation::Home(0), 18, 25, 0),
+            cloak(GearLocation::Pack(0), 10, 25, 2),
+            cloak(GearLocation::Pack(1), 8, 16, 0),
+            cloak(GearLocation::Pack(2), 7, 15, 0),
+        ];
+        assert_eq!(backup_counts(&choices, &[0], 1), [1, 0, 1, 0, 1]);
+    }
 
     #[test]
     fn better_options_count_across_all_three_locations() {

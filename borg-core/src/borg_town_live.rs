@@ -1084,8 +1084,9 @@ fn release_home_gear(st: &BorgState, slot: usize, quantity: u8) -> Option<TownAc
 }
 
 fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
-    use crate::borg_spare_gear::{cleanup_slot, gear_plan, planned_slot, GearLocation};
+    use crate::borg_spare_gear::{can_rank, cleanup_slot, gear_plan, planned_slot, redundant_copies, GearLocation};
     if preparing_loadout(st) || crate::engine::player_is_shapechanged() { return None; }
+    if !st.borg.in_shop && !crate::borg_item_wear::ranked_wear_safe(st) { return None; }
     let pack = crate::borg_item::inven_wield() as usize;
     let groups: std::collections::BTreeSet<_> = st.items.items[..pack].iter()
         .filter_map(|item| cleanup_slot(st, item))
@@ -1132,6 +1133,19 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                 }
                 _ => {}
             }
+        }
+    }
+    if release_pack.is_none() {
+        release_pack = crate::borg_junk::unplanned_pack_excess(st, false)
+            .map(|drop| pack_gear_disposal(st, drop.slot, drop.quantity));
+    }
+    if release_home.is_none() {
+        for slot in 0..st.store.shops[BORG_HOME].ware.len() {
+            let item = &st.store.shops[BORG_HOME].ware[slot];
+            if !can_rank(item) || planned_slot(item).is_some() { continue; }
+            let quantity = redundant_copies(st, GearLocation::Home(slot), crate::borg_junk::gear_alternatives());
+            release_home = release_home_gear(st, slot, quantity);
+            if release_home.is_some() { break; }
         }
     }
     release_pack.or(release_home).or(stash)

@@ -869,11 +869,7 @@ fn prefer_wear_candidate(
 pub(crate) fn ranked_wear_fits(st: &BorgState, source: usize, target: usize) -> bool {
     let item = &st.items.items[source];
     let old = &st.items.items[target];
-    if item.iqty == 0 || old.one_ring || engine::flag_has(&old.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
-        || old.desc.contains(&(b'!' as core::ffi::c_char)) || item.desc.contains(&(b'!' as core::ffi::c_char))
-    {
-        return false;
-    }
+    if !allows_ranked_wear(item, old) { return false; }
     let slot = borg_wield_slot(item);
     let ring = slot == inven_left();
     let both_rings = st.items.items[inven_left() as usize].iqty > 0 && st.items.items[inven_right() as usize].iqty > 0;
@@ -883,8 +879,15 @@ pub(crate) fn ranked_wear_fits(st: &BorgState, source: usize, target: usize) -> 
         && (old.iqty == 0 || item.iqty == 1 || engine::pack_slots_free() > 0)
 }
 
+pub(crate) fn allows_ranked_wear(item: &borg_item, old: &borg_item) -> bool {
+    let marked = |gear: &borg_item| gear.desc.contains(&(b'!' as core::ffi::c_char));
+    item.iqty > 0 && !old.one_ring
+        && !engine::flag_has(&old.flags, crate::headers::list_object_flags_h::OF_STICKY as i32)
+        && !marked(old) && !marked(item)
+}
+
 pub(crate) fn wear_ranked_upgrade(st: &mut BorgState, source: usize, target: usize) -> bool {
-    if !ranked_wear_fits(st, source, target) { return false; }
+    if !ranked_wear_fits(st, source, target) || !ranked_wear_safe(st) { return false; }
     let item = st.items.items[source];
     note_desc(st, "# Wearing ", &item, ".");
     borg_keypress(st, keycode_t::from(b'w'));
@@ -896,6 +899,10 @@ pub(crate) fn wear_ranked_upgrade(st: &mut BorgState, source: usize, target: usi
     }
     antibounce(st);
     true
+}
+
+pub(crate) fn ranked_wear_safe(st: &mut BorgState) -> bool {
+    !engine::player_is_shapechanged() && danger_here(st) == 0
 }
 
 /// Wear useful equipment (`borg_wear_stuff`).
@@ -930,10 +937,10 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
         return false;
     }
 
-    let ranked = crate::borg_town_live::gear_home_backups() && !st.borg.in_shop
-        && !crate::borg_town_live::preparing_loadout(st) && !engine::player_is_shapechanged()
-        && danger_here(st) == 0;
-    if ranked {
+    let ranked = crate::borg_town_live::gear_home_backups();
+    if ranked && !st.borg.in_shop
+        && !crate::borg_town_live::preparing_loadout(st) && ranked_wear_safe(st)
+    {
         use crate::borg_spare_gear::{gear_plan, planned_slot, GearLocation};
         let groups: std::collections::BTreeSet<_> = st.items.items[..inven_wield() as usize]
             .iter().filter_map(planned_slot).collect();
