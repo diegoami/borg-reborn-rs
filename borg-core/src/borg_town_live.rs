@@ -698,22 +698,23 @@ pub fn choose(st: &mut BorgState) -> bool {
     let plan = crate::borg_town_shadow::live_plan(st);
     let a = plan.action;
     let recall_first = recall_loadout::enabled(st);
-    // #1264: offer inferior spares before other disposals.
-    if !no_sale && matches!(a.code,
+    // After urgent shopping, clear redundant gear before optional purchases
+    // can consume the rest of this town visit.
+    let cutoff = crate::borg_junk::gear_alternatives();
+    if cutoff > 0 && !no_sale && !plan.urgent_action {
+        if let Some(cleanup) = ranked_gear_cleanup(st, cutoff) { return set_action(st, cleanup); }
+    }
+    // #1264: the earlier policy offers inferior spares before other disposals.
+    if cutoff == 0 && !no_sale && matches!(a.code,
         action::LEAVE | action::DROP | action::SELL | action::STORE | action::SELL_HOME | action::DROP_HOME)
     {
-        let cutoff = crate::borg_junk::gear_alternatives();
-        if cutoff > 0 {
-            if let Some(cleanup) = ranked_gear_cleanup(st, cutoff) { return set_action(st, cleanup); }
-        } else {
-            if let Some(sale) = inferior_spare_sale(st) { return set_action(st, sale); }
-            if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
-                let code = if crate::borg_junk::exploration_first() { DROP_SURPLUS } else { action::DROP };
-                let drop = crate::borg_junk::find_inferior_spare(st, |_, slot, item| {
-                    Some(TownAction { code, at: [-1, slot as i64, i64::from(item.iqty), 0] })
-                });
-                if let Some(drop) = drop { return set_action(st, drop); }
-            }
+        if let Some(sale) = inferior_spare_sale(st) { return set_action(st, sale); }
+        if a.code == action::DROP || crate::borg_inventory::borg_first_empty_inventory_slot(st) < 0 {
+            let code = if crate::borg_junk::exploration_first() { DROP_SURPLUS } else { action::DROP };
+            let drop = crate::borg_junk::find_inferior_spare(st, |_, slot, item| {
+                Some(TownAction { code, at: [-1, slot as i64, i64::from(item.iqty), 0] })
+            });
+            if let Some(drop) = drop { return set_action(st, drop); }
         }
     }
     // borg-reborn-rs (#1239): evaluate quiver trimming after shopping.
