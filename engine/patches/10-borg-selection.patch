@@ -14,7 +14,7 @@ Share the Ctrl-Z prompt and Borg switching between the C and Rust Borgs. Guarded
  #include "mon-util.h"
  #include "player-calcs.h"
  #include "player-history.h"
-@@ -109,6 +114,87 @@
+@@ -109,6 +114,93 @@
  
  extern void do_cmd_borg(void);
  
@@ -49,10 +49,6 @@ Share the Ctrl-Z prompt and Borg switching between the C and Rust Borgs. Guarded
 +void borg_switch_selection(void)
 +{
 +	use_cborg = !use_cborg;
-+	if (!streq(ANGBAND_SYS, "borgh"))
-+		greet_selected_borg();
-+	else
-+		msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
 +}
 +
 +static void run_selected_borg_command(char cmd)
@@ -92,17 +88,27 @@ Share the Ctrl-Z prompt and Borg switching between the C and Rust Borgs. Guarded
 +	const char *prompt = use_cborg
 +		? "CBorg command (? for help): "
 +		: "PBorg command (? for help): ";
++	bool was_cborg = use_cborg;
 +	char cmd;
 +
-+	if (get_com(prompt, &cmd))
-+		run_selected_borg_command(cmd);
++	if (!get_com(prompt, &cmd))
++		return;
++	run_selected_borg_command(cmd);
++	/* A command entered in help may have switched Borgs. Greet after help
++	 * has restored the game screen. */
++	if (use_cborg != was_cborg) {
++		if (!streq(ANGBAND_SYS, "borgh"))
++			greet_selected_borg();
++		else
++			msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
++	}
 +}
 +#endif
 +
  /*
   * Verify use of "borg" mode
   */
-@@ -131,7 +217,11 @@
+@@ -131,7 +223,11 @@
  	}
  
  	/* Okay */
