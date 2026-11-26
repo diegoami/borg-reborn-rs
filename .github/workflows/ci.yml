@@ -299,6 +299,7 @@ jobs:
       - run: python3 engine/tests/test_junk_consumables.py
       - run: python3 engine/tests/test_inferior_spares.py TownSpareSaleTest
       - run: python3 engine/tests/test_stair_handoff.py EmergencyStairHandoffTest
+      - run: python3 engine/tests/test_stair_handoff.py TownRecallReadinessTest
       - run: python3 engine/tests/test_stair_handoff.py HealingRestockTest
       - run: python3 engine/tests/test_stair_handoff.py LeaveLevelUpstairsTest
       - run: python3 engine/tests/test_stair_handoff.py DarkVeinLoopTest
