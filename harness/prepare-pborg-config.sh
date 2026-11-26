@@ -15,12 +15,13 @@ DIR="$1"
 mkdir -p "$DIR"
 sha() { python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
 BT="$DIR/pborg.yaml"
-TMP="$BT.tmp.$$"
+TMP=$(mktemp "$DIR/.pborg-config.XXXXXXXX")
+trap 'rm -f "$TMP" "$TMP.2"' EXIT
 sed '/^[[:space:]]*borg_world[[:space:]]*=/d' "$ROOT/harness/borg.txt" > "$TMP"
 SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$TMP" | tail -1 | tr -d '[:space:]')"
 if [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
     [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] && [ -f "$ROOT/harness/$SCARY_NAME" ] || {
-        rm -f "$TMP"; echo "prepare-pborg-config.sh: scary list '$SCARY_NAME' not in harness/" >&2; exit 1; }
+        echo "prepare-pborg-config.sh: scary list '$SCARY_NAME' not in harness/" >&2; exit 1; }
     cp "$ROOT/harness/$SCARY_NAME" "$DIR/$SCARY_NAME"
     sed '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$TMP" > "$TMP.2" && mv "$TMP.2" "$TMP"
     printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \

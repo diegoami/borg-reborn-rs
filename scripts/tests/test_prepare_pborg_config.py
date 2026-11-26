@@ -21,7 +21,7 @@ class PrepareBorgTxtTest(unittest.TestCase):
                                           'borg_scary_list: "scary_monsters.txt"\n'))
             self.assertEqual((Path(d) / 'scary_monsters.txt').read_bytes(),
                              (ROOT / 'harness/scary_monsters.txt').read_bytes())
-            self.assertFalse((Path(d) / 'borg.txt').exists())
+            self.assertEqual({p.name for p in Path(d).iterdir()}, {'pborg.yaml', 'scary_monsters.txt'})
             self.assertRegex(text, r'(?m)^borg_param_\w+__mage: -?\d+$')
 
     def test_watch_borg_restores_a_missing_scary_list(self):

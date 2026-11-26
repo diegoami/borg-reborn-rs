@@ -106,9 +106,9 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 ```
 
 **Which core a run plays** (owner, #606). With no `BORG_CORE`, the harness
-plays the core `harness/borg.txt` names: **borg-rs** (`borg-core/`), the one
-the zoo runs and the only one that reads `harness/borg.txt` and its
-`borg_param_*` settings. Its reference is `harness/reference/smoke-borg-rs`.
+plays the core selected by the YAML generated from `harness/borg.txt`.
+The shipped selection is **borg-rs** (`borg-core/`), which reads the
+`borg_param_*` settings from the run’s `user/pborg.yaml`. Its reference is `harness/reference/smoke-borg-rs`.
 `BORG_CORE=reborn` plays our own reborn core, which reads
 `harness/profiles/reborn-default.txt` instead; its references are
 `smoke-rust`, `smoke-exact-rust` and `full-rust`. A change to a borg-rs

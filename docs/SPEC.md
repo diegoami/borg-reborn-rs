@@ -70,32 +70,27 @@ vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
 - The game rules are never changed. The only differences from upstream are
   the patches of §3.3, each one a harness hook that is inert unless a
   harness build turns it on.
-- Upstream's own Borg (`src/borg/`, 118 files) stays in the tree unmodified
-  and is not built here: the Rust Borg takes its place at link time (§3.6).
+- The source tree includes upstream's native Borg in `src/borg/`. The
+  combined build compiles it alongside PBorg and applies the shared
+  command prompt patch to the build copy (§3.6).
 
 ### 3.2 The seam
 
-Upstream already has the whole Borg seam, and we use it as it is:
+The combined build shares Angband's Borg command and key hook:
 
 | Seam | Upstream | Our use |
 | --- | --- | --- |
 | Build switch | CMake `SUPPORT_BORG`, define `ALLOW_BORG` | on in every build |
-| Entry | `^Z` → `do_cmd_try_borg()` (`cmd-misc.c:115`) → `do_cmd_borg()` | the Rust Borg exports `do_cmd_borg`, in place of upstream's `src/borg/` |
-| Keys | `inkey_hack` (`ui-input.c:130`), read before every key | the Rust Borg installs its hook |
+| Entry | Ctrl-Z calls `do_cmd_try_borg()`, then `do_cmd_borg()` | Ctrl-Z opens the selected Borg prompt. The shared command handler dispatches to `do_cmd_pborg` or `do_cmd_cborg_key`. |
+| Keys | `inkey_hack` (`ui-input.c`), read before every key | The active Borg installs its hook. |
 | Reads | the game's globals and functions (`player`, `cave`, `map_info()`, `r_info`, …) | through generated bindings (§3.4), only the reads of the D3 list (§5) |
-
-The build links the Rust Borg and leaves out upstream's `src/borg/`
-(§3.6).
 
 ### 3.3 Harness hooks (our patch series)
 
 Headless, measured runs need a few things the game does not offer. Each
 is a small patch in `engine/patches/`, guarded by `#ifdef BORG_HARNESS` and
 documented with its purpose and the evidence that it does not change play
-when off. In today's tree the hooks proper are about 33 changed lines in 6
-files, plus 14 in `main.c` and `main.h` for the frontend's registration.
-The rest of borg-rs's changes to those files are its recording includes,
-which are not carried.
+when off. The full patch inventory is in [ENGINE.md](ENGINE.md).
 
 | Hook | Where | Why |
 | --- | --- | --- |
@@ -105,6 +100,7 @@ which are not carried.
 | Fixed date | `mon-make.c` | holiday monsters depend on the clock |
 | Message log | `message.c` | every message, Borg notes included, to `messages.log` |
 | Key and state logs | `ui-input.c`, `ui-game.c` | `keys.log` (the determinism oracle) and `state.log` |
+| Borg selection | `cmd-misc.c`, `borg/borg-commands.c` | Share Ctrl-Z and its warning. Default to PBorg and switch Borgs with `B`. |
 
 The patch series is applied at build time to a copy of the pristine tree
 (§3.6), so `engine/angband/` stays upstream's bytes. borg-rs's equivalents may be copied as a
@@ -163,15 +159,12 @@ every field.
 
 ### 3.6 Build
 
-- **One build system:** a CMake project of ours (`engine/CMakeLists.txt`)
-  that compiles the pristine `angband/` sources, our patches, our frontend
-  and exactly one Borg implementation.
-- **The source list is ours:** upstream's `CMakeLists.txt` lists every
-  `src/borg/*.c` inside its core library, and the Rust Borg exports
-  `do_cmd_borg` itself, so upstream's file cannot be used as it stands
-  (the symbol would be defined twice). Ours carries a copy of upstream's
-  source list, recorded in `docs/PROVENANCE.md`, including `src/borg/*.c`. A
-  test compares the copy with upstream's list, so a difference is caught.
+- **One build system:** `engine/CMakeLists.txt` builds a patched copy of
+  `engine/angband/`, the frontends and both Borgs.
+- **The source list matches upstream:** `engine/sources.cmake` copies all
+  209 upstream core sources, including the 59 native Borg sources. The
+  build also links PBorg's Rust static library. `engine/tests/test_build.py`
+  checks the C source list against upstream.
 - **Entry point:** `harness/build.sh` with `BORG_IMPL=<impl>` builds
   `build/<impl>/game/angband` and writes `build/<impl>/BUILD_ID`. Both the
   name and the layout are part of the zoo contract (§4).
@@ -213,10 +206,10 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     difference from the C set is declared
     with its reason (spec §1.2 warns that the options change the screen the
     Borg reads).
-  - **`harness/borg.txt`** is the run's `borg.txt`, which the zoo's adapter
-    also copies (§4, the zoo). Since the repivot (§2 amendment,
-    docs/ERRANDS.md) it is read: it is borg-rs's v12 file, which configures
-    borg-rs's core, with `borg_munchkin_by_class` and `borg_self_scum` set to
+  - **`harness/borg.txt`** is the PBorg settings template. The harness and
+    Zoo apply the run overrides and convert it to `user/pborg.yaml` before
+    launching PBorg. CBorg uses upstream's settings in `user/borg.txt`.
+    The template descends from borg-rs's v12 file, with `borg_munchkin_by_class` and `borg_self_scum` set to
     `FALSE` (owner, 2026-11-14: no stair-scumming, no town scumming), and
     three keys of ours that select the decision core (`borg_reborn_core`),
     an errand (`borg_reborn_errand`) and the fear stop
@@ -258,7 +251,7 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
   written down in `docs/ZOO-INTERFACE.md`:
   - `harness/build.sh`, `build/<impl>/game/angband` and
     `build/<impl>/BUILD_ID` (with `binary_sha256`);
-  - `harness/borg.txt`, which the zoo copies;
+  - the PBorg settings template, converter and YAML declaration in `BUILD_ID` as specified in `docs/ZOO-INTERFACE.md`;
   - the frontend's mode, flags and outputs (§3.5).
 
   This is the interface the zoo's existing "borg-rs" adapter calls. Keeping
@@ -363,7 +356,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `harness/build.sh` | borg-rs's build with our overlays | **Re-found** on §3.6, same name and layout | the zoo calls it |
 | `harness/measurement/`, `control-overlay.py` | borg-rs-specific build helpers and the C controls' overlays | **Drop** | §3.6, §6 |
 | `run.sh`, `suite.sh`, `diff`, `identity.sh`, `supervise.py` | copied from borg-rs, adapted | **Keep** as ours, adapt to the new frontend | §4 |
-| `harness/borg.txt` | the C Borgs' configuration, from borg-rs | **Keep**, only because the zoo's adapter copies it | §4 |
+| `harness/borg.txt` | Settings inherited from borg-rs | PBorg template for the harness and Zoo. Both generate `user/pborg.yaml` for play. | §4 |
 | `harness/suites/`, `harness/profiles/` | ours | **Keep** | §4 |
 | `check-boundary.py`, `check-extra-load.sh`, `zoo-check.py`; `tools/depth-stream.py`, `export-death.py`, `reconcile-deaths.py`, `tools/tests/` | ours | **Keep** | §4 |
 | `tools/endpoint.py` | ours: the primary endpoint over local outputs and zoo cells | **Drop** | the zoo computes every statistic (§6) |

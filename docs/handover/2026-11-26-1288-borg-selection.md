@@ -37,3 +37,7 @@ watcher's scary-list preflight through the game YAML parser, and added
 the upstream CBorg defaults to release packages. PBorg's introduction
 identifies the shipped decision core. An absent PBorg settings file
 reports the reborn-core fallback.
+
+The re-review reconciled the remaining live build and command-interface
+documentation. The settings helper now removes its temporary configuration
+files after both successful and failed conversions.

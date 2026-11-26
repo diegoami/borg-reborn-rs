@@ -166,6 +166,5 @@ Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 
 ## Not engine reads
 
-The harness frontend's `borgh_decision` (declared in `engine.rs`, harness
-builds only) and the Borg's own export `do_cmd_borg` belong to the seam,
-not to the game's state.
+The harness callback `borgh_decision` and the Rust export `do_cmd_pborg`
+are part of the command and measurement interface.

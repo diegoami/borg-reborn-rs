@@ -13,12 +13,11 @@ kept here since 2026-11-21, are in
 
 Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
-core and our own "reborn" core. The engine's `^Z` enters through
-`do_cmd_borg` (`borg-reborn-rs/src/engine.rs:252`); when
-`core_is_borg_rs()` (`borg-reborn-rs/src/borg.rs:291`) is true it applies
-the configured fear setting and errand, then calls
-`borg_rs::do_cmd_borg()` (`borg-reborn-rs/src/engine.rs:273`), which is
-`engine::do_cmd_borg` in borg-core (`borg-core/src/engine.rs:144`).
+core and our own "reborn" core. The shared Ctrl-Z prompt sends PBorg
+commands to `do_cmd_pborg` in `borg-reborn-rs/src/engine.rs`. When
+`core_is_borg_rs()` selects the vendored core, the shell applies the
+configured fear setting and errand, then forwards the command key to
+`borg_rs::do_cmd_borg_key()`.
 
 ## 1. What it is and where it comes from
 
