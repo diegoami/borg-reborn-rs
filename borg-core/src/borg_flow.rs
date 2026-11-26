@@ -128,6 +128,8 @@ pub struct FlowState {
     /// (`flow_commit`): a brave walk is continued only while its own flow is
     /// the current one.
     pub commit_seq: u32,
+    /// The current flow was spread with stair-scum loot step constraints.
+    pub stair_scum_loot: bool,
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
@@ -195,6 +197,7 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             commit_seq: 0,
+            stair_scum_loot: false,
             hunting: false,
             flight_no_danger: false,
             through_traps: false,
@@ -978,11 +981,33 @@ pub fn borg_flow_spread_hunting(
 pub fn borg_flow_spread(
     st: &mut BorgState,
     depth: i32,
+    optimize: bool,
+    avoid: bool,
+    tunneling: bool,
+    stair_idx: i32,
+    sneak: bool,
+) {
+    spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak, None);
+}
+
+pub(crate) fn spread_stair_scum_loot(
+    st: &mut BorgState,
+    depth: i32,
+    avoid: bool,
+    map: &crate::borg_stair_scum::Map,
+) {
+    spread(st, depth, true, avoid, false, -1, true, Some(map));
+}
+
+fn spread(
+    st: &mut BorgState,
+    depth: i32,
     mut optimize: bool,
     avoid: bool,
     tunneling: bool,
     stair_idx: i32,
     sneak: bool,
+    stair_scum: Option<&crate::borg_stair_scum::Map>,
 ) {
     let mut o = 0;
 
@@ -1048,6 +1073,14 @@ pub fn borg_flow_spread(
 
             /* Skip "reached" grids */
             if i32::from(st.flow.data_cost[y as usize][x as usize]) <= n {
+                continue;
+            }
+
+            // The spread runs backwards from the target. Test the forward
+            // step from the candidate predecessor to the queued grid.
+            if stair_scum.is_some_and(|map| {
+                !map.allows_step(st, loc { x, y }, loc { x: x1, y: y1 })
+            }) {
                 continue;
             }
 
@@ -1214,6 +1247,7 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
     let f = &mut st.flow;
     copy_data(&mut f.data_flow, &f.data_cost);
     f.weighted_flight = WeightedFlight::None;
+    f.stair_scum_loot = false;
     f.up_stair_flight = why == GOAL_FLEE && who == Some(b"up-stairs");
 
     /* Save the goal type */
@@ -2098,9 +2132,14 @@ fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
         return false;
     }
 
+    let stair_scum = if st.flow.stair_scum_loot {
+        crate::borg_stair_scum::Map::of(st)
+    } else {
+        None
+    };
     let next = match st.flow.weighted_flight {
         WeightedFlight::None => {
-            let i = select_step(st);
+            let i = select_step(st, stair_scum.as_ref());
             (i >= 0).then(|| loc {
                 x: st.borg.c.x + i32::from(engine::ddx_ddd(i as usize)),
                 y: st.borg.c.y + i32::from(engine::ddy_ddd(i as usize)),
@@ -2146,7 +2185,9 @@ fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
 
     // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
     // step, a resumed flow's too, against its safe area.
-    if next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x)) {
+    if !st.flow.stair_scum_loot
+        && next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x))
+    {
         st.borg.goal.type_0 = 0;
         return false;
     }
@@ -2215,7 +2256,7 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
     if i32::from(st.borg.goal.type_0) != GOAL_DARK {
         return false;
     }
-    let step = select_step(st);
+    let step = select_step(st, None);
     if step < 0 {
         return false;
     }
@@ -2226,7 +2267,7 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
 
 /// The "Look around" part of `borg_flow_old()`: the direction index
 /// (`ddx_ddd`) of the best next grid along the committed flow, or -1.
-fn select_step(st: &BorgState) -> i32 {
+pub(crate) fn select_step(st: &BorgState, stair_scum: Option<&crate::borg_stair_scum::Map>) -> i32 {
     let mut b_n = 0;
     let mut b_i: i32 = -1;
 
@@ -2258,6 +2299,12 @@ fn select_step(st: &BorgState) -> i32 {
 
         /* avoid screen edges */
         if !(1..AUTO_MAX_X).contains(&x) || !(1..AUTO_MAX_Y).contains(&y) {
+            continue;
+        }
+
+        // A lower-cost neighbour can have been reached from another
+        // predecessor even when the edge from here is forbidden.
+        if stair_scum.is_some_and(|map| !map.allows_step(st, st.borg.c, loc { x, y })) {
             continue;
         }
 
