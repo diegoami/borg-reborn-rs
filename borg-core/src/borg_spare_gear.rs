@@ -42,7 +42,7 @@ fn properties_cover(worn: &borg_item, spare: &borg_item, other_slots: &[&borg_it
         })
 }
 
-fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
+pub(crate) fn known_properties_cover(worn: &borg_item, spare: &borg_item) -> bool {
     properties_and_attack_cover(worn, spare, &[])
 }
 
@@ -340,6 +340,235 @@ pub(crate) fn can_rank(item: &borg_item) -> bool {
     known_gear(item) && !item.needs_ident && ranked_slot(item).is_some()
 }
 
+fn visible_artifact_weapon(item: &borg_item) -> bool {
+    // A named weapon can show its dice and bonuses before every rune is
+    // known. Use those facts for comparison, and leave wear eligibility
+    // to the ordinary identification and curse checks.
+    melee_weapon(item) && item.aware && item.art_idx != 0 && item.dd > 0 && item.ds > 0
+        && item.to_h > 0 && item.to_d > 0 && !item.cursed && !item.curses.contains(&true)
+}
+
+pub(crate) struct GearPlan {
+    pub upgrade: Option<(GearLocation, usize)>,
+    pub stock: Vec<GearStock>,
+}
+
+pub(crate) struct GearStock {
+    pub source: GearLocation,
+    pub stash: u8,
+    pub release: u8,
+}
+
+#[derive(Clone, Copy)]
+struct GearChoice {
+    source: GearLocation,
+    item: borg_item,
+    power: i32,
+    lighter: bool,
+    backup: bool,
+    wearable: bool,
+}
+
+fn backup_counts(choices: &[GearChoice], worn: &[usize], capacity: usize) -> Vec<u8> {
+    let mut keep = vec![0; choices.len()];
+    for &index in worn {
+        keep[index] += 1;
+    }
+    let mut ranked: Vec<_> = (0..choices.len()).filter(|&index| choices[index].backup).collect();
+    ranked.sort_by_key(|&i| {
+        let distinct = capacity == 1 && worn.iter().any(|&w| choices[w].item.iqty > 0
+            && !known_properties_cover(&choices[w].item, &choices[i].item));
+        // A stealth cloak is an alternate exploration kit. Keep the best
+        // cloak for that use when the primary supplies no stealth.
+        let stealth = crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize;
+        let stealth_backup = distinct && u32::from(choices[i].item.tval) == TV_CLOAK
+            && choices[i].item.modifiers[stealth] > 0
+            && worn.iter().all(|&w| choices[w].item.modifiers[stealth] <= 0);
+        (std::cmp::Reverse(stealth_backup), std::cmp::Reverse(distinct), std::cmp::Reverse(choices[i].power), choices[i].source)
+    });
+    let mut regular = Vec::new();
+    for &index in &ranked {
+        if capacity == 1 && worn.iter().any(|&i| crate::borg_town_home::same_variant(&choices[i].item, &choices[index].item)
+            && choices[i].item.iqty > 0) { continue; }
+        let copies = usize::from(choices[index].item.iqty - keep[index]).min(capacity - regular.len());
+        keep[index] += copies as u8;
+        regular.extend(std::iter::repeat_n(index, copies));
+        if regular.len() == capacity { break; }
+    }
+    if capacity == 1 {
+        // Require a pound of relief. Compare with both selected pieces
+        // so an already-light runner-up fills the role.
+        let light_limit = worn.iter().chain(&regular).map(|&i| choices[i].item.weight)
+            .min().unwrap_or(0).saturating_sub(10);
+        if let Some(index) = ranked.into_iter().find(|&i| keep[i] == 0 && choices[i].lighter
+            && choices[i].item.weight <= light_limit)
+        {
+            keep[index] = 1;
+        }
+    }
+    keep
+}
+
+pub(crate) fn planned_slot(item: &borg_item) -> Option<usize> {
+    // A tunnelling tool is not a weapon backup. Fueled lights have their
+    // own reserve based on remaining turns.
+    ((can_rank(item) || visible_artifact_weapon(item)) && !item.one_ring
+        && u32::from(item.tval) != TV_DIGGING).then(|| ranked_slot(item)).flatten()
+}
+
+fn uninspected_plain_armour(item: &borg_item) -> bool {
+    if !item.aware || item.iqty == 0 || !item.needs_ident || item.art_idx != 0 || item.ego_idx != 0
+        || item.cursed || item.curses.contains(&true) || !armour(item) { return false; }
+    let note = item.desc.iter().copied().map(|c| c as u8).skip_while(|&c| c != b'{')
+        .take_while(|&c| c != 0).collect::<Vec<_>>();
+    note == b"{??}"
+}
+
+pub(crate) fn cleanup_slot(st: &BorgState, item: &borg_item) -> Option<usize> {
+    planned_slot(item).or_else(|| {
+        (st.borg.tr(BI_AID) == 0 && uninspected_plain_armour(item)).then(|| ranked_slot(item)).flatten()
+    })
+}
+
+pub(crate) fn gear_plan(st: &mut BorgState, slot: usize, include_home: bool) -> GearPlan {
+    let pack = inven_wield() as usize;
+    let ring = slot == pack + 3;
+    let slots = if ring { slot - 1..=slot } else { slot..=slot };
+    let capacity = if ring { 2 } else { 1 };
+    let choice = |(source, item)| {
+        let available = match source {
+            GearLocation::Home(index) => !crate::borg_town_live::retained_gear(st, &item)
+                && !crate::borg_town_live::buy_rejected(st, crate::borg_store::BORG_HOME as i16, index)
+                && crate::borg_town_live::shopping_weight_capacity(st, item.weight) > 0,
+            _ => true,
+        };
+        GearChoice {
+            source, item, power: i32::MIN, lighter: false, backup: planned_slot(&item) == Some(slot),
+            wearable: available && (can_rank(&item) || matches!(source, GearLocation::Pack(_))
+                && visible_artifact_weapon(&item)
+                && !engine::player_opt(crate::headers::list_options_h::OPT_birth_randarts)),
+        }
+    };
+    let mut choices: Vec<_> = slots.clone().map(|i| choice((GearLocation::Worn(i), st.items.items[i])))
+        .chain(st.store.shops[crate::borg_store::BORG_HOME].ware.iter().copied().enumerate()
+            .filter(|(_, item)| include_home && planned_slot(item) == Some(slot))
+            .map(|(i, item)| choice((GearLocation::Home(i), item))))
+        .chain(st.items.items[..pack].iter().copied().enumerate()
+            .filter(|(_, item)| planned_slot(item) == Some(slot))
+            .map(|(i, item)| choice((GearLocation::Pack(i), item))))
+        .collect();
+    if choices.len() == capacity { return GearPlan { upgrade: None, stock: Vec::new() }; }
+
+    let items = st.items.items.clone();
+    let borg = st.borg.clone();
+    let traits = st.traits.clone();
+    let home = st.home.clone();
+    let do_spell = std::mem::replace(&mut st.think.do_spell, false);
+    // Judge the fit of gear to wear, independent of how many of the
+    // prospective spares are temporarily in the pack.
+    for entry in &choices[capacity..] {
+        if let GearLocation::Pack(i) = entry.source { st.items.items[i].iqty = 0; }
+    }
+    let destinations: Vec<_> = slots.collect();
+    let current: Vec<_> = (0..capacity).collect();
+    let pack_has_room = engine::pack_slots_free() > 0;
+    let evaluate = |st: &mut BorgState, kit: &[usize], choices: &[GearChoice]| {
+        for (&index, &target) in kit.iter().zip(&destinations) {
+            let item = choices[index].item;
+            st.items.items[target] = borg_item { iqty: item.iqty.min(1), ..item };
+        }
+        crate::borg_trait::borg_notice(st, false);
+        (crate::borg_power::borg_power_equipment(st),
+            super::borg_town_loadout::keeps_capabilities(&borg.trait_, &st.borg.trait_))
+    };
+    let wear_allowed = |i: usize, target: usize| {
+        if i < capacity { return i == target; }
+        choices[i].wearable && match choices[i].source {
+            GearLocation::Pack(source) => {
+                // Use the real inventory for capacity and the ring prompt.
+                let old = &items[destinations[target]];
+                crate::borg_item_wear::allows_ranked_wear(&choices[i].item, old)
+                    && (old.iqty == 0 || items[source].iqty == 1 || pack_has_room)
+            }
+            _ => crate::borg_item_wear::allows_ranked_wear(&choices[i].item, &items[destinations[target]]),
+        }
+    };
+    let (baseline, _) = evaluate(st, &current, &choices);
+    let mut best = current.clone();
+    let mut best_power = baseline;
+    // Evaluate both fingers together. A stack with two copies is allowed
+    // to supply both, and we keep the current arrangement on a tie.
+    for first in 0..choices.len() {
+        if !wear_allowed(first, 0) { continue; }
+        if ring {
+            for second in 0..choices.len() {
+                if !wear_allowed(second, 1) || first == second && choices[first].item.iqty < 2 { continue; }
+                let trial = [first, second];
+                let (power, _) = evaluate(st, &trial, &choices);
+                if power > best_power { best.copy_from_slice(&trial); best_power = power; }
+            }
+        } else {
+            let (power, _) = evaluate(st, &[first], &choices);
+            if power > best_power { best[0] = first; best_power = power; }
+        }
+    }
+    if ring {
+        for i in 0..choices.len() {
+            for target in 0..capacity {
+                if i < capacity && i != target || i == best[1 - target] && choices[i].item.iqty < 2 { continue; }
+                let mut trial = best.clone();
+                trial[target] = i;
+                let (power, _) = evaluate(st, &trial, &choices);
+                choices[i].power = choices[i].power.max(power);
+            }
+        }
+    } else {
+        for i in 0..choices.len() {
+            let (power, preserves) = evaluate(st, &[i], &choices);
+            choices[i].power = power;
+            choices[i].lighter = preserves;
+        }
+    }
+    st.items.items = items;
+    st.borg = borg;
+    st.traits = traits;
+    st.home = home;
+    st.think.do_spell = do_spell;
+
+    let upgrade = best.iter().enumerate().filter(|&(target, &i)| target != i)
+        // The engine always uses the open finger before asking which ring
+        // to replace. Fill it first if the pair changes both slots.
+        .min_by_key(|&(target, _)| choices[target].item.iqty != 0)
+        .map(|(target, &i)| (choices[i].source, destinations[target]));
+    let keep = backup_counts(&choices, &best, capacity);
+    let mut stock: Vec<_> = choices.iter().zip(&keep).enumerate().skip(capacity).map(|(index, (entry, &keep))| {
+        let item = entry.item;
+        let protected = item.art_idx != 0 || item.activ_idx != 0
+            || item.desc.contains(&(b'{' as core::ffi::c_char))
+            || crate::borg_town_live::retained_gear(st, &item);
+        GearStock {
+            source: entry.source,
+            stash: keep - best.iter().filter(|&&i| i == index).count() as u8,
+            release: if protected { 0 } else { item.iqty - keep },
+        }
+    }).collect();
+    // When there is no usable identification, two verified alternatives
+    // can release plain armour that is visibly worse than either one.
+    if st.borg.tr(BI_AID) == 0 {
+        for (index, item) in st.items.items[..pack].iter().enumerate().filter(|(_, item)| {
+            uninspected_plain_armour(item) && ranked_slot(item) == Some(slot)
+        }) {
+            let covered = choices.iter().zip(&keep).filter(|(entry, qty)| {
+                **qty > 0 && can_rank(&entry.item) && static_gear_covers(&entry.item, item, &[], false)
+            }).take(2).count();
+            if covered == 2 {
+                stock.push(GearStock { source: GearLocation::Pack(index), stash: 0, release: item.iqty });
+            }
+        }
+    }
+    GearPlan { upgrade, stock }
+}
+
 pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutoff: usize) -> u8 {
     let wield = inven_wield() as usize;
     let home = &st.store.shops[crate::borg_store::BORG_HOME].ware;
@@ -365,7 +594,9 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
         .map(|i| (GearLocation::Worn(i), &st.items.items[i]))
         .chain(home.iter().enumerate().map(|(i, item)| (GearLocation::Home(i), item)))
         .chain(st.items.items[..wield].iter().enumerate().map(|(i, item)| (GearLocation::Pack(i), item)))
-        .filter(|(source, item)| *source != location && can_rank(item) && ranked_slot(item) == Some(slot)
+        .filter(|(source, item)| *source != location && (can_rank(item)
+            || visible_artifact_weapon(item) && item.kind == spare.kind && item.weight <= spare.weight)
+            && ranked_slot(item) == Some(slot)
             && (u32::from(item.tval) == TV_DIGGING) == digger)
         .map(|(source, item)| (source, *item, item.iqty)).collect();
     if !melee_weapon(&spare) {
@@ -404,7 +635,8 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
     st.think.do_spell = do_spell;
     covered_copies(&(location, sample), &peers, spare.iqty, worn_capacity, cutoff,
         |(have, better, room), (need, worse, required)| {
-            covers_activation(have, need) && properties_and_attack_cover(have, need, &[])
+            (need.ident || need.art_idx == 0 || have.art_idx == need.art_idx) && covers_activation(have, need)
+                && properties_and_attack_cover(have, need, &[])
                 && room >= required && better.speed >= worse.speed && better.armor >= worse.armor
                 && better.hit >= worse.hit && better.damage(1) >= worse.damage(1)
                 && have.slays.iter().zip(&need.slays)
@@ -465,7 +697,7 @@ pub(crate) fn inspection_pending(st: &BorgState, item: &borg_item) -> bool {
 #[cfg(feature = "test-town-loadout")]
 pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
     let wield = inven_wield() as usize;
-    if case == "ranked-gear" {
+    if matches!(case, "ranked-gear" | "weight-blocked-upgrade") {
         use GearLocation::{Home, Pack};
         let worn_slot = wield + 6;
         let home = crate::borg_store::BORG_HOME;
@@ -476,6 +708,20 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
         let empty = crate::borg_item::blank_item();
         st.items.items[..wield].fill(empty);
         st.store.shops[home].ware.fill(empty);
+        if case == "weight-blocked-upgrade" {
+            st.items.items[worn_slot] = borg_item { iqty: 1, ..robe };
+            st.items.items[0] = better;
+            st.store.shops[home].ware[0] = best;
+            st.borg.trait_[BI_WEIGHT as usize] = st.borg.tr(BI_CARRY) / 2 - 5;
+            assert_eq!(crate::borg_town_live::shopping_weight_capacity(st, best.weight), 0);
+            let plan = gear_plan(st, worn_slot, true);
+            assert_eq!(plan.upgrade, Some((Pack(0), worn_slot)));
+            assert!(plan.stock.iter().any(|entry| entry.source == Home(0) && entry.release == 0));
+            st.items.items[0].desc[0] = b'!' as core::ffi::c_char;
+            assert_eq!(gear_plan(st, worn_slot, true).upgrade, None);
+            println!("#1264 exploration pack passed: {case}");
+            std::process::exit(0);
+        }
         st.items.items[0] = robe;
         st.items.items[worn_slot] = best;
         st.store.shops[home].ware[1] = better;
@@ -589,6 +835,24 @@ pub(crate) fn fixture(st: &mut BorgState, case: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cloak_backup_keeps_stealth_and_requires_a_pound_for_an_extra_copy() {
+        let cloak = |source, power, weight, stealth| {
+            let mut item = borg_item { iqty: 1, tval: TV_CLOAK as u8, weight,
+                to_a: power as i16, ..crate::borg_item::blank_item() };
+            item.modifiers[crate::headers::list_object_modifiers_h::OBJ_MOD_STEALTH as usize] = stealth;
+            GearChoice { source, item, power, lighter: true, backup: true, wearable: true }
+        };
+        let choices = [
+            cloak(GearLocation::Worn(0), 20, 25, 0),
+            cloak(GearLocation::Home(0), 18, 25, 0),
+            cloak(GearLocation::Pack(0), 10, 25, 2),
+            cloak(GearLocation::Pack(1), 8, 16, 0),
+            cloak(GearLocation::Pack(2), 7, 15, 0),
+        ];
+        assert_eq!(backup_counts(&choices, &[0], 1), [1, 0, 1, 0, 1]);
+    }
 
     #[test]
     fn better_options_count_across_all_three_locations() {

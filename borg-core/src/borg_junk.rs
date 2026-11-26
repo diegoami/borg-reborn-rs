@@ -741,6 +741,7 @@ fn expendable_town_spare(item: &borg_item, worn: &borg_item) -> bool {
 }
 
 fn town_spare_drop(st: &mut BorgState) -> Option<SurplusDrop> {
+    if let Some(drop) = surplus_light_drop(st) { return Some(drop); }
     let shared = exploration_first();
     let pack = &st.items.items[..pack_size() as usize];
     let legacy_drop = pack.iter().enumerate().filter(|&(slot, item)| {
@@ -1395,7 +1396,10 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
             return true;
         }
         let cutoff = gear_alternatives();
-        let spare = if cutoff > 0 {
+        let spare = if crate::borg_town_live::gear_home_backups() {
+            surplus_light_drop(st).or_else(|| planned_pack_excess(st, true))
+                .or_else(|| unplanned_pack_excess(st, true)).map(|drop| drop.slot as i32)
+        } else if cutoff > 0 {
             (0..pack_size()).find(|&slot| {
                 let slot = slot as usize;
                 let quantity = st.items.items[slot].iqty;
@@ -2291,11 +2295,16 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
         item.iqty > 0 && i64::from(item.value) * i64::from(item.iqty) <= i64::from(EARLY_JUNK_VALUE)
     };
     let safe_to_drop = |st: &mut BorgState| !engine::player_is_shapechanged() && danger_here(st) == 0;
+    let light = surplus_light_drop(st);
     let cutoff = gear_alternatives();
     if cutoff > 0 {
-        if !(0..pack_size() as usize).any(|slot| crate::borg_spare_gear::can_rank(&st.items.items[slot]))
+        if light.is_none() && !(0..pack_size() as usize).any(|slot| {
+            let item = &st.items.items[slot];
+            crate::borg_spare_gear::can_rank(item) || crate::borg_town_live::gear_home_backups()
+                && crate::borg_spare_gear::cleanup_slot(st, item).is_some()
+        })
             || !safe_to_drop(st) { return false; }
-        let Some(drop) = ranked_pack_spare(st, cutoff) else { return false; };
+        let Some(drop) = light.or_else(|| ranked_pack_spare(st, cutoff)) else { return false; };
         if drop.quantity < st.items.items[drop.slot].iqty { return drop_surplus(st, drop); }
         note_desc(st, "# Dropping inferior spare ", drop.slot as i32, ".");
         drop_ignored_pack_stack(st, drop.slot as i32);
@@ -2328,10 +2337,49 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
 }
 
 pub(crate) fn ranked_pack_spare(st: &mut BorgState, cutoff: usize) -> Option<SurplusDrop> {
+    if let Some(drop) = surplus_light_drop(st) { return Some(drop); }
+    if crate::borg_town_live::gear_home_backups() {
+        return planned_pack_excess(st, false).or_else(|| unplanned_pack_excess(st, false));
+    }
     (0..pack_size() as usize).find_map(|slot| {
         let quantity = crate::borg_spare_gear::redundant_copies(st, crate::borg_spare_gear::GearLocation::Pack(slot), cutoff);
         (quantity > 0).then_some(SurplusDrop { slot, quantity, sell_first: true })
     })
+}
+
+pub(crate) fn unplanned_pack_excess(st: &mut BorgState, whole_stack: bool) -> Option<SurplusDrop> {
+    use crate::borg_spare_gear::{self as spare_gear, GearLocation};
+    let cutoff = gear_alternatives();
+    (0..pack_size() as usize).find_map(|slot| {
+        let item = &st.items.items[slot];
+        if !spare_gear::can_rank(item) || spare_gear::planned_slot(item).is_some() { return None; }
+        let total = item.iqty;
+        let quantity = spare_gear::redundant_copies(st, GearLocation::Pack(slot), cutoff);
+        (quantity > 0 && (!whole_stack || quantity == total))
+            .then_some(SurplusDrop { slot, quantity, sell_first: true })
+    })
+}
+
+pub(crate) fn surplus_light_drop(st: &BorgState) -> Option<SurplusDrop> {
+    let slot = crate::borg_light::surplus_light(st)?;
+    Some(SurplusDrop { slot, quantity: st.items.items[slot].iqty, sell_first: true })
+}
+
+fn planned_pack_excess(st: &mut BorgState, whole_stack: bool) -> Option<SurplusDrop> {
+    use crate::borg_spare_gear::{cleanup_slot, gear_plan, GearLocation};
+    let groups: std::collections::BTreeSet<_> = st.items.items[..pack_size() as usize]
+        .iter().filter_map(|item| cleanup_slot(st, item)).collect();
+    for group in groups {
+        let plan = gear_plan(st, group, true);
+        if matches!(plan.upgrade, Some((GearLocation::Pack(_), _))) { continue; }
+        for entry in plan.stock {
+            let GearLocation::Pack(slot) = entry.source else { continue; };
+            if entry.release > 0 && (!whole_stack || entry.release == st.items.items[slot].iqty) {
+                return Some(SurplusDrop { slot, quantity: entry.release, sell_first: true });
+            }
+        }
+    }
+    None
 }
 
 #[cfg(test)]

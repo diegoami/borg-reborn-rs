@@ -45,6 +45,8 @@ class ExplorationPackTest(unittest.TestCase):
                        BORG_PARAM_ITEM_USE_IDLE="0")
             if fixture:
                 env["BORG_TEST_EXPLORATION_PACK"] = fixture
+            if fixture == "weight-blocked-upgrade":
+                env["BORG_PARAM_TOWN_SHOP_OVERLOADED"] = "2"
             result = subprocess.run(
                 [str(game), "-mborgh", "-n", *(f"-d{name}={path}" for name, path in paths.items()),
                  "--", "-seed", "101", "-race", "0", "-class", "0", "-start-depth", "3",
@@ -69,6 +71,9 @@ class ExplorationPackTest(unittest.TestCase):
 
     def test_ranked_spares_count_worn_pack_and_home(self):
         self.run_case(harmful=False, fixture="ranked-gear")
+
+    def test_weight_blocked_home_upgrade_leaves_the_carried_upgrade_available(self):
+        self.run_case(harmful=False, fixture="weight-blocked-upgrade")
 
     def test_drops_known_harmful_potions_before_usable_supplies(self):
         log = self.run_case(harmful=True)

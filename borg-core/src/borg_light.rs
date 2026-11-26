@@ -986,6 +986,44 @@ pub(crate) fn light_contribution(item: &BorgItem) -> i32 {
     innate + i32::from(item.modifiers[OBJ_MOD_LIGHT as usize])
 }
 
+fn permanent_light(item: &BorgItem) -> bool {
+    item.iqty > 0 && u32::from(item.tval) == TV_LIGHT && !item.cursed
+        && !item.curses.contains(&true) && has_flag(item, OF_NO_FUEL) && light_contribution(item) > 0
+}
+
+fn covers_spare_light(permanent: &BorgItem, spare: &BorgItem) -> bool {
+    if light_contribution(permanent) < light_contribution(spare)
+        || spare.activ_idx != 0 && permanent.activ_idx != spare.activ_idx { return false; }
+    let mut spare = *spare;
+    // The radius was compared explicitly. Refill and burnout mechanics
+    // do not add benefits beyond what a permanent light provides.
+    for flag in [OF_LIGHT_2, OF_LIGHT_3, OF_BURNS_OUT, OF_TAKES_FUEL, OF_NO_FUEL] {
+        let bit = (flag as i32 - engine::FLAG_START) as usize;
+        spare.flags[bit / 8] &= !(1 << (bit % 8));
+    }
+    spare.modifiers[OBJ_MOD_LIGHT as usize] = 0;
+    crate::borg_spare_gear::known_properties_cover(permanent, &spare)
+}
+
+pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
+    if !crate::borg_town_live::gear_home_backups() { return None; }
+    let worn = &st.items.items[inven_light() as usize];
+    if !permanent_light(worn) { return None; }
+    let pack = &st.items.items[..inven_wield() as usize];
+    pack.iter().position(|item| {
+        if item.iqty == 0 || u32::from(item.tval) != TV_LIGHT || !item.aware || item.needs_ident
+            || item.cursed || item.curses.contains(&true) || item.art_idx != 0
+            || item.desc.contains(&(b'{' as core::ffi::c_char))
+        { return false; }
+        if permanent_light(item) {
+            // A distinct permanent light can still serve as the backup.
+            return worn.kind == item.kind && worn.weight <= item.weight && covers_spare_light(worn, item);
+        }
+        covers_spare_light(worn, item)
+            || pack.iter().any(|light| permanent_light(light) && covers_spare_light(light, item))
+    })
+}
+
 /// borg-reborn-rs (#1235): a clean torch that will be consumed when its fuel runs out.
 /// See engine/angband/src/player-util.c:719 (player_update_light).
 pub(crate) fn burning_torch(item: &BorgItem) -> bool {
@@ -1598,6 +1636,20 @@ mod lightless_tests {
             item.flags[offset / 8] |= 1 << (offset % 8);
         }
         item
+    }
+
+    #[test]
+    fn a_permanent_light_covers_equal_radius_fuel_and_keeps_distinct_benefits() {
+        let worn = light(&[OF_LIGHT_3, OF_NO_FUEL], 0);
+        let mut torch = light(&[OF_LIGHT_2, OF_BURNS_OUT], 5000);
+        torch.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        assert!(permanent_light(&worn));
+        assert!(covers_spare_light(&worn, &torch));
+        torch.modifiers[OBJ_MOD_LIGHT as usize] = 2;
+        assert!(!covers_spare_light(&worn, &torch));
+        torch.modifiers[OBJ_MOD_LIGHT as usize] = 1;
+        torch.el_info[0].res_level = 1;
+        assert!(!covers_spare_light(&worn, &torch));
     }
 
     fn torch(timeout: i16) -> BorgItem {

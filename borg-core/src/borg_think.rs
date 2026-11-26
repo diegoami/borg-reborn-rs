@@ -225,7 +225,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
             static PREPARED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
         }
         if !PREPARED.replace(true) {
-            engine::equip_test_sandal_spares(st, case == "ranked-home");
+            engine::equip_test_sandal_spares(st, case.to_str().unwrap_or("1"));
             crate::borg_item::borg_find_all_items(st);
         }
     }
