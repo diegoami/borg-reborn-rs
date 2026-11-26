@@ -21,7 +21,8 @@ wearing the better pair of rings, and storing only the selected backups.
 The Paladin checkpoint in [#1279](https://github.com/diegoami/borg-reborn-rs/issues/1279)
 has Narthanc, a partially identified Nimthanc and two weaker ordinary
 daggers. A named weapon with visible combat bonuses can count against an
-ordinary spare even when some runes are unknown. It still needs normal
+ordinary spare of the same kind and weight even when some runes are
+unknown. It still needs normal
 identification before the new wear planner selects it. Run
 `python3 engine/tests/check_paladin_daggers.py /path/to/extracted-evidence`
 to check disposal with either gear policy.

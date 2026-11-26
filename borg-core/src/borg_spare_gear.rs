@@ -538,7 +538,8 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
         .map(|i| (GearLocation::Worn(i), &st.items.items[i]))
         .chain(home.iter().enumerate().map(|(i, item)| (GearLocation::Home(i), item)))
         .chain(st.items.items[..wield].iter().enumerate().map(|(i, item)| (GearLocation::Pack(i), item)))
-        .filter(|(source, item)| *source != location && (can_rank(item) || visible_artifact_weapon(item))
+        .filter(|(source, item)| *source != location && (can_rank(item)
+            || visible_artifact_weapon(item) && item.kind == spare.kind && item.weight <= spare.weight)
             && ranked_slot(item) == Some(slot)
             && (u32::from(item.tval) == TV_DIGGING) == digger)
         .map(|(source, item)| (source, *item, item.iqty)).collect();
@@ -578,7 +579,7 @@ pub(crate) fn redundant_copies(st: &mut BorgState, location: GearLocation, cutof
     st.think.do_spell = do_spell;
     covered_copies(&(location, sample), &peers, spare.iqty, worn_capacity, cutoff,
         |(have, better, room), (need, worse, required)| {
-            (need.art_idx == 0 || have.art_idx == need.art_idx) && covers_activation(have, need)
+            (need.ident || need.art_idx == 0 || have.art_idx == need.art_idx) && covers_activation(have, need)
                 && properties_and_attack_cover(have, need, &[])
                 && room >= required && better.speed >= worse.speed && better.armor >= worse.armor
                 && better.hit >= worse.hit && better.damage(1) >= worse.damage(1)
