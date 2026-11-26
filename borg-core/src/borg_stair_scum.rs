@@ -1144,6 +1144,24 @@ pub(crate) fn run_loot_route_regression(st: &mut BorgState) -> ! {
     borg_flow::spread_stair_scum_loot(st, 6, true, &map);
     assert_eq!(st.flow.cost_at(20, 40), 4, "use the legal detour");
 
+    let goal = i32::from(crate::borg_flow_take::GOAL_TAKE);
+    assert!(borg_flow::borg_flow_commit(st, c"Scum item", goal));
+    let step = borg_flow::select_step(st, Some(&map));
+    assert!(step >= 0, "the committed route can take the detour");
+    assert_eq!(
+        (engine::ddx_ddd(step as usize), engine::ddy_ddd(step as usize)),
+        (0, 1),
+        "skip the lower-cost unsafe neighbour",
+    );
+
+    map.area[index(21, 40)] = false;
+    assert_eq!(
+        borg_flow::select_step(st, Some(&map)),
+        -1,
+        "the committed route yields if the map no longer allows its step",
+    );
+    map.area[index(21, 40)] = true;
+
     st.cave.grid_mut(41, 22).feat = FEAT_GRANITE as u8;
     borg_flow::borg_flow_clear(st);
     borg_flow::borg_flow_enqueue_grid(st, 20, 42);

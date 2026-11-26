@@ -1071,16 +1071,16 @@ fn spread(
                 continue;
             }
 
+            /* Skip "reached" grids */
+            if i32::from(st.flow.data_cost[y as usize][x as usize]) <= n {
+                continue;
+            }
+
             // The spread runs backwards from the target. Test the forward
             // step from the candidate predecessor to the queued grid.
             if stair_scum.is_some_and(|map| {
                 !map.allows_step(st, loc { x, y }, loc { x: x1, y: y1 })
             }) {
-                continue;
-            }
-
-            /* Skip "reached" grids */
-            if i32::from(st.flow.data_cost[y as usize][x as usize]) <= n {
                 continue;
             }
 
@@ -2185,7 +2185,7 @@ fn borg_flow_old_step(st: &mut BorgState, why: i32) -> bool {
 
     // borg-reborn-rs (#1061, review P1): stair_scum checks every voluntary
     // step, a resumed flow's too, against its safe area.
-    if stair_scum.is_none()
+    if !st.flow.stair_scum_loot
         && next.is_some_and(|n| !crate::borg_stair_scum::step_allowed(st, why, n.y, n.x))
     {
         st.borg.goal.type_0 = 0;
@@ -2267,7 +2267,7 @@ pub(crate) fn up_stair_search_can_continue(st: &BorgState, stair: loc) -> bool {
 
 /// The "Look around" part of `borg_flow_old()`: the direction index
 /// (`ddx_ddd`) of the best next grid along the committed flow, or -1.
-fn select_step(st: &BorgState, stair_scum: Option<&crate::borg_stair_scum::Map>) -> i32 {
+pub(crate) fn select_step(st: &BorgState, stair_scum: Option<&crate::borg_stair_scum::Map>) -> i32 {
     let mut b_n = 0;
     let mut b_i: i32 = -1;
 
