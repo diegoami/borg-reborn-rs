@@ -47,6 +47,7 @@ class BorgFileConfigTest(unittest.TestCase):
     def test_missing_and_valid_files_keep_their_core_selection(self):
         out, result = self.launch('missing')
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('pborg.yaml is missing', result.stderr)
         self.assertTrue((out / 'params.json').is_file())
         self.assertFalse((out / 'params-core.json').exists())
         for core in [0, 1]:
@@ -54,6 +55,22 @@ class BorgFileConfigTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((out / ('params-core.json' if core else 'params.json')).is_file())
             self.assertFalse(json.loads((out / 'summary.json').read_text())['dead'])
+
+    def test_watcher_preflight_uses_the_yaml_scariness_setting(self):
+        user = self.root / 'user'
+        user.mkdir()
+        (user / 'pborg.yaml').write_text(
+            'borg_reborn_core: "borg-rs"\nborg_scary_list: "custom.txt" # edited setting\n')
+        argv = ['./angband', '-mborgh']
+        argv.extend(f'-d{kind}={self.root / kind}' for kind in ('user', 'save', 'archive', 'panic', 'scores'))
+        argv += ['--', '-check-pborg-settings']
+        env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
+        failed = subprocess.run(argv, cwd=GAME, env=env, text=True, capture_output=True, timeout=5)
+        self.assertEqual(failed.returncode, 2, failed.stderr)
+        self.assertIn(str(user / 'custom.txt'), failed.stderr)
+        (user / 'custom.txt').write_text('')
+        ok = subprocess.run(argv, cwd=GAME, env=env, text=True, capture_output=True, timeout=5)
+        self.assertEqual(ok.returncode, 0, ok.stderr)
 
     def test_invalid_utf8_and_unreadable_paths_do_not_select_a_default_arm(self):
         for core in [0, 1]:

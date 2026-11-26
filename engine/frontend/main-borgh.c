@@ -1046,11 +1046,18 @@ static int capture_level_arg(int argc, char *argv[], int *i)
 	return value;
 }
 
+extern void borgh_check_pborg_settings(void);
+
 errr init_borgh(int argc, char *argv[])
 {
 	int i;
 	const char *env;
 	const char *letters = all_letters_borgh;
+
+	if (argc == 2 && streq(argv[1], "-check-pborg-settings")) {
+		borgh_check_pborg_settings();
+		quit(NULL);
+	}
 
 	gettimeofday(&start_tv, NULL);
 

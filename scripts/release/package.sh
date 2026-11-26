@@ -89,6 +89,7 @@ cp "$ROOT"/harness/plans/* "$STAGE/borg/plans/"
 rm -rf "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user"
 mkdir -p "$STAGE/lib/save" "$STAGE/lib/scores" "$STAGE/lib/panic" "$STAGE/lib/user/archive"
 "$ROOT/harness/prepare-pborg-config.sh" "$STAGE/lib/user"
+cp "$ROOT/engine/angband/src/borg/borg.txt" "$STAGE/lib/user/borg.txt"
 
 # The short guide. The game is started directly (angband, angband.exe): the
 # owner, for v0.1.0-alpha.1, ships no launcher and no headless runner (lib/

@@ -170,14 +170,15 @@ every field.
   `src/borg/*.c` inside its core library, and the Rust Borg exports
   `do_cmd_borg` itself, so upstream's file cannot be used as it stands
   (the symbol would be defined twice). Ours carries a copy of upstream's
-  source list, recorded in `docs/PROVENANCE.md`, without `src/borg/*.c`. A
+  source list, recorded in `docs/PROVENANCE.md`, including `src/borg/*.c`. A
   test compares the copy with upstream's list, so a difference is caught.
 - **Entry point:** `harness/build.sh` with `BORG_IMPL=<impl>` builds
   `build/<impl>/game/angband` and writes `build/<impl>/BUILD_ID`. Both the
   name and the layout are part of the zoo contract (§4).
-- **One implementation:** `BORG_IMPL=rust`, the Rust staticlib built by
-  cargo. The variable and `build/rust/` stay because the zoo contract names
-  them. No C Borg is built here (§6).
+- **Combined build (#1288):** `BORG_IMPL=rust` links the Rust staticlib and
+  the native C Borg into one executable. Ctrl-Z opens PBorg by default.
+  `B` switches between PBorg and CBorg for the session. The harness retains
+  `BORG_IMPL=rust` and the `build/rust/` layout for the Zoo.
 - **Identity:** `BUILD_ID` holds the hashes of the build's inputs (engine
   tree, patches, frontend, Borg sources, Cargo.lock), the binary's
   `binary_sha256` and the implementation. A run records it.
@@ -303,11 +304,11 @@ justification. A test fails when the boundary uses a symbol not on it.
 ## 6. Controls and comparisons: borg-zoo's
 
 borg-zoo chooses the Borgs it compares ours with, runs them, and computes
-every endpoint and statistic (owner, 2026-11-09). This repository builds and
-measures no control:
+every endpoint and statistic (owner, 2026-11-09). The combined build ships
+upstream CBorg as an interactive option (#1288). The Zoo owns the control arms:
 
-- The C Borgs (upstream's original, better-borg-c's milestones) are zoo
-  specimens, built and run by the zoo. Same-seed pairing with them is the
+- The Zoo builds and runs its own control specimens of upstream CBorg and
+  better-borg-c milestones. Same-seed pairing with them is the
   zoo's concern: for example, it can build a C Borg on our engine and
   frontend, since both are open and documented (`docs/ENGINE.md`,
   `docs/ZOO-INTERFACE.md`).
@@ -367,7 +368,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `check-boundary.py`, `check-extra-load.sh`, `zoo-check.py`; `tools/depth-stream.py`, `export-death.py`, `reconcile-deaths.py`, `tools/tests/` | ours | **Keep** | §4 |
 | `tools/endpoint.py` | ours: the primary endpoint over local outputs and zoo cells | **Drop** | the zoo computes every statistic (§6) |
 | `harness/reference/smoke-c`, `smoke-pristine`, `full-pristine`, `smoke-c-bbc-m7` | references of the C arms | **Drop** | §6 |
-| Arms `c`, `c-pristine`, `c-bbc-m7`; #56 (`c-bbc-m8`) | C Borgs built here | **Drop**; #56 is closed for borg-zoo#36 | §6 |
+| Arms `c`, `c-pristine`, `c-bbc-m7`; #56 (`c-bbc-m8`) | Historical C Borg control arms | Zoo-owned. The combined release ships upstream CBorg (#1288). | §6 |
 | The copied `tools/` (GUI recording, replay viewer, human takeover, native recording, the death workflow, their tests, 2 C files with 2 headers) and the root launchers | copied from borg-rs and better-borg-c in T1.6 | **Dropped** in TE.6, all of it (owner, §11 q1): the death tooling imports the recording toolkit | replaced by `tools/rerun-death.py` (rerun a death with the Borg's logs), `tools/death_registry.py` (the index) and `watch-borg.sh` (one launcher) |
 | `tools/IMPORTED.json`, `tools/README.md` | the import record of T1.6 | **Replace** with `docs/PROVENANCE.md` | §2.2 |
 | `engine.rs`, `borg.rs`, `observation.rs`, `world.rs`, `knowledge.rs`, `params.rs`, `trace.rs` | ours (M1, T2.1–T2.4) | **Keep**, re-based on the new bindings | the Borg layers are ours |

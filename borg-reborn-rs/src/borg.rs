@@ -293,6 +293,7 @@ pub fn core_is_borg_rs() -> bool {
     *CORE.get_or_init(|| {
         let environment = std::env::var_os("BORG_CORE");
         let file = if environment.is_none() {
+            borg_rs::shell::warn_missing_pborg_config();
             borg_rs::shell::borg_txt_setting("borg_reborn_core")
         } else {
             None

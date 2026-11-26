@@ -31,3 +31,9 @@ then credits Diego Amicabile on subsequent starts and selections. C-Borg
 credits Ben Harrison and Andrew P. White. The headless frontend retains
 its replay message stream. [Harrison's Angband page](https://www.phial.com/angband/).
 [Historical Borg README](https://github.com/angband/angband/blob/3.5.1/src/borg/borgread.txt).
+
+Review follow-up synchronized the combined build contract, restored the
+watcher's scary-list preflight through the game YAML parser, and added
+the upstream CBorg defaults to release packages. PBorg's introduction
+identifies the shipped decision core. An absent PBorg settings file
+reports the reborn-core fallback.

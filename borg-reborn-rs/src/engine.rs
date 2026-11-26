@@ -238,6 +238,14 @@ extern "C" fn inkey_hook(flush_first: c_int) -> b::keypress {
     }
 }
 
+/// Validate file dependencies before the watched game starts.
+#[no_mangle]
+extern "C" fn borgh_check_pborg_settings() {
+    if crate::borg::core_is_borg_rs() {
+        borg_rs::scary_list::check_selected_file();
+    }
+}
+
 /// The engine's call into the PBorg commands (`^Z`, `do_cmd_try_borg` in
 /// `angband/src/cmd-misc.c`).
 #[no_mangle]

@@ -57,6 +57,7 @@ if [ "$BUILD_ONLY" = 1 ]; then
     exit 0
 fi
 mkdir -p "$DATA"/{user,save,archive,panic,scores}
+DATA="$(cd "$DATA" && pwd)"
 # Install PBorg settings in their own file, beside any existing CBorg configuration.
 SHIPPED=$(mktemp -d "${TMPDIR:-/tmp}/borg-settings.XXXXXXXX")
 trap 'rm -rf "$SHIPPED"' EXIT
@@ -69,16 +70,19 @@ elif cmp -s "$SHIPPED/pborg.yaml" "$DATA/user/pborg.yaml"; then
 else
     echo "Settings: your $DATA/user/pborg.yaml (it differs from the shipped harness/borg.txt; --reset-settings takes the shipped one)"
 fi
-# The files pborg.yaml names (the scary list): every shipped one that is
-# missing, whatever borg.txt is (review of #866: a kept borg.txt naming a
-# list that is not there made the core exit at start).
+# Restore shipped scary-list files missing from the user directory.
 for f in "$SHIPPED"/*; do
     [ -e "$f" ] && [ "$(basename "$f")" != pborg.yaml ] || continue
     { [ "$RESET" = 1 ] || [ ! -e "$DATA/user/$(basename "$f")" ]; } && cp "$f" "$DATA/user/"
 done
+GAME_DIRS=(-duser="$DATA/user" -dsave="$DATA/save" -darchive="$DATA/archive"
+    -dpanic="$DATA/panic" -dscores="$DATA/scores")
+if ! (cd "$BUILD/game" && ./angband -mborgh "${GAME_DIRS[@]}" -- -check-pborg-settings); then
+    echo "watch-borg: check $DATA/user/pborg.yaml and its scary list, or use --reset-settings" >&2
+    exit 2
+fi
 rm -rf "$SHIPPED"; trap - EXIT   # exec below would skip the trap
 echo "Create or load a character; Ctrl-Z then z starts PBorg by default. Ctrl-Z then B switches Borgs. Any key stops the active Borg."
 cd "$BUILD/game"   # the game finds ./lib relative to the working directory
 # Angband resolves -u immediately: select the save directory first.
-exec ./angband -mx11 -duser="$DATA/user" -dsave="$DATA/save" -darchive="$DATA/archive" \
-    -dpanic="$DATA/panic" -dscores="$DATA/scores" -u"$NAME"
+exec ./angband -mx11 "${GAME_DIRS[@]}" -u"$NAME"

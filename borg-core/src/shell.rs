@@ -230,6 +230,14 @@ pub(crate) const CLASSES: [&str; 9] = [
 
 pub(crate) const PBORG_CONFIG: &[u8] = b"pborg.yaml";
 
+pub fn warn_missing_pborg_config() {
+    if let Ok(path) = borg_txt_path(engine::path_build_user(1024, PBORG_CONFIG)) {
+        if matches!(path.try_exists(), Ok(false)) {
+            eprintln!("borg-reborn-rs: {} is missing; using the reborn core defaults", path.display());
+        }
+    }
+}
+
 /// The same configuration supplies the shell, parameter registry and command core.
 pub fn borg_txt_setting(name: &str) -> Option<String> {
     let text = borg_txt_contents().unwrap_or_else(|error| config_file_error(error));

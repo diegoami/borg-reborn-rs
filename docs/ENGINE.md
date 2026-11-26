@@ -69,6 +69,7 @@ the test checks the rest:
 | `07-command-boundary` | `ui-game.c` | `borgh_command_hook()` at each game-command boundary |
 | `08-town-queries` | `store.c/.h`, `obj-gear.c/.h` | M13 read-only exact-stack price and inventory-capacity queries, under `BORG_HARNESS` (#328) |
 | `09-synthetic-start` | `game-world.c` | Harness-only wrapper around native leave/generate/arrival before synthetic Borg activation (#371); normal game loop and generation rules unchanged |
+| `10-borg-selection` | `cmd-misc.c`, `borg/borg-commands.c` | Shared Ctrl-Z prompt, PBorg default, and session Borg switching (#1288) |
 
 **The declared exception:** `04-fixed-date` splits
 `struct tm *date = localtime(&cur_time);` into a declaration and an
@@ -120,10 +121,8 @@ Our CMake project (docs/SPEC.md §3.6; task TE.4):
   --features borgh`), into `game/angband`, with the data in `game/lib`;
 - it builds CBorg (`src/borg/`) alongside the Rust static library. The
   shared Ctrl-Z prompt defaults to PBorg and accepts `B` to switch Borgs;
-- the source list is a copy of upstream's (`engine/sources.cmake`, 150 of
-  upstream's 209 core sources: all but the 59 of `src/borg/`), and
-  `engine/tests/test_build.py` checks that it is upstream's list minus the C
-  Borg;
+- the source list in `engine/sources.cmake` copies all 209 upstream core
+  sources. `engine/tests/test_build.py` checks that the lists match;
 - the flags are upstream's: C99 with GNU extensions, `-O3` in Release, the
   warnings, `ALLOW_BORG`, the self-contained data paths `./lib/`, plus
   `BORG_HARNESS` and `USE_BORGH` for our hooks and frontend;

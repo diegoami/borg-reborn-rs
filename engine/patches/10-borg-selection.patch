@@ -13,7 +13,7 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
  #include "mon-util.h"
  #include "player-calcs.h"
  #include "player-history.h"
-@@ -109,6 +113,61 @@
+@@ -109,6 +113,62 @@
  
  extern void do_cmd_borg(void);
  
@@ -37,7 +37,8 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
 +		textblock_append(greeting,
 +			"Hi, I am the P-Borg, a partial rewrite of the original Borg "
 +			"in Rust, whose main focus is survivability.\n\n"
-+			"You are more likely to get bored than to die with us.");
++			"You are more likely to get bored than to die with us.\n\n"
++			"This build uses the borg-rs decision core by default.");
 +		textui_textblock_show(greeting, SCREEN_REGION, "P-Borg");
 +		textblock_free(greeting);
 +		pborg_introduced = true;
@@ -75,7 +76,7 @@ Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
  /*
   * Verify use of "borg" mode
   */
-@@ -131,7 +190,11 @@
+@@ -131,7 +191,11 @@
  	}
  
  	/* Okay */

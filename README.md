@@ -137,7 +137,7 @@ A suite of runs: `harness/suite.sh smoke OUTDIR`.
 
 | Core | What | How to select |
 | --- | --- | --- |
-| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core: borg-rs` in `pborg.yaml` (shipped) |
+| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core: "borg-rs"` in `pborg.yaml` (shipped) |
 | reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core = reborn` |
 
 `BORG_CORE` in the environment wins over the file. The reborn core reads
