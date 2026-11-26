@@ -1,0 +1,128 @@
+Share the Ctrl-Z prompt between the C and Rust Borgs. Guarded by BORG_HARNESS.
+
+--- a/src/cmd-misc.c
++++ b/src/cmd-misc.c
+@@ -24,6 +24,10 @@
+ #include "game-input.h"
+ #include "init.h"
+ #include "mon-lore.h"
++#ifdef BORG_HARNESS
++#include "ui-output.h"
++#include "z-textblock.h"
++#endif
+ #include "mon-util.h"
+ #include "player-calcs.h"
+ #include "player-history.h"
+@@ -109,6 +113,62 @@
+ 
+ extern void do_cmd_borg(void);
+ 
++#ifdef BORG_HARNESS
++extern void do_cmd_cborg_key(int cmd);
++extern void do_cmd_pborg(unsigned char cmd);
++
++static bool use_cborg;
++
++static void greet_selected_borg(void)
++{
++	static bool pborg_introduced;
++
++	if (use_cborg) {
++		/* Ben Harrison's Angband page and the historical APWBorg readme. */
++		msg("(Original C-Borg by Ben Harrison, extended by Andrew P. White.)");
++	} else if (pborg_introduced) {
++		msg("(P-Borg, partial rewrite of the Borg by Diego Amicabile)");
++	} else {
++		textblock *greeting = textblock_new();
++		textblock_append(greeting,
++			"Hi, I am the P-Borg, a partial rewrite of the original Borg "
++			"in Rust, whose main focus is survivability.\n\n"
++			"You are more likely to get bored than to die with us.\n\n"
++			"This build uses the borg-rs decision core by default.");
++		textui_textblock_show(greeting, SCREEN_REGION, "P-Borg");
++		textblock_free(greeting);
++		pborg_introduced = true;
++	}
++}
++
++static void do_cmd_selected_borg(void)
++{
++	const char *prompt = use_cborg
++		? "CBorg command (? for help, B for PBorg): "
++		: "PBorg command (? for help, B for CBorg): ";
++	/* Keep interactive greetings out of deterministic replays. */
++	bool interactive = !streq(ANGBAND_SYS, "borgh");
++	char cmd;
++
++	if (!get_com(prompt, &cmd))
++		return;
++	if (cmd == 'B') {
++		use_cborg = !use_cborg;
++		if (interactive)
++			greet_selected_borg();
++		else
++			msg("%s selected. Press Ctrl-Z for commands.", use_cborg ? "CBorg" : "PBorg");
++		return;
++	}
++	if (interactive && cmd == 'z')
++		greet_selected_borg();
++	if (use_cborg)
++		do_cmd_cborg_key((unsigned char)cmd);
++	else
++		do_cmd_pborg((unsigned char)cmd);
++}
++#endif
++
+ /*
+  * Verify use of "borg" mode
+  */
+@@ -131,7 +191,11 @@
+ 	}
+ 
+ 	/* Okay */
++#ifdef BORG_HARNESS
++	do_cmd_selected_borg();
++#else
+ 	do_cmd_borg();
++#endif
+ }
+ 
+ #endif /* ALLOW_BORG */
+--- a/src/borg/borg-commands.c
++++ b/src/borg/borg-commands.c
+@@ -1554,7 +1554,11 @@
+ /*
+  * Interact with the Borg
+  */
++#ifdef BORG_HARNESS
++void do_cmd_cborg_key(int selected)
++#else
+ void do_cmd_borg(void)
++#endif
+ {
+     int  i;
+     char cmd = 0;
+@@ -1574,6 +1578,11 @@
+     borg.c = player->grid;
+ 
+     /* Get a "Borg command", or abort */
++#ifdef BORG_HARNESS
++    if (selected >= 0)
++        cmd = (char)selected;
++    else
++#endif
+     if (!get_com("Borg command (? for help): ", &cmd)) {
+         /* Restore the screen */
+         Term_load();
+@@ -1611,4 +1620,11 @@
+     return;
+ }
+ 
++#ifdef BORG_HARNESS
++void do_cmd_borg(void)
++{
++    do_cmd_cborg_key(-1);
++}
+ #endif
++
++#endif

@@ -13,12 +13,11 @@ kept here since 2026-11-21, are in
 
 Our own crate `borg-reborn-rs/` is the shell around it: the engine
 boundary (`borg-reborn-rs/src/engine.rs`) and the selector between this
-core and our own "reborn" core. The engine's `^Z` enters through
-`do_cmd_borg` (`borg-reborn-rs/src/engine.rs:252`); when
-`core_is_borg_rs()` (`borg-reborn-rs/src/borg.rs:291`) is true it applies
-the configured fear setting and errand, then calls
-`borg_rs::do_cmd_borg()` (`borg-reborn-rs/src/engine.rs:273`), which is
-`engine::do_cmd_borg` in borg-core (`borg-core/src/engine.rs:144`).
+core and our own "reborn" core. The shared Ctrl-Z prompt sends PBorg
+commands to `do_cmd_pborg` in `borg-reborn-rs/src/engine.rs`. When
+`core_is_borg_rs()` selects the vendored core, the shell applies the
+configured fear setting and errand, then forwards the command key to
+`borg_rs::do_cmd_borg_key()`.
 
 ## 1. What it is and where it comes from
 
@@ -28,7 +27,7 @@ the configured fear setting and errand, then calls
 |---|---|
 | [`borg-core/PIN`](../../borg-core/PIN) | the borg-rs commit vendored: `8c5d000a58e9ddca1f1954ab9552e505856b313f`, the same as the `borg-rs` pin in [`pins.json`](../../pins.json). The refresh to it (#368, three-way from `1443c2d`, the M13 tag) is recorded in [PROVENANCE.md](../PROVENANCE.md) |
 | [`scripts/borg-core-vendor.py`](../../scripts/borg-core-vendor.py) | keeps the copy honest: `delta` (our changes as a patch), `check` (borg-core/ is borg-rs at the pin plus declared files, exit 1 otherwise), `refresh REV` (three-way merge of each file: base the pin, theirs REV, ours borg-core/; writes `PIN`; conflicts left marked) |
-| `MAP` (`borg-core-vendor.py:32`) | borg-rs's `borg-rs/` maps to `borg-core/`; its `harness/borg.txt` to `borg-core/borg.txt`; the C Borg's `angband/src/borg/borg-init.c` and `borg.txt` to `borg-core/c-reference/` |
+| `MAP` (`borg-core-vendor.py:32`) | borg-rs's `borg-rs/` maps to `borg-core/`; its `harness/borg.txt` becomes `borg-core/pborg.yaml`; the C Borg's `angband/src/borg/borg-init.c` and `borg.txt` to `borg-core/c-reference/` |
 | `OURS` (`borg-core-vendor.py:39`) | files that are ours only and must not exist in borg-rs |
 | `HOOKED` (`borg-core-vendor.py:42`) | borg-rs files that carry our changes, each marked in the source `borg-reborn-rs (#N)`, with the issue noted beside the entry |
 
@@ -162,11 +161,11 @@ reincarnations included. Which class's value applies follows the character.
 | layer | form | where |
 |---|---|---|
 | compiled default | the row's `default`, or its class default | `params.rs`; neutral: it keeps the vendored policy (#479) |
-| shipped value | `borg_param_<name> = N` | [`harness/borg.txt`](../../harness/borg.txt) (353 such lines), copied as the run's `user/borg.txt` |
-| class value | `borg_param_<name>@<class> = N`, or `<name>__<class>` (#696: the characters a zoo profile can write) | written by hand in `harness/borg_<class>.txt`, folded into borg.txt's `CLASS FILES` block (`harness/borg.txt:1374`) by `scripts/borg-class-files.py fold` (`check` fails if the block is stale) |
+| shipped value | `borg_param_<name>: N` | [`harness/pborg.yaml`](../../harness/pborg.yaml), staged as `user/pborg.yaml` |
+| class value | `borg_param_<name>__<class>: N` or `borg_param_<name>@<class>: N` | The class-specific entries in `pborg.yaml` |
 | legacy alias | `attack_preference_<class>_<family>_permille`, `attack_arrow_point_blank_divisor_<class>`, `town_heal_*_<class>` | accepted as the class value (`legacy_alias`, `params.rs:2447`); a value at the family's old "general" sentinel sets nothing |
 | environment | `BORG_PARAM_<NAME>`, and `BORG_PARAM_<NAME>__<CLASS>` for one class | `split_env_name` (`params.rs:2494`); upper case only, a lower-case name is unknown |
-| zoo profile | rewrites a borg.txt line in place | [ZOO-INTERFACE.md](../ZOO-INTERFACE.md); `harness/run.sh` offers the same with `BORG_TXT_SET="name=value;..."` for existing keys |
+| zoo profile | overrides a YAML key | [ZOO-INTERFACE.md](../ZOO-INTERFACE.md); `harness/run.sh` offers the same with `PBORG_SET="name=value;..."` for existing keys |
 
 Precedence inside `parse` (`params.rs:2519`): the environment, then the
 file, then the compiled default, separately for the common value and for
@@ -191,7 +190,7 @@ and the shell's keys have no class value.
 
 **Compiled defaults versus shipped values (#479).** The compiled core
 keeps neutral defaults that reproduce the vendored policy. The behaviour we
-ship comes from `harness/borg.txt` (its header says so). A zoo profile that
+ship comes from `harness/pborg.yaml` (its header says so). A zoo profile that
 omits a key therefore gets the shipped value, not the compiled default, and
 `BORG_CORE_OVERRIDES=off` (§6) plays the compiled defaults with borg-rs's
 own file.
@@ -250,7 +249,7 @@ on a level of the plan the core plays as itself, no level is forced past
 `/stopscared` off every hook returns at once, so play is borg-rs's byte for
 byte (`shell.rs`, module comment).
 
-| setting | environment | borg.txt key |
+| setting | environment | pborg.yaml key |
 |---|---|---|
 | errand | `BORG_ERRAND` | `borg_reborn_errand` (shipped `none`) |
 | fear | `BORG_STOPSCARED` | `borg_reborn_stopscared` (shipped `off`) |
@@ -293,7 +292,7 @@ An errands plan ([GAME-PLAN-LANGUAGE.md](../GAME-PLAN-LANGUAGE.md),
 `errands_plan.rs`, #305) is a plain-text file of class sections and
 character-level ranges, one `max-depth N` per phase (the core plays as
 itself under a depth cap; `loop-levels` was removed 2026-11-16). It is
-selected by `borg_plan = FILE` in the run's borg.txt (resolved under the
+selected by `borg_plan: FILE` in the run's YAML (resolved under the
 user directory) or `BORG_ERRANDS_PLAN`, read once and validated before play
 (`errands_plan::initialize`, `borg_init.rs:995`). Two plans ship in
 [`harness/plans/`](../../harness/plans/README.md): `errands_plan.txt` and
@@ -305,9 +304,9 @@ user directory) or `BORG_ERRANDS_PLAN`, read once and validated before play
 The C Borg marks a level scary while certain named monsters are known and
 the character is at or below a level. `scary_list.rs` (#518) reads that
 list from a file instead: [`harness/scary_monsters.txt`](../../harness/scary_monsters.txt),
-selected by `borg_scary_list = scary_monsters.txt` (`harness/borg.txt:1197`)
+selected by `borg_scary_list: scary_monsters.txt` in `harness/pborg.yaml`
 and used with `borg_param_caution_scary_named_monsters = 1`
-(`harness/borg.txt:1190`). A line is `monster | tough-fragile level | class
+(`harness/pborg.yaml`). A line is `monster | tough-fragile level | class
 exceptions | flags`, scaled by per-class fragility; later lines overlay
 earlier ones. `borg_scary_list = none` or no key keeps the compiled C list.
 An unknown monster or class stops the run (`scary_list::selected`,
@@ -315,54 +314,27 @@ An unknown monster or class stops the run (`scary_list::selected`,
 
 ## 6. How a run is wired
 
-`borg-core/src/borg_init.rs:693` (`borg_init_txt_file`) reads `borg.txt`
-from the game's user directory (`engine::path_build_user`,
-`borg_init.rs:709`). If the file is missing it warns and writes one with
-the defaults. The shell and the registry read the same file through
-`shell::borg_txt_contents` (`shell.rs:241`); its missing-file policy is
-"settings absent", while any read error or invalid UTF-8 exits 2
-(ERRANDS.md). `^Z $` reloads the C settings in game; the parameters
-(`params.rs`, a `OnceLock`) and the core selection stay as the process
-first read them.
+P-Borg reads `user/pborg.yaml` through `shell::borg_txt_contents`. The
+shell passes the settings to the core's validators in memory. Invalid YAML
+or an unreadable file exits with status 2. Ctrl-Z then **$** reloads the
+built-in settings. The parameter registry and core selection are loaded once
+per process.
 
-[`harness/run.sh`](../../harness/run.sh) builds the run's `user/`:
+[`harness/run.sh`](../../harness/run.sh) copies the defaults from
+`harness/pborg.yaml` and applies the run's race, class, cheat-death flag and
+any `PBORG_SET` overrides. It stages the named scary list and errands plan
+beside the YAML. `config.txt` records `pborg_yaml_sha256` for the effective
+settings. The YAML includes the data hashes for the list, plan and generated
+world when present.
 
-1. **borg.txt.** It copies `harness/borg.txt` to `OUTDIR/user/borg.txt`,
-   setting `borg_respawn_race`, `borg_respawn_class` and
-   `borg_cheat_death = FALSE` (`run.sh:233`–`247`). With
-   `BORG_CORE=reborn` it rewrites `borg_reborn_core = reborn` so the file
-   names the core that played (`run.sh:253`). `BORG_TXT_SET` rewrites
-   existing keys. A borg.txt that selects a plan itself is refused
-   (`run.sh:267`).
-2. **The scary list.** `BORG_SCARY_LIST`, else the list borg.txt names
-   (from `harness/`), is copied beside it, and the `borg_scary_list` line is
-   rewritten with a comment naming its SHA-256 (`run.sh:278`–`293`).
-3. **A plan.** `BORG_ERRANDS_PLAN` is copied as `user/errands_plan.txt`
-   and selected with `borg_plan = errands_plan.txt` after a SHA-256 comment
-   (`run.sh:327`–`335`); it needs the borg-rs core. A world (`borg_world`,
-   #704) is handled the same way.
-4. **Identity.** `config.txt` records `borg_txt_sha256`, so plan, list and
-   world bytes are part of the run's identity, the `BORG_CORE`,
-   `BORG_ERRAND` and similar variables that are set (`run.sh:366`), and,
-   with no `BORG_CORE`, the core the file names (`borg_core=`).
-
-**Which core plays.** `BORG_CORE`, else `borg_reborn_core` in the run's
-borg.txt; `parse_core_selector` (`borg-reborn-rs/src/borg.rs:328`) accepts
-exactly `borg-rs`/`1` and `reborn`/`0`, and anything else exits 2. With
-neither set, the compiled fallback is the reborn core. The shipped
-`harness/borg.txt:37` says `borg_reborn_core = borg-rs` (#479), so with
-`BORG_CORE` unset a harness run and a zoo cell play this core (#606). The
-choice is read once per process.
-
-**`BORG_CORE_OVERRIDES=off`** gives the core borg-rs's pristine
-`borg-core/borg.txt` instead (`run.sh:240`): no `borg_param_*` or
-`borg_reborn_*` keys, so compiled defaults and no errand. That file names
-no core, so `run.sh:237` exports `BORG_CORE=borg-rs` for it. It is the
-parity check against borg-rs's own build at the pin.
+`BORG_CORE` overrides the YAML's `borg_reborn_core` selector. The shipped
+value is `borg-rs`, and an absent setting selects `reborn`.
+`BORG_CORE_OVERRIDES=off` uses `borg-core/pborg.yaml` for parity with the
+donor's pinned build.
 
 The default core's regression reference is
 `harness/reference/smoke-borg-rs`. A change to a shipped value in
-`harness/borg.txt` is committed, then `scripts/rerecord-smoke-borg-rs.sh`
+`harness/pborg.yaml` is committed, then `scripts/rerecord-smoke-borg-rs.sh`
 re-records the reference ([AGENTS.md](../../AGENTS.md)).
 
 ## 7. Design documents and further reading

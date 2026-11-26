@@ -51,13 +51,14 @@ for ((c = 1; c <= CHARACTERS; c++)); do
     DIR="$OUT/char-$c"
     mkdir -p "$DIR"/{user,save,archive,panic,scores}
     # #826: the shipped settings, as a run's, so the borg-rs core plays them
-    # (without a borg.txt the frozen reborn core would; BORG_CORE still wins).
-    "$ROOT/harness/prepare-borg-txt.sh" "$DIR/user"
+    # (without a pborg.yaml the frozen reborn core would; BORG_CORE still wins).
+    "$ROOT/harness/prepare-pborg-config.sh" "$DIR/user"
+    core="$(python3 "$ROOT/harness/pborg-settings.py" "$ROOT/harness/pborg.yaml" get borg_reborn_core)"
     {
         echo "character=$c"
         echo "commit=$(git -C "$ROOT" rev-parse HEAD)"
-        echo "borg_core=${BORG_CORE:-$(sed -n 's/^borg_reborn_core = //p' "$DIR/user/borg.txt" | head -1)}"
-        echo "borg_txt_sha256=$(sha256sum < "$DIR/user/borg.txt" | cut -d' ' -f1)"
+        echo "borg_core=${BORG_CORE:-${core:-reborn}}"
+        echo "pborg_yaml_sha256=$(sha256sum < "$DIR/user/pborg.yaml" | cut -d' ' -f1)"
         echo "profile=${BORG_PROFILE:-defaults}"
     } > "$DIR/config.txt"
     echo "play.sh: character $c of $CHARACTERS - Ctrl-Z then z starts the Borg."

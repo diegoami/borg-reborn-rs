@@ -401,7 +401,7 @@ jobs:
           d=$(cygpath -u '${{ runner.temp }}')/excl
           m=$(cygpath -m "$d")
           mkdir -p "$d"/{user,save,archive,panic,scores}
-          harness/prepare-borg-txt.sh "$d/user"
+          harness/prepare-pborg-config.sh "$d/user"
           printf 'keep me\n' > "$d/existing.build"
           cd build/rust/game
           set +e
@@ -420,7 +420,7 @@ jobs:
           d=$(cygpath -u '${{ runner.temp }}')/savecheck
           w=$(cygpath -w "$d")
           mkdir -p "$d"/{user,save,archive,panic,scores}
-          harness/prepare-borg-txt.sh "$d/user"
+          harness/prepare-pborg-config.sh "$d/user"
           cd build/rust/game
           set +e
           ./angband.exe -mborgh -n -uBorg "-duser=$w\user" "-dsave=$w\save" "-darchive=$w\archive" \
@@ -453,7 +453,7 @@ jobs:
             $hash, $file = $line -split '  ', 2
             if ((Get-FileHash -Algorithm SHA256 $file).Hash.ToLower() -ne $hash) { throw "checksum: $file" }
           }
-          foreach ($f in 'LICENSES\angband-copying.rst', 'LICENSES\openssl.txt', 'PLAYING.txt', 'lib\save', 'lib\user\borg.txt') { if (-not (Test-Path $f)) { throw "missing $f" } }
+          foreach ($f in 'LICENSES\angband-copying.rst', 'LICENSES\openssl.txt', 'PLAYING.txt', 'lib\save', 'lib\user\pborg.yaml') { if (-not (Test-Path $f)) { throw "missing $f" } }
           # CI's runner (not shipped), on the unzipped package.
           $env:BORG_PACKAGE_DIR = (Get-Location).Path
           $runner = "$env:GITHUB_WORKSPACE\scripts\release\windows\play-headless.ps1"
@@ -466,7 +466,7 @@ jobs:
           $p = Start-Process -FilePath .\angband.exe -ArgumentList '-mborgh -n -uDirect -- -seed 101 -race 0 -class 0 -turns 2000 -menu-letters -save-on-stop lib/save/Direct' -NoNewWindow -Wait -PassThru -RedirectStandardError "$env:RUNNER_TEMP\direct.err"
           Get-Content "$env:RUNNER_TEMP\direct.err" -Tail 5
           if (-not (Test-Path lib\save\Direct) -or (Get-Item lib\save\Direct).Length -eq 0) { throw 'a game started directly did not save' }
-          if (-not (Select-String -Path lib\user\borg.txt -Pattern '^borg_reborn_core = borg-rs$' -Quiet)) { throw 'lib\user\borg.txt does not select the borg-rs core' }
+          if (-not (Select-String -Path lib\user\pborg.yaml -Pattern '^borg_reborn_core: "borg-rs"$' -Quiet)) { throw 'lib\user\pborg.yaml does not select the borg-rs core' }
       - run: |
           t=$(cygpath -u '${{ runner.temp }}')
           python3 scripts/release/compare-games.py harness/reference/smoke-borg-rs \

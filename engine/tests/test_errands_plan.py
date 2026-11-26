@@ -82,15 +82,15 @@ class ErrandsPlanTest(unittest.TestCase):
         for name,kind in [('bytes','invalid-utf8'),('directory','unreadable')]:
             out=self.root/name;out.mkdir()
             for directory in ['user','save','archive','panic','scores']:(out/directory).mkdir()
-            config=out/'user/borg.txt'
-            if kind=='invalid-utf8':config.write_bytes(b'borg_reborn_core = borg-rs\nborg_plan = errands_plan.txt\n\xff')
+            config=out/'user/pborg.yaml'
+            if kind=='invalid-utf8':config.write_bytes(b'borg_reborn_core: "borg-rs"\nborg_plan: "errands_plan.txt"\n\xff')
             else:config.mkdir()
             env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
             command=[str(GAME),'-mborgh','-n']+[f'-d{k}={out/k}' for k in ['user','save','archive','panic','scores']]
             command+=['-uBadConfig','--','-seed','1010','-race','0','-class','0','-menu-letters','-turns','100','-keylog',str(out/'keys.log')]
             r=subprocess.run(command,cwd=GAME.parent,env=env,capture_output=True,text=True,timeout=10)
             self.assertEqual(r.returncode,2,(kind,r.stderr))
-            self.assertIn('borg.txt',r.stderr)
+            self.assertIn('pborg.yaml',r.stderr)
             self.assertEqual((out/'keys.log').stat().st_size,0)
 
     def test_default_and_class_override(self):
@@ -154,7 +154,7 @@ class ErrandsPlanTest(unittest.TestCase):
         return dict(l.split('=',1) for l in (out/'config.txt').read_text().splitlines() if '=' in l)
 
     def test_measured_harness_run_records_the_plan_identity(self):
-        # #352: harness/run.sh runs plans; their bytes are in borg_txt_sha256.
+        # #352: harness/run.sh runs plans; their bytes are in pborg_yaml_sha256.
         import hashlib
         plan=self.root/'plan.txt';plan.write_text(PLAN)
         same=self.root/'same-bytes-other-name.txt';same.write_text(PLAN)
@@ -165,17 +165,19 @@ class ErrandsPlanTest(unittest.TestCase):
         config=self.config(out)
         self.assertEqual(config['borg_errands_plan_sha256'],sha)
         self.assertEqual(config['borg_errands_plan'],str(plan))
-        self.assertIn(f'errands plan sha256 {sha}\nborg_plan = errands_plan.txt\n',(out/'user/borg.txt').read_text())
+        yaml = (out/'user/pborg.yaml').read_text()
+        self.assertIn(f'errands plan sha256 {sha}\n', yaml)
+        self.assertIn('borg_plan: "errands_plan.txt"\n', yaml)
         self.assertEqual((out/'errands_plan.txt').read_text(),PLAN,'the game preserves the plan it loaded')
         self.assertIn('# Plan:',(out/'messages.log').read_text())
         families={}
         for name,source in [('same',same),('other',other),('none',None)]:
             r,run=self.run_measured(name,source)
             self.assertEqual(r.returncode,0,r.stderr)
-            families[name]=self.config(run)['borg_txt_sha256']
-        self.assertEqual(families['same'],config['borg_txt_sha256'],'a plan is identified by its bytes, not its name')
-        self.assertNotEqual(families['other'],config['borg_txt_sha256'])
-        self.assertNotEqual(families['none'],config['borg_txt_sha256'])
+            families[name]=self.config(run)['pborg_yaml_sha256']
+        self.assertEqual(families['same'],config['pborg_yaml_sha256'],'a plan is identified by its bytes, not its name')
+        self.assertNotEqual(families['other'],config['pborg_yaml_sha256'])
+        self.assertNotEqual(families['none'],config['pborg_yaml_sha256'])
 
     def test_measured_harness_refuses_unidentified_or_wrong_core_plans(self):
         plan=self.root/'plan.txt';plan.write_text(PLAN)
@@ -192,7 +194,7 @@ class ErrandsPlanTest(unittest.TestCase):
         plan=self.root/'plan.txt';plan.write_text(PLAN)
         r,out=self.run_measured('default',plan,None)
         self.assertEqual(r.returncode,0,r.stderr)
-        text=(out/'user/borg.txt').read_text()
-        self.assertIn('borg_reborn_core = borg-rs\n',text)
-        self.assertIn('borg_plan = errands_plan.txt\n',text)
+        text=(out/'user/pborg.yaml').read_text()
+        self.assertIn('borg_reborn_core: "borg-rs"\n',text)
+        self.assertIn('borg_plan: "errands_plan.txt"\n',text)
         self.assertEqual(self.config(out).get('borg_core'),'borg-rs','the record says which core played')

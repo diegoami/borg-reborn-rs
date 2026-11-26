@@ -114,7 +114,7 @@ pub struct Budget {
 ///
 /// borg-reborn-rs (#956, P7 review): `Need::Trip` is urgent only with
 /// `town_recall_urgent` at the dive gate, where the Recall is "bought first,
-/// before anything is weighed" (harness/borg.txt). Counting needs alone, a
+/// before anything is weighed" (harness/pborg.yaml). Counting needs alone, a
 /// purse of 140 with a 125-gold scroll and a 20-gold ration bought the
 /// ration and left the Recall 5 gold short.
 fn urgent_pass(

@@ -3,9 +3,10 @@
 # borg-reborn-rs
 
 An automatic player (a "Borg") for [Angband](https://github.com/angband/angband)
-4.2.6, in Rust. The game is upstream Angband at
-`574b618c3bfec595f3503a58f8e488b1c4ae3a46`, byte for byte, entered through
-upstream's own Borg command (**Ctrl-Z**). The Borg that plays is the
+4.2.6, in Rust. Press **Ctrl-Z** to open the Borg prompt. PBorg is selected
+at startup. Press **B** at the prompt to switch Borgs and **Ctrl-Z**, **z**
+to start the selected Borg. The game engine is upstream Angband at
+`574b618c3bfec595f3503a58f8e488b1c4ae3a46`. PBorg plays with the
 **borg-rs core**: a line-by-line Rust translation of the original C Borg,
 vendored in `borg-core/`, with named settings, errands and a decision trace
 added here. [borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
@@ -85,8 +86,8 @@ tools match the pin, and `BORG_CEMETERY_DIR` names a checkout explicitly; see
 builds the game with the X11 window into `build/watch/` (about a minute).
 The game's user directory for watched games is `.angband-reborn/user/`. On
 its first start `watch-borg.sh` writes the shipped settings there
-(`harness/borg.txt` and its scary list, prepared as a headless run's, #826),
-so the borg-rs core plays them. Later starts keep that `borg.txt`, yours to
+(`harness/pborg.yaml` and its scary list),
+so the borg-rs core plays them. Later starts keep that `pborg.yaml`, yours to
 edit, and say when it differs from the shipped one. After updating the
 repository, take the new shipped settings with:
 
@@ -136,37 +137,40 @@ A suite of runs: `harness/suite.sh smoke OUTDIR`.
 
 | Core | What | How to select |
 | --- | --- | --- |
-| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core = borg-rs` in `borg.txt` (shipped) |
-| reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core = reborn` |
+| **borg-rs** (default) | borg-rs's core in `borg-core/`, with our settings, errands and trace | `borg_reborn_core: "borg-rs"` in `pborg.yaml` (shipped) |
+| reborn (frozen) | this repository's own first-principles core | `BORG_CORE=reborn` in the environment, or `borg_reborn_core: reborn` |
 
 `BORG_CORE` in the environment wins over the file. The reborn core reads
-`harness/profiles/reborn-default.txt`, not `borg.txt`, and none of the
+`harness/profiles/reborn-default.txt`, not `pborg.yaml`, and none of the
 settings below apply to it.
 
 ## 6. Changing what the Borg does
 
-Everything is in **`borg.txt`**: `harness/borg.txt` for headless runs (each
-run copies it), `.angband-reborn/user/borg.txt` for a watched game. Each
+PBorg reads **`user/pborg.yaml`**. The package, harness and Zoo use
+`harness/pborg.yaml` as their source for the shipped settings. For a watched game, edit
+`.angband-reborn/user/pborg.yaml`. CBorg reads its own `user/borg.txt`. Each
 setting is commented: what it does, what raising or lowering it does, and
 how many short test games it changed. The values shipped are the ones the
-zoo measures; a change you make is your own experiment.
+zoo measures; a change you make is your own experiment. To import settings
+from an older PBorg install, run `python3 harness/pborg-config.py OLD_PBORG_SETTINGS > pborg.yaml`
+and place the resulting file in the game's user directory.
 
 | To change | Where |
 | --- | --- |
-| the C Borg's own settings (`borg_stop_dlevel`, `borg_no_deeper`, `borg_plays_risky`, ...) | their lines in `borg.txt` |
-| a named threshold of the core | its `borg_param_<name>` line in `borg.txt`; the full list with units, ranges and the code each one reaches is [docs/CALIBRATION.md](docs/CALIBRATION.md) |
-| one class only | `harness/borg_<class>.txt`, then `python3 scripts/borg-class-files.py fold` (folds them into `borg.txt`'s CLASS FILES block); or a line `borg_param_<name>@<class> = value` |
-| a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `BORG_TXT_SET="name=value;..."` for `harness/run.sh` |
+| the core's built-in settings (`borg_stop_dlevel`, `borg_no_deeper`, `borg_plays_risky`, ...) | their keys in `pborg.yaml` |
+| a named threshold of the core | its `borg_param_<name>` key in `pborg.yaml`; the full list with units, ranges and the code each one reaches is [docs/CALIBRATION.md](docs/CALIBRATION.md) |
+| one class only | a YAML entry such as `borg_param_<name>__mage: value` |
+| a setting for one run | `BORG_PARAM_<NAME>=value` (or `BORG_PARAM_<NAME>__<CLASS>`) in the environment; `PBORG_SET="name=value;..."` for `harness/run.sh` |
 | the monsters that make a level "scary" | `harness/scary_monsters.txt` (format in its header), selected by `borg_scary_list` |
-| a long-term goal: go to town, dive to a depth, a ladder, a trip plan | an **errand**: `borg_reborn_errand` in `borg.txt`, `BORG_ERRAND`, or in the game (below); [docs/ERRANDS.md](docs/ERRANDS.md) |
-| a whole game plan by class and level | a plan file ([docs/GAME-PLAN-LANGUAGE.md](docs/GAME-PLAN-LANGUAGE.md); examples in `harness/plans/`), `borg_plan = FILE` or `BORG_ERRANDS_PLAN` |
+| a long-term goal: go to town, dive to a depth, a ladder, a trip plan | an **errand**: `borg_reborn_errand` in `pborg.yaml`, `BORG_ERRAND`, or in the game (below); [docs/ERRANDS.md](docs/ERRANDS.md) |
+| a whole game plan by class and level | a plan file ([docs/GAME-PLAN-LANGUAGE.md](docs/GAME-PLAN-LANGUAGE.md); examples in `harness/plans/`), `borg_plan: FILE` or `BORG_ERRANDS_PLAN` |
 | when the Borg hands control back to you | `borg_reborn_stopscared` (off, a percent of HP, or `flee`) |
 
 **In the game**, Ctrl-Z then **/** opens the Borg's command line
 ([docs/ERRANDS.md](docs/ERRANDS.md)): `/town`, `/dive 5`, `/ladder`,
 `/explore-level`, `/stopscared flee`, `/stopscared off`, `/stop`, several
-joined with `;`. Ctrl-Z then **?** lists the C Borg's other commands
-(**$** reloads `borg.txt`'s C settings; the `borg_param_*` values are read
+joined with `;`. Ctrl-Z then **?** lists PBorg's other commands
+(**$** reloads `pborg.yaml`'s built-in Borg settings; the `borg_param_*` values are read
 once per game process).
 
 ## 7. Deaths and measurement

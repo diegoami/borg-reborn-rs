@@ -3153,8 +3153,7 @@ their names remain as aliases of the class values (docs/ZOO-INTERFACE.md,
 "Class values"). New: `attack_preference_melee_permille`, `_projectile_`,
 `_thrown_`, `_spell_`, `_device_`, `_activation_` (1000, 500–2000,
 `borg_fight_attack.rs:4575`). The shipped class values live in
-`harness/borg_<class>.txt`, folded into `harness/borg.txt` by
-`scripts/borg-class-files.py`.
+`harness/pborg.yaml`.
 
 ## M13 inventory gap closure (#433 / P4)
 
@@ -5834,7 +5833,7 @@ and `304-377` at `574b618c`.
 The compiled defaults preserve older profiles, including an off-by-default
 DL2 CL gate. The shipped DL21 offsets and upper CL bounds are two levels
 higher than the inherited values. Ranger uses the same rule below CL29.
-The files `harness/borg_<class>.txt` supply the class
+The class sections in `harness/pborg.yaml` supply the class
 values folded as `borg_param_<name>__<class>` in `harness/borg.txt`.
 Set that class-specific key to sweep a threshold in the zoo.
 The optional `borg_plan` overlay and
@@ -5870,7 +5869,7 @@ The approved stricter values are unmeasured hypotheses about readiness.
 The smoke suite reached DL2. The paired DL21+ comparison requested in
 [#1283](https://github.com/diegoami/borg-reborn-rs/issues/1283) remains open.
 
-The shared values are in [`harness/borg.txt`](../harness/borg.txt).
+The shared values are in [`harness/pborg.yaml`](../harness/pborg.yaml).
 Append `__<class>` to a key to override it for a class. For example,
 `borg_param_prepared_dl20_min_depth__paladin = 18` moves the Paladin's
 Free Action requirement to DL18. Every other class uses DL19. A band's
@@ -7292,8 +7291,7 @@ CONFUSED); Neutralize Poison (75 gold) and Cure Critical Wounds do
   `Model::reserve` skip the healing rows. The Home's stored healing is valued
   without the decay (`reserve`). Ammunition keeps its own caps
   (`town_ranger_arrows_max`).
-- **Per class** (`harness/borg_<class>.txt`, folded into `harness/borg.txt`
-  with `scripts/borg-class-files.py fold`; every parameter takes `@<class>`),
+- **Per class** (`harness/pborg.yaml`; every parameter takes `@<class>`),
   Cure Light Wounds, Cure Serious Wounds, Phase Door and oil; food, light and
   Cure Critical Wounds are common. The values start from the owner's and move
   with what each class carries at a town departure now (36 games of 200,000
@@ -7982,7 +7980,7 @@ any character can come at them". With this section the registry holds
 **2461** parameters (9 added to `track-p` `40c1c963`). `stair_scum` is compiled 0 and **shipped 1** in
 `harness/borg.txt` (owner, 2026-11-23: "ok let us merge with those settings"),
 with the owner's `byclass` arm of borg-zoo#721: `stair_scum_max_hp = 20`, slack
-per class in `harness/borg_<class>.txt` (Druid and Necromancer 1, Mage and Priest
+per class in `harness/pborg.yaml` (Druid and Necromancer 1, Mage and Priest
 2, Ranger and Rogue 3, Paladin and Blackguard 4; the Warrior with the mode off),
 the level rate at its default 50. It ships before the zoo's pilot reports; the
 pilot (all arms explicit) is pinned to `0d09e318`, which ships it 0. Every number is a hypothesis (RULES 14): borg-zoo

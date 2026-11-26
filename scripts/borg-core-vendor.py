@@ -20,6 +20,7 @@ against a fresh build of borg-rs at REV).
 
 import argparse
 import difflib
+import importlib.util
 import subprocess
 import sys
 import tempfile
@@ -31,7 +32,7 @@ CORE = ROOT / 'borg-core'
 # borg-rs path (a directory ends in '/') -> path under borg-core/.
 MAP = [
     ('borg-rs/', ''),
-    ('harness/borg.txt', 'borg.txt'),
+    ('harness/borg.txt', 'pborg.yaml'),
     ('angband/src/borg/borg-init.c', 'c-reference/borg-init.c'),
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
@@ -112,6 +113,18 @@ def blob(repo, oid):
     return git(repo, 'cat-file', 'blob', oid, binary=True).stdout
 
 
+def donor_file(repo, oid, path):
+    data = blob(repo, oid)
+    if path == 'pborg.yaml':
+        script = ROOT / 'harness/pborg-config.py'
+        spec = importlib.util.spec_from_file_location('legacy_pborg_config', script)
+        converter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(converter)
+        yaml = converter.convert(data.decode('utf-8'))
+        return ('\n'.join(line.rstrip() for line in yaml.splitlines()).rstrip() + '\n').encode('utf-8')
+    return data
+
+
 def ours():
     """{borg-core path: bytes} of the working tree's borg-core/."""
     return {str(p.relative_to(CORE)): p.read_bytes() for p in sorted(CORE.rglob('*')) if p.is_file()}
@@ -125,7 +138,7 @@ def delta(repo):
     base, mine = donor(repo, pin()), ours()
     out = []
     for rel in sorted(set(base) | set(mine)):
-        old = blob(repo, base[rel]) if rel in base else None
+        old = donor_file(repo, base[rel], rel) if rel in base else None
         new = mine.get(rel)
         if old == new:
             continue
@@ -148,7 +161,7 @@ def check(repo):
             problems.append(f'{rel}: in borg-rs at the pin, missing here')
         elif rel not in base:
             problems.append(f'{rel}: not in borg-rs at the pin, and not declared ours')
-        elif blob(repo, base[rel]) != mine[rel] and rel not in HOOKED:
+        elif donor_file(repo, base[rel], rel) != mine[rel] and rel not in HOOKED:
             problems.append(f'{rel}: differs from borg-rs at the pin, and not declared hooked')
     return problems
 
@@ -161,8 +174,8 @@ def refresh(repo, rev):
         if rel in OURS:
             continue
         path = CORE / rel
-        b = blob(repo, base[rel]) if rel in base else None
-        t = blob(repo, theirs[rel]) if rel in theirs else None
+        b = donor_file(repo, base[rel], rel) if rel in base else None
+        t = donor_file(repo, theirs[rel], rel) if rel in theirs else None
         o = mine.get(rel)
         if t == b:
             continue  # borg-rs did not change it: ours stands

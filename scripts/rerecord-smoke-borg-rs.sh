@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Re-record harness/reference/smoke-borg-rs after a change to how the default
-# (borg-rs) core plays, such as a shipped value in harness/borg.txt (AGENTS.md,
+# (borg-rs) core plays, such as a shipped value in harness/pborg.yaml (AGENTS.md,
 # "Which core a run plays").
 #
-#   1. edit harness/borg.txt (or borg-core/src/) and commit it;
+#   1. edit harness/pborg.yaml (or borg-core/src/) and commit it;
 #   2. scripts/rerecord-smoke-borg-rs.sh
 #
 # It builds the committed tree, plays the smoke suite on the default core,
@@ -38,8 +38,8 @@ if [ -n "${BORG_CORE:-}" ] && [ "${BORG_CORE}" != borg-rs ]; then
     echo "rerecord: BORG_CORE=$BORG_CORE; this reference is the default borg-rs core's" >&2
     exit 2
 fi
-# CI plays harness/borg.txt; BORG_CORE_OVERRIDES=off would play
-# borg-core/borg.txt instead and record another game (review of #633).
+# CI plays harness/pborg.yaml; BORG_CORE_OVERRIDES=off would play
+# borg-core/pborg.yaml instead and record another game (review of #633).
 if [ "${BORG_CORE_OVERRIDES:-on}" != on ]; then
     echo "rerecord: BORG_CORE_OVERRIDES=$BORG_CORE_OVERRIDES changes the borg.txt the run reads; unset it" >&2
     exit 2

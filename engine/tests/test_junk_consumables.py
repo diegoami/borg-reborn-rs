@@ -9,6 +9,8 @@ import tempfile
 import unittest
 
 
+from pborg_fixture import write_pborg_config
+
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust-test/game/angband"
 BASE_KIT = ROOT / "engine/tests/fixtures/warrior-level5.build"
@@ -34,8 +36,8 @@ class JunkConsumablesTest(unittest.TestCase):
             paths = {name: out / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            for name in ("borg.txt", "scary_monsters.txt"):
-                shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             # Keep equipped gear, food, and fuel from the known 72 HP build.
             # Replace its other pack contents with the items under test.
             records = [

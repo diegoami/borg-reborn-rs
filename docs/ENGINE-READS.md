@@ -43,7 +43,6 @@ Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 | `feat_is_shop` | B | the C Borg's guard before the shop number: the known feature is a shop (`borg-update.c:317`) |
 | `cave_monster` | B | the real monster on a seen grid: race, HP, timers (`borg_update_kill_old`) |
 | `cmd_get_nrepeats` | B | the game is repeating a command (spec §2.7) |
-| `get_com` | S | reads the `^Z` command key |
 | `option_set` | W | the game options the Borg sets |
 | `spell_by_index` | B | the class's spells (`borg_cheat_spells`) |
 | `spell_chance` | X | a spell's failure chance as the spell menu shows it (the "Fail" column); the C Borg computes its own (`borg_spell_fail_rate`) (#127) |
@@ -167,6 +166,5 @@ Reasons, from the C Borg specification (`docs/c-borg/BORG_SPEC.md`
 
 ## Not engine reads
 
-The harness frontend's `borgh_decision` (declared in `engine.rs`, harness
-builds only) and the Borg's own export `do_cmd_borg` belong to the seam,
-not to the game's state.
+The harness callback `borgh_decision` and the Rust export `do_cmd_pborg`
+are part of the command and measurement interface.

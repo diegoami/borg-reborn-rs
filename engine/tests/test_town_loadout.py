@@ -9,6 +9,8 @@ import tempfile
 import unittest
 
 
+from pborg_fixture import write_pborg_config
+
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust-test/game/angband"
 
@@ -23,8 +25,8 @@ class TownLoadoutTest(unittest.TestCase):
             paths = {name: Path(directory) / name for name in ("user", "save", "archive", "panic", "scores")}
             for path in paths.values():
                 path.mkdir()
-            for name in ("borg.txt", "scary_monsters.txt"):
-                shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
+            write_pborg_config(paths["user"])
+            shutil.copyfile(ROOT / "harness/scary_monsters.txt", paths["user"] / "scary_monsters.txt")
             messages = Path(directory) / "messages.log"
             env = {
                 key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))

@@ -31,6 +31,7 @@ test-cursed-spares = []
 libc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml_ng = "0.10"
 
 # borg-reborn-rs (#207): borg-rs's code is linted by borg-rs's own CI, on its
 # toolchain. Here, newer clippy releases would fail our `-D warnings` on code

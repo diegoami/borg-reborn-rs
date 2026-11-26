@@ -36,10 +36,10 @@ class VendorTest(unittest.TestCase):
         self.repo.mkdir()
         git(self.repo, 'init', '-q')
         self.pin = commit(self.repo, {'borg-rs/src/a.rs': LINES, 'borg-rs/src/b.rs': 'b\n',
-                                      'harness/borg.txt': 'x = 1\n', 'angband/src/borg/borg.txt': 'x = 1\n',
+                                      'harness/borg.txt': 'borg_stop_clevel = 1\n', 'angband/src/borg/borg.txt': 'x = 1\n',
                                       'angband/src/borg/borg-init.c': 'int x;\n'}, 'pin')
         files = {'src/a.rs': LINES.replace('line 2\n', 'line 2 // borg-reborn-rs (#208) hook\n'),
-                 'src/b.rs': 'b\n', 'borg.txt': 'x = 1\n', 'c-reference/borg.txt': 'x = 1\n',
+                 'src/b.rs': 'b\n', 'pborg.yaml': '# PBorg settings. Place this file at user/pborg.yaml.\nborg_stop_clevel: 1\n', 'c-reference/borg.txt': 'x = 1\n',
                  'c-reference/borg-init.c': 'int x;\n', 'src/shell.rs': 'ours\n', 'ladders.txt': 'l\n',
                  'PIN': self.pin + '\n'}
         for rel, text in files.items():

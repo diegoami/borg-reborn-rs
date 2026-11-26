@@ -8,7 +8,7 @@
 # OUTDIR/keys.log, messages.log, state.log and summary.json. RACE and CLASS
 # are indices into lib/gamedata/p_race.txt and class.txt, picked with the
 # birth menu's letters (defaults: seed 101, Human Warrior). The settings are
-# borg/borg.txt with the race and class set, as harness/run.sh sets them, so
+# borg/pborg.yaml with the race and class set, as harness/run.sh sets them, so
 # seed 101 0 0 20000 plays the same keys as the source tree's smoke-warrior-1
 # reference (harness/reference/smoke-borg-rs).
 set -euo pipefail
@@ -22,9 +22,9 @@ done
 mkdir -p "$1"; OUT="$(cd "$1" && pwd)"
 mkdir -p "$OUT/user" "$OUT/save" "$OUT/archive" "$OUT/panic" "$OUT/scores"
 cp "$PKG"/borg/*.txt "$OUT/user/"
-sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
-    -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
-    -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" "$PKG/borg/borg.txt" > "$OUT/user/borg.txt"
+sed -e "s/^borg_respawn_race: .*/borg_respawn_race: $RACE/" \
+    -e "s/^borg_respawn_class: .*/borg_respawn_class: $CLASS/" \
+    -e "s/^borg_cheat_death: .*/borg_cheat_death: false/" "$PKG/borg/pborg.yaml" > "$OUT/user/pborg.yaml"
 # The headless-only executable where there is one (Linux), else the game's.
 BIN=./angband; [ ! -x "$PKG/angband-headless" ] || BIN=./angband-headless
 # A UTF-8 locale (C.UTF-8 is glibc's; macOS has en_US.UTF-8).

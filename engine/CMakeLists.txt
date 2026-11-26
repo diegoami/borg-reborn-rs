@@ -2,10 +2,8 @@
 #
 # Compiles a patched copy of the pristine upstream tree (engine/angband/,
 # engine/patches/), our headless frontend (engine/frontend/) and the Rust
-# Borg's staticlib into game/angband, with the game data in game/lib. The
-# C Borg (src/borg/) is not built: the Rust Borg exports do_cmd_borg in its
-# place. Upstream's own CMakeLists.txt is not used (it lists src/borg/
-# inside its core library); its source list is copied in sources.cmake.
+# Borg's staticlib alongside the native C Borg. The executable is installed
+# as game/angband, with the game data in game/lib.
 #
 #   cmake -S engine -B build/rust [-DBORG_FEATURES=test-hallucinate] [-DSUPPORT_X11=ON]
 #         [-DSUPPORT_GCU=ON] [-DBORG_RUST_TARGET=x86_64-pc-windows-gnu]

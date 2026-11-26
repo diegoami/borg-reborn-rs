@@ -1329,9 +1329,9 @@ mod tests {
         ] {
             st.borg.trait_[index as usize] = actual;
         }
-        let shipped = include_str!("../../harness/borg.txt");
+        let shipped = crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
         let ranger = CLASSES.iter().position(|class| *class == "ranger").unwrap();
-        let ranger_value = test_class_values(shipped, ranger);
+        let ranger_value = test_class_values(&shipped, ranger);
         st.borg.trait_[BI_CLASS as usize] = ranger as i32;
         st.borg.trait_[BI_MAXCLEVEL as usize] = 28;
         let reason = deeper_requirements(&st, 21, &ranger_value, || -1).unwrap();
@@ -1341,7 +1341,7 @@ mod tests {
         assert!(deeper_requirements(&st, 21, &ranger_value, || -1).is_none());
 
         for caster in [CLASS_MAGE, CLASS_NECROMANCER] {
-            let caster_value = test_class_values(shipped, caster as usize);
+            let caster_value = test_class_values(&shipped, caster as usize);
             st.borg.trait_[BI_CLASS as usize] = caster;
             st.borg.trait_[BI_MAXCLEVEL as usize] = 40;
             assert!(deeper_requirements(&st, 30, &caster_value, || -1).is_none());
@@ -1361,7 +1361,8 @@ mod tests {
         use super::*;
         use crate::params::test_class_values;
 
-        let value = test_class_values(include_str!("../../harness/borg.txt"), CLASS_WARRIOR as usize);
+        let shipped = crate::shell::yaml_settings(include_str!("../../harness/pborg.yaml")).unwrap();
+        let value = test_class_values(&shipped, CLASS_WARRIOR as usize);
         let mut st = BorgState::default();
         st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
         st.borg.trait_ = vec![1; crate::borg_headers::borg_trait_h::BI_MAX as usize];

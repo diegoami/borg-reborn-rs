@@ -351,24 +351,36 @@ fn fatal(error: impl std::fmt::Display) -> ! {
     std::process::exit(2)
 }
 
+fn selected_path() -> Option<String> {
+    let file = crate::shell::borg_txt_setting("borg_scary_list")?;
+    let file = file.trim();
+    if file.is_empty() {
+        fatal("empty borg_scary_list");
+    }
+    // `none`: the compiled C list (an experiment's control arm).
+    if file.eq_ignore_ascii_case("none") {
+        return None;
+    }
+    let path = if std::path::Path::new(file).is_absolute() {
+        file.to_string()
+    } else {
+        String::from_utf8(engine::path_build_user(4096, file.as_bytes())).unwrap_or_else(|e| fatal(e))
+    };
+    Some(path)
+}
+
+/// Check the selected list before opening the interactive game.
+pub fn check_selected_file() {
+    if let Some(path) = selected_path() {
+        std::fs::File::open(&path).unwrap_or_else(|error| fatal(format!("{path}: {error}")));
+    }
+}
+
 /// The list selected by `borg_scary_list`, loaded once (after the game data,
 /// which resolves the names); `None` without the key: the compiled C list.
 pub fn selected() -> Option<&'static List> {
     LIST.get_or_init(|| {
-        let file = crate::shell::borg_txt_setting("borg_scary_list")?;
-        let file = file.trim();
-        if file.is_empty() {
-            fatal("empty borg_scary_list");
-        }
-        // `none`: the compiled C list (an experiment's control arm).
-        if file.eq_ignore_ascii_case("none") {
-            return None;
-        }
-        let path = if std::path::Path::new(file).is_absolute() {
-            file.to_string()
-        } else {
-            String::from_utf8(engine::path_build_user(4096, file.as_bytes())).unwrap_or_else(|e| fatal(e))
-        };
+        let path = selected_path()?;
         let text = std::fs::read_to_string(&path).unwrap_or_else(|e| fatal(format!("{path}: {e}")));
         // The last race slot is the player ghost, which has no name
         // (borg_race_name's "player ghost").

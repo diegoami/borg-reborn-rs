@@ -6544,13 +6544,13 @@ mod floor_cure_tests {
         assert_eq!(floor_cure_choice(false, [CLW, CSW, CCW], |_| false), None);
     }
 
-    /// The flag is off when compiled, shipped on in `harness/borg.txt`.
+    /// The flag is off when compiled, shipped on in `harness/pborg.yaml`.
     #[test]
     fn the_floor_cure_is_compiled_off_and_shipped_on() {
         let spec = crate::params::SPECS.iter().find(|s| s.name == "attack_kill_on_sight_floor_cure").unwrap();
         assert_eq!((spec.default, spec.min, spec.max), (0, 0, 1));
-        let shipped = include_str!("../../harness/borg.txt");
-        assert!(shipped.lines().any(|l| l.trim() == "borg_param_attack_kill_on_sight_floor_cure = 1"));
+        let shipped = include_str!("../../harness/pborg.yaml");
+        assert!(shipped.lines().any(|l| l.trim() == "borg_param_attack_kill_on_sight_floor_cure: 1"));
     }
 
     /// #1064: the floor's decline drinks before it moves on (the wiring;

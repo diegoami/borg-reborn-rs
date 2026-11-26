@@ -84,9 +84,9 @@ This is a new game/process; it does not hot-patch a running recorded binary.
 Interactive selection through the vendored core's configuration:
 
 ```text
-# In the actual run's user/borg.txt:
+# In the actual run's user/pborg.yaml:
 borg_reborn_core = borg-rs
-borg_plan = errands_plan.txt
+borg_plan: errands_plan.txt
 ```
 
 Put that `errands_plan.txt` beside this borg.txt. Relative paths resolve under
@@ -95,7 +95,7 @@ are accepted. `BORG_ERRANDS_PLAN=/absolute/path/errands_plan.txt` overrides the
 file setting. An empty explicit path is an error; with no selection, existing
 behaviour is unchanged. No automatic search or YAML/TOML profile loader.
 
-For normal watched games the files are `.angband-reborn/user/borg.txt` and
+For normal watched games the files are `.angband-reborn/user/pborg.yaml` and
 `.angband-reborn/user/errands_plan.txt`. A guided game uses its own
 `SESSION/user/` directory from the manifest. Do not change the currently
 running frozen recording: it has the old executable. A new process/segment
@@ -161,7 +161,7 @@ No network, engine patch or recorder modification is needed.
 The driver is for bounded diagnostics. **Measured runs** use the standard
 harness (#352): `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE harness/run.sh ...`
 (and so `harness/suite.sh`). `run.sh` copies the plan into the run's
-`user/errands_plan.txt` and selects it in the run's `user/borg.txt` with a line
+`user/errands_plan.txt` and selects it in the run's `user/pborg.yaml` with a line
 naming the plan's SHA-256, so `borg_txt_sha256`, and with it the cemetery's
 encounter family, changes with the plan's bytes (not its file name).
 `config.txt` records `borg_errands_plan` (the path relative to the checkout)

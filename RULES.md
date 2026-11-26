@@ -188,8 +188,8 @@ not undo other-track work already authorized before the gate.
    the declared patch series of `engine/patches/` (docs/ENGINE.md): harness
    hooks under `#ifdef BORG_HARNESS` or `USE_BORGH`, applied to a copy at
    build time, each shown not to change the game with the guards off. Birth
-   options are the game's defaults. No C Borg is built here (docs/SPEC.md
-   §6).
+   options are the game's defaults. The owner approved shipping the native
+   C Borg alongside PBorg in #1288 (docs/SPEC.md §6).
 10. **Determinism.** Seed, build and profile reproduce a game's key stream.
     The Borg thinks with its own RNG and never moves the game's. Wall time
     never affects play. Decisions never iterate over unordered containers.

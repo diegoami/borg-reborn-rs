@@ -140,7 +140,7 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     echo "suite=$SUITE"
     echo "suite_file=$SFILE"   # the resolved suite (harness/check-characters.py)
     echo "suite_sha256=$(sha256sum < "$SFILE" | cut -d' ' -f1)"
-    echo "borg_txt_sha256=$(sha256sum < "$ROOT/harness/borg.txt" | cut -d' ' -f1)"
+    echo "pborg_yaml_sha256=$(sha256sum < "$ROOT/harness/pborg.yaml" | cut -d' ' -f1)"
     echo "borg_impl_env=$IMPL"
     echo "binary=$BIN"
     echo "binary_sha256=$BIN_SHA"
@@ -194,14 +194,11 @@ if [ $FAIL = 0 ]; then RESULT=OK; else RESULT=FAILED; fi
     python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); print(sys.argv[2], s["stop_reason"], "turns=%d"%s["game_turns"], "pturns=%d"%s["player_turns"], "clev=%d"%s["clevel"], "maxdepth=%d"%s["max_depth"], "keys=%d"%s["keys"], "wall=%.1f"%s["wall_seconds"], s["race"], s["class"])' "$WORK/$d/summary.json" "$d" 2>/dev/null || echo "$d MISSING/FAILED"
   done
 } > "$WORK/timing.txt"
-# Effective config of each run: its flags and the sha256 of its borg.txt
-# (stock suites: borg_txt_sha256 differs from the manifest's stock hash
-# in the respawn race/class lines and, since #479, in borg_reborn_core,
-# which harness/run.sh sets to reborn when BORG_CORE is unset).
+# Effective config of each run: its flags and the SHA-256 of its YAML.
 for d in "${NAMES[@]}"; do
     f="$WORK/$d/config.txt"
     if [ -f "$f" ]; then
-        echo "run_config.$d=$(sed -n 's/^flags=//p' "$f") $(sed -n 's/^borg_txt_sha256=//p' "$f")"
+        echo "run_config.$d=$(sed -n 's/^flags=//p' "$f") $(sed -n 's/^pborg_yaml_sha256=//p' "$f")"
     else
         echo "run_config.$d=missing"
     fi

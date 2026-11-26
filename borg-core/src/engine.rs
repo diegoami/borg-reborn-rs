@@ -136,13 +136,9 @@ fn lend<R>(st: &mut BorgState, f: impl FnOnce() -> R) -> R {
     r
 }
 
-/// The engine's call into the Borg commands (`do_cmd_borg`, called by
-/// `do_cmd_try_borg` in cmd-misc.c for `^Z`). Private: only the engine
-/// calls it (the `#[no_mangle]` symbol is exported all the same).
-// borg-reborn-rs (#207): the symbol is the shell's; the shell calls this
-// when `BORG_CORE=borg-rs` selects this core.
-pub fn do_cmd_borg() {
-    enter(crate::borg_commands::do_cmd_borg)
+/// Run the selected PBorg command on the engine thread.
+pub fn do_cmd_borg_key(cmd: u8) {
+    enter(|st| crate::borg_commands::do_cmd_borg_key(st, cmd))
 }
 
 // ---------------------------------------------------------------------------
@@ -1144,28 +1140,6 @@ pub fn spell_chance(spell_index: i32) -> i16 {
 }
 
 // ---------------------------------------------------------------------------
-// Files
-
-/// An engine file (`ang_file *`) opened by someone else. It has no public
-/// constructor: the only one is made by `ReadFile::getl` for one call,
-/// from an open `ReadFile`.
-#[derive(Clone, Copy)]
-pub struct AngFile(*mut crate::headers::z_file_h::ang_file);
-
-impl AngFile {
-}
-
-/// `file_getl(f, buf, len)`: read a line into `buf` (at most `len - 1`
-/// bytes and a NUL; `\r`, `\n` and `\r\n` end a line, tabs become
-/// spaces). Returns false at the end of the file.
-pub fn file_getl(f: AngFile, buf: &mut [u8], len: usize) -> bool {
-    assert!(len >= 1 && len <= buf.len());
-    // SAFETY: f is open (an AngFile only comes from an open ReadFile, see
-    // the type); file_getl writes at most `len` bytes into buf (len checked).
-    unsafe { crate::headers::z_file_h::file_getl(f.0, buf.as_mut_ptr() as *mut c_char, len) }
-}
-
-// ---------------------------------------------------------------------------
 // Flags, player flags and race resistances
 
 /// `FLAG_END` (z-bitflag.h): no flag.
@@ -1305,37 +1279,6 @@ fn path_build_in(dir: *mut c_char, len: usize, leaf: &[u8]) -> Vec<u8> {
     let n = buf.iter().position(|&b| b == 0).unwrap_or(len);
     buf.truncate(n);
     buf
-}
-
-/// An engine file opened for reading by `file_open(path, MODE_READ, -1)`
-/// (`ang_file *`). Not `Copy`: `close()` consumes it. Dropping it without
-/// closing leaks it.
-pub struct ReadFile(*mut crate::headers::z_file_h::ang_file);
-
-/// `file_open(path, MODE_READ, -1)`; `None` where C gets NULL.
-pub fn file_open_read(path: &[u8]) -> Option<ReadFile> {
-    use crate::headers::z_file_h as z;
-    let c = CString::new(path).expect("no NUL in path");
-    // SAFETY: c is a valid C string for the call; the file type is not
-    // used for reading (C passes -1); the result is NULL or a file the
-    // engine allocated.
-    let f = unsafe { z::file_open(c.as_ptr(), z::MODE_READ, u32::MAX) };
-    (!f.is_null()).then_some(ReadFile(f))
-}
-
-impl ReadFile {
-    /// `file_getl(f, buf, len)`, as [`file_getl`].
-    pub fn getl(&mut self, buf: &mut [u8], len: usize) -> bool {
-        // AngFile contract: self.0 is open (only close() ends it, by value)
-        // and the handle does not outlive this call.
-        file_getl(AngFile(self.0), buf, len)
-    }
-
-    /// `file_close(f)`.
-    pub fn close(self) -> bool {
-        // SAFETY: self.0 is open and is not used again (self is consumed).
-        unsafe { crate::headers::z_file_h::file_close(self.0) }
-    }
 }
 
 /// `time(NULL)`.

@@ -2,8 +2,8 @@
 
 Precedence (review of #535): BORG_SCARY_LIST=FILE wins, under its own file
 name; otherwise the list the borg.txt names is copied from harness/; with
-borg_scary_list = none the compiled C list runs, with no file and no hash.
-Each case inspects the run's user/borg.txt, the copied files and config.txt,
+borg_scary_list: "none" the compiled C list runs, with no file and no hash.
+Each case inspects the run's user/pborg.yaml, the copied files and config.txt,
 and plays a short borg-rs game, which stops before play on a missing or
 invalid list.
 """
@@ -44,8 +44,8 @@ class ScaryListHarnessTest(unittest.TestCase):
         r = subprocess.run([str(ROOT / 'harness/run.sh'), str(out), '29', '0', '0', '200', 'menu'],
                            env=env, capture_output=True, text=True, timeout=120)
         config = dict(l.split('=', 1) for l in (out / 'config.txt').read_text().splitlines() if '=' in l)
-        borg_txt = (out / 'user/borg.txt').read_text()
-        lines = [l for l in borg_txt.splitlines() if l.partition('=')[0].strip() == 'borg_scary_list']
+        borg_txt = (out / 'user/pborg.yaml').read_text()
+        lines = [l for l in borg_txt.splitlines() if l.partition(':')[0].strip() == 'borg_scary_list']
         return r, out, config, borg_txt, lines
 
     def assert_played(self, r, out):
@@ -56,8 +56,8 @@ class ScaryListHarnessTest(unittest.TestCase):
         r, out, config, borg_txt, lines = self.run_sh('shipped')
         self.assert_played(r, out)
         digest = sha(ROOT / 'harness' / SHIPPED)
-        self.assertEqual(lines, [f'borg_scary_list = {SHIPPED}'])
-        self.assertIn(f'scary list sha256 {digest}\nborg_scary_list = {SHIPPED}\n', borg_txt)
+        self.assertEqual(lines, [f'borg_scary_list: "{SHIPPED}"'])
+        self.assertIn(f'scary list sha256 {digest}\n', borg_txt)
         self.assertEqual((out / 'user' / SHIPPED).read_bytes(), (ROOT / 'harness' / SHIPPED).read_bytes())
         self.assertEqual((config['borg_scary_list'], config['borg_scary_list_sha256']), (SHIPPED, digest))
 
@@ -65,26 +65,26 @@ class ScaryListHarnessTest(unittest.TestCase):
         r, out, config, borg_txt, lines = self.run_sh('override', BORG_SCARY_LIST=str(ROOT / 'harness' / C_LIST))
         self.assert_played(r, out)
         digest = sha(ROOT / 'harness' / C_LIST)
-        self.assertEqual(lines, [f'borg_scary_list = {C_LIST}'])
-        self.assertIn(f'scary list sha256 {digest}\nborg_scary_list = {C_LIST}\n', borg_txt)
+        self.assertEqual(lines, [f'borg_scary_list: "{C_LIST}"'])
+        self.assertIn(f'scary list sha256 {digest}\n', borg_txt)
         self.assertEqual((out / 'user' / C_LIST).read_bytes(), (ROOT / 'harness' / C_LIST).read_bytes())
         self.assertFalse((out / 'user' / SHIPPED).exists(), 'only the selected list is copied')
         self.assertEqual((config['borg_scary_list'], config['borg_scary_list_sha256']), (C_LIST, digest))
 
     def test_none_runs_the_compiled_list_with_no_file_and_no_hash(self):
-        r, out, config, borg_txt, lines = self.run_sh('none', BORG_TXT_SET='borg_scary_list=none')
+        r, out, config, borg_txt, lines = self.run_sh('none', PBORG_SET='borg_scary_list=none')
         self.assert_played(r, out)
-        self.assertEqual(lines, ['borg_scary_list = none'])
+        self.assertEqual(lines, ['borg_scary_list: "none"'])
         self.assertNotIn('scary list sha256', borg_txt)
         self.assertEqual([p.name for p in (out / 'user').glob('scary_monsters*')], [])
         self.assertEqual(config['borg_scary_list'], 'none')
         self.assertNotIn('borg_scary_list_sha256', config)
 
     def test_borg_scary_list_wins_over_none(self):
-        r, out, config, _, lines = self.run_sh('none-override', BORG_TXT_SET='borg_scary_list=none',
+        r, out, config, _, lines = self.run_sh('none-override', PBORG_SET='borg_scary_list=none',
                                                BORG_SCARY_LIST=str(ROOT / 'harness' / C_LIST))
         self.assert_played(r, out)
-        self.assertEqual(lines, [f'borg_scary_list = {C_LIST}'])
+        self.assertEqual(lines, [f'borg_scary_list: "{C_LIST}"'])
         self.assertEqual(config['borg_scary_list_sha256'], sha(ROOT / 'harness' / C_LIST))
 
     def test_an_invalid_list_stops_before_play(self):
@@ -92,7 +92,7 @@ class ScaryListHarnessTest(unittest.TestCase):
         bad.write_text((ROOT / 'harness' / SHIPPED).read_text().replace('soldier | ', 'soldiers | ', 1))
         r, out, config, _, lines = self.run_sh('invalid', BORG_SCARY_LIST=str(bad))
         self.assertNotEqual(r.returncode, 0)
-        self.assertEqual(lines, ['borg_scary_list = bad.txt'])
+        self.assertEqual(lines, ['borg_scary_list: "bad.txt"'])
         self.assertIn("unknown monster 'soldiers'", (out / 'stderr.log').read_text())
         self.assertFalse((out / 'keys.log').exists() and (out / 'keys.log').read_text().strip())
 

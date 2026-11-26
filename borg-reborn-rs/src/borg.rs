@@ -287,12 +287,13 @@ pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 
 /// Whether the decision core is borg-rs's (#207), read once at the first
 /// `^Z`: `BORG_CORE` in the environment, else `borg_reborn_core` in the
-/// run's borg.txt. The zoo's integer profiles use 1 for borg-rs, 0 for reborn.
+/// run's pborg.yaml. The zoo's integer profiles use 1 for borg-rs, 0 for reborn.
 pub fn core_is_borg_rs() -> bool {
     static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CORE.get_or_init(|| {
         let environment = std::env::var_os("BORG_CORE");
         let file = if environment.is_none() {
+            borg_rs::shell::warn_missing_pborg_config();
             borg_rs::shell::borg_txt_setting("borg_reborn_core")
         } else {
             None
@@ -303,7 +304,7 @@ pub fn core_is_borg_rs() -> bool {
                 .ok_or_else(|| format!("BORG_CORE: invalid non-UTF-8 core selector {value:?}"))
                 .and_then(|value| parse_core_selector(Some(value), "BORG_CORE"))
         } else {
-            parse_core_selector(file.as_deref(), "borg.txt borg_reborn_core")
+            parse_core_selector(file.as_deref(), "pborg.yaml borg_reborn_core")
         };
         let selected = selected.unwrap_or_else(|error| {
             eprintln!("borg-reborn-rs: {error}");
@@ -350,7 +351,7 @@ pub fn configured_errand() -> Option<String> {
             .ok_or_else(|| format!("BORG_ERRAND: invalid non-UTF-8 errand selector {value:?}"))
             .and_then(|value| parse_errand_setting(Some(value), "BORG_ERRAND"))
     } else {
-        parse_errand_setting(file.as_deref(), "borg.txt borg_reborn_errand")
+        parse_errand_setting(file.as_deref(), "pborg.yaml borg_reborn_errand")
     };
     selected.unwrap_or_else(|error| {
         eprintln!("borg-reborn-rs: {error}");
@@ -388,7 +389,7 @@ pub fn configured_stopscared() -> Option<borg_rs::shell::Command> {
             .ok_or_else(|| format!("BORG_STOPSCARED: invalid non-UTF-8 stopscared value {value:?}"))
             .and_then(|value| parse_stopscared_setting(Some(value), "BORG_STOPSCARED"))
     } else {
-        parse_stopscared_setting(file.as_deref(), "borg.txt borg_reborn_stopscared")
+        parse_stopscared_setting(file.as_deref(), "pborg.yaml borg_reborn_stopscared")
     };
     selected.unwrap_or_else(|error| {
         eprintln!("borg-reborn-rs: {error}");
@@ -436,10 +437,9 @@ fn parse_errand_budget(value: Option<&str>) -> Result<i64, String> {
     }
 }
 
-/// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
-/// menu does, so borgh's start script and the GUI work unchanged).
-pub fn command() {
-    if engine::read_command() != Some(b'z') {
+/// Run a key from the shared Borg command prompt. The reborn core supports start.
+pub fn command(cmd: u8) {
+    if cmd != b'z' {
         return;
     }
     // The game options the Borg relies on (spec §1.2; docs/ENGINE.md): no
@@ -773,7 +773,7 @@ mod tests {
         ] {
             assert_eq!(parse_core_selector(value, "BORG_CORE"), Ok(expected));
         }
-        for source in ["BORG_CORE", "borg.txt borg_reborn_core"] {
+        for source in ["BORG_CORE", "pborg.yaml borg_reborn_core"] {
             for value in ["", "true", "2", "7", "borg_rs", "BORG-RS", " 1"] {
                 let error = parse_core_selector(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
@@ -802,7 +802,7 @@ mod tests {
                 Ok(Some(value.into()))
             );
         }
-        for source in ["BORG_ERRAND", "borg.txt borg_reborn_errand"] {
+        for source in ["BORG_ERRAND", "pborg.yaml borg_reborn_errand"] {
             for value in [" ", "; ;", "true", "2", "dvie 2", "/dive 0", "/town; typo"] {
                 let error = parse_errand_setting(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
@@ -837,7 +837,7 @@ mod tests {
                 matches!(command, Some(borg_rs::shell::Command::StopScared(n)) if n == expected)
             );
         }
-        for source in ["BORG_STOPSCARED", "borg.txt borg_reborn_stopscared"] {
+        for source in ["BORG_STOPSCARED", "pborg.yaml borg_reborn_stopscared"] {
             for value in [
                 "bogus",
                 "0",

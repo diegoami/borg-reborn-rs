@@ -8,6 +8,8 @@ import tempfile
 import unittest
 
 
+from pborg_fixture import write_pborg_config
+
 ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / "build/rust/game"
 SCROLL_LIGHT = "equip:scroll:Light:6:6:none"
@@ -40,10 +42,10 @@ class LightScrollsTest(unittest.TestCase):
                 path.mkdir()
             scary = "scary_monsters.txt"
             (paths["user"] / scary).write_bytes((ROOT / "harness" / scary).read_bytes())
-            config = (ROOT / "harness/borg.txt").read_text().splitlines()
+            config = (ROOT / "harness/pborg.yaml").read_text().splitlines()
             setting = "borg_param_light_scroll_idle_spend"
-            config = [line for line in config if not line.startswith(f"{setting} =")]
-            (paths["user"] / "borg.txt").write_text("\n".join([*config, f"{setting} = {enabled}", ""]))
+            config = [line for line in config if not line.startswith(f"{setting}:")]
+            write_pborg_config(paths["user"], "\n".join([*config, f"{setting}: {enabled}", ""]))
 
             env = {k: v for k, v in os.environ.items() if not k.startswith(("BORG_", "BORGH_"))}
             env.update(BORG_CORE="borg-rs", BORG_RUN_DIR=str(out))
