@@ -117,7 +117,10 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
             || borg_read_scroll(st, st.item_val.sv_scroll_word_of_recall)
         {
             // do we need to answer "Set recall depth to current depth? [y/n]"
-            if st.borg.tr(BI_CDEPTH) < st.borg.tr(BI_MAXDEPTH) && st.borg.tr(BI_CDEPTH) != 0 {
+            if st.borg.tr(BI_CDEPTH) < st.borg.tr(BI_MAXDEPTH) && st.borg.tr(BI_CDEPTH) != 0
+                && !(crate::borg_think_dungeon::bravery_recovery_enabled()
+                    && engine::player_opt(crate::headers::list_options_h::OPT_birth_levels_persist))
+            {
                 let diff_max_from_desired_depth =
                     st.borg.tr(BI_MAXDEPTH) - st.prepared.depth_hunted_unique;
                 let diff_cur_from_desired_depth =
@@ -3080,4 +3083,26 @@ pub(crate) fn recall_ready(st: &BorgState) -> bool {
         || borg_equips_item(st, st.act.recall, true)
         || borg_spell_okay_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
         || (can_read_now(st) && borg_slot(st, TV_SCROLL as i32, st.item_val.sv_scroll_word_of_recall) >= 0)
+}
+
+/// The stalled-think fallback only starts a Recall that will go to town
+/// and whose full activation delay fits the survival forecast.
+pub(crate) fn recall_for_bravery_recovery(st: &mut BorgState) -> Result<(), &'static str> {
+    use crate::headers::list_options_h::OPT_birth_no_recall;
+    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.goal.recalling != 0 {
+        return Err("no townward Recall to start");
+    }
+    if (engine::player_opt(OPT_birth_no_recall) && st.borg.tr(BI_KING) == 0)
+        || engine::player_arena_level()
+        || (engine::player_opt(OPT_birth_force_descend) && engine::player_on_quest_level())
+    {
+        return Err("the engine prevents Recall on this level");
+    }
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_RECALL) == 0 {
+        return Err("no Recall source");
+    }
+    if st.borg.tr(BI_ISWEAK) != 0 || !crate::borg_caution::bravery_recall_survivable(st) {
+        return Err("the activation delay is unsafe");
+    }
+    if borg_recall(st) { Ok(()) } else { Err("no Recall source can be used now") }
 }

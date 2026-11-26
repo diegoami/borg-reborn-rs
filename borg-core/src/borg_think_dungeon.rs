@@ -69,6 +69,7 @@ use crate::borg_think_dungeon_util::{
 use crate::borg_think_store::borg_choose_shop;
 use crate::borg_trait::borg_notice;
 use crate::engine;
+use crate::params::{value, Param};
 use crate::borg_headers::borg_h::{
     BORG_DELAY_FACTOR, BORG_MONEY_SCUM_AMOUNT, BORG_PLAYS_RISKY,
 };
@@ -96,6 +97,7 @@ pub struct ThinkDungeonState {
     /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
     pub(crate) cursed: crate::borg_cursed::Removal,
     pub(crate) healing_restock: crate::borg_healing_restock::Restock,
+    pub(crate) bravery_recall: bool,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -250,23 +252,23 @@ fn check_light_for_doors(st: &mut BorgState) -> bool {
 /// This function is a sub-set of the standard dungeon goals, and is
 /// only executed when all of the standard dungeon goals fail, because
 /// of excessive danger, or because the level is "bizarre".
-fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
+fn borg_think_dungeon_brave(st: &mut BorgState) -> Option<&'static str> {
     /*** Local stuff ***/
     let p1 = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
 
     /* Try a defense maneuver on 100 */
     if st.borg.tr(BI_CDEPTH) == 100 && borg_defend(st, p1) {
-        return true;
+        return Some("defend");
     }
 
     /* Attack monsters */
     if crate::borg_fight_attack::borg_attack(st, true) {
-        return true;
+        return Some("attack");
     }
 
     /* Cast a light beam to remove fear of an area */
     if borg_light_beam(st, false) {
-        return true;
+        return Some("light_beam");
     }
 
     /*** Flee (or leave) the level ***/
@@ -279,14 +281,14 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
         borg_keypress(st, key(b'>'));
 
         /* Success */
-        return true;
+        return Some("descend");
     }
 
     /* Return to Stairs, but not use them */
     if st.borg.goal.less {
         /* Continue fleeing to stair */
         if borg_flow_old(st, GOAL_FLEE) {
-            return true;
+            return Some("continue_stair_flow");
         }
 
         /* Try to find some stairs */
@@ -294,7 +296,7 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
             && st.borg.tr(BI_CDEPTH) == 0
             && borg_flow_stair_both(st, GOAL_FLEE, false)
         {
-            return true;
+            return Some("find_town_stairs");
         }
 
         // borg-reborn-rs (#1062): the return leash's walk back goes to the
@@ -303,7 +305,7 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
             borg_note(st, "# Looking for stairs. Goal_less, any stair, brave.");
             // borg-reborn-rs (#1130): the walk is committed.
             crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Any);
-            return true;
+            return Some("find_return_stairs");
         }
 
         /* Try to find some stairs up */
@@ -311,7 +313,7 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
             borg_note(st, "# Looking for stairs. Goal_less, brave.");
             // borg-reborn-rs (#1130): the walk is committed.
             crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Up);
-            return true;
+            return Some("find_upstairs");
         }
     }
 
@@ -341,7 +343,7 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
 
         /* Continue fleeing the level */
         if borg_flow_old(st, GOAL_FLEE) {
-            return true;
+            return Some("continue_stair_flow");
         }
 
         /* Try to find some stairs up */
@@ -349,14 +351,14 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
             borg_note(st, "# Looking for stairs. Flee, brave.");
             // borg-reborn-rs (#1130): the walk is committed.
             crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Up);
-            return true;
+            return Some("find_upstairs");
         }
 
         /* Try to find some stairs down */
         if st.borg.stair_more && borg_flow_stair_more(st, GOAL_FLEE, false, true) {
             // borg-reborn-rs (#1130): the walk is committed.
             crate::borg_flow::commit_brave_walk(st, crate::borg_flow::BraveStairs::Down);
-            return true;
+            return Some("find_downstairs");
         }
     }
 
@@ -364,138 +366,138 @@ fn borg_think_dungeon_brave(st: &mut BorgState) -> bool {
     if st.borg.status.vault {
         /* Continue flowing towards monsters */
         if borg_flow_old(st, GOAL_KILL) {
-            return true;
+            return Some("continue_monster_flow");
         }
 
         /* Find a (viewable) monster */
         if borg_flow_kill(st, true, 35) {
-            return true;
+            return Some("hunt_monster");
         }
 
         /* Continue flowing towards objects */
         if borg_flow_old(st, GOAL_TAKE) {
-            return true;
+            return Some("continue_item_flow");
         }
 
         /* Find a (viewable) object */
         if borg_flow_take(st, true, 35) {
-            return true;
+            return Some("retrieve_item");
         }
         if borg_flow_vein(st, true, 35) {
-            return true;
+            return Some("mine_vein");
         }
 
         /* Continue to dig out a vault */
         if borg_flow_old(st, GOAL_VAULT) {
-            return true;
+            return Some("continue_vault_flow");
         }
 
         /* Find a vault to excavate */
         if borg_flow_vault(st, 35) {
-            return true;
+            return Some("excavate_vault");
         }
     }
 
     /* Continue flowing towards monsters */
     if borg_flow_old(st, GOAL_KILL) {
-        return true;
+        return Some("continue_monster_flow");
     }
 
     /* Find a (viewable) monster */
     if borg_flow_kill(st, true, 250) {
-        return true;
+        return Some("hunt_monster");
     }
 
     /* Continue flowing towards objects */
     if borg_flow_old(st, GOAL_TAKE) {
-        return true;
+        return Some("continue_item_flow");
     }
 
     /* Find a (viewable) object */
     if borg_flow_take(st, true, 250) {
-        return true;
+        return Some("retrieve_item");
     }
     if borg_flow_vein(st, true, 250) {
-        return true;
+        return Some("mine_vein");
     }
 
     /*** Exploration ***/
 
     /* Continue flowing (see below) */
     if borg_flow_old(st, GOAL_MISC) {
-        return true;
+        return Some("continue_misc_flow");
     }
 
     /* Continue flowing (see below) */
     if borg_flow_old(st, GOAL_DARK) {
-        return true;
+        return Some("continue_exploration");
     }
 
     /* Continue flowing (see below) */
     if borg_flow_old(st, GOAL_XTRA) {
-        return true;
+        return Some("continue_search");
     }
 
     /* Continue flowing (see below) */
     if borg_flow_old(st, GOAL_BORE) {
-        return true;
+        return Some("continue_level_exit");
     }
 
     /*** Explore the dungeon ***/
 
     /* Explore interesting grids */
     if borg_flow_dark(st, true) {
-        return true;
+        return Some("explore_near");
     }
 
     /* Explore interesting grids */
     if borg_flow_dark(st, false) {
-        return true;
+        return Some("explore_far");
     }
 
     // borg-reborn-rs (#1098): as in the ordinary think, nothing left to
     // explore leaves before the secret-door search.
     if crate::borg_flow_dark::exhausted_this_think(st) && borg_leave_level(st, false) {
-        return true;
+        return Some("leave_level");
     }
 
     /* Search for secret door via spell before spastic */
     if check_light_for_doors(st) {
-        return true;
+        return Some("detect_doors");
     }
 
     /*** Track down old stuff ***/
 
     /* Chase old objects */
     if borg_flow_take(st, false, 250) {
-        return true;
+        return Some("retrieve_item");
     }
     if borg_flow_vein(st, false, 250) {
-        return true;
+        return Some("mine_vein");
     }
 
     /* Chase old monsters */
     if borg_flow_kill(st, false, 250) {
-        return true;
+        return Some("hunt_monster");
     }
 
     /* Search for secret door via spell before spastic */
     if check_light_for_doors(st) {
-        return true;
+        return Some("detect_doors");
     }
 
     /* Attempt to leave the level */
     if borg_leave_level(st, true) {
-        return true;
+        return Some("leave_level");
     }
 
     /* Search for secret doors */
     if borg_flow_spastic(st, true) {
-        return true;
+        return Some("search");
     }
 
     /* Nothing */
-    false
+    None
 }
 
 /// Prevent a "bouncing Borg" bug. Where borg with telepathy
@@ -640,8 +642,8 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
     before(st);
 
     /* Try anything */
-    let done = borg_think_dungeon_brave(st);
-
+    let selected = borg_think_dungeon_brave(st);
+    crate::core_trace::record_bravery(st, n, from, to, selected);
 
     /* Reset "avoidance" */
     st.borg.avoidance = st.borg.tr(BI_CURHP) as i16;
@@ -649,8 +651,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
     /* Re-calculate danger */
     st.danger.wipe = true;
 
-    /* Done */
-    done
+    selected.is_some()
 }
 
 /// Perform an action in the dungeon
@@ -680,6 +681,9 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// then takes a nap to recover from damage, but gets yanked
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        st.think_dungeon.bravery_recall = false;
+    }
     // borg-reborn-rs (#1206, review 3): capture the escape context before
     // re-planning goals, so opened doors belong to one continuous escape.
     crate::borg_flow::escape_context_tick(st);
@@ -1769,29 +1773,37 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /*** Nothing to do ***/
 
+    let boosts = bravery_boosts_enabled();
+    let recovery = bravery_recovery_enabled();
+    if recovery && recover_without_bravery(st) {
+        return true;
+    }
+
     /* Twitching in town can be fatal.  Really he should not become twitchy
      * but sometimes he cant recall to the dungeon and that may induce the
      * twitchy behavior.  So we reset the level if this happens.  That will
      * force him to go shopping all over again.
      */
-    if (st.borg.tr(BI_CDEPTH) == 0 && borg_timer(st, st.borg.time.level) > 800)
-        || borg_timer(st, st.borg.time.level) > 28000
+    if boosts && ((st.borg.tr(BI_CDEPTH) == 0 && borg_timer(st, st.borg.time.level) > 800)
+        || borg_timer(st, st.borg.time.level) > 28000)
     {
         st.borg.status.old_depth = 126;
     }
 
-    /* Set a flag that the borg is  not allowed to retreat for 5 rounds */
-    st.borg.no_retreat = 5;
+    if boosts {
+        /* Set a flag that the borg is  not allowed to retreat for 5 rounds */
+        st.borg.no_retreat = 5;
 
-    // borg-reborn-rs (#556): stuck while remembered breeders block the
-    // flows (caution_breeder_avoid): the marks are suspended for a few turns,
-    // so the stuck think's flows below may cross them (fight its way out).
-    crate::borg_caution::suspend_breeder_marks_when_stuck(st);
+        // borg-reborn-rs (#556): stuck while remembered breeders block the
+        // flows (caution_breeder_avoid): the marks are suspended for a few turns,
+        // so the stuck think's flows below may cross them (fight its way out).
+        crate::borg_caution::suspend_breeder_marks_when_stuck(st);
 
-    /* Boost slightly */
-    let to = st.borg.tr(BI_CURHP).wrapping_mul(2);
-    if i32::from(st.borg.avoidance) < to && boost_bravery(st, 1, to, |_| {}) {
-        return choice!("boost_bravery_1");
+        /* Boost slightly */
+        let to = st.borg.tr(BI_CURHP).wrapping_mul(2);
+        if i32::from(st.borg.avoidance) < to && boost_bravery(st, 1, to, |_| {}) {
+            return choice!("boost_bravery_1");
+        }
     }
 
     /* try phase before boosting bravery further and acting goofy */
@@ -1815,66 +1827,20 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
     }
 
-    /* Set a flag that the borg is not allowed */
-    /*  to retreat for 10 rounds */
-    st.borg.no_retreat = 10;
+    if boosts {
+        /* Set a flag that the borg is not allowed */
+        /*  to retreat for 10 rounds */
+        st.borg.no_retreat = 10;
 
-    /* Boost some more */
-    let to = st.borg.tr(BI_MAXHP).wrapping_mul(4);
-    if i32::from(st.borg.avoidance) < to && boost_bravery(st, 2, to, |_| {}) {
-        return choice!("boost_bravery_2");
+        /* Boost some more */
+        let to = st.borg.tr(BI_MAXHP).wrapping_mul(4);
+        if i32::from(st.borg.avoidance) < to && boost_bravery(st, 2, to, |_| {}) {
+            return choice!("boost_bravery_2");
+        }
     }
 
     /* Boost a lot */
-    if st.borg.avoidance < 30000
-        && boost_bravery(st, 3, 30000, |st| {
-            /* Reset multiple factors to jumpstart the borg */
-            st.borg.mon.unique = 0;
-            crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
-
-            /* reset our breeder flag */
-            st.borg.near.breeder = false;
-
-            /* Forget goals */
-            st.borg.goal.type_0 = 0;
-
-            /* Cannot rise past town */
-            if st.borg.tr(BI_CDEPTH) == 0 {
-                st.borg.goal.rising = false;
-            }
-
-            /* Assume not ignoring monsters */
-            st.borg.goal.ignoring = false;
-
-            /* No known stairs */
-            // borg-reborn-rs (#544, caution_jumpstart_keep_stairs since #548): unless kept; forgetting them left the
-            // Borg in a dead-end worm room with no way to the down staircase
-            // it had arrived on (priest-1055640847).
-            if !crate::borg_caution::jumpstart_keeps_stairs() {
-                st.stairs.less.num = 0;
-                st.stairs.more.num = 0;
-            }
-
-            /* No known glyph */
-            st.glyph.track.num = 0;
-
-            /* No known steps */
-            st.flow.track_step.num = 0;
-
-            /* No known doors */
-            st.flow.track_door.num = 0;
-
-            /* No known doors */
-            st.flow.track_closed.num = 0;
-
-            /* No mineral veins */
-            st.flow_misc.track_vein.num = 0;
-
-            /* No objects here */
-            st.takes.cnt = 0;
-            st.takes.nxt = 1;
-        })
-    {
+    if boosts && st.borg.avoidance < 30000 && boost_bravery(st, 3, 30000, reset_for_final_boost) {
         return choice!("boost_bravery_3");
     }
 
@@ -1913,12 +1879,21 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Recall to town */
-    if st.borg.tr(BI_CDEPTH) != 0 && borg_recall(st) {
+    if !recovery && st.borg.tr(BI_CDEPTH) != 0 && borg_recall(st) {
         /* Note */
         borg_note(st, "# Recalling (twitchy)");
 
         /* Success */
         return choice!("borg_recall");
+    }
+
+    if !boosts {
+        // Consume one turn so effects tick and the next decision can react.
+        if !recovery {
+            borg_note(st, "# Bravery disabled: ordinary escape did not select an action; waiting one turn.");
+        }
+        borg_keypress(st, key(b','));
+        return choice!("bravery_stall_wait");
     }
 
     /* Reset multiple factors to jumpstart the borg */
@@ -1948,4 +1923,109 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Oops */
     false
+}
+
+pub(crate) fn bravery_boosts_enabled() -> bool {
+    value(Param::think_bravery_mode) == 0
+}
+
+pub(crate) fn bravery_recovery_enabled() -> bool {
+    value(Param::think_bravery_mode) == 2
+}
+
+/// A last-resort route at ordinary avoidance. The normal decision loop has
+/// already tried its stairs, healing and escape policies.
+fn recover_without_bravery(st: &mut BorgState) -> bool {
+    if st.borg.goal.recalling != 0 {
+        borg_note(st, "# Bravery recovery: Recall is already pending.");
+        return false;
+    }
+    let depth = st.borg.tr(BI_CDEPTH);
+    if depth == 0 {
+        if crate::borg_think_dungeon_util::start_at_depth_one(st) {
+            borg_note(st, "# Bravery recovery: taking the readiness-checked DL1 route.");
+            return choice!("bravery_town_stairs");
+        }
+        return false;
+    }
+
+    if !force_descend() {
+        if feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_LESS {
+            if depth == 1 && crate::borg_stair_scum::wait_before_town_ascent(st) {
+                return choice!("bravery_town_stair_wait");
+            }
+            borg_keypress(st, key(b'<'));
+            borg_note(st, "# Bravery recovery: taking the upstairs underfoot.");
+            return choice!("bravery_up_stairs");
+        }
+        if borg_flow_stair_less(st, GOAL_BORE, false) {
+            st.borg.stair_less = true;
+            borg_note(st, "# Bravery recovery: walking to the upstairs at ordinary avoidance.");
+            return choice!("bravery_up_stairs");
+        }
+    }
+    if crate::borg_stair_scum::recover(st) {
+        borg_note(st, "# Bravery recovery: working within reach of a known return stair.");
+        return choice!("bravery_stair_scum");
+    }
+
+    match crate::borg_escape::recall_for_bravery_recovery(st) {
+        Ok(()) => {
+            st.think_dungeon.bravery_recall = true;
+            borg_note(st, "# Bravery recovery: recalling to town.");
+            choice!("bravery_recall_town")
+        }
+        Err(blocker) => {
+            borg_note(st, &format!("# Bravery recovery: no usable stair recovery; Recall blocked: {blocker}."));
+            false
+        }
+    }
+}
+
+fn reset_for_final_boost(st: &mut BorgState) {
+    /* Reset multiple factors to jumpstart the borg */
+    st.borg.mon.unique = 0;
+    crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
+
+    /* reset our breeder flag */
+    st.borg.near.breeder = false;
+
+    /* Forget goals */
+    st.borg.goal.type_0 = 0;
+
+    /* Cannot rise past town */
+    if st.borg.tr(BI_CDEPTH) == 0 {
+        st.borg.goal.rising = false;
+    }
+
+    /* Assume not ignoring monsters */
+    st.borg.goal.ignoring = false;
+
+    /* No known stairs */
+    // borg-reborn-rs (#544, caution_jumpstart_keep_stairs since #548): unless kept; forgetting them left the
+    // Borg in a dead-end worm room with no way to the down staircase
+    // it had arrived on (priest-1055640847).
+    if !crate::borg_caution::jumpstart_keeps_stairs() {
+        st.stairs.less.num = 0;
+        st.stairs.more.num = 0;
+    }
+
+    /* No known glyph */
+    st.glyph.track.num = 0;
+
+    /* No known steps */
+    st.flow.track_step.num = 0;
+
+    /* No known doors */
+    st.flow.track_door.num = 0;
+
+    /* No known doors */
+    st.flow.track_closed.num = 0;
+
+    /* No mineral veins */
+    st.flow_misc.track_vein.num = 0;
+
+    /* No objects here */
+    st.takes.cnt = 0;
+    st.takes.nxt = 1;
 }

@@ -1963,6 +1963,16 @@ pub(crate) fn brave_walk_avoidance(st: &BorgState, danger_here: i32) -> Option<i
         st.borg.tr(BI_CURHP),
     )
     .then_some(w.avoidance)
+    .filter(|_| crate::borg_think_dungeon::bravery_boosts_enabled() || w.from_loop)
+    .map(|avoidance| {
+        if crate::borg_think_dungeon::bravery_boosts_enabled() {
+            avoidance
+        } else {
+            // A loop walk started without a boost may continue at today's
+            // avoidance. Its old HP must not become a boost after taking damage.
+            st.borg.avoidance
+        }
+    })
 }
 
 /// #1130 (review of #1152): is the walk's own flow the current one? Another
@@ -2074,7 +2084,9 @@ fn brave_walk_respread(st: &mut BorgState, kind: BraveStairs) -> bool {
     match kind {
         BraveStairs::Up => borg_flow_stairs::borg_flow_stair_less(st, GOAL_FLEE, false),
         BraveStairs::Any => borg_flow_stairs::borg_flow_stair_both(st, GOAL_FLEE, false),
-        BraveStairs::Down => borg_flow_stairs::borg_flow_stair_more(st, GOAL_FLEE, false, true),
+        BraveStairs::Down => borg_flow_stairs::borg_flow_stair_more(
+            st, GOAL_FLEE, false, crate::borg_think_dungeon::bravery_boosts_enabled(),
+        ),
     }
 }
 

@@ -132,6 +132,7 @@ pub struct StairScumState {
     departing: bool,
     /// The last voluntary DL1 ascent, kept across immediate re-entry.
     last_town_ascent: Option<i32>,
+    recovery_started: Option<BorgTime>,
 }
 
 #[derive(Clone, Copy)]
@@ -203,10 +204,10 @@ fn carries(st: &BorgState, tval: i32, sval: i32) -> bool {
 /// Whether the mode applies now (the switch first: with it off, nothing
 /// else is read).
 pub(crate) fn active(st: &BorgState) -> bool {
-    flag()
-        && st.borg.tr(BI_CDEPTH) > 0
-        && below_threshold(st.borg.tr(BI_MAXHP), max_hp_threshold())
-        && !detects_monsters(st)
+    st.borg.tr(BI_CDEPTH) > 0
+        && (recovering(st)
+            || (flag() && below_threshold(st.borg.tr(BI_MAXHP), max_hp_threshold())
+                && !detects_monsters(st)))
 }
 
 /// The grids the own light shows, by the engine's rule (pure): a light of
@@ -786,7 +787,7 @@ pub(crate) fn admit(st: &mut BorgState, map: &Map, y: i32, x: i32) -> bool {
 /// (`leave`, `GOAL_BORE`: the kind the depth plan allows may not be the
 /// nearest) are never refused; with no route nothing is.
 pub(crate) fn step_allowed(st: &mut BorgState, why: i32, y: i32, x: i32) -> bool {
-    if !flag() || why == GOAL_FLEE || why == GOAL_BORE {
+    if (!flag() && !recovering(st)) || why == GOAL_FLEE || why == GOAL_BORE {
         return true;
     }
     let Some(map) = Map::of(st) else { return true };
@@ -904,7 +905,7 @@ fn step_to_stairs(st: &mut BorgState, map: &Map, why: &str) -> bool {
 /// After caution (`borg_think_dungeon`): the door sound, the alarm, the
 /// door peek and the walk back into the safe area. True when it acted.
 pub(crate) fn think(st: &mut BorgState) -> bool {
-    if !flag() {
+    if st.think_dungeon.bravery_recall || (!flag() && !recovering(st)) {
         return false;
     }
     sync_level(st);
@@ -1020,7 +1021,7 @@ fn leave_order(depth: i32, up_ok: bool, down_ok: bool) -> Vec<bool> {
 /// 4. Nothing left inside the safe area (after the exploration flows): take
 /// a staircase to a new level.
 pub(crate) fn leave(st: &mut BorgState) -> bool {
-    if !flag() {
+    if !flag() && !recovering(st) {
         return false;
     }
     let Some(map) = Map::of(st).filter(|m| m.routed) else {
@@ -1041,19 +1042,8 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
     for up in leave_order(depth, up_ok, down_ok) {
         let (here, k) = if up { (FEAT_LESS, b'<') } else { (FEAT_MORE, b'>') };
         if feat == here {
-            if up && depth == 1 {
-                // Angband cmd-cave.c:56–95 generates the new level without
-                // an ordinary move. Break same-turn town rerolls with a
-                // hold (cmd-cave.c:1580), when there is no threat here.
-                let turn = engine::game_turn();
-                let pos = st.borg.c;
-                if st.stair_scum.last_town_ascent == Some(turn)
-                    && !st.borg.goal.fleeing
-                    && crate::borg_danger::borg_danger(st, pos.y, pos.x, 1, true, false) <= 0
-                {
-                    return hold(st, "waiting before another same-turn return to town");
-                }
-                st.stair_scum.last_town_ascent = Some(turn);
+            if up && depth == 1 && wait_before_town_ascent(st) {
+                return true;
             }
             borg_note(st, &format!("# Stair scum: nothing left inside the safe area; taking the stairs {}.", if up { "up" } else { "down" }));
             st.stair_scum.departing = true;
@@ -1080,7 +1070,7 @@ pub(crate) fn leave(st: &mut BorgState) -> bool {
 /// caution) is left by the staircase: up, or down when prepared for the
 /// next depth. `None` when the mode does not decide.
 pub(crate) fn leave_on_threat(st: &mut BorgState, pos_danger: i32, threshold: i32) -> Option<bool> {
-    if !flag() || !active(st) || pos_danger < threshold {
+    if !active(st) || pos_danger < threshold {
         return None;
     }
     let (up, down) = usable_kinds(st);
@@ -1089,6 +1079,59 @@ pub(crate) fn leave_on_threat(st: &mut BorgState, pos_danger: i32, threshold: i3
         FEAT_MORE if down => Some(false),
         _ => None,
     }
+}
+
+/// #1282 pilot budget for one local recovery episode on a level.
+const RECOVERY_THINKS: BorgTime = 12;
+
+fn recovering(st: &BorgState) -> bool {
+    crate::borg_think_dungeon::bravery_recovery_enabled()
+        && st.borg.goal.recalling == 0
+        && st.stair_scum.level == st.borg.time.level
+        && st.stair_scum.recovery_started.is_some_and(|start| {
+            st.borg.time.now.wrapping_sub(start) < RECOVERY_THINKS
+        })
+}
+
+/// Reuse the return-stair map and exploration filters for a short recovery.
+/// A sealed floor or a stair the Borg cannot safely reach offers no anchor.
+pub(crate) fn recover(st: &mut BorgState) -> bool {
+    sync_level(st);
+    if st.stair_scum.recovery_started.is_some() && !recovering(st) {
+        return false;
+    }
+    let (up, down) = usable_kinds(st);
+    let map = Map::measure(st, up, down);
+    if !map.routed || !map.in_area(st.borg.c.y, st.borg.c.x) {
+        return false;
+    }
+    let now = st.borg.time.now;
+    st.stair_scum.recovery_started.get_or_insert(now);
+    if crate::borg_flow_dark::borg_flow_dark(st, true)
+        || crate::borg_flow_dark::borg_flow_dark(st, false)
+        || step_to_stairs(st, &map, "bravery recovery")
+    {
+        return true;
+    }
+    // The anchored exploration is exhausted. Do not reopen it every think.
+    st.stair_scum.recovery_started = Some(now.wrapping_sub(RECOVERY_THINKS));
+    false
+}
+
+// Stair commands can generate a level without an ordinary move
+// (cmd-cave.c:56–95). Spend a turn before repeating a quiet town reroll.
+pub(crate) fn wait_before_town_ascent(st: &mut BorgState) -> bool {
+    sync_level(st);
+    let turn = engine::game_turn();
+    let pos = st.borg.c;
+    if st.stair_scum.last_town_ascent == Some(turn)
+        && !st.borg.goal.fleeing
+        && crate::borg_danger::borg_danger(st, pos.y, pos.x, 1, true, false) <= 0
+    {
+        return hold(st, "waiting before another same-turn return to town");
+    }
+    st.stair_scum.last_town_ascent = Some(turn);
+    false
 }
 
 #[cfg(test)]

@@ -181,7 +181,8 @@ fn stairs_allowed(st: &mut BorgState) -> (bool, bool) {
     let up = !crate::engine::player_opt(crate::headers::list_options_h::OPT_birth_force_descend)
         && !recall_holds_up_stair(st, here);
     let next = st.borg.tr(BI_CDEPTH) + 1;
-    let down = (st.borg.goal.fleeing || crate::borg_prepared::prepared_c_for_decision(st, next).is_none())
+    let can_flee_down = st.borg.goal.fleeing && !crate::borg_think_dungeon::bravery_recovery_enabled();
+    let down = (can_flee_down || crate::borg_prepared::prepared_c_for_decision(st, next).is_none())
         && !recall_restricts(st)
         && !rising_holds_descent(st, here)
         && !rising_holds_flee_descent(st);
@@ -285,7 +286,7 @@ pub(crate) fn break_loop(st: &mut BorgState) -> bool {
     let saved = st.borg.avoidance;
     let boosted = st.borg.tr(BI_CURHP).saturating_mul(2).min(i32::from(i16::MAX)) as i16;
     let mut tries = vec![(saved, "a walk to the stairs")];
-    if boosted > saved {
+    if crate::borg_think_dungeon::bravery_boosts_enabled() && boosted > saved {
         tries.push((boosted, "a brave walk to the stairs"));
     }
     for (avoid, how) in tries {
