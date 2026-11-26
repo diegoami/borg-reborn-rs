@@ -21,17 +21,19 @@
 //! (struct copies: a copied item's `note` keeps pointing into the
 //! original's `desc`, as with `memcpy`).
 
-use crate::borg_buy_strategy::{reserve410_unmet, retain_reserve410_item};
-use crate::borg_home_notice::borg_notice_home;
-use crate::borg_home_power::borg_power_home;
-use crate::borg_inventory::borg_item_worth_id;
-use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE, KC_ENTER};
-use crate::borg_item::inven_wield;
-use crate::borg_item_analyze::borg_ego_has_random_power;
-use crate::borg_item_id::borg_item_note_needs_id;
-use crate::borg_power::borg_power;
-use crate::borg_store::BORG_HOME;
-use crate::engine;
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
+use crate::decision_api::borg_buy_strategy::{reserve410_unmet, retain_reserve410_item};
+use crate::decision_api::borg_home_notice::borg_notice_home;
+use crate::decision_api::borg_home_power::borg_power_home;
+use crate::decision_api::borg_inventory::borg_item_worth_id;
+use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::decision_api::borg_item::inven_wield;
+use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
+use crate::decision_api::borg_item_id::borg_item_note_needs_id;
+use crate::decision_api::borg_power::borg_power;
+use crate::decision_api::borg_store::BORG_HOME;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_WORSHIPS_GOLD};
 use crate::borg_headers::borg_item_h::{borg_item, BORG_CURSE_MAX};
 use crate::borg_headers::borg_trait_h::{
@@ -129,10 +131,10 @@ fn is_charged(item: &borg_item) -> bool {
 
 /// `MIN(item->value, 30000)` (as `long`, stored in an `int32_t`).
 fn capped_value(item: &borg_item) -> i32 {
-    if item.value < 30000 {
+    if item.value < param(Param::sell_value_cap) {
         item.value
     } else {
-        30000
+        param(Param::sell_value_cap)
     }
 }
 
@@ -334,8 +336,8 @@ pub(crate) fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &bor
     }
 
     if o_note && j_note {
-        let a = crate::borg_item::item_note(st, o_ptr);
-        let b = crate::borg_item::item_note(st, j_ptr);
+        let a = crate::decision_api::borg_item::item_note(st, o_ptr);
+        let b = crate::decision_api::borg_item::item_note(st, j_ptr);
         if !a.is_empty() && !b.is_empty() && a != b {
             return false;
         }
@@ -358,14 +360,16 @@ pub(crate) fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &bor
 /// Find the minimum amount of some item to buy/sell. For most
 /// items this is 1, but for certain items (such as ammunition)
 /// it may be higher.  -- RML
-pub fn borg_min_item_quantity(st: &mut BorgState, item: &borg_item) -> i32 {
+pub(crate) fn borg_min_item_quantity_native(st: &BorgState, item: &borg_item) -> i32 {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_min_item_quantity",format!("{:?}",(item,)));}
+
     // Only trade in bunches if sufficient cash
-    if st.borg.tr(BI_GOLD) < 250 {
+    if st.borg.tr(BI_GOLD) < param(Param::sell_batch_min_gold) {
         return 1;
     }
 
     // Don't trade expensive items in bunches
-    if item.value > 5 {
+    if item.value > param(Param::sell_batch_max_item_value) {
         return 1;
     }
 
@@ -378,16 +382,16 @@ pub fn borg_min_item_quantity(st: &mut BorgState, item: &borg_item) -> i32 {
     match u32::from(item.tval) {
         TV_SHOT | TV_ARROW | TV_BOLT => {
             // Maximum number of items
-            if item.iqty < 5 {
+            if item.iqty < (param(Param::sell_ammo_batch_count) as u8) {
                 return i32::from(item.iqty);
             }
-            5
+            param(Param::sell_ammo_batch_count)
         }
         TV_FOOD => {
-            if item.iqty < 3 {
+            if item.iqty < (param(Param::sell_food_batch_count) as u8) {
                 return i32::from(item.iqty);
             }
-            3
+            param(Param::sell_food_batch_count)
         }
         _ => 1,
     }
@@ -427,7 +431,7 @@ fn borg_think_home_sell_bad(st: &mut BorgState, i: i32, borg_empty_home_power: i
     // the house
     let bought_num = st.buy.bought_item_num;
     for p in 0..bought_num {
-        let b = crate::borg_store_buy::bought_item(st, p as usize);
+        let b = crate::decision_api::borg_store_buy::bought_item(st, p as usize);
         let item = pack_item(st, i);
         if b.tval == i32::from(item.tval)
             && b.sval == i32::from(item.sval)
@@ -461,7 +465,7 @@ fn borg_think_home_sell_bad(st: &mut BorgState, i: i32, borg_empty_home_power: i
     }
 
     // Examine borg
-    crate::borg_trait::borg_notice(st, true);
+    crate::decision_api::borg_trait::borg_notice(st, true);
 
     // if this reduces the borgs power, it is a bad transaction
     if borg_power(st) < st.borg.power {
@@ -612,7 +616,9 @@ fn borg_think_home_sell_best(st: &mut BorgState, best_home_power: &mut i32) {
 }
 
 /// Step 1 -- sell "useful" things to the home (for later)
-pub fn borg_think_home_sell_useful(st: &mut BorgState, best_home_power: &mut i32) -> bool {
+pub(crate) fn borg_think_home_sell_useful_native(st: &mut BorgState, best_home_power: &mut i32) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_home_sell_useful",format!("{:?}",(*best_home_power,)));}
+
     let sim = store_inven_max();
 
     // clear out our initial best/test objects
@@ -659,7 +665,7 @@ pub fn borg_think_home_sell_useful(st: &mut BorgState, best_home_power: &mut i32
         st.items.items[i] = st.items.safe_items[i];
     }
 
-    crate::borg_trait::borg_notice(st, true);
+    crate::decision_api::borg_trait::borg_notice(st, true);
 
     // Drop stuff that will stack in the home
     for i in 0..sim {
@@ -677,7 +683,7 @@ pub fn borg_think_home_sell_useful(st: &mut BorgState, best_home_power: &mut i32
             }
 
             // There are limted quantity per slot
-            if item2.iqty > 90 {
+            if item2.iqty > (param(Param::sell_home_stack_soft_limit) as u8) {
                 continue;
             }
 
@@ -858,11 +864,16 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     let mut multiple = false;
     let tval = u32::from(item.tval);
 
+    // borg-reborn-rs (#470): an unaware potion, scroll, mushroom or device
+    // is never used, so selling one is how its kind is learnt.
+    let unaware_kind = !item.aware
+        && matches!(tval, TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF);
+
     // Never attempt to sell worthless items, shops won't buy them
     if item.value <= 0 {
         // except unidentified potions and scrolls.  Since these can't be IDd,
         // best to sell them
-        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) {
+        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) && !unaware_kind {
             return false;
         }
     }
@@ -870,6 +881,12 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // make sure we are in the shop that buys this
     if !borg_store_buys(&item, who) {
         return false;
+    }
+
+    // One of an unaware kind (borg_min_item_quantity sells unaware items
+    // one at a time); the rest is judged as the known kind afterwards.
+    if unaware_kind {
+        return true;
     }
 
     // Never sell valuable non-id'd items
@@ -885,7 +902,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // Worshipping gold or scumming will allow the sale
     let scum = st.cfg(BORG_MONEY_SCUM_AMOUNT);
     if item.value > 0
-        && ((st.cfg(BORG_WORSHIPS_GOLD) != 0 || st.borg.tr(BI_MAXCLEVEL) < 10)
+        && ((st.cfg(BORG_WORSHIPS_GOLD) != 0 || st.borg.tr(BI_MAXCLEVEL) < param(Param::sell_unidentified_max_level))
             || (scum < st.borg.tr(BI_GOLD) && scum != 0))
     {
         // Borg is allowed to continue in this routine to sell
@@ -904,10 +921,10 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
                 // they have tons in the house
                 if tval == TV_POTION
                     && i32::from(item.sval) == st.item_val.sv_potion_restore_mana
-                    && st.borg.tr(BI_MAXSP) > 100
+                    && st.borg.tr(BI_MAXSP) > param(Param::sell_mana_reserve_min_sp)
                     && st.borg.has[st.item_val.kv_potion_restore_mana as usize]
                         + i32::from(st.home.num_mana)
-                        > 99
+                        > param(Param::sell_mana_reserve_count)
                 {
                     return false;
                 }
@@ -916,7 +933,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
             // Never sell if not "known"
             // unless we have more than one or are deep
             TV_FOOD | TV_ROD | TV_WAND | TV_STAFF | TV_RING | TV_AMULET | TV_LIGHT
-                if borg_item_worth_id(st, &item) && st.borg.tr(BI_MAXDEPTH) < 35 && !multiple =>
+                if borg_item_worth_id(st, &item) && st.borg.tr(BI_MAXDEPTH) < param(Param::sell_identify_max_depth) && !multiple =>
             {
                 return false;
             }
@@ -943,7 +960,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // Do not sell stuff that is not fully id'd and should be
     if !item.ident
         && item.ego_idx != 0
-        && item.iqty < 2
+        && item.iqty < (param(Param::sell_unidentified_ego_min_copies) as u8)
         && borg_ego_has_random_power(usize::from(item.ego_idx))
     {
         return false;
@@ -953,7 +970,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // do not buy the item if I just sold it.
     let bought_num = st.buy.bought_item_num;
     for p in 0..bought_num {
-        let b = crate::borg_store_buy::bought_item(st, p as usize);
+        let b = crate::decision_api::borg_store_buy::bought_item(st, p as usize);
         if b.tval == i32::from(item.tval)
             && b.sval == i32::from(item.sval)
             && (b.store == who || who != BORG_HOME as i32)
@@ -966,7 +983,9 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
 }
 
 /// Step 2 -- sell "useless" items to a shop (for cash)
-pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_shop_sell_useless_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_sell_useless",format!("{:?}",()));}
+
     let icky = (store_inven_max() - 1) as usize;
 
     let mut b_k: i32 = -1;
@@ -976,7 +995,7 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
     // Evaluate
     let mut b_p: i32 = st.borg.power;
-    let mut b_c: i32 = 30001;
+    let mut b_c: i32 = param(Param::sell_value_cap).wrapping_add(1);
 
     // Check each shop
     for k in 0..(i32::from(engine::z_info().store_max) - 1) {
@@ -997,12 +1016,12 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
             }
 
             // Skip some important type items
-            if i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL) && st.borg.tr(BI_AMISSILES) < 45 {
+            if i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL) && st.borg.tr(BI_AMISSILES) < param(Param::sell_ammo_reserve_count) {
                 continue;
             }
             if tval == TV_ROD
                 && sval == st.item_val.sv_rod_healing
-                && st.borg.has[st.item_val.kv_rod_healing as usize] <= 3
+                && st.borg.has[st.item_val.kv_rod_healing as usize] <= param(Param::sell_healing_rod_reserve_count)
             {
                 continue;
             }
@@ -1010,14 +1029,14 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
             if st.borg.tr(BI_CLASS) == CLASS_WARRIOR
                 && tval == TV_ROD
                 && sval == st.item_val.sv_rod_mapping
-                && item.iqty <= 2
+                && item.iqty <= (param(Param::sell_mapping_rod_reserve_count) as u8)
             {
                 continue;
             }
 
             // Do not sell our attack wands if they still have charges
             if tval == TV_WAND
-                && st.borg.tr(BI_CLEVEL) < 35
+                && st.borg.tr(BI_CLEVEL) < param(Param::sell_attack_device_min_level)
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud
                     || sval == st.item_val.sv_wand_annihilation)
@@ -1067,7 +1086,7 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
             fix = true;
 
             // Examine the inventory
-            crate::borg_trait::borg_notice(st, true);
+            crate::decision_api::borg_trait::borg_notice(st, true);
 
             // Evaluate the inventory
             let p = borg_power(st);
@@ -1102,7 +1121,7 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
     // Examine the inventory
     if fix {
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
     }
 
     // Sell something (if useless)
@@ -1122,21 +1141,25 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 }
 
 /// Sell items to the current shop, if desired
-pub fn borg_think_shop_sell(st: &mut BorgState) -> bool {
-    sell_selected(st, false)
+pub(crate) fn borg_think_shop_sell_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_sell",format!("{:?}",()));}
+
+    sell_selected(st, None)
 }
 
-pub fn sell_one_selected(st: &mut BorgState) -> bool {
-    sell_selected(st, true)
+pub(crate) fn sell_selected_quantity_native(st: &mut BorgState, quantity: i32) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.sell_selected_quantity",format!("{:?}",(quantity,)));}
+
+    sell_selected(st, Some(quantity))
 }
 
-fn sell_selected(st: &mut BorgState, one: bool) -> bool {
+fn sell_selected(st: &mut BorgState, quantity: Option<i32>) -> bool {
     // Sell something if requested
     if st.borg.goal.shop == st.think.shop_num && st.borg.goal.item >= 0 {
         let idx = st.borg.goal.item as usize;
         let item = st.items.items[idx];
 
-        let qty = if one { 1 } else { borg_min_item_quantity(st, &item) };
+        let qty = quantity.unwrap_or_else(|| borg_min_item_quantity(st, &item));
 
         // Log
         let mut note = b"# Selling ".to_vec();
@@ -1152,17 +1175,8 @@ fn sell_selected(st: &mut BorgState, one: bool) -> bool {
 
         // Sell a single item
         if st.items.items[idx].iqty > 1 || qty >= 2 {
-            if qty == 5 {
-                borg_keypress(st, keycode_t::from(b'5'));
-            }
-            if qty == 4 {
-                borg_keypress(st, keycode_t::from(b'4'));
-            }
-            if qty == 3 {
-                borg_keypress(st, keycode_t::from(b'3'));
-            }
-            if qty == 2 {
-                borg_keypress(st, keycode_t::from(b'2'));
+            if qty > 1 && (quantity.is_some() || qty <= 5) {
+                borg_keypresses(st, qty.to_string().as_bytes());
             }
             borg_keypress(st, KC_ENTER);
         }
@@ -1215,40 +1229,42 @@ fn sell_selected(st: &mut BorgState, one: bool) -> bool {
 
 /// `(borg.trait[BI_GOLD] / 100L) + add`, stored in an `int32_t`.
 fn gold_greed(st: &BorgState, add: i64) -> i32 {
-    (i64::from(st.borg.tr(BI_GOLD)) / 100 + add) as i32
+    (i64::from(st.borg.tr(BI_GOLD)) / i64::from(param(Param::sell_gold_greed_divisor)) + add) as i32
 }
 
 /// Count the number of items worth "selling"
 ///
 /// This determines the choice of stairs.
-pub fn borg_count_sell(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_count_sell_native(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_count_sell",format!("{:?}",()));}
+
     let mut k: i32 = 0;
 
     // Calculate "greed" factor
-    let mut greed = gold_greed(st, 100);
+    let mut greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base)));
 
     // Minimal greed
-    greed = greed.clamp(1000, 25000);
-    if st.borg.tr(BI_MAXDEPTH) >= 50 {
-        greed = 75000;
+    greed = greed.clamp(param(Param::sell_gold_greed_floor), param(Param::sell_gold_greed_ceiling));
+    if st.borg.tr(BI_MAXDEPTH) >= param(Param::sell_gold_greed_deep_depth) {
+        greed = param(Param::sell_gold_greed_deep_value);
     }
-    if st.borg.tr(BI_CLEVEL) < 25 {
-        greed = gold_greed(st, 50);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_25) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_25)));
     }
-    if st.borg.tr(BI_CLEVEL) < 20 {
-        greed = gold_greed(st, 35);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_20) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_20)));
     }
-    if st.borg.tr(BI_CLEVEL) < 15 {
-        greed = gold_greed(st, 20);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_15) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_15)));
     }
-    if st.borg.tr(BI_CLEVEL) < 13 {
-        greed = gold_greed(st, 10);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_13) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_13)));
     }
-    if st.borg.tr(BI_CLEVEL) < 10 {
-        greed = gold_greed(st, 5);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_10) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_10)));
     }
-    if st.borg.tr(BI_CLEVEL) < 5 {
-        greed = gold_greed(st, 0);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_5) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_5)));
     }
 
     // Count "sellable" items
@@ -1318,11 +1334,11 @@ pub fn borg_count_sell(st: &mut BorgState) -> i32 {
         // our power much
         let sv_qty = item.iqty;
         pack_item(st, i).iqty = 0;
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
         let p = borg_power(st);
         pack_item(st, i).iqty = sv_qty;
 
-        if p.wrapping_add(50) < st.borg.power {
+        if p.wrapping_add(param(Param::sell_count_power_tolerance)) < st.borg.power {
             continue;
         }
 
@@ -1330,7 +1346,7 @@ pub fn borg_count_sell(st: &mut BorgState) -> i32 {
         k += 1;
     }
     // reset the results
-    crate::borg_trait::borg_notice(st, true);
+    crate::decision_api::borg_trait::borg_notice(st, true);
 
     // Result
     k
@@ -1351,12 +1367,39 @@ pub fn borg_free_store_sell(st: &mut BorgState) {
     st.store_sell.best_item = Vec::new();
 }
 
+
+
+pub fn borg_min_item_quantity(st: &BorgState, item: &borg_item) -> i32 {
+if !crate::shadow::registered() || crate::decision_tape::active() {return borg_min_item_quantity_native(st,item);}
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::StoreMinimumQuantity {item:crate::decisions::ItemSnapshot::new(*item)}) {crate::decisions::Value::Score(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_home_sell_useful(st: &mut BorgState, best_home_power: &mut i32) -> bool {
+if crate::decision_tape::active() {return borg_think_home_sell_useful_native(st,best_home_power);}
+match crate::shadow::decision(st,crate::decisions::Decision::HomeSellUseful {best_home_power:*best_home_power}) {crate::decisions::Value::HomeSale{acted,best_home_power:power}=>{*best_home_power=power;acted},_=>unreachable!("typed store result")}
+}
+pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_shop_sell_useless_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreSellUseless) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_shop_sell(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_shop_sell_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreSell) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn sell_selected_quantity(st: &mut BorgState, quantity: i32) -> bool {
+if crate::decision_tape::active() {return sell_selected_quantity_native(st,quantity);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreSellQuantity {quantity}) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_count_sell(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() {return borg_count_sell_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreCountSell) {crate::decisions::Value::Score(v)=>v,_=>unreachable!("typed store result")}
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn blank() -> borg_item {
-        crate::borg_item::blank_item()
+        crate::decision_api::borg_item::blank_item()
     }
 
     #[test]

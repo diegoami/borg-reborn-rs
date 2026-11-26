@@ -20,13 +20,15 @@
 //! counters are the `int16_t` `st.home` fields (borg_home_notice), promoted
 //! to `int`.
 
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
 use crate::borg_headers::borg_trait_h::{
     BI_AID, BI_CLASS, BI_CLEVEL, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXSP,
 };
 use crate::headers::list_stats_h::{STAT_CON, STAT_DEX, STAT_STR};
 use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL, TV_STAFF};
 use crate::state::BorgState;
-use crate::engine;
+use crate::decision_api::engine;
 
 /// `CLASS_WARRIOR` (borg-trait.h).
 const CLASS_WARRIOR: i32 = 0;
@@ -98,11 +100,11 @@ fn stat_tiers(
 
 /// `kb_info[tval].max_stack`
 fn max_stack(tval: u32) -> i32 {
-    engine::kb_info()[tval as usize].max_stack
+    engine::base_max_stack(tval)
 }
 
 /// Helper function -- calculate power of equipment in the home
-fn borg_power_home_aux1(st: &mut BorgState) -> i32 {
+fn borg_power_home_aux1(st: &BorgState) -> i32 {
     let mut value: i32 = 0;
 
     // This would be better separated by item type (so 1 bonus for resist
@@ -113,99 +115,99 @@ fn borg_power_home_aux1(st: &mut BorgState) -> i32 {
     // This can be used to get rid of extra artifacts...
 
     // spare lite sources.  Artifacts only
-    value = spare(value, i32::from(st.home.num_LIGHT), 150, 170, 5);
-    value = spare(value, i32::from(st.home.num_slow_digest), 50, 70, 5);
-    value = spare(value, i32::from(st.home.num_regenerate), 75, 100, 10);
-    value = spare(value, i32::from(st.home.num_telepathy), 1000, 1500, 10);
-    value = spare(value, i32::from(st.home.num_see_inv), 800, 1200, 10);
-    value = spare(value, i32::from(st.home.num_ffall), 10, 15, 1);
-    value = spare(value, i32::from(st.home.num_free_act), 1000, 1500, 10);
-    value = spare(value, i32::from(st.home.num_hold_life), 1000, 1500, 10);
+    value = spare(value, i32::from(st.home.num_LIGHT), i64::from(param(Param::home_light_one_weight)), i64::from(param(Param::home_light_two_weight)), i64::from(param(Param::home_light_each_weight)));
+    value = spare(value, i32::from(st.home.num_slow_digest), i64::from(param(Param::home_slow_digest_one_weight)), i64::from(param(Param::home_slow_digest_two_weight)), i64::from(param(Param::home_slow_digest_each_weight)));
+    value = spare(value, i32::from(st.home.num_regenerate), i64::from(param(Param::home_regenerate_one_weight)), i64::from(param(Param::home_regenerate_two_weight)), i64::from(param(Param::home_regenerate_each_weight)));
+    value = spare(value, i32::from(st.home.num_telepathy), i64::from(param(Param::home_telepathy_one_weight)), i64::from(param(Param::home_telepathy_two_weight)), i64::from(param(Param::home_telepathy_each_weight)));
+    value = spare(value, i32::from(st.home.num_see_inv), i64::from(param(Param::home_see_inv_one_weight)), i64::from(param(Param::home_see_inv_two_weight)), i64::from(param(Param::home_see_inv_each_weight)));
+    value = spare(value, i32::from(st.home.num_ffall), i64::from(param(Param::home_ffall_one_weight)), i64::from(param(Param::home_ffall_two_weight)), i64::from(param(Param::home_ffall_each_weight)));
+    value = spare(value, i32::from(st.home.num_free_act), i64::from(param(Param::home_free_act_one_weight)), i64::from(param(Param::home_free_act_two_weight)), i64::from(param(Param::home_free_act_each_weight)));
+    value = spare(value, i32::from(st.home.num_hold_life), i64::from(param(Param::home_hold_life_one_weight)), i64::from(param(Param::home_hold_life_two_weight)), i64::from(param(Param::home_hold_life_each_weight)));
 
-    value = spare(value, i32::from(st.home.num_resist_acid), 1000, 1500, 1);
-    value = spare(value, i32::from(st.home.num_immune_acid), 3000, 5000, 30);
-    value = spare(value, i32::from(st.home.num_resist_elec), 1000, 1500, 1);
-    value = spare(value, i32::from(st.home.num_immune_elec), 3000, 5000, 30);
-    value = spare(value, i32::from(st.home.num_resist_fire), 1000, 1500, 1);
-    value = spare(value, i32::from(st.home.num_immune_fire), 3000, 5000, 30);
-    value = spare(value, i32::from(st.home.num_resist_cold), 1000, 1500, 1);
-    value = spare(value, i32::from(st.home.num_immune_cold), 3000, 5000, 30);
+    value = spare(value, i32::from(st.home.num_resist_acid), i64::from(param(Param::home_resist_acid_one_weight)), i64::from(param(Param::home_resist_acid_two_weight)), i64::from(param(Param::home_resist_acid_each_weight)));
+    value = spare(value, i32::from(st.home.num_immune_acid), i64::from(param(Param::home_immune_acid_one_weight)), i64::from(param(Param::home_immune_acid_two_weight)), i64::from(param(Param::home_immune_acid_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_elec), i64::from(param(Param::home_resist_elec_one_weight)), i64::from(param(Param::home_resist_elec_two_weight)), i64::from(param(Param::home_resist_elec_each_weight)));
+    value = spare(value, i32::from(st.home.num_immune_elec), i64::from(param(Param::home_immune_elec_one_weight)), i64::from(param(Param::home_immune_elec_two_weight)), i64::from(param(Param::home_immune_elec_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_fire), i64::from(param(Param::home_resist_fire_one_weight)), i64::from(param(Param::home_resist_fire_two_weight)), i64::from(param(Param::home_resist_fire_each_weight)));
+    value = spare(value, i32::from(st.home.num_immune_fire), i64::from(param(Param::home_immune_fire_one_weight)), i64::from(param(Param::home_immune_fire_two_weight)), i64::from(param(Param::home_immune_fire_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_cold), i64::from(param(Param::home_resist_cold_one_weight)), i64::from(param(Param::home_resist_cold_two_weight)), i64::from(param(Param::home_resist_cold_each_weight)));
+    value = spare(value, i32::from(st.home.num_immune_cold), i64::from(param(Param::home_immune_cold_one_weight)), i64::from(param(Param::home_immune_cold_two_weight)), i64::from(param(Param::home_immune_cold_each_weight)));
 
-    value = spare(value, i32::from(st.home.num_resist_pois), 5000, 9000, 40);
-    value = spare(value, i32::from(st.home.num_resist_conf), 2000, 8000, 45);
-    value = spare(value, i32::from(st.home.num_resist_sound), 500, 700, 30);
-    value = spare(value, i32::from(st.home.num_resist_LIGHT), 100, 150, 1);
-    value = spare(value, i32::from(st.home.num_resist_dark), 100, 150, 1);
-    value = spare(value, i32::from(st.home.num_resist_chaos), 1000, 1500, 10);
-    value = spare(value, i32::from(st.home.num_resist_disen), 5000, 7000, 35);
-    value = spare(value, i32::from(st.home.num_resist_shard), 100, 150, 1);
-    value = spare(value, i32::from(st.home.num_resist_nexus), 200, 300, 2);
-    value = spare(value, i32::from(st.home.num_resist_blind), 500, 1000, 5);
-    value = spare(value, i32::from(st.home.num_resist_neth), 3000, 4000, 45);
+    value = spare(value, i32::from(st.home.num_resist_pois), i64::from(param(Param::home_resist_pois_one_weight)), i64::from(param(Param::home_resist_pois_two_weight)), i64::from(param(Param::home_resist_pois_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_conf), i64::from(param(Param::home_resist_conf_one_weight)), i64::from(param(Param::home_resist_conf_two_weight)), i64::from(param(Param::home_resist_conf_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_sound), i64::from(param(Param::home_resist_sound_one_weight)), i64::from(param(Param::home_resist_sound_two_weight)), i64::from(param(Param::home_resist_sound_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_LIGHT), i64::from(param(Param::home_resist_light_one_weight)), i64::from(param(Param::home_resist_light_two_weight)), i64::from(param(Param::home_resist_light_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_dark), i64::from(param(Param::home_resist_dark_one_weight)), i64::from(param(Param::home_resist_dark_two_weight)), i64::from(param(Param::home_resist_dark_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_chaos), i64::from(param(Param::home_resist_chaos_one_weight)), i64::from(param(Param::home_resist_chaos_two_weight)), i64::from(param(Param::home_resist_chaos_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_disen), i64::from(param(Param::home_resist_disen_one_weight)), i64::from(param(Param::home_resist_disen_two_weight)), i64::from(param(Param::home_resist_disen_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_shard), i64::from(param(Param::home_resist_shard_one_weight)), i64::from(param(Param::home_resist_shard_two_weight)), i64::from(param(Param::home_resist_shard_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_nexus), i64::from(param(Param::home_resist_nexus_one_weight)), i64::from(param(Param::home_resist_nexus_two_weight)), i64::from(param(Param::home_resist_nexus_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_blind), i64::from(param(Param::home_resist_blind_one_weight)), i64::from(param(Param::home_resist_blind_two_weight)), i64::from(param(Param::home_resist_blind_each_weight)));
+    value = spare(value, i32::from(st.home.num_resist_neth), i64::from(param(Param::home_resist_neth_one_weight)), i64::from(param(Param::home_resist_neth_two_weight)), i64::from(param(Param::home_resist_neth_each_weight)));
 
     // stat gain items as well...(good to carry ring of dex +6 in
     //                            house even if I don't need it right now)
     let s = i32::from(st.home.home_stat_add[STAT_STR as usize]);
-    value = stat_tiers(value, s, 9, 15, 300, 9 * 300, 200, 9 * 300 + 6 * 200, 1);
+    value = stat_tiers(value, s, param(Param::home_stat_str_low_limit), param(Param::home_stat_str_high_limit), i64::from(param(Param::home_stat_str_first_weight)), i64::from(param(Param::home_stat_str_middle_base)), i64::from(param(Param::home_stat_str_middle_weight)), i64::from(param(Param::home_stat_str_last_base)), i64::from(param(Param::home_stat_str_last_weight)));
     let s = i32::from(st.home.home_stat_add[STAT_DEX as usize]);
-    value = stat_tiers(value, s, 9, 15, 300, 9 * 300, 200, 9 * 300 + 6 * 200, 1);
+    value = stat_tiers(value, s, param(Param::home_stat_dex_low_limit), param(Param::home_stat_dex_high_limit), i64::from(param(Param::home_stat_dex_first_weight)), i64::from(param(Param::home_stat_dex_middle_base)), i64::from(param(Param::home_stat_dex_middle_weight)), i64::from(param(Param::home_stat_dex_last_base)), i64::from(param(Param::home_stat_dex_last_weight)));
 
     // HACK extra con for thorin and other such things
     let s = i32::from(st.home.home_stat_add[STAT_CON as usize]);
-    value = stat_tiers(value, s, 15, 21, 300, 15 * 300, 200, 15 * 300 + 6 * 200, 1);
+    value = stat_tiers(value, s, param(Param::home_stat_con_low_limit), param(Param::home_stat_con_high_limit), i64::from(param(Param::home_stat_con_first_weight)), i64::from(param(Param::home_stat_con_middle_base)), i64::from(param(Param::home_stat_con_middle_weight)), i64::from(param(Param::home_stat_con_last_base)), i64::from(param(Param::home_stat_con_last_weight)));
 
     // spell stat is only bonused for spell casters.
-    let spell_stat = crate::borg_magic::borg_spell_stat();
+    let spell_stat = crate::decision_api::borg_magic::borg_spell_stat();
     if spell_stat >= 0 {
         let s = i32::from(st.home.home_stat_add[spell_stat as usize]);
         // C bug 8: the last tier starts from 20 * 100, not 20 * 400.
-        value = stat_tiers(value, s, 20, 26, 400, 20 * 400, 300, 20 * 100 + 6 * 300, 5);
+        value = stat_tiers(value, s, param(Param::home_stat_caster_low_limit), param(Param::home_stat_caster_high_limit), i64::from(param(Param::home_stat_caster_first_weight)), i64::from(param(Param::home_stat_caster_middle_base)), i64::from(param(Param::home_stat_caster_middle_weight)), i64::from(param(Param::home_stat_caster_last_base)), i64::from(param(Param::home_stat_caster_last_weight)));
     }
 
     // Sustains
-    value = spare(value, i32::from(st.home.num_sustain_str), 200, 250, 1);
-    value = spare(value, i32::from(st.home.num_sustain_int), 200, 250, 1);
-    value = spare(value, i32::from(st.home.num_sustain_wis), 200, 250, 1);
-    value = spare(value, i32::from(st.home.num_sustain_con), 200, 250, 1);
-    value = spare(value, i32::from(st.home.num_sustain_dex), 200, 250, 1);
-    value = spare(value, i32::from(st.home.num_sustain_all), 1000, 1500, 1);
+    value = spare(value, i32::from(st.home.num_sustain_str), i64::from(param(Param::home_sustain_str_one_weight)), i64::from(param(Param::home_sustain_str_two_weight)), i64::from(param(Param::home_sustain_str_each_weight)));
+    value = spare(value, i32::from(st.home.num_sustain_int), i64::from(param(Param::home_sustain_int_one_weight)), i64::from(param(Param::home_sustain_int_two_weight)), i64::from(param(Param::home_sustain_int_each_weight)));
+    value = spare(value, i32::from(st.home.num_sustain_wis), i64::from(param(Param::home_sustain_wis_one_weight)), i64::from(param(Param::home_sustain_wis_two_weight)), i64::from(param(Param::home_sustain_wis_each_weight)));
+    value = spare(value, i32::from(st.home.num_sustain_con), i64::from(param(Param::home_sustain_con_one_weight)), i64::from(param(Param::home_sustain_con_two_weight)), i64::from(param(Param::home_sustain_con_each_weight)));
+    value = spare(value, i32::from(st.home.num_sustain_dex), i64::from(param(Param::home_sustain_dex_one_weight)), i64::from(param(Param::home_sustain_dex_two_weight)), i64::from(param(Param::home_sustain_dex_each_weight)));
+    value = spare(value, i32::from(st.home.num_sustain_all), i64::from(param(Param::home_sustain_all_one_weight)), i64::from(param(Param::home_sustain_all_two_weight)), i64::from(param(Param::home_sustain_all_each_weight)));
 
     // do a minus for too many duplicates.  This way we do not store
     // useless items and spread out types of items.
     let n = i32::from(st.home.num_weapons);
-    if n > 5 {
-        value = too_many(value, n, 5, 2000);
+    if n > param(Param::home_weapons_soft_limit) {
+        value = too_many(value, n, param(Param::home_weapons_soft_limit), i64::from(param(Param::home_weapons_excess_weight)));
     } else {
-        value = too_many(value, n, 1, 100);
+        value = too_many(value, n, param(Param::home_weapons_spare_limit), i64::from(param(Param::home_weapons_spare_penalty)));
     }
-    value = too_many(value, i32::from(st.home.num_bow), 2, 1000);
+    value = too_many(value, i32::from(st.home.num_bow), param(Param::home_bows_limit), i64::from(param(Param::home_bows_penalty)));
     let n = i32::from(st.home.num_rings);
-    if n > 6 {
-        value = too_many(value, n, 6, 4000);
+    if n > param(Param::home_rings_soft_limit) {
+        value = too_many(value, n, param(Param::home_rings_soft_limit), i64::from(param(Param::home_rings_excess_weight)));
     } else {
-        value = too_many(value, n, 4, 2000);
+        value = too_many(value, n, param(Param::home_rings_spare_limit), i64::from(param(Param::home_rings_spare_penalty)));
     }
-    value = too_many(value, i32::from(st.home.num_neck), 3, 1500);
-    value = too_many(value, i32::from(st.home.num_armor), 6, 1000);
-    value = too_many(value, i32::from(st.home.num_cloaks), 3, 1000);
-    value = too_many(value, i32::from(st.home.num_shields), 3, 1000);
-    value = too_many(value, i32::from(st.home.num_hats), 4, 1000);
-    value = too_many(value, i32::from(st.home.num_gloves), 3, 1000);
-    value = too_many(value, i32::from(st.home.num_boots), 3, 1000);
+    value = too_many(value, i32::from(st.home.num_neck), param(Param::home_amulets_limit), i64::from(param(Param::home_amulets_penalty)));
+    value = too_many(value, i32::from(st.home.num_armor), param(Param::home_armor_limit), i64::from(param(Param::home_armor_penalty)));
+    value = too_many(value, i32::from(st.home.num_cloaks), param(Param::home_cloaks_limit), i64::from(param(Param::home_cloaks_penalty)));
+    value = too_many(value, i32::from(st.home.num_shields), param(Param::home_shields_limit), i64::from(param(Param::home_shields_penalty)));
+    value = too_many(value, i32::from(st.home.num_hats), param(Param::home_hats_limit), i64::from(param(Param::home_hats_penalty)));
+    value = too_many(value, i32::from(st.home.num_gloves), param(Param::home_gloves_limit), i64::from(param(Param::home_gloves_penalty)));
+    value = too_many(value, i32::from(st.home.num_boots), param(Param::home_boots_limit), i64::from(param(Param::home_boots_penalty)));
 
     // `int` addition (no `long` here)
     value = value.wrapping_add(i32::from(st.home.home_damage));
 
     // if edged and priest, small penalty
-    value = sub(value, i64::from(i32::from(st.home.num_edged_weapon)) * 50);
+    value = sub(value, i64::from(i32::from(st.home.num_edged_weapon)) * i64::from(param(Param::home_edged_weapon_penalty)));
 
     // if gloves and mage or ranger and not FA/Dex, dump it.
-    value = sub(value, i64::from(i32::from(st.home.num_bad_gloves)) * 3000);
+    value = sub(value, i64::from(i32::from(st.home.num_bad_gloves)) * i64::from(param(Param::home_bad_gloves_penalty)));
 
     // do not allow duplication of items.
     value = sub(
         value,
-        i64::from(i32::from(st.home.num_duplicate_items)) * 50000,
+        i64::from(i32::from(st.home.num_duplicate_items)) * i64::from(param(Param::home_duplicate_item_penalty)),
     );
 
     value
@@ -225,19 +227,19 @@ fn stack(value: i32, lim: i32, n: i32, base: i64, step: i64) -> i32 {
 /// Helper function -- calculate power of items in the home
 ///
 /// The weird calculations help spread out the purchase order
-fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
+fn borg_power_home_aux2(st: &BorgState) -> i32 {
     let mut value: i32 = 0;
 
     // *** Basic abilities ***
 
     // Collect food
-    if st.borg.tr(BI_MAXCLEVEL) < 10 {
+    if st.borg.tr(BI_MAXCLEVEL) < param(Param::home_food_stock_max_level) {
         value = stack(
             value,
             max_stack(TV_FOOD),
             i32::from(st.home.num_food),
-            8000,
-            10,
+            i64::from(param(Param::home_stock_food_base)),
+            i64::from(param(Param::home_stock_food_decay)),
         );
     }
 
@@ -246,38 +248,38 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
         value,
         max_stack(TV_SCROLL),
         i32::from(st.home.num_ident),
-        2000,
-        10,
+        i64::from(param(Param::home_stock_ident_base)),
+        i64::from(param(Param::home_stock_ident_decay)),
     );
 
     // Collect enchantments armour
-    if st.borg.tr(BI_CLEVEL) < 45 {
+    if st.borg.tr(BI_CLEVEL) < param(Param::home_enchant_armor_max_level) {
         value = stack(
             value,
             max_stack(TV_SCROLL),
             i32::from(st.home.num_enchant_to_a),
-            500,
-            10,
+            i64::from(param(Param::home_stock_enchant_to_a_base)),
+            i64::from(param(Param::home_stock_enchant_to_a_decay)),
         );
     }
     // Collect enchantments to hit
-    if st.borg.tr(BI_CLEVEL) < 45 {
+    if st.borg.tr(BI_CLEVEL) < param(Param::home_enchant_hit_max_level) {
         value = stack(
             value,
             max_stack(TV_SCROLL),
             i32::from(st.home.num_enchant_to_h),
-            500,
-            10,
+            i64::from(param(Param::home_stock_enchant_to_h_base)),
+            i64::from(param(Param::home_stock_enchant_to_h_decay)),
         );
     }
     // Collect enchantments to dam
-    if st.borg.tr(BI_CLEVEL) < 45 {
+    if st.borg.tr(BI_CLEVEL) < param(Param::home_enchant_damage_max_level) {
         value = stack(
             value,
             max_stack(TV_SCROLL),
             i32::from(st.home.num_enchant_to_d),
-            500,
-            10,
+            i64::from(param(Param::home_stock_enchant_to_d_base)),
+            i64::from(param(Param::home_stock_enchant_to_d_decay)),
         );
     }
 
@@ -286,8 +288,8 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
         value,
         max_stack(TV_SCROLL),
         i32::from(st.home.num_pfe),
-        500,
-        10,
+        i64::from(param(Param::home_stock_pfe_base)),
+        i64::from(param(Param::home_stock_pfe_decay)),
     );
 
     // Collect glyphs
@@ -295,26 +297,26 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
         value,
         max_stack(TV_SCROLL),
         i32::from(st.home.num_glyph),
-        500,
-        10,
+        i64::from(param(Param::home_stock_glyph_base)),
+        i64::from(param(Param::home_stock_glyph_decay)),
     );
 
     // Reward Genocide scrolls. Just scrolls, mainly used for Morgoth
     value = stack(
         value,
-        max_stack(TV_SCROLL) * 2,
+        max_stack(TV_SCROLL) * param(Param::home_banishment_stack_multiplier),
         i32::from(st.home.num_genocide),
-        500,
-        10,
+        i64::from(param(Param::home_stock_genocide_base)),
+        i64::from(param(Param::home_stock_genocide_decay)),
     );
 
     // Reward Mass Genocide scrolls. Just scrolls, mainly used for Morgoth
     value = stack(
         value,
-        max_stack(TV_SCROLL) * 2,
+        max_stack(TV_SCROLL) * param(Param::home_mass_banishment_stack_multiplier),
         i32::from(st.home.num_mass_genocide),
-        500,
-        0,
+        i64::from(param(Param::home_stock_mass_genocide_base)),
+        i64::from(param(Param::home_stock_mass_genocide_decay)),
     );
 
     // Collect Recharge ability
@@ -322,51 +324,51 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
         value,
         max_stack(TV_SCROLL),
         i32::from(st.home.num_recharge),
-        500,
-        10,
+        i64::from(param(Param::home_stock_recharge_base)),
+        i64::from(param(Param::home_stock_recharge_decay)),
     );
 
     // Reward Resistance Potions for Warriors
     if st.borg.tr(BI_CLASS) == CLASS_WARRIOR
-        && st.borg.tr(BI_MAXDEPTH) > 20
-        && st.borg.tr(BI_MAXDEPTH) < 80
+        && st.borg.tr(BI_MAXDEPTH) > param(Param::home_resistance_min_depth)
+        && st.borg.tr(BI_MAXDEPTH) < param(Param::home_resistance_max_depth)
     {
         // `k` carries over from the first loop into the second.
         let mut k = 0;
         while k < max_stack(TV_POTION) && k < i32::from(st.home.num_pot_rheat) {
-            value = add(value, 100 - i64::from(k) * 10);
+            value = add(value, i64::from(param(Param::home_heat_resist_base)) - i64::from(k) * i64::from(param(Param::home_heat_resist_decay)));
             k += 1;
         }
         while k < max_stack(TV_POTION) && k < i32::from(st.home.num_pot_rcold) {
-            value = add(value, 100 - i64::from(k) * 10);
+            value = add(value, i64::from(param(Param::home_cold_resist_base)) - i64::from(k) * i64::from(param(Param::home_cold_resist_decay)));
             k += 1;
         }
     }
 
     // Collect recall - stick to 5 spare, for if you run out of money
-    value = stack(value, 5, i32::from(st.home.num_recall), 100, 0);
+    value = stack(value, param(Param::home_stock_recall_limit), i32::from(st.home.num_recall), i64::from(param(Param::home_stock_recall_base)), i64::from(param(Param::home_stock_recall_decay)));
 
     // Collect escape  (staff of teleport)
-    value = stack(value, 85, i32::from(st.home.num_escape), 2000, 10);
+    value = stack(value, param(Param::home_stock_escape_limit), i32::from(st.home.num_escape), i64::from(param(Param::home_stock_escape_base)), i64::from(param(Param::home_stock_escape_decay)));
 
     // Collect only one stack worth of teleport staffs at home
     let mut k = max_stack(TV_STAFF);
     while k < i32::from(st.home.num_tele_staves) {
-        value = sub(value, 50000);
+        value = sub(value, i64::from(param(Param::home_teleport_staff_excess_penalty)));
         k += 1;
     }
 
     // Collect teleport
-    value = stack(value, 85, i32::from(st.home.num_teleport), 5000, 0);
+    value = stack(value, param(Param::home_stock_teleport_limit), i32::from(st.home.num_teleport), i64::from(param(Param::home_stock_teleport_base)), i64::from(param(Param::home_stock_teleport_decay)));
 
     // Collect phase
-    if st.borg.tr(BI_MAXCLEVEL) < 10 {
+    if st.borg.tr(BI_MAXCLEVEL) < param(Param::home_phase_stock_max_level) {
         value = stack(
             value,
             max_stack(TV_SCROLL),
             i32::from(st.home.num_phase),
-            5000,
-            0,
+            i64::from(param(Param::home_stock_phase_base)),
+            i64::from(param(Param::home_stock_phase_decay)),
         );
     }
 
@@ -374,21 +376,21 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
     // for (k = 0; k < 85 && k < num_speed; k++) value += 5000L - k*10L;
 
     // collect mana/
-    if st.borg.tr(BI_MAXSP) > 1 {
+    if st.borg.tr(BI_MAXSP) > param(Param::home_mana_stock_min_sp) {
         value = stack(
             value,
             max_stack(TV_POTION),
             i32::from(st.home.num_mana),
-            6000,
-            8,
+            i64::from(param(Param::home_stock_mana_base)),
+            i64::from(param(Param::home_stock_mana_decay)),
         );
     }
 
     // Level 1 priests are given a Potion of Healing.  It is better
     // for them to sell that potion and buy equipment or several
     // Cure Crits with it.
-    if st.borg.tr(BI_CLEVEL) == 1 {
-        value = stack(value, 10, i32::from(st.home.num_heal), -5000, 0);
+    if st.borg.tr(BI_CLEVEL) == param(Param::home_initial_heal_sell_level) {
+        value = stack(value, param(Param::home_stock_initial_heal_limit), i32::from(st.home.num_heal), i64::from(param(Param::home_stock_initial_heal_base)), i64::from(param(Param::home_stock_initial_heal_decay)));
     }
 
     // *** Healing ***
@@ -398,32 +400,32 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
         value,
         max_stack(TV_POTION),
         i32::from(st.home.num_cure_critical),
-        1500,
-        10,
+        i64::from(param(Param::home_stock_cure_critical_base)),
+        i64::from(param(Param::home_stock_cure_critical_decay)),
     );
 
     // Collect heal, *Heal*, Life
-    value = stack(value, 90, i32::from(st.home.num_heal), 3000, 0);
-    value = stack(value, 198, i32::from(st.home.num_ezheal), 8000, 0);
-    value = stack(value, 198, i32::from(st.home.num_life), 9000, 0);
+    value = stack(value, param(Param::home_stock_heal_limit), i32::from(st.home.num_heal), i64::from(param(Param::home_stock_heal_base)), i64::from(param(Param::home_stock_heal_decay)));
+    value = stack(value, param(Param::home_stock_ezheal_limit), i32::from(st.home.num_ezheal), i64::from(param(Param::home_stock_ezheal_base)), i64::from(param(Param::home_stock_ezheal_decay)));
+    value = stack(value, param(Param::home_stock_life_limit), i32::from(st.home.num_life), i64::from(param(Param::home_stock_life_base)), i64::from(param(Param::home_stock_life_decay)));
 
     // junk cure serious if we have some in the home
     // don't bother keeping them if high level
-    if st.borg.tr(BI_CLEVEL) > 35 {
+    if st.borg.tr(BI_CLEVEL) > param(Param::home_cure_serious_penalty_min_level) {
         // value -= 1500L - k * 10L
-        value = stack(value, 90, i32::from(st.home.num_cure_serious), -1500, -10);
+        value = stack(value, param(Param::home_stock_cure_serious_limit), i32::from(st.home.num_cure_serious), i64::from(param(Param::home_stock_cure_serious_base)), i64::from(param(Param::home_stock_cure_serious_decay)));
     }
 
     // *** Various ***
 
     // Fixing Stats
     if st.borg.tr(BI_CLEVEL) == 50 && i32::from(st.home.num_fix_exp) != 0 {
-        value = sub(value, 7500);
+        value = sub(value, i64::from(param(Param::home_max_level_exp_penalty)));
     }
-    if st.borg.tr(BI_CLEVEL) > 35 && st.borg.tr(BI_CLEVEL) <= 49 {
-        value = stack(value, 70, i32::from(st.home.num_fix_exp), 1000, 10);
-    } else if st.borg.tr(BI_CLEVEL) <= 35 {
-        value = stack(value, 5, i32::from(st.home.num_fix_exp), 1000, 10);
+    if st.borg.tr(BI_CLEVEL) > param(Param::home_exp_stock_late_min_level) && st.borg.tr(BI_CLEVEL) <= 49 {
+        value = stack(value, param(Param::home_stock_late_exp_limit), i32::from(st.home.num_fix_exp), i64::from(param(Param::home_stock_late_exp_base)), i64::from(param(Param::home_stock_late_exp_decay)));
+    } else if st.borg.tr(BI_CLEVEL) <= param(Param::home_exp_stock_early_max_level) {
+        value = stack(value, param(Param::home_stock_early_exp_limit), i32::from(st.home.num_fix_exp), i64::from(param(Param::home_stock_early_exp_base)), i64::from(param(Param::home_stock_early_exp_decay)));
     }
 
     // *** books ***
@@ -432,13 +434,13 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
     for book in 0..9 {
         // only collect books up to level 14.
         // After that, just buy them, they are always in stock
-        if st.borg.tr(BI_CLEVEL) < 15 {
+        if st.borg.tr(BI_CLEVEL) < param(Param::home_book_stock_max_level) {
             // Collect up to 5 copies of each normal book
             let mut k = 0;
-            while k < 5 && k < i32::from(st.home.num_book[book]) {
+            while k < param(Param::home_book_stock_limit) && k < i32::from(st.home.num_book[book]) {
                 // Only stockpile useful books
                 if i32::from(st.home.num_book[book]) != 0 {
-                    value = add(value, 5000 - i64::from(k) * 10);
+                    value = add(value, i64::from(param(Param::home_book_stock_base)) - i64::from(k) * i64::from(param(Param::home_book_stock_decay)));
                 }
                 k += 1;
             }
@@ -446,22 +448,24 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
     }
 
     // Reward artifacts in the home
-    value = add(value, i64::from(i32::from(st.home.num_artifact)) * 500);
+    value = add(value, i64::from(i32::from(st.home.num_artifact)) * i64::from(param(Param::home_artifact_weight)));
 
     // Reward certain types of egos in the home
-    value = add(value, i64::from(i32::from(st.home.num_ego)) * 5000);
+    value = add(value, i64::from(i32::from(st.home.num_ego)) * i64::from(param(Param::home_ego_weight)));
 
     // Only allow unid'd stuff if we can't id them
     let un_id = i32::from(st.home.home_un_id);
     if un_id != 0 {
-        value = add(value, i64::from(un_id - st.borg.tr(BI_AID)) * 1005);
+        value = add(value, i64::from(un_id - st.borg.tr(BI_AID)) * i64::from(param(Param::home_unidentified_weight)));
     }
 
     value
 }
 
 /// Calculate the "power" of the home
-pub fn borg_power_home(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_power_home_native(st: &BorgState) -> i32 {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_power_home",format!("{:?}",()));}
+
     let mut value: i32 = 0;
 
     // Process the home equipment
@@ -471,6 +475,13 @@ pub fn borg_power_home(st: &mut BorgState) -> i32 {
     value = value.wrapping_add(borg_power_home_aux2(st));
 
     value
+}
+
+
+
+pub fn borg_power_home(st: &BorgState) -> i32 {
+if crate::decision_tape::active() {return borg_power_home_native(st);}
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::HomePower) {crate::decisions::Value::Score(v)=>v,_=>unreachable!("typed store result")}
 }
 
 #[cfg(test)]

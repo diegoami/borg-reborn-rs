@@ -17,7 +17,7 @@ AUDITS = [(name, path) for name, path in AUDITS if path.exists()]
 
 
 class PolicyAuditTest(unittest.TestCase):
-    def run_audit(self, name, path, change_key=False):
+    def run_audit(self, name, path, change_key=False, native_tail='', port_tail=''):
         spec = importlib.util.spec_from_file_location('audit_' + name, path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
@@ -27,9 +27,14 @@ class PolicyAuditTest(unittest.TestCase):
         self.assertIn("key(b'5')", canonical)
         if change_key:
             canonical = canonical.replace("key(b'5')", "key(b'6')", 1)
+        native_file = 'borg_fight_attack.rs' if name == 'attack' else 'borg_fight_defend.rs'
+        native = ROOT / 'borg-core/src' / native_file
         read = Path.read_text
         def read_text(path, *args, **kwargs):
-            return canonical if path == target else read(path, *args, **kwargs)
+            if path == target:
+                return canonical + port_tail
+            text = read(path, *args, **kwargs)
+            return text + native_tail if path == native else text
         output = io.StringIO()
         with patch.object(Path, 'read_text', read_text), contextlib.redirect_stdout(output):
             module.main()
@@ -46,3 +51,17 @@ class PolicyAuditTest(unittest.TestCase):
         for name, path in AUDITS:
             with self.subTest(policy=name), self.assertRaises(AssertionError):
                 self.run_audit(name, path, change_key=True)
+
+    def test_late_production_is_audited_after_test_and_fixture_items(self):
+        native_only_test = '\n#[cfg(test)]\nmod extra_tests { fn fixture() {} }\n'
+        late_policy = '\nfn receiving_policy() -> i32 { 17 }\n'
+        for name, path in AUDITS:
+            with self.subTest(policy=name):
+                native_tail = native_only_test + late_policy
+                report = self.run_audit(name, path, native_tail=native_tail, port_tail=late_policy)
+                self.assertIn('receiving_policy', [row['function'] for row in report['functions']])
+                with self.assertRaises(AssertionError):
+                    self.run_audit(name, path, native_tail=native_tail)
+                with self.assertRaisesRegex(AssertionError, 'receiving_policy'):
+                    self.run_audit(name, path, native_tail=native_tail,
+                                   port_tail=late_policy.replace('17', '18'))

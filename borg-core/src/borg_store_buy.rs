@@ -23,19 +23,21 @@
 //! pointer does). C's pointer `item` into a ware is read again
 //! at each use (`ware`), never cached across a call.
 
-use crate::borg_buy_strategy::{
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
+use crate::decision_api::borg_buy_strategy::{
     buy_identify_enabled, is_learning_candidate, reserve410_unmet, RESERVE410_CURE,
     RESERVE410_PHASE,
 };
-use crate::borg_home_notice::borg_notice_home;
-use crate::borg_home_power::borg_power_home;
-use crate::borg_inventory::{borg_first_empty_inventory_slot, borg_slot, borg_wield_slot};
-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
-use crate::borg_item::inven_wield;
-use crate::borg_magic::{borg_get_book_num, borg_is_dungeon_book, borg_primarily_caster};
-use crate::borg_power::borg_power;
-use crate::borg_store::{BORG_HOME, SHOP_MENU_ITEMS};
-use crate::engine;
+use crate::decision_api::borg_home_notice::borg_notice_home;
+use crate::decision_api::borg_home_power::borg_power_home;
+use crate::decision_api::borg_inventory::{borg_first_empty_inventory_slot, borg_slot, borg_wield_slot};
+use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::decision_api::borg_item::inven_wield;
+use crate::decision_api::borg_magic::{borg_get_book_num, borg_is_dungeon_book, borg_primarily_caster};
+use crate::decision_api::borg_power::borg_power;
+use crate::decision_api::borg_store::{BORG_HOME, SHOP_MENU_ITEMS};
+use crate::decision_api::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_VERBOSE};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
@@ -202,7 +204,7 @@ fn note_desc(st: &mut BorgState, before: &str, item: &borg_item, after: &str) {
 /// on the ware as it is now.
 fn min_quantity(st: &mut BorgState, k: i32, n: i32) -> i32 {
     let w = *ware(st, k, n);
-    crate::borg_store_sell::borg_min_item_quantity(st, &w)
+    crate::decision_api::borg_store_sell::borg_min_item_quantity(st, &w)
 }
 
 /// Help decide if an item should be bought from a real store
@@ -228,7 +230,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     /* Check the object */
     match tval {
         TV_SHOT | TV_ARROW | TV_BOLT => {
-            if st.borg.tr(BI_CLEVEL) < 35 {
+            if st.borg.tr(BI_CLEVEL) < param(Param::buy_enchanted_ammo_min_level) {
                 if item.to_h != 0 {
                     return false;
                 }
@@ -307,13 +309,13 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
             return true;
         }
 
-        if b.tr(BI_CLEVEL) < 15 && b.tr(BI_GOLD) < 20000 {
+        if b.tr(BI_CLEVEL) < param(Param::buy_black_market_early_level) && b.tr(BI_GOLD) < param(Param::buy_black_market_early_gold) {
             return false;
         }
-        if b.tr(BI_CLEVEL) < 35 && b.tr(BI_GOLD) < 15000 {
+        if b.tr(BI_CLEVEL) < param(Param::buy_black_market_middle_level) && b.tr(BI_GOLD) < param(Param::buy_black_market_middle_gold) {
             return false;
         }
-        if b.tr(BI_GOLD) < 10000 {
+        if b.tr(BI_GOLD) < param(Param::buy_black_market_min_gold) {
             return false;
         }
     }
@@ -321,7 +323,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     /* do not buy the item if I just sold it. */
     let mut p = 0;
     while p < st.store_sell.sold_item_num {
-        let (s_tval, s_sval, s_store) = crate::borg_store_sell::sold_item(st, p as usize);
+        let (s_tval, s_sval, s_store) = crate::decision_api::borg_store_sell::sold_item(st, p as usize);
         if s_tval == tval as i32 && s_sval == sval && s_store == who {
             if st.core.cfg[BORG_VERBOSE as usize] != 0 {
                 note_desc(st, "# Choosing not to buy back ", &item, "");
@@ -343,7 +345,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     }
 
     /* Low level borgs should not waste the money on certain things */
-    if st.borg.tr(BI_MAXCLEVEL) < 5 {
+    if st.borg.tr(BI_MAXCLEVEL) < param(Param::buy_extra_book_min_level) {
         /* next book, cant read it */
         if can_browse(&item) && sval >= 1 {
             return false;
@@ -352,12 +354,21 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
 
     /* Not direct spell casters and the extra books */
     /* classes that are direct spell casters get more than 3 books */
-    if !borg_primarily_caster() && st.borg.tr(BI_MAXCLEVEL) <= 8 && can_browse(&item) && sval >= 1 {
+    if !borg_primarily_caster() && st.borg.tr(BI_MAXCLEVEL) <= param(Param::buy_hybrid_extra_book_max_level) && can_browse(&item) && sval >= 1 {
         return false;
     }
 
     /* Okay */
     true
+}
+
+pub(crate) fn recall_purchase_floor() -> i32 {
+    param(Param::buy_recall_from_gold)
+}
+
+/// Gold available for Word of Recall after reserving the required balance.
+pub(crate) fn recall_purchase_budget(gold: i64, minimum_remaining: i32) -> i64 {
+    gold.saturating_sub(i64::from(minimum_remaining)).max(0)
 }
 
 /// Point the Borg at one shop ware for purchase. A pending pack-sale goal
@@ -454,7 +465,9 @@ fn borg_buy_identify(st: &mut BorgState) -> bool {
 
 /// Step 3 -- buy "useful" things from a shop (to be used)
 /// (`borg_think_shop_buy_useful`).
-pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_shop_buy_useful_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_buy_useful",format!("{:?}",()));}
+
     let hole = borg_first_empty_inventory_slot(st);
 
     let mut b_k: i32 = -1;
@@ -540,7 +553,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
             if tval == TV_WAND
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud)
-                && st.borg.tr(BI_GOOD_W_CHG) > 40
+                && st.borg.tr(BI_GOOD_W_CHG) > param(Param::buy_attack_wand_charge_limit)
             {
                 continue;
             }
@@ -549,7 +562,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
             if tval == TV_WAND
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud)
-                && st.borg.tr(BI_MAXCLEVEL) > 30
+                && st.borg.tr(BI_MAXCLEVEL) > param(Param::buy_attack_wand_max_level)
             {
                 continue;
             }
@@ -618,7 +631,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
                 fix = true;
 
                 /* Examine the inventory */
-                crate::borg_trait::borg_notice(st, true);
+                crate::decision_api::borg_trait::borg_notice(st, true);
 
                 /* Evaluate the inventory */
                 p = borg_power(st);
@@ -641,7 +654,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
                 fix = true;
 
                 /* Examine the inventory */
-                crate::borg_trait::borg_notice(st, true);
+                crate::decision_api::borg_trait::borg_notice(st, true);
 
                 /* Evaluate the equipment */
                 p = borg_power(st);
@@ -676,7 +689,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
 
     /* Examine the inventory */
     if fix {
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
     }
 
     /* Buy something */
@@ -697,7 +710,9 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
 
 /// Step 4 -- buy "useful" things from the home (to be used)
 /// (`borg_think_home_buy_useful`).
-pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_home_buy_useful_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_home_buy_useful",format!("{:?}",()));}
+
     let home = BORG_HOME as i32;
     let mut b_n: i32 = -1;
     // these keep their values from one ware to the next, as in C
@@ -724,7 +739,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
         let mut skip_it = false;
         let mut i = 0;
         while i < st.store_sell.sold_item_num {
-            let (s_tval, s_sval, _) = crate::borg_store_sell::sold_item(st, i as usize);
+            let (s_tval, s_sval, _) = crate::decision_api::borg_store_sell::sold_item(st, i as usize);
             if s_tval == i32::from(tval) && s_sval == i32::from(sval) {
                 if st.core.cfg[BORG_VERBOSE as usize] != 0 {
                     let w = *ware(st, home, n);
@@ -795,7 +810,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
                     fix = true;
 
                     /* Examine the inventory */
-                    crate::borg_trait::borg_notice(st, true);
+                    crate::decision_api::borg_trait::borg_notice(st, true);
 
                     /* Evaluate the inventory */
                     p_left = borg_power(st);
@@ -820,7 +835,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
                     fix = true;
 
                     /* Examine the inventory */
-                    crate::borg_trait::borg_notice(st, true);
+                    crate::decision_api::borg_trait::borg_notice(st, true);
 
                     /* Evaluate the inventory */
                     p_right = borg_power(st);
@@ -850,7 +865,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
                 fix = true;
 
                 /* Examine the inventory */
-                crate::borg_trait::borg_notice(st, true);
+                crate::decision_api::borg_trait::borg_notice(st, true);
 
                 /* Evaluate the inventory */
                 p = borg_power(st);
@@ -908,7 +923,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
             fix = true;
 
             /* Examine the inventory */
-            crate::borg_trait::borg_notice(st, true);
+            crate::decision_api::borg_trait::borg_notice(st, true);
 
             /* Evaluate the equipment */
             p = borg_power(st);
@@ -932,7 +947,7 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
 
     /* Examine the inventory */
     if fix {
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
     }
 
     /* Buy something */
@@ -953,7 +968,9 @@ pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
 
 /// Step 5 -- buy "interesting" things from a shop (to be used later)
 /// (`borg_think_shop_grab_interesting`).
-pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_shop_grab_interesting_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_grab_interesting",format!("{:?}",()));}
+
     let mut b_k: i32 = -1;
     let mut b_n: i32 = -1;
     // keeps its value from one ware to the next, as in C
@@ -968,7 +985,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
     }
 
     /* not until later-- use that money for better equipment */
-    if st.borg.tr(BI_CLEVEL) < 15 {
+    if st.borg.tr(BI_CLEVEL) < param(Param::buy_home_stock_min_level) {
         return false;
     }
 
@@ -1010,7 +1027,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
             /* Require some "extra" cash */
             // `1000L + cost * 5`: the product is an int32_t, the sum a long
             if i64::from(st.borg.tr(BI_GOLD))
-                < 1000 + i64::from(ware(st, k, n).cost.wrapping_mul(5))
+                < i64::from(param(Param::buy_home_stock_gold_reserve)) + i64::from(ware(st, k, n).cost.wrapping_mul(param(Param::buy_home_stock_price_multiplier)))
             {
                 continue;
             }
@@ -1045,7 +1062,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
             }
 
             /* optimize the home inventory */
-            if !crate::borg_store_sell::borg_think_home_sell_useful(st, &mut s) {
+            if !crate::decision_api::borg_store_sell::borg_think_home_sell_useful(st, &mut s) {
                 continue;
             }
 
@@ -1053,7 +1070,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
             let c = ware(st, k, n).cost.wrapping_mul(qty);
 
             /* Penalize expensive items */
-            if c > st.borg.tr(BI_GOLD) / 10 {
+            if c > st.borg.tr(BI_GOLD) / param(Param::buy_home_stock_gold_divisor) {
                 s = s.wrapping_sub(c);
             }
 
@@ -1108,7 +1125,9 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
 
 /// Step 6 -- take "useless" things from the home (to be sold)
 /// (`borg_think_home_grab_useless`).
-pub fn borg_think_home_grab_useless(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_home_grab_useless_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_home_grab_useless",format!("{:?}",()));}
+
     let home = BORG_HOME as i32;
     let mut b_n: i32 = -1;
     // this keeps its value from one ware to the next, as in C
@@ -1140,7 +1159,7 @@ pub fn borg_think_home_grab_useless(st: &mut BorgState) -> bool {
         let mut skip_it = false;
         let mut p = 0;
         while p < st.store_sell.sold_item_num {
-            let (s_tval, s_sval, s_store) = crate::borg_store_sell::sold_item(st, p as usize);
+            let (s_tval, s_sval, s_store) = crate::decision_api::borg_store_sell::sold_item(st, p as usize);
             let w = ware(st, home, n);
             if s_tval == i32::from(w.tval) && s_sval == i32::from(w.sval) && s_store == home {
                 skip_it = true;
@@ -1312,7 +1331,7 @@ fn home_buy_swap(st: &mut BorgState, which: Swap) -> bool {
         fix = true;
 
         /* Examine the inventory and swap value*/
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
 
         /* Evaluate the new equipment */
         p = swap_value(st, which);
@@ -1335,7 +1354,7 @@ fn home_buy_swap(st: &mut BorgState, which: Swap) -> bool {
 
     /* Examine the inventory */
     if fix {
-        crate::borg_trait::borg_notice(st, true);
+        crate::decision_api::borg_trait::borg_notice(st, true);
     }
 
     /* Buy something */
@@ -1362,13 +1381,17 @@ fn home_buy_swap(st: &mut BorgState, which: Swap) -> bool {
 
 /// Step 7A -- buy "useful" weapons from the home (to be used as a swap)
 /// (`borg_think_home_buy_swap_weapon`).
-pub fn borg_think_home_buy_swap_weapon(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_home_buy_swap_weapon_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_home_buy_swap_weapon",format!("{:?}",()));}
+
     home_buy_swap(st, Swap::Weapon)
 }
 
 /// Step 7B -- buy "useful" armour from the home (to be used as a swap)
 /// (`borg_think_home_buy_swap_armour`).
-pub fn borg_think_home_buy_swap_armour(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_home_buy_swap_armour_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_home_buy_swap_armour",format!("{:?}",()));}
+
     home_buy_swap(st, Swap::Armour)
 }
 
@@ -1385,12 +1408,16 @@ fn purchase_done(st: &mut BorgState) {
 }
 
 /// Buy items from the current shop, if desired (`borg_think_shop_buy`).
-pub fn borg_think_shop_buy(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_shop_buy_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_shop_buy",format!("{:?}",()));}
+
     buy_selected(st, true)
 }
 
 /// A Home withdrawal intended for sale is not a newly purchased keeper.
-pub fn take_selected_for_sale(st: &mut BorgState) -> bool {
+pub(crate) fn take_selected_for_sale_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.take_selected_for_sale",format!("{:?}",()));}
+
     buy_selected(st, false)
 }
 
@@ -1411,13 +1438,17 @@ fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
 }
 
 /// Live mode calls this only after observing the native transaction.
-pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
-    note_desc(st, "# Buying ", item, ".");
-    let shop_name = String::from_utf8_lossy(&crate::engine::store_feat_name(shop as usize)).to_string();
-    crate::borg_object_log::log_buy(st, item, &shop_name, item.cost, shop == BORG_HOME as i32);
-    crate::borg_town_dump::dump_purchase(st, shop, item);
+/// borg-reborn-rs (#507): `qty` is the copies the transaction bought and
+/// `paid` the gold it took.
+pub(crate) fn confirm_purchase_native(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.confirm_purchase",format!("{:?}",(item,shop,keep,qty,paid,)));}
+    let qty = qty.max(1);
+    note_desc(st, &if qty > 1 { format!("# Buying {qty} x ") } else { "# Buying ".to_string() }, item, ".");
+    let shop_name = String::from_utf8_lossy(&crate::decision_api::engine::store_feat_name(shop as usize)).to_string();
+    crate::decision_api::borg_object_log::log_buy(st, item, &shop_name, paid, shop == BORG_HOME as i32, qty as u32);
+    crate::decision_api::borg_town_dump::dump_purchase(st, shop, item);
     if keep { remember_purchase(st, item, shop); }
-    if crate::borg_town_live::active(st) { reset_money_scum(st, item); }
+    if crate::decision_api::borg_town_live::active(st) { reset_money_scum(st, item); }
 }
 
 fn reset_money_scum(st: &mut BorgState, item: &borg_item) {
@@ -1455,21 +1486,27 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
             return false;
         }
 
-        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false); }
+        if !crate::decision_api::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false, 1, item.cost); }
 
         /* Buy the desired item */
         borg_keypress(st, purchase_target);
-        if !crate::engine::player_opt(crate::headers::list_options_h::OPT_store_buy_direct) {
+        if !crate::decision_api::engine::player_opt(crate::headers::list_options_h::OPT_store_buy_direct) {
             borg_keypress(st, keycode_t::from(b'p'));
+
+            // A planned purchase of several copies types its quantity over
+            // the prompt's default of 1 (borg-reborn-rs (#507); ui-store.c `store_purchase`,
+            // ui-input.c `askfor_aux`: the first key replaces the default).
+            let qty = crate::decision_api::borg_town_live::buy_quantity(st);
+            if qty > 1 { borg_keypresses(st, qty.to_string().as_bytes()); }
 
             /* Mega-Hack -- Accept the purchase */
             borg_keypress(st, KC_ENTER);
             borg_keypress(st, KC_ENTER);
         }
 
-        if !crate::borg_town_live::active(st) { reset_money_scum(st, &item); }
+        if !crate::decision_api::borg_town_live::active(st) { reset_money_scum(st, &item); }
 
-        if keep_purchase && !crate::borg_town_live::active(st) { remember_purchase(st, &item, shop); }
+        if keep_purchase && !crate::decision_api::borg_town_live::active(st) { remember_purchase(st, &item, shop); }
 
         purchase_done(st);
 
@@ -1487,6 +1524,47 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
 
     /* Nothing to buy */
     false
+}
+
+
+
+
+
+pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_shop_buy_useful_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreBuyUseful) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_home_buy_useful(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_home_buy_useful_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::HomeBuyUseful) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_shop_grab_interesting_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreGrabInteresting) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_home_grab_useless(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_home_grab_useless_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::HomeGrabUseless) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_home_buy_swap_weapon(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_home_buy_swap_weapon_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::HomeBuySwapWeapon) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_home_buy_swap_armour(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_home_buy_swap_armour_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::HomeBuySwapArmour) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_shop_buy(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_shop_buy_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreBuy) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn take_selected_for_sale(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return take_selected_for_sale_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreTakeForSale) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+if !crate::shadow::registered() || crate::decision_tape::active() {return confirm_purchase_native(st,item,shop,keep,qty,paid);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreConfirmPurchase {item:crate::decisions::ItemSnapshot::new(*item),shop,keep,qty,paid}) {crate::decisions::Value::Unit=>(),_=>unreachable!("typed store result")}
 }
 
 #[cfg(test)]

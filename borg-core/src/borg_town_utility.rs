@@ -14,6 +14,7 @@ use crate::borg_town_dispose::{Disposition, Freed, KitItem, Place};
 use crate::borg_town_record::{StepInput, WareFact};
 use crate::borg_town_solve::{Choice, Group, GroupKey, Limits};
 use crate::borg_town_usefulness::{Need, Weights};
+use crate::params::{value as param, Param};
 use crate::state::BorgState;
 
 /// Record utility and supply counts in thousandths. This prevents cheap
@@ -58,6 +59,10 @@ impl Journey {
             hp: i64::from(st.borg.tr(BI_MAXHP)).max(1) }
     }
 
+    pub(crate) fn fuel_goal(self, reserve: i64) -> i64 {
+        self.turns.max(reserve)
+    }
+
     pub(crate) fn exposure(self) -> i64 {
         (self.turns * self.depth * self.risk / (UNIT * self.level)).max(0)
     }
@@ -96,6 +101,9 @@ pub struct Utility {
     pub gold_weight: i64,
     home_discount: i64,
     pub(crate) space_weight: i64,
+    /// borg-reborn-rs (#557): `town_recall_reserve`, the Word of Recall
+    /// valued at the full trip weight each, whatever the depth.
+    pub(crate) recall_reserve: i64,
 }
 impl Utility {
     pub fn of(st: &BorgState, kit: &[KitItem], cure_spell: bool) -> Self {
@@ -143,7 +151,8 @@ impl Utility {
             poisoned: t(BI_ISPOISONED) > 0, cut: t(BI_ISCUT) > 0, cure_spell,
             home_discount: i64::from(st.cfg(BORG_TOWN_HOME_DISCOUNT)).clamp(0, UNIT),
             space_weight: i64::from(st.cfg(BORG_TOWN_W_SPACE)).max(0),
-            gold_weight: i64::from(st.cfg(BORG_TOWN_W_GOLD)).max(0) * UNIT }
+            gold_weight: i64::from(st.cfg(BORG_TOWN_W_GOLD)).max(0) * UNIT,
+            recall_reserve: i64::from(crate::params::value(crate::params::Param::town_recall_reserve)).max(0) }
     }
 
     pub fn total(&self, need: Need, amount: i64) -> i64 {
@@ -155,7 +164,13 @@ impl Utility {
             // Recall buys avoided walking, not a mandatory pair of scrolls.
             // Its value tends to zero for a nearby destination, and rises
             // smoothly as returning on foot occupies more of the journey.
-            Need::Trip => coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk),
+            // borg-reborn-rs (#557): the first `recall_reserve` scrolls are
+            // worth the full weight each, at any depth: without one a shallow
+            // Borg walks home, and the walk can fail (priest-1055640847).
+            Need::Trip => crate::borg_town_capability::recall_value_scaled(
+                coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk),
+            )
+                .max(w * amount.min(self.recall_reserve * UNIT)),
             Need::Healing if self.cut && !self.cure_spell => {
                 (coverage(w, amount, self.journey.demand(need)) * self.journey.exposure() / UNIT)
                     .max(if amount > 0 { w * UNIT } else { 0 })
@@ -238,10 +253,23 @@ pub(crate) fn burden(space_weight: i64, slots: i32, weight: i64, free_slots: i32
         + space_weight.max(0) * UNIT * weight.max(0) / carry.max(1)
 }
 
+/// borg-reborn-rs (#831): a pack stack of Scrolls of Detect Invisible whose
+/// flavour is known (an unknown flavour is a scroll nobody has read yet).
+fn keeps_detect_invisible(st: &BorgState, it: &KitItem) -> bool {
+    use crate::headers::list_tvals_h::TV_SCROLL;
+    it.place == Place::Pack && !it.unknown_flavour && st.items.items.get(usize::from(it.slot))
+        .is_some_and(|i| i.iqty > 0 && u32::from(i.tval) == TV_SCROLL && i32::from(i.sval) == st.item_val.sv_scroll_detect_invis)
+}
+
 /// Compare carrying, storing and selling on marginal utility, updating
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
 pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed) {
+    dispositions_with(input, u, st, param(Param::town_store_only_overweight) != 0)
+}
+
+/// `dispositions` with `town_store_only_overweight` given (#711).
+fn dispositions_with(input: &StepInput, u: &mut Utility, st: &BorgState, only_overweight: bool) -> (Vec<Disposition>, Freed) {
     let mut out = vec![Disposition::Keep; input.kit.len()];
     let mut freed = Freed::default();
     let carry = i64::from(st.borg.tr(BI_CARRY)).max(2) / 2;
@@ -256,6 +284,9 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
     });
     for i in pack {
         let it = &input.kit[i];
+        if u.capability.as_ref().is_some_and(|model| model.protects_fuel(it)) {
+            continue;
+        }
         if it.unknown_flavour && !it.just_bought && (input.revision < 8 || it.sell_shop >= 0) {
             out[i] = if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop };
             u.change(it, -1);
@@ -299,9 +330,26 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
                 _ => false,
             }
         });
-        let protected = it.unknown || it.just_bought || urgent_loss;
-        let store = !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (future - home_cost > loss - cost ||
-            input.limits.weight + freed.weight < 0 && (loss > 0 || future > 0 || protected));
+        // borg-reborn-rs (#831, owner: "selling detect invisible scrolls is
+        // wrong in the first place, once identified"): a known Scroll of
+        // Detect Invisible is carried, or stored while overweight, never
+        // sold or dropped; the copy cap (`borg_town_max_non_missile_copies`)
+        // still sends the copies past it away.
+        let protected = it.unknown || it.just_bought || urgent_loss || keeps_detect_invisible(st, it);
+        // borg-reborn-rs (#651, plan schema 12): what this visit bought is
+        // carried, not stored: a Cure Light Wounds bought to carry went to
+        // the Home and was bought again (borg-cemetery#75).
+        // borg-reborn-rs (#711, owner 2026-11-20: "only when it weighs too
+        // much they should stash the object with less value at home, until
+        // they are not overcarrying again"): with
+        // `town_store_only_overweight`, a stack goes home only while the pack
+        // is over its weight allowance. The pack is visited lowest keep value
+        // per weight first, and `freed.weight` ends the storing once it is
+        // under; a stack worth more kept for later than carried now stays.
+        let overweight = input.limits.weight + freed.weight < 0;
+        let worth_more_at_home = !only_overweight && future - home_cost > loss - cost;
+        let store = !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (worth_more_at_home ||
+            overweight && (loss > 0 || future > 0 || protected));
         let action = if store { Disposition::Store }
             else if !protected && loss <= cost && future <= home_cost {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
@@ -387,7 +435,7 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
     let mut out = Vec::new();
     let input = StepInput {
         revision: input.revision, capability: input.capability, utility: input.utility, candidates: candidates.to_vec(), facts: input.facts, tryon: input.tryon, limits: input.limits,
-        urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
+        black_market_reserve: input.black_market_reserve, black_market_percentage: input.black_market_percentage, urgent: input.urgent.clone(), params: input.params, traits: input.traits, power: input.power, carried: input.carried,
         cure_spell: input.cure_spell, kit: input.kit, home_slots: input.home_slots };
     let input = &input;
     for group in groups {
@@ -420,7 +468,8 @@ pub fn shared_groups(groups: Vec<Group>, input: &StepInput, candidates: &[crate:
                 let price = (next.cost - current.cost).max(1);
                 let bm: i64 = next.picks.iter().filter(|&&(i, _)| input.candidates[i].is_black_market())
                     .map(|&(i, k)| i64::from(input.candidates[i].price) * i64::from(k)).sum();
-                if bm.saturating_mul(u.weights.caution) > limits.gold || gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots { continue; }
+                let market_budget = crate::borg_town_budget::black_market_budget(limits.gold, input.black_market_reserve, input.black_market_percentage, u.weights.caution);
+                if ((u.weights.caution > 0 || input.black_market_reserve > 0 || input.black_market_percentage >= 0) && bm > market_budget) || gain <= 0 || next.cost > limits.gold || next.weight > limits.weight || next.slots > limits.pack_slots { continue; }
                 if best.as_ref().is_none_or(|(_, _, b)| i128::from(gain) * i128::from((b.cost - current.cost).max(1))
                     > i128::from(b.value - current.value) * i128::from(price)) {
                     best = Some((gi, oi, next));
@@ -536,7 +585,7 @@ mod tests {
     }
 
     fn input<'a>(kit: &'a [KitItem]) -> StepInput<'a> {
-        StepInput { revision: 7, capability: None, utility: true, candidates: Vec::new(), facts: &[], tryon: &[],
+        StepInput { revision: 7, capability: None, utility: true, black_market_reserve: 0, black_market_percentage: -1, candidates: Vec::new(), facts: &[], tryon: &[],
             limits: Limits { gold: 300, pack_slots: 15, weight: 1000 }, urgent: Vec::new(),
             params: [0; PARAMS], traits: &[], power: 0, carried: &[], cure_spell: false, kit, home_slots: 20 }
     }
@@ -578,6 +627,70 @@ mod tests {
     }
 
     #[test]
+    fn what_this_visit_bought_is_not_stored() {
+        // #651: the shallow Recall below is stored; bought this visit, it
+        // stays in the pack from plan schema 12 on.
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        let kit = [KitItem { just_bought: true, ..recall(Place::Pack) }];
+        let mut inp = input(&kit);
+        inp.revision = 12;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // Historical records keep their decision.
+        inp.revision = 11;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store]);
+        // Review of #654: the reported shape, a stack bought unaware (the
+        // flavour learned on purchase) and still flagged unknown.
+        let unaware = [KitItem { just_bought: true, need: -1, reduction: 0, unknown: true,
+            unknown_flavour: true, sell_shop: -1, ..recall(Place::Pack) }];
+        let mut inp = input(&unaware);
+        inp.revision = 11;
+        let mut u = Utility::of(&st, inp.kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store]);
+        inp.revision = 12;
+        let mut u = Utility::of(&st, inp.kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+    }
+
+    /// #711 (owner): with `town_store_only_overweight`, nothing goes home
+    /// while the pack is within its weight allowance; over it, the stacks
+    /// with the least keep value per weight go home until it is under.
+    #[test]
+    fn only_an_overweight_pack_stores_the_least_valuable_first() {
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        // The shallow Recall goes home today even with room (the test below).
+        let kit = [recall(Place::Pack)];
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions_with(&input(&kit), &mut u, &st, false).0, [Disposition::Store], "today");
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions_with(&input(&kit), &mut u, &st, true).0, [Disposition::Keep], "within the allowance");
+        // Over the allowance by 3: one 5-weight stack is enough, the one
+        // worth least per weight (the shallow Recall, worth nothing now).
+        let food = KitItem { slot: 1, kind: 43, weight: 5, need: index(Need::Food) as i8, ..recall(Place::Pack) };
+        let kit = [recall(Place::Pack), food];
+        let mut inp = input(&kit);
+        inp.limits.weight = -3;
+        let mut u = Utility::of(&st, &kit, false);
+        let (d, freed) = dispositions_with(&inp, &mut u, &st, true);
+        assert_eq!(d.iter().filter(|&&x| x == Disposition::Store).count(), 1, "{d:?}");
+        assert_eq!(d[0], Disposition::Store, "the least valuable goes: {d:?}");
+        assert!(inp.limits.weight + freed.weight >= 0, "under the allowance after it");
+        // Review of #714: the public entry point reads the switch the right
+        // way round (at the value the registry gives this test process).
+        let kit = [recall(Place::Pack)];
+        let on = crate::params::value(crate::params::Param::town_store_only_overweight) != 0;
+        let mut u = Utility::of(&st, &kit, false);
+        let public = dispositions(&input(&kit), &mut u, &st).0;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(public, dispositions_with(&input(&kit), &mut u, &st, on).0);
+        let mut u = Utility::of(&st, &kit, false);
+        assert_ne!(public, dispositions_with(&input(&kit), &mut u, &st, !on).0, "the switch changes this case");
+    }
+
+    #[test]
     fn shallow_recall_is_stored_even_with_room_and_deep_recall_is_taken() {
         let mut st = state(0, 1, 20);
         st.borg.trait_[BI_RECALL as usize] = 1;
@@ -597,7 +710,10 @@ mod tests {
 
     #[test]
     fn shallow_recall_loses_to_saving_gold_and_a_useful_wound_potion() {
-        let st = state(0, 1, 20);
+        // The soft gold price at borg-rs's 25 (the compiled default is 0
+        // since #493): saving gold still beats a shallow recall when priced.
+        let mut st = state(0, 1, 20);
+        st.core.cfg[BORG_TOWN_W_GOLD as usize] = 25;
         let u = Utility::of(&st, &[], false);
         let groups = [
             Group { key: GroupKey::Need(index(Need::Trip) as u8), options: vec![Choice::default(), Choice {
@@ -609,6 +725,32 @@ mod tests {
         assert_eq!(s.chosen, [0, 1]);
         assert_eq!(s.cost, 20);
         assert!(s.optimal);
+    }
+
+    /// #557: with `town_recall_reserve` 1, the shallow Recall that loses to
+    /// saving gold above is bought, and a carried one is kept in the pack.
+    #[test]
+    fn a_recall_reserve_buys_and_keeps_a_shallow_recall() {
+        let mut st = state(0, 1, 20);
+        st.core.cfg[BORG_TOWN_W_GOLD as usize] = 25;
+        let mut u = Utility::of(&st, &[], false);
+        u.recall_reserve = 1;
+        assert_eq!(u.gain(Need::Trip, UNIT), 50 * UNIT, "the first scroll is worth the full weight");
+        let groups = [
+            Group { key: GroupKey::Need(index(Need::Trip) as u8), options: vec![Choice::default(), Choice {
+                cost: 150, value: u.gain(Need::Trip, UNIT), ..Choice::default() }] },
+            Group { key: GroupKey::Need(index(Need::Healing) as u8), options: vec![Choice::default(), Choice {
+                cost: 20, value: u.gain(Need::Healing, 20 * UNIT), ..Choice::default() }] },
+        ];
+        let s = solve_cash(&groups, &Limits { gold: 300, pack_slots: 15, weight: 1000 }, u.gold_weight);
+        assert_eq!(s.chosen, [1, 1], "the Recall is bought with the potion");
+
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        let kit = [recall(Place::Pack)];
+        let mut u = Utility::of(&st, &kit, false);
+        u.recall_reserve = 1;
+        let (actions, _) = dispositions(&input(&kit), &mut u, &st);
+        assert_eq!(actions, [Disposition::Keep], "the reserve scroll stays in the pack");
     }
 
     #[test]
@@ -722,6 +864,29 @@ mod tests {
     }
 
     #[test]
+    fn a_known_detect_invisible_scroll_is_never_sold() {
+        // #831 (owner): worth nothing to the plan (no need, no power) and
+        // sellable, a known Scroll of Detect Invisible is still kept (or stored); the
+        // same stack in another kind is sold.
+        let mut st = state(0, 1, 20);
+        st.item_val.sv_scroll_detect_invis = 31;
+        let scroll = KitItem { joins_pack: false, need: -1, reduction: 0, sell_shop: 4, ..recall(Place::Pack) };
+        let kit = [scroll];
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Sell], "any other worthless stack");
+        st.items.items.push(crate::borg_item::blank_item());
+        st.items.items[0].tval = crate::headers::list_tvals_h::TV_SCROLL as u8;
+        st.items.items[0].sval = 31;
+        st.items.items[0].iqty = 1;
+        let mut u = Utility::of(&st, &kit, false);
+        let kept = dispositions(&input(&kit), &mut u, &st).0[0];
+        assert!(matches!(kept, Disposition::Keep | Disposition::Store), "Detect Invisible is never sold or dropped: {kept:?}");
+        let unread = [KitItem { unknown_flavour: true, ..scroll }];
+        let mut u = Utility::of(&st, &unread, false);
+        assert_eq!(dispositions(&input(&unread), &mut u, &st).0, [Disposition::Sell], "not yet identified: sold as before");
+    }
+
+    #[test]
     fn unknown_flavours_do_not_count_as_known_healing_or_get_stored_by_hidden_kind() {
         let mut st = state(0, 1, 20);
         st.borg.trait_[BI_ACLW as usize] = 5;
@@ -788,6 +953,79 @@ mod tests {
         let town=Journey::for_trip(&st,Some(forecast));assert_eq!(town.depth,12);
         st.core.cfg[BORG_TOWN_TARGET_DEPTH as usize]=2;st.core.cfg[BORG_TOWN_TRIP_TURNS as usize]=777;
         let explicit=Journey::for_trip(&st,Some(forecast));assert_eq!((explicit.depth,explicit.turns),(2,777));
+    }
+
+
+    /// borg-reborn-rs (#451): a carried Remove Hunger scroll supplies
+    /// nutrition (35: 50 to a hungry 15 percent), so the planner keeps it
+    /// below the food floor; valued at nothing it was stored or sold in the
+    /// visit that bought it.
+    #[test]
+    fn a_carried_remove_hunger_scroll_is_kept_while_food_is_short() {
+        use crate::borg_town_capability::{Model, PACK};
+        let st = state(0, 1, 20);
+        let scroll = KitItem { joins_pack: false, need: -1, reduction: 0, weight: 5, sell_shop: 5, proceeds: 5, ..recall(Place::Pack) };
+        let kit = [scroll];
+        let floor = 5 * UNIT;
+        let model = |units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            // the food floor: a requirement linear up to five rations' nutrition
+            curves[1] = [1, 100 * floor, -(crate::borg_town_capability::RATION_NUTRITION * floor), units, 0];
+            Model { available: Vec::new(), packing: None, curves,
+                supplies: if units > 0 { vec![[PACK, 0, 1, units]] } else { Vec::new() } }
+        };
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(35 * UNIT));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Keep]);
+        // worth nothing (before #451): sold at once
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(0));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Sell]);
+    }
+
+    /// borg-reborn-rs (#452): a known Potion of Speed is an emergency
+    /// reserve, valued per potion like the escapes (exposure), so the
+    /// planner keeps it while the pack has room. Valued as 20+2d10 turns
+    /// of buff against the whole trip (the old curve) it was about one
+    /// percent of the demand, under its slot's burden, and was sold.
+    #[test]
+    fn a_known_speed_potion_is_kept_while_the_pack_has_room() {
+        use crate::borg_town_capability::{Model, PACK};
+        use crate::borg_headers::borg_h::{BORG_TOWN_W_ESCAPE, BORG_TOWN_W_SUPPORT};
+        const SPEED: usize = 16;
+        // the measured arm's trip: 100000 turns
+        let mut st = state(5, 25, 100);
+        st.core.cfg[BORG_TOWN_TRIP_TURNS as usize] = 100_000;
+        let journey = Journey::of(&st);
+        let exposure = journey.exposure();
+        let weight = i64::from(st.cfg(BORG_TOWN_W_ESCAPE)) * exposure;
+        let potion = KitItem { joins_pack: false, need: -1, reduction: 0, weight: 4, sell_shop: 5, proceeds: 40, ..recall(Place::Pack) };
+        let kit = [potion];
+        let model = |curve: [i64; 5], units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            curves[SPEED] = curve;
+            Model { available: Vec::new(), packing: None, curves, supplies: vec![[PACK, 0, SPEED as i64, units]] }
+        };
+        // the pack has room (limits.pack_slots is 15): kept, not sold or stored
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model([SPEED as i64, weight, exposure, UNIT, 0], UNIT));
+        let mut inp = input(&kit);
+        inp.revision = 9;
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // several potions: the stack is kept whole
+        let stack = [KitItem { qty: 4, ..kit[0] }];
+        let mut u = Utility::of(&st, &stack, false);
+        u.capability = Some(model([SPEED as i64, weight, exposure, 4 * UNIT, 0], UNIT));
+        let mut inp = input(&stack);
+        inp.revision = 9;
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // the old valuation, 31 turns of buff against the trip: sold
+        let ordinary = i64::from(st.cfg(BORG_TOWN_W_SUPPORT)) * exposure;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model([SPEED as i64, ordinary, journey.turns * UNIT, 31 * UNIT, 0], 31 * UNIT));
+        let mut inp = input(&kit);
+        inp.revision = 9;
+        assert_ne!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
     }
 
 }

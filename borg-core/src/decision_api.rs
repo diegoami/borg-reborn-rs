@@ -85,6 +85,17 @@ crate::decision_tape::effect(st,"borg_fight_defend::borg_defend",format!("{:?}",
 }
 }
 pub mod borg_flow_kill {
+    pub use crate::memory::BorgKill;
+
+    pub fn breeder_hunt_now(st: &mut crate::state::BorgState) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_kill::breeder_hunt_now", String::new(), |st| crate::borg_flow_kill::breeder_hunt_now(st))
+    }
+
+    pub fn breeder_hunt_now_with(st: &mut crate::state::BorgState, engaged: bool) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_kill::breeder_hunt_now_with", format!("{:?}", (engaged,)), |st| crate::borg_flow_kill::breeder_hunt_now_with(st, engaged))
+    }
+
+
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -137,6 +148,43 @@ crate::decision_tape::engine("borg_flow_misc::borg_extract_dir",format!("{:?}",(
 }
 }
 pub mod borg_flow_stairs {
+    pub fn bounded_desperate_flight(st: &mut crate::state::BorgState, up: bool, max_moves: i32, ranged_reach: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_stairs::bounded_desperate_flight", format!("{:?}", (up, max_moves, ranged_reach,)), |st| crate::borg_flow_stairs::bounded_desperate_flight(st, up, max_moves, ranged_reach))
+    }
+
+    pub fn enqueue_down_stairs(st: &mut crate::state::BorgState) {
+        crate::decision_tape::effect(st, "borg_flow_stairs::enqueue_down_stairs", String::new(), |st| crate::borg_flow_stairs::enqueue_down_stairs(st))
+    }
+
+    pub fn more_refused(st: &mut crate::state::BorgState, brave: bool) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_stairs::more_refused", format!("{:?}", (brave,)), |st| crate::borg_flow_stairs::more_refused(st, brave))
+    }
+
+    pub fn resume_known_up_stair_flight(st: &mut crate::state::BorgState, danger: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_stairs::resume_known_up_stair_flight", format!("{:?}", (danger,)), |st| crate::borg_flow_stairs::resume_known_up_stair_flight(st, danger))
+    }
+
+    pub fn stair_path_ahead(st: &mut crate::state::BorgState, up: bool, percent: i32, reach: i32) -> Option<usize> {
+        crate::decision_tape::effect(st, "borg_flow_stairs::stair_path_ahead", format!("{:?}", (up, percent, reach,)), |st| crate::borg_flow_stairs::stair_path_ahead(st, up, percent, reach))
+    }
+
+    pub fn stair_path_blocker(st: &mut crate::state::BorgState, up: bool, percent: i32) -> Option<usize> {
+        crate::decision_tape::effect(st, "borg_flow_stairs::stair_path_blocker", format!("{:?}", (up, percent,)), |st| crate::borg_flow_stairs::stair_path_blocker(st, up, percent))
+    }
+
+    pub fn stair_steps_around(st: &mut crate::state::BorgState) -> [i32; 8] {
+        crate::decision_tape::effect(st, "borg_flow_stairs::stair_steps_around", String::new(), |st| crate::borg_flow_stairs::stair_steps_around(st))
+    }
+
+    pub fn weighted_down_flight(st: &mut crate::state::BorgState, depth: i32, weight: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_stairs::weighted_down_flight", format!("{:?}", (depth, weight,)), |st| crate::borg_flow_stairs::weighted_down_flight(st, depth, weight))
+    }
+
+    pub fn weighted_stair_reachable(st: &mut crate::state::BorgState, up: bool, avoid: bool, weight: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow_stairs::weighted_stair_reachable", format!("{:?}", (up, avoid, weight,)), |st| crate::borg_flow_stairs::weighted_stair_reachable(st, up, avoid, weight))
+    }
+
+
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -157,6 +205,10 @@ crate::decision_tape::effect(st,"borg_flow_stairs::borg_prep_leave_level_spells"
 }
 }
 pub mod borg_inventory {
+pub fn borg_first_empty_inventory_slot(st:&crate::state::BorgState) -> i32 {
+if !crate::decision_tape::active() { return crate::borg_inventory::borg_first_empty_inventory_slot(st); }
+crate::decision_tape::query(st,"borg_inventory::borg_first_empty_inventory_slot",format!("{:?}",()),||crate::borg_inventory::borg_first_empty_inventory_slot(st))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -174,8 +226,22 @@ pub fn borg_wield_slot(item: &borg_item) -> i32 {
 if !crate::decision_tape::active() { return crate::borg_inventory::borg_wield_slot(item); }
 crate::decision_tape::engine("borg_inventory::borg_wield_slot",format!("{:?}",(item,)),|| crate::borg_inventory::borg_wield_slot(item))
 }
+
+pub fn borg_item_worth_id(st:&mut crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item)->bool {
+if !crate::decision_tape::active() {return crate::borg_inventory::borg_item_worth_id(st,item);}
+crate::decision_tape::effect(st,"borg_inventory::borg_item_worth_id",format!("{:?}",(item,)),|st| crate::borg_inventory::borg_item_worth_id(st,item))
+}
 }
 pub mod borg_io {
+    pub fn borg_flush(st: &mut crate::state::BorgState) {
+        crate::decision_tape::effect(st, "borg_io::borg_flush", String::new(), |st| crate::borg_io::borg_flush(st))
+    }
+
+
+pub fn borg_keypresses(st:&mut crate::state::BorgState, keys:&[u8]) -> i32 {
+if !crate::decision_tape::active() { return crate::borg_io::borg_keypresses(st,keys); }
+crate::decision_tape::effect(st,"borg_io::borg_keypresses",format!("{:?}",(keys,)),|st|crate::borg_io::borg_keypresses(st,keys))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -193,8 +259,16 @@ if !crate::decision_tape::active() { return crate::borg_io::borg_note(st,what); 
 crate::decision_tape::effect(st,"borg_io::borg_note",format!("{:?}",(what,)),|st| crate::borg_io::borg_note(st,what))
 }
 pub fn borg_note_bytes(st:&mut BorgState,what:&[u8])  {
-if !crate::decision_tape::active() { return crate::borg_io::borg_note_bytes(st,what); }
-crate::decision_tape::effect(st,"borg_io::borg_note_bytes",format!("{:?}",(what,)),|st| crate::borg_io::borg_note_bytes(st,what))
+fn call(st:&mut BorgState,what:&[u8]) {
+    // #435: a constructed copied memory cannot lend the real engine root.
+    // Only this declared test-driver scope stubs the shared UI notification;
+    // the ordered effect and complete input/output state are still taped.
+    #[cfg(all(feature="test-r4-item-use",not(feature="test-r4-equipment")))]
+    if super::item_use_fixture::messages_stubbed() { return; }
+    crate::borg_io::borg_note_bytes(st,what)
+}
+if !crate::decision_tape::active() { return call(st,what); }
+crate::decision_tape::effect(st,"borg_io::borg_note_bytes",format!("{:?}",(what,)),|st| call(st,what))
 }
 
 use crate::borg_headers::borg_item_h::borg_item;
@@ -227,10 +301,6 @@ pub fn borg_eat_food_any(st:&mut BorgState) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_eat_food_any(st); }
 crate::decision_tape::effect(st,"borg_item_use::borg_eat_food_any",format!("{:?}",()),|st| crate::borg_item_use::borg_eat_food_any(st))
 }
-pub fn borg_eat_unknown(st:&mut BorgState) -> bool {
-if !crate::decision_tape::active() { return crate::borg_item_use::borg_eat_unknown(st); }
-crate::decision_tape::effect(st,"borg_item_use::borg_eat_unknown",format!("{:?}",()),|st| crate::borg_item_use::borg_eat_unknown(st))
-}
 pub fn borg_equips_staff_fail(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_staff_fail(st,sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_equips_staff_fail",format!("{:?}",(sval,)),|st| crate::borg_item_use::borg_equips_staff_fail(st,sval))
@@ -243,17 +313,9 @@ pub fn borg_quaff_potion(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_quaff_potion(st,sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_quaff_potion",format!("{:?}",(sval,)),|st| crate::borg_item_use::borg_quaff_potion(st,sval))
 }
-pub fn borg_quaff_unknown(st:&mut BorgState) -> bool {
-if !crate::decision_tape::active() { return crate::borg_item_use::borg_quaff_unknown(st); }
-crate::decision_tape::effect(st,"borg_item_use::borg_quaff_unknown",format!("{:?}",()),|st| crate::borg_item_use::borg_quaff_unknown(st))
-}
 pub fn borg_read_scroll(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_read_scroll(st,sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_read_scroll",format!("{:?}",(sval,)),|st| crate::borg_item_use::borg_read_scroll(st,sval))
-}
-pub fn borg_read_unknown(st:&mut BorgState) -> bool {
-if !crate::decision_tape::active() { return crate::borg_item_use::borg_read_unknown(st); }
-crate::decision_tape::effect(st,"borg_item_use::borg_read_unknown",format!("{:?}",()),|st| crate::borg_item_use::borg_read_unknown(st))
 }
 pub fn borg_use_staff(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_use_staff(st,sval); }
@@ -262,10 +324,6 @@ crate::decision_tape::effect(st,"borg_item_use::borg_use_staff",format!("{:?}",(
 pub fn borg_use_staff_fail(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_use_staff_fail(st,sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_use_staff_fail",format!("{:?}",(sval,)),|st| crate::borg_item_use::borg_use_staff_fail(st,sval))
-}
-pub fn borg_use_unknown(st:&mut BorgState) -> bool {
-if !crate::decision_tape::active() { return crate::borg_item_use::borg_use_unknown(st); }
-crate::decision_tape::effect(st,"borg_item_use::borg_use_unknown",format!("{:?}",()),|st| crate::borg_item_use::borg_use_unknown(st))
 }
 pub fn borg_zap_rod(st:&mut BorgState,sval:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_zap_rod(st,sval); }
@@ -290,9 +348,9 @@ pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_dragon(st,drag_sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_equips_dragon",format!("{:?}",(drag_sval,)),|st| crate::borg_item_use::borg_equips_dragon(st,drag_sval))
 }
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_item(st,activation,check_charge); }
-crate::decision_tape::effect(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|st| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
+crate::decision_tape::query(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
 }
 pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_ring(st,ring_sval); }
@@ -326,6 +384,16 @@ pub fn borg_backup_swap(st:&mut BorgState,p:i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_wear::borg_backup_swap(st,p); }
 crate::decision_tape::effect(st,"borg_item_wear::borg_backup_swap",format!("{:?}",(p,)),|st| crate::borg_item_wear::borg_backup_swap(st,p))
 }
+
+pub fn borg_best_stuff(st:&mut crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_item_wear::borg_best_stuff(st);}
+crate::decision_tape::effect(st,"borg_item_wear::borg_best_stuff",format!("{:?}",()),|st| crate::borg_item_wear::borg_best_stuff(st))
+}
+
+pub fn borg_wear_stuff(st:&mut crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_item_wear::borg_wear_stuff(st);}
+crate::decision_tape::effect(st,"borg_item_wear::borg_wear_stuff",format!("{:?}",()),|st| crate::borg_item_wear::borg_wear_stuff(st))
+}
 }
 pub mod borg_light {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -352,6 +420,19 @@ crate::decision_tape::effect(st,"borg_light::borg_light_beam",format!("{:?}",(si
 }
 }
 pub mod borg_magic {
+pub fn borg_spell_fail_rate(st: &crate::state::BorgState, spell: crate::borg_headers::borg_magic_h::borg_spells) -> i32 {
+    crate::decision_tape::query(st, "borg_magic::borg_spell_fail_rate", format!("{spell:?}"),
+        || crate::borg_magic::borg_spell_fail_rate(st, spell))
+}
+
+pub fn borg_spell_stat() -> i32 {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_spell_stat(); }
+crate::decision_tape::engine("borg_magic::borg_spell_stat",format!("{:?}",()),crate::borg_magic::borg_spell_stat)
+}
+pub fn borg_get_spell_entry(st:&crate::state::BorgState,book:i32,entry:i32)->Option<usize> {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_get_spell_entry(st,book,entry); }
+crate::decision_tape::query(st,"borg_magic::borg_get_spell_entry",format!("{:?}",(book,entry)),|| crate::borg_magic::borg_get_spell_entry(st,book,entry))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -395,8 +476,28 @@ pub fn borg_heroism_level(st: &BorgState) -> i32 {
 if !crate::decision_tape::active() { return crate::borg_magic::borg_heroism_level(st); }
 crate::decision_tape::query(st,"borg_magic::borg_heroism_level",format!("{:?}",()),|| crate::borg_magic::borg_heroism_level(st))
 }
+
+pub fn borg_get_book_num(sval: i32) -> i32 {
+if !crate::decision_tape::active() {return crate::borg_magic::borg_get_book_num(sval);}
+crate::decision_tape::engine("borg_magic::borg_get_book_num",format!("{:?}",(sval,)),|| crate::borg_magic::borg_get_book_num(sval))
+}
+
+pub fn borg_is_dungeon_book(tval: i32, sval: i32) -> bool {
+if !crate::decision_tape::active() {return crate::borg_magic::borg_is_dungeon_book(tval,sval);}
+crate::decision_tape::engine("borg_magic::borg_is_dungeon_book",format!("{:?}",(tval,sval,)),|| crate::borg_magic::borg_is_dungeon_book(tval,sval))
+}
+
+pub fn borg_primarily_caster() -> bool {
+if !crate::decision_tape::active() {return crate::borg_magic::borg_primarily_caster();}
+crate::decision_tape::engine("borg_magic::borg_primarily_caster",format!("{:?}",()),|| crate::borg_magic::borg_primarily_caster())
+}
 }
 pub mod borg_prepared {
+    pub fn prepared_c_for_decision(st: &mut crate::state::BorgState, depth: i32) -> Option<Vec<u8>> {
+        crate::decision_tape::effect(st, "borg_prepared::prepared_c_for_decision", format!("{:?}", (depth,)), |st| crate::borg_prepared::prepared_c_for_decision(st, depth))
+    }
+
+
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -476,8 +577,46 @@ pub fn borg_count_sell(st:&mut BorgState) -> i32 {
 if !crate::decision_tape::active() { return crate::borg_store_sell::borg_count_sell(st); }
 crate::decision_tape::effect(st,"borg_store_sell::borg_count_sell",format!("{:?}",()),|st| crate::borg_store_sell::borg_count_sell(st))
 }
+
+pub fn borg_min_item_quantity(st: &crate::state::BorgState, item: &crate::borg_headers::borg_item_h::borg_item) -> i32 {
+if !crate::decision_tape::active() {return crate::borg_store_sell::borg_min_item_quantity(st,item);}
+crate::decision_tape::query(st,"borg_store_sell::borg_min_item_quantity",format!("{:?}",(item,)),|| crate::borg_store_sell::borg_min_item_quantity(st,item))
+}
+
+pub fn borg_think_home_sell_useful(st: &mut crate::state::BorgState, best_home_power: &mut i32) -> bool {
+if !crate::decision_tape::active(){return crate::borg_store_sell::borg_think_home_sell_useful(st,best_home_power);}
+let before=*best_home_power;
+let (acted,power)=crate::decision_tape::effect(st,"borg_store_sell::borg_think_home_sell_useful",format!("{:?}",(before,)),|st|{let mut power=before;let acted=crate::borg_store_sell::borg_think_home_sell_useful(st,&mut power);(acted,power)});
+*best_home_power=power;acted
+}
+
+pub fn borg_think_shop_sell_useless(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_sell::borg_think_shop_sell_useless(st);}
+crate::decision_tape::effect(st,"borg_store_sell::borg_think_shop_sell_useless",format!("{:?}",()),|st| crate::borg_store_sell::borg_think_shop_sell_useless(st))
+}
+
+pub fn borg_think_shop_sell(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_sell::borg_think_shop_sell(st);}
+crate::decision_tape::effect(st,"borg_store_sell::borg_think_shop_sell",format!("{:?}",()),|st| crate::borg_store_sell::borg_think_shop_sell(st))
+}
+
+pub fn sell_selected_quantity(st: &mut crate::state::BorgState, quantity: i32) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_sell::sell_selected_quantity(st,quantity);}
+crate::decision_tape::effect(st,"borg_store_sell::sell_selected_quantity",format!("{quantity:?}"),|st| crate::borg_store_sell::sell_selected_quantity(st,quantity))
+}
+
+pub fn sold_item(st:&crate::state::BorgState,p:usize)->(i32,i32,i32) {
+if !crate::decision_tape::active() {return crate::borg_store_sell::sold_item(st,p);}
+crate::decision_tape::query(st,"borg_store_sell::sold_item",format!("{:?}",(p,)),|| crate::borg_store_sell::sold_item(st,p))
+}
 }
 pub mod borg_trait {
+pub fn borg_notice(st:&mut crate::state::BorgState, notice_swap:bool) {
+#[cfg(feature="test-r4-store")] crate::decision_api::store_fixture::observe_notice(st);
+
+if !crate::decision_tape::active() { return crate::borg_trait::borg_notice(st,notice_swap); }
+crate::decision_tape::effect(st,"borg_trait::borg_notice",format!("{:?}",(notice_swap,)),|st|crate::borg_trait::borg_notice(st,notice_swap))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -490,6 +629,90 @@ crate::decision_tape::query(st,"borg_trait::borg_uses_swaps",format!("{:?}",()),
 }
 }
 pub mod engine {
+pub fn extract_energy(speed: usize) -> u8 {
+    crate::decision_tape::engine("engine::extract_energy", format!("{:?}", (speed,)), || crate::engine::extract_energy(speed))
+}
+
+pub fn game_turn() -> i32 {
+    crate::decision_tape::engine("engine::game_turn", String::new(), || crate::engine::game_turn())
+}
+
+pub fn player_attack_rates() -> (i32, i32) {
+    crate::decision_tape::engine("engine::player_attack_rates", String::new(), || crate::engine::player_attack_rates())
+}
+
+pub fn player_blessed_weapon_bonus() -> i32 {
+    crate::decision_tape::engine("engine::player_blessed_weapon_bonus", String::new(), || crate::engine::player_blessed_weapon_bonus())
+}
+
+pub fn player_combat_speed() -> i32 {
+    crate::decision_tape::engine("engine::player_combat_speed", String::new(), || crate::engine::player_combat_speed())
+}
+
+pub fn player_depth() -> i32 {
+    crate::decision_tape::engine("engine::player_depth", String::new(), || crate::engine::player_depth())
+}
+
+pub fn player_grid() -> loc {
+    crate::decision_tape::engine("engine::player_grid", String::new(), || crate::engine::player_grid())
+}
+
+pub fn player_is_shapechanged() -> bool {
+    crate::decision_tape::engine("engine::player_is_shapechanged", String::new(), || crate::engine::player_is_shapechanged())
+}
+
+pub fn player_shape_name() -> Vec<u8> {
+    crate::decision_tape::engine("engine::player_shape_name", String::new(), || crate::engine::player_shape_name())
+}
+
+pub fn race_base_name(race: usize) -> &'static [u8] {
+    crate::decision_tape::engine("engine::race_base_name", format!("{:?}", (race,)), || crate::engine::race_base_name(race))
+}
+
+pub fn race_blow(race: usize, slot: usize) -> Option<crate::engine::RaceBlow> {
+    crate::decision_tape::engine("engine::race_blow", format!("{:?}", (race, slot,)), || crate::engine::race_blow(race, slot))
+}
+
+pub fn rand_state() -> (bool, u32) {
+    crate::decision_tape::engine("engine::rand_state", String::new(), || crate::engine::rand_state())
+}
+
+pub fn set_rand_state(quick: bool, value: u32) {
+    crate::decision_tape::engine("engine::set_rand_state", format!("{:?}", (quick, value,)), || crate::engine::set_rand_state(quick, value))
+}
+
+pub fn square_feat(x: i32, y: i32) -> u8 {
+    crate::decision_tape::engine("engine::square_feat", format!("{:?}", (x, y,)), || crate::engine::square_feat(x, y))
+}
+
+pub fn msg(st:&mut crate::state::BorgState, what:&[u8]) {
+if !crate::decision_tape::active() { return crate::engine::msg(st,what); }
+crate::decision_tape::effect(st,"engine::msg",format!("{:?}",(what,)),|st|crate::engine::msg(st,what))
+}
+pub fn adj_str_hold(index:usize) -> i32 {
+if !crate::decision_tape::active() { return crate::engine::adj_str_hold(index); }
+crate::decision_tape::engine("engine::adj_str_hold",format!("{:?}",(index,)),|| crate::engine::adj_str_hold(index))
+}
+pub fn class_book_dungeon(book:i32) -> bool {
+if !crate::decision_tape::active() { return crate::engine::class_book_dungeon(book); }
+crate::decision_tape::engine("engine::class_book_dungeon",format!("{:?}",(book,)),|| crate::engine::class_book_dungeon(book))
+}
+pub fn class_spell_weight() -> i32 {
+if !crate::decision_tape::active() { return crate::engine::class_spell_weight(); }
+crate::decision_tape::engine("engine::class_spell_weight",format!("{:?}",()),|| crate::engine::class_spell_weight())
+}
+pub fn class_total_spells() -> i32 {
+if !crate::decision_tape::active() { return crate::engine::class_total_spells(); }
+crate::decision_tape::engine("engine::class_total_spells",format!("{:?}",()),|| crate::engine::class_total_spells())
+}
+pub fn player_has(flag:u32) -> bool {
+if !crate::decision_tape::active() { return crate::engine::player_has(flag); }
+crate::decision_tape::engine("engine::player_has",format!("{:?}",(flag,)),|| crate::engine::player_has(flag))
+}
+pub fn spell_chance(index:i32) -> i16 {
+if !crate::decision_tape::active() { return crate::engine::spell_chance(index); }
+crate::decision_tape::engine("engine::spell_chance",format!("{:?}",(index,)),|| crate::engine::spell_chance(index))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -545,8 +768,13 @@ if !crate::decision_tape::active() { return crate::engine::race_flag_has(r_idx,f
 crate::decision_tape::engine("engine::race_flag_has",format!("{:?}",(r_idx,flag,)),|| crate::engine::race_flag_has(r_idx,flag))
 }
 pub fn randint0(m:u32) -> i32 {
-if !crate::decision_tape::active() { return crate::engine::randint0(m); }
-crate::decision_tape::engine("engine::randint0",format!("{:?}",(m,)),|| crate::engine::randint0(m))
+fn call(m:u32)->i32 {
+    #[cfg(feature="test-r4-equipment")]
+    super::equipment_fixture::observe_rng_draw();
+    crate::engine::randint0(m)
+}
+if !crate::decision_tape::active() { return call(m); }
+crate::decision_tape::engine("engine::randint0",format!("{:?}",(m,)),||call(m))
 }
 pub fn square_in_bounds(x:i32,y:i32) -> bool {
 if !crate::decision_tape::active() { return crate::engine::square_in_bounds(x,y); }
@@ -619,13 +847,13 @@ crate::decision_tape::engine("engine::slay_race_flag_multiplier",format!("{:?}",
 // #364: pointer-free metadata, copied at the original query point.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AttackRace {
-    pub ac: i32, pub d_char: i32, pub speed: i32, pub light: i32,
+    pub ac: i32, pub level: i32, pub avg_hp: i32, pub d_char: libc::wchar_t, pub speed: i32, pub light: i32,
     pub flags: [u8; 11], pub spell_flags: [u8; 12], pub has_friends: bool,
 }
 pub fn race(index: usize) -> AttackRace {
     crate::decision_tape::engine("engine::race", format!("{:?}", (index,)), || {
         let r = crate::engine::race(index);
-        AttackRace { ac:r.ac, d_char:r.d_char, speed:r.speed, light:r.light,
+        AttackRace { ac:r.ac, level:r.level, avg_hp:r.avg_hp, d_char:r.d_char, speed:r.speed, light:r.light,
             flags:r.flags, spell_flags:r.spell_flags,
             has_friends:!r.friends.is_null() || !r.friends_base.is_null() }
     })
@@ -644,6 +872,37 @@ pub fn term_geometry() -> TermGeometry {
 if !crate::decision_tape::active() { return crate::engine::term_geometry(); }
 crate::decision_tape::engine("engine::term_geometry",format!("{:?}",()),|| crate::engine::term_geometry())
 }
+
+pub fn no_light() -> bool {
+if !crate::decision_tape::active() { return crate::engine::no_light(); }
+crate::decision_tape::engine("engine::no_light",format!("{:?}",()),|| crate::engine::no_light())
+}
+
+pub fn adj_dex_safe(i: usize) -> i32 {
+if !crate::decision_tape::active() {return crate::engine::adj_dex_safe(i);}
+crate::decision_tape::engine("engine::adj_dex_safe",format!("{:?}",(i,)),|| crate::engine::adj_dex_safe(i))
+}
+
+pub fn kind_max_stack(kind: usize) -> i32 {
+if !crate::decision_tape::active() {return crate::engine::kind_max_stack(kind);}
+crate::decision_tape::engine("engine::kind_max_stack",format!("{:?}",(kind,)),|| crate::engine::kind_max_stack(kind))
+}
+
+pub fn store_feat_name(store: usize) -> Vec<u8> {
+if !crate::decision_tape::active() {return crate::engine::store_feat_name(store);}
+crate::decision_tape::engine("engine::store_feat_name",format!("{:?}",(store,)),|| crate::engine::store_feat_name(store))
+}
+
+pub fn player_square_shopnum() -> i32 {
+if !crate::decision_tape::active() {return crate::engine::player_square_shopnum();}
+crate::decision_tape::engine("engine::player_square_shopnum",format!("{:?}",()),|| crate::engine::player_square_shopnum())
+}
+
+/// Engine object-base stack limit, not a policy score.
+pub fn base_max_stack(tval:u32)->i32 {
+if !crate::decision_tape::active(){return crate::engine::kb_info()[tval as usize].max_stack;}
+crate::decision_tape::engine("engine::base_max_stack",format!("{:?}",(tval,)),||crate::engine::kb_info()[tval as usize].max_stack)
+}
 }
 pub mod shell {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -658,33 +917,59 @@ crate::decision_tape::effect(st,"shell::shopping_departure",format!("{:?}",()),|
 }
 }
 pub mod headers {
-pub mod list_mon_race_flags_h { pub use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL,RF_PASS_WALL}; pub use crate::headers::list_mon_race_flags_h::{RF_ANIMAL,RF_DEMON,RF_DRAGON,RF_EVIL,RF_GIANT,RF_HURT_COLD,RF_HURT_FIRE,RF_HURT_LIGHT,RF_HURT_ROCK,RF_IM_ACID,RF_IM_COLD,RF_IM_ELEC,RF_IM_FIRE,RF_IM_POIS,RF_MULTIPLY,RF_NEVER_MOVE,RF_NONLIVING,RF_NO_CONF,RF_NO_FEAR,RF_NO_SLEEP,RF_ORC,RF_QUESTOR,RF_SPIRIT,RF_TROLL,RF_UNDEAD,RF_UNIQUE};
+pub mod obj_properties_h {pub use crate::headers::obj_properties_h::{OBJ_MOD_MAX};}
+
+pub mod list_object_modifiers_h {pub use crate::headers::list_object_modifiers_h::{OBJ_MOD_SPEED};}
+
+pub mod list_elements_h {pub use crate::headers::list_elements_h::{ELEM_ACID,ELEM_CHAOS,ELEM_COLD,ELEM_DARK,ELEM_DISEN,ELEM_ELEC,ELEM_FIRE,ELEM_LIGHT,ELEM_NETHER,ELEM_NEXUS,ELEM_POIS,ELEM_SHARD,ELEM_SOUND};}
+
+pub mod list_player_flags_h { pub use crate::headers::list_player_flags_h::{PF_ZERO_FAIL}; }
+pub mod player_h { pub use crate::headers::player_h::{STAT_MAX}; }
+pub mod list_mon_race_flags_h {
+    pub use crate::headers::list_mon_race_flags_h::{RF_NEVER_BLOW, RF_OPEN_DOOR, RF_BASH_DOOR, RF_IM_DISEN, RF_IM_WATER, RF_REGENERATE}; pub use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL,RF_PASS_WALL}; pub use crate::headers::list_mon_race_flags_h::{RF_ANIMAL,RF_DEMON,RF_DRAGON,RF_EVIL,RF_GIANT,RF_HURT_COLD,RF_HURT_FIRE,RF_HURT_LIGHT,RF_HURT_ROCK,RF_IM_ACID,RF_IM_COLD,RF_IM_ELEC,RF_IM_FIRE,RF_IM_POIS,RF_MULTIPLY,RF_NEVER_MOVE,RF_NONLIVING,RF_NO_CONF,RF_NO_FEAR,RF_NO_SLEEP,RF_ORC,RF_QUESTOR,RF_SPIRIT,RF_TROLL,RF_UNDEAD,RF_UNIQUE};
 }
-pub mod list_options_h { pub use crate::headers::list_options_h::{OPT_birth_force_descend}; pub use crate::headers::list_options_h::{OPT_birth_randarts};
+pub mod list_options_h {pub use crate::headers::list_options_h::{OPT_store_buy_direct};
+
+pub use crate::headers::list_options_h::{OPT_birth_no_selling,OPT_birth_randarts};
+ pub use crate::headers::list_options_h::{OPT_birth_force_descend};
 }
-pub mod list_player_timed_h { pub use crate::headers::list_player_timed_h::{TMD_OPP_ACID}; }
+pub mod list_player_timed_h {
+    pub use crate::headers::list_player_timed_h::TMD_ATT_CONF;
+ pub use crate::headers::list_player_timed_h::{TMD_OPP_ACID}; }
 pub mod list_terrain_h { pub use crate::headers::list_terrain_h::{FEAT_LAVA,FEAT_LESS,FEAT_MORE,FEAT_NONE}; pub use crate::headers::list_terrain_h::{FEAT_BROKEN,FEAT_FLOOR,FEAT_MAGMA,FEAT_OPEN,FEAT_PASS_RUBBLE,FEAT_PERM};
 pub use crate::headers::list_terrain_h::{FEAT_CLOSED,FEAT_GRANITE,FEAT_RUBBLE};
 }
-pub mod list_tvals_h { pub use crate::headers::list_tvals_h::{TV_FOOD,TV_MUSHROOM,TV_POTION,TV_ROD,TV_STAFF}; pub use crate::headers::list_tvals_h::{TV_BOOTS,TV_FLASK,TV_LIGHT,TV_RING,TV_WAND};
-pub use crate::headers::list_tvals_h::{TV_SCROLL};
+pub mod list_tvals_h {pub use crate::headers::list_tvals_h::{TV_AMULET,TV_ARROW,TV_BOLT,TV_BOOTS,TV_BOW,TV_CHEST,TV_CLOAK,TV_CROWN,TV_DIGGING,TV_DRAG_ARMOR,TV_FLASK,TV_FOOD,TV_GLOVES,TV_HAFTED,TV_HARD_ARMOR,TV_HELM,TV_LIGHT,TV_MAGIC_BOOK,TV_MUSHROOM,TV_NATURE_BOOK,TV_OTHER_BOOK,TV_POLEARM,TV_POTION,TV_PRAYER_BOOK,TV_RING,TV_ROD,TV_SCROLL,TV_SHADOW_BOOK,TV_SHIELD,TV_SHOT,TV_SOFT_ARMOR,TV_STAFF,TV_SWORD,TV_WAND};
+
+
+
+
+
 }
 pub mod ui_event_h { pub use crate::headers::ui_event_h::{keycode_t}; }
 pub mod z_type_h { pub use crate::headers::z_type_h::{loc}; }
 
-pub mod object_h { pub use crate::headers::object_h::{activation};
+pub mod object_h {
+pub use crate::headers::object_h::{ELEM_MAX,EL_INFO_HATES,EL_INFO_IGNORE};
+ pub use crate::headers::object_h::{activation};
 }
 
 pub mod trap_h { pub use crate::headers::trap_h::{trap};
 }
 
-pub mod list_mon_spells_h { pub use crate::headers::list_mon_spells_h::{RSF_BA_WATE,RSF_BR_CHAO,RSF_BR_DARK,RSF_BR_DISE,RSF_BR_GRAV,RSF_BR_INER,RSF_BR_LIGHT,RSF_BR_NETH,RSF_BR_NEXU,RSF_BR_PLAS,RSF_BR_SHAR,RSF_BR_SOUN,RSF_BR_TIME,RSF_BR_WALL,RSF_S_AINU,RSF_S_ANIMAL,RSF_S_DEMON,RSF_S_DRAGON,RSF_S_HI_DEMON,RSF_S_HI_DRAGON,RSF_S_HI_UNDEAD,RSF_S_HOUND,RSF_S_HYDRA,RSF_S_KIN,RSF_S_MONSTER,RSF_S_MONSTERS,RSF_S_SPIDER,RSF_S_UNDEAD,RSF_S_UNIQUE,RSF_S_WRAITH};
+pub mod list_mon_spells_h {
+    pub use crate::headers::list_mon_spells_h::{RSF_MAX, RSF_HEAL, RSF_HEAL_KIN, RSF_SCARE, RSF_BLIND, RSF_CONF, RSF_DRAIN_MANA, RSF_FORGET}; pub use crate::headers::list_mon_spells_h::{RSF_BA_WATE,RSF_BR_CHAO,RSF_BR_DARK,RSF_BR_DISE,RSF_BR_GRAV,RSF_BR_INER,RSF_BR_LIGHT,RSF_BR_NETH,RSF_BR_NEXU,RSF_BR_PLAS,RSF_BR_SHAR,RSF_BR_SOUN,RSF_BR_TIME,RSF_BR_WALL,RSF_S_AINU,RSF_S_ANIMAL,RSF_S_DEMON,RSF_S_DRAGON,RSF_S_HI_DEMON,RSF_S_HI_DRAGON,RSF_S_HI_UNDEAD,RSF_S_HOUND,RSF_S_HYDRA,RSF_S_KIN,RSF_S_MONSTER,RSF_S_MONSTERS,RSF_S_SPIDER,RSF_S_UNDEAD,RSF_S_UNIQUE,RSF_S_WRAITH};
 }
 
-pub mod list_stats_h { pub use crate::headers::list_stats_h::{STAT_CON,STAT_DEX,STAT_INT,STAT_STR,STAT_WIS};
+pub mod list_stats_h {
+pub use crate::headers::list_stats_h::{STAT_CON,STAT_DEX,STAT_STR};
+pub use crate::headers::list_stats_h::{OBJ_MOD_STR}; pub use crate::headers::list_stats_h::{STAT_INT,STAT_WIS};
 }
 
-pub mod list_object_flags_h { pub use crate::headers::list_object_flags_h::{OF_NO_FUEL};
+pub mod list_object_flags_h {
+    pub use crate::headers::list_object_flags_h::{OF_EXPLODE, OF_THROWING};
+pub use crate::headers::list_object_flags_h::{OF_BURNS_OUT,OF_TAKES_FUEL};
+pub use crate::headers::list_object_flags_h::{OF_FREE_ACT,OF_HOLD_LIFE,OF_PROT_BLIND,OF_PROT_CONF,OF_SEE_INVIS,OF_TELEPATHY}; pub use crate::headers::list_object_flags_h::{OF_NO_FUEL};
 }
 
 pub mod ui_output_h { pub use crate::headers::ui_output_h::{region};
@@ -692,13 +977,19 @@ pub mod ui_output_h { pub use crate::headers::ui_output_h::{region};
 
 pub mod ui_term_h { pub use crate::headers::ui_term_h::{term};
 }
+pub mod list_effects_h { pub use crate::headers::list_effects_h::{EF_NOURISH};
+}
 }
 pub mod borg_headers {
-pub mod borg_item_h { pub use crate::borg_headers::borg_item_h::borg_item; }
-pub mod borg_h { pub use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY}; pub use crate::borg_headers::borg_h::{BORG_TOWN_PLAN};
-pub use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT};
+pub mod borg_item_h {
+pub use crate::borg_headers::borg_item_h::{BORG_CURSE_MAX,borg_item};
+  }
+pub mod borg_h {
+pub use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT,BORG_SELF_SCUM,BORG_TOWN_NO_STORES,BORG_VERBOSE,BORG_WORSHIPS_GOLD};
+pub use crate::borg_headers::borg_h::{BORG_NO_DEEPER,BORG_USES_DYNAMIC_CALCS,BORG_WORSHIPS_AC,BORG_WORSHIPS_DAMAGE,BORG_WORSHIPS_HP,BORG_WORSHIPS_MANA,BORG_WORSHIPS_SPEED}; pub use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY}; pub use crate::borg_headers::borg_h::{BORG_TOWN_PLAN};
+
 }
-pub mod borg_magic_h { pub use crate::borg_headers::borg_magic_h::{BERSERK_STRENGTH,CURE_POISON,DIMENSION_DOOR,HEALING,HERBAL_CURING,HEROISM,HOLY_WORD,MINOR_HEALING,PHASE_DOOR,PORTAL,RECHARGING,REMEMBRANCE,REMOVE_HUNGER,RESTORATION,REVITALIZE,SHADOW_SHIFT,TELEPORT_LEVEL,TELEPORT_SELF,UNHOLY_REPRIEVE,WORD_OF_RECALL}; pub use crate::borg_headers::borg_magic_h::{ACID_SPRAY,ANNIHILATE,BANISH_SPIRITS,CONFUSE_MONSTER,CRUSH,CURSE,DARK_SPEAR,DISENCHANT,DISPEL_EVIL,DISPEL_LIFE,DISPEL_UNDEAD,EARTH_RISING,ELECTRIC_ARC,EXPLOSION,FIRE_BALL,FRIGHTEN,FROST_BOLT,HOWL_OF_THE_DAMNED,ICE_STORM,LEAP_INTO_BATTLE,LIGHTNING_STRIKE,LIGHT_OF_VARDA,MAGIC_MISSILE,MAIM_FOE,MANA_BOLT,MANA_STORM,MASS_SLEEP,METEOR_SWARM,NETHER_BOLT,ORB_OF_DRAINING,RIFT,RIVER_OF_LIGHTNING,SHOCK_WAVE,SLEEP_EVIL,SLOW_MONSTER,SPEAR_OF_LIGHT,SPEAR_OF_OROME,STINKING_CLOUD,STORM_OF_DARKNESS,TAP_UNLIFE,THRUST_AWAY,TRANCE,TURN_STONE_TO_MUD,UNLEASH_CHAOS,VAMPIRE_STRIKE,VOLCANIC_ERUPTION,WHIRLWIND_ATTACK,borg_magic,borg_spells};
+pub mod borg_magic_h {pub use crate::borg_headers::borg_magic_h::{FOX_FORM, IDENTIFY_RUNE}; pub use crate::borg_headers::borg_magic_h::{BERSERK_STRENGTH,CURE_POISON,DIMENSION_DOOR,HEALING,HERBAL_CURING,HEROISM,HOLY_WORD,MINOR_HEALING,PHASE_DOOR,PORTAL,RECHARGING,REMEMBRANCE,REMOVE_HUNGER,RESTORATION,REVITALIZE,SHADOW_SHIFT,TELEPORT_LEVEL,TELEPORT_SELF,UNHOLY_REPRIEVE,WORD_OF_RECALL}; pub use crate::borg_headers::borg_magic_h::{ACID_SPRAY,ANNIHILATE,BANISH_SPIRITS,CONFUSE_MONSTER,CRUSH,CURSE,DARK_SPEAR,DISENCHANT,DISPEL_EVIL,DISPEL_LIFE,DISPEL_UNDEAD,EARTH_RISING,ELECTRIC_ARC,EXPLOSION,FIRE_BALL,FRIGHTEN,FROST_BOLT,HOWL_OF_THE_DAMNED,ICE_STORM,LEAP_INTO_BATTLE,LIGHTNING_STRIKE,LIGHT_OF_VARDA,MAGIC_MISSILE,MAIM_FOE,MANA_BOLT,MANA_STORM,MASS_SLEEP,METEOR_SWARM,NETHER_BOLT,ORB_OF_DRAINING,RIFT,RIVER_OF_LIGHTNING,SHOCK_WAVE,SLEEP_EVIL,SLOW_MONSTER,SPEAR_OF_LIGHT,SPEAR_OF_OROME,STINKING_CLOUD,STORM_OF_DARKNESS,TAP_UNLIFE,THRUST_AWAY,TRANCE,TURN_STONE_TO_MUD,UNLEASH_CHAOS,VAMPIRE_STRIKE,VOLCANIC_ERUPTION,WHIRLWIND_ATTACK,borg_magic,borg_spells};
 pub use crate::borg_headers::borg_magic_h::{BANISHMENT,BANISH_EVIL,BLESS,CLAIRVOYANCE,DETECTION,DOOR_CREATION,FUME_OF_MORDOR,GLYPH_OF_WARDING,GRIM_PURPOSE,GRONDS_BLOW,HASTE_SELF,MASS_BANISHMENT,PROTECTION_FROM_EVIL,QUAKE,RAPID_REGENERATION,RESISTANCE,RESIST_POISON,REVEAL_MONSTERS,SENSE_INVISIBLE,SMITE_EVIL,TELEPORT_OTHER,TREMOR,WORD_OF_DESTRUCTION};
 }
 pub mod borg_trait_h { pub use crate::borg_headers::borg_trait_h::{BI_ACCW,BI_AESCAPE,BI_AEZHEAL,BI_AFUEL,BI_AHEAL,BI_AMISSILES,BI_APHASE,BI_ATELEPORT,BI_CDEPTH,BI_CLASS,BI_CLEVEL,BI_CRSFEAR,BI_CRSNOTEL,BI_CURHP,BI_CURSP,BI_ESP,BI_FOOD,BI_GOLD,BI_IFIRE,BI_ISAFRAID,BI_ISBLIND,BI_ISCONFUSED,BI_ISCUT,BI_ISFIXALL,BI_ISFIXCON,BI_ISFIXDEX,BI_ISFIXEXP,BI_ISFIXINT,BI_ISFIXSTR,BI_ISFIXWIS,BI_ISHEAVYSTUN,BI_ISHUNGRY,BI_ISIMAGE,BI_ISPOISONED,BI_ISSTUN,BI_ISWEAK,BI_KING,BI_LIGHT,BI_MAXCLEVEL,BI_MAXDEPTH,BI_MAXHP,BI_MAXSP,BI_SPEED}; pub use crate::borg_headers::borg_trait_h::{BI_FRACT,BI_RCONF};
@@ -710,13 +1001,24 @@ pub mod borg_fight_attack_h { pub use crate::borg_headers::borg_fight_attack_h::
 pub mod borg_danger_h { pub use crate::borg_headers::borg_danger_h::{MONBLOW_ACID,MONBLOW_BLACK_BREATH,MONBLOW_BLIND,MONBLOW_COLD,MONBLOW_CONFUSE,MONBLOW_DISENCHANT,MONBLOW_DRAIN_CHARGES,MONBLOW_EAT_FOOD,MONBLOW_EAT_GOLD,MONBLOW_EAT_ITEM,MONBLOW_EAT_LIGHT,MONBLOW_ELEC,MONBLOW_EXP_10,MONBLOW_EXP_20,MONBLOW_EXP_40,MONBLOW_EXP_80,MONBLOW_FIRE,MONBLOW_HALLU,MONBLOW_HURT,MONBLOW_LOSE_ALL,MONBLOW_LOSE_CON,MONBLOW_LOSE_DEX,MONBLOW_LOSE_INT,MONBLOW_LOSE_STR,MONBLOW_LOSE_WIS,MONBLOW_NONE,MONBLOW_PARALYZE,MONBLOW_POISON,MONBLOW_SHATTER,MONBLOW_TERRIFY};
 }
 }
-pub mod borg { pub use crate::borg::BorgTime; }
+pub mod borg {
+    pub use crate::borg::{BorgGoal, BorgMonInfo};
+ pub use crate::borg::{BorgTime,BorgBest}; }
 pub mod borg_cave { pub use crate::borg_cave::{AUTO_MAX_X,AUTO_MAX_Y}; pub use crate::borg_cave::{BorgGrid,DUNGEON_HGT,DUNGEON_WID};
 }
 pub mod borg_update { pub use crate::borg_update::Detect;
 use crate::memory::BorgGrid; }
 
 pub mod borg_item {
+#[cfg(test)] pub use crate::borg_item::blank_item;
+pub fn item_note(st:&crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item)->Vec<u8> {
+if !crate::decision_tape::active() { return crate::borg_item::item_note(st,item); }
+crate::decision_tape::query(st,"borg_item::item_note",format!("{:?}",item),||crate::borg_item::item_note(st,item))
+}
+pub fn borg_item_weight(item:&crate::borg_headers::borg_item_h::borg_item)->i16 {
+if !crate::decision_tape::active() { return crate::borg_item::borg_item_weight(item); }
+crate::decision_tape::engine("borg_item::borg_item_weight",format!("{:?}",item),|| crate::borg_item::borg_item_weight(item))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_update::Detect;
@@ -751,12 +1053,16 @@ crate::decision_tape::query(st,"borg_item_id::borg_item_note_needs_id",format!("
 }
 
 pub mod borg_town_utility {
+    pub fn journey_fuel_goal(st: &crate::state::BorgState, reserve: i64) -> i64 {
+        crate::decision_tape::query(st, "borg_town_utility::journey_fuel_goal", format!("{reserve:?}"),
+            || crate::borg_town_utility::Journey::of(st).fuel_goal(reserve))
+    }
+
 use crate::state::BorgState;
-// #364: shared town/trip service; forecast can mutate owned trip memory.
+// Receiving oil reserves use the town planner’s standalone journey estimate.
 pub fn supply_journey_turns(st:&mut BorgState)->i64 {
     crate::decision_tape::effect(st,"borg_town_utility::supply_journey_turns",String::new(),|st| {
-        let forecast=crate::borg_trip::forecast(st);
-        crate::borg_town_utility::Journey::for_trip(st,forecast).turns
+        crate::borg_town_utility::Journey::of(st).turns
     })
 }
 }
@@ -799,6 +1105,30 @@ use crate::borg_update::Detect;
 use crate::memory::BorgGrid;
 use crate::headers::ui_event_h::keycode_t;
 use std::ffi::CStr;
+pub fn teleport_scroll_blocked(st: &mut BorgState, sval: i32) -> bool {
+    if !crate::decision_tape::active() {
+        return crate::borg_escape::teleport_scroll_blocked(st, sval);
+    }
+    crate::decision_tape::effect(st, "borg_escape::teleport_scroll_blocked", format!("{sval:?}"),
+        |st| crate::borg_escape::teleport_scroll_blocked(st, sval))
+}
+
+pub fn teleport_staff_blocked(st: &mut BorgState, sval: i32) -> bool {
+    if !crate::decision_tape::active() {
+        return crate::borg_escape::teleport_staff_blocked(st, sval);
+    }
+    crate::decision_tape::effect(st, "borg_escape::teleport_staff_blocked", format!("{sval:?}"),
+        |st| crate::borg_escape::teleport_staff_blocked(st, sval))
+}
+
+pub fn teleport_activation_blocked(st: &mut BorgState, activation: i32) -> bool {
+    if !crate::decision_tape::active() {
+        return crate::borg_escape::teleport_activation_blocked(st, activation);
+    }
+    crate::decision_tape::effect(st, "borg_escape::teleport_activation_blocked", format!("{activation:?}"),
+        |st| crate::borg_escape::teleport_activation_blocked(st, activation))
+}
+
 pub fn borg_caution_teleport(st:&mut BorgState,emergency:i32,turns:i32)->bool {
 if !crate::decision_tape::active() { return crate::borg_escape::borg_caution_teleport(st,emergency,turns); }
 crate::decision_tape::effect(st,"borg_escape::borg_caution_teleport",format!("{:?}",(emergency,turns,)),|st| crate::borg_escape::borg_caution_teleport(st,emergency,turns))
@@ -807,4 +1137,384 @@ pub fn borg_surrounded(st:&mut BorgState)->bool {
 if !crate::decision_tape::active() { return crate::borg_escape::borg_surrounded(st); }
 crate::decision_tape::effect(st,"borg_escape::borg_surrounded",format!("{:?}",()),|st| crate::borg_escape::borg_surrounded(st))
 }
+}
+
+pub mod borg_item_analyze {
+pub fn borg_ego_has_random_power(index:usize)->bool {
+if !crate::decision_tape::active() { return crate::borg_item_analyze::borg_ego_has_random_power(index); }
+crate::decision_tape::engine("borg_item_analyze::borg_ego_has_random_power",format!("{:?}",(index,)),|| crate::borg_item_analyze::borg_ego_has_random_power(index))
+}
+use crate::state::BorgState;
+use crate::borg_headers::borg_item_h::borg_item;
+pub fn borg_obj_has_effect(kind: u32, index: i32, subtype: i32) -> bool {
+if !crate::decision_tape::active() { return crate::borg_item_analyze::borg_obj_has_effect(kind,index,subtype); }
+crate::decision_tape::engine("borg_item_analyze::borg_obj_has_effect",format!("{:?}",(kind,index,subtype,)),|| crate::borg_item_analyze::borg_obj_has_effect(kind,index,subtype))
+}
+}
+
+pub mod borg_object_log {
+use crate::state::BorgState;
+use crate::borg_headers::borg_item_h::borg_item;
+pub fn log_use(st: &BorgState, action: &str, item: &borg_item) {
+if !crate::decision_tape::active() { return crate::borg_object_log::log_use(st,action,item); }
+crate::decision_tape::query(st,"borg_object_log::log_use",format!("{:?}",(action,item,)),|| crate::borg_object_log::log_use(st,action,item))
+}
+
+pub fn log_buy(st:&crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item,shop:&str,cost:i32,home:bool,count:u32) {
+if !crate::decision_tape::active() {return crate::borg_object_log::log_buy(st,item,shop,cost,home,count);}
+crate::decision_tape::query(st,"borg_object_log::log_buy",format!("{:?}",(item,shop,cost,home,count)),|| crate::borg_object_log::log_buy(st,item,shop,cost,home,count))
+}
+}
+
+// #435: test-driver capability, absent from normal builds and forbidden to policy.
+#[cfg(feature="test-r4-item-use")]
+pub mod item_use_fixture {
+    use std::cell::Cell;
+    thread_local! { static STUB_MESSAGES:Cell<bool>=const {Cell::new(false)}; }
+    pub(crate) fn messages_stubbed()->bool { STUB_MESSAGES.with(Cell::get) }
+    pub fn with_stubbed_messages<T>(run:impl FnOnce()->T)->T {
+        struct Reset(bool);
+        impl Drop for Reset { fn drop(&mut self) { STUB_MESSAGES.with(|v|v.set(self.0)); } }
+        let _reset=Reset(STUB_MESSAGES.with(|v|v.replace(true)));
+        run()
+    }
+}
+
+/// R434: engine-derived activation-name lookup; policy chain is owned by each implementation.
+pub mod borg_item_activation { pub use crate::borg_item_activation::ActivationIds; }
+/// R434: configured formula policy explicitly remains shared, with ordered full-state replay.
+pub mod borg_formulas {
+pub fn borg_power_dynamic(st:&mut crate::state::BorgState)->i32 {
+if !crate::decision_tape::active() { return crate::borg_formulas::borg_power_dynamic(st); }
+crate::decision_tape::effect(st,"borg_formulas::borg_power_dynamic",format!("{:?}",()),crate::borg_formulas::borg_power_dynamic)
+}
+}
+
+pub mod borg_power {
+pub fn borg_power(st:&mut crate::state::BorgState) -> i32 {
+if !crate::decision_tape::active() { return crate::borg_power::borg_power(st); }
+crate::decision_tape::effect(st,"borg_power::borg_power",format!("{:?}",()),|st|crate::borg_power::borg_power(st))
+}
+}
+
+pub mod borg_store {
+pub use crate::borg_store::{BORG_HOME,SHOP_MENU_ITEMS};
+pub fn borg_home_full(st:&crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() { return crate::borg_store::borg_home_full(st); }
+crate::decision_tape::query(st,"borg_store::borg_home_full",format!("{:?}",()),||crate::borg_store::borg_home_full(st))
+}
+pub fn borg_inventory_full(st:&crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() { return crate::borg_store::borg_inventory_full(st); }
+crate::decision_tape::query(st,"borg_store::borg_inventory_full",format!("{:?}",()),||crate::borg_store::borg_inventory_full(st))
+}
+}
+
+pub mod borg_think {
+pub fn borg_oops(st:&mut crate::state::BorgState, what:&str) {
+if !crate::decision_tape::active() { return crate::borg_think::borg_oops(st,what); }
+crate::decision_tape::effect(st,"borg_think::borg_oops",format!("{:?}",(what,)),|st|crate::borg_think::borg_oops(st,what))
+}
+}
+
+#[cfg(feature="test-r4-equipment")]
+pub mod equipment_fixture {
+    pub fn rng_is_quick() -> bool { crate::engine::rand_state().0 }
+    use std::cell::Cell;
+    thread_local! { static RNG_DRAWS:Cell<u64>=const {Cell::new(0)}; }
+    pub(super) fn observe_rng_draw() { RNG_DRAWS.with(|n|n.set(n.get()+1)); }
+    pub fn rng_draws()->u64 { RNG_DRAWS.with(Cell::get) }
+}
+
+pub mod borg_home_power {
+pub fn borg_power_home(st: &crate::state::BorgState) -> i32 {
+if !crate::decision_tape::active() {return crate::borg_home_power::borg_power_home(st);}
+crate::decision_tape::query(st,"borg_home_power::borg_power_home",format!("{:?}",()),|| crate::borg_home_power::borg_power_home(st))
+}
+}
+
+pub mod borg_store_buy {
+pub fn borg_think_shop_buy_useful(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_shop_buy_useful(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_shop_buy_useful",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_shop_buy_useful(st))
+}
+
+pub fn borg_think_home_buy_useful(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_home_buy_useful(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_home_buy_useful",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_home_buy_useful(st))
+}
+
+pub fn borg_think_shop_grab_interesting(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_shop_grab_interesting(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_shop_grab_interesting",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_shop_grab_interesting(st))
+}
+
+pub fn borg_think_home_grab_useless(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_home_grab_useless(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_home_grab_useless",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_home_grab_useless(st))
+}
+
+pub fn borg_think_home_buy_swap_weapon(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_home_buy_swap_weapon(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_home_buy_swap_weapon",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_home_buy_swap_weapon(st))
+}
+
+pub fn borg_think_home_buy_swap_armour(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_home_buy_swap_armour(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_home_buy_swap_armour",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_home_buy_swap_armour(st))
+}
+
+pub fn borg_think_shop_buy(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::borg_think_shop_buy(st);}
+crate::decision_tape::effect(st,"borg_store_buy::borg_think_shop_buy",format!("{:?}",()),|st| crate::borg_store_buy::borg_think_shop_buy(st))
+}
+
+pub fn take_selected_for_sale(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_store_buy::take_selected_for_sale(st);}
+crate::decision_tape::effect(st,"borg_store_buy::take_selected_for_sale",format!("{:?}",()),|st| crate::borg_store_buy::take_selected_for_sale(st))
+}
+
+pub fn confirm_purchase(st: &mut crate::state::BorgState, item: &crate::borg_headers::borg_item_h::borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+if !crate::decision_tape::active() {return crate::borg_store_buy::confirm_purchase(st,item,shop,keep,qty,paid);}
+crate::decision_tape::effect(st,"borg_store_buy::confirm_purchase",format!("{:?}",(item,shop,keep,qty,paid)),|st| crate::borg_store_buy::confirm_purchase(st,item,shop,keep,qty,paid))
+}
+
+pub use crate::borg_store_buy::BoughtItem;
+
+pub fn bought_item(st:&crate::state::BorgState,i:usize)->BoughtItem {
+if !crate::decision_tape::active() {return crate::borg_store_buy::bought_item(st,i);}
+crate::decision_tape::query(st,"borg_store_buy::bought_item",format!("{:?}",(i,)),|| crate::borg_store_buy::bought_item(st,i))
+}
+
+
+
+
+}
+
+pub mod borg_think_store {
+pub fn borg_choose_shop(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_think_store::borg_choose_shop(st);}
+crate::decision_tape::effect(st,"borg_think_store::borg_choose_shop",format!("{:?}",()),|st| crate::borg_think_store::borg_choose_shop(st))
+}
+
+pub fn borg_think_store(st: &mut crate::state::BorgState) -> bool {
+if !crate::decision_tape::active() {return crate::borg_think_store::borg_think_store(st);}
+crate::decision_tape::effect(st,"borg_think_store::borg_think_store",format!("{:?}",()),|st| crate::borg_think_store::borg_think_store(st))
+}
+
+pub fn town_strategy_disabled(st:&crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_think_store::town_strategy_disabled(st);}
+crate::decision_tape::query(st,"borg_think_store::town_strategy_disabled",format!("{:?}",()),|| crate::borg_think_store::town_strategy_disabled(st))
+}
+}
+
+pub mod borg_buy_strategy {
+pub use crate::borg_buy_strategy::{RESERVE410_CURE,RESERVE410_PHASE};
+
+pub fn reserve410_unmet(st:&crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_buy_strategy::reserve410_unmet(st);}
+crate::decision_tape::query(st,"borg_buy_strategy::reserve410_unmet",format!("{:?}",()),|| crate::borg_buy_strategy::reserve410_unmet(st))
+}
+
+pub fn buy_identify_enabled(st:&crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_buy_strategy::buy_identify_enabled(st);}
+crate::decision_tape::query(st,"borg_buy_strategy::buy_identify_enabled",format!("{:?}",()),|| crate::borg_buy_strategy::buy_identify_enabled(st))
+}
+
+pub fn is_learning_candidate(st:&crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item)->bool {
+if !crate::decision_tape::active() {return crate::borg_buy_strategy::is_learning_candidate(st,item);}
+crate::decision_tape::query(st,"borg_buy_strategy::is_learning_candidate",format!("{:?}",(item,)),|| crate::borg_buy_strategy::is_learning_candidate(st,item))
+}
+
+pub fn retain_reserve410_item(st:&crate::state::BorgState,item:&crate::borg_headers::borg_item_h::borg_item)->bool {
+if !crate::decision_tape::active() {return crate::borg_buy_strategy::retain_reserve410_item(st,item);}
+crate::decision_tape::query(st,"borg_buy_strategy::retain_reserve410_item",format!("{:?}",(item,)),|| crate::borg_buy_strategy::retain_reserve410_item(st,item))
+}
+}
+
+pub mod borg_home_notice {
+pub fn borg_notice_home(st:&mut crate::state::BorgState,in_item:Option<&crate::borg_headers::borg_item_h::borg_item>,no_items:bool) {
+if !crate::decision_tape::active() {return crate::borg_home_notice::borg_notice_home(st,in_item,no_items);}
+crate::decision_tape::effect(st,"borg_home_notice::borg_notice_home",format!("{:?}",(in_item,no_items,)),|st| crate::borg_home_notice::borg_notice_home(st,in_item,no_items))
+}
+}
+
+pub mod borg_town_live {
+pub fn buy_quantity(st: &crate::state::BorgState) -> i32 {
+    if !crate::decision_tape::active() {return crate::borg_town_live::buy_quantity(st);}
+    crate::decision_tape::query(st,"borg_town_live::buy_quantity",String::new(),|| crate::borg_town_live::buy_quantity(st))
+}
+
+pub fn active(st:&crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_town_live::active(st);}
+crate::decision_tape::query(st,"borg_town_live::active",format!("{:?}",()),|| crate::borg_town_live::active(st))
+}
+
+pub fn choose(st:&mut crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_town_live::choose(st);}
+crate::decision_tape::effect(st,"borg_town_live::choose",format!("{:?}",()),|st| crate::borg_town_live::choose(st))
+}
+
+pub fn execute_store(st:&mut crate::state::BorgState)->bool {
+if !crate::decision_tape::active() {return crate::borg_town_live::execute_store(st);}
+crate::decision_tape::effect(st,"borg_town_live::execute_store",format!("{:?}",()),|st| crate::borg_town_live::execute_store(st))
+}
+}
+
+pub mod borg_town_shadow {
+pub fn shadow_visit(st:&mut crate::state::BorgState) {
+if !crate::decision_tape::active() {return crate::borg_town_shadow::shadow_visit(st);}
+crate::decision_tape::effect(st,"borg_town_shadow::shadow_visit",format!("{:?}",()),|st| crate::borg_town_shadow::shadow_visit(st))
+}
+}
+
+pub mod borg_cursed {
+pub fn harmful_curse(item: &crate::borg_headers::borg_item_h::borg_item) -> Option<&'static str> {
+    crate::borg_cursed::harmful_curse(item)
+}
+}
+
+pub mod borg_town_dump {
+pub fn record_phase_observation(st: &mut crate::state::BorgState, shop: Option<usize>) {
+    if !crate::decision_tape::active() {
+        return crate::borg_town_dump::record_phase_observation(st, shop);
+    }
+    crate::decision_tape::effect(st, "borg_town_dump::record_phase_observation", format!("{shop:?}"),
+        |st| crate::borg_town_dump::record_phase_observation(st, shop))
+}
+
+pub fn record_reason(bytes:&[u8]) {
+if !crate::decision_tape::active() {return crate::borg_town_dump::record_reason(bytes);}
+crate::decision_tape::engine("borg_town_dump::record_reason",format!("{:?}",(bytes,)),|| crate::borg_town_dump::record_reason(bytes))
+}
+
+pub fn dump_town_visit(st:&mut crate::state::BorgState) {
+if !crate::decision_tape::active() {return crate::borg_town_dump::dump_town_visit(st);}
+crate::decision_tape::effect(st,"borg_town_dump::dump_town_visit",format!("{:?}",()),|st| crate::borg_town_dump::dump_town_visit(st))
+}
+
+pub fn dump_purchase(st:&mut crate::state::BorgState,shop:i32,item:&crate::borg_headers::borg_item_h::borg_item) {
+if !crate::decision_tape::active() {return crate::borg_town_dump::dump_purchase(st,shop,item);}
+crate::decision_tape::effect(st,"borg_town_dump::dump_purchase",format!("{:?}",(shop,item,)),|st| crate::borg_town_dump::dump_purchase(st,shop,item))
+}
+}
+
+/// Shared configuration metadata for native test-state initialization.
+#[cfg(test)] pub mod borg_init {pub use crate::borg_init::BORG_SETTINGS;}
+
+/// Test-only observation at the existing notice boundary; it never changes the policy state.
+#[cfg(feature="test-r4-store")]
+pub mod store_fixture {
+    use std::cell::RefCell;
+    pub type NoticeObservation=(u8,i16,u8,i16,u8,i16);
+    thread_local! {static NOTICES:RefCell<Option<Vec<NoticeObservation>>>=const {RefCell::new(None)};}
+    pub fn start_notices(){NOTICES.with(|v|{let mut v=v.borrow_mut();assert!(v.is_none());*v=Some(Vec::new());});}
+    pub fn finish_notices()->Vec<NoticeObservation>{NOTICES.with(|v|v.borrow_mut().take().expect("active notice observation"))}
+    pub(crate) fn observe_notice(st:&crate::state::BorgState){NOTICES.with(|v|{
+        if let Some(out)=v.borrow_mut().as_mut(){
+            let pack=&st.items.items[0];let home=&st.store.shops[crate::borg_store::BORG_HOME].ware[0];let magic=&st.store.shops[5].ware[0];
+            out.push((pack.iqty,pack.pval,home.iqty,home.pval,magic.iqty,magic.pval));
+        }
+    });}
+}
+
+pub mod borg_flow {
+    pub fn borg_flow_clear(st: &mut crate::state::BorgState) {
+        crate::decision_tape::effect(st, "borg_flow::borg_flow_clear", String::new(), |st| crate::borg_flow::borg_flow_clear(st))
+    }
+
+    pub fn borg_flow_commit(st: &mut crate::state::BorgState, who: &std::ffi::CStr, why: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow::borg_flow_commit", format!("{:?}", (who, why,)), |st| crate::borg_flow::borg_flow_commit(st, who, why))
+    }
+
+    pub fn borg_flow_enqueue_grid(st: &mut crate::state::BorgState, y: i32, x: i32) {
+        crate::decision_tape::effect(st, "borg_flow::borg_flow_enqueue_grid", format!("{:?}", (y, x,)), |st| crate::borg_flow::borg_flow_enqueue_grid(st, y, x))
+    }
+
+    pub fn borg_flow_old(st: &mut crate::state::BorgState, why: i32) -> bool {
+        crate::decision_tape::effect(st, "borg_flow::borg_flow_old", format!("{:?}", (why,)), |st| crate::borg_flow::borg_flow_old(st, why))
+    }
+
+    pub fn borg_flow_spread( st: &mut crate::state::BorgState, depth: i32, optimize: bool, avoid: bool, tunneling: bool, stair_idx: i32, sneak: bool, ) {
+        crate::decision_tape::effect(st, "borg_flow::borg_flow_spread", format!("{:?}", (depth, optimize, avoid, tunneling, stair_idx, sneak,)), |st| crate::borg_flow::borg_flow_spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak))
+    }
+
+}
+
+pub mod borg_kit {
+    pub fn leave_danger_percent(st: &crate::state::BorgState) -> Option<i32> {
+        crate::decision_tape::query(st, "borg_kit::leave_danger_percent", String::new(), || crate::borg_kit::leave_danger_percent(st))
+    }
+
+}
+
+pub mod borg_town_hunt {
+    pub use crate::borg_town_hunt::REASON;
+
+    pub fn viewed_target(st: &crate::state::BorgState, kill: &crate::memory::BorgKill) -> bool {
+        crate::decision_tape::query(st, "borg_town_hunt::viewed_target", format!("{:?}", (kill,)), || crate::borg_town_hunt::viewed_target(st, kill))
+    }
+
+    pub fn avoids_maggot(st: &crate::state::BorgState, race: usize) -> bool {
+        crate::decision_tape::query(st, "borg_town_hunt::avoids_maggot", format!("{:?}", (race,)), || crate::borg_town_hunt::avoids_maggot(st, race))
+    }
+
+    pub fn controls_target(st: &crate::state::BorgState, race: usize) -> bool {
+        crate::decision_tape::query(st, "borg_town_hunt::controls_target", format!("{:?}", (race,)), || crate::borg_town_hunt::controls_target(st, race))
+    }
+
+}
+
+pub mod borg_trip {
+    pub fn legacy_sale_hold(st: &mut crate::state::BorgState) -> bool {
+        crate::decision_tape::effect(st, "borg_trip::legacy_sale_hold", String::new(), |st| crate::borg_trip::legacy_sale_hold(st))
+    }
+
+}
+
+pub mod core_trace {
+    pub use crate::core_trace::AttackRanking;
+
+    pub fn attack_ranking() -> Option<AttackRanking> {
+        crate::decision_tape::engine("core_trace::attack_ranking", String::new(), || crate::core_trace::attack_ranking())
+    }
+
+    pub fn record_attack_ranking(trace: Option<AttackRanking>, winner: Option<i32>) {
+        crate::decision_tape::engine("core_trace::record_attack_ranking", format!("{trace:?} {winner:?}"), || crate::core_trace::record_attack_ranking(trace, winner))
+    }
+
+}
+
+pub mod borg_cave_view {
+    pub use crate::borg_cave_view::BORG_VIEW;
+}
+
+pub mod borg_flow_take {
+    pub use crate::borg_flow_take::GOAL_TAKE;
+}
+
+pub mod attack_types {
+    pub use crate::borg_fight_attack::{AttackCost, FocusedAttack};
+    pub use crate::attack_preference::{AttackKind, Candidate, Family};
+}
+
+pub mod phase_types {
+    pub use crate::borg_escape::{PhaseCheck, PhaseSite, PhaseVerdict, TeleportBlock};
+}
+
+pub mod unseen_bumps {
+    pub use crate::borg_caution::{UnseenBump, UnseenBumps, UnseenOilShot};
+}
+
+pub mod scary_list {
+    pub use crate::scary_list::{attack_named, attack_reason, is_ignored, ranged_reason, Situation};
+    pub fn selected() -> Option<&'static crate::scary_list::List> {
+        crate::decision_tape::engine("scary_list::selected", String::new(), crate::scary_list::selected)
+    }
+}
+
+pub mod borg_recover {
+    pub fn note_rest_hunt(active: bool) -> bool {
+        crate::decision_tape::engine("borg_recover::note_rest_hunt", format!("{active:?}"),
+            || crate::borg_recover::note_rest_hunt(active))
+    }
 }

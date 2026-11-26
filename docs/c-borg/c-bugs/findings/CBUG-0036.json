@@ -1,0 +1,74 @@
+{
+  "id": "CBUG-0036",
+  "source_groups": [
+    11
+  ],
+  "title": "borg_reincarnate_start(), only when the Borg respawns (game option cheat_live on and borg_cheat_death off, or borg_respawn_winners)",
+  "site": "src/borg/borg-reincarnate.c:borg_reincarnate_start",
+  "origin": "upstream-c",
+  "priority": "med",
+  "checked": "2026-11-05",
+  "c": "reported-at-pin; not independently validated",
+  "neo": "unreviewed",
+  "mandos": "unreviewed",
+  "impact": {
+    "level": "reported-only",
+    "description": "The report is retained below. Legal reachability, actual game consequence and port applicability still require independent review."
+  },
+  "notes": "Lead supplied by borg-rs. A C function link below is context, not proof that this report is independently validated. Related sub-symptoms may be split during triage; no fix or carry is implied.",
+  "tracker": {
+    "repository": "diegoami/neo-angband-tracker",
+    "number": 52
+  },
+  "references": [
+    {
+      "role": "c",
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg/borg-reincarnate.c",
+      "start": 304,
+      "end": 362,
+      "description": "C function context; reported fault site not yet independently checked"
+    },
+    {
+      "role": "borg_rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+      "path": "docs/c-bugs.md",
+      "start": 143,
+      "end": 152,
+      "description": "reported C observation; not an independent validation"
+    }
+  ],
+  "lead_sources": [
+    {
+      "kind": "borg-rs",
+      "repository": "diegoami/borg-rs",
+      "commit": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f",
+      "groups": [
+        11
+      ]
+    }
+  ],
+  "reported_sources": [
+    {
+      "group": 11,
+      "reference": {
+        "role": "borg_rs",
+        "repository": "diegoami/borg-rs",
+        "commit": "c375a82456741f7e4d4d410b27390ba68077ba9c",
+        "path": "docs/c-bugs.md",
+        "start": 143,
+        "end": 152,
+        "description": "reported C observation; not an independent validation"
+      },
+      "text": "`borg-reincarnate.c`, `borg_reincarnate_start()`, only when the Borg\n  respawns (game option `cheat_live` on and `borg_cheat_death` off, or\n  `borg_respawn_winners`). It types `all_letters[race]` and\n  `all_letters[class]`, but the birth menus use `all_letters_nohjkl`\n  (ui-birth.c). So index 7 (Half-Troll, Ranger) types 'h', which is no\n  menu letter, and indexes 8 and up select the entry before the one meant\n  (race 8, Dunadan, types 'i' and gets a Half-Troll; class 8, Blackguard,\n  gets the Ranger; race 10, Kobold, types 'k', no menu letter either).\n  The random name is still made for the race meant. Seen in local respawn\n  runs (seed 1011: race 8 chosen, a Half-Troll with a human name rolled)."
+    }
+  ],
+  "evidence_at_import": "reported-lead",
+  "status_at_import": "investigate",
+  "proposals_at_import": [],
+  "next_at_import": "Check the cited C context and current port, separate harmless/unreachable behavior from defects, then retain a legal reproduction and controls before a ready local proposal.",
+  "record_kind": "historical-import-and-provenance",
+  "original_import_pin": "3fed84b19506ea9cc9d5d07fc3de213856a39a7f"
+}

@@ -1,0 +1,285 @@
+{
+  "schema": "borg-reborn-rs/r437-source@1",
+  "receiving_commit": "64acb1f1e5c269eff258d8696494b120051e9b87",
+  "owned_bodies": {
+    "borg-next/src/stateful/home_power.rs": {
+      "add": "borg-core/src/borg_home_power.rs",
+      "sub": "borg-core/src/borg_home_power.rs",
+      "spare": "borg-core/src/borg_home_power.rs",
+      "too_many": "borg-core/src/borg_home_power.rs",
+      "stat_tiers": "borg-core/src/borg_home_power.rs",
+      "max_stack": "borg-core/src/borg_home_power.rs",
+      "borg_power_home_aux1": "borg-core/src/borg_home_power.rs",
+      "stack": "borg-core/src/borg_home_power.rs",
+      "borg_power_home_aux2": "borg-core/src/borg_home_power.rs",
+      "borg_power_home": "borg-core/src/borg_home_power.rs"
+    },
+    "borg-next/src/stateful/store_buy.rs": {
+      "inven_right": "borg-core/src/borg_store_buy.rs",
+      "inven_left": "borg-core/src/borg_store_buy.rs",
+      "inven_light": "borg-core/src/borg_store_buy.rs",
+      "pack_slots": "borg-core/src/borg_store_buy.rs",
+      "store_max": "borg-core/src/borg_store_buy.rs",
+      "store_inven_max": "borg-core/src/borg_store_buy.rs",
+      "ware": "borg-core/src/borg_store_buy.rs",
+      "ware_mut": "borg-core/src/borg_store_buy.rs",
+      "restore_ware": "borg-core/src/borg_store_buy.rs",
+      "item_from_safe_ware": "borg-core/src/borg_store_buy.rs",
+      "item_from_safe": "borg-core/src/borg_store_buy.rs",
+      "item_mut": "borg-core/src/borg_store_buy.rs",
+      "is_device": "borg-core/src/borg_store_buy.rs",
+      "can_browse": "borg-core/src/borg_store_buy.rs",
+      "sub_iqty": "borg-core/src/borg_store_buy.rs",
+      "note_desc": "borg-core/src/borg_store_buy.rs",
+      "min_quantity": "borg-core/src/borg_store_buy.rs",
+      "borg_good_buy": "borg-core/src/borg_store_buy.rs",
+      "set_buy_goal": "borg-core/src/borg_store_buy.rs",
+      "borg_buy_reserve410": "borg-core/src/borg_store_buy.rs",
+      "borg_buy_identify": "borg-core/src/borg_store_buy.rs",
+      "borg_think_shop_buy_useful": "borg-core/src/borg_store_buy.rs",
+      "borg_think_home_buy_useful": "borg-core/src/borg_store_buy.rs",
+      "borg_think_shop_grab_interesting": "borg-core/src/borg_store_buy.rs",
+      "borg_think_home_grab_useless": "borg-core/src/borg_store_buy.rs",
+      "swaps": "borg-core/src/borg_store_buy.rs",
+      "set_swaps": "borg-core/src/borg_store_buy.rs",
+      "swap_value": "borg-core/src/borg_store_buy.rs",
+      "home_buy_swap": "borg-core/src/borg_store_buy.rs",
+      "borg_think_home_buy_swap_weapon": "borg-core/src/borg_store_buy.rs",
+      "borg_think_home_buy_swap_armour": "borg-core/src/borg_store_buy.rs",
+      "purchase_done": "borg-core/src/borg_store_buy.rs",
+      "borg_think_shop_buy": "borg-core/src/borg_store_buy.rs",
+      "take_selected_for_sale": "borg-core/src/borg_store_buy.rs",
+      "remember_purchase": "borg-core/src/borg_store_buy.rs",
+      "confirm_purchase": "borg-core/src/borg_store_buy.rs",
+      "buy_selected": "borg-core/src/borg_store_buy.rs",
+      "reset_money_scum": "borg-core/src/borg_store_buy.rs"
+    },
+    "borg-next/src/stateful/store_sell.rs": {
+      "store_inven_max": "borg-core/src/borg_store_sell.rs",
+      "pack_size": "borg-core/src/borg_store_sell.rs",
+      "inven_total": "borg-core/src/borg_store_sell.rs",
+      "pack_slots": "borg-core/src/borg_store_sell.rs",
+      "randarts": "borg-core/src/borg_store_sell.rs",
+      "is_charged": "borg-core/src/borg_store_sell.rs",
+      "capped_value": "borg-core/src/borg_store_sell.rs",
+      "pack_item": "borg-core/src/borg_store_sell.rs",
+      "home_ware": "borg-core/src/borg_store_sell.rs",
+      "is_swap": "borg-core/src/borg_store_sell.rs",
+      "borg_object_similar": "borg-core/src/borg_store_sell.rs",
+      "borg_min_item_quantity": "borg-core/src/borg_store_sell.rs",
+      "borg_think_home_sell_bad": "borg-core/src/borg_store_sell.rs",
+      "borg_think_home_sell_best": "borg-core/src/borg_store_sell.rs",
+      "borg_think_home_sell_useful": "borg-core/src/borg_store_sell.rs",
+      "borg_has_mutiple": "borg-core/src/borg_store_sell.rs",
+      "borg_store_buys": "borg-core/src/borg_store_sell.rs",
+      "borg_good_sell": "borg-core/src/borg_store_sell.rs",
+      "borg_think_shop_sell_useless": "borg-core/src/borg_store_sell.rs",
+      "borg_think_shop_sell": "borg-core/src/borg_store_sell.rs",
+      "sell_one_selected": "borg-core/src/borg_store_sell.rs",
+      "sell_selected": "borg-core/src/borg_store_sell.rs",
+      "gold_greed": "borg-core/src/borg_store_sell.rs",
+      "borg_count_sell": "borg-core/src/borg_store_sell.rs"
+    },
+    "borg-next/src/stateful/think_store.rs": {
+      "borg_timer": "borg-core/src/borg_think_store.rs",
+      "cstr": "borg-core/src/borg_think_store.rs",
+      "goal_ware_desc": "borg-core/src/borg_think_store.rs",
+      "goal_item_desc": "borg-core/src/borg_think_store.rs",
+      "goal_shop_name": "borg-core/src/borg_think_store.rs",
+      "note": "borg-core/src/borg_think_store.rs",
+      "note_ware_at": "borg-core/src/borg_think_store.rs",
+      "note_ware": "borg-core/src/borg_think_store.rs",
+      "clear_shop_goal": "borg-core/src/borg_think_store.rs",
+      "leave": "borg-core/src/borg_think_store.rs",
+      "town_strategy_disabled": "borg-core/src/borg_think_store.rs",
+      "null_arm_gate": "borg-core/src/borg_think_store.rs",
+      "borg_choose_shop": "borg-core/src/borg_think_store.rs",
+      "borg_choose_shop_inner": "borg-core/src/borg_think_store.rs",
+      "borg_think_store": "borg-core/src/borg_think_store.rs"
+    }
+  },
+  "entry_specs": [
+    [
+      "HomePower",
+      "borg_home_power",
+      "borg_power_home",
+      "",
+      "",
+      "st",
+      "Score"
+    ],
+    [
+      "StoreBuyUseful",
+      "borg_store_buy",
+      "borg_think_shop_buy_useful",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "HomeBuyUseful",
+      "borg_store_buy",
+      "borg_think_home_buy_useful",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreGrabInteresting",
+      "borg_store_buy",
+      "borg_think_shop_grab_interesting",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "HomeGrabUseless",
+      "borg_store_buy",
+      "borg_think_home_grab_useless",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "HomeBuySwapWeapon",
+      "borg_store_buy",
+      "borg_think_home_buy_swap_weapon",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "HomeBuySwapArmour",
+      "borg_store_buy",
+      "borg_think_home_buy_swap_armour",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreBuy",
+      "borg_store_buy",
+      "borg_think_shop_buy",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreTakeForSale",
+      "borg_store_buy",
+      "take_selected_for_sale",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreConfirmPurchase",
+      "borg_store_buy",
+      "confirm_purchase",
+      "item:ItemSnapshot,shop:i32,keep:bool",
+      "item:crate::decisions::ItemSnapshot::new(*item),shop,keep",
+      "st,&item.0,shop,keep",
+      "Unit"
+    ],
+    [
+      "StoreMinimumQuantity",
+      "borg_store_sell",
+      "borg_min_item_quantity",
+      "item:ItemSnapshot",
+      "item:crate::decisions::ItemSnapshot::new(*item)",
+      "st,&item.0",
+      "Score"
+    ],
+    [
+      "HomeSellUseful",
+      "borg_store_sell",
+      "borg_think_home_sell_useful",
+      "best_home_power:i32",
+      "best_home_power:*best_home_power",
+      "st,&mut best_home_power",
+      "HomeSale"
+    ],
+    [
+      "StoreSellUseless",
+      "borg_store_sell",
+      "borg_think_shop_sell_useless",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreSell",
+      "borg_store_sell",
+      "borg_think_shop_sell",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreSellOne",
+      "borg_store_sell",
+      "sell_one_selected",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreCountSell",
+      "borg_store_sell",
+      "borg_count_sell",
+      "",
+      "",
+      "st",
+      "Score"
+    ],
+    [
+      "StoreChooseShop",
+      "borg_think_store",
+      "borg_choose_shop",
+      "",
+      "",
+      "st",
+      "Acted"
+    ],
+    [
+      "StoreThink",
+      "borg_think_store",
+      "borg_think_store",
+      "",
+      "",
+      "st",
+      "Acted"
+    ]
+  ],
+  "shared_policy": [
+    "reserve/identify selection",
+    "M13 town/trip planner family",
+    "notice/stock/log services"
+  ],
+  "limits": "Implementation in progress; no native parity or branch-coverage claim.",
+  "receiving_original_sha256": {
+    "borg-core/src/borg_home_power.rs": "6dd98e54bf536129e1c0a204be6051ce55de305c290a99449789e9dd7c164614",
+    "borg-core/src/borg_store_buy.rs": "0628f142f12ffab082a29f8f14c5fd297015745a412eb4477de3d7d404ffa02a",
+    "borg-core/src/borg_store_sell.rs": "78042fc5d2d4967c4f2e7a1f25d06e41d9446306488d1f01950bcaf5cd999802",
+    "borg-core/src/borg_think_store.rs": "4a3ebd5108ad9d86837883919d283bc3a8658f71ff51e8c4d5311c792be1a970"
+  },
+  "native_seams_sha256": "f46e75833e783f24cbaf1ad435fac472dcd7a06a72fdaa922eb2b41f66304ef2",
+  "fixed_literal_contract": "docs/M13-INVENTORY-PARAMETERS.md: retained literals and interfaces; disabled exploit paths unchanged, no new experiment knobs",
+  "accepted_fixed_literals_sha256": "8b30bbb1573abdeff56852d1a0bbdcb09118a3695f286450dc0180a3ded80709",
+  "immutable_entries": [
+    "store.borg_power_home",
+    "store.borg_min_item_quantity",
+    "store.town_strategy_disabled"
+  ]
+}

@@ -29,6 +29,226 @@ class ShadowCheckTest(unittest.TestCase):
         (root / 'shadow-stats.jsonl').write_text(json.dumps(row) + '\n')
         (root / 'shadow.jsonl').write_text('')
 
+    def test_r4_requires_its_exact_surface_and_all_item_entries(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row(); self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], legacy_item_use=True)
+            row.update(schema='borg-reborn-rs/shadow-stats@4', surface='r4-item-use',
+                       ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use'])
+            counts = row['counts']
+            counts['item_use_calls'] = len(module.ITEM_USE_ENTRY_POINTS)
+            counts['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+            counts['policy_markers'] += len(module.ITEM_USE_ENTRY_POINTS)
+            counts['tape_events'] += len(module.ITEM_USE_ENTRY_POINTS)
+            self.write(root, row)
+            module.check([root], require_all_entries=True, expected_mode='check', legacy_item_use=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root])
+            counts['stateful_points'][module.ITEM_USE_ENTRY_POINTS[0]] = 0
+            counts['item_use_calls'] -= 1
+            counts['policy_markers'] -= 1
+            counts['tape_events'] -= 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'missing individual entry'):
+                module.check([root], require_all_entries=True, legacy_item_use=True)
+
+    def test_readonly_root_partition_and_legacy_separation(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row()
+            row.update(schema='borg-reborn-rs/shadow-stats@5', surface='r4-item-use-readonly',
+                       ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use'])
+            counts=row['counts']; counts['item_use_calls']=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+            counts['policy_markers']+=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['tape_events']+=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['readonly_comparisons']=1
+            counts['readonly_points']={'item_use.borg_equips_item':1}
+            counts['comparisons']+=1
+            self.write(root,row)
+            module.check([root], require_all_entries=True, r4_item_use=True)
+            with self.assertRaisesRegex(ValueError,'wrong schema'):
+                module.check([root], legacy_item_use=True)
+            for field, value, error in [
+                ('readonly_comparisons',2,'read-only root counts'),
+                ('readonly_points',{'item_use.borg_activate_item':1},'entry coverage'),
+                ('root_points',{'item_use.borg_equips_item':1},'entry coverage'),
+                ('comparisons',6,'comparison counts'),
+            ]:
+                changed=copy.deepcopy(row);changed['counts'][field]=value;self.write(root,changed)
+                with self.assertRaisesRegex(ValueError,error):
+                    module.check([root], r4_item_use=True)
+
+    def test_power_requires_v6_entries_and_immutable_equipment_root(self):
+        row = valid_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@6', surface='r4-power',
+                   ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use', 'power'])
+        c = row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+        c['stateful_points'].update({'power.borg_power':1, 'power.borg_power_equipment':1})
+        added = len(module.ITEM_USE_ENTRY_POINTS) + 2
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS), power_calls=2,
+                 readonly_comparisons=2, readonly_points={'item_use.borg_equips_item':1, 'power.borg_power_equipment':1},
+                 stateful_comparisons=2, comparisons=9)
+        c['root_points']['power.borg_power'] = 1
+        c['policy_markers'] += added
+        c['tape_events'] += added
+        with tempfile.TemporaryDirectory() as name:
+            root=Path(name);self.write(root,row)
+            module.check([root], r4_power=True, require_all_entries=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r4_item_use=True)
+            for key,value,error in [('readonly_points',{'item_use.borg_equips_item':2},'read-only roots'),
+                                    ('root_points',{'power.borg_power_equipment':2},'entry coverage'),
+                                    ('power_calls',1,'individual entry coverage')]:
+                changed=copy.deepcopy(row);changed['counts'][key]=value;self.write(root,changed)
+                with self.assertRaisesRegex(ValueError,error):
+                    module.check([root],r4_power=True,require_all_entries=True)
+
+    def test_nested_equipment_marker_cannot_replace_each_readonly_root(self):
+        row = valid_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@6', surface='r4-power',
+                   ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use', 'power'])
+        c=row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS,1))
+        c['stateful_points'].update({'power.borg_power':1, 'power.borg_power_equipment':1})
+        c['root_points']['power.borg_power']=1
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
+                 stateful_comparisons=2,readonly_comparisons=1,comparisons=8)
+        added=len(module.ITEM_USE_ENTRY_POINTS)+2
+        c['policy_markers']+=added
+        c['tape_events']+=added
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for missing,present in [('power.borg_power_equipment','item_use.borg_equips_item'),
+                                    ('item_use.borg_equips_item','power.borg_power_equipment')]:
+                for explicitly_zero in [False,True]:
+                    with self.subTest(missing=missing,explicitly_zero=explicitly_zero):
+                        changed=copy.deepcopy(row)
+                        changed['counts']['readonly_points']={present:1}
+                        if explicitly_zero:
+                            changed['counts']['readonly_points'][missing]=0
+                        self.write(root,changed)
+                        # All policy markers and arithmetic are otherwise valid.
+                        module.check([root],r4_power=True)
+                        with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                            module.check([root],r4_power=True,require_all_entries=True)
+
+    def test_equipment_surface_requires_v7_and_all_equipment_entries(self):
+        row=valid_row()
+        names=('borg_test_stuff','borg_swap_rings','borg_wear_rings','borg_backup_swap',
+               'borg_wear_stuff','borg_best_stuff','borg_clear_best','borg_wear_recharge','borg_object_fully_id')
+        row.update(schema='borg-reborn-rs/shadow-stats@7',surface='r4-equipment',
+                   ported_points=module.R2_PORTED+['attack','defence','item_use','power','equipment'])
+        c=row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS,1))
+        c['stateful_points'].update({'power.borg_power':1,'power.borg_power_equipment':1})
+        c['stateful_points'].update({'equipment.'+name:1 for name in names})
+        added=len(module.ITEM_USE_ENTRY_POINTS)+2+len(names)
+        c['policy_markers']+=added;c['tape_events']+=added
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,equipment_calls=len(names),
+                 readonly_comparisons=2,readonly_points={'item_use.borg_equips_item':1,'power.borg_power_equipment':1},
+                 stateful_comparisons=3,comparisons=10)
+        c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1})
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.write(root,row)
+            module.check([root],r4_equipment=True,require_all_entries=True)
+            with self.assertRaisesRegex(ValueError,'wrong schema'):
+                module.check([root],r4_power=True)
+            missing=copy.deepcopy(row)
+            del missing['counts']['stateful_points']['equipment.borg_wear_rings']
+            for field in ['equipment_calls','policy_markers','tape_events']:missing['counts'][field]-=1
+            self.write(root,missing);module.check([root],r4_equipment=True)
+            with self.assertRaisesRegex(ValueError,'missing individual entry coverage'):
+                module.check([root],r4_equipment=True,require_all_entries=True)
+
+    def test_store_surface_requires_v8_entries_and_immutable_root(self):
+        row=valid_store_row()
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.write(root,row)
+            module.check([root],r4_store=True,require_all_entries=True,expected_mode='check')
+            with self.assertRaisesRegex(ValueError,'wrong schema'):
+                module.check([root],r4_equipment=True)
+            missing=copy.deepcopy(row)
+            del missing['counts']['readonly_points']['store.town_strategy_disabled']
+            missing['counts']['readonly_comparisons']-=1;missing['counts']['comparisons']-=1
+            self.write(root,missing);module.check([root],r4_store=True)
+            with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                module.check([root],r4_store=True,require_all_entries=True)
+            missing=copy.deepcopy(row)
+            del missing['counts']['stateful_points']['store.confirm_purchase']
+            for name in ['store_calls','policy_markers','tape_events']:missing['counts'][name]-=1
+            self.write(root,missing);module.check([root],r4_store=True)
+            with self.assertRaisesRegex(ValueError,'missing individual entry coverage'):
+                module.check([root],r4_store=True,require_all_entries=True)
+
+    def test_receiving_surface_replaces_retired_markers(self):
+        row = valid_store_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@9', surface='r45')
+        counts = row['counts']
+        points = counts['stateful_points']
+        for name in module.R45_RETIRED:
+            counts[name.split('.')[0] + '_calls'] -= points.pop(name)
+        for name in module.R45_ADDED:
+            points[name] = 1
+            counts[name.split('.')[0] + '_calls'] += 1
+        counts['policy_markers'] = sum(points.values())
+        counts['tape_events'] = counts['policy_markers'] + counts['dependency_requests']
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write(root, row)
+            module.check([root], r45=True, require_all_entries=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r4_store=True)
+
+            point = 'caution.lightless_self_care'
+            del points[point]
+            counts['caution_calls'] -= 1
+            counts['policy_markers'] -= 1
+            counts['tape_events'] -= 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'missing individual entry coverage'):
+                module.check([root], r45=True, require_all_entries=True)
+
+            points['escape.borg_caution_phase'] = 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'entry coverage'):
+                module.check([root], r45=True)
+
+    def test_declared_run_partition_keeps_combined_strict_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);natural=root/'natural';constructed=root/'constructed'
+            natural.mkdir();constructed.mkdir()
+            row=valid_store_row();missing=copy.deepcopy(row)
+            del missing['counts']['readonly_points']['store.town_strategy_disabled']
+            missing['counts']['readonly_comparisons']-=1;missing['counts']['comparisons']-=1
+            del missing['counts']['stateful_points']['store.sell_one_selected']
+            for name in ['store_calls','policy_markers','tape_events']:missing['counts'][name]-=1
+            self.write(natural,missing);self.write(constructed,row)
+            before=(natural/'shadow-stats.jsonl').read_bytes()
+            _,totals=module.check([root],r4_store=True,require_all_entries=True,constructed_roots=[constructed])
+            split=totals['coverage_by_run_provenance']
+            self.assertEqual(split['natural_runs']['runs'],1);self.assertEqual(split['constructed_runs']['runs'],1)
+            self.assertEqual(split['only_in_constructed_runs']['readonly_points'],['store.town_strategy_disabled'])
+            self.assertEqual(split['only_in_constructed_runs']['entry_points'],['store.sell_one_selected'])
+            self.assertEqual(totals['comparisons'],row['counts']['comparisons']+missing['counts']['comparisons'])
+            with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                module.check([natural],r4_store=True,require_all_entries=True)
+            self.assertEqual(before,(natural/'shadow-stats.jsonl').read_bytes())
+            with self.assertRaisesRegex(ValueError,'included in the checked roots'):
+                module.check([natural],r4_store=True,constructed_roots=[constructed])
+
+    def test_cli_report_records_gate_options_and_never_overwrites(self):
+        import subprocess,sys
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.write(root,valid_store_row());report=root/'gate.json'
+            cmd=[sys.executable,str(module.__file__),'--r4-store','--require-all-entries','--expect-mode','check',str(root),'--constructed-root',str(root),'--report',str(report)]
+            result=subprocess.run(cmd,capture_output=True,text=True);self.assertEqual(result.returncode,0,result.stderr)
+            value=json.loads(report.read_text());self.assertTrue(value['require_all_entries']);self.assertEqual(value['expected_mode'],'check')
+            self.assertEqual(value['counts']['coverage_by_run_provenance']['natural_runs']['runs'],0)
+            self.assertEqual(value['counts']['coverage_by_run_provenance']['constructed_runs']['runs'],1)
+            saved=report.read_bytes();self.assertNotEqual(subprocess.run(cmd,capture_output=True).returncode,0);self.assertEqual(report.read_bytes(),saved)
+
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)
@@ -155,3 +375,24 @@ class ShadowCheckTest(unittest.TestCase):
                 module.check([root], True)
             self.assertEqual(module.check([root], True, legacy_attack=True)[1]['policy_markers'], 18)
             self.assertEqual(before, (root / 'shadow-stats.jsonl').read_bytes())
+
+
+def valid_store_row():
+    row=valid_row()
+    equipment=('borg_test_stuff','borg_swap_rings','borg_wear_rings','borg_backup_swap',
+               'borg_wear_stuff','borg_best_stuff','borg_clear_best','borg_wear_recharge','borg_object_fully_id')
+    row.update(schema='borg-reborn-rs/shadow-stats@8',surface='r4-store',
+               ported_points=module.R2_PORTED+['attack','defence','item_use','power','equipment','store'])
+    c=row['counts']
+    extra=(*module.ITEM_USE_ENTRY_POINTS,'power.borg_power','power.borg_power_equipment',
+           *('equipment.'+name for name in equipment),*module.STORE_ENTRY_POINTS)
+    c['stateful_points'].update(dict.fromkeys(extra,1))
+    c['policy_markers']+=len(extra);c['tape_events']+=len(extra)
+    c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
+             equipment_calls=len(equipment),store_calls=len(module.STORE_ENTRY_POINTS),
+             readonly_comparisons=5,readonly_points={'item_use.borg_equips_item':1,
+             'power.borg_power_equipment':1,'store.town_strategy_disabled':1,
+             'store.borg_power_home':1,'store.borg_min_item_quantity':1},
+             stateful_comparisons=4,comparisons=14)
+    c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1,'store.borg_think_shop_buy_useful':1})
+    return row

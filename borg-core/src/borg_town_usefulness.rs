@@ -28,7 +28,7 @@
 use crate::borg_headers::borg_h::{
     BORG_TOWN_FOOD_TRIP, BORG_TOWN_LIGHT_DEPTH, BORG_TOWN_SHARE, BORG_TOWN_W_BLEEDING,
     BORG_TOWN_W_ESCAPE, BORG_TOWN_W_FOOD, BORG_TOWN_W_KNOWLEDGE, BORG_TOWN_W_LIGHT,
-    BORG_TOWN_W_POISON, BORG_TOWN_W_POWER, BORG_TOWN_W_TRIP,
+    BORG_TOWN_W_POISON, BORG_TOWN_W_POWER, BORG_TOWN_W_TRIP, BORG_TRIP_POLICY,
 };
 use crate::borg_headers::borg_trait_h::{
     BI_ACCW, BI_ACLW, BI_ACSW, BI_ACUREPOIS, BI_APHASE, BI_FOOD, BI_ISCUT, BI_ISHUNGRY,
@@ -265,7 +265,11 @@ impl Weights {
             bleeding: i64::from(cfg[BORG_TOWN_W_BLEEDING as usize]),
             poison: i64::from(cfg[BORG_TOWN_W_POISON as usize]),
             escape: i64::from(cfg[BORG_TOWN_W_ESCAPE as usize]),
-            knowledge: i64::from(cfg[BORG_TOWN_W_KNOWLEDGE as usize]),
+            // borg-reborn-rs: with the trip policy, the Borg goes back to town
+            // to sell unknown items, so buying one of each flavour to learn
+            // it is redundant; borg_town_w_knowledge applies without it.
+            knowledge: if cfg[BORG_TRIP_POLICY as usize] == 1 { 0 }
+                else { i64::from(cfg[BORG_TOWN_W_KNOWLEDGE as usize]) },
             power: i64::from(cfg[BORG_TOWN_W_POWER as usize]),
             trip: i64::from(cfg[BORG_TOWN_W_TRIP as usize]),
             caution: i64::from(cfg[BORG_TOWN_SHARE as usize]),

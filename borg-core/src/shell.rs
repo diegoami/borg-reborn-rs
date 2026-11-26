@@ -1,7 +1,9 @@
 //! borg-reborn-rs's errands over this core (#208, docs/ERRANDS.md). Not part of borg-rs: this file and the hook calls marked
-//! `borg-reborn-rs (#208)` are the shell's whole footprint in the vendored
-//! core, so borg-rs's later changes still apply to the rest as plain
-//! patches.
+//! `borg-reborn-rs (#208)` are the errand shell's footprint in the vendored
+//! core. borg-reborn-rs's whole footprint, its own files and the borg-rs
+//! files carrying its hooks, is listed in `scripts/borg-core-vendor.py`
+//! (`OURS`, `HOOKED`), so borg-rs's later changes still apply to the rest
+//! as plain patches.
 //!
 //! The errand is **trips** (owner, 2026-11-14): explore DL1 and go back to
 //! town; then explore DL1, DL2, DL1 and go back to town; and so on. The
@@ -102,8 +104,6 @@ pub enum Errand {
     Town,
     /// One shopping round in town; stop before leaving town.
     Shopping,
-    /// Explore every level between the endpoints, back and forth forever.
-    LoopLevels(i32, i32),
     /// The stairs down to DL N, not exploring; done on arrival.
     Dive(i32),
     /// The level the character is on, explored; done when the core is done.
@@ -146,19 +146,6 @@ impl Command {
         Some(match (name.to_ascii_lowercase().as_str(), arg) {
             ("town", "") => Command::Errand(Errand::Town),
             ("shopping", "") => Command::Errand(Errand::Shopping),
-            ("loop-levels", _) => {
-                let mut endpoints = arg.split_whitespace();
-                // At 42cd156ac, src/player-util.c:dungeon_get_next_level:62-63
-                // clamps to max_depth-1; lib/gamedata/constants.txt:98 sets
-                // world:max-depth:128. Both are under engine/angband/.
-                let valid = |s: &str| s.parse::<i32>().ok().filter(|d| (0..128).contains(d));
-                let first = valid(endpoints.next()?)?;
-                let last = valid(endpoints.next()?)?;
-                if endpoints.next().is_some() || first == last {
-                    return None;
-                }
-                Command::Errand(Errand::LoopLevels(first, last))
-            }
             ("dive", _) => Command::Errand(Errand::Dive(depth()?)),
             ("explore-level", "") => Command::Errand(Errand::ExploreLevel),
             ("dive-exploring", _) => Command::Errand(Errand::DiveExploring(depth()?)),
@@ -216,6 +203,14 @@ pub fn borg_txt_setting(name: &str) -> Option<String> {
     let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt"))
         .unwrap_or_else(|error| config_file_error(error));
     borg_txt_setting_at(&path, name)
+}
+
+/// borg-reborn-rs (#704, review of #740): `borg_txt_setting` that never
+/// reports a file it cannot read: `None` instead, so a check that runs before
+/// the parameter loader leaves the loader's own error to the loader.
+pub(crate) fn borg_txt_setting_lenient(name: &str) -> Option<String> {
+    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt")).ok()?;
+    borg_txt_value_at(&path, name).ok().flatten()
 }
 
 fn config_file_error(error: String) -> ! {
@@ -328,7 +323,6 @@ impl Errand {
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Running {
     /// A repeating interval, independent of the finite/trip planner.
-    level_loop: Option<LevelLoop>,
     trips: Vec<Trip>,
     /// The trip under way.
     trip: usize,
@@ -358,59 +352,6 @@ struct Running {
     /// last game turn seen: another character drops the errand (review
     /// #227, finding 5 and re-review 4).
     owner: Option<(u32, u64, i64)>,
-}
-
-/// The next level to explore in a back-and-forth interval. A town detour
-/// temporarily overrides it; arrival in town restarts the original route.
-#[derive(Clone, Debug, PartialEq, Eq)]
-struct LevelLoop {
-    first: i32,
-    last: i32,
-    next: i32,
-    direction: i32,
-    home: bool,
-}
-
-impl LevelLoop {
-    fn new(first: i32, last: i32) -> Self {
-        Self { first, last, next: first, direction: (last - first).signum(), home: false }
-    }
-
-    fn target(&self) -> i32 {
-        if self.home { 0 } else { self.next }
-    }
-
-    fn advance(&mut self) {
-        if self.next == self.last {
-            self.direction = (self.first - self.last).signum();
-        } else if self.next == self.first {
-            self.direction = (self.last - self.first).signum();
-        }
-        self.next += self.direction;
-    }
-
-    /// Observe actual level transitions, not assumed Recall destinations.
-    fn observe(&mut self, previous: Option<i32>, depth: i32, wants_town: bool) -> bool {
-        if depth == 0 {
-            if self.home || (previous.is_some_and(|d| d > 0) && self.next != 0) {
-                *self = Self::new(self.first, self.last);
-                return true;
-            }
-        } else if wants_town
-            || previous.is_some_and(|d| d > depth && self.target() > depth)
-        {
-            if !self.home {
-                self.home = true;
-                return true;
-            }
-        } else if !self.home && previous.is_some_and(|d| d != depth && d == self.next) {
-            // The core left a planned level on its own (escape, trapdoor,
-            // etc.). Continue from where it actually arrived.
-            self.advance();
-            return true;
-        }
-        false
-    }
 }
 
 /// The level under the errand: its depth, the grids the core knows of it,
@@ -454,9 +395,6 @@ impl Running {
     /// The depth the errand wants now: a level of the trip, 0 for home, or
     /// `None` when the errand is over.
     fn target(&self) -> Option<i32> {
-        if let Some(plan) = &self.level_loop {
-            return Some(plan.target());
-        }
         if self.end == End::Shopping {
             return Some(0);
         }
@@ -509,10 +447,6 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
     };
     *running() = errand.map(|e| {
         let name = format!("{e:?}");
-        let level_loop = match &e {
-            Errand::LoopLevels(first, last) => Some(LevelLoop::new(*first, *last)),
-            _ => None,
-        };
         let one = |levels| {
             vec![Trip {
                 levels,
@@ -525,7 +459,6 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             Errand::Ladder => (Vec::new(), End::Home, true, None),
             Errand::Town | Errand::WalkBack => (one(vec![]), End::Home, false, None),
             Errand::Shopping => (Vec::new(), End::Shopping, false, None),
-            Errand::LoopLevels(_, _) => (Vec::new(), End::Stop, false, None),
             Errand::Dive(n) => (one(vec![n]), End::Arrive, false, None),
             Errand::ExploreLevel => (Vec::new(), End::Stop, false, Some(FromHere::Here)),
             Errand::DiveExploring(n) => (Vec::new(), End::Stop, false, Some(FromHere::DownTo(n))),
@@ -533,7 +466,6 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
         };
         let recall = name == "Town";
         Running {
-            level_loop,
             trips,
             trip: 0,
             step: 0,
@@ -622,7 +554,7 @@ pub(crate) fn borg_cmd_errand(st: &mut BorgState) {
     let mut buf = [0u8; 80];
     if !engine::get_string(
         st,
-        c"Errand (/town /shopping /loop-levels A B /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stop; ...): ",
+        c"Errand (/town /shopping /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stop; ...): ",
         &mut buf,
         80,
     ) {
@@ -700,7 +632,7 @@ fn target(st: &mut BorgState) -> Option<i32> {
             let r = guard.as_ref()?;
             (r.target()?, r.skip_unprepared)
         };
-        if t == 0 || !skip || crate::borg_prepared::borg_prepared(st, t).is_none() {
+        if t == 0 || !skip || crate::borg_prepared::prepared_for_decision(st, t).is_none() {
             return Some(t);
         }
         borg_note(st, &format!("# Errand: not prepared for DL{t}, skipped."));
@@ -785,9 +717,6 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
             borg_note(st, "# Errand: shopping round in town.");
         }
         return None;
-    }
-    if running().as_ref().is_some_and(|r| r.level_loop.is_some()) {
-        return before_level_loop(st, depth, turn);
     }
     // A plan that starts here, and the arrival of a dive.
     {
@@ -912,7 +841,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         // with none set, once the core is ready for its deepest level.
         let ready = match min_level {
             Some(level) => st.borg.tr(BI_CLEVEL) >= level,
-            None => crate::borg_prepared::borg_prepared(st, deepest).is_none(),
+            None => crate::borg_prepared::prepared_for_decision(st, deepest).is_none(),
         };
         if ready {
             if let Some(r) = running().as_mut() {
@@ -937,69 +866,11 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     Some(true)
 }
 
-/// Keep the cycle intact across the core's town work. Only the actual
-/// level transition resumes a suspended loop; clearing a flee flag alone
-/// must not send it back down before it has reached town.
-fn before_level_loop(st: &mut BorgState, depth: i32, turn: i64) -> Option<bool> {
-    let (changed, new_level, target, home, budget) = {
-        let mut guard = running();
-        let r = guard.as_mut()?;
-        let started = *r.started.get_or_insert(turn);
-        let plan = r.level_loop.as_mut()?;
-        let previous = r.watch.map(|w| w.depth);
-        let changed = plan.observe(previous, depth,
-            st.borg.goal.rising || st.borg.goal.fleeing_to_town);
-        let new_level = previous != Some(depth);
-        if changed || new_level {
-            r.watch = Some(Watch {
-                depth, known: 0, progress: turn, arrived: turn, stuck: false,
-            });
-        }
-        (changed, new_level, plan.target(), plan.home,
-            r.budget > 0 && turn - started >= r.budget)
-    };
-    if budget {
-        finish(st, "budget");
-        return Some(true);
-    }
-    if changed || new_level {
-        // A saved flow belongs to the old target/level.
-        st.borg.goal.type_0 = 0;
-    }
-    if changed {
-        let why = if depth == 0 { "restart after town" }
-            else if home { "town overrides the loop" }
-            else { "the core changed level" };
-        borg_note(st, &format!("# Errand: loop {why}, target DL{target}."));
-    }
-    None
-}
-
 /// Town (`borg_leave_level` at depth 0): the core shops until it is bored,
 /// then the trip starts by the stairs (never a recall to the maximum
 /// depth). `None` lets the core decide as usual.
 pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
     if !active() || st.borg.tr(BI_CDEPTH) != 0 {
-        return None;
-    }
-    if running().as_ref().is_some_and(|r| r.level_loop.is_some()) {
-        if bored {
-            // A planned visit to depth 0 includes the core's town work.
-            // Only when it is ready to leave is that waypoint complete.
-            advance_level_loop(st);
-            if target(st) == Some(1) {
-                // The next level of a town-ended cycle is adjacent: do
-                // not Recall past the very levels this trip must explore.
-                if !prepared_below(st, 0) {
-                    return Some(refuse_descent(st, 1));
-                }
-                return Some(stairs_down(st));
-            }
-        }
-        // Use the core's normal leave_town policy, including its Recall
-        // readiness/supply checks and its stairs fallback. Recall lands at
-        // the engine's actual recall depth; the loop then travels to its
-        // first waypoint instead of pretending it recalled to that target.
         return None;
     }
     if running().as_ref().is_some_and(|r| r.end == End::Shopping) {
@@ -1048,60 +919,7 @@ pub(crate) fn on_leave_choice(st: &mut BorgState, free: bool) -> Option<bool> {
     if !active() || !free {
         return None;
     }
-    if running().as_ref().is_some_and(|r| r.level_loop.is_some()) {
-        advance_level_loop(st);
-        return Some(travel_level_loop(st));
-    }
     Some(move_on(st))
-}
-
-/// Mark just the current waypoint explored; repeated leave-choice calls
-/// while travelling must not consume the following waypoints.
-fn advance_level_loop(st: &mut BorgState) {
-    let depth = st.borg.tr(BI_CDEPTH);
-    let next = {
-        let mut guard = running();
-        let Some(r) = guard.as_mut() else { return; };
-        let Some(plan) = r.level_loop.as_mut() else { return; };
-        if plan.home || plan.target() != depth { return; }
-        plan.advance();
-        if let Some(w) = r.watch.as_mut() {
-            w.arrived = i64::from(engine::game_turn());
-            w.stuck = false;
-        }
-        plan.target()
-    };
-    st.borg.goal.type_0 = 0;
-    borg_note(st, &format!("# Errand: loop DL{depth} complete, target DL{next}."));
-}
-
-fn travel_level_loop(st: &mut BorgState) -> bool {
-    let depth = st.borg.tr(BI_CDEPTH);
-    let Some(t) = running().as_ref().and_then(|r| r.level_loop.as_ref().map(LevelLoop::target))
-        else { return false; };
-    if depth == 0 || st.borg.goal.recalling != 0 { return false; }
-    if t == 0 && crate::borg_escape::borg_recall(st) { return true; }
-    if stuck(st, depth) { return false; }
-    walk(st, depth, t)
-}
-
-fn steer_level_loop(st: &mut BorgState) -> bool {
-    let depth = st.borg.tr(BI_CDEPTH);
-    let Some(t) = running().as_ref().and_then(|r| r.level_loop.as_ref().map(LevelLoop::target))
-        else { return false; };
-    if depth == 0 { return false; }
-    if depth == t {
-        if let Some(why) = level_done(st, depth) {
-            borg_note(st, &format!("# Errand: loop DL{depth} {why}."));
-            advance_level_loop(st);
-        } else {
-            return false;
-        }
-    }
-    if t != 0 && (st.borg.goal.fleeing || st.borg.goal.leaving) {
-        return false;
-    }
-    travel_level_loop(st)
 }
 
 /// The level under the errand is explored (the core is done with it, or
@@ -1160,9 +978,6 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         return false;
     }
     let depth = st.borg.tr(BI_CDEPTH);
-    if running().as_ref().is_some_and(|r| r.level_loop.is_some()) {
-        return steer_level_loop(st);
-    }
     if running().as_ref().is_some_and(|r| r.end == End::Shopping) {
         // Remain after caution but before the general exploration/leave
         // decisions. In particular, "nothing to sell" must not bypass
@@ -1331,7 +1146,7 @@ fn scared_home(st: &mut BorgState) -> Home {
     if depth == 0 || !(st.borg.goal.fleeing_to_town || st.borg.goal.rising) {
         return Home::No;
     }
-    if !st.borg.goal.fleeing_to_town && crate::borg_prepared::borg_prepared(st, depth).is_none() {
+    if !st.borg.goal.fleeing_to_town && crate::borg_prepared::prepared_for_decision(st, depth).is_none() {
         return Home::Errand;
     }
     let ended = match running().as_mut() {
@@ -1349,7 +1164,7 @@ fn scared_home(st: &mut BorgState) -> Home {
 
 /// The core is prepared for the level below `depth` (`borg_prepared`).
 fn prepared_below(st: &mut BorgState, depth: i32) -> bool {
-    crate::borg_prepared::borg_prepared(st, depth + 1).is_none()
+    crate::borg_prepared::prepared_for_decision(st, depth + 1).is_none()
 }
 
 /// The errand would take the core below where it is prepared for
@@ -1357,18 +1172,6 @@ fn prepared_below(st: &mut BorgState, depth: i32) -> bool {
 /// down). A command stops; a ladder trip goes home. `true` when the
 /// errand stopped.
 fn refuse_descent(st: &mut BorgState, below: i32) -> bool {
-    let loop_home = {
-        let mut guard = running();
-        guard.as_mut().and_then(|r| r.level_loop.as_mut()).is_some_and(|plan| {
-            plan.home = true;
-            true
-        })
-    };
-    if loop_home {
-        st.borg.goal.type_0 = 0;
-        borg_note(st, &format!("# Errand: loop not prepared for DL{below}; town overrides the loop."));
-        return false;
-    }
     if running().as_ref().is_some_and(|r| !r.skip_unprepared) {
         finish(
             st,
@@ -1406,7 +1209,7 @@ fn stuck(st: &mut BorgState, depth: i32) -> bool {
         let Some(r) = guard.as_mut() else {
             return false;
         };
-        let command = !r.skip_unprepared && r.level_loop.is_none();
+        let command = !r.skip_unprepared;
         let Some(w) = r.watch.as_mut().filter(|w| w.depth == depth) else {
             return false;
         };
@@ -1562,83 +1365,6 @@ mod tests {
     }
 
     #[test]
-    fn a_level_loop_explores_each_intermediate_level_in_both_directions() {
-        let mut plan = LevelLoop::new(3, 5);
-        let mut levels = Vec::new();
-        for _ in 0..10 {
-            levels.push(plan.target());
-            plan.advance();
-        }
-        assert_eq!(levels, [3, 4, 5, 4, 3, 4, 5, 4, 3, 4]);
-        let mut reverse = LevelLoop::new(5, 3);
-        assert_eq!(reverse.target(), 5);
-        reverse.advance();
-        assert_eq!(reverse.target(), 4);
-        reverse.advance();
-        assert_eq!(reverse.target(), 3);
-        reverse.advance();
-        assert_eq!(reverse.target(), 4);
-    }
-
-    #[test]
-    fn a_loop_town_detour_waits_for_town_then_restarts_the_first_endpoint() {
-        let mut plan = LevelLoop::new(3, 5);
-        plan.advance();
-        assert_eq!(plan.target(), 4);
-        assert!(plan.observe(Some(4), 4, true));
-        assert_eq!(plan.target(), 0);
-        assert!(!plan.observe(Some(4), 4, false));
-        assert_eq!(plan.target(), 0, "a cleared flag is not arrival in town");
-        assert!(plan.observe(Some(4), 0, false));
-        assert_eq!(plan.target(), 3);
-        plan.advance();
-        assert_eq!(plan.target(), 4);
-    }
-
-    #[test]
-    fn planned_town_is_a_waypoint_and_unplanned_town_restarts_the_loop() {
-        let mut plan = LevelLoop::new(0, 2);
-        let mut levels = Vec::new();
-        for _ in 0..7 {
-            levels.push(plan.target());
-            plan.advance();
-        }
-        assert_eq!(levels, [0, 1, 2, 1, 0, 1, 2]);
-        let mut plan = LevelLoop::new(2, 0);
-        plan.advance();
-        plan.advance();
-        assert_eq!(plan.target(), 0);
-        assert!(!plan.observe(Some(1), 0, false));
-        plan.advance();
-        assert_eq!(plan.target(), 1, "explore the intermediate level after town");
-        assert!(plan.observe(Some(1), 0, false));
-        assert_eq!(plan.target(), 2, "an unplanned town trip restarts the route");
-    }
-
-    #[test]
-    fn loop_recall_arrival_does_not_claim_unvisited_waypoints_explored() {
-        let mut plan = LevelLoop::new(3, 5);
-        assert!(!plan.observe(Some(0), 10, false));
-        assert_eq!(plan.target(), 3, "Recall may land outside the interval");
-        assert!(!plan.observe(Some(10), 9, false));
-        assert_eq!(plan.target(), 3);
-        assert!(!plan.observe(Some(4), 3, false));
-        assert_eq!(plan.target(), 3, "arrival alone does not explore a level");
-        plan.advance();
-        assert_eq!(plan.target(), 4);
-    }
-
-    #[test]
-    fn an_unfit_rise_suspends_the_loop_instead_of_bouncing_down() {
-        let mut plan = LevelLoop::new(3, 5);
-        plan.advance();
-        assert!(plan.observe(Some(3), 2, false));
-        assert_eq!(plan.target(), 0);
-        assert!(plan.observe(Some(1), 0, false));
-        assert_eq!(plan.target(), 3);
-    }
-
-    #[test]
     fn trips_parse() {
         assert_eq!(
             Errand::parse("trips:1*/1,2,1"),
@@ -1691,19 +1417,19 @@ mod tests {
     }
 
     #[test]
+    fn every_class_has_a_ladder() {
+        let text = include_str!("../ladders.txt");
+        for class in CLASSES {
+            assert!(ladder_of(text, class).is_some(), "{class}");
+        }
+    }
+
+    #[test]
     fn commands_parse() {
         use Command as C;
         assert_eq!(C::parse("/town"), Some(C::Errand(Errand::Town)));
         assert_eq!(C::parse("/shopping"), Some(C::Errand(Errand::Shopping)));
         assert_eq!(C::parse("/shopping 2"), None);
-        assert_eq!(C::parse("/loop-levels 3 5"), Some(C::Errand(Errand::LoopLevels(3, 5))));
-        assert_eq!(C::parse("/loop-levels 0 2"), Some(C::Errand(Errand::LoopLevels(0, 2))));
-        assert_eq!(C::parse("/loop-levels 5 3"), Some(C::Errand(Errand::LoopLevels(5, 3))));
-        for bad in ["/loop-levels", "/loop-levels 3", "/loop-levels 3 3",
-            "/loop-levels -1 3", "/loop-levels 0 128", "/loop-levels 0 2147483647",
-            "/loop-levels 1 2 3", "/loop-levels 1 town"] {
-            assert_eq!(C::parse(bad), None, "{bad}");
-        }
         assert_eq!(C::parse("/dive 2"), Some(C::Errand(Errand::Dive(2))));
         assert_eq!(C::parse("dive:3"), Some(C::Errand(Errand::Dive(3))));
         assert_eq!(C::parse("/dive"), None);
@@ -1748,7 +1474,6 @@ mod tests {
     #[test]
     fn a_dive_ends_on_arrival_and_town_ends_home() {
         let dive = Running {
-            level_loop: None,
             trips: vec![Trip {
                 levels: vec![3],
                 repeat: false,
@@ -1787,14 +1512,6 @@ mod tests {
     }
 
     #[test]
-    fn every_class_has_a_ladder() {
-        let text = include_str!("../ladders.txt");
-        for class in CLASSES {
-            assert!(ladder_of(text, class).is_some(), "{class}");
-        }
-    }
-
-    #[test]
     fn a_trip_walks_its_levels_then_home_then_the_next_trip() {
         let trip = |levels: Vec<i32>| Trip {
             levels,
@@ -1802,7 +1519,6 @@ mod tests {
             min_level: None,
         };
         let mut r = Running {
-            level_loop: None,
             trips: vec![trip(vec![1]), trip(vec![1, 2, 1])],
             trip: 0,
             step: 0,
@@ -1830,14 +1546,4 @@ mod tests {
         r.trip = 2;
         assert_eq!(r.target(), None, "every trip is over");
     }
-}
-
-// Owner-requested POC (#305): internal installation does not cancel itself.
-pub(crate) fn install_plan_loop(first: i32, last: i32) {
-    NEXT.lock().unwrap().clear();
-    set_errand(Some(Errand::LoopLevels(first, last)), 0);
-}
-pub(crate) fn install_plan_stop() {
-    NEXT.lock().unwrap().clear();
-    set_errand(None, 0);
 }

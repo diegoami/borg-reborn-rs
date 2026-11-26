@@ -7,17 +7,26 @@ import hashlib
 import json
 import re
 from pathlib import Path
-from rust_ports import functions, mask_non_code
+from rust_ports import functions, mask_non_code, without_test_items
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def policy_source(text):
+    # This harness fixture is feature-gated rather than a Rust unit test.
+    # Exclude only that item and keep any production definitions after it.
+    fixture_attribute = r'^#\[cfg\(feature = "test-r3-defence"\)\](?=\s+pub fn fixture_choice\()'
+    return without_test_items(re.sub(fixture_attribute, '#[cfg(test)]', text, flags=re.M))
 
 
 def main():
     native_path = ROOT / 'borg-core/src/borg_fight_defend.rs'
     port_path = ROOT / 'borg-next/src/stateful/defence.rs'
     native_text, port_text = native_path.read_text(), port_path.read_text()
-    native = functions(native_text.split('// Test-only defence fixture entry.', 1)[0].split('#[cfg(test)]', 1)[0])
-    port = functions(port_text.split('// Test-only defence fixture entry.', 1)[0])
+    native_source = policy_source(native_text)
+    port_source = policy_source(port_text)
+    native = functions(native_source)
+    port = functions(port_source)
     traits = {}
     declaration = (ROOT / 'borg-next/src/lib.rs').read_text()
     for _, _, field, body in re.findall(
@@ -86,7 +95,7 @@ def main():
                     found[match[2]] = text[match.start():end + 1]
                     break
         return found
-    native_declarations, port_declarations = declarations(native_text), declarations(port_text)
+    native_declarations, port_declarations = declarations(native_source), declarations(port_source)
     assert native_declarations.keys() == port_declarations.keys()
     for name in native_declarations:
         before, after = native_declarations[name], port_declarations[name]
@@ -97,7 +106,7 @@ def main():
     print(json.dumps(dict(
         schema='borg-reborn-rs/r365-source-audit@1',
         native_sha256=sha(native_text), port_sha256=sha(port_text),
-        scope='All 56 policy function bodies and module constants; imports and memory definitions require separate review.',
+        scope='Production policy function bodies and module constants; imports and memory definitions require separate review.',
         identical_declarations=sorted(native_declarations),
         normalization='Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string and character sequences compared separately.',
         functions=rows), indent=2))

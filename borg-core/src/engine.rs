@@ -489,6 +489,24 @@ pub fn player_is_shapechanged() -> bool {
     unsafe { crate::headers::player_util_h::player_is_shapechanged(p) }
 }
 
+/// borg-reborn-rs (#551): the name of the player's shape
+/// (`player->shape->name`): "normal", "fox", ...
+pub fn player_shape_name() -> Vec<u8> {
+    let p = player_ref();
+    if p.shape.is_null() {
+        return Vec::new();
+    }
+    // SAFETY: `shape` points into the game's shape list, which lives for
+    // the game; its `name` is a NUL-terminated string set at parse time.
+    unsafe {
+        let shape = &*p.shape;
+        if shape.name.is_null() {
+            return Vec::new();
+        }
+        core::ffi::CStr::from_ptr(shape.name).to_bytes().to_vec()
+    }
+}
+
 /// A copy of the game's `savefile` buffer (ui-game.c, `char savefile[1024]`).
 pub fn savefile() -> [u8; 1024] {
     // SAFETY: plain copy of a char array global; engine thread.
@@ -638,6 +656,12 @@ pub fn kind(kind: usize) -> ObjectKind {
     // SAFETY: p points at a live entry of k_info (see kind_ptr); copied at
     // once, no reference is kept.
     unsafe { *p }
+}
+
+/// `k_info[kidx].cost`: the base price of an object kind
+/// (borg-reborn-rs #830: the price of a Remove Curse scroll).
+pub fn kind_cost_of(kidx: usize) -> i32 {
+    self::kind(kidx).cost
 }
 
 /// `k_info[kind].base->max_stack`: how many objects of this kind fit in
@@ -1302,13 +1326,23 @@ impl ReadFile {
 }
 
 /// `time(NULL)`.
+#[cfg(not(windows))]
 pub fn time_now() -> i64 {
     // SAFETY: time() accepts a NULL out-pointer.
     unsafe { crate::headers::time_h::time(core::ptr::null_mut()) }
 }
 
+/// borg-reborn-rs (#823): Windows' C runtime has no `time` symbol (its
+/// header inlines `_time64`); the libc crate links that.
+#[cfg(windows)]
+pub fn time_now() -> i64 {
+    // SAFETY: time() accepts a NULL out-pointer.
+    unsafe { libc::time(core::ptr::null_mut()) }
+}
+
 /// `strftime(buf, max, fmt, localtime(&t))`: the bytes written (empty
 /// where strftime returns 0).
+#[cfg(not(windows))]
 pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
     let mut buf = vec![0u8; max];
     // SAFETY: localtime reads t and returns its static struct (or NULL,
@@ -1317,6 +1351,27 @@ pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
         let tm = crate::headers::time_h::localtime(&t);
         assert!(!tm.is_null(), "localtime failed");
         crate::headers::time_h::strftime(buf.as_mut_ptr() as *mut c_char, max, fmt.as_ptr(), tm)
+    };
+    buf.truncate(n);
+    buf
+}
+
+/// borg-reborn-rs (#823): as above with Windows' `localtime_s` and its own
+/// `struct tm` (no `tm_gmtoff`), through the libc crate.
+#[cfg(windows)]
+pub fn strftime_local(t: i64, max: usize, fmt: &CStr) -> Vec<u8> {
+    // Windows' struct tm, not the Linux one headers/time_h.rs declares.
+    #[allow(clashing_extern_declarations)]
+    extern "C" {
+        fn strftime(s: *mut c_char, max: usize, fmt: *const c_char, tm: *const libc::tm) -> usize;
+    }
+    let mut buf = vec![0u8; max];
+    // SAFETY: localtime_s fills tm from t (checked); strftime writes at
+    // most max bytes into buf.
+    let n = unsafe {
+        let mut tm: libc::tm = core::mem::zeroed();
+        assert!(libc::localtime_s(&mut tm, &t) == 0, "localtime failed");
+        strftime(buf.as_mut_ptr() as *mut c_char, max, fmt.as_ptr(), &tm)
     };
     buf.truncate(n);
     buf
@@ -1383,6 +1438,25 @@ pub struct PlayerSummary {
     /// `player->died_from`
     pub died_from: Vec<u8>,
     pub word_recall: i16,
+}
+
+/// #759: computed attack rates from the player's own state, already in
+/// the permitted player_state read category (docs/ENGINE-READS.md). Blows
+/// are hundredths and shots tenths (player-attack.c:991,1087).
+pub fn player_attack_rates() -> (i32, i32) {
+    let p = player_ref();
+    (p.state.num_blows, p.state.num_shots)
+}
+
+/// #759 review: own computed blessed-weapon hit bonus, as in
+/// player-attack.c:chance_of_melee_hit_base:89-95 (574b618c).
+pub fn player_blessed_weapon_bonus() -> i32 {
+    if player_ref().state.bless_wield { 2 } else { 0 }
+}
+
+/// #759/#758: own displayed speed, including current haste/slow effects.
+pub fn player_combat_speed() -> i32 {
+    player_ref().state.speed
 }
 
 /// Read the player's summary fields.
@@ -1525,7 +1599,38 @@ fn native_sale_quote(obj: *const crate::headers::object_h::object, shop: usize, 
     unsafe { crate::headers::store_h::store_sale_quote(crate::headers::store_h::stores.add(shop), obj, quantity) }
 }
 
+fn with_object_quantity<T>(
+    source: *const crate::headers::object_h::object,
+    quantity: i32,
+    read: impl FnOnce(*const crate::headers::object_h::object) -> T,
+) -> T {
+    use crate::headers::object_h::object;
+    extern "C" {
+        fn object_copy_amt(dest: *mut object, src: *const object, amount: i32);
+        fn object_wipe(obj: *mut object);
+    }
+    // SAFETY: callers hold a live object handle. The native copy owns its
+    // allocated fields, which are released after the read-only query.
+    unsafe {
+        assert!(quantity > 0 && quantity <= i32::from((*source).number));
+        let mut split = std::mem::MaybeUninit::<object>::zeroed();
+        object_copy_amt(split.as_mut_ptr(), source, quantity);
+        let result = read(split.as_ptr());
+        object_wipe(split.as_mut_ptr());
+        result
+    }
+}
+
 impl StoreObject<'_> {
+
+    /// Quote the same split stack the purchase prompt will confirm.
+    pub fn purchase_quote_quantity(self, shop: usize, quantity: i32) -> i32 {
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(shop), split, false, quantity) }
+        })
+    }
 
     /// The native shop quote for one copy, as displayed to the player.
     /// This is not the historical Borg's optimistic price approximation.
@@ -1752,6 +1857,19 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    /// Check the store's capacity for the same quantity the command would split.
+    pub fn store_accepts_quantity(self, shop: usize, quantity: i32) -> bool {
+        use crate::headers::{object_h::object, store_h::{store, stores}};
+        extern "C" {
+            fn store_check_num(shop: *mut store, obj: *const object) -> bool;
+        }
+        assert!(shop < usize::from(z_info().store_max));
+        with_object_quantity(self.0, quantity, |split| {
+            // SAFETY: the temporary split and store are live for this query.
+            unsafe { store_check_num(stores.add(shop), split) }
+        })
+    }
+
     pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
         // SAFETY: handle is a live carried object; reading number cannot re-enter.
         assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
@@ -1966,10 +2084,16 @@ pub fn feat_is_shop(feat: i32) -> bool {
 pub struct RaceBlow {
     /// `effect->name`
     pub effect_name: &'static CStr,
+    /// Static hit power from blow_effects.txt (mon-attack.c:336-355).
+    pub hit_power: i32,
     /// `dice.dice`
     pub dice: i32,
     /// `dice.sides`
     pub sides: i32,
+    /// borg-reborn-rs (#505): `dice.base`, the fixed part of `randcalc`
+    pub base: i32,
+    /// borg-reborn-rs (#505): `dice.m_bonus`, the level-scaled part
+    pub m_bonus: i32,
 }
 
 /// `r_info[r_idx].blow[k]` for `k < z_info->mon_blows_max`, or `None` when
@@ -1990,7 +2114,7 @@ pub fn race_blow(r_idx: usize, k: usize) -> Option<RaceBlow> {
         assert!(!b.effect.is_null(), "race {r_idx} blow {k} has no effect");
         let name = (*b.effect).name;
         assert!(!name.is_null(), "race {r_idx} blow {k} effect has no name");
-        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides })
+        Some(RaceBlow { effect_name: CStr::from_ptr(name), hit_power: (*b.effect).power, dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
     }
 }
 
@@ -2373,6 +2497,7 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
+#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
 }
@@ -3368,6 +3493,12 @@ pub fn py_food_levels() -> (i32, i32, i32, i32) {
     unsafe { (t::PY_FOOD_WEAK, t::PY_FOOD_HUNGRY, t::PY_FOOD_FULL, t::PY_FOOD_MAX) }
 }
 
+#[cfg(feature = "test-town-review")]
+#[no_mangle]
+pub extern "C" fn borg_rs_test_home_attempt(stored: bool, success: bool, kind: u32) -> u32 {
+    enter(|st| crate::borg_town_live::test_home_attempt(st, stored, success, kind))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3532,5 +3663,22 @@ mod receiving_options_tests {
         assert_eq!(std::mem::offset_of!(player_options, hitpoint_warn), 46);
         // No player/engine exists in this test: a read would fail.
         assert!(!super::player_opt(crate::headers::list_options_h::OPT_store_buy_direct));
+    }
+}
+
+// borg-reborn-rs (#371): read-only authorization from the validated frontend.
+// Non-harness builds retain all ordinary birth-option restrictions.
+pub fn synthetic_start() -> bool {
+    #[cfg(feature = "borgh")]
+    {
+        extern "C" {
+            fn borgh_synthetic_start() -> bool;
+        }
+        // SAFETY: the linked headless frontend returns one immutable mode bit.
+        unsafe { borgh_synthetic_start() }
+    }
+    #[cfg(not(feature = "borgh"))]
+    {
+        false
     }
 }

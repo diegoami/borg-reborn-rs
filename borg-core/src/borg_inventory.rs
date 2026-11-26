@@ -199,7 +199,7 @@ pub fn borg_inventory(st: &mut BorgState) {
 
 /// The first empty pack slot after the last used one, or -1
 /// (`borg_first_empty_inventory_slot`). An empty pack gives slot 0.
-pub fn borg_first_empty_inventory_slot(st: &mut BorgState) -> i32 {
+pub fn borg_first_empty_inventory_slot(st: &BorgState) -> i32 {
     /* PACK_SLOTS */
     let pack_slots = i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS);
 
@@ -225,5 +225,5 @@ pub fn borg_item_worth_id(st: &mut BorgState, item: &borg_item) -> bool {
     }
 
     /* Things that can't be wielded can't be ID'd (potions, scrolls etc) */
-    borg_wield_slot(item) >= 0
+    crate::decision_api::borg_inventory::borg_wield_slot(item) >= 0
 }

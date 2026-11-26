@@ -45,20 +45,22 @@
 //!   attempt to use the home as a "stockpile", even though that is
 //!   not worth any money, since it may save us money eventually.
 
-use crate::borg::BorgTime;
-use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
-use crate::borg_item::inven_wield;
-use crate::borg_item_wear::{borg_best_stuff, borg_wear_stuff};
-use crate::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
-use crate::borg_store_buy::{
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
+use crate::decision_api::borg::BorgTime;
+use crate::decision_api::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
+use crate::decision_api::borg_item::inven_wield;
+use crate::decision_api::borg_item_wear::{borg_best_stuff, borg_wear_stuff};
+use crate::decision_api::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
+use crate::decision_api::borg_store_buy::{
     borg_think_home_buy_swap_armour, borg_think_home_buy_swap_weapon, borg_think_home_buy_useful,
     borg_think_home_grab_useless, borg_think_shop_buy, borg_think_shop_buy_useful,
     borg_think_shop_grab_interesting,
 };
-use crate::borg_store_sell::{
+use crate::decision_api::borg_store_sell::{
     borg_think_home_sell_useful, borg_think_shop_sell, borg_think_shop_sell_useless,
 };
-use crate::engine;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_TOWN_NO_STORES};
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_FOOD, BI_GOLD, BI_ISCUT, BI_ISPOISONED, BI_LIGHT,
@@ -97,7 +99,7 @@ fn goal_shop_name(st: &BorgState) -> Vec<u8> {
 fn note(st: &mut BorgState, parts: &[&[u8]]) {
     let s = parts.concat();
     // The town-visit dump reads this back as the reason for the decision.
-    crate::borg_town_dump::record_reason(&s);
+    crate::decision_api::borg_town_dump::record_reason(&s);
     borg_note_bytes(st, &s);
 }
 
@@ -132,7 +134,9 @@ fn leave(st: &mut BorgState) {
 /// The negative-baseline arm is on (`borg_town_no_stores`): the town
 /// inventory strategy does nothing at all and the Borg never walks into
 /// a shop, not even the one a human asked for.
-pub fn town_strategy_disabled(st: &BorgState) -> bool {
+pub(crate) fn town_strategy_disabled_native(st: &BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.town_strategy_disabled",format!("{:?}",()));}
+
     st.cfg(BORG_TOWN_NO_STORES) != 0
 }
 
@@ -142,7 +146,7 @@ pub fn town_strategy_disabled(st: &BorgState) -> bool {
 /// forbids the visit; the shop goal is cleared so that no TownAction is
 /// ever executed (borg-rs#36).
 fn null_arm_gate(st: &mut BorgState) -> bool {
-    if town_strategy_disabled(st) {
+    if town_strategy_disabled_native(st) {
         clear_shop_goal(st);
         return true;
     }
@@ -154,13 +158,15 @@ fn null_arm_gate(st: &mut BorgState) -> bool {
 /// When the Borg takes a town decision, the town-visit dump records that
 /// decision together with the state and the shop stock. The dump is
 /// observation only, so the keypress stream is unchanged.
-pub fn borg_choose_shop(st: &mut BorgState) -> bool {
-    let live = crate::borg_town_live::active(st);
-    let decided = if live { crate::borg_town_live::choose(st) } else { borg_choose_shop_inner(st) };
+pub(crate) fn borg_choose_shop_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_choose_shop",format!("{:?}",()));}
+
+    let live = crate::decision_api::borg_town_live::active(st);
+    let decided = if live { crate::decision_api::borg_town_live::choose(st) } else { borg_choose_shop_inner(st) };
     if decided {
-        crate::borg_town_dump::dump_town_visit(st);
+        crate::decision_api::borg_town_dump::dump_town_visit(st);
         // The plan in shadow mode, on the same state: observation only.
-        if !live { crate::borg_town_shadow::shadow_visit(st); }
+        if !live { crate::decision_api::borg_town_shadow::shadow_visit(st); }
     }
     decided
 }
@@ -197,10 +203,10 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if borg_timer(st, st.borg.time.level) > 2000 {
+    if borg_timer(st, st.borg.time.level) > param(Param::shopping_max_turns) {
         return false;
     }
-    if i32::from(st.borg.antibounce_count) > 1350 {
+    if i32::from(st.borg.antibounce_count) > param(Param::shopping_max_bounces) {
         return false;
     }
 
@@ -215,13 +221,13 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* If Starving  -- flow to general store */
-    if st.borg.tr(BI_FOOD) == 0 || (st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CLEVEL) >= 2) {
+    if st.borg.tr(BI_FOOD) == 0 || (st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CLEVEL) >= param(Param::shopping_unlit_min_level)) {
         /* G Store first */
         st.borg.goal.shop = 0;
     }
 
     /* if No Lantern -- flow to general store */
-    if st.borg.tr(BI_LIGHT) == 1 && st.borg.tr(BI_GOLD) >= 100 {
+    if st.borg.tr(BI_LIGHT) == param(Param::shopping_upgrade_light_radius) && st.borg.tr(BI_GOLD) >= param(Param::shopping_light_min_gold) {
         st.borg.goal.shop = 0;
     }
 
@@ -232,7 +238,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         || st.borg.tr(BI_FOOD) == 0
         || st.borg.tr(BI_ISCUT) != 0
         || st.borg.tr(BI_ISPOISONED) != 0)
-        || (st.borg.tr(BI_LIGHT) == 1 && st.borg.tr(BI_GOLD) >= 100 && st.borg.tr(BI_CLEVEL) < 10)
+        || (st.borg.tr(BI_LIGHT) == param(Param::shopping_upgrade_light_radius) && st.borg.tr(BI_GOLD) >= param(Param::shopping_light_min_gold) && st.borg.tr(BI_CLEVEL) < param(Param::shopping_emergency_light_max_level))
     {
         if borg_think_shop_buy_useful(st) {
             /* Message */
@@ -368,7 +374,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* Step 7A -- Buy weapons from the home (as a backup item) */
-    if crate::borg_trait::borg_uses_swaps(st) && borg_think_home_buy_swap_weapon(st) {
+    if crate::decision_api::borg_trait::borg_uses_swaps(st) && borg_think_home_buy_swap_weapon(st) {
         /* Message */
         note_ware(st, "# Buying", " from the home as a backup");
 
@@ -376,7 +382,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         return true;
     }
     /* Step 7B -- Buy armour from the home (as a backup item) */
-    if crate::borg_trait::borg_uses_swaps(st) && borg_think_home_buy_swap_armour(st) {
+    if crate::decision_api::borg_trait::borg_uses_swaps(st) && borg_think_home_buy_swap_armour(st) {
         /* Message */
         note_ware(st, "# Buying", " from the home as a backup");
 
@@ -389,9 +395,12 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 }
 
 /// Deal with being in a store (`borg_think_store`).
-pub fn borg_think_store(st: &mut BorgState) -> bool {
+pub(crate) fn borg_think_store_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_think_store",format!("{:?}",()));}
+
     /* Cheat the store number */
     st.think.shop_num = engine::player_square_shopnum() as i16;
+    crate::decision_api::borg_town_dump::record_phase_observation(st, usize::try_from(st.think.shop_num).ok());
 
     /* The Borg is in the store the human asked for: the override has been
      * served, so the strategy chooses the next shop itself. */
@@ -438,8 +447,8 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     /* Choose a shop to visit.  Goal_shop indicates he is trying to sell
      * something somewhere. */
     if borg_choose_shop(st) {
-        if crate::borg_town_live::active(st) {
-            if crate::borg_town_live::execute_store(st) { return true; }
+        if crate::decision_api::borg_town_live::active(st) {
+            if crate::decision_api::borg_town_live::execute_store(st) { return true; }
             leave(st);
             st.borg.in_shop = false;
             return true;
@@ -470,7 +479,7 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* No shop */
-    if crate::borg_town_live::active(st) { st.borg.in_shop = false; }
+    if crate::decision_api::borg_town_live::active(st) { st.borg.in_shop = false; }
     clear_shop_goal(st);
 
     /* Leave the store */
@@ -480,10 +489,22 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     true
 }
 
+
+
+pub fn borg_choose_shop(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_choose_shop_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreChooseShop) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn borg_think_store(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() {return borg_think_store_native(st);}
+match crate::shadow::decision(st,crate::decisions::Decision::StoreThink) {crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}
+}
+pub fn town_strategy_disabled(st:&BorgState)->bool {if crate::decision_tape::active(){return town_strategy_disabled_native(st);}match crate::shadow::read_decision(st,crate::decisions::ReadDecision::StoreDisabled){crate::decisions::Value::Acted(v)=>v,_=>unreachable!("typed store result")}}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::borg_init::BORG_SETTINGS;
+    use crate::decision_api::borg_init::BORG_SETTINGS;
 
     fn state(no_stores: i32) -> BorgState {
         let mut st = BorgState::default();

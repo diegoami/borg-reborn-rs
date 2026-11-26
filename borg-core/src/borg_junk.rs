@@ -238,6 +238,35 @@ pub fn borg_destroy_floor(st: &mut BorgState) -> bool {
     true
 }
 
+/// borg-reborn-rs (#470): a Scroll of Deep Descent is never kept. It lands
+/// five levels below the deepest level so far (`effect_handler_DEEP_DESCENT`
+/// targets `max_depth` + 5), past any plan cap. Once its flavour is known,
+/// ignore the kind ('k', the scroll, "All Scrolls of Deep Descent"): the
+/// engine then drops every carried copy (`ignore_drop`) and hides those on
+/// the floor, so none is picked up again. It takes no game time.
+pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
+    let sv = st.item_val.sv_scroll_deep_descent;
+    if sv < 0 {
+        return false;
+    }
+    let Some(i) = (0..pack_size()).find(|&i| {
+        let item = &st.items.items[i as usize];
+        item.iqty > 0 && item.aware && u32::from(item.tval) == TV_SCROLL && i32::from(item.sval) == sv
+    }) else {
+        return false;
+    };
+    // Already ignored: the engine drops it on its own.
+    if engine::kind(st.items.items[i as usize].kind as usize).ignore != 0 {
+        return false;
+    }
+    note_desc(st, "# Discarding ", i, " (Deep Descent is never read)");
+    borg_keypress(st, key(b'k'));
+    slot_keys(st, i);
+    // The ignore menu: a) This item only, b) All Scrolls of Deep Descent.
+    borg_keypress(st, key(b'b'));
+    true
+}
+
 /// Attempt to consume an item as a method of destroying it
 /// (`borg_consume`).
 fn borg_consume(st: &mut BorgState, i: i32) -> bool {
@@ -475,7 +504,10 @@ fn junk_keep_some(st: &BorgState, item: &borg_item) -> bool {
             || (item.ego_idx != 0 && borg_ego_has_random_power(usize::from(item.ego_idx)))
             || (is(item, TV_SCROLL, v.sv_scroll_teleport_level)
                 && st.borg.tr(BI_ATELEPORTLVL) < 1000)
-            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil))
+            || is(item, TV_SCROLL, v.sv_scroll_protection_from_evil)
+            // borg-reborn-rs (#831, owner): Detect Invisible is not worthless; at 15
+            // gold the value tiers would junk it from depth 5 (`value > 15` fails).
+            || is(item, TV_SCROLL, v.sv_scroll_detect_invis))
 }
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
@@ -508,7 +540,7 @@ pub fn borg_drop_junk(st: &mut BorgState) -> bool {
         let tval = u32::from(item.tval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
@@ -843,8 +875,8 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
 
         let mut value_boost: i32 = 0;
 
-        /* Skip empty items */
-        if item.iqty == 0 {
+        /* Skip empty items. A desperate pack clear can spend the reserve. */
+        if item.iqty == 0 || !desperate && crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
@@ -1134,7 +1166,7 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
         let sval = i32::from(item.sval);
 
         /* Skip empty items */
-        if item.iqty == 0 {
+        if item.iqty == 0 || crate::borg_light::keep_fuel_stack(st, i as usize) {
             continue;
         }
 
@@ -1372,6 +1404,12 @@ pub fn borg_dump_quiver(st: &mut BorgState) -> bool {
     false
 }
 
+// Leave a harmful light to direct replacement or decursing. Emptying
+// the slot can make light maintenance re-wield the same item.
+fn protects_cursed_light(slot: i32, light: i32, item: &borg_item) -> bool {
+    slot == light && crate::borg_cursed::harmful_curse(item).is_some()
+}
+
 /// Remove useless equipment (`borg_remove_stuff`).
 ///
 /// Look through the inventory for equipment that is reducing power.
@@ -1414,6 +1452,8 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
     /* Start with good power */
     let b_p = st.borg.power;
 
+    let light = crate::borg_light::inven_light();
+
     /* Scan equip */
     for i in inven_wield()..inven_total() {
         let item = &st.items.items[i as usize];
@@ -1435,6 +1475,10 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
         /* skip it if it has not been decursed */
         if item.one_ring {
+            continue;
+        }
+
+        if protects_cursed_light(i, light, item) {
             continue;
         }
 
@@ -1495,4 +1539,26 @@ pub fn borg_remove_stuff(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_item_h::{BORG_CURSE_AIR_SWING, BORG_CURSE_PARALYSIS};
+    use crate::borg_item::blank_item;
+    use crate::borg_light::light_slot;
+
+    #[test]
+    fn ordinary_take_off_skips_only_a_harmful_curse_in_the_light_slot() {
+        let light = light_slot(23) as i32;
+        let mut item = blank_item();
+        item.iqty = 1;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.cursed = true;
+        item.curses[BORG_CURSE_AIR_SWING as usize] = true;
+        assert!(!protects_cursed_light(light, light, &item));
+        item.curses[BORG_CURSE_PARALYSIS as usize] = true;
+        assert!(protects_cursed_light(light, light, &item));
+        assert!(!protects_cursed_light(light + 1, light, &item));
+    }
 }

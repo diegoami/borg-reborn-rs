@@ -225,6 +225,14 @@ fn note_starts_with_brace(st: &mut BorgState, j: i32) -> bool {
 
 /// Remove the inscription of slot `i` (`borg_deinscribe`).
 pub fn borg_deinscribe(st: &mut BorgState, i: i32) {
+    // borg-reborn-rs (#775): inventory refresh runs before the shape
+    // decision. Defer cleanup until normal form. Otherwise this command
+    // takes the revert's 'r' answer and leaves its item key at the command
+    // prompt (cmd-obj.c:do_cmd_uninscribe:153-167).
+    if engine::player_is_shapechanged() {
+        return;
+    }
+
     let it = &st.items.items[i as usize];
     if u32::from(it.tval) == TV_FOOD
         && i32::from(it.sval) == st.item_val.sv_food_slime_mold

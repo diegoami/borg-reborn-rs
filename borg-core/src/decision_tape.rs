@@ -128,6 +128,37 @@ pub fn compare<T:Clone+PartialEq>(st:&mut BorgState,context:serde_json::Value,dr
     (driven,replayed,agreement,count,visits)
 }
 
+
+/// Read-only policy comparison. Both programs borrow the SAME immutable
+/// caller memory; neither receives &mut or a copied engine token. Ordered
+/// engine/RNG responses still execute once and replay without fallback.
+/// Only audited immutable entries may use this boundary; stateful entries
+/// retain compare's complete fork and before/after equality checks.
+pub fn compare_read<T:Clone+PartialEq>(st:&BorgState,context:serde_json::Value,drive:impl FnOnce(&BorgState)->T,replay:impl FnOnce(&BorgState)->T) -> (T,Option<T>,Result<(),String>,usize,std::collections::BTreeMap<&'static str,u64>) {
+    // An opaque dependency may re-enter a ported policy (or the Borg).
+    // Save its tape and pause depth; the inner transaction owns its own
+    // record/replay, then restores the suspended dependency exactly.
+    let _scope=Scope { saved:TAPE.with(|t|t.borrow_mut().take()), paused:PAUSED.with(|p|p.replace(0)), context:CONTEXT.with(|c|c.replace(context)) };
+    TAPE.with(|t|*t.borrow_mut()=Some(Tape::Record(Vec::new())));
+    let driven=catch_unwind(AssertUnwindSafe(||drive(st)));
+    let recorded=TAPE.with(|t|t.borrow_mut().take());
+    let driven=match driven {Ok(v)=>v,Err(e)=>std::panic::resume_unwind(e)};
+    let events=match recorded {Some(Tape::Record(v))=>v,_=>unreachable!()}; let count=events.len();
+    let mut visits=std::collections::BTreeMap::new();
+    for event in &events { if let Some(name)=event.name.strip_prefix("policy::") { *visits.entry(name).or_insert(0)+=1; } }
+    TAPE.with(|t|*t.borrow_mut()=Some(Tape::Replay(events.into())));
+    let result=catch_unwind(AssertUnwindSafe(||replay(st)));
+    let remaining=TAPE.with(|t|match t.borrow_mut().take() {Some(Tape::Replay(q))=>q.len(),_=>unreachable!()});
+    let replayed=result.as_ref().ok().cloned();
+    let agreement=match result {
+        Err(e)=>match e.downcast::<Divergence>() {Ok(e)=>Err(e.0),Err(e)=>std::panic::resume_unwind(e)},
+        Ok(v) if v!=driven=>Err("read-only decision return differs".into()),
+        Ok(_) if remaining!=0=>Err(format!("{remaining} recorded requests were not consumed")),
+        Ok(_)=>Ok(()),
+    };
+    (driven,replayed,agreement,count,visits)
+}
+
 struct Scope { saved:Option<Tape>, paused:usize, context:serde_json::Value }
 impl Drop for Scope { fn drop(&mut self) {
     TAPE.with(|t|*t.borrow_mut()=self.saved.take());
@@ -139,6 +170,38 @@ impl Drop for Scope { fn drop(&mut self) {
 mod tests {
     use super::*;
     fn context()->serde_json::Value {serde_json::json!({"point":"fixture"})}
+    #[test]
+    fn readonly_queries_replay_once_and_preserve_the_parent_transaction() {
+        let mut st=BorgState::default();
+        let draws=Cell::new(0);
+        let (_,_,agreement,_,_)=compare(&mut st,context(),|st| {
+            let result=effect(st,"opaque","".into(),|st| {
+                let (answer,replayed,agreement,_,_)=compare_read(st,context(),|_| {
+                    engine("read-query","x".into(),||{draws.set(draws.get()+1);7i32})
+                },|_| engine("read-query","x".into(),||panic!("read replay executed a query")));
+                assert_eq!(replayed,Some(answer)); assert!(agreement.is_ok());
+                st.borg.goal.fleeing=true;
+                answer
+            });
+            engine("parent-tail","".into(),||9i32)+result
+        },|st| {
+            let result:i32=effect(st,"opaque","".into(),|_|panic!("outer replay executed an effect"));
+            engine::<i32>("parent-tail","".into(),||panic!("parent replay executed a query"))+result
+        });
+        assert!(agreement.is_ok()); assert!(st.borg.goal.fleeing); assert_eq!(draws.get(),1);
+    }
+    #[test]
+    fn readonly_return_and_request_order_faults_reject() {
+        let st=BorgState::default();
+        let (_,_,agreement,_,_)=compare_read(&st,context(),|_|true,|_|false);
+        assert_eq!(agreement,Err("read-only decision return differs".into()));
+        let (_,_,agreement,_,_)=compare_read(&st,context(),|_| {
+            let _:i32=engine("first","".into(),||1);
+            engine("second","".into(),||2i32)
+        },|_| engine("second","".into(),||panic!("reordered read escaped replay")));
+        assert!(agreement.unwrap_err().contains("expected first"));
+    }
+
     #[test]
     fn effect_and_rng_execute_once_and_complete_state_is_compared() {
         let mut st=BorgState::default(); let effects=Cell::new(0); let draws=Cell::new(0);

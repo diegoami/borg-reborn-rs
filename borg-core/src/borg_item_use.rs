@@ -18,12 +18,12 @@
 // borg-reborn-rs (#242): named item_use policy; default operations unchanged.
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
-use crate::borg_inventory::borg_slot;
-use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
-use crate::borg_item::inven_wield;
-use crate::borg_item_analyze::borg_obj_has_effect;
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
-use crate::engine;
+use crate::decision_api::borg_inventory::borg_slot;
+use crate::decision_api::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
+use crate::decision_api::borg_item::inven_wield;
+use crate::decision_api::borg_item_analyze::borg_obj_has_effect;
+use crate::decision_api::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::decision_api::engine;
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_magic_h::{
     HERBAL_CURING, RECHARGING, REMEMBRANCE, REMOVE_HUNGER, REVITALIZE, UNHOLY_REPRIEVE,
@@ -99,36 +99,6 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
-/// Index of the last item in the pack that is not empty, has the given
-/// tval test true and is not aware (the `*_unknown` scans), or -1.
-fn last_unaware(st: &BorgState, tval_ok: impl Fn(u32) -> bool) -> i32 {
-    let mut n = -1;
-
-    /* Scan the pack */
-    for i in 0..i32::from(engine::z_info().pack_size) {
-        let item = &st.items.items[i as usize];
-
-        /* Skip empty items */
-        if item.iqty == 0 {
-            continue;
-        }
-
-        /* Require correct tval */
-        if !tval_ok(u32::from(item.tval)) {
-            continue;
-        }
-
-        /* Skip aware items */
-        if item.aware {
-            continue;
-        }
-
-        /* Save this item */
-        n = i;
-    }
-    n
-}
-
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us
@@ -136,7 +106,8 @@ fn last_unaware(st: &BorgState, tval_ok: impl Fn(u32) -> bool) -> i32 {
 ///   3) if we are burning through them fast we should probably teleport out
 ///      of the fight.
 ///   4) When it is the only/best way out of danger, drink away
-pub fn borg_quaff_crit(st: &mut BorgState, no_check: bool) -> bool {
+pub(crate) fn borg_quaff_crit_native(st: &mut BorgState, no_check: bool) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_quaff_crit",format!("{:?}",(no_check,))); }
     if no_check {
         if borg_quaff_potion(st, st.item_val.sv_potion_cure_critical) {
             st.item_use.when_last_quaff = st.borg.time.now;
@@ -165,7 +136,8 @@ pub fn borg_quaff_crit(st: &mut BorgState, no_check: bool) -> bool {
 }
 
 /// Attempt to quaff the given potion (by sval).
-pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_quaff_potion_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_quaff_potion",format!("{:?}",(sval,))); }
     /* Look for that potion */
     let i = borg_slot(st, TV_POTION as i32, sval);
 
@@ -178,7 +150,7 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Quaffing ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "quaff", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "quaff", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'q'));
@@ -191,36 +163,9 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
-/// Attempt to quaff an unknown potion.
-pub fn borg_quaff_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_POTION);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Quaffing unknown potion ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "quaff", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'q'));
-    borg_keypress(st, letter(n));
-
-    /* Clear "shop" goals. Inventory changed so goals need to be redone. */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
-}
-
 /// Attempt to read the given scroll (by sval).
-pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_read_scroll_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_read_scroll",format!("{:?}",(sval,))); }
     /* Dark */
     if engine::no_light() {
         return false;
@@ -231,6 +176,11 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
         || st.borg.tr(BI_ISCONFUSED) != 0
         || st.borg.tr(BI_ISFORGET) != 0
     {
+        return false;
+    }
+
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::decision_api::borg_escape::teleport_scroll_blocked(st, sval) {
         return false;
     }
 
@@ -246,7 +196,7 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Reading ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "read", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "read", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, ESCAPE);
@@ -261,49 +211,9 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
-/// Attempt to read an unknown scroll.
-pub fn borg_read_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_SCROLL);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Dark */
-    if engine::no_light() {
-        return false;
-    }
-
-    /* Blind or Confused */
-    if st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Reading unknown scroll ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "read", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'r'));
-    borg_keypress(st, letter(n));
-
-    /* In case it is ID scroll, ESCAPE out. */
-    borg_keypress(st, ESCAPE);
-
-    /* Clear "shop" goals */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
-}
-
 /// Attempt to eat the given food or mushroom.
-pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32) -> bool {
+pub(crate) fn borg_eat_native(st: &mut BorgState, tval: i32, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_eat",format!("{:?}",(tval,sval,))); }
     /* Look for that food */
     let i = borg_slot(st, tval, sval);
 
@@ -326,33 +236,39 @@ pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32) -> bool {
     true
 }
 
-/// Attempt to eat an unknown food/mushroom. This is done in emergencies.
-pub fn borg_eat_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_FOOD || t == TV_MUSHROOM);
+/// Whether a Remove Hunger scroll may be tried ahead of food: only under the
+/// town plan, and only when the Borg can read (`borg_read_scroll` also
+/// checks the light). A Borg that cannot read goes on to eat.
+///
+/// borg-reborn-rs (#451).
+pub(crate) fn may_read_hunger_scroll_first(capability_mode: bool, blind: bool, confused: bool, forgetful: bool) -> bool {
+    capability_mode && !blind && !confused && !forgetful
+}
 
-    /* None available */
-    if n < 0 {
+/// Relieve hunger before any food is eaten: the hunger spells, then a Remove
+/// Hunger scroll (50% of a full stomach, `NOURISH:INC_TO` 50 in object.txt:
+/// more than a ration's `INC_BY` 30 when read hungry, at 5 against 8 weight).
+/// Only under the town plan, where the planner carries the scroll.
+///
+/// borg-reborn-rs (#451).
+pub fn borg_satisfy_hunger_before_food(st: &mut BorgState) -> bool {
+    let capability_mode = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
+    if !may_read_hunger_scroll_first(
+        capability_mode,
+        st.borg.tr(BI_ISBLIND) != 0,
+        st.borg.tr(BI_ISCONFUSED) != 0,
+        st.borg.tr(BI_ISFORGET) != 0,
+    ) {
         return false;
     }
-
-    /* Log the message */
-    note_desc(st, b"# Eating unknown mushroom ", n as usize, b".");
-
-    /* Perform the action */
-    borg_keypress(st, key(b'E'));
-    borg_keypress(st, letter(n));
-
-    /* Clear "shop" goals */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
+    borg_spell(st, REMOVE_HUNGER)
+        || borg_spell(st, HERBAL_CURING)
+        || borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
 }
 
 /// Prevent starvation by any means possible.
-pub fn borg_eat_food_any(st: &mut BorgState) -> bool {
+pub(crate) fn borg_eat_food_any_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_eat_food_any",format!("{:?}",())); }
     let pack_size = usize::from(engine::z_info().pack_size);
 
     /* Scan the inventory for "normal" food */
@@ -449,7 +365,8 @@ pub fn borg_eat_food_any(st: &mut BorgState) -> bool {
 }
 
 /// Checks rod (by sval) and make a fail check on it.
-pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_equips_rod_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_rod",format!("{:?}",(sval,))); }
     /* Look for that staff */
     let i = borg_slot(st, TV_ROD as i32, sval);
 
@@ -482,7 +399,8 @@ pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool {
 }
 
 /// Attempt to zap the given (charged) rod (by sval).
-pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_zap_rod_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_zap_rod",format!("{:?}",(sval,))); }
     /* Look for that rod */
     let i = borg_slot(st, TV_ROD as i32, sval);
 
@@ -514,7 +432,7 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Zapping ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "zap", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "zap", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'z'));
@@ -525,7 +443,13 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
 }
 
 /// Attempt to use the given (charged) staff (by sval).
-pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_use_staff_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_use_staff",format!("{:?}",(sval,))); }
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::decision_api::borg_escape::teleport_staff_blocked(st, sval) {
+        return false;
+    }
+
     /* Look for that staff */
     let i = borg_slot(st, TV_STAFF as i32, sval);
 
@@ -543,7 +467,7 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Using ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'u'));
@@ -553,37 +477,15 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
-/// Attempt to use an unknown staff. This is done in emergencies.
-pub fn borg_use_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_STAFF);
-
-    /* None available */
-    if n < 0 {
+/// Attempt to use the given (charged) staff (by sval) and make a fail
+/// check on it.
+pub(crate) fn borg_use_staff_fail_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_use_staff_fail",format!("{:?}",(sval,))); }
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::decision_api::borg_escape::teleport_staff_blocked(st, sval) {
         return false;
     }
 
-    /* Log the message */
-    note_desc(st, b"# Using unknown Staff ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "use", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'u'));
-    borg_keypress(st, letter(n));
-
-    /* In case it is ID staff, ESCAPE out. */
-    borg_keypress(st, ESCAPE);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
-}
-
-/// Attempt to use the given (charged) staff (by sval) and make a fail
-/// check on it.
-pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     /* Look for that staff */
     let i = borg_slot(st, TV_STAFF as i32, sval);
 
@@ -625,7 +527,7 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Using ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'u'));
@@ -636,7 +538,8 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
 }
 
 /// Checks staff (by sval) and make a fail check on it.
-pub fn borg_equips_staff_fail(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_equips_staff_fail_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_staff_fail",format!("{:?}",(sval,))); }
     /* Look for that staff */
     let i = borg_slot(st, TV_STAFF as i32, sval);
 
@@ -687,7 +590,8 @@ pub fn borg_equips_staff_fail(st: &mut BorgState, sval: i32) -> bool {
 }
 
 /// Attempt to aim the given (charged) wand (by sval).
-pub fn borg_aim_wand(st: &mut BorgState, sval: i32) -> bool {
+pub(crate) fn borg_aim_wand_native(st: &mut BorgState, sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_aim_wand",format!("{:?}",(sval,))); }
     /* Look for that wand */
     let i = borg_slot(st, TV_WAND as i32, sval);
 
@@ -705,7 +609,7 @@ pub fn borg_aim_wand(st: &mut BorgState, sval: i32) -> bool {
     note_desc(st, b"# Aiming ", i as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "aim", &st.items.items[i as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "aim", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'a'));
@@ -737,7 +641,8 @@ fn inven_total() -> i32 {
 
 /// Check and see if borg is wielding a ring and if he will pass a fail
 /// check.
-pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
+pub(crate) fn borg_equips_ring_native(st: &mut BorgState, ring_sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_ring",format!("{:?}",(ring_sval,))); }
     for i in inven_right()..=inven_left() {
         let item = &st.items.items[i as usize];
 
@@ -787,7 +692,8 @@ pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
 }
 
 /// Attempt to use the given ring.
-pub fn borg_activate_ring(st: &mut BorgState, ring_sval: i32) -> bool {
+pub(crate) fn borg_activate_ring_native(st: &mut BorgState, ring_sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_activate_ring",format!("{:?}",(ring_sval,))); }
     /* Check the equipment */
     for i in inven_right()..=inven_left() {
         let item = &st.items.items[i as usize];
@@ -819,7 +725,7 @@ pub fn borg_activate_ring(st: &mut BorgState, ring_sval: i32) -> bool {
         note_desc(st, b"# Activating ring ", i as usize, b".");
 
         /* The session object log: what the Borg uses. */
-        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
+        crate::decision_api::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
 
         /* Perform the action */
         borg_keypress(st, key(b'A'));
@@ -862,7 +768,8 @@ fn dragon_ready(item: &borg_item, drag_sval: i32) -> bool {
 
 /// Check and see if borg is wielding a dragon armor and if he will pass a
 /// fail check.
-pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
+pub(crate) fn borg_equips_dragon_native(st: &mut BorgState, drag_sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_dragon",format!("{:?}",(drag_sval,))); }
     /* Check the equipment */
     let item = &st.items.items[inven_body() as usize];
 
@@ -906,7 +813,8 @@ pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 }
 
 /// Attempt to use the given dragon armour.
-pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
+pub(crate) fn borg_activate_dragon_native(st: &mut BorgState, drag_sval: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_activate_dragon",format!("{:?}",(drag_sval,))); }
     /* Check the equipment */
     let body = inven_body();
     if !dragon_ready(&st.items.items[body as usize], drag_sval) {
@@ -917,7 +825,7 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
     note_desc(st, b"# Activating dragon scale ", body as usize, b".");
 
     /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "activate", &st.items.items[body as usize]);
+    crate::decision_api::borg_object_log::log_use(st, "activate", &st.items.items[body as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'A'));
@@ -928,7 +836,13 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 }
 
 /// Attempt to use the given artifact.
-pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
+pub(crate) fn borg_activate_item_native(st: &mut BorgState, activation: i32) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_activate_item",format!("{:?}",(activation,))); }
+    /* borg-reborn-rs (#829): not a teleport under a teleport curse */
+    if crate::decision_api::borg_escape::teleport_activation_blocked(st, activation) {
+        return false;
+    }
+
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;
@@ -956,7 +870,7 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
         note_desc(st, b"# Activating item ", i as usize, b".");
 
         /* The session object log: what the Borg uses. */
-        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
+        crate::decision_api::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
 
         /* Perform the action */
         borg_keypress(st, key(b'A'));
@@ -971,7 +885,8 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub(crate) fn borg_equips_item_native(st: &BorgState, activation: i32, check_charge: bool) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_item",format!("{:?}",(activation,check_charge,))); }
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
         return false;
@@ -1009,7 +924,8 @@ pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool)
 /// The lower the number, the better the chance of success
 /// 200 is 80% of success
 /// 600 is 40% chance of success
-pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
+pub(crate) fn borg_activate_failure_native(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_activate_failure",format!("{:?}",(tval,sval,))); }
     /* Look for that item */
     let i = borg_slot(st, tval, sval);
 
@@ -1041,7 +957,8 @@ pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32) -> i32 {
 }
 
 /// Use things in a useful, but non-essential, manner.
-pub fn borg_use_things(st: &mut BorgState) -> bool {
+pub(crate) fn borg_use_things_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_use_things",format!("{:?}",())); }
     /* Quaff experience restoration potion */
     if st.borg.tr(BI_ISFIXEXP) != 0
         && (borg_spell(st, REVITALIZE)
@@ -1156,36 +1073,35 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
         }
     }
 
-    /* Eat food */
-    if st.borg.tr(BI_ISHUNGRY) != 0 {
-        let food = TV_FOOD as i32;
-        /* Attempt to satisfy hunger */
-        if borg_spell(st, REMOVE_HUNGER)
-            || borg_spell(st, HERBAL_CURING)
-            || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
-            || borg_eat(st, food, st.item_val.sv_food_slime_mold)
-            || borg_eat(st, food, st.item_val.sv_food_slice)
-            || borg_eat(st, food, st.item_val.sv_food_apple)
-            || borg_eat(st, food, st.item_val.sv_food_pint)
-            || borg_eat(st, food, st.item_val.sv_food_handful)
-            || borg_eat(st, food, st.item_val.sv_food_honey_cake)
-            || borg_eat(st, food, st.item_val.sv_food_ration)
-            || borg_eat(st, food, st.item_val.sv_food_waybread)
-            || borg_eat(st, food, st.item_val.sv_food_draught)
-            || borg_activate_item(st, st.act.food_waybread)
-        {
-            return true;
-        }
-    }
+    st.borg.tr(BI_ISHUNGRY) != 0 && borg_eat_when_hungry(st)
+}
 
-    /* Nothing to do */
-    false
+/// Satisfy hunger using known supplies without using unrelated items.
+pub(crate) fn borg_eat_when_hungry(st: &mut BorgState) -> bool {
+    let food = TV_FOOD as i32;
+    /* Attempt to satisfy hunger */
+    // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
+    borg_satisfy_hunger_before_food(st)
+        || borg_spell(st, REMOVE_HUNGER)
+        || borg_spell(st, HERBAL_CURING)
+        || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
+        || borg_eat(st, food, st.item_val.sv_food_slime_mold)
+        || borg_eat(st, food, st.item_val.sv_food_slice)
+        || borg_eat(st, food, st.item_val.sv_food_apple)
+        || borg_eat(st, food, st.item_val.sv_food_pint)
+        || borg_eat(st, food, st.item_val.sv_food_handful)
+        || borg_eat(st, food, st.item_val.sv_food_honey_cake)
+        || borg_eat(st, food, st.item_val.sv_food_ration)
+        || borg_eat(st, food, st.item_val.sv_food_waybread)
+        || borg_eat(st, food, st.item_val.sv_food_draught)
+        || borg_activate_item(st, st.act.food_waybread)
 }
 
 /// Recharge things.
 ///
 /// XXX XXX XXX Prioritize available items
-pub fn borg_recharging(st: &mut BorgState) -> bool {
+pub(crate) fn borg_recharging_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_recharging",format!("{:?}",())); }
     /* Forbid blind/confused */
     if st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0 {
         return false;
@@ -1280,4 +1196,103 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
+}
+
+// borg-reborn-rs (#435): independent item-use entry facades.
+pub fn borg_quaff_crit(st: &mut BorgState, no_check: bool)->bool {
+if crate::decision_tape::active() { return borg_quaff_crit_native(st,no_check); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemQuaffCrit { no_check }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_quaff_potion(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_quaff_potion_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemQuaffPotion { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_read_scroll(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_read_scroll_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemReadScroll { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_eat_native(st,tval,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEat { tval,sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_eat_food_any(st: &mut BorgState)->bool {
+if crate::decision_tape::active() { return borg_eat_food_any_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEatFoodAny) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_equips_rod(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_equips_rod_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEquipsRod { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_zap_rod(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_zap_rod_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemZapRod { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_use_staff(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_use_staff_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemUseStaff { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_use_staff_fail_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemUseStaffFail { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_equips_staff_fail(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_equips_staff_fail_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEquipsStaffFail { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_aim_wand(st: &mut BorgState, sval: i32)->bool {
+if crate::decision_tape::active() { return borg_aim_wand_native(st,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemAimWand { sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32)->bool {
+if crate::decision_tape::active() { return borg_equips_ring_native(st,ring_sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEquipsRing { ring_sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_activate_ring(st: &mut BorgState, ring_sval: i32)->bool {
+if crate::decision_tape::active() { return borg_activate_ring_native(st,ring_sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemActivateRing { ring_sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32)->bool {
+if crate::decision_tape::active() { return borg_equips_dragon_native(st,drag_sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemEquipsDragon { drag_sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32)->bool {
+if crate::decision_tape::active() { return borg_activate_dragon_native(st,drag_sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemActivateDragon { drag_sval }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_activate_item(st: &mut BorgState, activation: i32)->bool {
+if crate::decision_tape::active() { return borg_activate_item_native(st,activation); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemActivateItem { activation }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool)->bool {
+if crate::decision_tape::active() { return borg_equips_item_native(st,activation,check_charge); }
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::ItemEquipsItem { activation,check_charge }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32)->i32 {
+if crate::decision_tape::active() { return borg_activate_failure_native(st,tval,sval); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemActivateFailure { tval,sval }) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
+}
+pub fn borg_use_things(st: &mut BorgState)->bool {
+if crate::decision_tape::active() { return borg_use_things_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemUseThings) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+pub fn borg_recharging(st: &mut BorgState)->bool {
+if crate::decision_tape::active() { return borg_recharging_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::ItemRecharging) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#451)
+#[cfg(test)]
+mod tests {
+    use super::may_read_hunger_scroll_first;
+
+    #[test]
+    fn the_hunger_scroll_goes_before_food_only_under_the_plan_and_when_it_can_be_read() {
+        assert!(may_read_hunger_scroll_first(true, false, false, false));
+        // without the town plan the C Borg's order stands (spells, then food)
+        assert!(!may_read_hunger_scroll_first(false, false, false, false));
+        // blind, confused or forgetful: no scroll, the Borg goes on to eat
+        assert!(!may_read_hunger_scroll_first(true, true, false, false));
+        assert!(!may_read_hunger_scroll_first(true, false, true, false));
+        assert!(!may_read_hunger_scroll_first(true, false, false, true));
+    }
 }

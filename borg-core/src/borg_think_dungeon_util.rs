@@ -192,21 +192,25 @@ pub fn borg_money_scum(st: &mut BorgState) -> bool {
 }
 
 /// Attempt a series of maneuvers to stay alive when you run out of light
-pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
+pub fn borg_think_dungeon_light(st: &mut BorgState, lightless: bool) -> bool {
     /* Consume needed things */
-    if st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
+    if !lightless && st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
         return true;
     }
 
     let light = &st.items.items[inven_light()];
     let dying = light.iqty != 0 && light.timeout <= 3 && !engine::flag_has(&light.flags, OF_NO_FUEL as i32);
-    if !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
+    if !lightless && !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
         /* Nothing to do */
         return false;
     }
 
     /* I am recalling, sit here till it engages. */
     if st.borg.goal.recalling != 0 {
+        // borg-reborn-rs (#567, review of #640): the third Recall rest.
+        if crate::borg_caution::recall_rest_held(st) {
+            return true;
+        }
         /* just wait */
         borg_keypress(st, key(b'R'));
         borg_keypress(st, key(b'9'));
@@ -214,43 +218,46 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
         return true;
     }
 
-    /* wear stuff and see if it glows */
-    if borg_wear_stuff(st) {
-        return true;
-    }
-
-    /* attempt to refuel/swap */
-    let need = borg_maintain_light(st);
-    if need == BorgNeed::MetNeed {
-        return true;
-    }
-    if need == BorgNeed::NoNeed {
-        return false;
-    }
-
-    /* Can I recall out with a rod */
-    if st.borg.goal.recalling == 0 {
-        let sv = st.item_val.sv_rod_recall;
-        if borg_zap_rod(st, sv) {
+    if !lightless {
+        /* wear stuff and see if it glows */
+        if borg_wear_stuff(st) {
             return true;
         }
-    }
 
-    /* Can I recall out with a spell */
-    if st.borg.goal.recalling == 0 && borg_recall(st) {
-        return true;
-    }
+        /* attempt to refuel/swap */
+        let need = borg_maintain_light(st);
+        if need == BorgNeed::MetNeed {
+            return true;
+        }
+        if need == BorgNeed::NoNeed {
+            return false;
+        }
 
-    /* Test for stairs */
-    if !engine::player_opt(OPT_birth_force_descend)
-        && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_LESS
-    {
-        /* Usable stairs */
-        borg_note(st, "# Testing for stairs .");
-        borg_keypress(st, key(b'<'));
+        /* Can I recall out with a rod */
+        if st.borg.goal.recalling == 0 {
+            let sv = st.item_val.sv_rod_recall;
+            if borg_zap_rod(st, sv) {
+                return true;
+            }
+        }
 
-        /* Done */
-        return true;
+        /* Can I recall out with a spell */
+        if st.borg.goal.recalling == 0 && borg_recall(st) {
+            return true;
+        }
+
+        /* Test for stairs */
+        if !engine::player_opt(OPT_birth_force_descend)
+            && feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_LESS
+        {
+            /* Usable stairs */
+            borg_note(st, "# Testing for stairs .");
+            borg_keypress(st, key(b'<'));
+
+            /* Done */
+            return true;
+        }
+
     }
 
     /* If on a glowing grid, got some food, and low mana, then rest here */
@@ -385,6 +392,10 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
                 return true;
             }
         }
+    }
+
+    if lightless {
+        return false;
     }
 
     /* don't flee to the stairs if already fleeing */
@@ -696,6 +707,7 @@ fn borg_time_to_stay_on_level(st: &mut BorgState, bored: bool) -> i32 {
 
 /// `borg_prepared(depth)`, keeping C's pointer: a formatted reason is the
 /// one static buffer, which later formatted reasons overwrite.
+#[track_caller]
 fn prepared(st: &mut BorgState, depth: i32) -> Option<PreparedC> {
     crate::borg_prepared::borg_prepared_buf(st, depth)
 }
@@ -952,8 +964,9 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* Climb if deeper than I want to be */
-    if g == 0 && st.borg.tr(BI_CDEPTH) > st.cfg(BORG_NO_DEEPER) {
-        let n = st.cfg(BORG_NO_DEEPER);
+    // borg-reborn-rs (#447): use the same overlay as preparedness.
+    let n = crate::errands_plan::effective_no_deeper(st.cfg(BORG_NO_DEEPER));
+    if g == 0 && st.borg.tr(BI_CDEPTH) > n {
         borg_note(st, &format!("# Going up a bit (No Deeper than {n})."));
         g = -1;
     }
@@ -992,23 +1005,11 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
     }
 
-    /* The trip policy, acting: a return sets the rising goal (the route is
-     * the code below: Recall from depth 5, else the stairs); the planned
-     * depth stops a descent past it. Survival (borg_caution) ran before. */
+    /* The added return policy can request town, but cannot replace the
+     * inherited depth or return decisions. */
     if let Some(d) = &trip {
-        use crate::borg_trip::Action;
         let before = (g, st.borg.goal.rising);
-        match d.action {
-            Action::Return => {
-                st.borg.goal.rising = true;
-                if g >= 0 {
-                    g = -1;
-                }
-            }
-            Action::Ascend => g = -1,
-            Action::Continue if g > 0 => g = if bored { -1 } else { 0 },
-            Action::Continue | Action::Descend => {}
-        }
+        (g, st.borg.goal.rising) = crate::borg_trip::apply_return(d.action, before);
         crate::borg_trip::record_application(st, d, before, (g, st.borg.goal.rising));
     }
 
@@ -1067,14 +1068,24 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
 
         /* No up stairs found. do down then back up */
-        if st.stairs.less.num == 0 {
+        // borg-reborn-rs (#483): while rising, explore for up stairs first.
+        let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if st.stairs.less.num == 0 && crate::borg_caution::rising_holds_descent(st, here) {
+            borg_note(st, "# no up stairs found, exploring for them (rising)");
+        } else if st.stairs.less.num == 0 {
             borg_note(st, "# no up stairs found, going down");
             g = 1;
         }
     }
 
     /* Go Down */
-    if g > 0 {
+    // borg-reborn-rs (#483, review): every descent decided here (bored,
+    // "spent too long on level", the trip policy, the fallback above) is
+    // held while rising, unless in real danger.
+    let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if g > 0 && crate::borg_caution::rising_holds_descent(st, here) {
+        borg_note(st, "# Holding a descent while rising to town");
+    } else if g > 0 {
         /* Take next stairs */
         st.borg.stair_more = true;
 

@@ -13,12 +13,16 @@ path = "src/lib.rs"
 crate-type = ["rlib", "staticlib"]
 
 [features]
+test-r4-store = ["borg-next/test-r4-store"]
+test-r4-equipment = ["borg-next/test-r4-equipment"]
+test-r4-power = ["borg-next/test-r4-power"]
+test-r4-item-use = ["borg-next/test-r4-item-use"]
 test-r3-defence = ["borg-next/test-r3-defence"]
 # Declared synthetic M13 branch fixture; never a measured arm.
 test-m13-danger = ["borg-next/test-m13-danger"]
 recording = ["dep:angband-recorder"]
 # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
-borgh = []
+borgh = ["borg-core/borgh"]
 # Test builds only (CI): perception runs while the player hallucinates, and
 # each think asserts the game's RNG is unchanged (RULES 10 regression).
 test-hallucinate = []
@@ -26,6 +30,7 @@ test-hallucinate = []
 # against the engine through other routes (engine.rs, ENGINE TRUTH), and the
 # report goes to BORG_RUN_DIR/truth.jsonl.
 test-perception = []
+test-stair-handoff = ["borg-core/test-stair-handoff"]
 
 [dependencies]
 libc = "0.2"

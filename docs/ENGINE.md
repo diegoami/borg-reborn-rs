@@ -5,15 +5,29 @@ frontend (TE.2), bindings (TE.3) and build (TE.4) follow.*
 
 ## The tree: `engine/angband/`
 
-Upstream Angband at `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`,
+Upstream Angband at `574b618c3bfec595f3503a58f8e488b1c4ae3a46`,
 **byte for byte** (`engine/UPSTREAM`). It was extracted from the upstream
 repository (`git archive` of that commit), not from borg-rs. Its tree id,
-`36257987a683646296e9c53a4535c085472d62dd`, equals the commit's tree.
+`88b243a5eba440cef82007fd5a2c6477467a95f7`, equals the commit's tree.
 `engine/tests/test_engine.py` checks that at `HEAD` and refuses local
 changes. The tree is never edited: changes are patches applied to a copy at
 build time (`engine/apply-patches.sh DEST`).
 
-Re-pinned from `e473720` on 2026-11-14 (#215, owner: every Borg plays
+Re-pinned from `42cd156ac` on 2026-11-20 (#724, owner: "update engine"):
+`574b618c` is upstream `master` 10 commits later. The changes that touch the
+game: trap display made consistent (`cave-map.c`, `ui-target.c`,
+`ui-display.c`, `trap.c`, `trap.h`), two effect handlers
+(`effect-handler-attack.c`, `effect-handler-general.c`), `datafile.c` and
+`obj-init.c`. Three commits are the C Borg's (`src/borg`, not built here; the
+fixes are carried into borg-core and listed in `engine/upstream-borg.txt`);
+the rest are CI, Windows and SDL2. The patch series applied unchanged (two
+hunks at new offsets: 02, 5 lines; 09, 2 lines), the core source list is
+unchanged, and the bindings are unchanged (`trap.h` adds a function they do
+not bind). Every game plays as before: smoke-borg-rs 3/3, smoke-rust 3/3,
+smoke-exact-rust 3/3, full-rust 45/45 identical, so no reference is
+re-recorded (each `REFERENCE` still names the engine it was made on).
+
+The previous re-pin: re-pinned from `e473720` on 2026-11-14 (#215, owner: every Borg plays
 upstream Angband): `42cd156ac` is upstream `master` 12 commits later, the
 commit borg-rs v12 plays. The changes that touch play: timed effects with
 `COMPLETE_REST` (`player_timed.txt`, `player-timed.c`) decide when a complete
@@ -54,6 +68,7 @@ the test checks the rest:
 | `06-key-log` | `ui-input.c` | `borgh_key_hook()` sees every key `inkey_hack` returns |
 | `07-command-boundary` | `ui-game.c` | `borgh_command_hook()` at each game-command boundary |
 | `08-town-queries` | `store.c/.h`, `obj-gear.c/.h` | M13 read-only exact-stack price and inventory-capacity queries, under `BORG_HARNESS` (#328) |
+| `09-synthetic-start` | `game-world.c` | Harness-only wrapper around native leave/generate/arrival before synthetic Borg activation (#371); normal game loop and generation rules unchanged |
 
 **The declared exception:** `04-fixed-date` splits
 `struct tm *date = localtime(&cur_time);` into a declaration and an
@@ -164,11 +179,13 @@ difference from the C set is declared here, with its reason.
 
 ## References
 
-`harness/reference/smoke-rust/` and `full-rust/` hold the Rust Borg's
-smoke and full outputs (keys, messages and state, xz-compressed, plus
-`summary.json`) at the commit recorded in each `REFERENCE` file. They are
-regression references, not oracles (docs/SPEC.md §4). CI compares smoke
-with them. Full is compared locally, under the lock, when the Borg's code
+`harness/reference/smoke-rust/` and `full-rust/` hold the reborn core's
+(`BORG_CORE=reborn`) smoke and full outputs (keys, messages and state,
+xz-compressed, plus `summary.json`) at the commit recorded in each
+`REFERENCE` file; `smoke-borg-rs/` holds the default (borg-rs) core's smoke
+(#606). They are regression references, not oracles (docs/SPEC.md §4). CI
+compares the reborn core's smoke with `smoke-rust` and the default core's
+smoke with `smoke-borg-rs`. Full is compared locally, under the lock, when the Borg's code
 changes.
 
 TE.5 made them from the build on our own integration, after TE.4's

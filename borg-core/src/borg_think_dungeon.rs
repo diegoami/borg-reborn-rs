@@ -92,6 +92,9 @@ pub struct ThinkDungeonState {
     pub feeling_danger: i32,
     /// `borg_feeling_stuff`
     pub feeling_stuff: i32,
+    pub(crate) lightless: crate::borg_lightless::Recovery,
+    /// borg-reborn-rs (#830): the take-off of a cursed item being tried.
+    pub(crate) cursed: crate::borg_cursed::Removal,
 }
 
 /// `GOAL_KILL` (borg-flow.h)
@@ -157,6 +160,7 @@ fn force_descend() -> bool {
 /// `(char *)NULL == borg_prepared(depth)`. Goes through
 /// `borg_prepared::borg_prepared_buf`, so a formatted reason is written into
 /// `borg_prepared_buffer` as in C.
+#[track_caller]
 fn prepared_null(st: &mut BorgState, depth: i32) -> bool {
     crate::borg_prepared::borg_prepared_buf(st, depth).is_none()
 }
@@ -484,6 +488,13 @@ fn borg_check_bounciness(st: &mut BorgState) -> bool {
 }
 
 fn borg_check_breeders(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#722): a level lost to breeders, searched long enough
+    // for stairs: Recall.
+    if crate::borg_caution::breeder_recall_due(st) && crate::borg_escape::borg_recall(st) {
+        borg_note(st, "# Leaving a level lost to breeders (recall): no stairs reached in time.");
+        return true;
+    }
+
     /* Close doors on breeder levels */
     if st.borg.mon.breeders >= 3 {
         /* set the flag to close doors */
@@ -491,8 +502,12 @@ fn borg_check_breeders(st: &mut BorgState) -> bool {
     }
 
     /* Caution from breeders */
+    // borg-reborn-rs (#503): not without an easy escape: stand and fight.
     if (i32::from(st.borg.mon.breeders) >= (st.borg.tr(BI_CLEVEL) + 2).min(5))
         && (st.borg.tr(BI_RECALL) <= 0 || st.borg.tr(BI_CLEVEL) < 35)
+        && !crate::borg_caution::breeder_stand(st)
+        // borg-reborn-rs (#722, lead b): not from a one-think pause.
+        && !crate::borg_caution::breeder_stand_paused(st)
     {
         /* Ignore monsters from caution */
         if !st.borg.goal.ignoring && borg_timer(st, st.borg.time.level) >= 2500 {
@@ -567,6 +582,7 @@ fn boost_bravery(st: &mut BorgState, n: i32, to: i32, before: impl FnOnce(&mut B
 /// back to town before he can collect his reward.
 pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     let mut b_j = -1;
+    let lightless = crate::borg_lightless::update(st);
 
     /* HACK: Prevent clock wrapping Step 1 */
     let now = st.borg.time.now;
@@ -600,8 +616,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* if standing on something valueless, destroy it */
     /* this can be done first because it takes no "turns" */
-    if borg_destroy_floor(st) {
+    if !lightless && borg_destroy_floor(st) {
         return choice!("borg_destroy_floor");
+    }
+
+    // borg-reborn-rs (#470): no Scroll of Deep Descent is kept.
+    if !lightless && crate::borg_junk::borg_discard_deep_descent(st) {
+        return choice!("borg_discard_deep_descent");
     }
 
     /* add a short pause to slow the borg down for viewing */
@@ -635,9 +656,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * 1, do a quick check for items near the stairs that I can pick up before
      * returning to town.
      */
-    if st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
+    if !lightless && st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
         /* Try to grab a close item while I'm down here */
-        if borg_think_stair_scum(st) {
+        // borg-reborn-rs (#549): not while threatened
+        // (`caution_stair_scum_threat`): go straight back up instead.
+        if !crate::borg_caution::stair_scum_threatened(st) && borg_think_stair_scum(st) {
             return choice!("borg_think_stair_scum");
         }
 
@@ -647,12 +670,12 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* check if we need to do something due to bouncing between spots
      * this will set flags to change behavior even if it doesn't force
      * an action */
-    if borg_check_bounciness(st) {
+    if !lightless && borg_check_bounciness(st) {
         return choice!("borg_check_bounciness");
     }
 
     /* check if we need to do something due to breeders */
-    if borg_check_breeders(st) {
+    if !lightless && borg_check_breeders(st) {
         return choice!("borg_check_breeders");
     }
 
@@ -675,7 +698,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         /* Check for an existing "up stairs" */
         b_j = nearest_up_stair(st, b_j);
 
-        let leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+        // C's own literal, 3 x CL + 14 (not `flow_leash_per_level`/`_base`, which are
+        // `borg_get_leash`'s 3 and 9): the kit scales this one separately.
+        let mut leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
+        // borg-reborn-rs (#840): a short kit shortens it (never below 3: "close
+        // enough" below clears the return, so a smaller one would flap).
+        if crate::borg_kit::leash_active(st) {
+            leash = crate::borg_kit::leash(st, leash, leash, 0).max(3);
+        }
 
         /* Return to the upstair-- too far away? */
         if !st.borg.goal.less && b_j > leash {
@@ -702,6 +732,44 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* examine equipment and swaps */
     borg_notice(st, true);
 
+    // borg-reborn-rs (#840): the purse in town, and a note when the kit's
+    // score or leash moves (only with a kit switch on).
+    crate::borg_kit::tick(st);
+
+    // borg-reborn-rs (#830): a harmful curse comes off at once, before any
+    // fight or flight (the curse itself keeps monsters awake and in view).
+    if !lightless && crate::borg_cursed::borg_remove_cursed(st) {
+        return choice!("borg_remove_cursed");
+    }
+
+    let town_hunt = crate::borg_town_hunt::think(st);
+    if town_hunt == crate::borg_town_hunt::Hunt::Retreat {
+        start_leaving_fleeing(st, "town hunt");
+        st.borg.goal.fleeing_to_town = true;
+    }
+    let town_retreat = crate::borg_town_hunt::enabled(st)
+        && st.borg.goal.fleeing && st.borg.goal.fleeing_to_town;
+
+    // #760/#759: an attack-on-sight target or a winning fight owns the
+    // action before even an out-of-light wait or a depth-return flight.
+    if town_hunt == crate::borg_town_hunt::Hunt::Acted
+        || (!town_retreat && crate::borg_caution::fight_before_flight(st))
+    {
+        if st.borg.no_retreat > 0 {
+            st.borg.no_retreat -= 1;
+        }
+        if town_hunt == crate::borg_town_hunt::Hunt::Acted {
+            return choice!("town_hunt");
+        }
+        return choice!("fight_before_flight");
+    }
+
+    // borg-reborn-rs (#811): recovery owns the decision through handoff.
+    if lightless {
+        crate::borg_lightless::recover(st);
+        return choice!("lightless_recovery");
+    }
+
     /* Keep borg on a suitable level */
     if st.stairs.less.num != 0 && st.borg.tr(BI_CLEVEL) < 10 && !st.borg.goal.less && {
         let d = st.borg.tr(BI_CDEPTH);
@@ -723,7 +791,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /*** crucial goals ***/
 
     /* require light-- Special handle for being out of a light source.*/
-    if borg_think_dungeon_light(st) {
+    if borg_think_dungeon_light(st, false) {
         return choice!("borg_think_dungeon_light");
     }
 
@@ -747,6 +815,24 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Try not to die */
     if borg_caution(st) {
         return choice!("borg_caution");
+    }
+
+    // #789: use the normal scary-town stair flow for a retreat without
+    // restoring the named scare. The ordinary ladder remains the fallback.
+    if town_retreat {
+        if feat_at(st, st.borg.c.x, st.borg.c.y) == FEAT_MORE {
+            borg_keypress(st, key(b'>'));
+            return choice!("town_hunt_retreat");
+        }
+        if borg_flow_old(st, GOAL_FLEE) || borg_flow_stair_both(st, GOAL_FLEE, false) {
+            return choice!("town_hunt_retreat");
+        }
+    }
+
+    if crate::borg_town_live::choose_overflow(st)
+        && borg_flow_shop_entry(st, i32::from(st.borg.goal.shop))
+    {
+        return choice!("town_excess_to_shop");
     }
 
     // borg-reborn-rs (#208): an errand steers here, after caution.
@@ -869,7 +955,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Continue flowing to a safe grid on which I may recover */
-    if borg_flow_old(st, GOAL_RECOVER) {
+    // borg-reborn-rs (#614, review of #616): not while committed to stairs.
+    if !crate::borg_recover::holding_for_stairs(st)
+        && !crate::borg_recover::holding_for_monster(st)
+        && borg_flow_old(st, GOAL_RECOVER) {
         return choice!("borg_flow_old");
     }
 
@@ -880,7 +969,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Attempt to find a grid which is safe and I can recover on it.  This
      * should work closely with borg_recover. */
-    if borg_flow_recover(st, 50) {
+    if !crate::borg_recover::holding_for_stairs(st)
+        && !crate::borg_recover::holding_for_monster(st)
+        && borg_flow_recover(st, 50) {
         return choice!("borg_flow_recover");
     }
 
@@ -1009,7 +1100,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Flee the level */
-    if st.borg.goal.fleeing && st.borg.goal.recalling == 0 {
+    // borg-reborn-rs (#603): flee as usual while Recall counts down with
+    // caution_recall_wait_as_usual.
+    if st.borg.goal.fleeing && !crate::borg_caution::recall_restricts(st) {
         /* Take the next stairs */
         st.borg.stair_more = true;
         st.borg.stair_less = true;
@@ -1036,7 +1129,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
 
         /* Try to find some stairs down */
-        if borg_flow_stair_more(st, GOAL_FLEE, false, false) {
+        // borg-reborn-rs (#483): not while rising, unless in real danger.
+        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if !crate::borg_caution::rising_holds_descent(st, here)
+            && borg_flow_stair_more(st, GOAL_FLEE, false, false)
+        {
             return choice!("borg_flow_stair_more");
         }
     }
@@ -1170,7 +1267,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /*** Leave the level XXX XXX XXX ***/
 
     /* Leave the level */
-    if (st.borg.goal.leaving && st.borg.goal.recalling == 0 && st.borg.mon.unique == 0)
+    if (st.borg.goal.leaving && !crate::borg_caution::recall_restricts(st) && st.borg.mon.unique == 0)
         || borg_trip::legacy_sale_hold(st)
     {
         if st.borg.ready_morgoth == 0 && !force_descend() {
@@ -1267,6 +1364,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /*** Explore the dungeon ***/
+
+    // borg-reborn-rs (#754): caution_recall_wait_no_explore.
+    if crate::borg_caution::recall_wait_no_explore(st) {
+        return choice!("wait_for_recall");
+    }
 
     if st.borg.status.vault {
         /* Chase close monsters */
@@ -1408,6 +1510,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     if st.borg.goal.recalling != 0
         && borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false) <= 0
     {
+        // borg-reborn-rs (#567): a monster was near a moment ago: one turn.
+        if crate::borg_caution::recall_rest_held(st) {
+            return choice!("wait_for_recall");
+        }
+
         /* Take note */
         borg_note(st, "# Waiting for Recall...");
 
@@ -1436,6 +1543,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Set a flag that the borg is  not allowed to retreat for 5 rounds */
     st.borg.no_retreat = 5;
 
+    // borg-reborn-rs (#556): stuck while remembered breeders block the
+    // flows (caution_breeder_avoid): the marks are suspended for a few turns,
+    // so the stuck think's flows below may cross them (fight its way out).
+    crate::borg_caution::suspend_breeder_marks_when_stuck(st);
+
     /* Boost slightly */
     let to = st.borg.tr(BI_CURHP).wrapping_mul(2);
     if i32::from(st.borg.avoidance) < to && boost_bravery(st, 1, to, |_| {}) {
@@ -1450,20 +1562,30 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         borg_note(st, "# Considering Phase (twitchy)");
 
         /* Phase */
+        /* borg-reborn-rs (#584): through the one Phase Door decision; no
+         * check, as before. */
         if borg_allow_teleport(st)
-            && (borg_spell(st, PHASE_DOOR)
-                || {
-                    let act = st.act.tele_phase;
-                    borg_activate_item(st, act)
-                }
-                || {
-                    let sv = st.item_val.sv_scroll_phase_door;
-                    borg_read_scroll(st, sv)
-                }
-                || borg_dimension_door(st, 90)
-                || borg_spell(st, TELEPORT_SELF)
-                || borg_spell(st, PORTAL)
-                || borg_shadow_shift(st, 90))
+            && crate::borg_escape::phase_door(
+                st,
+                crate::borg_escape::PhaseSite::TwitchyThink,
+                crate::borg_escape::PhaseCheck::None,
+                None,
+                |st| {
+                    borg_spell(st, PHASE_DOOR)
+                        || {
+                            let act = st.act.tele_phase;
+                            borg_activate_item(st, act)
+                        }
+                        || {
+                            let sv = st.item_val.sv_scroll_phase_door;
+                            borg_read_scroll(st, sv)
+                        }
+                        || borg_dimension_door(st, 90)
+                        || borg_spell(st, TELEPORT_SELF)
+                        || borg_spell(st, PORTAL)
+                        || borg_shadow_shift(st, 90)
+                },
+            )
         {
             /* Success */
             return choice!("twitch_phase");
@@ -1485,7 +1607,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         && boost_bravery(st, 3, 30000, |st| {
             /* Reset multiple factors to jumpstart the borg */
             st.borg.mon.unique = 0;
-            st.borg.mon.scary = false;
+            crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
             /* reset our breeder flag */
             st.borg.near.breeder = false;
@@ -1502,8 +1624,13 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             st.borg.goal.ignoring = false;
 
             /* No known stairs */
-            st.stairs.less.num = 0;
-            st.stairs.more.num = 0;
+            // borg-reborn-rs (#544, caution_jumpstart_keep_stairs since #548): unless kept; forgetting them left the
+            // Borg in a dead-end worm room with no way to the down staircase
+            // it had arrived on (priest-1055640847).
+            if !crate::borg_caution::jumpstart_keeps_stairs() {
+                st.stairs.less.num = 0;
+                st.stairs.more.num = 0;
+            }
 
             /* No known glyph */
             st.glyph.track.num = 0;
@@ -1573,7 +1700,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Reset multiple factors to jumpstart the borg */
     st.borg.mon.unique = 0;
-    st.borg.mon.scary = false;
+    crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
     /* reset our breeder flag */
     st.borg.near.breeder = false;

@@ -1,0 +1,8 @@
+{
+  "schema": "borg-reborn-rs/r1038-item-use-source@1",
+  "receiving_commit": "17992dfcfc74509b723c861b41056f45993dc37c",
+  "receiving_path": "borg-core/src/borg_item_use.rs",
+  "receiving_original_sha256": "b6f7f96b2242664bc3521fa24bf713263fdc4b5365319c33d7ef020d4b465fe5",
+  "native_seams_sha256": "9a6e53a7f29317c1165bf202b5768858bab7dbc25b3ce8881aa3a907d20f1b10",
+  "scope": "All native module bytes recover the accepted pre-seam source; current native-to-owned correspondence covers 37 policy bodies and module constants/enums with explicit API/read/marker seams."
+}

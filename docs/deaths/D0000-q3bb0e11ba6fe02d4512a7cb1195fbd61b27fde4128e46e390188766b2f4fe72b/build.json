@@ -1,0 +1,13 @@
+{
+  "binary": "/workspace/work/p341-adoption/build/rust/game/angband",
+  "binary_sha256": "c0249d4af00d4716bee97f9bc6c39e7f621bdd10121a066d7814f1c89617d626",
+  "built_utc": "2026-11-15T23:18:06Z",
+  "cc": "cc (Debian 14.2.0-19) 14.2.0",
+  "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+  "git_dirty": "no",
+  "git_rev": "2f74e1c5d57ce2b41ded1b5b694174b91b51f265",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+}

@@ -1,6 +1,1946 @@
 # Handover
 
-*Where the work stands, for the next session. Update it in every PR.*
+*The archive, up to 2026-11-18.* Handover notes are now one file per task in
+[`docs/handover/`](handover/README.md) (RULES 5b, #580): read the newest
+there first (`ls -r docs/handover/`). Don't add entries to this file.
+
+## 2026-11-18: CI skips the full test suite when it cannot matter (#577)
+
+Owner: make CI shorter. The engine job's `harness/suite.sh full` on the test
+build (8 of its 12 minutes) plays the reborn core only. A pull request whose
+changed files are all docs (`docs/`, `reference/`, top-level `*.md`), the
+vendored borg-rs core (`borg-core/`) or its settings (`harness/borg*.txt`,
+`harness/scary_monsters*.txt`, `harness/plans/`) now skips it and its diff;
+the perception and no-time checks then read smoke alone. Any other file, and
+every push to main or track-p, runs it as before. The list is an exclusion
+list on purpose: a new path runs the full suite.
+
+Scope (review of #578): the skip is of the reborn-core suite only. The
+settings files and `borg-core/` do change the borg-rs Borg's play, but that
+suite never plays it (`harness/run.sh` rewrites `borg_reborn_core` to
+`reborn` without `BORG_CORE`), so skipping it drops no check of the borg-rs
+arm. What CI checks of that arm (borg-core's release tests, the
+`BORG_CORE=borg-rs` runs with `BORG_CORE_OVERRIDES=off`, the parameter
+validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
+on the borg-rs core, before or after this change: the zoo measures that.
+
+## 2026-11-18: #544's down-staircase flight only when cornered (#548)
+
+Owner: as merged in #545, A+K fired on almost every flight (13 of 18
+classes-18 games, up to 721 notes) and added 3 deaths in a local preview.
+Narrowed, each condition a parameter; all off in `harness/borg.txt`.
+
+- `caution_flee_known_down_stairs` (A, 0) now needs
+  `caution_flee_known_down_cornered` (1): a moving monster adjacent, danger
+  here at or above the HP or surrounded, and no Phase Door, teleport,
+  Teleport Level or escape; and `caution_flee_known_down_max_cost` (40): the
+  staircase within that many steps of flow (the flow's depth from the
+  staircases, the walk around walls; 0 = any). Its own flow
+  (`flee_known_down_flow`) keeps every refusal of `borg_flow_stair_more`
+  (`more_refused`, shared since review 2) and #557's rising hold.
+- K is its own flag, `caution_jumpstart_keep_stairs` (0).
+- Flags off: smoke 3/3 identical.
+- **Local classes-18** (this tree, `BORG_CORE=borg-rs`, 100,000 turns,
+  the zoo's 18 starts; not a zoo run, and the shipped `borg.txt` of today, not
+  #240's ctl): ctl 0 deaths, 0 notes; *wide* (#545 as merged: cornered 0,
+  cap 0, K 1) 2 deaths (Priest 1569794094 a soldier, Druid 934061548 a
+  wild cat), 2,607 notes in 17 games; *narrow* (the defaults above, K 0) 1
+  death, 31 notes in 3 games, the other 15 games key-for-key the ctl. The
+  narrow death (Priest 1569794094, poison from worms at turn 42,320) comes
+  5,450 turns after a flight that did escape an adjacent soldier (danger 84,
+  HP 34, staircase 24 flow away); the game had diverged. #240's three newly
+  killed (Ranger 1739161339, Warrior 1019921749, Druid 102023799) live in
+  every arm here, but this tree is not #240's.
+- **Review of #566:** `status.desperate` is now set before the staircases
+  are enqueued (`borg_flow_enqueue_grid` rates an unknown staircase grid's
+  danger unless the flow ignores it), as `desperate_flow` did. Recall is no
+  escape for "cornered" here (as #504), though it is one for #503's easy
+  escape: the two disagree on purpose. `borg_surrounded` is checked only
+  with a monster adjacent, and prints its own "Possibility of being
+  surrounded" note.
+- **After syncing with main `4a482c58`** (the owner's new `borg.txt` values
+  and #539), ctl and narrow again: 1 death in both (Blackguard 1472012981,
+  a cave spider, as in #539's runs), the note 3 times in 1 game (Rogue
+  1381972077, alive), the other 17 games key-for-key the ctl. Main has
+  since taken #565 (DL1 flight Recall gate, shipped 2); not rerun with it.
+- **Grandfathered trailers (owner, 2026-11-18):** the first two commits of
+  #566 (`22ed701e`, `1310b46a`) carry a `Co-Authored-By` trailer against
+  RULES 4. The owner chose not to force-push the task branch, so they stay,
+  like the earlier pair; no later commit has one.
+- **The worm room** (`~/borg-play/priest-1055640847`, the arm's
+  `borg.txt` plus the four #548 keys, from birth on this tree: flags off
+  plays the zoo game's 8,008 keys and dies at 91,153). With a temporary
+  local turn gate (not committed), as #545:
+
+  | flags on from | narrow, K 0 | narrow + K | wide + K (#545) |
+  |---|---|---|---|
+  | 88,600 | dies 91,153 (0 notes) | alive at 120,000 (11 notes) | alive at 120,000 (62) |
+  | 89,000 | dies 91,153 | dies 91,153 | dies 91,153 |
+
+  The narrowed A still escapes, but only with K: without it the stuck
+  jumpstart at 88,607 forgets the staircases. A zoo arm for this case
+  should set both. Loading the turn-88,147 save does not test A (a loaded
+  game's Borg knows no down staircase); there, 6 seeds die or live the
+  same in every arm (seeds 11 and 22 die to the worm mass).
+
+- **Review 2 of #566:** (1) main merged (#561, #570), count 2143,
+  citations re-done. (2) With an up staircase known but occupied, the flight
+  skipped `borg_flow_stair_more`'s refusals (not prepared for the next
+  depth, hungry, a sale held, no light) that block "four" applies to the
+  same staircase; now both share `more_refused` in `borg_flow_stairs.rs`
+  (the review read `borg_prepared_c` the wrong way round: it refuses when
+  *not* prepared, but the disagreement was real). (3) The escape traits
+  count items, not spells; adjacency is distance 1, tighter than #504's
+  radius. (4) `flee_down_cornered` reads as `breeder_exit`'s shape. (5) The
+  stairs are enqueued with `enqueue_stairs`. (6) No borg-cemetery case
+  exists for priest-1055640847 or these trials yet; the inputs are
+  `~/borg-play` (the owner's local copy).
+- **Rerun at this head** (main `8da9be99`, shipped `borg.txt`): local
+  classes-18, 0 deaths in ctl, narrow and narrow + K; the note 15 times in
+  2 games (Ranger 226104090, Druid 934061548) in both flag arms; narrow
+  plays the ctl's keys in 17 games, narrow + K in 12 (K alone changes
+  stuck games). Worm room, gate at 88,600: narrow dies at 91,153, narrow +
+  K alive at 120,000 (11 notes), wide + K alive (121); from 89,000 narrow +
+  K dies. Smoke 3/3 identical.
+
+- **Re-review of #566:** accepted with two small items: main merged again
+  (`f660aecc`, with #571; count 2145, citations unchanged; smoke 3/3,
+  borg-core 418 tests) and the PR summary rewritten (the flight shares
+  `borg_flow_stair_more`'s refusals and differs only in the depth cap).
+
+Left: the zoo pilot, borg-zoo#286 (ctl, keep, narrow, narrow-keep on
+classes-18, specimen `b054287b`), requested, not dispatched.
+
+## 2026-11-18: when the Borg buys Word of Recall (#557)
+
+Owner: make the Recall rules adjustable, and value Recall more instead of a
+reserve. Two new settings, both neutral in `harness/borg.txt`:
+- `town_recall_value_percent` (100): the town planner values a scroll at
+  this percent of the walk it saves (capability and need models).
+- `prepared_recall_depth` (5 = C): a descent to this depth or deeper needs
+  one Recall carried. It only stops descents.
+- Already a setting, and found inert for purchases under the shipped
+  planner: `power_inventory_clevel_threshold_3` (7), the old power scorer's
+  "Recall only above CL7".
+
+The six borg-play games from birth with the shipped `borg.txt`, 100,000
+turns (Recall bought in how many games): value 100% 0/6, 300% 1/6, 1000%
+4/6 (up to 3 scrolls); threshold 0: 0/6; recall depth 2: 1/6, and with
+1000% the same as 1000% alone. Defaults: smoke 3/3 identical.
+
+## 2026-11-18: no class values for the breeder hunt count (#574)
+
+Owner, after #561: "I do not want those setting set in the main right now,
+warrior and priest, remove them". `harness/borg_warrior.txt` and
+`harness/borg_priest.txt` no longer set `caution_breeder_hunt_max_count`
+(6 and 3), so every class hunts with the common 4. borg-zoo#277, the pilot
+of the count (2/4/6, the same for every class) and of
+`recover_breeder_hunt_hp_percent` (0/50), is re-pinned to this commit. Its
+c4-h50 arm is this shipped configuration.
+
+## 2026-11-18: one worktree per task (RULES 5a)
+
+Owner: "do we not have a rule about that in this repository? If not add
+it!" #539's last part reached `main` without review (`fba1c6e0..4a482c58`,
+review after the fact in #569): another session (#548) switched the shared
+checkout to `main` while that work was uncommitted, and a bare `git push`
+sent it. RULES 5a now makes every task work in its own worktree, check
+the branch before committing and push with an explicit refspec. AGENTS.md's
+*Starting* section points to it.
+
+## 2026-11-18: breeders hunted by every class (#558)
+
+Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
+a lone green worm mass. Three causes, all fixed behind switches. All of it is
+in the vendored core (`borg-core/`), so it plays only with the borg-rs core:
+`borg_reborn_core = borg-rs` (shipped since #479; the zoo and `~/borg-play`)
+or `BORG_CORE=borg-rs`. A harness run without `BORG_CORE` plays the original
+reborn core, which is unaffected.
+- **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
+  from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
+- **Class:** #503's hunt left Priests out. Every class hunts now, through
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3; removed
+  by #574, all classes now use 4); the
+  count is the switch, with no flag of its own, so the control that plays as
+  main sets it to 0 for Mage, Druid, Priest, Necromancer and Ranger. For
+  Mages and Necromancers below CL35 the hunt walk targets breeders only, with
+  half their mana (`borg_flow_kill_direct`, after 3000 turns on a level, still
+  digs to any monster).
+- **Danger:** the worm's 1d3 acid bite read 630 (200 corrosion fear per acid
+  blow, then +150% for a breeder below CL20), above the hunt's limit of a
+  third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear
+  stays for everything else: at 0 everywhere, 18 starts went from 2 to 5
+  deaths.
+- **Checks** (third review, against main `68cf9eb5` and its `borg.txt`):
+  - control (the class counts at 0 for Mage, Druid, Priest, Necromancer and
+    Ranger, Warrior 4, both switches 0): 18/18 classes-18 starts identical to
+    main;
+  - shipped: 8 of 18 games change; the same 3 deaths (wild dog, blue yeek,
+    lava), sum of CL 100 against 101; the rest gate's note appears 8 times;
+  - the owner's 88,147 save over 8 seeds: 4 worm deaths on main and 4 here.
+    The save is a breeder trap either way (cornered by 14–22 worms), so
+    #556 (no walking into colonies) is the follow-up;
+  - the six `borg-play` deaths: no new death (Priest 809881907 dies to a
+    soldier on main and survives here); Priest 1055640847 ends at CL3
+    against 6, Ranger 2107852048 on DL1 against DL3.
+- **Left:** more Bless and Heroism (#560). The return trip without Recall
+  (#557) went into main as #559, from another session.
+
+## 2026-11-18: no flight Recall on DL1 (#557)
+
+Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
+(#564), `caution_flee_recall_gate_below_depth` (compiled 0; **2 in
+`harness/borg.txt`**; a ceiling, 2 = DL1 only) makes a flight at a depth
+shallower than that read Word of Recall only with #559's exceptions (5 known breeders, or 3 awake monsters that can
+move within 6 grids). Recall there is no easy escape in the stand tests
+either.
+
+- Local classes-18 on `d419072f`, 100,000 turns: 0 deaths in both arms;
+  flight Recalls 17 to 10 games; sum of CL 99 against 107, sum of max depth
+  41 against 43; 17 of 18 games change keys.
+- The six borg-play deaths from birth: with 2, four of six alive at 200,000
+  (as with the full gate); with 0 they replay their zoo keys.
+- Evaluated, not built (owner's items 2 and 4): in the 17 flight Recalls of
+  borg-zoo#255's local ctl cells, 13 were on DL1, 10 came after "unable to
+  flow to up stairs" (median 2,260 game turns on the level), and no
+  monster had fled before any of them. Several were set off by monsters
+  that never move (floating eye, grey mushroom patch): "excessive danger"
+  from a floating eye at 230 against 28 HP.
+
+## 2026-11-18: a hurt or afraid monster is not scary (#539, last part)
+
+Owner, from `priest-809881907` (Grip fled from one flask of oil): a hurt or
+afraid scary monster should stop being scary.
+
+- `caution_scary_hurt_percent` (compiled 0, shipped 50) and
+  `caution_scary_afraid` (compiled 0, shipped 1): a monster that has lost
+  that share of its HP, or is afraid, is no named-list or damage-rule
+  scare. Resist-based and door scares are unchanged.
+- **Found:** with stand mode, a calmed monster that stopped counting as a
+  pursuer turned a stand into a flight while other scary monsters slept.
+  The first version had 2 deaths on the 18 starts (a cave spider, a
+  poisoning). A calmed monster now still counts as a pursuer when it is
+  awake and fast. Then 0 deaths, and 17/18 games play the same keys as
+  off; the Ranger shoots a 4-HP Grip.
+- With the owner's `borg.txt` of `fba1c6e0` merged in, off and shipped
+  are identical (18/18). Both have 1 death: Blackguard 1472012981, a cave
+  spider, which no arm had before that `borg.txt`. It comes from
+  `borg_trip_unknown_stacks = 2`: with 5 the game lives to 100,000, and
+  with `caution_stair_scum_threat = 0` it still dies. At turn 42,023 it is
+  surrounded by a soldier, a salamander and a cave spider. A lead for
+  borg-zoo#248.
+- **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
+  against 107, and max depth 39 against 43, on the 18 starts. Both arms had
+  0 deaths. Details in docs/CALIBRATION.md.
+- **Not run:** the issue's own case (replay from the 1,721 save) and the
+  other `borg-play` deaths, because `~/borg-play` is not on this machine.
+
+Left: a zoo arm (hurt/afraid on against off). #539 closes with this PR. Its
+follow-ups are now issues: #567 (no rest for Recall with a monster near) and
+#568 (throws ranked fairly against melee). The third, Phase Door only with a
+monster adjacent, shipped in #543.
+
+## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
+
+Owner, from priest-1055640847's walk home (#557): "maybe the issue is that
+scary should go away". With #530's stand mode (shipped), the level's scary
+flag is decided after each monster scan, but a scan that finds nothing scary
+returned without clearing it: a level stayed scary until a new level, and the
+Borg kept fleeing. #515's parked branch (`e5fddf0d`) changed the pre-#530
+path only, which the stand mode no longer uses.
+
+- `caution_scary_latch` (1 compiled and in `harness/borg.txt`, the latch): 0
+  clears the flag when the scan finds no scary monster and withdraws only the
+  goals the scare set. Door scares stay latched.
+- From the turn-88,147 save, 5 seeds to 120,000 turns: latch on, seeds 11
+  and 22 die to the worm mass (91,850 and 91,145), 1 of 5 in town; latch off,
+  5 of 5 alive, 2 in town (113,332 and 95,336). With #559's descent hold on
+  as well, 2 deaths (poison, a soldier): the hold hurts.
+- The six borg-play deaths from birth (their zoo arm has stand mode off, so
+  latch 0 alone plays identical keys): with `caution_scary_stand = 1`, latch
+  on and off give the same 3 deaths and 3 survivors at 200,000; the latch
+  clears 0-8 times per game; ranger-1355387156 ends CL7 against CL10.
+- Latch 1: smoke 3/3 identical; the six deaths replay their zoo keys.
+- Not run: the 18 classes-18 starts.
+- Review of #562: the unlatch now also ends the stand (`mon.scary_stand`),
+  so the next stand prints its note. It resets the stand even when the
+  last think stood and had already cleared the flag, a case the review's
+  suggested fix missed. Only the note changes, not the keys.
+
+Left: a zoo arm against the control. Seeds 44 and 55 still stay on DL2:
+exploring for the up staircase (#557).
+
+## 2026-11-18: Boldness capped, rests no longer arm Detect Invisible (#516)
+
+- **Boldness:** `town_fear_cure_count` (compiled 0, shipped 2). Not afraid,
+  fear cures are valued linearly up to 2 in the pack.
+- **Detect Invisible:** `recover_rest_arms_see_invis` (compiled 1 = C,
+  shipped 0). C's rest stamped the see-invisible clock as recent, so every
+  rest triggered a Detect Invisible read, 57 of them in town.
+- **18 starts:** reads 187 to 95 (0 in town), Detect Invisible gold 1,830 to
+  1,245, Boldness 35 to 8 bought (7 to 10 drunk), deaths 0 and 0, levels 95
+  to 107. Details in docs/CALIBRATION.md.
+## 2026-11-18: the walk home without Recall, three flags (#557, part)
+
+Owner, from the replayed priest-1055640847 (`--to 88000`): a CL<=7 Borg
+never buys Word of Recall (the planner prices it as the walk it saves, worth
+less than gold at DL1-3), and walking home bounces DL2<->DL3 with
+connected stairs (8 times from the owner's save on main).
+
+- `town_recall_reserve` (0): that many Recall scrolls are a requirement at
+  the full trip weight, at any depth (review: the walk is never worth the
+  full weight, so a depth condition never applied and was dropped). It is set in the live
+  capability model (`borg_town_capability.rs`), which values purchases when
+  present, and in `borg_town_utility.rs`'s need model. From birth with 1,
+  the Borg reads its starting Recall at 77,690 and buys and keeps a new one at
+  the next visit (87,436); off, it buys none.
+- `caution_rising_hold_flee_descent` (0): while rising in the dungeon, no
+  flight down a staircase unless the danger here is at or above the HP
+  (`choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`),
+  and the held staircase is no easy escape in #530's stand. It cuts the
+  bounces, but from the owner's save over 3 surviving seeds it gets home no
+  more often (0/3 alone; 2/3 with `caution_rising_explore_ticks` 3000; 2/3
+  off). The blocker is exploring for the up staircase on a scary level,
+  left in #557.
+- `caution_rising_explore_ticks = 300` is now written out in
+  `harness/borg.txt` (its compiled default, owner) so a zoo arm can vary it.
+- `caution_flee_recall` (compiled 1 = C; shipped 0 at the merge of #559, then **back to 1** until borg-zoo#255 measures it, owner 2026-11-18): 0 stops a flight from reading Word of
+  Recall (`borg_caution.rs`, "Fleeing the level (recall)") unless the level
+  is swamped by breeders (`caution_flee_recall_breeders`, 5 known) or the
+  Borg is chased (`caution_flee_recall_chasers`, 3 awake within
+  `caution_flee_recall_chase_distance`, 6); Recall then also stops counting
+  as an easy escape in #503/#530's stand tests. Owner: Recall is used too
+  often as an escape and seldom helps. In 144 local classes-18 zoo games on
+  `eea1bf9c` (with #539), a flight read Recall in 134, 113 times of 142 on
+  DL1, spending the starting scroll. The six borg-play deaths from birth with
+  0: four now alive at 200,000 (mage-1594647951, priest-809881907,
+  priest-1055640847, ranger-1355387156, CL5-8); ranger-2107852048 (Grip,
+  stair scum, #549) and mage-2028599180 (floating eye) die as before. From
+  the owner's save (no Recall carried): no change.
+  Other Recall reads left as they are: the stuck jumpstart's "Recalling
+  (twitchy)" (`borg_think_dungeon.rs`), `borg_leave_level`'s trips (rising
+  from DL5+, restock, no stairs after 1000 turns, into the dungeon) and the
+  low-light exit (`borg_think_dungeon_light`).
+- The reserve and the hold off, the Recall gate on: smoke 3/3 identical (its games never flee with Recall). With the gate at 1, the six borg-play deaths replay their zoo keys.
+
+
+## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
+
+Owner, from the replayed zoo death ranger-2107852048 (Grip, game turn 276):
+after fleeing town the Borg landed on DL1 on the up staircase home, and the
+C Borg's stair scum (`borg_think_stair_scum`, grab DL1 items near the stairs,
+then go back up) picked up items while Grip bit it from 14 to 6 HP. It runs
+before `borg_caution` and checks only light. The same bug killed
+mage-1594647951 (the soldier). #539's switches do not help: the scum returns
+first.
+
+- `caution_stair_scum_threat` (0 compiled and in `harness/borg.txt`): 1 skips
+  the stair scum while the level is scary, the danger here is above
+  `caution_stair_scum_danger` (0), or the HP is below the maximum.
+- Flag off: smoke 3/3 identical; the six borg-play deaths replay key for key.
+  Flag on: the Ranger returns to town at turn 201 (alive at 20,000), the Mage
+  lives (85,841); the other four play identical keys.
+
+Left: a zoo arm against the control.
+
+## 2026-11-18: harness/borg.txt's parameter block in the file's own format (#552)
+
+Owner: the flags added since #479 were hard to read. The block is now in the
+format of the older part of the file: `### Section ###` headings (Default
+parameters, Combat, Healing and town shopping, Fleeing, Cornered, Breeders,
+Scary monsters), and for each setting a short description, a blank line, the
+setting and a blank line. Issue numbers stay, as a pointer; the history moved
+out. Every setting and value is unchanged (140 keys, none duplicated), and
+three games play identical keys with the old and the new file. New settings
+should follow this format, in the section they belong to.
+
+## 2026-11-17: flee only while the escape is real (#530)
+
+Owner: flee scary monsters while there is a chance; once there isn't, stand
+and fight. `caution_scary_stand` (compiled 0, shipped 1): in the dungeon a
+never-moving monster is never scary, and a scary level is fled only with an
+easy escape (stairs within the breeder stand's steps, or an escape item) or
+when no scary monster awake and as fast as the character exists; otherwise
+the scare's leave and flee are withdrawn and the Borg fights (the cornered
+mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
+45 stands; the setting at 0 plays main's keys.
+- **Left:** the town (unchanged), and the escape itself: the owner notes
+  the Borg is not always good at escaping (e.g. leave the room and close the
+  door) — #532.
+
+## 2026-11-18: reference-receipt compatibility decision (#375 / P5)
+
+- Owner authorized #579 merge and continuation. #579 integrated into track-p
+  at f357404e after green CI; #374 is closed. Work proceeds in its own
+  .worktrees/T375 checkout on task/T375-reference-receipts from that source.
+- Assess the existing full-package importer and Cemetery native API 1 at
+  pinned 09225018. No payload-reference resolver/closure contract exists;
+  retain self-contained qualified packages and implement no alternate registrar.
+- Read-only validation rechecks all 25 P341 mapped packages; all 13 receiving
+  packages have earlier qualified family/key matches present at 2f74e1c5.
+  Twelve identical parameter payloads occupy one Git blob already. Logical
+  working-tree byte totals are not claimed Git storage savings or new lives.
+- docs/REFERENCE-RECEIPTS.md records full versus coverage identity, mandatory
+  actual new-attempt provenance, changed-payload retention, missing-reference
+  failure and owner/version/index/reconciliation/retention boundaries for a
+  future format. Existing KNOWN coverage avoids unnecessary new death packages;
+  it does not establish complete result equality or capture another build's data.
+- No runtime/default/pin/schema/index/registry change, game, canonical write,
+  historical migration or deletion. Original records/maps/packages remain exact.
+  Full-package retention is the concrete permitted design outcome of #375.
+- #608 review recommends approval. Clarify that routine KNOWN controls require
+  no new record or extra retention/publication step; retained receipts/payloads
+  are scoped to explicit evidence claims, with a concrete Cemetery bundle link.
+  The thirteenth receiving package selects borg_core=reborn and has params.json,
+  not params-core.json; the twelve-copy byte/blob count is unchanged.
+- Importer regressions and archive verification pass; required checks/CI and
+  owner review precede task integration. After the last P5 task merges, stop
+  for a pinned track-p→main milestone review; do not promote automatically.
+
+## 2026-11-18: exact historical validation recipes (#374 / P5)
+
+- Owner authorized continuing after #555/#537 merged into track-p 6aa38d2b.
+  Task uses its own worktree .worktrees/T374 on task/T374-validation-invocations.
+- Add docs/VALIDATION-RECEIPTS.md's future capture contract and portable
+  reconstruction instructions plus harness/recipes/p341-full.json. These are
+  command metadata, not new gameplay reports, and original P341 files/packages
+  stay byte-identical. No original shell history or new 45-start run is claimed.
+- Exact receiving suite SHA-256: 7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed.
+  It has 45 menu-letter starts, nine classes and 100000 turns each. Both roles
+  must use this file; donor's built-in full has another hash and lacks menu.
+- Verify clean pinned Git-tree source hashes 87717140… (receiving) and
+  d07a8547… (donor), every start/config hash, pristine effective borg.txt,
+  receiving profile/selectors and all 45 retained stream-hash pairs. Commands
+  are verified historical reconstruction; JOBS=2 and portable output paths are
+  explicit choices, not invented contemporaneous captures. The full host
+  environment and original argv spelling are not recoverable from the JSON.
+- Preserve strict comparison failure and output hash e06e85e8…; never report
+  the 0/45 complete-summary result as parity. Do not recover unretained opt-in,
+  replay/probe or donor death-postprocessing argv by assumption. The original
+  evidence/map retain their actual outcomes and original source-qualified IDs.
+- No runtime/default/pin change, local gameplay comparison, Cemetery write or
+  population experiment. Source-owned command contracts link immutable evidence.
+  Required checks/CI and owner review precede task integration; #375 follows.
+- #579 review found no blocker. Add the Cemetery clean-tree preflight,
+  explicit expected exit-1 note and pinned donor-script source/hash checks;
+  place this task entry first, preserving the earlier handover entries.
+
+## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
+
+The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
+the eye with Magic Missile or a flask. The Borg's first Magic Missile left the
+eye at 1/9 HP. `set_health` estimates HP as `maxhp * (100*hp/maxhp) / 100`,
+truncating twice: 9 × 11 / 100 = 0. The overkill caps (damage at most twice
+the estimate) then score every attack 0, and `borg_flow_old` walked the Borg
+next to the eye, whose gaze paralysed it until it died. New switch
+`kill_live_min_power` (compiled 0, shipped 1): a living monster is estimated at
+least that many HP.
+
+- The Mage lives: it casts again, then throws oil, and reaches the turn cap at
+  CL4. Five of the six `borg-play` deaths now live; the turn-276 Ranger (Grip)
+  plays the same as before.
+- 18 classes-18 starts on main `9ecbfd1e`: off identical to main (18/18). On,
+  16/18 games change (1-HP monsters are common); the same 2 deaths, sum of CL
+  95 → 92. No measured gain beyond the Mage; the zoo would measure it.
+
+## 2026-11-18: escapes from a breeder room, two flags for a zoo arm (#544)
+
+Owner, from the replayed zoo death priest-1055640847 (`~/borg-play`): the
+Borg dies in a dead-end worm room the owner leaves in six moves from turn
+89,000. Found: the stuck jumpstart (bravery boost 3) forgets the known
+staircases, so "flee the level" has nowhere to go; and the danger of a worm
+crowd saturates at `danger_maximum` on every grid, so retreat and back-away
+never move it (236 attacks on one grid). The arm's #503 breeder stand is not
+the cause.
+
+- `caution_breeder_exit` (B): only breeders near, one adjacent, outmatched or
+  surrounded: the desperate flow to the nearest known chokepoint (corridor or
+  doorway: its passable neighbours form two or more groups; review of #545
+  replaced a neighbour count that took room corners for corridors) at least
+  `caution_breeder_exit_distance` (6) grids from every breeder.
+- `caution_flee_known_down_stairs` (A+K): in the dungeon, fleeing with no up
+  staircase known, the desperate flow to a known down staircase at any
+  distance; the jumpstart keeps the known stairs.
+- Both 0 in `harness/borg.txt`: smoke 3/3 identical, and the zoo game
+  replays key for key. With either on from turn 88,600 the Borg leaves the
+  room and is alive at 120,000. From 89,000 only B does: by then the stairs
+  are already forgotten. On from birth, the game diverges early (B first at
+  game turn 17,756 on DL1; A+K at 41,761), so this case alone says nothing about
+  the population.
+
+Left: a zoo arm against the control (owner's choice of size and runs); the
+track for #544 is the owner's to name.
+
+## 2026-11-17: the scary list file shipped on (#518)
+
+Owner: switch to our list. The shipped `borg.txt` sets
+`borg_scary_list = scary_monsters.txt` beside
+`caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
+none` keeps the compiled C list.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
+- **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
+  core, which ignores the list: smoke 3/3 identical to its references.
+- **The merge waits for the zoo:** its adapter must copy a list named by the
+  shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
+  stop with exit 2.
+
+## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
+
+The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
+it read its only Recall with the up staircase 8 steps away, rested while Grip
+closed in, phased twice from a dog twice its speed and died meleeing with 17
+flasks of oil. Three switches (compiled 0, shipped 1):
+`caution_flee_stairs_before_recall`, `escape_phase_adjacent_only`,
+`caution_scary_ranged_no_stairs`.
+
+- The Priest lives (walks back to the stairs). Of the six `borg-play` deaths,
+  four live with the switches on; the floating-eye Mage and the turn-276
+  Ranger play identical keys (no rule engaged).
+- 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
+  deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
+  ranged 3.
+- Review of #543: "known" was not "reachable". Recall now waits only when the
+  flee flows' own stair flow (up: `borg_flow_stair_less`'s; down: its gates,
+  or `borg_flow_stair_both`'s on a scary level) reaches the Borg from a free
+  staircase, probed without committing. "Something to throw or shoot" is the
+  attack planner's own choice (`ranged_means`: `best_throw`, `launch_damage`),
+  not any flask; on a scary level without stairs `borg_attack` takes only an
+  awake monster in view at range (`ranged_candidate`, shared with the Recall
+  and Phase waits). Rerun: off still identical to main (18/18); on 5 → 2
+  deaths, sum of CL 87 → 95; alone: stairs 3 deaths / 95, phase 3 / 89,
+  ranged 2 / 94. Priest and the same four `borg-play` deaths live; the two
+  others still play identical keys.
+- A first version walked to the stairs inside `borg_caution` and returned, so a
+  fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
+  only declines to read Recall.
+- Left on #539: a hurt or afraid monster stops being scary (needs the scary
+  flag recomputed each think, with door/resist scares kept latched).
+
+## 2026-11-18: contract tests run the environment overrides directly (#540)
+
+Moving the borg-zoo pin (needed for #535's shipped scary list) broke
+`engine/tests/test_core_profile_contract.py`: the current adapter clears every
+ambient `BORG_*` variable, so the tests' `BORG_CORE`, `BORG_ERRAND`,
+`BORG_ERRAND_BUDGET` and `BORG_STOPSCARED` overrides never reached the core.
+Those tests now run the game directly (`direct`), with the pinned adapter's
+own `config_text` and `command`. The profile tests still go through
+`run_cell`. 13/13 pass with the old pin (`c5f1b04`) and with `7b373a70`; the
+rest of the engine suite is unchanged between the two pins. Next: the pin
+move in its own PR, then #535.
+
+## 2026-11-17: class values and per-class borg files (#520)
+
+Owner: one common borg.txt, per-class files overriding any setting, no
+per-class flags in the code; decisions A–D "yes to all" (on #520).
+
+- `params.rs`: every parameter has a common value and optional class values
+  (`borg_param_<name>@<class>`, `BORG_PARAM_<NAME>__<CLASS>`, or the pre-#520
+  per-class names as aliases). `value()` follows the character's class
+  (`set_class`). 81 per-class parameters became 6 (registry 2,116).
+- `harness/borg_<class>.txt` hold the 36 shipped class values; the generated
+  CLASS FILES block in `harness/borg.txt` carries them (legacy names, so zoo
+  profiles keep rewriting them); `scripts/tests/test_borg_class_files.py`
+  keeps the block in sync. The zoo adapter needs no change.
+- `params-core.json` adds `class_values`; the trace's attack `parameter_name`
+  is the family's parameter.
+- Checked: the 18 classes-18 starts play identical keys to main `435b07e7`.
+- Left: the cfg `borg_*` settings (decision C: later); #518's scary list by
+  class can use class values.
+## 2026-11-17: borg.txt's formula section removed (#519)
+
+Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
+them. borg-rs's formula section (Power, Depth Requirement, Restock
+Requirement: 790 of `harness/borg.txt`'s 1,362 lines) is deleted; the file is
+now 576 lines. `borg-core/borg.txt` (borg-rs's copy, the parity check) keeps
+it.
+
+- The shipped `borg_uses_dynamic_calcs = FALSE`: the section was read but never
+  processed, and `borg_power`/`borg_prepared` use their built-in calculations.
+  Checked: the 18 classes-18 starts play identical keys to main `a8ac685a`.
+- Even with TRUE the formulas never took effect: a formula line fails to parse
+  and `borg_load_formulas` switches dynamic calculations off (#526, closed as
+  moot). With the section gone, TRUE warns "no formulas found" and stays off.
+## 2026-11-17: the named scary list as data (#518)
+
+Owner: a flexible scary list, by monster, level and class.
+- **Code:** `borg-core/src/scary_list.rs` (ours, declared in the vendor
+  check). `borg_scary_list = FILE` in `borg.txt` replaces the compiled
+  block in `borg_near_monster_type`; the list loads at `borg_init`.
+- **Data:** `harness/scary_monsters.txt`. Each monster has a range
+  `tough-fragile`, each class a fragility 0-100 (owner): Fang 5-8 is 5 for
+  Warrior, Paladin and Blackguard, 6 for Ranger and Rogue, 7 for Priest and
+  Druid, 8 for Mage and Necromancer. Ranges are C's level to C's level + 3.
+  Format: `monster | tough-fragile | class exceptions | flags`.
+  C's list as a file plays byte-identical keys to the compiled one on 18
+  starts; the shipped ranges change 2 of them (Rogue, Ranger).
+- **Harness:** `BORG_SCARY_LIST=FILE harness/run.sh ...` copies and pins
+  the file.
+- **Not shipped yet:** `harness/borg.txt` doesn't name the file, so the zoo
+  plays the compiled list (identical) until its adapter copies the file.
+  The borg-zoo issue is linked from the PR.
+- **Next:** per-class edits, starting where the list costs most (Blackguard
+  and Druid lose about 7 levels, #518 evaluation), measured by zoo pilot.
+- **The latch (#515) is parked**, on branch `task/T515-scary-latch`
+  (`e5fddf0d`, no PR): with the latch re-checked every scan, the Borg still
+  reached stairs within about ten turns, so 912 of 985 scares ended by
+  leaving the level and the switch changed almost nothing.
+
+## 2026-11-17: the named scary list is on again
+
+Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
+the named list against 4 without, with or without the errands plan):
+`harness/borg.txt` ships `caution_scary_named_monsters = 1` again, alongside
+#514's scary-by-damage rule (60). The owner wants the list flexible: #518
+moves it to a data file by class and level (designed, on hold: the owner
+first evaluates a per-class layout, possibly with #520's class files).
+
+## 2026-11-17: cornered mode (#504, #488 slice B)
+
+- `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
+  teleport or escape, a monster within `caution_cornered_radius` 2, danger
+  at or above HP x `caution_cornered_danger_tenths` / 10) the Borg uses every
+  buff regardless of `borg_defend`'s "some danger but not much" window:
+  fear cure, Speed, Heroism, Berserk Strength, Blessing, then Monster
+  Confusion against an adjacent unique or higher-level monster
+  (`caution_cornered_big_level_margin` 0). Melee classes then neither retreat
+  nor back away. Monster Confusion leaves the planner's worthless list only
+  while the mode is on (the planner still gives it no value: no core
+  supply curve reads TMD_ATT_CONF).
+- On 193d9076 (run 44054277431's death starts): Blackguard 888896726
+  (Berserk Strength cast 9 times) and Rogue 1502695781 survive; the Ranger
+  (bleeding) plays identical keys (it has Phase Door); Ranger3 dies to a
+  crow instead of a centipede; the Druid is unchanged.
+- On main, 9 classes x 2 seeds (2001, 2002), 100k turns: 6 deaths off, 3 on
+  (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
+  a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
+- Re-synced with main after #510 (#503) merged.
+- Review (#511): buff spells only at or below `caution_cornered_spell_fail`
+  (25%) failure, Haste Self before the Speed potion; no Monster Confusion
+  against `RF_NO_CONF`; monsters that never move do not corner the Borg;
+  the outmatched heal stays at the end (tried before the boosts, it made a
+  Rogue drink in front of a grey mold instead of stepping away, and a Ranger
+  heal in place against Bullroarer: two new deaths on main `dd5f026e`); Teleport Level is an escape (Recall is
+  not); the boost order is a pure `boost_order`, unit-tested.
+- Owner: in a hard breeder fight the same boosts.
+  `caution_breeder_boost_danger_tenths` (compiled 0, shipped 5): standing
+  against breeders with no easy escape and danger here at or above half the
+  HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
+  Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
+
+## 2026-11-17: healing by class, no Shovel while poor (#487)
+
+- #487's analysis (on the issue): no melee class bought a weapon in five
+  games; for Warriors and Rogues the try-on rates every heavier weapon about
+  -44,500 power per lost blow, so keeping the Dagger is right; Paladins,
+  Blackguards and Rangers miss upgrades by a few gold. The gold went to
+  Cure Light Wounds for the 400% reserve (a CL8 Warrior bought 26 in one
+  visit and kept 712 gold) and to a Shovel (66 gold) at four of five first
+  visits.
+- Owner: per-class overrides of the healing curve scale and reserve
+  (`town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
+  shipped from 50 (Warrior) to 150 (Mage) and from 100 to 300; the general
+  reserve 100 and curve scale 125; `town_digger_min_gold` 500. Weapon saving
+  is not done.
+- Owner: healing speed (#491) was not meant to set how many potions fill the
+  reserve. `town_heal_reserve_real_hp` (shipped 1) counts real HP in the
+  reserve; speed weights only the healing curve.
+- On main `233ef23e`, 9 classes x 2 seeds: with the old values (reserve 400,
+  scale 100, `town_heal_reserve_real_hp` 0, no class values, digger 0) the 18
+  games play identical keys to main. With the shipped ones (real-HP reserve
+  included) 4 deaths become 2: the four that died live (Mage, Necromancer,
+  Ranger, Blackguard), and two others die (a Druid to an acolyte, a Priest to
+  a green worm mass). Cure Light Wounds bought 212 -> 117, healing gold
+  7190 -> 5430, Shovels 20 -> 8; Warriors' healing 590/1540 -> 130/380 gold.
+  Too few games: a borg-zoo experiment follows at the merge.
+## 2026-11-17: scary by damage (#505)
+
+Owner: scary is a monster that can one- or two-shot you, as a percentage of
+HP. borg-zoo#216 saw the named list's removal (#510) kill characters (5 and
+4 deaths of 18 against 1).
+
+**Change:** `caution_scary_damage_percent` (compiled 0, shipped 60, owner).
+A known monster on the level makes it scary when one character turn of its
+melee, on average, takes that percent of max HP:
+`borg_caution::scary_by_damage`.
+- The damage is the average of its blows (`randcalc` AVERAGE: base, dice
+  and level bonus, review of #514) times its moves per
+  character turn.
+- Not `borg_danger`: a first try with it rated a street urchin at 245 and
+  a floating eye at 276 against 10 HP, from the penalties for stealing and
+  paralysis.
+- Spells are not counted.
+- A note `# Scary by damage: <monster>, <damage> of max HP <hp>` marks when
+  it first makes a level scary.
+- The named list stays shipped off; the resist-based scares and the latch
+  stay.
+
+**Local check:** 18 starts; the table is in docs/CALIBRATION.md. The rule
+keeps the levels and depth of "list off", where the named list loses about
+a quarter of them. Deaths can't be told apart at this size.
+
+**Left:**
+- a zoo pilot (list on, list off, the rule at 30/60/80) decides the value;
+- whether spells should count;
+- the latch, if the zoo shows it holds the Borg.
+
+## 2026-11-17: a planned purchase buys its copies in one transaction (#507)
+
+Found by the zoo on borg-zoo#198. Half-Troll Ranger 60792140 bought 120
+Arrows one transaction at a time: ~1,080 keys at one game turn, which the
+zoo counted as a stall. The zoo's half, borg-zoo#205, is closed: borg-zoo#207
+now flags such runs as `purchase_burst`.
+
+**Cause:** live mode set every action's quantity to 1, and `buy_selected`
+accepted the prompt's default of 1. The planner then re-solved after
+every copy.
+
+**Fix:**
+- A BUY keeps the copies the plan picked of the first ware of its chosen
+  option (`borg_town_shadow::evaluate`). Copies of the same class at a
+  second ware, and other kinds in the option, come on later re-solves.
+- `execute_store` caps them by the stack, the pack's room
+  (`inven_carry_num`) and the gold at the price of one (`price_item`):
+  `borg_town_live::purchase_quantity`, unit-tested. Never above store.c's
+  maximum, so 2 or more always meets the prompt.
+- `buy_selected` types the quantity.
+- The purchase note and object log name the copies bought, and the log's
+  cost is the gold the purse lost (for an uneven stack of wands or staves,
+  `price_item`'s total is not N times the price of one).
+- With `store_buy_direct` set the engine buys one copy with no prompt, so
+  the quantity is not typed. The shipped `harness/borg.txt` does not set it.
+- TAKE_HOME and sales still move one copy per action.
+- The fix is in the vendored core (`borg-core/`), so it plays only when
+  the borg-rs core is selected: `borg_reborn_core = borg-rs` (shipped since
+  #479) or `BORG_CORE=borg-rs`. The original reborn core is unaffected.
+
+**Checked:** three Ranger starts, 100,000 turns, on main `28360152` and on
+the branch:
+- the largest key count at one game turn fell from 149–330 to 72–80;
+- arrow purchases fell from 87–237 transactions to 14;
+- no "not enough gold" or "cannot carry" message.
+
+Play changes, and more arrows are bought in all (276–302 against 87–237),
+so it needs a zoo pilot. Deaths on a specimen with it need new Cemetery
+packages (RULES 12).
+
+**Still open from #491:** the healing reserve can crowd out Phase Door for
+poor characters. A local run of 18 starts found 114 departures without
+Phase Door at reserve 400, against 38 with no reserve. The owner chooses
+the fix after borg-zoo#192's small and medium runs: a cap on the
+reserve's gold, or a reserve that grows with level. Not a Phase Door
+floor: the owner rejected it, since Phase Door is not in the same league
+as healing. Those runs should keep the surviving games' purchase records,
+because deaths alone cannot show the crowding.
+
+## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
+
+#488 (stand-and-fight) is split into #503 (A, breeders), #504 (B, the
+cornered mode) and #505 (C, the scary-monster list). Owner: removing the
+hard-coded scary monsters belongs in this PR.
+
+- `caution_breeder_fight` (compiled 0, shipped 1): with breeders on the
+  level and no easy escape (a free staircase within
+  `caution_breeder_easy_escape_steps` 5, Phase Door, teleport, escape or
+  Word of Recall) the three breeder flees are skipped, and while every
+  known monster within `caution_breeder_stand_radius` 5 is a breeder the
+  Borg neither retreats nor backs away (the Rogue's death ping-ponged
+  between two grids). Warriors, Paladins, Rogues and Blackguards hunt
+  breeders below CL10 while at most `caution_breeder_hunt_max_count` 4 are
+  known.
+- `caution_scary_named_monsters` (compiled 1, shipped 0): the C Borg's
+  named scary monsters by character level and the low-level door scares.
+  The scary flag latches until a new level: a small kobold seen once kept
+  the Blackguard 888896726 fleeing for 54,000 game turns. Resist-based
+  scares stay. With it off, breeders scare through nothing; their handling
+  is the breeder flee / stand above.
+- Replays (run 44054277431's death starts): on 193d9076 all five die; with
+  the shipped settings all five reach the turn cap (CL5–8, DL1–3). On main
+  all six starts reach the cap without the change; with it, five do, at
+  CL6–8 instead of CL4–6, and the Druid 934061548 dies to a kobold shaman on
+  DL2 (CL6), on a later path.
+- Review (#510): Teleport Level counts as an easy escape; the no-retreat
+  rule needs no non-breeder within the danger horizon (20 grids), not only
+  within the radius; the generic low-HP and bleeding/poison flees are left to
+  #504; with the named list on, a breeder scare latched before the stand
+  engaged stays until a new level (a known limit of that intermediate arm). Too few games to claim anything: a zoo arm is
+  needed (named list off / breeder fight off / both).
+- `engine/tests/test_errands_plan.py` growth test: seed 1003 (the plan
+  feature's test; the shipped default stays no plan).
+- Left: #504 (cornered mode), #505 (now: whether the resist-based scares
+  and the latch need changes; to be decided with the owner).
+
+## 2026-11-17: CI cancels superseded pull-request runs (#499)
+
+Owner: are we doing too much on CI? The repositories are public (no paid
+minutes), but runner slots are shared with borg-zoo's experiments, and
+2026-11-17 had 43 CI runs. `.github/workflows/ci.yml` now has a concurrency
+group per pull request with `cancel-in-progress` for `pull_request` events:
+a new push to a PR cancels its older run. Each push to main or track-p has a
+group of its own (the run id), so those are never queued or cancelled. The
+session's practice from now on: batch review fixes into one push, and re-sync
+a PR with main only right before merging, when needed.
+
+## 2026-11-17: explicit gold reserve, shipped 0 (#493)
+
+Owner: the gold reserve is a borg.txt setting, fixed and percent, and it
+should be 0. Before, the live town planner kept gold only through
+`borg_town_w_gold` (25), a price in `solve_cash` (spending `c` costs
+`w x c / (gold left + 1)`) that made the last coins nearly unspendable.
+
+- New parameters `town_gold_reserve` and `town_gold_reserve_percent`
+  (default 0): `Budget::of` takes the larger from the gold left after the
+  urgent needs (which may still use the whole purse);
+  `borg_town_budget::{gold_reserve, spendable}`, unit-tested.
+- Shipped `harness/borg.txt`: both at 0 and `borg_town_w_gold = 0`; the
+  compiled default is 0 too (owner), declared in `borg_init.rs`
+  (`OUR_DEFAULTS`, `NEW_SETTINGS`). The soft price came from borg-rs
+  `785f5064` (2026-11-14, its docs/TOWN-UTILITY.md "Retaining gold"),
+  vendored with borg-rs #87.
+- The reserve bounds the purse at arrival; the visit's sale proceeds are
+  spendable on top of it (review F1, documented rather than changed).
+- Shipping `borg_town_w_gold = 0` changes the borg-rs core's key stream, so
+  zoo deaths on a specimen with it need new Cemetery packages (RULES 12).
+- On borg-zoo run 44054277431's death starts (main's defaults): the median
+  gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
+  holds (median 138). Healing purchases moved only partly (#491 is the
+  healing value).
+## 2026-11-17: no merge before the owner says the review is done (RULES 1a)
+
+Owner, after #496 was merged while it was under review: every PR waits
+for the owner to say its review is done, on every track and into any
+branch. Green CI is not enough. RULES 1a and AGENTS.md "At the end of a
+task" step 4 say so; track P's `track-p` task merges follow it too.
+
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
+## 2026-11-17: Boldness is no buff to the town planner (#486)
+
+The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
+death starts on main's defaults), and the core never drank them for what they
+were bought for. Wine (`object.txt`: weight 10, cost 2, `NOURISH:INC_BY 3`,
+`TIMED_INC:BOLD`) has been no food to the planner since #444, but `timed_cap`
+mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
+
+- A Bold timed effect is no buff the core uses. The core takes Boldness only
+  to cure fear: a Potion of Boldness is `CURE:AFRAID`, priced through FEAR,
+  and `borg_caution` / `borg_recover` quaff it when afraid. The hunger list
+  drinks wine as food.
+- `TMD_BOLD` no longer maps to `BUFF` (`borg_town_capability::timed_cap`).
+  The rule is effect-wide on purpose: the only kind with `TIMED_INC:BOLD` in
+  `object.txt` is the Pint of Fine Wine (no activation or class spell grants
+  it), and Potions of Boldness keep their fear-cure value (tested).
+- On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
+  The freed gold isn't spent on healing; the healing value is a diminishing
+  curve (HP x exposure), which is borg-reborn-rs#491.
+## 2026-11-17: review of #496 (post-merge), fixes
+
+The owner's review of #496 found no behaviour defect: the maths, "off is
+identical" and the mage's death at reserve 800 all reproduce. Fixed here:
+- **F1:** `docs/ZOO-INTERFACE.md` gave the registry as 1783; it now says
+  1795 (1786 after #496, plus #498's nine per-class divisors).
+- **F2:** the CLW/CSW/Healing ranges in docs/CALIBRATION.md and below were
+  max HP, written as if they were potion HP. Reworded, with
+  `object.txt`'s figures.
+- **F3:** `tools/shopping-audit.py` reads `borg_town_capability::NAMES`
+  from the source instead of a hand-kept copy, which lacked "healing
+  reserve". Tested (`tools/tests/test_shopping_audit.py`).
+- **F4:** docs/CALIBRATION.md says that the curve scale also multiplies
+  healing's total value, and that the speed factor also changes the curve's
+  shape.
+
+## 2026-11-17: a healing reserve for the town planner (#491)
+
+Owner: "we can never have enough healing". The owner chose
+configurable borg.txt values instead of the issue's three proposals: a
+linear reserve as a percent of max HP (as in proposal 1), a value for the
+diminishing curve past it, and then healing speed, with proposed defaults.
+
+- **Code:** `borg_town_capability.rs`, details in docs/CALIBRATION.md.
+  - `town_heal_reserve_hp_percent` (0 = off): up to this percent of max HP
+    of healing, each HP is worth the curve's first HP (`w_bleeding / max HP`),
+    on top of the curve. Bought first, never sold below.
+  - `town_heal_curve_scale_percent` (100 = today): stretches the curve past
+    the reserve, keeping its first HP's value.
+  - `town_heal_speed_percent` (0 = HP alone), owner: "budget healing speed
+    as well". A potion that heals at least this percent of max HP in one
+    swallow counts in full; a smaller one counts `heal x heal / (percent x
+    max HP)`. HP per gold alone made Cure Light Wounds the best buy at every
+    level: 800% of a 300-HP character's max HP is 120 CLW, each healing
+    20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
+    CSW at 60–100 max HP, then Healing from about 200 max HP. CCW (60 HP for
+    200 gold) never wins on healing alone.
+- **Off is identical:** at 0, 100 and 0 the four starts of the issue play
+  the same key streams as main `4d83dd26`.
+- **Shipped (owner):** reserve 400, curve 100, speed 66, in
+  `harness/borg.txt`.
+  - 800 was proposed first. In CI, engine test
+    `test_active_cap_is_replaced_when_level_changes` (mage, seed 1001)
+    failed with it: at 10 max HP, 800% is 8 Cure Light Wounds, about 160
+    gold, almost all the starting gold. The mage bought no oil and died at
+    level 1 to a grey mold (turn 4,084).
+  - With 400 + 66, or 66 alone, the mage reaches level 2 alive.
+  - On the four starts, 400 + 66 bought 13 / 6 / 5 / 12 healing potions
+    (main 6 / 4 / 4 / 5). The Blackguard died early (turn 15,735), as it
+    did at 400 without speed. One game each, so an anecdote.
+  - Left: a zoo arm for reserve {400, 800} x speed {0, 66}, and possibly
+    a reserve that grows with level, so early characters keep gold for
+    their attack.
+- **Speed 66 on the four starts:** off still equals main and reserve 800
+  is unchanged by the new code.
+  - Rogue, Blackguard: unchanged, with or without the reserve.
+  - Ranger (34 HP) with reserve 800: 21 potions bought, 570 gold (CLW and
+    CSW), alive.
+  - Druid with reserve 800: 30 potions, 650 gold, alive.
+  - No deep character is measured.
+- **Measurement:** the four starts, 100k turns, branch build. Healing
+  potions bought, gold on healing / total, outcome. One game per cell,
+  descriptive (RULES 14).
+
+| setting | Rogue | Ranger | Blackguard | Druid | deaths |
+|---|---|---|---|---|---|
+| off (= main) | 6, 270/2337 | 4, 80/899 | 4, 80/322, **died** | 5, 100/1168 | 1 |
+| reserve 200 | 2, 40/814 | 3, 60/864 | 4, 180/761 | 5, 100/596 | 0 |
+| reserve 400 | 10, 400/1432 | 11, 370/1051 | 5, 100/192, **died** | 12, 240/650 | 1 |
+| **reserve 800** | 11, 220/1517 | 17, 340/837 | 9, 180/571 | 29, 780/1928 | 0 |
+| reserve 1200 | 31, 720/2059 | 28, 560/1198 | 10, 200/215 | 14, 280/537, **died** | 1 |
+| curve 300 | 17, 390/959 | 2, 40/117, **died** | 4, 80/138, **died** | 11, 270/793 | 2 |
+| reserve 400 + curve 300 | 7, 140/1088 | 10, 300/1188 | 5, 100/192, **died** | 13, 260/593 | 1 |
+| reserve 800 + curve 200 | 10, 200/1395 | 12, 240/1122 | 10, 200/941 | 8, 160/560 | 0 |
+
+- **Reading:**
+  - Reserve 200 is at or below what these low-level characters already
+    carry, so it buys little.
+  - Reserve 800 multiplies the healing bought by 2–6 and still leaves
+    gold for arrows, oil and Phase Door. 1200 starts to crowd them out.
+  - Stretching the curve alone (curve 300) bought more healing on two
+    starts but had two deaths against one; no sign it helps outcomes.
+  - Every game diverges early, so deaths are anecdotes.
+- **Left:**
+  - #496 review: the reserve's total value grows with max HP squared (its
+    weight and its size both grow with max HP). At 400%, a 300-HP character
+    can put about 3,200 gold into it (4 Healing). A reserve that grows less
+    than linearly in max HP, or with level, would keep early characters
+    cheap.
+  - No deep character is measured. With speed 66 the reserve fills with
+    Healing potions from about 200 max HP, not Cure Light Wounds.
+  - Zoo pilot requested: borg-zoo#192, reserve {0, 400, 800} x speed
+    {0, 66} on main `7e08c920`.
+  - #494 (gold reserve, `borg_town_w_gold = 0`) also changes what gold is
+    left for healing. #492 (no wine) is merged; it freed 14–21 lb and a
+    little gold.
+
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
+## 2026-11-17: point-blank shots keep half their damage (#485)
+
+Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its
+bow scored 4 (8 with the Ranger preference) against melee 22–64.
+
+- **Cause:** not the launcher's damage. Bow and Main Gauche both score 4,
+  and the engine agrees (1.2 shots, 1.17 blows, about 6 each per turn).
+  The gap is the danger bonus. Melee adds the target's danger over 2 turns
+  at full damage; `borg_launch_bolt_aux_hack` adds 1 turn weighted by the
+  monster's hit chance, 0 for a monster 2 squares away (same as C). An
+  adjacent non-unique could not be shot at all: damage / 5 = 0. The engine
+  has no point-blank penalty; arrow breakage is the same at any distance.
+  Per-term numbers are in the issue.
+- **Change (owner):** shipped `harness/borg.txt` sets
+  `borg_param_attack_arrow_point_blank_divisor = 2`. The compiled default
+  stays 5. It applies to launcher ammo and thrown objects of every class.
+- **Replay:** with 2, the Ranger is alive at the 100k-turn cap (CL8, max
+  DL7) instead of dying at turn 74,797. It diverges at turn 6,573, so this is
+  one game, not evidence (RULES 14); a zoo arm should measure it.
+- **Left:** the danger-term asymmetry itself (a `full_damage` parameter for
+  the launcher's term) is not changed. Owner's call after the zoo measure.
+
+## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
+
+Owner request: the settings of borg-zoo#170's arm `reborn-bundle-plan-speed30`
+become the defaults, apart from the errands, and the default core switches to
+borg-rs ("reborn is not ready yet").
+
+- **Shipped `harness/borg.txt`:**
+  - `borg_reborn_core = borg-rs` (was reborn);
+  - `borg_town_plan = 1`;
+  - `borg_trip_policy = 1`, `borg_trip_unknown_stacks = 5`, `borg_trip_pack_slack = 1`;
+  - 18 `borg_param_*` lines: outmatched healing 1, speed fight 30, and the 16 class attack preferences.
+- **Not set:** `borg_plan` and `borg_reborn_errand` (none).
+- **Compiled defaults are unchanged.** `params.rs` and `borg_init.rs` stay neutral; unit tests pin them as the neutral and C-parity tables. The bundle comes from the shipped file, which a player's game and every zoo arm read. A zoo profile that names a key rewrites the line.
+- **`harness/run.sh`:**
+  - With no `BORG_CORE`, it rewrites the run's copy to `borg_reborn_core = reborn`, so the harness's reborn-core references (smoke, full, observations) still test the reborn core.
+  - New `BORG_TXT_SET="name=value;..."` pins an existing key.
+- **`test_shopping`'s home-storage round** pins `borg_town_plan=0`, the historical chooser it tests.
+- **Measurement:** borg-zoo#170's pilot was identical across speed 0/30/60 on 18 starts. The medium tier (run 43998795815) is the measurement of the bundle.
+
+## 2026-11-17: never use unidentified items; Deep Descent discarded (#470)
+
+Owner request after borg-zoo#147: 35 of 900 small-tier games ended below
+their max-depth cap, mostly through Deep Descent (an unknown scroll read in
+an emergency, or the known scroll as an escape).
+
+- **Never use an unidentified item.** The three emergency gambles in
+  `borg_caution` (poison/cure section, after the wound patch, and C's last
+  resort) no longer quaff, eat, use or read unknown items;
+  `borg_quaff_unknown`, `borg_read_unknown`, `borg_eat_unknown` and
+  `borg_use_unknown` are deleted. Combat no longer aims an unknown wand or
+  zaps an unknown rod (`BF_WAND_UNKNOWN`/`BF_ROD_UNKNOWN` score 0). Five
+  parameters went with the code (registry 1785 to 1780; docs/CALIBRATION.md).
+  `borg_test_stuff` (Identify Rune) is unchanged.
+- **Sell one of each unknown kind.** Under the town plan an unaware wand,
+  staff or rod is now sold like an unknown potion, scroll or mushroom
+  (`borg_town_shadow::kit_of`). The live planner sells one copy per action;
+  the sale reveals the kind (also under `birth_no_selling`), and the rest of
+  the stack is then valued as the known kind. The historical chooser
+  (`borg_town_plan = 0`) already sold unknown potions and scrolls one at a
+  time; `borg_good_sell` now does the same for unaware mushrooms and devices.
+- **Deep Descent.** Never read or activated (`borg_teleport_off_level`).
+  Once its flavour is known, `borg_junk::borg_discard_deep_descent` ignores
+  the kind: the engine drops every carried copy and hides floor copies, so
+  none is picked up. The planner values it 0 (`WORTHLESS`), so no shop buys
+  it. Its scoring value stays 0.
+- Always on: no switch.
+- Not changed: Teleport Level and fleeing down stairs, the other known ways
+  below a cap (#470 excludes them).
+## 2026-11-17: Speed before a very dangerous fight (#469)
+
+- Owner: when the danger is very high and the Borg fights rather than
+  retreats, drink a Potion of Speed. `attack_speed_fight_danger_tenths`
+  (0 = off, default): once `borg_attack` has chosen a positive best attack
+  other than waiting, a Borg in the dungeon, not fast, with a Speed potion,
+  drinks it first when the danger from monsters that can move (no
+  NEVER_MOVE) is above avoidance x value / 10. This is now the only change
+  that drinks Speed: #465 merged as hoarding only (its last-resort quaff was
+  dropped). The core's own `borg_defend_aux_speed` is unchanged.
+- Found: counting every monster, grey mushroom patches (NEVER_MOVE, spore
+  danger 204) set it off at any threshold. Moving monsters only, it fires 2
+  (setting 20) and 1 (setting 50) times in 180 starts of the ambitious arm
+  (4,2), at thieves (scruffy looking hobbit, cutpurse), with no rescue or
+  new death; off is byte-identical (12 of 12). Descriptive (RULES 14).
+- Left: those games end near DL2, where Speed rarely matters; the setting
+  needs a zoo arm with deeper play. Thieves' danger is inflated by theft.
+
+## 2026-11-17: a game's start leaves out borg.txt and flags (#464 follow-up)
+
+- Owner-approved: a new borg.txt setting changed the file's hash and made
+  every control game UNRECORDED on #465, with identical key streams. The
+  start is now implementation, seed, race, class and save; a setting that
+  changes play changes the key stream, which must still match.
+- `death-tools-pin.txt` moves to `09225018` (borg-cemetery
+  `tools/relaxed-death-match-on-1afd942`; the same commit is borg-cemetery
+  #54 against main). RULES 12 and docs/DOSSIER-IMPORT.md say so.
+## 2026-11-17: hoard Potions of Speed (#452)
+
+Owner: keep Speed potions as an emergency reserve. The last-resort quaff that
+was tried with them is removed (owner, 2026-11-17).
+- **Hoard** (`borg_town_capability.rs`): a speed effect (`TIMED_INC:FAST`,
+  20+2d10 turns, +10 speed, object.txt Potion of Speed) supplies one use,
+  and the SPEED curve is escape-like (`borg_town_w_escape` x exposure, like
+  PHASE/TELEPORT). It was `amount` turns against the whole trip, about 1% of
+  the demand, under a slot's burden: sold or stored. Unknown flavours are
+  still sold (unchanged, #445's question). Unit test: a level-25 character
+  on a 100000-turn trip keeps a stack of four; the old curve does not.
+  The core drinks Speed only as before (`borg_defend_aux_speed`).
+- **Measured** (180 classes-1800 starts, ambitious arm (4,2), 100k turns;
+  descriptive, RULES 14): Speed sold known 57 -> 0, stored 13 -> 0, quaffed
+  43 -> 58, deaths 33 -> 29, deaths with Speed still in the pack about 4 -> 1.
+  The planner now also buys Speed (9 potions in 180 games, one never used).
+- **Tried and removed:** `borg_speed_last_resort` (drink Speed when no heal,
+  phase or teleport is left). As first written it never fired (any Cure
+  Light Wounds potion counted as a heal). Given precedence over CLW it fired
+  in 6 of 180 games, every time at full HP against a harmless monster whose
+  danger estimate exceeded the Borg's HP (floating eye 460, giant white
+  mouse 200, scruffy looking hobbit 63): it wasted the potion and rescued
+  nothing. The danger estimate alone does not mark a real emergency.
+
+## 2026-11-16: no knowledge-only purchases (#460)
+
+- Owner: "turn off the buying of useless unknown objects". Cause of the
+  Scroll of Monster Confusion buys (replay 1285833235, game turn 13116,
+  shop 4 slot 10): not a supply path. `WORTHLESS` does blank
+  `capability::supplies()` for it, and the plan entry's value was exactly
+  25000 = `borg_town_w_knowledge` x UNIT, the first-copy "learn" bonus of a
+  ware whose `serves` carries the knowledge bit. #444 zeroed that weight
+  under `borg_trip_policy = 1` in `Weights::of`, but `step()` rebuilds its
+  settings from the 24 recorded town params (`state_of`), and the trip policy
+  is not one of them, so the zero never reached the plan: the weight was 25 in
+  every arm.
+- Change: `borg_town_shadow::effective_params` zeroes `borg_town_w_knowledge`
+  in the params the step runs on and records (`configured_params` still holds
+  the configured value). Off in every arm, trip 0 and 1; no schema, parameter
+  or default change; replays of new records reproduce the plan. The IDENTIFY
+  capability (Identify Rune scrolls, only with unknown runes carried) still
+  reads the configured weight. `borg_town_shadow.rs` is declared HOOKED.
+  Tests: the effective params, and a knowledge-only ware is planned at the
+  configured weight and not at the effective one (both planner modes).
+- Local replays (before = main build, after = this change; flavour-unknown
+  buys counted from messages.log): 1285833235 trip 1: 6 buys 155 gold with
+  one Monster Confusion, died of poison at clvl 4 -> 4 buys 58 gold (CLW,
+  Phase Door, Boldness, Detect Invisible), alive at the 100000-turn cap;
+  2109297965 trip 0: 7 buys 210 gold, killed by a wild dog at clvl 1 -> 5
+  buys 185 gold, alive at the cap (clvl 7); sanity cell 501/0/0 ambitious:
+  main keys a80b9ac6... -> ba6181b9..., 9 buys 238 gold, died to Lagduf at
+  clvl 8 -> 4 buys 113 gold, alive at the cap. Play diverges from the first
+  changed purchase, so end states are not evidence of improvement (RULES 14).
+  What remains unknown-flavour was bought for its kind: CLW, Phase Door,
+  Magic Mapping, Cure Serious Wounds, Boldness, Detect Invisible.
+- A `WORTHLESS` check cannot cover a flavour-unknown ware by itself: in a
+  store the ware carries its real kind, and `supplies()` prices it by that
+  (so a known-worthless kind in stock has no supply on any path), but the
+  knowledge bonus does not look at the kind. With the weight zero no
+  worthless kind has value on any planner path.
+- Question for the owner: should trip 0 keep buy-to-identify behind
+  `borg_town_w_knowledge`? The issue said to ask; this change turns it off
+  there too, as the owner's words ask. To restore the knob, read the
+  configured weight again in `effective_params` (one line). The historical
+  chooser (`borg_town_plan = 0`) has its own `borg_buy_identify` (default 0 in
+  harness/borg.txt, #27 learning list including Monster Confusion and Remove
+  Hunger, `borg_buy_strategy.rs:142`); not touched.
+- Low-value kinds still bought for their capability (use sites in the core):
+  Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
+  Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
+  Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
+  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  not count it as food). The planner prices them through `timed_cap`
+  (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
+  FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
+  with the ordinary weight (`:492`, `:502-507`); the owner decides whether
+  those curves are too generous.
+## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
+
+Owner: the scroll should have value, be carried, and be used before any food.
+- **Value** (`borg_town_capability.rs`): the scroll supplies FOOD again (#444
+  had stripped it from every non-food kind). `NOURISH:INC_TO` fills to N
+  percent (`effect_handler_NOURISH`, subtype 3; units: `food_value` 100 per
+  percent, object.txt Remove Hunger 50), so read hungry (grade 15, 
+  player_timed.txt) it adds 35: more than a Ration's `INC_BY` 30, not 50
+  and not a flat ration. Applies to every INC_TO food (Honey-cake, Draught
+  60 -> 45, Waybread 75 -> 60).
+- **Food floor stays coherent**: under the town plan `borg_trait` now counts
+  every scroll in `BI_FOOD` beside the rations (before: only with no other
+  food), so planner and core count the same (`with_remove_hunger`). No
+  store-sold food supplies more than 35, so the planner's floor (200
+  nutrition) is never met with fewer than the core's five items. Not under
+  the plan: unchanged.
+- **Use first** (`borg_item_use.rs`, `borg_caution.rs`): under the plan a
+  hungry or weak Borg tries the hunger spells, then reads the scroll, then
+  eats. Blind, confused, forgetful or in the dark it cannot read and eats.
+- Local, 180 starts, ambitious arm (4,2): Remove Hunger read 0 -> 47 notes,
+  sold 33 -> 4, stored 130 -> 103 (89 games), rations eaten 65 -> 56,
+  "You are getting hungry" 651 -> 512; deaths 32 -> 28, mean CL 4.73 -> 4.83,
+  mean max depth 2.33 -> 2.46; restock-food loops 0 / 0; no stalls.
+- **Left open:** the scroll is still bought once per game (155) as a
+  flavour-learning purchase (the planner values unknown flavours, like Resist
+  Heat/Cold) and stored when the food floor is already met by cheap Hard
+  Biscuits (eleven carried in the sampled game). That is the planner doing
+  its job on a spare scroll; fewer learning buys is #445's question.
+- `scripts/borg-core-vendor.py`: `borg_trait.rs` is declared hooked (it
+  already reported `borg_town_usefulness.rs` and `borg_town_utility.rs`
+  from #444 and earlier; not declared here, not part of CI).
+- `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
+  notes count as use, so torches are not reported as unused.
+
+
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
+## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
+
+- New parameters `caution_heal_when_outmatched` (0/1, default 0) and
+  `caution_heal_outmatched_min_loss` (50 percent); registry 1783 to 1785.
+  `borg_heal_outmatched` runs at the very end of `borg_caution` (after stairs,
+  retreat, escape, back-away and the reserve/recall/unknown-item steps all
+  declined, so escapes keep precedence) and, when hurt by the threshold with
+  danger at least current HP, quaffs CLW, else CSW, else CCW instead of
+  letting `borg_attack` run. Note: "# Healing (outmatched)." The potion order
+  is weakest first (conserves stronger cures); the owner may prefer strongest
+  first for the study.
+- Flag 0 is byte-identical on this build: seed 1516096046 (race 4 class 2,
+  errands_plan.txt, town 1, trip 0, 100000 turns) still dies at CL3 with keys
+  `4c2ea4baf255`; seed 501 (race 0 class 0, ambitious plan) keys `a80b9ac6185c`.
+- Flag 1, same cells: 1516096046 quaffs CLW twice in the acolyte fight and
+  survives to the turn limit (CL4, max DL2); 979002123 (race 8 class 6,
+  trip 1) drinks 17 times and survives to the turn limit (CL10, max DL13)
+  where flag 0 dies (CL8, DL12). One cell each, not a measurement (RULES 14):
+  the zoo control (flag 0 against 1 on the #147 arms) is the next step.
+- Unit tests cover the pure decision; the potion path needs the engine's
+  `z_info` and is exercised by the replays above.
+
+## 2026-11-16: back-away no longer steps onto lava (#458)
+
+- `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
+  `borg_cave_floor_grid`, which includes `FEAT_LAVA`. Lava burns 100+1d100
+  per turn (engine player-util.c:918), so low-level Borgs died at full HP in
+  town (borg-zoo#147: 15 of 212 death cells). It now skips lava unless the
+  Borg is fire-immune, the rule already used in borg_caution's
+  flee-grid check, flow_dark, flow and rest. Plain fix, no flag.
+- Audit of the other `borg_cave_floor_grid` callers: none else chooses a
+  step. The rest are projection and ray paths (borg_projection, fight_attack,
+  fight_defend), monster tracking (flow_kill), light and surround counts,
+  trap assumption (update), and a search-target scan (flow_misc) whose cost
+  map already blocks lava. Dimension door excludes lava already. Flow
+  spreading blocks lava for a non-immune Borg. Phase door lands wherever the
+  game puts the Borg; that is not a Borg choice. `borg_cave_floor_grid` is
+  unchanged (map/view code depends on lava being a floor).
+- Replays (errands_plan, town 1, trip 0, 100000 turns): 1356248624 race 2
+  class 0 now survives to the turn limit (CL5); 584077430 race 1 class 3 now
+  dies at turn 73713 to a battle-scarred veteran, not lava. Sanity cell 501
+  with the ambitious plan keeps its keys sha256 (a80b9ac6...).
+- The unit test covers the lava rule; `back_away` itself links only with the
+  engine, so the replays are the integration check.
+
+## 2026-11-16: reviewed preference promotion synchronization (#453)
+
+- Owner asks to merge after #407's review at50c92ba0 reports no blockers.
+  Prepare the combined build through a track-p task PR before promotion.
+- Merge accepted main6d1bca10 into track-p50c92ba0. Preserve both branches'
+  handover/provenance additions; those are the only conflicts. Main's newer
+  throwable supply helper and all accepted donor/planner/survival/startup
+  changes remain intact. The reviewed final-ranking seam merges unchanged.
+- Review findings1/2: document core-trace@2 and the attacks array; explain
+  fixed-neutral waiting against downweighted attacks. Confirm the documented
+  invocation-family semantics without changing weights or mapping.
+- The vendor audit exposes an existing accepted-main ownership omission:
+  #400/#443 changed borg_town_usefulness.rs without declaring it HOOKED.
+  Declare that receiving file; retain its accepted bytes without edits.
+- Local formatting/Clippy,165 workspace checks,333 native checks/four ignores
+  and the vendor audit pass. Candidate full45 and real weighted Mage/trace
+  parity checks pass. Cemetery0f9f7cf7 independently retains98 verified
+  packages, including this combined source290fd89e and initial CI failure.
+  Pin it for fresh CI. Compare the full45 with accepted main separately. Earlier exact-build evidence remains historical;
+  green old task CI does not validate this combined build. Repin #407 only
+  after task CI/integration; promotion must preserve accepted main work.
+
+## 2026-11-16: attack preference review follow-up (#424)
+
+- #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
+  review of 3f744ddb found no correctness bugs or blocking findings.
+- Owner requested the suggested small follow-up (findings 1 and 6). Retain
+  the winning simulation's raw utility for the diagnostic note. When it
+  differs from the weighted utility, label both; otherwise preserve the
+  existing note exactly, including at all default weights. No helper is
+  rerun, and ranking, execution, RNG and parameter values are unchanged.
+- Correct PLAN.md's stale task status. Other minor review observations
+  remain nonblocking; invocation-family weighting includes emergency and
+  control actions as documented. Any non-neutral tuning needs that scope
+  considered explicitly; no default tuning is proposed here.
+- Local formatting/Clippy,165 workspace tests,336 core tests/four ignores and
+  vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
+  weighted logging and trace-on/off equality pass; original Fang keys match.
+  Source-qualified controls and the initial CI reconciliation failure are
+  retained in Cemeteryf2e4b38c, class-attack-preferences/review-followup-424.
+  The second CI passed full engine behavior/reference checks; final original-
+  core reconciliation also needed the Druid seed1020 identity. Its independent
+  local control matches exactly; all86 archive packages verify before fresh CI.
+  Pin that independently retained archive before fresh CI; never weaken the
+  reconciliation check or relabel earlier source identities.
+- Required Rust checks and task CI gate integration into track-p. Preserve
+  the original review pin; update #407 to the integrated follow-up pin after
+  green CI. Main promotion still requires owner acceptance and delegation;
+  R carry #406 remains gated on accepted promotion.
+- Read-only source refresh ran; missing moving-source clones and unresolved
+  origin/HEAD refs prevent a complete upstream report. No source pins move.
+
+## 2026-11-16: preference task synchronization with recorder review (#403)
+
+- Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference
+  validation ran. Preserve the complete recorder v0.2.0 adoption and both
+  handover histories; only this document conflicted. No recorder code or pin
+  is edited by the preference task beyond inheriting that integration commit.
+- #407 now freezes track-p for the recorder milestone review. #405 remains
+  unmerged while that review is active; owner authorization to implement
+  preferences does not authorize moving its reviewed head or promotion to main.
+- Fresh clean25e89494 versus clean46d5f2ae passes strict full45/45 native
+  key/message/state parity.336 native tests (four existing ignored),165 workspace
+  tests, formatting/Clippy and70 engine checks (two local skips, required pinned
+  zoo and incident fixtures present) pass. The real weighted choice and tracing
+  checks still pass; original-core Fang replay reproduces50491fa13924 exactly.
+- Current Cemetery evidence pin:62039b2750d3b106062d5246e77fa3a84d60d1d8, recorder-sync/ under
+  validation/borg-reborn-rs/class-attack-preferences. All73 qualified packages
+  verify, including27 new exact-build records;12 current native neutral deaths,
+  the weighted case and two original-core deaths reconcile. The new fixture
+  reference supplies CI's known archive without weakening any check. Earlier
+  cac37f59/cd411e55 evidence below remains historical, not relabeled.
+- R carry remains separately blocked in #406. Native calibration replay tooling
+  is Cemetery#13; #407's reviewed track-p head remains unchanged.
+
+## 2026-11-16: class/family attack preferences (#403, design #396)
+
+- Owner authorized native P implementation after the proposal discussion. Branch
+  task/T403-class-attack-preferences starts from track-p cd411e55; task PR targets
+  track-p only. Main promotion and the later R carry need their normal gates.
+- Add 54 named neutral-default parameters (nine classes, six invocation families),
+  explicit symbolic mapping of all170 BF entries, widened floor arithmetic and
+  one final-ranking seam. Hybrids/controls retain invocation family; emergency
+  eligibility and all helper internals remain unchanged. No danger correction.
+- core-trace@2 adds every evaluated candidate's raw/adjusted score, parameter and
+  provenance plus per-invocation winner. Nonpositive results carry no invented
+  rejection cause. Nested frames/repeated attempts remain separate; tracing
+  does not rerun simulation or feed decisions. Historical @1 evidence is intact.
+- Native arithmetic/mapping/config/ranking/nesting tests, workspace tests,
+  formatting, Clippy, vendor audit and Python tools/scripts pass locally.
+  A bounded real Mage regression changes the selected attack under a non-neutral
+  profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
+  for other classes are not claimed as native replay coverage.
+- Clean cac37f59 versus clean cd411e55 passes strict full45/45 key/message/state
+  parity.336 native tests (four existing ignored),165 workspace tests,70 engine
+  tests (three skipped),13 mandatory pinned zoo-profile contracts and the existing
+  four-save incident regression pass. Other checks above remain green. Initial
+  baseline/candidate full attempts played all45 games but could not finalize the
+  suite marker because bc was absent; preserve those attempts. Install tools
+  locally and repeat unchanged suites, never forge completion or discard deaths.
+- Cemetery evidence is pinned ate6a3698c113e9b6bf7ebec87bed8a5d30196a62a under
+  validation/borg-reborn-rs/class-attack-preferences. It retains46 qualified
+  packages, original records, the initial CI artifact, all failure receipts and
+  full comparison hashes. The second CI passed all gameplay comparisons but
+  needed the reference-identical seed102 Fang smoke dossier under its new source
+  identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
+  reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
+  known registry; the original fixture/tool pins and historical archive stay fixed.
+  Native preference test deaths use a separate uploaded/reconciled registry, so
+  the existing original-core observation replay continues to select its own
+  core's case. Shared rerun-death lacks calibration-override restoration; that
+  pre-existing tooling limit is not silently treated as a native replay check.
+  Local raw evidence is under /workspace/work/403-*. R must
+  independently consume the accepted promoted contract with neutral/non-neutral
+  check/switch, ordered requests/effects/RNG and restoration (#364/#366).
+
+## 2026-11-16: town planner item values (#400, #443, food)
+
+One PR, owner's request (supersedes #441):
+- **#400** learned spells no longer zero an item's demand (all services,
+  not only Phase Door).
+- **Food counted like the core**: only food and mushrooms supply FOOD
+  (`BI_FOOD`, which the core's readiness counts). A Remove Hunger scroll
+  counted as food let the planner sell the starting rations; the core
+  then bounced DL1/town on "restock food < 3" in 27-31 of 90 town-arm
+  games. The core seldom reads the scroll (6 of 253 bought).
+- **Food floor**: below five rations' nutrition the FOOD curve is a capped
+  requirement (borg_prepared "5 Food"). Without it the loop stays in 17 of
+  90 games. Nutrition, not items: a Mage may buy cheap Hard Biscuits.
+- **#443 worthless kinds**: 45 consumables the core never uses on purpose
+  (source audit; foods and use-up-is-benefit potions excluded) get no
+  planner value until the core learns to use them.
+- **Flavour learning** (`borg_town_w_knowledge`) is 0 with the trip policy,
+  which returns to town to sell unknown items.
+- **Wine churn fixed**: drinks with under 10 nutrition (wine, whisky,
+  liquor, miruvor) are not food to the planner; counted, the floor bought
+  wine then stored it at the Home every visit (1,532 stores in 180 games
+  -> 42).
+- **Sell less** moved to branch `task/sell-policy` (owner): a parameter
+  `town_sell_without_gold`, still under investigation (town arm without a
+  plan: deaths 30 -> 44, deeper dives). Next study: 2x2 of depth caps
+  (errands_plan / ambitious, max-depth) x returns (trip policy 0/1).
+- Local, town arm, 180 starts (classes-1800 1-180): deaths main 34 /
+  this 30; caster deaths 19 / 19; restock-food loops 58 / 0. Starts 1-90
+  alone showed caster deaths 5 -> 12, starts 91-180 14 -> 7: noise.
+
+## 2026-11-16: learned spells no longer zero item value (#400)
+
+- Owner: fix all of #400 in one PR, the way #380 fixed Phase Door.
+  borg_town_capability.rs no longer sets a capability's demand to 0 when
+  the character has a reliable spell for it (TRAPS, MONSTERS, INVISIBLE,
+  MAP, ILLUMINATE, DIG, RECALL, FOOD). Mana is finite, spells fail or are
+  unusable, and the broad classes conflate effects (treasure sensing is
+  not mapping). The demand drives buying and keeping, so this also stops
+  casters selling those items.
+- `effect_supply` is test-only now; `engine::spell_effect_values` keeps an
+  `#[allow(dead_code)]` hook (donor code, no caller).
+- test_phase_stock: on the Mage town fixture TRAPS, MONSTERS and
+  ILLUMINATE were 0 (Find Traps, Detect Monsters, Light Room); now every
+  service keeps its demand. The assertion fails on 4ecb93d7.
+
+## 2026-11-16: owner-authorized synthetic P1 landing (#378)
+
+- Owner explicitly requested merging #378 after the independent milestone
+  review/re-review and coordinated fixes. Cemetery #7 landed first at
+  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+- Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
+  handover histories, native recorder v0.2.0 and accepted #369/#380 survival
+  changes. Harness conflict resolution retains BOTH synthetic receipt/build
+  checks and the accepted errands-plan copy/load identity check.
+- The canonical fixture/evidence checkout points to Cemetery `ec332c6`, which
+  includes the unchanged incident save bundle and both parent control sets.
+  The native-tool pin remains `1afd9423`; its byte verification stays enabled.
+- Integrated clean runtime is `88a9437a7cbc96ceb7de16c1eecd9cc49c8b4bfb`,
+  source `2d1420b704fa8faa4a1972fe9548fdd2ebaa2a5fde98c9ff7ce9f4ba51d2ecef`.
+  Formatting, Clippy, workspace/core tests, 94 tools and 19 scripts pass;
+  86 local engine tests pass with 18 existing fixture/dependency skips.
+  Initial native checks rejected a stale API-1 sibling checkout as designed;
+  after checking out the landed Cemetery code, rerun passes without test edits.
+  Ordinary/exact smoke match stored references 3/3 across all streams.
+- Three natural controls for the integrated source are retained immutably in
+  Cemetery PR #20 at `9283d07c77724326970e18759d886cd15efd7d29`; all 82 scoped
+  packages verify and all 869 prior package blobs remain intact. The source
+  fixture now points to that canonical evidence, keeping the original save
+  bundle/hash unchanged. No new validation dossier is added to this source
+  repository. Final integrated-head CI must pass before #378 merges. Reviewed P1 runtime/bank
+  evidence remains pinned to its original runtime; no new survival or
+  population claim follows from integration. Per-kind charges (#411) and
+  optional one-way policy (#404) remain separate follow-ups.
+
+## 2026-11-16: coordinated M2 review boundary fix (#378 / Cemetery #7)
+
+- Owner requested coordination with the Cemetery session. Work is isolated on
+  `task/371-m2-forwarder-review`, stacked on reviewed #378 head `34cec1fc`.
+  No direct pushes to the shared #378/Cemetery branches and no native-tool pin
+  change. Ownership proposal is on Cemetery #7 comment 6913007931 and reborn
+  #378 comment 6913031259; Cemetery owns merge/index regeneration, retained
+  stream checks, process cleanup and packet disclosure. Acknowledgement and a
+  fixed new Cemetery head are still needed before paired integration updates.
+- Reborn review finding 3: all native tool execution now requires file bytes
+  matching death-tools-pin.txt, including outside CI. Docs/evidence-only heads
+  with identical native code work; stale API-1 guards, changed/missing files,
+  missing pin objects and added source fail before executing tool code.
+- Seven pointer tests and all 94 tool tests pass. The reviewer's stale Cemetery
+  main `5abfdbe` is refused before executing export against a real retained
+  synthetic death; pinned `1afd9423` correctly rejects it as synthetic. No
+  scratch natural-registry directory is created. No new game was run.
+  Source/script tests: 19 pass. Engine input digest remains the reviewed
+  `bf9a451c46a07142b59525a9c9c581287930e3b333baa4a81dda4816ed2a025a`;
+  there is no new runtime/bank identity. Fix tracking is #410; low-priority
+  per-kind charge validation is explicitly tracked in #411, without altering
+  the reviewed observed tier.
+- Finding 2 is explicitly disclosed in harness/README.md: the P1 birth kit is
+  an ordinary kit created before one-way options, retaining the option-
+  conditional Recall scroll that a native one-way Warrior birth omits. The
+  existing bank's ineffective consumption is disclosed, not a valid escape.
+  Runtime/capture/catalog/bank bytes remain unchanged; no new gameplay report
+  belongs in this repository. This is a review response, not acceptance.
+
+## 2026-11-16: synthetic P1 evidence ownership synchronization
+
+- Preserve current main's accepted ownership/CI changes. All six unmerged
+  task-control packages and the two gameplay evidence packets are now in
+  borg-cemetery, byte-for-byte verified in its M2 ownership receipt. No
+  accepted historical source record or published Git history is rewritten.
+- Source gameplay packet paths are immutable Cemetery references. The
+  fixture/evidence checkout pin includes canonical controls and the unchanged
+  incident save bundle, so CI checks against retained evidence rather than
+  itself. Source-input hash remains 8a61938a; the runtime code did not change.
+- Canonical milestone packet: borg-cemetery docs/reviews/M2/README.md;
+  exact paired heads and cloud checks are in the PR descriptions. M1 and P/R
+  acceptance gates remain independent; no milestone is marked accepted here.
+
+## 2026-11-16: continued synthetic P1 milestone (#371 / cemetery #5)
+
+- Owner instructed continued implementation with review at the milestone;
+  the original generated-depth PR is an integration checkpoint, not a task
+  review stop. Cemetery PLAN.md selects M2 / synthetic P1 independently of M1.
+- Added a restricted declarative Human Warrior tier: real measured capture,
+  engine SHA256, explicit native item/state validation, full-health normalization,
+  and verified initial level/max HP/SP. Capture preserves the ordinary key/state/
+  message streams; no save or Borg memory becomes a synthetic input.
+- OpenSSL crypto is a build dependency for the native file digest. Verified generated-cave starts use contract @2 for both variants; @1 is
+  superseded because requested player depth did not prove cave generation. The pinned capability declaration
+  explicitly limits supported native state; no unsupported item is dropped.
+- The #378 owner-supplied review led to a direct cave/pending-generation
+  check and exposed the initial startup bug. Complete the native transition
+  before either Borg activates; retain old results as superseded, not valid
+  generated-cave evidence. Both cores receive repeated real startup checks.
+- Narrow core birth-option authorization and the guarded lifecycle wrapper
+  follow #386 at its recorded provenance pin; no strategy/tactics are copied.
+  These are competing primitive implementations: do not merge both blindly.
+- Synthetic one-way save reload is refused. Cemetery additionally excludes
+  unmarked one-way native options from natural exports. Generic refusal-message
+  counts are reported separately from terminal outcomes and hazard qualification.
+- Source snapshots and exploratory attempts remain outside Git. The final P1
+  catalog/suite must use a clean, pinned build, with source/binary/config/log
+  hashes, declared normalization and a single-observation sampling limitation.
+- Cemetery owns generation, isolated adapter execution, independent terminal and
+  validity outcomes, provisional low-HP screens and reports. Qualified null-move
+  counts remain unavailable in P1; wider catalogs/qualification are P2.
+
+## 2026-11-16: synthetic-start prerequisite (#371, owner-directed first slice)
+
+- Branch `task/371-synthetic-start` starts at main `92404c7e`; this is an
+  execution/harness task, not a P calibration or R port milestone.
+- `start-depth=N` / `-start-depth N` generates a birth-kit start without a
+  save, rejects bad/conflicting requests, verifies the first logged depth,
+  and records `borg-reborn-rs/synthetic-start@1` in summary/config.
+- Semantics are native one-way descent: no ascent/recall, further descent
+  allowed. This deliberately resolves the epic's conflicting single-level
+  wording; it must be assessed in the owner's review.
+- Harness skips synthetic death export; the exact cemetery toolkit pin
+  supplies an independent direct-export and reconciliation guard.
+- Review scope and runnable checks: `docs/reviews/SYNTHETIC-START.md`.
+  Leave the implementation unmerged for the owner-requested review.
+- Initial CI exposed missing source-specific ordinary control dossiers,
+  not a synthetic-start failure. Retained three immutable natural validation
+  packages using `tools/import-deaths.py`; 2,556 packages verify and both
+  ordinary/core controls reconcile. No synthetic dossier was imported.
+- #371 remains open: run-derived build application and independent
+  null-move diagnostics are follow-up slices; cemetery #5's suite remains
+  outside this change. No population/improvement claim is made.
+## 2026-11-16: owner-approved recorder-only promotion
+
+- Owner accepts the recorder review at46d5f2ae and explicitly requests merge.
+  Concurrent #405 integration expanded track-p/#407 beyond that review.
+  Promote the preserved recorder snapshot separately; leave attack preferences
+  on track-p for their combined review. No preference policy is included here.
+- Preserve accepted main8a0b57c8, including #354 harness work and #368 core
+  refresh. Retain both handover histories and main's canonical evidence pin;
+  fixture archive bytes/hashes are unchanged. Revalidate this combined tree.
+- Original recorder implementation and vendor bytes remain exactly46d5f2ae.
+  Its review provenance and nonblocking follow-ups (#409) remain intact.
+- Clean combined build71978c7b/source1573e6ca: native1011, smoke102 and
+  original-core1020 controls match accepted-main retained key hashes and
+  terminal facts. Pin canonical sync receipts at Cemetery8d63abf5. Local
+  91 tool/19 script checks and all2572 historical package checks pass.
+  Combined CI gates the delegated recorder-only merge.
+
+## 2026-11-16: recorder integration after accepted importer review (#351)
+
+- #395 is merged. Sync current track-p cd411e55, retaining both histories
+  and the accepted Cemetery ownership/fixture changes. Gameplay source remains
+  7d2af920, identical to the measured current-base recorder task build.
+- Cemetery PR11 preserves all 54 task packets and eight reports byte-for-byte
+  (602 audited files). The source archive returns to the accepted 2,572
+  historical cases; canonical native controls total64. Pin that evidence for
+  CI reconciliation and retain brief source links in P351-VALIDATION.md/.json.
+  Older entries below describe their original snapshots and paths.
+- After green final CI, merge #393 only into track-p and close #351. Open
+  the exact-pin track-p -> main recorder milestone review; the owner chooses
+  the reviewer and accepts promotion. Do not merge that promotion here.
+
+## 2026-11-16: recorder task current-base synchronization (#351)
+
+- Track-p advanced to 79ec0591 during recorder work, including the owner-
+  directed #373/#379 policy revert and #358/#359 importer fixes. Preserve
+  that source and both histories. Only this handover conflicts. Keep
+  #395's review head fixed; #393 remains a separate draft.
+- Preserve the first completed comparison as pre-revert proof under
+  P351-PRE-REVERT-* and freeze its actual three executable images. Do not
+  relabel its #355-era policy or overwrite recordings/build identities.
+- Refreshed current-base checks pass: all 45 play triples and deterministic
+  summaries, 242,641 classified rows, fresh/loaded v2 replay and saves, 69
+  native tests (one local binding skip), 91 tool/19 script tests and required
+  Rust checks. Actual clean build receipts are in P351-VALIDATION.md/.json.
+- Preserve 26 current-source packets as well as 28 first-epoch packets;
+  both registries reconcile and all 2,632 archive cases verify. #393 needs
+  CI and #395 disposition before integration; its V2 pin/consumer hooks
+  remain confined to the task branch while that reviewed head is fixed.
+
+## 2026-11-16: recorder v0.2.0 consumer adoption (#351)
+
+- #372 is already owner-promoted; continue on task/P351-recorder-v020.
+  Pin the exact v0.2.0 tag ee8b133a and vendor all 41 files verbatim.
+  No recorder implementation changes are made in this repository.
+- Regenerate consumer hooks from the actual patched tree: early startup,
+  file-newer, directory enumeration and live save-path existence. Keep
+  recorder-off builds off and preserve existing harness/snapshot hooks.
+- Document the v1/v2 incompatibility and retain all old sessions/identities.
+  Add captured-load replay/final-save coverage alongside fresh-game capture,
+  forked checkpoints, bot streams and v2 CLI verification. GUI/branch-menu
+  and migration coverage are not claimed.
+- Local validation passes: full 45/45 recorder-off play parity and 241,403
+  classified rows, original smoke/death controls, fresh/loaded native v2
+  replay/final saves/checkpoints, 18 recorder Rust checks and required Rust
+  checks. Native 69-test run had two local skips; the pinned incident test
+  rerun passes all four positions, leaving local binding regeneration for CI.
+- Preserve 28 new provenance packets with exact original bytes; both
+  registries reconcile and all 2,606 archive packages verify. Build/log/hash
+  receipts and limitations are in P351-VALIDATION.md/.json and the map.
+  Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: plan phases become depth caps (`max-depth N`)
+
+- Owner: a phase should be an additional check, not forced behaviour.
+  New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
+  errand; the core plays as itself and is not prepared below DL N (the
+  phase supplies a separate N+1 threshold, combined with the live configured
+  value). Review follow-up #447 replaces the cfg snapshot/restore: reload
+  and same-save reinitialization retain the overlay; cancellation releases
+  it immediately, including during Recall. No stale cfg is restored.
+  Phase changes preserve errands and core goals; parser/dive/trip tests
+  removed with loop-only coverage are restored.
+- Owner: remove the loop errand entirely. `/loop-levels` and the plan
+  command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
+  was removed; use max-depth N"), with the level-loop code in shell.rs,
+  including #421's hold, test_loop_levels.py and test_loop_livelock.py.
+  #421 cannot recur: nothing forces a route any more.
+- Both shipped plans rewritten: `loop-levels A B` -> `max-depth B` (new
+  hashes).
+- The core's own cap lets a "spent too long, leaving" move step onto the
+  level below for one move and climb straight back; owner: not an issue.
+- The published #440 90-start comparison is historical, descriptive and
+  not independently verified here. Raw seed/config/run custody is still
+  being recovered; it is not validation of #447. See the canonical
+  [Cemetery archive](https://github.com/diegoami/borg-cemetery/tree/513d14f59a00fee6b6a5fa39c650d04eaea05650/validation/borg-reborn-rs/plan-cap-review-447/);
+  missing raw custody is tracked in #448.
+- CI deaths for reviewed source ef85f725 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
+  adds `checkpoints-max-depth.zip`, the wild-cat archive with the plan
+  capped (saves and borg.txt unchanged; the original stays as evidence).
+
+## 2026-11-16: level-loop stair livelock (#421)
+
+- borg-zoo's 3x3 pilot and small tier found frozen-turn bursts with the
+  ambitious plan and the live town planner: on DL1 the core refuses DL2
+  for a reason town cannot change (e.g. "30 hp"), the loop goes home, and
+  in town it restarts and takes the stairs straight down, with no game
+  time passing. Still on main 4ecb93d7 (Half-Troll Rogue 926210318: 1,098
+  keys at one game turn).
+- Fix (borg-core/src/shell.rs, ours): the loop remembers the refusal that
+  sent it home (level, reason, max character level). The same refusal
+  again, with no descent in between, holds the loop: the core plays the
+  level it is prepared for, and leaves a used-up level its own way. A
+  descent clears it. The note now names the core's reason.
+- Checks: engine/tests/test_loop_livelock.py (fails on main with 1,098
+  keys at turn 48483, passes here). 90 small-tier starts, ambitious-town:
+  stalls 1 -> 0, deaths 23 -> 17, max burst 725 (one-unit arrow buying).
+  No-plan arms (control, town) byte-identical on 8 cells.
+- Synchronized with main 83da6679 (#378; play unchanged on checked cells).
+  CI deaths for source 6b3b9e99 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-421-ci-controls-v2` (da51ee44, based on
+  9283d07); the wild-cat fixture points CI at that commit.
+- Found while auditing (next PR): every phase change starts with a town
+  trip (`loop-levels 0 N`), arrival in town restarts the loop, and any
+  upward move sets "home" (46 such overrides in one Warrior game).
+
+## 2026-11-16: narrow survival fixes together on main (#369, #380)
+
+- Owner: both narrow proposals have the highest priority, in one PR for
+  review. Carries #392's flee-healing change (borg_caution.rs: fleeing no
+  longer skips borg_heal() merely because HP cannot absorb another round;
+  borg_heal keeps its own wound/level/resource gates) and #390's Phase
+  Door stock change (borg_town_capability.rs: a learned Phase Door no
+  longer zeroes the scroll's supply value; HOOKED). Both rebased onto
+  main 8837ece2 (borg-rs 8c5d000, recorder v0.2.0) without other changes.
+- Source hash 9a4ea375 → 2317021c. Wild-cat saved-position tests: heals
+  through the fight; with CLW/CSW tiers disabled still dies (control).
+  Phase stock: Mage fixture buys a Scroll of Phase Door.
+- CI deaths for the new source (core 1011, smoke 102, reborn 1020; the
+  fixes do not save them) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-369-380-ci-controls` (2f9d823); the wild-cat
+  fixture points CI at that commit. The owner merges that cemetery PR.
+- Supersedes #392 and #390 (close them on merge). The zoo needs a new ref.
+
+## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
+
+- Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
+  store/take livelock) and borg-rs#88 (additive trip policy). Three-way
+  refresh from 1443c2d, 0 conflicts; vendor check passes. harness/borg.txt
+  gets #88's trip comments only (settings unchanged).
+- Source hash 87717140 → 9a4ea375; harness/borg.txt 88296dd1.
+- Donor parity: 12/12 cells (seeds 501–506, classes 0–5, 30k turns,
+  town/trip off and on) byte-identical keys against a fresh borg-rs build
+  at 8c5d000.
+- Off arms unchanged: with borg_town_plan = 0 and borg_trip_policy = 0,
+  12/12 cells (no plan and errands_plan.txt) are byte-identical to main
+  1c4b351b; smoke 3/3 identical to the reference. All shop cells change,
+  as #88 intends.
+- Oil case (Warrior seed 501, ambitious plan + shop, 100k): keys 69,838 →
+  15,209, Home takes 3,994 → 0, worst burst 719 → 12 actions at one turn;
+  keys sha256 f32abbde21da.
+- CI death controls for the new source (core seed 1011 Mage, smoke seed
+  102 Mage, reborn seed
+  1020 Druid; same keys as before) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-368-ci-controls` (696065b, PR borg-cemetery#16);
+  harness/fixtures/planmage-wild-cat.json points CI at that commit.
+  The owner merges borg-cemetery#16.
+- Left: a store/take across visits is still possible (costs game time);
+  no no-progress detector. The zoo needs the new ref (borg-zoo#123).
+
+## 2026-11-16: #354 synchronized with main 72a21620, without #355
+
+- Owner decision: the zoo's five-arm specimen carries current main's game,
+  not #355. #355 (7022017e) was reverted on main by #379 (#373), so the
+  game inputs are the pre-355 ones again (source hash 87717140, as at
+  2f74e1c5) and this branch adds only plan files, harness plan runs and
+  the zoo contract. Plan hashes unchanged: errands_plan.txt 922372ba,
+  errands_plan_ambitious.txt 9d7d8a39. The 72-game local pilot still
+  applies to this game. borg-rs#90 (oil store/take loop) is in the
+  vendored core and still present.
+
+## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
+
+- #395 review at 79ec0591 reports no blockers. Its remaining engine CI
+  condition is satisfied by green run 43783576729. Nonblocking mode,
+  fault-injection, Python-minimum and formatting observations are tracked
+  in #397; none is implemented in this synchronization.
+- Main advanced to 6c89d9a2 through #394. Preserve the accepted Cemetery
+  ownership migration, six mapped package removals and pinned CI evidence.
+  Resolve only the handover conflict by retaining both histories.
+- Reviewed importer, importer tests and DOSSIER-IMPORT.md stay byte-identical
+  to 79ec0591. Runtime, source pins and archive contents match accepted main.
+  Required CI on this combined tree must pass before track-p integration.
+- Update #395 with the new pin and exact scope/tree proof; retain the
+  original review's provenance. Promotion remains pending owner acceptance
+  and explicit delegation, not merely the reviewer's recommendation.
+
+## 2026-11-16: Cemetery evidence ownership (#376)
+
+- AGENTS/RULES now require gameplay reports, scenarios and trials in
+  borg-cemetery; source PRs retain code/tests and concise validation links.
+- Cemetery PR8 retains the PlanMage incident and all66 files of the six
+  #355 control packages byte-for-byte. Remove only those mapped packages
+  here, regenerate the index and redirect the current incident pages.
+- CI reads the unchanged checkpoint archive from a separate pinned Cemetery
+  evidence checkout. Reconciliation uses retained historical plus canonical
+  cases, never the new temporary registry as its own expected baseline.
+- Original public player recordings/hashes and other sessions' historical
+  packages remain preserved. No policy change is part of this cleanup.
+
+
+## 2026-11-16: importer follow-up main sync after #379
+
+- Main advanced to58b11ff2 through owner-directed #379 while #381/#384
+  were in CI. Synchronize it through a separate task PR into track-p;
+  retain the pre-355 behavior and both handover histories without edits to
+  accepted runtime code. The merge is conflict-free.
+- Importer mode and failed-publication cleanup follow-ups remain intact;
+  runtime inputs must equal this accepted main and all2,578 archived
+  packages remain unchanged. No new gameplay or survival claim.
+- CI is required for the synchronized tree. After integration, open the
+  importer follow-up batch's pinned track-p -> main review and stop;
+  prior #372 acceptance does not cover the new changes.
+
+## 2026-11-16: failed import publication cleanup (#359)
+
+- Stacked on #358/#381. Restore0700 only on this invocation's unpublished
+  staging before removal, even if publication adopted a read-only source's
+  mode. Never scan other importers' staging or chmod an existing package.
+- Keep the original publication exception if cleanup also fails, attaching
+  the cleanup error as a diagnostic. Reproduce both paths with injected
+  rename/removal failures; assert read-only source mode, private cleanup,
+  existing package bytes, another active staging directory and no final
+  partial package. No evidence, runtime, defaults or pin changes.
+- Task PR records local/CI checks; integrate into track-p after green CI,
+  then stop for the next pinned owner-selected promotion review.
+
+## 2026-11-16: published import directory access (#358)
+
+- Owner accepted #372 and delegated its merge; the unchanged reviewed pin
+  cf687bb2 is promoted as b7d45f17. Review follow-ups #374 (exact invocation
+  receipts) and #375 (reference-receipt assessment) remain separate. The
+  reported missing log hashes already exist for all 45 pairs in the pin.
+- Bound newly published directory modes by source access and directory
+  creation under the importing process's umask. Obtain creation permissions
+  with an empty directory inside private staging, without changing the
+  process-global umask; remove the probe before publishing. Drop special
+  bits. Source0777/umask022 now gives0755; source0755/umask077 gives0700.
+  An intentionally permissive umask000 still permits a source0777 directory.
+- The mode matrix covers four umasks and five source modes (including
+  special bits), private staging during every write, file/generated-metadata
+  access, unchanged source modes, exact package bytes/IDs and re-import modes.
+  #359 still owns failed-publication cleanup for read-only staging.
+- No runtime, default, pin, immutable package or index changes. Source-refresh
+  report ran read-only; this isolated worktree lacks six moving-source clones,
+  so it cannot report their new commits. This narrow historical-import review
+  follow-up neither updates pins nor claims a refreshed gameplay baseline.
+- Local/CI validation is recorded in the task PR. Task targets track-p;
+  a fresh pinned owner-selected review must precede promotion to main.
+
+## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
+
+- #349 was owner-reviewed, synchronized through green #362 and promoted as
+  92404c7e. Track P's M13 source adoption was already integrated by #331;
+  this task supplies its remaining fresh donor build/run evidence.
+- Rebuilt exact donor 1443c2d1 and accepted combined-P adoption 2f74e1c5 from
+  clean separate worktrees. Actual source/binary/build/config receipts are
+  retained, without relabelling older dirty measurements. Full 45/45 play
+  triples and effective configs match, with 242,641 contiguous classified
+  trace rows and no unclassified rows. All calibration params are default.
+- Historical adoption parity is not claimed for later #355 policy source
+  0f2e003f. Current production code remains unchanged; its intentional six-
+  file safety delta and existing scenario evidence are explicitly separated.
+  See P341-FRESH-DONOR-VALIDATION.md/.json.
+- Three policy-on pairs match; 656 schema11 plans replay (500 with a plan).
+  328 core tests (four existing ignored), 13 isolation, 4 shopping, 3 loop tests
+  and original smoke 3/3 pass. Initial fixture harness failures from missing
+  discoverable cemetery tools are retained; unchanged reruns pass after
+  adding the ignored pointer to the exact tooling pin. No assertion changed.
+- All 25 fresh natural-death packages are qualified in P341-DOSSIER-MAP.json;
+  original records/payloads remain exact. All 2,578 archive packages verify,
+  and both receiving 13 and donor 12 deaths reconcile with none missing.
+  Repeated/paired controls are not additional independent population lives.
+- No game, configuration/default, source pin, Zoo specimen/run or canonical
+  cemetery content changes. Raw builds/attempts remain under the named
+  /workspace/work/p341-* paths. Task PR targets track-p and requires green
+  CI; a new pinned owner-selected milestone review precedes promotion.
+  #358/#359 remain separate permission/cleanup follow-ups.
+
+## 2026-11-15: reviewed P349 synchronization (#360)
+
+- Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
+  The review reports 88 tool tests, script tests, all 2,547 archive cases
+  and real mode/umask imports. Required CI and P342 play evidence were
+  taken on trust; do not describe the later combined head as independently
+  re-reviewed. The accepted runtime changes in main remain separate evidence.
+- Merge main 7022017e (#355 safety fix) into track-p, retaining both handover
+  sections. This is the sole merge conflict. Runtime inputs and archive
+  packets remain byte-identical to that accepted main; the reviewed P
+  importer, tests, ignore rule and guidance remain intact.
+- #358 tracks source/umask bounds for published directories (including the
+  world-writable source case); #359 tracks read-only staging cleanup after
+  failed rename. Both are nonblocking follow-ups after this promotion.
+  No follow-up implementation is slipped into the reviewed pin.
+- Local checks pass: 88 tool tests, 19 source-tool tests, all 2,553
+  archive packages, vendor audit, formatting and Clippy. Required Rust
+  tests and sync CI must pass before integration and promotion.
+  #341's fresh-donor baseline audit follows this gate; it must distinguish
+  historical M13 parity from #355's intentional later policy changes.
+
+
+## 2026-11-16: owner-requested rollback of #355 behavior (#373)
+
+- Restore the six native-core files to accepted pre-#355 main 2f74e1c5.
+  This rollback contains no dossier/report payloads; preserved evidence and
+  canonical Cemetery migration are separate. The saved-position tests now
+  identify the restored death control honestly. Narrow replacements will be
+  separate owner-reviewed changes before any zoo dispatch.
+
+## 2026-11-15: owner-directed wild-cat survival fix (#350)
+
+- The original PlanMage GUI recording was replayed with its frozen binary;
+  all streams, final save and complete core trace verify. Native saves at
+  411638/648/658/668 match the recorded world fingerprints. Reloading them
+  loses Borg process memory; nevertheless all four original-source fresh
+  Borg branches die to wild cats, making them useful scenario fixtures.
+- Remove the return-to-town stair-looting path, reject known occupied flee
+  steps, use ordinary cures deterministically at useful wound sizes even
+  when fleeing at lethal HP, and consider usable Phase Door separately from
+  the conservative APHASE preparedness trait. A trapped/lethal flee can
+  try a short escape despite unknown landing grids; arena/curse restrictions
+  and the configured emergency failure bound remain enforced.
+- Diagnostic instrumentation found a 5% legal/affordable Phase Door excluded
+  by APHASE's 3% trait gate, followed by 100 unknown landing samples rejected.
+  The initial healing/path patch still lost two nearby-save starts; those
+  failed controls remain retained. With the emergency escape correction,
+  all four fixed starts survive the bounded follow-up at full HP. This is
+  one incident, not four independent lives or a population improvement.
+- Fixture archive is pinned to player-cemetery bec33f4, with SHA256 checks;
+  CI requires the real four saves. The standard native suite passes 69 tests.
+  Final Rust checks pass (156+4+5 workspace,328 core/four ignores),
+  69 engine tests,87 tools/19 scripts, formatting/Clippy/vendor. Original
+  smoke matches3/3 in keys/messages/states. Six validation-control deaths
+  across intermediate/final sources are qualified;2553 archive cases
+  verify and all final controls reconcile with zero missing deaths.
+  Final source0f2e003f988f and binary27f564611416 were built from5e8454ab
+  with clean game inputs; only retained non-runtime evidence was uncommitted.
+  Actual identities are preserved in INCIDENT-350-VALIDATION.json.
+- Recorder-owned rolling save retention and turn-based read-only viewing
+  are developed separately in angband-recorder; do not silently replace the
+  pinned vendor or claim live Borg memory is restored by a native save.
+
+
+## 2026-11-15: import guidance and staging follow-up (#333)
+
+- Generic AGENTS.md guidance now applies to every track. Clarify that the
+  legacy guarantee covers the full record and declared payload files;
+  undeclared analysis/extra files are outside it. Qualified packets remain
+  immutable in every file. No evidence or inventory is rewritten.
+- Keep staging private while incomplete; publish with the source directory's
+  ordinary access bits, respecting private sources. Files keep process-umask
+  limits as well as source-file access; generated metadata follows the source
+  record's limits. Re-import does not alter existing access. Ignore abandoned
+  historical staging directories without deleting another process's work.
+- All 88 tool tests and 19 script tests pass, including publication modes
+  0750/0700 and immutable payload verification. All 2,547 archive cases
+  verify; staging ignore is checked. Game inputs remain exactly #342 source
+  87717140, so its Rust/native/play evidence applies. Required CI is pending.
+  Prepared separately from #331/#346; integrate only after that promotion,
+  then open a separate pinned milestone review before main.
+
+## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
+
+- Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:
+  `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE`. It copies the plan into
+  `user/`, selects it in the run's borg.txt with a line naming its SHA-256,
+  records `borg_errands_plan`/`_sha256` in config.txt, and fails when the
+  game did not preserve exactly that plan. The plan's bytes are now in
+  `borg_txt_sha256`, so the cemetery's encounter family distinguishes plans
+  with death-tool API 1 unchanged. Plans selected in the harness borg.txt,
+  missing files and the original core are refused.
+- Open: cemetery `rerun-death.py` does not restore `BORG_ERRANDS_PLAN` yet
+  (it restores `BORG_LADDERS` the same way); a plan death's rerun reports
+  "does not reproduce" until it does. That is a cemetery-owned change.
+- docs/ZOO-INTERFACE.md gains the `borg_plan` row (the zoo copies
+  `harness/plans/NAME`); the adapter work is borg-zoo#123.
+- New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
+  curve (ch. 12.2), fighters ~one dungeon level per character level, casters
+  slower, no town-start phases from CL3 (CL6 casters). An engine test
+  checks it is never shallower than the first plan. A hypothesis only.
+- harness runs still cannot set borg.txt settings such as `borg_town_plan`;
+  the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+- Pilot finding (72 cells, PR #354 comment): the ambitious plan's requests
+  are capped by the core's readiness ("not prepared for DL2; town overrides
+  the loop"), so it bounces to town instead of diving. In one cell
+  (Warrior seed 501, ambitious + shopping) the M13 town planner looped
+  buy oil at the General Store / drop it at Home about 4,000 times over
+  ~35k game turns: a vendored-core (borg-rs town planner) defect to report
+  upstream, not a plan defect.
+- The plan-file checks are engine tests (strict reader + native load), not
+  release-core tests, so borg-core and the build's source hash are
+  unchanged and the existing CI death controls still apply.
+
+## 2026-11-20: wear accepted; store/home implementation active
+
+- Owner-approved #683 merged into feature/track-r at `64acb1f1`; #436 closed.
+  Reviewed-head CI, full native/check/switch parity, strict coverage and
+  canonical reconciliation passed. No main/global-reviewed promotion.
+- #437 starts from that accepted merge on `task/T437-store-home`.
+  The first implementation pass and exact source proof are recorded in
+  [R437-HANDOVER.md](R437-HANDOVER.md). Native controls, full validation and
+  owner review remain gates; it is not complete or review-ready.
+- #293 is not delivered by a parity port; #438 freezes the combined milestone
+  review after #437. Shared maintenance dependency #680 remains explicit.
 
 ## 2026-11-16: accessor merged; attack #401 validation underway
 
@@ -1446,7 +3386,7 @@ actual locations; reconciliation does not copy evidence.
 - `danger_maximum=1` changes seed 1000's first key at turn 4430 and its
   state trace at the same turn. The escape-threshold trial on that seed
   has no play change; both results are recorded without an improvement
-  claim. See [P1.2-VALIDATION.md](P1.2-VALIDATION.md).
+  claim. See [P1.2-VALIDATION.md](validation/P1.2-VALIDATION.md).
 - Rust tests, Clippy, formatting, Python tests and vendoring check pass.
   D2183–D2201 preserve the validation deaths; none are missing. The shared
   lock covers every build and game run. The read-only source refresh was
@@ -1473,7 +3413,7 @@ actual locations; reconciliation does not copy evidence.
   keys/messages/states; all shared game-summary fields agree. The standard
   cross-repository diff still fails on three existing frontend telemetry
   fields (our frontend reports 0/0/{} for the vendored core), documented in
-  [P1.1-VALIDATION.md](P1.1-VALIDATION.md). Full 45/45 against the earlier
+  [P1.1-VALIDATION.md](validation/P1.1-VALIDATION.md). Full 45/45 against the earlier
   main baseline passes the standard diff. Original-core smoke is 3/3;
   a 20,000-turn ladder errand matches main exactly.
 - **Override evidence:** seed 1000 Human Warrior, only
@@ -2877,7 +4817,7 @@ PR #135's review rejected the first G0 baseline: T3.7's up/down reroll
 could generate levels forever at one game turn, reset both no-time and
 goal budgets, and select fresh levels (stair-scumming in substance).
 The dedicated fix replaces those references and rewrites
-[docs/G0.md](G0.md).
+[docs/G0.md](archive/G0.md).
 
 - Level generations are unique; travel goals die on generation change,
   so fresh levels Explore. Only an exhausted frontier or cooling Explore
@@ -2934,7 +4874,7 @@ The reviewer is the owner's choice; do not start #118.
 
 ## 2026-11-10: T3.7, G0 (#23)
 
-**G0 passes; the report is [docs/G0.md](G0.md).** The first attempt did
+**G0 passes; the report is [docs/G0.md](archive/G0.md).** The first attempt did
 not pass honestly: seven long runs held in Explore/cooldown loops until
 starvation, 53,497 Holds in the full suite. T3.7 fixes the causes:
 frontier-underfoot is finished, empty Explore falls to Descend, the
@@ -4307,7 +6247,7 @@ D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
 2. Tag `m1` on the merge of #39. The zoo specimens should point at it.
 3. Routing the zoo change request. The owner asked for a prompt for a
    borg-zoo session; it is the appendix of
-   [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md). The zoo work happens in
+   [ZOO-CHANGE-REQUEST.md](archive/ZOO-CHANGE-REQUEST.md). The zoo work happens in
    borg-zoo, not here.
 4. Whether the self-produced `harness/reference/smoke-c-bbc-m7` is enough as a
    regression reference.
@@ -4343,7 +6283,7 @@ D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
   (in-memory specimens, no zoo change). All three arms run on the zoo's
   smoke with no harness failure or config error. The gaps are survivors
   stopping after the cap and an empty `first_turn_at_depth`.
-  [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md) is **for the owner to
+  [ZOO-CHANGE-REQUEST.md](archive/ZOO-CHANGE-REQUEST.md) is **for the owner to
   route**: three catalogue specimens; the adapter's `-exact-turns`,
   boundary field and depth stream; optionally the endpoint in stats.
 - Controls now build from a fresh checkout: the pinned sources are cloned on
@@ -4469,7 +6409,7 @@ already has `opt_exact_turns`).
 - better-borg-c wrote `docs/deaths/REDESIGN-LESSONS.md` for this repository:
   thirteen lessons from D0001–D0014 and four owner manual takeovers. It came
   in with refresh #31, together with death D0014.
-- [LESSONS-TRACE.md](LESSONS-TRACE.md) maps each lesson to our principle,
+- [LESSONS-TRACE.md](archive/LESSONS-TRACE.md) maps each lesson to our principle,
   our architecture section and the task that builds it.
 - GOALS principles 4–8 are extended, and principle 14 is new (equipment by
   what it does). D3 now states that the threat model uses full race data
@@ -4512,7 +6452,7 @@ already has `opt_exact_turns`).
   `git subtree --ignore-joins` into 29 commits and added unsquashed. The tree id
   `5cc1b1c…` is recorded in `pins.json` (`engine_tree`), and a repository test
   pins it.
-- [ENGINE-TREE.md](ENGINE-TREE.md) lists what differs from upstream
+- `ENGINE-TREE.md` (since replaced by [ENGINE.md](ENGINE.md)) listed what differs from upstream
   `e473720`:
   - 8 added files (borgh, recording);
   - 14 engine files, all behind `BORG_HARNESS`/`BORG_RECORDING` except
@@ -4631,3 +6571,139 @@ new build-identity death dossiers. D2093/D2094 reproduce CI controls 102/1020;
 keys, messages and state channels match the CI artifact, whose original record
 and build identities are retained in ci-evidence.json. Both remain unassessed
 validation controls, not a strategy/performance claim. No death check is waived.
+
+## Synthetic P1 review follow-ups (2026-11-16)
+
+Owner-supplied reviews of #378 d406d2c9 and Cemetery #7 e750549 are input, not
+acceptance. Every requested capture now reports captured/absent and its requested
+level; an unreached/skipped level no longer leaves an ambiguous successful run.
+A parity regression covers the absence path. The startup wrapper mirrors the
+native character_dungeon leave guard and names lifecycle/arena pin-bump checks.
+Cemetery fixes malformed-option reconciliation, normalizes marker flags and
+prints exclusions; this source pins its reviewed-follow-up guard revision.
+Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
+OpenSSL remains an intentional documented runtime dependency. Full responses
+and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
+
+## 2026-11-16: #440 review follow-up (#447)
+
+- Separate cap overlay fixes reload, reinitialization, stale restoration and
+  Recall cancellation; the cap test permits the accepted one-step N+1 move.
+- Release core checks: 329 pass, 4 ignored; workspace tests, fmt and clippy
+  pass. Targeted native plan/survival checks: 13 pass; tools: 94 pass;
+  scripts: 19 pass. Full engine suite: 84 pass/checks, 2 fixture-dependent
+  skips. Vendor declaration also covers #444’s existing hook.
+- Clean implementation/source/binary are pinned in Cemetery #36, with three
+  canonical CI control deaths. The source fixture pins that evidence commit.
+  Lifecycle reload/cancel behavior has unit coverage; an interactive GUI
+  reload/Recall session is not claimed. Follow-up stays unmerged for review.
+
+## #449 re-review fixes
+
+- Apply the effective depth limit before dynamic/static preparedness selection.
+- Initialization refreshes the cap from the loaded character and level before
+  store/Recall ticks; same-run cancellation remains cancelled.
+- Require the child cancellation test to report one executed test. Remove
+  the redundant cancellation branch and correct the remaining path-intent text.
+- Add initialization lifecycle and production preparedness-guard regression before calculation dispatch.
+  Validation and refreshed evidence pins will be recorded on #449.
+
+## #449 second re-review
+
+- Guard preparedness with only the active plan limit. Restore the configured
+  check at its original static-only location so no-plan play and reason order
+  remain unchanged. The dispatch regression covers absent-plan pass-through.
+- Completed reincarnation calls the same refresh as initialization; declare
+  the receiving hook and clarify configuration semantics in the documentation.
+- The PR runtime pin is already current; refresh it and validation after these
+  runtime changes. #448 remains open for historical raw-evidence custody.
+
+## 2026-11-17: Track P synchronization before inventory calibration (#474)
+
+- Owner selected #433. Synchronize accepted main 68e39b7e into track-p
+  through this CI-checked integration PR; prior track-p is an ancestor.
+- Preserve all accepted runtime, recorder, death identity/matching, evidence
+  references and plan-cap fixes. No new gameplay policy is introduced.
+- Next: M13 inventory parameter audit/extraction under #433, with neutral
+  defaults, parity checks and a pinned owner-selected promotion review.
+
+## 2026-11-17: P4 M13 inventory parameter extraction (#433)
+
+- Owner selected #433; #475 synchronized accepted main into track-p at
+  9cf60aae after green CI. P4 is the bounded active milestone in PLAN.md.
+- Append 362 neutral parameters (2,143 total): power48, wear23, buy14,
+  sell34, shop6, home237. Existing IDs/defaults, C-long/i32 arithmetic,
+  tie/RNG order, quantities, no-selling and disabled exploit paths stay.
+- M13-INVENTORY-PARAMETERS.md/.json classifies policy versus retained
+  mechanics and gives original source references. #293 stays separate;
+  R4 #434 waits for owner-reviewed promotion of an exact P4 pin.
+- Divisors/narrow counts are bounded; invalid greed/tier/depth ordering
+  fails before play. Add a native non-neutral town-budget regression.
+- Validation/evidence receipts are recorded on the task PR before merge.
+  Task integration targets track-p; the subsequent milestone review and
+  owner acceptance gate promotion to main. No tuning/population claim.
+
+## 2026-11-17: P4 milestone review fixes (#481)
+
+- Owner-selected review #477 at 105f7947 confirms neutral extraction and
+  independently matches all 45 native streams, with an exporter checkout
+  mismatch limiting that reviewer's harness/reconciliation status.
+- F1: cap mapping-rod reserve at 255 and test 256/300 rejection plus the
+  valid endpoints and all new u8/i16 operand bounds. Default remains 2.
+- F2: rename the three unpromoted curing bonuses for their actual CCW,
+  Healing and poison-cure guards; synchronize descriptions and JSON.
+- Preserve old parameter positions/defaults and immutable Cemetery #61
+  evidence; no aliases or policy changes. Integrate only through track-p
+  and update the exact #477 pin for owner re-review before main promotion.
+
+
+## 2026-11-17: P4 conflict resolution before promotion (#522)
+
+- Merge accepted main a8ac685a into task/T522-p4-main-sync from track-p
+  7078bb1d, preserving all main bug fixes, configuration and review rules.
+- Resolve params.rs test conflict by retaining both town and P4 source-module
+  validation; retain both calibration snapshots and correct the current count.
+- Main's 1829 specs stay byte-identical in the same order; append the same
+  362 reviewed P4 specs (2191 total). Unpromoted P4 absolute IDs move;
+  historical evidence remains pinned to its original registry and build.
+- The buying-code auto-merge keeps #507's quantity fix and neutral P4 lookups.
+  All other runtime modules equal their accepted parent versions exactly.
+- Required checks/CI and owner review precede task integration under RULES 1a.
+  #477 stays unmerged; update its pin after approved track-p integration and
+  re-review the synchronized result before promotion.
+
+
+## 2026-11-18: isolated P5 source refresh after #537 review (#554)
+
+- Dedicated task/T554-p5-source-refresh starts from track-p ac293ef7 and
+  synchronizes accepted main c9e58ca0. Only source reference/reading metadata
+  changes beyond that main snapshot; runtime/tool/evidence inputs stay exact.
+- Separate the borg-rs pin/copy refresh from #536's P5 plan/P4 completion
+  edits. Update KNOWLEDGE.md for the actual donor material read, including
+  unaccepted default-off direct buy and the empty-light-slot Recall correction.
+- Run the all-six-source report before --update borg-rs; record every observed
+  head and deferral in docs/research/P5-SOURCE-REFRESH.md. Main's newer zoo pin
+  stays; engine/C/tracker and further zoo changes are intentionally deferred.
+  This is a scoped refresh proposal for owner review, not a claim all pins moved.
+- #537 depends on this dedicated refresh; after its approved integration,
+  #537 contains only the kickoff plan and its handover. Preserve published
+  commits. Neither PR merges until owner review and green CI (RULES 1a).
+
+
+## 2026-11-18: P5 kickoff after accepted P4 (#536)
+
+- Owner requested the next milestone after #477 promoted P4 at 435b07e7.
+  Define bounded P5: #374 exact validation commands/suite identities, then
+  #375's preservation/compatibility design for future reference receipts.
+- Originally synchronized main 6101ca01 from track-p ac293ef7. Review
+  follow-up now includes accepted main c9e58ca0 through prerequisite #555.
+  Fresh task branches must use track-p after approved prerequisite integration.
+- Isolate scripts/refresh-sources.py --update borg-rs and its ledger/all-source
+  inventory in #554/#555. Merge that source-only PR before #537; then this
+  kickoff adds only PLAN and its handover. Original mixed commit e5108d52
+  stays historical; do not amend or force-push it.
+- P4's completion replaces its stale in-progress status in PLAN. Historical
+  validation/packages stay attributed to their original source and hashes.
+- Kickoff PR must pass checks and owner review under RULES 1a before merging
+  into track-p. Then #374 goes first; #375 follows. No reviewer launched,
+  next gameplay policy, population measurement or external evidence rewrite.

@@ -1,6 +1,7 @@
 //! Full danger assessment over the typed native-memory view.
 //! Adapted from borg-rs M13 1443c2d (borg_danger.rs), with Track P named
-//! parameters. Provenance in PROVENANCE.md.
+//! parameters and the #856 danger changes at main 24be9873. Provenance in
+//! PROVENANCE.md.
 //! Copyright (c) 1997 Ben Harrison, James E. Wilson, Robert A. Koeneke
 //! Copyright (c) 2007-9 Andi Sidwell, Chris Carr, Ed Graham, Erik Osheim
 //!
@@ -49,6 +50,14 @@ fn pfe_applies(st: &Assessment<'_>, kill: &BorgKill) -> bool {
     st.view.threat.temporary.prot_from_evil
         && rf(kill, RF_EVIL)
         && st.view.character.clevel >= r_ptr.level
+}
+
+/// A breeder being hunted on this level is judged by the acid damage alone.
+fn hunted_breeder(st: &Assessment<'_>, kill: &BorgKill) -> bool {
+    let setting = param(Param::danger_hunt_breeder_no_acid_fear);
+    let breeder = rf(kill, RF_MULTIPLY);
+    let hunt = st.facts.breeder_engaged();
+    setting != 0 && breeder && hunt
 }
 
 /// Calculate base danger from a monster's physical attacks
@@ -250,8 +259,9 @@ fn physical_estimate(
                 if st.view.resistances.vacid != 0 && !st.view.threat.temporary.res_acid {
                     z = z * 4 / 3;
                 }
-                // Add fear for the effect
-                z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
+                if !hunted_breeder(st, kill) {
+                    z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
+                }
                 if half {
                     z /= param(Param::danger_pfe_melee_divisor);
                 }
@@ -2036,6 +2046,11 @@ fn estimate_monster(
     if st.view.threat.temporary.fast {
         fake_speed += 10;
     }
+    // Like native escape's movement bonus, the dungeon Fox Form switch is
+    // the one consulted here, regardless of the separate town switch.
+    if param(Param::escape_fox_form) != 0 && facts::player_is_fox() {
+        fake_speed += param(Param::escape_fox_form_speed);
+    }
     if flags.slow_spell {
         monster_speed -= 10;
     }
@@ -2716,7 +2731,7 @@ mod grid_failure_tests {
                 let contents = std::fs::read_to_string(log).unwrap();
                 assert_eq!(contents.lines().count(), 1);
                 let row: serde_json::Value = serde_json::from_str(&contents).unwrap();
-                assert_eq!(row["schema"], "borg-reborn-rs/shadow@3");
+                assert_eq!(row["schema"], "borg-reborn-rs/shadow@9");
                 assert_eq!(row["mode"], mode);
                 assert_eq!(row["point"], "danger.grid");
                 assert_eq!(row["inputs"], serde_json::json!({"x":x,"y":y}));

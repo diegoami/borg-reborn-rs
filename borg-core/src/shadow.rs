@@ -20,6 +20,7 @@ pub trait Shadow: Send + Sync {
     fn blow_effect(&self,name:&[u8],original:i32)->i32;
     fn thrust_damage(&self,state:&BorgState,slot:i32,original:i32)->i32;
 
+    fn read_decision(&self,state:&BorgState,request:crate::decisions::ReadDecision)->crate::decisions::Value { request.native(state) }
     fn decision(&self, state: &mut BorgState, request: crate::decisions::Decision) -> crate::decisions::Value { request.native(state) }
     fn danger(&self, _state: &BorgState, _input: DangerInput, original: i32) -> i32 { original }
     fn monster_danger(&self, _state: &BorgState, _input: DangerInput, _slot: i32, original: i32) -> i32 { original }
@@ -66,3 +67,12 @@ pub(crate) fn blow_effect(name:&[u8],original:i32)->i32 {
 pub(crate) fn thrust_damage(state:&BorgState,slot:i32,original:i32)->i32 {
     SHADOW.get().map_or(original,|s|s.thrust_damage(state,slot,original))
 }
+
+// #435: immutable predicate boundary. Stateful comparison remains unchanged.
+pub(crate) fn read_decision(state:&BorgState,request:crate::decisions::ReadDecision)->crate::decisions::Value {
+    if crate::decision_tape::active() { return request.native(state); }
+    match SHADOW.get() {Some(s)=>s.read_decision(state,request),None=>request.native(state)}
+}
+
+/// Avoid allocating owned item requests when shadow mode is disabled.
+pub(crate) fn registered() -> bool { SHADOW.get().is_some() }

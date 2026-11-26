@@ -1,22 +1,31 @@
-# Reference sources
+# Reference: copies that follow a live tool
 
-Copies of sources that sessions read often, so they are available offline
-and at a fixed version. The original repositories stay canonical, and they
-keep moving. Do not edit these files: replace them with a newer copy in a
-PR that updates the pin and this table.
+Copies of documents **we** wrote in other repositories whose tools still
+produce or read them: the zoo's pages, borg-runner's manuals and run
+notes, the death registries, and borg-rs's own records. They follow their
+source at its pin (`copies` in `pins.json`, refreshed by
+`scripts/refresh-sources.py --update` in its own PR, RULES 21). **Do not
+edit them here.** `scripts/check-reference.py` checks that each one is
+byte for byte its source's at the pin, and that nothing else is here.
+
+Our own documents, including those moved here from our other
+repositories on 2026-11-21 (the strategy manual, the C Borg documents and
+fixes, the shipped core's design), are in [`docs/`](../docs/README.md);
+other authors' documents (the game's manual, the original C Borg's) stay
+untouched in [`engine/angband/`](../engine/angband/) and upstream. Which is
+which: [docs/DOCUMENTATION-MAP.md](../docs/DOCUMENTATION-MAP.md).
+
+## Copies
 
 | Path | Copied from | Commit | What is included |
 | --- | --- | --- | --- |
-| `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `0c00e7761fce968de861b7f05583d3d3749e42dd` | The C Borg specification. Its relative links point into neo-angband-tracker |
-| `c-borg/TUNABLE-BORG-PLAN.md` | same | same | Revision 3 plus *What a remake leaves out* (2026-11-08) |
-| `c-borg/README.md` | same | same | Index of the C Borg documents |
-| `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `0c00e7761fce968de861b7f05583d3d3749e42dd` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
-| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `ab7890bf722bd74f78d201e7a10a78164719361e` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
-| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `727ccff75cfc731f953a296c14ef3071a57c28fb` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
-| `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
+| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `46037038cb0ce3a248ea22c06f02454818dbe4b4` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
+| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `8c5d000a58e9ddca1f1954ab9552e505856b313f` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `borg-rs/` | diegoami/borg-rs `docs/` | see `pins.json` | borg-rs's own records: what it changed in its engine tree (`FORK-CORRECTIONS.md`, `adoption/status.json`; context only since milestone E, docs/ENGINE.md) and its tooling (`harness.md`, `checkpoints.md`, `REPLAY-TOOLKIT.md`, `ENGINE-UPGRADE.md`, `C-CONSUMER-ADOPTION.md`) |
 | `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
-| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `f5043c96a1a427d7d5cb624c91a795ef3277ae9f` | Specimens, profiles and suites as of that commit |
+| `borg-runner/ACCUMULATED_BEHAVIOUR.md`, `borg-runner/docs/DESIGN.md` | diegoami/borg-runner | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | How the agent players behaved, and how borg-runner works (#816) |
+| `zoo/DESIGN.md`, `zoo/FINDINGS.md`, `zoo/PROFILES.md`, `zoo/catalogue/` | diegoami/borg-zoo | `7b373a702e7b9bb491ba468d97d34cf99ec3df2d` | The zoo's design, what its completed experiments showed (`FINDINGS.md`, #816), what can be asked of it (`PROFILES.md`, #816), and its specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 
@@ -33,13 +42,6 @@ resolve here. Read them at the pinned commit, for example
 | borg-rs | `docs/C-CONSUMER-ADOPTION.md` | The adoption contract |
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
-
-`c-manual/` links its own copy of the official manual (`user-manual/`); its
-source references (`src/...`, `lib/gamedata/...`) are relative to
-an Angband tree: here `engine/angband/src/` and `engine/angband/lib/gamedata/`.
-
-The retired draft strategy manual (S12) had the same convention; its copy
-is in git history.
 
 `deaths/INDEX.md` is generated from the copies and from our own
 historical registry (`docs/deaths/`, or explicit `BORG_DEATH_RECORDS_DIR`) by
