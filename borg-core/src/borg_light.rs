@@ -1006,7 +1006,7 @@ fn covers_spare_light(permanent: &BorgItem, spare: &BorgItem) -> bool {
 }
 
 pub(crate) fn surplus_light(st: &BorgState) -> Option<usize> {
-    if !crate::borg_junk::exploration_first() { return None; }
+    if !crate::borg_town_live::gear_home_backups() { return None; }
     let worn = &st.items.items[inven_light() as usize];
     if !permanent_light(worn) { return None; }
     let pack = &st.items.items[..inven_wield() as usize];

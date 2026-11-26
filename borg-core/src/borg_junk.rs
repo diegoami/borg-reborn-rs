@@ -2296,7 +2296,7 @@ pub(crate) fn borg_drop_inferior_spare(st: &mut BorgState) -> bool {
     let safe_to_drop = |st: &mut BorgState| !engine::player_is_shapechanged() && danger_here(st) == 0;
     let light = surplus_light_drop(st);
     let cutoff = gear_alternatives();
-    if cutoff > 0 || light.is_some() {
+    if cutoff > 0 {
         if light.is_none() && !(0..pack_size() as usize).any(|slot| {
             let item = &st.items.items[slot];
             crate::borg_spare_gear::can_rank(item) || crate::borg_town_live::gear_home_backups()
