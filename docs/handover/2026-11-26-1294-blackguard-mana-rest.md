@@ -16,11 +16,11 @@ issued zero `R*` commands, used `R&` 19 times, and was exploring at turn
 99,994 on its way to the cap at CL5.
 [Issue and reproduction](https://github.com/diegoami/borg-reborn-rs/issues/1294)
 
-The native CI regression replays this start and checks for ordinary
-health rest, absence of the mana-only rest, and decisions past turn
-80,484. All four `smoke-borg-rs` runs matched the references for keys,
-messages and state. Formatting, Clippy, Rust tests and parameter
+The native CI regression replays this start to 90,000 turns and checks
+for ordinary health rest, absence of the mana-only rest, and decisions
+past turn 80,484. All four `smoke-borg-rs` runs matched the references for
+keys, messages and state. Formatting, Clippy, Rust tests and parameter
 citations passed.
 
-The re-review and owner's integration decision are pending on
-[PR #1295](https://github.com/diegoami/borg-reborn-rs/pull/1295).
+The remaining decision is whether to merge PR #1295 into `track-p` after
+owner review under RULES 1a. [PR #1295](https://github.com/diegoami/borg-reborn-rs/pull/1295)

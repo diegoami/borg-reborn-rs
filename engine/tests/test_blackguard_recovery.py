@@ -1,4 +1,7 @@
-"""Replay the Blackguard mana-rest stall from #1294 on the native engine."""
+"""Replay #1294 to 90,000 turns, past the old stall at turn 80,484.
+
+The harness allows 90 wall-clock seconds for the native game on shared CI.
+"""
 
 import json
 import os
@@ -24,12 +27,16 @@ class BlackguardRecoveryTest(unittest.TestCase):
             if "BORG_CEMETERY_DIR" in os.environ:
                 env["BORG_CEMETERY_DIR"] = os.environ["BORG_CEMETERY_DIR"]
             env.update(BORG_IMPL="rust", BORG_CORE="borg-rs", BORG_CORE_TRACE="1",
-                       BORG_DEATH_RECORDS_DIR=str(out.parent / "deaths"), RUN_TIMEOUT_SECONDS="45")
+                       BORG_DEATH_RECORDS_DIR=str(out.parent / "deaths"),
+                       RUN_TIMEOUT_SECONDS="90", STALL_TIMEOUT_SECONDS="0")
             result = subprocess.run(
-                [str(ROOT / "harness/run.sh"), str(out), "312081895", "7", "8", "100000", "menu,exact"],
-                env=env, capture_output=True, text=True, timeout=60,
+                [str(ROOT / "harness/run.sh"), str(out), "312081895", "7", "8", "90000", "menu,exact"],
+                env=env, capture_output=True, text=True, timeout=105,
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
+            if result.returncode != 0:
+                receipt = out / "process.json"
+                status = json.loads(receipt.read_text())["status"] if receipt.is_file() else "no process receipt"
+                self.fail(f"Blackguard replay failed ({status}, exit {result.returncode})\n{result.stderr}")
             last_turn = health_rests = 0
             with (out / "trace-core.jsonl").open() as trace:
                 for line in trace:

@@ -633,6 +633,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Rest until HP and SP are full (player-util.c:1500-1501).
+    // Combat regenerators have no mana-rest floor because their SP drains.
     if mana_rest_sp_floor(st).is_some_and(|floor| st.borg.tr(BI_CURSP) < floor)
         && p < mana_rest_danger_gate(
             param(Param::recover_mana_rest_full_hp) != 0,
