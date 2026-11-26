@@ -8797,7 +8797,7 @@ borg-cemetery#132:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_book_lookahead_levels` | 0 | levels | 0–50 | `borg_town_capability.rs:939` |
-| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1073` |
+| `town_keep_last_class_book` | 0 | flag | 0–1 | `borg_town_shadow.rs:1075` |
 
 ## Quiver surplus in town (#1168, #1272)
 
@@ -9082,7 +9082,8 @@ identified spares.
 
 | parameter | default | unit | range | source |
 |---|---:|---|---|---|
-| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2221` |
+| `junk_inferior_spares` | 1 | flag | 0–1 | `borg_junk.rs:2237` |
+| `junk_gear_alternatives` | 2 | distinct better options | 0–3 | `borg_spare_gear.rs:303` |
 
 The removal establishes the control for the paired pilot of the #1264
 redesign. [Handover](handover/2026-11-25-1265-remove-sandal-flag.md)

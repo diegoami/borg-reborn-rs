@@ -292,6 +292,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
     let pack_end = inven_wield() as usize;
     let home_policy = borg_town_home::enabled(st);
     let can_decurse = home_policy && crate::borg_item_decurse::can_decurse(st);
+    let ranked_gear = live && crate::borg_spare_gear::alternatives_required() > 0;
     let preferred_dagger = home_policy.then(|| borg_town_home::preferred_elemental_dagger(st)).flatten();
     let redundant_at_home: Vec<bool> = if home_policy {
         (0..st.store.shops[BORG_HOME].ware.len())
@@ -354,7 +355,8 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             keep_last_book: protects_class_book(it),
             protect_disposal: protected_supply
                 || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
-                    || home_policy && it.art_idx != 0 && !redundant_dagger))
+                    || (home_policy && it.art_idx != 0 || ranked_gear && crate::borg_spare_gear::can_rank(it))
+                        && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
