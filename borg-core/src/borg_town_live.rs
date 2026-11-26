@@ -696,8 +696,7 @@ pub fn choose(st: &mut BorgState) -> bool {
     if !st.borg.in_shop && st.borg.goal.shop >= 0 && st.think.town_action.is_some() {
         return true;
     }
-    let organize_backups = gear_home_backups();
-    if !no_sale && !organize_backups {
+    if !no_sale {
         if let Some(restock) = exploration_restock(st) {
             return set_action(st, restock);
         }
@@ -709,11 +708,8 @@ pub fn choose(st: &mut BorgState) -> bool {
     // can consume the rest of this town visit.
     let cutoff = crate::borg_junk::gear_alternatives();
     if cutoff > 0 && !no_sale && !plan.urgent_action {
-        let cleanup = if organize_backups { organize_gear(st) } else { ranked_gear_cleanup(st, cutoff) };
+        let cleanup = if gear_home_backups() { organize_gear(st) } else { ranked_gear_cleanup(st, cutoff) };
         if let Some(cleanup) = cleanup { return set_action(st, cleanup); }
-    }
-    if !no_sale && organize_backups {
-        if let Some(restock) = exploration_restock(st) { return set_action(st, restock); }
     }
     // #1264: the earlier policy offers inferior spares before other disposals.
     if cutoff == 0 && !no_sale && matches!(a.code,
@@ -1111,7 +1107,9 @@ fn organize_gear(st: &mut BorgState) -> Option<TownAction> {
                             code: DROP_SURPLUS, at: [-1, slot as i64, i64::from(entry.release), 0],
                         }));
                     }
-                    if entry.stash > 0 && stash.is_none() && !home_moved(st, item, false)
+                    // A withdrawn inferior variant does not block storing
+                    // the selected backup of the same kind.
+                    if entry.stash > 0 && stash.is_none()
                         && !sale_rejected(st, BORG_HOME as i16, item)
                         && crate::engine::inven_object(&st.access, slot)
                             .is_some_and(|o| o.store_accepts_quantity(BORG_HOME, i32::from(entry.stash)))
