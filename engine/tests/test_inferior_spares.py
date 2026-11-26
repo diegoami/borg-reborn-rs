@@ -71,8 +71,10 @@ class TownSpareSaleTest(unittest.TestCase):
     def test_redundant_home_stack_is_withdrawn_and_disposed(self):
         messages = self.run_town(1, ranked_home=True)
         self.assertIn("# Home reserve: withdrawing low-priority stock", messages)
-        self.assertRegex(messages, r"You (?:drop|had|sold) 3 Pairs of Leather Sandals \[1,\+0\]")
-        self.assertNotRegex(messages, r"You (?:drop|had|sold)[^\n]*Leather Sandals \[1,\+4\]")
+        sandals = "\n".join(line for line in messages.splitlines() if "Leather Sandals" in line)
+        self.assertRegex(sandals, r"You drop 3 Pairs of Leather Sandals \[1,\+0\] \{borg ignore\}")
+        # Angband also says "You drop" when putting gear safely in Home.
+        self.assertNotRegex(sandals, r"You (?:had|sold)[^\n]*\[1,\+4\]|You drop[^\n]*\[1,\+4\] \{borg ignore")
 
     def run_town(self, planner, *, ranked_home=False):
         game = ROOT / "build/rust-test/game/angband"
