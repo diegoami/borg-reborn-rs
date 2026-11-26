@@ -5869,7 +5869,7 @@ The approved stricter values are unmeasured hypotheses about readiness.
 The smoke suite reached DL2. The paired DL21+ comparison requested in
 [#1283](https://github.com/diegoami/borg-reborn-rs/issues/1283) remains open.
 
-The shared values are in [`harness/borg.txt`](../harness/borg.txt).
+The shared values are in [`harness/pborg.yaml`](../harness/pborg.yaml).
 Append `__<class>` to a key to override it for a class. For example,
 `borg_param_prepared_dl20_min_depth__paladin = 18` moves the Paladin's
 Free Action requirement to DL18. Every other class uses DL19. A band's
