@@ -366,11 +366,14 @@ pub(crate) fn same_variant(a: &borg_item, b: &borg_item) -> bool {
 /// Ordinary dungeon pack cleanup can wait until town for one useful spare
 /// of a kind. Emergency slot/weight relief can still use its normal fallback.
 pub(crate) fn keep_in_dungeon(st: &BorgState, slot: usize) -> bool {
-    if !enabled(st) || st.borg.tr(BI_CDEPTH) == 0 {
+    if st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     let item = &st.items.items[slot];
-    if item.iqty == 0 || item.cursed || !item.aware {
+    if crate::borg_junk::gear_alternatives() > 0 && crate::borg_spare_gear::can_rank(item) {
+        return true;
+    }
+    if !enabled(st) || item.iqty == 0 || item.cursed || !item.aware {
         return false;
     }
     let role = classify(st, item, false, 0);
