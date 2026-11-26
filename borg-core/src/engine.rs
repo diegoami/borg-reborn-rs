@@ -3258,9 +3258,13 @@ pub(crate) fn town_recall_destination() -> Option<i32> {
     use crate::headers::list_options_h::{OPT_birth_force_descend, OPT_birth_levels_persist};
     use crate::headers::player_h::player;
 
-    // effect_handler_RECALL() prompts for a level in this mode. The Borg
-    // does not answer that prompt, so use the stairs instead.
-    if player_opt(OPT_birth_levels_persist) && !player_opt(OPT_birth_force_descend) {
+    let live = player_ref();
+    // player_get_recall_depth() prompts only after visiting the dungeon
+    // and when descent is optional. The Borg has no handler for that prompt.
+    if live.max_depth > 0
+        && player_opt(OPT_birth_levels_persist)
+        && !player_opt(OPT_birth_force_descend)
+    {
         return None;
     }
 
@@ -3271,7 +3275,7 @@ pub(crate) fn town_recall_destination() -> Option<i32> {
     // game-world.c:process_world() calls this before a Recall from town.
     // SAFETY: player-util.c:player_set_recall_depth():79-93 writes only
     // recall_depth. Its quest checks only read the original quest data.
-    let mut snapshot = *player_ref();
+    let mut snapshot = *live;
     unsafe { player_set_recall_depth(&mut snapshot) };
     Some(i32::from(snapshot.recall_depth))
 }

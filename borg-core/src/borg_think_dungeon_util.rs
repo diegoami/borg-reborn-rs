@@ -1207,36 +1207,31 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
 
     let max_depth = st.borg.tr(BI_MAXDEPTH);
     let min_recall_depth = if st.cfg(BORG_WORSHIPS_GOLD) != 0 { 10 } else { 8 };
-    let risky = st.cfg(BORG_PLAYS_RISKY) != 0;
-    let destination = engine::town_recall_destination();
-
-    /* Case for those who cannot Teleport Level */
-    if destination == Some(100) && !risky && borg_restock(st, 100).is_some() {
-        st.borg.goal.fleeing = true;
-        st.borg.goal.leaving = true;
-        st.borg.stair_more = true;
-        borg_note(st, "# Borg must crawl to deep dungeon- no recall to 100.");
-        return borg_flow_stair_more(st, GOAL_BORE, false, false);
-    }
-
     if max_depth < min_recall_depth {
         borg_note(st, "# Not deep enough to recall");
     } else if st.borg.tr(BI_RECALL) < 3 {
         borg_note(st, "# Not enough recalls to recall");
-    } else if let Some(depth) = destination {
-        let percent = crate::params::value(crate::params::Param::town_recall_prepared_depth_percent);
-        let check_depth = depth * percent / 100;
-        let reason = crate::borg_prepared::prepared_c_for_decision(st, check_depth);
-        if let Some(reason) = reason.filter(|_| !risky) {
-            note_with(st, b"# Way too scary to recall down there!   ", &reason, b"");
-        } else if borg_recall(st) {
-            borg_note(st, "# Recalling into dungeon.");
-            return true;
-        } else {
-            borg_note(st, "# failed to recall when I wanted to");
-        }
     } else {
-        borg_note(st, "# Recall requires a destination choice; taking the stairs");
+        let risky = st.cfg(BORG_PLAYS_RISKY) != 0;
+        match engine::town_recall_destination() {
+            Some(100) if !risky && borg_restock(st, 100).is_some() => {
+                borg_note(st, "# Borg must crawl to deep dungeon- no recall to 100.");
+            }
+            Some(depth) => {
+                let percent = crate::params::value(crate::params::Param::town_recall_prepared_depth_percent);
+                let check_depth = depth * percent / 100;
+                let reason = crate::borg_prepared::prepared_c_for_decision(st, check_depth);
+                if let Some(reason) = reason.filter(|_| !risky) {
+                    note_with(st, b"# Way too scary to recall down there!   ", &reason, b"");
+                } else if borg_recall(st) {
+                    borg_note(st, "# Recalling into dungeon.");
+                    return true;
+                } else {
+                    borg_note(st, "# failed to recall when I wanted to");
+                }
+            }
+            None => borg_note(st, "# Recall requires a destination choice; taking the stairs"),
+        }
     }
 
     st.borg.goal.fleeing = true;
@@ -1253,20 +1248,22 @@ fn leave_town(st: &mut BorgState, bored: bool) -> bool {
 pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
     use crate::borg_headers::borg_trait_h::{BI_ACCW, BI_AESCAPE, BI_APHASE, BI_ATELEPORT, BI_DINV, BI_MAXHP};
 
-    let (max_depth, saved, force, persist, teleports, expect_read) = match case {
-        "blocked" => (16, 16, false, false, 0, false),
-        "ready" => (16, 16, false, false, 2, true),
-        "saved" => (18, 16, false, false, 0, false),
-        "sixty" => (18, 16, false, false, 0, true),
-        "forced" => (15, 9, true, false, 0, false),
-        "persistent" => (16, 16, false, true, 2, false),
+    let (max_depth, saved, force, persist, teleports, destination) = match case {
+        "blocked" => (16, 16, false, false, 0, Some(16)),
+        "ready" => (16, 16, false, false, 2, Some(16)),
+        "saved" | "sixty" | "zero" => (18, 16, false, false, 0, Some(16)),
+        "forced" => (15, 9, true, false, 0, Some(16)),
+        "persistent" => (16, 16, false, true, 2, None),
+        "persistent-new" => (0, 0, false, true, 2, Some(1)),
+        "endgame" => (101, 100, false, false, 0, Some(100)),
+        "shallower-than-100" => (100, 16, false, false, 2, Some(16)),
         _ => panic!("unknown town Recall case {case}"),
     };
     assert_eq!(engine::player_depth(), 0);
     engine::set_test_recall_depths(max_depth, saved);
     assert!(engine::option_set(c"birth_force_descend", force));
     assert!(engine::option_set(c"birth_levels_persist", persist));
-    assert_eq!(engine::town_recall_destination(), (!persist).then_some(16));
+    assert_eq!(engine::town_recall_destination(), destination);
 
     for (index, value) in [
         (BI_MAXDEPTH, i32::from(max_depth)), (BI_MAXCLEVEL, 22), (BI_MAXHP, 210),
@@ -1276,8 +1273,21 @@ pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
         st.borg.trait_[index as usize] = value;
     }
 
+    let recalled = "# Recalling into dungeon.";
+    let expected_note = match case {
+        "ready" | "sixty" | "zero" | "shallower-than-100" => recalled,
+        "persistent" => "# Recall requires a destination choice; taking the stairs",
+        "persistent-new" => "# Not deep enough to recall",
+        "endgame" => "# Borg must crawl to deep dungeon- no recall to 100.",
+        _ => "# Way too scary to recall down there!   restock tele + tele staff < 2",
+    };
     assert!(st.io.queued_keys().is_empty());
     let _ = borg_leave_level(st, true);
+    let recent_notes: Vec<_> = (0..engine::messages_num().min(20)).map(engine::message_str).collect();
+    let has_note = |note: &str| recent_notes.iter().any(|message| message == note.as_bytes());
+    let expect_read = expected_note == recalled;
+    assert!(has_note(expected_note), "{case}: expected {expected_note}");
+    assert_eq!(has_note(recalled), expect_read, "{case}");
     assert_eq!(st.io.queued_keys().contains(&key(b'r')), expect_read, "{case}");
     assert_eq!(st.borg.stair_more, !expect_read, "{case}");
     println!("town Recall readiness passed: {case}");

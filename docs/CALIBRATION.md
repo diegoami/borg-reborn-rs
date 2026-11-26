@@ -6760,6 +6760,21 @@ switches below are off by default, which reproduces today's play.
 | `town_recall_urgent_depth` | 0 | depth | 0–127 | `borg_town_utility.rs:256` |
 | `caution_recall_dl1_hold_up` | 0 | flag | 0–1 | `borg_caution.rs:9669` |
 
+## Town Word of Recall destination (#1281)
+
+`town_recall_prepared_depth_percent` sets the share of Angband's resolved
+dungeon destination checked for preparedness, rounded down. Both the
+compiled and shipped defaults are 100. Use 60 to reproduce the former
+probe when the recorded maximum and Recall destination coincide. A value
+of 0 checks town preparedness. The separate DL100 restock guard uses the
+resolved destination at any percentage. The smoke games reach DL1–2, below
+the town Recall gate. The native regression exercises the departure
+decision with a constructed kit.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_recall_prepared_depth_percent` | 100 | percent | 0–100 | `borg_think_dungeon_util.rs:1221` |
+
 ## The Borg's own light radius (#877)
 
 The C Borg marks as lit by the Borg's own light every grid up to `BI_LIGHT`

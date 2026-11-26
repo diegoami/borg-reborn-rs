@@ -838,7 +838,11 @@ class RecoveryManaLoopTest(unittest.TestCase):
 @unittest.skipUnless(TEST_GAME.is_file(), "test-stair-handoff build required")
 class TownRecallReadinessTest(unittest.TestCase):
     def test_destination_readiness(self):
-        for case in ("blocked", "ready", "saved", "sixty", "forced", "persistent"):
+        cases = (
+            "blocked", "ready", "saved", "sixty", "zero", "forced", "persistent",
+            "persistent-new", "endgame", "shallower-than-100",
+        )
+        for case in cases:
             with self.subTest(case=case), tempfile.TemporaryDirectory(prefix="town-recall-") as directory:
                 paths = {kind: Path(directory) / kind for kind in ("user", "save", "archive", "panic", "scores")}
                 for path in paths.values():
@@ -847,8 +851,9 @@ class TownRecallReadinessTest(unittest.TestCase):
                     shutil.copyfile(ROOT / "harness" / name, paths["user"] / name)
                 env = {key: val for key, val in os.environ.items() if not key.startswith(("BORG_", "BORGH_"))}
                 env.update(BORG_CORE="borg-rs", BORG_TEST_STAIR_HANDOFF=f"town-recall-{case}")
-                if case == "sixty":
-                    env["BORG_PARAM_TOWN_RECALL_PREPARED_DEPTH_PERCENT"] = "60"
+                percentages = {"sixty": "60", "zero": "0", "endgame": "0"}
+                if case in percentages:
+                    env["BORG_PARAM_TOWN_RECALL_PREPARED_DEPTH_PERCENT"] = percentages[case]
                 result = subprocess.run(
                     [str(TEST_GAME), "-mborgh", "-n", *(f"-d{kind}={path}" for kind, path in paths.items()),
                      "--", "-seed", "101", "-race", "1", "-class", "5", "-menu-letters", "-keys", "250"],
