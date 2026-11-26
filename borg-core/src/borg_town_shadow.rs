@@ -319,6 +319,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         let redundant_dagger = borg_town_home::redundant_elemental_dagger(st, it, preferred_dagger);
         let redundant_home_gear = place == Place::Home
             && (redundant_dagger || redundant_at_home.get(slot) == Some(&true));
+        let ranked_item = ranked_gear && crate::borg_spare_gear::can_rank(it) && !redundant_dagger;
         let at_limit = place == Place::Pack && crate::borg_town_live::home_at_limit(st, it);
         let just_bought = !redundant_home_gear && kit_just_bought(st, it, place, at_limit);
         let protected_supply = live && place == Place::Pack
@@ -342,6 +343,11 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
         } else if home_policy {
             borg_town_home::classify(st, it, can_decurse, worn_gain)
         } else { Role::Ordinary };
+        if ranked_item && matches!(home_role, Role::Reject | Role::Renewable | Role::Ordinary) {
+            // Ranked cleanup makes the disposal decision. The normal planner
+            // may still put the spare at Home to save carried weight.
+            home_role = Role::Gear;
+        }
         if home_role == Role::LatePotion {
             let home = &st.store.shops[BORG_HOME].ware;
             let earlier = if place == Place::Home { &home[..slot] } else { &home[..] };
@@ -355,8 +361,7 @@ fn kit_of(st: &mut BorgState, live: bool) -> Vec<KitItem> {
             keep_last_book: protects_class_book(it),
             protect_disposal: protected_supply
                 || (place == Place::Home && (crate::borg_town_live::retained_gear(st, it)
-                    || (home_policy && it.art_idx != 0 || ranked_gear && crate::borg_spare_gear::can_rank(it))
-                        && !redundant_dagger))
+                    || (home_policy && it.art_idx != 0 || ranked_item) && !redundant_dagger))
                 || (it.aware && u32::from(it.tval) == crate::headers::list_tvals_h::TV_SCROLL
                     && i32::from(it.sval) == st.item_val.sv_scroll_detect_invis),
             home_unwanted: crate::borg_town_capability::unwanted_home_item(it),
