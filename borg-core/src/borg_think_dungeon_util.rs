@@ -1250,13 +1250,14 @@ pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
 
     let (max_depth, saved, force, persist, teleports, destination) = match case {
         "blocked" => (16, 16, false, false, 0, Some(16)),
-        "ready" => (16, 16, false, false, 2, Some(16)),
+        "two-escapes" => (16, 16, false, false, 2, Some(16)),
+        "ready" => (16, 16, false, false, 3, Some(16)),
         "saved" | "sixty" | "zero" => (18, 16, false, false, 0, Some(16)),
         "forced" => (15, 9, true, false, 0, Some(16)),
         "persistent" => (16, 16, false, true, 2, None),
         "persistent-new" => (0, 0, false, true, 2, Some(1)),
         "endgame" => (101, 100, false, false, 0, Some(100)),
-        "shallower-than-100" => (100, 16, false, false, 2, Some(16)),
+        "shallower-than-100" => (100, 16, false, false, 3, Some(16)),
         _ => panic!("unknown town Recall case {case}"),
     };
     assert_eq!(engine::player_depth(), 0);
@@ -1279,6 +1280,7 @@ pub(crate) fn check_town_recall(st: &mut BorgState, case: &str) -> ! {
         "persistent" => "# Recall requires a destination choice; taking the stairs",
         "persistent-new" => "# Not deep enough to recall",
         "endgame" => "# Borg must crawl to deep dungeon- no recall to 100.",
+        "two-escapes" => "# Way too scary to recall down there!   teleports: 2 < 3",
         _ => "# Way too scary to recall down there!   restock tele + tele staff < 2",
     };
     assert!(st.io.queued_keys().is_empty());

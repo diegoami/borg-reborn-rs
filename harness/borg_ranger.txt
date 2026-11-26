@@ -35,9 +35,9 @@ borg_param_prepared_dl59_min_hp = 0
 borg_param_prepared_dl59_min_clevel = 11
 # #768: class offsets and bounds for mid-depth and deep preparedness.
 borg_param_prepared_mid_clevel_offset = 0
-borg_param_prepared_deep_clevel_offset = 8
-borg_param_prepared_deep_min_clevel = 29
-borg_param_prepared_deep_max_clevel = 41
+borg_param_prepared_deep_clevel_offset = 10
+borg_param_prepared_deep_min_clevel = 0
+borg_param_prepared_deep_max_clevel = 43
 # #712 (owner, 2026-11-20): a Ranger has arrows; no thrown-oil curve.
 borg_param_town_oil_apart = 0
 # #716 (owner, 2026-11-20): a soft cap of 50 arrows, then a diminishing curve
