@@ -3253,6 +3253,39 @@ pub fn player_depth() -> i32 {
     i32::from(player_ref().depth)
 }
 
+/// Destination of an automatic Recall from town.
+pub(crate) fn town_recall_destination() -> Option<i32> {
+    use crate::headers::list_options_h::{OPT_birth_force_descend, OPT_birth_levels_persist};
+    use crate::headers::player_h::player;
+
+    // effect_handler_RECALL() prompts for a level in this mode. The Borg
+    // does not answer that prompt, so use the stairs instead.
+    if player_opt(OPT_birth_levels_persist) && !player_opt(OPT_birth_force_descend) {
+        return None;
+    }
+
+    extern "C" {
+        fn player_set_recall_depth(p: *mut player);
+    }
+
+    // game-world.c:process_world() calls this before a Recall from town.
+    // SAFETY: player-util.c:player_set_recall_depth():79-93 writes only
+    // recall_depth. Its quest checks only read the original quest data.
+    let mut snapshot = *player_ref();
+    unsafe { player_set_recall_depth(&mut snapshot) };
+    Some(i32::from(snapshot.recall_depth))
+}
+
+#[cfg(feature = "test-stair-handoff")]
+pub(crate) fn set_test_recall_depths(max_depth: i16, recall_depth: i16) {
+    // SAFETY: test-only setup on the engine thread after birth.
+    unsafe {
+        let player = crate::headers::player_h::player;
+        (*player).max_depth = max_depth;
+        (*player).recall_depth = recall_depth;
+    }
+}
+
 /// A key for the character, from what its birth fixed: the hit points
 /// rolled for each level, height, weight, age and name (FNV-1a).
 /// borg-reborn-rs (#208, re-review #227): an errand belongs to one

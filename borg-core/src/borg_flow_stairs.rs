@@ -1542,6 +1542,9 @@ mod off_stair_handoff_tests {
 /// engine. Feed the queued movement keys back as the next Borg observations.
 #[cfg(feature = "test-stair-handoff")]
 pub(crate) fn run_handoff_regression(st: &mut BorgState, case: &str) -> ! {
+    if let Some(case) = case.strip_prefix("town-recall-") {
+        crate::borg_think_dungeon_util::check_town_recall(st, case);
+    }
     if case.starts_with("pursuit-budget") {
         crate::borg_caution::run_desperate_walk_budget_regression(st, case);
     }

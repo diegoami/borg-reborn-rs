@@ -418,6 +418,7 @@ parameters! {
     town_recall_urgent_depth => (0, "depth", 0, 127, "borg_town_utility.rs:256", "#984: the trip depth from which town_recall_urgent makes the first Word of Recall urgent when none is carried. 0 = prepared_recall_depth (#859, today); N > 0 = from DL N (1: any trip into the dungeon), so a shallow Borg that has read its last scroll buys one first, before the solver weighs anything, and the buy_recall_from_gold floor does not hold it back. The dive gate (prepared_recall_depth) is not moved. Read only with town_recall_urgent on."),
     town_recall_curve_scale_percent => (0, "percent", 0, 10_000, "borg_town_capability.rs:1040", "#859 (owner: \"a curve for word of recall starting from 1 and make it be 110 by default, so that they buy a few\"; \"use the trip weight\"): above 0, the live town planner values every Word of Recall on a diminishing curve on the trip weight (borg_town_w_trip), weight and demand scaled by this percent as town_heal_curve_scale_percent scales healing's: each scroll is worth less than the last and never nothing, so a Borg with gold and room carries spares. The town_recall_reserve requirement stays on top (its own row, as town_phase_reserve's); town_recall_value_percent (the walk a scroll saves) is then not read. 0 = #557 (the reserve alone, nothing past it; below the gold floor, the walk a scroll saves)."),
     prepared_recall_depth => (5, "depth", 0, 127, "borg_prepared.rs:236", "#557 (owner): a descent to this depth or deeper needs one Word of Recall carried (C's \"1 recall\", from DL5); lower moves it shallower; 0 = never. It only gates descents: it buys nothing."),
+    town_recall_prepared_depth_percent => (100, "percent", 0, 100, "borg_think_dungeon_util.rs:1227", "#1281. Before using Word of Recall from town, check preparedness at this percent of the engine destination, rounded down. 100 checks the full destination. 60 uses the old fraction. 0 checks town. Risky play can still bypass preparedness."),
     // #768: C Borg dive gates. Class arrays follow CLASSES (class.txt order).
     prepared_clevel_depth_margin => (0, "levels", -50, 50, "borg_prepared.rs:747", "Before CL50, require maximum character level to reach depth minus this margin. Positive lets the Borg dive earlier."),
     prepared_dl2_min_clevel => (0, "level", 0, 50, "borg_prepared.rs:265", "#1217: Minimum maximum character level for a DL2 proposal, skipped in risky play. 0 disables this gate. Shipped class values are one level above explore_mix_max_clevel."),
@@ -3392,6 +3393,7 @@ mod tests {
             (Param::prepared_clevel_depth_margin, 0),
             (Param::prepared_dl2_min_clevel, 0),
             (Param::prepared_recall_depth, 5),
+            (Param::town_recall_prepared_depth_percent, 100),
             (Param::prepared_cure_min, 2),
             (Param::prepared_cure_until_clevel, 30),
             (Param::prepared_mid_max_depth, 19),
