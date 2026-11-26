@@ -3,8 +3,8 @@
 The accepted R4 snapshot is `40cbaf272193abb44dd80fad2cfeec24b627be22`.
 The owner-selected native baseline is `24be98732748230062882fe2b7d9601dba5e2cc0`.
 The [rebuild handover](handover/2026-11-25-856-r45-rebuild.md) records the
-local commits, build identities and run lineage. Full-suite evidence and
-owner review are pending.
+local commits, build identities and run lineage. The full Zoo gate passed
+and owner acceptance is pending.
 
 ## Owned source
 
@@ -66,32 +66,36 @@ rejection in both modes. A temporary `>` to `>=` change in the owned rule
 stopped replay at the unexpected refusal note. The clean port passed again
 after restoration.
 
-## Full-suite handoff
+## Full-suite result
 
-Use the fixed receiving pin as the native control, with the rebuilt specimen
-as the candidate. All arms use the shipped profile with no parameter changes.
-The shipped `harness/borg.txt` SHA-256 is
+The native control is `24be98732748230062882fe2b7d9601dba5e2cc0` and both
+shadow arms use candidate `83e28cd4c3fb9a3a0eb4cb75e0ff8d635f25a9d2`.
+All arms use the receiving measurement baseline at engine
+`574b618c3bfec595f3503a58f8e488b1c4ae3a46`, which came in with the pinned
+main merge. The pre-carry R4 engine was `42cd156a`. All arms used the
+shipped profile. The shipped `harness/borg.txt` SHA-256 is
 `dd21cc3e95f5ac0dc504d1f821f148befe356df74d4eb69b17d3b549edc4e046`.
-The cell environment needs `BORG_SHADOW=off` for native and `check` or
-`switch` for the candidate. The frontend uses the cell's `-summary`
-directory for diagnostics. A local check run confirmed both shadow files
-are written there with no inherited `BORG_RUN_DIR`.
 
-The read-only inspection of Zoo's pinned and current Borg Rust adapters
-found that inherited `BORG_*` environment settings are cleared and there is no
-explicit `BORG_SHADOW` arm field. Zoo needs a per-arm mode and raw evidence
-retention before its owner can dispatch the parity pilot.
+The pilot passed all nine cells and exercised retention of a failed cell.
+The full run passed all 135 cells using the exact 45 starts in
+`harness/suites/full` (SHA-256
+`7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed`).
+Both `check` and `switch` produced zero shadow mismatches, and each matched
+all 45 native starts for keys, messages, state and meaningful summary fields.
+The pinned receiving checker `610aabe058f34ab155859e6f3802c8ebeb218e71`
+verified the build, settings, exit and mode receipts before comparing play.
 [Request and run inputs](R45-ZOO-REQUEST.md) ·
-[Zoo #792](https://github.com/diegoami/borg-zoo/issues/792)
+[Zoo #792](https://github.com/diegoami/borg-zoo/issues/792#issuecomment-7176002191) ·
+[Full gate](https://github.com/diegoami/borg-zoo/actions/runs/45685728667/job/139508652763) ·
+[Retained full run](https://github.com/diegoami/borg-zoo/actions/runs/45685728667/artifacts/15062667664)
 
-The R4.5 exit slice is the exact 45 starts in `harness/suites/full`
-(SHA-256 `7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed`).
-The gate is zero check mismatches and 45/45 switch runs matching the native
-keys, messages, state and meaningful summary fields. Retain every attempted
-cell and reconcile natural deaths in Cemetery. The receiving checker
-`harness/check-r45-suite.py` validates build, settings, exit and mode
-receipts before running the existing shadow reader and gameplay diff. The
-retained three-start smoke artifacts passed this checker in its smoke mode.
+The two distinct natural deaths are retained on Cemetery main at
+`e6ad554fb94e9b6b8df663543a351f06ef536a87` with the original gameplay
+streams. The Rust, engine, recorder and R4 evidence workflow passed at
+`8be1f018e9e5200cb13984aab8d695727a041e1b`. The final tooling run passed
+157 tests with the pinned Cemetery tools.
+[Cemetery #158](https://github.com/diegoami/borg-cemetery/pull/158) ·
+[Task CI](https://github.com/diegoami/borg-reborn-rs/actions/runs/45694647299)
 
 ## Work after the pin and R5 sizing
 
